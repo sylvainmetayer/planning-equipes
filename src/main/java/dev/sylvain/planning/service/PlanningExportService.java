@@ -41,6 +41,8 @@ public class PlanningExportService {
     private final AnimateurPlanningPdf pdfAnimateur;
     private final GlobalPlanningPdf pdfGlobal;
     private final PlanningIcs ics;
+    /** Plain arithmetic on the plan, no CDI needed: the same reading the espace and {@code /api/pauses} give. */
+    private final PauseAnalyzer pauses = new PauseAnalyzer();
     private final ExportProvenance provenance;
 
     /**
@@ -84,6 +86,7 @@ public class PlanningExportService {
                 .toList();
         return pdfAnimateur.construire(resolveAnimateurName(planning, animateurId), animateurPostes,
                 teammatesByPoste(planning, animateurId), daysOff(planning, animateurId),
+                pauses.pausesAnimateur(planning, animateurId),
                 lienEspaceAnimateur(planning, animateurId), provenanceDuPlan);
     }
 

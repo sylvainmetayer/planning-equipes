@@ -140,6 +140,15 @@
           <span i18n="@@espace.planning.repos">Repos — aucune affectation ce jour.</span>
         </p>
       }
+      @for (pause of jour.pauses; track pause.standId + '-' + pause.heureLimite) {
+        <p class="espace-pause">
+          <mat-icon inline>free_breakfast</mat-icon>
+          <span i18n="@@espace.planning.pause">Pause de {{ pause.dureeMinutes }} min à prendre avant {{ pause.heureLimite.slice(0, 5) }}, sur {{ pause.standNom }}</span>
+          @if (!pause.relaisDisponible) {
+            <span class="espace-pause-seul" i18n="@@espace.planning.pauseSansRelais">— personne d'autre sur le stand : demandez le relais à l'organisation</span>
+          }
+        </p>
+      }
       <ul class="espace-postes">
         @for (poste of jour.postes; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
           <li class="espace-poste">

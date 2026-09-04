@@ -1378,10 +1378,83 @@ export interface CollegueView {
   nomComplet: string;
 }
 
+/** A colleague on the same stand at a break's deadline, who can take the relay. */
+export interface RelaisView {
+  animateurId: string;
+  nomComplet: string;
+}
+
+/** One legal break a working stretch owes (`GET /api/pauses`). */
+export interface PauseDueView {
+  /** Latest start of the break, `HH:mm:ss`: the stretch reaches the legal mark then. */
+  heureLimite: string;
+  /** 20 for an adult, 30 for a minor. */
+  dureeMinutes: number;
+  standId: string;
+  standNom: string;
+  relais: RelaisView[];
+  /** False when nobody else is on the stand at that moment. */
+  relaisDisponible: boolean;
+}
+
+/** An uninterrupted working stretch of one animateur's day, with the breaks it owes. */
+export interface SequenceTravailView {
+  debut: string;
+  fin: string;
+  minutes: number;
+  pausesDues: PauseDueView[];
+}
+
+/** A break the grid already schedules: the gap between two stretches. */
+export interface PausePlanifieeView {
+  debut: string;
+  fin: string;
+  minutes: number;
+}
+
+/** One animateur on one day, as `GET /api/pauses` reads it. */
+export interface JourneeAnimateurPauses {
+  animateurId: string;
+  nomComplet: string;
+  /** The minors' figures applied: 4 h 30 and 30 minutes. */
+  mineur: boolean;
+  /** ISO date. */
+  date: string;
+  jour: number;
+  sequences: SequenceTravailView[];
+  pausesPlanifiees: PausePlanifieeView[];
+}
+
+/** `GET /api/pauses`: where the legal breaks of the persisted plan fall. */
+export interface RapportPauses {
+  /** The organiser's declaration that breaks are taken on the post, as it stands today. */
+  pauseSurPoste: boolean;
+  journeesAnalysees: number;
+  pausesDues: number;
+  relaisManquants: number;
+  /** Only the days that owe a break or list a scheduled one, by date then name. */
+  journees: JourneeAnimateurPauses[];
+  message: string;
+}
+
+/** One break of the animateur's own planning, read from the published plan. */
+export interface PauseAnimateurView {
+  /** ISO date. */
+  date: string;
+  /** `HH:mm:ss`. */
+  heureLimite: string;
+  dureeMinutes: number;
+  standId: string;
+  standNom: string;
+  relaisDisponible: boolean;
+}
+
 /** `/api/espace-animateur/{jeton}`: the espace's home payload. */
 export interface EspaceAnimateurView {
   /** ISO dates of the event days without any seat for this animateur — their « Repos » days. */
   joursRepos: string[];
+  /** The legal breaks their days owe, read from the same published plan as `postes`. */
+  pauses: PauseAnimateurView[];
   animateurId: string;
   prenom: string;
   nom: string;

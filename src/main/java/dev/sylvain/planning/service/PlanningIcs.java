@@ -88,6 +88,7 @@ public class PlanningIcs {
                 .append("\r\n")
                 .append("CALSCALE:GREGORIAN\r\n");
 
+        List<PauseAnalyzer.PauseAnimateurView> pauses = new PauseAnalyzer().pausesAnimateur(planning, animateurId);
         for (PosteAffectation poste : postes) {
             String uid = poste.getId() + "@" + uidDomain;
             builder.append("BEGIN:VEVENT\r\n")
@@ -103,7 +104,8 @@ public class PlanningIcs {
                     .append("\r\n")
                     .append("SUMMARY:").append(escapeIcs(poste.getStand().getNom())).append("\r\n")
                     .append("DESCRIPTION:")
-                    .append(escapeIcs("Stand " + poste.getStand().getNom() + " - slot " + poste.getCreneau().getId()))
+                    .append(escapeIcs("Stand " + poste.getStand().getNom() + " - slot " + poste.getCreneau().getId()
+                            + descriptionPauses(pauses, poste)))
                     .append("\r\n");
             Emplacement emplacement = poste.getStand().getEmplacement();
             if (emplacement != null && emplacement.getNom() != null && !emplacement.getNom().isBlank()) {
@@ -146,4 +148,20 @@ public class PlanningIcs {
                 .replace(";", "\\;")
                 .replace("\n", "\\n");
     }
+
+    /** « Pause de 20 min à prendre avant 19:00 », appended to the event the deadline falls in. */
+    private static String descriptionPauses(List<PauseAnalyzer.PauseAnimateurView> pauses, PosteAffectation poste) {
+        StringBuilder texte = new StringBuilder();
+        for (PauseAnalyzer.PauseAnimateurView pause : pauses) {
+            if (pause.date().equals(poste.getCreneau().getDate()) && pause.standId().equals(poste.getStand().getId())
+                    && !pause.heureLimite().isBefore(poste.heureDebutEffectif())
+                    && (poste.heureFinEffectif() == null || !poste.heureFinEffectif().isAfter(poste.heureDebutEffectif())
+                            || pause.heureLimite().isBefore(poste.heureFinEffectif()))) {
+                texte.append(" - Pause de ").append(pause.dureeMinutes()).append(" min à prendre avant ")
+                        .append(pause.heureLimite());
+            }
+        }
+        return texte.toString();
+    }
+
 }

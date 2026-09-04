@@ -139,6 +139,31 @@ class EspacePlanPublieTest {
 
     /* -------------------------------- Helpers ------------------------------ */
 
+    @Test
+    void lEspaceAnnonceLaPauseQueLaJourneePubliseDoit() {
+        Animateur alice = new Animateur("PUBESP-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
+        Animateur bruno = new Animateur("PUBESP-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
+        Stand stand = new Stand("PUBESP-S1", "Stand espace un", Set.of(), 2, 2, false);
+        Creneau longue = new Creneau(CRENEAU_ID, 1, JOUR, LocalTime.of(13, 0), LocalTime.of(20, 0));
+        PosteAffectation posteAlice = new PosteAffectation("PUBESP-P1", stand, longue);
+        posteAlice.setAnimateur(alice);
+        PosteAffectation posteBruno = new PosteAffectation("PUBESP-P2", stand, longue);
+        posteBruno.setAnimateur(bruno);
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
+        publication.publier();
+
+        given().when().get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(1))
+                .body("pauses.size()", equalTo(1))
+                .body("pauses[0].date", equalTo(JOUR.toString()))
+                .body("pauses[0].heureLimite", equalTo("19:00:00"))
+                .body("pauses[0].dureeMinutes", equalTo(20))
+                .body("pauses[0].standNom", equalTo("Stand espace un"))
+                .body("pauses[0].relaisDisponible", equalTo(true));
+    }
+
     private void persistPlan(String titulaireId) {
         Animateur alice = new Animateur("PUBESP-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("PUBESP-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);

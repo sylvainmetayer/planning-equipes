@@ -108,6 +108,10 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
             {
               term: $localize`:@@espace.aide.planning.term.coequipiers:Les coéquipiers`,
               text: $localize`:@@espace.aide.planning.def.coequipiers:Les animateurs affectés au même stand, sur le même créneau que vous.`
+            },
+            {
+              term: $localize`:@@espace.aide.planning.term.pause:La pause`,
+              text: $localize`:@@espace.aide.planning.def.pause:Dès que votre journée atteint six heures d'affilée, vous avez droit à vingt minutes de pause. Votre planning vous dit avant quelle heure la prendre et sur quel stand vous serez : sortez en vous relayant avec vos coéquipiers, ou demandez le relais à l'organisation si vous êtes seul.`
             }
           ]
         },

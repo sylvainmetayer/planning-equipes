@@ -84,6 +84,30 @@ class PlanningPdfContenuTest {
         write("contenu-animateur.txt", text);
     }
 
+    @Test
+    void lePdfIndividuelAnnonceLaPauseSousLaVacationQuiLaDoit() throws IOException {
+        // 13:00-20:00 on one stand with a colleague: the break is owed at 19:00
+        // and the relay is on the stand. The same day alone on the stand says so.
+        Stand stand = new Stand("STAND-P", "Stand des Pauses", Set.of("STRATEGIE"), 2, 2, false);
+        Creneau releve = new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(13, 0), LocalTime.of(14, 0));
+        Creneau aprem = new Creneau(12L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        Animateur alan = new Animateur("A-ALAN", "Alan", "Turing", LocalDate.of(1992, 2, 2), false);
+        List<PosteAffectation> postes = new ArrayList<>(List.of(
+                poste("p1", stand, releve, ada), poste("p2", stand, aprem, ada), poste("p3", stand, aprem, alan)));
+        PlanningEvenement planning = new PlanningEvenement(LocalDate.of(2026, 8, 14),
+                new ArrayList<>(List.of(ada, alan)), postes);
+
+        String text = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
+        assertThat(text).contains("Pause de 20 min à prendre avant 19:00").contains("en relais avec l'équipe du stand");
+        // Alan's six hours end at 20:00 exactly: nothing owed, nothing printed.
+        assertThat(textOf(service.exportAnimateurPdf(planning, "A-ALAN"))).doesNotContain("Pause de");
+
+        postes.remove(2);
+        String seule = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
+        assertThat(seule).contains("Pause de 20 min à prendre avant 19:00").contains("personne d'autre sur le stand");
+    }
+
     /**
      * The « vos stands affectés » callout is a list, not a sentence: one stand
      * per line, and under each one the games played there, one per line too —

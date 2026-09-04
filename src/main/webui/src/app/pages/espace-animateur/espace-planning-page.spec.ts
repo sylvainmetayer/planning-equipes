@@ -36,6 +36,7 @@ function vue(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView 
     foireOuvreLe: null,
     foireFermeLe: null,
     abonnementToken: 'abo-1',
+    pauses: [],
     ...overrides
   } as EspaceAnimateurView;
 }
@@ -265,5 +266,32 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
 
     expect(erreur()).toBeNull();
     expect(succes()).not.toBeNull();
+  });
+
+  it('prints the break of the day under its title, and says when nobody can relay', async () => {
+    espaceVue.set(
+      vue({
+        postes: [poste()],
+        pauses: [
+          { date: '2026-07-10', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: true }
+        ]
+      })
+    );
+    await rendre();
+
+    const note = (fixture.nativeElement as HTMLElement).querySelector('.espace-pause')!;
+    expect(note.textContent).toContain('Pause de 20 min à prendre avant 19:00, sur Stand un');
+    expect(note.querySelector('.espace-pause-seul')).toBeNull();
+
+    espaceVue.set(
+      vue({
+        postes: [poste()],
+        pauses: [
+          { date: '2026-07-10', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: false }
+        ]
+      })
+    );
+    await rendre();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.espace-pause-seul')?.textContent).toContain("personne d'autre sur le stand");
   });
 });

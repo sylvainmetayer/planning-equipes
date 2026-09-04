@@ -268,6 +268,25 @@ class PlanningExportServiceTest {
     }
 
     @Test
+    void exportAnimateurIcsSaysWhenTheLegalBreakIsOwedInsideTheEvent() {
+        Stand stand = new Stand("STAND-1", "Stand", java.util.Set.of(), 1, 1, false);
+        Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 7, 10), LocalTime.of(13, 0), LocalTime.of(20, 0));
+        Creneau court = new Creneau(2L, 2, LocalDate.of(2026, 7, 11), LocalTime.of(10, 0), LocalTime.of(12, 0));
+        Animateur oscar = new Animateur("A-OSCAR", "Oscar", "Fontaine", LocalDate.of(1990, 1, 1), false);
+        PosteAffectation longue = new PosteAffectation("P1", stand, creneau);
+        longue.setAnimateur(oscar);
+        PosteAffectation courte = new PosteAffectation("P2", stand, court);
+        courte.setAnimateur(oscar);
+        PlanningEvenement planning = new PlanningEvenement(creneau.getDate(), List.of(oscar), List.of(longue, courte));
+
+        String ics = service.exportAnimateurIcs(planning, "A-OSCAR");
+
+        assertThat(ics).contains("slot 1 - Pause de 20 min à prendre avant 19:00");
+        assertThat(ics).contains("slot 2\r\n");
+        assertThat(ics).doesNotContain("slot 2 - Pause");
+    }
+
+    @Test
     void exportAnimateurPdfRendersAGeocodedStandWithoutError() throws IOException {
         PlanningEvenement planning = fakePlanning();
         String animateurId = planning.getAnimateurs().get(0).getId();

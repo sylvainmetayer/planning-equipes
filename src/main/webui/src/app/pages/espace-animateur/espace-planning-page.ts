@@ -5,7 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { errorMessage } from '../../core/error-message';
-import { PosteAnimateurView } from '../../core/models';
+import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
 
 interface JourPlanning {
   /** ISO date, `''` for postes without one. */
@@ -13,6 +13,8 @@ interface JourPlanning {
   postes: PosteAnimateurView[];
   /** True for an event day without any seat: the card says « Repos » instead of listing shifts. */
   repos: boolean;
+  /** The legal breaks this day owes — « 20 min at the latest at 19:00 » — in deadline order. */
+  pauses: PauseAnimateurView[];
 }
 
 /**
@@ -185,16 +187,26 @@ export class EspacePlanningPage {
         parJour.set(date, [poste]);
       }
     }
+    const pausesParJour = new Map<string, PauseAnimateurView[]>();
+    for (const pause of this.espace.vue()?.pauses ?? []) {
+      const existantes = pausesParJour.get(pause.date);
+      if (existantes) {
+        existantes.push(pause);
+      } else {
+        pausesParJour.set(pause.date, [pause]);
+      }
+    }
     const jours: JourPlanning[] = Array.from(parJour.entries()).map(([date, postes]) => ({
       date,
       postes,
-      repos: false
+      repos: false,
+      pauses: (pausesParJour.get(date) ?? []).sort((a, b) => a.heureLimite.localeCompare(b.heureLimite))
     }));
     // Rest days take their chronological place among the worked ones: a day
     // silently missing reads as an oversight, an explicit « Repos » card as a
     // decision. The server sends none for an animateur without any seat.
     for (const date of this.espace.vue()?.joursRepos ?? []) {
-      jours.push({ date, postes: [], repos: true });
+      jours.push({ date, postes: [], repos: true, pauses: [] });
     }
     return jours.sort((a, b) => a.date.localeCompare(b.date));
   });

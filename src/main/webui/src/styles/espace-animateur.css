@@ -356,6 +356,23 @@
   font-style: italic;
 }
 
+/* The one legal obligation the animateur acts on themselves: under the day's
+   title, before the shifts, in the accent colour. */
+.espace-pause {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+}
+
+.espace-pause-seul {
+  font-weight: 400;
+  color: var(--mat-sys-error);
+}
+
 /*
  * Une affectation se lit d'abord sur un téléphone : l'horaire en tête, le
  * stand en dessous, les coéquipiers à la ligne. En rangée, la troisième

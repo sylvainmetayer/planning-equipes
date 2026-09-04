@@ -1,0 +1,130 @@
+/* Écran « Pauses » : un bloc par stand, les stands sans relais en tête. */
+
+.pauses-message {
+  margin: 0 0 0.75rem;
+}
+
+.pauses-alerte {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.pauses-controles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pauses-jour {
+  min-width: 14rem;
+}
+
+.pauses-recherche {
+  flex: 1 1 16rem;
+}
+
+.pauses-synthese {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: 1.25rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.pauses-synthese .synthese-alerte {
+  color: var(--mat-sys-error);
+}
+
+.pauses-stand {
+  margin-bottom: 1.5rem;
+}
+
+.pauses-stand-titre {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.pauses-stand-alerte .pauses-stand-titre {
+  color: var(--mat-sys-error);
+}
+
+.pauses-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.pauses-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pauses-table th,
+.pauses-table td {
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  vertical-align: top;
+}
+
+.pauses-table th[scope='row'] {
+  font-weight: 600;
+}
+
+.pauses-limite {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.pauses-ligne-alerte .pauses-limite,
+.pauses-aucun-relais {
+  color: var(--mat-sys-error);
+}
+
+.pauses-mineur {
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.pauses-planifiees-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.pauses-planifiees-liste li {
+  display: flex;
+  gap: 1rem;
+  padding: 0.3rem 0.75rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.pauses-planifiee-nom {
+  flex: 1 1 12rem;
+  font-weight: 600;
+}
+
+.pauses-planifiee-duree {
+  color: var(--mat-sys-on-surface-variant);
+}

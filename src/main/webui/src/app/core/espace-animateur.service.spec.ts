@@ -20,7 +20,8 @@ function vue(): EspaceAnimateurView {
     confirmeLe: null,
     foireOuvreLe: null,
     foireFermeLe: null,
-    abonnementToken: 'abo-1'
+    abonnementToken: 'abo-1',
+    pauses: []
   };
 }
 

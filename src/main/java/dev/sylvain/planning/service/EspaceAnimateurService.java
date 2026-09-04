@@ -67,6 +67,9 @@ public class EspaceAnimateurService {
     @Inject
     ConfirmationPlanningService confirmationService;
 
+    @Inject
+    PauseAnalyzer pauseAnalyzer;
+
     /** One of the animateur's seats in the persisted planning. */
     public record PosteAnimateurView(Long creneauId, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
             String standId, String standNom, List<String> coequipiers) {
@@ -111,13 +114,17 @@ public class EspaceAnimateurService {
      *                 sent so the espace can build the subscription URL. It is
      *                 <b>not</b> the espace token: it opens that one document
      *                 and nothing else, and the espace rotates it on its own
+     * @param pauses   the legal breaks their days owe — « 20 min at the latest
+     *                 at 19:00, on stand X » — read from the same published
+     *                 plan as {@code postes}, so the note never contradicts
+     *                 the shifts it sits under (see {@link PauseAnalyzer})
      */
     public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant publieLe,
             boolean foireOuverte, List<PosteAnimateurView> postes,
             List<LocalDate> joursRepos, List<ColleagueView> collegues,
             String statutConfirmation, Instant confirmeLe,
             LocalDate foireOuvreLe, LocalDate foireFermeLe,
-            String abonnementToken) {
+            String abonnementToken, List<PauseAnalyzer.PauseAnimateurView> pauses) {
     }
 
     /**
@@ -166,7 +173,8 @@ public class EspaceAnimateurService {
                 (confirmation == null ? StatutConfirmation.NON_VU : confirmation.statut()).name(),
                 confirmation == null ? null : confirmation.confirmeLe(),
                 foire.ouvertureAVenir(LocalDate.now()), foire.fin(),
-                referenceDataService.abonnementToken(animateurId));
+                referenceDataService.abonnementToken(animateurId),
+                pauseAnalyzer.pausesAnimateur(planning, animateurId));
     }
 
     private static List<PosteAnimateurView> postesOf(PlanningEvenement planning, String animateurId,

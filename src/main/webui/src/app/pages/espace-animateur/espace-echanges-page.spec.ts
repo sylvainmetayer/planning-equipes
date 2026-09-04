@@ -57,6 +57,7 @@ function vue(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView 
     foireOuvreLe: null,
     foireFermeLe: null,
     abonnementToken: 'abo-1',
+    pauses: [],
     ...overrides
   };
 }

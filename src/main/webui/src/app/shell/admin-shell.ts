@@ -240,6 +240,7 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         label: $localize`:@@nav.link.fragilite:Fragilité du planning`,
         icon: 'personal_injury'
       },
+      { path: '/pauses', label: $localize`:@@nav.link.pauses:Pauses`, icon: 'free_breakfast' },
       {
         path: '/banc-de-touche',
         label: $localize`:@@nav.link.bancDeTouche:Banc de touche`,

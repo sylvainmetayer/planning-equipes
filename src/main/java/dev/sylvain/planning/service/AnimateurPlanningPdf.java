@@ -53,7 +53,8 @@ public class AnimateurPlanningPdf {
 
     byte[] construire(String animateurName, List<PosteAffectation> postes,
             Map<String, List<String>> teammatesByPoste, List<PlanningExportService.JourRepos> joursRepos,
-            String lienEspaceAnimateur, ExportProvenance.Provenance provenance) {
+            List<PauseAnalyzer.PauseAnimateurView> pauses, String lienEspaceAnimateur,
+            ExportProvenance.Provenance provenance) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
@@ -78,6 +79,14 @@ public class AnimateurPlanningPdf {
                     prochainRepos = repos.hasNext() ? repos.next() : null;
                 }
                 document.add(buildAssignmentCard(poste, teammatesByPoste.getOrDefault(poste.getId(), List.of())));
+                // The break sits right under the shift it falls in, at its
+                // chronological place: a line the animateur reads while
+                // reading their day, not a footnote.
+                for (PauseAnalyzer.PauseAnimateurView pause : pauses) {
+                    if (fallsInside(pause, poste)) {
+                        document.add(pauseCard(pause));
+                    }
+                }
             }
             while (prochainRepos != null) {
                 document.add(reposCard(prochainRepos));
@@ -262,6 +271,43 @@ public class AnimateurPlanningPdf {
     }
 
     /** A small pill-shaped "JOURx" badge, sized to hug its own text rather than stretching to the column width. */
+    /** Whether the break's deadline falls inside this seat: same day, same stand, within its effective window. */
+    private static boolean fallsInside(PauseAnalyzer.PauseAnimateurView pause, PosteAffectation poste) {
+        Creneau creneau = poste.getCreneau();
+        if (creneau == null || creneau.getDate() == null || !creneau.getDate().equals(pause.date())
+                || poste.getStand() == null || !poste.getStand().getId().equals(pause.standId())) {
+            return false;
+        }
+        LocalTime debut = poste.heureDebutEffectif();
+        LocalTime fin = poste.heureFinEffectif();
+        boolean passeMinuit = fin != null && debut != null && !fin.isAfter(debut);
+        return debut != null && !pause.heureLimite().isBefore(debut)
+                && (passeMinuit || fin == null || pause.heureLimite().isBefore(fin));
+    }
+
+    /**
+     * « Pause de 20 min à prendre avant 19:00 » — under the shift, in the
+     * accent colour, so the one legal obligation the animateur has to act on
+     * themselves stands out from the shifts somebody else planned.
+     */
+    private PdfPTable pauseCard(PauseAnalyzer.PauseAnimateurView pause) {
+        PdfPTable card = new PdfPTable(1);
+        card.setWidthPercentage(100);
+        card.setSpacingAfter(9f);
+        card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+        PdfPCell cell = new PdfPCell();
+        cell.setBorder(Rectangle.NO_BORDER);
+        cell.setPadding(8f);
+        cell.setPaddingLeft(14f);
+        String texte = "Pause de " + pause.dureeMinutes() + " min à prendre avant "
+                + pause.heureLimite().format(PdfTheme.TIME_FORMAT)
+                + (pause.relaisDisponible() ? ", en relais avec l'équipe du stand"
+                        : " — personne d'autre sur le stand : demandez le relais à l'organisation");
+        cell.addElement(new Paragraph(texte, theme.calloutTitleFont()));
+        card.addCell(cell);
+        return card;
+    }
+
     private PdfPTable dayBadge(int jour) {
         String text = "JOUR" + jour;
         float characterSpacing = 0.6f;

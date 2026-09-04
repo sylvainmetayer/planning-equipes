@@ -96,6 +96,7 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
     ['/ouvertures', { label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`, icon: 'storefront', touche: 'o' }],
     ['/staffing', { label: $localize`:@@nav.link.staffing:Besoin en animateurs`, icon: 'engineering', touche: 'b' }],
     ['/fragilite', { label: $localize`:@@nav.link.fragilite:Fragilité du planning`, icon: 'personal_injury' }],
+    ['/pauses', { label: $localize`:@@nav.link.pauses:Pauses`, icon: 'free_breakfast' }],
     ['/banc-de-touche', { label: $localize`:@@nav.link.bancDeTouche:Banc de touche`, icon: 'airline_seat_recline_normal' }],
     ['/jour-j', { label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' }],
     ['/stands', { label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront', touche: 's' }],

@@ -1,0 +1,154 @@
+<app-work-in-progress-banner [message]="messageEssai()" />
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@pauses.title">Pauses</h1>
+    <mat-card-subtitle i18n="@@pauses.subtitle">
+      Où tombent les pauses légales, jour par jour et stand par stand : qui sort au plus tard à quelle heure, et qui
+      est là pour relayer. Lu sur le planning persisté, sans lancer le solveur.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+    @if (vueModifiee()) {
+      <button matButton type="button" (click)="reinitialiser()">
+        <mat-icon>filter_alt_off</mat-icon>
+        <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+      </button>
+    }
+  </mat-card-actions>
+  <mat-card-content>
+    @if (chargement() && !rapport()) {
+      <mat-progress-bar mode="indeterminate" />
+      <p class="empty-hint" i18n="@@pauses.loading">Lecture des pauses du planning…</p>
+    } @else if (erreur()) {
+      <p class="empty-hint">{{ erreur() }}</p>
+    } @else if (!rapport() || rapport()!.journeesAnalysees === 0) {
+      <p class="empty-hint" i18n="@@pauses.empty">
+        Aucun planning persisté : lancez une résolution, puis revenez ici pour savoir où tombent les pauses.
+      </p>
+    } @else {
+      <p class="pauses-message">{{ rapport()!.message }}</p>
+
+      @if (!rapport()!.pauseSurPoste && rapport()!.pausesDues > 0) {
+        <p class="pauses-alerte" role="status">
+          <mat-icon inline>warning</mat-icon>
+          <span i18n="@@pauses.nonDeclare">
+            La pause prise sur le poste n'est pas déclarée : ces séquences dépassent la durée légale de travail continu.
+            Déclarez-la dans les
+            <a routerLink="/constraints">paramètres légaux</a>, ou planifiez un trou entre deux vacations.
+          </span>
+        </p>
+      }
+
+      @if (jours().length === 0) {
+        <p class="empty-hint" i18n="@@pauses.aucune">
+          Aucune séquence ne dépasse la durée légale de travail continu, et aucun trou n'est planifié : rien à organiser.
+        </p>
+      } @else {
+        <div class="pauses-controles">
+          <button matIconButton type="button" [disabled]="estPremierJour()" (click)="decalerJour(-1)"
+                  [attr.aria-label]="jourPrecedentLabel" [title]="jourPrecedentLabel">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <mat-form-field appearance="outline" class="pauses-jour">
+            <mat-label i18n="@@pauses.day.label">Journée</mat-label>
+            <mat-select [value]="jourCourant()?.date ?? null" (valueChange)="selectionnerJour($event)">
+              @for (jour of jours(); track jour.date) {
+                <mat-option [value]="jour.date">{{ jour.title }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button matIconButton type="button" [disabled]="estDernierJour()" (click)="decalerJour(1)"
+                  [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+          <mat-form-field appearance="outline" class="pauses-recherche">
+            <mat-label i18n="@@pauses.recherche">Filtrer par nom ou stand</mat-label>
+            <input matInput name="recherche" [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
+          </mat-form-field>
+          <mat-checkbox [checked]="sansRelaisSeulement()" (change)="sansRelaisSeulement.set($event.checked)"
+                        i18n="@@pauses.filter.sansRelais">Seulement sans relais</mat-checkbox>
+        </div>
+
+        @if (synthese(); as bilan) {
+          <div class="pauses-synthese">
+            <span><strong>{{ bilan.pauses }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.pauses">pauses à organiser</ng-container></span>
+            <span [class.synthese-alerte]="bilan.relaisManquants > 0"><strong>{{ bilan.relaisManquants }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.sansRelais">sans relais sur le stand</ng-container></span>
+            <span><strong>{{ bilan.animateurs }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.animateurs">animateurs concernés</ng-container></span>
+            <span><strong>{{ bilan.planifiees }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.planifiees">pauses déjà planifiées</ng-container></span>
+          </div>
+        }
+
+        @if (groupes().length === 0) {
+          <p class="empty-hint" i18n="@@pauses.jour.vide">Aucune pause à organiser ce jour-là avec ces filtres.</p>
+        }
+        @for (groupe of groupes(); track groupe.standId) {
+          <section class="pauses-stand" [class.pauses-stand-alerte]="groupe.relaisManquants > 0">
+            <h2 class="pauses-stand-titre">
+              <mat-icon inline>storefront</mat-icon>
+              {{ groupe.standNom }}
+              @if (groupe.relaisManquants > 0) {
+                <span class="pauses-badge" i18n="@@pauses.groupe.sansRelais">{{ groupe.relaisManquants }} sans relais</span>
+              }
+            </h2>
+            <div class="table-wrapper">
+              <table class="pauses-table">
+                <caption class="visually-hidden" i18n="@@pauses.table.caption">Pauses à organiser sur ce stand, dans l'ordre des heures limites</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" i18n="@@pauses.colonne.animateur">Animateur</th>
+                    <th scope="col" i18n="@@pauses.colonne.sequence">Séquence</th>
+                    <th scope="col" i18n="@@pauses.colonne.limite">Pause au plus tard à</th>
+                    <th scope="col" i18n="@@pauses.colonne.duree">Durée</th>
+                    <th scope="col" i18n="@@pauses.colonne.relais">Relais possible</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (ligne of groupe.lignes; track ligne.animateurId + ligne.heureLimite) {
+                    <tr [class.pauses-ligne-alerte]="!ligne.relaisDisponible">
+                      <th scope="row">
+                        {{ ligne.nomComplet }}
+                        @if (ligne.mineur) {
+                          <span class="pauses-mineur" i18n="@@pauses.mineur">mineur</span>
+                        }
+                      </th>
+                      <td>{{ heure(ligne.sequenceDebut) }}–{{ heure(ligne.sequenceFin) }}</td>
+                      <td class="pauses-limite">{{ heure(ligne.heureLimite) }}</td>
+                      <td>{{ ligne.dureeMinutes }} min</td>
+                      <td>
+                        @if (ligne.relaisDisponible) {
+                          {{ libelleRelais(ligne) }}
+                        } @else {
+                          <span class="pauses-aucun-relais" i18n="@@pauses.relais.aucun">Personne d'autre sur le stand</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+
+        @if (planifiees().length > 0) {
+          <section class="pauses-planifiees">
+            <h2 class="pauses-stand-titre" i18n="@@pauses.planifiees.title">Pauses déjà planifiées par la grille</h2>
+            <ul class="pauses-planifiees-liste">
+              @for (pause of planifiees(); track pause.animateurId + pause.debut) {
+                <li>
+                  <span class="pauses-planifiee-nom">{{ pause.nomComplet }}</span>
+                  <span>{{ heure(pause.debut) }}–{{ heure(pause.fin) }}</span>
+                  <span class="pauses-planifiee-duree">{{ pause.minutes }} min</span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      }
+    }
+  </mat-card-content>
+</mat-card>

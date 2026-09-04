@@ -171,6 +171,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/fragilite/fragilite-page').then((m) => m.FragilitePage)
   },
   {
+    path: 'pauses',
+    title: 'Breaks',
+    loadComponent: () => import('./pages/pauses/pauses-page').then((m) => m.PausesPage)
+  },
+  {
     path: 'banc-de-touche',
     title: 'Banc de touche',
     loadComponent: () =>

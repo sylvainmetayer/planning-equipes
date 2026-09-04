@@ -576,8 +576,13 @@ public class PlanningPersistenceService {
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
-        return new PlanningEvenement(dateDebut, animateurs, postes,
+        PlanningEvenement evenement = new PlanningEvenement(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
+        // The plan carries the legal parameters it was made under, so every
+        // read-out downstream (breaks, exports, the animateur's espace) reads
+        // the organiser's declarations from the plan itself.
+        evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        return evenement;
     }
 
     private List<Siege> readSieges() {

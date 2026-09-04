@@ -602,6 +602,10 @@ export function buildHelpSections(): HelpSection[] {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
               text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde vue liste les stands tenus par une seule personne compétente pour leurs typologies, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts : ils peuvent dépanner partout, mais un stand qu'ils sont seuls à pouvoir tenir n'a toujours aucun spécialiste. Rien n'est recalculé par le solveur : l'écran lit le planning enregistré. Il est livré à l'essai, sous « En cours de développement » : il pourra être retiré s'il ne s'avère pas utile.`
             }
+            ,{
+              term: $localize`:@@aide.views.term.pauses:Pauses`,
+              text: $localize`:@@aide.views.def.pauses:Où tombent les pauses légales, jour par jour et stand par stand : qui sort au plus tard à quelle heure, pour combien de temps, et qui est là pour relayer. Le solveur ne planifie pas la pause de vingt minutes due à la sixième heure (trente à quatre heures et demie pour un mineur) ; quand elle est déclarée prise sur le poste, c'est ici qu'on organise les relais. Les trous déjà planifiés par la grille sont listés à part. Chaque animateur retrouve ses pauses sur son propre planning.`
+            }
           ]
         }
       ],
@@ -614,6 +618,7 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/hours', label: $localize`:@@nav.link.hours:Heures` },
         { route: '/repos', label: $localize`:@@nav.link.repos:Jours de repos` },
         { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
+        { route: '/pauses', label: $localize`:@@nav.link.pauses:Pauses` },
         { route: '/banc-de-touche', label: $localize`:@@nav.link.bancDeTouche:Banc de touche` },
         { route: '/graphe', label: $localize`:@@nav.link.graphe:Graphe` },
         { route: '/kpi', label: $localize`:@@nav.link.kpi:Autopsie du planning` },
