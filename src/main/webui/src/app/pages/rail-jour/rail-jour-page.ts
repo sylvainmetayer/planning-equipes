@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { PlanningEvenement, TypologieItem } from '../../core/models';
+import { PlanningEvenement, TypologieItem, RapportPauses } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { errorPrefix } from '../../core/error-message';
@@ -59,6 +59,8 @@ export class RailJourPage {
   protected readonly planning = signal<PlanningEvenement | null>(null);
   /** Typologie referential, only used to turn ids into legend labels. */
   protected readonly typologies = signal<TypologieItem[]>([]);
+  /** The breaks of the plan; null when the request failed — the rail still draws. */
+  protected readonly pauses = signal<RapportPauses | null>(null);
   /** Day the rail shows; null until the plan is loaded, then the first day of the event. */
   protected readonly jourSelectionne = signal<number | null>(null);
   protected readonly filtre = signal('');
@@ -76,7 +78,7 @@ export class RailJourPage {
     }
     // The ad hoc exceptions travel with the plan already: no second request to
     // know which hours someone was recorded as unavailable on.
-    return buildRailJours(planning.postes ?? [], planning.animateurs ?? [], planning.contraintesAdHoc ?? []);
+    return buildRailJours(planning.postes ?? [], planning.animateurs ?? [], planning.contraintesAdHoc ?? [], this.pauses());
   });
 
   /**
@@ -207,14 +209,16 @@ export class RailJourPage {
     this.loading.set(true);
     this.error.set('');
     try {
-      const [planning, typologies] = await Promise.all([
+      const [planning, typologies, pauses] = await Promise.all([
         this.planningState.loadForDisplay(),
         // Labels only: a missing referential degrades the legend to raw ids
         // rather than failing the rail.
-        this.api.get<TypologieItem[]>('/api/typologies').catch(() => [])
+        this.api.get<TypologieItem[]>('/api/typologies').catch(() => []),
+        this.api.get<RapportPauses>('/api/pauses').catch(() => null)
       ]);
       this.planning.set(planning);
       this.typologies.set(typologies);
+      this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
     } catch (error) {
       this.planning.set(null);
       this.error.set(errorPrefix(error));

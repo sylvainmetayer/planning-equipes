@@ -17,13 +17,15 @@ import {
   ContributionAdHoc,
   FeasibilityReport,
   NiveauContrainte,
-  TypeCauseInfaisabilite
+  TypeCauseInfaisabilite,
+  RapportPauses
 } from './models';
+import { formatHeure } from './time-of-day';
 
 /** Display severity of the merged list, from the most to the least blocking. */
 export type NiveauProbleme = 'BLOQUANT' | 'AVERTISSEMENT' | 'MINEUR';
 
-export type SourceProbleme = 'FAISABILITE' | 'CONTRAINTE';
+export type SourceProbleme = 'FAISABILITE' | 'CONTRAINTE' | 'PAUSES';
 
 export interface Probleme {
   /** Stable within one merge, used as the `@for` track key. */
@@ -43,6 +45,23 @@ export interface Probleme {
   liens: LienProbleme[];
 }
 
+/** One line per relay-less break, day by day: who, when, where. */
+function detailsDePauses(pauses: RapportPauses): string[] {
+  const lignes: string[] = [];
+  for (const journee of pauses.journees) {
+    for (const sequence of journee.sequences) {
+      for (const pause of sequence.pausesDues) {
+        if (!pause.relaisDisponible) {
+          lignes.push(
+            $localize`:@@problemes.pauses.detail:${journee.date}:date: · ${journee.nomComplet}:animateur: · ${formatHeure(pause.debut)}:debut: – ${formatHeure(pause.fin)}:fin: · ${pause.standNom}:stand:`
+          );
+        }
+      }
+    }
+  }
+  return lignes;
+}
+
 /** A route the problem can be acted upon from. */
 export interface LienProbleme {
   route: string;
@@ -59,7 +78,7 @@ export interface ComptageProblemes {
 const RANG_NIVEAU: Record<NiveauProbleme, number> = { BLOQUANT: 0, AVERTISSEMENT: 1, MINEUR: 2 };
 // Within one severity tier, a structural capacity problem comes before a
 // constraint violation: it must be fixed first, since no solve can work around it.
-const RANG_SOURCE: Record<SourceProbleme, number> = { FAISABILITE: 0, CONTRAINTE: 1 };
+const RANG_SOURCE: Record<SourceProbleme, number> = { FAISABILITE: 0, CONTRAINTE: 1, PAUSES: 2 };
 
 export function niveauDeCause(severite: CauseInfaisabilite['severite']): NiveauProbleme {
   return severite === 'CRITIQUE' ? 'BLOQUANT' : 'AVERTISSEMENT';
@@ -169,9 +188,25 @@ function detailsEnCause(contributions: ContributionAdHoc[]): string[] {
 export function construireProblemes(
   report: FeasibilityReport | null,
   contraintes: ConstraintView[] = [],
-  contraintesAdHocEnCause: ContributionAdHoc[] = []
+  contraintesAdHocEnCause: ContributionAdHoc[] = [],
+  pauses: RapportPauses | null = null
 ): Probleme[] {
   const problemes: Probleme[] = [];
+
+  // A break nobody can relay is not a violation the solver sees — the seat is
+  // held — but it is one person alone on a stand for twenty minutes, and the
+  // organiser must know before the day, not during it.
+  if (pauses && pauses.relaisManquants > 0) {
+    problemes.push({
+      id: 'pauses-sans-relais',
+      niveau: 'AVERTISSEMENT',
+      source: 'PAUSES',
+      titre: $localize`:@@problemes.pauses.titre:Pauses sans relais`,
+      message: $localize`:@@problemes.pauses.message:${pauses.relaisManquants}:count: pause(s) légale(s) tombent sur un stand où personne d'autre n'est présent : la personne est seule, personne ne peut la relayer. Prévoyez un relais extérieur, ou renforcez le stand.`,
+      details: detailsDePauses(pauses),
+      liens: [{ route: '/pauses', libelle: $localize`:@@problemes.lien.pauses:Voir les pauses` }]
+    });
+  }
 
   (report?.causes ?? []).forEach((cause, index) => {
     problemes.push({

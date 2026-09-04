@@ -170,6 +170,7 @@ describe('SolverPage', () => {
   const problemes = {
     reload: vi.fn(),
     alerteReglesLegales: () => '',
+    alertePausesSansRelais: () => '',
     comptage: () => ({ total: 0 }),
     problemes: () => []
   };

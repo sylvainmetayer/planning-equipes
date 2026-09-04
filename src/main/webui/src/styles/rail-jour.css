@@ -237,6 +237,32 @@
   text-overflow: ellipsis;
 }
 
+/* A break over the vacation it falls in; the error colour when nobody relays. */
+.rail-pause {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  min-width: 3px;
+  z-index: 1;
+  border-radius: 2px;
+  background: var(--mat-sys-tertiary);
+  opacity: 0.9;
+}
+
+.rail-pause-alerte {
+  background: var(--mat-sys-error);
+  outline: 2px solid var(--mat-sys-error);
+  outline-offset: 1px;
+}
+
+.rail-swatch-pause {
+  background: var(--mat-sys-tertiary);
+}
+
+.rail-swatch-pause-alerte {
+  background: var(--mat-sys-error);
+}
+
 /* Two seats at the same moment: never a normal state, so it is outlined rather
    than merely stacked — the block underneath would otherwise vanish. */
 .rail-bloc-chevauchement {

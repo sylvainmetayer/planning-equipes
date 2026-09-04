@@ -13,7 +13,7 @@
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { CauseInfaisabilite, ConstraintsView, FeasibilityReport } from './models';
+import { CauseInfaisabilite, ConstraintsView, FeasibilityReport, RapportPauses } from './models';
 import { compterProblemes, construireProblemes } from './problemes';
 import { errorMessage } from './error-message';
 
@@ -22,6 +22,8 @@ export class ProblemesStore {
   /** `null` until loaded, or when the request failed (see `error`). */
   readonly report = signal<FeasibilityReport | null>(null);
   readonly constraints = signal<ConstraintsView | null>(null);
+  /** The breaks of the persisted plan, for the relay-less ones; null until loaded or when the request failed. */
+  readonly pauses = signal<RapportPauses | null>(null);
   readonly loading = signal(false);
   readonly error = signal('');
 
@@ -33,7 +35,8 @@ export class ProblemesStore {
     construireProblemes(
       this.report(),
       this.constraints()?.contraintes ?? [],
-      this.constraints()?.contraintesAdHocEnCause ?? []
+      this.constraints()?.contraintesAdHocEnCause ?? [],
+      this.pauses()
     )
   );
   readonly comptage = computed(() => compterProblemes(this.problemes()));
@@ -56,6 +59,15 @@ export class ProblemesStore {
   readonly reglesLegalesDesactivees = computed(() =>
     (this.constraints()?.contraintes ?? []).filter((contrainte) => contrainte.protegee && !contrainte.actif)
   );
+
+  /** The one line the Solveur screen says about relay-less breaks, empty when there is none. */
+  readonly alertePausesSansRelais = computed(() => {
+    const manquants = this.pauses()?.relaisManquants ?? 0;
+    if (manquants === 0) {
+      return '';
+    }
+    return $localize`:@@problemes.pauses.alerte:${manquants}:count: pause(s) légale(s) sans relais : une personne seule sur son stand pendant sa pause. Voir l'écran Pauses.`;
+  });
 
   readonly alerteReglesLegales = computed(() => {
     const desactivees = this.reglesLegalesDesactivees();
@@ -152,12 +164,15 @@ export class ProblemesStore {
   /** Reloads both sources, for the screens showing the full problem list. */
   async reload(): Promise<void> {
     this.loading.set(true);
-    const [feasibility, constraints] = await Promise.all([
+    const [feasibility, constraints, pauses] = await Promise.all([
       this.api.get<FeasibilityReport>('/api/feasibility').catch((error: unknown) => error as Error),
-      this.api.get<ConstraintsView>('/api/constraints').catch((error: unknown) => error as Error)
+      this.api.get<ConstraintsView>('/api/constraints').catch((error: unknown) => error as Error),
+      // Without the breaks the list is merely shorter: never a failure of the screen.
+      this.api.get<RapportPauses>('/api/pauses').catch(() => null)
     ]);
     this.report.set(feasibility instanceof Error ? null : feasibility);
     this.constraints.set(constraints instanceof Error ? null : constraints);
+    this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
     const failure = [feasibility, constraints].find((result): result is Error => result instanceof Error);
     this.error.set(failure ? failure.message : '');
     this.loading.set(false);

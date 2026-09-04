@@ -66,6 +66,10 @@
           <span i18n="@@railJour.legend.blocage">Plage hachurée : indisponibilité saisie sur ces heures, à ne pas solliciter</span></li>
         <li><mat-icon inline class="rail-chevauchement-icon" aria-hidden="true">warning</mat-icon>
           <span i18n="@@railJour.legend.overlap">Vacations qui se chevauchent</span></li>
+        <li><span class="rail-swatch rail-swatch-pause"></span>
+          <span i18n="@@railJour.legend.pause">Pause légale, telle que la rotation la pose</span></li>
+        <li><span class="rail-swatch rail-swatch-pause-alerte"></span>
+          <span i18n="@@railJour.legend.pauseAlerte">Pause sans relais sur le stand, ou en même temps qu'une autre</span></li>
         @for (item of legende(); track item.id) {
           <li><span class="typologie-dot" [class]="item.colorClass" aria-hidden="true"></span>{{ item.label }}</li>
         }
@@ -152,6 +156,15 @@
                         [title]="bloc.label"
                         [attr.data-poste-id]="bloc.posteId"
                       ><span class="rail-bloc-label">{{ bloc.standNom }}</span></span>
+                    }
+                    @for (pause of ligne.pauses; track pause.heureDebut) {
+                      <span
+                        class="rail-pause"
+                        [class.rail-pause-alerte]="pause.sansRelais || pause.simultanee"
+                        [style.left.%]="pause.offsetPercent"
+                        [style.width.%]="pause.widthPercent"
+                        [title]="pause.label"
+                      ></span>
                     }
                   </span>
                 </td>

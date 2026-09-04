@@ -8,11 +8,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { indexerPauses, pausesDe, SegmentPause, segmentsPause } from '../../core/pauses-index';
 import { uniqueById } from '../../core/date-utils';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { Animateur, CompteRenduEnvoi, PlanningEvenement, PosteAffectation, TypologieItem } from '../../core/models';
+import { Animateur, CompteRenduEnvoi, PlanningEvenement, PosteAffectation, TypologieItem, RapportPauses } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels, typologiePrincipale } from '../../core/typologie-colors';
 import { SelectionRecherche } from '../../shared/selection-recherche';
 import { errorMessage, errorPrefix } from '../../core/error-message';
@@ -74,7 +75,12 @@ export interface TimelineStandsSummary {
 
 export interface TimelineDay {
   jour: number;
+  /** ISO date of the day, null when the créneaux carry none — what joins the day to its breaks. */
+  date: string | null;
   title: string;
+  /** The track's origin and length, in minutes of the day: what places anything else drawn on it. */
+  amplitudeDebutMinutes: number;
+  amplitudeMinutes: number;
   /** Raw first-block start / last-block end, shown as the day's worked span. */
   amplitudeDebut: string;
   amplitudeFin: string;
@@ -115,6 +121,8 @@ export class AnimateurTimelinePage {
   protected readonly selectedAnimateurId = signal<string | null>(null);
   /** Typologie referential, only used to turn ids into display labels. */
   protected readonly typologies = signal<TypologieItem[]>([]);
+  /** The breaks of the plan, drawn on the tracks; null when the request failed — the timeline still shows. */
+  protected readonly pauses = signal<RapportPauses | null>(null);
 
   private readonly api = inject(ApiService);
   private readonly notifications = inject(NotificationService);
@@ -130,6 +138,28 @@ export class AnimateurTimelinePage {
     }
     return buildAnimateurTimeline(this.planning()?.postes ?? [], animateurId);
   });
+
+  private readonly indexPauses = computed(() => indexerPauses(this.pauses()));
+
+  /** The breaks of each shown day, placed on that day's track; keyed by day number. */
+  protected readonly pausesParJour = computed<Map<number, SegmentPause[]>>(() => {
+    const animateurId = this.selectedAnimateurId();
+    const segments = new Map<number, SegmentPause[]>();
+    if (!animateurId) {
+      return segments;
+    }
+    for (const day of this.days()) {
+      const pauses = pausesDe(this.indexPauses(), day.date, animateurId);
+      if (pauses.length > 0) {
+        segments.set(day.jour, segmentsPause(pauses, day.amplitudeDebutMinutes, day.amplitudeMinutes));
+      }
+    }
+    return segments;
+  });
+
+  protected pausesDuJour(day: TimelineDay): SegmentPause[] {
+    return this.pausesParJour().get(day.jour) ?? [];
+  }
 
   protected readonly standsSummary = computed<TimelineStandsSummary>(() =>
     buildStandsSummary(this.days(), typologieLabels(this.typologies()))
@@ -165,14 +195,17 @@ export class AnimateurTimelinePage {
     this.loading.set(true);
     this.error.set('');
     try {
-      const [planning, typologies] = await Promise.all([
+      const [planning, typologies, pauses] = await Promise.all([
         this.planningState.loadForDisplay(),
         // Labels only: a missing referential degrades the chips to raw ids
         // rather than failing the whole timeline.
-        this.api.get<TypologieItem[]>('/api/typologies').catch(() => [])
+        this.api.get<TypologieItem[]>('/api/typologies').catch(() => []),
+        // Same spirit: without the breaks the tracks still draw.
+        this.api.get<RapportPauses>('/api/pauses').catch(() => null)
       ]);
       this.planning.set(planning);
       this.typologies.set(typologies);
+      this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
       const options = this.animateurOptions();
       if (!this.selectedAnimateurId() || !options.some((option) => option.id === this.selectedAnimateurId())) {
         this.selectedAnimateurId.set(options[0]?.id ?? null);
@@ -462,9 +495,12 @@ function buildTimelineDay(
 
   return {
     jour,
+    date,
     title: date
       ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${jour}:jour: — ${date}:date:`
       : $localize`:@@calendarDay.dayTitle:Jour ${jour}:jour:`,
+    amplitudeDebutMinutes,
+    amplitudeMinutes: range,
     amplitudeDebut,
     amplitudeFin,
     amplitudeLabel: $localize`:@@timeline.amplitude:${amplitudeDebut}:debut: – ${amplitudeFin}:fin: (${formatDuration(amplitudeFinMinutes - amplitudeDebutMinutes)}:duree:)`,

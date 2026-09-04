@@ -381,4 +381,55 @@ describe('buildRailJours', () => {
 
     expect(ligne(jours[0].lignes, 'Fantome').blocs).toHaveLength(1);
   });
+
+describe('buildRailJours — pauses', () => {
+  it('draws the breaks of the day on the line, flags the relay-less one and says it in the summary', () => {
+    const alice = animateur('alice');
+    const postes = [poste({ id: 'p1', creneau: creneau({ id: 1, date: '2026-08-01', heureDebut: '13:00', heureFin: '20:00' }), stand: stand('Tir'), animateur: alice })];
+    const pauses = {
+      pauseSurPoste: true,
+      journeesAnalysees: 1,
+      pausesDues: 1,
+      relaisManquants: 1,
+      message: '',
+      journees: [
+        {
+          animateurId: 'alice',
+          nomComplet: 'Alice',
+          mineur: false,
+          date: '2026-08-01',
+          jour: 1,
+          sequences: [
+            {
+              debut: '13:00:00',
+              fin: '20:00:00',
+              minutes: 420,
+              pausesDues: [
+                { debut: '19:00:00', fin: '19:20:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'Tir', standNom: 'Tir', relais: [], relaisDisponible: false, simultanee: false }
+              ]
+            }
+          ],
+          pausesPlanifiees: []
+        }
+      ]
+    };
+
+    const [jour] = buildRailJours(postes, [alice], [], pauses);
+    const ligne = jour.lignes[0];
+
+    expect(ligne.pauses).toHaveLength(1);
+    expect(ligne.pauses[0].sansRelais).toBe(true);
+    // Scale 13:00 → 20:00, whole hours: 19:00 sits at 6/7 of the track.
+    expect(ligne.pauses[0].offsetPercent).toBeCloseTo((6 / 7) * 100, 5);
+    expect(ligne.resume).toContain("Pause 19:00 – 19:20 sur Tir — personne d'autre sur le stand");
+  });
+
+  it('draws nothing without a report, and an empty line carries no break', () => {
+    const alice = animateur('alice');
+    const postes = [poste({ id: 'p1', creneau: creneau({ id: 1, date: '2026-08-01', heureDebut: '13:00', heureFin: '20:00' }), stand: stand('Tir'), animateur: alice })];
+
+    const [sans] = buildRailJours(postes, [alice, animateur('bob')], []);
+    expect(sans.lignes.every((ligne) => ligne.pauses.length === 0)).toBe(true);
+  });
+});
 });

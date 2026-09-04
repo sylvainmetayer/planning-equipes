@@ -28,6 +28,35 @@
   margin: 0.5rem 0;
 }
 
+/* A break drawn over the vacation it falls in: a short bar, in the accent
+   colour — and in the error colour when nobody is there to relay. */
+.timeline-pause {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  min-width: 3px;
+  z-index: 1;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-tertiary);
+  opacity: 0.85;
+  cursor: default;
+}
+
+.timeline-pause-alerte {
+  background: var(--mat-sys-error);
+  outline: 2px solid var(--mat-sys-error);
+  outline-offset: 1px;
+}
+
+.timeline-pause-item {
+  color: var(--mat-sys-tertiary);
+}
+
+.timeline-pause-item-alerte {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
 .timeline-block {
   position: absolute;
   top: 0.25rem;

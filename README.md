@@ -206,7 +206,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 
 | Fonctionnalité | En une phrase |
 | --- | --- |
-| Problèmes | Vue unique des blocages, triés par gravité : causes d'infaisabilité détectées sans résolution, et règles encore en défaut après la dernière analyse. Quand une règle a buté sur des exceptions saisies à la main, elles sont nommées une par une |
+| Problèmes | Vue unique des blocages, triés par gravité : causes d'infaisabilité détectées sans résolution, et règles encore en défaut après la dernière analyse. Quand une règle a buté sur des exceptions saisies à la main, elles sont nommées une par une, et les pauses légales que personne ne peut relayer |
 | Ouvertures des stands | Grille stand × jour de ce que le planning retiendra réellement, et les trois erreurs de saisie d'horaires habituelles — à vérifier avant de lancer un calcul |
 | Besoin en animateurs | Effectif minimum estimé à partir des seuls stands et créneaux : dit si le problème est un manque de monde plutôt qu'un manque de temps de calcul, et sur quelle typologie de jeu le vivier de compétents est trop mince |
 | Fragilité du planning | Qui est un point de défaillance unique : pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et surtout ceux que personne d'autre ne pourrait reprendre — plus les stands tenus par une seule personne compétente. Le tableau qui dit où recruter ou former |
@@ -246,10 +246,10 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Calendrier journalier | Une journée, stand par stand et créneau par créneau |
 | Heures | Heures planifiées par animateur, semaine ISO par semaine ISO, avec le total de l'événement |
 | Heatmap de charge | Jour croisé avec le stand (trous de couverture) ou avec l'animateur (surcharges) |
-| Timeline animateur | Le planning d'une personne : amplitude, vacations, pauses et coéquipiers présents sur le même stand |
+| Timeline animateur | Le planning d'une personne : amplitude, vacations, trous entre elles, pauses légales telles que la rotation les pose — en rouge quand personne ne peut la relayer — et coéquipiers présents sur le même stand |
 | Jours de repos | Une ligne par animateur et une colonne par journée : qui travaille, qui se repose, qui était indisponible, et qui n'a aucune journée libre sur tout l'événement |
 | Pauses | Où tombent les pauses légales, jour par jour et stand par stand : qui sort au plus tard à quelle heure, pour combien de temps, et qui est là pour relayer. Chaque animateur retrouve ses pauses sur son espace, son PDF et son calendrier |
-| Rail de la journée | Une journée vue par personne : une ligne par animateur, vacations placées dans le temps, lignes vides pour qui reste mobilisable |
+| Rail de la journée | Une journée vue par personne : une ligne par animateur, vacations placées dans le temps, pauses légales posées dessus (en rouge sans relais), lignes vides pour qui reste mobilisable |
 | Carte de la journée | La même journée sur la carte des emplacements : un curseur temporel, et chaque lieu coloré selon que ses stands y sont ouverts et pourvus, ouverts avec des places vides, ou ouverts sans personne |
 | Graphe | Navigation descendante des lieux vers les stands puis vers les personnes |
 | Notifications | Journal des alertes de l'édition — résolutions terminées, contraintes en défaut, erreurs de saisie — consultable après coup |

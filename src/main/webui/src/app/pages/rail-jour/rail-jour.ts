@@ -5,7 +5,8 @@
 // Pure functions, kept out of the component so the geometry and the wording of
 // a line are unit-tested without rendering 150 rows.
 
-import { Animateur, ContrainteAdHoc, PosteAffectation } from '../../core/models';
+import { Animateur, ContrainteAdHoc, PauseDueView, PosteAffectation, RapportPauses } from '../../core/models';
+import { IndexPauses, indexerPauses, pausesDe, SegmentPause, segmentsPause } from '../../core/pauses-index';
 import { endMinutesOfDay, formatDuration, formatHeure, formatHourTick, minutesOfDay } from '../../core/time-of-day';
 import { standTypologies, typologieColorClass, typologiePrincipale } from '../../core/typologie-colors';
 
@@ -50,6 +51,8 @@ export interface RailLigne {
   chevauchement: boolean;
   /** Windows a forced ad hoc unavailability covers this day; empty in the common case. */
   blocages: RailBlocage[];
+  /** The legal breaks of the day, as the rotation places them, drawn over the vacations. */
+  pauses: SegmentPause[];
   /** What a screen reader reads for the whole line — the rail itself is decorative. */
   resume: string;
 }
@@ -232,8 +235,10 @@ interface ContenuJour {
 export function buildRailJours(
   postes: PosteAffectation[],
   animateurs: Animateur[],
-  contraintes: ContrainteAdHoc[] = []
+  contraintes: ContrainteAdHoc[] = [],
+  pauses: RapportPauses | null = null
 ): RailJour[] {
+  const indexPauses = indexerPauses(pauses);
   const jours = new Map<number, ContenuJour>();
   postes.forEach((poste) => {
     const creneau = poste.creneau;
@@ -269,12 +274,14 @@ export function buildRailJours(
 
   return Array.from(jours.entries())
     .sort((left, right) => left[0] - right[0])
-    .map(([jour, contenu]) => buildRailJour(jour, contenu, contraintes, effectif, noms));
+    .map(([jour, contenu]) => buildRailJour(jour, contenu,
+      indexPauses, contraintes, effectif, noms));
 }
 
 function buildRailJour(
   jour: number,
   contenu: ContenuJour,
+  indexPauses: IndexPauses,
   contraintes: ContrainteAdHoc[],
   animateurs: Animateur[],
   noms: Map<string, string>
@@ -313,7 +320,8 @@ function buildRailJour(
         date,
         spansParAnimateur.get(animateur.id) ?? [],
         fusionner(blocages.get(animateur.id) ?? []),
-        echelle
+        echelle,
+        pausesDe(indexPauses, date, animateur.id)
       )
     )
     .sort((left, right) => left.nom.localeCompare(right.nom));
@@ -337,9 +345,11 @@ function buildRailLigne(
   date: string | null,
   spans: Span[],
   fenetresBloquees: Fenetre[],
-  echelle: Echelle
+  echelle: Echelle,
+  pausesDuJour: PauseDueView[] = []
 ): RailLigne {
   const { debutMinutes, amplitude } = echelle;
+  const pauses = segmentsPause(pausesDuJour, debutMinutes, amplitude);
   const blocages: RailBlocage[] = fenetresBloquees.map((fenetre) => ({
     heureDebut: fenetre.heureDebut,
     heureFin: fenetre.heureFin,
@@ -395,6 +405,7 @@ function buildRailLigne(
       amplitudeDebut: null,
       amplitudeFin: null,
       chevauchement: false,
+      pauses: [],
       resume: statut === 'indisponible' ? base : mentionnerBlocages(base, plages)
     };
   }
@@ -422,8 +433,18 @@ function buildRailLigne(
     chevauchement,
     // The red outline and the warning icon are visual only; a line read out
     // loud must say the one anomaly this view exists to make visible.
-    resume: mentionnerChevauchement(mentionnerBlocages(base, plages), chevauchement)
+    pauses,
+    resume: mentionnerPauses(mentionnerChevauchement(mentionnerBlocages(base, plages), chevauchement), pauses)
   };
+}
+
+/** Same, for the breaks — a relay-less one is the thing to hear first. */
+function mentionnerPauses(base: string, pauses: SegmentPause[]): string {
+  if (pauses.length === 0) {
+    return base;
+  }
+  const liste = pauses.map((pause) => pause.label).join(' ; ');
+  return $localize`:@@railJour.resume.pauses:${base}:ligne: — ${liste}:pauses:`;
 }
 
 /** Appends the recorded unavailability windows to a line's summary, when there is any. */

@@ -122,6 +122,16 @@
                 <span class="timeline-block-label">{{ block.standNom }}</span>
               </div>
             }
+            @for (pause of pausesDuJour(day); track pause.heureDebut) {
+              <div
+                class="timeline-pause"
+                [class.timeline-pause-alerte]="pause.sansRelais || pause.simultanee"
+                [style.left.%]="pause.offsetPercent"
+                [style.width.%]="pause.widthPercent"
+                [matTooltip]="pause.label"
+                [attr.aria-label]="pause.label"
+              ></div>
+            }
           </div>
           <ul class="timeline-block-list">
             @for (block of day.blocks; track block.posteId) {
@@ -133,6 +143,12 @@
                 } @else {
                   <span class="timeline-block-list-team" i18n="@@timeline.alone">seul(e) sur ce stand</span>
                 }
+              </li>
+            }
+            @for (pause of pausesDuJour(day); track pause.heureDebut) {
+              <li class="timeline-pause-item" [class.timeline-pause-item-alerte]="pause.sansRelais || pause.simultanee">
+                <mat-icon inline aria-hidden="true">free_breakfast</mat-icon>
+                {{ pause.label }}
               </li>
             }
           </ul>

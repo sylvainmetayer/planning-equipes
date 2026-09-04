@@ -3,6 +3,7 @@
 <app-problem-summary-banner [problemes]="problemes.problemes()" />
 
 <app-status-message [text]="alerteReglesLegales()" tone="error" />
+<app-status-message [text]="problemes.alertePausesSansRelais()" tone="warning" />
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>

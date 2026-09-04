@@ -106,6 +106,47 @@ describe('construireProblemes', () => {
     ]);
   });
 
+  it('adds a warning for the relay-less breaks, after the constraints of its tier, linking to the breaks screen', () => {
+    const pauses = {
+      pauseSurPoste: true,
+      journeesAnalysees: 2,
+      pausesDues: 2,
+      relaisManquants: 1,
+      message: '',
+      journees: [
+        {
+          animateurId: 'alice',
+          nomComplet: 'Alice Martin',
+          mineur: false,
+          date: '2026-07-10',
+          jour: 3,
+          sequences: [
+            {
+              debut: '13:00:00',
+              fin: '20:00:00',
+              minutes: 420,
+              pausesDues: [
+                { debut: '19:00:00', fin: '19:20:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'JEUX', standNom: 'Village des jeux', relais: [], relaisDisponible: false, simultanee: false },
+                { debut: '18:40:00', fin: '19:00:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'JEUX', standNom: 'Village des jeux', relais: [{ animateurId: 'b', nomComplet: 'B' }], relaisDisponible: true, simultanee: false }
+              ]
+            }
+          ],
+          pausesPlanifiees: []
+        }
+      ]
+    };
+
+    const problemes = construireProblemes(null, [], [], pauses);
+
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0].niveau).toBe('AVERTISSEMENT');
+    expect(problemes[0].source).toBe('PAUSES');
+    expect(problemes[0].details).toEqual(['2026-07-10 · Alice Martin · 19:00 – 19:20 · Village des jeux']);
+    expect(problemes[0].liens).toEqual([{ route: '/pauses', libelle: 'Voir les pauses' }]);
+    expect(construireProblemes(null, [], [], { ...pauses, relaisManquants: 0 })).toEqual([]);
+    expect(construireProblemes(null, [], [], null)).toEqual([]);
+  });
+
   it('keeps the server ranking of two causes of the same severity', () => {
     const problemes = construireProblemes(
       report([cause({ severite: 'ELEVE', message: 'premier' }), cause({ severite: 'ELEVE', message: 'second' })])

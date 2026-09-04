@@ -299,10 +299,11 @@ describe('AnimateurTimelinePage', () => {
 
   async function rendre(
     evenement: PlanningEvenement | null,
-    options: { animateurEnParametre?: string | null } = {}
+    options: { animateurEnParametre?: string | null } = {},
+    apiGet: (url: string) => unknown = () => []
   ): Promise<void> {
     api = {
-      get: vi.fn(async () => []),
+      get: vi.fn(async (url: string) => apiGet(url)),
       post: vi.fn(async () => ({ envoyes: 1, echecs: [] })),
       downloadPost: vi.fn(async () => 'Téléchargement démarré.')
     };
@@ -467,5 +468,43 @@ describe('AnimateurTimelinePage', () => {
     await fixture.whenStable();
 
     expect(api.post).toHaveBeenCalledWith('/api/planning/envoi/animateur/a1', null);
+  });
+
+  it('draws the breaks of the shown days on their track and lists them, the relay-less one flagged', async () => {
+    const evenement = planningDeDeux();
+    const rapport = {
+      pauseSurPoste: true,
+      journeesAnalysees: 1,
+      pausesDues: 1,
+      relaisManquants: 1,
+      message: '',
+      journees: [
+        {
+          animateurId: 'a1',
+          nomComplet: 'Alice',
+          mineur: false,
+          date: evenement.postes[0].creneau!.date,
+          jour: evenement.postes[0].creneau!.jour,
+          sequences: [
+            {
+              debut: '09:00:00',
+              fin: '12:00:00',
+              minutes: 180,
+              pausesDues: [
+                { debut: '11:40:00', fin: '12:00:00', heureLimite: '12:00:00', dureeMinutes: 20, standId: 's', standNom: evenement.postes[0].stand!.nom, relais: [], relaisDisponible: false, simultanee: false }
+              ]
+            }
+          ],
+          pausesPlanifiees: []
+        }
+      ]
+    };
+    await rendre(evenement, {}, (url: string) => (url === '/api/pauses' ? rapport : []));
+
+    const segment = racine().querySelector('.timeline-pause');
+    expect(segment).not.toBeNull();
+    expect(segment!.classList.contains('timeline-pause-alerte')).toBe(true);
+    expect(segment!.getAttribute('aria-label')).toContain("personne d'autre sur le stand");
+    expect(racine().querySelector('.timeline-pause-item')?.textContent).toContain('Pause 11:40 – 12:00');
   });
 });
