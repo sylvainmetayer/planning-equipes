@@ -119,7 +119,11 @@ function decrireJours(horaire: HoraireStand): string {
 
 function decrireExceptionRow(exception: OuvertureStand | IndisponibiliteStand, ouverture: boolean): DetailRow {
   const fenetre = decrireFenetre(
-    { heureDebut: exception.heureDebut, heureFin: exception.heureFin },
+    {
+      heureDebut: exception.heureDebut,
+      heureFin: exception.heureFin,
+      effectif: ouverture ? (exception as OuvertureStand).effectif ?? null : null
+    },
     $localize`:@@stands.apercu.fermeture:fermeture`
   );
   return {

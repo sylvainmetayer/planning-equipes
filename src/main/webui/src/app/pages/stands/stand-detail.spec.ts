@@ -123,6 +123,20 @@ describe('buildStandDetail', () => {
     expect(rowValue(sections, 'Fermeture du 2026-07-09')).toBe('14:00 → 16:00');
   });
 
+  it('shows the seats a dated opening names, next to its window', () => {
+    const sections = buildStandDetail(
+      stand({
+        effectifMin: 1,
+        ouvertures: [{ id: 1, date: '2026-07-08', heureDebut: '14:00', heureFin: '20:00', motif: 'Tournoi', effectif: 4 }],
+        indisponibilites: [{ id: 2, date: '2026-07-09', heureDebut: '14:00', heureFin: null, motif: null }]
+      })
+    );
+
+    expect(rowValue(sections, 'Ouverture du 2026-07-08')).toBe('14:00 → 20:00 ×4 — Tournoi');
+    // A closure has no headcount to show, whatever the stand's minimum.
+    expect(rowValue(sections, 'Fermeture du 2026-07-09')).toBe('14:00 → fermeture');
+  });
+
   it('summarises how many rules and exceptions the stand carries', () => {
     const sections = buildStandDetail(
       stand({

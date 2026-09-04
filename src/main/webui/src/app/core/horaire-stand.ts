@@ -108,7 +108,12 @@ export function resoudreHoraires(stand: Stand, dates: readonly string[]): JourRe
 
 function trier(fenetres: readonly FenetreHoraire[]): FenetreHoraire[] {
   return [...fenetres]
-    .map((fenetre) => ({ heureDebut: fenetre.heureDebut, heureFin: fenetre.heureFin }))
+    .map((fenetre) => ({
+      heureDebut: fenetre.heureDebut,
+      heureFin: fenetre.heureFin,
+      // Carried only when named, so a window without one keeps its historical shape.
+      ...(fenetre.effectif !== null && fenetre.effectif !== undefined ? { effectif: fenetre.effectif } : {})
+    }))
     .sort((a, b) => a.heureDebut.localeCompare(b.heureDebut));
 }
 
@@ -117,10 +122,15 @@ export function heureCourte(heure: string): string {
   return heure.length > 5 ? heure.slice(0, 5) : heure;
 }
 
-/** `10:00 → 12:00`, or `14:00 → fermeture` for an open-ended window. */
+/**
+ * `10:00 → 12:00`, or `14:00 → fermeture` for an open-ended window — followed
+ * by ` ×3` when the window names its own effectif, so a preview never hides
+ * that the seats differ from the stand's minimum.
+ */
 export function decrireFenetre(fenetre: FenetreHoraire, libelleFermeture: string): string {
   const fin = fenetre.heureFin ? heureCourte(fenetre.heureFin) : libelleFermeture;
-  return `${heureCourte(fenetre.heureDebut)} → ${fin}`;
+  const effectif = fenetre.effectif !== null && fenetre.effectif !== undefined ? ` ×${fenetre.effectif}` : '';
+  return `${heureCourte(fenetre.heureDebut)} → ${fin}${effectif}`;
 }
 
 /**
@@ -157,7 +167,7 @@ export function horaireVide(): HoraireStand {
     dateDebut: null,
     dateFin: null,
     dates: [],
-    fenetres: [{ heureDebut: '', heureFin: null }],
+    fenetres: [{ heureDebut: '', heureFin: null, effectif: null }],
     motif: null
   };
 }
@@ -173,6 +183,7 @@ export function erreurHoraire(
     fenetreRequise: string;
     heureDebutRequise: string;
     fenetreInversee: string;
+    effectifInvalide: string;
     joursSemaineRequis: string;
     plageRequise: string;
     datesRequises: string;
@@ -187,6 +198,10 @@ export function erreurHoraire(
     }
     if (fenetre.heureFin && fenetre.heureFin <= fenetre.heureDebut) {
       return messages.fenetreInversee;
+    }
+    if (fenetre.effectif !== null && fenetre.effectif !== undefined
+        && (!Number.isInteger(fenetre.effectif) || fenetre.effectif < 1)) {
+      return messages.effectifInvalide;
     }
   }
   switch (horaire.jours) {

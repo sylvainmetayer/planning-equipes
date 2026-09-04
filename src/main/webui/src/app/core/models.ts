@@ -93,6 +93,8 @@ export interface OuvertureStand {
   heureFin: string | null;
   /** Free-text reason, nullable — purely informative, never read by the solver. */
   motif: string | null;
+  /** Seats to fill on this dated window; absent or null = the stand's `effectifMin`. Never below 1. */
+  effectif?: number | null;
 }
 
 /** `OUVERTURE` = open only on the listed windows; `FERMETURE` = closed only on them. */
@@ -145,6 +147,8 @@ export interface HoraireStand {
 export interface FenetreHoraire {
   heureDebut: string;
   heureFin: string | null;
+  /** Seats to fill on this window; absent or null = the stand's `effectifMin`. Never below 1. */
+  effectif?: number | null;
 }
 
 /**
@@ -256,7 +260,7 @@ export interface PosteFragile {
   jour: number;
   heureDebut: string;
   heureFin: string;
-  /** The stand's configured minimum — not this group's floor, which `siegesRequis` carries. */
+  /** The effectif configured for this window (the window's own, or the stand's minimum) — not this group's floor, which `siegesRequis` carries. */
   effectifMin: number;
   /** Break-covering shift: seats are generated at half the headcount, rounded up. */
   couverturePause: boolean;

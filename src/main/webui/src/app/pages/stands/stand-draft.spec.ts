@@ -17,6 +17,11 @@ import {
   patchDansListe,
   plageVide,
   retirerDe,
+  effectifFenetreInvalide,
+  effectifOuvertureInvalide,
+  fenetreVide,
+  normaliserEffectif,
+  ouvertureVide,
   toDraft,
   versStand
 } from './stand-draft';
@@ -142,6 +147,47 @@ describe('dated exceptions', () => {
   });
 });
 
+describe('window effectif', () => {
+  it('opens a new window and a new opening with no effectif named', () => {
+    expect(fenetreVide().effectif).toBeNull();
+    expect(ouvertureVide().effectif).toBeNull();
+    // A closure never carries one: the backend has no such field there.
+    expect('effectif' in plageVide()).toBe(false);
+  });
+
+  it('accepts an absent effectif and any whole number from one up', () => {
+    expect(effectifFenetreInvalide(null)).toBe(false);
+    expect(effectifFenetreInvalide(undefined)).toBe(false);
+    expect(effectifFenetreInvalide(1)).toBe(false);
+    expect(effectifFenetreInvalide(12)).toBe(false);
+  });
+
+  it('refuses zero, a negative number and a fraction', () => {
+    expect(effectifFenetreInvalide(0)).toBe(true);
+    expect(effectifFenetreInvalide(-2)).toBe(true);
+    expect(effectifFenetreInvalide(1.5)).toBe(true);
+    expect(effectifFenetreInvalide(Number.NaN)).toBe(true);
+  });
+
+  it('normalises the empty states to null and keeps a typed number as a number', () => {
+    expect(normaliserEffectif(null)).toBeNull();
+    expect(normaliserEffectif(undefined)).toBeNull();
+    expect(normaliserEffectif('')).toBeNull();
+    expect(normaliserEffectif(3)).toBe(3);
+    expect(normaliserEffectif('2' as unknown as number)).toBe(2);
+    // Zero is not "empty": it stays, and the validation is what refuses it.
+    expect(normaliserEffectif(0)).toBe(0);
+  });
+
+  it('flags an opening whose effectif cannot be saved, and only that', () => {
+    expect(effectifOuvertureInvalide(draft({ ouvertures: [{ ...plage(), effectif: 0 }] }))).toBe(true);
+    expect(effectifOuvertureInvalide(draft({ ouvertures: [{ ...plage(), effectif: 2 }, plage()] }))).toBe(false);
+    expect(effectifOuvertureInvalide(draft({ ouvertures: [] }))).toBe(false);
+    // The generic opening check does not double-report it.
+    expect(ouvertureInvalide(draft({ ouvertures: [{ ...plage(), effectif: 0 }] }))).toBe(false);
+  });
+});
+
 describe('conflitOuvertureFermeture', () => {
   it('refuses the same day being both closed and opened', () => {
     const invalide = draft({
@@ -260,6 +306,31 @@ describe('versStand', () => {
 
     expect(stand.indisponibilites[0].heureFin).toBeNull();
     expect(stand.ouvertures[0].heureFin).toBeNull();
+  });
+
+  it('sends a window effectif as typed, and an emptied one as null — never as zero', () => {
+    const stand = versStand(
+      draft({
+        ouvertures: [
+          { ...plage(), effectif: 4 },
+          { ...plage({ date: '2026-07-11' }), effectif: null },
+          { ...plage({ date: '2026-07-12' }), effectif: '' as unknown as number }
+        ],
+        horaires: [
+          horaire({
+            fenetres: [
+              { heureDebut: '10:00', heureFin: '12:00', effectif: 3 },
+              { heureDebut: '14:00', heureFin: null, effectif: '' as unknown as number },
+              { heureDebut: '16:00', heureFin: null }
+            ]
+          })
+        ]
+      }),
+      emplacements
+    );
+
+    expect(stand.ouvertures.map((ouverture) => ouverture.effectif)).toEqual([4, null, null]);
+    expect(stand.horaires[0].fenetres.map((fenetre) => fenetre.effectif)).toEqual([3, null, null]);
   });
 
   it('reads an empty effectif as zero rather than as NaN', () => {

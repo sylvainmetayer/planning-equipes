@@ -148,6 +148,12 @@
                      [ngModel]="fenetre.heureFin"
                      (ngModelChange)="patchFenetre(indexHoraire, $index, { heureFin: $event })" />
             </mat-form-field>
+            <mat-form-field appearance="outline" class="fenetre-effectif">
+              <mat-label i18n="@@stands.horaires.effectif">Effectif (vide = celui du stand)</mat-label>
+              <input matInput type="number" min="1" step="1" [name]="'FenetreEffectif' + indexHoraire + '-' + $index"
+                     [ngModel]="fenetre.effectif ?? null"
+                     (ngModelChange)="patchFenetre(indexHoraire, $index, { effectif: $event })" />
+            </mat-form-field>
             <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
                     i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
                     [disabled]="editingLocked()" (click)="retirerFenetre(indexHoraire, $index)">
@@ -242,6 +248,11 @@
         <input matInput type="time" [name]="'ouvertureHeureFin' + $index"
                [ngModel]="ouverture.heureFin" (ngModelChange)="patchOuverture($index, { heureFin: $event })" />
       </mat-form-field>
+      <mat-form-field appearance="outline" class="fenetre-effectif">
+        <mat-label i18n="@@stands.ouvertures.effectif">Effectif (vide = celui du stand)</mat-label>
+        <input matInput type="number" min="1" step="1" [name]="'ouvertureEffectif' + $index"
+               [ngModel]="ouverture.effectif ?? null" (ngModelChange)="patchOuverture($index, { effectif: $event })" />
+      </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label i18n="@@stands.ouvertures.motif">Motif (optionnel)</mat-label>
         <input matInput [name]="'ouvertureMotif' + $index"
@@ -256,6 +267,9 @@
   }
   @if (ouvertureInvalide()) {
     <p class="field-error" role="alert" i18n="@@stands.ouvertures.invalid">Chaque ouverture doit avoir une date et une heure de début ; l'heure de fin, si elle est renseignée, doit être après l'heure de début.</p>
+  }
+  @if (effectifOuvertureInvalide()) {
+    <p class="field-error" role="alert" i18n="@@stands.ouvertures.effectifInvalid">L'effectif d'une ouverture, s'il est renseigné, doit être un entier d'au moins 1 (vide = l'effectif minimum du stand).</p>
   }
   @if (conflitOuvertureFermeture()) {
     <p class="field-error" role="alert" i18n="@@stands.ouvertures.conflict">

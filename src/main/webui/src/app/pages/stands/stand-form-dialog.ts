@@ -29,9 +29,11 @@ import {
   conflitOuvertureFermeture,
   datesDepuisTexte,
   effectifInvalide,
+  effectifOuvertureInvalide,
   fenetreVide,
   indisponibiliteInvalide,
   ouvertureInvalide,
+  ouvertureVide,
   patchDansListe,
   plageVide,
   retirerDe,
@@ -114,6 +116,7 @@ export class StandFormDialog {
   protected readonly ouvertureInvalide = computed(() => ouvertureInvalide(this.draft()));
 
   protected readonly conflitOuvertureFermeture = computed(() => conflitOuvertureFermeture(this.draft()));
+  protected readonly effectifOuvertureInvalide = computed(() => effectifOuvertureInvalide(this.draft()));
 
   /** First problem among the recurring rules, or `null` — mirrors the backend's own check. */
   protected readonly erreurHoraires = computed(() => premiereErreurHoraire(this.draft().horaires));
@@ -165,7 +168,7 @@ export class StandFormDialog {
   }
 
   protected ajouterOuverture(): void {
-    this.patch({ ouvertures: ajouterA(this.draft().ouvertures, plageVide()) });
+    this.patch({ ouvertures: ajouterA(this.draft().ouvertures, ouvertureVide()) });
   }
 
   protected patchOuverture(index: number, patch: Partial<OuvertureStand>): void {
@@ -230,7 +233,7 @@ export class StandFormDialog {
   }
 
   protected readonly formulaireInvalide = computed(
-    () => brouillonInvalide(this.draft()) || this.erreurHoraires() !== null
+    () => brouillonInvalide(this.draft()) || this.effectifOuvertureInvalide() || this.erreurHoraires() !== null
   );
 
   protected async save(): Promise<void> {

@@ -25,6 +25,11 @@
   flex: 1 1 10rem;
 }
 
+.horaire-fenetre-row mat-form-field.fenetre-effectif,
+.indisponibilite-row mat-form-field.fenetre-effectif {
+  flex: 0 1 12rem;
+}
+
 .horaire-jours-semaine {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));

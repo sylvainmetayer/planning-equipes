@@ -158,6 +158,18 @@ describe('decrireJour', () => {
     expect(texte).toBe('Ouvert 10:00 → 12:00, 14:00 → fermeture');
   });
 
+  it('shows the seats of a window that names them, and nothing for the others', () => {
+    const texte = decrireJour(
+      jour({
+        fenetres: [
+          { heureDebut: '10:00', heureFin: '12:00' },
+          { heureDebut: '14:00', heureFin: '20:00', effectif: 3 }
+        ]
+      })
+    );
+    expect(texte).toBe('Ouvert 10:00 → 12:00, 14:00 → 20:00 ×3');
+  });
+
   it('says "fermeture" for a window running to the end of the day', () => {
     expect(decrireJour(jour({ fenetres: [{ heureDebut: '14:00', heureFin: null }] }))).toContain('fermeture');
   });

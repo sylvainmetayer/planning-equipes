@@ -16,6 +16,7 @@ const MESSAGES = {
   fenetreRequise: 'fenetreRequise',
   heureDebutRequise: 'heureDebutRequise',
   fenetreInversee: 'fenetreInversee',
+  effectifInvalide: 'effectifInvalide',
   joursSemaineRequis: 'joursSemaineRequis',
   plageRequise: 'plageRequise',
   datesRequises: 'datesRequises'
@@ -177,6 +178,22 @@ describe('erreurHoraire', () => {
     );
   });
 
+  it('accepte une fenêtre sans effectif ou avec un entier d’au moins 1', () => {
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: null }] }), MESSAGES)).toBeNull();
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 1 }] }), MESSAGES)).toBeNull();
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 7 }] }), MESSAGES)).toBeNull();
+  });
+
+  it('refuse un effectif de fenêtre nul, négatif ou fractionnaire', () => {
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 0 }] }), MESSAGES)).toBe('effectifInvalide');
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: -1 }] }), MESSAGES)).toBe('effectifInvalide');
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 2.5 }] }), MESSAGES)).toBe('effectifInvalide');
+  });
+
+  it('signale une fenêtre inversée avant son effectif', () => {
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '12:00', heureFin: '10:00', effectif: 0 }] }), MESSAGES)).toBe('fenetreInversee');
+  });
+
   it('refuse un sélecteur sans les données qu’il exige', () => {
     const base = { fenetres: [{ heureDebut: '14:00', heureFin: null }] };
     expect(erreurHoraire(regle({ ...base, jours: 'JOURS_SEMAINE' }), MESSAGES)).toBe('joursSemaineRequis');
@@ -225,6 +242,24 @@ describe('decrireFenetre / resumerHoraires', () => {
   it('nomme la fermeture plutôt qu’une heure inventée', () => {
     expect(decrireFenetre({ heureDebut: '14:00', heureFin: null }, 'fermeture')).toBe('14:00 → fermeture');
     expect(decrireFenetre({ heureDebut: '10:00:00', heureFin: '12:00:00' }, 'fermeture')).toBe('10:00 → 12:00');
+  });
+
+  it('montre l’effectif d’une fenêtre qui en nomme un, et rien sinon', () => {
+    expect(decrireFenetre({ heureDebut: '14:00', heureFin: '20:00', effectif: 3 }, 'fermeture')).toBe('14:00 → 20:00 ×3');
+    expect(decrireFenetre({ heureDebut: '14:00', heureFin: null, effectif: 1 }, 'fermeture')).toBe('14:00 → fermeture ×1');
+    expect(decrireFenetre({ heureDebut: '14:00', heureFin: null, effectif: null }, 'fermeture')).toBe('14:00 → fermeture');
+    expect(decrireFenetre({ heureDebut: '14:00', heureFin: null, effectif: undefined }, 'fermeture')).toBe('14:00 → fermeture');
+  });
+
+  it('garde l’effectif des fenêtres quand il résout un jour', () => {
+    const jour = resoudreJour(
+      stand({
+        horaires: [regle({ fenetres: [{ heureDebut: '14:00', heureFin: '20:00', effectif: 4 }, { heureDebut: '10:00', heureFin: '12:00' }] })]
+      }),
+      '2026-07-10'
+    );
+
+    expect(jour.fenetres.map((fenetre) => fenetre.effectif)).toEqual([undefined, 4]);
   });
 
   it('résume règles et exceptions au lieu du compte brut de fenêtres', () => {

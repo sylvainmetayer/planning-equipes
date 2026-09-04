@@ -11,6 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ModeBooleen, ModeListe } from '../../core/bulk-edit';
 import { labelStandsPluriel } from '../../core/entity-labels';
 import { horaireVide } from '../../core/horaire-stand';
+import { fenetreVide } from './stand-draft';
 import { effectifDepuisSaisie, libelleJourSemaine, premiereErreurHoraire } from './stand-horaires';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -148,7 +149,7 @@ export class StandBulkEditDialog {
   }
 
   protected ajouterFenetre(index: number): void {
-    this.majFenetres(index, (fenetres) => [...fenetres, { heureDebut: '', heureFin: null }]);
+    this.majFenetres(index, (fenetres) => [...fenetres, fenetreVide()]);
   }
 
   protected patchFenetre(indexHoraire: number, indexFenetre: number, patch: Partial<FenetreHoraire>): void {

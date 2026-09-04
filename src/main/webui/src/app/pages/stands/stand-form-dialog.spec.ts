@@ -338,6 +338,99 @@ describe('StandFormDialog', () => {
     expect(soumettre(fixture).disabled).toBe(true);
   });
 
+  it('sends the effectif typed on a window, and null for a window left without one', async () => {
+    const { fixture, save } = mount(
+      stand({
+        id: 's7',
+        horaires: [
+          {
+            id: null,
+            mode: 'OUVERTURE',
+            jours: 'TOUS',
+            joursSemaine: [],
+            dateDebut: null,
+            dateFin: null,
+            dates: [],
+            fenetres: [
+              { heureDebut: '10:00', heureFin: '12:00' },
+              { heureDebut: '14:00', heureFin: null, effectif: 2 }
+            ],
+            motif: null
+          }
+        ]
+      })
+    );
+    await fixture.whenStable();
+
+    const effectifs = Array.from(
+      root(fixture).querySelectorAll<HTMLInputElement>('.horaire-fenetre-row input[type="number"]')
+    );
+    expect(effectifs).toHaveLength(2);
+    expect(effectifs[0].value).toBe('');
+    expect(effectifs[1].value).toBe('2');
+    effectifs[0].value = '3';
+    effectifs[0].dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
+    expect(payload.horaires[0].fenetres.map((fenetre) => fenetre.effectif)).toEqual([3, 2]);
+  });
+
+  it('refuses a zero effectif on a window, says why and blocks the submit', async () => {
+    const { fixture } = mount(
+      stand({
+        horaires: [
+          {
+            id: null,
+            mode: 'OUVERTURE',
+            jours: 'TOUS',
+            joursSemaine: [],
+            dateDebut: null,
+            dateFin: null,
+            dates: [],
+            fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 0 }],
+            motif: null
+          }
+        ]
+      })
+    );
+    await fixture.whenStable();
+
+    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    expect(alertes.some((texte) => texte.includes("L'effectif d'une fenêtre"))).toBe(true);
+    expect(soumettre(fixture).disabled).toBe(true);
+  });
+
+  it('refuses a zero effectif on a dated opening, and accepts one from one up', async () => {
+    const { fixture, save } = mount(
+      stand({
+        id: 's8',
+        ouvertures: [{ id: null, date: '2026-07-14', heureDebut: '14:00', heureFin: null, motif: null, effectif: 0 }]
+      })
+    );
+    await fixture.whenStable();
+
+    let alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    expect(alertes.some((texte) => texte.includes("L'effectif d'une ouverture"))).toBe(true);
+    expect(soumettre(fixture).disabled).toBe(true);
+
+    const champ = root(fixture).querySelector<HTMLInputElement>('.indisponibilite-row input[type="number"]')!;
+    champ.value = '5';
+    champ.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    expect(alertes.some((texte) => texte.includes("L'effectif d'une ouverture"))).toBe(false);
+    expect(soumettre(fixture).disabled).toBe(false);
+    root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+    const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
+    expect(payload.ouvertures[0].effectif).toBe(5);
+  });
+
   it('refuses a day carrying both a closure and an opening', async () => {
     const { fixture } = mount(
       stand({

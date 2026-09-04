@@ -51,13 +51,35 @@ export function ajouterA<T>(liste: readonly T[], item: T): T[] {
   return [...liste, item];
 }
 
-/** An empty dated exception — a closure or an opening, they share their shape. */
+/** An empty dated closure. */
 export function plageVide(): IndisponibiliteStand {
   return { id: null, date: '', heureDebut: '', heureFin: null, motif: null };
 }
 
+/** An empty dated opening: a closure's shape plus the seats it may name. */
+export function ouvertureVide(): OuvertureStand {
+  return { ...plageVide(), effectif: null };
+}
+
 export function fenetreVide(): FenetreHoraire {
-  return { heureDebut: '', heureFin: null };
+  return { heureDebut: '', heureFin: null, effectif: null };
+}
+
+/**
+ * Whether a window's effectif, as typed, can be saved: empty means "the
+ * stand's minimum" and is fine; anything else must be a whole number of at
+ * least one — a window nobody should staff is a closure, not a zero.
+ */
+export function effectifFenetreInvalide(effectif: number | null | undefined): boolean {
+  return effectif !== null && effectif !== undefined && (!Number.isInteger(effectif) || effectif < 1);
+}
+
+/**
+ * An emptied `<input type="number">` gives back `null` (or `''` from an older
+ * form state): both mean "no effectif named", never a zero.
+ */
+export function normaliserEffectif(effectif: number | null | undefined | string): number | null {
+  return effectif === null || effectif === undefined || effectif === '' ? null : Number(effectif);
 }
 
 /** Adds or removes one weekday of a `JOURS_SEMAINE` rule, without duplicates. */
@@ -101,6 +123,11 @@ export function indisponibiliteInvalide(draft: StandDraft): boolean {
 /** Same rules as {@link indisponibiliteInvalide}, for the opening exceptions. */
 export function ouvertureInvalide(draft: StandDraft): boolean {
   return draft.ouvertures.some((ouverture) => plageInvalide(ouverture));
+}
+
+/** An opening naming a zero, negative or fractional effectif — reported apart, it has its own sentence. */
+export function effectifOuvertureInvalide(draft: StandDraft): boolean {
+  return draft.ouvertures.some((ouverture) => effectifFenetreInvalide(ouverture.effectif));
 }
 
 function plageInvalide(plage: { date: string; heureDebut: string; heureFin: string | null }): boolean {
@@ -184,7 +211,10 @@ export function versStand(draft: StandDraft, emplacements: readonly Emplacement[
       ? (emplacements.find((emplacement) => emplacement.id === draft.emplacementId) ?? null)
       : null,
     indisponibilites: draft.indisponibilites.map(normaliserPlage),
-    ouvertures: draft.ouvertures.map(normaliserPlage),
+    ouvertures: draft.ouvertures.map((ouverture) => ({
+      ...normaliserPlage(ouverture),
+      effectif: normaliserEffectif(ouverture.effectif)
+    })),
     horaires: draft.horaires.map(normaliserHoraire)
   };
 }
@@ -200,7 +230,11 @@ export function normaliserPlage<T extends { heureFin: string | null }>(plage: T)
 export function normaliserHoraire(horaire: HoraireStand): HoraireStand {
   return {
     ...horaire,
-    fenetres: horaire.fenetres.map((fenetre) => ({ ...fenetre, heureFin: fenetre.heureFin || null })),
+    fenetres: horaire.fenetres.map((fenetre) => ({
+      ...fenetre,
+      heureFin: fenetre.heureFin || null,
+      effectif: normaliserEffectif(fenetre.effectif)
+    })),
     // Only the fields the chosen scope uses are sent, so a rule switched from
     // PLAGE to TOUS doesn't keep dragging its old bounds along.
     joursSemaine: horaire.jours === 'JOURS_SEMAINE' ? horaire.joursSemaine : [],
