@@ -149,6 +149,51 @@ class ReferenceDataServiceStandTest {
     }
 
     @Test
+    void fenetreAvecEffectifNulOuNegatifEstRejetee() {
+        Stand stand = stand("STAND-HOR-EFF-0");
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), 0))));
+
+        assertThatThrownBy(() -> referenceDataService.createStand(stand))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("au moins 1");
+
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), -3))));
+        assertThatThrownBy(() -> referenceDataService.createStand(stand))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("au moins 1");
+    }
+
+    @Test
+    void ouvertureAvecEffectifNulEstRejetee() {
+        Stand stand = stand("STAND-OUV-EFF-0");
+        stand.setOuvertures(List.of(new OuvertureStand(null, LocalDate.of(2026, 7, 10), LocalTime.of(10, 0),
+                LocalTime.of(12, 0), null, 0)));
+
+        assertThatThrownBy(() -> referenceDataService.createStand(stand))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("au moins 1");
+    }
+
+    @Test
+    void fenetreEtOuvertureAvecEffectifSontConserveesTellesQuelles() {
+        Stand stand = stand("STAND-HOR-EFF-2");
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), 2),
+                new FenetreHoraire(LocalTime.of(14, 0), null, null))));
+        stand.setOuvertures(List.of(new OuvertureStand(null, LocalDate.of(2026, 7, 10), LocalTime.of(10, 0),
+                LocalTime.of(12, 0), null, 4)));
+
+        Stand cree = referenceDataService.createStand(stand);
+
+        assertThat(cree.getHoraires().get(0).getFenetres())
+                .extracting(FenetreHoraire::getEffectif)
+                .containsExactly(2, null);
+        assertThat(cree.getOuvertures().get(0).getEffectif()).isEqualTo(4);
+    }
+
+    @Test
     void horaireJoursSemaineSansJourEstRejete() {
         Stand stand = stand("STAND-HOR-4");
         stand.setHoraires(List.of(new HoraireStand(null, ModeHoraire.OUVERTURE, TypeJoursHoraire.JOURS_SEMAINE,

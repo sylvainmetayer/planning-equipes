@@ -13,6 +13,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -187,6 +188,79 @@ class FeasibilityAnalyzerTest {
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
         assertThat(report.causes()).isEmpty();
+    }
+
+    @Test
+    void laDemandeSuitLEffectifDeLaFenetreQuandElleEnNommeUn() {
+        // The stand's minimum is 1, but its opening window on that day asks for
+        // 4: seat generation creates 4 seats, so 2 animateurs leave 2 missing.
+        Stand stand = stand("stand-1", 1, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+        stand.setOuvertures(List.of(new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0),
+                LocalTime.of(12, 0), null, 4)));
+
+        FeasibilityReport report = analyzer.analyze(
+                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")),
+                List.of(stand), List.of(creneau));
+
+        assertThat(report.feasible()).isFalse();
+        CauseInfaisabilite cause = report.causes().getFirst();
+        assertThat(cause.demande()).isEqualTo(4);
+        assertThat(cause.capacite()).isEqualTo(2);
+        assertThat(cause.manque()).isEqualTo(2);
+    }
+
+    @Test
+    void uneFenetreDemandantMoinsQueLeMinimumDuStandAllegeLaDemande() {
+        // Minimum 3 on the stand, but the window of that day names 1: one
+        // animateur is enough, where counting effectifMin would announce 2 missing.
+        Stand stand = stand("stand-1", 3, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+        stand.setOuvertures(List.of(new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0),
+                LocalTime.of(12, 0), null, 1)));
+
+        FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")),
+                List.of(stand), List.of(creneau));
+
+        assertThat(report.feasible()).isTrue();
+        assertThat(report.causes()).isEmpty();
+    }
+
+    @Test
+    void deuxSegmentsSuccessifsDemandentLePlusChargeDesDeuxPasLeurSomme() {
+        // 10:00-11:00 needs 2, 11:00-12:00 needs 4: nobody has to hold both at
+        // once, so 4 animateurs cover the slot and 3 leave exactly one missing.
+        Stand stand = stand("stand-1", 1, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(11, 0), null, 2),
+                new OuvertureStand(null, creneau.getDate(), LocalTime.of(11, 0), LocalTime.of(12, 0), null, 4)));
+        List<Animateur> quatre = List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE"),
+                animateur("a3", "STRATEGIE"), animateur("a4", "STRATEGIE"));
+
+        assertThat(analyzer.analyze(quatre, List.of(stand), List.of(creneau)).feasible()).isTrue();
+
+        FeasibilityReport troisSeulement = analyzer.analyze(quatre.subList(0, 3), List.of(stand), List.of(creneau));
+        assertThat(troisSeulement.feasible()).isFalse();
+        assertThat(troisSeulement.causes().getFirst().demande()).isEqualTo(4);
+        assertThat(troisSeulement.causes().getFirst().manque()).isEqualTo(1);
+    }
+
+    @Test
+    void uneVacationDeCouverturePauseNeDemandeQueLaMoitieDeLaFenetre() {
+        // Seat generation halves the headcount on a break-covering shift, so a
+        // window of 4 asks for 2 seats: two animateurs are enough.
+        Stand stand = stand("stand-1", 1, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+        creneau.setCouverturePause(true);
+        stand.setOuvertures(List.of(new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0),
+                LocalTime.of(12, 0), null, 4)));
+
+        FeasibilityReport report = analyzer.analyze(
+                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")),
+                List.of(stand), List.of(creneau));
+
+        assertThat(report.feasible()).isTrue();
     }
 
     @Test

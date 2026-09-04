@@ -156,6 +156,71 @@ class CreneauSegmentOuvertTest {
                 .containsExactly(tuple(0, 120, 2), tuple(180, 360, 2));
     }
 
+    // --- siegesSegment / siegesSimultanes: the one seat-counting rule ---------
+
+    @Test
+    void unSegmentSansEffectifDeclareGenereToujoursUnSiege() {
+        assertThat(apresMidi.siegesSegment(0)).isEqualTo(1);
+        assertThat(apresMidi.siegesSegment(-2)).isEqualTo(1);
+        assertThat(apresMidi.siegesSegment(1)).isEqualTo(1);
+        assertThat(apresMidi.siegesSegment(3)).isEqualTo(3);
+    }
+
+    @Test
+    void uneVacationDeCouverturePauseHalveLesSiegesEnArrondissantAuSuperieur() {
+        Creneau pause = new Creneau(2L, 1, JOUR, LocalTime.of(12, 0), LocalTime.of(13, 0));
+        pause.setCouverturePause(true);
+
+        assertThat(pause.siegesSegment(0)).isEqualTo(1);
+        assertThat(pause.siegesSegment(1)).isEqualTo(1);
+        assertThat(pause.siegesSegment(3)).isEqualTo(2);
+        assertThat(pause.siegesSegment(4)).isEqualTo(2);
+        assertThat(pause.siegesSegment(5)).isEqualTo(3);
+    }
+
+    @Test
+    void lesSiegesSimultanesSuiventLEffectifMinSansFenetre() {
+        assertThat(apresMidi.siegesSimultanes(stand(3))).isEqualTo(3);
+        // A stand declared at zero still gets its one seat.
+        assertThat(apresMidi.siegesSimultanes(stand(0))).isEqualTo(1);
+    }
+
+    @Test
+    void lesSiegesSimultanesSuiventLEffectifDeLaFenetre() {
+        assertThat(apresMidi.siegesSimultanes(
+                standOuvert(1, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 4)))).isEqualTo(4);
+        // A window may also ask for less than the stand's minimum.
+        assertThat(apresMidi.siegesSimultanes(
+                standOuvert(3, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 1)))).isEqualTo(1);
+    }
+
+    @Test
+    void deuxSegmentsSuccessifsDonnentLePlusChargeDesDeuxPasLeurSomme() {
+        Stand stand = standOuvert(1,
+                ouverture(LocalTime.of(14, 0), LocalTime.of(17, 0), 2),
+                ouverture(LocalTime.of(17, 0), LocalTime.of(20, 0), 5));
+
+        assertThat(apresMidi.siegesSimultanes(stand)).isEqualTo(5);
+    }
+
+    @Test
+    void unStandFermeSurLeCreneauNAAucunSiegeSimultane() {
+        Stand stand = stand(3);
+        stand.setIndisponibilites(List.of(
+                new IndisponibiliteStand(null, JOUR, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
+
+        assertThat(apresMidi.siegesSimultanes(stand)).isZero();
+    }
+
+    @Test
+    void lesSiegesSimultanesDUneCouverturePauseSontHalves() {
+        Creneau pause = new Creneau(2L, 1, JOUR, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        pause.setCouverturePause(true);
+
+        assertThat(pause.siegesSimultanes(
+                standOuvert(1, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 5)))).isEqualTo(3);
+    }
+
     private static Stand stand(int effectifMin) {
         return new Stand("S", "S", Set.of(), effectifMin, 10, false);
     }

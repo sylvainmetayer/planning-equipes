@@ -198,10 +198,43 @@ public class Creneau {
      * <p>{@code effectif} is already resolved: a window that named one carries
      * that value, a window that did not carries the stand's
      * {@link Stand#getEffectifMin()}. It is <b>not</b> floored to 1 — that rule
-     * belongs to poste generation, which is the only place that decides a stand
-     * open with nobody declared still gets one seat.</p>
+     * belongs to seat generation, {@link #siegesSegment(int)}, which is the
+     * single place that decides a stand open with nobody declared still gets
+     * one seat.</p>
      */
     public record SegmentOuvert(int debutMinutes, int finMinutes, int effectif) {
+    }
+
+    /**
+     * Seats generated on one open segment of this slot for the given resolved
+     * effectif: at least one — a stand nobody declared a headcount for still
+     * needs somebody, so closing it stays an explicit decision rather than a
+     * side effect of an unset {@code effectifMin} — and half, rounded up, on a
+     * break-covering shift ({@link #isCouverturePause()}), where the stand runs
+     * at reduced staffing and a stand held by a single person keeps that person
+     * rather than closing.
+     *
+     * <p>Poste generation, the feasibility analysis and the premium-continuity
+     * rule all read this one method, so what the solver must fill and what the
+     * screens announce can never be two different numbers.</p>
+     */
+    public int siegesSegment(int effectifSegment) {
+        int effectif = Math.max(1, effectifSegment);
+        return couverturePause ? (effectif + 1) / 2 : effectif;
+    }
+
+    /**
+     * The most seats this slot asks the stand to staff at any one instant: the
+     * largest {@link #siegesSegment(int)} over its open segments, zero when the
+     * stand is closed on it. Segments of one slot never overlap, so the demand
+     * at an instant is the one of the segment covering it, never a sum.
+     */
+    public int siegesSimultanes(Stand stand) {
+        int sieges = 0;
+        for (SegmentOuvert segment : segmentsOuverts(stand)) {
+            sieges = Math.max(sieges, siegesSegment(segment.effectif()));
+        }
+        return sieges;
     }
 
     /**

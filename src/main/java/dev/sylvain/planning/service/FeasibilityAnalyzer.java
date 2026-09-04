@@ -34,13 +34,16 @@ import jakarta.enterprise.context.ApplicationScoped;
  * together, are exactly the ones nobody will find by re-reading the form.</p>
  *
  * <p>The demand of a créneau is counted exactly as
- * {@link PlanningService#buildPostes(List, List)} generates seats:
- * {@code max(1, effectifMin)} per stand actually open on that créneau (see
- * {@link Creneau#isStandOpen(String)}). {@code effectifMax} is the upper
- * capacity a stand <em>could</em> accept, not the number of seats that must be
- * staffed, and closed stands generate no seat at all — counting either of them
- * as demand overstates it and reports a shortfall on plannings the solver fills
- * without trouble.
+ * {@link PlanningService#buildPostes(List, List)} generates seats: for every
+ * stand open on that créneau, the seats of its busiest open segment —
+ * {@link Creneau#siegesSimultanes(Stand)}, i.e. the window's own effectif or
+ * the stand's {@code effectifMin} when the window names none, floored to one
+ * and halved on a break-covering shift. Segments of one slot follow each
+ * other, so what has to be staffed at any instant is the largest of them, not
+ * their sum. {@code effectifMax} is the upper capacity a stand <em>could</em>
+ * accept, not the number of seats that must be staffed, and closed stands
+ * generate no seat at all — counting either of them as demand overstates it
+ * and reports a shortfall on plannings the solver fills without trouble.
  *
  * <p>Against that demand we count, for each créneau, every animateur present
  * that day — an optimistic upper bound on how many seats that créneau could
@@ -127,7 +130,7 @@ public class FeasibilityAnalyzer {
                     .filter(stand -> creneau.isStandOpen(stand))
                     .toList();
             int demande = standsOuverts.stream()
-                    .mapToInt(stand -> Math.max(1, stand.getEffectifMin()))
+                    .mapToInt(creneau::siegesSimultanes)
                     .sum();
             long capacite = animateurs.stream()
                     .filter(animateur -> !animateur.isIndisponibleOn(creneau.getDate()))

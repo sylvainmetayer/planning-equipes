@@ -12,6 +12,7 @@ import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -120,11 +121,14 @@ public final class QualiteConstraints {
      * instead of rotating people through it: penalises how many <b>distinct</b>
      * animateurs the stand sees, beyond the one crew it needs at a time.
      *
-     * <p>"Beyond one crew" is {@code max(1, effectifMin)}, which is exactly the
-     * number of seats poste generation creates per créneau: a stand needing two
-     * people at once, held by the same two all event, is perfect continuity
-     * and scores zero. Simultaneous multi-staffing was never rotation, and
-     * still isn't.</p>
+     * <p>"Beyond one crew" is the largest number of seats poste generation
+     * creates for the stand on any of its créneaux
+     * ({@link Creneau#siegesSimultanes(Stand)} — a window's own effectif, or
+     * the stand's {@code effectifMin}): a stand needing two people at once,
+     * held by the same two all event, is perfect continuity and scores zero.
+     * Simultaneous multi-staffing was never rotation, and still isn't; and a
+     * stand whose afternoon window asks for five people cannot be blamed for
+     * showing five faces.</p>
      *
      * <p>This used to count <em>pairs</em> of postes on the same stand held by
      * different animateurs on different créneaux, which made it quadratic in
@@ -146,16 +150,21 @@ public final class QualiteConstraints {
                 "eviterRoulementStandsPremium")
                 .filter(poste -> poste.getStand().isPremium())
                 .groupBy(PosteAffectation::getStand,
-                        ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
-                .filter((stand, animateursDistincts) -> animateursDistincts > equipage(stand))
+                        ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur),
+                        ConstraintCollectors.max(QualiteConstraints::equipage))
+                .filter((stand, animateursDistincts, equipage) -> animateursDistincts > equipage)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
-                        (stand, animateursDistincts) -> animateursDistincts - equipage(stand))
+                        (stand, animateursDistincts, equipage) -> animateursDistincts - equipage)
                 .asConstraint("eviterRoulementStandsPremium");
     }
 
-    /** Seats a stand needs staffed at the same time — one crew, i.e. what poste generation creates per créneau. */
-    private static int equipage(Stand stand) {
-        return Math.max(1, stand.getEffectifMin());
+    /**
+     * Seats the stand of this poste needs staffed at the same time on this
+     * poste's créneau — one crew; the largest over the stand's postes is the
+     * allowance above. Never below one: a poste exists, so somebody holds it.
+     */
+    private static int equipage(PosteAffectation poste) {
+        return Math.max(1, poste.getCreneau().siegesSimultanes(poste.getStand()));
     }
 
     /**

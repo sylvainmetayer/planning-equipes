@@ -932,10 +932,12 @@ stand × créneau × **fenêtre** : un stand fermé en milieu de créneau produi
 plusieurs segments, donc plusieurs lignes qui ne se distinguent que par
 `heureDebut`. `groupesSansSpecialiste` se compte dans cette même unité, comme
 `groupesAnalyses` — un stand que personne ne sait tenir, ouvert sur quarante
-créneaux, y pèse quarante. Et `effectifMin` est le minimum **configuré sur le
-stand**, pas le plancher du groupe : sur une vacation de couverture de pause
-(`couverturePause: true`) les sièges sont générés à la moitié, arrondie au
-supérieur, et c'est `siegesRequis` qui porte le plancher réellement applicable.
+créneaux, y pèse quarante. Et `effectifMin` est l'effectif **configuré pour la
+fenêtre** du groupe — celui de la fenêtre d'ouverture quand elle en nomme un,
+sinon le minimum du stand —, pas le plancher du groupe : sur une vacation de
+couverture de pause (`couverturePause: true`) les sièges sont générés à la
+moitié, arrondie au supérieur, et c'est `siegesRequis` qui porte le plancher
+réellement applicable.
 
 Les listes sont bornées (20 postes détaillés par animateur, 100 couples
 stand × créneau), `postesNonDetailles` et `totalCompetencesRares` disant ce qui

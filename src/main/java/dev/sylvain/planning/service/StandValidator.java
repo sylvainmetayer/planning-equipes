@@ -83,6 +83,19 @@ final class StandValidator {
                                 + ouverture.getHeureDebut() + ") — une ouverture ne peut pas chevaucher minuit, "
                                 + "entrez-en deux");
             }
+            checkEffectifFenetre(ouverture.getEffectif(), "une ouverture");
+        }
+    }
+
+    /**
+     * A window's effectif is optional — absent, the stand's minimum applies —
+     * but never zero or negative: a window nobody should staff is a closure,
+     * and is declared as one.
+     */
+    private static void checkEffectifFenetre(Integer effectif, String porteur) {
+        if (effectif != null && effectif < 1) {
+            throw new BusinessError.Invalid("effectif (" + effectif + ") doit être au moins 1 sur " + porteur
+                    + " — laissez-le vide pour reprendre l'effectif minimum du stand, ou déclarez une fermeture");
         }
     }
 
@@ -136,6 +149,7 @@ final class StandValidator {
                         + fenetre.getHeureDebut() + ") — une fenêtre horaire ne peut pas chevaucher minuit, "
                         + "entrez-en deux");
             }
+            checkEffectifFenetre(fenetre.getEffectif(), "une fenêtre horaire");
         }
         switch (horaire.getJours()) {
             case JOURS_SEMAINE -> {

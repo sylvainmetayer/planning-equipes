@@ -2,6 +2,7 @@ package dev.sylvain.planning.solver.constraints;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -168,6 +170,28 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .given(poste(standDeuxPlaces, creneauMatin, referentMajeur("A1")),
                         poste(standDeuxPlaces, creneauMatin, referentMajeur("A2")))
                 .penalizesBy(0);
+    }
+
+    @Test
+    void lEquipageDUnStandPremiumSuitLEffectifDeSaFenetre() {
+        // Minimum 1 on the stand, but its morning window asks for three: three
+        // faces on that slot are the crew, not a rotation. A fourth person on the
+        // afternoon slot, whose window asks for one, is one head beyond the
+        // largest crew the stand ever needs.
+        Stand stand = standPremium("STAND-PREMIUM-FENETRE");
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, D1, creneauMatin.getHeureDebut(), creneauMatin.getHeureFin(), null, 3),
+                new OuvertureStand(null, D1, creneauAprem.getHeureDebut(), creneauAprem.getHeureFin(), null, 1)));
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
+        Animateur a3 = referentMajeur("A3");
+        verify("eviterRoulementStandsPremium")
+                .given(poste(stand, creneauMatin, a1), poste(stand, creneauMatin, a2), poste(stand, creneauMatin, a3))
+                .penalizesBy(0);
+        verify("eviterRoulementStandsPremium")
+                .given(poste(stand, creneauMatin, a1), poste(stand, creneauMatin, a2), poste(stand, creneauMatin, a3),
+                        poste(stand, creneauAprem, referentMajeur("A4")))
+                .penalizesBy(1);
     }
 
     @Test

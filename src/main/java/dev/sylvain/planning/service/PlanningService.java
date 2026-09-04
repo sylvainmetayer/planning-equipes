@@ -692,15 +692,10 @@ public class PlanningService {
                 boolean creneauEntierOuvert = segments.size() == 1 && segments.get(0).debutMinutes() == 0
                         && segments.get(0).finMinutes() == creneau.getDureeMinutes();
                 for (Creneau.SegmentOuvert segment : segments) {
-                    // At least one seat on an open stand: a stand nobody
-                    // declared a headcount for still needs somebody, so closing
-                    // it stays an explicit decision rather than a side effect of
-                    // an unset effectifMin.
-                    int effectif = Math.max(1, segment.effectif());
-                    // On a break-covering shift (EFFECTIF_REDUIT strategy) the
-                    // stand runs at half staffing, rounded up: a stand held by a
-                    // single person keeps that person rather than closing.
-                    int seats = creneau.isCouverturePause() ? (effectif + 1) / 2 : effectif;
+                    // At least one seat on an open stand, half on a
+                    // break-covering shift: the rule lives on the slot so the
+                    // analyses count exactly what is generated here.
+                    int seats = creneau.siegesSegment(segment.effectif());
                     for (int seat = 0; seat < seats; seat++) {
                         PosteAffectation poste = new PosteAffectation("poste-" + (counter++), stand, creneau);
                         if (!creneauEntierOuvert) {

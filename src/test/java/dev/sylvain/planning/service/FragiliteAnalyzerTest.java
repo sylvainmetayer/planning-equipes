@@ -14,6 +14,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.FragiliteAnalyzer.AnimateurFragilite;
@@ -357,6 +358,42 @@ class FragiliteAnalyzerTest {
         assertThat(poste.couverturePause()).isTrue();
         assertThat(poste.effectifMin()).isEqualTo(4);
         assertThat(poste.siegesRequis()).isEqualTo(2);
+    }
+
+    @Test
+    void theEffectifShownIsTheWindowsWhenTheWindowNamesOne() {
+        // The stand is configured at 1, but the day's opening window asks for 3:
+        // that is the figure the screen must show next to the three seats,
+        // otherwise « 3 seats required, minimum 1 » reads as a contradiction.
+        Stand stand = stand("A", 1, "JEUX");
+        Creneau slot = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0), null, 3)));
+        Animateur alice = animateur("alice", "JEUX");
+        Animateur bob = animateur("bob", "JEUX");
+        Animateur carol = animateur("carol", "JEUX");
+
+        RapportFragilite rapport = analyzer.analyze(
+                planning(List.of(alice, bob, carol), seats(stand, slot, alice, bob, carol)));
+
+        PosteFragile poste = ligne(rapport, "alice").postes().getFirst();
+        assertThat(poste.effectifMin()).isEqualTo(3);
+        assertThat(poste.siegesRequis()).isEqualTo(3);
+    }
+
+    @Test
+    void theEffectifShownFallsBackToTheStandsWhenSeatsMatchNoWindow() {
+        // Hand-authored seats on a slot the windows only partly cover: no open
+        // segment is this group's window, so the stand's minimum is what the
+        // screen can honestly show.
+        Stand stand = stand("A", 2, "JEUX");
+        Creneau slot = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, LocalTime.of(10, 0), LocalTime.of(11, 0), null, 5)));
+        Animateur alice = animateur("alice", "JEUX");
+        Animateur bob = animateur("bob", "JEUX");
+
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), seats(stand, slot, alice, bob)));
+
+        assertThat(ligne(rapport, "alice").postes().getFirst().effectifMin()).isEqualTo(2);
     }
 
     private static AnimateurFragilite ligne(RapportFragilite rapport, String animateurId) {

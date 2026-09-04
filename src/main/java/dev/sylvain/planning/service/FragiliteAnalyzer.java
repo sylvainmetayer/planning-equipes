@@ -99,9 +99,11 @@ public class FragiliteAnalyzer {
     /**
      * One stand × timeslot group an animateur's withdrawal would leave short.
      *
-     * @param effectifMin      the <em>stand's</em> configured minimum, for
-     *                         reference — not this group's floor, which
-     *                         {@code siegesRequis} carries
+     * @param effectifMin      the effectif configured for this window — the
+     *                         opening window's own, or the stand's minimum
+     *                         when the window names none — for reference; not
+     *                         this group's floor, which {@code siegesRequis}
+     *                         carries
      * @param couverturePause  true on a break-covering shift, where seat
      *                         generation halves the headcount (rounded up):
      *                         that, and nothing else, is why
@@ -356,7 +358,7 @@ public class FragiliteAnalyzer {
                                 groupe.creneau.getJour(),
                                 groupe.debut,
                                 groupe.fin,
-                                groupe.stand.getEffectifMin(),
+                                effectifConfigure(groupe),
                                 groupe.creneau.isCouverturePause(),
                                 groupe.sieges,
                                 groupe.pourvus,
@@ -467,6 +469,26 @@ public class FragiliteAnalyzer {
             }
         }
         return libres;
+    }
+
+    /**
+     * The effectif configured for the group's window: the open segment of the
+     * créneau that this group's effective window is, or the stand's minimum
+     * when the seats were not generated from windows (hand-authored postes, a
+     * closure-mode day).
+     */
+    private static int effectifConfigure(SeatGroup groupe) {
+        for (Creneau.SegmentOuvert segment : groupe.creneau.segmentsOuverts(groupe.stand)) {
+            LocalTime debut = groupe.creneau.getHeureDebut().plusMinutes(segment.debutMinutes());
+            LocalTime fin = groupe.creneau.getHeureDebut().plusMinutes(segment.finMinutes());
+            boolean memeDebut = groupe.debut == null ? segment.debutMinutes() == 0 : groupe.debut.equals(debut);
+            boolean memeFin = groupe.fin == null
+                    ? segment.finMinutes() == groupe.creneau.getDureeMinutes() : groupe.fin.equals(fin);
+            if (memeDebut && memeFin) {
+                return segment.effectif();
+            }
+        }
+        return groupe.stand.getEffectifMin();
     }
 
     private static boolean isBusy(List<Interval> plages, Interval plage) {

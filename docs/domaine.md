@@ -446,6 +446,17 @@ pause à l'intérieur d'un créneau : les deux grandeurs coïncident, ce qui rev
 à supposer qu'aucune pause n'y est prise. C'est précisément pourquoi les pauses
 sont modélisées comme des **trous entre deux créneaux**.
 
+### Un seul compte de sièges
+
+Le nombre de sièges qu'un segment ouvert génère — au moins un, la moitié
+arrondie au supérieur sur une vacation de couverture de pause — est une méthode
+du créneau, `Creneau.siegesSegment`, et le plus chargé des segments d'un stand
+sur un créneau est `Creneau.siegesSimultanes`. La génération des postes,
+l'analyse de faisabilité (`GET /api/feasibility`), l'analyse de fragilité et la
+règle `eviterRoulementStandsPremium` lisent tous cette même méthode : ce que le
+solveur doit remplir et ce que les écrans annoncent ne peuvent pas être deux
+nombres différents, et un effectif porté par une fenêtre est vu partout.
+
 ### Pause prise sur le poste
 
 Le Code exige que la pause soit **réelle**, pas qu'elle soit planifiée : un
