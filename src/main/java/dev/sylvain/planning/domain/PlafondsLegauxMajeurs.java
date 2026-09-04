@@ -24,6 +24,28 @@ public final class PlafondsLegauxMajeurs {
     /** Art. L3121-18: 10 h/day of travail effectif for an adult. */
     public static final int DUREE_QUOTIDIENNE_MAX_MINUTES = 10 * 60;
 
+    /** Art. L3121-16: an adult's uninterrupted work may not exceed 6 h. */
+    public static final int TRAVAIL_CONTINU_MAX_MINUTES = 6 * 60;
+
+    /** Art. L3121-16: the break that interrupts an adult's working stretch lasts at least 20 min. */
+    public static final int PAUSE_MINIMALE_MINUTES = 20;
+
+    /**
+     * Minutes of legal breaks an adult takes <i>on the post</i> inside an
+     * uninterrupted stretch of {@code stretchMinutes}, when the organiser has
+     * declared that breaks are taken by relay ({@code ParametresLegaux.pauseSurPoste}):
+     * one 20-minute break at the latest at the sixth hour, then another every
+     * 6 h of work — so {@code p} breaks let a stretch run for
+     * {@code 6 h × (p + 1) + 20 min × p}. Zero for a stretch within the cap.
+     */
+    public static int onPostBreakMinutes(int stretchMinutes) {
+        if (stretchMinutes <= TRAVAIL_CONTINU_MAX_MINUTES) {
+            return 0;
+        }
+        return PAUSE_MINIMALE_MINUTES * Math.ceilDiv(stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES,
+                TRAVAIL_CONTINU_MAX_MINUTES + PAUSE_MINIMALE_MINUTES);
+    }
+
     /** Art. L3132-1: no more than six worked days in the same week. */
     public static final int JOURS_TRAVAILLES_MAX_PAR_SEMAINE = 6;
 

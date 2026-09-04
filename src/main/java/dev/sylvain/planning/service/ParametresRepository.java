@@ -41,7 +41,8 @@ public class ParametresRepository {
                 PreparedStatement ps = scope.prepareScoped(connection,
                         """
                         SELECT duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes,
-                        pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes
+                        pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes,
+                        pause_sur_poste
                         FROM parametres_legaux
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -51,6 +52,7 @@ public class ParametresRepository {
                 parametres.setPauseMinimaleEntreVacationsMinutes(
                         rs.getInt("pause_minimale_entre_vacations_minutes"));
                 parametres.setReposQuotidienMinimalMinutes(rs.getInt("repos_quotidien_minimal_minutes"));
+                parametres.setPauseSurPoste(rs.getBoolean("pause_sur_poste"));
                 return parametres;
             }
             return new ParametresLegaux();
@@ -65,17 +67,19 @@ public class ParametresRepository {
                         """
                         INSERT INTO parametres_legaux (edition_id, duree_hebdomadaire_max_minutes,
                         duree_hebdomadaire_max_mineur_minutes, pause_minimale_entre_vacations_minutes,
-                        repos_quotidien_minimal_minutes)
-                        VALUES (?, ?, ?, ?, ?)
+                        repos_quotidien_minimal_minutes, pause_sur_poste)
+                        VALUES (?, ?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET duree_hebdomadaire_max_minutes = EXCLUDED.duree_hebdomadaire_max_minutes,
                         duree_hebdomadaire_max_mineur_minutes = EXCLUDED.duree_hebdomadaire_max_mineur_minutes,
                         pause_minimale_entre_vacations_minutes = EXCLUDED.pause_minimale_entre_vacations_minutes,
-                        repos_quotidien_minimal_minutes = EXCLUDED.repos_quotidien_minimal_minutes""")) {
+                        repos_quotidien_minimal_minutes = EXCLUDED.repos_quotidien_minimal_minutes,
+                        pause_sur_poste = EXCLUDED.pause_sur_poste""")) {
             ps.setInt(2, parametres.getDureeHebdomadaireMaxMinutes());
             ps.setInt(3, parametres.getDureeHebdomadaireMaxMineurMinutes());
             ps.setInt(4, parametres.getPauseMinimaleEntreVacationsMinutes());
             ps.setInt(5, parametres.getReposQuotidienMinimalMinutes());
+            ps.setBoolean(6, parametres.isPauseSurPoste());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save legal parameters", e);

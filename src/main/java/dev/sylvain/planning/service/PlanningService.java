@@ -1040,6 +1040,7 @@ public class PlanningService {
         item.put("dureeHebdomadaireMaxMinutes", parametres.getDureeHebdomadaireMaxMinutes());
         item.put("pauseMinimaleEntreVacationsMinutes", parametres.getPauseMinimaleEntreVacationsMinutes());
         item.put("reposQuotidienMinimalMinutes", parametres.getReposQuotidienMinimalMinutes());
+        item.put("pauseSurPoste", parametres.isPauseSurPoste());
         return item;
     }
 
@@ -1664,6 +1665,12 @@ public class PlanningService {
         readInt(data, "dureeHebdomadaireMaxMinutes", parametres::setDureeHebdomadaireMaxMinutes);
         readInt(data, "pauseMinimaleEntreVacationsMinutes", parametres::setPauseMinimaleEntreVacationsMinutes);
         readInt(data, "reposQuotidienMinimalMinutes", parametres::setReposQuotidienMinimalMinutes);
+        Object pauseSurPoste = data.get("pauseSurPoste");
+        if (pauseSurPoste instanceof Boolean valeur) {
+            parametres.setPauseSurPoste(valeur);
+        } else if (pauseSurPoste != null) {
+            throw new BusinessError.Invalid("parametresLegaux.pauseSurPoste must be true or false");
+        }
         return Optional.of(parametres);
     }
 
@@ -2145,7 +2152,8 @@ public class PlanningService {
         Set<String> occupes = animateursOccupesPendant(solved, poste);
         return solved.getAnimateurs().stream()
                 .filter(animateur -> !animateur.getId().equals(actuelId))
-                .filter(animateur -> EligibleAnimateurMoveFilter.isEligible(poste, animateur))
+                .filter(animateur -> EligibleAnimateurMoveFilter.isEligible(poste, animateur,
+                        solved.pauseSurPosteActive()))
                 .sorted(Comparator.comparing((Animateur animateur) -> occupes.contains(animateur.getId()))
                         .thenComparing(Animateur::getId, NaturalOrder.DES_IDS))
                 .toList();
@@ -2286,7 +2294,8 @@ public class PlanningService {
         for (Animateur animateur : banc) {
             AffectationHypothesis hypothese = hypotheses.get(animateur.getId());
             Set<String> contraintes = new LinkedHashSet<>();
-            for (EligibleAnimateurMoveFilter.Motif motif : EligibleAnimateurMoveFilter.motifs(cible, animateur)) {
+            for (EligibleAnimateurMoveFilter.Motif motif : EligibleAnimateurMoveFilter.motifs(cible, animateur,
+                    solved.pauseSurPosteActive())) {
                 contraintes.add(motif.contrainte());
             }
             if (hypothese != null) {
@@ -2707,7 +2716,8 @@ public class PlanningService {
         List<OptionEchange> diriges = new ArrayList<>();
         List<Animateur> collegues = solved.getAnimateurs().stream()
                 .filter(collegue -> !collegue.getId().equals(demandeur.getId()))
-                .filter(collegue -> EligibleAnimateurMoveFilter.isEligible(posteDemandeur, collegue))
+                .filter(collegue -> EligibleAnimateurMoveFilter.isEligible(posteDemandeur, collegue,
+                        solved.pauseSurPosteActive()))
                 .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.DES_IDS))
                 .toList();
         for (Animateur collegue : collegues) {
@@ -2718,10 +2728,10 @@ public class PlanningService {
                     .orElse(null);
             if (memeCreneau == null) {
                 liberent.add(new OptionEchange(collegue, null, NatureEchange.LIBERE));
-            } else if (EligibleAnimateurMoveFilter.isEligible(memeCreneau, demandeur)) {
+            } else if (EligibleAnimateurMoveFilter.isEligible(memeCreneau, demandeur, solved.pauseSurPosteActive())) {
                 croises.add(new OptionEchange(collegue, memeCreneau, NatureEchange.CROISE));
             }
-            for (PosteAffectation ailleurs : siegesAilleurs(sieges, creneauId, demandeur)) {
+            for (PosteAffectation ailleurs : siegesAilleurs(sieges, creneauId, demandeur, solved.pauseSurPosteActive())) {
                 diriges.add(new OptionEchange(collegue, ailleurs, NatureEchange.DIRIGE));
             }
         }
@@ -2737,10 +2747,10 @@ public class PlanningService {
      * laisse mon lundi, je prends ton mardi » family.
      */
     private static List<PosteAffectation> siegesAilleurs(List<PosteAffectation> sieges, long creneauId,
-            Animateur demandeur) {
+            Animateur demandeur, boolean pauseSurPoste) {
         return sieges.stream()
                 .filter(poste -> poste.getCreneau().getId() != creneauId)
-                .filter(poste -> EligibleAnimateurMoveFilter.isEligible(poste, demandeur))
+                .filter(poste -> EligibleAnimateurMoveFilter.isEligible(poste, demandeur, pauseSurPoste))
                 .sorted(Comparator
                         .comparing((PosteAffectation poste) -> poste.getCreneau().getDate(),
                                 Comparator.nullsLast(Comparator.naturalOrder()))

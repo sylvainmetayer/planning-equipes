@@ -125,6 +125,17 @@ public class PlanningEvenement {
         this.parametresLegaux = parametresLegaux;
     }
 
+    /**
+     * Whether the organiser declared the legal break as taken on the post
+     * ({@link ParametresLegaux#isPauseSurPoste()}); false when the fact is
+     * absent, the protective default. Not a bean property on purpose: it is a
+     * shortcut for the move filter, not a serialised field.
+     */
+    public boolean pauseSurPosteActive() {
+        return parametresLegaux != null && !parametresLegaux.isEmpty()
+                && parametresLegaux.get(0) != null && parametresLegaux.get(0).isPauseSurPoste();
+    }
+
     public List<ParametresQualite> getParametresQualite() {
         return parametresQualite;
     }

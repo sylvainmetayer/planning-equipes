@@ -13,5 +13,6 @@ import jakarta.validation.constraints.PositiveOrZero;
 public record ParametresLegauxDto(
         @Positive Integer dureeHebdomadaireMaxMinutes,
         @PositiveOrZero Integer pauseMinimaleEntreVacationsMinutes,
-        @PositiveOrZero Integer reposQuotidienMinimalMinutes) {
+        @PositiveOrZero Integer reposQuotidienMinimalMinutes,
+        Boolean pauseSurPoste) {
 }

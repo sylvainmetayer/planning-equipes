@@ -50,8 +50,8 @@ class EligibleAnimateurMotifsTest {
     void anAvailableAdultIsEligibleAndHasNoReasonAgainstThem() {
         PosteAffectation poste = poste(openStand(), creneauJournee());
 
-        assertThat(EligibleAnimateurMoveFilter.isEligible(poste, majeur())).isTrue();
-        assertThat(EligibleAnimateurMoveFilter.motifs(poste, majeur())).isEmpty();
+        assertThat(EligibleAnimateurMoveFilter.isEligible(poste, majeur(), false)).isTrue();
+        assertThat(EligibleAnimateurMoveFilter.motifs(poste, majeur(), false)).isEmpty();
     }
 
     /**
@@ -64,7 +64,7 @@ class EligibleAnimateurMotifsTest {
     void theEmptySeatCarriesNoReason() {
         PosteAffectation poste = poste(openStand(), creneauJournee());
 
-        assertThat(EligibleAnimateurMoveFilter.motifs(poste, null)).isEmpty();
+        assertThat(EligibleAnimateurMoveFilter.motifs(poste, null, false)).isEmpty();
     }
 
     @Test
@@ -73,8 +73,8 @@ class EligibleAnimateurMotifsTest {
         Animateur indisponible = majeur();
         indisponible.setJoursIndisponibles(Set.of(JOUR));
 
-        assertThat(EligibleAnimateurMoveFilter.isEligible(poste, indisponible)).isFalse();
-        assertThat(EligibleAnimateurMoveFilter.motifs(poste, indisponible))
+        assertThat(EligibleAnimateurMoveFilter.isEligible(poste, indisponible, false)).isFalse();
+        assertThat(EligibleAnimateurMoveFilter.motifs(poste, indisponible, false))
                 .containsExactly(Motif.INDISPONIBLE);
     }
 
@@ -90,7 +90,7 @@ class EligibleAnimateurMotifsTest {
         Animateur mineur = new Animateur("A-MINEUR", "Manon", "Petit", JOUR_FERIE.minusYears(15), false);
         mineur.setJoursIndisponibles(Set.of(JOUR_FERIE));
 
-        assertThat(EligibleAnimateurMoveFilter.motifs(poste, mineur))
+        assertThat(EligibleAnimateurMoveFilter.motifs(poste, mineur, false))
                 .containsExactly(Motif.INDISPONIBLE, Motif.STAND_RESERVE_AUX_MAJEURS, Motif.JOUR_FERIE_MINEUR,
                         Motif.TRAVAIL_DE_NUIT_MINEUR, Motif.DUREE_QUOTIDIENNE_MINEUR, Motif.TRAVAIL_CONTINU_MINEUR);
     }
@@ -101,13 +101,33 @@ class EligibleAnimateurMotifsTest {
      * rules that could still stop them (adult supervision, daily totals) depend
      * on the rest of the plan and are the score's business, not this filter's.
      */
+    /**
+     * With the organiser's declaration that breaks are taken on the post, a
+     * six-hour créneau no longer caps a minor's stretch and counts 5 h 30 of
+     * work — exactly what {@code travailContinuMaxMineur} and
+     * {@code dureeQuotidienneMaxMineur} then accept. A nine-hour one still
+     * exceeds the 8 h day even once its break is deducted.
+     */
+    @Test
+    void aDeclaredOnPostBreakIsReadHereAsTheConstraintsReadIt() {
+        Animateur mineur = new Animateur("A-MINEUR", "Manon", "Petit", JOUR.minusYears(15), false);
+        Creneau sixHeures = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(16, 0));
+        Creneau neufHeures = new Creneau(2L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(18, 0));
+
+        assertThat(EligibleAnimateurMoveFilter.motifs(poste(openStand(), sixHeures), mineur, false))
+                .containsExactly(Motif.TRAVAIL_CONTINU_MINEUR);
+        assertThat(EligibleAnimateurMoveFilter.motifs(poste(openStand(), sixHeures), mineur, true)).isEmpty();
+        assertThat(EligibleAnimateurMoveFilter.motifs(poste(openStand(), neufHeures), mineur, true))
+                .containsExactly(Motif.DUREE_QUOTIDIENNE_MINEUR);
+    }
+
     @Test
     void aMinorOnAnOrdinarySlotIsNotRefusedHere() {
         Creneau courtEtDeJour = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(13, 0));
         PosteAffectation poste = poste(openStand(), courtEtDeJour);
         Animateur mineur = new Animateur("A-MINEUR", "Manon", "Petit", JOUR.minusYears(15), false);
 
-        assertThat(EligibleAnimateurMoveFilter.motifs(poste, mineur)).isEmpty();
+        assertThat(EligibleAnimateurMoveFilter.motifs(poste, mineur, false)).isEmpty();
     }
 
     /** {@code isEligible} is exactly « aucun motif », on every case above and their variations. */
@@ -128,9 +148,9 @@ class EligibleAnimateurMotifsTest {
             for (Stand stand : stands) {
                 PosteAffectation poste = poste(stand, creneau);
                 for (Animateur animateur : animateurs) {
-                    assertThat(EligibleAnimateurMoveFilter.isEligible(poste, animateur))
+                    assertThat(EligibleAnimateurMoveFilter.isEligible(poste, animateur, false))
                             .describedAs("%s sur %s / %s", animateur.getId(), stand.getId(), creneau.getId())
-                            .isEqualTo(EligibleAnimateurMoveFilter.motifs(poste, animateur).isEmpty());
+                            .isEqualTo(EligibleAnimateurMoveFilter.motifs(poste, animateur, false).isEmpty());
                 }
             }
         }

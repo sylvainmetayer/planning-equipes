@@ -55,6 +55,8 @@ public class ParametresMcpTools {
             @ToolArg(description = "Durée hebdomadaire maximale d'un mineur, en minutes", required = false) Integer dureeHebdomadaireMaxMineurMinutes,
             @ToolArg(description = "Pause minimale entre deux vacations, en minutes", required = false) Integer pauseMinimaleEntreVacationsMinutes,
             @ToolArg(description = "Repos quotidien minimal, en minutes", required = false) Integer reposQuotidienMinimalMinutes,
+            @ToolArg(description = "Pause légale prise sur le poste, par relais entre collègues, plutôt que "
+                    + "comme un trou entre deux vacations (L3121-16 / L3162-3)", required = false) Boolean pauseSurPoste,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
         if (dureeHebdomadaireMaxMinutes != null) {
@@ -68,6 +70,9 @@ public class ParametresMcpTools {
         }
         if (reposQuotidienMinimalMinutes != null) {
             parametres.setReposQuotidienMinimalMinutes(reposQuotidienMinimalMinutes);
+        }
+        if (pauseSurPoste != null) {
+            parametres.setPauseSurPoste(pauseSurPoste);
         }
         return toView(referenceDataService.updateParametresLegaux(parametres));
     }
@@ -277,7 +282,8 @@ public class ParametresMcpTools {
         return new ParametresLegauxView(parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.getDureeHebdomadaireMaxMineurMinutes(),
                 parametres.getPauseMinimaleEntreVacationsMinutes(),
-                parametres.getReposQuotidienMinimalMinutes());
+                parametres.getReposQuotidienMinimalMinutes(),
+                parametres.isPauseSurPoste());
     }
 
     static ParametresDecoupageView toView(ParametresDecoupage parametres) {
@@ -303,7 +309,7 @@ public class ParametresMcpTools {
     }
 
     public record ParametresLegauxView(int dureeHebdomadaireMaxMinutes, int dureeHebdomadaireMaxMineurMinutes,
-            int pauseMinimaleEntreVacationsMinutes, int reposQuotidienMinimalMinutes) {
+            int pauseMinimaleEntreVacationsMinutes, int reposQuotidienMinimalMinutes, boolean pauseSurPoste) {
     }
 
     public record ParametresDecoupageView(int dureeVacationCibleMinutes, int dureeVacationMinMinutes,

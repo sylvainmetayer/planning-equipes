@@ -728,6 +728,12 @@ export interface ParametresLegaux {
   pauseMinimaleEntreVacationsMinutes: number;
   /** Minimum daily rest (minutes) between two calendar days, all animateurs. Default 660 (11h, art. L3131-1). */
   reposQuotidienMinimalMinutes: number;
+  /**
+   * Legal break (20 min at 6 h for an adult, 30 min at 4 h 30 for a minor) taken on
+   * the post by relay between colleagues, rather than as a gap between two
+   * vacations. Default false: the organiser declares it.
+   */
+  pauseSurPoste: boolean;
 }
 
 export type StrategieCouverturePendantPause = 'FERMETURE' | 'RELEVE' | 'EFFECTIF_REDUIT';

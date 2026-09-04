@@ -47,10 +47,26 @@ public class ParametresLegaux {
      */
     public static final int REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT = 11 * 60;
 
+    /**
+     * Whether the legal break — 20 consecutive minutes once an adult's working
+     * time reaches 6 h (art. L3121-16), 30 minutes at 4 h 30 for a minor (art.
+     * L3162-3) — is taken <b>on the post</b>, by relay between the colleagues
+     * of the stand, rather than as a gap between two vacations. The Code
+     * requires the break to be real, not to be scheduled: an organiser that
+     * relieves each animateur for twenty minutes inside a 13:00-20:00 vacation
+     * complies. When true, the continuous-work constraints treat the break as
+     * organised inside the vacation, and the daily caps deduct it from the
+     * amplitude (art. L3121-18 and L3162-1 count <i>travail effectif</i>).
+     * Default false: the application never presumes an organisational fact it
+     * does not hold; the organiser declares it.
+     */
+    public static final boolean PAUSE_SUR_POSTE_PAR_DEFAUT = false;
+
     private int dureeHebdomadaireMaxMinutes = DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT;
     private int dureeHebdomadaireMaxMineurMinutes = DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT;
     private int pauseMinimaleEntreVacationsMinutes = PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT;
     private int reposQuotidienMinimalMinutes = REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT;
+    private boolean pauseSurPoste = PAUSE_SUR_POSTE_PAR_DEFAUT;
 
     public ParametresLegaux() {
     }
@@ -101,5 +117,13 @@ public class ParametresLegaux {
 
     public void setReposQuotidienMinimalMinutes(int reposQuotidienMinimalMinutes) {
         this.reposQuotidienMinimalMinutes = reposQuotidienMinimalMinutes;
+    }
+
+    public boolean isPauseSurPoste() {
+        return pauseSurPoste;
+    }
+
+    public void setPauseSurPoste(boolean pauseSurPoste) {
+        this.pauseSurPoste = pauseSurPoste;
     }
 }

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.solver.constraints;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 import org.junit.jupiter.api.Test;
@@ -95,14 +96,14 @@ class LegalConstraintsTest extends ConstraintTestBase {
         // A 9 h timeslot (540 min) exceeds the 8 h ceiling (480 min) by 60 min.
         Creneau journee = longDay("J1-LONG", 1, D1);
         verify("dureeQuotidienneMaxMineur")
-                .given(poste(standStrat, journee, mineurDebutant("M1")))
+                .given(poste(standStrat, journee, mineurDebutant("M1")), new ParametresLegaux())
                 .penalizesBy(60);
     }
 
     @Test
     void mineurSousHuitHeuresParJourNEstPasPenalise() {
         verify("dureeQuotidienneMaxMineur")
-                .given(poste(standStrat, creneauMatin, mineurDebutant("M1")))
+                .given(poste(standStrat, creneauMatin, mineurDebutant("M1")), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -112,7 +113,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         // where a 16-18 would only exceed by 60 min (8 h ceiling, L3162-1).
         Creneau journee = longDay("J1-LONG", 1, D1);
         verify("dureeQuotidienneMaxMineur")
-                .given(poste(standStrat, journee, under16DebutantMineur("M15")))
+                .given(poste(standStrat, journee, under16DebutantMineur("M15")), new ParametresLegaux())
                 .penalizesBy(120);
     }
 
@@ -120,7 +121,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
     void mineurDeMoinsDe16AnsSousSeptHeuresParJourNEstPasPenalise() {
         Creneau sixHeures = creneau("J1-6H", 1, D1, LocalTime.of(9, 0), LocalTime.of(15, 0));
         verify("dureeQuotidienneMaxMineur")
-                .given(poste(standStrat, sixHeures, under16DebutantMineur("M15")))
+                .given(poste(standStrat, sixHeures, under16DebutantMineur("M15")), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -128,7 +129,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
     void majeurNEstPasConcerneParLePlafondQuotidien() {
         Creneau journee = longDay("J1-LONG", 1, D1);
         verify("dureeQuotidienneMaxMineur")
-                .given(poste(standStrat, journee, referentMajeur("A1")))
+                .given(poste(standStrat, journee, referentMajeur("A1")), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -203,7 +204,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         verify("dureeQuotidienneMaxMajeur")
                 .given(poste(standStrat, matin, majeur),
                         poste(standStrat, aprem, majeur),
-                        poste(standStrat, soiree, majeur))
+                        poste(standStrat, soiree, majeur), new ParametresLegaux())
                 .penalizesBy(4 * 60);
     }
 
@@ -214,7 +215,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         verify("dureeQuotidienneMaxMajeur")
                 .given(poste(standStrat, matin, majeur),
-                        poste(standStrat, aprem, majeur))
+                        poste(standStrat, aprem, majeur), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -230,7 +231,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau longDay = creneau("J1-6-18", 1, D1, LocalTime.of(6, 0), LocalTime.of(18, 0));
         verify("dureeQuotidienneMaxMajeur")
                 .given(posteWithEffectiveFenetre(standStrat, longDay, majeur,
-                        LocalTime.of(6, 0), LocalTime.of(12, 0)))
+                        LocalTime.of(6, 0), LocalTime.of(12, 0)), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -238,7 +239,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
     void mineurNEstPasConcerneParLePlafondQuotidienMajeur() {
         Animateur mineur = mineurDebutant("M1");
         verify("dureeQuotidienneMaxMajeur")
-                .given(poste(standStrat, longDay("J1-LONG", 1, D1), mineur))
+                .given(poste(standStrat, longDay("J1-LONG", 1, D1), mineur), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -253,7 +254,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
         verify("travailContinuMaxMajeur")
                 .given(poste(standStrat, aprem, majeur),
-                        poste(standStrat, soiree, majeur))
+                        poste(standStrat, soiree, majeur), new ParametresLegaux())
                 .penalizesBy(4 * 60);
     }
 
@@ -266,7 +267,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
         verify("travailContinuMaxMajeur")
                 .given(poste(standStrat, aprem, majeur),
-                        poste(standStrat, soiree, majeur))
+                        poste(standStrat, soiree, majeur), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -279,8 +280,94 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau suite = creneau("J1-1710-2010", 1, D1, LocalTime.of(17, 10), LocalTime.of(20, 10));
         verify("travailContinuMaxMajeur")
                 .given(poste(standStrat, debut, majeur),
-                        poste(standStrat, suite, majeur))
+                        poste(standStrat, suite, majeur), new ParametresLegaux())
                 .penalizesBy(10);
+    }
+
+    // --- Break declared as taken on the post (L3121-16 read as the Code does: real, not scheduled)
+
+    private static ParametresLegaux pauseSurPoste() {
+        ParametresLegaux parametres = new ParametresLegaux();
+        parametres.setPauseSurPoste(true);
+        return parametres;
+    }
+
+    @Test
+    void laPauseDeclareeSurLePosteRendLaReleveDeSeptHeuresLegale() {
+        // The festival's 13:00-14:00 relay followed by 14:00-20:00: seven hours in one
+        // stretch. Without the declaration, one hour over; with it, the twenty
+        // minutes are taken on the post and the stretch is compliant.
+        Animateur majeur = referentMajeur("A1");
+        Creneau releve = creneau("J1-13-14", 1, D1, LocalTime.of(13, 0), LocalTime.of(14, 0));
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, releve, majeur), poste(standStrat, aprem, majeur), new ParametresLegaux())
+                .penalizesBy(60);
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, releve, majeur), poste(standStrat, aprem, majeur), pauseSurPoste())
+                .penalizesBy(0);
+    }
+
+    @Test
+    void lePlafondQuotidienDeduitLaPausePriseSurLePoste() {
+        // 14:00-20:00 then 20:00-24:00: a 10 h amplitude, one break of 20 min
+        // taken on the post — 9 h 40 of travail effectif, under the 10 h cap.
+        Animateur majeur = referentMajeur("A1");
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
+        verify("dureeQuotidienneMaxMajeur")
+                .given(poste(standStrat, aprem, majeur), poste(standStrat, soiree, majeur), pauseSurPoste())
+                .penalizesBy(0);
+    }
+
+    @Test
+    void lePlafondQuotidienResteDepasseQuandLaPauseDeduiteNeSuffitPas() {
+        // 13:00-14:00, 14:00-20:00, 20:00-24:00: 11 h of amplitude. One break of
+        // 20 min is enough for a stretch under 12 h 20, so 10 h 40 of travail
+        // effectif remain — 40 min over the cap. Without the declaration, the
+        // whole amplitude counts: 60 min over.
+        Animateur majeur = referentMajeur("A1");
+        Creneau releve = creneau("J1-13-14", 1, D1, LocalTime.of(13, 0), LocalTime.of(14, 0));
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
+        verify("dureeQuotidienneMaxMajeur")
+                .given(poste(standStrat, releve, majeur), poste(standStrat, aprem, majeur),
+                        poste(standStrat, soiree, majeur), pauseSurPoste())
+                .penalizesBy(40);
+        verify("dureeQuotidienneMaxMajeur")
+                .given(poste(standStrat, releve, majeur), poste(standStrat, aprem, majeur),
+                        poste(standStrat, soiree, majeur), new ParametresLegaux())
+                .penalizesBy(60);
+    }
+
+    @Test
+    void unTrouLegalEntreDeuxVacationsNeFaitDeduireAucunePauseSurLePoste() {
+        // 09:00-13:00 then 14:00-20:00: the hour off is the break, no stretch
+        // exceeds 6 h, nothing is deducted — 10 h of travail effectif, at the cap.
+        Animateur majeur = referentMajeur("A1");
+        Creneau matin = creneau("J1-9-13", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        verify("dureeQuotidienneMaxMajeur")
+                .given(poste(standStrat, matin, majeur), poste(standStrat, aprem, majeur), pauseSurPoste())
+                .penalizesBy(0);
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, matin, majeur), poste(standStrat, aprem, majeur), new ParametresLegaux())
+                .penalizesBy(0);
+    }
+
+    @Test
+    void laPauseDeclareeSurLePosteVautAussiPourUnMineur() {
+        // 14:00-20:00 held by a minor: 1 h 30 over the 4 h 30 stretch without the
+        // declaration; with it the 30-minute break is taken on the post, and the
+        // day counts 5 h 30 of travail effectif, under the 8 h cap.
+        Animateur mineur = mineurDebutant("M1");
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        verify("travailContinuMaxMineur")
+                .given(poste(standStrat, aprem, mineur), pauseSurPoste())
+                .penalizesBy(0);
+        verify("dureeQuotidienneMaxMineur")
+                .given(poste(standStrat, aprem, mineur), pauseSurPoste())
+                .penalizesBy(0);
     }
 
     // --- Art. L3162-3: 4 h 30 of continuous work / a 30 min break ----------
@@ -292,7 +379,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Animateur mineur = mineurDebutant("M1");
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         verify("travailContinuMaxMineur")
-                .given(poste(standStrat, aprem, mineur))
+                .given(poste(standStrat, aprem, mineur), new ParametresLegaux())
                 .penalizesBy(90);
     }
 
@@ -301,7 +388,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Animateur mineur = mineurDebutant("M1");
         Creneau aprem = creneau("J1-14-1830", 1, D1, LocalTime.of(14, 0), LocalTime.of(18, 30));
         verify("travailContinuMaxMineur")
-                .given(poste(standStrat, aprem, mineur))
+                .given(poste(standStrat, aprem, mineur), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -312,7 +399,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau suite = creneau("J1-1330-1700", 1, D1, LocalTime.of(13, 30), LocalTime.of(17, 0));
         verify("travailContinuMaxMineur")
                 .given(poste(standStrat, debut, mineur),
-                        poste(standStrat, suite, mineur))
+                        poste(standStrat, suite, mineur), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -326,7 +413,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau suite = creneau("J1-1320-1620", 1, D1, LocalTime.of(13, 20), LocalTime.of(16, 20));
         verify("travailContinuMaxMineur")
                 .given(poste(standStrat, debut, mineur),
-                        poste(standStrat, suite, mineur))
+                        poste(standStrat, suite, mineur), new ParametresLegaux())
                 .penalizesBy(170);
     }
 
@@ -335,7 +422,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Animateur majeur = referentMajeur("A1");
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         verify("travailContinuMaxMineur")
-                .given(poste(standStrat, aprem, majeur))
+                .given(poste(standStrat, aprem, majeur), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
@@ -453,6 +540,12 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 LocalTime.of(11, 0), LocalTime.of(15, 0));
     }
 
+    private Creneau jourSemaine30(int offsetDepuisLundi, LocalTime debut, LocalTime fin) {
+        java.time.LocalDate lundi = java.time.LocalDate.of(2026, 7, 20);
+        return creneau("W30-J" + offsetDepuisLundi + "-" + debut, 13 + offsetDepuisLundi,
+                lundi.plusDays(offsetDepuisLundi), debut, fin);
+    }
+
     @Test
     void septJoursTravaillesDansLaSemaineEstPenalise() {
         // B4: the event lasts 15 days; nothing stopped an animateur from being
@@ -477,14 +570,64 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void semaineSansTrenteCinqHeuresDeReposConsecutivesEstPenalisee() {
-        // Seven days from 11:00 to 15:00: the longest rest is 20 h (15:00 → 11:00
-        // the next day), that is 900 min under the 35 h minimum.
+        // Seven days from 11:00 to 15:00. The rests between days are 20 h; the
+        // best the week can be credited is the free time before Monday 11:00 —
+        // 11 h of the week plus the 11 h of daily rest the law lets adjoin —
+        // 22 h, that is 780 min under the 35 h minimum.
         Animateur majeur = referentMajeur("A1");
         Object[] postes = new Object[7];
         for (int i = 0; i < 7; i++) {
             postes[i] = poste(standStrat, jourSemaine29(i), majeur);
         }
-        verify("reposHebdomadaireMinimal").given(postes).penalizesBy(35 * 60 - 20 * 60);
+        verify("reposHebdomadaireMinimal").given(postes).penalizesBy(35 * 60 - 22 * 60);
+    }
+
+    @Test
+    void reposDuDimancheACheavalSurLeLundiCompteEnEntier() {
+        // Six days from Monday 13 to Saturday 18 (11:00-15:00), Sunday off, six
+        // days again from Monday 20. The rest runs from Saturday 15:00 to Monday
+        // 11:00: 44 h, of which 33 h fall in week 29. Truncated at Monday 00:00 it
+        // would be one hour short; the law reads it in full.
+        Animateur majeur = referentMajeur("A1");
+        Object[] postes = new Object[12];
+        for (int i = 0; i < 6; i++) {
+            postes[i] = poste(standStrat, jourSemaine29(i), majeur);
+            postes[6 + i] = poste(standStrat, jourSemaine30(i, LocalTime.of(11, 0), LocalTime.of(15, 0)), majeur);
+        }
+        verify("reposHebdomadaireMinimal").given(postes).penalizesBy(0);
+    }
+
+    @Test
+    void reposDuDimancheApresUneSoireeFinissantAMinuitResteInsuffisant() {
+        // Same week, but Saturday 18 ends at midnight and Monday 20 starts at
+        // 10:00: 34 consecutive hours, 24 h of Sunday plus 10 h of Monday — one
+        // hour short of the 24 h + 11 h the law requires.
+        Animateur majeur = referentMajeur("A1");
+        Object[] postes = new Object[7];
+        for (int i = 0; i < 5; i++) {
+            postes[i] = poste(standStrat, jourSemaine29(i), majeur);
+        }
+        postes[5] = poste(standStrat, creneau("W29-SAM-NUIT", 11, LocalDate.of(2026, 7, 18),
+                LocalTime.of(20, 0), LocalTime.of(0, 0)), majeur);
+        postes[6] = poste(standStrat, jourSemaine30(0, LocalTime.of(10, 0), LocalTime.of(15, 0)), majeur);
+        verify("reposHebdomadaireMinimal").given(postes).penalizesBy(60);
+    }
+
+    @Test
+    void reposDuLundiCompteEnEntierPourLaSemaineQuiCommence() {
+        // Sunday 12 worked until 20:00, Monday 13 off, Tuesday 14 from 09:00 then
+        // five more days: the rest runs from Sunday 20:00 to Tuesday 09:00, 37 h,
+        // of which only 33 h fall in week 29. Read in full, it satisfies the week.
+        Animateur majeur = referentMajeur("A1");
+        Object[] postes = new Object[7];
+        postes[0] = poste(standStrat, creneau("W28-DIM", 5, LocalDate.of(2026, 7, 12),
+                LocalTime.of(11, 0), LocalTime.of(20, 0)), majeur);
+        postes[1] = poste(standStrat, creneau("W29-MAR-9H", 7, LocalDate.of(2026, 7, 14),
+                LocalTime.of(9, 0), LocalTime.of(15, 0)), majeur);
+        for (int i = 2; i < 7; i++) {
+            postes[i] = poste(standStrat, jourSemaine29(i), majeur);
+        }
+        verify("reposHebdomadaireMinimal").given(postes).penalizesBy(0);
     }
 
     @Test

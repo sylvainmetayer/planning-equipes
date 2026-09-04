@@ -71,7 +71,8 @@ public class EditionRepository {
             new TableToCopy("ponderation_contrainte", "nom, poids"),
             new TableToCopy("parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
-                            + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes"),
+                            + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes, "
+                            + "pause_sur_poste"),
             new TableToCopy("parametres_decoupage",
                     "duree_vacation_cible_minutes, duree_vacation_min_minutes, duree_vacation_max_minutes, "
                             + "duree_chevauchement_minutes, duree_pause_repas_minutes, fenetre_repas_midi_debut, "

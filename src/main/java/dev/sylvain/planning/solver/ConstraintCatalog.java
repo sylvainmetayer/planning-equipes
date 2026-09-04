@@ -78,7 +78,8 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("dureeQuotidienneMaxMineur", Niveau.HARD, "Légal (mineurs)",
                     "Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée "
                             + "(Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans "
-                            + "(art. D4153-3)."),
+                            + "(art. D4153-3). Les pauses prises sur le poste, si l'organisateur les déclare, "
+                            + "sont déduites."),
             new ConstraintDefinition("travailInterditJourFerieMineur", Niveau.HARD, "Légal (mineurs)",
                     "Un mineur ne peut pas travailler un jour férié légal "
                             + "(Code du travail art. L3164-6, liste de l'art. L3133-1). Aucune dérogation "
@@ -90,7 +91,8 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("travailContinuMaxMineur", Niveau.HARD, "Légal (mineurs)",
                     "Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause "
                             + "d'au moins 30 minutes consécutives est obligatoire "
-                            + "(Code du travail art. L3162-3)."),
+                            + "(Code du travail art. L3162-3). Inerte quand l'organisateur déclare la pause "
+                            + "prise sur le poste, par relais."),
 
             new ConstraintDefinition("dureeHebdomadaireMax", Niveau.HARD, "Légal (temps de travail)",
                     "Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de "
@@ -102,7 +104,8 @@ public final class ConstraintCatalog {
                             + "pendant les vacances scolaires)."),
             new ConstraintDefinition("dureeQuotidienneMaxMajeur", Niveau.HARD, "Légal (temps de travail)",
                     "Un animateur majeur ne peut pas dépasser 10 heures de travail effectif sur une même journée "
-                            + "(Code du travail art. L3121-18)."),
+                            + "(Code du travail art. L3121-18). Les pauses prises sur le poste, si l'organisateur "
+                            + "les déclare, sont déduites."),
             new ConstraintDefinition("reposQuotidienMinimal", Niveau.HARD, "Légal (temps de travail)",
                     "Entre deux journées travaillées, tout animateur bénéficie d'un repos quotidien minimal : "
                             + "11 h pour un majeur (art. L3131-1), 12 h pour un mineur et 14 h avant 16 ans "
@@ -113,11 +116,13 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("reposHebdomadaireMinimal", Niveau.HARD, "Légal (temps de travail)",
                     "Chaque animateur bénéficie, dans chaque semaine, d'un repos hebdomadaire de 35 heures "
                             + "consécutives : 24 heures (art. L3132-2) auxquelles s'ajoutent les 11 heures de repos "
-                            + "quotidien (art. L3131-1)."),
+                            + "quotidien (art. L3131-1). Un repos à cheval sur le lundi compte en entier "
+                            + "pour la semaine où il tombe."),
             new ConstraintDefinition("travailContinuMaxMajeur", Niveau.HARD, "Légal (temps de travail)",
                     "Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause "
                             + "d'au moins 20 minutes consécutives est obligatoire "
-                            + "(Code du travail art. L3121-16)."),
+                            + "(Code du travail art. L3121-16). Inerte quand l'organisateur déclare la pause "
+                            + "prise sur le poste, par relais."),
             new ConstraintDefinition("pauseMinimaleEntreVacations", Niveau.HARD, "Légal (temps de travail)",
                     "Entre deux vacations d'un même animateur le même jour, l'écart doit être d'au moins la pause "
                             + "minimale paramétrée (30 min par défaut)."),

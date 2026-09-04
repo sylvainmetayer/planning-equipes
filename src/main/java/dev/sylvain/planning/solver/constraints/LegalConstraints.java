@@ -65,13 +65,13 @@ public final class LegalConstraints {
     private static final int REPOS_QUOTIDIEN_MIN_MOINS_DE_16_ANS_MINUTES = 14 * 60;
 
     /** Art. L3121-16: an adult's uninterrupted work may not exceed 6 h. */
-    private static final int TRAVAIL_CONTINU_MAX_MAJEUR_MINUTES = 6 * 60;
+    private static final int TRAVAIL_CONTINU_MAX_MAJEUR_MINUTES = PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES;
 
     /** Art. L3121-16: the break that interrupts an adult's working stretch lasts at least 20 min. */
-    private static final int PAUSE_MIN_MAJEUR_MINUTES = 20;
+    private static final int PAUSE_MIN_MAJEUR_MINUTES = PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
 
     /** Art. L3162-3: the break that interrupts a young worker's stretch lasts at least 30 min. */
-    private static final int PAUSE_MIN_MINEUR_MINUTES = 30;
+    private static final int PAUSE_MIN_MINEUR_MINUTES = PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES;
 
     /**
      * Art. L3132-2 + L3131-1: 24 consecutive hours of weekly rest, on top of the
@@ -210,10 +210,13 @@ public final class LegalConstraints {
                         && poste.getAnimateur().isMineurOn(poste.getCreneau().getDate()))
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
-                        ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes))
-                .filter((animateur, date, dureeTotale) -> dureeTotale > dailyCapForMineur(animateur, date))
+                        ConstraintCollectors.toList())
+                .join(ParametresLegaux.class)
+                .filter((animateur, date, postes, parametres) -> effectiveWorkMineurMinutes(postes, parametres)
+                        > dailyCapForMineur(animateur, date))
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, dureeTotale) -> dureeTotale - dailyCapForMineur(animateur, date))
+                        (animateur, date, postes, parametres) -> effectiveWorkMineurMinutes(postes, parametres)
+                                - dailyCapForMineur(animateur, date))
                 .asConstraint("dureeQuotidienneMaxMineur");
     }
 
@@ -306,10 +309,13 @@ public final class LegalConstraints {
                         && poste.getAnimateur().isMajeurOn(poste.getCreneau().getDate()))
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
-                        ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes))
-                .filter((animateur, date, dureeTotale) -> dureeTotale > PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
+                        ConstraintCollectors.toList())
+                .join(ParametresLegaux.class)
+                .filter((animateur, date, postes, parametres) -> effectiveWorkMajeurMinutes(postes, parametres)
+                        > PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, dureeTotale) -> dureeTotale - PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
+                        (animateur, date, postes, parametres) -> effectiveWorkMajeurMinutes(postes, parametres)
+                                - PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
                 .asConstraint("dureeQuotidienneMaxMajeur");
     }
 
@@ -328,12 +334,19 @@ public final class LegalConstraints {
      * non-compliant — is defensible and <b>[à faire validate par un juriste]</b>.
      * Switching to it means comparing with {@code >=} here.</p>
      *
-     * <p>The model has no break inside a créneau (see {@code docs/domaine.md}):
-     * a break is the <i>gap between two créneaux of the same animateur</i>.
-     * Consecutive créneaux separated by less than 20 minutes are therefore
-     * merged into a single stretch, whose length is measured from the first
-     * start to the last end — counting the sub-legal gaps as worked time, which
-     * is the protective reading.</p>
+     * <p>By default the model has no break inside a créneau (see
+     * {@code docs/domaine.md}): a break is the <i>gap between two créneaux of
+     * the same animateur</i>. Consecutive créneaux separated by less than 20
+     * minutes are therefore merged into a single stretch, whose length is
+     * measured from the first start to the last end — counting the sub-legal
+     * gaps as worked time, which is the protective reading.</p>
+     *
+     * <p>The Code requires the break to be real, not to be scheduled. When the
+     * organiser declares {@link ParametresLegaux#isPauseSurPoste()} — the
+     * break is taken on the post, by relay between colleagues — the stretch is
+     * read as containing its break at the latest at the sixth hour, and this
+     * constraint no longer fires; the daily cap then deducts that break from
+     * the amplitude, see {@link #effectiveWorkMajeurMinutes(List, ParametresLegaux)}.</p>
      *
      * <p>Grouped per animateur <i>and date</i> so each group holds a handful of
      * postes. A stretch chained across midnight is caught by
@@ -349,10 +362,12 @@ public final class LegalConstraints {
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
-                .filter((animateur, date, postes) -> longestSequenceMinutes(postes, PAUSE_MIN_MAJEUR_MINUTES)
-                        > TRAVAIL_CONTINU_MAX_MAJEUR_MINUTES)
+                .join(ParametresLegaux.class)
+                .filter((animateur, date, postes, parametres) -> !parametres.isPauseSurPoste()
+                        && longestSequenceMinutes(postes, PAUSE_MIN_MAJEUR_MINUTES)
+                                > TRAVAIL_CONTINU_MAX_MAJEUR_MINUTES)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, postes) -> longestSequenceMinutes(postes, PAUSE_MIN_MAJEUR_MINUTES)
+                        (animateur, date, postes, parametres) -> longestSequenceMinutes(postes, PAUSE_MIN_MAJEUR_MINUTES)
                                 - TRAVAIL_CONTINU_MAX_MAJEUR_MINUTES)
                 .asConstraint("travailContinuMaxMajeur");
     }
@@ -387,10 +402,12 @@ public final class LegalConstraints {
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
-                .filter((animateur, date, postes) -> longestSequenceMinutes(postes, PAUSE_MIN_MINEUR_MINUTES)
-                        > PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
+                .join(ParametresLegaux.class)
+                .filter((animateur, date, postes, parametres) -> !parametres.isPauseSurPoste()
+                        && longestSequenceMinutes(postes, PAUSE_MIN_MINEUR_MINUTES)
+                                > PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, postes) -> longestSequenceMinutes(postes, PAUSE_MIN_MINEUR_MINUTES)
+                        (animateur, date, postes, parametres) -> longestSequenceMinutes(postes, PAUSE_MIN_MINEUR_MINUTES)
                                 - PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .asConstraint("travailContinuMaxMineur");
     }
@@ -420,7 +437,8 @@ public final class LegalConstraints {
     }
 
     /**
-     * Every animateur gets 35 consecutive hours of rest inside each ISO week.
+     * Every animateur gets 35 consecutive hours of rest credited to each ISO
+     * week in which they work.
      *
      * <p>Code du travail art. <b>L3132-2</b>: <i>« Le repos hebdomadaire a une
      * durée minimale de vingt-quatre heures consécutives auxquelles s'ajoutent
@@ -428,30 +446,24 @@ public final class LegalConstraints {
      * The daily rest of art. L3131-1 being 11 h, the floor is 24 + 11 = 35
      * consecutive hours.</p>
      *
-     * <p>Measured inside the ISO week window (Monday 00:00 → next Monday 00:00),
-     * which is also the window used by {@code Creneau.semaineIso()} and by the
-     * weekly hour caps. Gaps considered include the one before the first
-     * assignment and the one after the last, both clamped to the window — so a
-     * week the event only partially covers is satisfied by construction,
-     * which is correct: the animateur really is free on those days.</p>
-     *
-     * <p><b>Known approximation</b>: rest is evaluated week by week, so a rest
-     * period straddling the Sunday/Monday boundary is counted twice, once
-     * truncated in each week, instead of once at full length. The result is
-     * <i>stricter</i> than the law, never laxer.</p>
+     * <p>The week is the ISO week (Monday 00:00 → next Monday 00:00), the same
+     * window as {@code Creneau.semaineIso()} and the weekly hour caps. A rest
+     * period is <b>not</b> truncated at that boundary: the law's own structure
+     * — 24 h of the week plus the daily rest that adjoins them — is what gets
+     * credited, see {@link #deficitReposHebdomadaireMinutes(List)}. So a
+     * Sunday or a Monday off counts like any other day off, which matters on an
+     * event open seven days a week, and a Sunday off squeezed between a shift
+     * ending at midnight and a 10:00 start still falls one hour short, as the
+     * law says.</p>
      */
     private Constraint reposHebdomadaireMinimal(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
                 "reposHebdomadaireMinimal")
                 .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste))
-                .groupBy(PosteAffectation::getAnimateur,
-                        poste -> poste.getCreneau().semaineIso(),
-                        ConstraintCollectors.toList())
-                .filter((animateur, semaine, postes) -> longestRestMinutes(postes)
-                        < REPOS_HEBDOMADAIRE_MIN_MINUTES)
+                .groupBy(PosteAffectation::getAnimateur, ConstraintCollectors.toList())
+                .filter((animateur, postes) -> deficitReposHebdomadaireMinutes(postes) > 0)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, semaine, postes) -> REPOS_HEBDOMADAIRE_MIN_MINUTES
-                                - longestRestMinutes(postes))
+                        (animateur, postes) -> deficitReposHebdomadaireMinutes(postes))
                 .asConstraint("reposHebdomadaireMinimal");
     }
 
@@ -566,32 +578,93 @@ public final class LegalConstraints {
     }
 
     /**
-     * Longest rest, in minutes, inside the ISO week of the given assignments —
-     * counting the free time before the first one and after the last one, both
-     * clamped to the week window.
+     * Daily rest that the law lets adjoin the 24 h of weekly rest, on either
+     * side of the week boundary (35 h − 24 h).
      */
-    private static int longestRestMinutes(List<PosteAffectation> postes) {
+    private static final int REPOS_QUOTIDIEN_ADJOINT_MINUTES = REPOS_HEBDOMADAIRE_MIN_MINUTES - 24 * 60;
+
+    /**
+     * Minutes missing, summed over the ISO weeks in which the animateur works,
+     * to reach 35 consecutive hours of rest credited to each of those weeks.
+     *
+     * <p>A rest period is credited to a week for the part of it that lies
+     * inside the week, extended by the 11 h of daily rest that art. L3132-2 lets
+     * adjoin the 24 h — and never beyond its real length. Examples, for a
+     * Sunday off:</p>
+     * <ul>
+     * <li>Saturday shift ending 20:00, Monday shift at 10:00: a 38 h rest, of
+     *     which 28 h fall in the week → credited min(38, 28 + 11) = 38 h.</li>
+     * <li>Saturday shift ending at midnight, Monday shift at 10:00: a 34 h
+     *     rest, 24 h in the week → credited min(34, 24 + 11) = 34 h, one hour
+     *     short, exactly as the law reads it.</li>
+     * <li>Monday off after a Sunday shift ending 20:00, Tuesday shift at 09:00:
+     *     37 h, of which 33 h fall in the new week → credited 37 h.</li>
+     * </ul>
+     * <p>The free time before the first assignment and after the last one has
+     * no known end, so it is credited for its part inside the week plus the
+     * adjoining 11 h — a week the event only partially covers is satisfied by
+     * construction, as the animateur really is free on those days.</p>
+     */
+    static int deficitReposHebdomadaireMinutes(List<PosteAffectation> postes) {
         List<PosteAffectation> tries = postes.stream()
                 .sorted(Comparator.comparing(LegalConstraints::debut))
                 .toList();
-        LocalDateTime debutSemaine = debutSemaine(tries.get(0).getCreneau().getDate());
-        LocalDateTime finSemaine = debutSemaine.plusDays(7);
-        long longest = 0;
-        LocalDateTime curseur = debutSemaine;
+        // Merged occupations: [start, end] pairs, non-overlapping, in order.
+        List<LocalDateTime[]> occupations = new java.util.ArrayList<>();
         for (PosteAffectation poste : tries) {
             LocalDateTime debut = debut(poste);
-            if (debut.isAfter(curseur)) {
-                longest = Math.max(longest, Duration.between(curseur, debut).toMinutes());
-            }
             LocalDateTime fin = fin(poste);
-            if (fin.isAfter(curseur)) {
-                curseur = fin;
+            if (!occupations.isEmpty() && !debut.isAfter(occupations.get(occupations.size() - 1)[1])) {
+                LocalDateTime[] derniere = occupations.get(occupations.size() - 1);
+                if (fin.isAfter(derniere[1])) {
+                    derniere[1] = fin;
+                }
+            } else {
+                occupations.add(new LocalDateTime[] {debut, fin});
             }
         }
-        if (finSemaine.isAfter(curseur)) {
-            longest = Math.max(longest, Duration.between(curseur, finSemaine).toMinutes());
+        java.util.TreeSet<LocalDateTime> semaines = new java.util.TreeSet<>();
+        for (PosteAffectation poste : tries) {
+            semaines.add(debutSemaine(poste.getCreneau().getDate()));
         }
-        return (int) longest;
+        int deficit = 0;
+        for (LocalDateTime debutSemaine : semaines) {
+            LocalDateTime finSemaine = debutSemaine.plusDays(7);
+            long meilleur = creditReposMinutes(null, occupations.get(0)[0], debutSemaine, finSemaine);
+            for (int i = 1; i < occupations.size(); i++) {
+                meilleur = Math.max(meilleur, creditReposMinutes(
+                        occupations.get(i - 1)[1], occupations.get(i)[0], debutSemaine, finSemaine));
+            }
+            meilleur = Math.max(meilleur, creditReposMinutes(
+                    occupations.get(occupations.size() - 1)[1], null, debutSemaine, finSemaine));
+            if (meilleur < REPOS_HEBDOMADAIRE_MIN_MINUTES) {
+                deficit += (int) (REPOS_HEBDOMADAIRE_MIN_MINUTES - meilleur);
+            }
+        }
+        return deficit;
+    }
+
+    /**
+     * Minutes of the rest period {@code [debutRepos, finRepos]} credited to the
+     * week {@code [debutSemaine, finSemaine)}: its part inside the week plus the
+     * adjoining daily rest, capped at its real length. A {@code null} bound
+     * means the rest has no known end on that side.
+     */
+    private static long creditReposMinutes(LocalDateTime debutRepos, LocalDateTime finRepos,
+            LocalDateTime debutSemaine, LocalDateTime finSemaine) {
+        LocalDateTime debutDansSemaine = debutRepos == null || debutRepos.isBefore(debutSemaine)
+                ? debutSemaine : debutRepos;
+        LocalDateTime finDansSemaine = finRepos == null || finRepos.isAfter(finSemaine)
+                ? finSemaine : finRepos;
+        if (!finDansSemaine.isAfter(debutDansSemaine)) {
+            return 0;
+        }
+        long dansSemaine = Duration.between(debutDansSemaine, finDansSemaine).toMinutes();
+        long credit = dansSemaine + REPOS_QUOTIDIEN_ADJOINT_MINUTES;
+        if (debutRepos != null && finRepos != null) {
+            credit = Math.min(credit, Duration.between(debutRepos, finRepos).toMinutes());
+        }
+        return credit;
     }
 
     /**
@@ -613,6 +686,47 @@ public final class LegalConstraints {
         return longest;
     }
 
+    /** Effective working minutes of an adult's day, see {@link #effectiveWorkMinutes}. */
+    private static int effectiveWorkMajeurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
+        return effectiveWorkMinutes(postes, parametres, PAUSE_MIN_MAJEUR_MINUTES,
+                PlafondsLegauxMajeurs::onPostBreakMinutes);
+    }
+
+    /** Effective working minutes of a minor's day, see {@link #effectiveWorkMinutes}. */
+    private static int effectiveWorkMineurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
+        return effectiveWorkMinutes(postes, parametres, PAUSE_MIN_MINEUR_MINUTES,
+                PlafondsLegauxMineurs::onPostBreakMinutes);
+    }
+
+    /**
+     * Effective working minutes of one animateur's day: the sum of the effective
+     * durations of their postes, minus the legal breaks taken on the post when
+     * the organiser declares them ({@link ParametresLegaux#isPauseSurPoste()}).
+     *
+     * <p>Each uninterrupted stretch — créneaux closer than
+     * {@code pauseMinimaleMinutes} form one — contributes the breaks
+     * {@code onPostBreak} says it needs ({@code PlafondsLegauxMajeurs} /
+     * {@code PlafondsLegauxMineurs#onPostBreakMinutes}). Those breaks are real
+     * rest, not <i>travail effectif</i> (art. L3121-1), hence deducted: an
+     * adult's 14:00-24:00 amplitude is 9 h 40 of work, a 13:00-24:00 one 10 h 40
+     * — still over the 10 h cap.</p>
+     *
+     * <p>Without the declaration nothing is deducted: an amplitude is then read
+     * as worked in full, the protective reading.</p>
+     */
+    private static int effectiveWorkMinutes(List<PosteAffectation> postes, ParametresLegaux parametres,
+            int pauseMinimaleMinutes, java.util.function.IntUnaryOperator onPostBreak) {
+        int total = postes.stream().mapToInt(PosteAffectation::getDureeEffectiveMinutes).sum();
+        if (!parametres.isPauseSurPoste()) {
+            return total;
+        }
+        int pauses = 0;
+        for (int sequence : sequencesMinutes(postes, pauseMinimaleMinutes)) {
+            pauses += onPostBreak.applyAsInt(sequence);
+        }
+        return total - pauses;
+    }
+
     /**
      * Longest uninterrupted working stretch, in minutes, once créneaux separated
      * by less than {@code pauseMinimaleMinutes} are merged (a gap shorter than
@@ -621,10 +735,23 @@ public final class LegalConstraints {
      * end, i.e. the sub-legal gaps count as worked time.
      */
     private static int longestSequenceMinutes(List<PosteAffectation> postes, int pauseMinimaleMinutes) {
+        int longest = 0;
+        for (int sequence : sequencesMinutes(postes, pauseMinimaleMinutes)) {
+            longest = Math.max(longest, sequence);
+        }
+        return longest;
+    }
+
+    /**
+     * Lengths, in minutes, of the uninterrupted working stretches of the given
+     * postes, in chronological order — the decomposition behind
+     * {@link #longestSequenceMinutes(List, int)}.
+     */
+    private static List<Integer> sequencesMinutes(List<PosteAffectation> postes, int pauseMinimaleMinutes) {
         List<PosteAffectation> tries = postes.stream()
                 .sorted(Comparator.comparing(LegalConstraints::debut))
                 .toList();
-        int longest = 0;
+        List<Integer> sequences = new java.util.ArrayList<>();
         LocalDateTime debutSequence = null;
         LocalDateTime finSequence = null;
         for (PosteAffectation poste : tries) {
@@ -634,7 +761,7 @@ public final class LegalConstraints {
                 debutSequence = debut;
                 finSequence = fin;
             } else if (Duration.between(finSequence, debut).toMinutes() >= pauseMinimaleMinutes) {
-                longest = Math.max(longest, (int) Duration.between(debutSequence, finSequence).toMinutes());
+                sequences.add((int) Duration.between(debutSequence, finSequence).toMinutes());
                 debutSequence = debut;
                 finSequence = fin;
             } else if (fin.isAfter(finSequence)) {
@@ -642,9 +769,9 @@ public final class LegalConstraints {
             }
         }
         if (debutSequence != null) {
-            longest = Math.max(longest, (int) Duration.between(debutSequence, finSequence).toMinutes());
+            sequences.add((int) Duration.between(debutSequence, finSequence).toMinutes());
         }
-        return longest;
+        return sequences;
     }
 
     /**

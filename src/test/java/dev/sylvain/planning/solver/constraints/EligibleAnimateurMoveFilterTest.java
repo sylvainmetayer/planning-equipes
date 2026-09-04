@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
@@ -48,17 +49,23 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
      * {@code penalizesBy(0)} fails exactly when the constraint penalises, which
      * is the information wanted here.
      */
-    private boolean penalise(String contrainte, PosteAffectation poste) {
+    private boolean penalise(String contrainte, PosteAffectation poste, ParametresLegaux parametres) {
         try {
-            verify(contrainte).given(poste, poste.getAnimateur()).penalizesBy(0);
+            verify(contrainte).given(poste, poste.getAnimateur(), parametres).penalizesBy(0);
             return false;
         } catch (AssertionError pénalisé) {
             return true;
         }
     }
 
-    private boolean atLeastOneConstraintPenalizes(PosteAffectation poste) {
-        return CONTRAINTES_REFLETEES.stream().anyMatch(contrainte -> penalise(contrainte, poste));
+    private boolean atLeastOneConstraintPenalizes(PosteAffectation poste, ParametresLegaux parametres) {
+        return CONTRAINTES_REFLETEES.stream().anyMatch(contrainte -> penalise(contrainte, poste, parametres));
+    }
+
+    private static ParametresLegaux parametres(boolean pauseSurPoste) {
+        ParametresLegaux parametres = new ParametresLegaux();
+        parametres.setPauseSurPoste(pauseSurPoste);
+        return parametres;
     }
 
     /** Every (animateur × stand × timeslot) combination the filter tells apart. */
@@ -90,18 +97,25 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
         return cas;
     }
 
-    /** The property: the filter never hides an assignment the score would accept. */
+    /**
+     * The property: the filter never hides an assignment the score would
+     * accept — under both readings of the legal break, since the organiser's
+     * {@code pauseSurPoste} declaration changes what the constraints accept.
+     */
     @Test
     void leFiltreNeRejetteJamaisUneAffectationQueLesContraintesAcceptent() {
         List<String> rejetsInjustifies = new ArrayList<>();
-        for (PosteAffectation cas : situation()) {
-            if (EligibleAnimateurMoveFilter.isEligible(cas, cas.getAnimateur())) {
-                continue;
-            }
-            if (!atLeastOneConstraintPenalizes(cas)) {
-                rejetsInjustifies.add(cas.getAnimateur().getId() + " sur " + cas.getStand().getId()
-                        + " au créneau " + cas.getCreneau().getHeureDebut() + "–" + cas.getCreneau().getHeureFin()
-                        + " le " + cas.getCreneau().getDate());
+        for (boolean pauseSurPoste : new boolean[] {false, true}) {
+            for (PosteAffectation cas : situation()) {
+                if (EligibleAnimateurMoveFilter.isEligible(cas, cas.getAnimateur(), pauseSurPoste)) {
+                    continue;
+                }
+                if (!atLeastOneConstraintPenalizes(cas, parametres(pauseSurPoste))) {
+                    rejetsInjustifies.add(cas.getAnimateur().getId() + " sur " + cas.getStand().getId()
+                            + " au créneau " + cas.getCreneau().getHeureDebut() + "–"
+                            + cas.getCreneau().getHeureFin() + " le " + cas.getCreneau().getDate()
+                            + (pauseSurPoste ? " (pause sur poste)" : ""));
+                }
             }
         }
 
@@ -115,7 +129,7 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
     @Test
     void unPosteNonPourvuResteToujoursProposable() {
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), matin("C", 1, D1), null), null)).isTrue();
+                poste(standWithStrategy("S"), matin("C", 1, D1), null), null, false)).isTrue();
     }
 
     /**
@@ -131,14 +145,14 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
         indisponible.setJoursIndisponibles(java.util.Set.of(D1));
 
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), matin("C1", 1, D1), indisponible), indisponible)).isFalse();
+                poste(standWithStrategy("S"), matin("C1", 1, D1), indisponible), indisponible, false)).isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(stand("S-MAJ", true, "STRATEGIE"), matin("C2", 1, D1), mineur), mineur)).isFalse();
+                poste(stand("S-MAJ", true, "STRATEGIE"), matin("C2", 1, D1), mineur), mineur, false)).isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), nuit("C3", 1, D1), mineur), mineur)).isFalse();
+                poste(standWithStrategy("S"), nuit("C3", 1, D1), mineur), mineur, false)).isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), longDay("C4", 1, D1), mineur), mineur)).isFalse();
+                poste(standWithStrategy("S"), longDay("C4", 1, D1), mineur), mineur, false)).isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), matin("C5", 7, FERIE), mineur), mineur)).isFalse();
+                poste(standWithStrategy("S"), matin("C5", 7, FERIE), mineur), mineur, false)).isFalse();
     }
 }

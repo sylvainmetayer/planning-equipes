@@ -328,7 +328,7 @@ devient plusieurs vacations plus courtes et chevauchantes. Tant qu'une vacation
 reste sous `dureeVacationMaxMinutes` (6 h par défaut, seuil de l'art. [L3121-16])
 **et** ne recouvre pas entièrement une fenêtre repas, elle n'a besoin d'aucune
 pause interne : **la pause est le trou entre deux vacations**, pas un attribut
-de créneau.
+de créneau — sauf si l'organisateur déclare `pauseSurPoste` (voir plus bas).
 
 Une amplitude est un créneau ordinaire, en base le temps de l'import ; le
 découpage la remplace **en place**. Le solveur ne voit donc jamais d'amplitude.
@@ -441,10 +441,30 @@ les créneaux de nuit sont courts.
 ### Amplitude vs travail effectif
 
 La durée d'un créneau mesure une **amplitude**, alors que les articles cités
-portent sur le **travail effectif**. Le modèle ne représente aucune pause à
-l'intérieur d'un créneau : les deux grandeurs coïncident, ce qui revient à
-supposer qu'aucune pause n'y est prise. C'est précisément pourquoi les pauses
+portent sur le **travail effectif**. Par défaut le modèle ne représente aucune
+pause à l'intérieur d'un créneau : les deux grandeurs coïncident, ce qui revient
+à supposer qu'aucune pause n'y est prise. C'est précisément pourquoi les pauses
 sont modélisées comme des **trous entre deux créneaux**.
+
+### Pause prise sur le poste
+
+Le Code exige que la pause soit **réelle**, pas qu'elle soit planifiée : un
+organisateur qui relève chaque animateur vingt minutes à l'intérieur d'une
+vacation 13 h-20 h est en règle avec l'art. [L3121-16]. Le paramètre légal
+`pauseSurPoste` (faux par défaut, `PUT /api/parametres-legaux`, section
+`parametresLegaux` d'un scénario) déclare cette organisation. Quand il est vrai :
+
+- `travailContinuMaxMajeur` et `travailContinuMaxMineur` considèrent la pause
+  comme prise à la sixième heure (à 4 h 30 pour un mineur) et ne pénalisent plus
+  une séquence longue ;
+- `dureeQuotidienneMaxMajeur` et `dureeQuotidienneMaxMineur` déduisent de
+  l'amplitude les pauses ainsi organisées — 20 minutes par tranche de 6 h
+  entamée au-delà de la première (30 minutes par 4 h 30 pour un mineur) — pour
+  ne compter que le travail effectif, comme les art. L3121-18 et L3162-1.
+
+Une journée 14 h-minuit vaut ainsi 9 h 40 de travail effectif ; 13 h-minuit en
+vaut 10 h 40 et reste refusée. Le paramètre est **déclaratif** : l'outil ne
+vérifie pas que le stand peut relayer, c'est l'organisateur qui l'affirme.
 
 ## Paramètres de qualité
 

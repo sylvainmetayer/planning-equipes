@@ -35,6 +35,25 @@ public final class PlafondsLegauxMineurs {
     /** Art. L3162-3: a young worker's uninterrupted work may not exceed 4 h 30. */
     public static final int TRAVAIL_CONTINU_MAX_MINUTES = 4 * 60 + 30;
 
+    /** Art. L3162-3: the break that interrupts a young worker's stretch lasts at least 30 min. */
+    public static final int PAUSE_MINIMALE_MINUTES = 30;
+
+    /**
+     * Minutes of legal breaks a young worker takes <i>on the post</i> inside an
+     * uninterrupted stretch of {@code stretchMinutes}, when the organiser has
+     * declared that breaks are taken by relay ({@code ParametresLegaux.pauseSurPoste}):
+     * one 30-minute break at the latest at 4 h 30, then another every 4 h 30 of
+     * work. Zero for a stretch within the cap. Shared by the constraint and by
+     * the move filter, so both read a long créneau the same way.
+     */
+    public static int onPostBreakMinutes(int stretchMinutes) {
+        if (stretchMinutes <= TRAVAIL_CONTINU_MAX_MINUTES) {
+            return 0;
+        }
+        return PAUSE_MINIMALE_MINUTES * Math.ceilDiv(stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES,
+                TRAVAIL_CONTINU_MAX_MINUTES + PAUSE_MINIMALE_MINUTES);
+    }
+
     /**
      * The daily cap that applies to {@code animateur} on {@code date}, chosen
      * on the age bracket they are in that day.
