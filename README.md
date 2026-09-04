@@ -231,7 +231,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 
 | Fonctionnalité | En une phrase |
 | --- | --- |
-| Stands | Typologies, effectifs minimum et maximum, restriction aux majeurs, indicateurs premium et effort, horaires en règles récurrentes complétées d'exceptions datées |
+| Stands | Typologies, effectifs minimum et maximum, restriction aux majeurs, indicateurs premium et effort, horaires en règles récurrentes complétées d'exceptions datées — chaque fenêtre d'ouverture peut nommer son propre effectif, pour un stand qui n'a pas le même besoin le matin, l'après-midi et en nocturne |
 | Animateurs | Identité, compétences par typologie et niveau, souhaits, jours d'indisponibilité ; le régime légal se déduit de l'âge à la date de chaque créneau |
 | Créneaux | Découpage temporel que le solveur remplit, saisi à la main ou généré par le découpage |
 | Typologies | Vocabulaire commun entre compétences et jeux d'un stand, dont la typologie « ninja » des polyvalents |
@@ -248,6 +248,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Heatmap de charge | Jour croisé avec le stand (trous de couverture) ou avec l'animateur (surcharges) |
 | Timeline animateur | Le planning d'une personne : amplitude, vacations, pauses et coéquipiers présents sur le même stand |
 | Jours de repos | Une ligne par animateur et une colonne par journée : qui travaille, qui se repose, qui était indisponible, et qui n'a aucune journée libre sur tout l'événement |
+| Pauses | Où tombent les pauses légales, jour par jour et stand par stand : qui sort au plus tard à quelle heure, pour combien de temps, et qui est là pour relayer. Chaque animateur retrouve ses pauses sur son espace, son PDF et son calendrier |
 | Rail de la journée | Une journée vue par personne : une ligne par animateur, vacations placées dans le temps, lignes vides pour qui reste mobilisable |
 | Carte de la journée | La même journée sur la carte des emplacements : un curseur temporel, et chaque lieu coloré selon que ses stands y sont ouverts et pourvus, ouverts avec des places vides, ou ouverts sans personne |
 | Graphe | Navigation descendante des lieux vers les stands puis vers les personnes |

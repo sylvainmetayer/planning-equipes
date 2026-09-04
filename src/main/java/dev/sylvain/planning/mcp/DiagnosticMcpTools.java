@@ -1,5 +1,8 @@
 package dev.sylvain.planning.mcp;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -12,6 +15,8 @@ import dev.sylvain.planning.service.KpiHistoriqueService.KpiHistoriqueEntry;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.LigneStand;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.PauseAnalyzer;
+import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
@@ -48,6 +53,12 @@ public class DiagnosticMcpTools {
 
     @Inject
     KpiHistoriqueService kpiHistoriqueService;
+
+    @Inject
+    PauseAnalyzer pauseAnalyzer;
+
+    @Inject
+    PlanningPersistenceService persistenceService;
 
     /**
      * Built exactly like {@code StaffingResource}: on the seats a real solve
@@ -166,4 +177,94 @@ public class DiagnosticMcpTools {
     /** One counter set per family asked about, each aggregated over its ids. */
     public record UsagesView(ReferenceUsage animateurs, ReferenceUsage stands, ReferenceUsage creneaux) {
     }
+
+    /**
+     * Built exactly like {@code PauseResource}: the persisted plan, read under
+     * the organiser's <em>current</em> legal parameters. Mapped to records of
+     * its own so that no name crosses MCP — the analyzer's own views carry the
+     * animateur's display name for the screens.
+     */
+    @Tool(description = "Où tombent les pauses légales du planning persisté : pour chaque animateur et chaque "
+            + "jour, les séquences de travail ininterrompu, l'heure limite de la pause due (20 min à la sixième "
+            + "heure, 30 min à 4 h 30 pour un mineur), le stand tenu à ce moment et les collègues présents pour "
+            + "relayer, plus les trous déjà planifiés par la grille. Lu sous les paramètres légaux courants — "
+            + "pauseSurPoste déclaré ou non — sans lancer de résolution. Filtrable par date, par stand, ou aux "
+            + "seules pauses sans relais.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    PausesView analyser_pauses(
+            @ToolArg(description = "Date (AAAA-MM-JJ) : ne garder que ce jour", required = false) String date,
+            @ToolArg(description = "Id de stand : ne garder que les pauses tenues sur ce stand", required = false) String standId,
+            @ToolArg(description = "true : ne garder que les pauses sans relais possible sur le stand", required = false) Boolean sansRelaisSeulement,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        PauseAnalyzer.RapportPauses rapport = pauseAnalyzer.analyze(persistenceService.loadPersistedPlanning(),
+                referenceDataService.getParametresLegaux());
+        LocalDate jour = McpArgs.date(date, "date");
+        boolean sansRelais = Boolean.TRUE.equals(sansRelaisSeulement);
+        boolean planifieesVisibles = standId == null && !sansRelais;
+        List<JourneePausesView> journees = new ArrayList<>();
+        for (PauseAnalyzer.JourneeAnimateurView journee : rapport.journees()) {
+            if (jour != null && !jour.equals(journee.date())) {
+                continue;
+            }
+            List<SequencePausesView> sequences = new ArrayList<>();
+            for (PauseAnalyzer.SequenceView sequence : journee.sequences()) {
+                List<PauseDueView> dues = sequence.pausesDues().stream()
+                        .filter(pause -> standId == null || standId.equals(pause.standId()))
+                        .filter(pause -> !sansRelais || !pause.relaisDisponible())
+                        .map(pause -> new PauseDueView(pause.heureLimite(), pause.dureeMinutes(), pause.standId(),
+                                pause.relais().stream().map(PauseAnalyzer.RelaisView::animateurId).toList(),
+                                pause.relaisDisponible()))
+                        .toList();
+                if (!dues.isEmpty() || planifieesVisibles) {
+                    sequences.add(new SequencePausesView(sequence.debut(), sequence.fin(), sequence.minutes(), dues));
+                }
+            }
+            boolean planifiees = planifieesVisibles && !journee.pausesPlanifiees().isEmpty();
+            if (sequences.isEmpty() && !planifiees) {
+                continue;
+            }
+            journees.add(new JourneePausesView(journee.animateurId(), journee.mineur(), journee.date(),
+                    journee.jour(), sequences, planifieesVisibles ? journee.pausesPlanifiees() : List.of()));
+        }
+        int pausesDues = 0;
+        int relaisManquants = 0;
+        for (JourneePausesView journee : journees) {
+            for (SequencePausesView sequence : journee.sequences()) {
+                pausesDues += sequence.pausesDues().size();
+                relaisManquants += (int) sequence.pausesDues().stream()
+                        .filter(pause -> !pause.relaisDisponible()).count();
+            }
+        }
+        return new PausesView(rapport.pauseSurPoste(), rapport.journeesAnalysees(), pausesDues, relaisManquants,
+                journees, rapport.message());
+    }
+
+    /** One break owed; the relays are animateur ids only. */
+    public record PauseDueView(LocalTime heureLimite, int dureeMinutes, String standId,
+            List<String> relaisAnimateurIds, boolean relaisDisponible) {
+    }
+
+    public record SequencePausesView(LocalTime debut, LocalTime fin, int minutes, List<PauseDueView> pausesDues) {
+    }
+
+    /**
+     * One animateur on one day. {@code pausesPlanifiees} — the gaps the grid
+     * already schedules — are given only when no stand or relay filter
+     * narrows the answer: they belong to the day, not to a stand.
+     */
+    public record JourneePausesView(String animateurId, boolean mineur, LocalDate date, int jour,
+            List<SequencePausesView> sequences, List<PauseAnalyzer.PausePlanifieeView> pausesPlanifiees) {
+    }
+
+    /**
+     * @param journeesAnalysees animateur-days holding at least one seat, over the whole plan — not
+     *                          reduced by the filters
+     * @param pausesDues        breaks kept after the filters; {@code relaisManquants} those without relay
+     * @param message           the analyzer's own sentence, over the whole plan
+     */
+    public record PausesView(boolean pauseSurPoste, int journeesAnalysees, int pausesDues, int relaisManquants,
+            List<JourneePausesView> journees, String message) {
+    }
+
 }

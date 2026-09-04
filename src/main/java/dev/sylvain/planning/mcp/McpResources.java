@@ -69,7 +69,8 @@ public class McpResources {
                 | Mot | Ce que c'est |
                 | --- | --- |
                 | **Animateur** | une personne à planifier. Sur MCP elle n'a **qu'un id** : ni nom, ni prénom, ni date de naissance ne sortent d'ici. Le statut majeur/mineur en est dérivé, parce que les contraintes légales en dépendent. |
-                | **Stand** | un lieu d'activité à armer. Il porte un effectif minimum et maximum, des typologies proposées, et ses heures d'ouverture. |
+                | **Stand** | un lieu d'activité à armer. Il porte un effectif minimum et maximum, des typologies proposées, et ses heures d'ouverture — dont chaque fenêtre peut nommer son propre effectif (« 14:00-20:00@4 ») ; sans lui, c'est l'effectif minimum du stand. |
+                | **Pause** | les vingt minutes dues dès six heures de travail d'affilée (trente à 4 h 30 pour un mineur). Le solveur ne la planifie pas : déclarée « prise sur le poste » dans les paramètres légaux, elle se prend par relais, et `analyser_pauses` dit où elle tombe et qui peut relayer. |
                 | **Typologie** | une catégorie de jeu. C'est un référentiel modifiable, pas une liste figée : les compétences des animateurs et les typologies proposées par les stands s'y réfèrent. |
                 | **Emplacement** | l'endroit physique où un stand se trouve, utilisé pour limiter les déplacements. |
                 | **Créneau** | une tranche horaire datée. Selon l'étape, la grille contient des **amplitudes** (la journée d'ouverture, à découper) ou des **vacations** (les tranches finales sur lesquelles on affecte). |
@@ -91,7 +92,7 @@ public class McpResources {
                 3. la vérification : `valider_creneaux`, `analyser_ouvertures_stands`,
                    `analyser_effectifs`, `analyser_faisabilite` ;
                 4. la résolution : `lancer_solveur`, puis le diagnostic
-                   `expliquer_echec_contraintes_dures` ;
+                   `expliquer_echec_contraintes_dures`, et `analyser_pauses` pour les relais à organiser ;
                 5. la retouche : `verrouiller` ce qui est bon, `resoudre_incremental` pour le reste,
                    `suggerer_reparations` et `affecter_poste` pour un siège isolé.
                 6. la diffusion : `etat_publication` puis `publier_planning` — et ensuite les demandes

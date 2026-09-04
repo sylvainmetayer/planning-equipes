@@ -129,7 +129,8 @@ public class StandMcpTools {
             @ToolArg(description = "Nom de l'emplacement, à créer s'il n'existe pas encore", required = false) String emplacementNom,
             @ToolArg(description = "Latitude de l'emplacement créé", required = false) Double latitude,
             @ToolArg(description = "Longitude de l'emplacement créé", required = false) Double longitude,
-            @ToolArg(description = "Fenêtres d'ouverture, ex. « 10:00-12:00,14:00- »", required = false) String horaires,
+            @ToolArg(description = "Fenêtres d'ouverture, ex. « 10:00-12:00,14:00- » ; « @N » nomme l'effectif d'une "
+                    + "fenêtre (ex. « 10:00-12:00@2,14:00-@4 »)", required = false) String horaires,
             @ToolArg(description = "Portée des horaires : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String horairesJours,
             @ToolArg(description = "Jours de la semaine (MONDAY…SUNDAY) si portée JOURS_SEMAINE", required = false) List<String> horairesJoursSemaine,
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String horairesDateDebut,
@@ -207,7 +208,7 @@ public class StandMcpTools {
         horaire.setDateDebut(McpArgs.date(dateDebut, "horairesDateDebut"));
         horaire.setDateFin(McpArgs.date(dateFin, "horairesDateFin"));
         horaire.setDates(new TreeSet<>(McpArgs.dates(dates, "horairesDates")));
-        horaire.setFenetres(McpArgs.fenetres(fenetres, false));
+        horaire.setFenetres(McpArgs.fenetres(fenetres, false, true));
         return horaire;
     }
 
@@ -303,10 +304,12 @@ public class StandMcpTools {
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM) ; omise = jusqu'à la fermeture", required = false) String heureFin,
             @ToolArg(description = "Motif, purement informatif", required = false) String motif,
+            @ToolArg(description = "Effectif à pourvoir sur cette ouverture (au moins 1) ; omis = l'effectif "
+                    + "minimum du stand", required = false) Integer effectif,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = findStand(standId);
         stand.getOuvertures().add(new OuvertureStand(null, McpArgs.date(date, "date"),
-                McpArgs.heure(heureDebut, "heureDebut"), endTimeOrClosing(heureFin), motif));
+                McpArgs.heure(heureDebut, "heureDebut"), endTimeOrClosing(heureFin), motif, effectif));
         return toView(referenceDataService.updateStand(standId, stand));
     }
 
@@ -342,7 +345,9 @@ public class StandMcpTools {
     StandView ajouter_horaire_stand(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "OUVERTURE ou FERMETURE") String mode,
-            @ToolArg(description = "Fenêtres, ex. « 10:00-12:00,14:00- »") String fenetres,
+            @ToolArg(description = "Fenêtres, ex. « 10:00-12:00,14:00- » ; un suffixe « @N » nomme l'effectif à "
+                    + "pourvoir sur la fenêtre (ex. « 10:00-12:00@2,14:00-@4 »), sans lui c'est l'effectif minimum "
+                    + "du stand") String fenetres,
             @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
             @ToolArg(description = "Jours de la semaine (MONDAY…SUNDAY) si portée JOURS_SEMAINE", required = false) List<String> joursSemaine,
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String dateDebut,
@@ -370,7 +375,7 @@ public class StandMcpTools {
             horaire.setDates(dates.stream().map(date -> McpArgs.date(date, "dates"))
                     .collect(Collectors.toCollection(TreeSet::new)));
         }
-        horaire.setFenetres(McpArgs.fenetres(fenetres, false));
+        horaire.setFenetres(McpArgs.fenetres(fenetres, false, true));
         horaire.setMotif(motif);
         stand.getHoraires().add(horaire);
         return toView(referenceDataService.updateStand(standId, stand));
@@ -510,15 +515,16 @@ public class StandMcpTools {
     static StandView toView(Stand stand) {
         List<PlageView> fermetures = new ArrayList<>();
         stand.getIndisponibilites().forEach(indispo -> fermetures.add(new PlageView(indispo.getDate(),
-                indispo.getHeureDebut(), indispo.getHeureFin(), indispo.getMotif())));
+                indispo.getHeureDebut(), indispo.getHeureFin(), indispo.getMotif(), null)));
         List<PlageView> ouvertures = new ArrayList<>();
         stand.getOuvertures().forEach(ouverture -> ouvertures.add(new PlageView(ouverture.getDate(),
-                ouverture.getHeureDebut(), ouverture.getHeureFin(), ouverture.getMotif())));
+                ouverture.getHeureDebut(), ouverture.getHeureFin(), ouverture.getMotif(), ouverture.getEffectif())));
         List<HoraireView> horaires = new ArrayList<>();
         stand.getHoraires().forEach(horaire -> horaires.add(new HoraireView(horaire.getMode(), horaire.getJours(),
                 horaire.getJoursSemaine(), horaire.getDateDebut(), horaire.getDateFin(), horaire.getDates(),
                 horaire.getFenetres().stream()
-                        .map(fenetre -> new FenetreView(fenetre.getHeureDebut(), fenetre.getHeureFin()))
+                        .map(fenetre -> new FenetreView(fenetre.getHeureDebut(), fenetre.getHeureFin(),
+                                fenetre.getEffectif()))
                         .toList(),
                 horaire.getMotif())));
         return new StandView(stand.getId(), stand.getNom(), stand.getTypologiesProposees(),
@@ -543,8 +549,13 @@ public class StandMcpTools {
             List<HoraireView> horaires) {
     }
 
-    /** A dated exception window; a {@code null} {@code heureFin} means "until closing time". */
-    public record PlageView(LocalDate date, LocalTime heureDebut, LocalTime heureFin, String motif) {
+    /**
+     * A dated exception window; a {@code null} {@code heureFin} means "until
+     * closing time". {@code effectif} is the seats an opening names, {@code null}
+     * for the stand's minimum — and always {@code null} on a closure.
+     */
+    public record PlageView(LocalDate date, LocalTime heureDebut, LocalTime heureFin, String motif,
+            Integer effectif) {
     }
 
     /** A recurring rule: which days, and the windows those days carry. */
@@ -553,8 +564,11 @@ public class StandMcpTools {
             String motif) {
     }
 
-    /** One window of a rule; a {@code null} {@code heureFin} means "until closing time". */
-    public record FenetreView(LocalTime heureDebut, LocalTime heureFin) {
+    /**
+     * One window of a rule; a {@code null} {@code heureFin} means "until closing
+     * time", a {@code null} {@code effectif} the stand's minimum headcount.
+     */
+    public record FenetreView(LocalTime heureDebut, LocalTime heureFin, Integer effectif) {
     }
 
     public record EmplacementView(String id, String nom, Double latitude, Double longitude) {

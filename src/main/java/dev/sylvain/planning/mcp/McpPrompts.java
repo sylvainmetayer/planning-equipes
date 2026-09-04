@@ -97,6 +97,10 @@ public class McpPrompts {
                 5. analyser_effectifs : combien d'animateurs faut-il au minimum, et l'effectif présent \
                 suffit-il ?
                 6. analyser_faisabilite : reste-t-il une cause structurellement bloquante ?
+                7. consulter_parametres_legaux : la pause minimale entre vacations et la pause sur le \
+                poste sont-elles réglées comme l'organisateur le veut ? À 30 minutes entre vacations, \
+                deux blocs qui se touchent exigent deux équipes ; sans la pause sur le poste, aucune \
+                séquence ne peut dépasser six heures.
 
                 Conclus par oui/non, puis par la liste de ce qui reste à corriger avant de lancer une \
                 résolution.""".formatted(designation(edition)));
@@ -116,7 +120,9 @@ public class McpPrompts {
                 4. comparer_instantanes entre l'instantané capturé et « courant ».
                 5. Dis-moi ce qui a changé : score, postes pourvus, violations par contrainte. Si le \
                 résultat est moins bon, propose restaurer_instantane — mais ne le fais pas sans mon \
-                accord.
+                accord. Si la pause sur le poste est déclarée (consulter_parametres_legaux), appelle \
+                analyser_pauses avec sansRelaisSeulement : chaque pause sans relais est un relais à \
+                organiser avant de publier.
 
                 6. Rappelle-moi que résoudre n'est pas prévenir : tant que le planning n'est pas \
                 publié, les animateurs lisent toujours le précédent. etat_publication dit depuis quand.

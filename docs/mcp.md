@@ -275,6 +275,27 @@ l'un d'eux nomme un outil inexistant.
 Le vocabulaire est le seul texte écrit à la main ici : il résume
 `docs/domaine.md` pour un lecteur qui ne verra jamais le modèle Java.
 
+## Les fenêtres d'un stand portent leur effectif, les pauses sortent sans nom
+
+Une fenêtre d'ouverture — dans `ajouter_horaire_stand`, `creer_stand_complet` et
+`ajouter_ouverture_stand` — peut nommer l'effectif à pourvoir sur elle : le
+suffixe `@N` de la syntaxe des fenêtres (`« 10:00-12:00@2,14:00-@4 »`), ou
+l'argument `effectif` d'une ouverture datée. Sans lui, la fenêtre reprend
+l'effectif minimum du stand, comme avant. Zéro est refusé : un stand sur lequel
+personne ne doit être est une fermeture. Le suffixe n'a de sens que sur un
+stand ; sur la récurrence d'un créneau (`creer_creneaux_recurrents`) il est
+rejeté. Les vues renvoient l'effectif de chaque fenêtre et de chaque ouverture,
+`null` quand il hérite.
+
+`analyser_pauses` lit le planning persisté sous les paramètres légaux courants
+et dit, par animateur et par jour, où tombe la pause due, sur quel stand, et
+qui peut relayer. Là où l'écran et le planning individuel nomment les
+collègues, l'outil ne rend que des **ids** — `relaisAnimateurIds` — comme tout
+ce qui traverse MCP. Les trous déjà planifiés par la grille ne sont donnés
+qu'en l'absence de filtre par stand ou par relais : ils appartiennent à la
+journée, pas à un stand. La déclaration `pauseSurPoste` se lit et se règle par
+`consulter_parametres_legaux` / `modifier_parametres_legaux`.
+
 ## Hors périmètre, volontairement
 
 | Ce qui n'a pas d'outil | Pourquoi |

@@ -197,4 +197,54 @@ class ReferentielMcpToolsTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("NORMAL");
     }
+
+    @Test
+    void uneFenetreDHoraireEtUneOuverturePortentLeurEffectifParMcp() {
+        standTools.creer_stand("STAND-MCP-EFF", "Village", List.of(), 1, 4, false, false, null, null, null);
+        try {
+            StandView avecRegle = standTools.ajouter_horaire_stand("STAND-MCP-EFF", "OUVERTURE",
+                    "10:00-12:00@2, 14:00-@4", null, null, null, null, null, null, null);
+
+            assertThat(avecRegle.horaires()).hasSize(1);
+            assertThat(avecRegle.horaires().getFirst().fenetres())
+                    .extracting(StandMcpTools.FenetreView::effectif).containsExactly(2, 4);
+            assertThat(avecRegle.horaires().getFirst().fenetres().get(1).heureFin()).isNull();
+
+            StandView avecOuverture = standTools.ajouter_ouverture_stand("STAND-MCP-EFF", "2026-07-18", "14:00",
+                    "20:00", "Tournoi", 3, null);
+            assertThat(avecOuverture.ouvertures()).hasSize(1);
+            assertThat(avecOuverture.ouvertures().getFirst().effectif()).isEqualTo(3);
+
+            // Without the suffix, the window inherits the stand's minimum: nothing named.
+            StandView sansEffectif = standTools.ajouter_ouverture_stand("STAND-MCP-EFF", "2026-07-19", "14:00",
+                    null, null, null, null);
+            assertThat(sansEffectif.ouvertures().get(1).effectif()).isNull();
+            assertThat(sansEffectif.fermetures()).isEmpty();
+        } finally {
+            standTools.supprimer_stand("STAND-MCP-EFF", null);
+        }
+    }
+
+    @Test
+    void unEffectifDeFenetreNulOuMalFormeEstRefuse() {
+        standTools.creer_stand("STAND-MCP-EFF-0", "Village", List.of(), 1, 4, false, false, null, null, null);
+        try {
+            assertThatThrownBy(() -> standTools.ajouter_horaire_stand("STAND-MCP-EFF-0", "OUVERTURE",
+                    "10:00-12:00@0", null, null, null, null, null, null, null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("au moins 1");
+            assertThatThrownBy(() -> standTools.ajouter_horaire_stand("STAND-MCP-EFF-0", "OUVERTURE",
+                    "10:00-12:00@deux", null, null, null, null, null, null, null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("@N");
+            assertThatThrownBy(() -> standTools.ajouter_ouverture_stand("STAND-MCP-EFF-0", "2026-07-18", "14:00",
+                    null, null, 0, null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("au moins 1");
+            // Nothing was written by the refused calls.
+            assertThat(standTools.consulter_stand("STAND-MCP-EFF-0", null).horaires()).isEmpty();
+        } finally {
+            standTools.supprimer_stand("STAND-MCP-EFF-0", null);
+        }
+    }
 }

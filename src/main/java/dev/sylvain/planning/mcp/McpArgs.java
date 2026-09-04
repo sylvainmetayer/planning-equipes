@@ -83,6 +83,17 @@ final class McpArgs {
      *                   convenient.
      */
     static List<FenetreHoraire> fenetres(String fenetres, boolean finRequise) {
+        return fenetres(fenetres, finRequise, false);
+    }
+
+    /**
+     * Same syntax, plus — when {@code effectifAutorise} — an optional
+     * {@code @N} suffix naming the seats to staff on that window
+     * ({@code « 10:00-12:00@2,14:00-@4 »}): the stand's own windows carry an
+     * effectif, a créneau's recurrence does not, and the suffix is refused
+     * where it would mean nothing.
+     */
+    static List<FenetreHoraire> fenetres(String fenetres, boolean finRequise, boolean effectifAutorise) {
         if (fenetres == null || fenetres.isBlank()) {
             throw new BusinessError.Invalid("fenetres est requis, ex. « 10:00-12:00,14:00-18:00 »");
         }
@@ -91,6 +102,16 @@ final class McpArgs {
             String fenetre = morceau.trim();
             if (fenetre.isEmpty()) {
                 continue;
+            }
+            Integer effectif = null;
+            int arobase = fenetre.indexOf('@');
+            if (arobase >= 0) {
+                if (!effectifAutorise) {
+                    throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : l'effectif « @N » ne "
+                            + "se déclare que sur les fenêtres d'ouverture d'un stand");
+                }
+                effectif = effectifFenetre(fenetre.substring(arobase + 1).trim(), fenetre);
+                fenetre = fenetre.substring(0, arobase).trim();
             }
             int separateur = fenetre.indexOf('-');
             if (separateur < 0) {
@@ -105,12 +126,27 @@ final class McpArgs {
                         + "qui se lisent au regard d'un créneau ; un créneau est lui-même l'amplitude du jour.");
             }
             result.add(new FenetreHoraire(heure(debut, "fenetres.heureDebut"),
-                    fin.isEmpty() ? null : heure(fin, "fenetres.heureFin")));
+                    fin.isEmpty() ? null : heure(fin, "fenetres.heureFin"), effectif));
         }
         if (result.isEmpty()) {
             throw new BusinessError.Invalid("fenetres ne contient aucune fenêtre exploitable");
         }
         return result;
+    }
+
+    /** The {@code N} of a {@code @N} suffix: a whole number of at least one, as the stand validator requires. */
+    private static Integer effectifFenetre(String valeur, String fenetre) {
+        try {
+            int effectif = Integer.parseInt(valeur);
+            if (effectif < 1) {
+                throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : l'effectif doit être au "
+                        + "moins 1 — omettez « @N » pour reprendre l'effectif minimum du stand");
+            }
+            return effectif;
+        } catch (NumberFormatException e) {
+            throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : attendu « HH:MM-HH:MM@N » "
+                    + "avec N entier, ex. « 14:00-20:00@4 »");
+        }
     }
 
     /**

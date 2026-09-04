@@ -16,6 +16,16 @@ import dev.sylvain.planning.service.StaffingAnalyzer.CompetenceStaffing;
 import dev.sylvain.planning.service.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.StaffingAnalyzer.TypologieStaffing;
 import io.quarkus.test.junit.QuarkusTest;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.mcp.DiagnosticMcpTools.PausesView;
+import dev.sylvain.planning.service.PlanningPersistenceService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 
@@ -44,6 +54,12 @@ class DiagnosticMcpToolsTest {
 
     @Inject
     StandMcpTools standTools;
+
+    @Inject
+    PlanningPersistenceService persistence;
+
+    @Inject
+    ParametresMcpTools parametresTools;
 
     @AfterEach
     void clearEdition() {
@@ -195,5 +211,52 @@ class DiagnosticMcpToolsTest {
             assertThat(vue.nom()).isNotBlank();
             assertThat(vue.niveau()).isIn("HARD", "MEDIUM", "SOFT");
         }
+    }
+
+    @Test
+    void lAnalyseDesPausesSitueChaquePauseSansNommerPersonneEtSeFiltre() {
+        scenarioTools.reinitialiser_donnees(null);
+        Animateur alice = new Animateur("PAUSE-MCP-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
+        Animateur bruno = new Animateur("PAUSE-MCP-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
+        Animateur seul = new Animateur("PAUSE-MCP-C", "Carole", "Seule", LocalDate.of(1990, 1, 1), false);
+        Stand duo = new Stand("PAUSE-MCP-S1", "Duo", Set.of(), 2, 2, false);
+        Stand solo = new Stand("PAUSE-MCP-S2", "Solo", Set.of(), 1, 1, false);
+        LocalDate jour = LocalDate.of(2026, 7, 11);
+        Creneau longue = new Creneau(9601L, 1, jour, LocalTime.of(13, 0), LocalTime.of(20, 0));
+        PosteAffectation p1 = new PosteAffectation("PAUSE-MCP-P1", duo, longue);
+        p1.setAnimateur(alice);
+        PosteAffectation p2 = new PosteAffectation("PAUSE-MCP-P2", duo, longue);
+        p2.setAnimateur(bruno);
+        PosteAffectation p3 = new PosteAffectation("PAUSE-MCP-P3", solo, longue);
+        p3.setAnimateur(seul);
+        persistence.persist(new PlanningEvenement(jour, List.of(alice, bruno, seul), List.of(p1, p2, p3)));
+        parametresTools.modifier_parametres_legaux(null, null, null, null, true, null);
+
+        PausesView tout = diagnosticTools.analyser_pauses(null, null, null, null);
+        assertThat(tout.pauseSurPoste()).isTrue();
+        assertThat(tout.journeesAnalysees()).isEqualTo(3);
+        assertThat(tout.pausesDues()).isEqualTo(3);
+        assertThat(tout.relaisManquants()).isEqualTo(1);
+        assertThat(tout.journees()).extracting(DiagnosticMcpTools.JourneePausesView::animateurId)
+                .containsExactly("PAUSE-MCP-A", "PAUSE-MCP-B", "PAUSE-MCP-C");
+        DiagnosticMcpTools.PauseDueView pauseAlice = tout.journees().getFirst().sequences().getFirst()
+                .pausesDues().getFirst();
+        assertThat(pauseAlice.heureLimite()).isEqualTo(LocalTime.of(19, 0));
+        assertThat(pauseAlice.standId()).isEqualTo("PAUSE-MCP-S1");
+        assertThat(pauseAlice.relaisAnimateurIds()).containsExactly("PAUSE-MCP-B");
+        // No display name anywhere in the wire shape: ids only.
+        assertThat(tout.toString()).doesNotContain("Martin").doesNotContain("Alice");
+
+        PausesView sansRelais = diagnosticTools.analyser_pauses(null, null, true, null);
+        assertThat(sansRelais.journees()).extracting(DiagnosticMcpTools.JourneePausesView::animateurId)
+                .containsExactly("PAUSE-MCP-C");
+        assertThat(sansRelais.pausesDues()).isEqualTo(1);
+
+        PausesView surLeDuo = diagnosticTools.analyser_pauses("2026-07-11", "PAUSE-MCP-S1", null, null);
+        assertThat(surLeDuo.journees()).hasSize(2);
+        assertThat(diagnosticTools.analyser_pauses("2026-07-12", null, null, null).journees()).isEmpty();
+
+        parametresTools.modifier_parametres_legaux(null, null, null, null, false, null);
+        assertThat(diagnosticTools.analyser_pauses(null, null, null, null).pauseSurPoste()).isFalse();
     }
 }
