@@ -75,9 +75,11 @@ public final class OuvertureStandsAnalyzer {
     /**
      * One créneau of a day, as a column of the entry grid: what the organiser
      * types a headcount under. Sorted by start time, then by id, so two
-     * stagger families of the same vacation keep a stable order.
+     * stagger families of the same vacation keep a stable order. The id is
+     * {@code null} for a créneau not written yet — the recurrence preview
+     * validates a grid holding the rows a rule <em>would</em> add.
      */
-    public record ColonneCreneau(long id, LocalTime heureDebut, LocalTime heureFin, int famille,
+    public record ColonneCreneau(Long id, LocalTime heureDebut, LocalTime heureFin, int famille,
             boolean couverturePause) {
     }
 
@@ -94,7 +96,7 @@ public final class OuvertureStandsAnalyzer {
      * the grid cannot hold, and which a save from the grid would flatten to
      * the créneau; {@code effectif} is then the highest one.
      */
-    public record CelluleCreneau(long creneauId, Integer effectif, boolean partiel) {
+    public record CelluleCreneau(Long creneauId, Integer effectif, boolean partiel) {
     }
 
     /** An open stretch, in wall-clock hours, after clamping to the créneaux. */
@@ -139,8 +141,9 @@ public final class OuvertureStandsAnalyzer {
             amplitudeParJour.put(date, minutes);
             int debut = couverture.get(0)[0];
             int fin = couverture.get(couverture.size() - 1)[1];
+            // Same order as the day's list, which creneauxByDay sorted: the
+            // cells of a row are read back by position.
             List<ColonneCreneau> colonnes = duJour.stream()
-                    .sorted(Comparator.comparing(Creneau::getHeureDebut).thenComparing(Creneau::getId))
                     .map(creneau -> new ColonneCreneau(creneau.getId(), creneau.getHeureDebut(),
                             creneau.getHeureFin(), creneau.getFamille(), creneau.isCouverturePause()))
                     .toList();
@@ -204,9 +207,10 @@ public final class OuvertureStandsAnalyzer {
     private static CelluleJour cellule(Stand stand, JourAmplitude jour, List<PosteAffectation> postes,
             int minutesAmplitude, List<Creneau> duJour) {
         SourceHoraire source = HoraireStandResolver.sourceOfDay(stand, jour.date());
-        List<CelluleCreneau> parCreneau = jour.creneaux().stream()
-                .map(colonne -> celluleCreneau(stand, duJour, colonne.id()))
-                .toList();
+        List<CelluleCreneau> parCreneau = new ArrayList<>();
+        for (int index = 0; index < jour.creneaux().size(); index++) {
+            parCreneau.add(celluleCreneau(stand, duJour.get(index), jour.creneaux().get(index)));
+        }
         if (postes.isEmpty()) {
             return new CelluleJour(jour.date(), EtatOuverture.FERME, source, List.of(), 0, minutesAmplitude, 0,
                     parCreneau);
@@ -230,17 +234,15 @@ public final class OuvertureStandsAnalyzer {
      * headcount, not the seats — a break-covering créneau halves the seats,
      * and the organiser types what the stand needs, not what the solver gets.
      */
-    private static CelluleCreneau celluleCreneau(Stand stand, List<Creneau> duJour, long creneauId) {
-        Creneau creneau = duJour.stream().filter(candidat -> Long.valueOf(creneauId).equals(candidat.getId()))
-                .findFirst().orElseThrow();
+    private static CelluleCreneau celluleCreneau(Stand stand, Creneau creneau, ColonneCreneau colonne) {
         List<Creneau.SegmentOuvert> segments = creneau.segmentsOuverts(stand);
         if (segments.isEmpty()) {
-            return new CelluleCreneau(creneauId, null, false);
+            return new CelluleCreneau(colonne.id(), null, false);
         }
         int effectif = segments.stream().mapToInt(Creneau.SegmentOuvert::effectif).max().orElse(0);
         boolean entier = segments.size() == 1 && segments.get(0).debutMinutes() == 0
                 && segments.get(0).finMinutes() == creneau.getDureeMinutes();
-        return new CelluleCreneau(creneauId, effectif, !entier);
+        return new CelluleCreneau(colonne.id(), effectif, !entier);
     }
 
     /**
