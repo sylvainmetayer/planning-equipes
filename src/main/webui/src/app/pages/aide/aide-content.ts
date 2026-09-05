@@ -227,6 +227,35 @@ export function buildHelpSections(): HelpSection[] {
       ]
     },
     {
+      id: 'import-grille-stands',
+      icon: 'grid_view',
+      title: $localize`:@@aide.importGrille.title:Import de la grille des stands`,
+      summary: $localize`:@@aide.importGrille.summary:Verser la matrice du classeur — stands en lignes, jours et créneaux en colonnes — sans la ressaisir : format attendu, ce que fait chaque colonne, et ce qu'un stand importé devient.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.importGrille.format:L'écran « Import de la grille des stands » lit un CSV tel qu'un tableur l'exporte : une première colonne qui nomme le stand par son identifiant ou son nom exact, puis une colonne par jour et par créneau, un effectif par case, vide, « - » ou 0 pour fermé. Deux lignes d'en-tête — les dates, les cellules fusionnées d'un tableur laissant les suivantes vides, puis les bandes « 10:00-12:00 » — ou une seule, « 2026-07-08 10:00-12:00 ». Le bouton « Télécharger la grille actuelle comme modèle » rend l'édition telle qu'elle est, dans ce format exact : le plus simple est de partir de lui.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.importGrille.colonnes:Chaque colonne se pose sur le créneau de même date et mêmes heures. Une colonne sans créneau — une bande de montage que l'édition n'a pas, une colonne de commentaire — est ignorée et listée, sans faire refuser le fichier. Un créneau que le fichier ne nomme pas garde la case actuelle de chaque stand importé : l'import ne réécrit que ce que le fichier dit. Sans aucun créneau dans l'édition, l'import est refusé : créez-les d'abord, en série ou dérivés des horaires des stands.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.importGrille.stands:Un stand accepté est réécrit comme depuis la grille de saisie : tout son horaire suit ses cases, ramené en règles quand un motif se répète, et ses effectifs minimum et maximum suivent la plus petite et la plus grande case. Un stand absent du fichier n'est pas touché, et l'import ne crée pas de stand : un identifiant inconnu, ou un nom porté par deux stands, rejette la ligne en le disant. Rien n'est écrit avant « Importer », et l'écriture est d'un seul tenant.`
+        }
+      ],
+      links: [
+        {
+          route: '/import-grille-stands',
+          label: $localize`:@@nav.link.importGrilleStands:Import de la grille des stands`
+        },
+        { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
+        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
+        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` }
+      ]
+    },
+    {
       id: 'configuration-solveur',
       icon: 'tune',
       title: $localize`:@@aide.config.title:Configuration du solveur`,

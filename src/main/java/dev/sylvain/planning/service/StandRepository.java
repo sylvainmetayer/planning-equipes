@@ -227,6 +227,15 @@ public class StandRepository {
         });
     }
 
+    /** Every stand of the list, in one transaction: all written, or none — what an import report promises. */
+    public void saveStands(List<Stand> stands) {
+        scope.write("Failed to save " + stands.size() + " stands", connection -> {
+            for (Stand stand : stands) {
+                upsertStand(connection, stand);
+            }
+        });
+    }
+
     /**
      * Deletes one stand, and the seats that were opened on it.
      *

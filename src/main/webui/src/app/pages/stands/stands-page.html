@@ -21,6 +21,12 @@
       <mat-icon>grid_on</mat-icon>
       <ng-container i18n="@@stands.grille.action">Saisir en grille</ng-container>
     </a>
+    <a matButton routerLink="/import-grille-stands"
+       i18n-matTooltip="@@stands.importGrille.tooltip"
+       matTooltip="Verser la matrice du classeur — stands en lignes, jours et créneaux en colonnes — depuis un fichier CSV, avec un aperçu ligne par ligne.">
+      <mat-icon>upload_file</mat-icon>
+      <ng-container i18n="@@stands.importGrille.action">Importer la grille</ng-container>
+    </a>
     <app-table-filter [(value)]="filtre" [matches]="standsFiltres().length" [total]="store.stands().length"
                       (enterTable)="navigation.focusCurrent()" />
   </mat-card-actions>

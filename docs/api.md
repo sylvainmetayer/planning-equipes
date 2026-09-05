@@ -1648,6 +1648,42 @@ effectif que s'il diffère du minimum.
 fermer »), `404` sur un stand inconnu, `409` pendant une résolution. Chaque
 stand est validé et écrit séparément : un stand refusé n'annule pas les autres.
 
+### Import de la grille des stands
+
+Le second import **partiel** du produit, calqué sur celui des animateurs
+([décision 0022](decisions/0022-import-de-la-grille-des-stands.md)) : la matrice
+de l'organisateur — une ligne par stand, une colonne par jour et par créneau, un
+entier par case — analysée, prévisualisée, rejouée, jamais écrite sur disque.
+
+| Méthode | Route | Rôle |
+| --- | --- | --- |
+| `POST` | `/api/stands/import-grille/analyse` | Lit le fichier et rend le rapport : chaque colonne et le créneau où elle se pose, une ligne par stand. **N'ouvre aucune transaction** |
+| `POST` | `/api/stands/import-grille` | Relit le même fichier, rejoue toutes les vérifications, puis réécrit les stands acceptés en **une** transaction |
+| `GET` | `/api/stands/import-grille/exemple` | Rend la grille actuelle de l'édition en CSV (`text/csv`, en pièce jointe) : ses créneaux en colonnes, ses stands en lignes — réimportable telle quelle |
+
+Corps des deux `POST` : `{ fileName, content }`. Deux lignes d'en-tête (les
+dates, les cellules fusionnées d'un tableur laissant les suivantes vides, puis
+les bandes `10:00-12:00`) ou une seule (`2026-07-08 10:00-12:00`) ; dates ISO
+ou `08/07/2026`, heures `10:00`, `10h`, `10h30`, `24:00` lu comme minuit.
+
+- Une colonne se pose sur le créneau de même date et mêmes heures ; une colonne
+  sans créneau est **ignorée et listée** (`columns[].reason`), pas un motif de
+  refus. Un créneau sans colonne (`creneauxAbsents`) **garde la case actuelle**
+  de chaque stand importé : l'import ne réécrit que ce que le fichier dit.
+- Une ligne nomme un stand par son identifiant, sinon par son nom exact (casse
+  et accents indifférents) ; un nom porté par deux stands, ou un stand inconnu,
+  rejette la ligne — l'import ne crée pas de stand. Une case vide, `-` ou `0`
+  ferme ; un entier est un effectif ; tout autre contenu rejette la ligne en
+  nommant la colonne.
+- Un stand accepté est réécrit comme depuis la grille de saisie
+  (`PUT /api/ouvertures-stands/grille`) : règles par compaction, bornes
+  dérivées. Les stands absents du fichier ne sont pas touchés ; rien n'est
+  jamais supprimé.
+
+`400` sur un classeur `.xlsx`, un fichier vide ou trop gros, une édition sans
+créneau, un fichier dont aucune colonne ne correspond ; `409` pendant une
+résolution.
+
 ## Import de scénario
 
 **C'est un diff, pas un remplacement aveugle.** Stands et animateurs du fichier

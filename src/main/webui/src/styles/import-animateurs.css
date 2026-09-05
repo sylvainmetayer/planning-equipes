@@ -55,3 +55,11 @@ table.import-rapport td mat-icon {
 .import-jours {
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* Stand grid import: the columns the file could not place, listed by name. */
+.import-colonnes-ignorees {
+  margin: 0.5rem 0 0.75rem;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface-variant);
+}

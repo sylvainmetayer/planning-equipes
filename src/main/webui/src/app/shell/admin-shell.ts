@@ -140,6 +140,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         path: '/import-animateurs',
         label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`,
         icon: 'table_view'
+      },
+      {
+        path: '/import-grille-stands',
+        label: $localize`:@@nav.link.importGrilleStands:Import de la grille des stands`,
+        icon: 'grid_view'
       }
     ]
   },

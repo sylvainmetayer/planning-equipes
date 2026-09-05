@@ -121,6 +121,12 @@ const adminRoutes: Routes = [
       import('./pages/import-animateurs/import-animateurs-page').then((m) => m.ImportAnimateursPage)
   },
   {
+    path: 'import-grille-stands',
+    title: 'Import grille des stands',
+    loadComponent: () =>
+      import('./pages/import-grille-stands/import-grille-stands-page').then((m) => m.ImportGrilleStandsPage)
+  },
+  {
     path: 'typologies',
     title: 'Typologies',
     loadComponent: () => import('./pages/typologies/typologies-page').then((m) => m.TypologiesPage)

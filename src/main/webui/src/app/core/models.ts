@@ -2205,6 +2205,52 @@ export interface ImportCsvRapport {
   warnings: string[];
 }
 
+/* ------------------ Import de la grille des stands (`/api/stands/import-grille`) ------------------ */
+
+export type ImportGrilleAction = 'UPDATED' | 'REJECTED';
+
+/** One column of the file: the (date, band) read, and the créneau it landed on — or why it did not. */
+export interface ImportGrilleColonne {
+  index: number;
+  label: string;
+  date: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+  creneauId: number | null;
+  reason: string | null;
+}
+
+export interface ImportGrilleLigne {
+  line: number;
+  label: string;
+  standId: string | null;
+  action: ImportGrilleAction;
+  reasons: string[];
+  cellulesOuvertes: number;
+  regles: number;
+  exceptions: number;
+  effectifMin: number | null;
+  effectifMax: number | null;
+}
+
+/** What the matrix would do, stand by stand — the same shape once applied. */
+export interface ImportGrilleRapport {
+  applied: boolean;
+  separator: string;
+  columns: ImportGrilleColonne[];
+  creneauxAbsents: string[];
+  total: number;
+  accepted: number;
+  rejected: number;
+  rows: ImportGrilleLigne[];
+  warnings: string[];
+}
+
+export interface ImportGrilleDemande {
+  fileName: string;
+  content: string;
+}
+
 /** Body of both calls — the file travels again, so the write re-validates it. */
 export interface ImportCsvDemande {
   fileName: string;

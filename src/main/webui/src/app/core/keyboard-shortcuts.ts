@@ -105,6 +105,7 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
     ['/creneaux', { label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule', touche: 'c' }],
     ['/typologies', { label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category', touche: 't' }],
     ['/import-animateurs', { label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`, icon: 'table_view' }],
+    ['/import-grille-stands', { label: $localize`:@@nav.link.importGrilleStands:Import de la grille des stands`, icon: 'grid_view' }],
     ['/calendar', { label: $localize`:@@nav.link.calendar:Calendrier des affectations`, icon: 'calendar_month', touche: 'm' }],
     ['/day-calendar', { label: $localize`:@@nav.link.dayCalendar:Calendrier journalier`, icon: 'view_day', touche: 'j' }],
     ['/hours', { label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule', touche: 'h' }],

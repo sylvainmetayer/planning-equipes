@@ -4,6 +4,9 @@ import java.util.List;
 
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.HoraireCompaction;
+import dev.sylvain.planning.service.StandGrilleImportReport;
+import dev.sylvain.planning.service.StandGrilleImportRequest;
+import dev.sylvain.planning.service.StandGrilleImportService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
 import dev.sylvain.planning.service.WrittenStand;
@@ -31,6 +34,9 @@ public class StandResource {
 
     @Inject
     ReferenceDataService referenceDataService;
+
+    @Inject
+    StandGrilleImportService grilleImport;
 
     @GET
     public List<Stand> listStands() {
@@ -89,4 +95,40 @@ public class StandResource {
         return referenceDataService.compactHoraires(apply);
     }
 
+
+    /* ----------------------------- Matrix import ----------------------------- */
+
+    /**
+     * What the stand matrix would do, without doing any of it: the columns
+     * read and the créneau each landed on, one line of report per stand row.
+     * A pure read — no transaction is opened.
+     */
+    @POST
+    @Path("/import-grille/analyse")
+    public StandGrilleImportReport analyseGrille(StandGrilleImportRequest request) {
+        return grilleImport.preview(request);
+    }
+
+    /**
+     * Applies the same request the preview was computed from — file included,
+     * re-read and re-checked — and writes the accepted stands in one
+     * transaction. {@code 409} while a solve runs.
+     */
+    @POST
+    @Path("/import-grille")
+    public StandGrilleImportReport importGrille(StandGrilleImportRequest request) {
+        return grilleImport.apply(request);
+    }
+
+    /** The edition's own matrix as a CSV to start from: its créneaux as columns, its stands as rows. */
+    @GET
+    @Path("/import-grille/exemple")
+    @Produces("text/csv")
+    public Response exempleGrille() {
+        return Response.ok(grilleImport.exemple())
+                .type("text/csv; charset=utf-8")
+                .header(jakarta.ws.rs.core.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + StandGrilleImportService.EXEMPLE_FICHIER + "\"")
+                .build();
+    }
 }

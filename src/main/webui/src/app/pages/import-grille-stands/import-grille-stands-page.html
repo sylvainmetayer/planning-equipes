@@ -1,0 +1,179 @@
+<div class="page-header">
+  <h1 i18n="@@importGrille.titre">Import de la grille des stands (CSV)</h1>
+  <p i18n="@@importGrille.intro">
+    Déposez la matrice de vos stands — une ligne par stand, une colonne par jour et par créneau, un effectif par
+    case, vide pour fermé — telle que votre tableur l'exporte. Lisez ce que l'import ferait, puis validez. Rien
+    n'est écrit avant cette validation, et le fichier reste en mémoire : il n'est jamais enregistré sur le serveur.
+  </p>
+</div>
+
+<mat-card class="page-card" appearance="outlined">
+  <mat-card-header>
+    <mat-card-title i18n="@@importGrille.fichier.titre">1. Le fichier</mat-card-title>
+    <mat-card-subtitle i18n="@@importGrille.fichier.aide">
+      Format CSV uniquement — séparateur virgule, point-virgule ou tabulation, reconnu tout seul. Deux lignes
+      d'en-tête, les dates puis les bandes « 10:00-12:00 », ou une seule « 2026-07-08 10:00-12:00 ». La première
+      colonne nomme le stand par son identifiant ou son nom exact.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="empty-hint" i18n="@@importGrille.fichier.format">
+      Chaque colonne se pose sur le créneau de même date et mêmes heures ; une colonne sans créneau est ignorée et
+      listée. Un stand du fichier voit tout son horaire réécrit depuis ses cases, ramené en règles quand un motif se
+      répète, et ses effectifs minimum et maximum suivent la plus petite et la plus grande case ; un créneau que le
+      fichier ne nomme pas garde sa case actuelle. Les stands absents du fichier ne sont pas touchés, et l'import ne
+      crée pas de stand.
+    </p>
+    <div class="card-actions">
+      <button matButton (click)="telechargerExemple()" [disabled]="telechargementEnCours()">
+        <mat-icon>download</mat-icon>
+        <span i18n="@@importGrille.fichier.exemple">Télécharger la grille actuelle comme modèle</span>
+      </button>
+      <a matButton routerLink="/ouvertures" [queryParams]="{ vue: 'saisie' }">
+        <mat-icon>grid_on</mat-icon>
+        <span i18n="@@importGrille.fichier.versGrille">La saisir à l'écran plutôt</span>
+      </a>
+      <a matButton routerLink="/aide" fragment="import-grille-stands">
+        <mat-icon>help_outline</mat-icon>
+        <span i18n="@@importCsv.fichier.aideDetaillee">Tous les détails dans l'aide</span>
+      </a>
+    </div>
+    <div class="card-actions">
+      <button matButton="filled" (click)="choisirFichier()" [disabled]="analyseEnCours() || importEnCours()">
+        <mat-icon>upload_file</mat-icon>
+        <span i18n="@@importCsv.fichier.choisir">Choisir un fichier CSV</span>
+      </button>
+      @if (nomFichier()) {
+        <button matButton (click)="reinitialiser()" [disabled]="importEnCours()">
+          <mat-icon>close</mat-icon>
+          <span i18n="@@importCsv.fichier.oublier">Oublier ce fichier</span>
+        </button>
+      }
+    </div>
+    <input #csvInput type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain" hidden (change)="onFichierChoisi($event)" />
+    @if (nomFichier()) {
+      <p class="empty-hint">
+        <span i18n="@@importCsv.fichier.nom">Fichier chargé :</span> {{ nomFichier() }}
+        @if (rapport(); as vue) {
+          <span i18n="@@importGrille.fichier.detail">&nbsp;— séparateur « {{ vue.separator }} », {{ colonnesReconnues().length }} colonne(s) reconnue(s), {{ vue.total }} ligne(s) de stand.</span>
+        }
+      </p>
+    }
+    @if (analyseEnCours() || importEnCours()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (erreur()) {
+      <p class="field-error" role="alert">{{ erreur() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (rapport(); as vue) {
+  <mat-card class="page-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title i18n="@@importGrille.colonnes.titre">2. Les colonnes</mat-card-title>
+      <mat-card-subtitle i18n="@@importGrille.colonnes.aide">
+        Chaque colonne du fichier et le créneau de l'édition où elle se pose. Une colonne ignorée ne change rien ; un
+        créneau sans colonne garde ses cases.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <ul class="import-compteurs">
+        <li><span i18n="@@importGrille.colonnes.reconnues">Colonnes reconnues</span> : <strong>{{ colonnesReconnues().length }}</strong></li>
+        <li><span i18n="@@importGrille.colonnes.ignorees">Colonnes ignorées</span> : <strong>{{ colonnesIgnorees().length }}</strong></li>
+        <li><span i18n="@@importGrille.colonnes.absents">Créneaux sans colonne</span> : <strong>{{ vue.creneauxAbsents.length }}</strong></li>
+      </ul>
+      @if (colonnesIgnorees().length > 0) {
+        <ul class="import-colonnes-ignorees">
+          @for (colonne of colonnesIgnorees(); track colonne.index) {
+            <li><strong>{{ colonne.label }}</strong> — {{ colonne.reason }}</li>
+          }
+        </ul>
+      }
+      @for (avertissement of vue.warnings; track avertissement) {
+        <p class="empty-hint">{{ avertissement }}</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>
+        @if (vue.applied) {
+          <ng-container i18n="@@importGrille.rapport.titreApplique">3. Ce qui a été importé</ng-container>
+        } @else {
+          <ng-container i18n="@@importGrille.rapport.titrePreview">3. Ce que l'import ferait</ng-container>
+        }
+      </mat-card-title>
+      <mat-card-subtitle>
+        @if (vue.applied) {
+          <ng-container i18n="@@importCsv.rapport.sousTitreApplique">Import effectué en une seule transaction : ces chiffres sont ceux de la base.</ng-container>
+        } @else {
+          <ng-container i18n="@@importCsv.rapport.sousTitrePreview">Aucune écriture n'a eu lieu. Rien ne part en base tant que vous n'avez pas cliqué sur « Importer ».</ng-container>
+        }
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <ul class="import-compteurs">
+        <li><span i18n="@@importGrille.rapport.acceptees">Stands acceptés</span> : <strong>{{ vue.accepted }}</strong> / {{ vue.total }}</li>
+        <li><span i18n="@@importGrille.rapport.rejetees">Lignes rejetées</span> : <strong>{{ vue.rejected }}</strong></li>
+      </ul>
+      @if (vue.rows.length === 0) {
+        <p class="empty-hint" i18n="@@importGrille.rapport.vide">Le fichier ne porte aucune ligne de stand sous ses en-têtes.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="import-rapport">
+            <thead>
+              <tr>
+                <th scope="col" i18n="@@importCsv.rapport.colonneLigne">Ligne</th>
+                <th scope="col" i18n="@@importGrille.rapport.colonneStand">Stand</th>
+                <th scope="col" i18n="@@importCsv.rapport.colonneAction">Résultat</th>
+                <th scope="col" i18n="@@importCsv.rapport.colonneDetail">Détail</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of vue.rows; track ligne.line) {
+                <tr [class]="classeAction(ligne.action)" [attr.data-ligne]="ligne.line">
+                  <td>{{ ligne.line }}</td>
+                  <td>
+                    {{ ligne.label }}
+                    @if (ligne.standId && ligne.standId !== ligne.label) {
+                      <span class="import-identifiant">({{ ligne.standId }})</span>
+                    }
+                  </td>
+                  <td>
+                    <mat-icon aria-hidden="true">{{ iconeAction(ligne.action) }}</mat-icon>
+                    @if (ligne.action === 'UPDATED') {
+                      <span i18n="@@importGrille.action.maj">Horaire réécrit</span>
+                    } @else {
+                      <span i18n="@@importCsv.action.rejet">Rejetée</span>
+                    }
+                  </td>
+                  <td>
+                    @if (ligne.action === 'UPDATED') {
+                      <span i18n="@@importGrille.rapport.detailMaj">{{ ligne.cellulesOuvertes }} case(s) ouverte(s) → {{ ligne.regles }} règle(s), {{ ligne.exceptions }} exception(s) ; effectif {{ ligne.effectifMin }} à {{ ligne.effectifMax }}</span>
+                    } @else {
+                      <ul class="import-motifs">
+                        @for (motif of ligne.reasons; track motif) {
+                          <li>{{ motif }}</li>
+                        }
+                      </ul>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      @if (!vue.applied) {
+        <div class="card-actions">
+          <button matButton="filled" (click)="importer()" [disabled]="!peutImporter()">
+            <mat-icon>publish</mat-icon>
+            <span i18n="@@importGrille.importer">Importer</span>
+          </button>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+}

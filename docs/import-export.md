@@ -310,6 +310,20 @@ disque : il porte des noms, des dates de naissance et parfois des mineurs (voir
 caractères et 5 000 lignes de données, en plus du plafond de corps HTTP de
 [`securite.md`](securite.md).
 
+## Import de la grille des stands
+
+Le second import partiel, `/import-grille-stands`, pour la matrice que
+l'organisateur tient déjà dans son classeur : stands en lignes, jours et
+créneaux en colonnes, un effectif par case. Il transpose les règles de l'import
+des animateurs — deux appels, rejoué, en mémoire, sans suppression — et diffère
+sur trois points, écrits dans la
+[décision 0022](decisions/0022-import-de-la-grille-des-stands.md) : l'identité
+d'une ligne est l'identifiant ou le nom exact du stand, une colonne sans
+créneau est ignorée et listée plutôt que refusée, et un créneau sans colonne
+garde la case actuelle du stand. Le bouton « Télécharger la grille actuelle
+comme modèle » rend l'édition telle qu'elle est, réimportable telle quelle.
+Endpoints dans [`api.md`](api.md#import-de-la-grille-des-stands).
+
 ## Fixtures réalistes anonymisées
 
 `festival-realiste.yaml` et `festival-realiste-canicule.yaml` sont **dérivés
