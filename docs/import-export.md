@@ -78,6 +78,10 @@ charge varie dans la journée — 4 personnes le matin, 5 le soir — de rester 
 seul stand plutôt que d'être éclaté en plusieurs. Voir
 [`domaine.md`](domaine.md#leffectif-se-porte-sur-la-fenêtre-pas-sur-le-stand).
 
+Le champ existe des deux côtés du modèle horaire : sur une **fenêtre d'une
+règle récurrente** et sur une **ouverture datée**. Un fichier qui n'en nomme
+aucun se relit exactement comme avant que le champ existe.
+
 Une portée plus précise prime sur une portée plus large ; une exception datée
 prime sur toutes les règles, pour le seul jour qu'elle nomme. Arbitrage complet
 dans [`domaine.md`](domaine.md#horaires-récurrents--trois-couches-un-seul-mode-par-jour).

@@ -198,6 +198,7 @@ class PlanningServiceScenarioFromTextTest {
                         heureDebut: "20:00"
                         heureFin: "23:00"
                         motif: null
+                        effectif: 3
 
                 animateurs:
                   - id: A1
@@ -229,6 +230,9 @@ class PlanningServiceScenarioFromTextTest {
         assertThat(stand.getOuvertures().get(0).getDate()).isEqualTo(LocalDate.of(2026, 8, 15));
         assertThat(stand.getOuvertures().get(0).getHeureDebut()).isEqualTo(LocalTime.of(20, 0));
         assertThat(stand.getOuvertures().get(0).getHeureFin()).isEqualTo(LocalTime.of(23, 0));
+        // An opening names its own headcount, like a rule's window does; absent, it
+        // falls back on the stand's minimum, and it must survive the round trip.
+        assertThat(stand.getOuvertures().get(0).getEffectif()).isEqualTo(3);
     }
 
     @Test
