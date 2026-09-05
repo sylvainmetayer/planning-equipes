@@ -213,7 +213,7 @@ Deux règles :
   vides restent mobiles, sinon geler un trou le rendrait définitivement non
   pourvu ;
 - **une place figée est scorée normalement.** Un verrou peut donc laisser une
-  violation visible — il ne désactive silencieusement aucune règle.
+  écart visible — il ne désactive silencieusement aucune règle.
 
 **Épingler ne suffit pas pour verrouiller un animateur** : cela fige les places
 qu'il tient, mais le solveur pourrait lui en attribuer d'autres ailleurs. Ce

@@ -258,7 +258,7 @@ describe('parametrer-pour-un-planning-complet', () => {
   });
 
   it('is found by the words an organiser would type', () => {
-    for (const mot of ['effectif par fenêtre', 'pause sur le poste', 'relève de midi', 'zéro violation']) {
+    for (const mot of ['effectif par fenêtre', 'pause sur le poste', 'relève de midi', 'le moindre écart']) {
       expect(filterHelpSections(sections, mot).map((each) => each.id), mot).toContain('parametrer-pour-un-planning-complet');
     }
   });

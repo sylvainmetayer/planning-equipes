@@ -293,7 +293,7 @@ mesurés à la capture, jamais un score recalculé. `editionsDifferentes` n'est
 variante *est* une autre édition — mais l'IHM doit le dire. Dans `diffViolations`,
 `null` signifie **non mesuré**, jamais zéro. `kpiRecalcule` marque le mode
 dégradé d'un instantané qui ne porte pas de KPI stockés : couverture et
-volumétrie exactes, violations non mesurées.
+volumétrie exactes, écarts non mesurés.
 
 ## Publication
 
@@ -417,8 +417,8 @@ Une désactivation insère une ligne dans `constraint_toggle`, une réactivation
 supprime : c'est tout ce que la table porte.
 
 `GET /api/constraints` porte aussi `contraintesAdHocEnCause` : les exceptions
-saisies à la main que la dernière analyse a trouvées encore violées, la plus
-violée d'abord, avec leur id, leur raison et le nombre de violations qu'elles
+saisies à la main que la dernière analyse a trouvées encore en écart, la plus
+en écart d'abord, avec leur id, leur raison et le nombre d'écarts qu'elles
 portent. C'est ce qui répond à « *lesquelles* de mes exceptions » quand une
 règle ad hoc affiche douze correspondances. Liste vide quand le plan les honore
 toutes — et quand rien n'a jamais été analysé.
@@ -460,7 +460,7 @@ et `DELETE`.
 « Pourquoi lui ? » cible un seul poste du planning envoyé, **déjà résolu et
 jamais re-résolu**.
 
-« Respectée » signifie seulement qu'aucune violation n'a été trouvée pour ce
+« Respectée » signifie seulement qu'aucun écart n'a été trouvé pour ce
 poste précis, **pas que la contrainte s'applique à lui** : l'IHM ne doit pas la
 présenter comme un satisfecit. La simulation de remplacement ne persiste rien.
 
@@ -691,7 +691,7 @@ le service.
 tout animateur affiché `disponible` est un candidat que `suggererReparations`
 propose sur le même siège (`CreneauAvailabilityCoherenceTest`). La réciproque
 est fausse **volontairement** : l'assistant applique deux filtres, dont le
-second lit les violations *du siège lui-même* match par match ; le reproduire
+second lit les écarts *du siège lui-même* match par match ; le reproduire
 ici reviendrait à réimplémenter cette analyse, c'est-à-dire la duplication que
 cet écran existe pour éviter. La vue applique à la place son propre instrument,
 plus strict — aucune contrainte dure aggravée, siège vide pour référence — et
@@ -954,7 +954,7 @@ heures (trente minutes à 4 h 30 pour un mineur, art. L3162-3). Quand
 l'organisateur déclare la pause **prise sur le poste** (`pauseSurPoste` des
 paramètres légaux), une séquence peut dépasser ce seuil, et quelqu'un doit
 organiser le relais : c'est ce que ce rapport donne. Sans la déclaration, une
-telle séquence est une violation que les contraintes refusent ; un plan
+telle séquence est un écart que les contraintes refusent ; un plan
 persisté peut encore en porter une, et elle est rapportée de la même façon,
 signalée comme non couverte.
 
@@ -1108,7 +1108,7 @@ collègue est terminal : l'admin n'arbitre jamais.
 
 Chaque demande est prévalidée contre les contraintes dures mais **enregistrée
 quel que soit le verdict** — la réponse porte `prevalidationOk` et les
-contraintes violées.
+contraintes non respectées.
 
 Sémantique : si le collègue tient aussi un poste sur le créneau, les deux
 permutent ; sinon il reprend simplement le poste. Un échange **dirigé** cède un

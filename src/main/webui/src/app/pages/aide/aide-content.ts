@@ -318,7 +318,7 @@ export function buildHelpSections(): HelpSection[] {
       id: 'parametrer-pour-un-planning-complet',
       icon: 'checklist',
       title: $localize`:@@aide.setup.title:Paramétrer pour un planning complet`,
-      summary: $localize`:@@aide.setup.summary:Créneaux, stands et options : ce qui fait tenir un planning à zéro violation avec l'effectif dont vous disposez, et dans quel ordre le vérifier.`,
+      summary: $localize`:@@aide.setup.summary:Créneaux, stands et options : ce qui fait tenir un planning sans le moindre écart avec l'effectif dont vous disposez, et dans quel ordre le vérifier.`,
       blocks: [
         {
           kind: 'paragraph',
@@ -362,7 +362,7 @@ export function buildHelpSections(): HelpSection[] {
           items: [
             $localize`:@@aide.setup.step1:1. Besoin en animateurs : les quatre bornes disent le plancher. Si l'effectif est sous le plancher, aucun réglage n'y changera rien ; si le plancher dépasse l'effectif de peu, revoyez la grille et la pause entre vacations avant tout.`,
             $localize`:@@aide.setup.step2:2. Ouvertures des stands, puis faisabilité : le besoin lu fenêtre par fenêtre, et la capacité jour par jour, sans calcul.`,
-            $localize`:@@aide.setup.step3:3. Une résolution courte, puis la page Problèmes : les violations restantes disent laquelle des règles tient les sièges vides.`,
+            $localize`:@@aide.setup.step3:3. Une résolution courte, puis la page Problèmes : les écarts restants disent laquelle des règles tient les sièges vides.`,
             $localize`:@@aide.setup.step4:4. Une résolution longue, une fois la configuration stable — en ne changeant qu'une chose à la fois entre deux essais.`,
             $localize`:@@aide.setup.step5:5. Fragilité, puis Pauses : qui est irremplaçable, et quels relais organiser avant de publier.`
           ]
@@ -439,11 +439,11 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.results.term.contraintes:Page Contraintes`,
-              text: $localize`:@@aide.results.def.contraintes:Le catalogue des règles, chacune avec son niveau, son état actif/inactif et le résultat de la dernière analyse : combien de fois elle est violée, et le détail des violations. C'est ce qui transforme « -14 hard » en « quatorze postes non pourvus sur tel stand ».`
+              text: $localize`:@@aide.results.def.contraintes:Le catalogue des règles, chacune avec son niveau, son état actif/inactif et le résultat de la dernière analyse : combien de fois elle n'est pas respectée, et le détail des écarts. C'est ce qui transforme « -14 hard » en « quatorze postes non pourvus sur tel stand ».`
             },
             {
               term: $localize`:@@aide.results.term.pourquoiLui:« Pourquoi lui ? »`,
-              text: $localize`:@@aide.results.def.pourquoiLui:Un clic sur un animateur affecté, dans le calendrier journalier ou le calendrier des affectations, explique cette affectation précise : les règles respectées ou violées pour ce poste. À la demande, l'écran cherche aussi qui pourrait le remplacer, et ne propose que les remplacements qui tiennent — ceux qui n'introduisent aucune violation dure — chacun avec son effet sur le score et les règles qu'il débloque. La recherche est bornée : elle annonce combien de candidats elle a évalués et si elle s'est arrêtée au plafond, car une liste courte ne prouve pas qu'il n'existe rien d'autre. « Appliquer » pose le remplacement dans le planning.`
+              text: $localize`:@@aide.results.def.pourquoiLui:Un clic sur un animateur affecté, dans le calendrier journalier ou le calendrier des affectations, explique cette affectation précise : les règles respectées ou non pour ce poste. À la demande, l'écran cherche aussi qui pourrait le remplacer, et ne propose que les remplacements qui tiennent — ceux qui n'introduisent aucun écart dur — chacun avec son effet sur le score et les règles qu'il débloque. La recherche est bornée : elle annonce combien de candidats elle a évalués et si elle s'est arrêtée au plafond, car une liste courte ne prouve pas qu'il n'existe rien d'autre. « Appliquer » pose le remplacement dans le planning.`
             }
           ]
         }
@@ -474,14 +474,14 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.tuning.term.plateau:Le score dur stagne à quelques unités de zéro`,
-              text: $localize`:@@aide.tuning.def.plateau:C'est le cas typique où allonger la durée de résolution paie : doublez-la et relancez. Si deux résolutions longues s'arrêtent exactement au même score, ce n'est plus un problème de temps mais de structure — identifiez la contrainte en défaut sur la page Contraintes et regardez ses violations une par une.`
+              text: $localize`:@@aide.tuning.def.plateau:C'est le cas typique où allonger la durée de résolution paie : doublez-la et relancez. Si deux résolutions longues s'arrêtent exactement au même score, ce n'est plus un problème de temps mais de structure — identifiez la contrainte en défaut sur la page Contraintes et regardez ses écarts un par un.`
             },
             {
-              term: $localize`:@@aide.tuning.term.legal:Les violations sont toutes des règles de temps de travail`,
+              term: $localize`:@@aide.tuning.term.legal:Les écarts portent tous sur des règles de temps de travail`,
               text: $localize`:@@aide.tuning.def.legal:Les plafonds hebdomadaires et le repos entre journées se heurtent au découpage. Revoyez les paramètres de découpage (vacations plus courtes, chevauchement, stratégie de couverture) plutôt que les plafonds légaux. Deux réglages disent souvent plus que la loi : la pause minimale entre vacations à 30 minutes interdit d'enchaîner deux blocs qui se touchent, et sans la « pause prise sur le poste » aucune séquence ne peut dépasser six heures — voir la section « Paramétrer pour un planning complet ».`
             },
             {
-              term: $localize`:@@aide.tuning.term.mineurs:Les violations concernent les mineurs`,
+              term: $localize`:@@aide.tuning.term.mineurs:Les écarts concernent les mineurs`,
               text: $localize`:@@aide.tuning.def.mineurs:Le cadre des mineurs est plus strict et dépend de l'âge à la date du créneau : pas de travail de nuit, amplitude quotidienne réduite, pauses plus longues, deux jours de repos consécutifs, accompagnement obligatoire par un majeur. Vérifiez les dates de naissance saisies et la proportion de majeurs disponibles sur les créneaux tardifs.`
             },
             {
@@ -581,7 +581,7 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.apres:Quand une résolution se termine malgré tout en défaut, la page Problèmes nomme les ajustements que le solveur n'a pas pu honorer, un par un, avec le nombre de violations que chacun porte — c'est ce qui distingue « le solveur n'y arrive pas » de « ces trois exceptions-là sont à arbitrer ».`
+          text: $localize`:@@aide.adHoc.apres:Quand une résolution se termine malgré tout en défaut, la page Problèmes nomme les ajustements que le solveur n'a pas pu honorer, un par un, avec le nombre d'écarts que chacun porte — c'est ce qui distingue « le solveur n'y arrive pas » de « ces trois exceptions-là sont à arbitrer ».`
         }
       ],
       links: [
@@ -686,7 +686,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.comparateur:Comparateur A/B`,
-              text: $localize`:@@aide.views.def.comparateur:Deux plannings côte à côte — deux instantanés, ou un instantané et le planning actuel — sur le score, la couverture, l'équité et les violations, avec le sens de chaque écart écrit en toutes lettres. Les instantanés de toutes les éditions sont proposés : c'est ainsi qu'on compare une variante (canicule, repli) à l'édition nominale. L'écran prévient quand les deux plannings n'ont pas la même taille ou ne viennent pas de la même édition : une partie de l'écart vient alors du problème posé, pas de la qualité de la résolution. Comparer ne lance jamais de calcul.`
+              text: $localize`:@@aide.views.def.comparateur:Deux plannings côte à côte — deux instantanés, ou un instantané et le planning actuel — sur le score, la couverture, l'équité et les écarts aux règles, avec le sens de chaque différence écrit en toutes lettres. Les instantanés de toutes les éditions sont proposés : c'est ainsi qu'on compare une variante (canicule, repli) à l'édition nominale. L'écran prévient quand les deux plannings n'ont pas la même taille ou ne viennent pas de la même édition : une partie de l'écart vient alors du problème posé, pas de la qualité de la résolution. Comparer ne lance jamais de calcul.`
             },
             {
               term: $localize`:@@aide.views.term.banc:Banc de touche`,

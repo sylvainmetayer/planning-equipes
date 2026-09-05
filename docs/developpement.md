@@ -354,8 +354,8 @@ correspondant.
 décidables sur le seul couple (poste, animateur) — mineur la nuit, mineur sur un
 stand réservé aux majeurs, créneau plus long que le plafond quotidien ou continu
 d'un mineur. Elles ne peuvent, par construction, écarter aucune solution
-faisable, et évitent au solveur de payer un calcul de score pour découvrir une
-violation certaine.
+faisable, et évitent au solveur de payer un calcul de score pour découvrir un
+écart certain.
 
 Règle à suivre pour toute nouvelle contrainte : exprimer d'abord ce qui peut
 l'être en `Joiners.equal` / `lessThan` / `overlapping`, restreindre le flux

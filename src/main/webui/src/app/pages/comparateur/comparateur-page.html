@@ -3,7 +3,7 @@
     <h1 mat-card-title i18n="@@comparateur.title">Comparateur A/B</h1>
     <mat-card-subtitle i18n="@@comparateur.subtitle">
       Confronte une référence et une variante — deux instantanés, ou un instantané et le plan actuel — sur le score, la
-      couverture, l'équilibre et les violations. Les instantanés de toutes les éditions sont proposés : depuis la
+      couverture, l'équilibre et les écarts aux règles. Les instantanés de toutes les éditions sont proposés : depuis la
       suppression des groupes de créneaux, une variante est une autre édition. Lecture seule : aucune résolution n'est
       déclenchée.
     </mat-card-subtitle>
@@ -65,7 +65,7 @@
         @if (kpiRecalcule()) {
           <p class="locked-hint" i18n="@@comparateur.warning.recalcule">
             Au moins un instantané a été pris avant l'enregistrement des KPI : ses métriques ont été recalculées depuis
-            son contenu. Couverture et volumétrie restent exactes, les violations ne sont pas mesurées (mode dégradé).
+            son contenu. Couverture et volumétrie restent exactes, les écarts ne sont pas mesurés (mode dégradé).
           </p>
         }
         <div class="table-wrapper">
@@ -105,11 +105,11 @@
         </div>
 
         @if (resultat.diffViolations.length > 0) {
-          <h2 class="comparateur-sous-titre" i18n="@@comparateur.violations.title">Violations par contrainte</h2>
+          <h2 class="comparateur-sous-titre" i18n="@@comparateur.violations.title">Écarts par contrainte</h2>
           <div class="table-wrapper">
             <table mat-table [dataSource]="resultat.diffViolations">
               <caption class="visually-hidden" i18n="@@comparateur.violations.caption">
-                Nombre de violations par contrainte, pour chacun des deux plans
+                Nombre d'écarts par contrainte, pour chacun des deux plans
               </caption>
               <ng-container matColumnDef="contrainte">
                 <th mat-header-cell *matHeaderCellDef i18n="@@comparateur.column.contrainte">Contrainte</th>

@@ -62,7 +62,7 @@ export interface AffectationExplanationDialogData {
         </p>
 
         @if (explication.contraintesViolees.length > 0) {
-          <h3 i18n="@@affectationExplanation.violatedTitle">Contraintes violées pour ce poste</h3>
+          <h3 i18n="@@affectationExplanation.violatedTitle">Contraintes non respectées pour ce poste</h3>
           <ul class="affectation-explanation-list">
             @for (impact of explication.contraintesViolees; track impact.name) {
               <li>
@@ -79,16 +79,16 @@ export interface AffectationExplanationDialogData {
             }
           </ul>
         } @else {
-          <p i18n="@@affectationExplanation.noViolation">Aucune contrainte violée détectée pour ce poste.</p>
+          <p i18n="@@affectationExplanation.noViolation">Aucun écart détecté sur ce poste.</p>
         }
 
         <p class="affectation-explanation-respected-count" i18n="@@affectationExplanation.respectedCount">
-          {{ explication.contraintesRespectees.length }} autre(s) contrainte(s) sans violation détectée pour ce poste.
+          {{ explication.contraintesRespectees.length }} autre(s) contrainte(s) sans écart sur ce poste.
         </p>
 
         <h3 i18n="@@affectationExplanation.repairTitle">Suggestions de réparation</h3>
         <p class="affectation-explanation-respected-count" i18n="@@affectationExplanation.repairHint">
-          Cherche les remplaçants qui n'introduisent aucune violation dure, classés par impact sur le score.
+          Cherche les remplaçants qui n'introduisent aucun écart dur, classés par impact sur le score.
         </p>
         <button matButton="tonal" [disabled]="suggestionsLoading()" (click)="chercherSuggestions()">
           <mat-icon>healing</mat-icon>
@@ -112,7 +112,7 @@ export interface AffectationExplanationDialogData {
           }
           @if (reparations.suggestions.length === 0) {
             <p i18n="@@affectationExplanation.repairNone">
-              Aucun remplacement possible sans introduire de violation dure.
+              Aucun remplacement possible sans introduire d'écart dur.
             </p>
           } @else {
             <ul class="affectation-explanation-list">

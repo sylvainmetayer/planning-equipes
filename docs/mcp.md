@@ -62,7 +62,7 @@ Trois mécanismes :
 1. **Des vues, jamais les objets de domaine.** Chaque outil renvoie un `record`
    dédié qui ne possède structurellement aucun accesseur vers un champ
    personnel.
-2. **Anonymisation des messages de violation.** `ViolationFormatter` désigne un
+2. **Anonymisation des messages d'écart.** `ViolationFormatter` désigne un
    animateur par « Prénom Nom (id) » pour l'interface web ;
    `AnonymisationViolations` réécrit en « animateur id » avant toute sortie MCP.
 3. **Un test structurel.** `McpConfidentialiteStructurelleTest` parcourt par

@@ -19,6 +19,23 @@ les lie vers Légifrance (`webui/src/app/core/legifrance.ts`, rendu par
 `app-legal-text`). Écrire `art. L3162-1` dans une description suffit donc à
 obtenir le lien : rien d'autre n'est à déclarer.
 
+## « Écart » à l'écran, `violation` dans le code
+
+Un cas où une contrainte n'est pas satisfaite se nomme un **écart** partout où
+l'organisateur le lit : les libellés, l'aide en ligne et cette documentation. Le
+mot vaut pour les trois niveaux, ce qu'« infraction » ou « manquement » ne
+feraient pas sans accuser une préférence de confort d'un délit.
+
+Le code, lui, garde `violation` : identifiants Java et TypeScript, clés JSON de
+l'API (`violations`, `violationsParContrainte`, `violationsIntroduites`),
+`ViolationFormatter`. Le renommer romprait le contrat JSON et donc tout client
+MCP existant, pour un gain de lecture seulement. **Le décalage est délibéré** :
+ne pas « corriger » un libellé vers `violation` ni un identifiant vers `écart`.
+Pour la même raison, `docs/rgpd.md` et `docs/securite.md` parlent bien de
+violation — de données et de CSP —, deux termes juridiques et techniques qui
+n'ont rien à voir avec celui-ci, et les documents datés (audit RH, ADR, revues)
+gardent les mots de leur époque.
+
 ## Fenêtre effective : ce qui la lit, et ce qui ne la lit pas délibérément
 
 Un stand fermé pour **une partie** d'un créneau — ou normalement fermé et
@@ -229,8 +246,8 @@ page Problèmes, et badge les lignes concernées sur la page Contraintes ad hoc.
 
 Et quand le solve termine **quand même** en dur négatif, le diagnostic répond à
 la question suivante — *lesquelles de mes exceptions* ? — avec
-`contraintesAdHocEnCause` : une ligne par exception encore violée, son id, sa
-raison et le nombre de violations qu'elle porte. Les lignes de violation
+`contraintesAdHocEnCause` : une ligne par exception encore en écart, son id, sa
+raison et le nombre d'écarts qu'elle porte. Les lignes d'écart
 nomment elles aussi l'exception par son id.
 
 **Le budget d'exceptions a été explicitement écarté** : voir

@@ -507,13 +507,13 @@ describe('ComparateurPage rendering', () => {
 
   it('lists the violations per constraint, and only when there are some', async () => {
     await comparerAvec({});
-    expect(texte()).not.toContain('Violations par contrainte');
+    expect(texte()).not.toContain('Écarts par contrainte');
 
     await comparerAvec({
       diffViolations: [{ contrainte: 'Repos quotidien', base: 3, variante: 0 }]
     } as Partial<ComparaisonSnapshots>);
 
-    expect(texte()).toContain('Violations par contrainte');
+    expect(texte()).toContain('Écarts par contrainte');
     expect(texte()).toContain('Repos quotidien');
   });
 

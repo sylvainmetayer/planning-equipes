@@ -227,7 +227,7 @@ describe('AffectationExplanationDialog', () => {
     await fixture.whenStable();
 
     const affiche = texte(fixture);
-    expect(affiche).toContain('Contraintes violées pour ce poste');
+    expect(affiche).toContain('Contraintes non respectées pour ce poste');
     // The description wins over the raw constraint name when the server sends one.
     expect(affiche).toContain('Repos quotidien de 11 h');
     expect(affiche).not.toContain('reposQuotidien');
@@ -249,7 +249,7 @@ describe('AffectationExplanationDialog', () => {
     const { fixture } = mount({});
     await fixture.whenStable();
 
-    expect(texte(fixture)).toContain('Aucune contrainte violée détectée pour ce poste');
+    expect(texte(fixture)).toContain('Aucun écart détecté sur ce poste');
     expect(root(fixture).querySelectorAll('.affectation-explanation-list')).toHaveLength(0);
   });
 
