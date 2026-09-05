@@ -291,28 +291,40 @@ public final class CoherenceAnalyzer {
         }
         List<Avertissement> avertissements = new ArrayList<>();
 
+        // The span is not the whole answer: a créneau crossing midnight reads a
+        // window dated the day after it (HoraireStandResolver#datesConcernees),
+        // and on the event's last day that date sits outside [first, last].
+        // Warning about it would be crying wolf on a window the solver honours.
+        Set<LocalDate> lues = HoraireStandResolver.datesConcernees(creneaux);
         List<LocalDate> horsEvenement = new ArrayList<>();
         apres.getIndisponibilites().stream().map(IndisponibiliteStand::getDate).filter(Objects::nonNull)
-                .filter(date -> !jours.covers(date)).forEach(horsEvenement::add);
+                .filter(date -> !jours.covers(date) && !lues.contains(date)).forEach(horsEvenement::add);
         apres.getOuvertures().stream().map(OuvertureStand::getDate).filter(Objects::nonNull)
-                .filter(date -> !jours.covers(date)).forEach(horsEvenement::add);
+                .filter(date -> !jours.covers(date) && !lues.contains(date)).forEach(horsEvenement::add);
         if (!horsEvenement.isEmpty()) {
             List<LocalDate> triees = horsEvenement.stream().distinct().sorted().toList();
             avertissements.add(new Avertissement(TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT,
-                    "Le stand " + apres.getId() + " porte " + triees.size() + " exception(s) datée(s) hors des "
-                            + "jours de l'événement (" + jours.first() + " → " + jours.last() + ") : " + citer(triees)
+                    "Le stand " + apres.getId() + " porte " + horsEvenement.size() + " exception(s) datée(s) hors "
+                            + "des jours de l'événement (" + jours.first() + " → " + jours.last() + "), sur "
+                            + triees.size() + " date(s) : " + citer(triees)
                             + ". Aucun créneau ne les lira. Le stand est enregistré."));
         }
 
         List<OuvertureStandsAnalyzer.Anomaly> sansEffet = OuvertureStandsAnalyzer.fenetresWithoutEffect(apres,
                 OuvertureStandsAnalyzer.creneauxByDay(creneaux));
         if (!sansEffet.isEmpty()) {
-            List<String> citees = sansEffet.stream().limit(DATES_CITEES)
-                    .map(anomalie -> anomalie.date() + " : " + anomalie.message()).toList();
-            String reste = sansEffet.size() > DATES_CITEES ? " Et " + (sansEffet.size() - DATES_CITEES) + " autre(s)." : "";
+            // The dates, not one full sentence per date: a rule expanding onto
+            // twelve days repeated the same phrase five times over 590
+            // characters, in a snack bar that stays until it is dismissed.
+            List<LocalDate> joursConcernes = sansEffet.stream().map(OuvertureStandsAnalyzer.Anomaly::date)
+                    .filter(Objects::nonNull).distinct().sorted().toList();
+            OuvertureStandsAnalyzer.Anomaly premiere = sansEffet.stream()
+                    .min(Comparator.comparing(anomalie -> anomalie.date() != null ? anomalie.date() : LocalDate.MIN))
+                    .orElse(sansEffet.get(0));
             avertissements.add(new Avertissement(TypeAvertissement.STAND_FENETRE_SANS_EFFET,
                     "Le stand " + apres.getId() + " a " + sansEffet.size() + " fenêtre(s) qui ne recoupent aucun "
-                            + "créneau de leur jour — " + String.join(" ; ", citees) + reste
+                            + "créneau de leur jour : " + citer(joursConcernes) + ". Par exemple le "
+                            + premiere.date() + ", " + premiere.message()
                             + " Vérifiez les heures saisies contre la grille de créneaux. Le stand est enregistré."));
         }
 
@@ -324,7 +336,7 @@ public final class CoherenceAnalyzer {
                             + " créneaux de l'édition : il n'ouvrira aucun poste et le solveur n'y placera personne. "
                             + "Le stand est enregistré."));
         }
-        return avertissements;
+        return List.copyOf(avertissements);
     }
 
     /**

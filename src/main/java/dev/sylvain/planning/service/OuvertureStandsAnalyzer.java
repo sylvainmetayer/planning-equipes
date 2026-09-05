@@ -309,11 +309,11 @@ public final class OuvertureStandsAnalyzer {
         TreeSet<String> dejaVues = new TreeSet<>();
         for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
             reportIfWithoutEffect(stand, creneauxParJour, anomalies, dejaVues, ouverture.getDate(),
-                    ouverture.getHeureDebut(), ouverture.getHeureFin(), "ouverture");
+                    ouverture.getHeureDebut(), ouverture.getHeureFin(), "L'ouverture");
         }
         for (IndisponibiliteStand fermeture : stand.getIndisponibilitesEffectives()) {
             reportIfWithoutEffect(stand, creneauxParJour, anomalies, dejaVues, fermeture.getDate(),
-                    fermeture.getHeureDebut(), fermeture.getHeureFin(), "fermeture");
+                    fermeture.getHeureDebut(), fermeture.getHeureFin(), "La fermeture");
         }
         return anomalies;
     }
@@ -347,7 +347,7 @@ public final class OuvertureStandsAnalyzer {
             return;
         }
         anomalies.add(new Anomaly(AnomalyType.FENETRE_SANS_EFFET, stand.getId(), stand.getNom(), date,
-                "La " + libelle + " de " + heureDebut + " à "
+                libelle + " de " + heureDebut + " à "
                         + (heureFin != null ? heureFin.toString() : "la fermeture")
                         + " ne recoupe aucun créneau de ce jour : elle ne change rien."));
     }

@@ -61,6 +61,11 @@ public class StandService {
         return stands;
     }
 
+    /** One stand as persisted, or {@code null}: what a write compares itself against. */
+    public Stand find(String id) {
+        return repository.findStand(id);
+    }
+
     public Stand create(Stand stand) {
         stand.setId(Ids.required(stand.getId(), "stand id"));
         validate(stand);

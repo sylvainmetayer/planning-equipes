@@ -23,8 +23,8 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 
 /**
- * {@link CoherenceAnalyzer}: the three warnings a write reports without
- * refusing anything.
+ * {@link CoherenceAnalyzer}: the warnings a write reports without refusing
+ * anything.
  *
  * <p>Every rule is tested both ways. A test that only proves the shout proves
  * nothing about the silence, and a warning that fires on correct data is worse
@@ -504,6 +504,28 @@ class CoherenceAnalyzerTest {
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.STAND_FENETRE_SANS_EFFET,
                 TypeAvertissement.STAND_JAMAIS_OUVERT);
         assertThat(avertissements.get(0).message()).contains("3 fenêtre(s)");
+        // The dates once each, and the window spelled out once — not one full
+        // sentence per date, which ran to 590 characters on a twelve-day rule.
+        assertThat(avertissements.get(0).message()).contains(JOUR_1.toString()).contains("21:00")
+                .hasSizeLessThan(400);
+    }
+
+    /**
+     * A créneau crossing midnight reads a window dated the day after it, so on
+     * the event's last day such a date is outside [first, last] and still
+     * honoured: warning about it would be crying wolf on correct data.
+     */
+    @Test
+    void uneFenetreDuLendemainDUnCreneauQuiFranchitMinuitNEstPasHorsEvenement() {
+        List<Creneau> creneaux = new ArrayList<>(List.of(
+                creneau(1L, JOUR_1, 10, 20),
+                new Creneau(2L, 0, JOUR_3, LocalTime.of(22, 0), LocalTime.of(2, 0))));
+        Stand nuit = stand("NUIT");
+        nuit.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_3.plusDays(1), LocalTime.MIDNIGHT,
+                LocalTime.of(2, 0), null));
+
+        assertThat(types(surStand(null, nuit, creneaux)))
+                .doesNotContain(TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT);
     }
 
     @Test

@@ -217,6 +217,11 @@ public class StandRepository {
         return valeurs.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
 
+    /** One stand, or {@code null} — what a write needs to compare against, instead of the whole referential. */
+    public Stand findStand(String id) {
+        return listStands().stream().filter(stand -> id.equals(stand.getId())).findFirst().orElse(null);
+    }
+
     public boolean standExists(String id) {
         return scope.exists("stand", id);
     }

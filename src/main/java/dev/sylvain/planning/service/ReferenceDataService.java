@@ -169,10 +169,7 @@ public class ReferenceDataService implements ReferenceData {
      * nothing about it (the bulk edit issues one {@code PUT} per row).
      */
     public WrittenStand writeStand(String id, Stand stand) {
-        Stand avant = stands.list().stream()
-                .filter(candidat -> Objects.equals(candidat.getId(), id))
-                .findFirst()
-                .orElse(null);
+        Stand avant = stands.find(id);
         Stand ecrit = updateStand(id, stand);
         return new WrittenStand(ecrit, coherence.onStand(avant, ecrit));
     }
