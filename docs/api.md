@@ -280,7 +280,12 @@ l'écrit dans l'instantané — une analyse par édition et par redémarrage, de
 un calcul qui va durer des minutes.
 
 Une restauration répond `409` **sans rien écrire** si des références ont
-disparu, en listant lesquelles.
+disparu, en listant lesquelles. Elle répond aussi `409` — même corps que les
+écritures du référentiel, le job en cause nommé — tant qu'une résolution tient
+le solveur **de cette édition** : le solve écraserait en se terminant le plan
+qu'on vient de remettre en place. La garde est dans le service, pas dans
+l'écran : l'API et l'outil MCP `restaurer_instantane` la partagent. Une
+résolution sur une autre édition ne refuse rien.
 
 **Un instantané peut porter l'état « publié »** (`publieLe`). C'est le plan que
 les animateurs ont reçu, et celui que leur espace affiche — voir *Publication*

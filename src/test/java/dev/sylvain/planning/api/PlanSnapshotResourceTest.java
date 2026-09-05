@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -163,6 +164,37 @@ class PlanSnapshotResourceTest {
                 .extract().jsonPath().getString("analysedAt");
         assertThat(apres).isNotNull();
         assertThat(java.time.Instant.parse(apres)).isAfter(java.time.Instant.parse(avant));
+    }
+
+    /**
+     * The guard of issue #313, seen from the API: a restore asked while a solve
+     * holds this edition's solver is a 409 whose body names the run — the same
+     * shape as every refused referential write — and nothing is written.
+     */
+    @Test
+    void restoreAnswers409WhileASolveRuns() throws InterruptedException {
+        persistedPlan();
+        long id = capture("Pendant le solve");
+        int avant = affectationCount();
+
+        attendreSolveurLibre();
+        String jobId = given()
+                .when().post("/api/solve/async/reference-data?seconds=30")
+                .then()
+                .statusCode(202)
+                .extract().path("id");
+        try {
+            given()
+                    .when().post("/api/planning/snapshots/" + id + "/restore")
+                    .then()
+                    .statusCode(409)
+                    .body("id", equalTo(jobId))
+                    .body("message", containsString("résolution est en cours"));
+            assertThat(affectationCount()).isEqualTo(avant);
+        } finally {
+            given().when().post("/api/jobs/" + jobId + "/cancel");
+            pollUntilFinished(jobId);
+        }
     }
 
     private void attendreSolveurLibre() throws InterruptedException {

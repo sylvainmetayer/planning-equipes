@@ -12,6 +12,7 @@ import dev.sylvain.planning.service.PlanSnapshotService.SnapshotMeta;
 import dev.sylvain.planning.service.PlanningKpiService.PlanningKpi;
 import dev.sylvain.planning.service.SnapshotComparisonService;
 import dev.sylvain.planning.service.SnapshotComparisonService.ComparaisonSnapshots;
+import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -106,12 +107,22 @@ public class InstantaneMcpTools {
      * says nothing was restored.
      */
     @Tool(description = "Restaure un instantané à la place du planning courant. Refusé si l'instantané référence "
-            + "des stands, créneaux ou animateurs qui n'existent plus : rien n'est alors écrit.",
+            + "des stands, créneaux ou animateurs qui n'existent plus, ou si une résolution est en cours sur "
+            + "l'édition (elle écraserait le plan restauré) : rien n'est alors écrit.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
                     idempotentHint = true, openWorldHint = false))
     RestaurationView restaurer_instantane(@ToolArg(description = "Id de l'instantané") long id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        RestaurationResult result = snapshotService.restaurer(id);
+        RestaurationResult result;
+        try {
+            result = snapshotService.restaurer(id);
+        } catch (SolverBusyException occupe) {
+            // Same refusal as the REST 409 (SolverOccupeMapper), said in the
+            // assistant's terms: the run to wait for, or to stop, is named.
+            throw new BusinessError.Conflict("Une résolution est en cours sur cette édition (job "
+                    + occupe.getActiveJob().getId() + ") : elle écraserait le plan restauré en se terminant. "
+                    + "Attendez sa fin ou arrêtez-la (arreter_solveur), puis restaurez.");
+        }
         if (result == null) {
             throw new BusinessError.NotFound("Instantané introuvable dans cette édition : " + id);
         }

@@ -424,7 +424,7 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : c'est la page Instantanés qui garde les autres. Une capture y est prise automatiquement avant chaque résolution — c'est ce filet que « Revenir au plan d'avant » utilise. Un plan que vous voulez garder au-delà des cinq dernières se met de côté explicitement, avec un libellé : celui-là n'est jamais purgé, et sert de terme de comparaison au Comparateur A/B. Le bouton « Restaurer ce plan » est désactivé pendant une résolution : celle-ci écraserait en se terminant le plan qu'on vient de remettre en place.`
+          text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : c'est la page Instantanés qui garde les autres. Une capture y est prise automatiquement avant chaque résolution — c'est ce filet que « Revenir au plan d'avant » utilise. Un plan que vous voulez garder au-delà des cinq dernières se met de côté explicitement, avec un libellé : celui-là n'est jamais purgé, et sert de terme de comparaison au Comparateur A/B. Restaurer pendant une résolution est refusé, par le serveur et non seulement par l'écran : la résolution écraserait en se terminant le plan qu'on vient de remettre en place. Attendez sa fin, ou arrêtez-la depuis la page Solveur.`
         },
         {
           kind: 'definitions',

@@ -70,6 +70,9 @@ public class PlanSnapshotService {
     @Inject
     PlanningKpiService kpiService;
 
+    @Inject
+    SolverJobService solverJobs;
+
     /**
      * The CDI-managed mapper, not a bare {@code new ObjectMapper()}: it carries
      * the modules Quarkus registers (JSR-310 in particular), so a field of a
@@ -420,8 +423,17 @@ public class PlanSnapshotService {
      * snapshot. Refuses — without writing anything — as soon as one referenced
      * stand, créneau or animateur has disappeared since the capture: a partial
      * restore would silently produce a plan nobody ever computed.
+     *
+     * <p>Refused while a solve holds this edition's solver (issue #313): the
+     * solve persists its own result when it lands, which would overwrite the
+     * plan just put back — silently, and with a constraint analysis describing
+     * yet another plan. The Instantanés screen disables its button meanwhile,
+     * but that guard covers only the operator in front of it; the REST call and
+     * the MCP tool both come through here, so this is the guard that covers
+     * everyone. See {@link SolverJobService#refuseIfSolving}.</p>
      */
     public RestaurationResult restaurer(long id) {
+        solverJobs.refuseIfSolving();
         SnapshotDetail detail = load(id);
         if (detail == null) {
             return null;
