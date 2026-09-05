@@ -65,7 +65,8 @@ public class PlanningExportService {
      * administration's own export, dated by the last solve.
      */
     public byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId) {
-        return exportAnimateurPdf(planning, animateurId, provenance.courante());
+        return exportAnimateurPdf(planning, animateurId, provenance.courante(),
+                pauses.pausesAnimateur(planning, animateurId));
     }
 
     /**
@@ -75,18 +76,19 @@ public class PlanningExportService {
      * (issue #245) — the document has not moved, so its date must not either.
      */
     public byte[] exportAnimateurPdfPublie(PlanningEvenement planning, String animateurId) {
-        return exportAnimateurPdf(planning, animateurId, provenance.publiee());
+        return exportAnimateurPdf(planning, animateurId, provenance.publiee(),
+                pauses.pausesAnimateur(planning, animateurId));
     }
 
     private byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId,
-            ExportProvenance.Provenance provenanceDuPlan) {
+            ExportProvenance.Provenance provenanceDuPlan, List<PauseAnalyzer.PauseAnimateurView> pausesDuJour) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
                 .toList();
         return pdfAnimateur.construire(resolveAnimateurName(planning, animateurId), animateurPostes,
                 teammatesByPoste(planning, animateurId), daysOff(planning, animateurId),
-                pauses.pausesAnimateur(planning, animateurId),
+                pausesDuJour,
                 lienEspaceAnimateur(planning, animateurId), provenanceDuPlan);
     }
 
@@ -206,12 +208,19 @@ public class PlanningExportService {
      * global PDF: the planning is always handed out person by person.
      */
     public byte[] exportAllPdfZip(PlanningEvenement planning) {
-        return buildZip(planning, List.of(new NamedFileBuilder(".pdf", id -> exportAnimateurPdf(planning, id))));
+        // One analysis for the whole roster: per animateur, it would walk every
+        // seat of the plan again, once per person in the ZIP.
+        Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
+        return buildZip(planning, List.of(new NamedFileBuilder(".pdf",
+                id -> exportAnimateurPdf(planning, id, provenance.courante(),
+                        parAnimateur.getOrDefault(id, List.of())))));
     }
 
     public byte[] exportAllIcsZip(PlanningEvenement planning) {
+        Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
         return buildZip(planning, List.of(new NamedFileBuilder(".ics",
-                id -> ics.exportAnimateurIcs(planning, id).getBytes(StandardCharsets.UTF_8))));
+                id -> ics.exportAnimateurIcs(planning, id, parAnimateur.getOrDefault(id, List.of()))
+                        .getBytes(StandardCharsets.UTF_8))));
     }
 
     /**
@@ -219,10 +228,13 @@ public class PlanningExportService {
      * the whole planning can be handed out through one download.
      */
     public byte[] exportAllBundleZip(PlanningEvenement planning) {
+        Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
         return buildZip(planning, List.of(
-                new NamedFileBuilder(".pdf", id -> exportAnimateurPdf(planning, id)),
+                new NamedFileBuilder(".pdf", id -> exportAnimateurPdf(planning, id, provenance.courante(),
+                        parAnimateur.getOrDefault(id, List.of()))),
                 new NamedFileBuilder(".ics",
-                        id -> ics.exportAnimateurIcs(planning, id).getBytes(StandardCharsets.UTF_8))));
+                        id -> ics.exportAnimateurIcs(planning, id, parAnimateur.getOrDefault(id, List.of()))
+                                .getBytes(StandardCharsets.UTF_8))));
     }
 
     /** Bundles one or more files per animateur, named after the animateur, into a ZIP. */

@@ -83,19 +83,30 @@ final class StandValidator {
                                 + ouverture.getHeureDebut() + ") — une ouverture ne peut pas chevaucher minuit, "
                                 + "entrez-en deux");
             }
-            checkEffectifFenetre(ouverture.getEffectif(), "une ouverture");
+            checkEffectifFenetre(ouverture.getEffectif(), "une ouverture", stand);
         }
     }
 
     /**
      * A window's effectif is optional — absent, the stand's minimum applies —
      * but never zero or negative: a window nobody should staff is a closure,
-     * and is declared as one.
+     * and is declared as one. Nor above the stand's {@code effectifMax}: seat
+     * generation would then make mandatory more seats than the stand is
+     * declared able to hold, and the two numbers would contradict each other
+     * on every screen that shows them.
      */
-    private static void checkEffectifFenetre(Integer effectif, String porteur) {
-        if (effectif != null && effectif < 1) {
+    private static void checkEffectifFenetre(Integer effectif, String porteur, Stand stand) {
+        if (effectif == null) {
+            return;
+        }
+        if (effectif < 1) {
             throw new BusinessError.Invalid("effectif (" + effectif + ") doit être au moins 1 sur " + porteur
                     + " — laissez-le vide pour reprendre l'effectif minimum du stand, ou déclarez une fermeture");
+        }
+        if (effectif > stand.getEffectifMax()) {
+            throw new BusinessError.Invalid("effectif (" + effectif + ") dépasse l'effectif maximum du stand ("
+                    + stand.getEffectifMax() + ") sur " + porteur
+                    + " — relevez l'effectif maximum du stand, ou baissez celui de la fenêtre");
         }
     }
 
@@ -119,7 +130,7 @@ final class StandValidator {
             return;
         }
         for (HoraireStand horaire : horaires) {
-            checkHoraire(horaire);
+            checkHoraire(horaire, stand);
         }
         for (int i = 0; i < horaires.size(); i++) {
             for (int j = i + 1; j < horaires.size(); j++) {
@@ -135,7 +146,7 @@ final class StandValidator {
         }
     }
 
-    private static void checkHoraire(HoraireStand horaire) {
+    private static void checkHoraire(HoraireStand horaire, Stand stand) {
         if (horaire.getFenetres().isEmpty()) {
             throw new BusinessError.Invalid("Un horaire de stand requiert au moins une fenêtre horaire");
         }
@@ -149,7 +160,7 @@ final class StandValidator {
                         + fenetre.getHeureDebut() + ") — une fenêtre horaire ne peut pas chevaucher minuit, "
                         + "entrez-en deux");
             }
-            checkEffectifFenetre(fenetre.getEffectif(), "une fenêtre horaire");
+            checkEffectifFenetre(fenetre.getEffectif(), "une fenêtre horaire", stand);
         }
         switch (horaire.getJours()) {
             case JOURS_SEMAINE -> {

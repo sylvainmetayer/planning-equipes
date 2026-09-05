@@ -363,6 +363,67 @@ class PauseAnalyzerTest {
 
     /* ------------------------------- helpers ------------------------------- */
 
+    @Test
+    void theBreakNamesTheStandHeldAtThatInstantEvenAcrossASubLegalGap() {
+        // 13:00-18:50 on one stand, 19:05-24:00 on another: the ten-minute gap is
+        // shorter than the break, so it is one stretch, and the deadline at 19:00
+        // falls inside the gap. The break belongs to the stand about to be held.
+        Stand matin = stand("MATIN", 1);
+        Stand soir = stand("SOIR", 2);
+        Animateur alice = adulte("alice");
+        Animateur bob = adulte("bob");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", matin, creneau(1, 13, 0, 18, 50), alice),
+                poste("p2", soir, creneau(2, 19, 5, 0, 0), alice),
+                poste("p3", soir, creneau(2, 19, 5, 0, 0), bob));
+
+        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice, bob), postes), surPoste(true)), "alice")
+                .sequences().getFirst().pausesDues().getFirst();
+
+        assertThat(pause.standId()).isEqualTo("SOIR");
+        // And the relay is looked for on that stand: bob only arrives at 19:05,
+        // so at the deadline there is nobody yet — the honest answer.
+        assertThat(pause.relaisDisponible()).isFalse();
+    }
+
+    @Test
+    void aColleagueAlreadyOnTheEveningStandIsTheRelayOfThatBreak() {
+        Stand matin = stand("MATIN", 1);
+        Stand soir = stand("SOIR", 2);
+        Animateur alice = adulte("alice");
+        Animateur bob = adulte("bob");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", matin, creneau(1, 13, 0, 18, 50), alice),
+                poste("p2", soir, creneau(2, 19, 5, 0, 0), alice),
+                poste("p3", soir, creneau(3, 18, 0, 0, 0), bob));
+
+        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice, bob), postes), surPoste(true)), "alice")
+                .sequences().getFirst().pausesDues().getFirst();
+
+        assertThat(pause.standId()).isEqualTo("SOIR");
+        assertThat(pause.relais()).extracting(PauseAnalyzer.RelaisView::animateurId).containsExactly("bob");
+    }
+
+    @Test
+    void pausesByAnimateurGivesTheSameLinesAsOneByOne() {
+        Stand stand = stand("JEUX", 2);
+        Animateur alice = adulte("alice");
+        Animateur bob = adulte("bob");
+        Animateur repos = adulte("repos");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", stand, creneau(1, 13, 0, 20, 0), alice),
+                poste("p2", stand, creneau(1, 13, 0, 20, 0), bob));
+        PlanningEvenement planning = planning(List.of(alice, bob, repos), postes);
+
+        var parAnimateur = analyzer.pausesByAnimateur(planning);
+
+        assertThat(parAnimateur.keySet()).containsExactlyInAnyOrder("alice", "bob");
+        assertThat(parAnimateur.get("alice")).isEqualTo(analyzer.pausesAnimateur(planning, "alice"));
+        assertThat(parAnimateur.get("bob")).isEqualTo(analyzer.pausesAnimateur(planning, "bob"));
+        // Somebody who owes none is simply absent, and the caller falls back on an empty list.
+        assertThat(parAnimateur).doesNotContainKey("repos");
+    }
+
     private static JourneeAnimateurView journee(RapportPauses rapport, String animateurId) {
         return rapport.journees().stream()
                 .filter(journee -> journee.animateurId().equals(animateurId))

@@ -102,6 +102,11 @@ porte son `effectif`. `null`, le cas très majoritaire, veut dire « hériter de
 `effectifMin` », donc une fenêtre qui n'en nomme aucun génère exactement ce
 qu'elle générait avant que le champ existe.
 
+Un effectif de fenêtre ne peut pas dépasser l'`effectifMax` du stand : la
+génération rendrait obligatoires plus de sièges que le stand n'est déclaré
+capable d'en tenir, et les deux nombres se contrediraient sur chaque écran qui
+les montre. Le validateur et le formulaire le refusent tous les deux.
+
 Un créneau à cheval sur deux fenêtres d'effectifs différents produit **deux
 groupes de sièges**, chacun portant la [fenêtre effective](#fenêtre-effective)
 de son segment. Là où deux fenêtres se recouvrent, le recouvrement prend le
