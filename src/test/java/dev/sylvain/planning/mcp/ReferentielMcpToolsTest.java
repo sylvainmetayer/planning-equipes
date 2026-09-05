@@ -170,6 +170,31 @@ class ReferentielMcpToolsTest {
     }
 
     @Test
+    void deriverLaGrilleDesStandsPrevisualiseSansEcrirePuisEcrit() {
+        creneauTools.supprimer_creneaux(null, null, null, true, null);
+        dev.sylvain.planning.domain.Stand stand = new dev.sylvain.planning.domain.Stand("DERIV-MCP", "Dérivé",
+                java.util.Set.of(), 1, 1, false);
+        stand.setHoraires(new java.util.ArrayList<>(List.of(dev.sylvain.planning.domain.HoraireStand.everyDay(
+                dev.sylvain.planning.domain.ModeHoraire.OUVERTURE,
+                new dev.sylvain.planning.domain.FenetreHoraire(java.time.LocalTime.of(10, 0), java.time.LocalTime.of(12, 0)),
+                new dev.sylvain.planning.domain.FenetreHoraire(java.time.LocalTime.of(14, 0), null)))));
+        referenceDataService.createStand(stand);
+
+        CreneauMcpTools.RapportDerivation apercu = creneauTools.previsualiser_derivation_creneaux(
+                "2026-07-06", "2026-07-07", "20:00", null, null, null, null);
+        assertThat(apercu.nombreGeneres()).isEqualTo(4);
+        assertThat(referenceDataService.listCreneaux()).isEmpty();
+
+        CreneauMcpTools.RapportDerivation ecrit = creneauTools.generer_creneaux_depuis_stands(
+                "2026-07-06", "2026-07-07", "20:00", null, null, null, null);
+        assertThat(ecrit.nombreGeneres()).isEqualTo(4);
+        assertThat(referenceDataService.listCreneaux()).hasSize(4);
+
+        creneauTools.supprimer_creneaux(null, null, null, true, null);
+        referenceDataService.deleteStand("DERIV-MCP");
+    }
+
+    @Test
     void supprimerDesCreneauxSansFiltreEstRefuse() {
         assertThatThrownBy(() -> creneauTools.supprimer_creneaux(null, null, null, null, null))
                 .isInstanceOf(IllegalArgumentException.class)

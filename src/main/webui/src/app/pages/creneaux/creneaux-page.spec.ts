@@ -123,6 +123,7 @@ type PageInternals = {
   mode: Signal<string>;
   changerMode: (mode: string) => Promise<void>;
   openSerie: () => void;
+  openDerivation: () => void;
 };
 
 describe('CreneauxPage', () => {
@@ -687,6 +688,20 @@ describe('CreneauxPage rendering', () => {
       editingLocked.set(true);
       await fixture.whenStable();
       expect(bouton('Créer une série').disabled).toBe(true);
+    });
+
+    it('opens the derivation dialog prefilled with the span of the grid', async () => {
+      await rendreEtLire([creneau({ id: 2, jour: 2, date: '2026-08-03' }), creneau({ id: 1, jour: 1, date: '2026-08-01' })]);
+      const dialog = TestBed.inject(MatDialog) as unknown as { open: ReturnType<typeof vi.fn> };
+
+      bouton('Dériver des horaires des stands').click();
+
+      expect(dialog.open).toHaveBeenCalledOnce();
+      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: object }])[1].data).toEqual({
+        mode: 'AMPLITUDES',
+        dateDebut: '2026-08-01',
+        dateFin: '2026-08-03'
+      });
     });
 
     it('declares the grid as vacations once the découpage has generated them', async () => {

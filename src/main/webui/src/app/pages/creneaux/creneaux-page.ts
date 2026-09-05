@@ -33,12 +33,14 @@ import {
   DiagnosticGrille,
   ModeGrilleCreneaux,
   ParametresDecoupage,
+  RapportDerivation,
   RapportGrille,
   RapportRecurrence
 } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-dialog';
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
+import { CreneauDerivationData, CreneauDerivationDialog } from './creneau-derivation-dialog';
 import { CreneauSerieData, CreneauSerieDialog } from './creneau-serie-dialog';
 import { bilanGrille, iconeAnomalieGrille, trierAnomalies } from './grille-creneaux';
 
@@ -286,6 +288,27 @@ export class CreneauxPage {
     ref.afterClosed().subscribe((rapport) => {
       if (rapport) {
         void this.apresSerie(rapport);
+      }
+    });
+  }
+
+  /** « Dériver des horaires des stands » : the grid the stands imply, previewed and written by the dialog. */
+  protected openDerivation(): void {
+    if (this.editingLocked()) {
+      return;
+    }
+    const dates = this.store.creneaux().map((creneau) => creneau.date).sort();
+    const ref = this.dialog.open<CreneauDerivationDialog, CreneauDerivationData, RapportDerivation | null>(
+      CreneauDerivationDialog,
+      {
+        data: { mode: this.mode(), dateDebut: dates[0] ?? null, dateFin: dates.at(-1) ?? null },
+        width: '44rem',
+        autoFocus: 'first-tabbable'
+      }
+    );
+    ref.afterClosed().subscribe((rapport) => {
+      if (rapport) {
+        void this.apresSerie({ nombreGeneres: rapport.nombreGeneres, creneaux: rapport.creneaux, controle: rapport.controle });
       }
     });
   }

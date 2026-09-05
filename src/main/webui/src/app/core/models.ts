@@ -863,6 +863,32 @@ export interface RegleRecurrence {
   fenetres: FenetreHoraire[];
 }
 
+/** A derivation of the grid from the stands' hours, as `POST /api/creneaux/derivation` reads it. */
+export interface DerivationRequest {
+  dateDebut: string;
+  dateFin: string;
+  /** `00:00` reads as midnight: the last créneau then crosses it. */
+  heureFermeture: string;
+  dureeMinimaleMinutes: number;
+  remplacer: boolean;
+}
+
+/** One cut of one day, and the first stands whose windows start or end there. */
+export interface CoupureDerivation {
+  date: string;
+  heure: string;
+  standIds: string[];
+  nombreStands: number;
+}
+
+export interface RapportDerivation {
+  nombreGeneres: number;
+  creneaux: Creneau[];
+  coupures: CoupureDerivation[];
+  joursSansFenetre: string[];
+  controle: RapportGrille;
+}
+
 /** What a rule produced (or would produce), and the verdict on the resulting grid. */
 export interface RapportRecurrence {
   nombreGeneres: number;

@@ -16,6 +16,12 @@
       <mat-icon>playlist_add</mat-icon>
       <ng-container i18n="@@creneaux.serie.action">Créer une série</ng-container>
     </button>
+    <button matButton type="button" [disabled]="editingLocked()" (click)="openDerivation()"
+            i18n-matTooltip="@@creneaux.derivation.tooltip"
+            matTooltip="La grille que les horaires des stands impliquent : une coupure à chaque heure où un stand ouvre ou ferme, prévisualisée avant d'écrire.">
+      <mat-icon>storefront</mat-icon>
+      <ng-container i18n="@@creneaux.derivation.action">Dériver des horaires des stands</ng-container>
+    </button>
   </mat-card-actions>
   <mat-card-content>
     <div class="grille-mode">

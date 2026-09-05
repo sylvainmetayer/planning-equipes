@@ -308,6 +308,38 @@ public class ReferenceDataService implements ReferenceData {
     public record RecurrenceGrille(List<Creneau> creneaux, CreneauGridService.RapportGrille controle) {
     }
 
+    /**
+     * The grid the stands' own hours imply, and the verdict on it — nothing
+     * written. {@code remplacer} says which grid is judged: the derived one
+     * alone, or the current grid plus the derived créneaux.
+     */
+    public DerivationGrille previewDerivation(GrilleDepuisFenetres.Parametres parametres, boolean remplacer,
+            ModeGrilleCreneaux mode) {
+        GrilleDepuisFenetres.Derivation derivation = GrilleDepuisFenetres.deriver(listStands(), parametres);
+        List<Creneau> resultante = remplacer ? new ArrayList<>() : new ArrayList<>(listCreneaux());
+        resultante.addAll(derivation.creneaux());
+        return new DerivationGrille(derivation, controlerGrille(resultante, mode));
+    }
+
+    /** Writes the derived grid: added to the current one, or in its place (the persisted plan goes with it). */
+    public DerivationGrille applyDerivation(GrilleDepuisFenetres.Parametres parametres, boolean remplacer,
+            ModeGrilleCreneaux mode) {
+        GrilleDepuisFenetres.Derivation derivation = GrilleDepuisFenetres.deriver(listStands(), parametres);
+        if (derivation.creneaux().isEmpty()) {
+            throw new BusinessError.Invalid("Aucun stand n'a de fenêtre d'ouverture sur ces dates : rien à dériver");
+        }
+        List<Creneau> ecrits = remplacer ? creneaux.replace(derivation.creneaux())
+                : createCreneaux(derivation.creneaux());
+        GrilleDepuisFenetres.Derivation persistee = new GrilleDepuisFenetres.Derivation(
+                ecrits, derivation.coupures(), derivation.joursSansFenetre());
+        return new DerivationGrille(persistee, controlerGrille(mode));
+    }
+
+    /** What the derivation produced (or would), and the verdict on the resulting grid. */
+    public record DerivationGrille(GrilleDepuisFenetres.Derivation derivation,
+            CreneauGridService.RapportGrille controle) {
+    }
+
     /* ------------------------------- Slicing -------------------------------- */
 
     public List<Creneau> previewDecoupage() {

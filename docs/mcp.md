@@ -306,6 +306,15 @@ s'applique — `modeGrille` de `modifier_parametres_decoupage`, la valeur que
 l'organisateur choisit sur la page Créneaux. `diagnostiquer_grille_creneaux`
 continue de dire ce que la grille contient, sans trancher.
 
+## La grille peut découler des stands
+
+Quand les stands ont déjà leurs horaires, `previsualiser_derivation_creneaux`
+montre la grille qu'ils impliquent — une coupure à chaque heure où un stand
+ouvre ou ferme — et `generer_creneaux_depuis_stands` l'écrit, en ajout par
+défaut, ou à la place de la grille avec `remplacer=true` (le planning résolu
+part avec elle, comme pour `generer_decoupage`). Le prompt
+`construire_la_grille_de_creneaux` la propose avant la récurrence.
+
 ## Hors périmètre, volontairement
 
 | Ce qui n'a pas d'outil | Pourquoi |

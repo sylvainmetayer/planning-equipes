@@ -1,0 +1,101 @@
+<h2 mat-dialog-title i18n="@@creneaux.derivation.title">Dériver la grille des horaires des stands</h2>
+<form (ngSubmit)="previsualiser()">
+<mat-dialog-content class="form-grid">
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<p class="empty-hint span-2" i18n="@@creneaux.derivation.hint">
+  Chaque heure où un stand ouvre ou ferme devient une coupure, et chaque tranche entre deux coupures où au moins un
+  stand est ouvert devient un créneau : la grille découle des horaires déjà saisis, sans être tapée une seconde
+  fois. Seuls les jours qu'un stand déclare « ouvert sur ces fenêtres » comptent. Prévisualisez d'abord.
+</p>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@creneaux.derivation.dateDebut">Du</mat-label>
+  <input matInput type="date" name="dateDebut" [ngModel]="draft().dateDebut" (ngModelChange)="patch({ dateDebut: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@creneaux.derivation.dateFin">Au</mat-label>
+  <input matInput type="date" name="dateFin" [ngModel]="draft().dateFin" (ngModelChange)="patch({ dateFin: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@creneaux.derivation.fermeture">Heure de fermeture</mat-label>
+  <input matInput type="time" name="heureFermeture" [ngModel]="draft().heureFermeture" (ngModelChange)="patch({ heureFermeture: $event })" />
+  <mat-hint i18n="@@creneaux.derivation.fermeture.hint">Fin des fenêtres « jusqu'à la fermeture » ; 00:00 = minuit</mat-hint>
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@creneaux.derivation.dureeMinimale">Durée minimale d'un créneau (min)</mat-label>
+  <input matInput type="number" min="0" step="5" name="dureeMinimaleMinutes" [ngModel]="draft().dureeMinimaleMinutes" (ngModelChange)="patch({ dureeMinimaleMinutes: $event })" />
+  <mat-hint i18n="@@creneaux.derivation.dureeMinimale.hint">En deçà, la tranche est fondue dans la précédente</mat-hint>
+</mat-form-field>
+<mat-checkbox name="remplacer" class="span-2" [disabled]="editingLocked()" [ngModel]="draft().remplacer" (ngModelChange)="patch({ remplacer: $event })"
+              i18n="@@creneaux.derivation.remplacer">Remplacer la grille actuelle (efface le planning résolu) plutôt que d'y ajouter</mat-checkbox>
+@if (erreur(); as message) {
+  <p class="field-error span-2" role="alert">{{ message }}</p>
+}
+@if (apercu(); as apercu) {
+  <div class="span-2 serie-apercu" [class.serie-apercu-perimee]="!apercuAJour()">
+    <h3 i18n="@@creneaux.derivation.apercu.title">{{ apercu.nombreGeneres }} créneau(x) seraient {{ draft().remplacer ? 'la grille' : 'ajoutés' }}</h3>
+    @if (!apercuAJour()) {
+      <p class="empty-hint" i18n="@@creneaux.serie.apercu.perime">La règle a changé depuis cet aperçu : prévisualisez à nouveau avant de créer.</p>
+    }
+    @if (apercu.nombreGeneres === 0) {
+      <p class="field-error" role="alert" i18n="@@creneaux.derivation.rien">Aucun stand ne déclare de fenêtre d'ouverture sur ces dates : rien à dériver.</p>
+    }
+    <div class="decoupage-resume">
+      @for (jour of resume(); track jour.date) {
+        <p>
+          <strong>{{ jour.date }}</strong>
+          @for (vacation of jour.vacations; track $index) {
+            <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
+          }
+          <span class="derivation-coupures" [attr.title]="coupuresDe(jour.date).join(' · ')">{{ coupuresDe(jour.date).length }} <ng-container i18n="@@creneaux.derivation.coupures">coupure(s)</ng-container></span>
+        </p>
+      }
+      @if (apercu.joursSansFenetre.length > 0) {
+        <p class="empty-hint" i18n="@@creneaux.derivation.joursSansFenetre">Sans aucune fenêtre, donc sans créneau : {{ apercu.joursSansFenetre.join(', ') }}</p>
+      }
+    </div>
+    @if (bilan(); as bilan) {
+      <p class="serie-bilan">
+        <span [class.serie-bilan-erreur]="bilan.erreurs > 0" i18n="@@creneaux.serie.bilan.erreurs">{{ bilan.erreurs }} erreur(s)</span>
+        <span i18n="@@creneaux.serie.bilan.avertissements">{{ bilan.avertissements }} avertissement(s)</span>
+        <span i18n="@@creneaux.serie.bilan.ouvertures">{{ bilan.ouvertures }} anomalie(s) d'ouverture</span>
+      </p>
+    }
+    @if (bloquee()) {
+      <p class="field-error" role="alert" i18n="@@creneaux.derivation.bloquee">La grille obtenue porterait une erreur (un doublon avec la grille actuelle, le plus souvent) : cochez « Remplacer », ou corrigez avant d'écrire.</p>
+    }
+    @if (anomalies().length > 0) {
+      <ul class="ouvertures-anomalies serie-anomalies">
+        @for (anomalie of anomalies(); track $index) {
+          <li [class.anomalie-avertissement]="anomalie.severite === 'AVERTISSEMENT'">
+            <mat-icon>{{ iconeAnomalieGrille(anomalie) }}</mat-icon>
+            @if (anomalie.date) {
+              <span class="anomalie-date">{{ anomalie.date }}</span>
+            }
+            <span>{{ anomalie.message }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
+  <button matButton type="submit" [disabled]="erreur() !== null || chargement() || editingLocked()">
+    @if (chargement()) {
+      <mat-progress-spinner diameter="18" mode="indeterminate" />
+    } @else {
+      <mat-icon>visibility</mat-icon>
+    }
+    <ng-container i18n="@@creneaux.serie.previsualiser">Prévisualiser</ng-container>
+  </button>
+  <button matButton="filled" type="button" [disabled]="!peutEcrire()" (click)="ecrire()">
+    <mat-icon>auto_awesome</mat-icon>
+    <ng-container i18n="@@creneaux.derivation.ecrire">Écrire la grille</ng-container>
+  </button>
+</mat-dialog-actions>
+</form>

@@ -42,8 +42,13 @@
       <p class="empty-hint" i18n="@@ouvertures.loading">Calcul des ouvertures…</p>
     } @else if (!rapport() || rapport()!.jours.length === 0) {
       <p class="empty-hint" i18n="@@ouvertures.empty">
-        Aucun créneau dans l'édition : créez des créneaux pour voir les ouvertures.
+        Aucun créneau dans l'édition : créez des créneaux pour voir les ouvertures — un par un, en série, ou dérivés
+        des horaires des stands, depuis la page Créneaux.
       </p>
+      <a matButton routerLink="/creneaux">
+        <mat-icon>calendar_month</mat-icon>
+        <ng-container i18n="@@ouvertures.versCreneaux">Aller aux créneaux</ng-container>
+      </a>
     } @else {
       @if (synthese(); as bilan) {
         <div class="ouvertures-synthese">

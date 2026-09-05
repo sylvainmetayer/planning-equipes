@@ -280,4 +280,71 @@ class CreneauResourceTest {
                 .body("nombreCreneaux", notNullValue())
                 .body("explication", notNullValue());
     }
+
+    /* ------------------------ Derived from the stands ------------------------ */
+
+    private static final String DERIVATION = """
+            {"dateDebut":"2032-05-03","dateFin":"2032-05-04","heureFermeture":"20:00:00","remplacer":false}
+            """;
+
+    private void standOuvertSur(String id, String fenetres) {
+        given().contentType("application/json")
+                .body("""
+                        {"id":"%s","nom":"%s","typologiesProposees":[],"effectifMin":1,"effectifMax":1,
+                         "reserveMajeurs":false,
+                         "horaires":[{"mode":"OUVERTURE","jours":"TOUS","fenetres":[%s]}]}
+                        """.formatted(id, id, fenetres))
+                .when().post("/api/stands").then().statusCode(200);
+    }
+
+    @Test
+    void lApercuDeLaDerivationNEcritRienEtNommeLesCoupures() {
+        standOuvertSur("DERIV-A", "{\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"},{\"heureDebut\":\"14:00:00\"}");
+        int avant = countCreneaux();
+
+        given().contentType("application/json").body(DERIVATION)
+                .when().post("/api/creneaux/derivation/apercu")
+                .then().statusCode(200)
+                .body("nombreGeneres", equalTo(4))
+                .body("creneaux[0].heureDebut", startsWith("10:00"))
+                .body("creneaux[1].heureFin", startsWith("20:00"))
+                .body("coupures[0].standIds", org.hamcrest.Matchers.hasItem("DERIV-A"))
+                .body("joursSansFenetre", org.hamcrest.Matchers.empty())
+                .body("controle.mode", notNullValue());
+
+        assertThat(countCreneaux()).isEqualTo(avant);
+        given().when().delete("/api/stands/DERIV-A").then().statusCode(204);
+    }
+
+    @Test
+    void laDerivationAjouteLesCreneauxOuRemplaceLaGrille() {
+        standOuvertSur("DERIV-B", "{\"heureDebut\":\"10:00:00\"}");
+        int avant = countCreneaux();
+
+        given().contentType("application/json").body(DERIVATION)
+                .when().post("/api/creneaux/derivation")
+                .then().statusCode(200)
+                .body("nombreGeneres", equalTo(2));
+        assertThat(countCreneaux()).isEqualTo(avant + 2);
+
+        given().contentType("application/json")
+                .body(DERIVATION.replace("\"remplacer\":false", "\"remplacer\":true"))
+                .when().post("/api/creneaux/derivation")
+                .then().statusCode(200);
+        // The whole grid is now the derived one: two days, one créneau each.
+        assertThat(countCreneaux()).isEqualTo(2);
+
+        given().when().delete("/api/stands/DERIV-B").then().statusCode(204);
+        for (Integer id : given().when().get("/api/creneaux").then().extract().jsonPath().getList("id", Integer.class)) {
+            given().when().delete("/api/creneaux/" + id).then().statusCode(204);
+        }
+    }
+
+    @Test
+    void sansAucuneFenetreLaDerivationEstRefusee() {
+        given().contentType("application/json").body(DERIVATION)
+                .when().post("/api/creneaux/derivation")
+                .then().statusCode(400)
+                .body("message", containsString("rien à dériver"));
+    }
 }

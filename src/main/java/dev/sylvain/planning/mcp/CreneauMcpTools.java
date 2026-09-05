@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.CreneauGridService;
+import dev.sylvain.planning.service.GrilleDepuisFenetres;
 import dev.sylvain.planning.service.CreneauGridService.DiagnosticGrille;
 import dev.sylvain.planning.service.CreneauGridService.RapportGrille;
 import dev.sylvain.planning.service.CreneauGridService.RegleRecurrence;
@@ -181,6 +182,60 @@ public class CreneauMcpTools {
                 validateGrid(referenceDataService.listCreneaux(), modeGrille));
     }
 
+    /* ------------------------ Grid: derived from the stands ------------------------ */
+
+    @Tool(description = "Prévisualise la grille de créneaux que les horaires des stands impliquent : chaque heure "
+            + "où un stand ouvre ou ferme est une coupure, chaque tranche entre deux coupures où au moins un stand "
+            + "est ouvert devient un créneau — sans RIEN écrire. À utiliser quand les horaires des stands existent "
+            + "déjà (règles saisies ou importées) et que la grille n'est pas encore faite. Seuls les jours qu'un "
+            + "stand déclare « ouvert sur ces fenêtres » comptent ; une fenêtre « jusqu'à la fermeture » finit à "
+            + "heureFermeture (00:00 pour minuit).",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    RapportDerivation previsualiser_derivation_creneaux(
+            @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
+            @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
+            @ToolArg(description = "Heure de fermeture des fenêtres ouvertes (HH:MM, 00:00 = minuit)") String heureFermeture,
+            @ToolArg(description = "Durée minimale d'un créneau en minutes ; en deçà, fusionné (défaut 15)", required = false) Integer dureeMinimaleMinutes,
+            @ToolArg(description = "true pour juger la grille dérivée seule, comme si elle remplaçait l'actuelle", required = false) Boolean remplacer,
+            @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false) String mode,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return toView(referenceDataService.previewDerivation(parametresDerivation(dateDebut, dateFin,
+                heureFermeture, dureeMinimaleMinutes), Boolean.TRUE.equals(remplacer), modeOrDeclared(mode)));
+    }
+
+    @Tool(description = "Écrit la grille de créneaux dérivée des horaires des stands — mêmes arguments que "
+            + "previsualiser_derivation_creneaux, qu'il faut avoir appelé d'abord. Par défaut les créneaux "
+            + "s'AJOUTENT à la grille ; remplacer=true remplace toute la grille et EFFACE le planning résolu, "
+            + "comme generer_decoupage.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
+    RapportDerivation generer_creneaux_depuis_stands(
+            @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
+            @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
+            @ToolArg(description = "Heure de fermeture des fenêtres ouvertes (HH:MM, 00:00 = minuit)") String heureFermeture,
+            @ToolArg(description = "Durée minimale d'un créneau en minutes ; en deçà, fusionné (défaut 15)", required = false) Integer dureeMinimaleMinutes,
+            @ToolArg(description = "true pour remplacer toute la grille (efface le planning résolu)", required = false) Boolean remplacer,
+            @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false) String mode,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return toView(referenceDataService.applyDerivation(parametresDerivation(dateDebut, dateFin,
+                heureFermeture, dureeMinimaleMinutes), Boolean.TRUE.equals(remplacer), modeOrDeclared(mode)));
+    }
+
+    private static GrilleDepuisFenetres.Parametres parametresDerivation(String dateDebut, String dateFin,
+            String heureFermeture, Integer dureeMinimaleMinutes) {
+        return new GrilleDepuisFenetres.Parametres(McpArgs.date(dateDebut, "dateDebut"),
+                McpArgs.date(dateFin, "dateFin"), McpArgs.heure(heureFermeture, "heureFermeture"),
+                dureeMinimaleMinutes == null ? GrilleDepuisFenetres.DUREE_MINIMALE_PAR_DEFAUT : dureeMinimaleMinutes);
+    }
+
+    private static RapportDerivation toView(ReferenceDataService.DerivationGrille resultat) {
+        GrilleDepuisFenetres.Derivation derivation = resultat.derivation();
+        return new RapportDerivation(derivation.creneaux().size(),
+                derivation.creneaux().stream().map(CreneauMcpTools::toView).toList(), derivation.coupures(),
+                derivation.joursSansFenetre(), resultat.controle());
+    }
+
     @Tool(description = "Supprime en une fois les créneaux que les filtres désignent — l'inverse de "
             + "creer_creneaux_recurrents, pour reprendre une règle qui s'est trompée. DESTRUCTIF. Au moins un "
             + "filtre est exigé ; pour vider toute la grille, passer explicitement tous=true.",
@@ -307,5 +362,11 @@ public class CreneauMcpTools {
     }
 
     public record BulkDeleteResult(int supprimes, int restants) {
+    }
+
+    /** The grid the stands' hours imply (or what was just written of it), the cuts behind it, and the verdict. */
+    public record RapportDerivation(int nombreGeneres, List<CreneauView> creneaux,
+            List<GrilleDepuisFenetres.Coupure> coupures, List<java.time.LocalDate> joursSansFenetre,
+            RapportGrille controle) {
     }
 }

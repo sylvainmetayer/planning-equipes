@@ -141,9 +141,13 @@ public class McpPrompts {
                 2. Demande-moi si la grille doit être en AMPLITUDES (journées à découper en vacations) \
                 ou en VACATIONS (vacations finales) : le verdict de la validation en dépend, ne le devine \
                 pas.
-                3. previsualiser_creneaux_recurrents pour me montrer ce que ta règle produirait — une \
-                règle qui se trompe d'une heure crée des dizaines de lignes d'un coup.
-                4. creer_creneaux_recurrents seulement après mon accord explicite.
+                3. Si les stands ont déjà leurs horaires (lister_stands), propose-moi d'abord \
+                previsualiser_derivation_creneaux : la grille découle alors de leurs fenêtres sans être \
+                saisie une seconde fois. Sinon, previsualiser_creneaux_recurrents pour me montrer ce que \
+                ta règle produirait — une règle qui se trompe d'une heure crée des dizaines de lignes d'un \
+                coup.
+                4. generer_creneaux_depuis_stands ou creer_creneaux_recurrents seulement après mon accord \
+                explicite.
                 5. valider_creneaux pour finir, et explique-moi chaque anomalie — doublon, chevauchement, \
                 trou dans une journée, date isolée, stand que personne ne pourra armer, sous-effectif — en \
                 disant pour chacune si c'est une vraie erreur ou un choix légitime de ma part.""".formatted(suffixe(edition)));

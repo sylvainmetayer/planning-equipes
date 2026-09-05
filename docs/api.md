@@ -1335,6 +1335,24 @@ sans stand ou sans créneau. `GET /api/creneaux/diagnostic` décrit la grille et
 suggère un mode (`modeProbable`, `modeCertain`) sans jamais trancher : seules
 des familles ou des créneaux de couverture de pause prouvent des vacations.
 
+**Dériver la grille des stands.** Quand les horaires des stands existent déjà
+— règles saisies, grille importée — la grille de créneaux découle d'eux au lieu
+d'être tapée une seconde fois : chaque heure où un stand ouvre ou ferme est une
+coupure, chaque tranche entre deux coupures où au moins un stand est ouvert
+devient un créneau. `POST /api/creneaux/derivation/apercu` et
+`POST /api/creneaux/derivation`, corps
+`{ dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes, remplacer }` :
+`heureFermeture` donne une fin aux fenêtres « jusqu'à la fermeture » (`00:00`
+pour minuit, le dernier créneau franchit alors minuit) ; une tranche plus courte
+que `dureeMinimaleMinutes` (défaut 15) est fusionnée avec la précédente ;
+`remplacer` juge — et, à l'écriture, remplace — toute la grille, le planning
+résolu partant avec elle comme pour le découpage, sinon les créneaux s'ajoutent.
+Seuls les jours qu'un stand déclare « ouvert sur ces fenêtres » participent :
+un stand qui ne dit rien d'un jour est ouvert quand les autres le sont, un stand
+qui ne déclare que des fermetures n'a pas de borne de départ connue. La réponse
+porte les créneaux, les `coupures` (jour, heure, premiers stands responsables),
+les `joursSansFenetre`, et le verdict `controle`. `400` sans aucune fenêtre.
+
 Le **découpage** lui-même : `GET /api/decoupage/preview` rend les vacations
 que les paramètres produiraient, `POST /api/decoupage/generer` (corps vide,
 `204`) les écrit à la place des amplitudes et efface le planning résolu.

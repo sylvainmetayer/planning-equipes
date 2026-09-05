@@ -134,4 +134,20 @@ public class CreneauService {
         repository.replaceCreneaux(vacations);
         changeTracker.markModified();
     }
+
+    /**
+     * Replaces the whole grid by {@code creneaux}, the persisted plan going
+     * with it — what the découpage does, offered to the derivation from the
+     * stands' hours. Refused while a solve runs, like every rewrite of the
+     * grid.
+     */
+    public List<Creneau> replace(List<Creneau> creneaux) {
+        solverJobs.refuseIfSolving();
+        for (Creneau creneau : creneaux) {
+            CreneauValidator.check(creneau);
+        }
+        repository.replaceCreneaux(creneaux);
+        changeTracker.markModified();
+        return repository.listCreneaux();
+    }
 }

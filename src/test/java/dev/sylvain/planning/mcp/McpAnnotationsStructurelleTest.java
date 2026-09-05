@@ -56,7 +56,8 @@ class McpAnnotationsStructurelleTest {
      */
     private static final List<String> DESTRUCTION = List.of(
             "supprimer_", "effacer_", "reinitialiser_", "importer_", "restaurer_",
-            "deverrouiller", "generer_decoupage", "lancer_solveur", "resoudre_incremental");
+            "deverrouiller", "generer_decoupage", "generer_creneaux_depuis_stands", "lancer_solveur",
+            "resoudre_incremental");
 
     /** Tools that write without destroying: creations, edits, toggles, locks. */
     private static final List<String> ECRITURE = List.of(

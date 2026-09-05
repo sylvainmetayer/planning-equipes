@@ -4,6 +4,7 @@ import java.util.List;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Set;
 
 import dev.sylvain.planning.domain.Creneau;
@@ -13,6 +14,7 @@ import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.CreneauGridService;
 import dev.sylvain.planning.service.CreneauGridService.DiagnosticGrille;
 import dev.sylvain.planning.service.CreneauGridService.RapportGrille;
+import dev.sylvain.planning.service.GrilleDepuisFenetres;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
 import dev.sylvain.planning.service.WrittenCreneau;
@@ -92,6 +94,53 @@ public class CreneauResource {
     @Path("/recurrence")
     public RapportRecurrence createRecurrence(RecurrenceRequest requete, @QueryParam("mode") ModeGrilleCreneaux mode) {
         return RapportRecurrence.of(referenceDataService.createRecurrence(requete.regle(), mode));
+    }
+
+    /**
+     * What the stands' own hours imply as a grid. {@code heureFermeture} ends
+     * the windows left open-ended ({@code 00:00} for midnight);
+     * {@code dureeMinimaleMinutes} merges the stretches too short to be a
+     * slot (default 15); {@code remplacer} judges — and, on the write,
+     * replaces — the whole grid rather than adding to it.
+     */
+    public record DerivationRequest(LocalDate dateDebut, LocalDate dateFin, LocalTime heureFermeture,
+            Integer dureeMinimaleMinutes, boolean remplacer) {
+
+        GrilleDepuisFenetres.Parametres parametres() {
+            return new GrilleDepuisFenetres.Parametres(dateDebut, dateFin, heureFermeture,
+                    dureeMinimaleMinutes == null ? GrilleDepuisFenetres.DUREE_MINIMALE_PAR_DEFAUT
+                            : dureeMinimaleMinutes);
+        }
+    }
+
+    /** The derived créneaux, the cuts that produced them, the days nothing said anything about, and the verdict. */
+    public record RapportDerivation(int nombreGeneres, List<Creneau> creneaux,
+            List<GrilleDepuisFenetres.Coupure> coupures, List<LocalDate> joursSansFenetre, RapportGrille controle) {
+
+        static RapportDerivation of(ReferenceDataService.DerivationGrille resultat) {
+            GrilleDepuisFenetres.Derivation derivation = resultat.derivation();
+            return new RapportDerivation(derivation.creneaux().size(), derivation.creneaux(), derivation.coupures(),
+                    derivation.joursSansFenetre(), resultat.controle());
+        }
+    }
+
+    /** The derivation, judged — nothing written. */
+    @POST
+    @Path("/derivation/apercu")
+    public RapportDerivation previewDerivation(DerivationRequest requete, @QueryParam("mode") ModeGrilleCreneaux mode) {
+        return RapportDerivation.of(referenceDataService.previewDerivation(requete.parametres(), requete.remplacer(), mode));
+    }
+
+    /**
+     * Writes the derived grid: added to the current one, or — {@code remplacer}
+     * — in its place, the persisted plan going with it as for the découpage.
+     * {@code 400} when no stand has a window on the dates, {@code 409} while a
+     * solve runs.
+     */
+    @POST
+    @Path("/derivation")
+    public RapportDerivation applyDerivation(DerivationRequest requete, @QueryParam("mode") ModeGrilleCreneaux mode) {
+        return RapportDerivation.of(referenceDataService.applyDerivation(requete.parametres(), requete.remplacer(), mode));
     }
 
     /** The grid's verdict — its own anomalies, the stand openings, the staffing — read in {@code mode}. */
