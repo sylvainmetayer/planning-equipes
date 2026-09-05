@@ -83,7 +83,7 @@ public class AnimateurPlanningPdf {
                 // chronological place: a line the animateur reads while
                 // reading their day, not a footnote.
                 for (PauseAnalyzer.PauseAnimateurView pause : pauses) {
-                    if (fallsInside(pause, poste)) {
+                    if (pause.fallsInside(poste)) {
                         document.add(pauseCard(pause));
                     }
                 }
@@ -271,20 +271,6 @@ public class AnimateurPlanningPdf {
     }
 
     /** A small pill-shaped "JOURx" badge, sized to hug its own text rather than stretching to the column width. */
-    /** Whether the break's deadline falls inside this seat: same day, same stand, within its effective window. */
-    private static boolean fallsInside(PauseAnalyzer.PauseAnimateurView pause, PosteAffectation poste) {
-        Creneau creneau = poste.getCreneau();
-        if (creneau == null || creneau.getDate() == null || !creneau.getDate().equals(pause.date())
-                || poste.getStand() == null || !poste.getStand().getId().equals(pause.standId())) {
-            return false;
-        }
-        LocalTime debut = poste.heureDebutEffectif();
-        LocalTime fin = poste.heureFinEffectif();
-        boolean passeMinuit = fin != null && debut != null && !fin.isAfter(debut);
-        return debut != null && !pause.debut().isBefore(debut)
-                && (passeMinuit || fin == null || pause.debut().isBefore(fin));
-    }
-
     /**
      * « Pause de 18:20 à 18:40 » — under the shift, in the accent colour, so
      * the one legal obligation the animateur has to act on themselves stands

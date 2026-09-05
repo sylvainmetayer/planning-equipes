@@ -17,7 +17,7 @@ import { JourResolu, conflitDeMode, decrireFenetre, erreurHoraire } from '../../
  * First problem among the recurring rules, or `null` — mirrors the backend's
  * own check, and blocks the submit button of both dialogs.
  */
-export function premiereErreurHoraire(horaires: readonly HoraireStand[]): string | null {
+export function premiereErreurHoraire(horaires: readonly HoraireStand[], effectifMax?: number): string | null {
   for (const horaire of horaires) {
     const erreur = erreurHoraire(horaire, {
       fenetreRequise: $localize`:@@stands.horaires.error.fenetreRequise:Chaque horaire doit porter au moins une fenêtre.`,
@@ -27,7 +27,7 @@ export function premiereErreurHoraire(horaires: readonly HoraireStand[]): string
       joursSemaineRequis: $localize`:@@stands.horaires.error.joursSemaineRequis:Choisissez au moins un jour de la semaine.`,
       plageRequise: $localize`:@@stands.horaires.error.plageRequise:Renseignez une date de début et une date de fin cohérentes.`,
       datesRequises: $localize`:@@stands.horaires.error.datesRequises:Choisissez au moins une date.`
-    });
+    }, effectifMax);
     if (erreur) {
       return erreur;
     }

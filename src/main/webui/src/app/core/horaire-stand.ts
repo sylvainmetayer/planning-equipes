@@ -117,6 +117,23 @@ function trier(fenetres: readonly FenetreHoraire[]): FenetreHoraire[] {
     .sort((a, b) => a.heureDebut.localeCompare(b.heureDebut));
 }
 
+/**
+ * Whether a window's effectif, as typed, can be saved: empty means "the
+ * stand's minimum" and is fine; anything else must be a whole number of at
+ * least one — a window nobody should staff is a closure, not a zero.
+ */
+export function effectifFenetreInvalide(effectif: number | null | undefined, effectifMax?: number): boolean {
+  if (effectif === null || effectif === undefined) {
+    return false;
+  }
+  if (!Number.isInteger(effectif) || effectif < 1) {
+    return true;
+  }
+  // Mirrors `StandValidator.checkEffectifFenetre`: a window cannot make
+  // mandatory more seats than the stand is declared able to hold.
+  return effectifMax !== undefined && Number.isFinite(effectifMax) && effectif > Number(effectifMax);
+}
+
 /** `09:00:00` → `09:00`; leaves anything already short alone. */
 export function heureCourte(heure: string): string {
   return heure.length > 5 ? heure.slice(0, 5) : heure;
@@ -187,7 +204,9 @@ export function erreurHoraire(
     joursSemaineRequis: string;
     plageRequise: string;
     datesRequises: string;
-  }
+  },
+  /** The stand's declared capacity, when known: a window may not ask for more. */
+  effectifMax?: number
 ): string | null {
   if (horaire.fenetres.length === 0) {
     return messages.fenetreRequise;
@@ -199,8 +218,7 @@ export function erreurHoraire(
     if (fenetre.heureFin && fenetre.heureFin <= fenetre.heureDebut) {
       return messages.fenetreInversee;
     }
-    if (fenetre.effectif !== null && fenetre.effectif !== undefined
-        && (!Number.isInteger(fenetre.effectif) || fenetre.effectif < 1)) {
+    if (effectifFenetreInvalide(fenetre.effectif, effectifMax)) {
       return messages.effectifInvalide;
     }
   }

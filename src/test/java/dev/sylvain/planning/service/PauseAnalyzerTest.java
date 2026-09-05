@@ -483,11 +483,128 @@ class PauseAnalyzerTest {
         }
     }
 
+    @Test
+    void aClampedBreakNeverPushesTheNextOneOntoItsSlot() {
+        // Windows too tight for four people: three fit back to back, the fourth
+        // is clamped to its floor and flagged. The rotation must not then place
+        // a fifth over a colleague's slot while calling it conflict-free.
+        Stand stand = stand("JEUX", 4);
+        Animateur a = adulte("a");
+        Animateur b = adulte("b");
+        Animateur c = adulte("c");
+        Animateur d = adulte("d");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", stand, creneau(1, 8, 0, 20, 0), a),
+                poste("p2", stand, creneau(1, 8, 0, 20, 0), b),
+                poste("p3", stand, creneau(1, 8, 0, 20, 0), c),
+                poste("p4", stand, creneau(1, 8, 0, 20, 0), d));
+
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c, d), postes), surPoste(true));
+
+        // Every break kept apart is really apart: two breaks may share an instant
+        // only when at least one of them says so.
+        List<PauseDueView> pauses = List.of(pause(rapport, "a"), pause(rapport, "b"), pause(rapport, "c"),
+                pause(rapport, "d"));
+        for (PauseDueView gauche : pauses) {
+            for (PauseDueView droite : pauses) {
+                if (gauche == droite || gauche.simultanee() || droite.simultanee()) {
+                    continue;
+                }
+                boolean disjointes = !gauche.debut().isBefore(droite.fin()) || !droite.debut().isBefore(gauche.fin());
+                assertThat(disjointes)
+                        .as("%s–%s et %s–%s se chevauchent sans le dire", gauche.debut(), gauche.fin(),
+                                droite.debut(), droite.fin())
+                        .isTrue();
+            }
+        }
+    }
+
+    @Test
+    void aBreakPastMidnightBelongsToTheEveningSeatItFallsIn() {
+        // 19:00 → 02:00 is a seven-hour stretch: the break falls at 01:00, on the
+        // next calendar day, and must still be attached to the evening's seat.
+        Stand stand = stand("JEUX", 1);
+        Animateur alice = adulte("alice");
+        PosteAffectation poste = poste("p1", stand, creneau(1, 19, 0, 2, 0), alice);
+
+        List<PauseAnalyzer.PauseAnimateurView> pauses =
+                analyzer.pausesAnimateur(planning(List.of(alice), List.of(poste)), "alice");
+
+        assertThat(pauses).hasSize(1);
+        assertThat(pauses.getFirst().debut()).isEqualTo(LocalTime.of(1, 0));
+        assertThat(pauses.getFirst().fallsInside(poste)).isTrue();
+        // Another stand, or another day, is never a match.
+        assertThat(pauses.getFirst().fallsInside(poste("p2", stand("AUTRE", 1), creneau(2, 19, 0, 2, 0), alice)))
+                .isFalse();
+        assertThat(pauses.getFirst().fallsInside(null)).isFalse();
+    }
+
     private static PauseDueView pause(RapportPauses rapport, String animateurId) {
         return journee(rapport, animateurId).sequences().getFirst().pausesDues().getFirst();
     }
 
     /* ------------------------------- helpers ------------------------------- */
+
+    @Test
+    void theBreakNamesTheStandHeldAtThatInstantEvenAcrossASubLegalGap() {
+        // 13:00-18:50 on one stand, 19:05-24:00 on another: the ten-minute gap is
+        // shorter than the break, so it is one stretch, and the deadline at 19:00
+        // falls inside the gap. The break belongs to the stand about to be held.
+        Stand matin = stand("MATIN", 1);
+        Stand soir = stand("SOIR", 2);
+        Animateur alice = adulte("alice");
+        Animateur bob = adulte("bob");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", matin, creneau(1, 13, 0, 18, 50), alice),
+                poste("p2", soir, creneau(2, 19, 5, 0, 0), alice),
+                poste("p3", soir, creneau(2, 19, 5, 0, 0), bob));
+
+        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice, bob), postes), surPoste(true)), "alice")
+                .sequences().getFirst().pausesDues().getFirst();
+
+        assertThat(pause.standId()).isEqualTo("SOIR");
+        // And the relay is looked for on that stand: bob only arrives at 19:05,
+        // so at the deadline there is nobody yet — the honest answer.
+        assertThat(pause.relaisDisponible()).isFalse();
+    }
+
+    @Test
+    void aColleagueAlreadyOnTheEveningStandIsTheRelayOfThatBreak() {
+        Stand matin = stand("MATIN", 1);
+        Stand soir = stand("SOIR", 2);
+        Animateur alice = adulte("alice");
+        Animateur bob = adulte("bob");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", matin, creneau(1, 13, 0, 18, 50), alice),
+                poste("p2", soir, creneau(2, 19, 5, 0, 0), alice),
+                poste("p3", soir, creneau(3, 18, 0, 0, 0), bob));
+
+        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice, bob), postes), surPoste(true)), "alice")
+                .sequences().getFirst().pausesDues().getFirst();
+
+        assertThat(pause.standId()).isEqualTo("SOIR");
+        assertThat(pause.relais()).extracting(PauseAnalyzer.RelaisView::animateurId).containsExactly("bob");
+    }
+
+    @Test
+    void pausesByAnimateurGivesTheSameLinesAsOneByOne() {
+        Stand stand = stand("JEUX", 2);
+        Animateur alice = adulte("alice");
+        Animateur bob = adulte("bob");
+        Animateur repos = adulte("repos");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", stand, creneau(1, 13, 0, 20, 0), alice),
+                poste("p2", stand, creneau(1, 13, 0, 20, 0), bob));
+        PlanningEvenement planning = planning(List.of(alice, bob, repos), postes);
+
+        var parAnimateur = analyzer.pausesByAnimateur(planning);
+
+        assertThat(parAnimateur.keySet()).containsExactlyInAnyOrder("alice", "bob");
+        assertThat(parAnimateur.get("alice")).isEqualTo(analyzer.pausesAnimateur(planning, "alice"));
+        assertThat(parAnimateur.get("bob")).isEqualTo(analyzer.pausesAnimateur(planning, "bob"));
+        // Somebody who owes none is simply absent, and the caller falls back on an empty list.
+        assertThat(parAnimateur).doesNotContainKey("repos");
+    }
 
     private static JourneeAnimateurView journee(RapportPauses rapport, String animateurId) {
         return rapport.journees().stream()

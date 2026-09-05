@@ -6,6 +6,7 @@
 // re-writing the same immutable update by hand, and six validation `computed`s
 // carrying the whole entry logic of a stand — 442 lines, zero tests.
 
+import { effectifFenetreInvalide } from '../../core/horaire-stand';
 import {
   Emplacement,
   FenetreHoraire,
@@ -51,6 +52,8 @@ export function ajouterA<T>(liste: readonly T[], item: T): T[] {
   return [...liste, item];
 }
 
+export { effectifFenetreInvalide };
+
 /** An empty dated closure. */
 export function plageVide(): IndisponibiliteStand {
   return { id: null, date: '', heureDebut: '', heureFin: null, motif: null };
@@ -63,15 +66,6 @@ export function ouvertureVide(): OuvertureStand {
 
 export function fenetreVide(): FenetreHoraire {
   return { heureDebut: '', heureFin: null, effectif: null };
-}
-
-/**
- * Whether a window's effectif, as typed, can be saved: empty means "the
- * stand's minimum" and is fine; anything else must be a whole number of at
- * least one — a window nobody should staff is a closure, not a zero.
- */
-export function effectifFenetreInvalide(effectif: number | null | undefined): boolean {
-  return effectif !== null && effectif !== undefined && (!Number.isInteger(effectif) || effectif < 1);
 }
 
 /**
@@ -127,7 +121,7 @@ export function ouvertureInvalide(draft: StandDraft): boolean {
 
 /** An opening naming a zero, negative or fractional effectif — reported apart, it has its own sentence. */
 export function effectifOuvertureInvalide(draft: StandDraft): boolean {
-  return draft.ouvertures.some((ouverture) => effectifFenetreInvalide(ouverture.effectif));
+  return draft.ouvertures.some((ouverture) => effectifFenetreInvalide(ouverture.effectif, Number(draft.effectifMax)));
 }
 
 function plageInvalide(plage: { date: string; heureDebut: string; heureFin: string | null }): boolean {

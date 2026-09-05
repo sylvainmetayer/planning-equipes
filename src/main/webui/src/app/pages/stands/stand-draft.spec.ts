@@ -155,7 +155,10 @@ describe('window effectif', () => {
     expect('effectif' in plageVide()).toBe(false);
   });
 
-  it('accepts an absent effectif and any whole number from one up', () => {
+  it('accepts an absent effectif and any whole number from one up, within the stand capacity', () => {
+    expect(effectifFenetreInvalide(4, 4)).toBe(false);
+    expect(effectifFenetreInvalide(5, 4)).toBe(true);
+    expect(effectifFenetreInvalide(null, 1)).toBe(false);
     expect(effectifFenetreInvalide(null)).toBe(false);
     expect(effectifFenetreInvalide(undefined)).toBe(false);
     expect(effectifFenetreInvalide(1)).toBe(false);
@@ -181,7 +184,9 @@ describe('window effectif', () => {
 
   it('flags an opening whose effectif cannot be saved, and only that', () => {
     expect(effectifOuvertureInvalide(draft({ ouvertures: [{ ...plage(), effectif: 0 }] }))).toBe(true);
-    expect(effectifOuvertureInvalide(draft({ ouvertures: [{ ...plage(), effectif: 2 }, plage()] }))).toBe(false);
+    expect(effectifOuvertureInvalide(draft({ effectifMax: 4, ouvertures: [{ ...plage(), effectif: 2 }, plage()] }))).toBe(false);
+    // Above the stand's declared capacity, the server would refuse it too.
+    expect(effectifOuvertureInvalide(draft({ effectifMax: 2, ouvertures: [{ ...plage(), effectif: 5 }] }))).toBe(true);
     expect(effectifOuvertureInvalide(draft({ ouvertures: [] }))).toBe(false);
     // The generic opening check does not double-report it.
     expect(ouvertureInvalide(draft({ ouvertures: [{ ...plage(), effectif: 0 }] }))).toBe(false);

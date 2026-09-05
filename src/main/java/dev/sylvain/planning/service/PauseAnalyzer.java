@@ -184,6 +184,26 @@ public class PauseAnalyzer {
                 .toList();
     }
 
+    /**
+     * The breaks of every animateur of the plan, by id — one analysis for the
+     * whole plan. Exports that walk the roster (the ZIP bundles, a publication
+     * mailing) build this once instead of re-analysing the plan per person.
+     */
+    public Map<String, List<PauseAnimateurView>> pausesByAnimateur(PlanningEvenement planning) {
+        Map<String, List<PauseAnimateurView>> parAnimateur = new LinkedHashMap<>();
+        for (JourneeAnimateurView journee : analyze(planning).journees()) {
+            List<PauseAnimateurView> pauses = parAnimateur.computeIfAbsent(journee.animateurId(),
+                    ignored -> new ArrayList<>());
+            for (SequenceView sequence : journee.sequences()) {
+                for (PauseDueView pause : sequence.pausesDues()) {
+                    pauses.add(new PauseAnimateurView(journee.date(), pause.debut(), pause.fin(), pause.heureLimite(),
+                            pause.dureeMinutes(), pause.standId(), pause.standNom(), pause.relaisDisponible()));
+                }
+            }
+        }
+        return parAnimateur;
+    }
+
     /** The breaks one animateur owes, day by day, under the plan's own parameters — one line per break. */
     public List<PauseAnimateurView> pausesAnimateur(PlanningEvenement planning, String animateurId) {
         List<PauseAnimateurView> pauses = new ArrayList<>();
@@ -201,9 +221,35 @@ public class PauseAnalyzer {
         return List.copyOf(pauses);
     }
 
-    /** One break of one animateur, as their own planning prints it: « pause de 18:20 à 18:40 ». */
+    /**
+     * One break of one animateur, as their own planning prints it: « pause de
+     * 18:20 à 18:40 ». {@code date} is the day of the seat it falls in, which a
+     * break past midnight shares with the evening it belongs to.
+     */
     public record PauseAnimateurView(LocalDate date, LocalTime debut, LocalTime fin, LocalTime heureLimite,
             int dureeMinutes, String standId, String standNom, boolean relaisDisponible) {
+
+        /**
+         * Whether this break falls inside that seat — what the PDF and the
+         * calendar feed both need, written once so they can never attach the
+         * same break to two different shifts. Compared on instants: a break past
+         * midnight belongs to the evening seat, where bare clock times would
+         * read it as earlier than the seat's own start and drop it.
+         */
+        public boolean fallsInside(PosteAffectation poste) {
+            if (poste == null || poste.getCreneau() == null || poste.getStand() == null
+                    || poste.getCreneau().getDate() == null || poste.heureDebutEffectif() == null
+                    || !poste.getStand().getId().equals(standId)) {
+                return false;
+            }
+            LocalDateTime debutPoste = LocalDateTime.of(poste.getCreneau().getDate(), poste.heureDebutEffectif());
+            LocalDateTime finPoste = debutPoste.plusMinutes(poste.getDureeEffectiveMinutes());
+            LocalDateTime debutPause = LocalDateTime.of(date, debut);
+            if (debutPause.isBefore(debutPoste) && finPoste.toLocalDate().isAfter(date)) {
+                debutPause = debutPause.plusDays(1);
+            }
+            return !debutPause.isBefore(debutPoste) && debutPause.isBefore(finPoste);
+        }
     }
 
     /** The stretches of one animateur's day, with the breaks each owes and the window of each. */
@@ -265,7 +311,11 @@ public class PauseAnalyzer {
                 demande.simultanee = true;
             }
             demande.debut = debut;
-            curseur = demande.debut;
+            // The cursor never moves forward: a break clamped up to its floor
+            // would otherwise leave room it does not have, and the next one —
+            // whose deadline is earlier — would be placed over it without the
+            // rotation saying two people are out at once.
+            curseur = curseur == null || debut.isBefore(curseur) ? debut : curseur;
         }
     }
 
@@ -400,15 +450,29 @@ public class PauseAnalyzer {
             this.fin = fin;
         }
 
-        /** The seat held at that instant — the last one starting before it. */
+        /**
+         * The seat held at that instant: the one covering it. A stretch merges
+         * seats separated by less than the legal break, so the instant can fall
+         * in such a sub-legal gap — the next seat to start is then the one the
+         * person is about to hold, and the one the break belongs to. Falls back
+         * on the last seat before the instant, then on the first of the stretch.
+         */
         private PosteAffectation posteA(LocalDateTime instant) {
-            PosteAffectation tenu = postes.get(0);
+            PosteAffectation avant = null;
+            PosteAffectation apres = null;
             for (PosteAffectation poste : postes) {
-                if (!PauseAnalyzer.debut(poste).isAfter(instant)) {
-                    tenu = poste;
+                LocalDateTime debut = PauseAnalyzer.debut(poste);
+                LocalDateTime fin = PauseAnalyzer.fin(poste);
+                if (!debut.isAfter(instant) && fin.isAfter(instant)) {
+                    return poste;
+                }
+                if (!debut.isAfter(instant)) {
+                    avant = poste;
+                } else if (apres == null || debut.isBefore(PauseAnalyzer.debut(apres))) {
+                    apres = poste;
                 }
             }
-            return tenu;
+            return apres != null ? apres : avant != null ? avant : postes.get(0);
         }
     }
 }

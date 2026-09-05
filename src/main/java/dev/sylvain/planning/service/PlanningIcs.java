@@ -74,6 +74,12 @@ public class PlanningIcs {
     }
 
     public String exportAnimateurIcs(PlanningEvenement planning, String animateurId) {
+        return exportAnimateurIcs(planning, animateurId, new PauseAnalyzer().pausesAnimateur(planning, animateurId));
+    }
+
+    /** Same feed, with the breaks already read — what a roster-wide export passes in. */
+    public String exportAnimateurIcs(PlanningEvenement planning, String animateurId,
+            List<PauseAnalyzer.PauseAnimateurView> pauses) {
         List<PosteAffectation> postes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(PlanningExportService.byCreneauThenStand())
@@ -88,7 +94,6 @@ public class PlanningIcs {
                 .append("\r\n")
                 .append("CALSCALE:GREGORIAN\r\n");
 
-        List<PauseAnalyzer.PauseAnimateurView> pauses = new PauseAnalyzer().pausesAnimateur(planning, animateurId);
         for (PosteAffectation poste : postes) {
             String uid = poste.getId() + "@" + uidDomain;
             builder.append("BEGIN:VEVENT\r\n")
@@ -153,10 +158,7 @@ public class PlanningIcs {
     private static String descriptionPauses(List<PauseAnalyzer.PauseAnimateurView> pauses, PosteAffectation poste) {
         StringBuilder texte = new StringBuilder();
         for (PauseAnalyzer.PauseAnimateurView pause : pauses) {
-            if (pause.date().equals(poste.getCreneau().getDate()) && pause.standId().equals(poste.getStand().getId())
-                    && !pause.debut().isBefore(poste.heureDebutEffectif())
-                    && (poste.heureFinEffectif() == null || !poste.heureFinEffectif().isAfter(poste.heureDebutEffectif())
-                            || pause.debut().isBefore(poste.heureFinEffectif()))) {
+            if (pause.fallsInside(poste)) {
                 texte.append(" - Pause de ").append(pause.debut()).append(" à ").append(pause.fin())
                         .append(" (").append(pause.dureeMinutes()).append(" min)");
             }
