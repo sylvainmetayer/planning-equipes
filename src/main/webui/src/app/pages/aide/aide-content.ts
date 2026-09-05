@@ -238,7 +238,7 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importGrille.colonnes:Chaque colonne se pose sur le créneau de même date et mêmes heures. Une colonne sans créneau — une bande de montage que l'édition n'a pas, une colonne de commentaire — est ignorée et listée, sans faire refuser le fichier. Un créneau que le fichier ne nomme pas garde la case actuelle de chaque stand importé : l'import ne réécrit que ce que le fichier dit. Sans aucun créneau dans l'édition, l'import est refusé : créez-les d'abord, en série ou dérivés des horaires des stands.`
+          text: $localize`:@@aide.importGrille.colonnes:Chaque colonne se pose sur les créneaux de même date et mêmes heures — sur tous, quand la grille est décalée en familles et en porte un par famille. Une colonne sans créneau — une bande de montage que l'édition n'a pas, une colonne de commentaire — est ignorée et listée, sans faire refuser le fichier. Un créneau que le fichier ne nomme pas garde la case actuelle de chaque stand importé : l'import ne réécrit que ce que le fichier dit. Attention à une conséquence : un stand qui n'ouvre qu'une partie d'un tel créneau en ressort élargi au créneau entier, parce qu'un effectif seul ne sait pas dire « seulement de 14 h à 15 h » — le rapport nomme ces stands, et donner une colonne à ces créneaux dit ce qu'ils doivent devenir. Sans aucun créneau dans l'édition, l'import est refusé : créez-les d'abord, en série ou dérivés des horaires des stands.`
         },
         {
           kind: 'paragraph',
