@@ -54,6 +54,6 @@ class AnimateurMcpToolsTest {
         assertThat(AnimateurView.class.getRecordComponents())
                 .extracting(component -> component.getName().toLowerCase())
                 .containsExactlyInAnyOrder("id", "statut", "moinsde16ans", "manager", "competences", "souhaits",
-                        "joursindisponibles");
+                        "joursindisponibles", "modifiele");
     }
 }

@@ -17,12 +17,27 @@ export interface TypologieItem {
    * demotes the previous holder server-side.
    */
   ninja?: boolean;
+  /**
+   * When the row was last written server-side (issue #362). Sent back as is on
+   * an edit: the server refuses the write (409, `MODIFICATION_CONCURRENTE`) if
+   * the row moved since, and the CRUD service then offers to reload or to
+   * overwrite. Absent or `null` = no precondition, the write is not checked.
+   */
+  modifieLe?: string | null;
 }
 
 export interface Animateur {
   id: string;
   prenom: string;
   nom: string;
+  /**
+   * When the row was last written server-side (issue #362). Sent back as is on
+   * an edit: the server refuses the write (409, `MODIFICATION_CONCURRENTE`) if
+   * the row moved since, and the CRUD service then offers to reload or to
+   * overwrite. Absent or `null` = no precondition, the write is not checked.
+   */
+  modifieLe?: string | null;
+
   dateNaissance: string | null;
   /** Manages other animateurs; every animateur (manager or not) is paid. */
   manager: boolean;
@@ -40,6 +55,13 @@ export interface Animateur {
 export interface Stand {
   id: string;
   nom: string;
+  /**
+   * When the row was last written server-side (issue #362). Sent back as is on
+   * an edit: the server refuses the write (409, `MODIFICATION_CONCURRENTE`) if
+   * the row moved since, and the CRUD service then offers to reload or to
+   * overwrite. Absent or `null` = no precondition, the write is not checked.
+   */
+  modifieLe?: string | null;
   typologiesProposees: string[];
   effectifMin: number;
   effectifMax: number;
@@ -374,6 +396,13 @@ export interface RapportFragilite {
 export interface Emplacement {
   id: string;
   nom: string;
+  /**
+   * When the row was last written server-side (issue #362). Sent back as is on
+   * an edit: the server refuses the write (409, `MODIFICATION_CONCURRENTE`) if
+   * the row moved since, and the CRUD service then offers to reload or to
+   * overwrite. Absent or `null` = no precondition, the write is not checked.
+   */
+  modifieLe?: string | null;
   latitude: number | null;
   longitude: number | null;
 }
@@ -440,6 +469,13 @@ export interface WrittenStand {
 export interface Creneau {
   id: number;
   jour: number;
+  /**
+   * When the row was last written server-side (issue #362). Sent back as is on
+   * an edit: the server refuses the write (409, `MODIFICATION_CONCURRENTE`) if
+   * the row moved since, and the CRUD service then offers to reload or to
+   * overwrite. Absent or `null` = no precondition, the write is not checked.
+   */
+  modifieLe?: string | null;
   date: string;
   heureDebut: string;
   heureFin: string;
@@ -507,6 +543,13 @@ export interface PosteAffectation {
 export interface ContrainteAdHoc {
   id: string;
   type: TypeContrainteAdHoc;
+  /**
+   * When the row was last written server-side (issue #362). Sent back as is on
+   * an edit: the server refuses the write (409, `MODIFICATION_CONCURRENTE`) if
+   * the row moved since, and the CRUD service then offers to reload or to
+   * overwrite. Absent or `null` = no precondition, the write is not checked.
+   */
+  modifieLe?: string | null;
   animateursConcernes: { id: string }[];
   /** Only `id` is populated by the backend; look up `Creneau` details from the reference store if needed. */
   creneau: { id: number } | null;

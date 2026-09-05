@@ -6,13 +6,20 @@ import { ApiError, SessionExpireeError } from './api.service';
 import { Avertissement, estJournalisable } from './models';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
-import { BulkResult, ReferenceDataStore } from './reference-data.store';
+import { BulkResult, ReferenceDataStore, SaveResult } from './reference-data.store';
 import { ReferenceUsageService } from './reference-usage.service';
 import { ConfirmService } from '../shared/confirm-dialog';
 import { errorMessage } from './error-message';
 
 /** Failures detailed in the snack bar before it degrades to a plain count. */
 const MAX_ECHECS_DETAILLES = 3;
+
+/**
+ * Sentinel id {@link ReferenceCrudService.persister} answers when the user
+ * chose to reload rather than overwrite: nothing was written, the caller has
+ * nothing to announce and the form can close over the refreshed store.
+ */
+const RECHARGE = '\u0000recharge';
 
 /**
  * Warnings spelled out in the snack bar before it says "and n others". Same
@@ -40,7 +47,9 @@ export class ReferenceCrudService {
 
   /**
    * Creates or updates an entity. `editingId` is null for a creation. Returns
-   * true when the entity was persisted, so the page can reset its form.
+   * true when the form can close: the entity was persisted — or, after a
+   * concurrent-edit conflict, the user chose to reload instead, and the store
+   * now holds the other session's version (see {@link resoudreConflit}).
    * `requireId` defaults to true (every entity but créneaux is keyed by a
    * user-typed natural id); créneaux pass `false` since their id is generated
    * by the server and never entered by the user.
@@ -61,7 +70,10 @@ export class ReferenceCrudService {
       return false;
     }
     try {
-      const { id, avertissements } = await this.store.save(resource, payload, editingId);
+      const { id, avertissements } = await this.persister(resource, payload, editingId);
+      if (id === RECHARGE) {
+        return true;
+      }
       this.refreshResolution();
       // The id the server wrote, not the one that was sent: a créneau is
       // created without one, and echoing the payload printed "Créneau
@@ -91,6 +103,50 @@ export class ReferenceCrudService {
     } catch (error) {
       this.reportError(error);
       return false;
+    }
+  }
+
+  /**
+   * Writes, and turns the one refusal that has an answer into that answer.
+   *
+   * A 409 carrying `MODIFICATION_CONCURRENTE` (issue #362) means another
+   * session wrote the row after this form loaded it. Silently overwriting is
+   * what the server just refused; silently failing would lose the user's
+   * typing to a red banner. So the user chooses: reload — the store is
+   * refreshed with the other session's version and the form closes, nothing of
+   * theirs is written — or overwrite — the same payload is sent again without
+   * its precondition, which is how a client says it knows. Any other failure
+   * propagates to the caller's snack bar as before.
+   */
+  private async persister<T extends { id?: string | number | null }>(
+    resource: string,
+    payload: T,
+    editingId: string | number | null
+  ): Promise<SaveResult> {
+    try {
+      return await this.store.save(resource, payload, editingId);
+    } catch (error) {
+      if (!(error instanceof ApiError) || !error.modificationConcurrente) {
+        throw error;
+      }
+      const ecraser = await this.confirm.ask({
+        title: $localize`:@@crud.error.conflit:Modifiée entre-temps`,
+        message: error.message,
+        confirmLabel: $localize`:@@crud.concurrent.overwrite:Écraser quand même`,
+        cancelLabel: $localize`:@@crud.concurrent.reload:Recharger`,
+        danger: true
+      });
+      if (ecraser) {
+        return this.store.save(resource, { ...payload, modifieLe: null }, editingId);
+      }
+      await this.store.reload();
+      this.notifications.notify({
+        title: $localize`:@@crud.concurrent.reloaded:Fiche rechargée, vos modifications n'ont pas été enregistrées.`,
+        message: $localize`:@@crud.concurrent.reloadedHint:Rouvrez-la pour les reporter sur la version actuelle.`,
+        variant: 'warning',
+        timeout: 8000
+      });
+      return { id: RECHARGE, avertissements: [] };
     }
   }
 

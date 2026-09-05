@@ -254,7 +254,9 @@ describe('AnimateurFormDialog', () => {
       email: null,
       competences: {},
       souhaits: [],
-      joursIndisponibles: []
+      joursIndisponibles: [],
+      // The precondition of issue #362: null on a fixture that never carried a stamp.
+      modifieLe: null
     });
     expect(close).toHaveBeenCalledWith(true);
   });

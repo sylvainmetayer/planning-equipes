@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -42,6 +43,16 @@ public class Creneau {
      */
     private boolean couverturePause;
 
+    /**
+     * When this row was last written (issue #362), read from the referential
+     * and echoed back by a form on save: a write carrying a value older than
+     * the row's is refused, see {@code ConcurrentModificationGuard}. {@code null}
+     * on an object that never went through the database, and on a write that
+     * deliberately carries no precondition (import, MCP merge, a client that
+     * chose to overwrite).
+     */
+    private Instant modifieLe;
+
     public Creneau() {
     }
 
@@ -75,6 +86,14 @@ public class Creneau {
                 creneau.setJour((int) ChronoUnit.DAYS.between(min, creneau.getDate()) + 1);
             }
         }
+    }
+
+    public Instant getModifieLe() {
+        return modifieLe;
+    }
+
+    public void setModifieLe(Instant modifieLe) {
+        this.modifieLe = modifieLe;
     }
 
     public Long getId() {

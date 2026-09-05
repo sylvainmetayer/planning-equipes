@@ -24,12 +24,22 @@ public class ContrainteAdHocService {
     @Inject
     ReferenceDataChangeTracker changeTracker;
 
+    @Inject
+    ConcurrentModificationGuard staleWrites;
+
     public List<ContrainteAdHoc> list() {
         return repository.listContraintes();
     }
 
+    /**
+     * Create-or-overwrite by id — the only write this resource has, so the
+     * concurrent-edit check of the other referentials lives here: a payload
+     * carrying the {@code modifieLe} it loaded is refused when the row moved
+     * since, a payload without one (a creation, an import) is not checked.
+     */
     public ContrainteAdHoc create(ContrainteAdHoc contrainte) {
         contrainte.setId(Ids.required(contrainte.getId(), "constraint id"));
+        staleWrites.check("contrainte_ad_hoc", contrainte.getId(), contrainte.getModifieLe());
         refuseContradiction(contrainte);
         if (contrainte.getCreeLe() == null) {
             contrainte.setCreeLe(Instant.now());

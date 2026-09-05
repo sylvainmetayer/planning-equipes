@@ -239,6 +239,22 @@ describe('brouillonInvalide', () => {
   });
 });
 
+describe('modifieLe — la précondition de #362 voyage de la fiche ouverte au payload', () => {
+  it('reprend le modifieLe de la fiche et le renvoie tel quel', () => {
+    const stand = { ...toDraft(null), id: 'S1', nom: 'Stand', modifieLe: '2026-09-06T10:00:00.123456Z' } as unknown as Stand;
+
+    const draft = toDraft(stand);
+
+    expect(draft.modifieLe).toBe('2026-09-06T10:00:00.123456Z');
+    expect(versStand(draft, []).modifieLe).toBe('2026-09-06T10:00:00.123456Z');
+  });
+
+  it('vaut null sur une fiche neuve : une création ne porte pas de précondition', () => {
+    expect(toDraft(null).modifieLe).toBeNull();
+    expect(versStand(toDraft(null), []).modifieLe).toBeNull();
+  });
+});
+
 describe('toDraft', () => {
   it('opens a new stand on a one-seat default rather than on zero', () => {
     const vierge = toDraft(null);

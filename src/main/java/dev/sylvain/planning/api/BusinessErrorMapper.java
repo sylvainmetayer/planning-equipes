@@ -29,9 +29,16 @@ public class BusinessErrorMapper implements ExceptionMapper<BusinessError> {
             case BusinessError.Invalid ignored -> Response.Status.BAD_REQUEST;
             case BusinessError.NotFound ignored -> Response.Status.NOT_FOUND;
             case BusinessError.Conflict ignored -> Response.Status.CONFLICT;
+            case BusinessError.Stale ignored -> Response.Status.CONFLICT;
         };
+        // A stale write is the one 409 the client answers with a dialog (reload
+        // or overwrite), so its body says which 409 it is — the message alone
+        // would be a sentence to read, not a case to switch on.
+        Object corps = erreur instanceof BusinessError.Stale stale
+                ? new StaleWriteError(stale.getMessage(), stale.getModifieLe())
+                : new ValidationError(erreur.getMessage());
         return Response.status(statut)
-                .entity(new ValidationError(erreur.getMessage()))
+                .entity(corps)
                 .type(MediaType.APPLICATION_JSON)
                 .build();
     }

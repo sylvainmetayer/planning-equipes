@@ -614,8 +614,9 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
   renaming it there too.
 - **A refused request throws `BusinessError`; a resource never writes a
   `try/catch` for it.** The sealed hierarchy (`Invalid` → 400, `NotFound`
-  → 404, `Conflict` → 409) carries the status, and `BusinessErrorMapper`
-  switches over it exhaustively. It extends `IllegalArgumentException`, so a
+  → 404, `Conflict` → 409, `Stale` → 409 with a `code` the frontend switches
+  on — a write based on an out-of-date read, issue #362) carries the status,
+  and `BusinessErrorMapper` switches over it exhaustively. It extends `IllegalArgumentException`, so a
   plain one — thrown by a library, or by nobody on purpose — still falls
   through to its 500 and its Sentry alert; that difference is the point.
   Choose the variant by where the id came from: a path segment that names

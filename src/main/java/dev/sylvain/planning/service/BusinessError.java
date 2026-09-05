@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import java.time.Instant;
+
 /**
  * A request the domain refuses, as opposed to a bug. The distinction matters
  * because the two deserve opposite treatments: a refusal is the expected
@@ -59,6 +61,27 @@ public sealed abstract class BusinessError extends IllegalArgumentException {
 
         public Conflict(String message) {
             super(message);
+        }
+    }
+
+    /**
+     * The write was based on a read that is out of date (issue #362): another
+     * session wrote the row since the caller loaded it — {@code 409} too, but
+     * told apart from {@link Conflict} because the client has a specific
+     * answer to it, reload or overwrite, that no other conflict offers. Carries
+     * the row's current {@code modifieLe} so the client can also overwrite
+     * knowingly by sending it back.
+     */
+    public static final class Stale extends BusinessError {
+        private final transient Instant modifieLe;
+
+        public Stale(String message, Instant modifieLe) {
+            super(message);
+            this.modifieLe = modifieLe;
+        }
+
+        public Instant getModifieLe() {
+            return modifieLe;
         }
     }
 }

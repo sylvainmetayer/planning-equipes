@@ -21,6 +21,9 @@ public class AnimateurService {
     ReferenceDataChangeTracker changeTracker;
 
     @Inject
+    ConcurrentModificationGuard staleWrites;
+
+    @Inject
     SolverJobService solverJobs;
 
     public List<Animateur> list() {
@@ -55,6 +58,7 @@ public class AnimateurService {
         if (!repository.animateurExists(id)) {
             throw new NotFoundException("Animateur not found: " + id);
         }
+        staleWrites.check("animateur", id, animateur.getModifieLe());
         animateur.setId(id);
         validate(animateur);
         repository.saveAnimateur(animateur);

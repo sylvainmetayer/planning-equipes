@@ -16,6 +16,8 @@ interface EmplacementDraft {
   nom: string;
   latitude: number | null;
   longitude: number | null;
+  /** The store's `modifieLe` at opening, sent back as the write's precondition (issue #362). */
+  modifieLe: string | null;
 }
 
 export interface EmplacementFormData {
@@ -85,7 +87,8 @@ export class EmplacementFormDialog {
         : Number(draft.latitude),
       longitude: draft.longitude === null || draft.longitude === undefined || `${draft.longitude}` === ''
         ? null
-        : Number(draft.longitude)
+        : Number(draft.longitude),
+      modifieLe: draft.modifieLe
     };
     if (await this.crud.save('emplacements', emplacement, this.editingId(), $localize`:@@emplacements.entityLabel:Emplacement`)) {
       this.dialogRef.close(true);
@@ -95,12 +98,13 @@ export class EmplacementFormDialog {
 
 function toDraft(emplacement: Emplacement | null): EmplacementDraft {
   if (!emplacement) {
-    return { id: '', nom: '', latitude: null, longitude: null };
+    return { id: '', nom: '', latitude: null, longitude: null, modifieLe: null };
   }
   return {
     id: emplacement.id,
     nom: emplacement.nom ?? '',
     latitude: emplacement.latitude,
-    longitude: emplacement.longitude
+    longitude: emplacement.longitude,
+    modifieLe: emplacement.modifieLe ?? null
   };
 }

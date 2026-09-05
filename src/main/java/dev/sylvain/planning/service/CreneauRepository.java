@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -34,7 +35,7 @@ public class CreneauRepository {
 
     private static final String SELECT_CRENEAU_SQL =
             """
-            SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause
+            SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause, c.modifie_le
             FROM creneau c
             WHERE c.edition_id = ?""";
 
@@ -79,6 +80,7 @@ public class CreneauRepository {
                 rs.getObject("heure_fin", LocalTime.class));
         creneau.setFamille(rs.getInt("famille"));
         creneau.setCouverturePause(rs.getBoolean("couverture_pause"));
+        creneau.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
         return creneau;
     }
 
@@ -170,7 +172,7 @@ public class CreneauRepository {
                 """
                 INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, famille, couverture_pause)
                 VALUES (?, ?, ?, ?, ?, ?)
-                RETURNING id""")) {
+                RETURNING id, modifie_le""")) {
             ps.setObject(2, creneau.getDate());
             ps.setObject(3, creneau.getHeureDebut());
             ps.setObject(4, creneau.getHeureFin());
@@ -180,6 +182,7 @@ public class CreneauRepository {
                 rs.next();
                 long id = rs.getLong("id");
                 creneau.setId(id);
+                creneau.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
             }
         }
         return creneau.getId();
@@ -191,8 +194,10 @@ public class CreneauRepository {
         try (PreparedStatement ps = connection.prepareStatement(
                 """
                 UPDATE creneau
-                SET date_creneau = ?, heure_debut = ?, heure_fin = ?, famille = ?, couverture_pause = ?
-                WHERE edition_id = ? AND id = ?""")) {
+                SET date_creneau = ?, heure_debut = ?, heure_fin = ?, famille = ?, couverture_pause = ?,
+                modifie_le = now()
+                WHERE edition_id = ? AND id = ?
+                RETURNING modifie_le""")) {
             ps.setObject(1, creneau.getDate());
             ps.setObject(2, creneau.getHeureDebut());
             ps.setObject(3, creneau.getHeureFin());
@@ -200,7 +205,7 @@ public class CreneauRepository {
             ps.setBoolean(5, creneau.isCouverturePause());
             ps.setString(6, scope.editionId());
             ps.setLong(7, creneau.getId());
-            ps.executeUpdate();
+            creneau.setModifieLe(WriteStamp.written(ps));
         }
     }
 }

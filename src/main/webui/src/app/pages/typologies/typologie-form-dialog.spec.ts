@@ -112,7 +112,7 @@ describe('TypologieFormDialog', () => {
     expect(save).toHaveBeenCalledOnce();
     const [resource, payload, editingId] = save.mock.calls[0] as unknown as [string, TypologieItem, string | null];
     expect(resource).toBe('typologies');
-    expect(payload).toEqual({ id: 'ambiance', label: 'Ambiance festive', ninja: false });
+    expect(payload).toEqual({ id: 'ambiance', label: 'Ambiance festive', ninja: false, modifieLe: null });
     expect(editingId).toBe('ambiance');
     expect(close).toHaveBeenCalledWith(true);
   });

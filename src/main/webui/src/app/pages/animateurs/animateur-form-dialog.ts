@@ -32,6 +32,8 @@ interface AnimateurDraft {
   competences: CompetenceRow[];
   souhaits: string[];
   joursIndisponibles: string[];
+  /** The store's `modifieLe` at opening, sent back as the write's precondition (issue #362). */
+  modifieLe: string | null;
 }
 
 export interface AnimateurFormData {
@@ -132,7 +134,8 @@ export class AnimateurFormDialog {
       email: draft.email.trim() || null,
       competences,
       souhaits: draft.souhaits,
-      joursIndisponibles: draft.joursIndisponibles
+      joursIndisponibles: draft.joursIndisponibles,
+      modifieLe: draft.modifieLe
     };
     if (await this.crud.save('animateurs', animateur, this.editingId(), $localize`:@@animateurs.entityLabel:Animateur`)) {
       this.dialogRef.close(true);
@@ -224,11 +227,13 @@ function toDraft(animateur: Animateur | null): AnimateurDraft {
       email: '',
       competences: [],
       souhaits: [],
-      joursIndisponibles: []
+      joursIndisponibles: [],
+      modifieLe: null
     };
   }
   return {
     id: animateur.id,
+    modifieLe: animateur.modifieLe ?? null,
     prenom: animateur.prenom ?? '',
     nom: animateur.nom ?? '',
     dateNaissance: animateur.dateNaissance ?? '',

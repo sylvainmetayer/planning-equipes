@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { describe, expect, it } from 'vitest';
-import { toError } from './api.service';
+import { ApiError, CODE_MODIFICATION_CONCURRENTE, toError } from './api.service';
 
 describe('toError', () => {
   it('uses the server-provided message when the error body carries one', () => {
@@ -30,5 +30,25 @@ describe('toError', () => {
     const result = toError('unexpected');
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe('unexpected');
+  });
+});
+
+describe('toError — le code du corps', () => {
+  it('garde le code MODIFICATION_CONCURRENTE que porte le 409 d’une écriture périmée', () => {
+    const response = new HttpErrorResponse({
+      status: 409,
+      error: { message: 'Modifiée par une autre session', code: 'MODIFICATION_CONCURRENTE', modifieLe: '2026-09-06T10:00:00Z' }
+    });
+    const error = toError(response) as ApiError;
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.code).toBe(CODE_MODIFICATION_CONCURRENTE);
+    expect(error.modificationConcurrente).toBe(true);
+  });
+
+  it('ne prend pas un 409 sans code pour une modification concurrente', () => {
+    const response = new HttpErrorResponse({ status: 409, error: { message: 'Solveur occupé' } });
+    const error = toError(response) as ApiError;
+    expect(error.code).toBeNull();
+    expect(error.modificationConcurrente).toBe(false);
   });
 });

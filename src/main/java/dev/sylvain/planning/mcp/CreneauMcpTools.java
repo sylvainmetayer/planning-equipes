@@ -1,6 +1,7 @@
 package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.service.BusinessError;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -69,8 +70,12 @@ public class CreneauMcpTools {
             @ToolArg(description = "Date (AAAA-MM-JJ)", required = false) String date,
             @ToolArg(description = "Heure de début (HH:MM)", required = false) String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM)", required = false) String heureFin,
+            @ToolArg(description = "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)", required = false) String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Creneau creneau = findCreneau(id);
+        if (modifieLe != null) {
+            creneau.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
+        }
         if (date != null) {
             creneau.setDate(McpArgs.date(date, "date"));
         }
@@ -331,10 +336,11 @@ public class CreneauMcpTools {
 
     static CreneauView toView(Creneau creneau) {
         return new CreneauView(creneau.getId(), creneau.getJour(), creneau.getDate(),
-                creneau.getHeureDebut(), creneau.getHeureFin());
+                creneau.getHeureDebut(), creneau.getHeureFin(), creneau.getModifieLe());
     }
 
-    public record CreneauView(Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin) {
+    public record CreneauView(Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
+            Instant modifieLe) {
     }
 
     /** What a recurrence rule produced (or would produce), plus the resulting grid's verdict. */

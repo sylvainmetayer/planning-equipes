@@ -3,6 +3,7 @@ package dev.sylvain.planning.mcp;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -233,8 +234,12 @@ public class StandMcpTools {
             @ToolArg(description = "Stand premium", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
             @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(description = "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)", required = false) String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = findStand(id);
+        if (modifieLe != null) {
+            stand.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
+        }
         if (nom != null) {
             stand.setNom(nom);
         }
@@ -433,8 +438,12 @@ public class StandMcpTools {
             @ToolArg(description = "Nom affiché", required = false) String nom,
             @ToolArg(description = "Latitude", required = false) Double latitude,
             @ToolArg(description = "Longitude", required = false) Double longitude,
+            @ToolArg(description = "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)", required = false) String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Emplacement emplacement = findEmplacement(id);
+        if (modifieLe != null) {
+            emplacement.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
+        }
         if (nom != null) {
             emplacement.setNom(nom);
         }
@@ -483,8 +492,12 @@ public class StandMcpTools {
     TypologieItem modifier_typologie(
             @ToolArg(description = "Id de la typologie") String id,
             @ToolArg(description = "Nouveau libellé") String label,
+            @ToolArg(description = "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)", required = false) String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return referenceDataService.updateTypologie(id, new TypologieItem(id, label));
+        // The ninja flag is carried over: a rename must not demote the ninja typologie.
+        boolean ninja = referenceDataService.typologieNinja().filter(id::equals).isPresent();
+        Instant precondition = modifieLe == null ? null : McpArgs.instant(modifieLe, "modifieLe");
+        return referenceDataService.updateTypologie(id, new TypologieItem(id, label, ninja, precondition));
     }
 
     @Tool(description = "Supprime une typologie de jeu. Refusé tant qu'elle est référencée par un stand ou un animateur.",
@@ -531,12 +544,12 @@ public class StandMcpTools {
                 stand.getEffectifMin(), stand.getEffectifMax(), stand.isReserveMajeurs(),
                 stand.isPremium(), stand.getNiveauEffort(),
                 stand.getEmplacement() == null ? null : stand.getEmplacement().getId(),
-                fermetures, ouvertures, horaires);
+                fermetures, ouvertures, horaires, stand.getModifieLe());
     }
 
     static EmplacementView toView(Emplacement emplacement) {
         return new EmplacementView(emplacement.getId(), emplacement.getNom(), emplacement.getLatitude(),
-                emplacement.getLongitude());
+                emplacement.getLongitude(), emplacement.getModifieLe());
     }
 
     /** @param total stands in the edition, which may exceed the number returned */
@@ -546,7 +559,7 @@ public class StandMcpTools {
     public record StandView(String id, String nom, Set<String> typologiesProposees, int effectifMin,
             int effectifMax, boolean reserveMajeurs, boolean premium, NiveauEffort niveauEffort,
             String emplacementId, List<PlageView> fermetures, List<PlageView> ouvertures,
-            List<HoraireView> horaires) {
+            List<HoraireView> horaires, Instant modifieLe) {
     }
 
     /**
@@ -571,6 +584,6 @@ public class StandMcpTools {
     public record FenetreView(LocalTime heureDebut, LocalTime heureFin, Integer effectif) {
     }
 
-    public record EmplacementView(String id, String nom, Double latitude, Double longitude) {
+    public record EmplacementView(String id, String nom, Double latitude, Double longitude, Instant modifieLe) {
     }
 }

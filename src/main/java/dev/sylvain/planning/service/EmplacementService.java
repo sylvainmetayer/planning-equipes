@@ -17,6 +17,9 @@ public class EmplacementService {
     @Inject
     ReferenceDataChangeTracker changeTracker;
 
+    @Inject
+    ConcurrentModificationGuard staleWrites;
+
     public List<Emplacement> list() {
         return repository.listEmplacements();
     }
@@ -33,6 +36,7 @@ public class EmplacementService {
         if (!repository.emplacementExists(id)) {
             throw new NotFoundException("Emplacement not found: " + id);
         }
+        staleWrites.check("emplacement", id, emplacement.getModifieLe());
         emplacement.setId(id);
         validateCoordinates(emplacement);
         repository.saveEmplacement(emplacement);

@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.service.BusinessError;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
@@ -38,6 +39,19 @@ final class McpArgs {
             return LocalDate.parse(value.trim());
         } catch (DateTimeParseException e) {
             throw new BusinessError.Invalid(champ + " : date invalide « " + value + " », format attendu AAAA-MM-JJ");
+        }
+    }
+
+    /** An ISO-8601 instant, as {@code modifieLe} is printed by every view — the precondition of issue #362. */
+    static Instant instant(String value, String champ) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Instant.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            throw new BusinessError.Invalid(champ + " : horodatage invalide « " + value
+                    + " », format attendu ISO-8601 (ex. 2026-09-06T10:15:30.123456Z)");
         }
     }
 

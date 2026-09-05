@@ -200,6 +200,54 @@ describe('ReferenceCrudService', () => {
       expect(notification.messageJournal).toContain('2027-08-15');
     });
 
+    // Issue #362 : le 409 « modification concurrente » n'est pas un échec
+    // comme les autres, il a une réponse. Écraser renvoie le même payload sans
+    // sa précondition ; recharger ne réécrit rien, rafraîchit le store et rend
+    // true pour que le formulaire se ferme sur la version de l'autre session.
+    describe('modification concurrente', () => {
+      const conflit = () => new ApiError(409, 'conflict', 'Modifiée par une autre session', 'MODIFICATION_CONCURRENTE');
+
+      it('propose d’écraser, puis renvoie le payload sans précondition', async () => {
+        store.save.mockRejectedValueOnce(conflit());
+        confirm.reponse = true;
+
+        const ok = await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
+
+        expect(ok).toBe(true);
+        expect(confirm.demande()).toEqual(
+          expect.objectContaining({ confirmLabel: 'Écraser quand même', cancelLabel: 'Recharger', danger: true })
+        );
+        expect(store.save).toHaveBeenCalledTimes(2);
+        expect(store.save).toHaveBeenLastCalledWith('stands', { id: 'S1', modifieLe: null }, 'S1');
+        expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      });
+
+      it('recharge sans réécrire quand l’utilisateur le choisit, et laisse le formulaire se fermer', async () => {
+        store.save.mockRejectedValueOnce(conflit());
+        confirm.reponse = false;
+
+        const ok = await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
+
+        expect(ok).toBe(true);
+        expect(store.save).toHaveBeenCalledTimes(1);
+        expect(store.reload).toHaveBeenCalled();
+        expect(notifications.notify).toHaveBeenCalledWith(
+          expect.objectContaining({ variant: 'warning', title: expect.stringContaining('rechargée') })
+        );
+        expect(notifications.notify).not.toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      });
+
+      it('laisse un 409 sans code suivre le chemin d’erreur ordinaire', async () => {
+        store.save.mockRejectedValueOnce(new ApiError(409, 'conflict', 'Solveur occupé'));
+
+        const ok = await service.save('stands', { id: 'S1' }, 'S1', 'le stand');
+
+        expect(ok).toBe(false);
+        expect(confirm.ask).not.toHaveBeenCalled();
+        expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
+      });
+    });
+
     it('retourne false et notifie quand le store échoue', async () => {
       store.save.mockRejectedValueOnce(new Error('conflit'));
 

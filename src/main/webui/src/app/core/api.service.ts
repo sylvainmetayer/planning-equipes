@@ -107,15 +107,29 @@ export class ApiService {
  */
 export type ApiErrorKind = 'invalid' | 'notFound' | 'conflict' | 'session' | 'technical';
 
+/** The `code` a 409 carries when the write was based on an out-of-date read (issue #362). */
+export const CODE_MODIFICATION_CONCURRENTE = 'MODIFICATION_CONCURRENTE';
+
 /** A server refusal that still knows what it was. */
 export class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly kind: ApiErrorKind,
-    message: string
+    message: string,
+    /**
+     * The discriminator the body carries when a status is not enough — today
+     * only {@link CODE_MODIFICATION_CONCURRENTE}, the one 409 the client
+     * answers with a choice rather than with a banner.
+     */
+    readonly code: string | null = null
   ) {
     super(message);
     this.name = 'ApiError';
+  }
+
+  /** True for the 409 that means "someone else wrote this row since you loaded it". */
+  get modificationConcurrente(): boolean {
+    return this.code === CODE_MODIFICATION_CONCURRENTE;
   }
 }
 
@@ -158,14 +172,15 @@ export function toError(error: unknown): Error {
     if (error.status === 401) {
       return new SessionExpireeError();
     }
-    const body = error.error as { message?: string } | string | null;
+    const body = error.error as { message?: string; code?: string } | string | null;
     const message =
       body && typeof body === 'object' && body.message
         ? body.message
         : $localize`:@@api.requestFailed:Échec de la requête (code ${error.status}:status:)`;
+    const code = body && typeof body === 'object' && typeof body.code === 'string' ? body.code : null;
     // Produced here and nowhere else: every caller can now switch on `kind`
     // instead of re-deriving the meaning from the message text.
-    return new ApiError(error.status, kindForStatus(error.status), message);
+    return new ApiError(error.status, kindForStatus(error.status), message, code);
   }
   return error instanceof Error ? error : new Error(String(error));
 }

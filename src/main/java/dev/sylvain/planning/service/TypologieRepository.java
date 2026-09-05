@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,10 +38,11 @@ public class TypologieRepository {
         List<TypologieItem> typologies = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
-                        "SELECT id, label, ninja FROM typologie WHERE edition_id = ? ORDER BY id");
+                        "SELECT id, label, ninja, modifie_le FROM typologie WHERE edition_id = ? ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                typologies.add(new TypologieItem(rs.getString("id"), rs.getString("label"), rs.getBoolean("ninja")));
+                typologies.add(new TypologieItem(rs.getString("id"), rs.getString("label"), rs.getBoolean("ninja"),
+                        rs.getObject("modifie_le", OffsetDateTime.class).toInstant()));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list typologies", e);
@@ -63,8 +65,9 @@ public class TypologieRepository {
         return scope.exists("typologie", id);
     }
 
-    public void saveTypologie(TypologieItem typologie) {
-        scope.write("Failed to save typology " + typologie.id(), connection -> {
+    /** Writes the item and returns it stamped with the moment the database wrote it. */
+    public TypologieItem saveTypologie(TypologieItem typologie) {
+        return scope.writeAndReturn("Failed to save typology " + typologie.id(), connection -> {
             // Only one typologie may be ninja *per edition*: demote the previous
             // holder in the same transaction, otherwise the partial unique index
             // (V31, scoped per edition by V33) rejects the insert and the user
@@ -75,13 +78,13 @@ public class TypologieRepository {
                 try (PreparedStatement ps = scope.prepareScoped(connection,
                         """
                         UPDATE typologie
-                        SET ninja = FALSE
+                        SET ninja = FALSE, modifie_le = now()
                         WHERE edition_id = ? AND ninja AND id <> ?""")) {
                     ps.setString(2, typologie.id());
                     ps.executeUpdate();
                 }
             }
-            upsertTypologie(connection, typologie);
+            return upsertTypologie(connection, typologie);
         });
     }
 
@@ -111,17 +114,18 @@ public class TypologieRepository {
         }
     }
 
-    private void upsertTypologie(Connection connection, TypologieItem typologie) throws SQLException {
+    private TypologieItem upsertTypologie(Connection connection, TypologieItem typologie) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection,
                 """
                 INSERT INTO typologie (edition_id, id, label, ninja)
                 VALUES (?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
-                DO UPDATE SET label = EXCLUDED.label, ninja = EXCLUDED.ninja""")) {
+                DO UPDATE SET label = EXCLUDED.label, ninja = EXCLUDED.ninja, modifie_le = now()
+                RETURNING modifie_le""")) {
             ps.setString(2, typologie.id());
             ps.setString(3, typologie.label());
             ps.setBoolean(4, typologie.ninja());
-            ps.executeUpdate();
+            return typologie.stamped(WriteStamp.written(ps));
         }
     }
 
@@ -137,7 +141,7 @@ public class TypologieRepository {
                 INSERT INTO typologie (edition_id, id, label, ninja)
                 VALUES (?, ?, ?, FALSE)
                 ON CONFLICT (edition_id, id)
-                DO UPDATE SET label = EXCLUDED.label""")) {
+                DO UPDATE SET label = EXCLUDED.label, modifie_le = now()""")) {
             ps.setString(2, typologie.id());
             ps.setString(3, typologie.label());
             ps.executeUpdate();

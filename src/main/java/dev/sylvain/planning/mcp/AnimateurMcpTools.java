@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -104,8 +105,12 @@ public class AnimateurMcpTools {
             @ToolArg(description = "Compétences : id de typologie -> DEBUTANT|AUTONOME|REFERENT (remplace la liste existante)", required = false) Map<String, String> competences,
             @ToolArg(description = "Ids de typologies souhaitées (remplace la liste existante)", required = false) List<String> souhaits,
             @ToolArg(description = "Jours indisponibles AAAA-MM-JJ (remplace la liste existante)", required = false) List<String> joursIndisponibles,
+            @ToolArg(description = "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)", required = false) String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Animateur animateur = find(id);
+        if (modifieLe != null) {
+            animateur.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
+        }
         if (manager != null) {
             animateur.setManager(manager);
         }
@@ -160,7 +165,8 @@ public class AnimateurMcpTools {
         String statut = animateur.isMineurOn(reference) ? "mineur" : "majeur";
         return new AnimateurView(animateur.getId(), statut, animateur.isUnder16On(reference),
                 animateur.isManager(),
-                animateur.getCompetences(), animateur.getSouhaits(), animateur.getJoursIndisponibles());
+                animateur.getCompetences(), animateur.getSouhaits(), animateur.getJoursIndisponibles(),
+                animateur.getModifieLe());
     }
 
     /**
@@ -172,6 +178,7 @@ public class AnimateurMcpTools {
     }
 
     public record AnimateurView(String id, String statut, boolean moinsDe16Ans, boolean manager,
-            Map<String, NiveauCompetence> competences, Set<String> souhaits, Set<LocalDate> joursIndisponibles) {
+            Map<String, NiveauCompetence> competences, Set<String> souhaits, Set<LocalDate> joursIndisponibles,
+            Instant modifieLe) {
     }
 }

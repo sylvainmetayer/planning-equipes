@@ -32,6 +32,9 @@ public class StandService {
     ReferenceDataChangeTracker changeTracker;
 
     @Inject
+    ConcurrentModificationGuard staleWrites;
+
+    @Inject
     SolverJobService solverJobs;
 
     /**
@@ -95,6 +98,7 @@ public class StandService {
         if (!repository.standExists(id)) {
             throw new NotFoundException("Stand not found: " + id);
         }
+        staleWrites.check("stand", id, stand.getModifieLe());
         stand.setId(id);
         validate(stand);
         repository.saveStand(stand);

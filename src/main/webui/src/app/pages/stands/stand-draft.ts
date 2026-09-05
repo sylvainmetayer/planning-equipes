@@ -46,6 +46,8 @@ export interface StandDraft {
   indisponibilites: IndisponibiliteStand[];
   ouvertures: OuvertureStand[];
   horaires: HoraireDraft[];
+  /** The store's `modifieLe` at opening, sent back as the write's precondition (issue #362). */
+  modifieLe: string | null;
 }
 
 /* ------------------------------ list edits ------------------------------ */
@@ -178,11 +180,13 @@ export function toDraft(stand: Stand | null): StandDraft {
       emplacementId: null,
       indisponibilites: [],
       ouvertures: [],
-      horaires: []
+      horaires: [],
+      modifieLe: null
     };
   }
   return {
     id: stand.id,
+    modifieLe: stand.modifieLe ?? null,
     nom: stand.nom ?? '',
     effectifMin: stand.effectifMin,
     effectifMax: stand.effectifMax,
@@ -223,7 +227,8 @@ export function versStand(draft: StandDraft, emplacements: readonly Emplacement[
       ...normaliserPlage(ouverture),
       effectif: normaliserEffectif(ouverture.effectif)
     })),
-    horaires: draft.horaires.map(normaliserHoraire)
+    horaires: draft.horaires.map(normaliserHoraire),
+    modifieLe: draft.modifieLe
   };
 }
 

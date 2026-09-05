@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -38,7 +39,7 @@ public class AnimateurRepository {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = scope.prepareScoped(connection,
                     """
-                    SELECT id, prenom, nom, date_naissance, manager, email, access_token
+                    SELECT id, prenom, nom, date_naissance, manager, email, access_token, modifie_le
                     FROM animateur
                     WHERE edition_id = ?
                     ORDER BY id""");
@@ -52,6 +53,7 @@ public class AnimateurRepository {
                             rs.getBoolean("manager"));
                     animateur.setEmail(rs.getString("email"));
                     animateur.setAccessToken(rs.getString("access_token"));
+                    animateur.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                     byId.put(animateur.getId(), animateur);
                 }
             }
@@ -360,15 +362,15 @@ public class AnimateurRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
                 DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, date_naissance = EXCLUDED.date_naissance,
-                manager = EXCLUDED.manager,"""
-                        + miseAJourEmail)) {
+                manager = EXCLUDED.manager, modifie_le = now(), """
+                        + miseAJourEmail + " RETURNING modifie_le")) {
             ps.setString(2, animateur.getId());
             ps.setString(3, animateur.getPrenom());
             ps.setString(4, animateur.getNom());
             ps.setObject(5, animateur.getDateNaissance());
             ps.setBoolean(6, animateur.isManager());
             ps.setString(7, animateur.getEmail());
-            ps.executeUpdate();
+            animateur.setModifieLe(WriteStamp.written(ps));
         }
         try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?")) {

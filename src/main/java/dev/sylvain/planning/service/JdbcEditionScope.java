@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 
 import javax.sql.DataSource;
 
@@ -150,6 +152,22 @@ public class JdbcEditionScope {
         return exists(table, ps -> ps.setLong(2, id), table + " " + id);
     }
 
+    /**
+     * When {@code table} last wrote this id in the current edition — the
+     * {@code modifie_le} column every referential carries (V67) — or
+     * {@code null} when the row does not exist. Written once here like
+     * {@link #exists}: the probe is the same for every referential, and the
+     * edition predicate must never vary.
+     */
+    public Instant lastWriteOf(String table, String id) {
+        return lastWriteOf(table, ps -> ps.setString(2, id), table + " " + id);
+    }
+
+    /** Same probe for a table whose id is database-generated ({@code creneau}). */
+    public Instant lastWriteOf(String table, long id) {
+        return lastWriteOf(table, ps -> ps.setLong(2, id), table + " " + id);
+    }
+
     /** Deletes by id, {@code sql} naming the table and putting {@code edition_id = ?} first. */
     public void delete(String sql, String id) {
         delete(sql, ps -> ps.setString(2, id), id);
@@ -164,6 +182,23 @@ public class JdbcEditionScope {
     @FunctionalInterface
     private interface Binding {
         void lier(PreparedStatement ps) throws SQLException;
+    }
+
+    private Instant lastWriteOf(String table, Binding binding, String what) {
+        return read("Failed to read the last write of " + what, connection -> {
+            try (PreparedStatement ps = prepareScoped(connection,
+                    "SELECT modifie_le FROM " + table + " WHERE edition_id = ? AND id = ?")) {
+                binding.lier(ps);
+                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        return null;
+                    }
+                    OffsetDateTime moment = rs.getObject("modifie_le", OffsetDateTime.class);
+                    return moment == null ? null : moment.toInstant();
+                }
+            }
+        });
     }
 
     private boolean exists(String table, Binding binding, String what) {

@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,7 +37,7 @@ public class ContrainteAdHocRepository {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = scope.prepareScoped(connection,
                     """
-                    SELECT id, type, creneau_id, stand_id, raison, cree_par, cree_le
+                    SELECT id, type, creneau_id, stand_id, raison, cree_par, cree_le, modifie_le
                     FROM contrainte_ad_hoc
                     WHERE edition_id = ?
                     ORDER BY id""");
@@ -60,6 +61,7 @@ public class ContrainteAdHocRepository {
                     contrainte.setCreeParUtilisateurId(rs.getString("cree_par"));
                     Timestamp creeLe = rs.getTimestamp("cree_le");
                     contrainte.setCreeLe(creeLe != null ? creeLe.toInstant() : null);
+                    contrainte.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                     byId.put(contrainte.getId(), contrainte);
                 }
             }
@@ -103,7 +105,8 @@ public class ContrainteAdHocRepository {
                 ON CONFLICT (edition_id, id)
                 DO UPDATE SET type = EXCLUDED.type, creneau_id = EXCLUDED.creneau_id,
                 stand_id = EXCLUDED.stand_id, raison = EXCLUDED.raison, cree_par = EXCLUDED.cree_par,
-                cree_le = EXCLUDED.cree_le""")) {
+                cree_le = EXCLUDED.cree_le, modifie_le = now()
+                RETURNING modifie_le""")) {
             ps.setString(2, contrainte.getId());
             ps.setString(3, contrainte.getType() != null ? contrainte.getType().name() : null);
             ps.setObject(4, contrainte.getCreneau() != null ? contrainte.getCreneau().getId() : null);
@@ -112,7 +115,7 @@ public class ContrainteAdHocRepository {
             ps.setString(7, contrainte.getCreeParUtilisateurId());
             Instant creeLe = contrainte.getCreeLe() != null ? contrainte.getCreeLe() : Instant.now();
             ps.setTimestamp(8, Timestamp.from(creeLe));
-            ps.executeUpdate();
+            contrainte.setModifieLe(WriteStamp.written(ps));
         }
         try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM contrainte_animateur WHERE edition_id = ? AND contrainte_id = ?")) {

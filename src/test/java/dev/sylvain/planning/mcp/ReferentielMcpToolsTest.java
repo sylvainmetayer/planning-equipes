@@ -51,7 +51,7 @@ class ReferentielMcpToolsTest {
         standTools.creer_typologie("TYPO-MCP-1", "Jeux de stratégie", null);
 
         AnimateurView modifie = animateurTools.modifier_animateur("A-MCP-1", true,
-                Map.of("TYPO-MCP-1", "REFERENT"), List.of("TYPO-MCP-1"), List.of("2026-07-18"), null);
+                Map.of("TYPO-MCP-1", "REFERENT"), List.of("TYPO-MCP-1"), List.of("2026-07-18"), null, null);
 
         assertThat(modifie.manager()).isTrue();
         assertThat(modifie.souhaits()).containsExactly("TYPO-MCP-1");
@@ -79,7 +79,7 @@ class ReferentielMcpToolsTest {
         assertThat(cree.niveauEffort().name()).isEqualTo("EPUISANT");
 
         StandView modifie = standTools.modifier_stand("STAND-MCP-1", "Tir à l'arc (grand)", null, null, 6,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
 
         assertThat(modifie.nom()).isEqualTo("Tir à l'arc (grand)");
         assertThat(modifie.effectifMax()).isEqualTo(6);
@@ -102,7 +102,7 @@ class ReferentielMcpToolsTest {
     void creerEtModifierUnCreneau() {
         CreneauView creneau = creneauTools.creer_creneau("2026-07-18", "09:00", "13:00", null);
 
-        CreneauView modifie = creneauTools.modifier_creneau(creneau.id(), null, "10:00", null, null);
+        CreneauView modifie = creneauTools.modifier_creneau(creneau.id(), null, "10:00", null, null, null);
         assertThat(modifie.heureDebut()).hasToString("10:00");
         assertThat(modifie.heureFin()).hasToString("13:00");
 

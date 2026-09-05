@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,7 +57,7 @@ public class StandRepository {
             try (PreparedStatement ps = scope.prepareScoped(connection,
                     """
                     SELECT s.id, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs,
-                    s.premium, s.niveau_effort, e.id AS emplacement_id, e.nom AS emplacement_nom,
+                    s.premium, s.niveau_effort, s.modifie_le, e.id AS emplacement_id, e.nom AS emplacement_nom,
                     e.latitude AS emplacement_latitude, e.longitude AS emplacement_longitude
                     FROM stand s
                     LEFT JOIN emplacement e ON e.edition_id = s.edition_id AND e.id = s.emplacement_id
@@ -72,6 +73,7 @@ public class StandRepository {
                     stand.setReserveMajeurs(rs.getBoolean("reserve_majeurs"));
                     stand.setPremium(rs.getBoolean("premium"));
                     stand.setNiveauEffort(NiveauEffort.valueOf(rs.getString("niveau_effort")));
+                    stand.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                     String emplacementId = rs.getString("emplacement_id");
                     if (emplacementId != null) {
                         stand.setEmplacement(new Emplacement(emplacementId, rs.getString("emplacement_nom"),
@@ -289,7 +291,8 @@ public class StandRepository {
                 DO UPDATE SET nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min,
                 effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs,
                 premium = EXCLUDED.premium, emplacement_id = EXCLUDED.emplacement_id,
-                niveau_effort = EXCLUDED.niveau_effort""")) {
+                niveau_effort = EXCLUDED.niveau_effort, modifie_le = now()
+                RETURNING modifie_le""")) {
             ps.setString(2, stand.getId());
             ps.setString(3, stand.getNom());
             ps.setInt(4, stand.getEffectifMin());
@@ -298,7 +301,7 @@ public class StandRepository {
             ps.setBoolean(7, stand.isPremium());
             ps.setString(8, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
             ps.setString(9, stand.getNiveauEffort().name());
-            ps.executeUpdate();
+            stand.setModifieLe(WriteStamp.written(ps));
         }
         try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?")) {

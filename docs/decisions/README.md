@@ -46,6 +46,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0020](0020-avertir-dans-la-reponse-d-ecriture.md) | Avertir dans la réponse d'écriture, pas dans un contrôle à part | Accepté · prolonge 0010 |
 | [0021](0021-import-tabulaire-partiel-et-previsualise.md) | L'import tabulaire d'animateurs est partiel, prévisualisé et rejoué | Accepté |
 | [0022](0022-import-de-la-grille-des-stands.md) | La matrice des stands s'importe sous le contrat de 0021 | Accepté · transpose 0021 |
+| [0023](0023-modification-concurrente-par-horodatage.md) | Détecter une modification concurrente par horodatage, sans verrou | Accepté |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

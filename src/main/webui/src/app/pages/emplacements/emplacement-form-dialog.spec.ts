@@ -135,7 +135,7 @@ describe('EmplacementFormDialog', () => {
     soumettre(fixture);
     await fixture.whenStable();
 
-    expect(payload(save)).toEqual({ id: 'hall', nom: 'Hall A', latitude: 47.2, longitude: -1.55 });
+    expect(payload(save)).toEqual({ id: 'hall', nom: 'Hall A', latitude: 47.2, longitude: -1.55, modifieLe: null });
     expect(close).toHaveBeenCalledWith(true);
   });
 

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,11 +28,13 @@ public class EmplacementRepository {
         List<Emplacement> emplacements = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
-                        "SELECT id, nom, latitude, longitude FROM emplacement WHERE edition_id = ? ORDER BY id");
+                        "SELECT id, nom, latitude, longitude, modifie_le FROM emplacement WHERE edition_id = ? ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                emplacements.add(new Emplacement(rs.getString("id"), rs.getString("nom"),
-                        (Double) rs.getObject("latitude"), (Double) rs.getObject("longitude")));
+                Emplacement emplacement = new Emplacement(rs.getString("id"), rs.getString("nom"),
+                        (Double) rs.getObject("latitude"), (Double) rs.getObject("longitude"));
+                emplacement.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
+                emplacements.add(emplacement);
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list emplacements", e);
@@ -61,12 +64,14 @@ public class EmplacementRepository {
                 INSERT INTO emplacement (edition_id, id, nom, latitude, longitude)
                 VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
-                DO UPDATE SET nom = EXCLUDED.nom, latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude""")) {
+                DO UPDATE SET nom = EXCLUDED.nom, latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude,
+                modifie_le = now()
+                RETURNING modifie_le""")) {
             ps.setString(2, emplacement.getId());
             ps.setString(3, emplacement.getNom());
             ps.setObject(4, emplacement.getLatitude());
             ps.setObject(5, emplacement.getLongitude());
-            ps.executeUpdate();
+            emplacement.setModifieLe(WriteStamp.written(ps));
         }
     }
 }

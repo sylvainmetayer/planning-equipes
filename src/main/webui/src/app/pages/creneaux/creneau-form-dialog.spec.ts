@@ -106,7 +106,7 @@ describe('CreneauFormDialog', () => {
     await fixture.whenStable();
 
     expect(save).toHaveBeenCalledOnce();
-    expect(payload(save)).toEqual({ date: '2026-07-15', heureDebut: '14:00', heureFin: '19:00' });
+    expect(payload(save)).toEqual({ date: '2026-07-15', heureDebut: '14:00', heureFin: '19:00', modifieLe: null });
     const [, , editingId, , options] = save.mock.calls[0] as unknown as [
       string,
       Partial<Creneau>,
@@ -129,7 +129,7 @@ describe('CreneauFormDialog', () => {
     soumettre(fixture);
     await fixture.whenStable();
 
-    expect(payload(save)).toEqual({ id: 7, date: '2026-07-14', heureDebut: '10:00', heureFin: '13:00' });
+    expect(payload(save)).toEqual({ id: 7, date: '2026-07-14', heureDebut: '10:00', heureFin: '13:00', modifieLe: null });
     expect((save.mock.calls[0] as unknown as [string, unknown, number])[2]).toBe(7);
   });
 
@@ -198,7 +198,7 @@ describe('CreneauFormDialog', () => {
     soumettre(fixture);
     await fixture.whenStable();
 
-    expect(payload(save)).toEqual({ date: '2026-07-08', heureDebut: '20:00', heureFin: '00:00' });
+    expect(payload(save)).toEqual({ date: '2026-07-08', heureDebut: '20:00', heureFin: '00:00', modifieLe: null });
   });
 
   it('says nothing about midnight for a slot that stays inside its day', async () => {

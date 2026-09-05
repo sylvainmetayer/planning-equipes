@@ -16,6 +16,8 @@ interface CreneauDraft {
   date: string;
   heureDebut: string;
   heureFin: string;
+  /** The store's `modifieLe` at opening, sent back as the write's precondition (issue #362). */
+  modifieLe: string | null;
 }
 
 export interface CreneauFormData {
@@ -106,7 +108,8 @@ export class CreneauFormDialog {
     const creneau: Partial<Creneau> = {
       date: draft.date,
       heureDebut: draft.heureDebut,
-      heureFin: draft.heureFin
+      heureFin: draft.heureFin,
+      modifieLe: draft.modifieLe
     };
     if (editingId != null) {
       creneau.id = editingId;
@@ -124,11 +127,12 @@ export class CreneauFormDialog {
 
 function toDraft(creneau: Creneau | null): CreneauDraft {
   if (!creneau) {
-    return { date: '', heureDebut: '', heureFin: '' };
+    return { date: '', heureDebut: '', heureFin: '', modifieLe: null };
   }
   return {
     date: creneau.date ?? '',
     heureDebut: creneau.heureDebut ?? '',
-    heureFin: creneau.heureFin ?? ''
+    heureFin: creneau.heureFin ?? '',
+    modifieLe: creneau.modifieLe ?? null
   };
 }

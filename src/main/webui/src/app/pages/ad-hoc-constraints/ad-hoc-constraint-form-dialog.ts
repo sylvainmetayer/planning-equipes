@@ -38,6 +38,8 @@ interface ContrainteDraft {
   standId: string;
   raison: string;
   animateurIds: string[];
+  /** The store's `modifieLe` at opening, sent back as the write's precondition (issue #362). */
+  modifieLe: string | null;
 }
 
 export interface AdHocConstraintFormData {
@@ -89,7 +91,8 @@ export class AdHocConstraintFormDialog {
       creneau: draft.creneauId !== '' ? { id: draft.creneauId } : null,
       stand: draft.standId ? { id: draft.standId } : null,
       raison: draft.raison.trim(),
-      creeParUtilisateurId: 'ui'
+      creeParUtilisateurId: 'ui',
+      modifieLe: draft.modifieLe
     };
     // Always POST (create-or-overwrite): the backend has no PUT for this resource.
     if (await this.crud.save('contraintes-ad-hoc', contrainte, null, $localize`:@@adHoc.entityLabel:Ajustement`)) {
@@ -100,10 +103,11 @@ export class AdHocConstraintFormDialog {
 
 function toDraft(contrainte: ContrainteAdHoc | null): ContrainteDraft {
   if (!contrainte) {
-    return { id: '', type: CONTRAINTE_TYPE_VALUES[0], creneauId: '', standId: '', raison: '', animateurIds: [] };
+    return { id: '', type: CONTRAINTE_TYPE_VALUES[0], creneauId: '', standId: '', raison: '', animateurIds: [], modifieLe: null };
   }
   return {
     id: contrainte.id,
+    modifieLe: contrainte.modifieLe ?? null,
     type: contrainte.type,
     creneauId: contrainte.creneau?.id ?? '',
     standId: contrainte.stand?.id ?? '',

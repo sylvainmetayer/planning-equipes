@@ -15,6 +15,16 @@ public class ContrainteAdHoc {
     private String creeParUtilisateurId;
     private Instant creeLe;
 
+    /**
+     * When this row was last written (issue #362), read from the referential
+     * and echoed back by a form on save: a write carrying a value older than
+     * the row's is refused, see {@code ConcurrentModificationGuard}. {@code null}
+     * on an object that never went through the database, and on a write that
+     * deliberately carries no precondition (import, MCP merge, a client that
+     * chose to overwrite).
+     */
+    private Instant modifieLe;
+
     public ContrainteAdHoc() {
     }
 
@@ -29,6 +39,14 @@ public class ContrainteAdHoc {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Instant getModifieLe() {
+        return modifieLe;
+    }
+
+    public void setModifieLe(Instant modifieLe) {
+        this.modifieLe = modifieLe;
     }
 
     public TypeContrainteAdHoc getType() {

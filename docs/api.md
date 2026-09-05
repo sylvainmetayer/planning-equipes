@@ -1379,6 +1379,42 @@ Le **découpage** lui-même : `GET /api/decoupage/preview` rend les vacations
 que les paramètres produiraient, `POST /api/decoupage/generer` (corps vide,
 `204`) les écrit à la place des amplitudes et efface le planning résolu.
 
+### Modification concurrente
+
+Deux sessions — deux onglets, un compte partagé — peuvent ouvrir la même fiche
+et l'enregistrer l'une après l'autre. Sans rien, la seconde écrase la première
+en silence. Chaque ligne des six référentiels (stands, animateurs, créneaux,
+typologies, emplacements, ajustements manuels) porte donc `modifieLe`, la date
+de sa dernière écriture, que le `GET` renvoie et que le formulaire **renvoie
+telle quelle** à l'enregistrement :
+
+- `modifieLe` égal à celui de la ligne → écrit ;
+- `modifieLe` différent → `409` **sans rien écrire**, corps
+  `{ message, code: "MODIFICATION_CONCURRENTE", modifieLe }` où `modifieLe`
+  est la valeur courante de la ligne. C'est le `code` qui distingue ce 409
+  de celui du solveur occupé : l'IHM y répond par un choix, **Recharger**
+  (rien n'est écrit, le formulaire se ferme sur la version de l'autre
+  session) ou **Écraser quand même** (le même payload repart sans
+  `modifieLe`) ;
+- `modifieLe` absent ou `null` → écrit sans contrôle. C'est ainsi qu'un
+  import, un script, un ancien client ou un écrasement délibéré disent qu'ils
+  n'ont rien à comparer.
+
+L'édition en masse envoie un `PUT` par ligne, chacun avec le `modifieLe` de sa
+ligne : une ligne modifiée ailleurs est refusée seule, les autres passent, et
+le compte rendu la nomme. Les outils MCP `modifier_*` acceptent le même
+horodatage en argument facultatif, lu dans la vue de `consulter_*` ; omis, la
+fusion qu'ils font relit la ligne juste avant d'écrire, ce qui revient au
+même. L'import de scénario et l'import CSV ne le portent pas : ils remplacent
+ou fusionnent un référentiel entier, pas une fiche qu'un écran a affichée.
+
+Ce n'est **pas un verrou** : deux sessions peuvent toujours modifier, la
+seconde est simplement prévenue. Avec un seul compte partagé, le serveur ne
+sait rien de plus (#294). La persistance d'un solve, qui réécrit le
+référentiel tel qu'il était au départ du calcul, ne touche pas `modifieLe` :
+sinon toute fiche ouverte entrerait en conflit après chaque résolution. Voir la
+[décision 0023](decisions/0023-modification-concurrente-par-horodatage.md).
+
 ### Avertissements de saisie
 
 Ces incohérences ne sont **pas** des refus : une indisponibilité hors des

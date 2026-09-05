@@ -27,6 +27,9 @@ public class TypologieService implements TypologieLibelles {
     @Inject
     ReferenceDataChangeTracker changeTracker;
 
+    @Inject
+    ConcurrentModificationGuard staleWrites;
+
     public List<TypologieItem> list() {
         return repository.listTypologies();
     }
@@ -44,9 +47,8 @@ public class TypologieService implements TypologieLibelles {
     }
 
     public TypologieItem create(TypologieItem typologie) {
-        TypologieItem cree = new TypologieItem(
-                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja());
-        repository.saveTypologie(cree);
+        TypologieItem cree = repository.saveTypologie(new TypologieItem(
+                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja()));
         changeTracker.markModified();
         return cree;
     }
@@ -55,8 +57,8 @@ public class TypologieService implements TypologieLibelles {
         if (!repository.typologieExists(id)) {
             throw new NotFoundException("Typology not found: " + id);
         }
-        TypologieItem misAJour = new TypologieItem(id, typologie.label(), typologie.ninja());
-        repository.saveTypologie(misAJour);
+        staleWrites.check("typologie", id, typologie.modifieLe());
+        TypologieItem misAJour = repository.saveTypologie(new TypologieItem(id, typologie.label(), typologie.ninja()));
         changeTracker.markModified();
         return misAJour;
     }
