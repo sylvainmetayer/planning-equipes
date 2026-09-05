@@ -191,7 +191,16 @@ export type TypeAnomalieOuverture =
   | 'FENETRE_SANS_EFFET'
   | 'SEGMENT_TROP_COURT';
 
-/** One event day, and the amplitude its column's cells are measured against. */
+/** One créneau of a day, as a column of the entry grid. */
+export interface ColonneCreneau {
+  id: number;
+  heureDebut: string;
+  heureFin: string;
+  famille: number;
+  couverturePause: boolean;
+}
+
+/** One event day, the amplitude its column's cells are measured against, and its créneaux. */
 export interface JourAmplitude {
   date: string;
   jour: number;
@@ -199,6 +208,19 @@ export interface JourAmplitude {
   heureFin: string;
   minutes: number;
   nombreCreneaux: number;
+  creneaux: ColonneCreneau[];
+}
+
+/**
+ * What one stand does on one créneau, as the entry grid shows it: the
+ * configured headcount, `null` when closed. `partiel` flags windows that do
+ * not follow the créneau's edges — a shape the grid cannot hold, and which a
+ * save from the grid aligns on the créneau.
+ */
+export interface CelluleCreneauOuverture {
+  creneauId: number;
+  effectif: number | null;
+  partiel: boolean;
 }
 
 export interface FenetreEffective {
@@ -214,6 +236,7 @@ export interface CelluleJourOuverture {
   minutesOuvertes: number;
   minutesAmplitude: number;
   postes: number;
+  creneaux: CelluleCreneauOuverture[];
 }
 
 export interface LigneStandOuverture {
@@ -244,6 +267,27 @@ export interface RapportOuvertures {
   standsJamaisOuverts: number;
   postesTotal: number;
   anomalies: AnomalieOuverture[];
+}
+
+/** One stand of the grid as submitted to `PUT /api/ouvertures-stands/grille`: all its cells. */
+export interface SaisieStandGrille {
+  standId: string;
+  cellules: { creneauId: number; effectif: number | null }[];
+}
+
+/** What the save did to one stand: the rules and exceptions it now holds, and the bounds derived from the cells. */
+export interface LigneSaisieGrille {
+  standId: string;
+  regles: number;
+  exceptions: number;
+  effectifMin: number;
+  effectifMax: number;
+  compacte: boolean;
+  raison: string;
+}
+
+export interface RapportSaisieGrille {
+  stands: LigneSaisieGrille[];
 }
 
 /* ------------------ Fragilité du planning (`/api/fragilite`) ------------------ */

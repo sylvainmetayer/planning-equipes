@@ -1,6 +1,9 @@
 package dev.sylvain.planning.service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -108,6 +111,38 @@ public class StandService {
         solverJobs.refuseIfSolving();
         repository.deleteStand(id);
         changeTracker.markModified();
+    }
+
+    /**
+     * Saves the schedules typed in the stand × créneau grid, one stand at a
+     * time: each is converted ({@link GrilleHorairesStands#apply}), validated
+     * and written on its own, so one stand the validator refuses does not roll
+     * back the others — the report says what happened to each.
+     *
+     * <p>Refused as a whole while a solve holds the solver, for the reason
+     * {@link #update} gives: the landing persist would revert the bounds and
+     * windows just written.</p>
+     */
+    public List<GrilleHorairesStands.LigneGrille> saisirGrille(List<GrilleHorairesStands.SaisieStand> saisies) {
+        solverJobs.refuseIfSolving();
+        List<Creneau> edition = creneaux.list();
+        Map<String, Stand> parId = new LinkedHashMap<>();
+        list().forEach(stand -> parId.put(stand.getId(), stand));
+        List<GrilleHorairesStands.LigneGrille> lignes = new ArrayList<>();
+        for (GrilleHorairesStands.SaisieStand saisie : saisies) {
+            Stand stand = parId.get(saisie.standId());
+            if (stand == null) {
+                throw new NotFoundException("Stand not found: " + saisie.standId());
+            }
+            lignes.add(GrilleHorairesStands.apply(stand, edition,
+                    saisie.cellules() == null ? List.of() : saisie.cellules()));
+            validate(stand);
+            repository.saveStand(stand);
+        }
+        if (!lignes.isEmpty()) {
+            changeTracker.markModified();
+        }
+        return lignes;
     }
 
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */

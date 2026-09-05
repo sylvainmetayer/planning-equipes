@@ -1539,6 +1539,40 @@ Trois anomalies, dont aucune ne bloque une résolution :
 créneau de son jour) et `SEGMENT_TROP_COURT` — la signature du contournement
 `23:59`.
 
+Chaque jour porte aussi ses créneaux (`jours[].creneaux`), et chaque cellule
+une entrée par créneau (`creneaux[]` : `creneauId`, `effectif`, `partiel`) —
+l'effectif **configuré** que le stand y demande, `null` s'il y est fermé.
+`partiel` signale des fenêtres qui ne suivent pas les bornes du créneau, ou un
+effectif qui change en cours de créneau ; `effectif` est alors le plus haut.
+
+### Saisie en grille
+
+`PUT /api/ouvertures-stands/grille` écrit l'horaire des stands sous la forme
+même du classeur de l'organisateur : **un entier par créneau**, vide pour
+fermé. Le corps ne porte que les stands modifiés, chacun avec **toutes** ses
+cases :
+
+```json
+{ "stands": [ { "standId": "BOURSE",
+                "cellules": [ { "creneauId": 1, "effectif": 2 },
+                              { "creneauId": 2, "effectif": null } ] } ] }
+```
+
+Un stand envoyé voit ses règles et ses exceptions **remplacées en totalité**
+par ses cases : les créneaux consécutifs à même effectif deviennent une fenêtre
+datée, la fenêtre qui atteint la fin du jour est laissée ouverte (« jusqu'à la
+fermeture »), un jour sans aucune case est une fermeture explicite — rien dire
+d'un jour voudrait dire ouvert. Le compactage (ci-dessus) ramène ensuite les
+jours répétés en règles quand il peut prouver l'équivalence, et laisse le reste
+daté : la réponse le dit stand par stand (`regles`, `exceptions`, `compacte`,
+`raison`). Les bornes suivent les cases : `effectifMin` est la plus petite
+valeur saisie, `effectifMax` la plus grande, et une fenêtre ne nomme son
+effectif que s'il diffère du minimum.
+
+`400` sur un créneau inconnu ou un effectif nul (« laissez la case vide pour
+fermer »), `404` sur un stand inconnu, `409` pendant une résolution. Chaque
+stand est validé et écrit séparément : un stand refusé n'annule pas les autres.
+
 ## Import de scénario
 
 **C'est un diff, pas un remplacement aveugle.** Stands et animateurs du fichier

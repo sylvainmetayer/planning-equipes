@@ -183,7 +183,7 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.data.ouvertures:Avant toute résolution, ouvrez « Ouvertures des stands » : la grille stand × jour montre ce que le solveur lira réellement une fois les règles étendues et les exceptions appliquées, et signale les trois erreurs de saisie habituelles — un stand finalement ouvert aucun jour, une fenêtre horaire hors des heures du jour (donc sans effet), et une plage trop courte pour être une vraie vacation.`
+          text: $localize`:@@aide.data.ouvertures:Avant toute résolution, ouvrez « Ouvertures des stands » : la grille stand × jour montre ce que le solveur lira réellement une fois les règles étendues et les exceptions appliquées, et signale les trois erreurs de saisie habituelles — un stand finalement ouvert aucun jour, une fenêtre horaire hors des heures du jour (donc sans effet), et une plage trop courte pour être une vraie vacation. La même page se retourne en grille de saisie (« Saisir ») : une case par stand et par créneau, l'effectif à tenir, vide pour fermé — la forme même d'un tableur, avec ses gestes : flèches et Entrée, collage d'un bloc copié, recopie d'un jour sur les autres. À l'enregistrement, chaque stand modifié voit tout son horaire réécrit depuis ses cases, ramené en règles quand un motif se répète, et ses effectifs minimum et maximum suivent la plus petite et la plus grande case.`
         }
       ],
       links: [

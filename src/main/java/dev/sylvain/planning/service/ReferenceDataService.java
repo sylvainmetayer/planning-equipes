@@ -166,6 +166,11 @@ public class ReferenceDataService implements ReferenceData {
         return stands.compactHoraires(apply);
     }
 
+    public List<GrilleHorairesStands.LigneGrille> saisirGrilleHoraires(
+            List<GrilleHorairesStands.SaisieStand> saisies) {
+        return stands.saisirGrille(saisies);
+    }
+
     /* ----------------------------- Emplacements ----------------------------- */
 
     @Override

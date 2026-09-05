@@ -27,6 +27,7 @@ function cellule(patch: Partial<CelluleJourOuverture> = {}): CelluleJourOuvertur
     minutesOuvertes: 600,
     minutesAmplitude: 600,
     postes: 2,
+    creneaux: [{ creneauId: 1, effectif: 2, partiel: false }],
     ...patch
   };
 }
@@ -52,7 +53,8 @@ function rapport(patch: Partial<RapportOuvertures> = {}): RapportOuvertures {
         heureDebut: '10:00',
         heureFin: '20:00',
         minutes: 600,
-        nombreCreneaux: 1
+        nombreCreneaux: 1,
+        creneaux: [{ id: 1, heureDebut: '10:00', heureFin: '20:00', famille: 0, couverturePause: false }]
       }
     ],
     stands: [ligne()],

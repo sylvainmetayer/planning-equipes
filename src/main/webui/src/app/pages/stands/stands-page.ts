@@ -8,6 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { labelStandsPluriel } from '../../core/entity-labels';
 import { resumerHoraires } from '../../core/horaire-stand';
@@ -47,6 +48,7 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
     MatIconModule,
     MatTableModule,
     MatTooltipModule,
+    RouterLink,
     BulkActionsBar,
     TableFilter
   ],

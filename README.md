@@ -207,7 +207,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Fonctionnalité | En une phrase |
 | --- | --- |
 | Problèmes | Vue unique des blocages, triés par gravité : causes d'infaisabilité détectées sans résolution, et règles encore en défaut après la dernière analyse. Quand une règle a buté sur des exceptions saisies à la main, elles sont nommées une par une, et les pauses légales que personne ne peut relayer |
-| Ouvertures des stands | Grille stand × jour de ce que le planning retiendra réellement, et les trois erreurs de saisie d'horaires habituelles — à vérifier avant de lancer un calcul |
+| Ouvertures des stands | Grille stand × jour de ce que le planning retiendra réellement, et les trois erreurs de saisie d'horaires habituelles — à vérifier avant de lancer un calcul ; la même grille se retourne en saisie, un effectif par stand et par créneau comme dans un tableur |
 | Besoin en animateurs | Effectif minimum estimé à partir des seuls stands et créneaux : dit si le problème est un manque de monde plutôt qu'un manque de temps de calcul, et sur quelle typologie de jeu le vivier de compétents est trop mince |
 | Fragilité du planning | Qui est un point de défaillance unique : pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et surtout ceux que personne d'autre ne pourrait reprendre — plus les stands tenus par une seule personne compétente. Le tableau qui dit où recruter ou former |
 | Banc de touche | Pour un créneau, qui n'est de service nulle part et quelle règle l'empêcherait de tenir la place restée libre — indisponibilité, repos légal, plafond d'heures, appréciation manquante — toutes les raisons applicables à la fois |

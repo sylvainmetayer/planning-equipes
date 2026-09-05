@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -93,6 +94,59 @@ class OuvertureStandsResourceTest {
                     .as(rapport.getString(prefixe + ".standId") + " postes")
                     .isEqualTo(postes.stream().mapToInt(Integer::intValue).sum());
         }
+    }
+
+    /**
+     * The grid is also where the schedule is typed: what is written under each
+     * créneau is what the next read shows, bounds derived from the cells.
+     */
+    @Test
+    void laGrilleSaisieEstRelueTelleQuelle() {
+        seedScenario();
+        JsonPath avant = given().when().get("/api/ouvertures-stands").then().statusCode(200).extract().jsonPath();
+        String standId = avant.getString("stands[0].standId");
+        List<Integer> creneauIds = avant.getList("jours.creneaux.id.flatten()", Integer.class);
+        assertThat(creneauIds).hasSizeGreaterThan(1);
+
+        // Closed on the first créneau, three people everywhere else.
+        List<Map<String, Object>> cellules = new java.util.ArrayList<>();
+        for (int index = 0; index < creneauIds.size(); index++) {
+            Map<String, Object> cellule = new java.util.LinkedHashMap<>();
+            cellule.put("creneauId", creneauIds.get(index));
+            cellule.put("effectif", index == 0 ? null : 3);
+            cellules.add(cellule);
+        }
+        given()
+                .contentType("application/json")
+                .body(Map.of("stands", List.of(Map.of("standId", standId, "cellules", cellules))))
+                .when().put("/api/ouvertures-stands/grille")
+                .then()
+                .statusCode(200)
+                .body("stands[0].standId", org.hamcrest.Matchers.equalTo(standId))
+                .body("stands[0].effectifMin", org.hamcrest.Matchers.equalTo(3))
+                .body("stands[0].effectifMax", org.hamcrest.Matchers.equalTo(3));
+
+        JsonPath apres = given().when().get("/api/ouvertures-stands").then().statusCode(200).extract().jsonPath();
+        List<Integer> effectifs = apres.getList("stands[0].jours.creneaux.effectif.flatten()", Integer.class);
+        assertThat(effectifs.get(0)).isNull();
+        assertThat(effectifs.subList(1, effectifs.size())).containsOnly(3);
+        assertThat(apres.getList("stands[0].jours.creneaux.partiel.flatten()", Boolean.class)).containsOnly(false);
+        assertThat(apres.getInt("stands[0].effectifMin")).isEqualTo(3);
+    }
+
+    @Test
+    void uneCelluleSurUnCreneauInconnuEstRefusee() {
+        seedScenario();
+        String standId = given().when().get("/api/ouvertures-stands").then().statusCode(200)
+                .extract().jsonPath().getString("stands[0].standId");
+
+        given()
+                .contentType("application/json")
+                .body(Map.of("stands", List.of(Map.of("standId", standId,
+                        "cellules", List.of(Map.of("creneauId", 999999, "effectif", 1))))))
+                .when().put("/api/ouvertures-stands/grille")
+                .then()
+                .statusCode(400);
     }
 
     private static void seedScenario() {

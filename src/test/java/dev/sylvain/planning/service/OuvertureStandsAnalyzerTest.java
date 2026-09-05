@@ -114,6 +114,47 @@ class OuvertureStandsAnalyzerTest {
         assertThat(jours.get(1).source()).isEqualTo(SourceHoraire.REGLE);
     }
 
+    /**
+     * The entry grid reads one cell per créneau: the configured headcount when
+     * the stand is open on the whole créneau, nothing when closed, and a
+     * partial flag when the windows do not follow the créneau's edges.
+     */
+    @Test
+    void chaqueJourPorteUneCelluleParCreneau() {
+        List<Creneau> creneaux = deuxJours();
+        creneaux.add(new Creneau(3L, 1, JOUR_1, LocalTime.of(20, 0), LocalTime.of(0, 0)));
+        Stand stand = stand("PROFIL");
+        stand.setEffectifMin(2);
+        stand.setEffectifMax(4);
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(20, 0), null),
+                new FenetreHoraire(LocalTime.of(21, 0), null, 4))));
+
+        RapportOuvertures rapport = analyze(List.of(stand), creneaux);
+
+        assertThat(rapport.jours().get(0).creneaux()).extracting(colonne -> colonne.heureDebut())
+                .containsExactly(LocalTime.of(10, 0), LocalTime.of(20, 0));
+        List<OuvertureStandsAnalyzer.CelluleCreneau> cellules = rapport.stands().get(0).jours().get(0).creneaux();
+        assertThat(cellules).containsExactly(
+                new OuvertureStandsAnalyzer.CelluleCreneau(1L, 2, false),
+                new OuvertureStandsAnalyzer.CelluleCreneau(3L, 4, true));
+        assertThat(rapport.stands().get(0).jours().get(1).creneaux())
+                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 2, false));
+    }
+
+    @Test
+    void unStandFermeUnJourALaCelluleVideSurChaqueCreneau() {
+        Stand stand = stand("FERME");
+        stand.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(0, 0), null, null));
+
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
+
+        assertThat(rapport.stands().get(0).jours().get(0).creneaux())
+                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(1L, null, false));
+        assertThat(rapport.stands().get(0).jours().get(1).creneaux())
+                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 1, false));
+    }
+
     /** A day cut into two windows must read as two stretches, not as one 10:00→20:00 block. */
     @Test
     void uneCoupureMeridienneDonneDeuxFenetres() {

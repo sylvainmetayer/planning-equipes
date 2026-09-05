@@ -12,6 +12,7 @@ import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
+import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { NotificationService } from '../../core/notification.service';
@@ -109,6 +110,7 @@ describe('StandsPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: ApiService, useValue: api },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
@@ -424,6 +426,7 @@ describe('StandsPage table', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: ApiService, useValue: { get: vi.fn(async () => []), post: vi.fn(async () => ({ standsCompactes: 0, fenetresAvant: 0, fenetresApres: 0 })) } },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },

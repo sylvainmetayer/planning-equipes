@@ -243,3 +243,101 @@
     max-width: 9rem;
   }
 }
+
+/* Entry view: one field per stand and créneau, sized for a two-digit
+   headcount, the day boundary marked by a heavier left border so twelve
+   days of five columns still read as twelve days. */
+.grille-saisie .entete-creneau,
+.grille-saisie .cellule-saisie {
+  padding: 0.15rem 0.2rem;
+  min-width: 0;
+}
+
+.grille-saisie .entete-creneau {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+.grille-saisie .premier-du-jour {
+  border-left: 2px solid var(--mat-sys-outline);
+}
+
+.grille-saisie .entete-jour-saisie {
+  border-left: 2px solid var(--mat-sys-outline);
+  position: relative;
+  padding-right: 1.6rem;
+}
+
+.grille-saisie .recopier-jour,
+.grille-saisie .recopier-ligne {
+  --mdc-icon-button-state-layer-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.grille-saisie .recopier-jour {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.1rem;
+}
+
+.grille-saisie .recopier-jour mat-icon,
+.grille-saisie .recopier-ligne mat-icon {
+  font-size: 0.95rem;
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.grille-saisie .colonne-stand {
+  padding-right: 0.25rem;
+}
+
+.grille-saisie .cellule-saisie input {
+  width: 2.6rem;
+  box-sizing: border-box;
+  padding: 0.25rem 0.1rem;
+  text-align: center;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.2rem;
+}
+
+.grille-saisie .cellule-saisie input:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: -1px;
+}
+
+.grille-saisie .cellule-saisie input:disabled {
+  color: var(--mat-sys-on-surface-variant);
+  background: var(--mat-sys-surface-container);
+}
+
+/* What changed since the last read, and what a save would flatten: two
+   facts, two channels — a tinted field for the first, a dashed border for the
+   second, so a partial cell that was also edited shows both. */
+.grille-saisie .cellule-modifiee input {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  border-color: var(--mat-sys-tertiary);
+}
+
+.grille-saisie .cellule-partielle input {
+  border-style: dashed;
+  border-color: var(--mat-sys-error);
+}
+
+.grille-saisie .ligne-modifiee .colonne-stand {
+  font-weight: 600;
+}
+
+.saisie-compteur {
+  margin-left: 0.25rem;
+  opacity: 0.8;
+}

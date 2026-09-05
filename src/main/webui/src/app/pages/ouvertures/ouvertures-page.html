@@ -7,7 +7,32 @@
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
-    <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
+    <mat-button-toggle-group [value]="vue()" (valueChange)="changerVue($event)" hideSingleSelectionIndicator
+                             i18n-aria-label="@@ouvertures.vue.label" aria-label="Vue">
+      <mat-button-toggle value="CONSULTER">
+        <mat-icon>visibility</mat-icon>
+        <ng-container i18n="@@ouvertures.vue.consulter">Consulter</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="SAISIR">
+        <mat-icon>grid_on</mat-icon>
+        <ng-container i18n="@@ouvertures.vue.saisir">Saisir</ng-container>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+    @if (vue() === 'SAISIR') {
+      <button matButton="filled" type="button" class="saisie-enregistrer"
+              [disabled]="editingLocked() || enregistrement() || standsModifies().length === 0" (click)="enregistrer()">
+        <mat-icon>save</mat-icon>
+        <ng-container i18n="@@ouvertures.saisie.enregistrer">Enregistrer</ng-container>
+        @if (standsModifies().length > 0) {
+          <span class="saisie-compteur">({{ standsModifies().length }})</span>
+        }
+      </button>
+      <button matButton type="button" [disabled]="standsModifies().length === 0" (click)="annuler()">
+        <mat-icon>undo</mat-icon>
+        <ng-container i18n="@@ouvertures.saisie.annuler">Annuler les modifications</ng-container>
+      </button>
+    }
+    <button matButton type="button" [disabled]="chargement() || standsModifies().length > 0" (click)="recharger()">
       <mat-icon>refresh</mat-icon>
       <ng-container i18n="@@common.refresh">Actualiser</ng-container>
     </button>
@@ -56,61 +81,137 @@
         <span><i class="pastille source-exception"></i><ng-container i18n="@@ouvertures.legende.exception">Décidé par une exception datée</ng-container></span>
       </div>
 
-      <div class="table-wrapper">
-        <table class="ouvertures-grille">
-          <caption class="visually-hidden" i18n="@@ouvertures.table.caption">Ouvertures effectives des stands : une ligne par stand, une colonne par journée de l'événement</caption>
-          <thead>
-            <tr>
-              <th scope="col" class="colonne-stand" i18n="@@ouvertures.colonne.stand">Stand</th>
-              @for (jour of rapport()!.jours; track jour.date) {
-                <th scope="col"
-                    [matTooltip]="libelleJour(jour.date) + ' · ' + heure(jour.heureDebut) + '→' + heure(jour.heureFin) + ' · ' + duree(jour.minutes)">
-                  <span class="entete-jour">J{{ jour.jour }}</span>
-                  <span class="entete-date">{{ libelleJour(jour.date) }}</span>
-                </th>
-              }
-              <th scope="col" class="colonne-total" i18n="@@ouvertures.colonne.total">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (ligne of lignes(); track ligne.standId) {
+      @if (vue() === 'SAISIR') {
+        <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
+          Une case par stand et par créneau : l'effectif à tenir, vide pour fermé. Flèches et Entrée pour circuler,
+          collage d'un bloc copié depuis un tableur, et un bouton par jour ou par ligne pour recopier. Rien n'est
+          écrit avant « Enregistrer » ; un stand enregistré voit tout son horaire réécrit depuis la grille, et ses
+          effectifs minimum et maximum suivent ses cases.
+        </p>
+        @if (editingLocked()) {
+          <p class="locked-hint" i18n="@@ouvertures.saisie.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
+        }
+        <div class="table-wrapper">
+          <table class="ouvertures-grille grille-saisie">
+            <caption class="visually-hidden" i18n="@@ouvertures.saisie.caption">Saisie des ouvertures : une ligne par stand, une colonne par créneau de chaque journée, l'effectif dans chaque case</caption>
+            <thead>
               <tr>
-                <th scope="row" class="colonne-stand">
-                  <span class="stand-nom">{{ ligne.nom || ligne.standId }}</span>
-                  @if (anomaliesDe(ligne.standId).length > 0) {
-                    <mat-icon class="row-problem-icon" [matTooltip]="infobulleStand(ligne)"
-                              [attr.aria-label]="infobulleStand(ligne)">warning</mat-icon>
-                  }
-                </th>
-                @for (cellule of ligne.jours; track cellule.date) {
-                  <td [class]="classeCellule(cellule)" [matTooltip]="infobulleCellule(cellule)"
-                      [attr.aria-label]="libelleEtat(cellule)">
-                    @if (cellule.etat === 'FERME') {
-                      <span class="cellule-vide" aria-hidden="true">—</span>
-                    } @else {
-                      <span class="cellule-barre" [style.width.%]="largeurPourcent(cellule)"></span>
-                      <span class="cellule-heures">{{ heure(cellule.fenetres[0].heureDebut) }}</span>
-                      @if (cellule.fenetres.length > 1) {
-                        <span class="cellule-fenetres">×{{ cellule.fenetres.length }}</span>
-                      }
-                    }
-                  </td>
+                <th scope="col" class="colonne-stand" rowspan="2" i18n="@@ouvertures.colonne.stand">Stand</th>
+                @for (jour of rapport()!.jours; track jour.date) {
+                  <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="jour.creneaux.length">
+                    <span class="entete-jour">J{{ jour.jour }}</span>
+                    <span class="entete-date">{{ libelleJour(jour.date) }}</span>
+                    <button matIconButton type="button" class="recopier-jour" [disabled]="editingLocked()"
+                            i18n-matTooltip="@@ouvertures.saisie.recopierJour" matTooltip="Recopier ce jour sur tous les autres jours, pour les stands affichés"
+                            i18n-aria-label="@@ouvertures.saisie.recopierJour" aria-label="Recopier ce jour sur tous les autres jours, pour les stands affichés"
+                            (click)="recopierJour(jour.date)">
+                      <mat-icon>content_copy</mat-icon>
+                    </button>
+                  </th>
                 }
-                <td class="colonne-total">
-                  <span>{{ duree(ligne.minutesOuvertes) }}</span>
-                  <span class="total-postes" i18n="@@ouvertures.total.postes">{{ ligne.postes }} postes</span>
-                </td>
               </tr>
-            } @empty {
               <tr>
-                <td [attr.colspan]="rapport()!.jours.length + 2" class="empty-hint" i18n="@@ouvertures.aucuneLigne">
-                  Aucun stand ne correspond à ce filtre.
-                </td>
+                @for (colonne of colonnes(); track colonne.creneauId) {
+                  <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0">{{ libelleColonne(colonne) }}</th>
+                }
               </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              @for (ligne of lignes(); track ligne.standId) {
+                <tr [class.ligne-modifiee]="standsModifies().includes(ligne.standId)">
+                  <th scope="row" class="colonne-stand">
+                    <span class="stand-nom">{{ ligne.nom || ligne.standId }}</span>
+                    <button matIconButton type="button" class="recopier-ligne" [disabled]="editingLocked()"
+                            i18n-matTooltip="@@ouvertures.saisie.recopierLigne" matTooltip="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
+                            i18n-aria-label="@@ouvertures.saisie.recopierLigne" aria-label="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
+                            (click)="recopierLigne(ligne.standId)">
+                      <mat-icon>content_copy</mat-icon>
+                    </button>
+                  </th>
+                  @for (colonne of colonnes(); track colonne.creneauId) {
+                    <td class="cellule-saisie" [class.premier-du-jour]="colonne.rang === 0"
+                        [class.cellule-modifiee]="estModifiee(ligne.standId, colonne.creneauId)"
+                        [class.cellule-partielle]="estPartielle(ligne.standId, colonne.creneauId)">
+                      <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"
+                             [attr.data-cellule]="identifiant(ligne.standId, colonne.creneauId)"
+                             [attr.aria-label]="(ligne.nom || ligne.standId) + ' · ' + libelleJour(colonne.date) + ' ' + libelleColonne(colonne)"
+                             [attr.title]="estPartielle(ligne.standId, colonne.creneauId) ? infobullePartielle() : null"
+                             [disabled]="editingLocked()"
+                             [value]="valeur(ligne.standId, colonne.creneauId)"
+                             (input)="saisir(ligne.standId, colonne.creneauId, $any($event.target).value)"
+                             (focus)="focaliser(ligne.standId, colonne.creneauId)"
+                             (keydown)="auClavier($event, ligne.standId, colonne.creneauId)"
+                             (paste)="auCollage($event, ligne.standId, colonne.creneauId)" />
+                    </td>
+                  }
+                </tr>
+              } @empty {
+                <tr>
+                  <td [attr.colspan]="colonnes().length + 1" class="empty-hint" i18n="@@ouvertures.aucuneLigne">
+                    Aucun stand ne correspond à ce filtre.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+      <div class="table-wrapper">
+          <table class="ouvertures-grille">
+            <caption class="visually-hidden" i18n="@@ouvertures.table.caption">Ouvertures effectives des stands : une ligne par stand, une colonne par journée de l'événement</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="colonne-stand" i18n="@@ouvertures.colonne.stand">Stand</th>
+                @for (jour of rapport()!.jours; track jour.date) {
+                  <th scope="col"
+                      [matTooltip]="libelleJour(jour.date) + ' · ' + heure(jour.heureDebut) + '→' + heure(jour.heureFin) + ' · ' + duree(jour.minutes)">
+                    <span class="entete-jour">J{{ jour.jour }}</span>
+                    <span class="entete-date">{{ libelleJour(jour.date) }}</span>
+                  </th>
+                }
+                <th scope="col" class="colonne-total" i18n="@@ouvertures.colonne.total">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of lignes(); track ligne.standId) {
+                <tr>
+                  <th scope="row" class="colonne-stand">
+                    <span class="stand-nom">{{ ligne.nom || ligne.standId }}</span>
+                    @if (anomaliesDe(ligne.standId).length > 0) {
+                      <mat-icon class="row-problem-icon" [matTooltip]="infobulleStand(ligne)"
+                                [attr.aria-label]="infobulleStand(ligne)">warning</mat-icon>
+                    }
+                  </th>
+                  @for (cellule of ligne.jours; track cellule.date) {
+                    <td [class]="classeCellule(cellule)" [matTooltip]="infobulleCellule(cellule)"
+                        [attr.aria-label]="libelleEtat(cellule)">
+                      @if (cellule.etat === 'FERME') {
+                        <span class="cellule-vide" aria-hidden="true">—</span>
+                      } @else {
+                        <span class="cellule-barre" [style.width.%]="largeurPourcent(cellule)"></span>
+                        <span class="cellule-heures">{{ heure(cellule.fenetres[0].heureDebut) }}</span>
+                        @if (cellule.fenetres.length > 1) {
+                          <span class="cellule-fenetres">×{{ cellule.fenetres.length }}</span>
+                        }
+                      }
+                    </td>
+                  }
+                  <td class="colonne-total">
+                    <span>{{ duree(ligne.minutesOuvertes) }}</span>
+                    <span class="total-postes" i18n="@@ouvertures.total.postes">{{ ligne.postes }} postes</span>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td [attr.colspan]="rapport()!.jours.length + 2" class="empty-hint" i18n="@@ouvertures.aucuneLigne">
+                    Aucun stand ne correspond à ce filtre.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
 
       @if (rapport()!.anomalies.length > 0) {
         <h3 i18n="@@ouvertures.anomalies.title">Anomalies détectées</h3>

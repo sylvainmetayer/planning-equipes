@@ -72,9 +72,29 @@ public final class OuvertureStandsAnalyzer {
      */
     static final int DUREE_MINIMALE_EXPLOITABLE_MINUTES = 15;
 
-    /** One event day, and the amplitude the cells of that column are measured against. */
+    /**
+     * One créneau of a day, as a column of the entry grid: what the organiser
+     * types a headcount under. Sorted by start time, then by id, so two
+     * stagger families of the same vacation keep a stable order.
+     */
+    public record ColonneCreneau(long id, LocalTime heureDebut, LocalTime heureFin, int famille,
+            boolean couverturePause) {
+    }
+
+    /** One event day, the amplitude the cells of that column are measured against, and its créneaux. */
     public record JourAmplitude(LocalDate date, int jour, LocalTime heureDebut, LocalTime heureFin, int minutes,
-            int nombreCreneaux) {
+            int nombreCreneaux, List<ColonneCreneau> creneaux) {
+    }
+
+    /**
+     * What one stand does on one créneau, as the entry grid shows it: the
+     * headcount when the stand is open on the whole créneau at one headcount,
+     * {@code null} when closed. {@code partiel} flags a stand open on part of
+     * the créneau only, or at a headcount that changes during it — a shape
+     * the grid cannot hold, and which a save from the grid would flatten to
+     * the créneau; {@code effectif} is then the highest one.
+     */
+    public record CelluleCreneau(long creneauId, Integer effectif, boolean partiel) {
     }
 
     /** An open stretch, in wall-clock hours, after clamping to the créneaux. */
@@ -82,7 +102,8 @@ public final class OuvertureStandsAnalyzer {
     }
 
     public record CelluleJour(LocalDate date, EtatOuverture etat, SourceHoraire source,
-            List<FenetreEffective> fenetres, int minutesOuvertes, int minutesAmplitude, int postes) {
+            List<FenetreEffective> fenetres, int minutesOuvertes, int minutesAmplitude, int postes,
+            List<CelluleCreneau> creneaux) {
     }
 
     public record LigneStand(String standId, String nom, int effectifMin, List<CelluleJour> jours, int minutesOuvertes,
@@ -118,8 +139,13 @@ public final class OuvertureStandsAnalyzer {
             amplitudeParJour.put(date, minutes);
             int debut = couverture.get(0)[0];
             int fin = couverture.get(couverture.size() - 1)[1];
+            List<ColonneCreneau> colonnes = duJour.stream()
+                    .sorted(Comparator.comparing(Creneau::getHeureDebut).thenComparing(Creneau::getId))
+                    .map(creneau -> new ColonneCreneau(creneau.getId(), creneau.getHeureDebut(),
+                            creneau.getHeureFin(), creneau.getFamille(), creneau.isCouverturePause()))
+                    .toList();
             jours.add(new JourAmplitude(date, duJour.get(0).getJour(), minuteToTime(debut), minuteToTime(fin),
-                    minutes, duJour.size()));
+                    minutes, duJour.size(), colonnes));
         });
 
         // The seats the solver would receive, grouped by stand then by day:
@@ -147,7 +173,8 @@ public final class OuvertureStandsAnalyzer {
             int postesStand = 0;
             for (JourAmplitude jour : jours) {
                 List<PosteAffectation> postes = parJour.getOrDefault(jour.date(), List.of());
-                CelluleJour cellule = cellule(stand, jour, postes, amplitudeParJour.get(jour.date()));
+                CelluleJour cellule = cellule(stand, jour, postes, amplitudeParJour.get(jour.date()),
+                        creneauxParJour.get(jour.date()));
                 cellules.add(cellule);
                 minutesStand += cellule.minutesOuvertes();
                 postesStand += cellule.postes();
@@ -175,10 +202,14 @@ public final class OuvertureStandsAnalyzer {
      * band per vacation), and the poste count as it stands.
      */
     private static CelluleJour cellule(Stand stand, JourAmplitude jour, List<PosteAffectation> postes,
-            int minutesAmplitude) {
+            int minutesAmplitude, List<Creneau> duJour) {
         SourceHoraire source = HoraireStandResolver.sourceOfDay(stand, jour.date());
+        List<CelluleCreneau> parCreneau = jour.creneaux().stream()
+                .map(colonne -> celluleCreneau(stand, duJour, colonne.id()))
+                .toList();
         if (postes.isEmpty()) {
-            return new CelluleJour(jour.date(), EtatOuverture.FERME, source, List.of(), 0, minutesAmplitude, 0);
+            return new CelluleJour(jour.date(), EtatOuverture.FERME, source, List.of(), 0, minutesAmplitude, 0,
+                    parCreneau);
         }
         List<int[]> fenetres = merge(postes.stream()
                 .map(poste -> intervalle(poste.heureDebutEffectif(), poste.heureFinEffectif()))
@@ -190,7 +221,26 @@ public final class OuvertureStandsAnalyzer {
                 .map(borne -> new FenetreEffective(minuteToTime(borne[0]), minuteToTime(borne[1])))
                 .toList();
         return new CelluleJour(jour.date(), etat, source, effectives, minutesOuvertes, minutesAmplitude,
-                postes.size());
+                postes.size(), parCreneau);
+    }
+
+    /**
+     * The grid cell of one créneau, read off the same open segments seat
+     * generation reads ({@link Creneau#segmentsOuverts}): the configured
+     * headcount, not the seats — a break-covering créneau halves the seats,
+     * and the organiser types what the stand needs, not what the solver gets.
+     */
+    private static CelluleCreneau celluleCreneau(Stand stand, List<Creneau> duJour, long creneauId) {
+        Creneau creneau = duJour.stream().filter(candidat -> Long.valueOf(creneauId).equals(candidat.getId()))
+                .findFirst().orElseThrow();
+        List<Creneau.SegmentOuvert> segments = creneau.segmentsOuverts(stand);
+        if (segments.isEmpty()) {
+            return new CelluleCreneau(creneauId, null, false);
+        }
+        int effectif = segments.stream().mapToInt(Creneau.SegmentOuvert::effectif).max().orElse(0);
+        boolean entier = segments.size() == 1 && segments.get(0).debutMinutes() == 0
+                && segments.get(0).finMinutes() == creneau.getDureeMinutes();
+        return new CelluleCreneau(creneauId, effectif, !entier);
     }
 
     /**
