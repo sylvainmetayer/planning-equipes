@@ -125,10 +125,6 @@ public class StandResource {
     @Path("/import-grille/exemple")
     @Produces("text/csv")
     public Response exempleGrille() {
-        return Response.ok(grilleImport.exemple())
-                .type("text/csv; charset=utf-8")
-                .header(jakarta.ws.rs.core.HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + StandGrilleImportService.EXEMPLE_FICHIER + "\"")
-                .build();
+        return CsvDownload.attachment(grilleImport.exemple(), StandGrilleImportService.EXEMPLE_FICHIER);
     }
 }

@@ -38,7 +38,9 @@ class StandGrilleImportResourceTest {
         String exemple = given().when().get("/api/stands/import-grille/exemple")
                 .then().statusCode(200).contentType(containsString("text/csv"))
                 .extract().asString();
-        assertThat(exemple).startsWith("stand;");
+        // The byte order mark, so Excel reads the file as UTF-8 once it is on
+        // disk; the parser strips it, which the clean re-import below proves.
+        assertThat(exemple).startsWith("\uFEFFstand;");
         // The band row carries no colon: Excel turns « 13:00-16:00 » into the
         // date-time 13:16:00, and the band is then lost for good.
         String bandes = exemple.lines().skip(1).findFirst().orElseThrow();

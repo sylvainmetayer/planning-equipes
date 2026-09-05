@@ -20,7 +20,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -127,11 +126,7 @@ public class AnimateurResource {
     @Path("/import-csv/exemple")
     @Produces("text/csv")
     public Response exempleCsvAnimateurs() {
-        return Response.ok(csvImport.exemple())
-                .type("text/csv; charset=utf-8")
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + AnimateurCsvImportService.EXEMPLE_FICHIER + "\"")
-                .build();
+        return CsvDownload.attachment(csvImport.exemple(), AnimateurCsvImportService.EXEMPLE_FICHIER);
     }
 
     /**

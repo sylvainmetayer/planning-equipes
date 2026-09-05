@@ -216,7 +216,15 @@ class AnimateurCsvExempleTest {
         assertThat(exemple).containsPattern("\\d{4}-\\d{2}-\\d{2}");
     }
 
-    /** The screen's « télécharger un exemple » serves this very resource, byte for byte. */
+    /**
+     * The screen's « télécharger un exemple » serves this very resource, with
+     * one addition: the byte order mark. Excel ignores the response's
+     * {@code charset=utf-8} once the file is on disk and falls back to its
+     * legacy code page, so an accented name would arrive mangled; the mark is
+     * what tells it otherwise. It costs nothing on the way back —
+     * {@code CsvParser} strips it before reading the header, which
+     * {@link #leFichierServiSeReimporteAvecSaMarque()} proves.
+     */
     @Test
     void lEndpointDeTelechargementSertLaMemeRessource() {
         String servi = given().when().get("/api/animateurs/import-csv/exemple")
@@ -224,7 +232,21 @@ class AnimateurCsvExempleTest {
                 .header("Content-Disposition", "attachment; filename=\"festival-realiste-animateurs.csv\"")
                 .extract().asString();
 
-        assertThat(servi).isEqualTo(exemple());
+        assertThat(servi).isEqualTo("\uFEFF" + exemple());
+    }
+
+    /** Downloaded and sent straight back, untouched: still not one rejected row. */
+    @Test
+    void leFichierServiSeReimporteAvecSaMarque() {
+        String servi = given().when().get("/api/animateurs/import-csv/exemple")
+                .then().statusCode(200).extract().asString();
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(
+                new AnimateurCsvImportRequest("festival-realiste-animateurs.csv", servi, null, false, false)));
+
+        assertThat(servi).startsWith("\uFEFF");
+        assertThat(rapport.rejected()).isZero();
+        assertThat(rapport.total()).isEqualTo(scenario.animateurs().size());
     }
 
     /* ------------------------------- Helpers ------------------------------- */

@@ -449,6 +449,20 @@ la paire qu'attend un tableur français. Avec un point, la cellule y était lue
 comme du texte : la colonne s'alignait à gauche et `=SOMME()` répondait zéro,
 ce qui est pire qu'un total faux, parce que ça ressemble à une réponse.
 
+## Les trois CSV sortent avec une marque d'octets
+
+`heures-planning.csv`, l'exemple des animateurs et le modèle de la grille des
+stands partent tous par `CsvDownload.attachment`, qui préfixe le contenu d'un
+**BOM UTF-8**. Excel ignore le `charset=utf-8` de la réponse dès que le fichier
+est sur le disque — l'en-tête voyageait avec le téléchargement, pas avec le
+fichier — et retombe sur la page de code du système : un nom accentué s'affiche
+alors `Métayer`. La marque est la seule chose qu'il lit. LibreOffice n'en a pas
+besoin et ne s'en trouble pas.
+
+Elle ne gêne pas le retour : `CsvParser` retire une marque de tête avant de lire
+l'en-tête, donc un modèle téléchargé puis renvoyé tel quel s'importe à
+l'identique — deux tests le vérifient sur le fichier réellement servi.
+
 ## Exports PDF / ICS
 
 Générés côté serveur. Les deux affichent l'horaire **effectif** du poste, pas

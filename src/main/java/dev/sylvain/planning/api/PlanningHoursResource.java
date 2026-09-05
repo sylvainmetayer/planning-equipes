@@ -8,7 +8,6 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -31,9 +30,6 @@ public class PlanningHoursResource {
     public Response exportCsv(PlanningEvenement planningEvenement) {
         HeuresRapport rapport = heuresPlanningService.compute(planningEvenement);
         String csv = heuresPlanningService.generateCsv(rapport);
-        return Response.ok(csv)
-                .type("text/csv; charset=utf-8")
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"heures-planning.csv\"")
-                .build();
+        return CsvDownload.attachment(csv, "heures-planning.csv");
     }
 }
