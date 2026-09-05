@@ -2,18 +2,18 @@
   <div class="horaire-carte" [class.horaire-carte-erreur]="erreursRegles()[indexHoraire] !== null">
     <div class="horaire-entete">
       @if (deplie(horaire)) {
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" [attr.id]="nom('horaire-cas-particulier-') + indexHoraire">
           <mat-label i18n="@@stands.horaires.mode">Mode</mat-label>
           <mat-select [name]="nom('horaireMode') + indexHoraire" [disabled]="disabled()"
-                      [ngModel]="horaire.mode" (ngModelChange)="patchHoraire(indexHoraire, { mode: $event })">
+                      [ngModel]="horaire.mode" (ngModelChange)="patchHoraire(indexHoraire, { mode: $event, deplie: true })">
             <mat-option value="OUVERTURE" i18n="@@stands.horaires.mode.ouverture">Ouvert sur ces fenêtres</mat-option>
             <mat-option value="FERMETURE" i18n="@@stands.horaires.mode.fermeture">Fermé sur ces fenêtres</mat-option>
           </mat-select>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" [attr.id]="nom('horaire-jours-') + indexHoraire">
           <mat-label i18n="@@stands.horaires.jours">Jours concernés</mat-label>
           <mat-select [name]="nom('horaireJours') + indexHoraire" [disabled]="disabled()"
-                      [ngModel]="horaire.jours" (ngModelChange)="patchHoraire(indexHoraire, { jours: $event })">
+                      [ngModel]="horaire.jours" (ngModelChange)="patchHoraire(indexHoraire, { jours: $event, deplie: true })">
             <mat-option value="TOUS" i18n="@@stands.horaires.jours.tous">Tous les jours</mat-option>
             <mat-option value="JOURS_SEMAINE" i18n="@@stands.horaires.jours.semaine">Certains jours de la semaine</mat-option>
             <mat-option value="PLAGE" i18n="@@stands.horaires.jours.plage">Une plage de dates</mat-option>
@@ -25,7 +25,8 @@
       }
       @if (!estCasParticulier(horaire)) {
         <button matButton type="button" class="horaire-cas-particulier" [disabled]="disabled()"
-                [attr.aria-expanded]="deplie(horaire)" (click)="basculerCasParticulier(indexHoraire)">
+                [attr.aria-expanded]="deplie(horaire)" [attr.aria-controls]="nom('horaire-cas-particulier-') + indexHoraire + ' ' + nom('horaire-jours-') + indexHoraire"
+                (click)="basculerCasParticulier(indexHoraire)">
           <mat-icon>{{ deplie(horaire) ? 'expand_less' : 'tune' }}</mat-icon>
           <ng-container i18n="@@stands.horaires.casParticulier">Cas particulier</ng-container>
         </button>
@@ -102,7 +103,7 @@
             </mat-form-field>
             <mat-form-field appearance="outline" class="fenetre-effectif">
               <mat-label i18n="@@stands.horaires.effectif">Effectif (vide = celui du stand)</mat-label>
-              <input matInput type="number" min="1" step="1" [name]="nom('FenetreEffectif') + indexHoraire + '-' + $index"
+              <input matInput type="number" min="1" step="1" [name]="nom('fenetreEffectif') + indexHoraire + '-' + $index"
                      [ngModel]="fenetre.effectif ?? null"
                      (ngModelChange)="patchFenetre(indexHoraire, $index, { effectif: $event })" />
             </mat-form-field>

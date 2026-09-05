@@ -8,6 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, NgForm } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { horaireVide } from '../../core/horaire-stand';
 import { HoraireDraft } from './stand-draft';
 import { HoraireReglesEditor } from './horaire-regles-editor';
 
@@ -42,11 +43,41 @@ function bouton(fixture: ComponentFixture<Hote>, libelle: string): HTMLButtonEle
   )!;
 }
 
+/** A plain rule, the shape the form starts a stand on. */
+function regle(): HoraireDraft {
+  return { ...horaireVide(), fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: null }] };
+}
+
+/** The rendered selects, in template order: mode then days when unfolded, none when folded. */
+function selects(fixture: ComponentFixture<Hote>): HTMLElement[] {
+  return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('mat-select'));
+}
+
+/** Picks an option of a `mat-select` the way a user does: open, then click. */
+async function choisir(fixture: ComponentFixture<Hote>, index: number, libelle: string): Promise<void> {
+  (selects(fixture)[index].querySelector('.mat-mdc-select-trigger') as HTMLElement).click();
+  await fixture.whenStable();
+  const option = Array.from(document.querySelectorAll('mat-option')).find(
+    (each) => each.textContent!.trim() === libelle
+  );
+  expect(option, `option « ${libelle} » absente`).toBeDefined();
+  (option as HTMLElement).click();
+  await fixture.whenStable();
+}
+
 describe('HoraireReglesEditor', () => {
+  let erreursConsole: unknown[][];
+
   beforeEach(() => {
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    erreursConsole = [];
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => erreursConsole.push(args));
   });
   afterEach(() => vi.restoreAllMocks());
+
+  /** Every control the editor renders, and what the host form registered. */
+  function controles(fixture: ComponentFixture<Hote>): Element[] {
+    return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('input[matInput], mat-select, mat-checkbox'));
+  }
 
   it('registers its controls with the host form, under the prefix, and never mutates the input', async () => {
     const fixture = monter();
@@ -57,9 +88,32 @@ describe('HoraireReglesEditor', () => {
     await fixture.whenStable();
 
     expect(nomsEnregistres(fixture)).toContain('bulkfenetresLigne0');
+    // An unnamed ngModel throws NG01352 and registers nothing: the count is
+    // what catches it, and this spec is the one that watches the bridge.
+    expect(nomsEnregistres(fixture)).toHaveLength(controles(fixture).length);
+    expect(erreursConsole.filter((args) => JSON.stringify(args).includes('NG01352'))).toEqual([]);
     expect(fixture.componentInstance.recu).toHaveLength(1);
     expect(avant).toHaveLength(0);
     expect(fixture.componentInstance.horaires()).toHaveLength(1);
+  });
+
+  // Une règle qui cesse d'être un cas particulier se repliait sous le curseur :
+  // le sélecteur que l'on venait d'utiliser disparaissait.
+  it('keeps a card unfolded once its selectors have been used', async () => {
+    const fixture = monter();
+    fixture.componentInstance.horaires.set([
+      { ...regle(), jours: 'DATES', dates: ['2026-07-14'] }
+    ]);
+    await fixture.whenStable();
+    expect(nomsEnregistres(fixture)).toContain('bulkhoraireJours0');
+
+    // Back to « every day »: the rule stops being a special case, and the
+    // selector just used must not vanish from under the cursor.
+    await choisir(fixture, 1, 'Tous les jours');
+
+    expect(fixture.componentInstance.horaires()[0].jours).toBe('TOUS');
+    expect(nomsEnregistres(fixture)).toContain('bulkhoraireJours0');
+    expect(bouton(fixture, 'Cas particulier').getAttribute('aria-expanded')).toBe('true');
   });
 
   it('turns the typed line into windows, and refuses one above the given capacity', async () => {

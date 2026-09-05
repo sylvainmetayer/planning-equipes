@@ -658,7 +658,7 @@
   "stands.apercu.fermeSur": "Closed {$fenetres}",
   "stands.apercu.fermeture": "closing",
   "stands.bulk.horaires.title": "Recurring schedule",
-  "stands.bulk.horaires.hint": "Applies the same rules to the whole selection — “open from 14:00 to closing, every day” is set in one operation. Each stand's one-off closures and openings are left untouched.",
+  "stands.bulk.horaires.hint": "Applies the same rules to the whole selection — “open from 14:00 to closing, every day” is set in one operation, one rule typed on a single line: “14:00-”. Each stand's one-off closures and openings are left untouched.",
   "stands.bulk.horaires.mode": "What to do with the schedule",
   "stands.compactage.action": "Compact the schedules",
   "stands.grille.tooltip": "Every stand's schedule as one stand × day × slot grid, one headcount per cell, like a spreadsheet.",
