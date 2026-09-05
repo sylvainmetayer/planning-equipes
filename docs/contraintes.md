@@ -248,12 +248,12 @@ est ce que vaut un repos **à cheval sur le lundi**.
 heures consécutives auxquelles s'ajoutent les heures consécutives de repos
 quotidien » : les 24 h sont *dans* la semaine, seul le repos quotidien qui s'y
 ajoute peut déborder. C'est ce que `creditReposMinutes` calcule —
-`min(durée réelle, part dans la semaine + 11 h)` — donc un repos n'est crédité à
-une semaine que s'il y passe au moins 24 h. Un repos du samedi 20 h au lundi
-10 h (38 h) satisfait la semaine du samedi et laisse la suivante à 21 h, comme
-la Cour de cassation le lit (Cass. soc. 13 nov. 2025, n° 24-10.733 : « toute
-semaine civile doit comporter » ce repos — arrêt cité d'après ses commentaires,
-à confirmer sur Judilibre avant toute citation dans le catalogue).
+`min(durée réelle, part dans la semaine + 11 h)`. Un repos à cheval est donc
+crédité aux deux semaines, mais il n'atteint le plancher de 35 h que dans celle
+où il passe au moins 24 h. Un repos du samedi 20 h au lundi 10 h (38 h) satisfait
+la semaine du samedi et laisse la suivante à 21 h, comme la Cour de cassation le
+lit (Cass. soc. 13 nov. 2025, n° 24-10.733, au visa des articles L3132-1 et
+L3132-2 : « toute semaine civile doit comporter » ce repos).
 
 **Mineurs, `reposHebdomadaireMineur` ([L3164-2]).** « Deux jours de repos
 consécutifs par semaine » se compte en **jours civils à l'intérieur de la
@@ -265,7 +265,10 @@ semaine, soit un résultat voisin de la dérogation à 36 h de l'alinéa 2 sans
 l'accord qu'il exige. Le test
 `mineurAvecDimancheEtLundiLibresAChevalSurDeuxSemainesEstPenaliseSurChacune`
 verrouille ce choix. Les jours que l'événement ne couvre pas restent des jours
-libres : une semaine partiellement couverte est satisfaite par construction.
+libres, ce qui ne met pas pour autant une semaine partiellement couverte hors de
+la règle : les deux jours doivent se suivre, et une semaine ouverte en pointillé
+— lundi, mercredi, vendredi, dimanche — reste pénalisée si le mineur les tient
+tous.
 
 ## Hors périmètre assumé
 

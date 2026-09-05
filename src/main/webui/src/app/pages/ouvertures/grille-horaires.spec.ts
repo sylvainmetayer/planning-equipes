@@ -3,7 +3,9 @@ import { RapportOuvertures } from '../../core/models';
 import {
   Cellules,
   cellulesDepuis,
+  cellulesInertes,
   cellulesPartielles,
+  compterRecopiees,
   collerBloc,
   colonnes,
   deplacement,
@@ -37,7 +39,12 @@ function rapport(): RapportOuvertures {
       couverturePause: false
     }))
   });
-  const cellule = (creneauId: number, effectif: number | null, partiel = false) => ({ creneauId, effectif, partiel });
+  const cellule = (creneauId: number, effectif: number | null, partiel = false, horsFamille = false) => ({
+    creneauId,
+    effectif,
+    partiel,
+    horsFamille
+  });
   const jourStand = (date: string, creneaux: ReturnType<typeof cellule>[]) => ({
     date,
     etat: 'OUVERT_TOTAL' as const,
@@ -91,8 +98,22 @@ describe('colonnes et cellules', () => {
     expect(cellulesPartielles(rapport())).toEqual(new Set(['B#1']));
   });
 
-  it('libelle une demi-heure avec ses minutes', () => {
-    expect(libelleColonne({ date: '', creneauId: 1, heureDebut: '13:30', heureFin: '14:00', rang: 0 })).toBe('13:30-14');
+  // L'API envoie « HH:mm:ss » : tester la forme brute laissait toutes les heures
+  // finir par « :00 », et 13:30-14:30 s'affichait « 13-14 ».
+  it('libelle une demi-heure avec ses minutes, telle que l’API l’envoie', () => {
+    expect(libelleColonne({ date: '', creneauId: 1, heureDebut: '13:30:00', heureFin: '14:30:00', rang: 0 })).toBe(
+      '13:30-14:30'
+    );
+    expect(libelleColonne({ date: '', creneauId: 1, heureDebut: '10:00:00', heureFin: '12:00:00', rang: 0 })).toBe(
+      '10-12'
+    );
+  });
+
+  it('relève les cases d’une autre famille de relais', () => {
+    const rapportAvecFamille = rapport();
+    rapportAvecFamille.stands[1].jours[0].creneaux[0].horsFamille = true;
+
+    expect(cellulesInertes(rapportAvecFamille)).toEqual(new Set(['B#1']));
   });
 });
 
@@ -131,6 +152,27 @@ describe('standsModifies et saisie', () => {
         ]
       }
     ]);
+  });
+
+  it('n’écrit ni ne renvoie une case inerte', () => {
+    const reference = cellulesDepuis(rapport());
+    const cols = colonnes(rapport());
+    const inertes = new Set(['A#2']);
+
+    const colle = collerBloc(reference, '9\t9', { standId: 'A', creneauId: 1 }, STANDS, cols, inertes);
+    expect(valeursLigne(colle, 'A', cols)).toEqual([9, 4, 4, 2, 4]);
+
+    const envoye = saisie(colle, ['A'], inertes);
+    expect(envoye[0].cellules.map((cellule) => cellule.creneauId)).toEqual([1, 3, 4, 5]);
+  });
+
+  it('compte les cases qu’une recopie a changées', () => {
+    const cols = colonnes(rapport());
+    const depart = cellulesDepuis(rapport());
+    const apres = recopierJour(ecrireCellule(depart, { standId: 'A', creneauId: 4 }, 7), '2026-07-09', ['A'], cols);
+
+    expect(compterRecopiees(depart, apres, cols)).toBeGreaterThan(0);
+    expect(compterRecopiees(depart, depart, cols)).toBe(0);
   });
 
   it('ne modifie jamais la carte reçue', () => {

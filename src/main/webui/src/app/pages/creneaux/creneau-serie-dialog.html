@@ -81,7 +81,7 @@
       </p>
     }
     @if (bloquee()) {
-      <p class="field-error" role="alert" i18n="@@creneaux.serie.bloquee">La grille obtenue porterait une erreur (un doublon, le plus souvent) : corrigez la règle avant de créer.</p>
+      <p class="field-error" role="alert" i18n="@@creneaux.serie.bloquee">Cette règle ajouterait {{ erreursIntroduites().length }} erreur(s) à la grille — un doublon, le plus souvent : corrigez-la avant de créer. Les anomalies déjà présentes ne bloquent pas.</p>
     }
     @if (anomalies().length > 0) {
       <ul class="ouvertures-anomalies serie-anomalies">

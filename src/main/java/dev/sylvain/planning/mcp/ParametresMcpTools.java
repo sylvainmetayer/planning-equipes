@@ -147,10 +147,13 @@ public class ParametresMcpTools {
                     McpArgs.enumeration(PauseCoverageStrategy.class, strategieCouverturePendantPause,
                             "strategieCouverturePendantPause"));
         }
+        ParametresDecoupage ecrits = referenceDataService.updateParametresDecoupage(parametres);
         if (modeGrille != null) {
-            parametres.setModeGrille(McpArgs.enumeration(ModeGrilleCreneaux.class, modeGrille, "modeGrille"));
+            // Its own write: the mode is not part of this payload — see
+            // ParametresService#updateModeGrille.
+            ecrits = referenceDataService.updateModeGrille(modeGrille);
         }
-        return toView(referenceDataService.updateParametresDecoupage(parametres));
+        return toView(ecrits);
     }
 
     /* ---------------------------- Solver parameters ------------------------- */

@@ -36,9 +36,11 @@ import {
   Cellules,
   ColonneGrille,
   cellulesDepuis,
+  cellulesInertes,
   cellulesPartielles,
   cle,
   collerBloc,
+  compterRecopiees,
   colonnes,
   deplacement,
   ecrireCellule,
@@ -112,6 +114,8 @@ export class OuverturesPage {
   /** The cells as the server last reported them: what "modified" is measured against. */
   private readonly reference = signal<Cellules>(new Map());
   private readonly partielles = signal<ReadonlySet<string>>(new Set());
+  /** Cells of another stagger family's créneau: shown, never typed, never sent. */
+  private readonly inertes = signal<ReadonlySet<string>>(new Set());
   /** The last cell focused: where a paste lands, and which day a row copy takes. */
   protected readonly celluleActive = signal<AdresseCellule | null>(null);
   protected readonly enregistrement = signal(false);
@@ -147,6 +151,7 @@ export class OuverturesPage {
       this.reference.set(cellules);
       this.cellules.set(cellules);
       this.partielles.set(cellulesPartielles(rapport));
+      this.inertes.set(cellulesInertes(rapport));
     } catch (error) {
       this.crud.reportError(error);
     } finally {
@@ -188,6 +193,15 @@ export class OuverturesPage {
     return estPartielle(this.partielles(), { standId, creneauId });
   }
 
+  /** A créneau of another stagger family: this stand never holds a seat there. */
+  protected estInerte(standId: string, creneauId: number): boolean {
+    return this.inertes().has(cle(standId, creneauId));
+  }
+
+  protected infobulleInerte(): string {
+    return $localize`:@@ouvertures.saisie.inerte:Ce créneau appartient à une autre famille de relais que ce stand : il n'y tiendra jamais de poste, la case ne se saisit pas.`;
+  }
+
   protected libelleColonne(colonne: ColonneGrille): string {
     return libelleColonne(colonne);
   }
@@ -198,10 +212,23 @@ export class OuverturesPage {
 
   /** A keystroke in a cell: digits become the headcount, an emptied field closes the stand; anything else is left as typed. */
   protected saisir(standId: string, creneauId: number, texte: string): void {
+    if (this.estInerte(standId, creneauId)) {
+      return;
+    }
     const lu = lireCellule(texte);
     if (lu !== undefined) {
       this.cellules.update((cellules) => ecrireCellule(cellules, { standId, creneauId }, lu));
     }
+  }
+
+  /**
+   * What is left in the field once it loses the focus: the model's own value.
+   * A keystroke that is not a headcount (`5x`) is ignored by {@link saisir},
+   * and without this the field would keep showing it while the grid holds — and
+   * would save — the old number.
+   */
+  protected reafficher(event: Event, standId: string, creneauId: number): void {
+    (event.target as HTMLInputElement).value = this.valeur(standId, creneauId);
   }
 
   protected focaliser(standId: string, creneauId: number): void {
@@ -240,13 +267,15 @@ export class OuverturesPage {
     }
     event.preventDefault();
     this.cellules.update((cellules) =>
-      collerBloc(cellules, texte, { standId, creneauId }, this.standIdsAffiches(), this.colonnes())
+      collerBloc(cellules, texte, { standId, creneauId }, this.standIdsAffiches(), this.colonnes(), this.inertes())
     );
   }
 
   /** The day's cells, for every displayed stand, copied onto every other day. */
   protected recopierJour(date: string): void {
-    this.cellules.update((cellules) => recopierJour(cellules, date, this.standIdsAffiches(), this.colonnes()));
+    this.appliquerRecopie((cellules) =>
+      recopierJour(cellules, date, this.standIdsAffiches(), this.colonnes(), this.inertes())
+    );
   }
 
   /** One stand's day — the focused one when it is on that row, else its first day with a headcount — copied onto its other days. */
@@ -257,7 +286,26 @@ export class OuverturesPage {
         ? (this.colonnes().find((colonne) => colonne.creneauId === active.creneauId)?.date ?? null)
         : jourDeReference(this.cellules(), standId, this.colonnes());
     if (date !== null) {
-      this.cellules.update((cellules) => recopierJour(cellules, date, [standId], this.colonnes()));
+      this.appliquerRecopie((cellules) => recopierJour(cellules, date, [standId], this.colonnes(), this.inertes()));
+    }
+  }
+
+  /**
+   * Applies a copy and says how many cells it changed. A day whose créneaux
+   * were sliced differently matches none of the target columns, and the copy
+   * then does nothing at all — silence would read as success.
+   */
+  private appliquerRecopie(recopie: (cellules: Cellules) => Cellules): void {
+    const avant = this.cellules();
+    const apres = recopie(avant);
+    const changees = compterRecopiees(avant, apres, this.colonnes());
+    this.cellules.set(apres);
+    if (changees === 0) {
+      this.notifications.notify({
+        title: $localize`:@@ouvertures.saisie.recopieVide:Aucune case recopiée : les créneaux des autres jours n'ont pas les mêmes horaires.`,
+        variant: 'warning',
+        timeout: 6000
+      });
     }
   }
 
@@ -291,13 +339,22 @@ export class OuverturesPage {
     this.enregistrement.set(true);
     try {
       const rapport = await this.api.put<RapportSaisieGrille>('/api/ouvertures-stands/grille', {
-        stands: saisie(this.cellules(), modifies)
+        stands: saisie(this.cellules(), modifies, this.inertes())
       });
       const regles = rapport.stands.reduce((total, ligne) => total + ligne.regles, 0);
       const exceptions = rapport.stands.reduce((total, ligne) => total + ligne.exceptions, 0);
+      // A stand whose rules would not reproduce its own segments stays fully
+      // dated, and the server says so per stand — worth a line rather than a
+      // number the reader cannot explain.
+      const nonCompactes = rapport.stands.filter((ligne) => !ligne.compacte).map((ligne) => ligne.standId);
       this.notifications.notify({
         title: $localize`:@@ouvertures.saisie.doneTitle:Horaires enregistrés`,
-        message: $localize`:@@ouvertures.saisie.doneMessage:${rapport.stands.length}:stands: stand(s) réécrit(s) en ${regles}:regles: règle(s) et ${exceptions}:exceptions: exception(s) datée(s).`,
+        message:
+          $localize`:@@ouvertures.saisie.doneMessage:${rapport.stands.length}:stands: stand(s) réécrit(s) en ${regles}:regles: règle(s) et ${exceptions}:exceptions: exception(s) datée(s).` +
+          (nonCompactes.length > 0
+            ? ' ' +
+              $localize`:@@ouvertures.saisie.doneNonCompactes:${nonCompactes.join(', ')}:stands: sont restés en fenêtres datées : leur motif ne se répète pas.`
+            : ''),
         variant: 'success'
       });
       await this.recharger();

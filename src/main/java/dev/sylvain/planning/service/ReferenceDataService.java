@@ -174,10 +174,7 @@ public class ReferenceDataService implements ReferenceData {
      * nothing about it (the bulk edit issues one {@code PUT} per row).
      */
     public WrittenStand writeStand(String id, Stand stand) {
-        Stand avant = stands.list().stream()
-                .filter(candidat -> Objects.equals(candidat.getId(), id))
-                .findFirst()
-                .orElse(null);
+        Stand avant = stands.find(id);
         Stand ecrit = updateStand(id, stand);
         return new WrittenStand(ecrit, coherence.onStand(avant, ecrit));
     }
@@ -188,6 +185,32 @@ public class ReferenceDataService implements ReferenceData {
 
     public ReferenceUsage countStandUsages(List<String> ids) {
         return usages.forStands(ids);
+    }
+
+    /** Declares what the edition's créneaux are; {@code null} or an unknown value is a 400. */
+    public ParametresDecoupage updateModeGrille(String mode) {
+        if (mode == null || mode.isBlank()) {
+            throw new BusinessError.Invalid("modeGrille est requis : AMPLITUDES (journées à découper en vacations) "
+                    + "ou VACATIONS (vacations finales, solvables telles quelles)");
+        }
+        return parametres.updateModeGrille(modeGrille(mode, "modeGrille"));
+    }
+
+    /**
+     * A grid mode read from a request, as text: bound as an enum it would be
+     * converted by the container, whose failure is a {@code 404} raised before
+     * the method runs — and a mistyped field is a {@code 400}.
+     */
+    public static ModeGrilleCreneaux modeGrille(String valeur, String champ) {
+        if (valeur == null || valeur.isBlank()) {
+            return null;
+        }
+        try {
+            return ModeGrilleCreneaux.valueOf(valeur.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new BusinessError.Invalid(champ + " : valeur inconnue « " + valeur
+                    + " », attendu AMPLITUDES ou VACATIONS");
+        }
     }
 
     public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
@@ -273,9 +296,15 @@ public class ReferenceDataService implements ReferenceData {
      * reads them.
      */
     public CreneauGridService.RapportGrille controlerGrille(List<Creneau> creneaux, ModeGrilleCreneaux mode) {
-        ModeGrilleCreneaux effectif = mode != null ? mode : getParametresDecoupage().getModeGrille();
-        return grille.validate(creneaux, listSolvedStands(), listAnimateurs(), effectif, getParametresDecoupage(),
-                getParametresLegaux());
+        ParametresDecoupage decoupage = getParametresDecoupage();
+        ModeGrilleCreneaux effectif = mode != null ? mode : decoupage.getModeGrille();
+        // The stands are resolved against the grid being judged, not against the
+        // persisted one: a preview of a grid the edition does not have yet — the
+        // ordinary case when deriving or seeding it — would otherwise read every
+        // rule-scheduled stand as open all day.
+        List<Stand> stands = listStands();
+        HoraireStandResolver.apply(stands, creneaux);
+        return grille.validate(creneaux, stands, listAnimateurs(), effectif, decoupage, getParametresLegaux());
     }
 
     public CreneauGridService.RapportGrille controlerGrille(ModeGrilleCreneaux mode) {

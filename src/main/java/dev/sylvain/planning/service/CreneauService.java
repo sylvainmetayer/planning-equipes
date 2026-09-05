@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
@@ -81,6 +82,10 @@ public class CreneauService {
      * every existing one.</p>
      */
     public List<Creneau> createInBulk(List<Creneau> creneaux) {
+        // A recurrence and a derivation both land here, and both add rows a
+        // running solve would not know about — the same reason delete and
+        // replace refuse.
+        solverJobs.refuseIfSolving();
         List<Creneau> crees = new ArrayList<>();
         creneaux.forEach(CreneauValidator::check);
         for (Creneau creneau : creneaux) {
@@ -132,6 +137,11 @@ public class CreneauService {
     public void generateDecoupage() {
         List<Creneau> vacations = previewDecoupage();
         repository.replaceCreneaux(vacations);
+        // What the edition holds has just changed nature, so it says so here
+        // rather than in the browser: an assistant calling generer_decoupage
+        // then valider_creneaux would otherwise read staggered vacations as
+        // amplitudes and report every relay overlap as a data-entry mistake.
+        parametres.updateModeGrille(ModeGrilleCreneaux.VACATIONS);
         changeTracker.markModified();
     }
 

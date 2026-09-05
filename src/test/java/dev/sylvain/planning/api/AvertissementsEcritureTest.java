@@ -148,6 +148,47 @@ class AvertissementsEcritureTest {
                 .body("find { it.id == 'AVERT-MATIN' }.horaires.size()", equalTo(1));
     }
 
+    /**
+     * The wiring the pure analyzer cannot prove: the edit path reads the stand
+     * as it stands in the database and compares. Renaming a stand whose window
+     * has always been useless must stay silent — otherwise every bulk edit,
+     * which issues one PUT per row, re-shouts about data nobody touched.
+     */
+    @Test
+    void renommerUnStandDontLaFenetreEstDejaSansEffetNeRedItRien() {
+        postCreneau("14:00:00", "18:00:00");
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "id":"AVERT-MATIN","nom":"Stand du matin","typologiesProposees":[],
+                          "effectifMin":1,"effectifMax":1,"reserveMajeurs":false,
+                          "horaires":[
+                            {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
+                          ]
+                        }
+                        """)
+                .when().post("/api/stands")
+                .then().statusCode(200)
+                .body("avertissements.type", hasItem("STAND_FENETRE_SANS_EFFET"));
+
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "id":"AVERT-MATIN","nom":"Renommé","typologiesProposees":[],
+                          "effectifMin":1,"effectifMax":1,"reserveMajeurs":false,
+                          "horaires":[
+                            {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
+                          ]
+                        }
+                        """)
+                .when().put("/api/stands/AVERT-MATIN")
+                .then().statusCode(200)
+                .body("stand.nom", equalTo("Renommé"))
+                .body("avertissements", empty());
+    }
+
     @Test
     void unStandCoherentNeProduitAucunAvertissementEtRenommerNeRedItRien() {
         postCreneau("14:00:00", "18:00:00");

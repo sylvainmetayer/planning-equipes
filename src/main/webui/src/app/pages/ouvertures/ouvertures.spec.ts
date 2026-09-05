@@ -27,7 +27,7 @@ function cellule(patch: Partial<CelluleJourOuverture> = {}): CelluleJourOuvertur
     minutesOuvertes: 600,
     minutesAmplitude: 600,
     postes: 2,
-    creneaux: [{ creneauId: 1, effectif: 2, partiel: false }],
+    creneaux: [{ creneauId: 1, effectif: 2, partiel: false, horsFamille: false }],
     ...patch
   };
 }

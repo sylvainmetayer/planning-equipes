@@ -87,7 +87,8 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("reposHebdomadaireMineur", Niveau.HARD, "Légal (mineurs)",
                     "Un mineur bénéficie de deux jours de repos consécutifs à l'intérieur de chaque semaine "
                             + "civile, du lundi 0 h au dimanche 24 h (Code du travail art. L3164-2 et L3121-35) : un "
-                            + "dimanche et le lundi qui le suit ne comptent pour aucune des deux semaines. Les "
+                            + "dimanche et le lundi qui le suit sont chacun un jour de repos de leur semaine, mais "
+                            + "ne forment la paire d'aucune des deux. Les "
                             + "dérogations conventionnelles supposent un accord étendu ou une autorisation de "
                             + "l'inspection du travail : elles ne sont pas présumées."),
             new ConstraintDefinition("travailContinuMaxMineur", Niveau.HARD, "Légal (mineurs)",
