@@ -201,6 +201,21 @@ class AnimateurCsvExempleTest {
                 assertThat(animateur.getJoursIndisponibles()).hasSizeGreaterThan(1));
     }
 
+    /**
+     * Its dates are ISO, and that is not a matter of taste: opened in a
+     * spreadsheet and saved again, {@code 12/09/2026} comes back
+     * {@code 12/09/26}, a year the import cannot read — the row is then
+     * rejected for a reason its author never wrote. {@code 2026-09-12} is
+     * given back unchanged by Excel as by LibreOffice.
+     */
+    @Test
+    void lesDatesDeLExempleSontEnIsoPourSurvivreAUnTableur() {
+        String exemple = exemple();
+
+        assertThat(exemple).doesNotContainPattern("\\d{2}/\\d{2}/\\d{4}");
+        assertThat(exemple).containsPattern("\\d{4}-\\d{2}-\\d{2}");
+    }
+
     /** The screen's « télécharger un exemple » serves this very resource, byte for byte. */
     @Test
     void lEndpointDeTelechargementSertLaMemeRessource() {

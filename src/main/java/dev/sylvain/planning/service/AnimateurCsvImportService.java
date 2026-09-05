@@ -18,6 +18,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -129,6 +130,9 @@ public class AnimateurCsvImportService {
             DateTimeFormatter.ofPattern("d/M/uuuu").withResolverStyle(ResolverStyle.STRICT),
             DateTimeFormatter.ofPattern("d-M-uuuu").withResolverStyle(ResolverStyle.STRICT),
             DateTimeFormatter.ofPattern("d.M.uuuu").withResolverStyle(ResolverStyle.STRICT));
+
+    /** {@code 12/09/26} and the like: a spreadsheet shortened the year, and the date is no longer readable. */
+    private static final Pattern ANNEE_COURTE = Pattern.compile("^\\s*\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2}\\s*$");
 
     private static final Set<String> TRUE_CELLS =
             Set.of("1", "x", "o", "oui", "vrai", "true", "y", "yes");
@@ -641,7 +645,7 @@ public class AnimateurCsvImportService {
         LocalDate parsed = parseDate(dateCell);
         if (parsed == null) {
             reasons.add("Date de naissance illisible : « " + dateCell
-                    + " » (formats acceptés : JJ/MM/AAAA ou AAAA-MM-JJ).");
+                    + " » (formats acceptés : JJ/MM/AAAA ou AAAA-MM-JJ)." + indiceAnneeCourte(dateCell));
             return existant != null ? existant.getDateNaissance() : null;
         }
         LocalDate today = LocalDate.now();
@@ -732,7 +736,7 @@ public class AnimateurCsvImportService {
             LocalDate jour = parseDate(valeur);
             if (jour == null) {
                 reasons.add("Jour d'indisponibilité illisible : « " + valeur
-                        + " » (formats acceptés : JJ/MM/AAAA ou AAAA-MM-JJ).");
+                        + " » (formats acceptés : JJ/MM/AAAA ou AAAA-MM-JJ)." + indiceAnneeCourte(valeur));
             } else if (!joursEvenement.contains(jour)) {
                 reasons.add("Jour d'indisponibilité hors des dates de l'événement : " + jour
                         + " — l'espace animateur ne peut pas l'afficher, et la première déclaration "
@@ -766,6 +770,21 @@ public class AnimateurCsvImportService {
     }
 
     /** {@code AAAA-MM-JJ} and the three separators a French spreadsheet writes a date with. */
+    /**
+     * The sentence to add when a date looks like one a spreadsheet shortened.
+     *
+     * <p>Excel and LibreOffice retype a date cell and write it back in their
+     * own format, often on two digits: the file then arrives with rows nobody
+     * can explain. The example ships its dates in {@code AAAA-MM-JJ}, which
+     * both tools give back unchanged.</p>
+     */
+    private static String indiceAnneeCourte(String cellule) {
+        return ANNEE_COURTE.matcher(cellule == null ? "" : cellule).matches()
+                ? " L'année n'a que deux chiffres : un tableur a réécrit la date en l'ouvrant. Repartez du fichier "
+                        + "d'exemple, dont les dates sont en AAAA-MM-JJ, une forme que les tableurs rendent intacte."
+                : "";
+    }
+
     static LocalDate parseDate(String value) {
         String cleaned = value == null ? "" : value.trim();
         if (cleaned.isEmpty()) {

@@ -164,6 +164,14 @@ correspondance proposée. Il montre ce qu'une cellule multi-valeurs contient :
 compétences avec et sans niveau (`DIV:REFERENT|LOGISTIQUE|NINJA:DEBUTANT`),
 souhaits, jours d'indisponibilité.
 
+Ses dates sont écrites **`AAAA-MM-JJ`**, et c'est la même précaution que pour
+les bandes de la grille des stands : ouvert puis réenregistré dans un tableur,
+`12/09/2026` revient `12/09/26`, une année sur deux chiffres que l'import
+refuse — la ligne est alors rejetée pour une raison que personne n'a écrite.
+La forme ISO, elle, ressort intacte d'Excel comme de LibreOffice. Les deux
+formats restent lus à l'import, et le message d'erreur nomme cette cause quand
+il voit une année à deux chiffres.
+
 Il n'existe **qu'à cet endroit** : l'écran le récupère par l'API plutôt que
 par une copie dans le bundle, et `AnimateurCsvExempleTest` réimporte cette
 ressource-là par le vrai lecteur CSV. Le test vérifie qu'elle passe avec
@@ -381,7 +389,7 @@ compétence ou les dates de l'événement fait échouer `AnimateurCsvExempleTest
 c'est voulu, et le CSV est alors à régénérer avec elle. La règle est
 mécanique : une ligne par animateur du YAML **dans l'ordre du fichier**,
 `identifiant;prénom;nom;date de naissance;email;manager;compétences;souhaits;jours indisponibles`,
-dates en `JJ/MM/AAAA`, `manager` en `oui`/`non`, compétences jointes par `|`
+dates en `AAAA-MM-JJ`, `manager` en `oui`/`non`, compétences jointes par `|`
 avec le niveau suffixé (`DIV:REFERENT`) sauf `AUTONOME` qui s'écrit nu. Seules
 les colonnes `souhaits` et `jours indisponibles` n'existent pas dans la fixture
 — elles y sont ajoutées pour montrer la cellule multi-valeurs, sur une
