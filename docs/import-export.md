@@ -440,6 +440,15 @@ optionnelle = un champ dans `ScenarioSections` et une ligne dans `sectionsOf`,
 **pas une méthode publique de plus** : une méthode par section reparserait le
 fichier entier à chaque appel, soit sept parses complets pour un seul clic.
 
+## Export des heures
+
+`POST /api/planning/hours/export` rend `heures-planning.csv` : une ligne par
+animateur, une colonne par semaine ISO (`2026-W33`), plus un total. Les heures
+s'écrivent avec une **virgule** (`4,00`), et le séparateur de champs reste `;` —
+la paire qu'attend un tableur français. Avec un point, la cellule y était lue
+comme du texte : la colonne s'alignait à gauche et `=SOMME()` répondait zéro,
+ce qui est pire qu'un total faux, parce que ça ressemble à une réponse.
+
 ## Exports PDF / ICS
 
 Générés côté serveur. Les deux affichent l'horaire **effectif** du poste, pas

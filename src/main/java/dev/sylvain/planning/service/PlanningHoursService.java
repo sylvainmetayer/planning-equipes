@@ -71,8 +71,18 @@ public class PlanningHoursService {
         return csv.toString();
     }
 
+    /**
+     * Hours with a <b>comma</b>, the decimal separator of the spreadsheets this
+     * file is opened in.
+     *
+     * <p>Written {@code 4.00}, a French Excel or LibreOffice reads the cell as
+     * text: it shows up left-aligned and {@code =SOMME()} over the column
+     * answers zero, which is worse than a wrong total because it looks like an
+     * answer. The field separator being {@code ;}, the comma is unambiguous —
+     * that pairing is exactly the convention those spreadsheets expect.</p>
+     */
     private String formater(double heures) {
-        return String.format(Locale.ROOT, "%.2f", heures);
+        return String.format(Locale.ROOT, "%.2f", heures).replace('.', ',');
     }
 
     private String echapper(String valeur) {

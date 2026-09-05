@@ -89,6 +89,8 @@ class PlanningHoursServiceTest {
 
         String csv = service.generateCsv(service.compute(planning));
 
-        assertThat(csv).isEqualTo("animateur;2026-W33;total\nAda Lovelace;4.00;4.00\n");
+        // Comma, not dot: a French spreadsheet reads « 4.00 » as text, and the
+        // column an organiser wants to sum then sums to zero.
+        assertThat(csv).isEqualTo("animateur;2026-W33;total\nAda Lovelace;4,00;4,00\n");
     }
 }
