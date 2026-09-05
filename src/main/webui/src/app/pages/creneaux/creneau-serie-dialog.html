@@ -1,0 +1,118 @@
+<h2 mat-dialog-title i18n="@@creneaux.serie.title">Créer une série de créneaux</h2>
+<form (ngSubmit)="previsualiser()">
+<mat-dialog-content class="form-grid">
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<p class="empty-hint span-2" i18n="@@creneaux.serie.hint">
+  Une règle crée tous les créneaux d'une journée type sur les jours choisis — « 09:00-12:00, 14:00-18:00 » tous les
+  jours du 6 au 19 juillet, ou du lundi au vendredi. Les créneaux existants ne sont pas touchés : la série s'ajoute.
+  Prévisualisez d'abord : le serveur dit ce que la règle ajouterait et ce que la grille deviendrait.
+</p>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@creneaux.serie.fenetres">Créneaux d'une journée</mat-label>
+  <input matInput name="fenetres" placeholder="09:00-12:00, 14:00-18:00" autocomplete="off" spellcheck="false"
+         [ngModel]="draft().fenetres" (ngModelChange)="patch({ fenetres: $event })" />
+  <mat-hint i18n="@@creneaux.serie.fenetres.hint">Un créneau par virgule, début et fin obligatoires</mat-hint>
+</mat-form-field>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@creneaux.serie.jours">Jours concernés</mat-label>
+  <mat-select name="jours" [disabled]="editingLocked()" [ngModel]="draft().jours" (ngModelChange)="patch({ jours: $event })">
+    <mat-option value="TOUS" i18n="@@creneaux.serie.jours.tous">Tous les jours d'une plage</mat-option>
+    <mat-option value="JOURS_SEMAINE" i18n="@@creneaux.serie.jours.semaine">Certains jours de la semaine, dans une plage</mat-option>
+    <mat-option value="DATES" i18n="@@creneaux.serie.jours.dates">Des dates précises</mat-option>
+  </mat-select>
+</mat-form-field>
+@if (draft().jours !== 'DATES') {
+  <mat-form-field appearance="outline">
+    <mat-label i18n="@@creneaux.serie.dateDebut">Du</mat-label>
+    <input matInput type="date" name="dateDebut" [ngModel]="draft().dateDebut" (ngModelChange)="patch({ dateDebut: $event })" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label i18n="@@creneaux.serie.dateFin">Au</mat-label>
+    <input matInput type="date" name="dateFin" [ngModel]="draft().dateFin" (ngModelChange)="patch({ dateFin: $event })" />
+  </mat-form-field>
+}
+@if (draft().jours === 'JOURS_SEMAINE') {
+  <div class="horaire-jours-semaine span-2">
+    @for (jour of joursSemaine; track jour) {
+      <mat-checkbox [name]="'serieJour' + jour" [disabled]="editingLocked()"
+                    [ngModel]="draft().joursSemaine.includes(jour)" (ngModelChange)="basculerJour(jour, $event)">
+        {{ libelleJourSemaine(jour) }}
+      </mat-checkbox>
+    }
+  </div>
+}
+@if (draft().jours === 'DATES') {
+  <mat-form-field appearance="outline" class="span-2">
+    <mat-label i18n="@@creneaux.serie.dates">Dates (AAAA-MM-JJ, séparées par des virgules)</mat-label>
+    <input matInput name="dates" placeholder="2026-07-14, 2026-07-19" [ngModel]="draft().dates" (ngModelChange)="patch({ dates: $event })" />
+  </mat-form-field>
+}
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@creneaux.serie.exclusions">Dates à exclure (optionnel)</mat-label>
+  <input matInput name="exclusions" placeholder="2026-07-14" [ngModel]="draft().exclusions" (ngModelChange)="patch({ exclusions: $event })" />
+</mat-form-field>
+@if (erreur(); as message) {
+  <p class="field-error span-2" role="alert">{{ message }}</p>
+}
+@if (apercu(); as apercu) {
+  <div class="span-2 serie-apercu" [class.serie-apercu-perimee]="!apercuAJour()">
+    <h3 i18n="@@creneaux.serie.apercu.title">{{ apercu.nombreGeneres }} créneau(x) seraient ajoutés</h3>
+    @if (!apercuAJour()) {
+      <p class="empty-hint" i18n="@@creneaux.serie.apercu.perime">La règle a changé depuis cet aperçu : prévisualisez à nouveau avant de créer.</p>
+    }
+    <div class="decoupage-resume">
+      @for (jour of resume(); track jour.date) {
+        <p>
+          <strong>{{ jour.date }}</strong>
+          @for (vacation of jour.vacations; track $index) {
+            <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
+          }
+        </p>
+      }
+    </div>
+    @if (bilan(); as bilan) {
+      <p class="serie-bilan">
+        <span [class.serie-bilan-erreur]="bilan.erreurs > 0" i18n="@@creneaux.serie.bilan.erreurs">{{ bilan.erreurs }} erreur(s)</span>
+        <span i18n="@@creneaux.serie.bilan.avertissements">{{ bilan.avertissements }} avertissement(s)</span>
+        <span i18n="@@creneaux.serie.bilan.ouvertures">{{ bilan.ouvertures }} anomalie(s) d'ouverture</span>
+      </p>
+    }
+    @if (bloquee()) {
+      <p class="field-error" role="alert" i18n="@@creneaux.serie.bloquee">La grille obtenue porterait une erreur (un doublon, le plus souvent) : corrigez la règle avant de créer.</p>
+    }
+    @if (anomalies().length > 0) {
+      <ul class="ouvertures-anomalies serie-anomalies">
+        @for (anomalie of anomalies(); track $index) {
+          <li [class.anomalie-avertissement]="anomalie.severite === 'AVERTISSEMENT'">
+            <mat-icon>{{ iconeAnomalieGrille(anomalie) }}</mat-icon>
+            @if (anomalie.date) {
+              <span class="anomalie-date">{{ anomalie.date }}</span>
+            }
+            <span>{{ anomalie.message }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
+  <button matButton type="submit" [disabled]="erreur() !== null || chargement() || editingLocked()">
+    @if (chargement()) {
+      <mat-progress-spinner diameter="18" mode="indeterminate" />
+    } @else {
+      <mat-icon>visibility</mat-icon>
+    }
+    <ng-container i18n="@@creneaux.serie.previsualiser">Prévisualiser</ng-container>
+  </button>
+  <button matButton="filled" type="button" [disabled]="!peutCreer()" (click)="creer()">
+    <mat-icon>playlist_add</mat-icon>
+    <ng-container i18n="@@creneaux.serie.creer">Créer la série</ng-container>
+  </button>
+</mat-dialog-actions>
+</form>

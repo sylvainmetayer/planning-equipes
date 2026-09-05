@@ -1293,6 +1293,52 @@ l'une des trois, l'écriture répond `400` plutôt que d'aller heurter la colonn
 c'est ainsi que s'écrit un créneau franchissant minuit (20:00→00:00 dure quatre
 heures), et lui seul lit une fenêtre de stand datée du lendemain.
 
+### La grille de créneaux lue comme un tout
+
+Un créneau se crée un par un, ou en **série** : une règle — les créneaux d'une
+journée type, et les jours qu'elle couvre — en ajoute des dizaines d'un coup,
+comme le fait déjà l'outil MCP `creer_creneaux_recurrents`.
+
+```json
+POST /api/creneaux/recurrence/apercu?mode=AMPLITUDES
+{ "jours": "JOURS_SEMAINE", "dateDebut": "2026-07-06", "dateFin": "2026-07-19",
+  "joursSemaine": ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"],
+  "exclusions": ["2026-07-14"],
+  "fenetres": [ { "heureDebut": "09:00", "heureFin": "12:00" },
+                { "heureDebut": "14:00", "heureFin": "18:00" } ] }
+→ { "nombreGeneres": 18, "creneaux": [ … ], "controle": { … } }
+```
+
+`jours` reprend le sélecteur des horaires de stand (`TOUS`, `JOURS_SEMAINE`,
+`PLAGE`, `DATES`) ; chaque fenêtre porte **début et fin**, un créneau étant
+l'amplitude du jour elle-même. `/recurrence/apercu` n'écrit rien et rend le
+verdict sur la grille **qui résulterait** ; `POST /api/creneaux/recurrence`
+ajoute les créneaux — jamais ne remplace — et rend le verdict sur la grille
+obtenue. Une règle qui répète un créneau existant ressort en `DOUBLON`,
+sévérité `ERREUR`. `400` sur une règle mal formée.
+
+**Le mode est déclaré par édition.** Une grille contient soit des
+`AMPLITUDES` (journées à découper), soit des `VACATIONS` (vacations finales,
+résolues telles quelles) ; les données seules ne le prouvent pas, et le verdict
+en dépend — un chevauchement le même jour est une faute entre amplitudes et la
+forme normale de vacations décalées. La déclaration vit dans
+`parametresDecoupage.modeGrille` (`GET`/`PUT /api/parametres-decoupage`,
+défaut `AMPLITUDES`), s'écrit depuis la page Créneaux, et sert de valeur par
+défaut à tout appel qui n'en nomme pas — le paramètre `mode` des routes
+ci-dessous comme l'argument des outils MCP. Générer le découpage la bascule
+en `VACATIONS`.
+
+`GET /api/creneaux/controle?mode=` rend le verdict : les anomalies de la
+grille (`severite` `ERREUR` ou `AVERTISSEMENT`, `type`, `date`, `message`),
+les anomalies d'ouverture des stands, et le rapport de faisabilité — `null`
+sans stand ou sans créneau. `GET /api/creneaux/diagnostic` décrit la grille et
+suggère un mode (`modeProbable`, `modeCertain`) sans jamais trancher : seules
+des familles ou des créneaux de couverture de pause prouvent des vacations.
+
+Le **découpage** lui-même : `GET /api/decoupage/preview` rend les vacations
+que les paramètres produiraient, `POST /api/decoupage/generer` (corps vide,
+`204`) les écrit à la place des amplitudes et efface le planning résolu.
+
 ### Avertissements de saisie
 
 Ces incohérences ne sont **pas** des refus : une indisponibilité hors des

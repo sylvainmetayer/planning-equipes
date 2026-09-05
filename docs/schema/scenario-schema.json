@@ -270,6 +270,10 @@
         "$ref" : "#/$defs/NiveauCompetence"
       }
     },
+    "ModeGrilleCreneaux" : {
+      "type" : "string",
+      "enum" : [ "AMPLITUDES", "VACATIONS" ]
+    },
     "ModeHoraire" : {
       "type" : "string",
       "enum" : [ "OUVERTURE", "FERMETURE" ]
@@ -349,6 +353,9 @@
         },
         "fenetreRepasSoirFin" : {
           "$ref" : "#/$defs/LocalTime"
+        },
+        "modeGrille" : {
+          "$ref" : "#/$defs/ModeGrilleCreneaux"
         },
         "nombreFamillesDecalage" : {
           "type" : "integer",

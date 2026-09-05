@@ -12,6 +12,7 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
@@ -96,7 +97,7 @@ public class ParametresRepository {
                         duree_vacation_max_minutes, duree_chevauchement_minutes,
                         duree_pause_repas_minutes, fenetre_repas_midi_debut, fenetre_repas_midi_fin,
                         fenetre_repas_soir_debut, fenetre_repas_soir_fin, strategie_couverture_pendant_pause,
-                        nombre_familles_decalage, duree_decalage_max_minutes
+                        nombre_familles_decalage, duree_decalage_max_minutes, mode_grille
                         FROM parametres_decoupage
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -116,6 +117,7 @@ public class ParametresRepository {
                                 .valueOf(rs.getString("strategie_couverture_pendant_pause")));
                 parametres.setNombreFamillesDecalage(rs.getInt("nombre_familles_decalage"));
                 parametres.setDureeDecalageMaxMinutes(rs.getInt("duree_decalage_max_minutes"));
+                parametres.setModeGrille(ModeGrilleCreneaux.valueOf(rs.getString("mode_grille")));
                 return parametres;
             }
             return new ParametresDecoupage();
@@ -132,8 +134,8 @@ public class ParametresRepository {
                         duree_vacation_min_minutes, duree_vacation_max_minutes, duree_chevauchement_minutes,
                         duree_pause_repas_minutes, fenetre_repas_midi_debut, fenetre_repas_midi_fin,
                         fenetre_repas_soir_debut, fenetre_repas_soir_fin, strategie_couverture_pendant_pause,
-                        nombre_familles_decalage, duree_decalage_max_minutes)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        nombre_familles_decalage, duree_decalage_max_minutes, mode_grille)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET duree_vacation_cible_minutes = EXCLUDED.duree_vacation_cible_minutes,
                         duree_vacation_min_minutes = EXCLUDED.duree_vacation_min_minutes,
@@ -146,7 +148,8 @@ public class ParametresRepository {
                         fenetre_repas_soir_fin = EXCLUDED.fenetre_repas_soir_fin,
                         strategie_couverture_pendant_pause = EXCLUDED.strategie_couverture_pendant_pause,
                         nombre_familles_decalage = EXCLUDED.nombre_familles_decalage,
-                        duree_decalage_max_minutes = EXCLUDED.duree_decalage_max_minutes""")) {
+                        duree_decalage_max_minutes = EXCLUDED.duree_decalage_max_minutes,
+                        mode_grille = EXCLUDED.mode_grille""")) {
             ps.setInt(2, parametres.getDureeVacationCibleMinutes());
             ps.setInt(3, parametres.getDureeVacationMinMinutes());
             ps.setInt(4, parametres.getDureeVacationMaxMinutes());
@@ -158,6 +161,7 @@ public class ParametresRepository {
             ps.setObject(10, parametres.getFenetreRepasSoirFin());
             ps.setString(11, parametres.getStrategieCouverturePendantPause().name());
             ps.setInt(12, parametres.getNombreFamillesDecalage());
+            ps.setString(14, parametres.getModeGrille().name());
             ps.setInt(13, parametres.getDureeDecalageMaxMinutes());
             ps.executeUpdate();
         } catch (SQLException e) {

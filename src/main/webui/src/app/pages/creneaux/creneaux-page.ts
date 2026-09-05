@@ -2,6 +2,7 @@ import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -26,16 +27,32 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableNavigation } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
-import { CauseInfaisabilite, Creneau } from '../../core/models';
+import {
+  CauseInfaisabilite,
+  Creneau,
+  DiagnosticGrille,
+  ModeGrilleCreneaux,
+  ParametresDecoupage,
+  RapportGrille,
+  RapportRecurrence
+} from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-dialog';
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
+import { CreneauSerieData, CreneauSerieDialog } from './creneau-serie-dialog';
+import { bilanGrille, iconeAnomalieGrille, trierAnomalies } from './grille-creneaux';
 
 /**
  * Timeslots CRUD: event day, date and hours of every schedulable slot,
  *
  * Slots are multi-selectable, for a bulk delete or to move a whole batch to
  * another group / realign its hours.
+ *
+ * <p>The grid is also read as a whole here: the edition declares what its
+ * créneaux <em>are</em> (amplitudes to slice, or final vacations — the data
+ * alone cannot tell, and every verdict depends on it), a rule adds a whole
+ * series at once, and the server's verdict on the grid is on the page rather
+ * than behind an assistant.</p>
  */
 @Component({
   selector: 'app-creneaux-page',
@@ -49,6 +66,7 @@ import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
     MatSortModule,
     MatTableModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
@@ -181,6 +199,106 @@ export class CreneauxPage {
   constructor() {
     void this.crud.reload();
     void this.problemes.reloadFeasibility();
+    void this.chargerGrille();
+  }
+
+  /* -------------------------- The grid as a whole -------------------------- */
+
+  /** The edition's découpage settings, carrying the declared mode; `null` until read. */
+  protected readonly parametresDecoupage = signal<ParametresDecoupage | null>(null);
+  protected readonly mode = computed<ModeGrilleCreneaux>(() => this.parametresDecoupage()?.modeGrille ?? 'AMPLITUDES');
+  protected readonly diagnostic = signal<DiagnosticGrille | null>(null);
+  protected readonly controle = signal<RapportGrille | null>(null);
+  protected readonly controleLoading = signal(false);
+  protected readonly modeLoading = signal(false);
+
+  protected readonly bilan = computed(() => {
+    const controle = this.controle();
+    return controle ? bilanGrille(controle) : null;
+  });
+  protected readonly anomaliesGrille = computed(() => trierAnomalies(this.controle()?.anomalies ?? []));
+  /** The data proves a mode the declaration contradicts: worth one line, never a silent switch. */
+  protected readonly desaccordMode = computed(() => {
+    const diagnostic = this.diagnostic();
+    return diagnostic !== null && diagnostic.modeCertain && diagnostic.modeProbable !== null && diagnostic.modeProbable !== this.mode();
+  });
+  protected readonly iconeAnomalieGrille = iconeAnomalieGrille;
+
+  private async chargerGrille(): Promise<void> {
+    try {
+      this.parametresDecoupage.set(await this.api.get<ParametresDecoupage>('/api/parametres-decoupage'));
+    } catch (error) {
+      this.crud.reportError(error);
+      return;
+    }
+    await this.rechargerVerdict();
+  }
+
+  /** The diagnostic and the verdict, read again after anything that changes the grid or its mode. */
+  protected async rechargerVerdict(): Promise<void> {
+    this.controleLoading.set(true);
+    try {
+      const [diagnostic, controle] = await Promise.all([
+        this.api.get<DiagnosticGrille>('/api/creneaux/diagnostic'),
+        this.api.get<RapportGrille>('/api/creneaux/controle')
+      ]);
+      this.diagnostic.set(diagnostic);
+      this.controle.set(controle);
+    } catch (error) {
+      this.crud.reportError(error);
+    } finally {
+      this.controleLoading.set(false);
+    }
+  }
+
+  /** Declares the mode, with the rest of the découpage settings untouched, then reads the verdict in it. */
+  protected async changerMode(mode: ModeGrilleCreneaux): Promise<void> {
+    const actuels = this.parametresDecoupage();
+    // Only the two modes are ever written: a toggle group settling on nothing
+    // would otherwise send an absent mode, which the server reads as the
+    // default — a silent reset.
+    if ((mode !== 'AMPLITUDES' && mode !== 'VACATIONS') || !actuels || actuels.modeGrille === mode || this.modeLoading()) {
+      return;
+    }
+    this.modeLoading.set(true);
+    try {
+      this.parametresDecoupage.set(
+        await this.api.put<ParametresDecoupage>('/api/parametres-decoupage', { ...actuels, modeGrille: mode })
+      );
+      await this.rechargerVerdict();
+    } catch (error) {
+      this.crud.reportError(error);
+    } finally {
+      this.modeLoading.set(false);
+    }
+  }
+
+  /** « Créer une série » : the dialog previews and writes; the page only has to read again. */
+  protected openSerie(): void {
+    if (this.editingLocked()) {
+      return;
+    }
+    const ref = this.dialog.open<CreneauSerieDialog, CreneauSerieData, RapportRecurrence | null>(CreneauSerieDialog, {
+      data: { mode: this.mode() },
+      width: '44rem',
+      autoFocus: 'first-tabbable'
+    });
+    ref.afterClosed().subscribe((rapport) => {
+      if (rapport) {
+        void this.apresSerie(rapport);
+      }
+    });
+  }
+
+  private async apresSerie(rapport: RapportRecurrence): Promise<void> {
+    await Promise.all([this.crud.reload(), this.resolution.reload(), this.problemes.reloadFeasibility()]);
+    this.controle.set(rapport.controle);
+    this.diagnostic.set(await this.api.get<DiagnosticGrille>('/api/creneaux/diagnostic').catch(() => this.diagnostic()));
+    this.notifications.notify({
+      title: $localize`:@@creneaux.serie.done:${rapport.nombreGeneres}:count: créneau(x) ajoutés à la grille.`,
+      variant: 'success',
+      timeout: 6000
+    });
   }
 
   protected openCreate(): void {
@@ -264,6 +382,9 @@ export class CreneauxPage {
     try {
       await this.api.post('/api/decoupage/generer', {});
       await Promise.all([this.crud.reload(), this.resolution.reload()]);
+      // What the grid now holds is what the découpage produced: say so, so
+      // the verdict reads overlaps as staggered vacations and not as mistakes.
+      await this.changerMode('VACATIONS');
       this.notifications.notify({
         title: $localize`:@@decoupage.generated:Découpage généré : les vacations ont remplacé les amplitudes.`,
         variant: 'success',

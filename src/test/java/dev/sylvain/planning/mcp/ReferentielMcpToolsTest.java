@@ -176,9 +176,12 @@ class ReferentielMcpToolsTest {
                 .hasMessageContaining("tous=true");
     }
 
+    /** The edition declares its mode once, on the Créneaux page: a call naming none reads that declaration. */
     @Test
-    void unModeDeGrilleManquantDemandeDeTrancherPlutotQueDeSupposer() {
-        assertThatThrownBy(() -> creneauTools.valider_creneaux(null, null))
+    void unModeDeGrilleManquantLitLeModeDeclareDeLEdition() {
+        assertThat(creneauTools.valider_creneaux(null, null).mode())
+                .isEqualTo(referenceDataService.getParametresDecoupage().getModeGrille());
+        assertThatThrownBy(() -> creneauTools.valider_creneaux("BIDULE", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("AMPLITUDES");
     }

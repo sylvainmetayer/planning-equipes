@@ -51,6 +51,8 @@ public class ParametresDecoupage {
     /** No staggering by default: every stand shares the same relay grid, exactly the historical behaviour. */
     public static final int NOMBRE_FAMILLES_DECALAGE_PAR_DEFAUT = 1;
     public static final int DUREE_DECALAGE_MAX_MINUTES_PAR_DEFAUT = 0;
+    /** What the Créneaux screen presumed silently before the mode was declared. */
+    public static final ModeGrilleCreneaux MODE_GRILLE_PAR_DEFAUT = ModeGrilleCreneaux.AMPLITUDES;
 
     private int dureeVacationCibleMinutes = DUREE_VACATION_CIBLE_MINUTES_PAR_DEFAUT;
     private int dureeVacationMinMinutes = DUREE_VACATION_MIN_MINUTES_PAR_DEFAUT;
@@ -64,8 +66,24 @@ public class ParametresDecoupage {
     private LocalTime fenetreRepasSoirDebut = FENETRE_REPAS_SOIR_DEBUT_PAR_DEFAUT;
     private LocalTime fenetreRepasSoirFin = FENETRE_REPAS_SOIR_FIN_PAR_DEFAUT;
     private PauseCoverageStrategy strategieCouverturePendantPause = PauseCoverageStrategy.FERMETURE;
+    private ModeGrilleCreneaux modeGrille = MODE_GRILLE_PAR_DEFAUT;
 
     public ParametresDecoupage() {
+    }
+
+    /**
+     * How the edition's créneaux are to be read — see {@link ModeGrilleCreneaux}.
+     * Kept with the découpage settings because that is the operation the
+     * distinction governs: {@link ModeGrilleCreneaux#AMPLITUDES} is what the
+     * découpage consumes, {@link ModeGrilleCreneaux#VACATIONS} what it
+     * produces. Never {@code null}: a missing value reads as the default.
+     */
+    public ModeGrilleCreneaux getModeGrille() {
+        return modeGrille;
+    }
+
+    public void setModeGrille(ModeGrilleCreneaux modeGrille) {
+        this.modeGrille = modeGrille != null ? modeGrille : MODE_GRILLE_PAR_DEFAUT;
     }
 
     public int getDureeVacationCibleMinutes() {

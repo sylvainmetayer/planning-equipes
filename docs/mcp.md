@@ -296,6 +296,16 @@ qu'en l'absence de filtre par stand ou par relais : ils appartiennent à la
 journée, pas à un stand. La déclaration `pauseSurPoste` se lit et se règle par
 `consulter_parametres_legaux` / `modifier_parametres_legaux`.
 
+## Le mode de la grille se déclare une fois
+
+`valider_creneaux`, `previsualiser_creneaux_recurrents` et
+`creer_creneaux_recurrents` lisent la grille en `AMPLITUDES` ou en `VACATIONS`,
+et le verdict change avec le mode. L'argument `mode` reste accepté, mais il
+n'est plus obligatoire : omis, c'est le mode **déclaré par l'édition** qui
+s'applique — `modeGrille` de `modifier_parametres_decoupage`, la valeur que
+l'organisateur choisit sur la page Créneaux. `diagnostiquer_grille_creneaux`
+continue de dire ce que la grille contient, sans trancher.
+
 ## Hors périmètre, volontairement
 
 | Ce qui n'a pas d'outil | Pourquoi |

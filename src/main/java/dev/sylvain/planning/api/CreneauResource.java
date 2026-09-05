@@ -2,7 +2,17 @@ package dev.sylvain.planning.api;
 
 import java.util.List;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.Set;
+
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.service.CreneauGridService;
+import dev.sylvain.planning.service.CreneauGridService.DiagnosticGrille;
+import dev.sylvain.planning.service.CreneauGridService.RapportGrille;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
 import dev.sylvain.planning.service.WrittenCreneau;
@@ -20,7 +30,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * CRUD of the timeslot grid.
+ * CRUD of the timeslot grid, plus the grid read as a whole: a recurrence
+ * rule that adds a series at once, the verdict on what is there, and the
+ * diagnostic of what it looks like — the same operations the MCP tools
+ * offer an assistant, reachable from the Créneaux screen.
  */
 @Path("/creneaux")
 @Produces(MediaType.APPLICATION_JSON)
@@ -33,6 +46,66 @@ public class CreneauResource {
     @GET
     public List<Creneau> listCreneaux() {
         return referenceDataService.listCreneaux();
+    }
+
+    /**
+     * A recurrence rule as the screen sends it: the day selector of the stand
+     * horaires, and the windows already structured (the client parses the
+     * compact line). A créneau is the day's amplitude itself, so every window
+     * needs its end.
+     */
+    public record RecurrenceRequest(TypeJoursHoraire jours, LocalDate dateDebut, LocalDate dateFin,
+            Set<DayOfWeek> joursSemaine, Set<LocalDate> dates, Set<LocalDate> exclusions,
+            List<FenetreHoraire> fenetres) {
+
+        CreneauGridService.RegleRecurrence regle() {
+            return new CreneauGridService.RegleRecurrence(jours, dateDebut, dateFin, joursSemaine, dates,
+                    exclusions, fenetres);
+        }
+    }
+
+    /** What a rule produced (or would produce), and the verdict on the resulting grid. */
+    public record RapportRecurrence(int nombreGeneres, List<Creneau> creneaux, RapportGrille controle) {
+
+        static RapportRecurrence of(ReferenceDataService.RecurrenceGrille resultat) {
+            return new RapportRecurrence(resultat.creneaux().size(), resultat.creneaux(), resultat.controle());
+        }
+    }
+
+    /**
+     * The créneaux a rule would add, and the verdict on the grid that would
+     * result — nothing written. {@code mode} defaults to the edition's
+     * declared one ({@code parametresDecoupage.modeGrille}).
+     */
+    @POST
+    @Path("/recurrence/apercu")
+    public RapportRecurrence previewRecurrence(RecurrenceRequest requete, @QueryParam("mode") ModeGrilleCreneaux mode) {
+        return RapportRecurrence.of(referenceDataService.previewRecurrence(requete.regle(), mode));
+    }
+
+    /**
+     * Adds the rule's créneaux to the grid: existing ones are left untouched,
+     * a rule that repeats one shows up as {@code DOUBLON} in the verdict.
+     * {@code 400} on a malformed rule.
+     */
+    @POST
+    @Path("/recurrence")
+    public RapportRecurrence createRecurrence(RecurrenceRequest requete, @QueryParam("mode") ModeGrilleCreneaux mode) {
+        return RapportRecurrence.of(referenceDataService.createRecurrence(requete.regle(), mode));
+    }
+
+    /** The grid's verdict — its own anomalies, the stand openings, the staffing — read in {@code mode}. */
+    @GET
+    @Path("/controle")
+    public RapportGrille validateGrid(@QueryParam("mode") ModeGrilleCreneaux mode) {
+        return referenceDataService.controlerGrille(mode);
+    }
+
+    /** What the grid looks like, and which mode the data suggests — a suggestion, never a decision. */
+    @GET
+    @Path("/diagnostic")
+    public DiagnosticGrille diagnoseGrid() {
+        return referenceDataService.diagnoseGrille();
     }
 
     /**

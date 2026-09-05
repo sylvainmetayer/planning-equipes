@@ -34,3 +34,81 @@
   margin: 0 0 0.75rem;
   line-height: 1.9;
 }
+
+/* What the grid is declared to be, on one line above the list: a label, the
+   two-way toggle, and the server's own reading of the data beside it — in
+   warning colour when the two disagree. */
+.grille-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.grille-mode-libelle {
+  font-weight: 600;
+}
+
+.grille-diagnostic {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.grille-diagnostic mat-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.grille-diagnostic-desaccord {
+  color: var(--mat-sys-error);
+}
+
+.controle-bilan {
+  margin-bottom: 0.75rem;
+}
+
+.controle-anomalies,
+.serie-anomalies {
+  margin-bottom: 0.75rem;
+}
+
+/* A warning reads apart from an error: same list, softer icon. */
+.controle-anomalies li.anomalie-avertissement mat-icon,
+.serie-anomalies li.anomalie-avertissement mat-icon {
+  color: var(--mat-sys-tertiary);
+}
+
+/* The preview of a series: what would be added, then the verdict. Greyed
+   when the rule was edited since, so it is never mistaken for the current one. */
+.serie-apercu {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  padding-top: 0.75rem;
+}
+
+.serie-apercu h3 {
+  margin: 0 0 0.5rem;
+  font: var(--mat-sys-title-small);
+}
+
+.serie-apercu-perimee .decoupage-resume,
+.serie-apercu-perimee .serie-bilan {
+  opacity: 0.5;
+}
+
+.serie-bilan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.serie-bilan-erreur {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}

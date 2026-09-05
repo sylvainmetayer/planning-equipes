@@ -8,6 +8,7 @@ import java.util.NoSuchElementException;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresDecoupage.PauseCoverageStrategy;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -104,6 +105,8 @@ public class ParametresMcpTools {
             @ToolArg(description = "Début de la fenêtre repas du soir (HH:MM)", required = false) String fenetreRepasSoirDebut,
             @ToolArg(description = "Fin de la fenêtre repas du soir (HH:MM)", required = false) String fenetreRepasSoirFin,
             @ToolArg(description = "Couverture pendant la pause : FERMETURE ou RELEVE", required = false) String strategieCouverturePendantPause,
+            @ToolArg(description = "Nature déclarée de la grille de créneaux : AMPLITUDES (journées à découper) ou "
+                    + "VACATIONS (vacations finales)", required = false) String modeGrille,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresDecoupage parametres = referenceDataService.getParametresDecoupage();
         if (dureeVacationCibleMinutes != null) {
@@ -143,6 +146,9 @@ public class ParametresMcpTools {
             parametres.setStrategieCouverturePendantPause(
                     McpArgs.enumeration(PauseCoverageStrategy.class, strategieCouverturePendantPause,
                             "strategieCouverturePendantPause"));
+        }
+        if (modeGrille != null) {
+            parametres.setModeGrille(McpArgs.enumeration(ModeGrilleCreneaux.class, modeGrille, "modeGrille"));
         }
         return toView(referenceDataService.updateParametresDecoupage(parametres));
     }
@@ -293,7 +299,7 @@ public class ParametresMcpTools {
                 parametres.getNombreFamillesDecalage(), parametres.getDureeDecalageMaxMinutes(),
                 parametres.getFenetreRepasMidiDebut(), parametres.getFenetreRepasMidiFin(),
                 parametres.getFenetreRepasSoirDebut(), parametres.getFenetreRepasSoirFin(),
-                parametres.getStrategieCouverturePendantPause());
+                parametres.getStrategieCouverturePendantPause(), parametres.getModeGrille());
     }
 
     static ParametresSolveurView toView(ParametresSolveur parametres) {
@@ -316,7 +322,7 @@ public class ParametresMcpTools {
             int dureeVacationMaxMinutes, int dureeChevauchementMinutes, int dureePauseRepasMinutes,
             int nombreFamillesDecalage, int dureeDecalageMaxMinutes, LocalTime fenetreRepasMidiDebut,
             LocalTime fenetreRepasMidiFin, LocalTime fenetreRepasSoirDebut, LocalTime fenetreRepasSoirFin,
-            PauseCoverageStrategy strategieCouverturePendantPause) {
+            PauseCoverageStrategy strategieCouverturePendantPause, ModeGrilleCreneaux modeGrille) {
     }
 
     public record ParametresSolveurView(int dureeResolutionSecondes) {

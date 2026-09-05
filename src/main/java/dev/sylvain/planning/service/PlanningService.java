@@ -65,6 +65,7 @@ import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -1053,6 +1054,7 @@ public class PlanningService {
         item.put("strategieCouverturePendantPause", parametres.getStrategieCouverturePendantPause().name());
         item.put("nombreFamillesDecalage", parametres.getNombreFamillesDecalage());
         item.put("dureeDecalageMaxMinutes", parametres.getDureeDecalageMaxMinutes());
+        item.put("modeGrille", parametres.getModeGrille().name());
         return item;
     }
 
@@ -1713,6 +1715,9 @@ public class PlanningService {
         }
         readInt(data, "nombreFamillesDecalage", parametres::setNombreFamillesDecalage);
         readInt(data, "dureeDecalageMaxMinutes", parametres::setDureeDecalageMaxMinutes);
+        if (data.get("modeGrille") != null) {
+            parametres.setModeGrille(ModeGrilleCreneaux.valueOf((String) data.get("modeGrille")));
+        }
         return Optional.of(parametres);
     }
 

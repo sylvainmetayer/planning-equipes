@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Set;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -78,6 +80,9 @@ public class ReferenceDataService implements ReferenceData {
 
     @Inject
     CoherenceService coherence;
+
+    @Inject
+    CreneauGridService grille;
 
     /* ------------------------------ Animateurs ----------------------------- */
 
@@ -258,6 +263,49 @@ public class ReferenceDataService implements ReferenceData {
 
     public ReferenceUsage countCreneauUsages(List<String> ids) {
         return usages.forCreneaux(ids);
+    }
+
+    /* ---------------------------- Grid as a whole ---------------------------- */
+
+    /**
+     * The grid's verdict, read in {@code mode} — the edition's declared mode
+     * when the caller names none. Stands come resolved, exactly as the solver
+     * reads them.
+     */
+    public CreneauGridService.RapportGrille controlerGrille(List<Creneau> creneaux, ModeGrilleCreneaux mode) {
+        ModeGrilleCreneaux effectif = mode != null ? mode : getParametresDecoupage().getModeGrille();
+        return grille.validate(creneaux, listSolvedStands(), listAnimateurs(), effectif, getParametresDecoupage(),
+                getParametresLegaux());
+    }
+
+    public CreneauGridService.RapportGrille controlerGrille(ModeGrilleCreneaux mode) {
+        return controlerGrille(listCreneaux(), mode);
+    }
+
+    public CreneauGridService.DiagnosticGrille diagnoseGrille() {
+        return CreneauGridService.diagnose(listCreneaux(), getParametresDecoupage());
+    }
+
+    /**
+     * What a recurrence rule would add, and the verdict on the grid that would
+     * result — nothing written.
+     */
+    public RecurrenceGrille previewRecurrence(CreneauGridService.RegleRecurrence regle,
+            ModeGrilleCreneaux mode) {
+        List<Creneau> generes = CreneauGridService.generateRecurrence(regle);
+        List<Creneau> resultante = new ArrayList<>(listCreneaux());
+        resultante.addAll(generes);
+        return new RecurrenceGrille(generes, controlerGrille(resultante, mode));
+    }
+
+    /** Adds the rule's créneaux to the grid — never replacing it — and reports the verdict on the whole. */
+    public RecurrenceGrille createRecurrence(CreneauGridService.RegleRecurrence regle, ModeGrilleCreneaux mode) {
+        List<Creneau> crees = createCreneaux(CreneauGridService.generateRecurrence(regle));
+        return new RecurrenceGrille(crees, controlerGrille(mode));
+    }
+
+    /** The créneaux a rule produced (or would produce), and the resulting grid's verdict. */
+    public record RecurrenceGrille(List<Creneau> creneaux, CreneauGridService.RapportGrille controle) {
     }
 
     /* ------------------------------- Slicing -------------------------------- */

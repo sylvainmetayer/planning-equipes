@@ -800,6 +800,76 @@ export type StrategieCouverturePendantPause = 'FERMETURE' | 'RELEVE' | 'EFFECTIF
  * `VacationGeneratorService` to split a day-long amplitude into shorter,
  * overlapping work vacations. Never seen by the solver.
  */
+/**
+ * What the créneaux of an edition currently are. Not guessable from the data
+ * with certainty, hence declared once on the Créneaux page: it decides
+ * whether an overlap is a mistake (amplitudes) or the normal shape of
+ * staggered vacations, and whether a ten-hour slot is an amplitude or an
+ * illegal shift.
+ */
+export type ModeGrilleCreneaux = 'AMPLITUDES' | 'VACATIONS';
+
+export type SeveriteGrille = 'ERREUR' | 'AVERTISSEMENT';
+
+export type TypeAnomalieGrille =
+  | 'CRENEAU_INCOMPLET'
+  | 'DUREE_NULLE'
+  | 'DOUBLON'
+  | 'REPOS_QUOTIDIEN_IMPOSSIBLE'
+  | 'CHEVAUCHEMENT'
+  | 'TROU_DANS_LA_JOURNEE'
+  | 'AMPLITUDE_PLUS_COURTE_QUE_LA_VACATION_MINIMALE'
+  | 'VACATION_TROP_LONGUE'
+  | 'DATE_ISOLEE';
+
+export interface AnomalieGrille {
+  severite: SeveriteGrille;
+  type: TypeAnomalieGrille;
+  date: string | null;
+  message: string;
+}
+
+/** `GET /api/creneaux/controle`: the grid's verdict, read in `mode`. */
+export interface RapportGrille {
+  mode: ModeGrilleCreneaux;
+  nombreCreneaux: number;
+  anomalies: AnomalieGrille[];
+  ouvertures: AnomalieOuverture[];
+  /** `null` when there is nothing to judge — no stand, or no créneau. */
+  faisabilite: FeasibilityReport | null;
+}
+
+/** `GET /api/creneaux/diagnostic`: what the grid looks like, and the mode the data suggests. */
+export interface DiagnosticGrille {
+  nombreCreneaux: number;
+  premiereDate: string | null;
+  derniereDate: string | null;
+  nombreFamilles: number;
+  contientCouverturePause: boolean;
+  modeProbable: ModeGrilleCreneaux | null;
+  /** Proven by the data (a family, a meal-pause créneau), or merely inferred from durations. */
+  modeCertain: boolean;
+  explication: string;
+}
+
+/** A recurrence rule as `POST /api/creneaux/recurrence` reads it. */
+export interface RegleRecurrence {
+  jours: TypeJoursHoraire;
+  dateDebut: string | null;
+  dateFin: string | null;
+  joursSemaine: JourSemaine[];
+  dates: string[];
+  exclusions: string[];
+  fenetres: FenetreHoraire[];
+}
+
+/** What a rule produced (or would produce), and the verdict on the resulting grid. */
+export interface RapportRecurrence {
+  nombreGeneres: number;
+  creneaux: Creneau[];
+  controle: RapportGrille;
+}
+
 export interface ParametresDecoupage {
   dureeVacationCibleMinutes: number;
   dureeVacationMinMinutes: number;
@@ -811,6 +881,8 @@ export interface ParametresDecoupage {
   fenetreRepasSoirDebut: string;
   fenetreRepasSoirFin: string;
   strategieCouverturePendantPause: StrategieCouverturePendantPause;
+  /** How the edition's créneaux read: amplitudes still to slice, or final vacations. */
+  modeGrille: ModeGrilleCreneaux;
   /** Nombre de grilles de relais décalées (1 = désactivé, comportement historique inchangé). */
   nombreFamillesDecalage: number;
   /** Étalement (min) des coupures internes des familles autour de la cible ; ignoré si `nombreFamillesDecalage` ≤ 1. */

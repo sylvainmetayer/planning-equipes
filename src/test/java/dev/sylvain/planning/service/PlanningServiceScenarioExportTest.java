@@ -210,6 +210,7 @@ class PlanningServiceScenarioExportTest {
                 .containsEntry("nombreFamillesDecalage", 5)
                 .containsEntry("dureeDecalageMaxMinutes", 120)
                 .containsEntry("strategieCouverturePendantPause", "EFFECTIF_REDUIT")
+                .containsEntry("modeGrille", "AMPLITUDES")
                 // Times stay strings, like everywhere else in the file.
                 .containsEntry("fenetreRepasMidiDebut", "12:00");
         assertThat((List<Map<String, Object>>) parsed.get("typologies"))

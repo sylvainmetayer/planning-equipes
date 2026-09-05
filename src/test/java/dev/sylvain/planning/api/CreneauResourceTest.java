@@ -180,4 +180,104 @@ class CreneauResourceTest {
                 .body("avertissements", notNullValue())
                 .extract().path("creneau.id");
     }
+
+    /* ------------------------ The grid as a whole ------------------------ */
+
+    private static final String REGLE_SEMAINE = """
+            {
+              "jours":"JOURS_SEMAINE",
+              "dateDebut":"2031-03-03",
+              "dateFin":"2031-03-09",
+              "joursSemaine":["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"],
+              "fenetres":[{"heureDebut":"09:00:00","heureFin":"12:00:00"},{"heureDebut":"14:00:00","heureFin":"18:00:00"}]
+            }
+            """;
+
+    /** The preview is the whole point of a rule that writes dozens of rows at once: it must write none. */
+    @Test
+    void lApercuDUneRecurrenceNEcritRien() {
+        int avant = countCreneaux();
+
+        given()
+                .contentType("application/json")
+                .body(REGLE_SEMAINE)
+                .when().post("/api/creneaux/recurrence/apercu?mode=AMPLITUDES")
+                .then()
+                .statusCode(200)
+                .body("nombreGeneres", equalTo(10))
+                .body("creneaux.size()", equalTo(10))
+                .body("controle.mode", equalTo("AMPLITUDES"))
+                .body("controle.anomalies.type", org.hamcrest.Matchers.hasItem("TROU_DANS_LA_JOURNEE"));
+
+        assertThat(countCreneaux()).isEqualTo(avant);
+    }
+
+    @Test
+    void uneRecurrenceAjouteSesCreneauxEtUneRepetitionEstSignaleeEnDoublon() {
+        int avant = countCreneaux();
+
+        given().contentType("application/json").body(REGLE_SEMAINE)
+                .when().post("/api/creneaux/recurrence?mode=AMPLITUDES")
+                .then().statusCode(200)
+                .body("nombreGeneres", equalTo(10))
+                .body("creneaux[0].id", notNullValue());
+        assertThat(countCreneaux()).isEqualTo(avant + 10);
+
+        // Added, never replaced: the same rule again doubles the rows, and the verdict says so.
+        given().contentType("application/json").body(REGLE_SEMAINE)
+                .when().post("/api/creneaux/recurrence?mode=AMPLITUDES")
+                .then().statusCode(200)
+                .body("controle.anomalies.find { it.type == 'DOUBLON' }.severite", equalTo("ERREUR"));
+
+        // Cleaned up so the other tests of the class keep their counts.
+        List<Integer> ids = given().when().get("/api/creneaux").then().extract()
+                .jsonPath().getList("findAll { it.date.startsWith('2031-03') }.id", Integer.class);
+        for (Integer id : ids) {
+            given().when().delete("/api/creneaux/" + id).then().statusCode(204);
+        }
+    }
+
+    @Test
+    void uneRecurrenceMalFormeeEstRefusee() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {"jours":"DATES","dates":[],"fenetres":[{"heureDebut":"09:00:00","heureFin":"12:00:00"}]}
+                        """)
+                .when().post("/api/creneaux/recurrence/apercu")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("DATES"));
+    }
+
+    /** No mode on the call: the edition's declared one applies, and it is what the screen persists. */
+    @Test
+    void leControleLitLeModeDeclareDeLEditionQuandLAppelNEnNommePas() {
+        io.restassured.path.json.JsonPath parametres = given().when().get("/api/parametres-decoupage")
+                .then().statusCode(200).extract().jsonPath();
+        java.util.Map<String, Object> corps = new java.util.LinkedHashMap<>(parametres.getMap("$"));
+        corps.put("modeGrille", "VACATIONS");
+        given().contentType("application/json").body(corps)
+                .when().put("/api/parametres-decoupage")
+                .then().statusCode(200).body("modeGrille", equalTo("VACATIONS"));
+
+        given().when().get("/api/creneaux/controle")
+                .then().statusCode(200)
+                .body("mode", equalTo("VACATIONS"))
+                .body("nombreCreneaux", notNullValue());
+        given().when().get("/api/creneaux/controle?mode=AMPLITUDES")
+                .then().statusCode(200)
+                .body("mode", equalTo("AMPLITUDES"));
+
+        corps.put("modeGrille", "AMPLITUDES");
+        given().contentType("application/json").body(corps).when().put("/api/parametres-decoupage").then().statusCode(200);
+    }
+
+    @Test
+    void leDiagnosticDecritLaGrilleSansTrancher() {
+        given().when().get("/api/creneaux/diagnostic")
+                .then().statusCode(200)
+                .body("nombreCreneaux", notNullValue())
+                .body("explication", notNullValue());
+    }
 }

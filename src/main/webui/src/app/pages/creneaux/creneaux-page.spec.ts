@@ -49,6 +49,59 @@ function cause(manque: number): CauseInfaisabilite {
   };
 }
 
+const PARAMETRES_DECOUPAGE = {
+  dureeVacationCibleMinutes: 300,
+  dureeVacationMinMinutes: 180,
+  dureeVacationMaxMinutes: 360,
+  dureeChevauchementMinutes: 30,
+  dureePauseRepasMinutes: 45,
+  fenetreRepasMidiDebut: '12:00',
+  fenetreRepasMidiFin: '14:00',
+  fenetreRepasSoirDebut: '19:00',
+  fenetreRepasSoirFin: '21:00',
+  strategieCouverturePendantPause: 'FERMETURE',
+  modeGrille: 'AMPLITUDES',
+  nombreFamillesDecalage: 1,
+  dureeDecalageMaxMinutes: 0
+};
+
+const DIAGNOSTIC = {
+  nombreCreneaux: 1,
+  premiereDate: '2026-08-01',
+  derniereDate: '2026-08-01',
+  nombreFamilles: 1,
+  contientCouverturePause: false,
+  modeProbable: 'AMPLITUDES',
+  modeCertain: false,
+  explication: 'Durée médiane de 120 min : rien ne le prouve.'
+};
+
+const CONTROLE = {
+  mode: 'AMPLITUDES',
+  nombreCreneaux: 1,
+  anomalies: [] as { severite: string; type: string; date: string | null; message: string }[],
+  ouvertures: [] as unknown[],
+  faisabilite: null
+};
+
+/**
+ * The page reads four endpoints on entry: the créneaux list is the store's
+ * business, the three others answer here by URL, with `autres` for whatever
+ * a test wants the remaining calls (the découpage preview) to return.
+ */
+function reponseApi(url: string, autres: unknown = [], surcharges: { parametres?: object; diagnostic?: object; controle?: object } = {}): unknown {
+  if (url.includes('parametres-decoupage')) {
+    return { ...PARAMETRES_DECOUPAGE, ...(surcharges.parametres ?? {}) };
+  }
+  if (url.includes('/creneaux/diagnostic')) {
+    return { ...DIAGNOSTIC, ...(surcharges.diagnostic ?? {}) };
+  }
+  if (url.includes('/creneaux/controle')) {
+    return { ...CONTROLE, ...(surcharges.controle ?? {}) };
+  }
+  return autres;
+}
+
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
   columns: Signal<string[]>;
@@ -67,6 +120,9 @@ type PageInternals = {
   remove: (creneau: Creneau) => Promise<void>;
   removeSelection: () => Promise<void>;
   editSelection: () => void;
+  mode: Signal<string>;
+  changerMode: (mode: string) => Promise<void>;
+  openSerie: () => void;
 };
 
 describe('CreneauxPage', () => {
@@ -77,7 +133,7 @@ describe('CreneauxPage', () => {
     removeMany: vi.fn(async () => 0),
     reportError: vi.fn()
   };
-  const api = { get: vi.fn(), post: vi.fn() };
+  const api = { get: vi.fn(), post: vi.fn(), put: vi.fn() };
   const confirm = { ask: vi.fn() };
   const notifications = { notify: vi.fn() };
   const resolution = { reload: vi.fn(async () => undefined) };
@@ -90,13 +146,15 @@ describe('CreneauxPage', () => {
     }
     api.get.mockReset();
     api.post.mockReset();
+    api.put.mockReset();
     confirm.ask.mockReset();
     notifications.notify.mockReset();
     dialog.open.mockClear();
     causeParCreneauId.set(new Map());
     confirm.ask.mockResolvedValue(true);
-    api.get.mockResolvedValue([]);
+    api.get.mockImplementation(async (url: string) => reponseApi(url));
     api.post.mockResolvedValue(undefined);
+    api.put.mockImplementation(async (_url: string, corps: object) => corps);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -383,7 +441,11 @@ describe('CreneauxPage rendering', () => {
   let fixture: ComponentFixture<CreneauxPage>;
   const causeParCreneauId = signal(new Map<string, CauseInfaisabilite>());
   const editingLocked = signal(false);
-  const api = { get: vi.fn(async (): Promise<Creneau[]> => []), post: vi.fn(async () => undefined) };
+  const api = {
+    get: vi.fn(async (url: string): Promise<unknown> => reponseApi(url)),
+    post: vi.fn(async () => undefined),
+    put: vi.fn(async (_url: string, corps: object) => corps)
+  };
   const confirm = { ask: vi.fn(async () => false) };
   const crud = {
     reload: vi.fn(async () => undefined),
@@ -424,8 +486,10 @@ describe('CreneauxPage rendering', () => {
     TestBed.resetTestingModule();
     editingLocked.set(false);
     causeParCreneauId.set(new Map());
-    api.get.mockClear();
+    api.get.mockReset();
+    api.get.mockImplementation(async (url: string) => reponseApi(url));
     api.post.mockClear();
+    api.put.mockClear();
     confirm.ask.mockClear();
     confirm.ask.mockResolvedValue(false);
     TestBed.configureTestingModule({
@@ -497,10 +561,12 @@ describe('CreneauxPage rendering', () => {
   });
 
   it('previews the slicing without writing anything', async () => {
-    api.get.mockResolvedValue([
-      { id: 1, jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00' },
-      { id: 2, jour: 1, date: '2026-08-01', heureDebut: '12:00', heureFin: '14:00' }
-    ]);
+    api.get.mockImplementation(async (url: string) =>
+      reponseApi(url, [
+        { id: 1, jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00' },
+        { id: 2, jour: 1, date: '2026-08-01', heureDebut: '12:00', heureFin: '14:00' }
+      ])
+    );
     await rendre([creneau({ id: 1, jour: 1 })]);
 
     bouton('Prévisualiser').click();
@@ -537,5 +603,102 @@ describe('CreneauxPage rendering', () => {
       each.textContent!.includes('découpage')
     )!;
     expect(lien.getAttribute('href')).toBe('/parametres');
+  });
+
+  describe('the grid as a whole', () => {
+    /** The page's own reads are plain promises the zoneless fixture does not track: let them settle. */
+    async function rendreEtLire(creneaux: Creneau[]): Promise<void> {
+      await rendre(creneaux);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await fixture.whenStable();
+    }
+
+    function texte(selecteur: string): string {
+      return racine().querySelector(selecteur)!.textContent!.replace(/\s+/g, ' ').trim();
+    }
+
+    it('declares the mode from the découpage settings and writes it back through them, then rereads the verdict', async () => {
+      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
+      const page = fixture.componentInstance as unknown as PageInternals;
+      expect(page.mode()).toBe('AMPLITUDES');
+      const lectures = api.get.mock.calls.filter(([url]) => String(url).includes('/creneaux/controle')).length;
+
+      await page.changerMode('VACATIONS');
+      await fixture.whenStable();
+
+      // One write, carrying the whole settings object with only the mode changed —
+      // never a write on entry, which would reset the mode to its default.
+      expect(api.put).toHaveBeenCalledOnce();
+      expect(api.put).toHaveBeenCalledWith('/api/parametres-decoupage', { ...PARAMETRES_DECOUPAGE, modeGrille: 'VACATIONS' });
+      expect(page.mode()).toBe('VACATIONS');
+      expect(api.get.mock.calls.filter(([url]) => String(url).includes('/creneaux/controle')).length).toBe(lectures + 1);
+      // Nothing to slice on a grid of final vacations.
+      expect(bouton('Générer les vacations').disabled).toBe(true);
+      expect(racine().textContent).toContain("rien à découper");
+    });
+
+    it('says when the data proves a mode the declaration contradicts', async () => {
+      api.get.mockImplementation(async (url: string) =>
+        reponseApi(url, [], { diagnostic: { modeProbable: 'VACATIONS', modeCertain: true, explication: 'Grille déjà découpée : 3 familles.' } })
+      );
+      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
+
+      const diagnostic = racine().querySelector('.grille-diagnostic')!;
+      expect(diagnostic.classList.contains('grille-diagnostic-desaccord')).toBe(true);
+      expect(diagnostic.textContent).toContain('3 familles');
+    });
+
+    it('shows the verdict on the page, errors first, and the stand openings apart', async () => {
+      api.get.mockImplementation(async (url: string) =>
+        reponseApi(url, [], {
+          controle: {
+            anomalies: [
+              { severite: 'AVERTISSEMENT', type: 'TROU_DANS_LA_JOURNEE', date: '2026-08-01', message: 'Trou de 12:00 à 14:00' },
+              { severite: 'ERREUR', type: 'DOUBLON', date: '2026-08-01', message: 'Doublon 10:00-12:00' }
+            ],
+            ouvertures: [{ type: 'STAND_JAMAIS_OUVERT', standId: 'S1', standNom: 'Stand un', date: null, message: 'Jamais ouvert' }],
+            faisabilite: { feasible: false, manqueAnimateurs: 2, causes: [], totalCauses: 1, message: 'Il manque 2 animateurs.' }
+          }
+        })
+      );
+      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
+
+      const messages = Array.from(racine().querySelectorAll('.controle-anomalies li')).map((each) => each.textContent!.replace(/\s+/g, ' ').trim());
+      expect(messages[0]).toContain('Doublon');
+      expect(messages[1]).toContain('Trou');
+      expect(messages[2]).toContain('Stand un');
+      expect(texte('.controle-bilan')).toContain('1 erreur(s)');
+      expect(texte('.controle-bilan')).toContain('Il manque 2 animateurs.');
+    });
+
+    it('says so when there is nothing to report', async () => {
+      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
+      expect(racine().textContent).toContain('Rien à signaler');
+    });
+
+    it('opens the série dialog with the declared mode, locked with the rest', async () => {
+      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
+      const dialog = TestBed.inject(MatDialog) as unknown as { open: ReturnType<typeof vi.fn> };
+
+      bouton('Créer une série').click();
+      expect(dialog.open).toHaveBeenCalledOnce();
+      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: { mode: string } }])[1].data).toEqual({ mode: 'AMPLITUDES' });
+
+      editingLocked.set(true);
+      await fixture.whenStable();
+      expect(bouton('Créer une série').disabled).toBe(true);
+    });
+
+    it('declares the grid as vacations once the découpage has generated them', async () => {
+      confirm.ask.mockResolvedValue(true);
+      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
+
+      bouton('Générer les vacations').click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await fixture.whenStable();
+
+      expect(api.post).toHaveBeenCalledWith('/api/decoupage/generer', {});
+      expect(api.put).toHaveBeenCalledWith('/api/parametres-decoupage', expect.objectContaining({ modeGrille: 'VACATIONS' }));
+    });
   });
 });

@@ -119,9 +119,10 @@ public class CreneauMcpTools {
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
     RapportGrille valider_creneaux(
-            @ToolArg(description = "AMPLITUDES (journées à découper) ou VACATIONS (vacations finales)") String mode,
+            @ToolArg(description = "AMPLITUDES (journées à découper) ou VACATIONS (vacations finales) ; omis = le "
+                    + "mode déclaré de l'édition", required = false) String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return validateGrid(referenceDataService.listCreneaux(), modeObligatoire(mode));
+        return validateGrid(referenceDataService.listCreneaux(), modeOrDeclared(mode));
     }
 
     /* ----------------------------- Grid: recurrence -------------------------- */
@@ -138,7 +139,7 @@ public class CreneauMcpTools {
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
     PrevisualisationRecurrence previsualiser_creneaux_recurrents(
-            @ToolArg(description = "AMPLITUDES ou VACATIONS — demander à l'utilisateur s'il ne l'a pas dit") String mode,
+            @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false) String mode,
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
             @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ), bornes incluses", required = false) String dateDebut,
@@ -147,7 +148,7 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> dates,
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false) List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        ModeGrilleCreneaux modeGrille = modeObligatoire(mode);
+        ModeGrilleCreneaux modeGrille = modeOrDeclared(mode);
         List<Creneau> generes = CreneauGridService.generateRecurrence(
                 regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
         List<Creneau> resultante = new ArrayList<>(referenceDataService.listCreneaux());
@@ -163,7 +164,7 @@ public class CreneauMcpTools {
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = false, openWorldHint = false))
     PrevisualisationRecurrence creer_creneaux_recurrents(
-            @ToolArg(description = "AMPLITUDES ou VACATIONS — demander à l'utilisateur s'il ne l'a pas dit") String mode,
+            @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false) String mode,
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
             @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ), bornes incluses", required = false) String dateDebut,
@@ -172,7 +173,7 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> dates,
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false) List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        ModeGrilleCreneaux modeGrille = modeObligatoire(mode);
+        ModeGrilleCreneaux modeGrille = modeOrDeclared(mode);
         List<Creneau> generes = CreneauGridService.generateRecurrence(
                 regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
         List<Creneau> crees = referenceDataService.createCreneaux(generes);
@@ -252,12 +253,14 @@ public class CreneauMcpTools {
      * {@link ModeGrilleCreneaux} — so an omitted mode comes back as a question
      * the assistant can relay rather than as a silent assumption.
      */
-    private static ModeGrilleCreneaux modeObligatoire(String mode) {
+    /**
+     * The mode named by the call, or the one the edition declares on its
+     * Créneaux page ({@code parametresDecoupage.modeGrille}) when the call
+     * names none — the declaration is the operator's answer, given once.
+     */
+    private ModeGrilleCreneaux modeOrDeclared(String mode) {
         if (mode == null || mode.isBlank()) {
-            throw new BusinessError.Invalid("mode est requis : AMPLITUDES (journées à découper en vacations) "
-                    + "ou VACATIONS (vacations finales, solvables telles quelles). Demander à l'utilisateur "
-                    + "laquelle des deux il veut ; diagnostiquer_grille_creneaux indique ce que contient déjà "
-                    + "l'édition.");
+            return referenceDataService.getParametresDecoupage().getModeGrille();
         }
         return McpArgs.enumeration(ModeGrilleCreneaux.class, mode, "mode");
     }

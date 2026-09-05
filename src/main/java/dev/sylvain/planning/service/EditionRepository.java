@@ -78,7 +78,7 @@ public class EditionRepository {
                             + "duree_chevauchement_minutes, duree_pause_repas_minutes, fenetre_repas_midi_debut, "
                             + "fenetre_repas_midi_fin, fenetre_repas_soir_debut, fenetre_repas_soir_fin, "
                             + "strategie_couverture_pendant_pause, nombre_familles_decalage, "
-                            + "duree_decalage_max_minutes"),
+                            + "duree_decalage_max_minutes, mode_grille"),
             new TableToCopy("parametres_solveur", "duree_resolution_secondes"));
 
     private record TableToCopy(String nom, String colonnes) {

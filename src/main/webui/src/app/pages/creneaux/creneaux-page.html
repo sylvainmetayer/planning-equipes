@@ -10,8 +10,37 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
-      </mat-card-actions>
+    <button matButton type="button" [disabled]="editingLocked()" (click)="openSerie()"
+            i18n-matTooltip="@@creneaux.serie.tooltip"
+            matTooltip="Tous les créneaux d'une journée type, répétés sur les jours choisis, en une règle prévisualisée avant d'écrire.">
+      <mat-icon>playlist_add</mat-icon>
+      <ng-container i18n="@@creneaux.serie.action">Créer une série</ng-container>
+    </button>
+  </mat-card-actions>
   <mat-card-content>
+    <div class="grille-mode">
+      <span class="grille-mode-libelle" i18n="@@creneaux.mode.libelle">Cette grille contient :</span>
+      <mat-button-toggle-group [value]="mode()" (change)="changerMode($event.value)" hideSingleSelectionIndicator
+                               [disabled]="modeLoading() || editingLocked() || !parametresDecoupage()"
+                               i18n-aria-label="@@creneaux.mode.libelle" aria-label="Cette grille contient :">
+        <mat-button-toggle value="AMPLITUDES" i18n-matTooltip="@@creneaux.mode.amplitudes.tooltip"
+                           matTooltip="Des journées entières, à découper en vacations par le découpage. Deux créneaux qui se chevauchent le même jour sont alors une erreur.">
+          <ng-container i18n="@@creneaux.mode.amplitudes">Des amplitudes à découper</ng-container>
+        </mat-button-toggle>
+        <mat-button-toggle value="VACATIONS" i18n-matTooltip="@@creneaux.mode.vacations.tooltip"
+                           matTooltip="Des vacations finales, résolues telles quelles : un créneau est un poste que quelqu'un tiendra. Les chevauchements sont normaux, les durées sont contrôlées contre la loi.">
+          <ng-container i18n="@@creneaux.mode.vacations">Des vacations finales</ng-container>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+      @if (diagnostic(); as diagnostic) {
+        <span class="grille-diagnostic" [class.grille-diagnostic-desaccord]="desaccordMode()">
+          @if (desaccordMode()) {
+            <mat-icon>warning</mat-icon>
+          }
+          {{ diagnostic.explication }}
+        </span>
+      }
+    </div>
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
@@ -99,15 +128,90 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@decoupage.generer.title">Générer le découpage</h2>
-    <mat-card-subtitle i18n="@@decoupage.generer.hint">
-      Les créneaux actuels de l'édition sont lus comme des amplitudes ; les vacations générées les remplacent, et le
-      planning résolu est effacé avec eux.
+    <h2 mat-card-title i18n="@@creneaux.controle.title">Contrôle de la grille</h2>
+    <mat-card-subtitle i18n="@@creneaux.controle.hint">
+      Ce que le serveur pense de la grille telle qu'elle est, lue comme déclarée ci-dessus : ses propres incohérences,
+      les fenêtres de stand qu'elle ne lit pas, et l'effectif qu'elle demande. Une erreur bloque une résolution
+      correcte ; un avertissement mérite un regard.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <div class="card-actions">
-      <button matButton type="button" [disabled]="previewLoading()" (click)="previsualiserDecoupage()">
+      <button matButton type="button" [disabled]="controleLoading()" (click)="rechargerVerdict()">
+        @if (controleLoading()) {
+          <mat-progress-spinner diameter="18" mode="indeterminate" />
+        } @else {
+          <mat-icon>fact_check</mat-icon>
+        }
+        <ng-container i18n="@@creneaux.controle.verifier">Vérifier la grille</ng-container>
+      </button>
+    </div>
+    @if (bilan(); as bilan) {
+      <div class="ouvertures-synthese controle-bilan">
+        <span [class.synthese-alerte]="bilan.erreurs > 0"><strong>{{ bilan.erreurs }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.erreurs">erreur(s)</ng-container></span>
+        <span [class.synthese-partiel]="bilan.avertissements > 0"><strong>{{ bilan.avertissements }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.avertissements">avertissement(s)</ng-container></span>
+        <span><strong>{{ bilan.ouvertures }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.ouvertures">anomalie(s) d'ouverture de stand</ng-container></span>
+        @if (controle()!.faisabilite; as faisabilite) {
+          <span [class.synthese-alerte]="!faisabilite.feasible">{{ faisabilite.message }}</span>
+        }
+      </div>
+      @if (anomaliesGrille().length === 0 && controle()!.ouvertures.length === 0) {
+        <p class="empty-hint" i18n="@@creneaux.controle.rien">Rien à signaler sur la grille.</p>
+      }
+      @if (anomaliesGrille().length > 0) {
+        <ul class="ouvertures-anomalies controle-anomalies">
+          @for (anomalie of anomaliesGrille(); track $index) {
+            <li [class.anomalie-avertissement]="anomalie.severite === 'AVERTISSEMENT'">
+              <mat-icon>{{ iconeAnomalieGrille(anomalie) }}</mat-icon>
+              @if (anomalie.date) {
+                <span class="anomalie-date">{{ anomalie.date }}</span>
+              }
+              <span>{{ anomalie.message }}</span>
+            </li>
+          }
+        </ul>
+      }
+      @if (controle()!.ouvertures.length > 0) {
+        <ul class="ouvertures-anomalies controle-anomalies">
+          @for (anomalie of controle()!.ouvertures; track $index) {
+            <li class="anomalie-avertissement">
+              <mat-icon>storefront</mat-icon>
+              <span class="anomalie-stand">{{ anomalie.standNom || anomalie.standId }}</span>
+              @if (anomalie.date) {
+                <span class="anomalie-date">{{ anomalie.date }}</span>
+              }
+              <span>{{ anomalie.message }}</span>
+            </li>
+          }
+        </ul>
+        <a matButton routerLink="/ouvertures">
+          <mat-icon>storefront</mat-icon>
+          <ng-container i18n="@@creneaux.controle.versOuvertures">Voir les ouvertures des stands</ng-container>
+        </a>
+      }
+    } @else if (controleLoading()) {
+      <p class="empty-hint" i18n="@@creneaux.controle.loading">Contrôle en cours…</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@decoupage.generer.title">Générer le découpage</h2>
+    <mat-card-subtitle i18n="@@decoupage.generer.hint">
+      Les créneaux actuels de l'édition, déclarés comme des amplitudes, sont découpés en vacations qui les
+      remplacent ; le planning résolu est effacé avec eux, et la grille passe en vacations finales.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (mode() === 'VACATIONS') {
+      <p class="empty-hint" i18n="@@decoupage.vacations.hint">
+        La grille est déclarée en vacations finales : il n'y a rien à découper. Déclarez-la en amplitudes ci-dessus
+        pour générer des vacations.
+      </p>
+    }
+    <div class="card-actions">
+      <button matButton type="button" [disabled]="previewLoading() || mode() === 'VACATIONS'" (click)="previsualiserDecoupage()">
         @if (previewLoading()) {
           <mat-progress-spinner diameter="18" mode="indeterminate" />
         } @else {
@@ -115,7 +219,7 @@
         }
         <ng-container i18n="@@decoupage.preview">Prévisualiser</ng-container>
       </button>
-      <button matButton="filled" type="button" [disabled]="genererLoading() || editingLocked()" (click)="genererDecoupage()">
+      <button matButton="filled" type="button" [disabled]="genererLoading() || editingLocked() || mode() === 'VACATIONS'" (click)="genererDecoupage()">
         @if (genererLoading()) {
           <mat-progress-spinner diameter="18" mode="indeterminate" />
         } @else {
