@@ -444,7 +444,7 @@ describe('CreneauxPage rendering', () => {
   const api = {
     get: vi.fn(async (url: string): Promise<unknown> => reponseApi(url)),
     post: vi.fn(async () => undefined),
-    put: vi.fn(async (_url: string, corps: object) => corps)
+    put: vi.fn(async (_url: string, corps: object) => ({ ...PARAMETRES_DECOUPAGE, ...corps }))
   };
   const confirm = { ask: vi.fn(async () => false) };
   const crud = {
@@ -629,7 +629,9 @@ describe('CreneauxPage rendering', () => {
       // One write, carrying the whole settings object with only the mode changed —
       // never a write on entry, which would reset the mode to its default.
       expect(api.put).toHaveBeenCalledOnce();
-      expect(api.put).toHaveBeenCalledWith('/api/parametres-decoupage', { ...PARAMETRES_DECOUPAGE, modeGrille: 'VACATIONS' });
+      // Its own endpoint: sending the whole settings object would let a stale
+      // Paramètres tab revert this choice.
+      expect(api.put).toHaveBeenCalledWith('/api/parametres-decoupage/mode-grille', { modeGrille: 'VACATIONS' });
       expect(page.mode()).toBe('VACATIONS');
       expect(api.get.mock.calls.filter(([url]) => String(url).includes('/creneaux/controle')).length).toBe(lectures + 1);
       // Nothing to slice on a grid of final vacations.
@@ -682,7 +684,10 @@ describe('CreneauxPage rendering', () => {
 
       bouton('Créer une série').click();
       expect(dialog.open).toHaveBeenCalledOnce();
-      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: { mode: string } }])[1].data).toEqual({ mode: 'AMPLITUDES' });
+      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: { mode: string } }])[1].data).toEqual({
+        mode: 'AMPLITUDES',
+        controleActuel: { ...CONTROLE }
+      });
 
       editingLocked.set(true);
       await fixture.whenStable();
@@ -698,7 +703,10 @@ describe('CreneauxPage rendering', () => {
       await fixture.whenStable();
 
       expect(api.post).toHaveBeenCalledWith('/api/decoupage/generer', {});
-      expect(api.put).toHaveBeenCalledWith('/api/parametres-decoupage', expect.objectContaining({ modeGrille: 'VACATIONS' }));
+      // The server declares the grid as vacations when it slices it: the page
+      // reads the settings back rather than writing the mode itself.
+      expect(api.put).not.toHaveBeenCalled();
+      expect(api.get.mock.calls.filter(([url]) => String(url).includes('parametres-decoupage')).length).toBeGreaterThan(1);
     });
   });
 });

@@ -1322,11 +1322,24 @@ sévérité `ERREUR`. `400` sur une règle mal formée.
 résolues telles quelles) ; les données seules ne le prouvent pas, et le verdict
 en dépend — un chevauchement le même jour est une faute entre amplitudes et la
 forme normale de vacations décalées. La déclaration vit dans
-`parametresDecoupage.modeGrille` (`GET`/`PUT /api/parametres-decoupage`,
-défaut `AMPLITUDES`), s'écrit depuis la page Créneaux, et sert de valeur par
+`parametresDecoupage.modeGrille` (défaut `AMPLITUDES`) et sert de valeur par
 défaut à tout appel qui n'en nomme pas — le paramètre `mode` des routes
-ci-dessous comme l'argument des outils MCP. Générer le découpage la bascule
-en `VACATIONS`.
+ci-dessous comme l'argument des outils MCP.
+
+Elle a **son propre écrit**, `PUT /api/parametres-decoupage/mode-grille`, corps
+`{ "modeGrille": "AMPLITUDES" }` : le mode se décide sur la page Créneaux
+tandis que le reste des réglages de découpage s'édite sur Paramètres, et un
+onglet Paramètres resté ouvert le ramènerait en arrière en enregistrant sa
+charge utile. `PUT /api/parametres-decoupage` ignore donc ce champ et conserve
+le mode enregistré. `GET` le rend, comme les autres.
+
+Générer le découpage bascule la déclaration en `VACATIONS` **côté serveur** :
+un assistant qui appelle `generer_decoupage` puis `valider_creneaux` lit bien
+des vacations, et non des amplitudes dont chaque chevauchement de relais
+passerait pour une faute de saisie.
+
+Un `mode` mal orthographié répond `400` — l'énumération est convertie par le
+service, pas par le conteneur, dont l'échec serait un `404`.
 
 `GET /api/creneaux/controle?mode=` rend le verdict : les anomalies de la
 grille (`severite` `ERREUR` ou `AVERTISSEMENT`, `type`, `date`, `message`),
