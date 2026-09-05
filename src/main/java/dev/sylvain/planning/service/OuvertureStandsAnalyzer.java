@@ -123,12 +123,7 @@ public final class OuvertureStandsAnalyzer {
      * ones a solve would actually run on.
      */
     public static RapportOuvertures analyze(List<Stand> stands, List<Creneau> creneaux) {
-        Map<LocalDate, List<Creneau>> creneauxParJour = new TreeMap<>();
-        for (Creneau creneau : creneaux) {
-            if (creneau.getDate() != null && creneau.getHeureDebut() != null && creneau.getHeureFin() != null) {
-                creneauxParJour.computeIfAbsent(creneau.getDate(), key -> new ArrayList<>()).add(creneau);
-            }
-        }
+        Map<LocalDate, List<Creneau>> creneauxParJour = creneauxByDay(creneaux);
         List<JourAmplitude> jours = new ArrayList<>();
         Map<LocalDate, Integer> amplitudeParJour = new LinkedHashMap<>();
         creneauxParJour.forEach((date, duJour) -> {
@@ -266,13 +261,25 @@ public final class OuvertureStandsAnalyzer {
         return anomalies;
     }
 
+    /** The well-formed créneaux, grouped by date in calendar order. */
+    static Map<LocalDate, List<Creneau>> creneauxByDay(List<Creneau> creneaux) {
+        Map<LocalDate, List<Creneau>> creneauxParJour = new TreeMap<>();
+        for (Creneau creneau : creneaux) {
+            if (creneau.getDate() != null && creneau.getHeureDebut() != null && creneau.getHeureFin() != null) {
+                creneauxParJour.computeIfAbsent(creneau.getDate(), key -> new ArrayList<>()).add(creneau);
+            }
+        }
+        return creneauxParJour;
+    }
+
     /**
      * Windows that overlap no créneau of their own date: they were entered, they
      * validate, and they change nothing — the classic "j'ai saisi 14 h-16 h sur un
      * jour qui ferme à midi". Read on the effective lists, so a rule that expands
-     * onto such a day is caught too.
+     * onto such a day is caught too. Shared with {@link CoherenceAnalyzer}, which
+     * says it at write time rather than on the review screen.
      */
-    private static List<Anomaly> fenetresWithoutEffect(Stand stand, Map<LocalDate, List<Creneau>> creneauxParJour) {
+    static List<Anomaly> fenetresWithoutEffect(Stand stand, Map<LocalDate, List<Creneau>> creneauxParJour) {
         List<Anomaly> anomalies = new ArrayList<>();
         TreeSet<String> dejaVues = new TreeSet<>();
         for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {

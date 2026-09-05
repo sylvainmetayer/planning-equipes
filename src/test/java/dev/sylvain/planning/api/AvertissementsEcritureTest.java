@@ -113,6 +113,67 @@ class AvertissementsEcritureTest {
     }
 
     /**
+     * The stand side of the same coupling: a window that overlaps no créneau
+     * of its day is written, and said in the success body — the grid only
+     * ever said it on the review screen before.
+     */
+    @Test
+    void unStandDontLaFenetreNeRecoupeAucunCreneauEstEcritEtSignale() {
+        postCreneau("14:00:00", "18:00:00");
+
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "id":"AVERT-MATIN",
+                          "nom":"Stand du matin",
+                          "typologiesProposees":[],
+                          "effectifMin":1,
+                          "effectifMax":1,
+                          "reserveMajeurs":false,
+                          "horaires":[
+                            {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
+                          ]
+                        }
+                        """)
+                .when().post("/api/stands")
+                .then().statusCode(200)
+                .body("stand.id", equalTo("AVERT-MATIN"))
+                .body("avertissements.type", contains("STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT"))
+                .body("avertissements[0].message", containsString("08:00"));
+
+        // Written despite the warnings, rules included.
+        given().when().get("/api/stands")
+                .then().statusCode(200)
+                .body("find { it.id == 'AVERT-MATIN' }.horaires.size()", equalTo(1));
+    }
+
+    @Test
+    void unStandCoherentNeProduitAucunAvertissementEtRenommerNeRedItRien() {
+        postCreneau("14:00:00", "18:00:00");
+
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "id":"AVERT-STAND",
+                          "nom":"Renommé",
+                          "typologiesProposees":[],
+                          "effectifMin":1,
+                          "effectifMax":2,
+                          "reserveMajeurs":false,
+                          "horaires":[
+                            {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"14:00:00"}]}
+                          ]
+                        }
+                        """)
+                .when().put("/api/stands/AVERT-STAND")
+                .then().statusCode(200)
+                .body("stand.nom", equalTo("Renommé"))
+                .body("avertissements", empty());
+    }
+
+    /**
      * Both animateur warnings at once, and the fiche written all the same —
      * the off day included, which is what proves nothing was rolled back.
      */

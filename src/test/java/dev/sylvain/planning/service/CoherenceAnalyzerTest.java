@@ -467,4 +467,92 @@ class CoherenceAnalyzerTest {
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.CRENEAU_DEBORDE_OUVERTURE_STANDS);
         assertThat(avertissements.get(0).message()).contains("de 23:00 à 00:00");
     }
+
+    /* ---------------------------------- Stand -------------------------------- */
+
+    /** Resolves the recurring rules the way {@link CoherenceService} does, then analyses. */
+    private static List<Avertissement> surStand(Stand avant, Stand apres, List<Creneau> creneaux) {
+        HoraireStandResolver.apply(List.of(apres), creneaux);
+        return CoherenceAnalyzer.onStand(avant, apres, creneaux);
+    }
+
+    @Test
+    void aStandOpenOnEveryDayBySayingNothingIsSilent() {
+        assertThat(surStand(null, stand("LIBRE"), troisJours())).isEmpty();
+    }
+
+    @Test
+    void aWindowOverlappingNoTimeslotOfItsDayIsReportedWithTheDay() {
+        Stand tot = stand("TOT");
+        tot.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+
+        List<Avertissement> avertissements = surStand(null, tot, troisJours());
+
+        assertThat(types(avertissements)).containsExactly(TypeAvertissement.STAND_FENETRE_SANS_EFFET);
+        assertThat(avertissements.get(0).message()).contains("TOT").contains(JOUR_1.toString()).contains("07:00");
+    }
+
+    /** A rule expanding onto every day: the resolved windows are read, not the rule alone. */
+    @Test
+    void aRuleWhoseWindowsMissEveryTimeslotIsReportedOnceAndAsNeverOpen() {
+        Stand nuit = stand("NUIT");
+        nuit.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(21, 0), LocalTime.of(23, 0)))));
+
+        List<Avertissement> avertissements = surStand(null, nuit, troisJours());
+
+        assertThat(types(avertissements)).containsExactly(TypeAvertissement.STAND_FENETRE_SANS_EFFET,
+                TypeAvertissement.STAND_JAMAIS_OUVERT);
+        assertThat(avertissements.get(0).message()).contains("3 fenêtre(s)");
+    }
+
+    @Test
+    void aDatedExceptionOutsideTheEventIsReportedWithBothBounds() {
+        Stand glisse = stand("GLISSE");
+        glisse.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1.plusMonths(1), LocalTime.of(10, 0), null, null));
+
+        List<Avertissement> avertissements = surStand(null, glisse, troisJours());
+
+        assertThat(types(avertissements)).containsExactly(TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT);
+        assertThat(avertissements.get(0).message()).contains(JOUR_1 + " → " + JOUR_3).contains(JOUR_1.plusMonths(1).toString());
+    }
+
+    @Test
+    void aStandClosedEveryDayIsReportedAsNeverOpen() {
+        Stand ferme = stand("FERME");
+        ferme.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE,
+                new FenetreHoraire(LocalTime.of(0, 0), null))));
+
+        assertThat(types(surStand(null, ferme, troisJours()))).containsExactly(TypeAvertissement.STAND_JAMAIS_OUVERT);
+    }
+
+    /** Renaming a stand that has always opened nowhere is not the moment to say so. */
+    @Test
+    void anEditLeavingTheScheduleAloneSaysNothingAboutIt() {
+        Stand avant = stand("FERME");
+        avant.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+        Stand apres = stand("FERME");
+        apres.setNom("Renommé");
+        apres.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+
+        assertThat(surStand(avant, apres, troisJours())).isEmpty();
+    }
+
+    @Test
+    void anEditChangingAWindowWarnsAgain() {
+        Stand avant = stand("BOUGE");
+        avant.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(12, 0), null));
+        Stand apres = stand("BOUGE");
+        apres.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+
+        assertThat(types(surStand(avant, apres, troisJours()))).contains(TypeAvertissement.STAND_FENETRE_SANS_EFFET);
+    }
+
+    @Test
+    void withoutAnyTimeslotNothingIsSaidAboutAStand() {
+        Stand tot = stand("TOT");
+        tot.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+
+        assertThat(surStand(null, tot, new ArrayList<>())).isEmpty();
+    }
 }

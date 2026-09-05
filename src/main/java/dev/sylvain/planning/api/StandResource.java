@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.HoraireCompaction;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
+import dev.sylvain.planning.service.WrittenStand;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -36,15 +37,21 @@ public class StandResource {
         return referenceDataService.listStands();
     }
 
+    /**
+     * Writes the stand and answers it back, together with the non-blocking
+     * warnings its schedule raised ({@link WrittenStand}) — a window that
+     * overlaps no créneau, an exception dated outside the event, a stand that
+     * ends up open nowhere. Written all the same: see {@code Avertissement}.
+     */
     @POST
-    public Response createStand(Stand stand) {
-        return Response.ok(referenceDataService.createStand(stand)).build();
+    public WrittenStand createStand(Stand stand) {
+        return referenceDataService.writeStand(stand);
     }
 
     @PUT
     @Path("/{id}")
-    public Response updateStand(@PathParam("id") String id, Stand stand) {
-        return Response.ok(referenceDataService.updateStand(id, stand)).build();
+    public WrittenStand updateStand(@PathParam("id") String id, Stand stand) {
+        return referenceDataService.writeStand(id, stand);
     }
 
     @DELETE

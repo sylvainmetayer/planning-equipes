@@ -161,6 +161,7 @@ service.StaffingAnalyzer$TypologieStaffing = borneRetenue, chargeTotal, heures, 
 service.TypologieItem = id, label, ninja
 service.WrittenAnimateur = animateur, avertissements
 service.WrittenCreneau = avertissements, creneau
+service.WrittenStand = avertissements, stand
 service.backup.BackupFile = createdAt, name, sizeBytes
 service.backup.BackupRun = attemptedAt, file, message, succeeded
 service.backup.BackupState = active, configured, cron, directory, directoryError, files, lastRun, nextRun, retention, zone

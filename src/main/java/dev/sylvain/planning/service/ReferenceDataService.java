@@ -154,6 +154,29 @@ public class ReferenceDataService implements ReferenceData {
         return stands.update(id, stand);
     }
 
+    /**
+     * Creates the stand, then reports what its schedule leaves unread. Same
+     * "written first, warned second" contract as {@link #writeAnimateur(Animateur)}.
+     */
+    public WrittenStand writeStand(Stand stand) {
+        Stand ecrit = createStand(stand);
+        return new WrittenStand(ecrit, coherence.onStand(null, ecrit));
+    }
+
+    /**
+     * Same as {@link #writeStand(Stand)}, for an edit — reported against the
+     * stand as it stood before, so a write that leaves the schedule alone says
+     * nothing about it (the bulk edit issues one {@code PUT} per row).
+     */
+    public WrittenStand writeStand(String id, Stand stand) {
+        Stand avant = stands.list().stream()
+                .filter(candidat -> Objects.equals(candidat.getId(), id))
+                .findFirst()
+                .orElse(null);
+        Stand ecrit = updateStand(id, stand);
+        return new WrittenStand(ecrit, coherence.onStand(avant, ecrit));
+    }
+
     public void deleteStand(String id) {
         stands.delete(id);
     }

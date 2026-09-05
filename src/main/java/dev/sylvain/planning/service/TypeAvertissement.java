@@ -37,5 +37,26 @@ public enum TypeAvertissement {
      * close. The middle of the slot is not looked at: a lunch closure common
      * to every stand is a schedule, not a mistake.
      */
-    CRENEAU_DEBORDE_OUVERTURE_STANDS
+    CRENEAU_DEBORDE_OUVERTURE_STANDS,
+
+    /**
+     * A dated exception of a stand falls outside the event's span: it names a
+     * day no créneau will ever read — almost always a month or a year slip,
+     * the stand-side twin of {@link #INDISPONIBILITE_HORS_EVENEMENT}.
+     */
+    STAND_EXCEPTION_HORS_EVENEMENT,
+
+    /**
+     * A window of the stand — from a rule or a dated exception — overlaps no
+     * créneau of its day: it validates, it is written, and it changes
+     * nothing. The classic "14 h-16 h on a day closing at noon", read on the
+     * resolved windows so a rule expanding onto such a day is caught too.
+     */
+    STAND_FENETRE_SANS_EFFET,
+
+    /**
+     * After this write the stand is open on no créneau at all: it will
+     * generate no seat and nobody will ever be scheduled on it.
+     */
+    STAND_JAMAIS_OUVERT
 }

@@ -12,6 +12,10 @@ import java.util.Set;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 
 /**
@@ -253,6 +257,105 @@ public final class CoherenceAnalyzer {
                 "Le créneau " + libelle(creneau) + " déborde l'amplitude d'ouverture de tous les stands : aucun "
                         + "n'est ouvert " + String.join(" ni ", debordements)
                         + ". Personne ne pourra être placé sur ces minutes. Le créneau est enregistré."));
+    }
+
+    /* --------------------------------- Stand -------------------------------- */
+
+    /**
+     * What is worth telling the operator about the stand they just wrote,
+     * given the edition's créneaux and <b>what the write actually changed</b>.
+     *
+     * <p>Nothing is said unless the schedule — rules, closures, openings —
+     * differs from {@code avant} ({@code null} for a creation): renaming a
+     * stand that has always opened on no day is not the moment to say so, and
+     * a bulk edit of thirty premium flags would otherwise repeat it thirty
+     * times. Same doctrine as {@link #onAnimateur(Animateur, Animateur,
+     * JoursEvenement)}.</p>
+     *
+     * @param apres the stand as written, its recurring rules <b>already
+     *              resolved</b> against {@code creneaux} —
+     *              {@link CoherenceService} calls {@link HoraireStandResolver}
+     *              first. An edition without a créneau yields no warning: there
+     *              is nothing to be outside of.
+     */
+    public static List<Avertissement> onStand(Stand avant, Stand apres, List<Creneau> creneaux) {
+        if (apres == null || creneaux == null || creneaux.isEmpty()) {
+            return List.of();
+        }
+        if (avant != null && scheduleSignature(avant).equals(scheduleSignature(apres))) {
+            return List.of();
+        }
+        JoursEvenement jours = JoursEvenement.of(creneaux);
+        if (jours.isEmpty()) {
+            return List.of();
+        }
+        List<Avertissement> avertissements = new ArrayList<>();
+
+        List<LocalDate> horsEvenement = new ArrayList<>();
+        apres.getIndisponibilites().stream().map(IndisponibiliteStand::getDate).filter(Objects::nonNull)
+                .filter(date -> !jours.covers(date)).forEach(horsEvenement::add);
+        apres.getOuvertures().stream().map(OuvertureStand::getDate).filter(Objects::nonNull)
+                .filter(date -> !jours.covers(date)).forEach(horsEvenement::add);
+        if (!horsEvenement.isEmpty()) {
+            List<LocalDate> triees = horsEvenement.stream().distinct().sorted().toList();
+            avertissements.add(new Avertissement(TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT,
+                    "Le stand " + apres.getId() + " porte " + triees.size() + " exception(s) datée(s) hors des "
+                            + "jours de l'événement (" + jours.first() + " → " + jours.last() + ") : " + citer(triees)
+                            + ". Aucun créneau ne les lira. Le stand est enregistré."));
+        }
+
+        List<OuvertureStandsAnalyzer.Anomaly> sansEffet = OuvertureStandsAnalyzer.fenetresWithoutEffect(apres,
+                OuvertureStandsAnalyzer.creneauxByDay(creneaux));
+        if (!sansEffet.isEmpty()) {
+            List<String> citees = sansEffet.stream().limit(DATES_CITEES)
+                    .map(anomalie -> anomalie.date() + " : " + anomalie.message()).toList();
+            String reste = sansEffet.size() > DATES_CITEES ? " Et " + (sansEffet.size() - DATES_CITEES) + " autre(s)." : "";
+            avertissements.add(new Avertissement(TypeAvertissement.STAND_FENETRE_SANS_EFFET,
+                    "Le stand " + apres.getId() + " a " + sansEffet.size() + " fenêtre(s) qui ne recoupent aucun "
+                            + "créneau de leur jour — " + String.join(" ; ", citees) + reste
+                            + " Vérifiez les heures saisies contre la grille de créneaux. Le stand est enregistré."));
+        }
+
+        boolean ouvertQuelquePart = creneaux.stream()
+                .anyMatch(creneau -> !creneau.segmentsOuvertsMinutes(apres).isEmpty());
+        if (!ouvertQuelquePart) {
+            avertissements.add(new Avertissement(TypeAvertissement.STAND_JAMAIS_OUVERT,
+                    "Le stand " + apres.getId() + " n'est ouvert sur aucun des " + creneaux.size()
+                            + " créneaux de l'édition : il n'ouvrira aucun poste et le solveur n'y placera personne. "
+                            + "Le stand est enregistré."));
+        }
+        return avertissements;
+    }
+
+    /**
+     * The schedule as typed, flattened to one string so two writes can be told
+     * apart. Deliberately not {@code equals} on the rules, which have none
+     * (see {@link HoraireStand}); the dated lists are read, never the
+     * resolved ones.
+     */
+    private static String scheduleSignature(Stand stand) {
+        StringBuilder signature = new StringBuilder();
+        for (HoraireStand horaire : stand.getHoraires()) {
+            signature.append(horaire.getMode()).append('|').append(horaire.getJours()).append('|')
+                    .append(horaire.getJoursSemaine()).append('|').append(horaire.getDateDebut()).append('|')
+                    .append(horaire.getDateFin()).append('|').append(horaire.getDates()).append('|');
+            for (FenetreHoraire fenetre : horaire.getFenetres()) {
+                signature.append(fenetre.getHeureDebut()).append('-').append(fenetre.getHeureFin()).append('@')
+                        .append(fenetre.getEffectif()).append(',');
+            }
+            signature.append(';');
+        }
+        signature.append('#');
+        for (IndisponibiliteStand fermeture : stand.getIndisponibilites()) {
+            signature.append(fermeture.getDate()).append(' ').append(fermeture.getHeureDebut()).append('-')
+                    .append(fermeture.getHeureFin()).append(';');
+        }
+        signature.append('#');
+        for (OuvertureStand ouverture : stand.getOuvertures()) {
+            signature.append(ouverture.getDate()).append(' ').append(ouverture.getHeureDebut()).append('-')
+                    .append(ouverture.getHeureFin()).append('@').append(ouverture.getEffectif()).append(';');
+        }
+        return signature.toString();
     }
 
     /* -------------------------------- Helpers ------------------------------- */

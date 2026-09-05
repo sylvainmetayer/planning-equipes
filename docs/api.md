@@ -1295,10 +1295,11 @@ heures), et lui seul lit une fenêtre de stand datée du lendemain.
 
 ### Avertissements de saisie
 
-Trois incohérences ne sont **pas** des refus : une indisponibilité hors des
+Ces incohérences ne sont **pas** des refus : une indisponibilité hors des
 bornes de l'édition, une date de naissance qui rend l'animateur mineur pendant
-l'événement, un créneau qui déborde l'amplitude d'ouverture de tous les stands.
-Un organisateur a le droit de saisir les trois — la doctrine du dépôt est de ne
+l'événement, un créneau qui déborde l'amplitude d'ouverture de tous les stands,
+un horaire de stand qui ne recoupe aucun créneau. Un organisateur a le droit de
+les saisir — la doctrine du dépôt est de ne
 refuser que ce qui est *certainement* insatisfiable — alors la ligne est
 écrite et l'avertissement voyage **dans la réponse de succès**, à côté de
 l'entité :
@@ -1316,9 +1317,10 @@ POST /api/animateurs  →  200
 
 `POST` et `PUT /api/animateurs` répondent `{ animateur, avertissements }`,
 `POST` et `PUT /api/creneaux` répondent `{ creneau, avertissements }` — le
-créneau y porte son `id` généré, comme avant. Les autres référentiels répondent
+créneau y porte son `id` généré, comme avant — et `POST` et `PUT /api/stands`
+répondent `{ stand, avertissements }`. Les autres référentiels répondent
 toujours l'entité nue : une clé `avertissements` absente veut dire « rien à
-signaler ». `avertissements` est toujours présent sur ces deux ressources, vide
+signaler ». `avertissements` est toujours présent sur ces trois ressources, vide
 quand tout va bien.
 
 | `type` | Ce qui l'a déclenché |
@@ -1328,6 +1330,15 @@ quand tout va bien.
 | `MINEUR_PENDANT_EVENEMENT` | L'animateur est mineur au moins un jour de l'événement. Le message dit à partir de quelle date il devient majeur, ou qu'il est mineur du début à la fin. Émis **seulement quand l'écriture pose ou change la date de naissance** : être mineur est un état légitime, pas une faute de saisie, et le redire à chaque modification d'une autre colonne apprend à ignorer le message. |
 | `CRENEAU_HORS_OUVERTURE_STANDS` | Aucun stand n'est ouvert une seule minute du créneau : il n'ouvrira aucun poste. |
 | `CRENEAU_DEBORDE_OUVERTURE_STANDS` | Le créneau commence avant que tous les stands n'ouvrent, ou finit après qu'ils ont tous fermé, d'au moins un quart d'heure. |
+| `STAND_FENETRE_SANS_EFFET` | Une fenêtre du stand — d'une règle étendue comme d'une exception datée — ne recoupe aucun créneau de son jour : elle est enregistrée et ne change rien. Le message cite jusqu'à cinq jours. |
+| `STAND_EXCEPTION_HORS_EVENEMENT` | Une exception datée du stand nomme un jour hors de l'intervalle `[premier créneau, dernier créneau]`. |
+| `STAND_JAMAIS_OUVERT` | Après l'écriture, le stand n'est ouvert sur aucun créneau : il n'ouvrira aucun poste. |
+
+Les trois avertissements de stand ne sont émis **que si l'écriture touche à
+l'horaire** (règles, fermetures, ouvertures) : renommer un stand qui n'a jamais
+ouvert nulle part n'est pas le moment de le dire, et l'édition en masse envoie
+un `PUT` par ligne. La grille de saisie (`PUT /api/ouvertures-stands/grille`)
+n'en émet aucun : ses fenêtres suivent les créneaux par construction.
 
 **Les bornes se dérivent, elles ne se stockent pas** : une `Edition` ne porte ni
 dates ni drapeau « en cours », donc l'événement court du premier au dernier

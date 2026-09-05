@@ -384,6 +384,9 @@ export type TypeAvertissement =
   | 'INDISPONIBILITE_JOUR_SANS_CRENEAU'
   | 'MINEUR_PENDANT_EVENEMENT'
   | 'CRENEAU_HORS_OUVERTURE_STANDS'
+  | 'STAND_EXCEPTION_HORS_EVENEMENT'
+  | 'STAND_FENETRE_SANS_EFFET'
+  | 'STAND_JAMAIS_OUVERT'
   | 'CRENEAU_DEBORDE_OUVERTURE_STANDS';
 
 export interface Avertissement {
@@ -419,6 +422,12 @@ export interface WrittenAnimateur {
 /** Body of `POST`/`PUT /api/creneaux` — same shape, same reason. */
 export interface WrittenCreneau {
   creneau: Creneau;
+  avertissements: Avertissement[];
+}
+
+/** Body of `POST`/`PUT /api/stands` — the schedule's warnings ride along. */
+export interface WrittenStand {
+  stand: Stand;
   avertissements: Avertissement[];
 }
 

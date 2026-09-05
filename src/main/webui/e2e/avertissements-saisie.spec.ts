@@ -11,6 +11,7 @@ let admin: APIRequestContext;
 /** Un jour très éloigné des autres fixtures : les bornes de l'édition sont les siennes. */
 const JOUR = '2027-06-10';
 const STAND = 'E2E-AVERT-S';
+const STAND_MATIN = 'E2E-AVERT-M';
 const ANIMATEUR = 'E2E-AVERT';
 const CRENEAU_REFERENCE = 987500;
 
@@ -74,6 +75,7 @@ test.afterAll(async () => {
   await supprimerCreneauxDuJour();
   await admin.delete(`/api/animateurs/${ANIMATEUR}`).catch(() => undefined);
   await admin.delete(`/api/stands/${STAND}`).catch(() => undefined);
+  await admin.delete(`/api/stands/${STAND_MATIN}`).catch(() => undefined);
   for (const voisin of standsVoisins) {
     await admin.put(`/api/stands/${voisin['id']}`, { data: voisin }).catch(() => undefined);
   }
@@ -121,6 +123,29 @@ test.describe('avertissements de saisie', () => {
 
     await expect(page.getByText(/Création de Créneau/)).toBeVisible();
     await expect(page.getByText(/déborde l'amplitude d'ouverture/)).toHaveCount(0);
+
+    await page.context().close();
+  });
+
+  test("un stand dont la fenêtre ne recoupe aucun créneau est enregistré, avec un message", async ({ browser }) => {
+    const page = await pageAdmin(browser, admin);
+    await page.goto('/stands');
+
+    await page.getByRole('button', { name: 'Ajouter' }).first().click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Identifiant').fill(STAND_MATIN);
+    await dialog.getByLabel('Nom').fill('Stand du matin');
+    await dialog.getByRole('button', { name: "Ajouter une règle d'horaire" }).click();
+    // The whole day's windows on one line: the morning, before the only créneau.
+    await dialog.getByLabel('Fenêtres de la journée').fill('08:00-10:00');
+    await dialog.getByRole('button', { name: 'Créer le stand' }).click();
+    await expect(dialog).toBeHidden();
+
+    // The message names the day and the window, and says the stand is written.
+    await expect(page.getByText(/ne recoupent aucun créneau/)).toBeVisible();
+    await expect(page.getByText(/08:00/)).toBeVisible();
+    await page.getByRole('button', { name: 'Fermer' }).click();
+    await expect(page.getByRole('row', { name: /Stand du matin/ })).toHaveCount(1);
 
     await page.context().close();
   });

@@ -49,7 +49,7 @@ class PlanningResourceTest {
                 .when().post("/api/stands")
                 .then()
                 .statusCode(200)
-                .body("id", equalTo("STAND-TEST"));
+                .body("stand.id", equalTo("STAND-TEST"));
 
         given()
                 .when().get("/api/stands")

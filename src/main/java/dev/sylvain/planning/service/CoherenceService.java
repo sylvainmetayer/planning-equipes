@@ -70,4 +70,23 @@ public class CoherenceService {
         }
         return CoherenceAnalyzer.onCreneau(creneau, resolus);
     }
+
+    /**
+     * Warnings about one stand, read against every créneau of the edition —
+     * the stand's rules resolved for them first, on the written instance, whose
+     * resolved view is cleared again afterwards so the response carries the
+     * rules and exceptions alone. {@code avant} is {@code null} for a creation.
+     */
+    public List<Avertissement> onStand(Stand avant, Stand apres) {
+        if (apres == null) {
+            return List.of();
+        }
+        List<Creneau> edition = creneaux.list();
+        HoraireStandResolver.apply(List.of(apres), edition);
+        try {
+            return CoherenceAnalyzer.onStand(avant, apres, edition);
+        } finally {
+            apres.setFenetresEffectives(null, null);
+        }
+    }
 }
