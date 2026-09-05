@@ -98,6 +98,47 @@ test('le navigateur charge la police et rend les icônes en glyphes, pas en mots
   await page.close();
 });
 
+/**
+ * The other way an icon disappears, and the one that actually happened: the
+ * font is perfect, the ligature forms, and Material's own
+ * `.mdc-data-table__cell { overflow: hidden; text-overflow: ellipsis }`
+ * replaces the last button of a cramped actions cell with « ... ».
+ *
+ * `.row-actions` was written against exactly that, but with the same
+ * specificity — and Angular injects a component's styles when the component
+ * loads, so after the global sheets. At equal specificity order decides, and
+ * the rule lost in silence. Nothing was visible until a real referential made
+ * a cell narrow enough, which is why this reads the computed style rather than
+ * a screenshot: the defect is in force long before it shows.
+ */
+test("la colonne d'actions ne remplace aucun bouton par « ... »", async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/stands');
+  await page.waitForLoadState('networkidle');
+
+  const cellule = page.locator('td.row-actions').first();
+  await expect(cellule).toBeVisible();
+  const etat = await cellule.evaluate((el) => {
+    const style = getComputedStyle(el);
+    const boutons = [...el.querySelectorAll('button')];
+    const dernier = boutons[boutons.length - 1];
+    return {
+      textOverflow: style.textOverflow,
+      overflow: style.overflow,
+      boutons: boutons.length,
+      dernierDedans: dernier.getBoundingClientRect().right <= el.getBoundingClientRect().right + 1
+    };
+  });
+
+  expect(etat.boutons, "la ligne n'a aucun bouton d'action").toBeGreaterThan(0);
+  expect(etat.textOverflow, 'la cellule tronquerait son dernier bouton en « ... »').not.toBe('ellipsis');
+  expect(etat.overflow, "la cellule masque ce qui dépasse : le dernier bouton n'est plus atteignable")
+    .not.toBe('hidden');
+  expect(etat.dernierDedans, 'le dernier bouton déborde déjà de sa cellule').toBe(true);
+
+  await page.close();
+});
+
 test("une icône en deux mots forme sa ligature aussi, l'underscore compris", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/stands');

@@ -153,8 +153,18 @@ form.form-grid {
  * colonne d'actions chargée (cinq boutons sur /animateurs) les derniers
  * disparaissaient : la colonne se réserve donc la largeur de ses boutons, et
  * c'est le tableau qui défile si l'ensemble dépasse.
+ *
+ * Le sélecteur porte `td` à dessein, et ce n'est pas de la coquetterie :
+ * `.mdc-data-table__cell { overflow: hidden; text-overflow: ellipsis }` a
+ * exactement la même spécificité que `.row-actions`, et les styles de
+ * composant Angular sont injectés dans le `<head>` au chargement du tableau —
+ * donc APRÈS les feuilles globales. À égalité, c'est l'ordre qui tranche, et
+ * Material gagnait : la règle ci-dessous était écrite, lisible, et sans effet.
+ * Le symptôme n'apparaît que sur une cellule effectivement à l'étroit — le
+ * dernier bouton, Supprimer, remplacé par « … » — ce qui la rendait
+ * invisible en revue. `e2e/icones.spec.ts` lit désormais le style calculé.
  */
-.row-actions {
+td.row-actions {
   white-space: nowrap;
   text-align: right;
   width: 1%;
