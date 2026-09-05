@@ -174,6 +174,100 @@ export function resumerHoraires(
   return morceaux.join(' · ');
 }
 
+/* ------------------------- compact window syntax ------------------------- */
+//
+// `10:00-12:00@2, 14:00-` : the day of a stand on one line — the form MCP
+// clients already send to `creer_stand_complet` (`McpArgs.fenetres`), and the
+// shape a line of the organiser's own spreadsheet has. Mirrors the server
+// parser: a window is `debut-fin`, an empty end runs until closing time, and
+// `@N` names the seats of that one window. What the server does not accept —
+// `10h`, `9:30`, `10h30` — is normalised here before being sent, so the line
+// can be typed the way one writes hours by hand.
+
+export type ErreurSaisieFenetres = 'VIDE' | 'FORME' | 'HEURE' | 'EFFECTIF';
+
+/** What one compact line parses to: windows, or the first thing wrong with it. */
+export type SaisieFenetres =
+  | { readonly fenetres: FenetreHoraire[]; readonly erreur: null; readonly morceau: null }
+  | { readonly fenetres: null; readonly erreur: ErreurSaisieFenetres; readonly morceau: string };
+
+/**
+ * `10`, `10h`, `10h30`, `9:5`, `09:30` → `HH:MM`; `null` for anything else.
+ * Hours run 0-23 and minutes 0-59: a window never crosses midnight, so `24:00`
+ * is not a time here — the open-ended form is how "until closing" is written.
+ */
+export function normaliserHeure(texte: string): string | null {
+  const m = /^(\d{1,2})(?:[h:.](\d{0,2}))?$/i.exec(texte.trim());
+  if (!m) {
+    return null;
+  }
+  const heures = Number(m[1]);
+  const minutes = m[2] ? Number(m[2].padEnd(2, '0')) : 0;
+  if (heures > 23 || minutes > 59) {
+    return null;
+  }
+  return `${String(heures).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+export function parseFenetres(texte: string): SaisieFenetres {
+  const fenetres: FenetreHoraire[] = [];
+  for (const brut of texte.split(/[,;]/)) {
+    const morceau = brut.trim();
+    if (morceau === '') {
+      continue;
+    }
+    let corps = morceau;
+    let effectif: number | null = null;
+    const arobase = morceau.indexOf('@');
+    if (arobase >= 0) {
+      const valeur = morceau.slice(arobase + 1).trim();
+      corps = morceau.slice(0, arobase).trim();
+      if (!/^\d+$/.test(valeur) || Number(valeur) < 1) {
+        return { fenetres: null, erreur: 'EFFECTIF', morceau };
+      }
+      effectif = Number(valeur);
+    }
+    // `10:00-12:00`, `10:00 - 12:00`, `10:00→12:00`; the separator must sit
+    // after the start, so `-` inside a time is not mistaken for it.
+    const m = /^([^-–→]+)[-–→]\s*(.*)$/.exec(corps);
+    if (!m) {
+      return { fenetres: null, erreur: 'FORME', morceau };
+    }
+    const heureDebut = normaliserHeure(m[1]);
+    const finTexte = m[2].trim();
+    const heureFin = finTexte === '' ? null : normaliserHeure(finTexte);
+    if (heureDebut === null || (finTexte !== '' && heureFin === null)) {
+      return { fenetres: null, erreur: 'HEURE', morceau };
+    }
+    fenetres.push({ heureDebut, heureFin, effectif });
+  }
+  if (fenetres.length === 0) {
+    return { fenetres: null, erreur: 'VIDE', morceau: texte.trim() };
+  }
+  return { fenetres, erreur: null, morceau: null };
+}
+
+/** The inverse of {@link parseFenetres}: `10:00-12:00@2, 14:00-`. */
+export function formaterFenetres(fenetres: readonly FenetreHoraire[]): string {
+  return fenetres
+    .map((fenetre) => {
+      const debut = fenetre.heureDebut ? heureCourte(fenetre.heureDebut) : '';
+      const fin = fenetre.heureFin ? heureCourte(fenetre.heureFin) : '';
+      const effectif = fenetre.effectif !== null && fenetre.effectif !== undefined ? `@${fenetre.effectif}` : '';
+      return `${debut}-${fin}${effectif}`;
+    })
+    .join(', ');
+}
+
+/**
+ * Whether a rule says anything beyond "open every day on these windows" —
+ * the only shape the reference event uses, and the one the form shows by
+ * default; anything else unfolds the mode and day selectors on its own.
+ */
+export function estCasParticulier(horaire: HoraireStand): boolean {
+  return horaire.mode !== 'OUVERTURE' || horaire.jours !== 'TOUS' || !!horaire.motif;
+}
+
 /** A blank rule, defaulted to the shape that covers the common case. */
 export function horaireVide(): HoraireStand {
   return {

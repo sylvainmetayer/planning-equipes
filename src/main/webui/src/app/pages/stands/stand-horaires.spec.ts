@@ -5,6 +5,7 @@ import {
   datesEvenement,
   decrireJour,
   effectifDepuisSaisie,
+  erreurRegle,
   libelleJour,
   libelleJourSemaine,
   premiereErreurHoraire
@@ -201,5 +202,27 @@ describe('effectifDepuisSaisie', () => {
 
   it('rejects anything that is not a number rather than writing NaN', () => {
     expect(effectifDepuisSaisie('abc')).toBeNull();
+  });
+});
+
+describe('erreurRegle', () => {
+  it('reports the compact line before the windows it has not replaced yet', () => {
+    // The windows are valid; the line being typed is not: the line wins,
+    // otherwise the card would say nothing while the submit stays blocked.
+    expect(erreurRegle({ ...horaire(), saisie: '10:00-12:00, 14:00' })).toContain('14:00');
+    expect(erreurRegle({ ...horaire(), saisie: '' })).toContain('au moins une fenêtre');
+    expect(erreurRegle({ ...horaire(), saisie: '10h-douze' })).toContain('heure illisible');
+    expect(erreurRegle({ ...horaire(), saisie: '10:00-12:00@0' })).toContain('après « @ »');
+  });
+
+  it('falls back on the rule checks once the line parses', () => {
+    expect(erreurRegle({ ...horaire(), saisie: '10:00-12:00' })).toBeNull();
+    expect(erreurRegle({ ...horaire({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 5 }] }), saisie: null }, 2)).toContain(
+      "L'effectif d'une fenêtre"
+    );
+  });
+
+  it('checks the windows when no line was ever typed', () => {
+    expect(erreurRegle(horaire({ fenetres: [] }))).toContain('au moins une fenêtre');
   });
 });

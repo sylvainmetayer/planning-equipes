@@ -372,4 +372,15 @@ describe('normaliserHoraire', () => {
 
     expect(normaliserHoraire(regle).fenetres.every((fenetre) => fenetre.heureFin === null)).toBe(true);
   });
+
+  // The compact line and the two fold states belong to the form, not to the
+  // entity: sent along, they would reach a backend that has no such fields.
+  it('leaves the editing state of the form behind', () => {
+    const normalise = normaliserHoraire({ ...horaire(), saisie: '10:00-12:00', deplie: true, detail: true });
+
+    expect(normalise).not.toHaveProperty('saisie');
+    expect(normalise).not.toHaveProperty('deplie');
+    expect(normalise).not.toHaveProperty('detail');
+    expect(normalise.fenetres).toEqual(horaire().fenetres.map((fenetre) => ({ ...fenetre, effectif: null })));
+  });
 });

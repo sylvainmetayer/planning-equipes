@@ -97,3 +97,36 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* A rule opens folded: one summary, one line of windows, the selectors behind
+   « Cas particulier ». The line is the substance of the rule, so it takes the
+   width; the button that unfolds it into rows sits beside it. */
+.horaire-carte-erreur {
+  border-color: var(--mat-sys-error);
+}
+
+.horaire-entete .horaire-resume {
+  flex: 1 1 10rem;
+  font-weight: 600;
+  padding: 0.25rem 0;
+}
+
+.horaire-ligne {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.horaire-ligne .horaire-ligne-champ {
+  flex: 1 1 18rem;
+}
+
+.horaire-ligne .horaire-ligne-champ input {
+  font-variant-numeric: tabular-nums;
+}
+
+.horaire-ligne .horaire-basculer-detail {
+  margin-top: 0.4rem;
+}

@@ -12,16 +12,26 @@ import { focusApresSuppression } from '../../core/focus-apres-suppression';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { horaireVide, JourResolu, resoudreHoraires } from '../../core/horaire-stand';
+import {
+  estCasParticulier,
+  formaterFenetres,
+  horaireVide,
+  JourResolu,
+  parseFenetres,
+  resoudreHoraires
+} from '../../core/horaire-stand';
 import {
   datesEvenement,
   decrireJour,
+  erreurRegle,
   libelleJour,
   libelleJourSemaine,
+  messageConflitDeMode,
   premiereErreurHoraire
 } from './stand-horaires';
-import { FenetreHoraire, HoraireStand, IndisponibiliteStand, JourSemaine, OuvertureStand, Stand } from '../../core/models';
+import { FenetreHoraire, IndisponibiliteStand, JourSemaine, OuvertureStand, Stand } from '../../core/models';
 import {
+  HoraireDraft,
   StandDraft,
   ajouterA,
   basculerJour,
@@ -55,6 +65,12 @@ export interface StandFormData {
  * dated **exceptions** override them for the single day they name. The preview
  * strip below the editor resolves both against the active group's days, so the
  * effect of a rule is visible without saving and re-reading.
+ *
+ * A rule opens folded on the only shape the reference event uses — open, every
+ * day — with its windows typed as one line (`10:00-12:00@2, 14:00-`), the way
+ * a line of the organiser's spreadsheet reads. The mode and day selectors sit
+ * behind « Cas particulier », and the windows can still be detailed one row
+ * each; both views edit the same windows.
  */
 @Component({
   selector: 'app-stand-form-dialog',
@@ -121,6 +137,14 @@ export class StandFormDialog {
   /** First problem among the recurring rules, or `null` — mirrors the backend's own check. */
   protected readonly erreurHoraires = computed(() => premiereErreurHoraire(this.draft().horaires, Number(this.draft().effectifMax)));
 
+  /** The problems rule by rule, so each card carries its own and the submit button knows them all. */
+  protected readonly erreursRegles = computed(() =>
+    this.draft().horaires.map((horaire) => erreurRegle(horaire, Number(this.draft().effectifMax)))
+  );
+
+  /** The one check that spans several rules: two rules of one scope disagreeing on the mode. */
+  protected readonly conflitDeMode = computed(() => messageConflitDeMode(this.draft().horaires));
+
   /** Days the preview covers: the edition's créneaux — what the solver builds from. */
   protected readonly datesEvenement = computed(() => datesEvenement(this.store.creneaux()));
 
@@ -182,17 +206,60 @@ export class StandFormDialog {
 
   /* ------------------------- Recurring horaires ------------------------- */
 
+  /** A new rule starts on an empty line, not on an empty row: the line's own error says what to type. */
   protected ajouterHoraire(): void {
-    this.patch({ horaires: ajouterA(this.draft().horaires, horaireVide()) });
+    this.patch({ horaires: ajouterA(this.draft().horaires, { ...horaireVide(), fenetres: [], saisie: '' }) });
   }
 
-  protected patchHoraire(index: number, patch: Partial<HoraireStand>): void {
+  protected patchHoraire(index: number, patch: Partial<HoraireDraft>): void {
     this.patch({ horaires: patchDansListe(this.draft().horaires, index, patch) });
   }
 
   protected retirerHoraire(index: number): void {
     this.patch({ horaires: retirerDe(this.draft().horaires, index) });
     this.focusApres('[data-focus="ajouter-horaire"]');
+  }
+
+  /** Whether the mode and day selectors of a rule are shown: asked for, or needed by what the rule says. */
+  protected deplie(horaire: HoraireDraft): boolean {
+    return horaire.deplie === true || estCasParticulier(horaire);
+  }
+
+  protected estCasParticulier(horaire: HoraireDraft): boolean {
+    return estCasParticulier(horaire);
+  }
+
+  protected basculerCasParticulier(index: number): void {
+    const horaire = this.draft().horaires[index];
+    if (horaire) {
+      this.patchHoraire(index, { deplie: !this.deplie(horaire) });
+    }
+  }
+
+  /** The windows of a rule as one line — what was typed while it is being typed, the windows otherwise. */
+  protected ligneFenetres(horaire: HoraireDraft): string {
+    return typeof horaire.saisie === 'string' ? horaire.saisie : formaterFenetres(horaire.fenetres);
+  }
+
+  /**
+   * A keystroke on the compact line. The windows follow every line that
+   * parses; a line that does not is kept as typed and reported on the card,
+   * without touching the windows it will replace once it does.
+   */
+  protected patchLigneFenetres(index: number, saisie: string): void {
+    const resultat = parseFenetres(saisie);
+    this.patchHoraire(index, resultat.erreur === null ? { saisie, fenetres: resultat.fenetres } : { saisie });
+  }
+
+  /** Shows the windows one row of fields each, or back as one line — the same windows either way. */
+  protected basculerDetail(index: number): void {
+    const horaire = this.draft().horaires[index];
+    if (!horaire) {
+      return;
+    }
+    // Leaving the line while it does not parse would carry an error the rows
+    // cannot show: the line is dropped, the rows edit the windows as they are.
+    this.patchHoraire(index, { detail: !horaire.detail, saisie: null });
   }
 
   protected ajouterFenetre(indexHoraire: number): void {
@@ -228,7 +295,8 @@ export class StandFormDialog {
   private majFenetres(indexHoraire: number, transformer: (fenetres: FenetreHoraire[]) => FenetreHoraire[]): void {
     const horaire = this.draft().horaires[indexHoraire];
     if (horaire) {
-      this.patchHoraire(indexHoraire, { fenetres: transformer(horaire.fenetres) });
+      // Edited row by row: the line is derived again from the windows.
+      this.patchHoraire(indexHoraire, { fenetres: transformer(horaire.fenetres), saisie: null });
     }
   }
 

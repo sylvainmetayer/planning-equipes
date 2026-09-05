@@ -10,28 +10,70 @@
 // Every `$localize` below sits inside a function body on purpose: called at
 // module scope it would run before `main.ts` has loaded the translations.
 
-import { Creneau, HoraireStand, JourSemaine } from '../../core/models';
-import { JourResolu, conflitDeMode, decrireFenetre, erreurHoraire } from '../../core/horaire-stand';
+import { Creneau, JourSemaine } from '../../core/models';
+import {
+  ErreurSaisieFenetres,
+  JourResolu,
+  conflitDeMode,
+  decrireFenetre,
+  erreurHoraire,
+  parseFenetres
+} from '../../core/horaire-stand';
+import { HoraireDraft } from './stand-draft';
+
+/**
+ * Why one rule cannot be saved as entered, or `null` — the compact line first
+ * when it is what the user is typing (a line that does not parse leaves the
+ * previous windows in place, and those may well be valid), then the windows
+ * and the day selector, as the backend checks them.
+ */
+export function erreurRegle(horaire: HoraireDraft, effectifMax?: number): string | null {
+  if (typeof horaire.saisie === 'string') {
+    const saisie = parseFenetres(horaire.saisie);
+    if (saisie.erreur !== null) {
+      return messageSaisie(saisie.erreur, saisie.morceau);
+    }
+  }
+  return erreurHoraire(horaire, {
+    fenetreRequise: $localize`:@@stands.horaires.error.fenetreRequise:Chaque horaire doit porter au moins une fenêtre.`,
+    heureDebutRequise: $localize`:@@stands.horaires.error.heureDebutRequise:Chaque fenêtre doit avoir une heure de début.`,
+    fenetreInversee: $localize`:@@stands.horaires.error.fenetreInversee:L'heure de fin doit être après l'heure de début (laissez-la vide pour aller jusqu'à la fermeture).`,
+    effectifInvalide: $localize`:@@stands.horaires.error.effectifInvalide:L'effectif d'une fenêtre, s'il est renseigné, doit être un entier d'au moins 1 (vide = l'effectif minimum du stand).`,
+    joursSemaineRequis: $localize`:@@stands.horaires.error.joursSemaineRequis:Choisissez au moins un jour de la semaine.`,
+    plageRequise: $localize`:@@stands.horaires.error.plageRequise:Renseignez une date de début et une date de fin cohérentes.`,
+    datesRequises: $localize`:@@stands.horaires.error.datesRequises:Choisissez au moins une date.`
+  }, effectifMax);
+}
+
+function messageSaisie(erreur: ErreurSaisieFenetres, morceau: string): string {
+  switch (erreur) {
+    case 'VIDE':
+      return $localize`:@@stands.horaires.error.saisieVide:Indiquez au moins une fenêtre, par exemple « 10:00-12:00, 14:00- ».`;
+    case 'FORME':
+      return $localize`:@@stands.horaires.error.saisieForme:« ${morceau}:morceau: » n'est pas une fenêtre : attendu « début-fin », ou « début- » jusqu'à la fermeture.`;
+    case 'HEURE':
+      return $localize`:@@stands.horaires.error.saisieHeure:« ${morceau}:morceau: » contient une heure illisible : écrivez 10:00, 10h ou 10h30.`;
+    case 'EFFECTIF':
+      return $localize`:@@stands.horaires.error.saisieEffectif:« ${morceau}:morceau: » : après « @ », un entier d'au moins 1 (l'effectif de cette fenêtre).`;
+  }
+}
 
 /**
  * First problem among the recurring rules, or `null` — mirrors the backend's
  * own check, and blocks the submit button of both dialogs.
  */
-export function premiereErreurHoraire(horaires: readonly HoraireStand[], effectifMax?: number): string | null {
+export function premiereErreurHoraire(horaires: readonly HoraireDraft[], effectifMax?: number): string | null {
   for (const horaire of horaires) {
-    const erreur = erreurHoraire(horaire, {
-      fenetreRequise: $localize`:@@stands.horaires.error.fenetreRequise:Chaque horaire doit porter au moins une fenêtre.`,
-      heureDebutRequise: $localize`:@@stands.horaires.error.heureDebutRequise:Chaque fenêtre doit avoir une heure de début.`,
-      fenetreInversee: $localize`:@@stands.horaires.error.fenetreInversee:L'heure de fin doit être après l'heure de début (laissez-la vide pour aller jusqu'à la fermeture).`,
-      effectifInvalide: $localize`:@@stands.horaires.error.effectifInvalide:L'effectif d'une fenêtre, s'il est renseigné, doit être un entier d'au moins 1 (vide = l'effectif minimum du stand).`,
-      joursSemaineRequis: $localize`:@@stands.horaires.error.joursSemaineRequis:Choisissez au moins un jour de la semaine.`,
-      plageRequise: $localize`:@@stands.horaires.error.plageRequise:Renseignez une date de début et une date de fin cohérentes.`,
-      datesRequises: $localize`:@@stands.horaires.error.datesRequises:Choisissez au moins une date.`
-    }, effectifMax);
+    const erreur = erreurRegle(horaire, effectifMax);
     if (erreur) {
       return erreur;
     }
   }
+  return messageConflitDeMode(horaires);
+}
+
+/** The one check that spans several rules, or `null`: same scope, same days, opposite modes. */
+export function messageConflitDeMode(horaires: readonly HoraireDraft[]): string | null {
   return conflitDeMode(horaires)
     ? $localize`:@@stands.horaires.error.conflitMode:Deux horaires de même portée portant sur les mêmes jours ne peuvent pas être l'un une ouverture et l'autre une fermeture. Utilisez une portée plus précise pour celui qui doit primer.`
     : null;

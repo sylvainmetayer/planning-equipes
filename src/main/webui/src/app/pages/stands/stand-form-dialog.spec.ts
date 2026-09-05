@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { Creneau, Emplacement, Stand } from '../../core/models';
+import { Creneau, Emplacement, HoraireStand, Stand } from '../../core/models';
 import { StandFormDialog } from './stand-form-dialog';
 
 const CRENEAUX: Creneau[] = [
@@ -55,6 +55,31 @@ function stand(overrides: Partial<Stand> = {}): Stand {
 }
 
 let erreursConsole: unknown[][] = [];
+
+function regle(overrides: Partial<HoraireStand> = {}): HoraireStand {
+  return {
+    id: null,
+    mode: 'OUVERTURE',
+    jours: 'TOUS',
+    joursSemaine: [],
+    dateDebut: null,
+    dateFin: null,
+    dates: [],
+    fenetres: [],
+    motif: null,
+    ...overrides
+  };
+}
+
+/** The compact line of the first rule. */
+function ligne(fixture: ComponentFixture<StandFormDialog>): HTMLInputElement {
+  return root(fixture).querySelector<HTMLInputElement>('input[name="fenetresLigne0"]')!;
+}
+
+function taper(champ: HTMLInputElement, valeur: string): void {
+  champ.value = valeur;
+  champ.dispatchEvent(new Event('input'));
+}
 
 function mount(donnee: Stand | null, options: { editingLocked?: boolean } = {}) {
   const save = vi.fn(async () => true);
@@ -277,8 +302,83 @@ describe('StandFormDialog', () => {
     const noms = nomsEnregistres(fixture);
     expect(noms).toHaveLength(controles(fixture).length);
     expect(new Set(noms).size).toBe(noms.length);
-    expect(noms).toContain('horaireMode0');
-    expect(noms).toContain('horaireMode1');
+    expect(noms).toContain('fenetresLigne0');
+    expect(noms).toContain('fenetresLigne1');
+  });
+
+  it('opens a plain rule folded: one line of windows, no mode or day selector', async () => {
+    const { fixture } = mount(stand({ horaires: [regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })] }));
+    await fixture.whenStable();
+
+    expect(nomsEnregistres(fixture)).not.toContain('horaireMode0');
+    expect(nomsEnregistres(fixture)).not.toContain('horaireJours0');
+    expect(root(fixture).querySelector('.horaire-resume')!.textContent!.trim()).toBe('Ouvert tous les jours');
+    expect(ligne(fixture).value).toBe('10:00-12:00');
+  });
+
+  it('unfolds the selectors behind « Cas particulier », keeping what the rule already said', async () => {
+    const { fixture } = mount(stand({ horaires: [regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })] }));
+    await fixture.whenStable();
+
+    const bouton = root(fixture).querySelector<HTMLButtonElement>('.horaire-cas-particulier')!;
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+    bouton.click();
+    await fixture.whenStable();
+
+    expect(bouton.getAttribute('aria-expanded')).toBe('true');
+    expect(nomsEnregistres(fixture)).toContain('horaireMode0');
+    expect(nomsEnregistres(fixture)).toContain('horaireJours0');
+    expect(nomsEnregistres(fixture)).toContain('horaireMotif0');
+    expect(ligne(fixture).value).toBe('10:00-12:00');
+  });
+
+  it('opens a closing rule unfolded, with nothing to fold it back on', async () => {
+    const { fixture } = mount(
+      stand({ horaires: [regle({ mode: 'FERMETURE', fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })] })
+    );
+    await fixture.whenStable();
+
+    expect(nomsEnregistres(fixture)).toContain('horaireMode0');
+    expect(root(fixture).querySelector('.horaire-cas-particulier')).toBeNull();
+    expect(root(fixture).querySelector('.horaire-resume')).toBeNull();
+  });
+
+  it('starts a new rule on an empty line and says what to type there', async () => {
+    const { fixture } = mount(stand());
+    await fixture.whenStable();
+
+    cliquer(fixture, "Ajouter une règle d'horaire");
+    await fixture.whenStable();
+
+    expect(ligne(fixture).value).toBe('');
+    const erreur = root(fixture).querySelector('#stand-horaire-erreur-0')!;
+    expect(erreur.textContent).toContain('au moins une fenêtre');
+    // Material prepends its own hint id: the error id must be among them.
+    expect(ligne(fixture).getAttribute('aria-describedby')!.split(/\s+/)).toContain('stand-horaire-erreur-0');
+    expect(soumettre(fixture).disabled).toBe(true);
+  });
+
+  it('keeps a line that does not parse as typed, reports it on its card and blocks the submit', async () => {
+    const { fixture } = mount(
+      stand({
+        horaires: [
+          regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }),
+          regle({ mode: 'FERMETURE', fenetres: [{ heureDebut: '13:00', heureFin: '14:00' }] })
+        ]
+      })
+    );
+    await fixture.whenStable();
+
+    taper(ligne(fixture), '10:00-12:00, 14:0');
+    await fixture.whenStable();
+
+    expect(ligne(fixture).value).toBe('10:00-12:00, 14:0');
+    const cartes = root(fixture).querySelectorAll('.horaire-carte');
+    expect(cartes[0].classList.contains('horaire-carte-erreur')).toBe(true);
+    expect(cartes[0].querySelector('.field-error')!.textContent).toContain('14:0');
+    // The other rule is fine and says nothing: one error, on the card it is about.
+    expect(cartes[1].querySelector('.field-error')).toBeNull();
+    expect(soumettre(fixture).disabled).toBe(true);
   });
 
   it('reveals the seven weekday checkboxes, correctly labelled, on the weekday scope', async () => {
@@ -338,29 +438,50 @@ describe('StandFormDialog', () => {
     expect(soumettre(fixture).disabled).toBe(true);
   });
 
-  it('sends the effectif typed on a window, and null for a window left without one', async () => {
+  it('sends the effectif typed on the line, and null for a window left without one', async () => {
     const { fixture, save } = mount(
       stand({
         id: 's7',
         effectifMax: 4,
         horaires: [
-          {
-            id: null,
-            mode: 'OUVERTURE',
-            jours: 'TOUS',
-            joursSemaine: [],
-            dateDebut: null,
-            dateFin: null,
-            dates: [],
+          regle({
             fenetres: [
               { heureDebut: '10:00', heureFin: '12:00' },
               { heureDebut: '14:00', heureFin: null, effectif: 2 }
-            ],
-            motif: null
-          }
+            ]
+          })
         ]
       })
     );
+    await fixture.whenStable();
+
+    expect(ligne(fixture).value).toBe('10:00-12:00, 14:00-@2');
+    taper(ligne(fixture), '10:00-12:00@3, 14:00-');
+    await fixture.whenStable();
+
+    root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
+    expect(payload.horaires[0].fenetres).toEqual([
+      { heureDebut: '10:00', heureFin: '12:00', effectif: 3 },
+      { heureDebut: '14:00', heureFin: null, effectif: null }
+    ]);
+    // The form's own state never reaches the backend.
+    expect(payload.horaires[0]).not.toHaveProperty('saisie');
+  });
+
+  it('details the windows row by row on demand, both views editing the same windows', async () => {
+    const { fixture, save } = mount(
+      stand({
+        id: 's7',
+        effectifMax: 4,
+        horaires: [regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }, { heureDebut: '14:00', heureFin: null, effectif: 2 }] })]
+      })
+    );
+    await fixture.whenStable();
+
+    cliquer(fixture, 'Détailler fenêtre par fenêtre');
     await fixture.whenStable();
 
     const effectifs = Array.from(
@@ -369,13 +490,15 @@ describe('StandFormDialog', () => {
     expect(effectifs).toHaveLength(2);
     expect(effectifs[0].value).toBe('');
     expect(effectifs[1].value).toBe('2');
-    effectifs[0].value = '3';
-    effectifs[0].dispatchEvent(new Event('input'));
+    taper(effectifs[0], '3');
     await fixture.whenStable();
+
+    cliquer(fixture, 'Revenir à la ligne');
+    await fixture.whenStable();
+    expect(ligne(fixture).value).toBe('10:00-12:00@3, 14:00-@2');
 
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
-
     const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
     expect(payload.horaires[0].fenetres.map((fenetre) => fenetre.effectif)).toEqual([3, 2]);
   });

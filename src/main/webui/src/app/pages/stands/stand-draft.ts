@@ -18,6 +18,20 @@ import {
   Stand
 } from '../../core/models';
 
+/**
+ * A rule as the form holds it: the entity, plus what only the editing of it
+ * needs to remember. `saisie` is the compact line as typed — kept verbatim
+ * while it does not parse, so a half-typed `10:0` is not rewritten under the
+ * cursor; `null` once the windows were last edited another way. `deplie`
+ * shows the mode and day selectors of a plain rule; `detail` shows the windows
+ * as one row of fields each instead of the line.
+ */
+export interface HoraireDraft extends HoraireStand {
+  saisie?: string | null;
+  deplie?: boolean;
+  detail?: boolean;
+}
+
 /** The form's own state: flat where the entity is nested, strings where the inputs are. */
 export interface StandDraft {
   id: string;
@@ -31,7 +45,7 @@ export interface StandDraft {
   emplacementId: string | null;
   indisponibilites: IndisponibiliteStand[];
   ouvertures: OuvertureStand[];
-  horaires: HoraireStand[];
+  horaires: HoraireDraft[];
 }
 
 /* ------------------------------ list edits ------------------------------ */
@@ -221,9 +235,11 @@ export function normaliserPlage<T extends { heureFin: string | null }>(plage: T)
   return { ...plage, heureFin: plage.heureFin || null };
 }
 
-export function normaliserHoraire(horaire: HoraireStand): HoraireStand {
+export function normaliserHoraire(horaire: HoraireDraft): HoraireStand {
+  // The editing state stays in the form: the entity has no such fields.
+  const { saisie: _saisie, deplie: _deplie, detail: _detail, ...entite } = horaire;
   return {
-    ...horaire,
+    ...entite,
     fenetres: horaire.fenetres.map((fenetre) => ({
       ...fenetre,
       heureFin: fenetre.heureFin || null,

@@ -4,8 +4,12 @@ import {
   couvreJour,
   decrireFenetre,
   erreurHoraire,
+  estCasParticulier,
+  formaterFenetres,
   horaireVide,
   jourSemaineDe,
+  normaliserHeure,
+  parseFenetres,
   resoudreHoraires,
   resoudreJour,
   resumerHoraires
@@ -278,5 +282,112 @@ describe('decrireFenetre / resumerHoraires', () => {
         libelles
       )
     ).toBe('2 règle(s) · 1 exception(s)');
+  });
+});
+
+describe('parseFenetres', () => {
+  it('lit la ligne compacte que les outils MCP acceptent déjà', () => {
+    expect(parseFenetres('10:00-12:00@2,14:00-')).toEqual({
+      erreur: null,
+      morceau: null,
+      fenetres: [
+        { heureDebut: '10:00', heureFin: '12:00', effectif: 2 },
+        { heureDebut: '14:00', heureFin: null, effectif: null }
+      ]
+    });
+  });
+
+  it('tolère les espaces, le point-virgule et les heures écrites à la main', () => {
+    const saisie = parseFenetres(' 9h-12h30 ; 14 - 18:5 @ 3 ');
+    expect(saisie.fenetres).toEqual([
+      { heureDebut: '09:00', heureFin: '12:30', effectif: null },
+      { heureDebut: '14:00', heureFin: '18:50', effectif: 3 }
+    ]);
+  });
+
+  it('accepte le tiret cadratin et la flèche que l’aperçu affiche', () => {
+    expect(parseFenetres('10:00 → 12:00, 14:00 – 20:00').fenetres?.map((f) => f.heureFin)).toEqual(['12:00', '20:00']);
+  });
+
+  it('refuse une ligne vide, en nommant l’erreur plutôt que de renvoyer zéro fenêtre', () => {
+    expect(parseFenetres('')).toMatchObject({ fenetres: null, erreur: 'VIDE' });
+    expect(parseFenetres(' , ; ')).toMatchObject({ fenetres: null, erreur: 'VIDE' });
+  });
+
+  it('nomme le morceau fautif d’une fenêtre sans séparateur', () => {
+    expect(parseFenetres('10:00-12:00, 14:00')).toMatchObject({ erreur: 'FORME', morceau: '14:00' });
+  });
+
+  it('refuse une heure illisible ou hors du cadran', () => {
+    expect(parseFenetres('10:00-25:00')).toMatchObject({ erreur: 'HEURE', morceau: '10:00-25:00' });
+    expect(parseFenetres('dix-12:00')).toMatchObject({ erreur: 'HEURE' });
+    expect(parseFenetres('10:60-12:00')).toMatchObject({ erreur: 'HEURE' });
+  });
+
+  it('refuse un effectif nul, non entier ou absent après le @', () => {
+    expect(parseFenetres('10:00-12:00@0')).toMatchObject({ erreur: 'EFFECTIF', morceau: '10:00-12:00@0' });
+    expect(parseFenetres('10:00-12:00@2.5')).toMatchObject({ erreur: 'EFFECTIF' });
+    expect(parseFenetres('10:00-12:00@')).toMatchObject({ erreur: 'EFFECTIF' });
+  });
+
+  // A window may not cross midnight, so a reversed window is not the parser's
+  // business: it comes out as typed and `erreurHoraire` refuses it, with the
+  // same sentence as the detailed rows.
+  it('laisse une fenêtre inversée au validateur des règles', () => {
+    const saisie = parseFenetres('18:00-14:00');
+    expect(saisie.erreur).toBeNull();
+    expect(erreurHoraire(regle({ fenetres: saisie.fenetres! }), MESSAGES)).toBe('fenetreInversee');
+  });
+});
+
+describe('normaliserHeure', () => {
+  it('ramène toute écriture usuelle à HH:MM', () => {
+    expect(normaliserHeure('9')).toBe('09:00');
+    expect(normaliserHeure('9h')).toBe('09:00');
+    expect(normaliserHeure('9h5')).toBe('09:50');
+    expect(normaliserHeure('09h05')).toBe('09:05');
+    expect(normaliserHeure('23.59')).toBe('23:59');
+    expect(normaliserHeure('0:00')).toBe('00:00');
+  });
+
+  it('refuse ce qui n’est pas une heure du jour', () => {
+    expect(normaliserHeure('24:00')).toBeNull();
+    expect(normaliserHeure('12:60')).toBeNull();
+    expect(normaliserHeure('midi')).toBeNull();
+    expect(normaliserHeure('')).toBeNull();
+    expect(normaliserHeure('1:2:3')).toBeNull();
+  });
+});
+
+describe('formaterFenetres', () => {
+  it('écrit ce que parseFenetres relit à l’identique', () => {
+    const fenetres = [
+      { heureDebut: '10:00', heureFin: '12:00', effectif: 2 },
+      { heureDebut: '14:00', heureFin: null, effectif: null }
+    ];
+    const ligne = formaterFenetres(fenetres);
+    expect(ligne).toBe('10:00-12:00@2, 14:00-');
+    expect(parseFenetres(ligne).fenetres).toEqual(fenetres);
+  });
+
+  it('raccourcit les heures à la seconde et vide une fenêtre sans début', () => {
+    expect(formaterFenetres([{ heureDebut: '10:00:00', heureFin: '12:00:00' }])).toBe('10:00-12:00');
+    expect(formaterFenetres([{ heureDebut: '', heureFin: null }])).toBe('-');
+    expect(formaterFenetres([])).toBe('');
+  });
+});
+
+describe('estCasParticulier', () => {
+  it('ne l’est pas pour une règle ouverte tous les jours sans motif', () => {
+    expect(estCasParticulier(regle({}))).toBe(false);
+    expect(estCasParticulier(regle({ motif: '' }))).toBe(false);
+  });
+
+  it('l’est dès que la règle ferme, cible des jours ou porte un motif', () => {
+    expect(estCasParticulier(regle({ mode: 'FERMETURE' }))).toBe(true);
+    expect(estCasParticulier(regle({ jours: 'JOURS_SEMAINE', joursSemaine: ['MONDAY'] }))).toBe(true);
+    expect(estCasParticulier(regle({ jours: 'PLAGE' }))).toBe(true);
+    expect(estCasParticulier(regle({ jours: 'DATES' }))).toBe(true);
+    expect(estCasParticulier(regle({ motif: 'canicule' }))).toBe(true);
   });
 });
