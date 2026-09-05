@@ -15,3 +15,18 @@ ALTER TABLE parametres_decoupage
 
 COMMENT ON COLUMN parametres_decoupage.mode_grille IS
     'How the edition''s créneaux read: AMPLITUDES to slice, or final VACATIONS';
+
+-- Existing editions: the default above would declare an already-sliced grid as
+-- amplitudes, which offers the destructive « generate the slicing » button on a
+-- grid that already is vacations, and reads every relay overlap as a mistake.
+-- Only the data can prove VACATIONS — a stagger family or a break-covering
+-- créneau is produced by the découpage and by nothing else — so only that
+-- proof is used; a hand-written grid of real vacations stays AMPLITUDES and is
+-- declared by its organiser, which is what the Créneaux page is for.
+UPDATE parametres_decoupage p
+SET mode_grille = 'VACATIONS'
+WHERE EXISTS (
+    SELECT 1 FROM creneau c
+    WHERE c.edition_id = p.edition_id
+      AND (c.famille > 0 OR c.couverture_pause = TRUE)
+);

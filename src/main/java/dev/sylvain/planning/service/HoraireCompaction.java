@@ -159,8 +159,12 @@ public final class HoraireCompaction {
         restentDates.forEach((date, jour) -> {
             for (FenetreHoraire fenetre : jour.fenetres()) {
                 if (jour.mode() == ModeHoraire.OUVERTURE) {
+                    // The effectif rides along: a day left dated because its
+                    // pattern repeats nowhere is exactly the busy Saturday the
+                    // organiser staffed differently, and dropping it here made
+                    // the window fall back on effectifMin without a word.
                     ouvertures.add(new OuvertureStand(null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(),
-                            jour.motif()));
+                            jour.motif(), fenetre.getEffectif()));
                 } else {
                     fermetures.add(new IndisponibiliteStand(null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(),
                             jour.motif()));

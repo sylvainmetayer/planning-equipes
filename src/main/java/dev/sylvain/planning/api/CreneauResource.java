@@ -8,7 +8,6 @@ import java.util.Set;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.CreneauGridService;
 import dev.sylvain.planning.service.CreneauGridService.DiagnosticGrille;
@@ -79,8 +78,8 @@ public class CreneauResource {
      */
     @POST
     @Path("/recurrence/apercu")
-    public RapportRecurrence previewRecurrence(RecurrenceRequest requete, @QueryParam("mode") ModeGrilleCreneaux mode) {
-        return RapportRecurrence.of(referenceDataService.previewRecurrence(requete.regle(), mode));
+    public RapportRecurrence previewRecurrence(RecurrenceRequest requete, @QueryParam("mode") String mode) {
+        return RapportRecurrence.of(referenceDataService.previewRecurrence(requete.regle(), ReferenceDataService.modeGrille(mode, "mode")));
     }
 
     /**
@@ -90,15 +89,15 @@ public class CreneauResource {
      */
     @POST
     @Path("/recurrence")
-    public RapportRecurrence createRecurrence(RecurrenceRequest requete, @QueryParam("mode") ModeGrilleCreneaux mode) {
-        return RapportRecurrence.of(referenceDataService.createRecurrence(requete.regle(), mode));
+    public RapportRecurrence createRecurrence(RecurrenceRequest requete, @QueryParam("mode") String mode) {
+        return RapportRecurrence.of(referenceDataService.createRecurrence(requete.regle(), ReferenceDataService.modeGrille(mode, "mode")));
     }
 
     /** The grid's verdict — its own anomalies, the stand openings, the staffing — read in {@code mode}. */
     @GET
     @Path("/controle")
-    public RapportGrille validateGrid(@QueryParam("mode") ModeGrilleCreneaux mode) {
-        return referenceDataService.controlerGrille(mode);
+    public RapportGrille validateGrid(@QueryParam("mode") String mode) {
+        return referenceDataService.controlerGrille(ReferenceDataService.modeGrille(mode, "mode"));
     }
 
     /** What the grid looks like, and which mode the data suggests — a suggestion, never a decision. */

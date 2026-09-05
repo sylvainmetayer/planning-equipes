@@ -10,7 +10,6 @@ import java.util.NoSuchElementException;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
-import dev.sylvain.planning.service.CreneauGridService;
 import dev.sylvain.planning.service.CreneauGridService.DiagnosticGrille;
 import dev.sylvain.planning.service.CreneauGridService.RapportGrille;
 import dev.sylvain.planning.service.CreneauGridService.RegleRecurrence;
@@ -38,9 +37,6 @@ public class CreneauMcpTools {
 
     @Inject
     ReferenceDataService referenceDataService;
-
-    @Inject
-    CreneauGridService grilleCreneauxService;
 
     @Tool(description = "Liste les créneaux de l'édition — ceux sur lesquels portera la prochaine résolution.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
@@ -106,8 +102,7 @@ public class CreneauMcpTools {
                     idempotentHint = true, openWorldHint = false))
     DiagnosticGrille diagnostiquer_grille_creneaux(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return CreneauGridService.diagnose(referenceDataService.listCreneaux(),
-                referenceDataService.getParametresDecoupage());
+        return referenceDataService.diagnoseGrille();
     }
 
     @Tool(description = "Contrôle la cohérence de la grille de créneaux actuelle et signale ce qui cloche : "
@@ -122,7 +117,7 @@ public class CreneauMcpTools {
             @ToolArg(description = "AMPLITUDES (journées à découper) ou VACATIONS (vacations finales) ; omis = le "
                     + "mode déclaré de l'édition", required = false) String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return validateGrid(referenceDataService.listCreneaux(), modeOrDeclared(mode));
+        return referenceDataService.controlerGrille(modeOrDeclared(mode));
     }
 
     /* ----------------------------- Grid: recurrence -------------------------- */
@@ -149,12 +144,10 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false) List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ModeGrilleCreneaux modeGrille = modeOrDeclared(mode);
-        List<Creneau> generes = CreneauGridService.generateRecurrence(
-                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
-        List<Creneau> resultante = new ArrayList<>(referenceDataService.listCreneaux());
-        resultante.addAll(generes);
-        return new PrevisualisationRecurrence(generes.size(), generes.stream().map(CreneauMcpTools::toView).toList(),
-                validateGrid(resultante, modeGrille));
+        ReferenceDataService.RecurrenceGrille apercu = referenceDataService.previewRecurrence(
+                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres), modeGrille);
+        return new PrevisualisationRecurrence(apercu.creneaux().size(),
+                apercu.creneaux().stream().map(CreneauMcpTools::toView).toList(), apercu.controle());
     }
 
     @Tool(description = "Crée les créneaux d'une règle récurrente et renvoie le contrôle de cohérence de la "
@@ -174,11 +167,10 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false) List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ModeGrilleCreneaux modeGrille = modeOrDeclared(mode);
-        List<Creneau> generes = CreneauGridService.generateRecurrence(
-                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
-        List<Creneau> crees = referenceDataService.createCreneaux(generes);
-        return new PrevisualisationRecurrence(crees.size(), crees.stream().map(CreneauMcpTools::toView).toList(),
-                validateGrid(referenceDataService.listCreneaux(), modeGrille));
+        ReferenceDataService.RecurrenceGrille ecrit = referenceDataService.createRecurrence(
+                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres), modeGrille);
+        return new PrevisualisationRecurrence(ecrit.creneaux().size(),
+                ecrit.creneaux().stream().map(CreneauMcpTools::toView).toList(), ecrit.controle());
     }
 
     @Tool(description = "Supprime en une fois les créneaux que les filtres désignent — l'inverse de "
@@ -248,12 +240,6 @@ public class CreneauMcpTools {
     /* -------------------------------- Outils -------------------------------- */
 
     /**
-     * The mode has no default on purpose. Guessing it would make
-     * {@code valider_creneaux} confidently wrong half the time — see
-     * {@link ModeGrilleCreneaux} — so an omitted mode comes back as a question
-     * the assistant can relay rather than as a silent assumption.
-     */
-    /**
      * The mode named by the call, or the one the edition declares on its
      * Créneaux page ({@code parametresDecoupage.modeGrille}) when the call
      * names none — the declaration is the operator's answer, given once.
@@ -275,12 +261,6 @@ public class CreneauMcpTools {
                 McpArgs.dates(dates, "dates"),
                 McpArgs.dates(exclusions, "exclusions"),
                 McpArgs.fenetres(fenetres, true));
-    }
-
-    private RapportGrille validateGrid(List<Creneau> creneaux, ModeGrilleCreneaux mode) {
-        return grilleCreneauxService.validate(creneaux, referenceDataService.listSolvedStands(),
-                referenceDataService.listAnimateurs(), mode, referenceDataService.getParametresDecoupage(),
-                referenceDataService.getParametresLegaux());
     }
 
     private List<CreneauView> creneauxCourants() {

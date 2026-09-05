@@ -3,6 +3,7 @@ import { AnomalieGrille, RapportGrille } from '../../core/models';
 import {
   bilanGrille,
   datesDepuisTexte,
+  erreursIntroduites,
   grilleBloquee,
   iconeAnomalieGrille,
   regleDepuis,
@@ -49,7 +50,7 @@ describe('regleDepuis', () => {
     expect(semaine.regle?.joursSemaine).toEqual(['MONDAY']);
     expect(semaine.regle?.dates).toEqual([]);
 
-    const dates = regleDepuis({ ...serieVide(), fenetres: '10:00-12:00', jours: 'DATES', dates: '2026-07-14, 2026-07-19 ; nope', dateDebut: '2026-01-01' });
+    const dates = regleDepuis({ ...serieVide(), fenetres: '10:00-12:00', jours: 'DATES', dates: '2026-07-14, 2026-07-19', dateDebut: '2026-01-01' });
     expect(dates.regle?.dates).toEqual(['2026-07-14', '2026-07-19']);
     expect(dates.regle?.dateDebut).toBeNull();
   });
@@ -65,7 +66,18 @@ describe('regleDepuis', () => {
     expect(regleDepuis({ ...serieVide(), fenetres: '10:00-12:00' })).toMatchObject({ erreur: 'PLAGE_REQUISE' });
     expect(regleDepuis({ ...serieVide(), fenetres: '10:00-12:00', dateDebut: '2026-07-09', dateFin: '2026-07-06' })).toMatchObject({ erreur: 'PLAGE_INVERSEE' });
     expect(regleDepuis({ ...serieVide(), fenetres: '10:00-12:00', jours: 'JOURS_SEMAINE', dateDebut: '2026-07-06', dateFin: '2026-07-09' })).toMatchObject({ erreur: 'JOURS_SEMAINE_REQUIS' });
-    expect(regleDepuis({ ...serieVide(), fenetres: '10:00-12:00', jours: 'DATES', dates: 'lundi' })).toMatchObject({ erreur: 'DATES_REQUISES' });
+    expect(regleDepuis({ ...serieVide(), fenetres: '10:00-12:00', jours: 'DATES', dates: '' })).toMatchObject({ erreur: 'DATES_REQUISES' });
+  });
+
+  // Silencieusement ignorée avant : « 14/07/2026 » en exclusion laissait créer
+  // les créneaux du 14 juillet sans un mot.
+  it('refuse une date qui n’en est pas une, plutôt que de l’ignorer', () => {
+    expect(
+      regleDepuis({ ...serieVide(), fenetres: '10:00-12:00', dateDebut: '2026-07-06', dateFin: '2026-07-19', exclusions: '14/07/2026' })
+    ).toMatchObject({ erreur: 'DATES_ILLISIBLES', morceau: '14/07/2026' });
+    expect(
+      regleDepuis({ ...serieVide(), fenetres: '10:00-12:00', jours: 'DATES', dates: '2026-07-14, lundi' })
+    ).toMatchObject({ erreur: 'DATES_ILLISIBLES', morceau: 'lundi' });
   });
 
   it('change de signature dès qu’un champ change', () => {
@@ -90,6 +102,17 @@ describe('verdict', () => {
     expect(grilleBloquee(null)).toBe(false);
     expect(grilleBloquee(rapport([anomalie({})]))).toBe(false);
     expect(grilleBloquee(rapport([anomalie({ severite: 'ERREUR', type: 'DOUBLON' })]))).toBe(true);
+  });
+
+  // Le verdict porte sur toute la grille obtenue : une édition qui traîne déjà
+  // une erreur rendrait sinon toute règle inécrivable, en accusant la règle.
+  it('ne bloque pas sur une erreur que la grille portait déjà', () => {
+    const deja = anomalie({ severite: 'ERREUR', type: 'REPOS_QUOTIDIEN_IMPOSSIBLE', message: 'trop long' });
+    const nouvelle = anomalie({ severite: 'ERREUR', type: 'DOUBLON', message: 'doublon' });
+
+    expect(grilleBloquee(rapport([deja]), rapport([deja]))).toBe(false);
+    expect(grilleBloquee(rapport([deja, nouvelle]), rapport([deja]))).toBe(true);
+    expect(erreursIntroduites(rapport([deja, nouvelle]), rapport([deja]))).toEqual([nouvelle]);
   });
 
   it('trie les erreurs avant les avertissements, puis par date', () => {

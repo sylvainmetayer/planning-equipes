@@ -1322,11 +1322,24 @@ sévérité `ERREUR`. `400` sur une règle mal formée.
 résolues telles quelles) ; les données seules ne le prouvent pas, et le verdict
 en dépend — un chevauchement le même jour est une faute entre amplitudes et la
 forme normale de vacations décalées. La déclaration vit dans
-`parametresDecoupage.modeGrille` (`GET`/`PUT /api/parametres-decoupage`,
-défaut `AMPLITUDES`), s'écrit depuis la page Créneaux, et sert de valeur par
+`parametresDecoupage.modeGrille` (défaut `AMPLITUDES`) et sert de valeur par
 défaut à tout appel qui n'en nomme pas — le paramètre `mode` des routes
-ci-dessous comme l'argument des outils MCP. Générer le découpage la bascule
-en `VACATIONS`.
+ci-dessous comme l'argument des outils MCP.
+
+Elle a **son propre écrit**, `PUT /api/parametres-decoupage/mode-grille`, corps
+`{ "modeGrille": "AMPLITUDES" }` : le mode se décide sur la page Créneaux
+tandis que le reste des réglages de découpage s'édite sur Paramètres, et un
+onglet Paramètres resté ouvert le ramènerait en arrière en enregistrant sa
+charge utile. `PUT /api/parametres-decoupage` ignore donc ce champ et conserve
+le mode enregistré. `GET` le rend, comme les autres.
+
+Générer le découpage bascule la déclaration en `VACATIONS` **côté serveur** :
+un assistant qui appelle `generer_decoupage` puis `valider_creneaux` lit bien
+des vacations, et non des amplitudes dont chaque chevauchement de relais
+passerait pour une faute de saisie.
+
+Un `mode` mal orthographié répond `400` — l'énumération est convertie par le
+service, pas par le conteneur, dont l'échec serait un `404`.
 
 `GET /api/creneaux/controle?mode=` rend le verdict : les anomalies de la
 grille (`severite` `ERREUR` ou `AVERTISSEMENT`, `type`, `date`, `message`),
@@ -1377,7 +1390,7 @@ quand tout va bien.
 | `CRENEAU_HORS_OUVERTURE_STANDS` | Aucun stand n'est ouvert une seule minute du créneau : il n'ouvrira aucun poste. |
 | `CRENEAU_DEBORDE_OUVERTURE_STANDS` | Le créneau commence avant que tous les stands n'ouvrent, ou finit après qu'ils ont tous fermé, d'au moins un quart d'heure. |
 | `STAND_FENETRE_SANS_EFFET` | Une fenêtre du stand — d'une règle étendue comme d'une exception datée — ne recoupe aucun créneau de son jour : elle est enregistrée et ne change rien. Le message cite jusqu'à cinq jours. |
-| `STAND_EXCEPTION_HORS_EVENEMENT` | Une exception datée du stand nomme un jour hors de l'intervalle `[premier créneau, dernier créneau]`. |
+| `STAND_EXCEPTION_HORS_EVENEMENT` | Une exception datée du stand nomme un jour hors de l'intervalle `[premier créneau, dernier créneau]` — le lendemain d'un créneau qui franchit minuit est exclu de ce compte : le domaine lit vraiment cette date. |
 | `STAND_JAMAIS_OUVERT` | Après l'écriture, le stand n'est ouvert sur aucun créneau : il n'ouvrira aucun poste. |
 
 Les trois avertissements de stand ne sont émis **que si l'écriture touche à
@@ -1626,9 +1639,18 @@ daté : la réponse le dit stand par stand (`regles`, `exceptions`, `compacte`,
 valeur saisie, `effectifMax` la plus grande, et une fenêtre ne nomme son
 effectif que s'il diffère du minimum.
 
-`400` sur un créneau inconnu ou un effectif nul (« laissez la case vide pour
-fermer »), `404` sur un stand inconnu, `409` pendant une résolution. Chaque
-stand est validé et écrit séparément : un stand refusé n'annule pas les autres.
+**Familles de relais.** Une grille découpée en plusieurs familles porte une
+variante de chaque vacation par famille, et un stand n'est apparié qu'à une
+seule d'entre elles ([`domaine.md`](domaine.md#familles-de-créneaux)). Les
+cellules des autres familles sortent avec `horsFamille: true`, effectif `null` :
+l'écran les rend inertes, et une case envoyée pour l'une d'elles est ignorée —
+l'écrire rouvrirait un jour que ce stand ne tient jamais.
+
+`400` sur un créneau inconnu, un effectif nul (« laissez la case vide pour
+fermer ») ou un stand inconnu — l'identifiant vient du corps, pas du chemin.
+`409` pendant une résolution. Les stands sont tous convertis et validés
+d'abord, puis écrits **en une seule transaction** : le rapport annonce ce que
+la base contient, jamais un lot à moitié écrit.
 
 ## Import de scénario
 

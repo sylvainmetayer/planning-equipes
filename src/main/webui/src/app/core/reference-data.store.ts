@@ -33,7 +33,7 @@ export interface BulkResult {
 
 /**
  * The warnings an accepted write came back with. `/api/animateurs` and
- * `/api/creneaux` answer `{ <entite>, avertissements }`; every other resource
+ * `/api/creneaux` and `/api/stands` answer `{ <entite>, avertissements }`; every other resource
  * still answers the bare entity, so an absent key simply means "nothing to
  * report".
  */
@@ -48,7 +48,7 @@ function avertissementsDe(reponse: unknown): Avertissement[] {
  * print "Créneau undefined" in the snack bar that stays on screen.
  *
  * Two shapes to read: the bare entity every referential answers, and the
- * `{ <entite>, avertissements }` wrapper `/api/animateurs` and `/api/creneaux`
+ * `{ <entite>, avertissements }` wrapper `/api/animateurs`, `/api/creneaux` and `/api/stands`
  * answer. `null` when neither carries one, and the caller falls back to what
  * it sent.
  */
