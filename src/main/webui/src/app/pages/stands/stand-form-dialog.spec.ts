@@ -342,6 +342,7 @@ describe('StandFormDialog', () => {
     const { fixture, save } = mount(
       stand({
         id: 's7',
+        effectifMax: 4,
         horaires: [
           {
             id: null,
@@ -408,6 +409,7 @@ describe('StandFormDialog', () => {
     const { fixture, save } = mount(
       stand({
         id: 's8',
+        effectifMax: 6,
         ouvertures: [{ id: null, date: '2026-07-14', heureDebut: '14:00', heureFin: null, motif: null, effectif: 0 }]
       })
     );
@@ -429,6 +431,33 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
     const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
     expect(payload.ouvertures[0].effectif).toBe(5);
+  });
+
+  it('refuses a window asking for more than the stand can hold, and says so', async () => {
+    const { fixture } = mount(
+      stand({
+        effectifMin: 1,
+        effectifMax: 2,
+        horaires: [
+          {
+            id: null,
+            mode: 'OUVERTURE',
+            jours: 'TOUS',
+            joursSemaine: [],
+            dateDebut: null,
+            dateFin: null,
+            dates: [],
+            fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 5 }],
+            motif: null
+          }
+        ]
+      })
+    );
+    await fixture.whenStable();
+
+    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    expect(alertes.some((texte) => texte.includes("L'effectif d'une fenêtre"))).toBe(true);
+    expect(soumettre(fixture).disabled).toBe(true);
   });
 
   it('refuses a day carrying both a closure and an opening', async () => {

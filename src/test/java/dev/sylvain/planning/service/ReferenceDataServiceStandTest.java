@@ -166,6 +166,35 @@ class ReferenceDataServiceStandTest {
     }
 
     @Test
+    void effectifDeFenetreAuDelaDeLaCapaciteDuStandEstRejete() {
+        // A window cannot make mandatory more seats than the stand is declared
+        // able to hold: the two figures would contradict each other on screen.
+        Stand stand = stand("STAND-HOR-EFF-MAX");
+        stand.setEffectifMin(1);
+        stand.setEffectifMax(3);
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), 4))));
+
+        assertThatThrownBy(() -> referenceDataService.createStand(stand))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("dépasse l'effectif maximum du stand (3)");
+
+        // At the capacity exactly, it is accepted.
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), 3))));
+        Stand cree = referenceDataService.createStand(stand);
+        assertThat(cree.getHoraires().get(0).getFenetres().get(0).getEffectif()).isEqualTo(3);
+
+        Stand avecOuverture = stand("STAND-OUV-EFF-MAX");
+        avecOuverture.setEffectifMax(2);
+        avecOuverture.setOuvertures(List.of(new OuvertureStand(null, LocalDate.of(2026, 7, 10),
+                LocalTime.of(10, 0), LocalTime.of(12, 0), null, 5)));
+        assertThatThrownBy(() -> referenceDataService.createStand(avecOuverture))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("dépasse l'effectif maximum du stand (2)");
+    }
+
+    @Test
     void ouvertureAvecEffectifNulEstRejetee() {
         Stand stand = stand("STAND-OUV-EFF-0");
         stand.setOuvertures(List.of(new OuvertureStand(null, LocalDate.of(2026, 7, 10), LocalTime.of(10, 0),
@@ -179,6 +208,7 @@ class ReferenceDataServiceStandTest {
     @Test
     void fenetreEtOuvertureAvecEffectifSontConserveesTellesQuelles() {
         Stand stand = stand("STAND-HOR-EFF-2");
+        stand.setEffectifMax(4);
         stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), 2),
                 new FenetreHoraire(LocalTime.of(14, 0), null, null))));

@@ -11,6 +11,7 @@ import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
+import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -121,11 +122,13 @@ public final class QualiteConstraints {
      * instead of rotating people through it: penalises how many <b>distinct</b>
      * animateurs the stand sees, beyond the one crew it needs at a time.
      *
-     * <p>"Beyond one crew" is the largest number of seats poste generation
-     * creates for the stand on any of its créneaux
-     * ({@link Creneau#siegesSimultanes(Stand)} — a window's own effectif, or
-     * the stand's {@code effectifMin}): a stand needing two people at once,
-     * held by the same two all event, is perfect continuity and scores zero.
+     * <p>"Beyond one crew" is the largest number of seats the stand holds on
+     * any one créneau — counted from the seats themselves rather than by
+     * replaying the opening geometry: they <em>are</em> what poste generation
+     * created, so the allowance follows a window's own effectif for free, and
+     * the rule stays a field read on the solver's hot path. A stand needing
+     * two people at once, held by the same two all event, is perfect
+     * continuity and scores zero.
      * Simultaneous multi-staffing was never rotation, and still isn't; and a
      * stand whose afternoon window asks for five people cannot be blamed for
      * showing five faces.</p>
@@ -150,21 +153,32 @@ public final class QualiteConstraints {
                 "eviterRoulementStandsPremium")
                 .filter(poste -> poste.getStand().isPremium())
                 .groupBy(PosteAffectation::getStand,
-                        ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur),
-                        ConstraintCollectors.max(QualiteConstraints::equipage))
-                .filter((stand, animateursDistincts, equipage) -> animateursDistincts > equipage)
+                        ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
+                .join(crewByStand(constraintFactory), Joiners.equal((stand, têtes) -> stand, Equipage::stand))
+                .filter((stand, animateursDistincts, equipage) -> animateursDistincts > equipage.sieges())
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
-                        (stand, animateursDistincts, equipage) -> animateursDistincts - equipage)
+                        (stand, animateursDistincts, equipage) -> animateursDistincts - equipage.sieges())
                 .asConstraint("eviterRoulementStandsPremium");
     }
 
     /**
-     * Seats the stand of this poste needs staffed at the same time on this
-     * poste's créneau — one crew; the largest over the stand's postes is the
-     * allowance above. Never below one: a poste exists, so somebody holds it.
+     * Seats a premium stand holds on its busiest créneau — its crew: the seats
+     * of one (stand, créneau) counted, then the largest over the stand's
+     * créneaux. One seat exists per person to staff, so counting them is the
+     * same answer as reading the windows, without walking them at every move.
      */
-    private static int equipage(PosteAffectation poste) {
-        return Math.max(1, poste.getCreneau().siegesSimultanes(poste.getStand()));
+    private static UniConstraintStream<Equipage> crewByStand(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(PosteAffectation.class)
+                .filter(poste -> poste.getStand().isPremium())
+                .groupBy(PosteAffectation::getStand, poste -> poste.getCreneau().getId(),
+                        ConstraintCollectors.count())
+                .map((stand, creneauId, sieges) -> new Equipage(stand, sieges.intValue()))
+                .groupBy(Equipage::stand, ConstraintCollectors.max(Equipage::sieges))
+                .map((stand, sieges) -> new Equipage(stand, sieges));
+    }
+
+    /** A premium stand and the seats of its busiest créneau. */
+    private record Equipage(Stand stand, int sieges) {
     }
 
     /**

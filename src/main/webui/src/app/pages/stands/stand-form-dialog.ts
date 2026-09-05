@@ -119,7 +119,7 @@ export class StandFormDialog {
   protected readonly effectifOuvertureInvalide = computed(() => effectifOuvertureInvalide(this.draft()));
 
   /** First problem among the recurring rules, or `null` — mirrors the backend's own check. */
-  protected readonly erreurHoraires = computed(() => premiereErreurHoraire(this.draft().horaires));
+  protected readonly erreurHoraires = computed(() => premiereErreurHoraire(this.draft().horaires, Number(this.draft().effectifMax)));
 
   /** Days the preview covers: the edition's créneaux — what the solver builds from. */
   protected readonly datesEvenement = computed(() => datesEvenement(this.store.creneaux()));
