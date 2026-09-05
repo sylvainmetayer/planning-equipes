@@ -6,6 +6,7 @@
 // on stand X, who steps out and who covers. Hence the regrouping here.
 
 import { correspondAuFiltre } from '../../core/text-filter';
+import { formatHeure } from '../../core/time-of-day';
 import { JourneeAnimateurPauses, PauseDueView, RapportPauses, RelaisView } from '../../core/models';
 
 /** One day of the event the report has something to say about. */
@@ -58,11 +59,6 @@ export interface SynthesePauses {
   pauses: number;
   relaisManquants: number;
   planifiees: number;
-}
-
-/** `10:00:00` → `10:00`; leaves anything already short alone. */
-export function heure(valeur: string | null | undefined): string {
-  return valeur && valeur.length > 5 ? valeur.slice(0, 5) : (valeur ?? '');
 }
 
 /** The days the report covers, chronological — the selector's options. */
@@ -216,6 +212,8 @@ export function syntheseDuJour(rapport: RapportPauses | null, date: string | nul
 }
 
 /** The relays of a break, spelled out for a cell; empty when nobody. */
+export { formatHeure as heure };
+
 export function libelleRelais(pause: Pick<PauseDueView, 'relais'>): string {
   return pause.relais.map((relais) => relais.nomComplet).join(', ');
 }

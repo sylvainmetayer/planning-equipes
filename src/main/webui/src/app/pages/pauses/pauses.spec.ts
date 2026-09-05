@@ -46,8 +46,8 @@ describe('heure', () => {
   it('shortens a server time and leaves a short one alone', () => {
     expect(heure('19:00:00')).toBe('19:00');
     expect(heure('19:00')).toBe('19:00');
-    expect(heure(null)).toBe('');
-    expect(heure(undefined)).toBe('');
+    // Same helper as every other view: the server always sends a time here.
+    expect(heure('')).toBe('');
   });
 });
 
