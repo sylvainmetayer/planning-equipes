@@ -162,6 +162,15 @@ Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL`
 (défaut `http://localhost:8080`), `E2E_ADMIN_PASSWORD`, `E2E_MAILPIT_URL`
 (défaut `http://localhost:8025`), `E2E_CHROMIUM`.
 
+Une suite mérite un mot : `e2e/icones.spec.ts` vérifie que la police des icônes
+arrive et se dessine. Un `<mat-icon>delete</mat-icon>` dont la police manque
+n'échoue nulle part — le navigateur écrit le mot, le bouton le rogne, et tous
+les écrans affichent « ... ». Aucun test unitaire ne peut le voir : jsdom n'a
+pas de polices. Le test constate trois faits indépendants — le fichier servi est
+bien une police et non la page de repli du SPA, le navigateur déclare la fonte
+utilisable, et les icônes rendues sont des glyphes carrés et non des mots rognés
+— et joint une capture de l'icône au rapport, réussite comprise.
+
 **La trace d'abord.** `trace: 'retain-on-failure'` est déjà en place : un échec
 laisse une trace navigable — pellicule, DOM, réseau, console — que la vidéo ne
 remplace pas.
