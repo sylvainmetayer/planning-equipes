@@ -85,11 +85,11 @@ public final class ConstraintCatalog {
                             + "(Code du travail art. L3164-6, liste de l'art. L3133-1). Aucune dérogation "
                             + "sectorielle n'est appliquée : celle de l'art. R3164-2 reste à instruire."),
             new ConstraintDefinition("reposHebdomadaireMineur", Niveau.HARD, "Légal (mineurs)",
-                    "Un mineur bénéficie de deux jours de repos consécutifs par semaine "
-                            + "(Code du travail art. L3164-2), lus à travers le lundi : un dimanche et le lundi "
-                            + "qui le suit comptent pour les deux semaines qu'ils touchent. Les dérogations "
-                            + "conventionnelles supposent un accord étendu ou une autorisation de l'inspection du "
-                            + "travail : elles ne sont pas présumées."),
+                    "Un mineur bénéficie de deux jours de repos consécutifs à l'intérieur de chaque semaine "
+                            + "civile, du lundi 0 h au dimanche 24 h (Code du travail art. L3164-2 et L3121-35) : un "
+                            + "dimanche et le lundi qui le suit ne comptent pour aucune des deux semaines. Les "
+                            + "dérogations conventionnelles supposent un accord étendu ou une autorisation de "
+                            + "l'inspection du travail : elles ne sont pas présumées."),
             new ConstraintDefinition("travailContinuMaxMineur", Niveau.HARD, "Légal (mineurs)",
                     "Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause "
                             + "d'au moins 30 minutes consécutives est obligatoire "

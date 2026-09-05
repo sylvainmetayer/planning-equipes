@@ -1,7 +1,5 @@
 package dev.sylvain.planning.solver.constraints;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -672,69 +670,24 @@ class LegalConstraintsTest extends ConstraintTestBase {
     }
 
     /**
-     * A Sunday and the Monday after it are two consecutive days off, wherever
-     * the ISO boundary falls: both weeks are satisfied (art. L3164-2, read like
-     * the adults' L3132-2 across the Monday).
+     * A Sunday off followed by a Monday off is one free day in each of two
+     * civil weeks, not two consecutive days of either: the right of art.
+     * L3164-2 is « par semaine », and the week must hold the rest itself
+     * (L3121-35; Cass. soc. 13 nov. 2025, n° 24-10.733). A minor working
+     * Monday 13 → Saturday 18 July, then Tuesday 21 → Sunday 26, has worked
+     * twelve days out of fourteen with two days off: both weeks are one day
+     * short. Locked here because the opposite reading was once proposed and
+     * would have quietly aligned minors on the adults' floor.
      */
     @Test
-    void mineurAvecDimancheEtLundiLibresAChevalSurDeuxSemainesNEstPasPenalise() {
+    void mineurAvecDimancheEtLundiLibresAChevalSurDeuxSemainesEstPenaliseSurChacune() {
         Animateur mineur = mineurDebutant("M1");
         Object[] postes = new Object[12];
         for (int i = 0; i < 6; i++) {
-            // Monday 13 → Saturday 18 July, then Tuesday 21 → Sunday 26 July.
             postes[i] = poste(standStrat, jourSemaine29(i), mineur);
             postes[6 + i] = poste(standStrat, jourSemaine30(1 + i, LocalTime.of(11, 0), LocalTime.of(15, 0)), mineur);
         }
-        verify("reposHebdomadaireMineur").given(postes).penalizesBy(0);
-    }
-
-    @Test
-    void deficitReposMineurCrediteUneSuiteLibreAuxDeuxSemainesQuElleTouche() {
-        java.time.LocalDate lundi29 = java.time.LocalDate.of(2026, 7, 13);
-        java.util.Set<java.time.LocalDate> travailles = new java.util.HashSet<>();
-        for (int i = 0; i < 6; i++) {
-            travailles.add(lundi29.plusDays(i));          // Mon 13 → Sat 18
-            travailles.add(lundi29.plusDays(8 + i));      // Tue 21 → Sun 26
-        }
-        assertThat(LegalConstraints.deficitReposMineurJours(travailles)).isZero();
-
-        // Sunday 19 worked too: Monday 20 stands alone — week 30 is one day
-        // short, and week 29 has no free day at all.
-        travailles.add(lundi29.plusDays(6));
-        assertThat(LegalConstraints.deficitReposMineurJours(travailles)).isEqualTo(2 + 1);
-    }
-
-    @Test
-    void deficitReposMineurNeSeSoucieQueDesJoursLibresDansOuContreLaSemaine() {
-        java.time.LocalDate lundi29 = java.time.LocalDate.of(2026, 7, 13);
-        java.util.Set<java.time.LocalDate> travailles = new java.util.HashSet<>();
-        for (int i = 0; i < 7; i++) {
-            travailles.add(lundi29.plusDays(i));          // the whole of week 29
-        }
-        // The free days before the event do not touch week 29: it is short of two.
-        assertThat(LegalConstraints.deficitReposMineurJours(travailles)).isEqualTo(2);
-
-        // Wednesday off: one day, one short.
-        travailles.remove(lundi29.plusDays(2));
-        assertThat(LegalConstraints.deficitReposMineurJours(travailles)).isEqualTo(1);
-
-        // Saturday off too: not consecutive with Wednesday, still one short.
-        travailles.remove(lundi29.plusDays(5));
-        assertThat(LegalConstraints.deficitReposMineurJours(travailles)).isEqualTo(1);
-
-        // Sunday off as well: Saturday + Sunday, satisfied.
-        travailles.remove(lundi29.plusDays(6));
-        assertThat(LegalConstraints.deficitReposMineurJours(travailles)).isZero();
-    }
-
-    @Test
-    void deficitReposMineurTraiteLesBordsDeLEvenementCommeLibres() {
-        java.time.LocalDate lundi29 = java.time.LocalDate.of(2026, 7, 13);
-        // Thursday to Sunday only: Monday to Wednesday are free and touch the week.
-        java.util.Set<java.time.LocalDate> travailles = new java.util.HashSet<>(java.util.List.of(
-                lundi29.plusDays(3), lundi29.plusDays(4), lundi29.plusDays(5), lundi29.plusDays(6)));
-        assertThat(LegalConstraints.deficitReposMineurJours(travailles)).isZero();
-        assertThat(LegalConstraints.deficitReposMineurJours(java.util.Set.of())).isZero();
+        verify("reposHebdomadaireMineur").given(postes).penalizesBy(1 + 1);
     }
 
     @Test

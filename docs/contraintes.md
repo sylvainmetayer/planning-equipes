@@ -236,6 +236,37 @@ nomment elles aussi l'exception par son id.
 **Le budget d'exceptions a été explicitement écarté** : voir
 [0010](decisions/0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md).
 
+## La frontière de semaine
+
+Les deux repos hebdomadaires se lisent sur la **semaine civile**, du lundi
+0 h au dimanche 24 h ([L3121-35], définition supplétive qu'un accord d'entreprise
+peut déplacer — donnée que l'application ne détient pas), la même fenêtre que
+`Creneau.semaineIso()` et les plafonds hebdomadaires. La question qui revient
+est ce que vaut un repos **à cheval sur le lundi**.
+
+**Majeurs, `reposHebdomadaireMinimal` ([L3132-2]).** Le texte est « vingt-quatre
+heures consécutives auxquelles s'ajoutent les heures consécutives de repos
+quotidien » : les 24 h sont *dans* la semaine, seul le repos quotidien qui s'y
+ajoute peut déborder. C'est ce que `creditReposMinutes` calcule —
+`min(durée réelle, part dans la semaine + 11 h)` — donc un repos n'est crédité à
+une semaine que s'il y passe au moins 24 h. Un repos du samedi 20 h au lundi
+10 h (38 h) satisfait la semaine du samedi et laisse la suivante à 21 h, comme
+la Cour de cassation le lit (Cass. soc. 13 nov. 2025, n° 24-10.733 : « toute
+semaine civile doit comporter » ce repos — arrêt cité d'après ses commentaires,
+à confirmer sur Judilibre avant toute citation dans le catalogue).
+
+**Mineurs, `reposHebdomadaireMineur` ([L3164-2]).** « Deux jours de repos
+consécutifs par semaine » se compte en **jours civils à l'intérieur de la
+semaine** : un dimanche et le lundi qui le suit sont un jour libre dans chacune
+de deux semaines, pas deux jours consécutifs de l'une d'elles, et aucune des
+deux n'est satisfaite. La lecture inverse — créditer la paire aux deux semaines
+— a été proposée puis écartée : elle ramenait un mineur à un seul jour libre par
+semaine, soit un résultat voisin de la dérogation à 36 h de l'alinéa 2 sans
+l'accord qu'il exige. Le test
+`mineurAvecDimancheEtLundiLibresAChevalSurDeuxSemainesEstPenaliseSurChacune`
+verrouille ce choix. Les jours que l'événement ne couvre pas restent des jours
+libres : une semaine partiellement couverte est satisfaite par construction.
+
 ## Hors périmètre assumé
 
 Ces obligations sont réelles et **volontairement non implémentées**. Elles sont
@@ -261,6 +292,7 @@ instruire avec un juriste ; d'ici là, contrôle manuel.
 | Nature des indisponibilités | `joursIndisponibles` est un `Set<LocalDate>` non typé : impossible de distinguer un repos légal, un congé payé et une convenance |
 | Autorisation d'inspection pour les moins de 16 ans ([L4153-3], [D4153-2]) | Donnée administrative absente du modèle, à vérifier manuellement |
 | Dérogation sectorielle aux jours fériés ([R3164-2]) | Non instruite ; le défaut le plus protecteur s'applique |
+| Repos dominical des mineurs ([L3132-3], [L3164-3] à [L3164-5], [R3164-1]) | Le repos hebdomadaire est donné le dimanche, et les dérogations de L3132-4 et L3132-8 ne s'appliquent pas aux moins de 18 ans ; seuls des apprentis de douze secteurs énumérés peuvent travailler le dimanche. Savoir si l'organisateur relève d'une dérogation et sous quel statut chaque animateur est engagé sont des faits que le dépôt ne contient pas : un mineur placé un dimanche est aujourd'hui accepté, à contrôler manuellement |
 
 ## Ajouter une contrainte
 
@@ -301,3 +333,10 @@ Chiffres mesurés et protocole dans
 [L3122-1]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3122-1
 [L4153-3]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L4153-3
 [R3164-2]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=R3164-2
+[L3121-35]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3121-35
+[L3132-2]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3132-2
+[L3132-3]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3132-3
+[L3164-2]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3164-2
+[L3164-3]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3164-3
+[L3164-5]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3164-5
+[R3164-1]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=R3164-1

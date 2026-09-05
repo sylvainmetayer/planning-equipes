@@ -478,8 +478,7 @@ public final class LegalConstraints {
     }
 
     /**
-     * A minor gets two <i>consecutive</i> rest days credited to each ISO week
-     * in which they work.
+     * A minor gets two <i>consecutive</i> rest days inside each ISO week.
      *
      * <p>Code du travail art. <b>L3164-2</b>: <i>« Les jeunes travailleurs ont
      * droit à deux jours de repos consécutifs par semaine. »</i></p>
@@ -492,15 +491,18 @@ public final class LegalConstraints {
      * unconditionally; any derogation must become entered data before it can be
      * coded.</p>
      *
-     * <p>Counted in <b>calendar days</b>, read across the Monday like
-     * {@link #reposHebdomadaireMinimal}: a Sunday and the Monday after it are
-     * two consecutive days off, and they are credited to both weeks they
-     * touch — the reading retained for adults, where the daily rest adjoining
-     * the boundary is credited on either side. Days the event does not cover
-     * are free days like any other, so a week only partially covered is
-     * satisfied by construction. Same whole-animateur grouping as the adults'
-     * rule, for the same reason: a pair straddling the Monday is only visible
-     * with the days of both weeks.</p>
+     * <p>Counted in <b>calendar days</b> inside the civil week, Monday 00:00 to
+     * Sunday 24:00 (art. L3121-35, the week {@code Creneau.semaineIso()}
+     * already uses): days of that week the event does not cover are free days
+     * like any other, so a week only partially covered is satisfied by
+     * construction. A Sunday and the Monday after it are <em>not</em> two days
+     * of one week: the right is « par semaine », the week must <em>comporter</em>
+     * the rest (Cass. soc. 13 nov. 2025, n° 24-10.733, on L3132-2), and each of
+     * the two weeks then holds one free day only. Deliberately different from
+     * {@link #reposHebdomadaireMinimal}, which does not credit a rest to both
+     * sides either: it requires 24 h <em>inside</em> the week and only lets the
+     * adjoining daily rest overflow, as L3132-2 is written. See
+     * {@code docs/contraintes.md}, « La frontière de semaine ».</p>
      */
     private Constraint reposHebdomadaireMineur(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
@@ -508,10 +510,13 @@ public final class LegalConstraints {
                 .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste)
                         && poste.getAnimateur().isMineurOn(poste.getCreneau().getDate()))
                 .groupBy(PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().semaineIso(),
                         ConstraintCollectors.toSet(poste -> poste.getCreneau().getDate()))
-                .filter((animateur, jours) -> deficitReposMineurJours(jours) > 0)
+                .filter((animateur, semaine, jours) -> longestRunOfFreeDays(jours)
+                        < JOURS_REPOS_CONSECUTIFS_MINEUR)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, jours) -> deficitReposMineurJours(jours))
+                        (animateur, semaine, jours) -> JOURS_REPOS_CONSECUTIFS_MINEUR
+                                - longestRunOfFreeDays(jours))
                 .asConstraint("reposHebdomadaireMineur");
     }
 
@@ -682,68 +687,22 @@ public final class LegalConstraints {
     }
 
     /**
-     * Days missing, summed over the ISO weeks in which the minor works, to
-     * reach {@link #JOURS_REPOS_CONSECUTIFS_MINEUR} consecutive free days
-     * credited to each of those weeks.
-     *
-     * <p>A week is credited with the longest run of consecutive free days that
-     * touches it, wherever the run starts or ends: a Sunday off followed by a
-     * Monday off satisfies the week of the Sunday and the week of the Monday
-     * alike. Days before the first worked day and after the last one are free
-     * with no known end, so a run reaching them is long enough by construction.</p>
+     * Longest run of consecutive calendar days of the ISO week on which none of
+     * the given dates falls — i.e. the longest stretch of days off.
      */
-    static int deficitReposMineurJours(Set<LocalDate> joursTravailles) {
-        if (joursTravailles.isEmpty()) {
-            return 0;
-        }
-        LocalDate premier = joursTravailles.stream().min(LocalDate::compareTo).orElseThrow();
-        LocalDate dernier = joursTravailles.stream().max(LocalDate::compareTo).orElseThrow();
-        java.util.TreeSet<LocalDate> lundis = new java.util.TreeSet<>();
-        for (LocalDate jour : joursTravailles) {
-            lundis.add(debutSemaine(jour).toLocalDate());
-        }
-        int deficit = 0;
-        for (LocalDate lundi : lundis) {
-            int meilleur = 0;
-            for (int i = 0; i < 7 && meilleur < JOURS_REPOS_CONSECUTIFS_MINEUR; i++) {
-                LocalDate jour = lundi.plusDays(i);
-                if (!joursTravailles.contains(jour)) {
-                    meilleur = Math.max(meilleur, runOfFreeDays(jour, joursTravailles, premier, dernier));
-                }
+    private static int longestRunOfFreeDays(Set<LocalDate> joursTravailles) {
+        LocalDate lundi = debutSemaine(joursTravailles.iterator().next()).toLocalDate();
+        int longest = 0;
+        int courante = 0;
+        for (int i = 0; i < 7; i++) {
+            if (joursTravailles.contains(lundi.plusDays(i))) {
+                courante = 0;
+            } else {
+                courante++;
+                longest = Math.max(longest, courante);
             }
-            deficit += Math.max(0, JOURS_REPOS_CONSECUTIFS_MINEUR - meilleur);
         }
-        return deficit;
-    }
-
-    /**
-     * Length of the run of consecutive free days {@code jour} belongs to,
-     * capped at {@link #JOURS_REPOS_CONSECUTIFS_MINEUR}; a run reaching before
-     * the first worked day or past the last one is capped at once, its real
-     * length being unknown.
-     */
-    private static int runOfFreeDays(LocalDate jour, Set<LocalDate> joursTravailles, LocalDate premier,
-            LocalDate dernier) {
-        int longueur = 1;
-        for (LocalDate avant = jour.minusDays(1); longueur < JOURS_REPOS_CONSECUTIFS_MINEUR; avant = avant.minusDays(1)) {
-            if (avant.isBefore(premier)) {
-                return JOURS_REPOS_CONSECUTIFS_MINEUR;
-            }
-            if (joursTravailles.contains(avant)) {
-                break;
-            }
-            longueur++;
-        }
-        for (LocalDate apres = jour.plusDays(1); longueur < JOURS_REPOS_CONSECUTIFS_MINEUR; apres = apres.plusDays(1)) {
-            if (apres.isAfter(dernier)) {
-                return JOURS_REPOS_CONSECUTIFS_MINEUR;
-            }
-            if (joursTravailles.contains(apres)) {
-                break;
-            }
-            longueur++;
-        }
-        return longueur;
+        return longest;
     }
 
     /** Effective working minutes of an adult's day, see {@link #effectiveWorkMinutes}. */
