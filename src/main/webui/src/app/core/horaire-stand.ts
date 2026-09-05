@@ -295,6 +295,8 @@ export function erreurHoraire(
     heureDebutRequise: string;
     fenetreInversee: string;
     effectifInvalide: string;
+    /** Receives the window's effectif and the stand's maximum: the two numbers that disagree. */
+    effectifDepasse: (effectif: number, effectifMax: number) => string;
     joursSemaineRequis: string;
     plageRequise: string;
     datesRequises: string;
@@ -312,8 +314,12 @@ export function erreurHoraire(
     if (fenetre.heureFin && fenetre.heureFin <= fenetre.heureDebut) {
       return messages.fenetreInversee;
     }
-    if (effectifFenetreInvalide(fenetre.effectif, effectifMax)) {
+    if (effectifFenetreInvalide(fenetre.effectif)) {
       return messages.effectifInvalide;
+    }
+    if (effectifFenetreInvalide(fenetre.effectif, effectifMax)) {
+      // Past the first check, the only way left to be invalid is the capacity.
+      return messages.effectifDepasse(fenetre.effectif as number, Number(effectifMax));
     }
   }
   switch (horaire.jours) {

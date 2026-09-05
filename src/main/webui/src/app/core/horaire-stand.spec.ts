@@ -21,6 +21,7 @@ const MESSAGES = {
   heureDebutRequise: 'heureDebutRequise',
   fenetreInversee: 'fenetreInversee',
   effectifInvalide: 'effectifInvalide',
+  effectifDepasse: (effectif: number, effectifMax: number) => `effectifDepasse ${effectif}>${effectifMax}`,
   joursSemaineRequis: 'joursSemaineRequis',
   plageRequise: 'plageRequise',
   datesRequises: 'datesRequises'
@@ -192,6 +193,15 @@ describe('erreurHoraire', () => {
     expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 0 }] }), MESSAGES)).toBe('effectifInvalide');
     expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: -1 }] }), MESSAGES)).toBe('effectifInvalide');
     expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 2.5 }] }), MESSAGES)).toBe('effectifInvalide');
+  });
+
+  it('nomme les deux nombres quand une fenêtre dépasse la capacité du stand', () => {
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 4 }] }), MESSAGES, 2)).toBe(
+      'effectifDepasse 4>2'
+    );
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 2 }] }), MESSAGES, 2)).toBeNull();
+    // A zero is a zero before it is "above the maximum".
+    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 0 }] }), MESSAGES, 2)).toBe('effectifInvalide');
   });
 
   it('signale une fenêtre inversée avant son effectif', () => {
