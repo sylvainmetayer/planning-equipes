@@ -196,8 +196,8 @@ public class PauseAnalyzer {
                     ignored -> new ArrayList<>());
             for (SequenceView sequence : journee.sequences()) {
                 for (PauseDueView pause : sequence.pausesDues()) {
-                    pauses.add(new PauseAnimateurView(journee.date(), pause.heureLimite(), pause.dureeMinutes(),
-                            pause.standId(), pause.standNom(), pause.relaisDisponible()));
+                    pauses.add(new PauseAnimateurView(journee.date(), pause.debut(), pause.fin(), pause.heureLimite(),
+                            pause.dureeMinutes(), pause.standId(), pause.standNom(), pause.relaisDisponible()));
                 }
             }
         }
@@ -221,9 +221,35 @@ public class PauseAnalyzer {
         return List.copyOf(pauses);
     }
 
-    /** One break of one animateur, as their own planning prints it: « pause de 18:20 à 18:40 ». */
+    /**
+     * One break of one animateur, as their own planning prints it: « pause de
+     * 18:20 à 18:40 ». {@code date} is the day of the seat it falls in, which a
+     * break past midnight shares with the evening it belongs to.
+     */
     public record PauseAnimateurView(LocalDate date, LocalTime debut, LocalTime fin, LocalTime heureLimite,
             int dureeMinutes, String standId, String standNom, boolean relaisDisponible) {
+
+        /**
+         * Whether this break falls inside that seat — what the PDF and the
+         * calendar feed both need, written once so they can never attach the
+         * same break to two different shifts. Compared on instants: a break past
+         * midnight belongs to the evening seat, where bare clock times would
+         * read it as earlier than the seat's own start and drop it.
+         */
+        public boolean fallsInside(PosteAffectation poste) {
+            if (poste == null || poste.getCreneau() == null || poste.getStand() == null
+                    || poste.getCreneau().getDate() == null || poste.heureDebutEffectif() == null
+                    || !poste.getStand().getId().equals(standId)) {
+                return false;
+            }
+            LocalDateTime debutPoste = LocalDateTime.of(poste.getCreneau().getDate(), poste.heureDebutEffectif());
+            LocalDateTime finPoste = debutPoste.plusMinutes(poste.getDureeEffectiveMinutes());
+            LocalDateTime debutPause = LocalDateTime.of(date, debut);
+            if (debutPause.isBefore(debutPoste) && finPoste.toLocalDate().isAfter(date)) {
+                debutPause = debutPause.plusDays(1);
+            }
+            return !debutPause.isBefore(debutPoste) && debutPause.isBefore(finPoste);
+        }
     }
 
     /** The stretches of one animateur's day, with the breaks each owes and the window of each. */
@@ -285,7 +311,11 @@ public class PauseAnalyzer {
                 demande.simultanee = true;
             }
             demande.debut = debut;
-            curseur = demande.debut;
+            // The cursor never moves forward: a break clamped up to its floor
+            // would otherwise leave room it does not have, and the next one —
+            // whose deadline is earlier — would be placed over it without the
+            // rotation saying two people are out at once.
+            curseur = curseur == null || debut.isBefore(curseur) ? debut : curseur;
         }
     }
 

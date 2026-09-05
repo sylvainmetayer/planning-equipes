@@ -483,6 +483,62 @@ class PauseAnalyzerTest {
         }
     }
 
+    @Test
+    void aClampedBreakNeverPushesTheNextOneOntoItsSlot() {
+        // Windows too tight for four people: three fit back to back, the fourth
+        // is clamped to its floor and flagged. The rotation must not then place
+        // a fifth over a colleague's slot while calling it conflict-free.
+        Stand stand = stand("JEUX", 4);
+        Animateur a = adulte("a");
+        Animateur b = adulte("b");
+        Animateur c = adulte("c");
+        Animateur d = adulte("d");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", stand, creneau(1, 8, 0, 20, 0), a),
+                poste("p2", stand, creneau(1, 8, 0, 20, 0), b),
+                poste("p3", stand, creneau(1, 8, 0, 20, 0), c),
+                poste("p4", stand, creneau(1, 8, 0, 20, 0), d));
+
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c, d), postes), surPoste(true));
+
+        // Every break kept apart is really apart: two breaks may share an instant
+        // only when at least one of them says so.
+        List<PauseDueView> pauses = List.of(pause(rapport, "a"), pause(rapport, "b"), pause(rapport, "c"),
+                pause(rapport, "d"));
+        for (PauseDueView gauche : pauses) {
+            for (PauseDueView droite : pauses) {
+                if (gauche == droite || gauche.simultanee() || droite.simultanee()) {
+                    continue;
+                }
+                boolean disjointes = !gauche.debut().isBefore(droite.fin()) || !droite.debut().isBefore(gauche.fin());
+                assertThat(disjointes)
+                        .as("%s–%s et %s–%s se chevauchent sans le dire", gauche.debut(), gauche.fin(),
+                                droite.debut(), droite.fin())
+                        .isTrue();
+            }
+        }
+    }
+
+    @Test
+    void aBreakPastMidnightBelongsToTheEveningSeatItFallsIn() {
+        // 19:00 → 02:00 is a seven-hour stretch: the break falls at 01:00, on the
+        // next calendar day, and must still be attached to the evening's seat.
+        Stand stand = stand("JEUX", 1);
+        Animateur alice = adulte("alice");
+        PosteAffectation poste = poste("p1", stand, creneau(1, 19, 0, 2, 0), alice);
+
+        List<PauseAnalyzer.PauseAnimateurView> pauses =
+                analyzer.pausesAnimateur(planning(List.of(alice), List.of(poste)), "alice");
+
+        assertThat(pauses).hasSize(1);
+        assertThat(pauses.getFirst().debut()).isEqualTo(LocalTime.of(1, 0));
+        assertThat(pauses.getFirst().fallsInside(poste)).isTrue();
+        // Another stand, or another day, is never a match.
+        assertThat(pauses.getFirst().fallsInside(poste("p2", stand("AUTRE", 1), creneau(2, 19, 0, 2, 0), alice)))
+                .isFalse();
+        assertThat(pauses.getFirst().fallsInside(null)).isFalse();
+    }
+
     private static PauseDueView pause(RapportPauses rapport, String animateurId) {
         return journee(rapport, animateurId).sequences().getFirst().pausesDues().getFirst();
     }

@@ -158,10 +158,7 @@ public class PlanningIcs {
     private static String descriptionPauses(List<PauseAnalyzer.PauseAnimateurView> pauses, PosteAffectation poste) {
         StringBuilder texte = new StringBuilder();
         for (PauseAnalyzer.PauseAnimateurView pause : pauses) {
-            if (pause.date().equals(poste.getCreneau().getDate()) && pause.standId().equals(poste.getStand().getId())
-                    && !pause.debut().isBefore(poste.heureDebutEffectif())
-                    && (poste.heureFinEffectif() == null || !poste.heureFinEffectif().isAfter(poste.heureDebutEffectif())
-                            || pause.debut().isBefore(poste.heureFinEffectif()))) {
+            if (pause.fallsInside(poste)) {
                 texte.append(" - Pause de ").append(pause.debut()).append(" à ").append(pause.fin())
                         .append(" (").append(pause.dureeMinutes()).append(" min)");
             }
