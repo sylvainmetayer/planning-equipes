@@ -188,7 +188,7 @@ public class CreneauMcpTools {
             @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
             @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
             @ToolArg(description = "Heure de fermeture des fenêtres ouvertes (HH:MM, 00:00 = minuit)") String heureFermeture,
-            @ToolArg(description = "Durée minimale d'un créneau en minutes ; en deçà, fusionné (défaut 15)", required = false) Integer dureeMinimaleMinutes,
+            @ToolArg(description = "Durée minimale d'un créneau en minutes ; en deçà, la tranche rejoint sa voisine et le trou est refermé (défaut 15)", required = false) Integer dureeMinimaleMinutes,
             @ToolArg(description = "true pour juger la grille dérivée seule, comme si elle remplaçait l'actuelle", required = false) Boolean remplacer,
             @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false) String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -206,7 +206,7 @@ public class CreneauMcpTools {
             @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
             @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
             @ToolArg(description = "Heure de fermeture des fenêtres ouvertes (HH:MM, 00:00 = minuit)") String heureFermeture,
-            @ToolArg(description = "Durée minimale d'un créneau en minutes ; en deçà, fusionné (défaut 15)", required = false) Integer dureeMinimaleMinutes,
+            @ToolArg(description = "Durée minimale d'un créneau en minutes ; en deçà, la tranche rejoint sa voisine et le trou est refermé (défaut 15)", required = false) Integer dureeMinimaleMinutes,
             @ToolArg(description = "true pour remplacer toute la grille (efface le planning résolu)", required = false) Boolean remplacer,
             @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false) String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {

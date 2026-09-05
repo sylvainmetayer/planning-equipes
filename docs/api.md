@@ -1356,8 +1356,12 @@ devient un créneau. `POST /api/creneaux/derivation/apercu` et
 `POST /api/creneaux/derivation`, corps
 `{ dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes, remplacer }` :
 `heureFermeture` donne une fin aux fenêtres « jusqu'à la fermeture » (`00:00`
-pour minuit, le dernier créneau franchit alors minuit) ; une tranche plus courte
-que `dureeMinimaleMinutes` (défaut 15) est fusionnée avec la précédente ;
+pour minuit, le dernier créneau franchit alors minuit ; une fenêtre « jusqu'à la
+fermeture » qui commence après cette heure court jusqu'au lendemain) ; une
+tranche plus courte que `dureeMinimaleMinutes` (défaut 15) rejoint celle qui la
+suit — celle d'avant à défaut — et un trou plus court qu'elle est refermé plutôt
+que de couper le créneau en deux ; les `coupures` rendues sont celles que la
+grille porte encore, jamais celles que ces fusions ont effacées ;
 `remplacer` juge — et, à l'écriture, remplace — toute la grille, le planning
 résolu partant avec elle comme pour le découpage, sinon les créneaux s'ajoutent.
 Seuls les jours qu'un stand déclare « ouvert sur ces fenêtres » participent :
