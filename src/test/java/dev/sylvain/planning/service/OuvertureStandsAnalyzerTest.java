@@ -142,6 +142,20 @@ class OuvertureStandsAnalyzerTest {
                 .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 2, false));
     }
 
+    /** The recurrence preview validates a grid holding rows a rule would add: no id yet, still one column each. */
+    @Test
+    void unCreneauPasEncoreEcritADroitASaColonneSansIdentifiant() {
+        List<Creneau> creneaux = deuxJours();
+        creneaux.add(new Creneau(null, 1, JOUR_1, LocalTime.of(20, 0), LocalTime.of(23, 0)));
+
+        RapportOuvertures rapport = analyze(List.of(stand("LIBRE")), creneaux);
+
+        assertThat(rapport.jours().get(0).creneaux()).extracting(colonne -> colonne.id()).containsExactly(1L, null);
+        assertThat(rapport.stands().get(0).jours().get(0).creneaux())
+                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(1L, 1, false),
+                        new OuvertureStandsAnalyzer.CelluleCreneau(null, 1, false));
+    }
+
     @Test
     void unStandFermeUnJourALaCelluleVideSurChaqueCreneau() {
         Stand stand = stand("FERME");
