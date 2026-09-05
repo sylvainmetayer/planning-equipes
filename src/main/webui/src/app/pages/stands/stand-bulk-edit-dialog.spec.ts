@@ -264,6 +264,30 @@ describe('StandBulkEditDialog', () => {
     expect(new Set(noms).size).toBe(noms.length);
   });
 
+  it('applies a rule typed on the compact line to every selected stand', async () => {
+    const { fixture, saveMany } = mount([stand('s1'), stand('s2')]);
+    await fixture.whenStable();
+    await remplir(fixture, { horaires: { mode: 'REMPLACER', horaires: [] } });
+    boutonAjouterHoraire(fixture)!.click();
+    await fixture.whenStable();
+
+    const ligne = root(fixture).querySelector<HTMLInputElement>('input[name="bulkfenetresLigne0"]')!;
+    ligne.value = '14:00-';
+    ligne.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    const [, payloads] = saveMany.mock.calls[0] as unknown as [string, Stand[]];
+    expect(payloads).toHaveLength(2);
+    for (const stand of payloads) {
+      expect(stand.horaires).toHaveLength(1);
+      expect(stand.horaires[0].fenetres).toEqual([{ heureDebut: '14:00', heureFin: null, effectif: null }]);
+      // The editor's own state stays in the form.
+      expect(stand.horaires[0]).not.toHaveProperty('saisie');
+    }
+  });
+
   it('blocks the batch on an invalid horaire rule and says why', async () => {
     const { fixture } = mount([stand('s1')]);
     await fixture.whenStable();

@@ -3,6 +3,7 @@
 
 import { ModeBooleen, ModeListe, appliquerModeBooleen, appliquerModeListe } from '../../core/bulk-edit';
 import { Emplacement, HoraireStand, NiveauEffort, Stand } from '../../core/models';
+import { HoraireDraft, normaliserHoraire } from './stand-draft';
 
 /** `DEFINIR` ties every selected stand to one emplacement, `EFFACER` unties them all. */
 export type ModeEmplacement = 'INCHANGE' | 'DEFINIR' | 'EFFACER';
@@ -28,7 +29,7 @@ export interface StandBulkPatch {
   reserveMajeurs: ModeBooleen;
   premium: ModeBooleen;
   niveauEffort: 'INCHANGE' | NiveauEffort;
-  horaires: { mode: ModeHoraires; horaires: HoraireStand[] };
+  horaires: { mode: ModeHoraires; horaires: HoraireDraft[] };
 }
 
 export function patchStandVide(): StandBulkPatch {
@@ -106,13 +107,14 @@ function appliquerHoraires(actuels: readonly HoraireStand[], patch: StandBulkPat
   }
 }
 
-function copierHoraire(horaire: HoraireStand): HoraireStand {
+function copierHoraire(horaire: HoraireDraft): HoraireStand {
+  // Normalised like the single-stand form: the editing state (the typed line,
+  // the fold flags) stays behind, and an emptied end reads as "until closing".
   return {
-    ...horaire,
+    ...normaliserHoraire(horaire),
     id: null,
     joursSemaine: [...horaire.joursSemaine],
-    dates: [...horaire.dates],
-    fenetres: horaire.fenetres.map((fenetre) => ({ ...fenetre }))
+    dates: [...horaire.dates]
   };
 }
 

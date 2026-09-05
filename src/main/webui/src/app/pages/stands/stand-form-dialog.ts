@@ -12,35 +12,17 @@ import { focusApresSuppression } from '../../core/focus-apres-suppression';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { JourResolu, resoudreHoraires } from '../../core/horaire-stand';
+import { datesEvenement, decrireJour, libelleJour, premiereErreurHoraire } from './stand-horaires';
+import { HoraireReglesEditor } from './horaire-regles-editor';
+import { IndisponibiliteStand, OuvertureStand, Stand } from '../../core/models';
 import {
-  estCasParticulier,
-  formaterFenetres,
-  horaireVide,
-  JourResolu,
-  parseFenetres,
-  resoudreHoraires
-} from '../../core/horaire-stand';
-import {
-  datesEvenement,
-  decrireJour,
-  erreurRegle,
-  libelleJour,
-  libelleJourSemaine,
-  messageConflitDeMode,
-  premiereErreurHoraire
-} from './stand-horaires';
-import { FenetreHoraire, IndisponibiliteStand, JourSemaine, OuvertureStand, Stand } from '../../core/models';
-import {
-  HoraireDraft,
   StandDraft,
   ajouterA,
-  basculerJour,
   brouillonInvalide,
   conflitOuvertureFermeture,
-  datesDepuisTexte,
   effectifInvalide,
   effectifOuvertureInvalide,
-  fenetreVide,
   indisponibiliteInvalide,
   ouvertureInvalide,
   ouvertureVide,
@@ -66,11 +48,8 @@ export interface StandFormData {
  * strip below the editor resolves both against the active group's days, so the
  * effect of a rule is visible without saving and re-reading.
  *
- * A rule opens folded on the only shape the reference event uses — open, every
- * day — with its windows typed as one line (`10:00-12:00@2, 14:00-`), the way
- * a line of the organiser's spreadsheet reads. The mode and day selectors sit
- * behind « Cas particulier », and the windows can still be detailed one row
- * each; both views edit the same windows.
+ * The recurring rules are edited by {@link HoraireReglesEditor}, shared with
+ * the bulk edit: a rule opens folded, its windows typed as one line.
  */
 @Component({
   selector: 'app-stand-form-dialog',
@@ -83,7 +62,8 @@ export interface StandFormData {
     MatCheckboxModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HoraireReglesEditor
   ],
   templateUrl: './stand-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -108,16 +88,6 @@ export class StandFormDialog {
   protected readonly editingId = signal<string | null>(this.data.stand?.id ?? null);
   protected readonly draft = signal<StandDraft>(toDraft(this.data.stand));
 
-  protected readonly joursSemaine: readonly JourSemaine[] = [
-    'MONDAY',
-    'TUESDAY',
-    'WEDNESDAY',
-    'THURSDAY',
-    'FRIDAY',
-    'SATURDAY',
-    'SUNDAY'
-  ];
-
   protected readonly effectifInvalid = computed(() => effectifInvalide(this.draft()));
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
@@ -137,13 +107,8 @@ export class StandFormDialog {
   /** First problem among the recurring rules, or `null` — mirrors the backend's own check. */
   protected readonly erreurHoraires = computed(() => premiereErreurHoraire(this.draft().horaires, Number(this.draft().effectifMax)));
 
-  /** The problems rule by rule, so each card carries its own and the submit button knows them all. */
-  protected readonly erreursRegles = computed(() =>
-    this.draft().horaires.map((horaire) => erreurRegle(horaire, Number(this.draft().effectifMax)))
-  );
-
-  /** The one check that spans several rules: two rules of one scope disagreeing on the mode. */
-  protected readonly conflitDeMode = computed(() => messageConflitDeMode(this.draft().horaires));
+  /** The stand's declared capacity, as the rule editor checks the windows against. */
+  protected readonly effectifMaxDeclare = computed(() => Number(this.draft().effectifMax));
 
   /** Days the preview covers: the edition's créneaux — what the solver builds from. */
   protected readonly datesEvenement = computed(() => datesEvenement(this.store.creneaux()));
@@ -168,10 +133,6 @@ export class StandFormDialog {
   /** Day label of the preview strip: `08/07`, short enough for a dozen cells in a row. */
   protected libelleJour(date: string): string {
     return libelleJour(date);
-  }
-
-  protected libelleJourSemaine(jour: JourSemaine): string {
-    return libelleJourSemaine(jour);
   }
 
   protected patch(patch: Partial<StandDraft>): void {
@@ -202,102 +163,6 @@ export class StandFormDialog {
   protected retirerOuverture(index: number): void {
     this.patch({ ouvertures: retirerDe(this.draft().ouvertures, index) });
     this.focusApres('[data-focus="ajouter-ouverture"]');
-  }
-
-  /* ------------------------- Recurring horaires ------------------------- */
-
-  /** A new rule starts on an empty line, not on an empty row: the line's own error says what to type. */
-  protected ajouterHoraire(): void {
-    this.patch({ horaires: ajouterA(this.draft().horaires, { ...horaireVide(), fenetres: [], saisie: '' }) });
-  }
-
-  protected patchHoraire(index: number, patch: Partial<HoraireDraft>): void {
-    this.patch({ horaires: patchDansListe(this.draft().horaires, index, patch) });
-  }
-
-  protected retirerHoraire(index: number): void {
-    this.patch({ horaires: retirerDe(this.draft().horaires, index) });
-    this.focusApres('[data-focus="ajouter-horaire"]');
-  }
-
-  /** Whether the mode and day selectors of a rule are shown: asked for, or needed by what the rule says. */
-  protected deplie(horaire: HoraireDraft): boolean {
-    return horaire.deplie === true || estCasParticulier(horaire);
-  }
-
-  protected estCasParticulier(horaire: HoraireDraft): boolean {
-    return estCasParticulier(horaire);
-  }
-
-  protected basculerCasParticulier(index: number): void {
-    const horaire = this.draft().horaires[index];
-    if (horaire) {
-      this.patchHoraire(index, { deplie: !this.deplie(horaire) });
-    }
-  }
-
-  /** The windows of a rule as one line — what was typed while it is being typed, the windows otherwise. */
-  protected ligneFenetres(horaire: HoraireDraft): string {
-    return typeof horaire.saisie === 'string' ? horaire.saisie : formaterFenetres(horaire.fenetres);
-  }
-
-  /**
-   * A keystroke on the compact line. The windows follow every line that
-   * parses; a line that does not is kept as typed and reported on the card,
-   * without touching the windows it will replace once it does.
-   */
-  protected patchLigneFenetres(index: number, saisie: string): void {
-    const resultat = parseFenetres(saisie);
-    this.patchHoraire(index, resultat.erreur === null ? { saisie, fenetres: resultat.fenetres } : { saisie });
-  }
-
-  /** Shows the windows one row of fields each, or back as one line — the same windows either way. */
-  protected basculerDetail(index: number): void {
-    const horaire = this.draft().horaires[index];
-    if (!horaire) {
-      return;
-    }
-    // Leaving the line while it does not parse would carry an error the rows
-    // cannot show: the line is dropped, the rows edit the windows as they are.
-    this.patchHoraire(index, { detail: !horaire.detail, saisie: null });
-  }
-
-  protected ajouterFenetre(indexHoraire: number): void {
-    this.majFenetres(indexHoraire, (fenetres) => ajouterA(fenetres, fenetreVide()));
-  }
-
-  protected patchFenetre(indexHoraire: number, indexFenetre: number, patch: Partial<FenetreHoraire>): void {
-    this.majFenetres(indexHoraire, (fenetres) => patchDansListe(fenetres, indexFenetre, patch));
-  }
-
-  protected retirerFenetre(indexHoraire: number, indexFenetre: number): void {
-    this.majFenetres(indexHoraire, (fenetres) => retirerDe(fenetres, indexFenetre));
-    this.focusApres(`[data-focus="ajouter-fenetre-${indexHoraire}"]`);
-  }
-
-  /**
-   * Toggles one weekday of a `JOURS_SEMAINE` rule. Kept here rather than bound
-   * to a multi-select so the seven days read as seven checkboxes — the shape the
-   * question actually has ("which days does the weekend schedule cover?").
-   */
-  protected basculerJourSemaine(indexHoraire: number, jour: JourSemaine, coche: boolean): void {
-    const horaire = this.draft().horaires[indexHoraire];
-    if (horaire) {
-      this.patchHoraire(indexHoraire, { joursSemaine: basculerJour(horaire.joursSemaine, jour, coche) });
-    }
-  }
-
-  /** Comma-separated ISO dates, for the `DATES` scope — a plain text field beats seven date pickers. */
-  protected patchDates(indexHoraire: number, valeur: string): void {
-    this.patchHoraire(indexHoraire, { dates: datesDepuisTexte(valeur) });
-  }
-
-  private majFenetres(indexHoraire: number, transformer: (fenetres: FenetreHoraire[]) => FenetreHoraire[]): void {
-    const horaire = this.draft().horaires[indexHoraire];
-    if (horaire) {
-      // Edited row by row: the line is derived again from the windows.
-      this.patchHoraire(indexHoraire, { fenetres: transformer(horaire.fenetres), saisie: null });
-    }
   }
 
   protected readonly formulaireInvalide = computed(

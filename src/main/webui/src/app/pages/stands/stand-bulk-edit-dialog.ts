@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,13 +9,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ModeBooleen, ModeListe } from '../../core/bulk-edit';
 import { labelStandsPluriel } from '../../core/entity-labels';
-import { horaireVide } from '../../core/horaire-stand';
-import { fenetreVide } from './stand-draft';
-import { effectifDepuisSaisie, libelleJourSemaine, premiereErreurHoraire } from './stand-horaires';
+import { HoraireDraft } from './stand-draft';
+import { HoraireReglesEditor } from './horaire-regles-editor';
+import { effectifDepuisSaisie, premiereErreurHoraire } from './stand-horaires';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { FenetreHoraire, HoraireStand, JourSemaine, NiveauEffort, Stand } from '../../core/models';
+import { NiveauEffort, Stand } from '../../core/models';
 import {
   ModeEmplacement,
   ModeHoraires,
@@ -50,10 +49,10 @@ export interface StandBulkEditData {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatCheckboxModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HoraireReglesEditor
   ],
   templateUrl: './stand-bulk-edit-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -110,16 +109,6 @@ export class StandBulkEditDialog {
     { value: 'REMPLACER', label: $localize`:@@bulk.mode.remplacer:Remplacer` },
     { value: 'EFFACER', label: $localize`:@@bulk.mode.effacer:Effacer` }
   ];
-  protected readonly joursSemaine: readonly JourSemaine[] = [
-    'MONDAY',
-    'TUESDAY',
-    'WEDNESDAY',
-    'THURSDAY',
-    'FRIDAY',
-    'SATURDAY',
-    'SUNDAY'
-  ];
-
   /** First problem among the rules being applied, or `null` — same check as the single-stand form. */
   protected readonly erreurHoraires = computed(() => {
     const patch = this.patch().horaires;
@@ -133,73 +122,9 @@ export class StandBulkEditDialog {
     this.update({ horaires: { ...this.patch().horaires, mode } });
   }
 
-  protected ajouterHoraire(): void {
-    const horaires = this.patch().horaires;
-    this.update({ horaires: { ...horaires, horaires: [...horaires.horaires, horaireVide()] } });
-  }
-
-  protected patchHoraire(index: number, patch: Partial<HoraireStand>): void {
-    this.majHoraires((horaires) =>
-      horaires.map((horaire, i) => (i === index ? { ...horaire, ...patch } : horaire))
-    );
-  }
-
-  protected retirerHoraire(index: number): void {
-    this.majHoraires((horaires) => horaires.filter((_, i) => i !== index));
-  }
-
-  protected ajouterFenetre(index: number): void {
-    this.majFenetres(index, (fenetres) => [...fenetres, fenetreVide()]);
-  }
-
-  protected patchFenetre(indexHoraire: number, indexFenetre: number, patch: Partial<FenetreHoraire>): void {
-    this.majFenetres(indexHoraire, (fenetres) =>
-      fenetres.map((fenetre, i) => (i === indexFenetre ? { ...fenetre, ...patch } : fenetre))
-    );
-  }
-
-  protected retirerFenetre(indexHoraire: number, indexFenetre: number): void {
-    this.majFenetres(indexHoraire, (fenetres) => fenetres.filter((_, i) => i !== indexFenetre));
-  }
-
-  protected basculerJourSemaine(index: number, jour: JourSemaine, coche: boolean): void {
-    this.majHoraires((horaires) =>
-      horaires.map((horaire, i) =>
-        i === index
-          ? {
-              ...horaire,
-              joursSemaine: coche
-                ? [...new Set([...horaire.joursSemaine, jour])]
-                : horaire.joursSemaine.filter((autre) => autre !== jour)
-            }
-          : horaire
-      )
-    );
-  }
-
-  protected patchDates(index: number, valeur: string): void {
-    const dates = valeur
-      .split(',')
-      .map((date) => date.trim())
-      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date));
-    this.patchHoraire(index, { dates });
-  }
-
-  protected libelleJourSemaine(jour: JourSemaine): string {
-    return libelleJourSemaine(jour);
-  }
-
-  private majHoraires(transformer: (horaires: HoraireStand[]) => HoraireStand[]): void {
-    const horaires = this.patch().horaires;
-    this.update({ horaires: { ...horaires, horaires: transformer(horaires.horaires) } });
-  }
-
-  private majFenetres(index: number, transformer: (fenetres: FenetreHoraire[]) => FenetreHoraire[]): void {
-    this.majHoraires((horaires) =>
-      horaires.map((horaire, i) =>
-        i === index ? { ...horaire, fenetres: transformer(horaire.fenetres) } : horaire
-      )
-    );
+  /** The rules as the shared editor hands them back — the whole list, every time. */
+  protected remplacerHoraires(horaires: HoraireDraft[]): void {
+    this.update({ horaires: { ...this.patch().horaires, horaires } });
   }
 
   protected readonly formTitle = $localize`:@@stands.bulk.title:Modifier ${this.data.stands.length}:count: stands`;

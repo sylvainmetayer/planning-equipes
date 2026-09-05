@@ -129,7 +129,8 @@ describe('appliquerPatchStand', () => {
 
     expect(resultat.horaires).toHaveLength(1);
     expect(resultat.horaires[0].id).toBeNull();
-    expect(resultat.horaires[0].fenetres).toEqual([{ heureDebut: '14:00', heureFin: null }]);
+    // Normalised like the single-stand form: an absent effectif is sent as null, never as a missing key.
+    expect(resultat.horaires[0].fenetres).toEqual([{ heureDebut: '14:00', heureFin: null, effectif: null }]);
   });
 
   it('ajoute une règle sans écraser celles du stand', () => {
