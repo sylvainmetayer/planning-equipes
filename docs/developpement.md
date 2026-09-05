@@ -16,6 +16,28 @@ cd src/main/webui && npm test          # Vitest
 `quarkus:dev` suffit : Quinoa démarre `ng serve` et le proxifie. Le frontend est
 désactivé sur le profil `%test`.
 
+**Variables d'environnement locales.** `mise.toml` porte celles que tout le
+monde partage (`MAIL_ADMIN`). Celles qui sont propres à une machine vont dans
+`mise.local.toml`, à la racine, que mise charge par-dessus et que `.gitignore`
+exclut — c'est le seul endroit où écrire une valeur qu'on ne veut pas voir dans
+un dépôt public. Exemple, pour voir la page `/mentions-legales` remplie plutôt
+que vide (les sept `LEGAL_*` sont décrites dans le
+[README](../README.md#variables-denvironnement) et dans
+[`exploitation.md`](exploitation.md#3-mentions-légales--à-renseigner-pas-à-laisser-vides)) :
+
+```toml
+[env]
+LEGAL_EDITEUR = "Association Les Bénévoles du Jeu, 12 rue des Pions, 79000 Niort — RNA W791234567"
+LEGAL_DIRECTEUR_PUBLICATION = "Camille Exemple, présidente"
+LEGAL_HEBERGEUR = "Hébergeur Fictif SAS, 1 avenue des Serveurs, 75000 Paris"
+LEGAL_CONTACT = "planning@exemple.invalid"
+LEGAL_RESPONSABLE_TRAITEMENT = "Association Les Bénévoles du Jeu, représentée par sa présidente"
+LEGAL_BASE_LEGALE = "Exécution du contrat de bénévolat et intérêt légitime de l'organisateur (art. 6.1.b et 6.1.f RGPD)"
+LEGAL_CONSERVATION = "Jusqu'au 31 décembre de l'année suivant l'édition, puis suppression"
+```
+
+Un `quarkus:dev` déjà lancé ne relit pas l'environnement : le relancer.
+
 **Deux pièges de l'environnement local :**
 
 - **F5 ou lien profond sur `:8080` renvoie 404 en mode dev.** Bug amont de
