@@ -184,6 +184,26 @@ public class PauseAnalyzer {
                 .toList();
     }
 
+    /**
+     * The breaks of every animateur of the plan, by id — one analysis for the
+     * whole plan. Exports that walk the roster (the ZIP bundles, a publication
+     * mailing) build this once instead of re-analysing the plan per person.
+     */
+    public Map<String, List<PauseAnimateurView>> pausesByAnimateur(PlanningEvenement planning) {
+        Map<String, List<PauseAnimateurView>> parAnimateur = new LinkedHashMap<>();
+        for (JourneeAnimateurView journee : analyze(planning).journees()) {
+            List<PauseAnimateurView> pauses = parAnimateur.computeIfAbsent(journee.animateurId(),
+                    ignored -> new ArrayList<>());
+            for (SequenceView sequence : journee.sequences()) {
+                for (PauseDueView pause : sequence.pausesDues()) {
+                    pauses.add(new PauseAnimateurView(journee.date(), pause.heureLimite(), pause.dureeMinutes(),
+                            pause.standId(), pause.standNom(), pause.relaisDisponible()));
+                }
+            }
+        }
+        return parAnimateur;
+    }
+
     /** The breaks one animateur owes, day by day, under the plan's own parameters — one line per break. */
     public List<PauseAnimateurView> pausesAnimateur(PlanningEvenement planning, String animateurId) {
         List<PauseAnimateurView> pauses = new ArrayList<>();
@@ -400,15 +420,29 @@ public class PauseAnalyzer {
             this.fin = fin;
         }
 
-        /** The seat held at that instant — the last one starting before it. */
+        /**
+         * The seat held at that instant: the one covering it. A stretch merges
+         * seats separated by less than the legal break, so the instant can fall
+         * in such a sub-legal gap — the next seat to start is then the one the
+         * person is about to hold, and the one the break belongs to. Falls back
+         * on the last seat before the instant, then on the first of the stretch.
+         */
         private PosteAffectation posteA(LocalDateTime instant) {
-            PosteAffectation tenu = postes.get(0);
+            PosteAffectation avant = null;
+            PosteAffectation apres = null;
             for (PosteAffectation poste : postes) {
-                if (!PauseAnalyzer.debut(poste).isAfter(instant)) {
-                    tenu = poste;
+                LocalDateTime debut = PauseAnalyzer.debut(poste);
+                LocalDateTime fin = PauseAnalyzer.fin(poste);
+                if (!debut.isAfter(instant) && fin.isAfter(instant)) {
+                    return poste;
+                }
+                if (!debut.isAfter(instant)) {
+                    avant = poste;
+                } else if (apres == null || debut.isBefore(PauseAnalyzer.debut(apres))) {
+                    apres = poste;
                 }
             }
-            return tenu;
+            return apres != null ? apres : avant != null ? avant : postes.get(0);
         }
     }
 }
