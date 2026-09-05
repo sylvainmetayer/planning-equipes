@@ -725,6 +725,18 @@ public class PlanningService {
      * Round-robin over sorted ids gives buckets that differ by at most one
      * stand.</p>
      */
+    /**
+     * Which stagger family each stand belongs to, for the given grid — the
+     * pairing {@link #buildPostes} applies. Exposed because every screen that
+     * shows a stand against a créneau has to agree with it: a stand only ever
+     * receives seats on its own family's créneaux, so a grid showing all of
+     * them invites an entry that generates nothing.
+     */
+    static Map<String, Integer> standFamilies(List<Stand> stands, List<Creneau> creneaux) {
+        int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
+        return spreadStandsByFamily(stands, nombreFamilles);
+    }
+
     private static Map<String, Integer> spreadStandsByFamily(List<Stand> stands, int nombreFamilles) {
         List<String> ids = stands.stream().map(Stand::getId).sorted().toList();
         Map<String, Integer> families = new HashMap<>();

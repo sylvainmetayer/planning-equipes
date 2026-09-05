@@ -1569,9 +1569,18 @@ daté : la réponse le dit stand par stand (`regles`, `exceptions`, `compacte`,
 valeur saisie, `effectifMax` la plus grande, et une fenêtre ne nomme son
 effectif que s'il diffère du minimum.
 
-`400` sur un créneau inconnu ou un effectif nul (« laissez la case vide pour
-fermer »), `404` sur un stand inconnu, `409` pendant une résolution. Chaque
-stand est validé et écrit séparément : un stand refusé n'annule pas les autres.
+**Familles de relais.** Une grille découpée en plusieurs familles porte une
+variante de chaque vacation par famille, et un stand n'est apparié qu'à une
+seule d'entre elles ([`domaine.md`](domaine.md#familles-de-créneaux)). Les
+cellules des autres familles sortent avec `horsFamille: true`, effectif `null` :
+l'écran les rend inertes, et une case envoyée pour l'une d'elles est ignorée —
+l'écrire rouvrirait un jour que ce stand ne tient jamais.
+
+`400` sur un créneau inconnu, un effectif nul (« laissez la case vide pour
+fermer ») ou un stand inconnu — l'identifiant vient du corps, pas du chemin.
+`409` pendant une résolution. Les stands sont tous convertis et validés
+d'abord, puis écrits **en une seule transaction** : le rapport annonce ce que
+la base contient, jamais un lot à moitié écrit.
 
 ## Import de scénario
 

@@ -9,6 +9,7 @@
 // are sent back — each with all its cells, since a save replaces the stand's
 // whole schedule.
 
+import { formatHeure } from '../../core/time-of-day';
 import { CelluleCreneauOuverture, RapportOuvertures, SaisieStandGrille } from '../../core/models';
 
 /** A cell's address: the stand, and the créneau column. */
@@ -56,6 +57,26 @@ export function cellulesDepuis(rapport: RapportOuvertures): Cellules {
     cellules.set(ligne.standId, parCreneau);
   }
   return cellules;
+}
+
+/**
+ * The cells of a créneau belonging to another stagger family than the stand's,
+ * keyed `standId#creneauId`. The stand never receives a seat there, so the
+ * cell is neither typed nor sent — writing it would reopen a day this stand
+ * never staffs.
+ */
+export function cellulesInertes(rapport: RapportOuvertures): Set<string> {
+  const inertes = new Set<string>();
+  for (const ligne of rapport.stands) {
+    for (const jour of ligne.jours) {
+      for (const cellule of jour.creneaux) {
+        if (cellule.horsFamille) {
+          inertes.add(cle(ligne.standId, cellule.creneauId));
+        }
+      }
+    }
+  }
+  return inertes;
 }
 
 /** The cells flagged partial by the server, keyed `standId#creneauId`: what a save would flatten. */
@@ -121,11 +142,21 @@ export function standsModifies(cellules: Cellules, reference: Cellules): string[
   return modifies;
 }
 
-/** The body of the save: every cell of every modified stand. */
-export function saisie(cellules: Cellules, standIds: readonly string[]): SaisieStandGrille[] {
+/**
+ * The body of the save: every cell of every modified stand, the inert ones
+ * left out — the server ignores them too, and sending them would say this
+ * stand states something about another family's créneau.
+ */
+export function saisie(
+  cellules: Cellules,
+  standIds: readonly string[],
+  inertes: ReadonlySet<string> = new Set()
+): SaisieStandGrille[] {
   return standIds.map((standId) => ({
     standId,
-    cellules: Array.from(cellules.get(standId) ?? []).map(([creneauId, effectif]) => ({ creneauId, effectif }))
+    cellules: Array.from(cellules.get(standId) ?? [])
+      .filter(([creneauId]) => !inertes.has(cle(standId, creneauId)))
+      .map(([creneauId, effectif]) => ({ creneauId, effectif }))
   }));
 }
 
@@ -184,7 +215,8 @@ export function collerBloc(
   texte: string,
   depuis: AdresseCellule,
   standIds: readonly string[],
-  colonnesGrille: readonly ColonneGrille[]
+  colonnesGrille: readonly ColonneGrille[],
+  inertes: ReadonlySet<string> = new Set()
 ): Cellules {
   const ligne0 = standIds.indexOf(depuis.standId);
   const colonne0 = colonnesGrille.findIndex((each) => each.creneauId === depuis.creneauId);
@@ -208,7 +240,7 @@ export function collerBloc(
         return;
       }
       const lu = lireCellule(valeur);
-      if (lu !== undefined) {
+      if (lu !== undefined && !inertes.has(cle(standId, colonne.creneauId))) {
         resultat = ecrireCellule(resultat, { standId, creneauId: colonne.creneauId }, lu);
       }
     });
@@ -225,7 +257,8 @@ export function recopierJour(
   cellules: Cellules,
   dateSource: string,
   standIds: readonly string[],
-  colonnesGrille: readonly ColonneGrille[]
+  colonnesGrille: readonly ColonneGrille[],
+  inertes: ReadonlySet<string> = new Set()
 ): Cellules {
   const source = colonnesGrille.filter((colonne) => colonne.date === dateSource);
   if (source.length === 0) {
@@ -242,6 +275,9 @@ export function recopierJour(
       continue;
     }
     for (const standId of standIds) {
+      if (inertes.has(cle(standId, cible.creneauId)) || inertes.has(cle(standId, origine))) {
+        continue;
+      }
       const valeur = resultat.get(standId)?.get(origine) ?? null;
       if ((resultat.get(standId)?.get(cible.creneauId) ?? null) !== valeur) {
         resultat = ecrireCellule(resultat, { standId, creneauId: cible.creneauId }, valeur);
@@ -249,6 +285,19 @@ export function recopierJour(
     }
   }
   return resultat;
+}
+
+/** How many cells a copy of one day onto the others actually changed. */
+export function compterRecopiees(avant: Cellules, apres: Cellules, colonnesGrille: readonly ColonneGrille[]): number {
+  let changees = 0;
+  for (const [standId, ligne] of apres) {
+    for (const colonne of colonnesGrille) {
+      if ((ligne.get(colonne.creneauId) ?? null) !== (avant.get(standId)?.get(colonne.creneauId) ?? null)) {
+        changees++;
+      }
+    }
+  }
+  return changees;
 }
 
 /** The first day on which a stand has any headcount typed, or the first day — the row copy's default source. */
@@ -272,9 +321,19 @@ export function valeursLigne(cellules: Cellules, standId: string, colonnesGrille
   return colonnesGrille.map((colonne) => ligne?.get(colonne.creneauId) ?? null);
 }
 
-/** `10:00`-`12:00` → `10-12`; `20:00`-`00:00` → `20-00`; a half hour keeps its minutes: `13:30-14`. */
+/**
+ * `10:00`-`12:00` → `10-12`; `20:00`-`00:00` → `20-00`; a half hour keeps its
+ * minutes: `13:30-14`.
+ *
+ * The API sends a time as `HH:mm:ss`, so the seconds go first: testing the
+ * whole wire form for a trailing `:00` matched *every* hour and turned
+ * `13:30-14:30` into `13-14`, giving two neighbouring columns the same label.
+ */
 export function libelleColonne(colonne: ColonneGrille): string {
-  const court = (heure: string) => (heure.endsWith(':00') ? heure.slice(0, 2) : heure.slice(0, 5));
+  const court = (heure: string) => {
+    const hhmm = formatHeure(heure);
+    return hhmm.endsWith(':00') ? hhmm.slice(0, 2) : hhmm;
+  };
   return `${court(colonne.heureDebut)}-${court(colonne.heureFin)}`;
 }
 
