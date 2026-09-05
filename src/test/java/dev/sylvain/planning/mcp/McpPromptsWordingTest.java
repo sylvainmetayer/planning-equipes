@@ -94,13 +94,20 @@ class McpPromptsWordingTest {
     @Test
     void leCatalogueSuitLeCycleDeVieDUnEvenement() {
         assertThat(prompts.catalogue()).extracting(PromptExpose::nom).containsExactly(
+                "saisir_les_horaires_des_stands",
                 "construire_la_grille_de_creneaux",
                 "traiter_les_declarations_de_disponibilite",
+                "savoir_ou_recruter_ou_former",
                 "verifier_avant_resolution",
                 "resoudre_sans_perdre_le_planning",
                 "diagnostiquer_contraintes_dures",
+                "verrouiller_ce_qui_tient",
+                "preparer_une_variante_de_repli",
+                "auditer_avant_diffusion",
                 "publier_le_planning",
-                "traiter_les_demandes_dechange");
+                "traiter_les_demandes_dechange",
+                "reprendre_apres_un_changement_tardif",
+                "tenir_le_jour_j");
     }
 
     @Test

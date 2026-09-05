@@ -59,7 +59,9 @@ class McpResourceTest {
                 .body("nom", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
                 .body("description", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
                 .body("texte", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
-                .body("[0].nom", equalTo("construire_la_grille_de_creneaux"));
+                // First of the catalogue, so first of the event: the stands' hours,
+                // which the créneau grid can then be derived from.
+                .body("[0].nom", equalTo("saisir_les_horaires_des_stands"));
     }
 
     @Test

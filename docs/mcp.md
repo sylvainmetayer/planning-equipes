@@ -241,14 +241,24 @@ respecter, il ne doit pas pouvoir passer dessus en silence.
 Deux autres familles MCP sont servies, parce qu'elles portent ce qu'un outil ne
 peut pas dire.
 
-**Sept prompts**, un par moment du cycle : construire la grille de créneaux,
-traiter les déclarations de disponibilité, vérifier une édition avant de
-résoudre, résoudre sans perdre le planning en place, diagnostiquer les
-contraintes dures, publier le planning, trancher les demandes d'échange. Chacun
-prend un argument `edition` facultatif et enchaîne les outils dans le bon ordre.
+**Quatorze prompts**, un par moment du cycle, dans l'ordre d'un vrai
+événement : saisir les horaires des stands, construire la grille de créneaux,
+traiter les déclarations de disponibilité, savoir où recruter ou former,
+vérifier une édition avant de résoudre, résoudre sans perdre le planning en
+place, diagnostiquer les contraintes dures, verrouiller ce qui tient, préparer
+une variante de repli, auditer avant diffusion, publier le planning, trancher
+les demandes d'échange, reprendre après un changement tardif, tenir le jour J.
+Chacun prend un argument `edition` facultatif et enchaîne les outils dans le
+bon ordre.
 
-Les trois derniers arrivent après la résolution, et deux d'entre eux nomment un
-outil qui envoie du courriel : ils exigent un accord explicite avant l'appel.
+Deux d'entre eux disent ce que les outils ne peuvent pas faire, et c'est
+délibéré : l'import de la matrice des stands et la grille de saisie vivent dans
+l'interface, et marquer une absence le jour J aussi. Un prompt qui tairait ces
+limites enverrait l'assistant chercher un outil qui n'existe pas — la lecture
+« Fragilité du planning » est dans le même cas.
+
+Ceux qui arrivent après la résolution nomment parfois un outil qui envoie du
+courriel : ils exigent alors un accord explicite avant l'appel.
 `McpPromptsWordingTest` le vérifie sans énumérer quoi que ce soit — il relit les
 outils dont `openWorldHint` est vrai, si bien qu'un futur outil sortant cité par
 un prompt muet fait échouer le build.
