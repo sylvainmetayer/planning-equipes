@@ -322,6 +322,17 @@ d'une ligne est l'identifiant ou le nom exact du stand, une colonne sans
 créneau est ignorée et listée plutôt que refusée, et un créneau sans colonne
 garde la case actuelle du stand. Le bouton « Télécharger la grille actuelle
 comme modèle » rend l'édition telle qu'elle est, réimportable telle quelle.
+
+Deux points valent d'être connus avant de verser un fichier. Une colonne se
+pose sur **tous** les créneaux de sa date et de ses heures, pas sur le premier :
+une grille décalée en familles en porte un par famille, et n'en servir qu'un
+laissait les stands des autres inchangés alors que le rapport les disait
+écrits. Et parce qu'un créneau sans colonne garde sa case, un stand qui n'ouvre
+qu'une partie d'un tel créneau ressort **élargi au créneau entier** : l'horaire
+est réécrit depuis des effectifs, qui ne savent pas dire « seulement de 14 h à
+15 h ». Le rapport nomme les stands concernés ; donnez une colonne à ces
+créneaux pour dire ce qu'ils doivent devenir. Une bande dont la minute n'a
+qu'un chiffre (`9:5`) est refusée plutôt que complétée, comme à la saisie.
 Endpoints dans [`api.md`](api.md#import-de-la-grille-des-stands).
 
 ## Fixtures réalistes anonymisées

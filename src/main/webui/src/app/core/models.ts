@@ -2223,6 +2223,8 @@ export interface ImportGrilleColonne {
   heureDebut: string | null;
   heureFin: string | null;
   creneauId: number | null;
+  /** How many créneaux the column lands on: more than one when the grid is staggered into families. */
+  creneaux: number;
   reason: string | null;
 }
 

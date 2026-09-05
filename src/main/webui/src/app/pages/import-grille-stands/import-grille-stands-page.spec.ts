@@ -27,8 +27,8 @@ function rapport(applied: boolean): ImportGrilleRapport {
     applied,
     separator: ';',
     columns: [
-      { index: 1, label: '2026-07-08 10:00-12:00', date: '2026-07-08', heureDebut: '10:00', heureFin: '12:00', creneauId: 1, reason: null },
-      { index: 2, label: '2026-07-08 montage', date: '2026-07-08', heureDebut: null, heureFin: null, creneauId: null, reason: 'En-tête illisible' }
+      { index: 1, label: '2026-07-08 10:00-12:00', date: '2026-07-08', heureDebut: '10:00', heureFin: '12:00', creneauId: 1, creneaux: 2, reason: null },
+      { index: 2, label: '2026-07-08 montage', date: '2026-07-08', heureDebut: null, heureFin: null, creneauId: null, creneaux: 0, reason: 'En-tête illisible' }
     ],
     creneauxAbsents: ['2026-07-09 10:00-12:00'],
     total: 2,

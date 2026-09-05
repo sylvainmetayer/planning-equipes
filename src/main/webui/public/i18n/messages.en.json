@@ -2342,6 +2342,7 @@
   "importGrille.colonnes.reconnues": "Recognised columns",
   "importGrille.colonnes.ignorees": "Ignored columns",
   "importGrille.colonnes.absents": "Slots without a column",
+  "importGrille.colonnes.familles": "Columns landing on several créneaux of one band",
   "importGrille.rapport.titreApplique": "3. What was imported",
   "importGrille.rapport.titrePreview": "3. What the import would do",
   "importGrille.rapport.acceptees": "Stands accepted",

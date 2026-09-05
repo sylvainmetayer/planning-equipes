@@ -29,8 +29,15 @@ public final class GrilleCsv {
     private GrilleCsv() {
     }
 
-    /** One column of the matrix: its position, what the header said, and the (date, band) it names — or not. */
-    public record Colonne(int index, String libelle, LocalDate date, LocalTime heureDebut, LocalTime heureFin) {
+    /**
+     * One column of the matrix: its position, what the header said, and the
+     * (date, band) it names — or not. {@code dateHeritee} marks a column whose
+     * date cell was empty and whose date comes from the column before it, the
+     * way a spreadsheet leaves a merged day cell: worth saying when two columns
+     * then claim one créneau, since the file looks like it names two days.
+     */
+    public record Colonne(int index, String libelle, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
+            boolean dateHeritee) {
 
         public boolean namesCreneau() {
             return date != null && heureDebut != null && heureFin != null;
@@ -45,7 +52,7 @@ public final class GrilleCsv {
     }
 
     private static final Pattern BANDE = Pattern.compile(
-            "^\\s*(\\d{1,2}(?:[:h.]\\d{0,2})?)\\s*[-–→]\\s*(\\d{1,2}(?:[:h.]\\d{0,2})?)\\s*$");
+            "^\\s*(\\d{1,2}(?:[:h.]\\d{0,2})?)\\s*[-\u2013\u2192]\\s*(\\d{1,2}(?:[:h.]\\d{0,2})?)\\s*$");
     private static final Pattern DATE_ET_BANDE = Pattern.compile("^\\s*(\\S+)\\s+(.+)$");
     private static final List<DateTimeFormatter> DATES = List.of(
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT),
@@ -71,7 +78,8 @@ public final class GrilleCsv {
                 LocalTime[] heures = bande(bande);
                 String libelle = (dateTexte.isEmpty() && courante != null ? courante.toString() : dateTexte) + " " + bande;
                 colonnes.add(new Colonne(index, libelle.trim(), courante,
-                        heures == null ? null : heures[0], heures == null ? null : heures[1]));
+                        heures == null ? null : heures[0], heures == null ? null : heures[1],
+                        dateTexte.isEmpty()));
             }
         } else {
             for (int index = 1; index < premiere.size(); index++) {
@@ -84,7 +92,7 @@ public final class GrilleCsv {
                     heures = bande(m.group(2));
                 }
                 colonnes.add(new Colonne(index, libelle, date, heures == null ? null : heures[0],
-                        heures == null ? null : heures[1]));
+                        heures == null ? null : heures[1], false));
             }
         }
         List<Ligne> lignes = new ArrayList<>();
@@ -139,15 +147,20 @@ public final class GrilleCsv {
         return debut == null || fin == null ? null : new LocalTime[] {debut, fin};
     }
 
-    /** {@code 10}, {@code 10h}, {@code 10h30}, {@code 10:30}, {@code 24:00} (as 00:00). */
+    /**
+     * {@code 10}, {@code 10h}, {@code 10h30}, {@code 10:30}, {@code 24:00} (as 00:00).
+     *
+     * <p>A single-digit minute is refused rather than completed: {@code 9:5} is
+     * as likely to be 9:05 as 9:50, and a band read wrong lands the column on
+     * the wrong créneau — the same refusal the compact line makes on entry.</p>
+     */
     static LocalTime heure(String texte) {
-        Matcher m = Pattern.compile("^(\\d{1,2})(?:[:h.](\\d{0,2}))?$").matcher(texte.trim().toLowerCase(Locale.ROOT));
+        Matcher m = Pattern.compile("^(\\d{1,2})(?:[:h.](\\d{2})?)?$").matcher(texte.trim().toLowerCase(Locale.ROOT));
         if (!m.matches()) {
             return null;
         }
         int heures = Integer.parseInt(m.group(1));
-        String minutesTexte = m.group(2) == null || m.group(2).isEmpty() ? "0" : m.group(2);
-        int minutes = Integer.parseInt(minutesTexte.length() == 1 ? minutesTexte + "0" : minutesTexte);
+        int minutes = m.group(2) == null ? 0 : Integer.parseInt(m.group(2));
         if (heures == 24 && minutes == 0) {
             return LocalTime.MIDNIGHT;
         }

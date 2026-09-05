@@ -58,4 +58,6 @@ faut écrire.
 - Le rapport porte les colonnes autant que les lignes : c'est là que se lit une
   bande mal écrite ou un jour de trop.
 - Le fichier voyage deux fois sur le réseau, comme pour les animateurs, et
-  sous les mêmes plafonds.
+  sous le même plafond de caractères (1 000 000). Le plafond de lignes est plus
+  bas — 2 000 contre 5 000 — parce qu'une matrice porte une ligne par stand
+  quand un fichier d'animateurs en porte une par personne.

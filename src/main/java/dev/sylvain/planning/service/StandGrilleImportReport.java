@@ -24,9 +24,15 @@ public record StandGrilleImportReport(
         List<ImportedRow> rows,
         List<String> warnings) {
 
-    /** One column of the file: the (date, band) read, and the créneau it matches. */
+    /**
+     * One column of the file: the (date, band) read, and the créneau it matches.
+     *
+     * @param creneauId the first créneau the column lands on, {@code null} when it lands on none
+     * @param creneaux  how many créneaux it lands on — more than one when the grid is staggered
+     *                  into families, the column then carrying the same cell to each of them
+     */
     public record ImportedColumn(int index, String label, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
-            Long creneauId, String reason) {
+            Long creneauId, int creneaux, String reason) {
     }
 
     public enum ImportAction {

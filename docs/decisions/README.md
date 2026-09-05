@@ -45,6 +45,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0019](0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md) | Un jeton et un chemin dédiés pour l'abonnement au calendrier | Accepté |
 | [0020](0020-avertir-dans-la-reponse-d-ecriture.md) | Avertir dans la réponse d'écriture, pas dans un contrôle à part | Accepté · prolonge 0010 |
 | [0021](0021-import-tabulaire-partiel-et-previsualise.md) | L'import tabulaire d'animateurs est partiel, prévisualisé et rejoué | Accepté |
+| [0022](0022-import-de-la-grille-des-stands.md) | La matrice des stands s'importe sous le contrat de 0021 | Accepté · transpose 0021 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

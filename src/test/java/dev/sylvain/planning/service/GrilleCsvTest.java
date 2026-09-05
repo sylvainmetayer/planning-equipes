@@ -52,7 +52,11 @@ class GrilleCsvTest {
         assertThat(GrilleCsv.bande("20:00-00:00")).containsExactly(LocalTime.of(20, 0), LocalTime.MIDNIGHT);
         assertThat(GrilleCsv.bande("matin")).isNull();
         assertThat(GrilleCsv.bande("25:00-26:00")).isNull();
-        assertThat(GrilleCsv.heure("9.5")).isEqualTo(LocalTime.of(9, 50));
+        // A single-digit minute is ambiguous — 9:05 or 9:50 — and a band read
+        // wrong lands the column on the wrong créneau: refused, never completed.
+        assertThat(GrilleCsv.heure("9.5")).isNull();
+        assertThat(GrilleCsv.heure("9.05")).isEqualTo(LocalTime.of(9, 5));
+        assertThat(GrilleCsv.bande("9:5-12:00")).isNull();
     }
 
     @Test

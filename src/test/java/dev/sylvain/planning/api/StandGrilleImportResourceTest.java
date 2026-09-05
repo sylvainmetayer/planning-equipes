@@ -97,6 +97,44 @@ class StandGrilleImportResourceTest {
         assertThat(motifs).anySatisfy(motif -> assertThat(motif).contains("INCONNU"));
     }
 
+    /**
+     * Two créneaux of one band, one per stagger family: the column has to land
+     * on both. Landing on the first left every stand of the other family
+     * untouched, while the report said the row had been written.
+     */
+    @Test
+    void uneColonneSePoseSurLesDeuxFamillesDeLaMemeBande() {
+        seedScenario();
+        JsonPath avant = given().when().get("/api/ouvertures-stands").then().statusCode(200).extract().jsonPath();
+        String standId = avant.getString("stands[0].standId");
+        String date = avant.getString("jours[0].date");
+        String debut = avant.getString("jours[0].creneaux[0].heureDebut").substring(0, 5);
+        String fin = avant.getString("jours[0].creneaux[0].heureFin").substring(0, 5);
+        // A twin of that band in the other family — what a staggered grid holds.
+        Long jumeau = given().contentType("application/json")
+                .body(Map.of("date", date, "heureDebut", debut, "heureFin", fin, "famille", 1))
+                .when().post("/api/creneaux").then().statusCode(200)
+                .extract().jsonPath().getLong("creneau.id");
+        assertThat(jumeau).isNotNull();
+
+        String csv = "stand;" + date + "\n;" + debut + "-" + fin + "\n" + standId + ";7\n";
+        JsonPath rapport = given().contentType("application/json").body(request(csv))
+                .when().post("/api/stands/import-grille")
+                .then().statusCode(200)
+                .body("accepted", equalTo(1))
+                // Both créneaux of the band, not the first of them.
+                .body("columns[0].creneaux", equalTo(2))
+                .extract().jsonPath();
+        assertThat(rapport.getList("rows.action", String.class)).containsOnly("UPDATED");
+
+        // And neither is left « without a column »: the twin used to be, so its
+        // cells were kept as they were while the row was reported as written.
+        assertThat(rapport.getList("creneauxAbsents", String.class))
+                .doesNotContain(date + " " + debut + "-" + fin);
+        JsonPath apres = given().when().get("/api/ouvertures-stands").then().statusCode(200).extract().jsonPath();
+        assertThat(apres.getInt("stands[0].jours[0].creneaux[0].effectif")).isEqualTo(7);
+    }
+
     @Test
     void unClasseurEstRefuseAvecLaMarcheASuivre() {
         seedScenario();

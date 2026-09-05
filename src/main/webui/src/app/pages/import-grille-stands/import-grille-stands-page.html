@@ -73,8 +73,8 @@
     <mat-card-header>
       <mat-card-title i18n="@@importGrille.colonnes.titre">2. Les colonnes</mat-card-title>
       <mat-card-subtitle i18n="@@importGrille.colonnes.aide">
-        Chaque colonne du fichier et le créneau de l'édition où elle se pose. Une colonne ignorée ne change rien ; un
-        créneau sans colonne garde ses cases.
+        Chaque colonne du fichier et le créneau de l'édition où elle se pose — tous ceux de la même bande quand la
+        grille est décalée en familles. Une colonne ignorée ne change rien ; un créneau sans colonne garde ses cases.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
@@ -82,6 +82,10 @@
         <li><span i18n="@@importGrille.colonnes.reconnues">Colonnes reconnues</span> : <strong>{{ colonnesReconnues().length }}</strong></li>
         <li><span i18n="@@importGrille.colonnes.ignorees">Colonnes ignorées</span> : <strong>{{ colonnesIgnorees().length }}</strong></li>
         <li><span i18n="@@importGrille.colonnes.absents">Créneaux sans colonne</span> : <strong>{{ vue.creneauxAbsents.length }}</strong></li>
+        @if (colonnesPartagees().length > 0) {
+          <li><span i18n="@@importGrille.colonnes.familles">Colonnes posées sur plusieurs créneaux d'une même bande</span> :
+            <strong>{{ colonnesPartagees().length }}</strong></li>
+        }
       </ul>
       @if (colonnesIgnorees().length > 0) {
         <ul class="import-colonnes-ignorees">

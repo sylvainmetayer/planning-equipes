@@ -1690,12 +1690,17 @@ entier par case — analysée, prévisualisée, rejouée, jamais écrite sur dis
 Corps des deux `POST` : `{ fileName, content }`. Deux lignes d'en-tête (les
 dates, les cellules fusionnées d'un tableur laissant les suivantes vides, puis
 les bandes `10:00-12:00`) ou une seule (`2026-07-08 10:00-12:00`) ; dates ISO
-ou `08/07/2026`, heures `10:00`, `10h`, `10h30`, `24:00` lu comme minuit.
+ou `08/07/2026`, heures `10:00`, `10h`, `10h30`, `24:00` lu comme minuit — une
+minute à un seul chiffre (`9:5`) est refusée plutôt que complétée.
 
-- Une colonne se pose sur le créneau de même date et mêmes heures ; une colonne
-  sans créneau est **ignorée et listée** (`columns[].reason`), pas un motif de
-  refus. Un créneau sans colonne (`creneauxAbsents`) **garde la case actuelle**
-  de chaque stand importé : l'import ne réécrit que ce que le fichier dit.
+- Une colonne se pose sur **tous** les créneaux de même date et mêmes heures —
+  une grille décalée en familles en porte un par famille, et `columns[].creneaux`
+  dit combien ; une colonne sans créneau est **ignorée et listée**
+  (`columns[].reason`), pas un motif de refus. Un créneau sans colonne
+  (`creneauxAbsents`) **garde la case actuelle** de chaque stand importé :
+  l'import ne réécrit que ce que le fichier dit. Un stand qui n'ouvre qu'une
+  partie d'un tel créneau en ressort élargi au créneau entier, un
+  `warnings[]` le nommant.
 - Une ligne nomme un stand par son identifiant, sinon par son nom exact (casse
   et accents indifférents) ; un nom porté par deux stands, ou un stand inconnu,
   rejette la ligne — l'import ne crée pas de stand. Une case vide, `-` ou `0`
