@@ -22,7 +22,11 @@ concurrency:
 
 jobs:
   docker:
-    runs-on: self-hosted
+    # The one job on a GitHub runner. Publishing the image and its attestations
+    # needs no secret held by the self-hosted machine, and running it here is
+    # what makes the provenance verifiable once the repository is public. Every
+    # other workflow stays self-hosted until that opening.
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository

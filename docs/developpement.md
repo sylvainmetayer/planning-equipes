@@ -405,13 +405,18 @@ il n'est sain que si l'affectation gelée est déjà bonne — d'où l'ordre
 
 ## Intégration continue
 
-Quatre workflows sous `.github/workflows/`, lisibles tels quels. Deux points qui
-ne s'y voient pas :
+Les workflows vivent sous `.github/workflows/`, lisibles tels quels. Trois
+points qui ne s'y voient pas :
 
 - **les tests de bout en bout ne tournent pas sur une PR**, seulement chaque
   nuit : la pile complète coûte trop pour une boucle de relecture ;
 - **l'image publiée porte un SBOM et une signature cosign en mode keyless**. Les
-  attestations GitHub natives attendent l'ouverture du dépôt.
+  attestations GitHub natives attendent l'ouverture du dépôt ;
+- **`docker-ghcr.yml` est le seul job sur un runner GitHub** (`ubuntu-latest`).
+  Publier l'image et ses attestations ne demande aucun secret de la machine
+  auto-hébergée, et les faire tourner chez GitHub est ce qui rendra la
+  provenance vérifiable une fois le dépôt public. Tous les autres workflows
+  restent auto-hébergés en attendant cette ouverture.
 
 ## Renovate
 
