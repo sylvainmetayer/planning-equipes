@@ -455,6 +455,16 @@ public final class LegalConstraints {
      * event open seven days a week, and a Sunday off squeezed between a shift
      * ending at midnight and a 10:00 start still falls one hour short, as the
      * law says.</p>
+     *
+     * <p><b>Why the group is the whole animateur, and not one week of them</b>:
+     * a rest straddling the Monday belongs to both weeks, and its real length
+     * is only visible with the seats of both. Grouping per week and joining the
+     * neighbouring week's occupations would keep the incrementality, at the
+     * price of a join this rule is not hot enough to warrant — an animateur
+     * holds a couple of dozen seats over a whole event, so the sweep is a few
+     * dozen operations; it is merely re-run when any of their seats moves
+     * instead of when one of that week's does. Revisit if a profile ever shows
+     * this rule high.</p>
      */
     private Constraint reposHebdomadaireMinimal(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),

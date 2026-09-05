@@ -288,6 +288,11 @@
         "date" : {
           "$ref" : "#/$defs/LocalDate"
         },
+        "effectif" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
         "heureDebut" : {
           "$ref" : "#/$defs/LocalTime"
         },

@@ -1109,6 +1109,7 @@ public class PlanningService {
             item.put("heureDebut", asString(ouverture.getHeureDebut()));
             item.put("heureFin", asString(ouverture.getHeureFin()));
             item.put("motif", ouverture.getMotif());
+            item.put("effectif", ouverture.getEffectif());
             result.add(item);
         }
         return result;
@@ -1430,7 +1431,13 @@ public class PlanningService {
                     LocalTime heureDebut = LocalTime.parse((String) ouvertureData.get("heureDebut"));
                     LocalTime heureFin = parseTimeOrEndOfDay(ouvertureData.get("heureFin"));
                     String motif = (String) ouvertureData.get("motif");
-                    ouvertures.add(new OuvertureStand(null, date, heureDebut, heureFin, motif));
+                    Object effectif = ouvertureData.get("effectif");
+                    if (effectif != null && !(effectif instanceof Number)) {
+                        throw new BusinessError.Invalid(
+                                "Champ invalide: stands.ouvertures.effectif doit être un entier");
+                    }
+                    ouvertures.add(new OuvertureStand(null, date, heureDebut, heureFin, motif,
+                            effectif == null ? null : ((Number) effectif).intValue()));
                 }
                 stand.setOuvertures(ouvertures);
             }
