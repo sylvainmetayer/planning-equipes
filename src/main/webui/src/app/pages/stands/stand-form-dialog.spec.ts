@@ -579,7 +579,8 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
-    expect(alertes.some((texte) => texte.includes("L'effectif d'une fenêtre"))).toBe(true);
+    // The two numbers that disagree, not a sentence about zero.
+    expect(alertes.some((texte) => texte.includes('(5)') && texte.includes('(2)'))).toBe(true);
     expect(soumettre(fixture).disabled).toBe(true);
   });
 

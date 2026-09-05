@@ -39,6 +39,8 @@ export function erreurRegle(horaire: HoraireDraft, effectifMax?: number): string
     heureDebutRequise: $localize`:@@stands.horaires.error.heureDebutRequise:Chaque fenêtre doit avoir une heure de début.`,
     fenetreInversee: $localize`:@@stands.horaires.error.fenetreInversee:L'heure de fin doit être après l'heure de début (laissez-la vide pour aller jusqu'à la fermeture).`,
     effectifInvalide: $localize`:@@stands.horaires.error.effectifInvalide:L'effectif d'une fenêtre, s'il est renseigné, doit être un entier d'au moins 1 (vide = l'effectif minimum du stand).`,
+    effectifDepasse: (effectif, effectifMax) =>
+      $localize`:@@stands.horaires.error.effectifDepasse:L'effectif d'une fenêtre (${effectif}:effectif:) dépasse l'effectif maximum du stand (${effectifMax}:effectifMax:) : relevez le maximum, ou baissez celui de la fenêtre.`,
     joursSemaineRequis: $localize`:@@stands.horaires.error.joursSemaineRequis:Choisissez au moins un jour de la semaine.`,
     plageRequise: $localize`:@@stands.horaires.error.plageRequise:Renseignez une date de début et une date de fin cohérentes.`,
     datesRequises: $localize`:@@stands.horaires.error.datesRequises:Choisissez au moins une date.`

@@ -153,9 +153,7 @@
                    autocomplete="off" spellcheck="false"
                    [attr.aria-describedby]="'stand-horaire-erreur-' + indexHoraire"
                    [ngModel]="ligneFenetres(horaire)" (ngModelChange)="patchLigneFenetres(indexHoraire, $event)" />
-            <mat-hint i18n="@@stands.horaires.ligne.hint">
-              Une fenêtre par virgule ; « 14:00- » va jusqu'à la fermeture ; « @2 » fixe l'effectif de la fenêtre.
-            </mat-hint>
+            <mat-hint i18n="@@stands.horaires.ligne.hint">« 14:00- » jusqu'à la fermeture, « @2 » l'effectif</mat-hint>
           </mat-form-field>
           <button matButton type="button" class="horaire-basculer-detail" [disabled]="editingLocked()"
                   (click)="basculerDetail(indexHoraire)">
