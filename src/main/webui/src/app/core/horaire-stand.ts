@@ -180,9 +180,12 @@ export function resumerHoraires(
 // clients already send to `creer_stand_complet` (`McpArgs.fenetres`), and the
 // shape a line of the organiser's own spreadsheet has. Mirrors the server
 // parser: a window is `debut-fin`, an empty end runs until closing time, and
-// `@N` names the seats of that one window. What the server does not accept —
-// `10h`, `9:30`, `10h30` — is normalised here before being sent, so the line
-// can be typed the way one writes hours by hand.
+// `@N` names the seats of that one window.
+//
+// It accepts more than the server does, and normalises before sending: `10h`,
+// `10h30`, `10.30` for the hour, `;` as well as `,` between windows, and `–`
+// or `→` as well as `-` inside one. What it does not do is guess: a lone digit
+// after the separator (`9:5`) is refused, not read as 9 h 50.
 
 export type ErreurSaisieFenetres = 'VIDE' | 'FORME' | 'HEURE' | 'EFFECTIF';
 
@@ -197,12 +200,15 @@ export type SaisieFenetres =
  * is not a time here — the open-ended form is how "until closing" is written.
  */
 export function normaliserHeure(texte: string): string | null {
-  const m = /^(\d{1,2})(?:[h:.](\d{0,2}))?$/i.exec(texte.trim());
+  // A lone digit after the separator is refused rather than guessed: `9:5`
+  // reads as 9 h 50 to one person and 9 h 05 to the next, and either reading
+  // silently rewrites an hour the user believes they typed.
+  const m = /^(\d{1,2})(?:[h:.](\d{2})?)?$/i.exec(texte.trim());
   if (!m) {
     return null;
   }
   const heures = Number(m[1]);
-  const minutes = m[2] ? Number(m[2].padEnd(2, '0')) : 0;
+  const minutes = m[2] ? Number(m[2]) : 0;
   if (heures > 23 || minutes > 59) {
     return null;
   }
@@ -247,11 +253,17 @@ export function parseFenetres(texte: string): SaisieFenetres {
   return { fenetres, erreur: null, morceau: null };
 }
 
-/** The inverse of {@link parseFenetres}: `10:00-12:00@2, 14:00-`. */
+/**
+ * The inverse of {@link parseFenetres}: `10:00-12:00@2, 14:00-`. A window with
+ * no start yet — the empty row the detail view adds — is left out rather than
+ * written `-`, which this file's own parser refuses; the rule still carries it,
+ * and `erreurHoraire` still says a start is missing.
+ */
 export function formaterFenetres(fenetres: readonly FenetreHoraire[]): string {
   return fenetres
+    .filter((fenetre) => !!fenetre.heureDebut)
     .map((fenetre) => {
-      const debut = fenetre.heureDebut ? heureCourte(fenetre.heureDebut) : '';
+      const debut = heureCourte(fenetre.heureDebut);
       const fin = fenetre.heureFin ? heureCourte(fenetre.heureFin) : '';
       const effectif = fenetre.effectif !== null && fenetre.effectif !== undefined ? `@${fenetre.effectif}` : '';
       return `${debut}-${fin}${effectif}`;

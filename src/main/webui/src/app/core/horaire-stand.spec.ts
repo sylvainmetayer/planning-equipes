@@ -308,7 +308,7 @@ describe('parseFenetres', () => {
   });
 
   it('tolère les espaces, le point-virgule et les heures écrites à la main', () => {
-    const saisie = parseFenetres(' 9h-12h30 ; 14 - 18:5 @ 3 ');
+    const saisie = parseFenetres(' 9h-12h30 ; 14 - 18:50 @ 3 ');
     expect(saisie.fenetres).toEqual([
       { heureDebut: '09:00', heureFin: '12:30', effectif: null },
       { heureDebut: '14:00', heureFin: '18:50', effectif: 3 }
@@ -354,10 +354,18 @@ describe('normaliserHeure', () => {
   it('ramène toute écriture usuelle à HH:MM', () => {
     expect(normaliserHeure('9')).toBe('09:00');
     expect(normaliserHeure('9h')).toBe('09:00');
-    expect(normaliserHeure('9h5')).toBe('09:50');
     expect(normaliserHeure('09h05')).toBe('09:05');
     expect(normaliserHeure('23.59')).toBe('23:59');
     expect(normaliserHeure('0:00')).toBe('00:00');
+  });
+
+  // « 9:5 » se lit 9 h 50 pour l'un et 9 h 05 pour l'autre : deviner réécrirait
+  // une heure que l'utilisateur croit avoir saisie.
+  it('refuse une minute à un seul chiffre plutôt que de la compléter', () => {
+    expect(normaliserHeure('9:5')).toBeNull();
+    expect(normaliserHeure('9h5')).toBeNull();
+    expect(normaliserHeure('9.5')).toBeNull();
+    expect(normaliserHeure('09:05')).toBe('09:05');
   });
 
   it('refuse ce qui n’est pas une heure du jour', () => {
@@ -380,9 +388,15 @@ describe('formaterFenetres', () => {
     expect(parseFenetres(ligne).fenetres).toEqual(fenetres);
   });
 
-  it('raccourcit les heures à la seconde et vide une fenêtre sans début', () => {
+  it('raccourcit les heures à la seconde et laisse de côté une fenêtre sans début', () => {
     expect(formaterFenetres([{ heureDebut: '10:00:00', heureFin: '12:00:00' }])).toBe('10:00-12:00');
-    expect(formaterFenetres([{ heureDebut: '', heureFin: null }])).toBe('-');
+    // Une ligne « - » était refusée par le parseur de ce même fichier à la
+    // frappe suivante : la fenêtre à moitié saisie reste dans la règle, et
+    // c'est « heure de début » qui la signale.
+    expect(formaterFenetres([{ heureDebut: '', heureFin: null }])).toBe('');
+    expect(
+      formaterFenetres([{ heureDebut: '10:00', heureFin: '12:00' }, { heureDebut: '', heureFin: null }])
+    ).toBe('10:00-12:00');
     expect(formaterFenetres([])).toBe('');
   });
 });
