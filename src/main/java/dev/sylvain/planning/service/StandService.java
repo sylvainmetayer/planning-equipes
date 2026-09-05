@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -58,6 +59,11 @@ public class StandService {
         List<Stand> stands = list();
         HoraireStandResolver.apply(stands, creneaux.list());
         return stands;
+    }
+
+    /** One stand as persisted, or {@code null}: what a write compares itself against. */
+    public Stand find(String id) {
+        return repository.findStand(id);
     }
 
     public Stand create(Stand stand) {
@@ -119,27 +125,56 @@ public class StandService {
      * and written on its own, so one stand the validator refuses does not roll
      * back the others — the report says what happened to each.
      *
-     * <p>Refused as a whole while a solve holds the solver, for the reason
-     * {@link #update} gives: the landing persist would revert the bounds and
-     * windows just written.</p>
+     * <p>Every stand is converted and validated first, then all are written in
+     * a single transaction: the report is a promise, and a half-written batch
+     * would break it. Refused as a whole while a solve holds the solver, for the
+     * reason {@link #update} gives: the landing persist would revert the bounds
+     * and windows just written.</p>
      */
     public List<GrilleHorairesStands.LigneGrille> saisirGrille(List<GrilleHorairesStands.SaisieStand> saisies) {
         solverJobs.refuseIfSolving();
         List<Creneau> edition = creneaux.list();
+        List<Stand> tous = list();
         Map<String, Stand> parId = new LinkedHashMap<>();
-        list().forEach(stand -> parId.put(stand.getId(), stand));
+        tous.forEach(stand -> parId.put(stand.getId(), stand));
+        Map<String, Integer> familles = PlanningService.standFamilies(tous, edition);
+        Set<Long> idsEdition = edition.stream().map(Creneau::getId).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
         List<GrilleHorairesStands.LigneGrille> lignes = new ArrayList<>();
+        List<Stand> aEcrire = new ArrayList<>();
         for (GrilleHorairesStands.SaisieStand saisie : saisies) {
             Stand stand = parId.get(saisie.standId());
             if (stand == null) {
-                throw new NotFoundException("Stand not found: " + saisie.standId());
+                // A body field naming nothing is a bad request, not a missing page.
+                throw new BusinessError.Invalid("Stand inconnu dans la grille : " + saisie.standId());
             }
-            lignes.add(GrilleHorairesStands.apply(stand, edition,
-                    saisie.cellules() == null ? List.of() : saisie.cellules()));
+            List<GrilleHorairesStands.SaisieCellule> cellules =
+                    saisie.cellules() == null ? List.of() : saisie.cellules();
+            for (GrilleHorairesStands.SaisieCellule cellule : cellules) {
+                if (!idsEdition.contains(cellule.creneauId())) {
+                    throw new BusinessError.Invalid("Créneau inconnu dans la grille du stand " + stand.getId()
+                            + " : " + cellule.creneauId());
+                }
+            }
+            // A stand only ever receives seats on its own stagger family's
+            // créneaux (PlanningService#buildPostes), so the other families'
+            // cells are inert: they are neither read nor written, and writing
+            // them would reopen days this stand never staffs.
+            int famille = familles.getOrDefault(stand.getId(), 0);
+            List<Creneau> siens = edition.stream().filter(creneau -> creneau.getFamille() == famille).toList();
+            Set<Long> idsFamille = siens.stream().map(Creneau::getId).collect(Collectors.toSet());
+            List<GrilleHorairesStands.SaisieCellule> retenues = cellules.stream()
+                    .filter(cellule -> idsFamille.contains(cellule.creneauId()))
+                    .toList();
+            lignes.add(GrilleHorairesStands.apply(stand, siens, retenues));
             validate(stand);
-            repository.saveStand(stand);
+            aEcrire.add(stand);
         }
-        if (!lignes.isEmpty()) {
+        // One transaction for the lot: a report announcing twelve stands after a
+        // rollback would be a promise nothing could keep.
+        if (!aEcrire.isEmpty()) {
+            repository.saveStands(aEcrire);
             changeTracker.markModified();
         }
         return lignes;

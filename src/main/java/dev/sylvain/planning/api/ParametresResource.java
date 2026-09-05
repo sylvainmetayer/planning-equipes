@@ -52,10 +52,25 @@ public class ParametresResource {
         return referenceDataService.getParametresDecoupage();
     }
 
+    /**
+     * Writes the slicing settings. {@code modeGrille} is <b>not</b> read from
+     * this body — it is declared on the Créneaux page and written by
+     * {@link #updateModeGrille}, so a tab left open here cannot revert it.
+     */
     @PUT
     @Path("/parametres-decoupage")
     public ParametresDecoupage updateParametresDecoupage(ParametresDecoupage parametres) {
         return referenceDataService.updateParametresDecoupage(parametres);
+    }
+
+    /** What the edition's créneaux are: {@code {"modeGrille": "AMPLITUDES"}} or {@code "VACATIONS"}. */
+    public record ModeGrilleRequest(String modeGrille) {
+    }
+
+    @PUT
+    @Path("/parametres-decoupage/mode-grille")
+    public ParametresDecoupage updateModeGrille(ModeGrilleRequest requete) {
+        return referenceDataService.updateModeGrille(requete == null ? null : requete.modeGrille());
     }
 
     @GET

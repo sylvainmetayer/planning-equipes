@@ -262,8 +262,11 @@ export class CreneauxPage {
     }
     this.modeLoading.set(true);
     try {
+      // Its own endpoint: the mode is declared here while the rest of the
+      // slicing settings are edited on Paramètres, and sending the whole object
+      // would let a stale tab there revert this choice.
       this.parametresDecoupage.set(
-        await this.api.put<ParametresDecoupage>('/api/parametres-decoupage', { ...actuels, modeGrille: mode })
+        await this.api.put<ParametresDecoupage>('/api/parametres-decoupage/mode-grille', { modeGrille: mode })
       );
       await this.rechargerVerdict();
     } catch (error) {
@@ -279,7 +282,7 @@ export class CreneauxPage {
       return;
     }
     const ref = this.dialog.open<CreneauSerieDialog, CreneauSerieData, RapportRecurrence | null>(CreneauSerieDialog, {
-      data: { mode: this.mode() },
+      data: { mode: this.mode(), controleActuel: this.controle() },
       width: '44rem',
       autoFocus: 'first-tabbable'
     });
@@ -310,29 +313,44 @@ export class CreneauxPage {
   }
 
   private openDialog(creneau: Creneau | null): void {
-    this.dialog.open<CreneauFormDialog, CreneauFormData, boolean>(CreneauFormDialog, {
+    // The verdict below the table is read again after anything that changes the
+    // grid: a card still listing an anomaly about a créneau that no longer
+    // exists is a verdict people stop reading.
+    const ref = this.dialog.open<CreneauFormDialog, CreneauFormData, boolean>(CreneauFormDialog, {
       data: { creneau },
       width: '36rem',
       maxWidth: '95vw',
       autoFocus: 'first-tabbable'
     });
+    ref.afterClosed().subscribe((ecrit) => {
+      if (ecrit) {
+        void this.rechargerVerdict();
+      }
+    });
   }
 
   protected async remove(creneau: Creneau): Promise<void> {
     await this.crud.remove('creneaux', creneau.id, $localize`:@@creneaux.entityLabel:Créneau`);
+    await this.rechargerVerdict();
   }
 
   protected async removeSelection(): Promise<void> {
     await this.crud.removeMany('creneaux', this.selection.selectedIds(), labelCreneauxPluriel());
+    await this.rechargerVerdict();
   }
 
   protected editSelection(): void {
     const selectionnes = new Set(this.selection.selectedIds());
-    this.dialog.open<CreneauBulkEditDialog, CreneauBulkEditData, boolean>(CreneauBulkEditDialog, {
+    const refBulk = this.dialog.open<CreneauBulkEditDialog, CreneauBulkEditData, boolean>(CreneauBulkEditDialog, {
       data: { creneaux: this.store.creneaux().filter((creneau) => selectionnes.has(creneau.id)) },
       width: '40rem',
       maxWidth: '95vw',
       autoFocus: 'first-tabbable'
+    });
+    refBulk.afterClosed().subscribe((ecrit) => {
+      if (ecrit) {
+        void this.rechargerVerdict();
+      }
     });
   }
 
@@ -382,9 +400,11 @@ export class CreneauxPage {
     try {
       await this.api.post('/api/decoupage/generer', {});
       await Promise.all([this.crud.reload(), this.resolution.reload()]);
-      // What the grid now holds is what the découpage produced: say so, so
-      // the verdict reads overlaps as staggered vacations and not as mistakes.
-      await this.changerMode('VACATIONS');
+      // The server declares the grid as vacations when it slices it, so the
+      // mode is read back rather than written from here — an assistant slicing
+      // over MCP has to get the same declaration.
+      this.parametresDecoupage.set(await this.api.get<ParametresDecoupage>('/api/parametres-decoupage'));
+      await this.rechargerVerdict();
       this.notifications.notify({
         title: $localize`:@@decoupage.generated:Découpage généré : les vacations ont remplacé les amplitudes.`,
         variant: 'success',

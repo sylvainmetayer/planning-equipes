@@ -102,6 +102,13 @@ porte son `effectif`. `null`, le cas très majoritaire, veut dire « hériter de
 `effectifMin` », donc une fenêtre qui n'en nomme aucun génère exactement ce
 qu'elle générait avant que le champ existe.
 
+Enregistrer un stand depuis la grille de saisie **dérive ses deux bornes de ses
+cases** : `effectifMin` est la plus petite valeur saisie, `effectifMax` la plus
+grande. C'est ce que le classeur source fait déjà (63 stands sur 63), et cela
+vaut dans les deux sens — un stand déclaré à un maximum de 5 dont aucune case
+ne dépasse 2 ressort à 2. La fiche du stand reste l'endroit où fixer une
+capacité que la grille ne montre pas.
+
 Un effectif de fenêtre ne peut pas dépasser l'`effectifMax` du stand : la
 génération rendrait obligatoires plus de sièges que le stand n'est déclaré
 capable d'en tenir, et les deux nombres se contrediraient sur chaque écran qui

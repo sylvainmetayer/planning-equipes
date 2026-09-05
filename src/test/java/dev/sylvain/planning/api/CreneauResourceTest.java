@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.startsWith;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 
@@ -253,24 +254,50 @@ class CreneauResourceTest {
     /** No mode on the call: the edition's declared one applies, and it is what the screen persists. */
     @Test
     void leControleLitLeModeDeclareDeLEditionQuandLAppelNEnNommePas() {
-        io.restassured.path.json.JsonPath parametres = given().when().get("/api/parametres-decoupage")
-                .then().statusCode(200).extract().jsonPath();
-        java.util.Map<String, Object> corps = new java.util.LinkedHashMap<>(parametres.getMap("$"));
-        corps.put("modeGrille", "VACATIONS");
-        given().contentType("application/json").body(corps)
-                .when().put("/api/parametres-decoupage")
-                .then().statusCode(200).body("modeGrille", equalTo("VACATIONS"));
+        try {
+            io.restassured.path.json.JsonPath parametres = given().when().get("/api/parametres-decoupage")
+                    .then().statusCode(200).extract().jsonPath();
+            assertThat(parametres.getString("modeGrille")).isNotBlank();
+            // Its own write: the mode is not a field of the slicing payload.
+            given().contentType("application/json").body(Map.of("modeGrille", "VACATIONS"))
+                    .when().put("/api/parametres-decoupage/mode-grille")
+                    .then().statusCode(200).body("modeGrille", equalTo("VACATIONS"));
 
-        given().when().get("/api/creneaux/controle")
-                .then().statusCode(200)
-                .body("mode", equalTo("VACATIONS"))
-                .body("nombreCreneaux", notNullValue());
-        given().when().get("/api/creneaux/controle?mode=AMPLITUDES")
-                .then().statusCode(200)
-                .body("mode", equalTo("AMPLITUDES"));
+            given().when().get("/api/creneaux/controle")
+                    .then().statusCode(200)
+                    .body("mode", equalTo("VACATIONS"))
+                    .body("nombreCreneaux", notNullValue());
+            given().when().get("/api/creneaux/controle?mode=AMPLITUDES")
+                    .then().statusCode(200)
+                    .body("mode", equalTo("AMPLITUDES"));
+            // A mistyped mode is a bad request, not a missing page.
+            given().when().get("/api/creneaux/controle?mode=VACATION").then().statusCode(400);
+        } finally {
+            // Restored whatever the assertions did: the edition is shared with
+            // every other test of the class.
+            given().contentType("application/json").body(Map.of("modeGrille", "AMPLITUDES"))
+                    .when().put("/api/parametres-decoupage/mode-grille").then().statusCode(200);
+        }
+    }
 
-        corps.put("modeGrille", "AMPLITUDES");
-        given().contentType("application/json").body(corps).when().put("/api/parametres-decoupage").then().statusCode(200);
+    /** A Paramètres tab left open must not be able to revert what Créneaux declared. */
+    @Test
+    void enregistrerLesParametresDeDecoupageNeTouchePasAuModeDeclare() {
+        try {
+            given().contentType("application/json").body(Map.of("modeGrille", "VACATIONS"))
+                    .when().put("/api/parametres-decoupage/mode-grille").then().statusCode(200);
+            Map<String, Object> anciens = given().when().get("/api/parametres-decoupage")
+                    .then().statusCode(200).extract().jsonPath().getMap("$");
+            Map<String, Object> perimes = new java.util.LinkedHashMap<>(anciens);
+            perimes.put("modeGrille", "AMPLITUDES");
+
+            given().contentType("application/json").body(perimes)
+                    .when().put("/api/parametres-decoupage")
+                    .then().statusCode(200).body("modeGrille", equalTo("VACATIONS"));
+        } finally {
+            given().contentType("application/json").body(Map.of("modeGrille", "AMPLITUDES"))
+                    .when().put("/api/parametres-decoupage/mode-grille").then().statusCode(200);
+        }
     }
 
     @Test

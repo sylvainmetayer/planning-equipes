@@ -11,13 +11,20 @@ import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { JourSemaine, ModeGrilleCreneaux, RapportRecurrence, RegleRecurrence } from '../../core/models';
+import {
+  JourSemaine,
+  ModeGrilleCreneaux,
+  RapportGrille,
+  RapportRecurrence,
+  RegleRecurrence
+} from '../../core/models';
 import { libelleJourSemaine } from '../stands/stand-horaires';
 import { summarizeVacationsByDay } from './decoupage';
 import {
   ErreurSerie,
   SerieDraft,
   bilanGrille,
+  erreursIntroduites,
   grilleBloquee,
   iconeAnomalieGrille,
   regleDepuis,
@@ -29,6 +36,8 @@ import {
 export interface CreneauSerieData {
   /** The mode the edition declares: what the preview's verdict is read in. */
   mode: ModeGrilleCreneaux;
+  /** The grid's current verdict, so only the errors the rule introduces block it. */
+  controleActuel: RapportGrille | null;
 }
 
 /**
@@ -99,7 +108,14 @@ export class CreneauSerieDialog {
     const apercu = this.apercu();
     return apercu ? trierAnomalies(apercu.controle.anomalies) : [];
   });
-  protected readonly bloquee = computed(() => grilleBloquee(this.apercu()?.controle ?? null));
+  protected readonly bloquee = computed(() =>
+    grilleBloquee(this.apercu()?.controle ?? null, this.data.controleActuel)
+  );
+  /** The errors this rule would add — the ones the message is about. */
+  protected readonly erreursIntroduites = computed(() => {
+    const apercu = this.apercu();
+    return apercu ? erreursIntroduites(apercu.controle, this.data.controleActuel) : [];
+  });
   protected readonly peutCreer = computed(
     () => this.apercuAJour() && !this.bloquee() && !this.creation() && !this.editingLocked()
   );
@@ -173,6 +189,8 @@ export class CreneauSerieDialog {
         return $localize`:@@creneaux.serie.error.joursSemaineRequis:Cochez au moins un jour de la semaine.`;
       case 'DATES_REQUISES':
         return $localize`:@@creneaux.serie.error.datesRequises:Indiquez au moins une date (AAAA-MM-JJ).`;
+      case 'DATES_ILLISIBLES':
+        return $localize`:@@creneaux.serie.error.datesIllisibles:« ${morceau ?? ''}:morceau: » n'est pas une date : écrivez-la AAAA-MM-JJ, sinon elle serait ignorée sans un mot.`;
     }
   }
 }
