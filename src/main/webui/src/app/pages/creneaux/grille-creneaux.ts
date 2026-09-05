@@ -49,11 +49,20 @@ export type ErreurSerie =
   | 'PLAGE_REQUISE'
   | 'PLAGE_INVERSEE'
   | 'JOURS_SEMAINE_REQUIS'
-  | 'DATES_REQUISES';
+  | 'DATES_REQUISES'
+  | 'DATES_ILLISIBLES';
 
 export type RegleOuErreur =
   | { readonly regle: RegleRecurrence; readonly erreur: null; readonly morceau: null }
   | { readonly regle: null; readonly erreur: ErreurSerie; readonly morceau: string | null };
+
+/** Dates the user typed that are not dates at all — dropped, and worth saying. */
+export function datesIllisibles(texte: string): string[] {
+  return texte
+    .split(/[,;\s]+/)
+    .map((date) => date.trim())
+    .filter((date) => date !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(date));
+}
 
 export function regleDepuis(draft: SerieDraft): RegleOuErreur {
   const saisie = parseFenetres(draft.fenetres);
@@ -69,6 +78,14 @@ export function regleDepuis(draft: SerieDraft): RegleOuErreur {
       return { regle: null, erreur: 'EFFECTIF_REFUSE', morceau: `${fenetre.heureDebut}-${fenetre.heureFin}@${fenetre.effectif}` };
     }
     fenetres.push({ heureDebut: fenetre.heureDebut, heureFin: fenetre.heureFin });
+  }
+  const illisibles = datesIllisibles(draft.exclusions).concat(
+    draft.jours === 'DATES' ? datesIllisibles(draft.dates) : []
+  );
+  if (illisibles.length > 0) {
+    // Silently dropped before: a « 14/07/2026 » among the exclusions wrote the
+    // créneaux of 14 July anyway, and nothing said the input was ignored.
+    return { regle: null, erreur: 'DATES_ILLISIBLES', morceau: illisibles.join(', ') };
   }
   const dates = draft.jours === 'DATES' ? datesDepuisTexte(draft.dates) : [];
   if (draft.jours === 'DATES') {
@@ -122,9 +139,30 @@ export function bilanGrille(rapport: RapportGrille): BilanGrille {
   };
 }
 
+/**
+ * The errors the previewed grid has and the current one does not — what the
+ * rule would introduce.
+ *
+ * Compared against the grid as it stands, because the verdict covers the whole
+ * resulting grid: an edition already carrying one long slot would otherwise
+ * make every rule unwritable, blaming a rule that is fine for an error about
+ * another date.
+ */
+export function erreursIntroduites(apres: RapportGrille, avant: RapportGrille | null): AnomalieGrille[] {
+  const connues = new Set(
+    (avant?.anomalies ?? [])
+      .filter((anomalie) => anomalie.severite === 'ERREUR')
+      .map((anomalie) => `${anomalie.type}#${anomalie.date}#${anomalie.message}`)
+  );
+  return apres.anomalies.filter(
+    (anomalie) =>
+      anomalie.severite === 'ERREUR' && !connues.has(`${anomalie.type}#${anomalie.date}#${anomalie.message}`)
+  );
+}
+
 /** Whether the verdict allows a rule to be written: warnings do, an error (a doublon, say) does not. */
-export function grilleBloquee(rapport: RapportGrille | null): boolean {
-  return rapport !== null && rapport.anomalies.some((anomalie) => anomalie.severite === 'ERREUR');
+export function grilleBloquee(rapport: RapportGrille | null, avant: RapportGrille | null = null): boolean {
+  return rapport !== null && erreursIntroduites(rapport, avant).length > 0;
 }
 
 /** Errors first, then warnings; within a severity, by date then message — the order a reader wants. */

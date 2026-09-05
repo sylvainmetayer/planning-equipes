@@ -110,11 +110,17 @@ function appliquerHoraires(actuels: readonly HoraireStand[], patch: StandBulkPat
 function copierHoraire(horaire: HoraireDraft): HoraireStand {
   // Normalised like the single-stand form: the editing state (the typed line,
   // the fold flags) stays behind, and an emptied end reads as "until closing".
+  //
+  // The two arrays are copied from the *normalised* rule, never from the draft:
+  // read from the draft they brought back the days a scope switched away from
+  // JOURS_SEMAINE was still dragging along, which the solver ignores but the
+  // write-time warnings read as a schedule change.
+  const normalise = normaliserHoraire(horaire);
   return {
-    ...normaliserHoraire(horaire),
+    ...normalise,
     id: null,
-    joursSemaine: [...horaire.joursSemaine],
-    dates: [...horaire.dates]
+    joursSemaine: [...normalise.joursSemaine],
+    dates: [...normalise.dates]
   };
 }
 

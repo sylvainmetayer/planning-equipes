@@ -6,7 +6,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ModeBooleen, ModeListe } from '../../core/bulk-edit';
 import { labelStandsPluriel } from '../../core/entity-labels';
 import { HoraireDraft } from './stand-draft';
@@ -51,7 +50,6 @@ export interface StandBulkEditData {
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule,
     HoraireReglesEditor
   ],
   templateUrl: './stand-bulk-edit-dialog.html',

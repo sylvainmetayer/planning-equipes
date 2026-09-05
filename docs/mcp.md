@@ -306,6 +306,10 @@ s'applique — `modeGrille` de `modifier_parametres_decoupage`, la valeur que
 l'organisateur choisit sur la page Créneaux. `diagnostiquer_grille_creneaux`
 continue de dire ce que la grille contient, sans trancher.
 
+`generer_decoupage` déclare lui-même la grille en `VACATIONS` : ce qu'il vient
+d'écrire *est* des vacations, et les lire comme des amplitudes ferait ressortir
+chaque chevauchement de relais comme une faute de saisie.
+
 ## La grille peut découler des stands
 
 Quand les stands ont déjà leurs horaires, `previsualiser_derivation_creneaux`

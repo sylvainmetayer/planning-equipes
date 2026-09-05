@@ -111,6 +111,35 @@ class GrilleDepuisFenetresTest {
         assertThat(heures(derivation.creneaux())).containsExactly("10:00-18:05");
     }
 
+    /**
+     * "Open from 22:00 until closing" on an event closing at 02:00: the window
+     * read as ending before it started, and vanished without a word.
+     */
+    @Test
+    void uneFermetureApresMinuitProlongeLaFenetreAuLendemain() {
+        List<Stand> stands = List.of(stand("A", fenetre(20, null)), stand("B", fenetre(22, null)));
+
+        Derivation derivation = GrilleDepuisFenetres.deriver(stands, oneDay(LocalTime.of(2, 0)));
+
+        assertThat(heures(derivation.creneaux())).containsExactly("20:00-22:00", "22:00-02:00");
+    }
+
+    /** A five-minute hole between two stands is not worth a cut of the grid. */
+    @Test
+    void unTrouTropCourtEstRefermeAuLieuDeCouperEnDeux() {
+        Stand a = stand("A", fenetre(10, 12));
+        Stand b = stand("B");
+        b.getHoraires().add(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(12, 5), LocalTime.of(18, 0))));
+
+        Derivation derivation = GrilleDepuisFenetres.deriver(List.of(a, b), oneDay(LocalTime.of(20, 0)));
+
+        assertThat(heures(derivation.creneaux())).containsExactly("10:00-18:00");
+        // And the 12:05 cut, merged away, is no longer given as a reason.
+        assertThat(derivation.coupures()).extracting(coupure -> coupure.heure().toString())
+                .containsExactly("10:00", "18:00");
+    }
+
     @Test
     void unJourOuAucunStandNeDitRienEstSignaleEtSansCreneau() {
         Stand libre = stand("LIBRE");

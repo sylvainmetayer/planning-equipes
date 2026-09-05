@@ -221,6 +221,12 @@ export interface CelluleCreneauOuverture {
   creneauId: number;
   effectif: number | null;
   partiel: boolean;
+  /**
+   * The créneau belongs to another stagger family than the stand's, so the
+   * stand never receives a seat on it: the cell is shown inert, and neither
+   * read nor written.
+   */
+  horsFamille: boolean;
 }
 
 export interface FenetreEffective {

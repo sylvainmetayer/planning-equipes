@@ -26,7 +26,7 @@
 <mat-form-field appearance="outline">
   <mat-label i18n="@@creneaux.derivation.dureeMinimale">Durée minimale d'un créneau (min)</mat-label>
   <input matInput type="number" min="0" step="5" name="dureeMinimaleMinutes" [ngModel]="draft().dureeMinimaleMinutes" (ngModelChange)="patch({ dureeMinimaleMinutes: $event })" />
-  <mat-hint i18n="@@creneaux.derivation.dureeMinimale.hint">En deçà, la tranche est fondue dans la précédente</mat-hint>
+  <mat-hint i18n="@@creneaux.derivation.dureeMinimale.hint">En deçà, la tranche rejoint sa voisine et le trou est refermé</mat-hint>
 </mat-form-field>
 <mat-checkbox name="remplacer" class="span-2" [disabled]="editingLocked()" [ngModel]="draft().remplacer" (ngModelChange)="patch({ remplacer: $event })"
               i18n="@@creneaux.derivation.remplacer">Remplacer la grille actuelle (efface le planning résolu) plutôt que d'y ajouter</mat-checkbox>
@@ -35,7 +35,11 @@
 }
 @if (apercu(); as apercu) {
   <div class="span-2 serie-apercu" [class.serie-apercu-perimee]="!apercuAJour()">
-    <h3 i18n="@@creneaux.derivation.apercu.title">{{ apercu.nombreGeneres }} créneau(x) seraient {{ draft().remplacer ? 'la grille' : 'ajoutés' }}</h3>
+    @if (draft().remplacer) {
+      <h3 i18n="@@creneaux.derivation.apercu.titleRemplacer">{{ apercu.nombreGeneres }} créneau(x) formeraient la grille</h3>
+    } @else {
+      <h3 i18n="@@creneaux.derivation.apercu.title">{{ apercu.nombreGeneres }} créneau(x) seraient ajoutés</h3>
+    }
     @if (!apercuAJour()) {
       <p class="empty-hint" i18n="@@creneaux.serie.apercu.perime">La règle a changé depuis cet aperçu : prévisualisez à nouveau avant de créer.</p>
     }

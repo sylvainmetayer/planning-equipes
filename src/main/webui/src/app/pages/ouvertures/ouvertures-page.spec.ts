@@ -30,7 +30,12 @@ function rapport(): RapportOuvertures {
       { id: ids[1], heureDebut: '14:00', heureFin: '20:00', famille: 0, couverturePause: false }
     ]
   });
-  const cellule = (creneauId: number, effectif: number | null, partiel = false) => ({ creneauId, effectif, partiel });
+  const cellule = (creneauId: number, effectif: number | null, partiel = false, horsFamille = false) => ({
+    creneauId,
+    effectif,
+    partiel,
+    horsFamille
+  });
   const jourStand = (date: string, creneaux: ReturnType<typeof cellule>[]) => ({
     date,
     etat: 'OUVERT_TOTAL' as const,
@@ -67,8 +72,8 @@ function rapport(): RapportOuvertures {
   };
 }
 
-function mount(options: { vue?: string; editingLocked?: boolean; confirme?: boolean } = {}) {
-  const get = vi.fn(async () => rapport());
+function mount(options: { vue?: string; editingLocked?: boolean; confirme?: boolean; rapport?: RapportOuvertures } = {}) {
+  const get = vi.fn(async () => options.rapport ?? rapport());
   const put = vi.fn(async () => ({ stands: [{ standId: 'B', regles: 1, exceptions: 0, effectifMin: 3, effectifMax: 3, compacte: true, raison: '' }] }));
   const ask = vi.fn(async () => options.confirme ?? true);
   const notify = vi.fn();
@@ -140,6 +145,28 @@ describe('OuverturesPage — saisie', () => {
     const entetes = Array.from(root(fixture).querySelectorAll('.entete-creneau')).map((each) => each.textContent!.trim());
     expect(entetes).toEqual(['10-12', '14-20', '10-12', '14-20']);
     expect(root(fixture).querySelector('.entete-jour-saisie')!.getAttribute('colspan')).toBe('2');
+  });
+
+  it('shows a cell of another relay family inert: disabled, unsent, and explained', async () => {
+    const rapportFamille = rapport();
+    rapportFamille.stands[0].jours[0].creneaux[1].horsFamille = true;
+    rapportFamille.stands[0].jours[0].creneaux[1].effectif = null;
+    const { fixture, put } = mount({ vue: 'saisie', rapport: rapportFamille });
+    await fixture.whenStable();
+
+    const inerte = champ(fixture, 'A', 2);
+    expect(inerte.disabled).toBe(true);
+    expect(inerte.closest('td')!.classList.contains('cellule-inerte')).toBe(true);
+    expect(inerte.getAttribute('title')).toContain('autre famille de relais');
+
+    // Typing elsewhere still saves, and the inert cell is left out of the body.
+    taper(champ(fixture, 'A', 1), '3');
+    await fixture.whenStable();
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
+
+    const [, corps] = put.mock.calls[0] as unknown as [string, { stands: { cellules: { creneauId: number }[] }[] }];
+    expect(corps.stands[0].cellules.map((cellule) => cellule.creneauId)).toEqual([1, 3, 4]);
   });
 
   it('marks a typed cell and its row as modified, and counts the stand on the save button', async () => {

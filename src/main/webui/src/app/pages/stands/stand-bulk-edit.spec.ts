@@ -162,6 +162,24 @@ describe('appliquerPatchStand', () => {
   });
 
   /**
+   * Une portée quittée laisse ses jours dans la saisie : la copie doit lire la
+   * règle normalisée, sinon elle envoie à tous les stands des jours de semaine
+   * que le solveur ignore mais que les avertissements d'écriture comptent
+   * comme un horaire changé.
+   */
+  it('oublie les jours d’une portée quittée', () => {
+    const quittee = { ...regleQuotidienne(), jours: 'TOUS' as const, joursSemaine: ['MONDAY' as const] };
+
+    const resultat = appliquerPatchStand(
+      stand(),
+      patch({ horaires: { mode: 'REMPLACER', horaires: [quittee] } }),
+      emplacements
+    );
+
+    expect(resultat.horaires[0].joursSemaine).toEqual([]);
+  });
+
+  /**
    * Les objets de règle sont copiés par stand : partager la même instance
    * enverrait à cinquante stands l'id de l'un d'eux.
    */

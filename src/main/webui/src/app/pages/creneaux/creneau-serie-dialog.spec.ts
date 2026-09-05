@@ -25,7 +25,7 @@ function apercu(patch: Partial<RapportRecurrence['controle']> = {}): RapportRecu
   };
 }
 
-function monter(options: { editingLocked?: boolean; reponse?: RapportRecurrence } = {}) {
+function monter(options: { editingLocked?: boolean; reponse?: RapportRecurrence; controleActuel?: RapportRecurrence['controle'] } = {}) {
   const post = vi.fn(async () => options.reponse ?? apercu());
   const close = vi.fn();
   TestBed.resetTestingModule();
@@ -36,7 +36,7 @@ function monter(options: { editingLocked?: boolean; reponse?: RapportRecurrence 
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { mode: 'AMPLITUDES' } }
+      { provide: MAT_DIALOG_DATA, useValue: { mode: 'AMPLITUDES', controleActuel: options.controleActuel ?? null } }
     ]
   });
   return { fixture: TestBed.createComponent(CreneauSerieDialog), post, close };
@@ -132,10 +132,26 @@ describe('CreneauSerieDialog', () => {
     bouton(fixture, 'Prévisualiser').click();
     await fixture.whenStable();
 
-    expect(racine(fixture).textContent).toContain('corrigez la règle');
+    expect(racine(fixture).textContent).toContain('ajouterait 1 erreur(s)');
     expect(racine(fixture).querySelector('.serie-anomalies')!.textContent).toContain('Doublon');
     expect(bouton(fixture, 'Créer la série').disabled).toBe(true);
     expect(close).not.toHaveBeenCalled();
+  });
+
+  // Le verdict couvre toute la grille : une erreur déjà là ne doit pas
+  // interdire d'écrire une règle qui, elle, est correcte.
+  it('does not block on an error the grid already carried', async () => {
+    const deja = { severite: 'ERREUR' as const, type: 'REPOS_QUOTIDIEN_IMPOSSIBLE' as const, date: '2026-07-06', message: 'Vacation trop longue' };
+    const { fixture } = monter({
+      reponse: apercu({ anomalies: [deja] }),
+      controleActuel: { mode: 'AMPLITUDES', nombreCreneaux: 2, anomalies: [deja], ouvertures: [], faisabilite: null }
+    });
+    await fixture.whenStable();
+    await remplirRegle(fixture);
+    bouton(fixture, 'Prévisualiser').click();
+    await fixture.whenStable();
+
+    expect(bouton(fixture, 'Créer la série').disabled).toBe(false);
   });
 
   it('sends the user back to the preview once the rule changed', async () => {

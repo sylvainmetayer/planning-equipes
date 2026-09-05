@@ -494,15 +494,21 @@ public final class LegalConstraints {
      * <p>Counted in <b>calendar days</b> inside the civil week, Monday 00:00 to
      * Sunday 24:00 (art. L3121-35, the week {@code Creneau.semaineIso()}
      * already uses): days of that week the event does not cover are free days
-     * like any other, so a week only partially covered is satisfied by
-     * construction. A Sunday and the Monday after it are <em>not</em> two days
-     * of one week: the right is « par semaine », the week must <em>comporter</em>
-     * the rest (Cass. soc. 13 nov. 2025, n° 24-10.733, on L3132-2), and each of
-     * the two weeks then holds one free day only. Deliberately different from
-     * {@link #reposHebdomadaireMinimal}, which does not credit a rest to both
-     * sides either: it requires 24 h <em>inside</em> the week and only lets the
-     * adjoining daily rest overflow, as L3132-2 is written. See
-     * {@code docs/contraintes.md}, « La frontière de semaine ».</p>
+     * like any other. That does not make a partly covered week free of the
+     * rule — the two free days must adjoin, so a week the event opens on
+     * scattered days (Monday, Wednesday, Friday, Sunday) still falls short if
+     * the minor works them all. A Sunday and the Monday after it are
+     * <em>not</em> two days of one week: the right is « par semaine », the week
+     * must <em>comporter</em> the rest (Cass. soc. 13 nov. 2025,
+     * n° 24-10.733, on L3132-2), and each of the two weeks then holds one free
+     * day only.</p>
+     *
+     * <p>Deliberately different from {@link #reposHebdomadaireMinimal}, which
+     * <em>does</em> credit one rest straddling the Monday to both weeks — but
+     * only what it spends in each: reaching the 35 h floor takes 24 h
+     * <em>inside</em> the week, and only the adjoining daily rest is allowed to
+     * overflow, as L3132-2 is written. Two consecutive days cannot be split
+     * that way. See {@code docs/contraintes.md}, « La frontière de semaine ».</p>
      */
     private Constraint reposHebdomadaireMineur(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),

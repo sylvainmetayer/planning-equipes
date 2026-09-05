@@ -179,7 +179,7 @@ class GrilleHorairesStandsTest {
         GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, 1, null, null, null, null));
         RapportOuvertures apres = relire(stand, creneaux);
 
-        assertThat(cellulesLues(apres, 0).get(0)).isEqualTo(new CelluleCreneau(1L, 1, false));
+        assertThat(cellulesLues(apres, 0).get(0)).isEqualTo(new CelluleCreneau(1L, 1, false, false));
         assertThat(apres.stands().get(0).jours().get(0).minutesOuvertes()).isEqualTo(120);
     }
 

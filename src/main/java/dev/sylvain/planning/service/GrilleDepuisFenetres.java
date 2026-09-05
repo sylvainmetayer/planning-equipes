@@ -30,7 +30,10 @@ import dev.sylvain.planning.domain.Stand;
  * at the closing hour given, {@code 00:00} meaning midnight, which makes the
  * last créneau cross it the way the domain writes a nocturne.</p>
  *
- * <p>Pure and static: the persistence is {@code ReferenceDataService}'s business.</p>
+ * <p>Static, and the only state it touches is the stands it is handed: their
+ * rules are resolved onto the dates asked for, the way every reader of
+ * {@link Stand#getOuverturesEffectives()} needs. The persistence is
+ * {@code ReferenceDataService}'s business.</p>
  */
 public final class GrilleDepuisFenetres {
 
@@ -44,7 +47,8 @@ public final class GrilleDepuisFenetres {
 
     /**
      * @param heureFermeture      the end of a window left open-ended; {@code 00:00} reads as midnight
-     * @param dureeMinimaleMinutes stretches shorter than this are merged into the previous one
+     * @param dureeMinimaleMinutes a stretch shorter than this joins the one next to it, and a hole
+     *                             shorter than this is closed rather than splitting a créneau in two
      */
     public record Parametres(LocalDate dateDebut, LocalDate dateFin, LocalTime heureFermeture,
             int dureeMinimaleMinutes) {
@@ -105,10 +109,12 @@ public final class GrilleDepuisFenetres {
                         continue;
                     }
                     int debut = ouverture.getHeureDebut().toSecondOfDay() / 60;
-                    int fin = ouverture.getHeureFin() == null ? fermeture : ouverture.getHeureFin().toSecondOfDay() / 60;
-                    if (fin <= debut) {
-                        continue;
-                    }
+                    // A window may not cross midnight on its own (hasValidRange),
+                    // but « until closing » may: an event closing at 02:00, or a
+                    // window opening after the closing hour given, means the next
+                    // day. Read as a same-day end it was silently dropped.
+                    int fin = ouverture.getHeureFin() != null ? ouverture.getHeureFin().toSecondOfDay() / 60
+                            : fermeture > debut ? fermeture : fermeture + MINUTES_PAR_JOUR;
                     fenetres.add(new int[] {debut, fin});
                     standsParBorne.computeIfAbsent(debut, key -> new TreeSet<>()).add(stand.getId());
                     standsParBorne.computeIfAbsent(fin, key -> new TreeSet<>()).add(stand.getId());
@@ -127,31 +133,71 @@ public final class GrilleDepuisFenetres {
                     tranches.add(new int[] {debut, fin});
                 }
             }
-            // A stretch too short to be a slot is a clock artefact of one
-            // stand's bound: its own end cut is dropped, so it joins the
-            // stretch after it — or the one before, when nothing follows.
-            List<int[]> retenues = new ArrayList<>();
-            for (int i = 0; i < tranches.size(); i++) {
-                int[] tranche = tranches.get(i);
-                boolean courte = tranche[1] - tranche[0] < parametres.dureeMinimaleMinutes();
-                int[] suivante = i + 1 < tranches.size() ? tranches.get(i + 1) : null;
-                int[] precedente = retenues.isEmpty() ? null : retenues.get(retenues.size() - 1);
-                if (courte && suivante != null && suivante[0] == tranche[1]) {
-                    suivante[0] = tranche[0];
-                } else if (courte && precedente != null && precedente[1] == tranche[0]) {
-                    precedente[1] = tranche[1];
-                } else {
-                    retenues.add(tranche);
-                }
-            }
-            tranches = retenues;
+            // A hole too short to be worth a break is one stand's clock
+            // artefact too — one closing at 18:00 while its neighbour opens at
+            // 18:05 — and closing it keeps one créneau where two would be cut.
+            tranches = withoutShortHoles(tranches, parametres.dureeMinimaleMinutes());
+            // A stretch too short to be a slot joins the stretch after it, its
+            // own end cut dropped — or the one before it, when nothing follows.
+            tranches = withoutShortStretches(tranches, parametres.dureeMinimaleMinutes());
             for (int[] tranche : tranches) {
                 creneaux.add(new Creneau(null, 0, date, minuteToTime(tranche[0]), minuteToTime(tranche[1])));
             }
-            standsParBorne.forEach((borne, ids) -> coupures.add(new Coupure(date, minuteToTime(borne),
-                    ids.stream().limit(STANDS_CITES).toList(), ids.size())));
+            // Only the cuts that survived: reporting the merged-away ones as
+            // reasons for a grid that no longer holds them explains nothing.
+            for (int borne : retainedBounds(tranches)) {
+                TreeSet<String> ids = standsParBorne.get(borne);
+                coupures.add(new Coupure(date, minuteToTime(borne),
+                        ids.stream().limit(STANDS_CITES).toList(), ids.size()));
+            }
         }
         return new Derivation(creneaux, coupures, joursSansFenetre);
+    }
+
+    /** Joins two stretches separated by a hole shorter than {@code dureeMinimaleMinutes}. */
+    private static List<int[]> withoutShortHoles(List<int[]> tranches, int dureeMinimaleMinutes) {
+        List<int[]> jointes = new ArrayList<>();
+        for (int[] tranche : tranches) {
+            int[] precedente = jointes.isEmpty() ? null : jointes.get(jointes.size() - 1);
+            int trou = precedente == null ? 0 : tranche[0] - precedente[1];
+            // A zero-length gap is not a hole: it is a cut, and the stretches
+            // it separates are two créneaux the stands actually asked for.
+            if (trou > 0 && trou < dureeMinimaleMinutes) {
+                precedente[1] = tranche[1];
+            } else {
+                jointes.add(new int[] {tranche[0], tranche[1]});
+            }
+        }
+        return jointes;
+    }
+
+    /** Merges away the stretches shorter than {@code dureeMinimaleMinutes}, into the next one by preference. */
+    private static List<int[]> withoutShortStretches(List<int[]> tranches, int dureeMinimaleMinutes) {
+        List<int[]> retenues = new ArrayList<>();
+        for (int i = 0; i < tranches.size(); i++) {
+            int[] tranche = tranches.get(i);
+            boolean courte = tranche[1] - tranche[0] < dureeMinimaleMinutes;
+            int[] suivante = i + 1 < tranches.size() ? tranches.get(i + 1) : null;
+            int[] precedente = retenues.isEmpty() ? null : retenues.get(retenues.size() - 1);
+            if (courte && suivante != null && suivante[0] == tranche[1]) {
+                suivante[0] = tranche[0];
+            } else if (courte && precedente != null && precedente[1] == tranche[0]) {
+                precedente[1] = tranche[1];
+            } else {
+                retenues.add(tranche);
+            }
+        }
+        return retenues;
+    }
+
+    /** The bounds the retained stretches still stand on, in order and without repeats. */
+    private static List<Integer> retainedBounds(List<int[]> tranches) {
+        TreeSet<Integer> bornes = new TreeSet<>();
+        for (int[] tranche : tranches) {
+            bornes.add(tranche[0]);
+            bornes.add(tranche[1]);
+        }
+        return List.copyOf(bornes);
     }
 
     /** Minutes since midnight back to a wall-clock time; {@code 24:00} wraps to {@code 00:00}. */

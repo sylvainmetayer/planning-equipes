@@ -74,8 +74,8 @@ public final class OuvertureStandsAnalyzer {
 
     /**
      * One créneau of a day, as a column of the entry grid: what the organiser
-     * types a headcount under. Sorted by start time, then by id, so two
-     * stagger families of the same vacation keep a stable order. The id is
+     * types a headcount under, in the order this class sorts them: start time,
+     * then id. The id is
      * {@code null} for a créneau not written yet — the recurrence preview
      * validates a grid holding the rows a rule <em>would</em> add.
      */
@@ -96,7 +96,12 @@ public final class OuvertureStandsAnalyzer {
      * the grid cannot hold, and which a save from the grid would flatten to
      * the créneau; {@code effectif} is then the highest one.
      */
-    public record CelluleCreneau(Long creneauId, Integer effectif, boolean partiel) {
+    /**
+     * @param horsFamille the créneau belongs to another stagger family than the
+     *                    stand's, so the stand never receives a seat on it —
+     *                    the cell is shown inert rather than editable
+     */
+    public record CelluleCreneau(Long creneauId, Integer effectif, boolean partiel, boolean horsFamille) {
     }
 
     /** An open stretch, in wall-clock hours, after clamping to the créneaux. */
@@ -126,6 +131,7 @@ public final class OuvertureStandsAnalyzer {
      */
     public static RapportOuvertures analyze(List<Stand> stands, List<Creneau> creneaux) {
         Map<LocalDate, List<Creneau>> creneauxParJour = creneauxByDay(creneaux);
+        Map<String, Integer> familles = PlanningService.standFamilies(stands, creneaux);
         List<JourAmplitude> jours = new ArrayList<>();
         Map<LocalDate, Integer> amplitudeParJour = new LinkedHashMap<>();
         creneauxParJour.forEach((date, duJour) -> {
@@ -172,7 +178,7 @@ public final class OuvertureStandsAnalyzer {
             for (JourAmplitude jour : jours) {
                 List<PosteAffectation> postes = parJour.getOrDefault(jour.date(), List.of());
                 CelluleJour cellule = cellule(stand, jour, postes, amplitudeParJour.get(jour.date()),
-                        creneauxParJour.get(jour.date()));
+                        creneauxParJour.get(jour.date()), familles.getOrDefault(stand.getId(), 0));
                 cellules.add(cellule);
                 minutesStand += cellule.minutesOuvertes();
                 postesStand += cellule.postes();
@@ -200,11 +206,11 @@ public final class OuvertureStandsAnalyzer {
      * band per vacation), and the poste count as it stands.
      */
     private static CelluleJour cellule(Stand stand, JourAmplitude jour, List<PosteAffectation> postes,
-            int minutesAmplitude, List<Creneau> duJour) {
+            int minutesAmplitude, List<Creneau> duJour, int familleStand) {
         SourceHoraire source = HoraireStandResolver.sourceOfDay(stand, jour.date());
         List<CelluleCreneau> parCreneau = new ArrayList<>();
         for (int index = 0; index < jour.creneaux().size(); index++) {
-            parCreneau.add(celluleCreneau(stand, duJour.get(index), jour.creneaux().get(index)));
+            parCreneau.add(celluleCreneau(stand, duJour.get(index), jour.creneaux().get(index), familleStand));
         }
         if (postes.isEmpty()) {
             return new CelluleJour(jour.date(), EtatOuverture.FERME, source, List.of(), 0, minutesAmplitude, 0,
@@ -229,15 +235,21 @@ public final class OuvertureStandsAnalyzer {
      * headcount, not the seats — a break-covering créneau halves the seats,
      * and the organiser types what the stand needs, not what the solver gets.
      */
-    private static CelluleCreneau celluleCreneau(Stand stand, Creneau creneau, ColonneCreneau colonne) {
+    private static CelluleCreneau celluleCreneau(Stand stand, Creneau creneau, ColonneCreneau colonne,
+            int familleStand) {
+        if (creneau.getFamille() != familleStand) {
+            // Another family's créneau: PlanningService#buildPostes never pairs
+            // it with this stand, so it holds no seat to read and none to type.
+            return new CelluleCreneau(colonne.id(), null, false, true);
+        }
         List<Creneau.SegmentOuvert> segments = creneau.segmentsOuverts(stand);
         if (segments.isEmpty()) {
-            return new CelluleCreneau(colonne.id(), null, false);
+            return new CelluleCreneau(colonne.id(), null, false, false);
         }
         int effectif = segments.stream().mapToInt(Creneau.SegmentOuvert::effectif).max().orElse(0);
         boolean entier = segments.size() == 1 && segments.get(0).debutMinutes() == 0
                 && segments.get(0).finMinutes() == creneau.getDureeMinutes();
-        return new CelluleCreneau(colonne.id(), effectif, !entier);
+        return new CelluleCreneau(colonne.id(), effectif, !entier, false);
     }
 
     /**
@@ -263,7 +275,15 @@ public final class OuvertureStandsAnalyzer {
         return anomalies;
     }
 
-    /** The well-formed créneaux, grouped by date in calendar order. */
+    /**
+     * The well-formed créneaux, grouped by date in calendar order, each day's
+     * sorted by start time then by id — an unsaved créneau, which the recurrence
+     * preview builds without one, last.
+     *
+     * <p>The sort is here and nowhere else: the columns of a day and the cells
+     * of a row are read back by position, so both sides must walk the same
+     * list.</p>
+     */
     static Map<LocalDate, List<Creneau>> creneauxByDay(List<Creneau> creneaux) {
         Map<LocalDate, List<Creneau>> creneauxParJour = new TreeMap<>();
         for (Creneau creneau : creneaux) {
@@ -271,6 +291,9 @@ public final class OuvertureStandsAnalyzer {
                 creneauxParJour.computeIfAbsent(creneau.getDate(), key -> new ArrayList<>()).add(creneau);
             }
         }
+        Comparator<Creneau> ordreDuJour = Comparator.comparing(Creneau::getHeureDebut)
+                .thenComparing(Creneau::getId, Comparator.nullsLast(Comparator.naturalOrder()));
+        creneauxParJour.values().forEach(duJour -> duJour.sort(ordreDuJour));
         return creneauxParJour;
     }
 
@@ -286,11 +309,11 @@ public final class OuvertureStandsAnalyzer {
         TreeSet<String> dejaVues = new TreeSet<>();
         for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
             reportIfWithoutEffect(stand, creneauxParJour, anomalies, dejaVues, ouverture.getDate(),
-                    ouverture.getHeureDebut(), ouverture.getHeureFin(), "ouverture");
+                    ouverture.getHeureDebut(), ouverture.getHeureFin(), "L'ouverture");
         }
         for (IndisponibiliteStand fermeture : stand.getIndisponibilitesEffectives()) {
             reportIfWithoutEffect(stand, creneauxParJour, anomalies, dejaVues, fermeture.getDate(),
-                    fermeture.getHeureDebut(), fermeture.getHeureFin(), "fermeture");
+                    fermeture.getHeureDebut(), fermeture.getHeureFin(), "La fermeture");
         }
         return anomalies;
     }
@@ -324,7 +347,7 @@ public final class OuvertureStandsAnalyzer {
             return;
         }
         anomalies.add(new Anomaly(AnomalyType.FENETRE_SANS_EFFET, stand.getId(), stand.getNom(), date,
-                "La " + libelle + " de " + heureDebut + " à "
+                libelle + " de " + heureDebut + " à "
                         + (heureFin != null ? heureFin.toString() : "la fermeture")
                         + " ne recoupe aucun créneau de ce jour : elle ne change rien."));
     }
