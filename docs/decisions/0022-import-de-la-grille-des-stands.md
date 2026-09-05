@@ -54,7 +54,9 @@ faut écrire.
 
 - Le fichier d'exemple n'est pas une ressource versionnée mais **la grille
   actuelle de l'édition**, rendue par l'API : elle est juste par construction
-  et se réimporte telle quelle, ce qu'un test vérifie.
+  et se réimporte telle quelle, ce qu'un test vérifie. Ses bandes s'écrivent
+  `10h00-12h00` : un tableur convertit `13:00-16:00` en date-heure et détruit
+  la colonne, alors qu'il laisse la forme en `h` intacte.
 - Le rapport porte les colonnes autant que les lignes : c'est là que se lit une
   bande mal écrite ou un jour de trop.
 - Le fichier voyage deux fois sur le réseau, comme pour les animateurs, et

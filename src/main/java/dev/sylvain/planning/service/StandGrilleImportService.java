@@ -119,7 +119,7 @@ public class StandGrilleImportService {
             boolean premier = true;
             for (Creneau creneau : jour.getValue()) {
                 csv.append(';').append(premier ? jour.getKey().toString() : "");
-                bandes.append(';').append(court(creneau.getHeureDebut())).append('-').append(court(creneau.getHeureFin()));
+                bandes.append(';').append(bandeCsv(creneau));
                 premier = false;
             }
         }
@@ -185,7 +185,10 @@ public class StandGrilleImportService {
             if (!colonne.namesCreneau()) {
                 columns.add(new ImportedColumn(colonne.index(), colonne.libelle(), colonne.date(),
                         colonne.heureDebut(), colonne.heureFin(), null, 0,
-                        "En-tête illisible : attendu une date et une bande « 10:00-12:00 »."));
+                        "En-tête illisible : attendu une date et une bande « 10:00-12:00 » ou « 10h00-12h00 ». "
+                                + "Une bande devenue une date, « 30/11/1999 13:16:00 », est le signe d'un tableur qui "
+                                + "l'a convertie : repartez du modèle téléchargé, dont les bandes sont écrites avec "
+                                + "un « h » pour cette raison."));
                 continue;
             }
             // Every créneau of that date and those hours, not the first: a grid
@@ -372,6 +375,20 @@ public class StandGrilleImportService {
         }
         String sansAccents = Normalizer.normalize(texte, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         return sansAccents.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * A band written {@code 09h00-12h00}, not {@code 09:00-12:00}.
+     *
+     * <p>Both forms are read back, but only this one survives a spreadsheet:
+     * Excel retypes {@code 13:00-16:00} into the date-time {@code 13:16:00},
+     * and the band is then lost for good — the file comes back with headers
+     * naming no créneau at all. Written with an {@code h}, the cell stays the
+     * text it is.</p>
+     */
+    private static String bandeCsv(Creneau creneau) {
+        return court(creneau.getHeureDebut()).replace(':', 'h') + '-'
+                + court(creneau.getHeureFin()).replace(':', 'h');
     }
 
     /** Thousands spaced out, the way the animateur import writes its own caps. */

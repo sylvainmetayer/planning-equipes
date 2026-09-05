@@ -333,6 +333,13 @@ est réécrit depuis des effectifs, qui ne savent pas dire « seulement de 14 h 
 15 h ». Le rapport nomme les stands concernés ; donnez une colonne à ces
 créneaux pour dire ce qu'ils doivent devenir. Une bande dont la minute n'a
 qu'un chiffre (`9:5`) est refusée plutôt que complétée, comme à la saisie.
+
+Le fichier d'exemple écrit ses bandes **`10h00-12h00`**, pas `10:00-12:00`, et
+c'est délibéré : Excel retype `13:00-16:00` en la date `30/11/1999 13:16:00`, et
+la bande est alors perdue — le fichier revient avec des en-têtes qui ne nomment
+plus aucun créneau. Les deux formes sont lues à l'import ; seule celle en `h`
+survit à un aller-retour par un tableur. Un test verrouille l'absence de `:`
+dans la ligne des bandes.
 Endpoints dans [`api.md`](api.md#import-de-la-grille-des-stands).
 
 ## Fixtures réalistes anonymisées

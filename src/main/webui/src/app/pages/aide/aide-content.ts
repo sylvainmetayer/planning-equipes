@@ -234,7 +234,7 @@ export function buildHelpSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importGrille.format:L'écran « Import de la grille des stands » lit un CSV tel qu'un tableur l'exporte : une première colonne qui nomme le stand par son identifiant ou son nom exact, puis une colonne par jour et par créneau, un effectif par case, vide, « - » ou 0 pour fermé. Deux lignes d'en-tête — les dates, les cellules fusionnées d'un tableur laissant les suivantes vides, puis les bandes « 10:00-12:00 » — ou une seule, « 2026-07-08 10:00-12:00 ». Le bouton « Télécharger la grille actuelle comme modèle » rend l'édition telle qu'elle est, dans ce format exact : le plus simple est de partir de lui.`
+          text: $localize`:@@aide.importGrille.format:L'écran « Import de la grille des stands » lit un CSV tel qu'un tableur l'exporte : une première colonne qui nomme le stand par son identifiant ou son nom exact, puis une colonne par jour et par créneau, un effectif par case, vide, « - » ou 0 pour fermé. Deux lignes d'en-tête — les dates, les cellules fusionnées d'un tableur laissant les suivantes vides, puis les bandes « 10h00-12h00 » ou « 10:00-12:00 » — ou une seule, « 2026-07-08 10h00-12h00 ». Le bouton « Télécharger la grille actuelle comme modèle » rend l'édition telle qu'elle est, dans ce format exact : le plus simple est de partir de lui. Le modèle écrit ses bandes avec un « h » à dessein : Excel transforme « 13:00-16:00 » en la date « 30/11/1999 13:16:00 », et la bande est alors perdue.`
         },
         {
           kind: 'paragraph',

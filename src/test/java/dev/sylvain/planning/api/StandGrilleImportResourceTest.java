@@ -39,6 +39,10 @@ class StandGrilleImportResourceTest {
                 .then().statusCode(200).contentType(containsString("text/csv"))
                 .extract().asString();
         assertThat(exemple).startsWith("stand;");
+        // The band row carries no colon: Excel turns « 13:00-16:00 » into the
+        // date-time 13:16:00, and the band is then lost for good.
+        String bandes = exemple.lines().skip(1).findFirst().orElseThrow();
+        assertThat(bandes).doesNotContain(":").contains("h");
 
         JsonPath rapport = given().contentType("application/json").body(request(exemple))
                 .when().post("/api/stands/import-grille/analyse")

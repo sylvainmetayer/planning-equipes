@@ -1691,7 +1691,10 @@ Corps des deux `POST` : `{ fileName, content }`. Deux lignes d'en-tête (les
 dates, les cellules fusionnées d'un tableur laissant les suivantes vides, puis
 les bandes `10:00-12:00`) ou une seule (`2026-07-08 10:00-12:00`) ; dates ISO
 ou `08/07/2026`, heures `10:00`, `10h`, `10h30`, `24:00` lu comme minuit — une
-minute à un seul chiffre (`9:5`) est refusée plutôt que complétée.
+minute à un seul chiffre (`9:5`) est refusée plutôt que complétée. Le fichier
+d'exemple écrit ses bandes `10h00-12h00` : Excel convertit `13:00-16:00` en la
+date `30/11/1999 13:16:00`, ce qui détruit la bande, alors qu'il laisse la
+forme en `h` telle quelle.
 
 - Une colonne se pose sur **tous** les créneaux de même date et mêmes heures —
   une grille décalée en familles en porte un par famille, et `columns[].creneaux`
