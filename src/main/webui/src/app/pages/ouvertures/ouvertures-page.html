@@ -131,15 +131,17 @@
                   @for (colonne of colonnes(); track colonne.creneauId) {
                     <td class="cellule-saisie" [class.premier-du-jour]="colonne.rang === 0"
                         [class.cellule-modifiee]="estModifiee(ligne.standId, colonne.creneauId)"
+                        [class.cellule-inerte]="estInerte(ligne.standId, colonne.creneauId)"
                         [class.cellule-partielle]="estPartielle(ligne.standId, colonne.creneauId)">
                       <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"
                              [attr.data-cellule]="identifiant(ligne.standId, colonne.creneauId)"
                              [attr.aria-label]="(ligne.nom || ligne.standId) + ' · ' + libelleJour(colonne.date) + ' ' + libelleColonne(colonne)"
-                             [attr.title]="estPartielle(ligne.standId, colonne.creneauId) ? infobullePartielle() : null"
-                             [disabled]="editingLocked()"
+                             [attr.title]="estInerte(ligne.standId, colonne.creneauId) ? infobulleInerte() : (estPartielle(ligne.standId, colonne.creneauId) ? infobullePartielle() : null)"
+                             [disabled]="editingLocked() || estInerte(ligne.standId, colonne.creneauId)"
                              [value]="valeur(ligne.standId, colonne.creneauId)"
                              (input)="saisir(ligne.standId, colonne.creneauId, $any($event.target).value)"
                              (focus)="focaliser(ligne.standId, colonne.creneauId)"
+                             (blur)="reafficher($event, ligne.standId, colonne.creneauId)"
                              (keydown)="auClavier($event, ligne.standId, colonne.creneauId)"
                              (paste)="auCollage($event, ligne.standId, colonne.creneauId)" />
                     </td>

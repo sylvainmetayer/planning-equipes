@@ -286,4 +286,29 @@ class HoraireCompactionTest {
         stand.setHoraires(new ArrayList<>());
         return stand;
     }
+
+    /**
+     * The busy Saturday: same hours as the other days, more people. Its pattern
+     * repeats nowhere, so it stays a dated window — and its effectif has to stay
+     * with it, or the stand silently falls back on its minimum.
+     */
+    @Test
+    void lEffectifDUnJourLaisseDateSurvitAuCompactage() {
+        Stand stand = stand("BOURSE");
+        for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
+            LocalDate date = PREMIER_JOUR.plusDays(jour);
+            Integer effectif = jour == 3 ? 6 : null;
+            stand.getOuvertures().add(new OuvertureStand(null, date, LocalTime.of(10, 0), LocalTime.of(20, 0),
+                    null, effectif));
+        }
+
+        HoraireCompaction.RapportCompactage rapport =
+                HoraireCompaction.compact(List.of(stand), amplitudes(LocalTime.of(20, 0)), true);
+
+        assertThat(rapport.standsCompactes()).isEqualTo(1);
+        assertThat(stand.getOuvertures()).singleElement().satisfies(ouverture -> {
+            assertThat(ouverture.getDate()).isEqualTo(PREMIER_JOUR.plusDays(3));
+            assertThat(ouverture.getEffectif()).isEqualTo(6);
+        });
+    }
 }

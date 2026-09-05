@@ -1377,7 +1377,7 @@ quand tout va bien.
 | `CRENEAU_HORS_OUVERTURE_STANDS` | Aucun stand n'est ouvert une seule minute du créneau : il n'ouvrira aucun poste. |
 | `CRENEAU_DEBORDE_OUVERTURE_STANDS` | Le créneau commence avant que tous les stands n'ouvrent, ou finit après qu'ils ont tous fermé, d'au moins un quart d'heure. |
 | `STAND_FENETRE_SANS_EFFET` | Une fenêtre du stand — d'une règle étendue comme d'une exception datée — ne recoupe aucun créneau de son jour : elle est enregistrée et ne change rien. Le message cite jusqu'à cinq jours. |
-| `STAND_EXCEPTION_HORS_EVENEMENT` | Une exception datée du stand nomme un jour hors de l'intervalle `[premier créneau, dernier créneau]`. |
+| `STAND_EXCEPTION_HORS_EVENEMENT` | Une exception datée du stand nomme un jour hors de l'intervalle `[premier créneau, dernier créneau]` — le lendemain d'un créneau qui franchit minuit est exclu de ce compte : le domaine lit vraiment cette date. |
 | `STAND_JAMAIS_OUVERT` | Après l'écriture, le stand n'est ouvert sur aucun créneau : il n'ouvrira aucun poste. |
 
 Les trois avertissements de stand ne sont émis **que si l'écriture touche à
@@ -1626,9 +1626,18 @@ daté : la réponse le dit stand par stand (`regles`, `exceptions`, `compacte`,
 valeur saisie, `effectifMax` la plus grande, et une fenêtre ne nomme son
 effectif que s'il diffère du minimum.
 
-`400` sur un créneau inconnu ou un effectif nul (« laissez la case vide pour
-fermer »), `404` sur un stand inconnu, `409` pendant une résolution. Chaque
-stand est validé et écrit séparément : un stand refusé n'annule pas les autres.
+**Familles de relais.** Une grille découpée en plusieurs familles porte une
+variante de chaque vacation par famille, et un stand n'est apparié qu'à une
+seule d'entre elles ([`domaine.md`](domaine.md#familles-de-créneaux)). Les
+cellules des autres familles sortent avec `horsFamille: true`, effectif `null` :
+l'écran les rend inertes, et une case envoyée pour l'une d'elles est ignorée —
+l'écrire rouvrirait un jour que ce stand ne tient jamais.
+
+`400` sur un créneau inconnu, un effectif nul (« laissez la case vide pour
+fermer ») ou un stand inconnu — l'identifiant vient du corps, pas du chemin.
+`409` pendant une résolution. Les stands sont tous convertis et validés
+d'abord, puis écrits **en une seule transaction** : le rapport annonce ce que
+la base contient, jamais un lot à moitié écrit.
 
 ## Import de scénario
 
