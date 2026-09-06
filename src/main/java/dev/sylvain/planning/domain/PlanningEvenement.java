@@ -52,8 +52,11 @@ public class PlanningEvenement {
      * The seats of the last published plan, read by {@code stabiliteDuPlanPublie}
      * so a re-solve after publication moves as few people as the weight allows.
      * Empty until a plan is published; filled by {@code PlanningService.prepareProblem}
-     * before every solve and every diagnosis, never sent by a caller.
+     * before every solve and every diagnosis, never sent by a caller — and
+     * never returned to one either: the field is the server's own knowledge,
+     * and on a 3 500-seat plan it is a megabyte the response has no use for.
      */
+    @JsonIgnore
     @ProblemFactCollectionProperty
     private List<AffectationPubliee> affectationsPubliees = new ArrayList<>();
 

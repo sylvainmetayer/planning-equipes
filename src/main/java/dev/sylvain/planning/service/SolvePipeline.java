@@ -90,9 +90,15 @@ public class SolvePipeline {
 
     /**
      * How many people would have to be told (issue « stabilité ») if this plan
-     * were published now: those whose seats differ from the last published
-     * plan, counted the way the publication counts them. {@code null} when
-     * nothing was ever published — there is nobody to compare against.
+     * were published now: those whose <b>seats differ</b> from the last
+     * published plan. {@code null} when nothing was ever published — there is
+     * nobody to compare against.
+     *
+     * <p>Not the same number as the publication screen's {@code nombreConcernes},
+     * and deliberately: that one also counts recipients whose schedule did not
+     * move but who have an échange decision or a pending request to be told
+     * about. This one answers « qui verrait son emploi du temps changer », the
+     * question the solve's own recap asks, so it is the smaller of the two.</p>
      *
      * @param publieLe when the plan compared against was published
      */

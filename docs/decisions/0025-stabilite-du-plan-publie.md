@@ -146,9 +146,7 @@ sélecteur **ruin and recreate** de Timefold (édition Community), restreint
 par `HoleNeighbourPosteFilter` aux sièges dont le créneau chevauche celui
 d'un siège vide : 3 à 10 sièges de cette heure-là sont défaits et
 reconstruits par l'heuristique de construction, la chaîne est évaluée
-comme un seul mouvement. Il ne sélectionne rien quand il n'y a plus de
-trou, ce qui est aussi le moment où la phase s'arrête. Même protocole,
-poids 5, symétrie comprise :
+comme un seul mouvement. Même protocole, poids 5, symétrie comprise :
 
 | Changement | Sans ruin and recreate | Avec |
 |---|---|---|
@@ -160,6 +158,30 @@ La faisabilité revient, au prix d'une dizaine de personnes de plus que le
 plan à trous — celles de la chaîne — et toujours à moitié de ce que fait la
 règle inactive (153). Retenu : c'est exactement l'arbitrage demandé, un
 planning tenable qui dérange le moins possible.
+
+**Ce que la revue a corrigé.** La première version du filtre balayait tout
+le plan à chaque appel, et se croyait inoffensive parce qu'« il n'y a plus
+de trou quand la phase s'arrête ». C'est faux : la phase 1 s'arrête sur la
+**faisabilité**, et la plupart des règles dures se cassent par excès
+d'affectation — « tous les sièges pourvus, toujours infaisable » est un
+état ordinaire, celui d'un réamorçage. Dans cet état le filtre n'acceptait
+rien, Timefold tentait `nombre de postes × 10` tirages avant d'abandonner,
+et 80 % d'un budget de 60 s passait à prouver qu'il n'y avait rien à
+défaire (mesuré sur 2 112 sièges : 48 s sur 60, et 18 % de medium en moins
+qu'avec le sélecteur retiré). Le filtre mémorise donc les heures des trous,
+rafraîchies au plus une fois par balayage complet :
+
+| trous dans le plan | coût par appel avant | après |
+|---|---|---|
+| aucun | 40 700 ns | 69 ns |
+| un | 8 080 ns | 154 ns |
+| vingt | 253 ns | 213 ns |
+
+Deux limites notées au passage : la reconstruction interne au ruin
+n'applique pas `EligibleAnimateurMoveFilter` (Timefold 2.5 n'expose pas le
+réglage), ce qui explique la chute du débit de mouvements ; et le
+chevauchement se compare désormais en instants absolus, donc un créneau qui
+franchit minuit voisine bien avec le matin suivant.
 
 **Ce que le banc ne dit pas.** Une mesure par case, sur une fixture
 anonymisée : les ordres de grandeur sont fiables, pas les unités. Le réel

@@ -236,7 +236,12 @@ class SolverJobReamorcageTest {
             }
             editionContext.executeIn(EDITION, () -> {
                 clean();
-                referenceData.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
+                // A creation whose id is taken is a 409 since the write carries
+                // its own precondition (issue #362): the fixture runs once per
+                // test, the typologie survives clean().
+                if (referenceData.listTypologies().stream().noneMatch(item -> "STRATEGIE".equals(item.id()))) {
+                    referenceData.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
+                }
                 referenceData.createStand(stand);
                 animateurs.forEach(referenceData::createAnimateur);
                 creneau = referenceData.createCreneau(

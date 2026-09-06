@@ -120,8 +120,25 @@
                 price, so change and swap never walk it. Ruining a handful of
                 seats at the hole's hour and rebuilding them with the
                 construction heuristic evaluates the chain as ONE move.
-                HoleNeighbourPosteFilter keeps the ruined set at that hour;
-                it selects nothing once there is no hole left.
+                HoleNeighbourPosteFilter keeps the ruined set at that hour.
+
+                It selects nothing when the plan has no empty seat — which is
+                NOT the same as "the phase is over": this phase ends on
+                feasibility, and most hard rules are broken by OVER-assignment
+                (weekly hours, rest, the ad hoc ones), so "every seat filled,
+                still infeasible" is an ordinary state. In it a filter that
+                accepts nothing makes Timefold try entityCount * 10 times
+                before giving up, which is why the filter memoises the hours of
+                the holes: 40 700 ns per call scanning, 69 ns from the memo, on
+                3 503 seats.
+
+                The recreate step runs its own construction heuristic, built by
+                Timefold with no filterClass: EligibleAnimateurMoveFilter does
+                NOT screen its candidates, so a ruin move scores 3 to 10 seats
+                against every animateur. That is the whole reason phase 1 drops
+                from ~6 800 to ~30 move evaluations per second here, and it is
+                worth re-checking on a Timefold bump — 2.5 exposes no knob for
+                it.
             -->
             <ruinRecreateMoveSelector>
                 <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
