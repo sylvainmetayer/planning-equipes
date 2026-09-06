@@ -572,7 +572,9 @@ The doc layout is intentional — respect it when adding or updating docs.
 5. When behaviour changes, update the doc that owns it: new endpoint →
    `docs/api.md`; new constraint → `docs/contraintes.md` **and**
    `ConstraintCatalog`; new business capability → README section 2; new
-   command/CI/tooling → `docs/developpement.md`.
+   command/CI/tooling → `docs/developpement.md`; anything touching the
+   version contract, the release flow or the Docker image tags →
+   `docs/versioning.md`.
 6. **Architecture decisions go to `docs/decisions/`**, one file per decision,
    named `NNNN-short-title.md` and listed in `docs/decisions/README.md`. A
    decision record answers *why*, where the rest of `docs/` answers *what*.
@@ -602,7 +604,12 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
   the glossary and the test that enforces it are in *Language of the code*
   below.
 - **Commit messages are short.** Subject under 72 characters, conventional
-  prefix, no trailing period. A body only when it carries what the diff
+  prefix, no trailing period. Subjects become CHANGELOG lines (git-cliff,
+  `cliff.toml`), so write them for the operator who will read the release
+  notes; two things file an entry under « ⚠️ Attention » — a `!` after the
+  prefix, which means a MAJOR rupture, and the reserved
+  `contraintes-legales` scope, which warns without bumping the major. See
+  `docs/versioning.md`. A body only when it carries what the diff
   cannot — the why, an option rejected on the way, a consequence at
   deployment — and then three to five lines, not thirty. No body at all is a
   perfectly good outcome. Never restate the diff, never narrate the work that

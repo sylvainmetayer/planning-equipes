@@ -17,6 +17,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`developpement.md`](developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
 | [`migration-timefold-2.md`](migration-timefold-2.md) | Passage de Timefold 1.34 à 2.5 : ce que l'édition Community refuse, les correctifs à appliquer, et le réglage du solveur remesuré sur le profil de production |
 | [`exploitation.md`](exploitation.md) | **Exploiter une instance chez un client** : prérequis, variables d'environnement, délivrabilité des e-mails, sauvegarde et restauration, conservation des données, surveillance |
+| [`versioning.md`](versioning.md) | **Versions et releases** : ce que promettent MAJOR/MINOR/PATCH, comment une release se fabrique (tag annoté, CHANGELOG généré, image Docker), et la procédure de patch d'une version antérieure |
 | [`securite.md`](securite.md) | Durcissement pour une exposition sur Internet : en-têtes de sécurité navigateur, plafonds de taille des requêtes, limitation de débit, déploiement de production |
 | [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (Cloudflare Web Analytics) en production : choix, intégration, variables d'environnement |
 | [`rgpd.md`](rgpd.md) | **Ce qu'un hébergeur d'instance doit écrire et tenir** : convention de sous-traitance (art. 28), registre des traitements (art. 30), journal des purges, limites connues |

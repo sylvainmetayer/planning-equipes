@@ -15,7 +15,13 @@
 
 services:
   app:
-    image: ghcr.io/sylvainmetayer/planning-equipes:main
+    # Une version NOMMÉE (APP_VERSION=1.2.0), jamais `main` ni `latest` : un
+    # déploiement doit être nommable dans un rapport d'incident. Sans défaut,
+    # comme les mots de passe : un défaut `main` déploierait en silence
+    # l'image de recette, c'est-à-dire exactement ce que docs/versioning.md
+    # § Déployer interdit. Tant qu'aucune v1.0.0 n'est publiée, on écrit
+    # `APP_VERSION=main` à la main — le choix est alors assumé, pas subi.
+    image: ghcr.io/sylvainmetayer/planning-equipes:${APP_VERSION:?APP_VERSION est obligatoire — une version nommée, ex. 1.2.0, voir docs/versioning.md}
     restart: unless-stopped
     # Sur la boucle locale seulement : le reverse proxy est le seul chemin
     # d'entrée, et l'origine ne doit pas être joignable sans passer par lui —

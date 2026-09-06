@@ -5,7 +5,13 @@ COPY pom.xml .
 RUN --mount=type=cache,target=/root/.m2 mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 COPY .git ./.git
-RUN --mount=type=cache,target=/root/.m2 mvn -q -DskipTests package
+# The Maven revision comes from the git tag being built (docs/versioning.md):
+# an exact `v*` tag becomes the version (v1.2.0 → 1.2.0), any other commit
+# keeps its short SHA so the startup line never claims a version that was
+# not released.
+RUN --mount=type=cache,target=/root/.m2 \
+    REVISION="$(git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse --short HEAD)" && \
+    mvn -q -DskipTests -Drevision="${REVISION#v}" package
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app

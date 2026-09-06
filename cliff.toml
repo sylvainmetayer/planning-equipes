@@ -1,0 +1,61 @@
+# git-cliff configuration (https://git-cliff.org) — see docs/versioning.md.
+#
+# The CHANGELOG is GENERATED, never hand-edited. First generation happens
+# after the history rewrite planned for the public opening (the old commit
+# messages get normalised there); until then this file is ready but unused.
+#
+#   git cliff --tag vX.Y.Z -o CHANGELOG.md   # full file, at release time
+#   git cliff --unreleased --tag vX.Y.Z      # preview the next section
+
+[changelog]
+header = """
+# Changelog
+
+Les évolutions notables du projet, générées par [git-cliff](https://git-cliff.org)
+à partir des messages de commit. Ce que promet un numéro de version est défini
+dans [docs/versioning.md](docs/versioning.md).
+"""
+body = """
+{% if version %}\
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## [À venir]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}\
+- {% if commit.scope %}**{{ commit.scope }}** : {% endif %}{{ commit.message | upper_first }}
+{% endfor %}\
+{% endfor %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+# Pre-rewrite commits may not parse; keep them out rather than fail.
+filter_unconventional = true
+protect_breaking_commits = true
+# Only stable release tags structure the file; `v0-pre-decoupage` and other
+# non-semver tags are ignored.
+tag_pattern = "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+sort_commits = "oldest"
+commit_parsers = [
+  # A `!` is the conventional breaking marker and nothing else: it means
+  # MAJOR (docs/versioning.md § Le contrat), which is also how
+  # `git cliff --bumped-version` reads it.
+  { message = '^[a-z]+(\(.*\))?!:', group = "<!-- 0 -->⚠️ Attention" },
+  # A new or hardened legal constraint stays MINOR, but it can make a planning
+  # that used to solve infeasible: the reserved `contraintes-legales` scope
+  # files it under the same heading WITHOUT claiming a major bump. Before
+  # `^feat`, so the scope wins over the type.
+  { message = '^[a-z]+\(contraintes-legales\)', group = "<!-- 0 -->⚠️ Attention" },
+  { message = "^feat", group = "<!-- 1 -->Fonctionnalités" },
+  { message = "^fix\\(deps\\)", group = "<!-- 5 -->Dépendances" },
+  { message = "^fix", group = "<!-- 2 -->Corrections" },
+  { message = "^perf", group = "<!-- 3 -->Performances" },
+  { message = "^refactor", group = "<!-- 4 -->Réusinages" },
+  { message = "^chore\\(deps\\)", group = "<!-- 5 -->Dépendances" },
+  { message = "^docs", group = "<!-- 6 -->Documentation" },
+  # Internal housekeeping an operator has nothing to do with.
+  { message = "^(chore|ci|test|style|build|release)", skip = true },
+]

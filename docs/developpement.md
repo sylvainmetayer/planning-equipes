@@ -448,6 +448,11 @@ points qui ne s'y voient pas :
   auto-hébergée, et les faire tourner chez GitHub est ce qui rendra la
   provenance vérifiable une fois le dépôt public. Tous les autres workflows
   restent auto-hébergés en attendant cette ouverture.
+- **`docker-ghcr.yml` publie `:main` à chaque fusion et `1.2.0`/`1.2` sur un
+  tag `vX.Y.Z`** ; `:latest` n'est jamais posé par `metadata-action`
+  (`latest=false`) mais par une étape dédiée, uniquement quand le tag poussé
+  est le plus récent du dépôt. Le pourquoi — et toute la politique de
+  release — est dans [`versioning.md`](versioning.md).
 
 ## Renovate
 

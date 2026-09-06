@@ -1,0 +1,182 @@
+# Versions et releases : ce qu'un numéro promet, et comment patcher hier
+
+Un numéro de version n'a d'intérêt que s'il permet à un exploitant de répondre
+à deux questions : « je suis sur quelle version ? » et « le correctif y
+est-il ? ». Ce document fixe ce que promettent les numéros, comment une release
+se fabrique, et comment corriger une version antérieure sans rien perdre.
+
+## 1. La source de vérité : un tag git annoté
+
+La version d'un déploiement est le **tag git annoté** `vX.Y.Z` posé sur `main` :
+
+```bash
+git tag -a v1.2.0 -m "Résumé de la version"
+git push origin v1.2.0
+```
+
+Annoté, jamais léger : `git describe --tags --exact-match` accepterait un tag
+léger, mais un tag de release porte un message — c'est le seul endroit où
+attacher un résumé signé et daté à un commit précis.
+
+Tout le reste **dérive** du tag, sans intervention :
+
+| Où | Comment |
+| --- | --- |
+| Frontend (`APP_VERSION`, page *Débogage*) | `generate-version.js` : le tag exact (`v1.2.0`), sinon le SHA court |
+| Backend (`quarkus.application.version`, ligne de démarrage Quarkus) | Le `Dockerfile` passe `-Drevision=1.2.0` dérivé du même `git describe`, le `v` retiré ; hors release, le SHA court. En build local, `999-SNAPSHOT` — une valeur qui ne ressemble volontairement à aucune version publiée |
+| Sentry, **côté frontend seulement** | `release: APP_VERSION` : les erreurs du navigateur se regroupent par version, pas par commit. Les événements du backend ne portent pas encore de `release` — `SentryInitializer` ne pose que le DSN et l'environnement |
+| Image Docker | `docker-ghcr.yml` publie `ghcr.io/…:1.2.0` et `ghcr.io/…:1.2` sur le push du tag |
+| Release GitHub | Une par tag, corps = section du CHANGELOG (§4) |
+
+Le `pom.xml` ne porte donc **plus de numéro en dur** : sa version est
+`${revision}`, et un workflow qui bâtit une release échoue avant de construire
+si le tag n'est pas visible du build (étape de garde de `docker-ghcr.yml`).
+
+**Point de départ : `1.0.0` à l'ouverture publique.** Pas de `0.x` : un `0.x`
+dit « je ne m'engage sur rien », ce qui est faux — le produit tourne en
+production sur un vrai événement.
+
+## 2. Le contrat : SemVer sur la surface qu'un exploitant touche
+
+« Rupture d'API » ne veut rien dire tant qu'on n'a pas dit ce qui est l'API.
+Ici, la surface publique n'est **pas** le code Java : c'est ce qu'un exploitant
+ou un client manipule.
+
+**Sont la surface publique — les changer incompatiblement est MAJOR :**
+
+- le format du **scénario YAML** (clés `festival:` et `festival.dateDebut`,
+  forme des stands et des créneaux) : c'est un fichier que le client écrit ;
+- les **variables d'environnement** (`BRANDING_*`, `LEGAL_*`,
+  `PLANNING_MCP_*`, `FLYWAY_REPAIR_AT_START`…) : en retirer une, ou changer un
+  défaut d'une façon qui change le comportement ;
+- les **URLs stables** — au premier chef les liens d'espace animateur,
+  **imprimés sur des PDF distribués à des humains** : les casser, c'est
+  invalider du papier déjà en circulation ;
+- l'**API REST** consommée par autre chose que notre propre frontend, serveur
+  MCP compris ;
+- une **migration Flyway irréversible** au sens exploitation : suppression ou
+  renommage de colonne, contrainte qui rejette des données existantes. Le
+  schéma est *forward-only* : revenir à l'image précédente ne suffit pas à
+  revenir en arrière, il faut restaurer un dump
+  ([`exploitation.md` § Sauvegarde](exploitation.md)). Une version qui rend le
+  retour arrière impossible doit se voir de loin.
+
+**MINOR** : fonctionnalité ajoutée, nouvelle variable d'environnement avec un
+défaut qui préserve le comportement, migration additive (nouvelle table,
+colonne nullable), nouvelle contrainte solveur *désactivable*.
+
+**PATCH** : correction de bug, sécurité, dépendances, documentation. Aucune
+migration destructive, aucune variable retirée.
+
+**Le cas de la contrainte légale nouvelle ou durcie** : elle peut rendre
+insatisfiable un planning qui passait avant. Techniquement additive,
+pratiquement une rupture d'exploitation. Verdict : **MINOR, avec une entrée
+« ⚠️ Attention » obligatoire au CHANGELOG.** Pas MAJOR : sinon on change de
+majeure chaque fois que le Code du travail bouge.
+
+Le marqueur est le **scope réservé `contraintes-legales`**
+(`feat(contraintes-legales): …`), pas le `!` — lequel reste ce que la
+convention en dit, le signe d'une rupture MAJOR, et ce que
+`git cliff --bumped-version` lit pour calculer la montée. Les deux mènent à la
+même section « ⚠️ Attention » (`cliff.toml`), sans que le même caractère ait
+à signifier MAJOR ici et MINOR là.
+
+## 3. Fabriquer une release
+
+Rien ne change au quotidien : `main` reste la seule branche de développement,
+une PR par sujet, pas de `develop`. Une release, c'est :
+
+```bash
+git switch main && git pull
+git cliff --unreleased --tag v1.2.0        # relire ce que dira le CHANGELOG
+git cliff --tag v1.2.0 -o CHANGELOG.md     # régénérer, committer
+git tag -a v1.2.0 -m "…"
+git push origin main v1.2.0
+```
+
+Le push du tag déclenche `docker-ghcr.yml` : build multi-arch, tags d'image
+`1.2.0` et `1.2`, SBOM, signature cosign — rien de tout cela ne demande de
+geste. Reste à créer la **release GitHub** sur le tag, corps = la section
+fraîche du CHANGELOG : c'est ce que lira quelqu'un qui découvre le dépôt.
+
+### `:latest` ne bouge jamais implicitement
+
+`docker/metadata-action` en défaut (`latest=auto`) déplacerait `:latest` à
+**chaque** push de tag — publier un correctif `1.2.4` après la sortie de la
+`1.3.0` ramènerait `:latest` sur l'ancienne ligne, silencieusement. Le
+workflow force donc `latest=false`, et une étape séparée ne pose `:latest`
+que si le tag poussé est le plus grand `vX.Y.Z` de tout le dépôt. `:latest`
+n'avance que vers l'avant, ou pas du tout.
+
+### Le CHANGELOG est généré, pas écrit
+
+`cliff.toml` à la racine transforme les messages conventionnels (`feat:`,
+`fix:`, … — la convention est dans [`AGENTS.md`](../AGENTS.md)) en sections
+datées. On ne retouche jamais `CHANGELOG.md` à la main : une entrée mal
+libellée se corrige en reformulant le commit *avant* fusion, pas après.
+
+> La première génération attend la **réécriture d'historique prévue pour
+> l'ouverture publique**, qui normalise les anciens messages : générer avant,
+> c'est figer les messages fautifs dans le fichier.
+
+## 4. Déployer : un `vX.Y.Z`, jamais `:main` ni `:latest`
+
+Le workflow publie aussi une image `:main` à chaque fusion. C'est l'**image de
+recette** : elle sert à valider ce qui sortira, pas à tourner chez un client.
+
+Un déploiement de production référence une **version nommée** — `1.2.0` —
+parce qu'un déploiement doit être nommable dans un rapport d'incident ou de
+faille. `:main` désigne un commit différent chaque jour ; `:latest` désigne ce
+que le registre veut bien ; ni l'un ni l'autre n'est une réponse à « vous
+tourniez sur quoi ? ». `docker-compose.prod.yml` prend la version par la
+variable `APP_VERSION` du `.env.prod`.
+
+## 5. Patcher une version antérieure
+
+C'est la question qui justifie tout le reste. Réponse : **des branches de
+maintenance créées à la demande, jamais à l'avance.** Tant que tous les
+déploiements sont sur la dernière version, il n'existe aucune branche de
+maintenance — on n'en crée une que le jour où un exploitant réel ne peut pas
+monter de version.
+
+Procédure, ce jour-là (exemple : faille à corriger, une prod en `1.2.0`,
+`main` déjà en `1.3.x`) :
+
+```bash
+# 1. Le correctif va d'abord sur main. Toujours. Sans exception.
+#    Un correctif qui n'existe que sur une branche de maintenance est une
+#    régression programmée pour la version suivante.
+git switch main && … && git commit     # PR normale, CI verte, fusion
+
+# 2. La branche de maintenance, créée depuis le TAG, pas depuis main
+git switch -c release/1.2 v1.2.0
+
+# 3. Rapatrier le correctif déjà fusionné sur main
+git cherry-pick -x <sha>               # -x note l'origine dans le message
+
+# 4. Tag + publication — le workflow Docker écoute `v*` sur toutes les branches
+git tag -a v1.2.1 -m "Correctif …"
+git push origin release/1.2 v1.2.1
+```
+
+Les règles qui rendent ça sûr :
+
+- **`main` d'abord, toujours** — c'est ce qui garantit qu'aucun correctif ne
+  se perd ;
+- **`cherry-pick -x`**, pour que le commit de maintenance dise de quel commit
+  de `main` il vient. Si le correctif ne s'applique pas tel quel, on écrit une
+  adaptation — et on la relit comme du code neuf, parce que c'en est ;
+- **rien sur une branche de maintenance qui ne soit pas déjà sur `main`** ;
+- **aucune migration Flyway dans un patch de maintenance**, sauf strictement
+  additive : le schéma étant *forward-only*, une base déjà passée en `1.3.0`
+  ne redescendra pas. Si le patch touche au schéma, ce n'est plus un patch,
+  c'est une montée de version ;
+- **`release/1.2` ne fusionne jamais dans `main`** : elle vit et meurt sur sa
+  ligne ;
+- **`:latest` ne bouge pas** : le `v1.2.1` n'est pas le tag le plus récent du
+  dépôt, l'étape du workflow le laisse en place (§3).
+
+**Combien de lignes maintient-on ? Une seule** — la dernière `MAJOR.MINOR`
+publiée en dehors de la ligne courante, et seulement tant qu'un exploitant
+réel y est. Au-delà, la réponse est « montez de version » : un développeur
+seul ne maintient pas trois lignes.
