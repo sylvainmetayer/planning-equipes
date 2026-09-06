@@ -382,10 +382,6 @@ public class PlanningService {
                     "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
                             + "des animateurs et des créneaux d'abord.");
         }
-        // The families this build pairs the stands on are the ones every
-        // later build must keep (issue #390): written now, once, whichever
-        // way the problem is built (cold, re-seeded, incremental).
-        referenceDataService.recordStandFamilies(stands, standFamilies(stands, creneaux));
         List<PosteAffectation> postes = buildPostes(stands, creneaux);
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
         if (planPersiste == null) {
@@ -470,6 +466,7 @@ public class PlanningService {
                     "Aucun plan enregistré sur cette édition : rien d'où repartir. "
                             + "Lancez un calcul de zéro (reamorcage=AUCUN), ou laissez le choix automatique.");
         }
+        recordStandFamilies(stands, creneaux);
         PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux, affectationsPrecedentes);
         if (affectationsPrecedentes.isEmpty()) {
             return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0);
@@ -557,6 +554,7 @@ public class PlanningService {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         List<Stand> stands = referenceDataService.listSolvedStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
+        recordStandFamilies(stands, creneaux);
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
                     "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
@@ -881,6 +879,25 @@ public class PlanningService {
      * an edition that never persisted anything is spread as before — and a
      * stand added later joins without moving anybody.
      */
+    /**
+     * Writes down the families this solve pairs the stands on (issue #390), so
+     * every later build keeps them.
+     *
+     * <p>Only from a build that <b>solves</b>: the same builder serves
+     * {@code GET /api/planning/volumetrie}, {@code GET /api/staffing} and two
+     * read-only MCP tools, and a read has no business writing. And only on a
+     * staggered grid: on a single-family one the assignment says nothing —
+     * freezing every stand at family 0 would starve the other families the day
+     * a staggered grid arrives without replacing this one.</p>
+     */
+    private void recordStandFamilies(List<Stand> stands, List<Creneau> creneaux) {
+        int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
+        if (nombreFamilles <= 1) {
+            return;
+        }
+        referenceDataService.recordStandFamilies(stands, standFamilies(stands, creneaux));
+    }
+
     private static Map<String, Integer> spreadStandsByFamily(List<Stand> stands, int nombreFamilles) {
         Map<String, Integer> families = new HashMap<>();
         int[] population = new int[nombreFamilles];

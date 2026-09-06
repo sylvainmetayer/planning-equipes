@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Map;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.specification.RequestSpecification;
@@ -82,6 +83,39 @@ class StandRelayFamilyResourceTest {
 
         assertThat(edition().when().get("/api/stands").then().statusCode(200)
                 .extract().jsonPath().getInt("[0].famille")).isBetween(0, 1);
+    }
+
+    /**
+     * A write that does not carry the family leaves it alone. Any client that
+     * predates the field — a script, an old bundle — would otherwise wipe it on
+     * every save, and the next build would move the stand to another family,
+     * voiding every published line of that stand.
+     */
+    @Test
+    void aWriteThatOmitsTheFamilyLeavesItAlone() {
+        createStand("STAND-KEEP", 1);
+        Map<String, Object> stand = edition().when().get("/api/stands").then().statusCode(200)
+                .extract().jsonPath().getList("findAll { it.id == 'STAND-KEEP' }", Map.class).get(0);
+        stand.remove("famille");
+        stand.put("nom", "Renommé sans la famille");
+
+        edition().contentType("application/json").body(stand)
+                .when().put("/api/stands/STAND-KEEP").then().statusCode(200);
+
+        assertThat(edition().when().get("/api/stands").then().statusCode(200).extract().jsonPath()
+                .getInt("find { it.id == 'STAND-KEEP' }.famille"))
+                .as("the family the operator chose survives a write that says nothing about it")
+                .isEqualTo(1);
+    }
+
+    /** A family the grid does not have is refused, not stored and silently rewritten. */
+    @Test
+    void aFamilyBeyondTheGridIsRefused() {
+        edition().contentType("application/json")
+                .body("{\"id\":\"STAND-HORS\",\"nom\":\"Hors grille\",\"typologiesProposees\":[\"JEU\"],"
+                        + "\"effectifMin\":1,\"effectifMax\":1,\"famille\":7}")
+                .when().post("/api/stands").then().statusCode(400)
+                .body("message", org.hamcrest.Matchers.containsString("famille"));
     }
 
     private static void createStand(String id, Integer famille) {

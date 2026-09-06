@@ -72,12 +72,19 @@ public class StandService {
     public Stand create(Stand stand) {
         stand.setId(Ids.required(stand.getId(), "stand id"));
         validate(stand);
+        checkFamilyExistsInGrid(stand);
         if (stand.getFamille() == null) {
             // Joins the least populated family of the current grid (issue
-            // #390), so the stands already in place keep their own.
-            List<Stand> tous = new ArrayList<>(list());
-            tous.add(stand);
-            stand.setFamille(PlanningService.standFamilies(tous, creneaux.list()).get(stand.getId()));
+            // #390), so the stands already in place keep their own. Nothing to
+            // assign on a grid with a single family: the value would say
+            // nothing, and would starve the others the day a staggered grid
+            // arrives without replacing this one.
+            List<Creneau> grille = creneaux.list();
+            if (grille.stream().anyMatch(creneau -> creneau.getFamille() > 0)) {
+                List<Stand> tous = new ArrayList<>(list());
+                tous.add(stand);
+                stand.setFamille(PlanningService.standFamilies(tous, grille).get(stand.getId()));
+            }
         }
         repository.saveStand(stand, true);
         changeTracker.markModified();
@@ -107,6 +114,7 @@ public class StandService {
         }
         stand.setId(id);
         validate(stand);
+        checkFamilyExistsInGrid(stand);
         repository.saveStand(stand, false);
         changeTracker.markModified();
         return stand;
@@ -141,11 +149,6 @@ public class StandService {
      * reason {@link #update} gives: the landing persist would revert the bounds
      * and windows just written.</p>
      */
-    /** See {@link StandRepository#updateFamilies}: not an edit, {@code modifie_le} untouched. */
-    public void recordFamilies(Map<String, Integer> familleParStand) {
-        repository.updateFamilies(familleParStand);
-    }
-
     public List<GrilleHorairesStands.LigneGrille> saisirGrille(List<GrilleHorairesStands.SaisieStand> saisies) {
         solverJobs.refuseIfSolving();
         List<Creneau> edition = creneaux.list();
@@ -200,7 +203,30 @@ public class StandService {
         return lignes;
     }
 
+    /** See {@link StandRepository#updateFamilies}: not an edit, {@code modifie_le} untouched. */
+    public void recordFamilies(Map<String, Integer> familleParStand) {
+        repository.updateFamilies(familleParStand);
+    }
+
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */
+    /**
+     * A relay family the grid does not have is refused rather than stored and
+     * silently rewritten by the next build (issue #390): the operator would
+     * otherwise read « Famille 8 » on a two-family grid, see an empty select,
+     * and watch the value change on its own.
+     */
+    private void checkFamilyExistsInGrid(Stand stand) {
+        Integer famille = stand.getFamille();
+        if (famille == null) {
+            return;
+        }
+        int nombreFamilles = creneaux.list().stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
+        if (famille >= nombreFamilles) {
+            throw new BusinessError.Invalid("La grille de cette édition compte " + nombreFamilles
+                    + " famille(s) de relais : « " + famille + " » n'existe pas. La première est 0.");
+        }
+    }
+
     private void validate(Stand stand) {
         StandValidator.check(stand);
         if (stand.getTypologiesProposees() != null) {

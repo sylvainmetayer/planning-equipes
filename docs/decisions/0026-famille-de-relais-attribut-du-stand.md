@@ -30,18 +30,27 @@ soit le poids de la règle. Le même stand nommé `ZZ-NOUVEAU` ne décale rien.
    déploiement, et la migration fige la répartition en vigueur (même rang,
    même ordre binaire que Java).
 3. **L'attribution s'écrit** à la création du stand et à chaque construction
-   du problème pour ce qui n'en a pas, sans toucher `modifie_le` : ce n'est
-   pas une modification de l'opérateur, une fiche ouverte ne doit pas devenir
-   un conflit d'écriture.
+   de problème **qui résout** — jamais depuis une lecture : le même
+   constructeur sert la volumétrie, l'effectif requis et deux outils MCP en
+   lecture seule. Sans toucher `modifie_le` : ce n'est pas une modification de
+   l'opérateur, une fiche ouverte ne doit pas devenir un conflit d'écriture.
+   Rien n'est écrit non plus sur une grille à une seule famille : la valeur ne
+   dirait rien, et figer tout le monde en famille 0 affamerait les autres le
+   jour où une grille décalée arrive sans remplacer celle-ci.
 4. **Une famille hors grille est réattribuée** comme une absence (valeur
    au-delà du nombre de familles), jamais traitée comme une famille de plus.
 5. **Le remplacement de la grille oublie les familles** (découpage,
    dérivation « remplacer ») : le plan enregistré part avec, la prochaine
    construction répartit à nouveau.
 6. **Visible et modifiable** dans la fiche du stand quand la grille a plus
-   d'une famille (« Automatique » par défaut), portée par l'import et
-   l'export de scénario (`famille:` facultatif) et par `creer_stand` /
-   `modifier_stand`.
+   d'une famille (« Automatique » par défaut, et le détail se tait pareillement
+   sur une grille unique), portée par l'import et l'export de scénario
+   (`famille:` facultatif, déclaré dans le schéma publié) et par `creer_stand` /
+   `modifier_stand`. Une famille que la grille n'a pas est refusée à
+   l'écriture, plutôt que stockée puis réécrite en silence.
+7. **Une écriture qui ne porte pas la famille la laisse telle quelle**
+   (`COALESCE`) : un client qui ignore le champ ne doit pas l'effacer, et la
+   duplication d'une édition la recopie comme elle recopie les créneaux.
 
 ## Conséquences
 

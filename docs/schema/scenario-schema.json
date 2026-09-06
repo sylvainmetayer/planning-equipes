@@ -441,6 +441,10 @@
         "emplacementId" : {
           "type" : "string"
         },
+        "famille" : {
+          "type" : "integer",
+          "format" : "int32"
+        },
         "horaires" : {
           "type" : "array",
           "items" : {

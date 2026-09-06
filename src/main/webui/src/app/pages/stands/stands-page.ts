@@ -67,6 +67,11 @@ export class StandsPage {
 
   /** Quick filter of the table: id, name, typologies and emplacement — everything a stand is looked up by. */
   protected readonly filtre = signal('');
+  /** Relay families of the edition's grid: below two, the family says nothing (issue #390). */
+  private readonly nombreFamilles = computed(
+    () => Math.max(0, ...this.store.creneaux().map((creneau) => creneau.famille ?? 0)) + 1
+  );
+
   protected readonly standsFiltres = computed(() =>
     this.store
       .stands()
@@ -200,7 +205,7 @@ export class StandsPage {
     const data: DetailData = {
       title: stand.nom || stand.id,
       subtitle: stand.id,
-      sections: buildStandDetail(stand, this.store.typologies())
+      sections: buildStandDetail(stand, this.store.typologies(), this.nombreFamilles())
     };
     const result = await firstValueFrom(
       this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed()

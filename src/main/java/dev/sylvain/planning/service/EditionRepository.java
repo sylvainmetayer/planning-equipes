@@ -48,7 +48,7 @@ public class EditionRepository {
             // exactly one edition.
             new TableToCopy("animateur", "id, prenom, nom, date_naissance, manager, email"),
             new TableToCopy("stand",
-                    "id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, niveau_effort"),
+                    "id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, niveau_effort, famille"),
             new TableToCopy("animateur_competence", "animateur_id, typologie, niveau"),
             new TableToCopy("animateur_jour_indispo", "animateur_id, jour"),
             new TableToCopy("animateur_souhait", "animateur_id, typologie"),

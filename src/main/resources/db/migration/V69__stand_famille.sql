@@ -9,7 +9,14 @@ ALTER TABLE stand ADD COLUMN famille INTEGER;
 -- Figer la répartition en vigueur : le même rang par identifiant, dans le même
 -- ordre que Java (comparaison binaire, d'où la collation C), modulo le nombre
 -- de familles de la grille de l'édition. Aucun plan ne change au déploiement.
+--
+-- Seulement là où la grille est décalée : sur une édition à une seule famille
+-- la valeur ne dirait rien, et figer tout le monde en famille 0 affamerait les
+-- autres familles le jour où une grille décalée arrive sans remplacer
+-- celle-ci. NULL veut dire « pas encore attribuée », ce que la répartition
+-- suivante traite comme avant.
 UPDATE stand s
-SET famille = rangs.rang % GREATEST(1, (SELECT COALESCE(MAX(c.famille), 0) + 1 FROM creneau c WHERE c.edition_id = s.edition_id))
+SET famille = rangs.rang % (SELECT MAX(c.famille) + 1 FROM creneau c WHERE c.edition_id = s.edition_id)
 FROM (SELECT edition_id, id, ROW_NUMBER() OVER (PARTITION BY edition_id ORDER BY id COLLATE "C") - 1 AS rang FROM stand) rangs
-WHERE rangs.edition_id = s.edition_id AND rangs.id = s.id;
+WHERE rangs.edition_id = s.edition_id AND rangs.id = s.id
+  AND (SELECT COALESCE(MAX(c.famille), 0) FROM creneau c WHERE c.edition_id = s.edition_id) > 0;

@@ -288,6 +288,22 @@ public class StandRepository {
      * it can be read and tested in the code, which is the decision issue #281
      * took for créneaux.</p>
      */
+
+    public void deleteStand(String id) {
+        scope.write("Failed to delete stand " + id, connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM poste_affectation WHERE edition_id = ? AND stand_id = ?")) {
+                ps.setString(2, id);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM stand WHERE edition_id = ? AND id = ?")) {
+                ps.setString(2, id);
+                ps.executeUpdate();
+            }
+        });
+    }
+
     /**
      * Records the families the problem build just assigned (issue #390).
      * Deliberately not a save: {@code modifie_le} stays put, because an
@@ -308,21 +324,6 @@ public class StandRepository {
                     ps.addBatch();
                 }
                 ps.executeBatch();
-            }
-        });
-    }
-
-    public void deleteStand(String id) {
-        scope.write("Failed to delete stand " + id, connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM poste_affectation WHERE edition_id = ? AND stand_id = ?")) {
-                ps.setString(2, id);
-                ps.executeUpdate();
-            }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM stand WHERE edition_id = ? AND id = ?")) {
-                ps.setString(2, id);
-                ps.executeUpdate();
             }
         });
     }
