@@ -124,7 +124,9 @@ test.describe('glisser-déposer', () => {
       const ligneDeux = page.locator('.day-stand', { hasText: 'Stand Glisse deux' });
       await expect(ligneUn).toBeVisible();
 
-      await glisser(page, ligneUn.locator('.affectation-link'), ligneDeux.locator('.affectation-link'));
+      // The drag is taken by the handle, not by the name (the name stays
+      // selectable and, on touch, scrollable — see the review of #308).
+      await glisser(page, ligneUn.locator('.affectation-poignee'), ligneDeux.locator('.affectation-link'));
 
       await expect(page.locator('mat-snack-bar-container')).toContainText('ont échangé leurs sièges');
       await expect.poll(async () => (await occupants())['SOLV-DD-S1']).toBe(avant['SOLV-DD-S2']);
@@ -149,7 +151,7 @@ test.describe('glisser-déposer', () => {
       const ligneTrois = page.locator('.day-stand', { hasText: 'Stand Glisse trois' });
       await expect(ligneTrois.locator('.siege-libre')).toBeVisible();
 
-      await glisser(page, ligneUn.locator('.affectation-link'), ligneTrois.locator('.siege-libre'));
+      await glisser(page, ligneUn.locator('.affectation-poignee'), ligneTrois.locator('.siege-libre'));
 
       await expect(page.locator('mat-snack-bar-container')).toContainText('a changé de siège');
       await expect.poll(async () => (await occupants())['SOLV-DD-S3']).toBe(avant['SOLV-DD-S1']);
@@ -168,7 +170,7 @@ test.describe('glisser-déposer', () => {
       const ligneB = page.locator('.rail-ligne', { hasText: 'Boris Glisse' });
       await expect(ligneA.locator('.rail-bloc')).toBeVisible();
 
-      await glisser(page, ligneA.locator('.rail-bloc'), ligneB.locator('.rail-cell'));
+      await glisser(page, ligneA.locator('.rail-bloc-poignee'), ligneB.locator('.rail-cell'));
 
       await expect(page.locator('mat-snack-bar-container')).toContainText('ont échangé leurs sièges');
       const apres = await occupants();
@@ -195,7 +197,7 @@ test.describe('glisser-déposer', () => {
       const ligneC = page.locator('.rail-ligne', { hasText: 'Cléo Glisse' });
       await expect(ligneA.locator('.rail-bloc')).toBeVisible();
 
-      await glisser(page, ligneA.locator('.rail-bloc'), ligneC.locator('.rail-cell'));
+      await glisser(page, ligneA.locator('.rail-bloc-poignee'), ligneC.locator('.rail-cell'));
 
       await expect(page.locator('mat-snack-bar-container')).toContainText('Déplacement refusé');
       expect(await occupants()).toEqual(avant);

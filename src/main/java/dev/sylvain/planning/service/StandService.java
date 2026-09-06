@@ -175,7 +175,8 @@ public class StandService {
             // this the screen that rewrites the most would be the only one
             // able to overwrite another session in silence (issue #362).
             stand.setModifieLe(saisie.modifieLe());
-            validate(stand);
+            // The hours, not the typologies: see StandValidator#checkSchedule.
+            StandValidator.checkSchedule(stand);
             aEcrire.add(stand);
         }
         // One transaction for the lot: a report announcing twelve stands after a

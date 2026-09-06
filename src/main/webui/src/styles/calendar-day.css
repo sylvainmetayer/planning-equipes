@@ -186,3 +186,33 @@
   box-shadow: var(--mat-sys-level3);
   text-decoration: none;
 }
+
+/*
+ * The drag handle (issue #308, review): the only surface the CDK marks
+ * undraggable-by-touch, so the name itself stays selectable and a swipe over
+ * it still scrolls the day. Discreet until the row is hovered or focused.
+ */
+.affectation-glissable {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+}
+
+.affectation-poignee {
+  cursor: grab;
+  opacity: 0.35;
+  font-size: 0.85em;
+  line-height: 1;
+  touch-action: none;
+  user-select: none;
+}
+
+.affectation-poignee:hover,
+.day-stand:hover .affectation-poignee,
+.affectation-glissable:focus-within .affectation-poignee {
+  opacity: 0.9;
+}
+
+.cdk-drag-disabled .affectation-poignee {
+  display: none;
+}

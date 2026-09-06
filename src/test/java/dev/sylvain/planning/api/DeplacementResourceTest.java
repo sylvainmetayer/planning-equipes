@@ -151,6 +151,112 @@ class DeplacementResourceTest {
         }
     }
 
+    /**
+     * The gesture names a seat, and a day view left open shows a plan somebody
+     * else may have moved since. Without the precondition the server moves
+     * whoever sits there now — the wrong person, with a 200.
+     */
+    @Test
+    void movingASeatSomebodyElseAlreadyMovedIsRefused() {
+        JsonPath plan = persistedPlan();
+        Map<String, String> avant = occupants(plan);
+        String siege = avant.keySet().iterator().next();
+        String occupantReel = avant.get(siege);
+        String autre = avant.values().stream().filter(id -> !id.equals(occupantReel)).findFirst().orElseThrow();
+        String creneau = plan.getString("postes.find { it.id == '" + siege + "' }.creneau.id");
+        List<String> occupesCeCreneau = plan.getList(
+                "postes.findAll { it.creneau.id == " + creneau + " && it.animateur != null }.animateur.id");
+        String libre = plan.<String>getList("animateurs.id").stream()
+                .filter(id -> !occupesCeCreneau.contains(id))
+                .findFirst()
+                .orElseThrow();
+
+        // The view still shows somebody else on that seat.
+        given().when().post("/api/postes/" + siege + "/deplacement?animateur=" + libre + "&occupant=" + autre)
+                .then().statusCode(409)
+                .body("message", containsString("n'est plus tenu par la personne affichée"));
+        assertThat(occupants(given().when().get("/api/planning/persisted").then().extract().jsonPath()))
+                .isEqualTo(avant);
+
+        // Naming the real occupant goes through, and so does naming nobody.
+        given().when().post("/api/postes/" + siege + "/deplacement?animateur=" + libre
+                        + "&occupant=" + occupantReel)
+                .then().statusCode(200);
+    }
+
+    /**
+     * A lock on the person <em>receiving</em> the seat is read on nothing when
+     * they hold none on that créneau — the rail gesture's main case — so it
+     * has to be checked by id, not through the seats.
+     */
+    @Test
+    void handingASeatToALockedAnimateurIsRefused() {
+        JsonPath plan = persistedPlan();
+        Map<String, String> avant = occupants(plan);
+        String siege = avant.keySet().iterator().next();
+        String creneau = plan.getString("postes.find { it.id == '" + siege + "' }.creneau.id");
+        List<String> occupesCeCreneau = plan.getList(
+                "postes.findAll { it.creneau.id == " + creneau + " && it.animateur != null }.animateur.id");
+        String libre = plan.<String>getList("animateurs.id").stream()
+                .filter(id -> !occupesCeCreneau.contains(id))
+                .findFirst()
+                .orElseThrow();
+
+        given().contentType("application/json")
+                .body("{\"id\":\"DEPL-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"" + libre + "\"}")
+                .when().post("/api/verrouillages").then().statusCode(200);
+        try {
+            given().when().post("/api/postes/" + siege + "/deplacement?animateur=" + libre)
+                    .then().statusCode(400)
+                    .body("message", containsString("verrouillé"));
+            assertThat(occupants(given().when().get("/api/planning/persisted").then().extract().jsonPath()))
+                    .isEqualTo(avant);
+        } finally {
+            given().when().delete("/api/verrouillages/DEPL-VERROU");
+        }
+    }
+
+    /**
+     * The verdict is read on the rules this edition runs under: a hard rule the
+     * operator switched off must not refuse a drop. Proves the plan is prepared
+     * server-side before it is scored.
+     */
+    @Test
+    void aDisabledHardRuleNoLongerRefusesADrop() {
+        JsonPath plan = persistedPlan();
+        Map<String, String> avant = occupants(plan);
+        String siege = avant.keySet().iterator().next();
+        String creneau = plan.getString("postes.find { it.id == '" + siege + "' }.creneau.id");
+        List<String> occupesCeCreneau = plan.getList(
+                "postes.findAll { it.creneau.id == " + creneau + " && it.animateur != null }.animateur.id");
+        String libre = plan.<String>getList("animateurs.id").stream()
+                .filter(id -> !occupesCeCreneau.contains(id))
+                .findFirst()
+                .orElseThrow();
+        given().contentType("application/json")
+                .body("""
+                        {"id":"DEPL-INDISPO-2","type":"INDISPONIBILITE_FORCEE",
+                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%s}}""".formatted(libre, creneau))
+                .when().post("/api/contraintes-ad-hoc").then().statusCode(200);
+        try {
+            given().when().post("/api/postes/" + siege + "/deplacement?animateur=" + libre)
+                    .then().statusCode(400);
+
+            // Same gesture, with that rule switched off on the Contraintes screen.
+            given().contentType("application/json").body("{\"actif\":false}")
+                    .when().put("/api/constraints/indisponibiliteForcee").then().statusCode(200);
+            try {
+                given().when().post("/api/postes/" + siege + "/deplacement?animateur=" + libre)
+                        .then().statusCode(200);
+            } finally {
+                given().contentType("application/json").body("{\"actif\":true}")
+                        .when().put("/api/constraints/indisponibiliteForcee").then().statusCode(200);
+            }
+        } finally {
+            given().when().delete("/api/contraintes-ad-hoc/DEPL-INDISPO-2");
+        }
+    }
+
     @Test
     void anUnknownSeatIs404AndASeatDroppedOnItselfIs400() {
         JsonPath plan = persistedPlan();

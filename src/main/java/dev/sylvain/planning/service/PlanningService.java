@@ -2106,6 +2106,16 @@ public class PlanningService {
         return solver.solve(problem);
     }
 
+    /**
+     * Fills a planning read from the database with the server-side facts before
+     * anything scores it — the same overwrite a solve does. Package-private for
+     * {@link DeplacementService}, which must judge a gesture on the rules the
+     * edition really runs under.
+     */
+    void prepareForAnalysis(PlanningEvenement planning) {
+        prepareProblem(planning);
+    }
+
     private void prepareProblem(PlanningEvenement problem) {
         if (problem.getContraintesAdHoc() == null || problem.getContraintesAdHoc().isEmpty()) {
             problem.setContraintesAdHoc(referenceDataService.snapshotContraintes());
@@ -2725,6 +2735,10 @@ public class PlanningService {
      * @param posteCibleId    the seat dropped on, or {@code null} when a person was
      * @param animateurCibleId the person dropped on, ignored when a seat was given
      */
+    private static boolean memePersonne(Animateur premier, Animateur second) {
+        return premier != null && second != null && Objects.equals(premier.getId(), second.getId());
+    }
+
     public DeplacementSimulation simulateDeplacement(PlanningEvenement solved, String posteSourceId,
             String posteCibleId, String animateurCibleId) {
         PosteAffectation source = findPoste(solved, posteSourceId);
@@ -2745,15 +2759,19 @@ public class PlanningService {
                 throw new BusinessError.Invalid("Indiquez le siège ou la personne qui reçoit l'affectation.");
             }
             animateurCible = findAnimateur(solved, animateurCibleId);
-            if (animateurCible == animateurSource) {
+            // By id, never by reference: a planning deserialised from a request
+            // body carries one Animateur instance per poste, so == is false
+            // even for the same person — the gesture would then be scored as
+            // "nobody moves" while the write performs a swap.
+            if (memePersonne(animateurCible, animateurSource)) {
                 throw new BusinessError.Invalid("Cette personne tient déjà ce siège : rien à déplacer.");
             }
             // The receiver's own seat on that créneau, if any: two people
             // trading créneaux is a swap, not one of them in two places at once.
             cible = solved.getPostes().stream()
-                    .filter(poste -> poste != source && poste.getAnimateur() == animateurCible
+                    .filter(poste -> poste != source && memePersonne(poste.getAnimateur(), animateurCible)
                             && poste.getCreneau() != null && source.getCreneau() != null
-                            && poste.getCreneau().getId().equals(source.getCreneau().getId()))
+                            && Objects.equals(poste.getCreneau().getId(), source.getCreneau().getId()))
                     .findFirst()
                     .orElse(null);
         }

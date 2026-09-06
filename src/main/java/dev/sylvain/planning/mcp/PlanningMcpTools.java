@@ -307,7 +307,7 @@ public class PlanningMcpTools {
             @ToolArg(description = "Id du poste qui la reçoit", required = false) String posteCibleId,
             @ToolArg(description = "Id de l'animateur qui la reçoit, si aucun poste n'est donné", required = false) String animateurId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return toView(deplacementService.simulate(null, posteId, posteCibleId, animateurId));
+        return toView(deplacementService.simulate(posteId, posteCibleId, animateurId));
     }
 
     /**
@@ -324,8 +324,10 @@ public class PlanningMcpTools {
     DeplacementView deplacer_affectation(@ToolArg(description = "Id du poste dont l'affectation bouge") String posteId,
             @ToolArg(description = "Id du poste qui la reçoit", required = false) String posteCibleId,
             @ToolArg(description = "Id de l'animateur qui la reçoit, si aucun poste n'est donné", required = false) String animateurId,
+            @ToolArg(description = "Id de l'animateur que l'appelant croit sur le siège de départ (précondition : "
+                    + "refusé si quelqu'un d'autre l'occupe ; omis, pas de contrôle)", required = false) String occupantAttendu,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return toView(deplacementService.apply(posteId, posteCibleId, animateurId));
+        return toView(deplacementService.apply(posteId, posteCibleId, animateurId, occupantAttendu));
     }
 
     private static DeplacementView toView(DeplacementSimulation simulation) {

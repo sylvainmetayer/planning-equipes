@@ -164,7 +164,8 @@
                         cdkDrag
                         [cdkDragData]="bloc"
                         [cdkDragDisabled]="editingLocked()"
-                      ><span class="rail-bloc-label">{{ bloc.standNom }}</span></span>
+                      ><span class="rail-bloc-poignee" cdkDragHandle aria-hidden="true">⠿</span
+                        ><span class="rail-bloc-label">{{ bloc.standNom }}</span></span>
                     }
                     @for (pause of ligne.pauses; track pause.heureDebut) {
                       <span

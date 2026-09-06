@@ -84,20 +84,21 @@ public class AffectationExplanationResource {
      * nothing else does. The only endpoint here that writes — hence a separate,
      * explicit call rather than a flag on the simulation.
      *
-     * @param animateurId omitted empties the seat
-     */
-    /**
      * Scores a seat movement (issue #308) without writing: the seat's animateur
      * dropped on another seat ({@code cible}) or on a person
-     * ({@code animateur}). The body is the planning to score, or empty for the
-     * persisted one — the day views already hold the plan they show.
+     * ({@code animateur}).
+     *
+     * <p>Always scored on the persisted plan, prepared server-side. It takes no
+     * body: the verdict must be read on the rules the edition actually runs
+     * under — the constraints the operator switched off included — and those
+     * are not the client's to send.</p>
      */
     @POST
     @Path("/{posteId}/deplacement/simulation")
+    @Consumes(MediaType.WILDCARD)
     public Response simulateDeplacement(@PathParam("posteId") String posteId,
-            @QueryParam("cible") String posteCibleId, @QueryParam("animateur") String animateurCibleId,
-            PlanningEvenement planning) {
-        return Response.ok(deplacementService.simulate(planning, posteId, posteCibleId, animateurCibleId)).build();
+            @QueryParam("cible") String posteCibleId, @QueryParam("animateur") String animateurCibleId) {
+        return Response.ok(deplacementService.simulate(posteId, posteCibleId, animateurCibleId)).build();
     }
 
     /**
@@ -105,15 +106,29 @@ public class AffectationExplanationResource {
      * first and refused (400) when it would worsen the hard score, so a client
      * that skipped the simulation is held to the same rule. Answers what was
      * done, scores before and after included.
+     *
+     * @param occupant who the caller believes holds the seat. The gesture names
+     *                 a seat, and a day view left open shows a plan somebody
+     *                 else may have moved since, so without this the server
+     *                 moves whoever sits there now — the wrong person, with a
+     *                 200. Mismatch is a 409; omitted, no precondition.
      */
     @POST
     @Path("/{posteId}/deplacement")
     @Consumes(MediaType.WILDCARD)
     public Response applyDeplacement(@PathParam("posteId") String posteId,
-            @QueryParam("cible") String posteCibleId, @QueryParam("animateur") String animateurCibleId) {
-        return Response.ok(deplacementService.apply(posteId, posteCibleId, animateurCibleId)).build();
+            @QueryParam("cible") String posteCibleId, @QueryParam("animateur") String animateurCibleId,
+            @QueryParam("occupant") String occupant) {
+        return Response.ok(deplacementService.apply(posteId, posteCibleId, animateurCibleId, occupant)).build();
     }
 
+    /**
+     * Applies one suggestion to the persisted plan: that seat changes hands and
+     * nothing else does. The only endpoint here that writes by name — hence a
+     * separate, explicit call rather than a flag on the simulation.
+     *
+     * @param animateurId omitted empties the seat
+     */
     @POST
     @Path("/{posteId}/affectation")
     @Consumes(MediaType.WILDCARD)

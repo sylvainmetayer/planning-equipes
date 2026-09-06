@@ -184,7 +184,9 @@ describe('CalendarDayPage rendering', () => {
 
     const boutons = Array.from(root(fixture).querySelectorAll('.affectation-link'));
     expect(boutons.map((each) => each.textContent!.trim())).toEqual(['Camille X', 'Alex X']);
-    expect(lignes(fixture)[0].texte).toContain('Camille X, Alex X');
+    // The ⠿ handle sits between the names: the drag surface is not the name
+    // itself, so the row's raw text carries it (issue #308, review).
+    expect(lignes(fixture)[0].texte.replaceAll('⠿', '')).toContain('Camille X, Alex X');
   });
 
   it('marks an unfilled line as such rather than leaving it blank', async () => {
@@ -211,7 +213,9 @@ describe('CalendarDayPage rendering', () => {
 
     const libres = Array.from(root(fixture).querySelectorAll<HTMLElement>('.siege-libre'));
     expect(libres.map((chip) => chip.dataset['posteId'])).toEqual(['p2', 'p3']);
-    expect(root(fixture).querySelector<HTMLElement>('.affectation-link')!.dataset['posteId']).toBe('p1');
+    // The seat id sits on the draggable wrapper, which contains the name: a
+    // drop resolves it with closest(), from wherever the pointer landed.
+    expect(root(fixture).querySelector<HTMLElement>('.affectation-glissable')!.dataset['posteId']).toBe('p1');
   });
 
   it('flags an understaffed line with a warning icon naming the shortfall', async () => {

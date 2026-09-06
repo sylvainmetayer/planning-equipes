@@ -1,4 +1,4 @@
-import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -48,6 +48,7 @@ interface RailLegendItem {
   selector: 'app-rail-jour-page',
   imports: [
     CdkDrag,
+    CdkDragHandle,
     CdkDropList,
     CdkDropListGroup,
     MatButtonModule,
@@ -213,8 +214,15 @@ export class RailJourPage {
     }
     const bloc = event.item.data;
     const receveur = event.container.data;
+    const porteur = event.previousContainer.data;
     try {
-      const simulation = await this.explications.deplacer(bloc.posteId, { animateurId: receveur.animateurId });
+      // The line the block was dragged from is who this view believes holds
+      // the seat: the server refuses (409) if somebody else does now.
+      const simulation = await this.explications.deplacer(
+        bloc.posteId,
+        { animateurId: receveur.animateurId },
+        porteur.animateurId
+      );
       this.notifications.notify({ ...resumeDeplacement(simulation, (id) => this.nomDe(id)), variant: 'success' });
       this.planningState.set(null);
       await this.refresh();
@@ -224,6 +232,9 @@ export class RailJourPage {
         message: errorMessage(error),
         variant: 'error'
       });
+      // The refusal may be « this seat moved under you »: re-read the day.
+      this.planningState.set(null);
+      await this.refresh();
     }
   }
 

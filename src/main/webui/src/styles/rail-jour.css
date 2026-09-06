@@ -314,3 +314,21 @@
   border-radius: 4px;
   box-shadow: var(--mat-sys-level3);
 }
+
+/* Same handle as the calendar: the block's label stays selectable. */
+.rail-bloc-poignee {
+  cursor: grab;
+  opacity: 0.5;
+  margin-right: 0.15rem;
+  font-size: 0.8em;
+  touch-action: none;
+  user-select: none;
+}
+
+.rail-bloc:hover .rail-bloc-poignee {
+  opacity: 1;
+}
+
+.cdk-drag-disabled .rail-bloc-poignee {
+  display: none;
+}

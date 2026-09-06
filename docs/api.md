@@ -518,8 +518,8 @@ et par les outils MCP `simuler_deplacement` / `deplacer_affectation`.
 
 | Endpoint | Effet |
 | --- | --- |
-| `POST /api/postes/{id}/deplacement/simulation?cible=P` ou `?animateur=A` | Chiffre le geste. Corps JSON : le planning à évaluer, vide pour le plan enregistré. Ne persiste rien. |
-| `POST /api/postes/{id}/deplacement?cible=P` ou `?animateur=A` | Applique le geste au plan enregistré. Écrit. |
+| `POST /api/postes/{id}/deplacement/simulation?cible=P` ou `?animateur=A` | Chiffre le geste sur le plan enregistré. Sans corps : le verdict se lit sur les règles de l'édition — celles que l'organisateur a désactivées comprises —, qui ne sont pas à l'appelant de fournir. Ne persiste rien. |
+| `POST /api/postes/{id}/deplacement?cible=P` ou `?animateur=A` | Applique le geste au plan enregistré. Écrit. `&occupant=X` dit qui l'appelant croit sur le siège de départ : si quelqu'un d'autre l'occupe, `409` et rien n'est écrit. |
 
 Une règle, trois gestes. Après le geste, le siège `{id}` tient
 `animateurCibleId` (personne quand il est nul) et `posteCibleId`, s'il y en a

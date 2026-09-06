@@ -1,4 +1,4 @@
-import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -85,6 +85,7 @@ interface DayCard {
   selector: 'app-calendar-day-page',
   imports: [
     CdkDrag,
+    CdkDragHandle,
     CdkDropList,
     CdkDropListGroup,
     FormsModule,
@@ -204,12 +205,12 @@ export class CalendarDayPage {
       });
       return;
     }
-    await this.deplacer(source.id, cible);
+    await this.deplacer(source.id, cible, source.animateur?.id ?? null);
   }
 
-  private async deplacer(posteSourceId: string, posteCibleId: string): Promise<void> {
+  private async deplacer(posteSourceId: string, posteCibleId: string, occupant: string | null): Promise<void> {
     try {
-      const simulation = await this.explications.deplacer(posteSourceId, { posteId: posteCibleId });
+      const simulation = await this.explications.deplacer(posteSourceId, { posteId: posteCibleId }, occupant);
       this.notifications.notify({ ...resumeDeplacement(simulation, (id) => this.nomDe(id)), variant: 'success' });
       // The persisted plan moved under the cached one: drop the cache, then
       // re-read — the same care openExplanation takes after a repair.
@@ -221,6 +222,10 @@ export class CalendarDayPage {
         message: errorMessage(error),
         variant: 'error'
       });
+      // The refusal may be « this seat moved under you »: re-read, so the
+      // second attempt is made on what is actually there.
+      this.planningState.set(null);
+      await this.refresh();
     }
   }
 

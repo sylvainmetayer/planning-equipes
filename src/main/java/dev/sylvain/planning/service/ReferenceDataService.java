@@ -496,12 +496,30 @@ public class ReferenceDataService implements ReferenceData {
      * endpoints. Every referential at once, in a single transaction — which is
      * why it belongs to the facade rather than to any one of them.
      */
+    /**
+     * Validates the stands a raw import carries, like every other write does
+     * (issue #343): {@code /api/database/import} is the deliberate SQL back
+     * door, this endpoint takes a domain object and must hold the same
+     * invariant as the fiche, the matrix and the scenario file.
+     */
+    private static void checkImportedStands(PlanningEvenement planning) {
+        if (planning == null || planning.getPostes() == null) {
+            return;
+        }
+        planning.getPostes().stream()
+                .map(PosteAffectation::getStand)
+                .filter(Objects::nonNull)
+                .distinct()
+                .forEach(StandValidator::check);
+    }
+
     public void importFromPlanning(PlanningEvenement planning) {
         // Refused while a solve holds this edition's solver: the landing persist
         // would re-insert the referential this import just replaced, old créneaux
         // reappearing by id beside the new ones, while emplacements, horaires and
         // ad hoc constraints stay wiped (issue #328).
         solverJobs.refuseIfSolving();
+        checkImportedStands(planning);
         if (planning != null) {
             // Refused before anything is written: a file may not install a
             // combination of ad hoc exceptions the form itself refuses

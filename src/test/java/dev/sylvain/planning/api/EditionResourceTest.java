@@ -47,13 +47,19 @@ class EditionResourceTest {
                 .then().statusCode(200);
     }
 
-    /** A stand always carries a typologie (issue #343): one is created in the edition first, idempotently. */
+    /**
+     * A stand always carries a typologie (issue #343): one is created in the
+     * edition first. A creation whose id is taken is a 409 since the write
+     * carries its own precondition (issue #362), so a second call is expected
+     * to bounce — the typologie is there either way.
+     */
     private void createStand(String editionId, String standId) {
         given().header(HEADER, editionId)
                 .contentType("application/json")
                 .body("{\"id\":\"TYPO-" + editionId + "\",\"label\":\"Typologie\"}")
                 .when().post("/api/typologies")
-                .then().statusCode(200);
+                .then().statusCode(org.hamcrest.Matchers.anyOf(
+                        org.hamcrest.Matchers.equalTo(200), org.hamcrest.Matchers.equalTo(409)));
         given().header(HEADER, editionId)
                 .contentType("application/json")
                 .body("{\"id\":\"" + standId + "\",\"nom\":\"" + standId + "\",\"typologiesProposees\":[\"TYPO-"

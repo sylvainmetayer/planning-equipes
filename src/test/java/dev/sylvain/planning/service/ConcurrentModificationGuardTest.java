@@ -75,10 +75,10 @@ class ConcurrentModificationGuardTest {
      */
     @Test
     void creatingATakenIdIsRefusedInsteadOfReplacing() {
-        Stand stand = referenceData.createStand(new Stand("CM-DUP", "Le premier", Set.of(), 1, 1, false));
+        Stand stand = referenceData.createStand(new Stand("CM-DUP", "Le premier", Set.of("STRATEGIE"), 1, 1, false));
         try {
             assertThatThrownBy(() -> referenceData.createStand(
-                    new Stand("CM-DUP", "Le second", Set.of(), 2, 2, false)))
+                    new Stand("CM-DUP", "Le second", Set.of("STRATEGIE"), 2, 2, false)))
                     .isInstanceOf(BusinessError.Conflict.class)
                     .hasMessageContaining("déjà pris");
             assertThat(referenceData.listStands()).filteredOn(s -> "CM-DUP".equals(s.getId()))

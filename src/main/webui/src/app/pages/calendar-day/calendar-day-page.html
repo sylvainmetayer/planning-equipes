@@ -116,16 +116,30 @@
                     } @else {
                       <span>
                         @for (entry of stand.entries; track entry.poste.id; let isLast = $last) {
-                          <button
-                            type="button"
-                            class="affectation-link"
+                          <span
+                            class="affectation-glissable"
                             cdkDrag
                             [cdkDragData]="entry.poste"
-                            [cdkDragDisabled]="editingLocked() || estLigneVerrouillee(slot, stand)"
+                            [cdkDragDisabled]="editingLocked() || estLigneVerrouillee(slot, stand) || estJourVerrouille(day)"
                             [attr.data-poste-id]="entry.poste.id"
-                            [title]="pourquoiLuiLabel + ' — ' + glisserTooltip"
-                            (click)="openExplanation(entry.poste)"
-                          >{{ entry.label }}</button
+                          >
+                            <!-- The handle is the only draggable surface: without
+                                 it the CDK sets touch-action: none and user-select:
+                                 none on the whole name, so a swipe no longer scrolls
+                                 the day and the name can no longer be selected. -->
+                            <span
+                              class="affectation-poignee"
+                              cdkDragHandle
+                              aria-hidden="true"
+                              [title]="glisserTooltip"
+                            >⠿</span
+                            ><button
+                              type="button"
+                              class="affectation-link"
+                              [title]="pourquoiLuiLabel"
+                              (click)="openExplanation(entry.poste)"
+                            >{{ entry.label }}</button>
+                          </span
                           >{{ isLast ? '' : ', ' }}
                         }
                       </span>

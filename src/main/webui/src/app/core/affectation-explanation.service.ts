@@ -45,13 +45,21 @@ export class AffectationExplanationService {
    * rule — one round trip, since the refusal names the rule; the day views
    * do not simulate first. Writes on success, and answers what it did.
    */
-  deplacer(posteId: string, cible: { posteId?: string; animateurId?: string }): Promise<DeplacementSimulation> {
+  deplacer(
+    posteId: string,
+    cible: { posteId?: string; animateurId?: string },
+    /** Who the view believes holds the seat: the server refuses (409) if somebody else does now. */
+    occupant?: string | null
+  ): Promise<DeplacementSimulation> {
     const params = new URLSearchParams();
     if (cible.posteId) {
       params.set('cible', cible.posteId);
     }
     if (cible.animateurId) {
       params.set('animateur', cible.animateurId);
+    }
+    if (occupant) {
+      params.set('occupant', occupant);
     }
     return this.api.post<DeplacementSimulation>(
       `/api/postes/${encodeURIComponent(posteId)}/deplacement?${params}`,
