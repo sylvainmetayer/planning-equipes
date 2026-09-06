@@ -82,13 +82,13 @@ class PlanningServiceScenarioAllerRetourTest {
      * {@code Long}, exported and read back.
      */
     @Test
-    void unScenarioExporteSeReimporte() {
+    void anExportedScenarioImportsBack() {
         Creneau creneau = creneau(1L, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Stand stand = stand("STAND-A");
         Animateur animateur = animateur("A1");
         PosteAffectation poste = poste("P1", stand, creneau);
 
-        String yaml = PlanningService.buildScenarioYaml(
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(
                 List.of(animateur), List.of(stand), List.of(creneau), List.of(poste));
 
         PlanningEvenement relu = service().buildFromScenarioText(yaml).planning();
@@ -107,13 +107,13 @@ class PlanningServiceScenarioAllerRetourTest {
      * had just written.
      */
     @Test
-    void unScenarioExporteNePorteAucunAliasEtPasseLeValidateur() throws IOException {
+    void anExportedScenarioCarriesNoAliasAndPassesTheValidator() throws IOException {
         Creneau creneau = creneau(1L, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Stand stand = stand("STAND-A");
         // Two animateurs with nothing off: the empty list is the same instance.
         List<Animateur> animateurs = List.of(animateur("A1"), animateur("A2"));
 
-        String yaml = PlanningService.buildScenarioYaml(
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(
                 animateurs, List.of(stand), List.of(creneau), List.of(poste("P1", stand, creneau)));
 
         assertThat(yaml).doesNotContain(" &id").doesNotContain(" *id");
@@ -126,8 +126,8 @@ class PlanningServiceScenarioAllerRetourTest {
      * in when the section is absent altogether.
      */
     @Test
-    void unExportSansPosteSeRelitSansPoste() {
-        String yaml = PlanningService.buildScenarioYaml(
+    void anExportWithoutSeatsReadsBackWithoutSeats() {
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(
                 List.of(animateur("A1")), List.of(stand("STAND-A")),
                 List.of(creneau(1L, LocalTime.of(9, 0), LocalTime.of(13, 0))), List.of());
 
@@ -143,11 +143,11 @@ class PlanningServiceScenarioAllerRetourTest {
      * back detached, which is a silent loss rather than a crash.
      */
     @Test
-    void lesPostesExportesRetrouventLeurCreneauEtLeurStand() {
+    void exportedSeatsFindTheirCreneauAndStandAgain() {
         Creneau creneau = creneau(7L, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Stand stand = stand("STAND-A");
 
-        String yaml = PlanningService.buildScenarioYaml(
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(
                 List.of(animateur("A1")), List.of(stand), List.of(creneau),
                 List.of(poste("P1", stand, creneau)));
 
@@ -173,7 +173,7 @@ class PlanningServiceScenarioAllerRetourTest {
         Creneau creneau = creneau(1L, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Stand stand = stand("STAND-A");
 
-        String yaml = PlanningService.buildScenarioYaml(
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(
                 List.of(animateur("A1")), List.of(stand), List.of(creneau),
                 List.of(poste("P1", stand, creneau)));
 
@@ -188,11 +188,11 @@ class PlanningServiceScenarioAllerRetourTest {
      * quote still comes back as the same time.
      */
     @Test
-    void lesHorairesSurviventQuelQueSoitLeTypeQueYamlLeurDonne() {
+    void horairesSurviveWhateverTypeYamlGivesThem() {
         Creneau matin = creneau(1L, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Stand stand = stand("STAND-A");
 
-        String yaml = PlanningService.buildScenarioYaml(
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(
                 List.of(animateur("A1")), List.of(stand), List.of(matin),
                 List.of(poste("P1", stand, matin)));
 
@@ -209,7 +209,7 @@ class PlanningServiceScenarioAllerRetourTest {
      * scrap.
      */
     @Test
-    void unFichierAncienAIdentifiantsNumeriquesResteLisible() {
+    void anOlderFileWithNumericIdsStaysReadable() {
         String yaml = """
                 festival:
                   dateDebut: '2026-07-08'

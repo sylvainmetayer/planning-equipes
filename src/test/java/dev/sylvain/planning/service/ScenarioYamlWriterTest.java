@@ -35,14 +35,14 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 
 /**
- * Exercises {@link PlanningService#buildScenarioYaml} directly
+ * Exercises {@link ScenarioYamlWriter#buildScenarioYaml} directly
  * (package-private, no database needed), the reverse of what
  * {@code chargerScenarioYaml} parses. Checks the produced text is valid YAML
  * carrying the same shape as the hand-authored scenario files, in particular
  * that times like "09:00" stay strings instead of being reinterpreted as
  * YAML 1.1 sexagesimal numbers.
  */
-class PlanningServiceScenarioExportTest {
+class ScenarioYamlWriterTest {
 
     private final Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 1, 2, false);
     private final Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
@@ -65,7 +65,7 @@ class PlanningServiceScenarioExportTest {
                 new OuvertureStand(2L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), LocalTime.of(23, 0), null, 3)));
         List<PosteAffectation> postes = PlanningService.buildPostes(List.of(stand), List.of(creneau));
 
-        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), postes);
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), postes);
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         assertThat(parsed.get("festival")).isInstanceOfSatisfying(Map.class,
@@ -129,7 +129,7 @@ class PlanningServiceScenarioExportTest {
      */
     @Test
     @SuppressWarnings("unchecked")
-    void horairesRecurrentsSontExportesCommeRegles() {
+    void recurringHorairesAreWrittenAsRules() {
         HoraireStand quotidien = HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
                 new FenetreHoraire(LocalTime.of(14, 0), null));
@@ -138,7 +138,7 @@ class PlanningServiceScenarioExportTest {
         weekend.setJoursSemaine(Set.of(DayOfWeek.SUNDAY));
         stand.setHoraires(List.of(quotidien, weekend));
 
-        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
                 List.of());
         Map<String, Object> parsed = new Yaml().load(yaml);
 
@@ -162,11 +162,11 @@ class PlanningServiceScenarioExportTest {
     /** A dated exception with no end hour keeps its explicit null, unlike a rule's window. */
     @Test
     @SuppressWarnings("unchecked")
-    void uneOuvertureDateeSansHeureFinExporteUnHeureFinNul() {
+    void aDatedOpeningWithoutAnEndHourWritesANullEndHour() {
         stand.setOuvertures(List.of(
                 new OuvertureStand(1L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), null, null)));
 
-        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
                 List.of());
         Map<String, Object> parsed = new Yaml().load(yaml);
 
@@ -193,7 +193,7 @@ class PlanningServiceScenarioExportTest {
         decoupage.setStrategieCouverturePendantPause(
                 ParametresDecoupage.PauseCoverageStrategy.EFFECTIF_REDUIT);
 
-        String yaml = PlanningService.buildScenarioYaml(new PlanningService.ScenarioExport(
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
                 List.of(animateur), List.of(stand), List.of(creneau), List.of(),
                 List.of(new TypologieItem("STRATEGIE", "Stratégie", true)),
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
@@ -235,7 +235,7 @@ class PlanningServiceScenarioExportTest {
      */
     @Test
     void anUntunedEditionWritesNoContraintesSection() {
-        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
                 List.of());
 
         assertThat(new Yaml().<Map<String, Object>>load(yaml)).doesNotContainKey("contraintes");
@@ -251,7 +251,7 @@ class PlanningServiceScenarioExportTest {
         incompatibilite.setStand(stand);
         incompatibilite.setRaison("Ne travaillent pas ensemble");
 
-        String yaml = PlanningService.buildScenarioYaml(new PlanningService.ScenarioExport(
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
                 List.of(animateur), List.of(stand), List.of(creneau), List.of(), List.of(), List.of(),
                 null, null, null, Set.of(), Map.of(), List.of(incompatibilite)));
         Map<String, Object> parsed = new Yaml().load(yaml);
@@ -273,7 +273,7 @@ class PlanningServiceScenarioExportTest {
     void aStandExportsItsEmplacementId() {
         stand.setEmplacement(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503));
 
-        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
                 List.of());
         Map<String, Object> parsed = new Yaml().load(yaml);
 
@@ -283,7 +283,7 @@ class PlanningServiceScenarioExportTest {
     /** A null seat list leaves the {@code postes:} section out entirely. */
     @Test
     void aNullSeatListPinsNoPostesSection() {
-        String yaml = PlanningService.buildScenarioYaml(new PlanningService.ScenarioExport(
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
                 List.of(animateur), List.of(stand), List.of(creneau), null, List.of(), List.of(), null, null, null,
                 Set.of(), Map.of(), List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);

@@ -111,7 +111,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   served by `GET /api/constraints`; **every new constraint must be registered
   there too**.
 - `service/` — `PlanningService` (SolverFactory from `solver/solverConfig.xml`,
-  loads `scenario.yml` via SnakeYAML), `SolverJobService` (async solves,
+  loads `scenario.yml` via SnakeYAML), `ScenarioYamlWriter` (one half of the
+  scenario file format: pure static serialization, so an export is unit-tested
+  without a database — the reader is a second hand-written traversal of the same
+  `Map` shape and the two must be kept in step, which
+  `PlanningServiceScenarioAllerRetourTest` enforces),
+  `SolverJobService` (async solves,
   plus the solver queue — persisted through `SolverJobRepository` and replayed
   at startup, so a restart no longer loses the planned runs),
   `ConstraintAnalysisStore` (the score breakdown the Contraintes screen shows,
