@@ -1492,7 +1492,7 @@
   "aide.contact.lienMail": "Contact support",
   "aide.contact.lienIssue": "Report a problem (GitHub)",
   "aide.data.term.familles": "Timeslot families",
-  "aide.data.def.familles": "When the slicing is generated with several staggered relay grids, every shift exists in several variants with slightly shifted cut points: the “families” (Family column of the Timeslots page). Each stand is attached to a single family, so stands do not all change teams at the same instant — without staggering, every handover would empty the whole event at once. Identical-looking timeslots belonging to different families are therefore not duplicates. On the needs side, a stand only generates seats on the timeslots of its own family: the total staffing need does not multiply with the number of families, it spreads out — the Staffing need page accounts for it.",
+  "aide.data.def.familles": "When the slicing is generated with several staggered relay grids, every shift exists in several variants with slightly shifted cut points: the “families” (Family column of the Timeslots page). Each stand is attached to a single family, so stands do not all change teams at the same instant — without staggering, every handover would empty the whole event at once. Identical-looking timeslots belonging to different families are therefore not duplicates. On the needs side, a stand only generates seats on the timeslots of its own family: the total staffing need does not multiply with the number of families, it spreads out — the Staffing need page accounts for it. A stand's family is an attribute of the stand, chosen on its form or assigned automatically to the least populated one: an added stand never moves the others.",
   "parametres.recap.titre": "Import into an edition designated by the file",
   "parametres.recap.editionCreee": "Edition “{$edition}” created: the scenario data was imported into it.",
   "parametres.recap.editionExistante": "Scenario data imported into the existing edition “{$edition}”.",
@@ -2406,5 +2406,11 @@
   "aide.importGrille.colonnes": "Each column lands on the créneaux of the same date and hours — on all of them, when the grid is staggered into families and holds one per family. A column no créneau matches — a set-up band the edition does not have, a comment column — is ignored and listed, without the file being refused. A créneau the file does not name keeps each imported stand's current cell: the import only rewrites what the file states. Mind one consequence: a stand opening only part of such a créneau comes back widened to the whole of it, because a headcount alone cannot say “only from 14:00 to 15:00” — the report names those stands, and giving those créneaux a column says what they should become. With no créneau at all in the edition, the import is refused: create them first, as a series or derived from the stands' hours.",
   "aide.importGrille.stands": "An accepted stand is rewritten as from the entry grid: its whole schedule follows its cells, folded into rules where a pattern repeats, and its minimum and maximum headcounts follow the smallest and largest cell. A stand absent from the file is untouched, and the import creates no stand: an unknown id, or a name two stands share, rejects the row and says so. Nothing is written before “Import”, and the write is all of a piece.",
   "crud.concurrent.moment": "(last written on {$moment})",
-  "crud.bulkConcurrent": "{$count} row(s) had been changed by another session: the list has just been reloaded, make the selection again to start from their current version."
+  "crud.bulkConcurrent": "{$count} row(s) had been changed by another session: the list has just been reloaded, make the selection again to start from their current version.",
+  "stands.field.famille": "Relay family",
+  "stands.famille.tooltip": "On a staggered grid, each stand relays with the stands of its family. Left empty, the least populated one is picked; an added stand never moves the others.",
+  "stands.famille.auto": "Automatic (least populated)",
+  "stands.famille.option": "Family {$INTERPOLATION}",
+  "stands.famille.nonAttribuee": "not assigned yet",
+  "stands.famille.valeur": "Family {$numero}"
 }

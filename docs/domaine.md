@@ -370,6 +370,19 @@ de créneau — sauf si l'organisateur déclare `pauseSurPoste` (voir plus bas).
 Une amplitude est un créneau ordinaire, en base le temps de l'import ; le
 découpage la remplace **en place**. Le solveur ne voit donc jamais d'amplitude.
 
+### La famille de relais est un attribut du stand
+
+Quand le découpage produit plusieurs **familles** de vacations (mêmes journées,
+coupures décalées), chaque stand relaie avec les stands de sa famille : la
+génération des postes ne l'apparie qu'aux créneaux de cette famille. La
+famille est **persistée sur le stand** (`stand.famille`, ADR
+[0026](decisions/0026-famille-de-relais-attribut-du-stand.md)) : un stand
+créé rejoint la moins peuplée, un stand ajouté ne déplace jamais les autres,
+et l'opérateur peut l'imposer dans la fiche du stand. Le remplacement de la
+grille (découpage, dérivation « remplacer ») oublie les familles, comme il
+oublie le plan enregistré. Sur une grille à une seule famille, l'attribut est
+sans effet.
+
 ### Le cas que le plafond de durée ne détecte pas
 
 `dureeVacationMinMinutes` peut à lui seul empêcher un relais de tomber *avant*

@@ -72,6 +72,13 @@ public class StandService {
     public Stand create(Stand stand) {
         stand.setId(Ids.required(stand.getId(), "stand id"));
         validate(stand);
+        if (stand.getFamille() == null) {
+            // Joins the least populated family of the current grid (issue
+            // #390), so the stands already in place keep their own.
+            List<Stand> tous = new ArrayList<>(list());
+            tous.add(stand);
+            stand.setFamille(PlanningService.standFamilies(tous, creneaux.list()).get(stand.getId()));
+        }
         repository.saveStand(stand, true);
         changeTracker.markModified();
         return stand;
@@ -134,6 +141,11 @@ public class StandService {
      * reason {@link #update} gives: the landing persist would revert the bounds
      * and windows just written.</p>
      */
+    /** See {@link StandRepository#updateFamilies}: not an edit, {@code modifie_le} untouched. */
+    public void recordFamilies(Map<String, Integer> familleParStand) {
+        repository.updateFamilies(familleParStand);
+    }
+
     public List<GrilleHorairesStands.LigneGrille> saisirGrille(List<GrilleHorairesStands.SaisieStand> saisies) {
         solverJobs.refuseIfSolving();
         List<Creneau> edition = creneaux.list();

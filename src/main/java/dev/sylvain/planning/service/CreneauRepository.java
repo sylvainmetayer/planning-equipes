@@ -64,6 +64,13 @@ public class CreneauRepository {
                     "DELETE FROM creneau WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
+            // A new grid may not have the same families as the old one: the
+            // stands' assignments go with the plan (issue #390), and the next
+            // build spreads them again.
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "UPDATE stand SET famille = NULL WHERE edition_id = ?")) {
+                ps.executeUpdate();
+            }
             for (Creneau creneau : creneaux) {
                 creneau.setId(null);
                 insertCreneauTx(connection, creneau);

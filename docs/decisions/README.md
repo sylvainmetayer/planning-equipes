@@ -49,6 +49,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0023](0023-modification-concurrente-par-horodatage.md) | Détecter une modification concurrente par horodatage, sans verrou | Accepté |
 | [0024](0024-repartir-du-plan-enregistre-par-defaut.md) | Une résolution complète repart du plan enregistré par défaut, sans l'épingler | Accepté |
 | [0025](0025-stabilite-du-plan-publie.md) | La stabilité après publication est une règle dosée, pas un gel | Accepté · prolonge 0024 |
+| [0026](0026-famille-de-relais-attribut-du-stand.md) | La famille de relais est un attribut du stand | Accepté · issue #390 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

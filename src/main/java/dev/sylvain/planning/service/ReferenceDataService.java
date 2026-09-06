@@ -151,6 +151,23 @@ public class ReferenceDataService implements ReferenceData {
         return stands.listSolved();
     }
 
+    /**
+     * Persists the families a build assigned to the stands that had none, or
+     * an invalid one (issue #390). A stand whose stored family already matches
+     * is left alone, so a build on a settled edition writes nothing.
+     */
+    public void recordStandFamilies(List<Stand> stands, Map<String, Integer> familleParStand) {
+        Map<String, Integer> aEcrire = new LinkedHashMap<>();
+        for (Stand stand : stands) {
+            Integer attribuee = familleParStand.get(stand.getId());
+            if (attribuee != null && !attribuee.equals(stand.getFamille())) {
+                stand.setFamille(attribuee);
+                aEcrire.put(stand.getId(), attribuee);
+            }
+        }
+        this.stands.recordFamilies(aEcrire);
+    }
+
     public Stand createStand(Stand stand) {
         return stands.create(stand);
     }

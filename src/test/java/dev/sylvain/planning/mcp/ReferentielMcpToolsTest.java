@@ -73,13 +73,13 @@ class ReferentielMcpToolsTest {
     void creerPuisModifierPuisSupprimerUnStand() {
         standTools.creer_typologie("TYPO-MCP-2", "Jeux d'adresse", null);
         StandView cree = standTools.creer_stand("STAND-MCP-1", "Tir à l'arc", List.of("TYPO-MCP-2"), 2, 4,
-                true, false, "EPUISANT", null, null);
+                true, false, "EPUISANT", null, null, null);
 
         assertThat(cree.effectifMin()).isEqualTo(2);
         assertThat(cree.niveauEffort().name()).isEqualTo("EPUISANT");
 
         StandView modifie = standTools.modifier_stand("STAND-MCP-1", "Tir à l'arc (grand)", null, null, 6,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
 
         assertThat(modifie.nom()).isEqualTo("Tir à l'arc (grand)");
         assertThat(modifie.effectifMax()).isEqualTo(6);
@@ -221,14 +221,14 @@ class ReferentielMcpToolsTest {
     @Test
     void unNiveauDEffortInconnuListeLesValeursPossibles() {
         assertThatThrownBy(() -> standTools.creer_stand("STAND-MCP-2", "Stand", null, 1, 1, null, null,
-                "TRANQUILLE", null, null))
+                "TRANQUILLE", null, null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("NORMAL");
     }
 
     @Test
     void uneFenetreDHoraireEtUneOuverturePortentLeurEffectifParMcp() {
-        standTools.creer_stand("STAND-MCP-EFF", "Village", List.of("STRATEGIE"), 1, 4, false, false, null, null, null);
+        standTools.creer_stand("STAND-MCP-EFF", "Village", List.of("STRATEGIE"), 1, 4, false, false, null, null, null, null);
         try {
             StandView avecRegle = standTools.ajouter_horaire_stand("STAND-MCP-EFF", "OUVERTURE",
                     "10:00-12:00@2, 14:00-@4", null, null, null, null, null, null, null);
@@ -255,7 +255,7 @@ class ReferentielMcpToolsTest {
 
     @Test
     void unEffectifDeFenetreNulOuMalFormeEstRefuse() {
-        standTools.creer_stand("STAND-MCP-EFF-0", "Village", List.of("STRATEGIE"), 1, 4, false, false, null, null, null);
+        standTools.creer_stand("STAND-MCP-EFF-0", "Village", List.of("STRATEGIE"), 1, 4, false, false, null, null, null, null);
         try {
             assertThatThrownBy(() -> standTools.ajouter_horaire_stand("STAND-MCP-EFF-0", "OUVERTURE",
                     "10:00-12:00@0", null, null, null, null, null, null, null))

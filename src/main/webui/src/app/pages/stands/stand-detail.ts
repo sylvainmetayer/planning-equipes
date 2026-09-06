@@ -47,6 +47,12 @@ export function buildStandDetail(stand: Stand, typologies: readonly TypologieIte
         {
           label: $localize`:@@stands.field.niveauEffort:Épuisant physiquement`,
           value: ouiNon(stand.niveauEffort === 'EPUISANT')
+        },
+        {
+          label: $localize`:@@stands.field.famille:Famille de relais`,
+          value: stand.famille === null || stand.famille === undefined
+            ? $localize`:@@stands.famille.nonAttribuee:pas encore attribuée`
+            : $localize`:@@stands.famille.valeur:Famille ${stand.famille + 1}:numero:`
         }
       ]
     },

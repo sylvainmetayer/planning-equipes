@@ -316,6 +316,12 @@ describe('toDraft', () => {
 });
 
 describe('versStand', () => {
+  it('sends the relay family as a number, and null to let the server pick', () => {
+    expect(versStand(draft({ famille: 2 }), []).famille).toBe(2);
+    expect(versStand(draft({ famille: null }), []).famille).toBeNull();
+    expect(toDraft(null).famille).toBeNull();
+  });
+
   const emplacements = [{ id: 'salle-1', nom: 'Salle 1' }] as Emplacement[];
 
   it('trims the identifier and the name', () => {

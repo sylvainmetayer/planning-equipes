@@ -210,6 +210,49 @@ class PlanningServicePosteGenerationTest {
         assertThat(max - min).as("écart entre la plus grosse et la plus petite famille").isLessThanOrEqualTo(1);
     }
 
+    /**
+     * A stand that carries a family keeps it whatever its rank (issue #390):
+     * this is what lets a stand be added without moving the others.
+     */
+    @Test
+    void unStandGardeSaFamillePersisteeEtLeNouveauRejointLaMoinsPeuplee() {
+        List<Creneau> creneaux = twoFamilyGrid();
+        Stand existantA = new Stand("STAND-A", "A", Set.of(), 1, 1, false);
+        Stand existantB = new Stand("STAND-B", "B", Set.of(), 1, 1, false);
+        Stand existantC = new Stand("STAND-C", "C", Set.of(), 1, 1, false);
+        existantA.setFamille(1);
+        existantB.setFamille(1);
+        existantC.setFamille(0);
+        // Sorts first: the historical round-robin would have given it family 0
+        // and pushed A, B and C one family further.
+        Stand ajoute = new Stand("AJOUTE", "Ajouté", Set.of(), 1, 1, false);
+
+        Map<String, Integer> familles = PlanningService.standFamilies(
+                List.of(existantA, existantB, existantC, ajoute), creneaux);
+
+        assertThat(familles).containsEntry("STAND-A", 1).containsEntry("STAND-B", 1).containsEntry("STAND-C", 0);
+        assertThat(familles.get("AJOUTE")).as("la famille la moins peuplée").isEqualTo(0);
+    }
+
+    /** A persisted family the grid does not have is treated as unassigned, never as a family of its own. */
+    @Test
+    void uneFamillePersisteeHorsGrilleEstReattribuee() {
+        Stand horsGrille = new Stand("STAND-X", "X", Set.of(), 1, 1, false);
+        horsGrille.setFamille(7);
+
+        Map<String, Integer> familles = PlanningService.standFamilies(List.of(horsGrille, standA), twoFamilyGrid());
+
+        assertThat(familles.values()).allSatisfy(famille -> assertThat(famille).isBetween(0, 1));
+        assertThat(familles.get("STAND-X")).isNotEqualTo(familles.get("STAND-A"));
+    }
+
+    private static List<Creneau> twoFamilyGrid() {
+        Creneau famille0 = new Creneau(10L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau famille1 = new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        famille1.setFamille(1);
+        return List.of(famille0, famille1);
+    }
+
     /** Same stands in a different order must land on the same families. */
     @Test
     void laRepartitionParFamilleEstStableQuelQueSoitLOrdreDesStands() {

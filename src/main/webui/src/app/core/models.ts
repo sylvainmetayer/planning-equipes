@@ -70,6 +70,12 @@ export interface Stand {
   premium: boolean;
   /** Physical-effort tier: EPUISANT drives rest-after-effort and pénibilité-fairness balancing. */
   niveauEffort: NiveauEffort;
+  /**
+   * Relay-grid family the stand's seats are cut on when the grid is staggered
+   * (issue #390): 0 = first family. `null` = not assigned yet, the next build or
+   * the creation puts it in the least populated one. Ignored on a single-family grid.
+   */
+  famille?: number | null;
   /** Physical location (kiosque, mairie, ...), nullable. */
   emplacement: Emplacement | null;
   /**

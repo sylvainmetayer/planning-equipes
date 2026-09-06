@@ -41,6 +41,8 @@ export interface StandDraft {
   reserveMajeurs: boolean;
   premium: boolean;
   niveauEffort: NiveauEffort;
+  /** Relay family, `null` = let the server pick the least populated one. */
+  famille: number | null;
   typologiesProposees: string[];
   emplacementId: string | null;
   indisponibilites: IndisponibiliteStand[];
@@ -182,6 +184,7 @@ export function toDraft(stand: Stand | null): StandDraft {
       reserveMajeurs: false,
       premium: false,
       niveauEffort: 'NORMAL',
+      famille: null,
       typologiesProposees: [],
       emplacementId: null,
       indisponibilites: [],
@@ -199,6 +202,7 @@ export function toDraft(stand: Stand | null): StandDraft {
     reserveMajeurs: Boolean(stand.reserveMajeurs),
     premium: Boolean(stand.premium),
     niveauEffort: stand.niveauEffort ?? 'NORMAL',
+    famille: stand.famille ?? null,
     typologiesProposees: [...(stand.typologiesProposees ?? [])],
     emplacementId: stand.emplacement?.id ?? null,
     // Copied, never aliased: the draft is edited in place by the form and must
@@ -225,6 +229,7 @@ export function versStand(draft: StandDraft, emplacements: readonly Emplacement[
     reserveMajeurs: draft.reserveMajeurs,
     premium: draft.premium,
     niveauEffort: draft.niveauEffort,
+    famille: draft.famille === null || draft.famille === undefined || Number.isNaN(Number(draft.famille)) ? null : Number(draft.famille),
     emplacement: draft.emplacementId
       ? (emplacements.find((emplacement) => emplacement.id === draft.emplacementId) ?? null)
       : null,

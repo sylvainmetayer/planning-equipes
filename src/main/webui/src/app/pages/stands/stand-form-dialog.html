@@ -55,6 +55,20 @@
 <mat-checkbox name="reserveMajeurs" [disabled]="editingLocked()"
               [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })"
               i18n="@@stands.field.reserveMajeurs">Réservé aux majeurs</mat-checkbox>
+@if (familles().length > 1) {
+  <mat-form-field appearance="outline" class="stand-famille">
+    <mat-label i18n="@@stands.field.famille">Famille de relais</mat-label>
+    <mat-select name="famille" [disabled]="editingLocked()" [ngModel]="draft().famille"
+                (ngModelChange)="patch({ famille: $event })"
+                i18n-matTooltip="@@stands.famille.tooltip"
+                matTooltip="Sur une grille décalée, chaque stand relaie avec les stands de sa famille. Laissée vide, la moins peuplée est choisie ; un stand ajouté ne déplace jamais les autres.">
+      <mat-option [value]="null" i18n="@@stands.famille.auto">Automatique (la moins peuplée)</mat-option>
+      @for (famille of familles(); track famille) {
+        <mat-option [value]="famille" i18n="@@stands.famille.option">Famille {{ famille + 1 }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+}
 <mat-checkbox name="premium" [disabled]="editingLocked()"
               i18n-matTooltip="@@stands.premium.tooltip"
               matTooltip="Stand éditeur : le solveur évite la rotation du personnel et privilégie les animateurs expérimentés."

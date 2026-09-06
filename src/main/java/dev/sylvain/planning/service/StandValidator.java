@@ -42,6 +42,10 @@ final class StandValidator {
     }
 
     static void check(Stand stand) {
+        if (stand.getFamille() != null && stand.getFamille() < 0) {
+            throw new BusinessError.Invalid("La famille de relais du stand « " + stand.getId()
+                    + " » doit être un entier positif ou nul (0 = première famille).");
+        }
         checkTypologies(stand);
         checkEffectifs(stand);
         checkIndisponibilites(stand);

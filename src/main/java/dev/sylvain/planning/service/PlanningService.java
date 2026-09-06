@@ -382,6 +382,10 @@ public class PlanningService {
                     "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
                             + "des animateurs et des créneaux d'abord.");
         }
+        // The families this build pairs the stands on are the ones every
+        // later build must keep (issue #390): written now, once, whichever
+        // way the problem is built (cold, re-seeded, incremental).
+        referenceDataService.recordStandFamilies(stands, standFamilies(stands, creneaux));
         List<PosteAffectation> postes = buildPostes(stands, creneaux);
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
         if (planPersiste == null) {
@@ -870,11 +874,35 @@ public class PlanningService {
         return spreadStandsByFamily(stands, nombreFamilles);
     }
 
+    /**
+     * A stand that already has a family keeps it (issue #390); the others,
+     * in id order, each join the least populated family, lowest first. On
+     * stands that have none this is exactly the historical round-robin, so
+     * an edition that never persisted anything is spread as before — and a
+     * stand added later joins without moving anybody.
+     */
     private static Map<String, Integer> spreadStandsByFamily(List<Stand> stands, int nombreFamilles) {
-        List<String> ids = stands.stream().map(Stand::getId).sorted().toList();
         Map<String, Integer> families = new HashMap<>();
-        for (int i = 0; i < ids.size(); i++) {
-            families.put(ids.get(i), i % nombreFamilles);
+        int[] population = new int[nombreFamilles];
+        List<Stand> sansFamille = new ArrayList<>();
+        for (Stand stand : stands.stream().sorted(Comparator.comparing(Stand::getId)).toList()) {
+            Integer famille = stand.getFamille();
+            if (famille != null && famille >= 0 && famille < nombreFamilles) {
+                families.put(stand.getId(), famille);
+                population[famille]++;
+            } else {
+                sansFamille.add(stand);
+            }
+        }
+        for (Stand stand : sansFamille) {
+            int moinsPeuplee = 0;
+            for (int famille = 1; famille < nombreFamilles; famille++) {
+                if (population[famille] < population[moinsPeuplee]) {
+                    moinsPeuplee = famille;
+                }
+            }
+            families.put(stand.getId(), moinsPeuplee);
+            population[moinsPeuplee]++;
         }
         return families;
     }
@@ -1024,6 +1052,9 @@ public class PlanningService {
             item.put("reserveMajeurs", stand.isReserveMajeurs());
             item.put("premium", stand.isPremium());
             item.put("niveauEffort", stand.getNiveauEffort().name());
+            if (stand.getFamille() != null) {
+                item.put("famille", stand.getFamille());
+            }
             item.put("indisponibilites", indisponibilitesYaml(stand.getIndisponibilites()));
             item.put("ouvertures", ouverturesYaml(stand.getOuvertures()));
             item.put("horaires", horairesYaml(stand.getHoraires()));
@@ -1553,6 +1584,8 @@ public class PlanningService {
             Stand stand = new Stand(id, nom, typologies, effectifMin, effectifMax, reserveMajeurs, premium);
             String niveauEffortStr = (String) standData.getOrDefault("niveauEffort", NiveauEffort.NORMAL.name());
             stand.setNiveauEffort(NiveauEffort.valueOf(niveauEffortStr));
+            Number famille = (Number) standData.get("famille");
+            stand.setFamille(famille == null ? null : famille.intValue());
             String emplacementId = (String) standData.get("emplacementId");
             if (emplacementId != null) {
                 stand.setEmplacement(emplacementsMap.get(emplacementId));

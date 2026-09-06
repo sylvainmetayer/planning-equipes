@@ -87,8 +87,10 @@ public class StandMcpTools {
             @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
             @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(description = "Famille de relais (0 = première) sur une grille décalée ; omis, la moins peuplée", required = false) Integer famille,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = new Stand();
+        stand.setFamille(famille);
         stand.setId(id);
         stand.setNom(nom);
         stand.setTypologiesProposees(typologiesProposees == null ? new HashSet<>() : new HashSet<>(typologiesProposees));
@@ -234,6 +236,7 @@ public class StandMcpTools {
             @ToolArg(description = "Stand premium", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
             @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(description = "Famille de relais (0 = première) sur une grille décalée", required = false) Integer famille,
             @ToolArg(description = "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)", required = false) String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = findStand(id);
@@ -257,6 +260,9 @@ public class StandMcpTools {
         }
         if (premium != null) {
             stand.setPremium(premium);
+        }
+        if (famille != null) {
+            stand.setFamille(famille);
         }
         if (niveauEffort != null) {
             stand.setNiveauEffort(McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
@@ -543,7 +549,7 @@ public class StandMcpTools {
         return new StandView(stand.getId(), stand.getNom(), stand.getTypologiesProposees(),
                 stand.getEffectifMin(), stand.getEffectifMax(), stand.isReserveMajeurs(),
                 stand.isPremium(), stand.getNiveauEffort(),
-                stand.getEmplacement() == null ? null : stand.getEmplacement().getId(),
+                stand.getEmplacement() == null ? null : stand.getEmplacement().getId(), stand.getFamille(),
                 fermetures, ouvertures, horaires, stand.getModifieLe());
     }
 
@@ -558,7 +564,7 @@ public class StandMcpTools {
 
     public record StandView(String id, String nom, Set<String> typologiesProposees, int effectifMin,
             int effectifMax, boolean reserveMajeurs, boolean premium, NiveauEffort niveauEffort,
-            String emplacementId, List<PlageView> fermetures, List<PlageView> ouvertures,
+            String emplacementId, Integer famille, List<PlageView> fermetures, List<PlageView> ouvertures,
             List<HoraireView> horaires, Instant modifieLe) {
     }
 

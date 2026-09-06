@@ -234,6 +234,15 @@ calcul finit malgré tout avec des écarts durs, les recours sont, dans
 l'ordre, « Corriger après un changement », un second « Calculer le
 planning », et la désactivation de la règle pour ce calcul.
 
+**Ce qu'elle ne retient pas : une grille qui change.** La règle tient des
+lignes stand × créneau. Tout ce qui rebat ces lignes lui retire sa prise : un
+découpage ou une dérivation qui remplace la grille (le plan enregistré part
+avec). Un stand ajouté, lui, ne déplace plus les autres depuis que la famille
+de relais est un attribut persisté du stand (ADR
+[0026](decisions/0026-famille-de-relais-attribut-du-stand.md)) : avant, un
+identifiant classé avant les autres faisait glisser toutes les familles, et
+le banc avait mesuré 153 personnes sur 153 quel que soit le poids.
+
 **Le compte à côté du score.** Chaque résolution rend aussi
 `impactPublication.personnes`, le nombre de personnes que la publication
 préviendrait — calculé comme la publication le calcule, sur les vacations par
