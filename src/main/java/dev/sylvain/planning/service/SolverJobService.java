@@ -198,12 +198,16 @@ public class SolverJobService {
      *                      start empty (animateur gone, or since unavailable)
      */
     public record ReamorcageEffectue(Reamorcage mode, int postes, int postesLiberes) {
-
-        static final ReamorcageEffectue A_FROID = new ReamorcageEffectue(Reamorcage.AUCUN, 0, 0);
     }
 
+    /**
+     * The result of a solve whose problem came in the request body: its
+     * starting point is whatever the caller sent, which the server cannot
+     * name — hence {@code null} rather than « de zéro », which would be a
+     * claim about a plan we never built.
+     */
     private static ResultatSolve resultatSolve(SolvePipeline.Resolution<?> resolution) {
-        return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(), ReamorcageEffectue.A_FROID);
+        return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(), null);
     }
 
     /**

@@ -49,7 +49,6 @@ public class CreneauService {
         if (!repository.creneauExists(id)) {
             throw new NotFoundException("Timeslot not found: " + id);
         }
-        staleWrites.check("creneau", id, creneau.getModifieLe());
         creneau.setId(id);
         repository.updateCreneau(creneau);
         changeTracker.markModified();

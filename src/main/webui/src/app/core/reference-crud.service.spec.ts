@@ -35,11 +35,19 @@ class FakeNotifications {
 
 class FakeConfirm {
   reponse = true;
+  /** `null` is the dismissal (Escape, backdrop): neither confirm nor cancel. */
+  reponseTroisEtats: boolean | null = null;
   ask = vi.fn(async (_options: ConfirmData) => this.reponse);
+  askThreeWay = vi.fn(async (_options: ConfirmData) => this.reponseTroisEtats);
 
   /** The data of the nth dialog opened, for the assertions on its detail. */
   demande(index = 0): ConfirmData {
     return this.ask.mock.calls[index][0];
+  }
+
+  /** Same, for the three-way dialog. */
+  demandeTroisEtats(index = 0): ConfirmData {
+    return this.askThreeWay.mock.calls[index][0];
   }
 }
 
@@ -209,12 +217,12 @@ describe('ReferenceCrudService', () => {
 
       it('propose d’écraser, puis renvoie le payload sans précondition', async () => {
         store.save.mockRejectedValueOnce(conflit());
-        confirm.reponse = true;
+        confirm.reponseTroisEtats = true;
 
         const ok = await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
 
         expect(ok).toBe(true);
-        expect(confirm.demande()).toEqual(
+        expect(confirm.demandeTroisEtats()).toEqual(
           expect.objectContaining({ confirmLabel: 'Écraser quand même', cancelLabel: 'Recharger', danger: true })
         );
         expect(store.save).toHaveBeenCalledTimes(2);
@@ -224,7 +232,7 @@ describe('ReferenceCrudService', () => {
 
       it('recharge sans réécrire quand l’utilisateur le choisit, et laisse le formulaire se fermer', async () => {
         store.save.mockRejectedValueOnce(conflit());
-        confirm.reponse = false;
+        confirm.reponseTroisEtats = false;
 
         const ok = await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
 
@@ -235,6 +243,35 @@ describe('ReferenceCrudService', () => {
           expect.objectContaining({ variant: 'warning', title: expect.stringContaining('rechargée') })
         );
         expect(notifications.notify).not.toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      });
+
+      // Écarter le dialogue (Échap, clic à côté) n'est ni écraser ni
+      // recharger : c'est le seul dialogue de l'application dont le bouton
+      // d'annulation détruit la saisie, donc le geste « je ne décide pas » ne
+      // doit rien détruire — le formulaire reste ouvert, tel qu'il est.
+      it('ne perd rien quand l’utilisateur écarte le dialogue sans choisir', async () => {
+        store.save.mockRejectedValueOnce(conflit());
+        confirm.reponseTroisEtats = null;
+
+        const ok = await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
+
+        expect(ok).toBe(false);
+        expect(store.save).toHaveBeenCalledTimes(1);
+        expect(store.reload).not.toHaveBeenCalled();
+        expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
+      });
+
+      it('date le conflit dans le fuseau du lecteur, jamais dans celui du serveur', async () => {
+        store.save.mockRejectedValueOnce(
+          new ApiError(409, 'conflict', 'Ce stand a été modifié', 'MODIFICATION_CONCURRENTE', '2026-09-06T15:34:00Z')
+        );
+        confirm.reponseTroisEtats = null;
+
+        await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
+
+        expect(confirm.demandeTroisEtats().message).toContain(
+          new Date('2026-09-06T15:34:00Z').toLocaleString('fr-FR')
+        );
       });
 
       it('laisse un 409 sans code suivre le chemin d’erreur ordinaire', async () => {

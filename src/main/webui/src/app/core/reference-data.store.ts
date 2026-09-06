@@ -2,7 +2,7 @@
 // them after a bulk change (sample load, CSV import, SQL dump replay).
 
 import { Injectable, inject, signal } from '@angular/core';
-import { ApiService } from './api.service';
+import { ApiError, ApiService } from './api.service';
 import {
   Animateur,
   Avertissement,
@@ -22,7 +22,8 @@ import { errorMessage } from './error-message';
  */
 export interface BulkResult {
   succes: (string | number)[];
-  echecs: { id: string | number; message: string }[];
+  /** `concurrente` marks the 409 of issue #362: the row moved under the selection. */
+  echecs: { id: string | number; message: string; concurrente?: boolean }[];
   /**
    * Warnings raised by the rows that went through. Gathered for the whole
    * batch rather than per row: a bulk edit of fifty animateurs must open one
@@ -224,7 +225,11 @@ export class ReferenceDataStore {
         result.avertissements.push(...avertissementsDe(await action(id)));
         result.succes.push(id);
       } catch (error) {
-        result.echecs.push({ id, message: errorMessage(error) });
+        result.echecs.push({
+          id,
+          message: errorMessage(error),
+          concurrente: error instanceof ApiError && error.modificationConcurrente
+        });
       }
     }
     await this.reload(this.familiesFor(resource));

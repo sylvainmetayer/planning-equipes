@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -42,7 +43,14 @@ public final class GrilleHorairesStands {
     }
 
     /** One stand of a submitted grid: its cells, one per créneau of the edition. */
-    public record SaisieStand(String standId, List<SaisieCellule> cellules) {
+    /**
+     * @param modifieLe the stand's {@code modifie_le} as the grid read it, sent
+     *                  back as the write's precondition (issue #362). This
+     *                  screen rewrites a stand's whole schedule, so it is the
+     *                  gesture that overwrites the most — it is checked like a
+     *                  fiche, and {@code null} means "no precondition" here too.
+     */
+    public record SaisieStand(String standId, Instant modifieLe, List<SaisieCellule> cellules) {
     }
 
     /** The headcount typed under one créneau; {@code null} or absent means closed. */

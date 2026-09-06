@@ -154,7 +154,10 @@ faisabilité ne se déclenche pas, le budget est consommé en entier.
 Le choix est **persisté avec le job** (`solver_job.reamorcage`, V68) : une
 résolution en file rejouée après un redémarrage démarre comme on le lui avait
 demandé. Le résultat le restitue — `reamorcage: { mode, postes, postesLiberes }`,
-où `mode` vaut ce qui a été fait (`PLAN_COURANT` ou `AUCUN`, jamais `AUTO`)
+où `mode` vaut ce qui a été fait (`PLAN_COURANT` ou `AUCUN`, jamais `AUTO`,
+et `reamorcage` est absent quand le problème est venu dans le corps de la
+requête : son point de départ est celui de l'appelant, que le serveur ne peut
+pas nommer)
 — à côté de `previousPlan`, qui dit si le plan remplacé était meilleur. La
 même brique servira la reprise d'un job `INTERROMPU` (#183) : elle n'est
 spécifique à aucun écran.
@@ -1428,18 +1431,35 @@ telle quelle** à l'enregistrement :
   de celui du solveur occupé : l'IHM y répond par un choix, **Recharger**
   (rien n'est écrit, le formulaire se ferme sur la version de l'autre
   session) ou **Écraser quand même** (le même payload repart sans
-  `modifieLe`) ;
+  `modifieLe`). Fermer ce dialogue sans choisir — Échap, un clic à côté — ne
+  fait ni l'un ni l'autre : la saisie reste à l'écran. Le message ne date pas
+  le conflit, le corps porte l'instant et le navigateur l'affiche à l'heure du
+  lecteur ;
 - `modifieLe` absent ou `null` → écrit sans contrôle. C'est ainsi qu'un
   import, un script, un ancien client ou un écrasement délibéré disent qu'ils
   n'ont rien à comparer.
 
 L'édition en masse envoie un `PUT` par ligne, chacun avec le `modifieLe` de sa
 ligne : une ligne modifiée ailleurs est refusée seule, les autres passent, et
-le compte rendu la nomme. Les outils MCP `modifier_*` acceptent le même
+le compte rendu la nomme — en disant de refaire la sélection, parce que le
+dialogue tient encore les valeurs qu'il a ouvertes et renverrait le même
+horodatage périmé. La **grille des ouvertures** porte la même précondition,
+une par stand (`stands[].modifieLe`, la valeur que la grille a lue) : c'est
+l'écriture qui réécrit le plus, elle ne pouvait pas être la seule à écraser en
+silence. Les outils MCP `modifier_*` acceptent le même
 horodatage en argument facultatif, lu dans la vue de `consulter_*` ; omis, la
 fusion qu'ils font relit la ligne juste avant d'écrire, ce qui revient au
 même. L'import de scénario et l'import CSV ne le portent pas : ils remplacent
 ou fusionnent un référentiel entier, pas une fiche qu'un écran a affichée.
+
+La vérification **fait partie de l'écriture** : un seul ordre SQL, dont le
+`ON CONFLICT DO UPDATE` porte la précondition et ne renvoie aucune ligne
+quand elle échoue. Une lecture suivie d'une écriture laisserait passer deux
+enregistrements séparés d'une milliseconde — la perte de modification que ce
+mécanisme existe pour empêcher — et coûterait un aller-retour de plus par
+enregistrement. La création est vérifiée de la même façon : un `POST` dont
+l'identifiant est déjà pris répond `409` au lieu de remplacer la ligne
+existante en silence.
 
 Ce n'est **pas un verrou** : deux sessions peuvent toujours modifier, la
 seconde est simplement prévenue. Avec un seul compte partagé, le serveur ne

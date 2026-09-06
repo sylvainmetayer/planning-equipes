@@ -213,7 +213,7 @@ public class ReferenceDataResource {
      * afterwards to actually stick, not before.
      */
     private void applyTypologies(PlanningService.ScenarioSections sections) {
-        sections.typologies().forEach(referenceDataService::createTypologie);
+        sections.typologies().forEach(referenceDataService::importTypologie);
     }
 
     /**

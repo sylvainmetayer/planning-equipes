@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,9 @@ import jakarta.inject.Inject;
 /** The emplacement rows stands are pinned to — a flat referential, and the only one with coordinates. */
 @ApplicationScoped
 public class EmplacementRepository {
+
+    @Inject
+    ConcurrentModificationGuard staleWrites;
 
     @Inject
     DataSource dataSource;
@@ -46,9 +50,16 @@ public class EmplacementRepository {
         return scope.exists("emplacement", id);
     }
 
-    public void saveEmplacement(Emplacement emplacement) {
+    /**
+     * Writes it, refusing a creation whose id is taken and an update based on an
+     * out-of-date read (issue #362): both are the write's own precondition.
+     *
+     * @param failIfPresent true on a creation — an existing row is then a 409,
+     *                      not a silent replacement
+     */
+    public void saveEmplacement(Emplacement emplacement, boolean failIfPresent) {
         try (Connection connection = dataSource.getConnection()) {
-            upsertEmplacementTx(connection, emplacement);
+            upsertEmplacementTx(connection, emplacement, failIfPresent);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save emplacement " + emplacement.getId(), e);
         }
@@ -58,7 +69,20 @@ public class EmplacementRepository {
         scope.delete("DELETE FROM emplacement WHERE edition_id = ? AND id = ?", id);
     }
 
+    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
+    private void refuse(boolean failIfPresent, String table, String id) {
+        if (failIfPresent) {
+            staleWrites.refuseDuplicate(table, id);
+        }
+        staleWrites.refuseStale(table, id);
+    }
+
     void upsertEmplacementTx(Connection connection, Emplacement emplacement) throws SQLException {
+        upsertEmplacementTx(connection, emplacement, false);
+    }
+
+    void upsertEmplacementTx(Connection connection, Emplacement emplacement, boolean failIfPresent)
+            throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection,
                 """
                 INSERT INTO emplacement (edition_id, id, nom, latitude, longitude)
@@ -66,12 +90,21 @@ public class EmplacementRepository {
                 ON CONFLICT (edition_id, id)
                 DO UPDATE SET nom = EXCLUDED.nom, latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude,
                 modifie_le = now()
+                WHERE CAST(? AS boolean)
+                AND (CAST(? AS timestamptz) IS NULL
+                     OR date_trunc('milliseconds', emplacement.modifie_le)
+                        = date_trunc('milliseconds', CAST(? AS timestamptz)))
                 RETURNING modifie_le""")) {
             ps.setString(2, emplacement.getId());
             ps.setString(3, emplacement.getNom());
             ps.setObject(4, emplacement.getLatitude());
             ps.setObject(5, emplacement.getLongitude());
-            emplacement.setModifieLe(WriteStamp.written(ps));
+            WriteStamp.bindPrecondition(ps, 6, !failIfPresent, emplacement.getModifieLe());
+            Instant ecrit = WriteStamp.writtenOrRefused(ps);
+            if (ecrit == null) {
+                refuse(failIfPresent, "emplacement", emplacement.getId());
+            }
+            emplacement.setModifieLe(ecrit);
         }
     }
 }

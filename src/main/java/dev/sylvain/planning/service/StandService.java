@@ -72,7 +72,7 @@ public class StandService {
     public Stand create(Stand stand) {
         stand.setId(Ids.required(stand.getId(), "stand id"));
         validate(stand);
-        repository.saveStand(stand);
+        repository.saveStand(stand, true);
         changeTracker.markModified();
         return stand;
     }
@@ -98,10 +98,9 @@ public class StandService {
         if (!repository.standExists(id)) {
             throw new NotFoundException("Stand not found: " + id);
         }
-        staleWrites.check("stand", id, stand.getModifieLe());
         stand.setId(id);
         validate(stand);
-        repository.saveStand(stand);
+        repository.saveStand(stand, false);
         changeTracker.markModified();
         return stand;
     }
@@ -172,6 +171,10 @@ public class StandService {
                     .filter(cellule -> idsFamille.contains(cellule.creneauId()))
                     .toList();
             lignes.add(GrilleHorairesStands.apply(stand, siens, retenues));
+            // The precondition the grid read, not the row's own stamp: without
+            // this the screen that rewrites the most would be the only one
+            // able to overwrite another session in silence (issue #362).
+            stand.setModifieLe(saisie.modifieLe());
             validate(stand);
             aEcrire.add(stand);
         }
@@ -223,7 +226,7 @@ public class StandService {
         boolean modifie = false;
         for (Stand stand : stands) {
             if (compactes.contains(stand.getId())) {
-                repository.saveStand(stand);
+                repository.saveStand(stand, false);
                 modifie = true;
             }
         }

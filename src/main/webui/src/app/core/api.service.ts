@@ -121,7 +121,14 @@ export class ApiError extends Error {
      * only {@link CODE_MODIFICATION_CONCURRENTE}, the one 409 the client
      * answers with a choice rather than with a banner.
      */
-    readonly code: string | null = null
+    readonly code: string | null = null,
+    /**
+     * When the row was actually last written, on a
+     * {@link CODE_MODIFICATION_CONCURRENTE} refusal: the server sends the
+     * instant rather than a formatted date, because it runs in UTC while
+     * every date the user reads is rendered by their own browser.
+     */
+    readonly modifieLe: string | null = null
   ) {
     super(message);
     this.name = 'ApiError';
@@ -172,7 +179,7 @@ export function toError(error: unknown): Error {
     if (error.status === 401) {
       return new SessionExpireeError();
     }
-    const body = error.error as { message?: string; code?: string } | string | null;
+    const body = error.error as { message?: string; code?: string; modifieLe?: string } | string | null;
     const message =
       body && typeof body === 'object' && body.message
         ? body.message
@@ -180,7 +187,9 @@ export function toError(error: unknown): Error {
     const code = body && typeof body === 'object' && typeof body.code === 'string' ? body.code : null;
     // Produced here and nowhere else: every caller can now switch on `kind`
     // instead of re-deriving the meaning from the message text.
-    return new ApiError(error.status, kindForStatus(error.status), message, code);
+    const modifieLe =
+      body && typeof body === 'object' && typeof body.modifieLe === 'string' ? body.modifieLe : null;
+    return new ApiError(error.status, kindForStatus(error.status), message, code, modifieLe);
   }
   return error instanceof Error ? error : new Error(String(error));
 }

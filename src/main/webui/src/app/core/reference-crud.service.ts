@@ -10,6 +10,16 @@ import { BulkResult, ReferenceDataStore, SaveResult } from './reference-data.sto
 import { ReferenceUsageService } from './reference-usage.service';
 import { ConfirmService } from '../shared/confirm-dialog';
 import { errorMessage } from './error-message';
+import { intlLocale } from './locale';
+
+/** « (dernière écriture le 06/09/2026 à 17:34) », in the reader's own time zone. */
+function quand(modifieLe: string | null): string {
+  if (!modifieLe) {
+    return '';
+  }
+  const moment = new Date(modifieLe).toLocaleString(intlLocale());
+  return ' ' + $localize`:@@crud.concurrent.moment:(dernière écriture le ${moment}:moment:)`;
+}
 
 /** Failures detailed in the snack bar before it degrades to a plain count. */
 const MAX_ECHECS_DETAILLES = 3;
@@ -115,8 +125,15 @@ export class ReferenceCrudService {
    * typing to a red banner. So the user chooses: reload — the store is
    * refreshed with the other session's version and the form closes, nothing of
    * theirs is written — or overwrite — the same payload is sent again without
-   * its precondition, which is how a client says it knows. Any other failure
-   * propagates to the caller's snack bar as before.
+   * its precondition, which is how a client says it knows.
+   *
+   * <p>Dismissing (Escape, the backdrop) is neither: it keeps the form open
+   * with everything the user typed. This is the one dialog of the application
+   * whose cancel button performs a destructive action, so the gesture that
+   * means "I did not decide" must not perform it — hence
+   * {@link ConfirmService.askThreeWay}.</p>
+   *
+   * Any other failure propagates to the caller's snack bar as before.
    */
   private async persister<T extends { id?: string | number | null }>(
     resource: string,
@@ -129,15 +146,19 @@ export class ReferenceCrudService {
       if (!(error instanceof ApiError) || !error.modificationConcurrente) {
         throw error;
       }
-      const ecraser = await this.confirm.ask({
+      const choix = await this.confirm.askThreeWay({
         title: $localize`:@@crud.error.conflit:Modifiée entre-temps`,
-        message: error.message,
+        message: error.message + quand(error.modifieLe),
         confirmLabel: $localize`:@@crud.concurrent.overwrite:Écraser quand même`,
         cancelLabel: $localize`:@@crud.concurrent.reload:Recharger`,
         danger: true
       });
-      if (ecraser) {
+      if (choix === true) {
         return this.store.save(resource, { ...payload, modifieLe: null }, editingId);
+      }
+      if (choix === null) {
+        // Dismissed: nothing written, nothing reloaded, the form stays as typed.
+        throw error;
       }
       await this.store.reload();
       this.notifications.notify({
@@ -294,10 +315,23 @@ export class ReferenceCrudService {
       .map((echec) => `${echec.id} : ${echec.message}`)
       .join(' · ');
     const restants = result.echecs.length - MAX_ECHECS_DETAILLES;
+    // A row refused as stale cannot be retried from here: the dialog still
+    // holds the values it opened with, so saving again re-sends the same
+    // out-of-date stamp and fails identically (issue #362). The selection has
+    // just been reloaded, so the way out is to reopen it.
+    const concurrentes = result.echecs.filter((echec) => echec.concurrente).length;
+    const suite =
+      concurrentes > 0
+        ? ' ' +
+          $localize`:@@crud.bulkConcurrent:${concurrentes}:count: ligne(s) avaient été modifiées par une autre session : la liste vient d'être rechargée, refaites la sélection pour repartir de leur version actuelle.`
+        : '';
     this.notifications.notify({
       title: failureTitle(result.echecs.length),
-      message: restants > 0 ? `${details} · ${$localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`}` : details,
-      variant: 'error'
+      message:
+        (restants > 0 ? `${details} · ${$localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`}` : details) +
+        suite,
+      variant: 'error',
+      timeout: concurrentes > 0 ? 0 : undefined
     });
     // A partly failed batch still wrote most of its rows, and what they raised
     // is not cancelled by the one row the server refused. The snack bar is

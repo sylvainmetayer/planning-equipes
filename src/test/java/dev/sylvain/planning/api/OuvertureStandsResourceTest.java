@@ -134,6 +134,44 @@ class OuvertureStandsResourceTest {
         assertThat(apres.getInt("stands[0].effectifMin")).isEqualTo(3);
     }
 
+    /**
+     * The grid rewrites a stand's whole schedule, so it carries the same
+     * precondition as its fiche (issue #362): a stand written since the grid
+     * was read is refused alone, and nothing of it is written.
+     */
+    @Test
+    void unStandModifieDepuisLaLectureDeLaGrilleEstRefuse() {
+        seedScenario();
+        JsonPath grille = given().when().get("/api/ouvertures-stands").then().statusCode(200).extract().jsonPath();
+        String standId = grille.getString("stands[0].standId");
+        String luParLaGrille = grille.getString("stands[0].modifieLe");
+        assertThat(luParLaGrille).as("the grid reads the stamp it will send back").isNotNull();
+        int creneauId = given().when().get("/api/ouvertures-stands").then().extract().jsonPath()
+                .getList("jours.creneaux.id.flatten()", Integer.class).get(0);
+
+        // Another session renames the stand: the grid's stamp is now out of date.
+        Map<String, Object> stand = given().when().get("/api/stands").then().statusCode(200)
+                .extract().jsonPath().getList("findAll { it.id == '" + standId + "' }", Map.class).get(0);
+        stand.put("nom", "Renommé ailleurs");
+        given().contentType("application/json").body(stand)
+                .when().put("/api/stands/" + standId).then().statusCode(200);
+
+        given().contentType("application/json")
+                .body(Map.of("stands", List.of(Map.of("standId", standId, "modifieLe", luParLaGrille,
+                        "cellules", List.of(Map.of("creneauId", creneauId, "effectif", 2))))))
+                .when().put("/api/ouvertures-stands/grille")
+                .then()
+                .statusCode(409)
+                .body("code", org.hamcrest.Matchers.equalTo("MODIFICATION_CONCURRENTE"));
+
+        // Without a precondition the same save goes through, as an import does.
+        given().contentType("application/json")
+                .body(Map.of("stands", List.of(Map.of("standId", standId,
+                        "cellules", List.of(Map.of("creneauId", creneauId, "effectif", 2))))))
+                .when().put("/api/ouvertures-stands/grille")
+                .then().statusCode(200);
+    }
+
     @Test
     void uneCelluleSurUnCreneauInconnuEstRefusee() {
         seedScenario();

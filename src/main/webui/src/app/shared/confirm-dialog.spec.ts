@@ -93,11 +93,15 @@ describe('ConfirmDialog', () => {
     expect(boutons(racine).map((bouton) => bouton.textContent!.trim())).toEqual(['Garder', 'Supprimer']);
   });
 
-  it('closes with null on dismiss and with true on confirm', () => {
+  // Three states, not two: the cancel button answers false, and only Escape
+  // or the backdrop leave null. One caller needs them apart — the conflict
+  // dialog of issue #362, whose cancel button ("Recharger") throws away what
+  // the user typed. `ask()` folds both into false for everybody else.
+  it('closes with false on cancel and with true on confirm', () => {
     const { racine, close } = monter({ title: 't', message: 'm' });
 
     boutons(racine)[0].click();
-    expect(close).toHaveBeenCalledWith(null);
+    expect(close).toHaveBeenCalledWith(false);
 
     boutons(racine)[1].click();
     expect(close).toHaveBeenLastCalledWith(true);

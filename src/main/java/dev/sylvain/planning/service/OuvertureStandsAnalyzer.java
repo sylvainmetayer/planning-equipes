@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -113,8 +114,12 @@ public final class OuvertureStandsAnalyzer {
             List<CelluleCreneau> creneaux) {
     }
 
+    /**
+     * @param modifieLe the stand's stamp as this grid read it, echoed back by
+     *                  the save as its precondition (issue #362)
+     */
     public record LigneStand(String standId, String nom, int effectifMin, List<CelluleJour> jours, int minutesOuvertes,
-            int postes) {
+            int postes, Instant modifieLe) {
     }
 
     public record Anomaly(AnomalyType type, String standId, String standNom, LocalDate date, String message) {
@@ -192,7 +197,7 @@ public final class OuvertureStandsAnalyzer {
             anomalies.addAll(fenetresWithoutEffect(stand, creneauxParJour));
             postesTotal += postesStand;
             lignes.add(new LigneStand(stand.getId(), stand.getNom(), stand.getEffectifMin(), cellules, minutesStand,
-                    postesStand));
+                    postesStand, stand.getModifieLe()));
         }
         anomalies.sort(Comparator.comparing((Anomaly anomalie) -> anomalie.type().ordinal())
                 .thenComparing(Anomaly::standId)

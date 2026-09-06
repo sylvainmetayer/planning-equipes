@@ -51,7 +51,7 @@ class ConcurrentModificationGuardTest {
             sessionA.setModifieLe(stand.getModifieLe());
             assertThatThrownBy(() -> referenceData.updateStand("CM-S1", sessionA))
                     .isInstanceOf(BusinessError.Stale.class)
-                    .hasMessageContaining("modifiée par une autre session")
+                    .hasMessageContaining("par une autre session")
                     .extracting(e -> ((BusinessError.Stale) e).getModifieLe())
                     .isEqualTo(ecritB.getModifieLe());
             assertThat(referenceData.listStands()).filteredOn(s -> "CM-S1".equals(s.getId()))
@@ -65,6 +65,27 @@ class ConcurrentModificationGuardTest {
             assertThat(referenceData.updateStand("CM-S1", sessionA).getNom()).isEqualTo("Sans précondition");
         } finally {
             referenceData.deleteStand("CM-S1");
+        }
+    }
+
+    /**
+     * A creation is checked by the same write: the id being taken is the
+     * `ON CONFLICT` branch refusing to fire, never a probe that another session
+     * could slip past.
+     */
+    @Test
+    void creatingATakenIdIsRefusedInsteadOfReplacing() {
+        Stand stand = referenceData.createStand(new Stand("CM-DUP", "Le premier", Set.of(), 1, 1, false));
+        try {
+            assertThatThrownBy(() -> referenceData.createStand(
+                    new Stand("CM-DUP", "Le second", Set.of(), 2, 2, false)))
+                    .isInstanceOf(BusinessError.Conflict.class)
+                    .hasMessageContaining("déjà pris");
+            assertThat(referenceData.listStands()).filteredOn(s -> "CM-DUP".equals(s.getId()))
+                    .singleElement().extracting(Stand::getNom).isEqualTo("Le premier");
+            assertThat(stand.getModifieLe()).isNotNull();
+        } finally {
+            referenceData.deleteStand("CM-DUP");
         }
     }
 

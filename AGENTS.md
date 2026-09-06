@@ -248,6 +248,13 @@ Single Quarkus service, no separate solver microservice. Package root:
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration.
+- **Every referential row carries `modifie_le`** (issue #362), and every write
+  of one carries its own precondition: the `ON CONFLICT DO UPDATE` clause
+  compares the caller's `modifieLe` with the stored one and returns no row when
+  they differ, which is the `409`. A new referential table must add the column,
+  write the same clause, and bind it through `WriteStamp.bindPrecondition`;
+  `WriteStampStructurelleTest` fails on a table that has neither. A read before
+  the write would not do: two saves a millisecond apart would both pass.
 - **Everything is partitioned by `edition`** ("Année 2025", "Année
   2026"). Every business table carries an `edition_id`, business ids have a
   composite `(edition_id, id)` primary key, and the edition a request works in

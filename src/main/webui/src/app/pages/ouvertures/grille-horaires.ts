@@ -150,10 +150,12 @@ export function standsModifies(cellules: Cellules, reference: Cellules): string[
 export function saisie(
   cellules: Cellules,
   standIds: readonly string[],
-  inertes: ReadonlySet<string> = new Set()
+  inertes: ReadonlySet<string> = new Set(),
+  modifieLeParStand: ReadonlyMap<string, string | null> = new Map()
 ): SaisieStandGrille[] {
   return standIds.map((standId) => ({
     standId,
+    modifieLe: modifieLeParStand.get(standId) ?? null,
     cellules: Array.from(cellules.get(standId) ?? [])
       .filter(([creneauId]) => !inertes.has(cle(standId, creneauId)))
       .map(([creneauId, effectif]) => ({ creneauId, effectif }))

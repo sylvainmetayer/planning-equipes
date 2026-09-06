@@ -58,7 +58,7 @@ describe('ReferenceDataStore bulk operations', () => {
 
     expect(api.delete).toHaveBeenCalledTimes(2);
     expect(result.succes).toEqual(['t2']);
-    expect(result.echecs).toEqual([{ id: 't1', message: 'encore référencé' }]);
+    expect(result.echecs).toEqual([{ id: 't1', message: 'encore référencé', concurrente: false }]);
     expect(reloadCount('/api/typologies')).toBe(1);
   });
 

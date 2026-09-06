@@ -165,6 +165,27 @@ class SolverJobRepriseTest {
         assertThat(jobRepository.list().stream().map(LigneJob::id)).doesNotContain(id);
     }
 
+    /**
+     * The queued job's starting point has to survive the restart with it (ADR
+     * 0024): a file replayed after a reboot must start the way it was asked to,
+     * and a cold start silently coming back warm would quietly rewrite a plan
+     * the operator had decided to throw away.
+     */
+    @Test
+    void leReamorcageDemandeSurvitAuRedemarrage() {
+        for (Reamorcage demande : new Reamorcage[] {Reamorcage.AUCUN, Reamorcage.PLAN_COURANT, null}) {
+            String id = UUID.randomUUID().toString();
+            jobRepository.record(new LigneJob(id, editionContext.editionIdCourant(), "Édition de test",
+                    JobType.SOLVE, JobStatus.PENDING, 1L, null, demande, true, null, Instant.now(), null, null));
+            assertThat(jobRepository.list().stream().filter(ligne -> ligne.id().equals(id)))
+                    .as("reamorcage %s read back from the database", demande)
+                    .singleElement()
+                    .extracting(LigneJob::reamorcage)
+                    .isEqualTo(demande);
+            jobRepository.delete(id);
+        }
+    }
+
     /* ------------------------------- Helpers ------------------------------- */
 
     /** Writes the row a server stopped in that state would have left behind. */

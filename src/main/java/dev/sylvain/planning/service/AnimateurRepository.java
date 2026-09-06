@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -27,6 +28,9 @@ import jakarta.inject.Inject;
  */
 @ApplicationScoped
 public class AnimateurRepository {
+
+    @Inject
+    ConcurrentModificationGuard staleWrites;
 
     @Inject
     DataSource dataSource;
@@ -114,9 +118,16 @@ public class AnimateurRepository {
         return scope.exists("animateur", id);
     }
 
-    public void saveAnimateur(Animateur animateur) {
+    /**
+     * Writes it, refusing a creation whose id is taken and an update based on an
+     * out-of-date read (issue #362): both are the write's own precondition.
+     *
+     * @param failIfPresent true on a creation — an existing row is then a 409,
+     *                      not a silent replacement
+     */
+    public void saveAnimateur(Animateur animateur, boolean failIfPresent) {
         scope.write("Failed to save animator " + animateur.getId(), connection -> {
-            upsertAnimateur(connection, animateur);
+            upsertAnimateur(connection, animateur, false, failIfPresent);
         });
     }
 
@@ -337,6 +348,14 @@ public class AnimateurRepository {
         }
     }
 
+    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
+    private void refuse(boolean failIfPresent, String table, String id) {
+        if (failIfPresent) {
+            staleWrites.refuseDuplicate(table, id);
+        }
+        staleWrites.refuseStale(table, id);
+    }
+
     void upsertAnimateur(Connection connection, Animateur animateur) throws SQLException {
         upsertAnimateur(connection, animateur, false);
     }
@@ -350,6 +369,11 @@ public class AnimateurRepository {
      */
     void upsertAnimateur(Connection connection, Animateur animateur, boolean conserverEmailSiAbsent)
             throws SQLException {
+        upsertAnimateur(connection, animateur, conserverEmailSiAbsent, false);
+    }
+
+    void upsertAnimateur(Connection connection, Animateur animateur, boolean conserverEmailSiAbsent,
+            boolean failIfPresent) throws SQLException {
         // Neither token is listed: a fresh row gets the database default, an
         // existing row keeps both. Rotation only happens through
         // regenerateAnimateurToken and regenerateAbonnementToken.
@@ -363,14 +387,24 @@ public class AnimateurRepository {
                 ON CONFLICT (edition_id, id)
                 DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, date_naissance = EXCLUDED.date_naissance,
                 manager = EXCLUDED.manager, modifie_le = now(), """
-                        + miseAJourEmail + " RETURNING modifie_le")) {
+                        + miseAJourEmail + "\n" + """
+                WHERE CAST(? AS boolean)
+                AND (CAST(? AS timestamptz) IS NULL
+                     OR date_trunc('milliseconds', animateur.modifie_le)
+                        = date_trunc('milliseconds', CAST(? AS timestamptz)))
+                RETURNING modifie_le""")) {
             ps.setString(2, animateur.getId());
             ps.setString(3, animateur.getPrenom());
             ps.setString(4, animateur.getNom());
             ps.setObject(5, animateur.getDateNaissance());
             ps.setBoolean(6, animateur.isManager());
             ps.setString(7, animateur.getEmail());
-            animateur.setModifieLe(WriteStamp.written(ps));
+            WriteStamp.bindPrecondition(ps, 8, !failIfPresent, animateur.getModifieLe());
+            Instant ecrit = WriteStamp.writtenOrRefused(ps);
+            if (ecrit == null) {
+                refuse(failIfPresent, "animateur", animateur.getId());
+            }
+            animateur.setModifieLe(ecrit);
         }
         try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?")) {

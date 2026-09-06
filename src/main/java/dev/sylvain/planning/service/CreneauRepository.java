@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -26,6 +28,9 @@ import jakarta.inject.Inject;
  */
 @ApplicationScoped
 public class CreneauRepository {
+
+    @Inject
+    ConcurrentModificationGuard staleWrites;
 
     @Inject
     DataSource dataSource;
@@ -197,6 +202,9 @@ public class CreneauRepository {
                 SET date_creneau = ?, heure_debut = ?, heure_fin = ?, famille = ?, couverture_pause = ?,
                 modifie_le = now()
                 WHERE edition_id = ? AND id = ?
+                AND (CAST(? AS timestamptz) IS NULL
+                     OR date_trunc('milliseconds', creneau.modifie_le)
+                        = date_trunc('milliseconds', CAST(? AS timestamptz)))
                 RETURNING modifie_le""")) {
             ps.setObject(1, creneau.getDate());
             ps.setObject(2, creneau.getHeureDebut());
@@ -205,7 +213,14 @@ public class CreneauRepository {
             ps.setBoolean(5, creneau.isCouverturePause());
             ps.setString(6, scope.editionId());
             ps.setLong(7, creneau.getId());
-            creneau.setModifieLe(WriteStamp.written(ps));
+            Timestamp attendu = creneau.getModifieLe() == null ? null : Timestamp.from(creneau.getModifieLe());
+            ps.setTimestamp(8, attendu);
+            ps.setTimestamp(9, attendu);
+            Instant ecrit = WriteStamp.writtenOrRefused(ps);
+            if (ecrit == null) {
+                staleWrites.refuseStale("creneau", creneau.getId());
+            }
+            creneau.setModifieLe(ecrit);
         }
     }
 }

@@ -27,7 +27,7 @@ public class EmplacementService {
     public Emplacement create(Emplacement emplacement) {
         emplacement.setId(Ids.required(emplacement.getId(), "emplacement id"));
         validateCoordinates(emplacement);
-        repository.saveEmplacement(emplacement);
+        repository.saveEmplacement(emplacement, true);
         changeTracker.markModified();
         return emplacement;
     }
@@ -36,10 +36,9 @@ public class EmplacementService {
         if (!repository.emplacementExists(id)) {
             throw new NotFoundException("Emplacement not found: " + id);
         }
-        staleWrites.check("emplacement", id, emplacement.getModifieLe());
         emplacement.setId(id);
         validateCoordinates(emplacement);
-        repository.saveEmplacement(emplacement);
+        repository.saveEmplacement(emplacement, false);
         changeTracker.markModified();
         return emplacement;
     }

@@ -48,17 +48,30 @@ public class TypologieService implements TypologieLibelles {
 
     public TypologieItem create(TypologieItem typologie) {
         TypologieItem cree = repository.saveTypologie(new TypologieItem(
-                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja()));
+                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null), true);
         changeTracker.markModified();
         return cree;
+    }
+
+    /**
+     * The write of an import: a scenario's {@code typologies:} section names
+     * ids the import has just auto-derived, so a taken id is the normal case
+     * here and not the mistake {@link #create} refuses. No precondition
+     * either — a file replaces a referential, it does not edit a fiche.
+     */
+    public TypologieItem importer(TypologieItem typologie) {
+        TypologieItem ecrite = repository.saveTypologie(new TypologieItem(
+                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null), false);
+        changeTracker.markModified();
+        return ecrite;
     }
 
     public TypologieItem update(String id, TypologieItem typologie) {
         if (!repository.typologieExists(id)) {
             throw new NotFoundException("Typology not found: " + id);
         }
-        staleWrites.check("typologie", id, typologie.modifieLe());
-        TypologieItem misAJour = repository.saveTypologie(new TypologieItem(id, typologie.label(), typologie.ninja()));
+        TypologieItem misAJour = repository.saveTypologie(
+                new TypologieItem(id, typologie.label(), typologie.ninja(), typologie.modifieLe()), false);
         changeTracker.markModified();
         return misAJour;
     }

@@ -100,6 +100,11 @@ export class OuverturesPage {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   protected readonly rapport = signal<RapportOuvertures | null>(null);
+
+  /** The stamps the displayed grid was built from, sent back as preconditions (issue #362). */
+  private readonly modifieLeParStand = computed(
+    () => new Map((this.rapport()?.stands ?? []).map((ligne) => [ligne.standId, ligne.modifieLe]))
+  );
   protected readonly chargement = signal(true);
   protected readonly filtre = signal<FiltreOuvertures>('TOUS');
   protected readonly recherche = signal('');
@@ -339,7 +344,7 @@ export class OuverturesPage {
     this.enregistrement.set(true);
     try {
       const rapport = await this.api.put<RapportSaisieGrille>('/api/ouvertures-stands/grille', {
-        stands: saisie(this.cellules(), modifies, this.inertes())
+        stands: saisie(this.cellules(), modifies, this.inertes(), this.modifieLeParStand())
       });
       const regles = rapport.stands.reduce((total, ligne) => total + ligne.regles, 0);
       const exceptions = rapport.stands.reduce((total, ligne) => total + ligne.exceptions, 0);

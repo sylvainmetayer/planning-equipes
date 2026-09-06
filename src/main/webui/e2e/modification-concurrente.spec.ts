@@ -69,7 +69,10 @@ test.describe('modification concurrente', () => {
 
       const conflit = page.getByRole('dialog').filter({ hasText: 'Modifiée entre-temps' });
       await expect(conflit).toBeVisible();
-      await expect(conflit).toContainText('modifiée par une autre session');
+      // The message no longer dates the conflict in the server's zone: it
+      // says who, and the browser adds when (review of #362).
+      await expect(conflit).toContainText('par une autre session');
+      await expect(conflit).toContainText('dernière écriture le');
       await conflit.getByRole('button', { name: 'Recharger' }).click();
 
       await expect(page.getByRole('dialog')).toHaveCount(0);

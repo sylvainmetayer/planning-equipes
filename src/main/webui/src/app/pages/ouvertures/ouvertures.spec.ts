@@ -40,6 +40,7 @@ function ligne(patch: Partial<LigneStandOuverture> = {}): LigneStandOuverture {
     jours: [cellule()],
     minutesOuvertes: 600,
     postes: 2,
+    modifieLe: '2026-09-06T10:00:00Z',
     ...patch
   };
 }

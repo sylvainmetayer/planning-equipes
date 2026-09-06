@@ -27,6 +27,9 @@ import jakarta.inject.Inject;
 public class ContrainteAdHocRepository {
 
     @Inject
+    ConcurrentModificationGuard staleWrites;
+
+    @Inject
     DataSource dataSource;
 
     @Inject
@@ -87,9 +90,16 @@ public class ContrainteAdHocRepository {
         return new ArrayList<>(byId.values());
     }
 
-    public void saveContrainte(ContrainteAdHoc contrainte) {
+    /**
+     * Writes it, refusing a creation whose id is taken and an update based on an
+     * out-of-date read (issue #362): both are the write's own precondition.
+     *
+     * @param failIfPresent true on a creation — an existing row is then a 409,
+     *                      not a silent replacement
+     */
+    public void saveContrainte(ContrainteAdHoc contrainte, boolean failIfPresent) {
         scope.write("Failed to save constraint " + contrainte.getId(), connection -> {
-            upsertContrainte(connection, contrainte);
+            upsertContrainte(connection, contrainte, failIfPresent);
         });
     }
 
@@ -97,7 +107,20 @@ public class ContrainteAdHocRepository {
         scope.delete("DELETE FROM contrainte_ad_hoc WHERE edition_id = ? AND id = ?", id);
     }
 
+    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
+    private void refuse(boolean failIfPresent, String table, String id) {
+        if (failIfPresent) {
+            staleWrites.refuseDuplicate(table, id);
+        }
+        staleWrites.refuseStale(table, id);
+    }
+
     void upsertContrainte(Connection connection, ContrainteAdHoc contrainte) throws SQLException {
+        upsertContrainte(connection, contrainte, false);
+    }
+
+    void upsertContrainte(Connection connection, ContrainteAdHoc contrainte, boolean failIfPresent)
+            throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection,
                 """
                 INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le)
@@ -106,6 +129,10 @@ public class ContrainteAdHocRepository {
                 DO UPDATE SET type = EXCLUDED.type, creneau_id = EXCLUDED.creneau_id,
                 stand_id = EXCLUDED.stand_id, raison = EXCLUDED.raison, cree_par = EXCLUDED.cree_par,
                 cree_le = EXCLUDED.cree_le, modifie_le = now()
+                WHERE CAST(? AS boolean)
+                AND (CAST(? AS timestamptz) IS NULL
+                     OR date_trunc('milliseconds', contrainte_ad_hoc.modifie_le)
+                        = date_trunc('milliseconds', CAST(? AS timestamptz)))
                 RETURNING modifie_le""")) {
             ps.setString(2, contrainte.getId());
             ps.setString(3, contrainte.getType() != null ? contrainte.getType().name() : null);
@@ -115,7 +142,12 @@ public class ContrainteAdHocRepository {
             ps.setString(7, contrainte.getCreeParUtilisateurId());
             Instant creeLe = contrainte.getCreeLe() != null ? contrainte.getCreeLe() : Instant.now();
             ps.setTimestamp(8, Timestamp.from(creeLe));
-            contrainte.setModifieLe(WriteStamp.written(ps));
+            WriteStamp.bindPrecondition(ps, 9, !failIfPresent, contrainte.getModifieLe());
+            Instant ecrit = WriteStamp.writtenOrRefused(ps);
+            if (ecrit == null) {
+                refuse(failIfPresent, "contrainte_ad_hoc", contrainte.getId());
+            }
+            contrainte.setModifieLe(ecrit);
         }
         try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM contrainte_animateur WHERE edition_id = ? AND contrainte_id = ?")) {

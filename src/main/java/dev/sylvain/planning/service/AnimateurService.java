@@ -33,7 +33,7 @@ public class AnimateurService {
     public Animateur create(Animateur animateur) {
         animateur.setId(Ids.required(animateur.getId(), "animateur id"));
         validate(animateur);
-        repository.saveAnimateur(animateur);
+        repository.saveAnimateur(animateur, true);
         changeTracker.markModified();
         return animateur;
     }
@@ -58,10 +58,9 @@ public class AnimateurService {
         if (!repository.animateurExists(id)) {
             throw new NotFoundException("Animateur not found: " + id);
         }
-        staleWrites.check("animateur", id, animateur.getModifieLe());
         animateur.setId(id);
         validate(animateur);
-        repository.saveAnimateur(animateur);
+        repository.saveAnimateur(animateur, false);
         changeTracker.markModified();
         return animateur;
     }

@@ -35,7 +35,7 @@ class StaleWriteResourceTest {
                     .when().put("/api/stands/SW-S1")
                     .then().statusCode(409)
                     .body("code", equalTo(StaleWriteError.CODE))
-                    .body("message", containsString("modifiée par une autre session"))
+                    .body("message", containsString("par une autre session"))
                     .body("modifieLe", notNullValue());
 
             // The stamp the client loaded, or none: both go through.

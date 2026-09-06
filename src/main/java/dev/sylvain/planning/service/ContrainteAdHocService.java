@@ -39,12 +39,14 @@ public class ContrainteAdHocService {
      */
     public ContrainteAdHoc create(ContrainteAdHoc contrainte) {
         contrainte.setId(Ids.required(contrainte.getId(), "constraint id"));
-        staleWrites.check("contrainte_ad_hoc", contrainte.getId(), contrainte.getModifieLe());
         refuseContradiction(contrainte);
         if (contrainte.getCreeLe() == null) {
             contrainte.setCreeLe(Instant.now());
         }
-        repository.saveContrainte(contrainte);
+        // POST is the only write path for an ajustement: re-posting an id is
+        // how it is edited, so a taken id is not a duplicate — the stale
+        // precondition below is what protects the other session's version.
+        repository.saveContrainte(contrainte, false);
         changeTracker.markModified();
         return contrainte;
     }
@@ -83,7 +85,7 @@ public class ContrainteAdHocService {
             if (contrainte.getCreeLe() == null) {
                 contrainte.setCreeLe(Instant.now());
             }
-            repository.saveContrainte(contrainte);
+            repository.saveContrainte(contrainte, false);
         }
         changeTracker.markModified();
         return contraintes;

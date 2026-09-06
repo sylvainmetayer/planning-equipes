@@ -399,6 +399,11 @@ public class ReferenceDataService implements ReferenceData {
         return typologies.list();
     }
 
+    /** See {@link TypologieService#importer}: the write of a scenario's own section. */
+    public TypologieItem importTypologie(TypologieItem typologie) {
+        return typologies.importer(typologie);
+    }
+
     public TypologieItem createTypologie(TypologieItem typologie) {
         return typologies.create(typologie);
     }

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -44,6 +45,9 @@ import jakarta.inject.Inject;
  */
 @ApplicationScoped
 public class StandRepository {
+
+    @Inject
+    ConcurrentModificationGuard staleWrites;
 
     @Inject
     DataSource dataSource;
@@ -228,17 +232,34 @@ public class StandRepository {
         return scope.exists("stand", id);
     }
 
-    public void saveStand(Stand stand) {
+    /**
+     * Writes the stand, refusing a creation whose id is taken and an update
+     * based on an out-of-date read (issue #362): both are the write's own
+     * precondition, never a probe before it.
+     *
+     * @param failIfPresent true on a creation — an existing row is then a 409,
+     *                      not a silent replacement
+     */
+    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
+    private void refuse(boolean failIfPresent, String table, String id) {
+        if (failIfPresent) {
+            staleWrites.refuseDuplicate(table, id);
+        }
+        staleWrites.refuseStale(table, id);
+    }
+
+    public void saveStand(Stand stand, boolean failIfPresent) {
         scope.write("Failed to save stand " + stand.getId(), connection -> {
-            upsertStand(connection, stand);
+            upsertStand(connection, stand, failIfPresent);
         });
     }
 
     /** Every stand of the list, in one transaction: all written, or none — what a grid save or an import promises. */
+    /** Several stands, one transaction, each with its own precondition. */
     public void saveStands(List<Stand> stands) {
         scope.write("Failed to save " + stands.size() + " stands", connection -> {
             for (Stand stand : stands) {
-                upsertStand(connection, stand);
+                upsertStand(connection, stand, false);
             }
         });
     }
@@ -282,6 +303,10 @@ public class StandRepository {
     }
 
     void upsertStand(Connection connection, Stand stand) throws SQLException {
+        upsertStand(connection, stand, false);
+    }
+
+    void upsertStand(Connection connection, Stand stand, boolean failIfPresent) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection,
                 """
                 INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max,
@@ -292,6 +317,10 @@ public class StandRepository {
                 effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs,
                 premium = EXCLUDED.premium, emplacement_id = EXCLUDED.emplacement_id,
                 niveau_effort = EXCLUDED.niveau_effort, modifie_le = now()
+                WHERE CAST(? AS boolean)
+                AND (CAST(? AS timestamptz) IS NULL
+                     OR date_trunc('milliseconds', stand.modifie_le)
+                        = date_trunc('milliseconds', CAST(? AS timestamptz)))
                 RETURNING modifie_le""")) {
             ps.setString(2, stand.getId());
             ps.setString(3, stand.getNom());
@@ -301,7 +330,12 @@ public class StandRepository {
             ps.setBoolean(7, stand.isPremium());
             ps.setString(8, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
             ps.setString(9, stand.getNiveauEffort().name());
-            stand.setModifieLe(WriteStamp.written(ps));
+            WriteStamp.bindPrecondition(ps, 10, !failIfPresent, stand.getModifieLe());
+            Instant ecrit = WriteStamp.writtenOrRefused(ps);
+            if (ecrit == null) {
+                refuse(failIfPresent, "stand", stand.getId());
+            }
+            stand.setModifieLe(ecrit);
         }
         try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?")) {

@@ -34,6 +34,7 @@ export interface ConfirmData {
 }
 
 /** `null` when the dialog was cancelled. */
+/** `true` confirmed, `false` the cancel button, `null` dismissed (Escape, backdrop). */
 export type ConfirmResult = boolean | null;
 
 @Component({
@@ -48,7 +49,14 @@ export type ConfirmResult = boolean | null;
       }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button matButton (click)="dialogRef.close(null)">
+      <!--
+        Closes with false, not null: null is what Escape and the backdrop
+        produce, and one dialog needs the two apart — the conflict of issue
+        #362, whose cancel button ("Recharger") throws away what the user
+        typed, so the gesture that means "I did not decide" must not perform
+        it. ask() maps both to false, so every other caller is unchanged.
+      -->
+      <button matButton (click)="dialogRef.close(false)">
         {{ data.cancelLabel ?? defaultCancelLabel }}
       </button>
       <button matButton="filled" [color]="data.danger ? 'warn' : 'primary'" (click)="dialogRef.close(true)">
@@ -77,6 +85,17 @@ export class ConfirmService {
 
   async ask(data: ConfirmData): Promise<boolean> {
     return (await this.open(data)) === true;
+  }
+
+  /**
+   * Same dialog, all three answers kept apart: `true` confirmed, `false` the
+   * cancel button, `null` dismissed (Escape, backdrop, the close cross). Use
+   * it wherever cancelling and dismissing must not do the same thing — a
+   * dialog whose cancel button performs a real action, for one (issue #362:
+   * « Recharger » throws away what the user typed, so Escape must not).
+   */
+  async askThreeWay(data: ConfirmData): Promise<ConfirmResult> {
+    return this.open(data);
   }
 
   private async open(data: ConfirmData): Promise<ConfirmResult> {

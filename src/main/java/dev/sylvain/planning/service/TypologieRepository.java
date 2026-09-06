@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -27,6 +28,9 @@ import jakarta.inject.Inject;
  */
 @ApplicationScoped
 public class TypologieRepository {
+
+    @Inject
+    ConcurrentModificationGuard staleWrites;
 
     @Inject
     DataSource dataSource;
@@ -66,7 +70,14 @@ public class TypologieRepository {
     }
 
     /** Writes the item and returns it stamped with the moment the database wrote it. */
-    public TypologieItem saveTypologie(TypologieItem typologie) {
+    /**
+     * Writes it, refusing a creation whose id is taken and an update based on an
+     * out-of-date read (issue #362): both are the write's own precondition.
+     *
+     * @param failIfPresent true on a creation — an existing row is then a 409,
+     *                      not a silent replacement
+     */
+    public TypologieItem saveTypologie(TypologieItem typologie, boolean failIfPresent) {
         return scope.writeAndReturn("Failed to save typology " + typologie.id(), connection -> {
             // Only one typologie may be ninja *per edition*: demote the previous
             // holder in the same transaction, otherwise the partial unique index
@@ -84,7 +95,7 @@ public class TypologieRepository {
                     ps.executeUpdate();
                 }
             }
-            return upsertTypologie(connection, typologie);
+            return upsertTypologie(connection, typologie, failIfPresent);
         });
     }
 
@@ -114,18 +125,36 @@ public class TypologieRepository {
         }
     }
 
-    private TypologieItem upsertTypologie(Connection connection, TypologieItem typologie) throws SQLException {
+    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
+    private void refuse(boolean failIfPresent, String table, String id) {
+        if (failIfPresent) {
+            staleWrites.refuseDuplicate(table, id);
+        }
+        staleWrites.refuseStale(table, id);
+    }
+
+    private TypologieItem upsertTypologie(Connection connection, TypologieItem typologie, boolean failIfPresent)
+            throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection,
                 """
                 INSERT INTO typologie (edition_id, id, label, ninja)
                 VALUES (?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
                 DO UPDATE SET label = EXCLUDED.label, ninja = EXCLUDED.ninja, modifie_le = now()
+                WHERE CAST(? AS boolean)
+                AND (CAST(? AS timestamptz) IS NULL
+                     OR date_trunc('milliseconds', typologie.modifie_le)
+                        = date_trunc('milliseconds', CAST(? AS timestamptz)))
                 RETURNING modifie_le""")) {
             ps.setString(2, typologie.id());
             ps.setString(3, typologie.label());
             ps.setBoolean(4, typologie.ninja());
-            return typologie.stamped(WriteStamp.written(ps));
+            WriteStamp.bindPrecondition(ps, 5, !failIfPresent, typologie.modifieLe());
+            Instant ecrit = WriteStamp.writtenOrRefused(ps);
+            if (ecrit == null) {
+                refuse(failIfPresent, "typologie", typologie.id());
+            }
+            return typologie.stamped(ecrit);
         }
     }
 

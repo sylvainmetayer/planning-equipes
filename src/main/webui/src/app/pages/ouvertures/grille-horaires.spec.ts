@@ -64,7 +64,8 @@ function rapport(): RapportOuvertures {
         effectifMin: 2,
         jours: [jourStand('2026-07-08', [cellule(1, 2), cellule(2, 4), cellule(3, 4)]), jourStand('2026-07-09', [cellule(4, 2), cellule(5, 4)])],
         minutesOuvertes: 0,
-        postes: 0
+        postes: 0,
+        modifieLe: '2026-09-06T10:00:00Z'
       },
       {
         standId: 'B',
@@ -72,7 +73,8 @@ function rapport(): RapportOuvertures {
         effectifMin: 1,
         jours: [jourStand('2026-07-08', [cellule(1, 1, true), cellule(2, null), cellule(3, null)]), jourStand('2026-07-09', [cellule(4, null), cellule(5, null)])],
         minutesOuvertes: 0,
-        postes: 0
+        postes: 0,
+        modifieLe: '2026-09-06T10:00:00Z'
       }
     ],
     standsJamaisOuverts: 0,
@@ -143,6 +145,7 @@ describe('standsModifies et saisie', () => {
     expect(saisie(modifie, ['B'])).toEqual([
       {
         standId: 'B',
+        modifieLe: null,
         cellules: [
           { creneauId: 1, effectif: 1 },
           { creneauId: 2, effectif: 3 },

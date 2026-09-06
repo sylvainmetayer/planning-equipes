@@ -274,6 +274,8 @@ export interface LigneStandOuverture {
   jours: CelluleJourOuverture[];
   minutesOuvertes: number;
   postes: number;
+  /** The stand's stamp as this grid read it, echoed back by the save as its precondition (issue #362). */
+  modifieLe: string | null;
 }
 
 export interface AnomalieOuverture {
@@ -300,6 +302,8 @@ export interface RapportOuvertures {
 /** One stand of the grid as submitted to `PUT /api/ouvertures-stands/grille`: all its cells. */
 export interface SaisieStandGrille {
   standId: string;
+  /** The stand's `modifieLe` as the grid read it, sent back as the write's precondition (issue #362). */
+  modifieLe: string | null;
   cellules: { creneauId: number; effectif: number | null }[];
 }
 

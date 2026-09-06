@@ -359,6 +359,19 @@ public class PlanningService {
      */
     private PlanningEvenement buildFromReferenceData(List<Animateur> animateurs, List<Stand> stands,
             List<Creneau> creneaux) {
+        return buildFromReferenceData(animateurs, stands, creneaux, null);
+    }
+
+    /**
+     * @param planPersiste the persisted assignments, when the caller has
+     *                     already read them — the warm start of issue #174
+     *                     needs the very same map the locks walk, and reading
+     *                     it twice both costs a full read of a 3 500-seat plan
+     *                     and leaves a window in which the two disagree.
+     *                     {@code null} lets the locks read it themselves.
+     */
+    private PlanningEvenement buildFromReferenceData(List<Animateur> animateurs, List<Stand> stands,
+            List<Creneau> creneaux, Map<String, List<String>> planPersiste) {
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
                     "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
@@ -366,7 +379,11 @@ public class PlanningService {
         }
         List<PosteAffectation> postes = buildPostes(stands, creneaux);
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
-        applyVerrouillages(postes, animateurs, verrouillages);
+        if (planPersiste == null) {
+            applyVerrouillages(postes, animateurs, verrouillages);
+        } else if (!verrouillages.isEmpty()) {
+            applyVerrouillages(postes, animateurs, verrouillages, planPersiste);
+        }
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
@@ -444,7 +461,7 @@ public class PlanningService {
                     "Aucun plan enregistré sur cette édition : rien d'où repartir. "
                             + "Lancez un calcul de zéro (reamorcage=AUCUN), ou laissez le choix automatique.");
         }
-        PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux);
+        PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux, affectationsPrecedentes);
         if (affectationsPrecedentes.isEmpty()) {
             return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0);
         }
