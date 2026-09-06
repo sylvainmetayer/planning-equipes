@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -29,6 +30,74 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     private final Emplacement placeDrapeau = emplacement("PLACE-DRAPEAU", 46.6513, 2.2492);
     private final Emplacement mairie = emplacement("MAIRIE", 46.6490, 2.2547);
     private final Emplacement pointVoisin = emplacement("VOISIN", 46.6515, 2.2490);
+
+    /* ------------------------- stabiliteDuPlanPublie ------------------------- */
+
+    private AffectationPubliee publie(Stand stand, Creneau creneau, String animateurId) {
+        return new AffectationPubliee(stand.getId(), creneau.getId(), animateurId);
+    }
+
+    @Test
+    void stabilityIsSilentWhileNothingWasPublished() {
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standStrat, creneauMatin, majeurAutonome("A1")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void keepingThePublishedHolderCostsNothing() {
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standStrat, creneauMatin, majeurAutonome("A1")),
+                        publie(standStrat, creneauMatin, "A1"))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void replacingThePublishedHolderCostsOneMediumPerPersonMoved() {
+        // A1 was told about the morning on the stand; A2 now holds it.
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standStrat, creneauMatin, majeurAutonome("A2")),
+                        publie(standStrat, creneauMatin, "A1"))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void swappingTwoPublishedHoldersCostsTwo() {
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standStrat, creneauMatin, majeurAutonome("A2")),
+                        poste(standPremium, creneauMatin, majeurAutonome("A1")),
+                        publie(standStrat, creneauMatin, "A1"),
+                        publie(standPremium, creneauMatin, "A2"))
+                .penalizesBy(2);
+    }
+
+    @Test
+    void aSeatThePublicationNeverHadIsFree() {
+        // A stand created after the publication: nobody was told anything about it.
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standPremium, creneauMatin, majeurAutonome("A1")),
+                        publie(standStrat, creneauMatin, "A1"))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void anExtraSeatOnAPublishedLineCountsItsNewcomer() {
+        // The stand grew from one seat to two on that créneau: A1 stays, A2 is new there.
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standStrat, creneauMatin, majeurAutonome("A1")),
+                        poste(standStrat, creneauMatin, majeurAutonome("A2")),
+                        publie(standStrat, creneauMatin, "A1"))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void anEmptySeatIsNotCountedTwice() {
+        // Nobody on a published seat is a hard hole already, not a stability cost.
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standStrat, creneauMatin, null),
+                        publie(standStrat, creneauMatin, "A1"))
+                .penalizesBy(0);
+    }
 
     @Test
     void standSansReferentEstPenaliseEnMedium() {

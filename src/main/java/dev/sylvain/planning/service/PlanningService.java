@@ -53,6 +53,7 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import ai.timefold.solver.core.config.solver.SolverConfig;
+import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
@@ -120,6 +121,10 @@ public class PlanningService {
      */
     @Inject
     PlanningPersistenceService planningPersistenceService;
+
+    /** The published plan, for {@code stabiliteDuPlanPublie}; null in a plain-Java harness like the persistence above. */
+    @Inject
+    PlanSnapshotService snapshotService;
 
     public PlanningService(
             @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "120") Long secondsLimit,
@@ -2128,12 +2133,37 @@ public class PlanningService {
                     .map(ConstraintToggle::new)
                     .toList());
         }
+        // The published plan is the server's knowledge, never the caller's: a
+        // planning posted by a client cannot decide what people were told.
+        problem.setAffectationsPubliees(affectationsPubliees());
         // Server-side configuration, like the weights below: always overwritten
         // so a caller cannot loosen a quality threshold by sending its own.
         problem.setParametresQualite(List.of(new ParametresQualite(maxEmplacementsParJour)));
         // Never sent by a caller (the field is @JsonIgnore-d on PlanningEvenement),
         // so this always overwrites the ConstraintWeightOverrides.none() default.
         problem.setPonderationsContraintes(constraintWeightOverrides(problem.getPonderationsScenario()));
+    }
+
+    /**
+     * The seats of the last published plan, as facts of {@code stabiliteDuPlanPublie};
+     * empty when nothing was published, or when the snapshot service is not
+     * wired (a plain-Java harness). A seat the publication left empty carries
+     * nobody to keep and is skipped.
+     */
+    List<AffectationPubliee> affectationsPubliees() {
+        if (snapshotService == null) {
+            return List.of();
+        }
+        PlanSnapshotService.SnapshotDetail publication = snapshotService.loadLastPublication();
+        if (publication == null) {
+            return List.of();
+        }
+        return publication.affectations().stream()
+                .filter(affectation -> affectation.animateurId() != null && affectation.standId() != null
+                        && affectation.creneauId() != null)
+                .map(affectation -> new AffectationPubliee(affectation.standId(),
+                        Long.parseLong(affectation.creneauId()), affectation.animateurId()))
+                .toList();
     }
 
     /**

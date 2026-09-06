@@ -152,6 +152,11 @@ public final class ConstraintCatalog {
                     "Chaque stand devrait compter au moins un référent sur chaque créneau."),
             new ConstraintDefinition("equilibrerCharge", Niveau.MEDIUM, "Qualité d'organisation",
                     "La charge de travail doit être répartie équitablement entre les animateurs."),
+            new ConstraintDefinition("stabiliteDuPlanPublie", Niveau.MEDIUM, "Qualité d'organisation",
+                    "Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait dans le plan "
+                            + "publié coûte : le solveur ne bouscule les gens déjà prévenus que si le gain vaut "
+                            + "le dérangement. Muette tant que rien n'a été publié ; un stand ou un créneau créé "
+                            + "depuis reste libre."),
             new ConstraintDefinition("repartitionMineursParCreneau", Niveau.MEDIUM, "Qualité d'organisation",
                     "Sur un créneau, un stand ne devrait pas compter plus de mineurs que de majeurs."),
             new ConstraintDefinition("experienceRequisePourStandsPremium", Niveau.MEDIUM, "Qualité d'organisation",

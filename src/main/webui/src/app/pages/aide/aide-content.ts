@@ -479,6 +479,10 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
               text: $localize`:@@aide.results.def.contraintes:Le catalogue des règles, chacune avec son niveau, son état actif/inactif et le résultat de la dernière analyse : combien de fois elle n'est pas respectée, et le détail des écarts. C'est ce qui transforme « -14 hard » en « quatorze postes non pourvus sur tel stand ».`
             },
             {
+              term: $localize`:@@aide.results.term.stabilite:Stabilité du plan publié`,
+              text: $localize`:@@aide.results.def.stabilite:Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait dans le plan publié coûte un point medium au solveur : un calcul relancé après un changement tardif ne bouscule les gens déjà prévenus que si le gain vaut le dérangement. La règle se dose sur la page Contraintes comme les autres règles de qualité, et reste muette tant que rien n'a été publié. Après chaque calcul, le récapitulatif dit combien de personnes la publication préviendrait ; ce n'est pas un gel — pour figer, il y a les verrouillages et « Corriger après un changement ».`
+            },
+            {
               term: $localize`:@@aide.results.term.pourquoiLui:« Pourquoi lui ? »`,
               text: $localize`:@@aide.results.def.pourquoiLui:Un clic sur un animateur affecté, dans le calendrier journalier ou le calendrier des affectations, explique cette affectation précise : les règles respectées ou non pour ce poste. À la demande, l'écran cherche aussi qui pourrait le remplacer, et ne propose que les remplacements qui tiennent — ceux qui n'introduisent aucun écart dur — chacun avec son effet sur le score et les règles qu'il débloque. La recherche est bornée : elle annonce combien de candidats elle a évalués et si elle s'est arrêtée au plafond, car une liste courte ne prouve pas qu'il n'existe rien d'autre. « Appliquer » pose le remplacement dans le planning.`
             }

@@ -103,6 +103,9 @@
       @if (libelleReamorcage()) {
         <p class="calendar-meta solver-reamorcage">{{ libelleReamorcage() }}</p>
       }
+      @if (libelleImpactPublication()) {
+        <p class="calendar-meta solver-impact-publication">{{ libelleImpactPublication() }}</p>
+      }
     </mat-card-content>
   }
   @if (comparaisonPlan(); as comparaison) {

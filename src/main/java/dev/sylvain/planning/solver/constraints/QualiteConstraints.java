@@ -17,6 +17,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -48,8 +49,41 @@ public final class QualiteConstraints {
                 appreciationIncompatible(constraintFactory),
                 souhaitsIncompatibles(constraintFactory),
                 limiterTypologiesDistinctesParAnimateur(constraintFactory),
-                maxJoursConsecutifsTravailles(constraintFactory)
+                maxJoursConsecutifsTravailles(constraintFactory),
+                stabiliteDuPlanPublie(constraintFactory)
         };
+    }
+
+    /**
+     * Stability of the published plan: every seat whose holder is not the one
+     * the published plan had on that stand and créneau costs one medium point
+     * — one point per person who would have to be told « votre emploi du temps
+     * a changé ». Measured on a real edition, a re-solve started from a good
+     * plan reshuffled dozens of people for a marginal equity gain, because
+     * nothing in the score said that moving a person already informed has a
+     * cost. This is that cost, dosed against the other medium rules.
+     *
+     * <p>Only a seat the published plan <em>had</em> (same stand, same
+     * créneau) is judged: a stand or a créneau created since is free, there is
+     * nobody to keep there. A seat the published plan had but that is now
+     * empty is not counted here — it is a hard violation already. Silent
+     * while nothing has been published: the list of facts is then empty and
+     * {@code ifExists} never matches.</p>
+     */
+    private Constraint stabiliteDuPlanPublie(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "stabiliteDuPlanPublie")
+                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null
+                        && poste.getCreneau() != null && poste.getCreneau().getId() != null)
+                .ifExists(AffectationPubliee.class,
+                        Joiners.equal(poste -> poste.getStand().getId(), AffectationPubliee::standId),
+                        Joiners.equal(poste -> poste.getCreneau().getId(), AffectationPubliee::creneauId))
+                .ifNotExists(AffectationPubliee.class,
+                        Joiners.equal(poste -> poste.getStand().getId(), AffectationPubliee::standId),
+                        Joiners.equal(poste -> poste.getCreneau().getId(), AffectationPubliee::creneauId),
+                        Joiners.equal(poste -> poste.getAnimateur().getId(), AffectationPubliee::animateurId))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .asConstraint("stabiliteDuPlanPublie");
     }
 
     private Constraint standComplexeAvecReferent(ConstraintFactory constraintFactory) {

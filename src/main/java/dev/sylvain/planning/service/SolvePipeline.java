@@ -2,17 +2,21 @@ package dev.sylvain.planning.service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import ai.timefold.solver.core.api.solver.Solver;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.notification.Notification;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 
 /**
  * What a solve <b>always</b> does, end to end: snapshot the plan it is about
@@ -35,6 +39,8 @@ import jakarta.inject.Inject;
  */
 @ApplicationScoped
 public class SolvePipeline {
+
+    private static final Logger LOG = Logger.getLogger(SolvePipeline.class);
 
     @Inject
     PlanSnapshotService snapshotService;
@@ -60,6 +66,12 @@ public class SolvePipeline {
     @Inject
     Event<Notification> notifications;
 
+    @Inject
+    PlanPublieService planPublieService;
+
+    @Inject
+    PublicationDiffService diffService;
+
     /**
      * What a solve produced.
      *
@@ -72,7 +84,19 @@ public class SolvePipeline {
      *                     back (issue #274); {@code null} when there was none
      */
     public record Resolution<P>(P probleme, PlanningEvenement planning,
-            PlanningService.PlanningDiagnostic diagnostic, PreviousPlan previousPlan) {
+            PlanningService.PlanningDiagnostic diagnostic, PreviousPlan previousPlan,
+            ImpactPublication impactPublication) {
+    }
+
+    /**
+     * How many people would have to be told (issue « stabilité ») if this plan
+     * were published now: those whose seats differ from the last published
+     * plan, counted the way the publication counts them. {@code null} when
+     * nothing was ever published — there is nobody to compare against.
+     *
+     * @param publieLe when the plan compared against was published
+     */
+    public record ImpactPublication(int personnes, Instant publieLe) {
     }
 
     /**
@@ -122,7 +146,36 @@ public class SolvePipeline {
         kpiHistoriqueService.recordAfterSolve(dureeSolveSecondes);
         announce(editionNom, diagnostic);
         return new Resolution<>(probleme, resolu, diagnostic,
-                PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()));
+                PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
+                impactPublication(resolu));
+    }
+
+    /**
+     * The same comparison the publication screen shows, run on the plan just
+     * solved so the recap can say « N personnes changeraient d'emploi du temps »
+     * before anyone decides to publish. Best-effort: a failure here is a
+     * missing figure, never a failed solve.
+     */
+    private ImpactPublication impactPublication(PlanningEvenement resolu) {
+        try {
+            PlanSnapshotService.SnapshotMeta publication = planPublieService.lastPublication();
+            if (publication == null) {
+                return null;
+            }
+            Map<String, PublicationDiffService.Identite> identites = new HashMap<>();
+            for (Animateur animateur : resolu.getAnimateurs()) {
+                identites.put(animateur.getId(),
+                        new PublicationDiffService.Identite(animateur.nomAffiche(), animateur.getEmail()));
+            }
+            int personnes = diffService.comparer(
+                    PublicationDiffService.vacationsByAnimateur(planPublieService.planPublie()),
+                    PublicationDiffService.vacationsByAnimateur(resolu),
+                    identites, false).size();
+            return new ImpactPublication(personnes, publication.publieLe());
+        } catch (RuntimeException e) {
+            LOG.warn("The publication impact of the solve could not be computed", e);
+            return null;
+        }
     }
 
     /**

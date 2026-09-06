@@ -23,6 +23,7 @@ import {
   ApercuPublication,
   ChangementAffectation,
   FeasibilityReport,
+  ImpactPublication,
   JobView,
   PerimetreReplanification,
   PlanningDiagnostic,
@@ -49,6 +50,7 @@ import {
   JobResults,
   SolverJobService,
   extraireDiagnostic,
+  extraireImpactPublication,
   extrairePlanPrecedent,
   extraireReamorcage,
   formatDuration
@@ -272,6 +274,20 @@ export class SolverPage {
 
   /** Where the last finished full solve started from, for the recap. */
   protected readonly reamorcageEffectue = signal<ReamorcageEffectue | null>(null);
+
+  /** Whom the last finished solve would disturb, against the published plan. */
+  protected readonly impactPublication = signal<ImpactPublication | null>(null);
+  protected readonly libelleImpactPublication = computed(() => {
+    const impact = this.impactPublication();
+    if (!impact) {
+      return '';
+    }
+    const quand = new Date(impact.publieLe).toLocaleString(intlLocale());
+    if (impact.personnes === 0) {
+      return $localize`:@@solver.impact.aucun:Personne ne change d'emploi du temps par rapport au plan publié le ${quand}:date:.`;
+    }
+    return $localize`:@@solver.impact.personnes:${impact.personnes}:count: personne(s) changeraient d'emploi du temps par rapport au plan publié le ${quand}:date: — c'est ce que la publication leur dirait.`;
+  });
   protected readonly libelleReamorcage = computed(() => {
     const reamorcage = this.reamorcageEffectue();
     if (!reamorcage) {
@@ -393,6 +409,7 @@ export class SolverPage {
       this.applyIncrementalResult(result);
       this.planPrecedent.set(extrairePlanPrecedent(result));
       this.reamorcageEffectue.set(extraireReamorcage(result));
+      this.impactPublication.set(extraireImpactPublication(result));
       void this.loadLastRun();
       void this.chargerPointDeDepart();
       // Le solve vient de réécrire le plan : le décompte des personnes à
@@ -692,9 +709,15 @@ export class SolverPage {
    */
   protected async onRecommencerDeZero(): Promise<void> {
     const affectations = this.affectationsEnregistrees() ?? 0;
+    const publieLe = this.publicationApercu()?.dernierePublicationLe;
+    const message = $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous de lui. Pour l'améliorer plutôt que le remplacer, utilisez « Calculer le planning ».`;
+    const avertissement = publieLe
+      ? ' ' +
+        $localize`:@@solver.aFroid.confirm.publie:Un planning a été publié le ${new Date(publieLe).toLocaleString(intlLocale())}:date: : repartir de zéro peut bousculer beaucoup de personnes déjà prévenues, là où « Calculer le planning » ne bouge que ce qui en vaut la peine.`
+      : '';
     const confirme = await this.confirm.ask({
       title: $localize`:@@solver.aFroid.confirm.title:Recommencer de zéro ?`,
-      message: $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous de lui. Pour l'améliorer plutôt que le remplacer, utilisez « Calculer le planning ».`,
+      message: message + avertissement,
       confirmLabel: $localize`:@@solver.aFroid.confirm.action:Recommencer de zéro`,
       danger: true
     });

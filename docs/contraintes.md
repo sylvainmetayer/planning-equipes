@@ -176,6 +176,80 @@ granularité ».
 `equilibrerCreneauxPenibles` applique la même technique, mais sur le seul
 sous-ensemble des postes épuisants ou premium.
 
+## Stabilité du plan publié
+
+`stabiliteDuPlanPublie` (MEDIUM, « Qualité d'organisation », dosable) répond à
+un constat mesuré sur l'édition réelle : un calcul relancé après publication
+déplaçait des dizaines de personnes déjà prévenues pour un gain d'équité
+marginal, parce que rien dans le score ne disait que déplacer une personne
+informée a un coût. C'est ce coût.
+
+**Ce qu'elle compte.** Un point medium par siège dont le titulaire n'est pas
+celui que le plan publié avait sur ce stand et ce créneau — un point par
+personne à qui la publication dirait « votre emploi du temps a changé ». Les
+faits sont les sièges du dernier instantané publié (`AffectationPubliee`),
+chargés par `PlanningService.prepareProblem` avant chaque résolution et
+chaque diagnostic, jamais envoyés par un client.
+
+**Ce qu'elle ne compte pas, délibérément.**
+
+- Rien tant que rien n'a été publié : la liste de faits est vide, la règle
+  est muette, le solveur reste libre de tout remanier en amont.
+- Un stand ou un créneau créé après la publication : personne n'y a été
+  prévenu de rien, le siège est libre.
+- Un siège publié devenu vide : c'est déjà une violation dure, la compter ici
+  ferait payer le trou deux fois.
+- Un siège ajouté sur une ligne publiée (l'effectif a grandi) compte son
+  nouvel occupant : c'est bien une personne à prévenir.
+
+**Ce qu'elle ne peut pas faire.** Elle est medium : une règle dure ou une
+indisponibilité l'emporte toujours (`PlanningHardConstraintsTest`
+`publishedSeatsNeverOutweighAHardRule`). Elle ne fige rien non plus — pour
+figer, il y a les verrouillages et la replanification incrémentale ; elle
+arbitre, au poids près, entre le dérangement et le gain.
+
+**Le poids : 5 par défaut.** Un point par siège déplacé, contre les autres
+règles medium à leur poids : `equilibrerCharge` produit des milliers de
+points sur une édition réelle, donc à poids 1 la stabilité pèse peu (74
+personnes bougent encore pour trois absences sur la fixture, 10 à poids 5).
+Le défaut `planning.constraint-weights.stabiliteDuPlanPublie=5` sort du banc
+décrit ci-dessous ; il se dose par édition sur l'écran Contraintes comme les
+autres règles de qualité, et se désactive par l'interrupteur.
+
+**Sa limite : de la demande en plus aux heures pleines.** Quand le
+changement ajoute des sièges (un stand nouveau ouvert toute la journée), la
+règle peut laisser quelques écarts durs au bout du budget là où le calcul
+sans elle finit à 0 : pourvoir un siège neuf aux heures pleines demande une
+chaîne de déplacements que chaque point de stabilité rend plus coûteuse à
+franchir. Le récapitulatif montre le score dur ; les recours sont, dans
+l'ordre, « Corriger après un changement » (qui ne remplit que les trous), un
+second « Calculer le planning » depuis ce plan, et enfin la désactivation de
+la règle pour ce calcul — en acceptant alors de prévenir tout le monde.
+
+**Ce qu'elle ne retient pas : une grille qui change.** La règle tient des
+lignes stand × créneau. Tout ce qui rebat ces lignes lui retire sa prise : un
+découpage ou une dérivation qui remplace la grille (le plan enregistré part
+avec), mais aussi — moins visible — un stand ajouté dont l'identifiant se
+classe **avant** les autres quand la grille a plusieurs familles de relais :
+les stands sont répartis sur les familles à tour de rôle dans l'ordre de leurs
+identifiants (`PlanningService.spreadStandsByFamily`), et chaque stand
+suivant glisse d'une famille ; ses lignes publiées n'existent plus, tout le
+monde change d'horaires, et la règle n'a rien à retenir. Le banc l'a
+mesuré : 153 personnes sur 153 quel que soit le poids. Un identifiant qui se
+classe après les autres laisse la répartition intacte.
+
+**Le compte à côté du score.** Chaque résolution rend aussi
+`impactPublication.personnes`, le nombre de personnes que la publication
+préviendrait — calculé comme la publication le calcule, sur les vacations par
+personne, et non par la contrainte. Les deux ne coïncident pas exactement (une
+personne qui change deux sièges compte deux points et une personne), et c'est
+le compte de personnes que l'écran montre.
+
+**Banc de comparaison** (fixture `festival-realiste`, 153 animateurs, 65
+stands, 600 s par résolution, réamorçage depuis le plan publié) — voir la
+décision [0025](decisions/0025-stabilite-du-plan-publie.md) pour les
+chiffres.
+
 ## Contraintes ad hoc : les contradictions refusées à la saisie
 
 `ContrainteAdHoc` dans le domaine et sur le fil, **« Ajustements manuels »** à

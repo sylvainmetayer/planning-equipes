@@ -1526,12 +1526,25 @@ export interface ReamorcageEffectue {
   postesLiberes: number;
 }
 
+/**
+ * How many people would have to be told if the plan just solved were published
+ * now — the same count the publication screen shows, computed at the end of
+ * every solve. `null` when nothing was ever published.
+ */
+export interface ImpactPublication {
+  personnes: number;
+  /** When the plan compared against was published. */
+  publieLe: string;
+}
+
 /** Payload of a finished full SOLVE job: a diagnostic plus the plan it replaced. */
 export interface ResultatSolve {
   diagnostic: PlanningDiagnostic;
   previousPlan: PreviousPlan | null;
   /** Absent on payloads from before issue #174. */
   reamorcage?: ReamorcageEffectue | null;
+  /** Absent on payloads from before the stability rule. */
+  impactPublication?: ImpactPublication | null;
 }
 
 /** Payload of a finished incremental SOLVE job: a diagnostic plus what moved. */
@@ -1540,6 +1553,7 @@ export interface ResultatSolveIncremental {
   statistiques: StatistiquesIncremental;
   changements: ChangementAffectation[];
   previousPlan: PreviousPlan | null;
+  impactPublication?: ImpactPublication | null;
 }
 
 /** `POST /api/planning/snapshots/{id}/restore` on success. */

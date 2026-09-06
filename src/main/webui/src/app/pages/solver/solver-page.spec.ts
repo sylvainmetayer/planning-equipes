@@ -130,6 +130,7 @@ type PageInternals = {
   publicationDestinatairesEnCours: Signal<number>;
   onPublier: () => Promise<void>;
   libelleReamorcage: Signal<string>;
+  libelleImpactPublication: Signal<string>;
   pointDeDepart: Signal<string>;
   planEnregistre: Signal<boolean>;
   onRecommencerDeZero: () => Promise<void>;
@@ -518,6 +519,27 @@ describe('SolverPage', () => {
         reamorcage: { mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2 }
       });
       expect(page.libelleReamorcage()).toContain('10 postes repris et 2 laissés libres');
+    });
+
+    it('says how many people the publication would inform, and nothing before any publication', () => {
+      const page = createPage();
+
+      pushResult('SOLVE', {
+        diagnostic: diagnostic({ hardScore: 0 }),
+        previousPlan: null,
+        impactPublication: { personnes: 12, publieLe: '2026-09-01T10:00:00Z' }
+      });
+      expect(page.libelleImpactPublication()).toContain('12 personne(s) changeraient');
+
+      pushResult('SOLVE', {
+        diagnostic: diagnostic({ hardScore: 0 }),
+        previousPlan: null,
+        impactPublication: { personnes: 0, publieLe: '2026-09-01T10:00:00Z' }
+      });
+      expect(page.libelleImpactPublication()).toContain('Personne ne change');
+
+      pushResult('SOLVE', { diagnostic: diagnostic({ hardScore: 0 }), previousPlan: null, impactPublication: null });
+      expect(page.libelleImpactPublication()).toBe('');
     });
 
     it('recaps a cold start, and stays silent on a payload from before the feature', () => {

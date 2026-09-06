@@ -186,7 +186,8 @@ public class SolverJobService {
     public record ResultatSolve(
             PlanningService.PlanningDiagnostic diagnostic,
             PreviousPlan previousPlan,
-            ReamorcageEffectue reamorcage) {
+            ReamorcageEffectue reamorcage,
+            SolvePipeline.ImpactPublication impactPublication) {
     }
 
     /**
@@ -207,7 +208,8 @@ public class SolverJobService {
      * claim about a plan we never built.
      */
     private static ResultatSolve resultatSolve(SolvePipeline.Resolution<?> resolution) {
-        return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(), null);
+        return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(), null,
+                resolution.impactPublication());
     }
 
     /**
@@ -247,7 +249,8 @@ public class SolverJobService {
             PlanningService.ProblemeReamorce probleme = resolution.probleme();
             return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(),
                     new ReamorcageEffectue(probleme.reamorcage(), probleme.postesReamorces(),
-                            probleme.postesLiberes()));
+                            probleme.postesLiberes()),
+                    resolution.impactPublication());
         };
     }
 
@@ -261,7 +264,8 @@ public class SolverJobService {
             PlanningService.PlanningDiagnostic diagnostic,
             PlanningService.StatistiquesIncremental statistiques,
             List<ReplanificationDiff.ChangementAffectation> changements,
-            PreviousPlan previousPlan) {
+            PreviousPlan previousPlan,
+            SolvePipeline.ImpactPublication impactPublication) {
     }
 
     /**
@@ -293,7 +297,7 @@ public class SolverJobService {
             PlanningService.ProblemeIncremental probleme = resolution.probleme();
             return new ResultatSolveIncremental(resolution.diagnostic(), probleme.statistiques(),
                     ReplanificationDiff.compute(probleme.affectationsPrecedentes(), resolution.planning()),
-                    resolution.previousPlan());
+                    resolution.previousPlan(), resolution.impactPublication());
         };
     }
 

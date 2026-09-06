@@ -48,6 +48,15 @@ public class PlanningEvenement {
     @ProblemFactCollectionProperty
     private List<VerrouillagePlanning> verrouillages = new ArrayList<>();
 
+    /**
+     * The seats of the last published plan, read by {@code stabiliteDuPlanPublie}
+     * so a re-solve after publication moves as few people as the weight allows.
+     * Empty until a plan is published; filled by {@code PlanningService.prepareProblem}
+     * before every solve and every diagnosis, never sent by a caller.
+     */
+    @ProblemFactCollectionProperty
+    private List<AffectationPubliee> affectationsPubliees = new ArrayList<>();
+
     // Never exposed over the API: PlanningService.prepareProblem always sets
     // this from server-side configuration before a solve. Auto-discovered by
     // Timefold from its type alone (no annotation needed), and must never be
@@ -158,6 +167,14 @@ public class PlanningEvenement {
 
     public void setVerrouillages(List<VerrouillagePlanning> verrouillages) {
         this.verrouillages = verrouillages;
+    }
+
+    public List<AffectationPubliee> getAffectationsPubliees() {
+        return affectationsPubliees;
+    }
+
+    public void setAffectationsPubliees(List<AffectationPubliee> affectationsPubliees) {
+        this.affectationsPubliees = affectationsPubliees == null ? new ArrayList<>() : affectationsPubliees;
     }
 
     public ConstraintWeightOverrides<HardMediumSoftScore> getPonderationsContraintes() {

@@ -151,6 +151,13 @@ solveur devrait d'abord défaire est un moins bon départ qu'un trou. Un plan
 de départ infaisable n'achète aucun raccourci : la terminaison sur
 faisabilité ne se déclenche pas, le budget est consommé en entier.
 
+Chaque résultat porte aussi `impactPublication: { personnes, publieLe }` —
+combien de personnes verraient leur emploi du temps changer par rapport au
+dernier plan publié, compté comme la publication le compte — ou `null` tant
+que rien n'a été publié. C'est le compte à lire avant de publier ; la règle
+`stabiliteDuPlanPublie` (voir [`contraintes.md`](contraintes.md#stabilité-du-plan-publié))
+est ce qui le tient bas.
+
 Le choix est **persisté avec le job** (`solver_job.reamorcage`, V68) : une
 résolution en file rejouée après un redémarrage démarre comme on le lui avait
 demandé. Le résultat le restitue — `reamorcage: { mode, postes, postesLiberes }`,

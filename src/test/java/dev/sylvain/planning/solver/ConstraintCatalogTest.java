@@ -95,7 +95,7 @@ class ConstraintCatalogTest {
                     assertThat(definition.niveau()).isEqualTo(ConstraintCatalog.Niveau.MEDIUM);
                     assertThat(definition.categorie()).isEqualTo(ConstraintCatalog.CATEGORIE_QUALITE);
                 })
-                .hasSize(12);
+                .hasSize(13);
 
         // Nothing protected is presented as a dial.
         assertThat(ConstraintCatalog.definitions())

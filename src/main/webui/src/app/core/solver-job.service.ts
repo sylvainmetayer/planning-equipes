@@ -29,6 +29,7 @@ import {
   PerimetreReplanification,
   PlanningDiagnostic,
   PlanningEvenement,
+  ImpactPublication,
   PreviousPlan,
   Reamorcage,
   ReamorcageEffectue,
@@ -998,6 +999,14 @@ export function extrairePlanPrecedent(result: unknown): PreviousPlan | null {
     return null;
   }
   return (result as Partial<ResultatSolve>).previousPlan ?? null;
+}
+
+/** The people a finished solve would disturb if published; `null` when nothing was published or the payload predates it. */
+export function extraireImpactPublication(result: unknown): ImpactPublication | null {
+  if (!result || typeof result !== 'object') {
+    return null;
+  }
+  return (result as Partial<ResultatSolve>).impactPublication ?? null;
 }
 
 /**

@@ -195,6 +195,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Fonctionnalité | En une phrase |
 | --- | --- |
 | Génération automatique du planning | Le moteur d'optimisation affecte les animateurs aux places à pourvoir, sous trois niveaux d'exigence : le cadre légal et les incompatibilités (jamais franchis), la couverture des postes, puis l'équité, les souhaits et le confort |
+| Stabilité du plan publié | Une fois le planning envoyé, chaque personne déplacée coûte au solveur : un recalcul après un changement tardif bouge le minimum de gens déjà prévenus, et le récapitulatif dit combien la publication préviendrait |
 | Trois façons de lancer le solveur | « Calculer le planning » repart du plan enregistré s'il existe et cherche à l'améliorer, sans rien figer hormis les verrouillages ; « Corriger après un changement » fige ce qui tient et ne recalcule que les postes rouverts ; « Recommencer de zéro » abandonne l'acquis, et le dit avant. La page annonce d'où partira le prochain calcul et d'où le dernier est parti |
 | Découpage automatique en vacations | Transforme l'amplitude d'ouverture d'une journée en vacations réelles : durée cible, relais, pauses repas et stratégie de couverture pendant la pause |
 | File d'attente du solveur | Planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file survit à un redémarrage du serveur ; la résolution qui était en cours, elle, est perdue et signalée comme interrompue |
