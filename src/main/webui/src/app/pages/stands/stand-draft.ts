@@ -121,6 +121,11 @@ export function effectifInvalide(draft: StandDraft): boolean {
   return Number(draft.effectifMax) < Number(draft.effectifMin);
 }
 
+/** A stand always carries at least one typologie (issue #343) — the server refuses otherwise, this says it first. */
+export function typologiesVides(draft: StandDraft): boolean {
+  return (draft.typologiesProposees ?? []).length === 0;
+}
+
 /**
  * Any closure missing a date or a start time, or whose end time isn't strictly
  * after its start — the backend rejects these outright. An *empty* end time is
@@ -157,6 +162,7 @@ export function conflitOuvertureFermeture(draft: StandDraft): boolean {
  */
 export function brouillonInvalide(draft: StandDraft): boolean {
   return (
+    typologiesVides(draft) ||
     effectifInvalide(draft) ||
     indisponibiliteInvalide(draft) ||
     ouvertureInvalide(draft) ||

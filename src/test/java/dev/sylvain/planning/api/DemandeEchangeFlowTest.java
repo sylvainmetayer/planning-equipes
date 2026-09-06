@@ -144,8 +144,8 @@ class DemandeEchangeFlowTest {
         Animateur bruno = persistedAnimateur("ECH-B");
         Creneau creneauA = new Creneau(CRENEAU_ID, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
         Creneau creneauB = new Creneau(creneauCibleId, 2, JOUR.plusDays(1), LocalTime.of(14, 0), LocalTime.of(16, 0));
-        Stand standUn = new Stand("ECH-S1", "Stand un", Set.of(), 1, 1, false);
-        Stand standDeux = new Stand("ECH-S2", "Stand deux", Set.of(), 1, 1, false);
+        Stand standUn = new Stand("ECH-S1", "Stand un", Set.of("STRATEGIE"), 1, 1, false);
+        Stand standDeux = new Stand("ECH-S2", "Stand deux", Set.of("STRATEGIE"), 1, 1, false);
         PosteAffectation posteAlice = new PosteAffectation("ECH-P1", standUn, creneauA);
         posteAlice.setAnimateur(alice);
         PosteAffectation posteBruno = new PosteAffectation("ECH-P2", standDeux, creneauB);
@@ -644,8 +644,8 @@ class DemandeEchangeFlowTest {
         Animateur bruno = new Animateur("ECH-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Animateur chloe = new Animateur("ECH-C", "Chloé", "Durand", LocalDate.of(1995, 3, 3), false);
         chloe.setJoursIndisponibles(Set.of(JOUR));
-        Stand standUn = new Stand("ECH-S1", "Stand un", Set.of(), 1, 1, false);
-        Stand standDeux = new Stand("ECH-S2", "Stand deux", Set.of(), 1, 1, false);
+        Stand standUn = new Stand("ECH-S1", "Stand un", Set.of("STRATEGIE"), 1, 1, false);
+        Stand standDeux = new Stand("ECH-S2", "Stand deux", Set.of("STRATEGIE"), 1, 1, false);
         Creneau creneau = new Creneau(CRENEAU_ID, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
         PosteAffectation posteUn = new PosteAffectation("ECH-P1", standUn, creneau);
         posteUn.setAnimateur(alice);
@@ -683,7 +683,7 @@ class DemandeEchangeFlowTest {
         animateurs.add(denis);
         Creneau lendemain = new Creneau(CRENEAU_AUTRE_JOUR, 2, JOUR.plusDays(1),
                 LocalTime.of(14, 0), LocalTime.of(16, 0));
-        Stand standDeux = new Stand("ECH-S2", "Stand deux", Set.of(), 1, 1, false);
+        Stand standDeux = new Stand("ECH-S2", "Stand deux", Set.of("STRATEGIE"), 1, 1, false);
         PosteAffectation posteDenis = new PosteAffectation("ECH-P3", standDeux, lendemain);
         posteDenis.setAnimateur(denis);
         List<PosteAffectation> postes = new ArrayList<>(planning.getPostes());

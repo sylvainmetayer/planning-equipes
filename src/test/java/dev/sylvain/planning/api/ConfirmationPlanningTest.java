@@ -208,9 +208,9 @@ class ConfirmationPlanningTest {
         Animateur alice = new Animateur("CONF-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("CONF-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Animateur carla = new Animateur("CONF-C", "Carla", "Roux", LocalDate.of(1994, 3, 3), false);
-        Stand un = new Stand("CONF-S1", "Stand confirmation un", Set.of(), 1, 1, false);
-        Stand deux = new Stand("CONF-S2", "Stand confirmation deux", Set.of(), 1, 1, false);
-        Stand trois = new Stand("CONF-S3", "Stand confirmation trois", Set.of(), 1, 1, false);
+        Stand un = new Stand("CONF-S1", "Stand confirmation un", Set.of("STRATEGIE"), 1, 1, false);
+        Stand deux = new Stand("CONF-S2", "Stand confirmation deux", Set.of("STRATEGIE"), 1, 1, false);
+        Stand trois = new Stand("CONF-S3", "Stand confirmation trois", Set.of("STRATEGIE"), 1, 1, false);
         Creneau creneau = new Creneau(9601L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
 
         PosteAffectation posteAlice = new PosteAffectation("CONF-P1", stand(standAlice, un, deux, trois), creneau);

@@ -37,7 +37,7 @@ class ConcurrentModificationGuardTest {
 
     @Test
     void staleStandWriteIsRefusedAndNothingIsWritten() {
-        Stand stand = referenceData.createStand(new Stand("CM-S1", "Stand", Set.of(), 1, 1, false));
+        Stand stand = referenceData.createStand(new Stand("CM-S1", "Stand", Set.of("STRATEGIE"), 1, 1, false));
         try {
             assertThat(stand.getModifieLe()).isNotNull();
             // Session B saves first.
@@ -47,7 +47,7 @@ class ConcurrentModificationGuardTest {
             assertThat(ecritB.getModifieLe()).isAfter(stand.getModifieLe());
 
             // Session A still holds the stamp it loaded before B wrote.
-            Stand sessionA = new Stand("CM-S1", "Renommé par A", Set.of(), 1, 1, false);
+            Stand sessionA = new Stand("CM-S1", "Renommé par A", Set.of("STRATEGIE"), 1, 1, false);
             sessionA.setModifieLe(stand.getModifieLe());
             assertThatThrownBy(() -> referenceData.updateStand("CM-S1", sessionA))
                     .isInstanceOf(BusinessError.Stale.class)

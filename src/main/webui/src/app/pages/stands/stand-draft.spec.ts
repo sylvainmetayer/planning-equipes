@@ -23,12 +23,13 @@ import {
   normaliserEffectif,
   ouvertureVide,
   toDraft,
+  typologiesVides,
   versStand
 } from './stand-draft';
 import type { Emplacement, HoraireStand, Stand } from '../../core/models';
 
 function draft(overrides: Partial<StandDraft> = {}): StandDraft {
-  return { ...toDraft(null), id: 'S1', nom: 'Stand 1', ...overrides };
+  return { ...toDraft(null), id: 'S1', nom: 'Stand 1', typologiesProposees: ['STRATEGIE'], ...overrides };
 }
 
 function plage(overrides: Partial<ReturnType<typeof plageVide>> = {}) {
@@ -236,6 +237,18 @@ describe('brouillonInvalide', () => {
         draft({ indisponibilites: [plage({ date: '2026-07-10' })], ouvertures: [plage({ date: '2026-07-10' })] })
       )
     ).toBe(true);
+  });
+});
+
+describe('typologiesVides — un stand a toujours au moins une typologie (#343)', () => {
+  it('rend le brouillon invalide tant qu\'aucune typologie n\'est choisie', () => {
+    const sans = { ...draft(), typologiesProposees: [] };
+    expect(typologiesVides(sans)).toBe(true);
+    expect(brouillonInvalide(sans)).toBe(true);
+
+    const avec = { ...sans, typologiesProposees: ['STRATEGIE'] };
+    expect(typologiesVides(avec)).toBe(false);
+    expect(brouillonInvalide(avec)).toBe(false);
   });
 });
 

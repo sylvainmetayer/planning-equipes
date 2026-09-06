@@ -47,10 +47,17 @@ class EditionResourceTest {
                 .then().statusCode(200);
     }
 
+    /** A stand always carries a typologie (issue #343): one is created in the edition first, idempotently. */
     private void createStand(String editionId, String standId) {
         given().header(HEADER, editionId)
                 .contentType("application/json")
-                .body("{\"id\":\"" + standId + "\",\"nom\":\"" + standId + "\",\"effectifMin\":1,\"effectifMax\":2}")
+                .body("{\"id\":\"TYPO-" + editionId + "\",\"label\":\"Typologie\"}")
+                .when().post("/api/typologies")
+                .then().statusCode(200);
+        given().header(HEADER, editionId)
+                .contentType("application/json")
+                .body("{\"id\":\"" + standId + "\",\"nom\":\"" + standId + "\",\"typologiesProposees\":[\"TYPO-"
+                        + editionId + "\"],\"effectifMin\":1,\"effectifMax\":2}")
                 .when().post("/api/stands")
                 .then().statusCode(200);
     }
@@ -159,7 +166,7 @@ class EditionResourceTest {
                 .when().post("/api/animateurs")
                 .then().statusCode(200);
         given().header(HEADER, DEFAUT).contentType("application/json")
-                .body("{\"id\":\"STAND-HORAIRE\",\"nom\":\"Stand à règles\",\"effectifMin\":1,\"effectifMax\":2,"
+                .body("{\"id\":\"STAND-HORAIRE\",\"nom\":\"Stand à règles\",\"typologiesProposees\":[\"STRATEGIE\"],\"effectifMin\":1,\"effectifMax\":2,"
                         + "\"horaires\":[{\"mode\":\"FERMETURE\",\"typeJours\":\"TOUS\","
                         + "\"fenetres\":[{\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}]}]}")
                 .when().post("/api/stands")

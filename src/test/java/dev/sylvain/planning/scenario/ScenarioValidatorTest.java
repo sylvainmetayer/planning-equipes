@@ -53,6 +53,18 @@ class ScenarioValidatorTest {
         assertThat(ScenarioValidator.validate(MINIMAL)).isEmpty();
     }
 
+    /** Issue #343: a stand without any typologie is refused, and the message says which entry. */
+    @Test
+    void aStandWithoutTypologieIsReportedByItsEntry() throws IOException {
+        String sansTypologie = MINIMAL.replace("typologiesProposees: [STRATEGIE]", "typologiesProposees: []");
+
+        List<String> erreurs = ScenarioValidator.validate(sansTypologie);
+
+        assertThat(erreurs).singleElement().asString()
+                .startsWith("stands[0].typologiesProposees:")
+                .contains("au moins une typologie");
+    }
+
     @Test
     void uneSectionObligatoireAbsenteEstSignalee() throws IOException {
         String withoutStands = MINIMAL.replaceAll("(?s)stands:.*?animateurs:", "animateurs:");

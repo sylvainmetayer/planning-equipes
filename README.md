@@ -233,7 +233,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 
 | Fonctionnalité | En une phrase |
 | --- | --- |
-| Stands | Typologies, effectifs minimum et maximum, restriction aux majeurs, indicateurs premium et effort, horaires en règles récurrentes complétées d'exceptions datées — chaque fenêtre d'ouverture peut nommer son propre effectif, pour un stand qui n'a pas le même besoin le matin, l'après-midi et en nocturne |
+| Stands | Au moins une typologie (toujours), effectifs minimum et maximum, restriction aux majeurs, indicateurs premium et effort, horaires en règles récurrentes complétées d'exceptions datées — chaque fenêtre d'ouverture peut nommer son propre effectif, pour un stand qui n'a pas le même besoin le matin, l'après-midi et en nocturne |
 | Animateurs | Identité, compétences par typologie et niveau, souhaits, jours d'indisponibilité ; le régime légal se déduit de l'âge à la date de chaque créneau |
 | Créneaux | Découpage temporel que le solveur remplit, saisi à la main, en série (une journée type répétée sur les jours choisis), généré par le découpage, ou déduit des horaires déjà saisis sur les stands — une coupure à chaque heure où un stand ouvre ou ferme ; la page déclare si la grille contient des amplitudes ou des vacations, et en lit le contrôle |
 | Typologies | Vocabulaire commun entre compétences et jeux d'un stand, dont la typologie « ninja » des polyvalents |

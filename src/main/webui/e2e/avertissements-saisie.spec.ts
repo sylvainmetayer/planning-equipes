@@ -61,7 +61,7 @@ test.beforeAll(async ({ playwright }, testInfo) => {
     data: {
       id: STAND,
       nom: "Stand de l'après-midi",
-      typologiesProposees: [],
+      typologiesProposees: ['STRATEGIE'],
       effectifMin: 1,
       effectifMax: 2,
       reserveMajeurs: false,
@@ -135,6 +135,10 @@ test.describe('avertissements de saisie', () => {
     const dialog = page.getByRole('dialog');
     await dialog.getByLabel('Identifiant').fill(STAND_MATIN);
     await dialog.getByLabel('Nom').fill('Stand du matin');
+    // A stand always carries a typologie (issue #343): the form refuses to submit without one.
+    await dialog.getByLabel('Typologies de jeu').click();
+    await page.getByRole('option', { name: 'STRATEGIE' }).click();
+    await page.keyboard.press('Escape');
     await dialog.getByRole('button', { name: "Ajouter une règle d'horaire" }).click();
     // The whole day's windows on one line: the morning, before the only créneau.
     await dialog.getByLabel('Fenêtres de la journée').fill('08:00-10:00');

@@ -26,11 +26,27 @@ final class StandValidator {
     }
 
     static void check(Stand stand) {
+        checkTypologies(stand);
         checkEffectifs(stand);
         checkIndisponibilites(stand);
         checkOuvertures(stand);
         checkExclusiveModesPerDay(stand);
         checkHoraires(stand);
+    }
+
+    /**
+     * A stand is always attached to at least one typologie (issue #343).
+     * Without one, {@code Animateur.hasCompetenceFor} answers false for
+     * everybody but the polyvalents: the tightest bottleneck the model can
+     * produce, born from an entry nothing flagged. Refused on write only — a
+     * row already stored without one stays readable and solvable, and is
+     * refused at its next save with this message.
+     */
+    private static void checkTypologies(Stand stand) {
+        if (stand.getTypologiesProposees() == null || stand.getTypologiesProposees().isEmpty()) {
+            throw new BusinessError.Invalid("Le stand « " + stand.getId() + " » ne propose aucune typologie de jeu : "
+                    + "un stand est toujours rattaché à au moins une typologie. Choisissez-en une avant d'enregistrer.");
+        }
     }
 
     private static void checkEffectifs(Stand stand) {

@@ -395,6 +395,7 @@
   "stands.field.effectifMin": "Minimum headcount",
   "stands.field.effectifMax": "Maximum headcount",
   "stands.effectifInvalid": "Maximum headcount cannot be lower than the minimum headcount.",
+  "stands.typologiesRequises": "A stand is always attached to at least one game typologie: pick one.",
   "stands.field.typologies": "Game categories",
   "stands.field.reserveMajeurs": "Adults only",
   "stands.premium.tooltip": "Editor stand: the solver avoids staff rotation and favours experienced staff members.",

@@ -477,6 +477,7 @@
           "type" : "boolean"
         },
         "typologiesProposees" : {
+          "minItems" : 1,
           "type" : "array",
           "items" : {
             "type" : "string"

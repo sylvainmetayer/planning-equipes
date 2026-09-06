@@ -46,7 +46,7 @@ class AvertissementsEcritureTest {
                         {
                           "id":"AVERT-STAND",
                           "nom":"Stand de l'après-midi",
-                          "typologiesProposees":[],
+                          "typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,
                           "effectifMax":2,
                           "reserveMajeurs":false,
@@ -127,7 +127,7 @@ class AvertissementsEcritureTest {
                         {
                           "id":"AVERT-MATIN",
                           "nom":"Stand du matin",
-                          "typologiesProposees":[],
+                          "typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,
                           "effectifMax":1,
                           "reserveMajeurs":false,
@@ -161,7 +161,7 @@ class AvertissementsEcritureTest {
                 .contentType("application/json")
                 .body("""
                         {
-                          "id":"AVERT-MATIN","nom":"Stand du matin","typologiesProposees":[],
+                          "id":"AVERT-MATIN","nom":"Stand du matin","typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,"effectifMax":1,"reserveMajeurs":false,
                           "horaires":[
                             {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
@@ -176,7 +176,7 @@ class AvertissementsEcritureTest {
                 .contentType("application/json")
                 .body("""
                         {
-                          "id":"AVERT-MATIN","nom":"Renommé","typologiesProposees":[],
+                          "id":"AVERT-MATIN","nom":"Renommé","typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,"effectifMax":1,"reserveMajeurs":false,
                           "horaires":[
                             {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
@@ -199,7 +199,7 @@ class AvertissementsEcritureTest {
                         {
                           "id":"AVERT-STAND",
                           "nom":"Renommé",
-                          "typologiesProposees":[],
+                          "typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,
                           "effectifMax":2,
                           "reserveMajeurs":false,

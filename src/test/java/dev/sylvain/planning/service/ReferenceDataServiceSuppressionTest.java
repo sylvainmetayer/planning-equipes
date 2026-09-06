@@ -246,6 +246,7 @@ class ReferenceDataServiceSuppressionTest {
         try {
             // Edition B gets a referential of its own, through the edition scope.
             editionContext.executeIn(EDITION_VOISINE, () -> {
+                referenceData.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
                 referenceData.createStand(stand("SUP-S10"));
                 referenceData.createAnimateur(animateur("SUP-A10"));
             });
@@ -372,6 +373,7 @@ class ReferenceDataServiceSuppressionTest {
         editions.create(new Edition(EDITION_VOISINE, "Édition voisine", false, null));
         try {
             editionContext.executeIn(EDITION_VOISINE, () -> {
+                referenceData.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
                 referenceData.createStand(stand("SUP-S13"));
                 referenceData.createAnimateur(animateur("SUP-A13"));
             });
@@ -497,7 +499,7 @@ class ReferenceDataServiceSuppressionTest {
     }
 
     private static Stand stand(String id) {
-        return new Stand(id, "Stand " + id, Set.of(), 1, 1, false);
+        return new Stand(id, "Stand " + id, Set.of("STRATEGIE"), 1, 1, false);
     }
 
     private static Animateur animateur(String id) {

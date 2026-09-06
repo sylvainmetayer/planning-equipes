@@ -535,6 +535,11 @@ peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
 ## Invariants à ne pas casser
 
 - Un poste = une place, jamais un couple stand × créneau.
+- Un stand est toujours rattaché à **au moins une typologie** (#343) : sans
+  elle, seuls les polyvalents pourraient le tenir, le goulot le plus serré du
+  modèle, né d'une saisie que rien ne signalait. Refusé à l'écriture (CRUD,
+  masse, MCP, import) ; une ligne ancienne sans typologie reste lisible et
+  solvable, et sera refusée à sa prochaine sauvegarde.
 - Le statut mineur/majeur est calculé, jamais stocké.
 - `souhaits` est un `Set` sans ordre ni priorité — ne pas le transformer en
   liste ordonnée.

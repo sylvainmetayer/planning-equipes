@@ -237,6 +237,18 @@ describe('StandFormDialog', () => {
     expect(min.getAttribute('aria-invalid')).toBe('false');
   });
 
+  // Issue #343: a stand always carries a typologie, and the form says so before the server does.
+  it('shows the typologies error and blocks the submit without any typologie', async () => {
+    const { fixture } = mount(stand({ typologiesProposees: [] }));
+    await fixture.whenStable();
+
+    const erreur = root(fixture).querySelector('#stand-typologies-erreur');
+    expect(erreur).not.toBeNull();
+    expect(erreur!.getAttribute('role')).toBe('alert');
+    expect(erreur!.textContent).toContain('au moins une typologie');
+    expect(soumettre(fixture).disabled).toBe(true);
+  });
+
   it('accepts a stand whose bounds are coherent', async () => {
     const { fixture } = mount(stand({ effectifMin: 1, effectifMax: 3 }));
     await fixture.whenStable();

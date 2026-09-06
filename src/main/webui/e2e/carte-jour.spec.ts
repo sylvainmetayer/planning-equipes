@@ -35,6 +35,7 @@ function nettoyage(): string {
     `delete from poste_affectation where creneau_id in (${SEED.creneauMatin}, ${SEED.creneauSoir});`,
     `delete from creneau where id in (${SEED.creneauMatin}, ${SEED.creneauSoir});`,
     `delete from animateur where id like 'CJ-%';`,
+    `delete from stand_typologie where stand_id like 'CJ-%';`,
     `delete from stand where id like 'CJ-%';`,
     `delete from emplacement where id like 'CJ-%';`
   ].join('\n');
@@ -53,6 +54,9 @@ async function amorcer(): Promise<void> {
     `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs, emplacement_id) values ('DEFAUT', '${SEED.matin}', 'Stand du matin', 1, 1, false, '${SEED.lieuMatin}');`,
     `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs, emplacement_id) values ('DEFAUT', '${SEED.soir}', 'Stand du soir', 1, 1, false, '${SEED.lieuSoir}');`,
     `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.nomade}', 'Stand nomade', 1, 1, false);`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.matin}', 'STRATEGIE');`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.soir}', 'STRATEGIE');`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.nomade}', 'STRATEGIE');`,
     `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.animateur}', 'Carte', 'Jour', '1990-01-01', false);`,
     `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauMatin}, '${SEED.jour}', '09:00', '11:00');`,
     `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauSoir}, '${SEED.jour}', '17:00', '19:00');`,

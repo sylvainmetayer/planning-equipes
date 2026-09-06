@@ -84,11 +84,15 @@ export async function seedPlanning(
     `delete from poste_affectation where creneau_id in (${SEED.creneauId}, ${SEED.creneauAutreJour});`,
     `delete from creneau where id in (${SEED.creneauId}, ${SEED.creneauAutreJour});`,
     `delete from animateur where id like 'E2E-%';`,
+    `delete from stand_typologie where stand_id like 'E2E-%';`,
     `delete from stand where id like 'E2E-%';`,
-    // The dataset itself. access_token is deliberately omitted: the database
+    // The dataset itself. Every stand carries a typologie (issue #343): a
+    // stand seeded without one would be refused at its next save. access_token is deliberately omitted: the database
     // generates it, and the suite reads it back through the admin API.
     `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.standDemandeur}', 'Stand E2E un', 1, 1, false);`,
     `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.standCible}', 'Stand E2E deux', 1, 1, false);`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.standDemandeur}', 'STRATEGIE');`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.standCible}', 'STRATEGIE');`,
     // Alice carries an email (mail-sending tests); Bruno deliberately none.
     `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email) values ('DEFAUT', '${SEED.demandeur}', 'Alice', 'E2E', '1990-01-01', false, '${SEED.demandeur}@example.org');`,
     `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.cible}', 'Bruno', 'E2E', '1992-02-02', false);`,
@@ -195,12 +199,16 @@ export async function seedReferentielSolveur(
   for (const prefixe of prefixes) {
     statements.push(
       `delete from animateur where id like '${prefixe}%';`,
+      `delete from stand_typologie where stand_id like '${prefixe}%';`,
       `delete from stand where id like '${prefixe}%';`
     );
   }
   for (const stand of stands) {
     statements.push(
-      `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${stand.id}', '${stand.nom}', ${stand.effectif}, ${stand.effectif}, ${stand.reserveMajeurs ?? false});`
+      `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${stand.id}', '${stand.nom}', ${stand.effectif}, ${stand.effectif}, ${stand.reserveMajeurs ?? false});`,
+      // A stand always carries a typologie (issue #343): without one, the specs
+      // that then edit the stand through the API would be refused.
+      `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${stand.id}', 'STRATEGIE');`
     );
   }
   for (const animateur of animateurs) {

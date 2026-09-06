@@ -1328,6 +1328,13 @@ compétences et les typologies proposées référencent leurs `id` par clé
 utilisée aussi. `ninja` désigne la typologie des profils polyvalents, au plus
 une à la fois — la poser sur une autre retire le drapeau de la précédente.
 
+**Un stand porte toujours au moins une typologie** (#343) : `POST` et `PUT
+/api/stands` répondent `400` sur `typologiesProposees` vide, en nommant le
+stand — sans typologie, seuls les polyvalents pourraient le tenir. Le contrôle
+est à l'écriture seulement : une ligne ancienne sans typologie se lit et se
+solve encore, et se voit refuser à sa prochaine sauvegarde, jusqu'à ce qu'on
+lui en donne une.
+
 Un créneau requiert une date, une heure de début et une heure de fin : sans
 l'une des trois, l'écriture répond `400` plutôt que d'aller heurter la colonne
 `NOT NULL`. En revanche une fin **antérieure ou égale** au début est acceptée —

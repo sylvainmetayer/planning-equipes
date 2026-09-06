@@ -30,6 +30,7 @@ import {
   plageVide,
   retirerDe,
   toDraft,
+  typologiesVides,
   versStand
 } from './stand-draft';
 
@@ -89,6 +90,7 @@ export class StandFormDialog {
   protected readonly draft = signal<StandDraft>(toDraft(this.data.stand));
 
   protected readonly effectifInvalid = computed(() => effectifInvalide(this.draft()));
+  protected readonly typologiesInvalides = computed(() => typologiesVides(this.draft()));
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
     return id ? $localize`:@@stands.form.editTitle:Modifier le stand ${id}:id:` : $localize`:@@stands.form.newTitle:Nouveau stand`;

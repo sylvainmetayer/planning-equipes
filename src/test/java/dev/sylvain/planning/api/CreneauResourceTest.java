@@ -317,7 +317,7 @@ class CreneauResourceTest {
     private void standOuvertSur(String id, String fenetres) {
         given().contentType("application/json")
                 .body("""
-                        {"id":"%s","nom":"%s","typologiesProposees":[],"effectifMin":1,"effectifMax":1,
+                        {"id":"%s","nom":"%s","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1,
                          "reserveMajeurs":false,
                          "horaires":[{"mode":"OUVERTURE","jours":"TOUS","fenetres":[%s]}]}
                         """.formatted(id, id, fenetres))

@@ -68,6 +68,18 @@ class ReferenceDataServiceStandTest {
         assertThat(cree.getOuvertures().get(0).getHeureFin()).isNull();
     }
 
+    /** Issue #343: refused on write, and the message names the stand. */
+    @Test
+    void aStandWithoutTypologieIsRefusedByName() {
+        Stand stand = new Stand("STAND-SANS-TYPO", "Sans typologie", Set.of(), 1, 1, false);
+
+        assertThatThrownBy(() -> referenceDataService.createStand(stand))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("STAND-SANS-TYPO")
+                .hasMessageContaining("au moins une typologie");
+        assertThat(referenceDataService.listStands()).noneMatch(s -> "STAND-SANS-TYPO".equals(s.getId()));
+    }
+
     @Test
     void ouvertureSansHeureDebutEstRejetee() {
         Stand stand = stand("STAND-OUV-2B");

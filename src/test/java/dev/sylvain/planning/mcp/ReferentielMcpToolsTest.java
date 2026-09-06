@@ -173,7 +173,7 @@ class ReferentielMcpToolsTest {
     void deriverLaGrilleDesStandsPrevisualiseSansEcrirePuisEcrit() {
         creneauTools.supprimer_creneaux(null, null, null, true, null);
         dev.sylvain.planning.domain.Stand stand = new dev.sylvain.planning.domain.Stand("DERIV-MCP", "Dérivé",
-                java.util.Set.of(), 1, 1, false);
+                java.util.Set.of("STRATEGIE"), 1, 1, false);
         stand.setHoraires(new java.util.ArrayList<>(List.of(dev.sylvain.planning.domain.HoraireStand.everyDay(
                 dev.sylvain.planning.domain.ModeHoraire.OUVERTURE,
                 new dev.sylvain.planning.domain.FenetreHoraire(java.time.LocalTime.of(10, 0), java.time.LocalTime.of(12, 0)),
@@ -228,7 +228,7 @@ class ReferentielMcpToolsTest {
 
     @Test
     void uneFenetreDHoraireEtUneOuverturePortentLeurEffectifParMcp() {
-        standTools.creer_stand("STAND-MCP-EFF", "Village", List.of(), 1, 4, false, false, null, null, null);
+        standTools.creer_stand("STAND-MCP-EFF", "Village", List.of("STRATEGIE"), 1, 4, false, false, null, null, null);
         try {
             StandView avecRegle = standTools.ajouter_horaire_stand("STAND-MCP-EFF", "OUVERTURE",
                     "10:00-12:00@2, 14:00-@4", null, null, null, null, null, null, null);
@@ -255,7 +255,7 @@ class ReferentielMcpToolsTest {
 
     @Test
     void unEffectifDeFenetreNulOuMalFormeEstRefuse() {
-        standTools.creer_stand("STAND-MCP-EFF-0", "Village", List.of(), 1, 4, false, false, null, null, null);
+        standTools.creer_stand("STAND-MCP-EFF-0", "Village", List.of("STRATEGIE"), 1, 4, false, false, null, null, null);
         try {
             assertThatThrownBy(() -> standTools.ajouter_horaire_stand("STAND-MCP-EFF-0", "OUVERTURE",
                     "10:00-12:00@0", null, null, null, null, null, null, null))

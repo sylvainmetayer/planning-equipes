@@ -21,7 +21,7 @@ class StaleWriteResourceTest {
     @Test
     void putWithAnOutdatedModifieLeAnswers409WithTheCodeAndTheCurrentStamp() {
         String stand = """
-                {"id":"SW-S1","nom":"Stand","typologiesProposees":[],"effectifMin":1,"effectifMax":1,
+                {"id":"SW-S1","nom":"Stand","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1,
                  "reserveMajeurs":false,"premium":false,"niveauEffort":"NORMAL"}""";
         try {
             String modifieLe = given().contentType(ContentType.JSON).body(stand)

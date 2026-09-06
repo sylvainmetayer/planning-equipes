@@ -140,6 +140,10 @@ nomme — le même contrôle qu'à la saisie
 
 ## Typologies
 
+Chaque stand du fichier **propose au moins une typologie** (#343) : une entrée
+`typologiesProposees: []` est refusée, par le validateur (`stands[N].typologiesProposees`)
+comme par l'import, qui nomme l'entrée et son id.
+
 Un id référencé sans être déclaré est créé avec un libellé identique à son id.
 La section `typologies` permet de fixer un vrai libellé — elle est appliquée
 **après** l'import, pour ne pas être écrasée par cette création automatique. Au

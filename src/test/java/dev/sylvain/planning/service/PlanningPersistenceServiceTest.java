@@ -92,8 +92,9 @@ class PlanningPersistenceServiceTest {
         editionService.create(new Edition("EDITION-SCOPE", "Édition scope", false, null));
         try {
             editionContext.executeIn("EDITION-SCOPE", () -> {
+                referenceDataService.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
                 Stand stand = referenceDataService.createStand(
-                        new Stand("STAND-SCOPE", "Stand scope", Set.of(), 1, 1, false));
+                        new Stand("STAND-SCOPE", "Stand scope", Set.of("STRATEGIE"), 1, 1, false));
                 Creneau creneau = referenceDataService.createCreneau(
                         new Creneau(null, 1, LocalDate.of(2026, 7, 15), LocalTime.of(10, 0), LocalTime.of(12, 0)));
                 Animateur animateur = referenceDataService.createAnimateur(

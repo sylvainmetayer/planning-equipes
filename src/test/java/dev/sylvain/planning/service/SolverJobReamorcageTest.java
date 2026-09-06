@@ -205,7 +205,7 @@ class SolverJobReamorcageTest {
         Fixture(int sieges, int effectif) {
             this.sieges = sieges;
             this.effectif = effectif;
-            this.stand = new Stand("WARM-S1", "Stand warm", Set.of(), sieges, sieges, false);
+            this.stand = new Stand("WARM-S1", "Stand warm", Set.of("STRATEGIE"), sieges, sieges, false);
             this.animateurs = java.util.stream.IntStream.range(0, effectif)
                     .mapToObj(i -> new Animateur("WARM-A" + i, "Prenom", "Nom " + i, LocalDate.of(1990, 1, 1), false))
                     .toList();

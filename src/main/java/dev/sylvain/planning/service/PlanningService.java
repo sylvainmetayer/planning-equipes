@@ -1534,6 +1534,11 @@ public class PlanningService {
             String id = (String) standData.get("id");
             String nom = (String) standData.get("nom");
             List<String> typologiesStr = YamlSections.chaines(standData, "typologiesProposees");
+            if (typologiesStr.isEmpty()) {
+                // Same rule as StandValidator (issue #343), said in the file's terms.
+                throw new IllegalArgumentException("stands[" + standsList.indexOf(standData) + "] (id " + id
+                        + ") : aucune typologie proposée, un stand est toujours rattaché à au moins une typologie");
+            }
             Set<String> typologies = new HashSet<>(typologiesStr);
             int effectifMin = ((Number) standData.get("effectifMin")).intValue();
             int effectifMax = ((Number) standData.get("effectifMax")).intValue();

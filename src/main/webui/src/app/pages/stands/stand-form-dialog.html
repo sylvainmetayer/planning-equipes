@@ -31,13 +31,17 @@
 }
 <mat-form-field appearance="outline" class="span-2">
   <mat-label i18n="@@stands.field.typologies">Typologies de jeu</mat-label>
-  <mat-select name="typologies" multiple [disabled]="editingLocked()"
+  <mat-select name="typologies" multiple required [disabled]="editingLocked()"
+              aria-describedby="stand-typologies-erreur" [attr.aria-invalid]="typologiesInvalides() || null"
               [ngModel]="draft().typologiesProposees" (ngModelChange)="patch({ typologiesProposees: $event })">
     @for (typologie of store.typologies(); track typologie.id) {
       <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
     }
   </mat-select>
 </mat-form-field>
+@if (typologiesInvalides()) {
+  <p class="field-error span-2" id="stand-typologies-erreur" role="alert" i18n="@@stands.typologiesRequises">Un stand est toujours rattaché à au moins une typologie de jeu : choisissez-en une.</p>
+}
 <mat-form-field appearance="outline" class="span-2">
   <mat-label i18n="@@stands.field.emplacement">Emplacement</mat-label>
   <mat-select name="emplacement" [disabled]="editingLocked()"
