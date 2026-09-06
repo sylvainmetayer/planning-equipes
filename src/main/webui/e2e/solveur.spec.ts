@@ -81,7 +81,7 @@ test('un solve lancé depuis la page Solveur pourvoit tous les postes', async ({
 
   const page = await pageAdmin(browser, admin);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Résoudre avec Timefold' }).click();
+  await page.getByRole('button', { name: 'Calculer le planning' }).click();
   // The server-side job lock is the source of truth: first see the job start
   // (otherwise an early poll could observe "no job yet" and pass before the
   // solve even ran), then see it end.
@@ -293,7 +293,7 @@ test('la courbe de score se replie, s’en souvient, et continue d’enregistrer
   await expect(page.getByRole('img', { name: /Contraintes dures/ })).toBeHidden();
 
   // Panneau fermé, on relance : rien ici ne doit couper le flux.
-  await page.getByRole('button', { name: 'Résoudre avec Timefold' }).click();
+  await page.getByRole('button', { name: 'Calculer le planning' }).click();
   await expect
     .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 15_000 })
     .toBe(200);

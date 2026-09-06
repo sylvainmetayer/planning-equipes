@@ -60,6 +60,7 @@ public class SolverJobRepository {
             JobStatus statut,
             Long secondsLimit,
             ReplanificationScope scope,
+            Reamorcage reamorcage,
             boolean rejouable,
             String erreur,
             Instant soumisLe,
@@ -77,8 +78,8 @@ public class SolverJobRepository {
     public void record(LigneJob ligne) {
         String sql = """
  INSERT INTO solver_job (id, edition_id, edition_nom, type, statut, seconds_limit,
- perimetre, rejouable, erreur, soumis_le, demarre_le, termine_le)
- VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)
+ perimetre, reamorcage, rejouable, erreur, soumis_le, demarre_le, termine_le)
+ VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?)
  ON CONFLICT (id)
  DO UPDATE SET statut = EXCLUDED.statut, erreur = EXCLUDED.erreur, demarre_le = EXCLUDED.demarre_le,
  termine_le = EXCLUDED.termine_le""";
@@ -91,11 +92,12 @@ public class SolverJobRepository {
             ps.setString(5, ligne.statut().name());
             setLong(ps, 6, ligne.secondsLimit());
             ps.setString(7, writeScope(ligne.scope()));
-            ps.setBoolean(8, ligne.rejouable());
-            ps.setString(9, ligne.erreur());
-            ps.setTimestamp(10, horodatage(ligne.soumisLe()));
-            ps.setTimestamp(11, horodatage(ligne.demarreLe()));
-            ps.setTimestamp(12, horodatage(ligne.termineLe()));
+            ps.setString(8, ligne.reamorcage() == null ? null : ligne.reamorcage().name());
+            ps.setBoolean(9, ligne.rejouable());
+            ps.setString(10, ligne.erreur());
+            ps.setTimestamp(11, horodatage(ligne.soumisLe()));
+            ps.setTimestamp(12, horodatage(ligne.demarreLe()));
+            ps.setTimestamp(13, horodatage(ligne.termineLe()));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to persist solver job " + ligne.id(), e);
@@ -109,7 +111,7 @@ public class SolverJobRepository {
     public List<LigneJob> list() {
         String sql = """
  SELECT id, edition_id, edition_nom, type, statut, seconds_limit, perimetre::text AS perimetre,
- rejouable, erreur, soumis_le, demarre_le, termine_le
+ reamorcage, rejouable, erreur, soumis_le, demarre_le, termine_le
  FROM solver_job
  ORDER BY ordre""";
         List<LigneJob> lignes = new ArrayList<>();
@@ -149,11 +151,24 @@ public class SolverJobRepository {
                 JobStatus.valueOf(rs.getString("statut")),
                 secondsLimit,
                 readScope(rs.getString("perimetre")),
+                readReamorcage(rs.getString("reamorcage")),
                 rs.getBoolean("rejouable"),
                 rs.getString("erreur"),
                 instant(rs.getTimestamp("soumis_le")),
                 instant(rs.getTimestamp("demarre_le")),
                 instant(rs.getTimestamp("termine_le")));
+    }
+
+    /** An unreadable value falls back to the default, like {@link #readScope}: the queue matters more than one word. */
+    private static Reamorcage readReamorcage(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Reamorcage.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return Reamorcage.AUTO;
+        }
     }
 
     private String writeScope(ReplanificationScope scope) {

@@ -173,7 +173,7 @@ class SolverJobRepriseTest {
         String id = UUID.randomUUID().toString();
         Instant maintenant = Instant.now();
         jobRepository.record(new LigneJob(id, editionContext.editionIdCourant(), "Édition de test",
-                type, statut, 1L, scope, rejouable, null, maintenant,
+                type, statut, 1L, scope, null, rejouable, null, maintenant,
                 statut == JobStatus.RUNNING ? maintenant : null, null));
         return id;
     }

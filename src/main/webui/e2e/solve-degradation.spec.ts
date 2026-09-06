@@ -104,7 +104,7 @@ async function agrandirLeStand(standId: string, effectif: number): Promise<void>
 /** Runs a solve from the page itself, so the recap lands on screen as a user sees it. */
 async function resoudreDepuisLaPage(page: Page): Promise<void> {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Résoudre avec Timefold' }).click();
+  await page.getByRole('button', { name: 'Calculer le planning' }).click();
   // The server-side lock is the source of truth: see the job hold it, then
   // release it. Polling the result alone could pass before the solve ran.
   await expect
@@ -124,9 +124,17 @@ test("le premier solve d'une édition n'a rien à comparer, le suivant nomme le 
   // Nothing was captured before it: there was no plan to overwrite.
   expect(premier.result?.previousPlan).toBeNull();
 
+  // Issue #174: the first solve had nothing to start from, the second restarts
+  // from the plan the first one saved — every seat carried over, none pinned.
+  expect(premier.result?.reamorcage).toEqual({ mode: 'AUCUN', postes: 0, postesLiberes: 0 });
+
   const second = await lancerSolve(admin, DUREE_SOLVE_SECONDES);
 
   expect(second.result?.diagnostic.hardScore).toBe(0);
+  // At least this spec's seats: the edition may still hold another spec's stand.
+  expect(second.result?.reamorcage?.mode).toBe('PLAN_COURANT');
+  expect(second.result?.reamorcage?.postes).toBeGreaterThanOrEqual(POSTES_ATTENDUS);
+  expect(second.result?.reamorcage?.postesLiberes).toBe(0);
   expect(second.result?.previousPlan).not.toBeNull();
   // The snapshot named here is the one to restore to undo this solve.
   expect(second.result?.previousPlan?.snapshotId).toBeGreaterThan(0);
@@ -188,4 +196,42 @@ test("une résolution qui dégrade le plan le dit, et le retour en arrière rét
   await expect(page.getByRole('button', { name: "Revenir au plan d'avant" })).toBeHidden();
 
   await page.context().close();
+});
+
+/**
+ * Issue #174, as a user sees it: the page says where the next calculation
+ * starts from, « Recommencer de zéro » asks before throwing the saved plan
+ * away, and the recap says which starting point the run actually used.
+ */
+test('« Calculer » repart du plan enregistré, « Recommencer de zéro » demande confirmation', async ({ browser }) => {
+  test.slow();
+  await reseed();
+  const page = await pageAdmin(browser, admin);
+  try {
+    await page.goto('/');
+    await expect(page.locator('#contenu')).toContainText('Aucun plan enregistré : le calcul part de zéro.');
+    await expect(page.getByRole('button', { name: 'Recommencer de zéro' })).toBeDisabled();
+
+    await resoudreDepuisLaPage(page);
+    await expect(page.locator('#contenu')).toContainText('Point de départ : aucun, calcul de zéro.');
+    await expect(page.locator('#contenu')).toContainText(/repart du plan enregistré le .* \(\d+ affectations\)/);
+    await expect(page.getByRole('button', { name: 'Recommencer de zéro' })).toBeEnabled();
+
+    await resoudreDepuisLaPage(page);
+    await expect(page.locator('#contenu')).toContainText(/Point de départ : le plan enregistré, \d+ postes repris\./);
+
+    await page.getByRole('button', { name: 'Recommencer de zéro' }).click();
+    const confirmation = page.getByRole('dialog');
+    await expect(confirmation).toContainText('Recommencer de zéro ?');
+    await confirmation.getByRole('button', { name: 'Recommencer de zéro' }).click();
+    await expect
+      .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 15_000 })
+      .toBe(200);
+    await expect
+      .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 90_000 })
+      .toBe(204);
+    await expect(page.locator('#contenu')).toContainText('Point de départ : aucun, calcul de zéro.');
+  } finally {
+    await page.context().close();
+  }
 });

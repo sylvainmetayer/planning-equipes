@@ -1056,6 +1056,8 @@ export interface JobView {
   /** Display name of that edition, resolved server-side at submit time. */
   editionNom: string | null;
   secondsLimit: number | null;
+  /** Where a full solve was asked to start from (issue #174); null for an incremental job. */
+  reamorcage?: Reamorcage | null;
   submittedAt: string;
   startedAt: string | null;
   finishedAt: string | null;
@@ -1502,10 +1504,30 @@ export interface PreviousPlan {
   degraded: boolean;
 }
 
+/**
+ * Where a full solve is asked to start from (issue #174). `AUTO` re-seeds from
+ * the persisted plan when there is one and starts cold otherwise; it is the
+ * default everywhere, because starting cold is what silently loses the plan
+ * already reached. `AUCUN` is the cold start, by name — the one gesture that
+ * can lose it, and the screen asks for confirmation.
+ */
+export type Reamorcage = 'AUTO' | 'PLAN_COURANT' | 'AUCUN';
+
+/** Where a finished full solve actually started from: `AUTO` resolved into one of the two. */
+export interface ReamorcageEffectue {
+  mode: 'PLAN_COURANT' | 'AUCUN';
+  /** Seats carrying an animateur from the persisted plan, left movable; 0 on a cold start. */
+  postes: number;
+  /** Seats the persisted plan staffed but that had to start empty (animateur gone, or since unavailable). */
+  postesLiberes: number;
+}
+
 /** Payload of a finished full SOLVE job: a diagnostic plus the plan it replaced. */
 export interface ResultatSolve {
   diagnostic: PlanningDiagnostic;
   previousPlan: PreviousPlan | null;
+  /** Absent on payloads from before issue #174. */
+  reamorcage?: ReamorcageEffectue | null;
 }
 
 /** Payload of a finished incremental SOLVE job: a diagnostic plus what moved. */

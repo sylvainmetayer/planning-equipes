@@ -59,9 +59,9 @@ class SolveurMcpToolsQueueTest {
     @Test
     void uneResolutionPeutAttendreSonTourAuLieuDEchouer() throws InterruptedException {
         loadScenario();
-        JobView premier = solveurTools.lancer_solveur(4L, null, null);
+        JobView premier = solveurTools.lancer_solveur(4L, null, null, null);
 
-        JobView enFile = solveurTools.lancer_solveur(1L, true, null);
+        JobView enFile = solveurTools.lancer_solveur(1L, true, null, null);
 
         assertThat(enFile.status()).isEqualTo(JobStatus.QUEUED.name());
         assertThat(enFile.id()).isNotEqualTo(premier.id());
@@ -71,9 +71,9 @@ class SolveurMcpToolsQueueTest {
     @Test
     void sansMiseEnFileUneResolutionConcurrenteEstRefusee() throws InterruptedException {
         loadScenario();
-        JobView premier = solveurTools.lancer_solveur(4L, null, null);
+        JobView premier = solveurTools.lancer_solveur(4L, null, null, null);
 
-        assertThatThrownBy(() -> solveurTools.lancer_solveur(1L, false, null))
+        assertThatThrownBy(() -> solveurTools.lancer_solveur(1L, false, null, null))
                 .isInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining(premier.id())
                 .hasMessageContaining("enFile");
@@ -84,7 +84,7 @@ class SolveurMcpToolsQueueTest {
     @Test
     void laResolutionIncrementaleRepartDuPlanningPersiste() throws InterruptedException {
         loadScenario();
-        assertThat(awaitFinished(solveurTools.lancer_solveur(1L, null, null).id()).status())
+        assertThat(awaitFinished(solveurTools.lancer_solveur(1L, null, null, null).id()).status())
                 .isEqualTo(JobStatus.COMPLETED.name());
         int affectations = planningTools.etat_planning(null).affectationsPersistees();
         String animateurId = planningTools.lister_affectations(null, null, null, false, null, null).affectations().stream()
@@ -103,7 +103,7 @@ class SolveurMcpToolsQueueTest {
     @Test
     void unPerimetreSansCibleResoutCeQueLesChangementsOntInvalide() throws InterruptedException {
         loadScenario();
-        assertThat(awaitFinished(solveurTools.lancer_solveur(1L, null, null).id()).status())
+        assertThat(awaitFinished(solveurTools.lancer_solveur(1L, null, null, null).id()).status())
                 .isEqualTo(JobStatus.COMPLETED.name());
 
         JobView incremental = solveurTools.resoudre_incremental(null, null, null, 1L, null, null);

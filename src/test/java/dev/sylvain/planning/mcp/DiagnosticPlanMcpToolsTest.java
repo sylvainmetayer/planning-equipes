@@ -86,7 +86,7 @@ class DiagnosticPlanMcpToolsTest {
         awaitSolverIdle();
         scenarioTools.reinitialiser_donnees(null);
         scenarioTools.importer_scenario("scenario.yml", null);
-        JobView job = solveurTools.lancer_solveur(1L, null, null);
+        JobView job = solveurTools.lancer_solveur(1L, null, null, null);
         assertThat(awaitFinished(job.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
     }
 

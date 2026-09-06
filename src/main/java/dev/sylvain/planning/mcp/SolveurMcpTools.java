@@ -17,6 +17,7 @@ import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
+import dev.sylvain.planning.service.Reamorcage;
 import dev.sylvain.planning.service.ReplanificationScope;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
@@ -63,13 +64,18 @@ public class SolveurMcpTools {
 
     @Tool(description = "Lance une résolution en tâche de fond à partir des données de référence persistées "
             + "(stands, créneaux, animateurs). Renvoie l'id du job à interroger via statut_solveur. "
-            + "Avec enFile, la résolution attend son tour au lieu d'être refusée quand le solveur est occupé.",
+            + "Avec enFile, la résolution attend son tour au lieu d'être refusée quand le solveur est occupé. "
+            + "Par défaut elle repart du plan enregistré s'il en existe un, sans rien figer : un calcul de zéro "
+            + "perd la qualité déjà atteinte, demandez-le explicitement (reamorcage=AUCUN).",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
                     idempotentHint = false, openWorldHint = false))
     JobView lancer_solveur(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes,
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false) Boolean enFile,
+            @ToolArg(description = "Point de départ : AUTO (défaut, repart du plan enregistré s'il existe), "
+                    + "PLAN_COURANT (échoue s'il n'y a pas de plan), AUCUN (calcul de zéro)", required = false) String reamorcage,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return submit(() -> solverJobService.submitSolveFromReferenceData(secondes, Boolean.TRUE.equals(enFile)));
+        Reamorcage depart = Reamorcage.parse(reamorcage);
+        return submit(() -> solverJobService.submitSolveFromReferenceData(secondes, Boolean.TRUE.equals(enFile), depart));
     }
 
     @Tool(description = "Relance une résolution partielle à partir du planning persisté : tout ce qu'un "

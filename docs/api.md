@@ -126,6 +126,39 @@ portant le job en cours.
 FIFO. Statuts : `QUEUED` → `PENDING` → `RUNNING` → `COMPLETED` / `FAILED` /
 `CANCELLED` / `INTERROMPU`.
 
+### Point de départ d'une résolution complète
+
+`POST /api/solve/async/reference-data?reamorcage=AUTO|PLAN_COURANT|AUCUN`
+(#174). `AUTO`, le défaut, **repart du plan enregistré** s'il en existe un et
+part de zéro sinon ; `PLAN_COURANT` l'exige et fait échouer le job quand il
+n'y a rien d'où repartir ; `AUCUN` est le départ à froid, par son nom. Une
+valeur inconnue répond `400`.
+
+Repartir du plan, ce n'est **pas** l'épingler : chaque siège reçoit
+l'animateur que le plan lui donnait et reste mobile, seuls les verrouillages
+explicites sont figés. C'est ce qui distingue ce réamorçage de la
+replanification incrémentale, qui fige tout ce qui reste valable. Le solveur
+score la solution de départ en premier et conserve la meilleure qu'il ait
+vue : à données égales, le résultat ne descend jamais sous le plan de départ.
+
+Pourquoi le défaut n'est pas le départ à froid, y compris pour un script ou
+un assistant : mesuré sur une édition réelle (3 499 postes, 600 s), un solve
+à froid a fini **1 202 points de medium sous** le plan déjà en base, quand le
+réamorçage l'a conservé et amélioré de ~3 %. Le départ à froid est le cas qui
+détruit l'acquis, il se demande. Un siège dont le titulaire a disparu, ou qui
+s'est déclaré indisponible depuis, repart vide — semer une violation que le
+solveur devrait d'abord défaire est un moins bon départ qu'un trou. Un plan
+de départ infaisable n'achète aucun raccourci : la terminaison sur
+faisabilité ne se déclenche pas, le budget est consommé en entier.
+
+Le choix est **persisté avec le job** (`solver_job.reamorcage`, V68) : une
+résolution en file rejouée après un redémarrage démarre comme on le lui avait
+demandé. Le résultat le restitue — `reamorcage: { mode, postes, postesLiberes }`,
+où `mode` vaut ce qui a été fait (`PLAN_COURANT` ou `AUCUN`, jamais `AUTO`)
+— à côté de `previousPlan`, qui dit si le plan remplacé était meilleur. La
+même brique servira la reprise d'un job `INTERROMPU` (#183) : elle n'est
+spécifique à aucun écran.
+
 ### La file survit au redémarrage
 
 Ce qui est persisté (`solver_job`) est l'**intention** — type, budget, édition,

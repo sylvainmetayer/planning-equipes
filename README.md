@@ -64,7 +64,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
    sélectionné** pour remplir l'édition courante (les référentiels sont ensuite
    modifiables depuis **Stands**, **Emplacements**, **Animateurs**,
    **Créneaux** et **Typologies**).
-3. Revenir sur **Solveur** et cliquer sur **Résoudre avec Timefold** : la résolution
+3. Revenir sur **Solveur** et cliquer sur **Calculer le planning** : la résolution
    part en tâche de fond (plusieurs minutes sur le scénario complet), la
    navigation reste libre, le score se trace en direct et une notification
    s'affiche à la fin — y compris dans les autres navigateurs ouverts sur
@@ -195,6 +195,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Fonctionnalité | En une phrase |
 | --- | --- |
 | Génération automatique du planning | Le moteur d'optimisation affecte les animateurs aux places à pourvoir, sous trois niveaux d'exigence : le cadre légal et les incompatibilités (jamais franchis), la couverture des postes, puis l'équité, les souhaits et le confort |
+| Trois façons de lancer le solveur | « Calculer le planning » repart du plan enregistré s'il existe et cherche à l'améliorer, sans rien figer hormis les verrouillages ; « Corriger après un changement » fige ce qui tient et ne recalcule que les postes rouverts ; « Recommencer de zéro » abandonne l'acquis, et le dit avant. La page annonce d'où partira le prochain calcul et d'où le dernier est parti |
 | Découpage automatique en vacations | Transforme l'amplitude d'ouverture d'une journée en vacations réelles : durée cible, relais, pauses repas et stratégie de couverture pendant la pause |
 | File d'attente du solveur | Planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file survit à un redémarrage du serveur ; la résolution qui était en cours, elle, est perdue et signalée comme interrompue |
 | Courbe de score en direct | Les trois niveaux de score se tracent pendant la résolution, chacun à sa propre échelle, pour voir quand le calcul plafonne et l'arrêter à propos plutôt qu'attendre la fin du budget. Seule la résolution en cours est tracée |

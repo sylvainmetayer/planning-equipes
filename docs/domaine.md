@@ -253,6 +253,31 @@ créneau — replanifier partiellement n'a d'intérêt que si l'on peut dire qui
 impacté. Une permutation entre places interchangeables d'un même stand n'y
 figure pas : le planning de personne n'a changé.
 
+### Réamorçage d'une résolution complète
+
+Par défaut, une résolution complète **repart du plan persisté** quand il en
+existe un (#174) : chaque place reçoit l'animateur que le plan lui donnait, par
+le même rapprochement positionnel stand × créneau que les verrous et la
+replanification, et **reste mobile**. Rien n'est épinglé hormis les verrous
+explicites. C'est l'exact contraire de la replanification incrémentale sur un
+seul point — elle épingle tout ce qui reste valable, le réamorçage n'épingle
+rien — et c'est la seule chose qui les sépare : la replanification stabilise,
+le réamorçage ré-optimise sans jeter l'acquis.
+
+| Place du plan persisté | Au réamorçage |
+| --- | --- |
+| Titulaire encore valable | Réamorcée avec lui, **mobile** |
+| Couverte par un verrou | Laissée telle que les verrous l'ont mise (épinglée) |
+| Titulaire disparu, indisponible ce jour-là, ou couvert par une indisponibilité forcée | Repart vide, comptée « libérée » |
+| Jamais pourvue, ou nouvelle | Libre |
+
+Le solveur score la solution de départ en premier et garde la meilleure
+rencontrée : à données égales, le résultat ne descend jamais sous le plan de
+départ. Il peut descendre quand le référentiel a changé entre-temps — le plan
+de départ n'est alors plus une solution du nouveau problème — ou quand on a
+demandé un départ à froid (`AUCUN`), le seul geste qui abandonne l'acquis et
+qui, pour cela, se confirme à l'écran.
+
 ### Demandes d'échange
 
 Un animateur propose un échange depuis son espace ; **rien n'est appliqué sans

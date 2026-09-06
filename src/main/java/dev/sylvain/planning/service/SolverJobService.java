@@ -185,11 +185,25 @@ public class SolverJobService {
      */
     public record ResultatSolve(
             PlanningService.PlanningDiagnostic diagnostic,
-            PreviousPlan previousPlan) {
+            PreviousPlan previousPlan,
+            ReamorcageEffectue reamorcage) {
+    }
+
+    /**
+     * Where a full solve actually started from (issue #174), for the
+     * recap: « réamorcé (N postes) » or « de zéro ». {@code mode} is never
+     * {@link Reamorcage#AUTO} — the request was resolved into what was done.
+     *
+     * @param postesLiberes seats the persisted plan staffed but that had to
+     *                      start empty (animateur gone, or since unavailable)
+     */
+    public record ReamorcageEffectue(Reamorcage mode, int postes, int postesLiberes) {
+
+        static final ReamorcageEffectue A_FROID = new ReamorcageEffectue(Reamorcage.AUCUN, 0, 0);
     }
 
     private static ResultatSolve resultatSolve(SolvePipeline.Resolution<?> resolution) {
-        return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan());
+        return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(), ReamorcageEffectue.A_FROID);
     }
 
     /**
@@ -202,14 +216,35 @@ public class SolverJobService {
      * @param enFile when the solver is busy, wait for it instead of being refused
      */
     public SolverJob submitSolveFromReferenceData(Long secondsLimit, boolean enFile) {
-        return submitReplayable(JobType.SOLVE, secondsLimit, null, enFile);
+        return submitSolveFromReferenceData(secondsLimit, enFile, Reamorcage.AUTO);
+    }
+
+    /**
+     * Same, saying where to start from (issue #174). {@link Reamorcage#AUTO}
+     * re-seeds from the persisted plan when there is one — the default of
+     * every entry point, screen, API and MCP alike, because starting cold is
+     * what silently loses the plan already reached. The choice is persisted
+     * with the job: a queued solve replayed after a restart starts the way it
+     * was asked to.
+     */
+    public SolverJob submitSolveFromReferenceData(Long secondsLimit, boolean enFile, Reamorcage reamorcage) {
+        return submitReplayable(JobType.SOLVE, secondsLimit, null,
+                reamorcage == null ? Reamorcage.AUTO : reamorcage, enFile);
     }
 
     /** The work of {@link #submitSolveFromReferenceData}, see {@link #replayableTask}. */
-    private JobTask solveTaskFromReferenceData(Long secondsLimit) {
-        return job -> resultatSolve(pipeline.execute(job.getEditionNom(),
-                planningService::buildFromReferenceData, Function.identity(),
-                secondsLimit, onSolverReady(job)));
+    private JobTask solveTaskFromReferenceData(Long secondsLimit, Reamorcage reamorcage) {
+        return job -> {
+            SolvePipeline.Resolution<PlanningService.ProblemeReamorce> resolution =
+                    pipeline.execute(job.getEditionNom(),
+                            () -> planningService.buildFromReferenceData(reamorcage),
+                            PlanningService.ProblemeReamorce::planning,
+                            secondsLimit, onSolverReady(job));
+            PlanningService.ProblemeReamorce probleme = resolution.probleme();
+            return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(),
+                    new ReamorcageEffectue(probleme.reamorcage(), probleme.postesReamorces(),
+                            probleme.postesLiberes()));
+        };
     }
 
     /**
@@ -240,7 +275,7 @@ public class SolverJobService {
     public SolverJob submitSolveIncremental(Long secondsLimitDemande, ReplanificationScope scope,
             boolean enFile) {
         Long secondsLimit = secondsLimitDemande != null ? secondsLimitDemande : DUREE_INCREMENTALE_DEFAUT_SECONDES;
-        return submitReplayable(JobType.SOLVE_INCREMENTAL, secondsLimit, scope, enFile);
+        return submitReplayable(JobType.SOLVE_INCREMENTAL, secondsLimit, scope, null, enFile);
     }
 
     /** The work of {@link #submitSolveIncremental}, see {@link #replayableTask}. */
@@ -271,14 +306,16 @@ public class SolverJobService {
      * drift.</p>
      */
     private SolverJob submitReplayable(JobType type, Long secondsLimit, ReplanificationScope scope,
-            boolean enFile) {
-        return submit(type, secondsLimit, enFile, scope, true, replayableTask(type, secondsLimit, scope));
+            Reamorcage reamorcage, boolean enFile) {
+        return submit(type, secondsLimit, enFile, scope, reamorcage, true,
+                replayableTask(type, secondsLimit, scope, reamorcage));
     }
 
     /** Rebuilds the work of a replayable job from its persisted intention. */
-    private JobTask replayableTask(JobType type, Long secondsLimit, ReplanificationScope scope) {
+    private JobTask replayableTask(JobType type, Long secondsLimit, ReplanificationScope scope,
+            Reamorcage reamorcage) {
         return switch (type) {
-            case SOLVE -> solveTaskFromReferenceData(secondsLimit);
+            case SOLVE -> solveTaskFromReferenceData(secondsLimit, reamorcage == null ? Reamorcage.AUTO : reamorcage);
             case SOLVE_INCREMENTAL -> incrementalSolveTask(secondsLimit, scope);
         };
     }
@@ -292,6 +329,11 @@ public class SolverJobService {
      */
     private synchronized SolverJob submit(JobType type, Long secondsLimit, boolean enFile,
             ReplanificationScope scope, boolean rejouable, JobTask task) {
+        return submit(type, secondsLimit, enFile, scope, null, rejouable, task);
+    }
+
+    private synchronized SolverJob submit(JobType type, Long secondsLimit, boolean enFile,
+            ReplanificationScope scope, Reamorcage reamorcage, boolean rejouable, JobTask task) {
         purgeExpiredJobs();
         Optional<SolverJob> actif = findActive();
         if (actif.isPresent() && !enFile) {
@@ -306,7 +348,7 @@ public class SolverJobService {
             refuseDuplicate(type, editionId);
         }
         SolverJob job = new SolverJob(UUID.randomUUID().toString(), type, secondsLimit,
-                editionId, nomEdition(editionId), scope, rejouable);
+                editionId, nomEdition(editionId), scope, reamorcage, rejouable);
         jobs.put(job.getId(), job);
         if (actif.isPresent()) {
             job.markQueued();
@@ -624,6 +666,7 @@ public class SolverJobService {
                     job.getStatus(),
                     job.getSecondsLimit(),
                     job.getPerimetre(),
+                    job.getReamorcage(),
                     job.isRejouable(),
                     job.getError(),
                     job.getSubmittedAt(),
@@ -707,7 +750,7 @@ public class SolverJobService {
      */
     private JobTask taskOrNothing(LigneJob ligne) {
         try {
-            return replayableTask(ligne.type(), ligne.secondsLimit(), ligne.scope());
+            return replayableTask(ligne.type(), ligne.secondsLimit(), ligne.scope(), ligne.reamorcage());
         } catch (RuntimeException e) {
             LOG.warnf(e, "Solver job %s cannot be replayed; it comes back interrupted", ligne.id());
             return null;
@@ -768,6 +811,8 @@ public class SolverJobService {
         private final String editionNom;
         /** Perimeter of an incremental re-solve; null for the other types. */
         private final ReplanificationScope scope;
+        /** Where a full solve was asked to start from (issue #174); null for the other types. */
+        private final Reamorcage reamorcage;
         /** Whether this job can rebuild its own problem — see {@link #replayableTask}. */
         private final boolean rejouable;
         private final Instant submittedAt;
@@ -780,13 +825,14 @@ public class SolverJobService {
         private volatile Solver<PlanningEvenement> solver;
 
         private SolverJob(String id, JobType type, Long secondsLimit, String editionId, String editionNom,
-                ReplanificationScope scope, boolean rejouable) {
+                ReplanificationScope scope, Reamorcage reamorcage, boolean rejouable) {
             this.id = id;
             this.type = type;
             this.secondsLimit = secondsLimit;
             this.editionId = editionId;
             this.editionNom = editionNom;
             this.scope = scope;
+            this.reamorcage = reamorcage;
             this.rejouable = rejouable;
             this.submittedAt = Instant.now();
         }
@@ -803,6 +849,7 @@ public class SolverJobService {
             this.editionId = ligne.editionId();
             this.editionNom = ligne.editionNom();
             this.scope = ligne.scope();
+            this.reamorcage = ligne.reamorcage();
             this.rejouable = ligne.rejouable();
             this.submittedAt = ligne.soumisLe();
             this.status = ligne.statut();
@@ -926,6 +973,11 @@ public class SolverJobService {
 
         public String getEditionNom() {
             return editionNom;
+        }
+
+        /** Where a full solve was asked to start from (issue #174); null for an incremental job. */
+        public Reamorcage getReamorcage() {
+            return reamorcage;
         }
 
         /** Bookkeeping for {@link #store}, not part of the public job view. */

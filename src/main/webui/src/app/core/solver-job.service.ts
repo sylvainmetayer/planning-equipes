@@ -30,6 +30,8 @@ import {
   PlanningDiagnostic,
   PlanningEvenement,
   PreviousPlan,
+  Reamorcage,
+  ReamorcageEffectue,
   ResultatSolve,
   ResultatSolveIncremental,
   ScorePoint,
@@ -100,7 +102,7 @@ interface ScoreStreamDelta extends Omit<ScoreTrace, 'points' | 'jobId'> {
  */
 function jobLabel(type: string): string {
   if (type === 'SOLVE') {
-    return $localize`:@@job.type.solve:Résolution Timefold`;
+    return $localize`:@@job.type.solve:Calcul du planning`;
   }
   if (type === 'SOLVE_INCREMENTAL') {
     return $localize`:@@job.type.solveIncremental:Replanification incrémentale`;
@@ -397,8 +399,13 @@ export class SolverJobService {
    *               refused; it starts by itself, and reads the referential as
    *               it stands at that moment
    */
-  submitSolveFromReferenceData(seconds?: number, enFile = false): Promise<JobView> {
-    return this.submit('/api/solve/async/reference-data', {}, 'SOLVE', seconds, enFile);
+  submitSolveFromReferenceData(seconds?: number, enFile = false, reamorcage: Reamorcage = 'AUTO'): Promise<JobView> {
+    // AUTO is the server's default too: only a deliberate choice travels.
+    const endpoint =
+      reamorcage === 'AUTO'
+        ? '/api/solve/async/reference-data'
+        : `/api/solve/async/reference-data?reamorcage=${reamorcage}`;
+    return this.submit(endpoint, {}, 'SOLVE', seconds, enFile);
   }
 
   /**
@@ -457,7 +464,7 @@ export class SolverJobService {
     if (enFile) {
       params.set('enFile', 'true');
     }
-    const url = params.size > 0 ? `${endpoint}?${params}` : endpoint;
+    const url = params.size > 0 ? `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params}` : endpoint;
     let job: JobView;
     try {
       // Raw errors: the 409 branch below needs the status and the body.
@@ -991,6 +998,17 @@ export function extrairePlanPrecedent(result: unknown): PreviousPlan | null {
     return null;
   }
   return (result as Partial<ResultatSolve>).previousPlan ?? null;
+}
+
+/**
+ * Where a finished full solve started from (issue #174), or `null` when the
+ * payload does not say: an incremental result, or one from before this shipped.
+ */
+export function extraireReamorcage(result: unknown): ReamorcageEffectue | null {
+  if (!result || typeof result !== 'object') {
+    return null;
+  }
+  return (result as Partial<ResultatSolve>).reamorcage ?? null;
 }
 
 function describeResult(result: unknown): string {

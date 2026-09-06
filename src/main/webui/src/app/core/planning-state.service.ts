@@ -38,7 +38,7 @@ export class PlanningStateService {
     const planning = await this.loadForDisplay();
     if (!planning || (planning.postes ?? []).length === 0) {
       throw new Error(
-        $localize`:@@planningState.noneAvailable:Aucun planning disponible pour le moment. Lancez d'abord « Résoudre avec Timefold ».`
+        $localize`:@@planningState.noneAvailable:Aucun planning disponible pour le moment. Lancez d'abord « Calculer le planning ».`
       );
     }
     return planning;

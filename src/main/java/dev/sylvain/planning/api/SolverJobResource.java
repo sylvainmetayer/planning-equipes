@@ -12,6 +12,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.JobStreamBroadcaster;
 import dev.sylvain.planning.service.ReplanificationScope;
+import dev.sylvain.planning.service.Reamorcage;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
 import dev.sylvain.planning.service.SolverJobService.SolverJob;
@@ -95,13 +96,21 @@ public class SolverJobResource {
      * solver is busy: it starts by itself once the running job finishes, and
      * builds its problem at that moment — so the edition can keep being
      * prepared in the meantime.</p>
+     *
+     * <p>{@code reamorcage} says where to start from (issue #174): {@code AUTO}
+     * (the default) re-seeds from the persisted plan when there is one,
+     * {@code PLAN_COURANT} insists on it, {@code AUCUN} starts cold. Cold is
+     * the case that loses the plan already reached, hence not the default —
+     * for a script as much as for the screen.</p>
      */
     @POST
     @Path("/solve/async/reference-data")
     @Consumes(MediaType.WILDCARD)
     public Response solveFromReferenceData(@QueryParam("seconds") Long secondsLimit,
-            @QueryParam("enFile") @DefaultValue("false") boolean enFile) {
-        SolverJob job = solverJobService.submitSolveFromReferenceData(secondsLimit, enFile);
+            @QueryParam("enFile") @DefaultValue("false") boolean enFile,
+            @QueryParam("reamorcage") String reamorcage) {
+        SolverJob job = solverJobService.submitSolveFromReferenceData(secondsLimit, enFile,
+                Reamorcage.parse(reamorcage));
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 
@@ -441,6 +450,8 @@ public class SolverJobResource {
             String editionId,
             String editionNom,
             Long secondsLimit,
+            /** Where a full solve was asked to start from (issue #174); null for an incremental job. */
+            Reamorcage reamorcage,
             Instant submittedAt,
             Instant startedAt,
             Instant finishedAt,
@@ -470,6 +481,7 @@ public class SolverJobResource {
                     job.getEditionId(),
                     job.getEditionNom(),
                     job.getSecondsLimit(),
+                    job.getReamorcage(),
                     job.getSubmittedAt(),
                     job.getStartedAt(),
                     job.getFinishedAt(),

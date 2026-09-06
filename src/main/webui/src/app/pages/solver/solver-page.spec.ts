@@ -129,6 +129,11 @@ type PageInternals = {
   publicationPossible: Signal<boolean>;
   publicationDestinatairesEnCours: Signal<number>;
   onPublier: () => Promise<void>;
+  libelleReamorcage: Signal<string>;
+  pointDeDepart: Signal<string>;
+  planEnregistre: Signal<boolean>;
+  onRecommencerDeZero: () => Promise<void>;
+  onTimefoldSolve: (reamorcage?: string) => Promise<void>;
 };
 
 describe('SolverPage', () => {
@@ -151,6 +156,7 @@ describe('SolverPage', () => {
     estimatedEndMs: () => null,
     remainingSeconds: () => null,
     listJobs: vi.fn(),
+    submitSolveFromReferenceData: vi.fn(async () => ({})),
     onResult: vi.fn((type: string, handler: (result: unknown) => void) => {
       handlers.set(type, [...(handlers.get(type) ?? []), handler]);
       return () => handlers.set(type, (handlers.get(type) ?? []).filter((entry) => entry !== handler));
@@ -186,6 +192,7 @@ describe('SolverPage', () => {
     localStorage.removeItem('planning-equipes.solver.scoreCurveCollapsed');
     for (const stub of [
       jobs.listJobs,
+      jobs.submitSolveFromReferenceData,
       jobs.onResult,
       jobs.chargerCourbeScore,
       jobs.activeJobDescription,
@@ -452,6 +459,112 @@ describe('SolverPage', () => {
 
       expect(page.hardScore()).toBe(0);
       expect(page.planPrecedent()).toBeNull();
+    });
+  });
+
+  /**
+   * Where a full solve starts from (issue #174): said before the click, said
+   * again in the recap, and the only cold start there is asks first.
+   */
+  describe('where the solve starts from', () => {
+    /** Persisted-plan count the page reads at load and after every result. */
+    function persistedCount(assignments: number | null): void {
+      api.get.mockImplementation(async (url: string) =>
+        url.includes('/persisted/count') ? (assignments === null ? {} : { assignments }) : {}
+      );
+    }
+
+    it('announces a cold start and disables « Recommencer de zéro » without a plan', async () => {
+      persistedCount(0);
+      const page = createPage();
+      await fixture.whenStable();
+
+      expect(page.pointDeDepart()).toContain('Aucun plan enregistré');
+      expect(page.planEnregistre()).toBe(false);
+    });
+
+    it('announces the saved plan it will restart from', async () => {
+      persistedCount(12);
+      const page = createPage();
+      await fixture.whenStable();
+
+      expect(page.pointDeDepart()).toContain('12 affectations');
+      expect(page.pointDeDepart()).toContain('repart du plan enregistré');
+      expect(page.planEnregistre()).toBe(true);
+    });
+
+    it('says nothing rather than something wrong when the count cannot be read', async () => {
+      persistedCount(null);
+      const page = createPage();
+      await fixture.whenStable();
+
+      expect(page.pointDeDepart()).toBe('');
+      expect(page.planEnregistre()).toBe(false);
+    });
+
+    it('recaps a re-seeded solve, with the seats it had to leave free', () => {
+      const page = createPage();
+
+      pushResult('SOLVE', {
+        diagnostic: diagnostic({ hardScore: 0 }),
+        previousPlan: null,
+        reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0 }
+      });
+      expect(page.libelleReamorcage()).toBe('Point de départ : le plan enregistré, 12 postes repris.');
+
+      pushResult('SOLVE', {
+        diagnostic: diagnostic({ hardScore: 0 }),
+        previousPlan: null,
+        reamorcage: { mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2 }
+      });
+      expect(page.libelleReamorcage()).toContain('10 postes repris et 2 laissés libres');
+    });
+
+    it('recaps a cold start, and stays silent on a payload from before the feature', () => {
+      const page = createPage();
+
+      pushResult('SOLVE', {
+        diagnostic: diagnostic({ hardScore: 0 }),
+        previousPlan: null,
+        reamorcage: { mode: 'AUCUN', postes: 0, postesLiberes: 0 }
+      });
+      expect(page.libelleReamorcage()).toBe('Point de départ : aucun, calcul de zéro.');
+
+      pushResult('SOLVE', diagnostic({ hardScore: 0 }));
+      expect(page.libelleReamorcage()).toBe('');
+    });
+
+    it('sends the default start with the everyday button, and nothing else', async () => {
+      const page = createPage();
+
+      await page.onTimefoldSolve();
+
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUTO');
+    });
+
+    it('asks before starting over from scratch, and does nothing when refused', async () => {
+      persistedCount(12);
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.ask.mockResolvedValueOnce(false);
+
+      await page.onRecommencerDeZero();
+
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Recommencer de zéro ?', danger: true })
+      );
+      expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
+    });
+
+    it('starts cold, by name, once the user confirmed', async () => {
+      persistedCount(12);
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.ask.mockResolvedValueOnce(true);
+
+      await page.onRecommencerDeZero();
+
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUCUN');
     });
   });
 

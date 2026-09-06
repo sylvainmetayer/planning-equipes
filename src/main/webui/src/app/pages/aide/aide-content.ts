@@ -256,6 +256,43 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
       ]
     },
     {
+      id: 'calculer',
+      icon: 'play_arrow',
+      title: $localize`:@@aide.calculer.title:Calculer, corriger, recommencer`,
+      summary: $localize`:@@aide.calculer.summary:Les trois façons de lancer le solveur, et laquelle choisir selon la situation.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.calculer.intro:La page Solveur ne demande pas de choisir un mécanisme mais de dire ce qu'on veut : le meilleur planning possible, une correction qui bouge le moins possible, ou une page blanche. Les trois lisent le même référentiel et respectent les mêmes règles ; ce qui change, c'est d'où le calcul part et ce qu'il s'autorise à bouger.`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.calculer.term.calculer:Calculer le planning`,
+              text: $localize`:@@aide.calculer.def.calculer:Le bouton de tous les jours. S'il existe un plan enregistré, le calcul en repart et cherche à l'améliorer avec tout le budget ; sinon il part de zéro. Rien n'est figé hormis les verrouillages : tout peut bouger, mais le résultat ne peut pas finir en dessous du plan de départ à données égales, puisque le solveur garde le meilleur de ce qu'il a vu. À utiliser après avoir saisi ou corrigé des données, ou simplement pour laisser tourner plus longtemps. La ligne sous les boutons dit d'où partira le prochain calcul.`
+            },
+            {
+              term: $localize`:@@aide.calculer.term.corriger:Corriger après un changement`,
+              text: $localize`:@@aide.calculer.def.corriger:Un désistement, une indisponibilité saisie tard, un stand ajouté : le planning est déjà diffusé et l'on veut bouger le moins possible. Tout ce qui reste valable est figé le temps du calcul, seuls les postes que le changement a invalidés (et ceux que vous rouvrez à la main) sont recalculés, en quelques dizaines de secondes. Le reste du planning est garanti inchangé, et le compte rendu nomme qui a bougé. Ne réoptimise rien : pour améliorer le plan, c'est « Calculer le planning ».`
+            },
+            {
+              term: $localize`:@@aide.calculer.term.recommencer:Recommencer de zéro`,
+              text: $localize`:@@aide.calculer.def.recommencer:Ignore le plan enregistré et repart de rien. C'est le seul geste qui peut perdre la qualité déjà atteinte — sur un événement réel, une relance de zéro a coûté plus d'un millier de points au niveau de couverture — d'où la confirmation. À réserver au plan qu'on ne veut pas garder : un essai qu'on abandonne, des données refaites en profondeur. Sans plan enregistré, le bouton est inactif : « Calculer le planning » part déjà de zéro.`
+            }
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.calculer.verrous:Les verrouillages ne sont pas un quatrième mode : ils s'appliquent aux trois. Un animateur, un stand, une journée ou un créneau verrouillé n'est touché ni par un calcul complet ni par une correction. Et quand le solveur est occupé, chacun des trois boutons planifie le calcul au lieu de le refuser : il démarrera de lui-même, sur l'édition courante, dès que la tâche en cours sera terminée.`
+        }
+      ],
+      links: [
+        { route: '/', label: $localize`:@@nav.link.solver:Solveur` },
+        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` }
+      ]
+    },
+    {
       id: 'configuration-solveur',
       icon: 'tune',
       title: $localize`:@@aide.config.title:Configuration du solveur`,
@@ -420,7 +457,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.previousPlan:Relancer une résolution sur une édition qui a déjà un bon planning peut le dégrader : le solveur repart de zéro et n'est pas tenu de retrouver aussi bien. La page Solveur affiche donc le score d'avant à côté de celui d'après, et le signale quand la nouvelle résolution est moins bonne — un score dur toujours à zéro ne veut pas dire que rien n'a été perdu, l'écart se lit sur le medium. Un bouton « Revenir au plan d'avant » remet alors en place le planning précédent. Ne tardez pas : ce filet est un instantané automatique, et seuls les cinq derniers sont conservés par édition.`
+          text: $localize`:@@aide.results.previousPlan:Un calcul relancé repart du plan enregistré et ne peut pas finir en dessous de lui à données égales. Il peut quand même le dégrader quand le référentiel a changé entre-temps — des places ajoutées, une personne en moins — ou quand on a choisi de recommencer de zéro. La page Solveur affiche donc le score d'avant à côté de celui d'après, et le signale quand la nouvelle résolution est moins bonne — un score dur toujours à zéro ne veut pas dire que rien n'a été perdu, l'écart se lit sur le medium. Un bouton « Revenir au plan d'avant » remet alors en place le planning précédent. Ne tardez pas : ce filet est un instantané automatique, et seuls les cinq derniers sont conservés par édition.`
         },
         {
           kind: 'paragraph',

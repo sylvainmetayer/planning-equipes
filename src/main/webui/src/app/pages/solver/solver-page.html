@@ -9,30 +9,45 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@nav.link.solver">Solveur</h2>
     <mat-card-subtitle i18n="@@solver.description">
-      Exécute Timefold en arrière-plan ; le résultat est analysé automatiquement. Une seule tâche du solveur s'exécute à la
-      fois pour tout le serveur. Initialisez ou réinitialisez les données depuis la page Paramètres.
+      Trois façons de lancer le solveur, selon la situation : calculer le planning (le meilleur possible, en repartant
+      de celui qui existe), le corriger après un changement tardif (en bougeant le moins possible), ou recommencer de
+      zéro. Le calcul tourne en arrière-plan et le résultat est analysé automatiquement ; une seule tâche du solveur
+      s'exécute à la fois pour tout le serveur.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="filled"
             i18n-matTooltip="@@solver.solve.tooltip"
-            matTooltip="Quand le solveur est occupé, la résolution est mise en file : elle démarre d'elle-même sur l'édition courante dès que la tâche en cours se termine."
+            matTooltip="Repart du plan enregistré s'il en existe un, sans rien figer hormis les verrouillages, et cherche à l'améliorer avec tout le budget. Quand le solveur est occupé, le calcul est mis en file et démarre de lui-même sur l'édition courante."
             (click)="onTimefoldSolve()">
       <mat-icon>{{ solverBusy() ? 'schedule_send' : 'play_arrow' }}</mat-icon>
       {{ libelleSolve() }}
     </button>
     <button matButton="tonal"
             i18n-matTooltip="@@solver.incremental.tooltip"
-            matTooltip="Repart du planning enregistré : ce qui reste valable est figé, seuls les postes rouverts par un changement tardif (ou par vous) sont recalculés. Quelques dizaines de secondes au lieu de plusieurs minutes."
+            matTooltip="Après un changement tardif : repart du planning enregistré, fige tout ce qui reste valable et ne recalcule que les postes rouverts par le changement (ou par vous). Quelques dizaines de secondes, et le reste du planning est garanti inchangé."
             (click)="onSolveIncremental()">
       <mat-icon>{{ solverBusy() ? 'schedule_send' : 'bolt' }}</mat-icon>
       {{ libelleIncremental() }}
+    </button>
+    <button matButton
+            [disabled]="!planEnregistre()"
+            i18n-matTooltip="@@solver.aFroid.tooltip"
+            matTooltip="Ignore le plan enregistré et repart de rien. C'est le seul cas qui peut perdre la qualité déjà atteinte : à réserver à un plan qu'on ne veut pas garder. Sans plan enregistré, « Calculer le planning » part déjà de zéro."
+            (click)="onRecommencerDeZero()">
+      <mat-icon>restart_alt</mat-icon>
+      {{ libelleAFroid() }}
     </button>
     <button matButton="tonal" [disabled]="!solverBusy() || arretEnCours()" (click)="onArreterSolveur()">
       <mat-icon>stop_circle</mat-icon>
       <ng-container i18n="@@solver.arreter">Arrêter le solveur</ng-container>
     </button>
   </mat-card-actions>
+  @if (pointDeDepart()) {
+    <mat-card-content>
+      <p class="calendar-meta solver-depart">{{ pointDeDepart() }}</p>
+    </mat-card-content>
+  }
   @if (raisonVerrou()) {
     <mat-card-content>
       <app-status-message [text]="raisonVerrou()" tone="info" />
@@ -85,6 +100,9 @@
   @if (lastRunAt()) {
     <mat-card-content>
       <p class="calendar-meta" i18n="@@solver.lastRun">Dernière exécution : {{ formattedLastRun() }}</p>
+      @if (libelleReamorcage()) {
+        <p class="calendar-meta solver-reamorcage">{{ libelleReamorcage() }}</p>
+      }
     </mat-card-content>
   }
   @if (comparaisonPlan(); as comparaison) {

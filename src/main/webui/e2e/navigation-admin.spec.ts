@@ -23,7 +23,7 @@ test.afterAll(async () => {
  * the shell's main region.
  */
 const ROUTES: { path: string; marker?: string }[] = [
-  { path: '/', marker: 'Résoudre avec Timefold' },
+  { path: '/', marker: 'Calculer le planning' },
   { path: '/notifications' },
   { path: '/problemes' },
   { path: '/constraints' },

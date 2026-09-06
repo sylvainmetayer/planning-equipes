@@ -398,6 +398,116 @@ public class PlanningService {
     }
 
     /**
+     * A full-solve problem and where it started from (issue #174).
+     *
+     * @param planning         the problem to solve, seeded or not
+     * @param reamorcage       what was actually done — never {@link Reamorcage#AUTO},
+     *                         which is a request, not an outcome
+     * @param postesReamorces  seats carrying an animateur from the persisted
+     *                         plan and left <b>movable</b>; 0 on a cold start
+     * @param postesLiberes    seats the persisted plan staffed but that had to
+     *                         start empty: the animateur is gone, or has since
+     *                         declared that day off
+     */
+    public record ProblemeReamorce(PlanningEvenement planning, Reamorcage reamorcage, int postesReamorces,
+            int postesLiberes) {
+    }
+
+    /**
+     * The problem of a full solve, started from the persisted plan when
+     * {@code reamorcage} asks for it (issue #174): the same seats as
+     * {@link #buildFromReferenceData()}, re-seeded positionally on
+     * stand × créneau — the convention of the locks (#87) and of the
+     * incremental re-solve (#86) — and <b>pinned nowhere</b> beyond the
+     * explicit locks. That is the whole difference with the incremental
+     * re-solve: this one re-optimises everything, it just does not throw away
+     * what the previous solve had reached. Timefold scores the seed first and
+     * keeps the best solution seen, so the result is never below it.
+     *
+     * <p>{@link Reamorcage#AUTO} re-seeds when a plan exists and starts cold
+     * otherwise; {@link Reamorcage#PLAN_COURANT} fails on an edition without a
+     * plan rather than quietly starting cold; {@link Reamorcage#AUCUN} is the
+     * cold start, by name. The same building block serves a warm restart of
+     * an interrupted job (#183) the day that exists: nothing here is specific
+     * to the Solveur screen.</p>
+     */
+    public ProblemeReamorce buildFromReferenceData(Reamorcage reamorcage) {
+        Reamorcage demande = reamorcage == null ? Reamorcage.AUTO : reamorcage;
+        List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        List<Stand> stands = referenceDataService.listSolvedStands();
+        List<Creneau> creneaux = referenceDataService.listCreneaux();
+        Map<String, List<String>> affectationsPrecedentes = demande == Reamorcage.AUCUN
+                ? Map.of()
+                : planningPersistenceService.loadAnimateursByStandCreneau();
+        if (demande == Reamorcage.PLAN_COURANT && affectationsPrecedentes.isEmpty()) {
+            throw new IllegalStateException(
+                    "Aucun plan enregistré sur cette édition : rien d'où repartir. "
+                            + "Lancez un calcul de zéro (reamorcage=AUCUN), ou laissez le choix automatique.");
+        }
+        PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux);
+        if (affectationsPrecedentes.isEmpty()) {
+            return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0);
+        }
+        int[] bilan = reamorcerDepuisAffectations(planning.getPostes(), animateurs, affectationsPrecedentes,
+                planning.getContraintesAdHoc());
+        return new ProblemeReamorce(planning, Reamorcage.PLAN_COURANT, bilan[0], bilan[1]);
+    }
+
+    /**
+     * The warm start itself (issue #174): every seat still free after the
+     * locks were applied gets the animateur the persisted plan gave it, and
+     * stays movable. A seat the locks already pinned is left exactly as they
+     * left it — the positional walk still counts it, so the seats after it
+     * keep their tenant. A tenant the referential no longer knows, or who has
+     * since declared the seat's day off, or whom a forced unavailability now
+     * covers, leaves the seat empty: seeding a violation the solver would have
+     * to undo first is a worse start than a hole, and it is the incremental
+     * re-solve's own rule. Package-private and static so it can be unit-tested
+     * without a database, like {@link #figerPostesIncremental}.
+     *
+     * @return {@code {seeded, freed}}
+     */
+    static int[] reamorcerDepuisAffectations(List<PosteAffectation> postes, List<Animateur> animateurs,
+            Map<String, List<String>> animateursPersistes, List<ContrainteAdHoc> contraintesAdHoc) {
+        Map<String, Animateur> animateursById = new HashMap<>();
+        for (Animateur animateur : animateurs) {
+            animateursById.put(animateur.getId(), animateur);
+        }
+        List<ContrainteAdHoc> indisponibilitesForcees = contraintesAdHoc == null
+                ? List.of()
+                : contraintesAdHoc.stream()
+                        .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
+                        .toList();
+        Map<String, Integer> prochainePlace = new HashMap<>();
+        int reamorces = 0;
+        int liberes = 0;
+        for (PosteAffectation poste : postes) {
+            if (poste.getStand() == null || poste.getCreneau() == null) {
+                continue;
+            }
+            String key = PlanningPersistenceService.standCreneauKey(
+                    poste.getStand().getId(), poste.getCreneau().getId());
+            List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
+            int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
+            if (poste.isVerrouille() || place >= tenants.size()) {
+                continue;
+            }
+            Animateur tenant = animateursById.get(tenants.get(place));
+            poste.setAnimateur(tenant);
+            if (tenant == null || indisponible(tenant, poste)
+                    || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
+                poste.setAnimateur(null);
+                liberes++;
+                continue;
+            }
+            // Deliberately no setVerrouille(true): that line is what makes the
+            // incremental re-solve incremental, and its absence is this method.
+            reamorces++;
+        }
+        return new int[] {reamorces, liberes};
+    }
+
+    /**
      * Builds an incremental re-solve problem (issue #86): the same seats as
      * {@link #buildFromReferenceData()}, but seeded from the persisted
      * plan and <b>pinned wherever that plan is still valid</b>, so a short

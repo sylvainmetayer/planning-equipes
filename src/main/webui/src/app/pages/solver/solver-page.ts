@@ -28,6 +28,8 @@ import {
   PlanningDiagnostic,
   PreviousPlan,
   RapportPublication,
+  Reamorcage,
+  ReamorcageEffectue,
   ResultatSolveIncremental,
   StatistiquesIncremental
 } from '../../core/models';
@@ -48,6 +50,7 @@ import {
   SolverJobService,
   extraireDiagnostic,
   extrairePlanPrecedent,
+  extraireReamorcage,
   formatDuration
 } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
@@ -224,14 +227,63 @@ export class SolverPage {
    */
   protected readonly libelleSolve = computed(() =>
     this.solverBusy()
-      ? $localize`:@@solver.planifierSolve:Planifier la résolution`
-      : $localize`:@@solver.solve:Résoudre avec Timefold`
+      ? $localize`:@@solver.planifierSolve:Planifier le calcul`
+      : $localize`:@@solver.solve:Calculer le planning`
   );
   protected readonly libelleIncremental = computed(() =>
     this.solverBusy()
-      ? $localize`:@@solver.planifierIncremental:Planifier la replanification`
-      : $localize`:@@solver.incremental:Replanifier (incrémental)`
+      ? $localize`:@@solver.planifierIncremental:Planifier la correction`
+      : $localize`:@@solver.incremental:Corriger après un changement`
   );
+  protected readonly libelleAFroid = computed(() =>
+    this.solverBusy()
+      ? $localize`:@@solver.planifierAFroid:Planifier un calcul de zéro`
+      : $localize`:@@solver.aFroid:Recommencer de zéro`
+  );
+
+  /* ------------------------------ Point de départ ----------------------------- */
+
+  /**
+   * Seats the persisted plan holds — what « Calculer le planning » will start
+   * from (issue #174). Read from the server, not derived from the last job of
+   * this browser: a plan solved from another tab, restored from a snapshot, or
+   * imported is a starting point too.
+   */
+  protected readonly affectationsEnregistrees = signal<number | null>(null);
+
+  /** True when a plan exists to start from: what makes « Recommencer de zéro » a choice at all. */
+  protected readonly planEnregistre = computed(() => (this.affectationsEnregistrees() ?? 0) > 0);
+
+  /** Under the buttons: where the next calculation starts, said before the click rather than after. */
+  protected readonly pointDeDepart = computed(() => {
+    const affectations = this.affectationsEnregistrees();
+    if (affectations === null) {
+      return '';
+    }
+    if (affectations === 0) {
+      return $localize`:@@solver.depart.aucun:Aucun plan enregistré : le calcul part de zéro.`;
+    }
+    const resoluLe = this.resolution.resolution()?.resoluLe;
+    const quand = resoluLe ? new Date(resoluLe).toLocaleString(intlLocale()) : '';
+    return quand
+      ? $localize`:@@solver.depart.planDate:« Calculer le planning » repart du plan enregistré le ${quand}:date: (${affectations}:count: affectations) et cherche à l'améliorer ; rien n'est figé hormis les verrouillages.`
+      : $localize`:@@solver.depart.plan:« Calculer le planning » repart du plan enregistré (${affectations}:count: affectations) et cherche à l'améliorer ; rien n'est figé hormis les verrouillages.`;
+  });
+
+  /** Where the last finished full solve started from, for the recap. */
+  protected readonly reamorcageEffectue = signal<ReamorcageEffectue | null>(null);
+  protected readonly libelleReamorcage = computed(() => {
+    const reamorcage = this.reamorcageEffectue();
+    if (!reamorcage) {
+      return '';
+    }
+    if (reamorcage.mode === 'AUCUN') {
+      return $localize`:@@solver.reamorcage.aFroid:Point de départ : aucun, calcul de zéro.`;
+    }
+    return reamorcage.postesLiberes > 0
+      ? $localize`:@@solver.reamorcage.planAvecLiberes:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris et ${reamorcage.postesLiberes}:liberes: laissés libres (animateur disparu ou devenu indisponible).`
+      : $localize`:@@solver.reamorcage.plan:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris.`;
+  });
 
   /**
    * "Fin estimée" of the run in progress: its start time plus the duration it
@@ -312,6 +364,7 @@ export class SolverPage {
 
   constructor() {
     void this.loadLastRun();
+    void this.chargerPointDeDepart();
     void this.problemes.reload();
     void this.loadSolverDuration();
     void this.crud.reload();
@@ -339,7 +392,9 @@ export class SolverPage {
       }
       this.applyIncrementalResult(result);
       this.planPrecedent.set(extrairePlanPrecedent(result));
+      this.reamorcageEffectue.set(extraireReamorcage(result));
       void this.loadLastRun();
+      void this.chargerPointDeDepart();
       // Le solve vient de réécrire le plan : le décompte des personnes à
       // prévenir n'est plus celui d'avant.
       void this.chargerApercuPublication();
@@ -599,9 +654,12 @@ export class SolverPage {
 
   /** What a planned job will do, and to which edition — the two things worth reading in the queue. */
   protected typeFileLabel(job: JobView): string {
-    return job.type === 'SOLVE_INCREMENTAL'
-      ? $localize`:@@job.type.solveIncremental:Replanification incrémentale`
-      : $localize`:@@job.type.solve:Résolution Timefold`;
+    if (job.type === 'SOLVE_INCREMENTAL') {
+      return $localize`:@@job.type.solveIncremental:Replanification incrémentale`;
+    }
+    return job.reamorcage === 'AUCUN'
+      ? $localize`:@@job.type.solveAFroid:Calcul du planning (de zéro)`
+      : $localize`:@@job.type.solve:Calcul du planning`;
   }
 
   protected editionFileLabel(job: JobView): string {
@@ -627,12 +685,30 @@ export class SolverPage {
     return [jour, heures].filter((part) => part.length > 0).join(' ');
   }
 
-  protected async onTimefoldSolve(): Promise<void> {
+  /**
+   * « Recommencer de zéro » (issue #174): the one gesture that can lose the
+   * plan already reached, so it says so and asks. Not offered at all without
+   * a plan — « Calculer le planning » already starts cold then.
+   */
+  protected async onRecommencerDeZero(): Promise<void> {
+    const affectations = this.affectationsEnregistrees() ?? 0;
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@solver.aFroid.confirm.title:Recommencer de zéro ?`,
+      message: $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous de lui. Pour l'améliorer plutôt que le remplacer, utilisez « Calculer le planning ».`,
+      confirmLabel: $localize`:@@solver.aFroid.confirm.action:Recommencer de zéro`,
+      danger: true
+    });
+    if (confirme) {
+      await this.onTimefoldSolve('AUCUN');
+    }
+  }
+
+  protected async onTimefoldSolve(reamorcage: Reamorcage = 'AUTO'): Promise<void> {
     const enFile = this.jobs.solverBusy();
     this.output.set(
       enFile
-        ? $localize`:@@solver.planning:Planification de la résolution...`
-        : $localize`:@@solver.submitting:Envoi de la résolution au solveur en arrière-plan...`
+        ? $localize`:@@solver.planning:Planification du calcul...`
+        : $localize`:@@solver.submitting:Envoi du calcul au solveur en arrière-plan...`
     );
     this.feasibility.set(null);
     this.hardScore.set(null);
@@ -642,11 +718,11 @@ export class SolverPage {
       // uploaded, so even a very large scenario can be solved without hitting the
       // HTTP body limit (which would fail with a network error). A planned solve
       // builds it when it starts, not now — the edition can keep being prepared.
-      await this.jobs.submitSolveFromReferenceData(this.solverSettings.secondsLimit(), enFile);
+      await this.jobs.submitSolveFromReferenceData(this.solverSettings.secondsLimit(), enFile, reamorcage);
       this.output.set(
         enFile
-          ? $localize`:@@solver.planned:Résolution planifiée : elle démarrera d'elle-même sur cette édition dès que la tâche en cours sera terminée. Vous pouvez fermer cet écran.`
-          : $localize`:@@solver.submitted:Résolution avec Timefold sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`
+          ? $localize`:@@solver.planned:Calcul planifié : il démarrera de lui-même sur cette édition dès que la tâche en cours sera terminée. Vous pouvez fermer cet écran.`
+          : $localize`:@@solver.submitted:Calcul du planning sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`
       );
     } catch (error) {
       this.output.set(errorPrefix(error));
@@ -793,6 +869,17 @@ export class SolverPage {
       this.output.set(errorPrefix(error));
     } finally {
       this.exportBusy.set(false);
+    }
+  }
+
+  /** Best-effort like {@link loadLastRun}: without it the line under the buttons simply stays empty. */
+  private async chargerPointDeDepart(): Promise<void> {
+    try {
+      const statut = await this.api.get<{ assignments?: number }>('/api/planning/persisted/count');
+      this.affectationsEnregistrees.set(typeof statut.assignments === 'number' ? statut.assignments : null);
+      await this.resolution.reload();
+    } catch {
+      this.affectationsEnregistrees.set(null);
     }
   }
 
