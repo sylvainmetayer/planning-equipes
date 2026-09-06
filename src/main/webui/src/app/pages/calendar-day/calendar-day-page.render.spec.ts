@@ -189,6 +189,17 @@ describe('CalendarDayPage rendering', () => {
     expect(lignes(fixture)[0].texte.replaceAll('⠿', '')).toContain('Camille X, Alex X');
   });
 
+  // The drag-and-drop is announced as under test on the screen that carries
+  // it: the warning has to be there every time it is opened, so it is asserted
+  // like any other part of the page.
+  it('says on the page that dragging is still under test', async () => {
+    const { fixture } = mount({ planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]) });
+    await fixture.whenStable();
+
+    const bandeau = root(fixture).querySelector('.essai-bandeau');
+    expect(bandeau?.textContent).toContain('en cours de test');
+  });
+
   it('marks an unfilled line as such rather than leaving it blank', async () => {
     const { fixture } = mount({ planning: planning([poste('p1', AMBIANCE, C1, null)]) });
     await fixture.whenStable();

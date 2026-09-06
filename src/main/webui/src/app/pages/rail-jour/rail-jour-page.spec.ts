@@ -134,6 +134,14 @@ describe('RailJourPage', () => {
     expect(racine().querySelectorAll('.rail-cell-indisponible')).toHaveLength(1);
   });
 
+  // Same warning as the day calendar, on the other screen that carries the
+  // gesture: it has to be there every time the page is opened.
+  it('says on the page that dragging is still under test', async () => {
+    await rendre(planningDeuxJours());
+
+    expect(racine().querySelector('.essai-bandeau')?.textContent).toContain('en cours de test');
+  });
+
   it('announces every line as text, since the rail itself is decorative', async () => {
     await rendre(planningDeuxJours());
 

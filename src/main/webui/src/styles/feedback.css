@@ -116,3 +116,25 @@
 }
 
 
+
+/*
+ * A feature still under test, said on the screen that carries it rather than
+ * in a snack bar: the warning has to be there every time the screen is opened,
+ * not once per session, and it must not steal the place of a real refusal.
+ * Tertiary rather than error: nothing is broken, the operator is told to
+ * double-check.
+ */
+.essai-bandeau {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.essai-bandeau mat-icon {
+  flex: none;
+}
