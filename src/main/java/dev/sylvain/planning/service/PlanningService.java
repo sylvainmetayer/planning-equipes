@@ -1158,7 +1158,35 @@ public class PlanningService {
 
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-        return new Yaml(options).dump(root);
+        return new Yaml(options).dump(deepCopy(root));
+    }
+
+    /**
+     * Rebuilds the structure so that no two nodes are the same instance.
+     *
+     * <p>SnakeYAML writes an anchor and an alias ({@code &id001} / {@code *id001})
+     * as soon as one collection appears twice, and {@code List.of()} returns a
+     * singleton — so a hundred and fifty animateurs with no day off shared one
+     * empty list, and the export carried an alias for every one of them. Our
+     * own file import reads YAML through Jackson, which does not resolve those
+     * aliases: the application refused the scenario it had just written, with
+     * « Cannot deserialize value of type ArrayList&lt;LocalDate&gt; from String
+     * value ». Scalars are exempt — SnakeYAML never anchors them — so copying
+     * the maps and the lists is enough, and it is done once here rather than
+     * left to every builder above to remember.</p>
+     */
+    private static Object deepCopy(Object valeur) {
+        if (valeur instanceof Map<?, ?> map) {
+            Map<Object, Object> copie = new LinkedHashMap<>();
+            map.forEach((clef, valeurDeLaClef) -> copie.put(clef, deepCopy(valeurDeLaClef)));
+            return copie;
+        }
+        if (valeur instanceof List<?> liste) {
+            List<Object> copie = new ArrayList<>(liste.size());
+            liste.forEach(element -> copie.add(deepCopy(element)));
+            return copie;
+        }
+        return valeur;
     }
 
     private static String asString(Object value) {

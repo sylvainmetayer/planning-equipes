@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -94,6 +96,28 @@ class PlanningServiceScenarioAllerRetourTest {
         assertThat(relu.getAnimateurs()).extracting(Animateur::getId).containsExactly("A1");
         assertThat(relu.getPostes()).hasSize(1);
         assertThat(relu.getDateDebutFestival()).isEqualTo(LocalDate.of(2026, 7, 8));
+    }
+
+    /**
+     * The export must be readable by the <b>other</b> reader too: the file
+     * import validates through Jackson, which does not resolve YAML aliases.
+     * SnakeYAML emits one as soon as the same instance appears twice, and
+     * {@code List.of()} is a singleton — so a hundred and fifty animateurs with
+     * no day off shared one empty list, and the application refused the file it
+     * had just written.
+     */
+    @Test
+    void unScenarioExporteNePorteAucunAliasEtPasseLeValidateur() throws IOException {
+        Creneau creneau = creneau(1L, LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Stand stand = stand("STAND-A");
+        // Two animateurs with nothing off: the empty list is the same instance.
+        List<Animateur> animateurs = List.of(animateur("A1"), animateur("A2"));
+
+        String yaml = PlanningService.buildScenarioYaml(
+                animateurs, List.of(stand), List.of(creneau), List.of(poste("P1", stand, creneau)));
+
+        assertThat(yaml).doesNotContain(" &id").doesNotContain(" *id");
+        assertThat(ScenarioValidator.validate(yaml)).isEmpty();
     }
 
     /**
