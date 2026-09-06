@@ -48,7 +48,7 @@ export interface HelpSection {
  * `main.ts` has loaded the translation catalog, which happens after this
  * module is imported. Same reasoning as `buildNavGroups()` in `app.ts`.
  */
-export function buildHelpSections(): HelpSection[] {
+export function buildHelpSections(supportEmail = ''): HelpSection[] {
   return [
     {
       id: 'prise-en-main',
@@ -986,18 +986,29 @@ export function buildHelpSections(): HelpSection[] {
       icon: 'contact_support',
       title: $localize`:@@aide.contact.title:Contact et support`,
       summary: $localize`:@@aide.contact.summary:Une question, un blocage, une erreur métier : à qui s'adresser et comment.`,
+      // The address comes from the deployment (BRANDING_SUPPORT_EMAIL); with
+      // none, the paragraph and its link are left out rather than pointing at
+      // nobody.
       blocks: [
+        ...(supportEmail
+          ? [
+              {
+                kind: 'paragraph' as const,
+                text: $localize`:@@aide.contact.mail:Pour une question d'utilisation, un doute sur un résultat ou un besoin d'accompagnement, écrivez à ${supportEmail}:email: — joignez si possible une capture d'écran et la version affichée en bas de la page Débogage.`
+              }
+            ]
+          : []),
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.contact.mail:Pour une question d'utilisation, un doute sur un résultat ou un besoin d'accompagnement, écrivez à planning@sylvain.dev — joignez si possible une capture d'écran et la version affichée en bas de la page Débogage.`
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.contact.issue:Pour une erreur métier reproductible (un score faux, une contrainte non respectée, un export incorrect), ouvrez un rapport de problème sur GitHub : le formulaire guide la description. Attention, GitHub est public : n'y mettez aucune information nominative — désignez les personnes par leur identifiant d'animateur (visible sur la page Animateurs), jamais par leur nom. Les données nominatives, elles, passent par l'e-mail ci-dessus.`
+          text: supportEmail
+            ? $localize`:@@aide.contact.issue:Pour une erreur métier reproductible (un score faux, une contrainte non respectée, un export incorrect), ouvrez un rapport de problème sur GitHub : le formulaire guide la description. Attention, GitHub est public : n'y mettez aucune information nominative — désignez les personnes par leur identifiant d'animateur (visible sur la page Animateurs), jamais par leur nom. Les données nominatives, elles, passent par l'e-mail ci-dessus.`
+            : $localize`:@@aide.contact.issueSansMail:Pour une erreur métier reproductible (un score faux, une contrainte non respectée, un export incorrect), ouvrez un rapport de problème sur GitHub : le formulaire guide la description. Attention, GitHub est public : n'y mettez aucune information nominative — désignez les personnes par leur identifiant d'animateur (visible sur la page Animateurs), jamais par leur nom.`
         }
       ],
       links: [
-        { href: 'mailto:planning@sylvain.dev', label: $localize`:@@aide.contact.lienMail:Contacter le support` },
+        ...(supportEmail
+          ? [{ href: `mailto:${supportEmail}`, label: $localize`:@@aide.contact.lienMail:Contacter le support` }]
+          : []),
         {
           href: 'https://github.com/sylvainmetayer/planning-equipes/issues/new?template=erreur-metier.yml',
           label: $localize`:@@aide.contact.lienIssue:Rapporter un problème (GitHub)`

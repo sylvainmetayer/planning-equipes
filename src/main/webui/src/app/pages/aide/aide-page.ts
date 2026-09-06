@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { buildHelpSections, filterHelpSections } from './aide-content';
+import { BRANDING } from '../../core/branding';
 import { StatusMessage } from '../../shared/status-message';
 
 /**
@@ -34,7 +35,7 @@ import { StatusMessage } from '../../shared/status-message';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AidePage {
-  private readonly sections = buildHelpSections();
+  private readonly sections = buildHelpSections(inject(BRANDING).supportEmail);
   protected readonly query = signal('');
   protected readonly visibleSections = computed(() => filterHelpSections(this.sections, this.query()));
   protected readonly noResult = computed(() => this.visibleSections().length === 0);

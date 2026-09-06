@@ -71,6 +71,14 @@ public interface ConfigBranding {
      */
     Optional<String> mascotIconUrl();
 
+    /**
+     * Address the in-app help sends usage questions to (« Contact et support »).
+     * Blank hides that paragraph and its link rather than printing an address
+     * nobody answers: support is a service somebody actually renders, and a
+     * white-label instance names its own.
+     */
+    Optional<String> supportEmail();
+
     Pdf pdf();
 
     /** What the exported documents are drawn with. */

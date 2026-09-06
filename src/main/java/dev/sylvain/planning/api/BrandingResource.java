@@ -46,7 +46,8 @@ public class BrandingResource {
                 text(branding.logoUrl()),
                 text(branding.accentColor()),
                 text(branding.mascotUrl()),
-                text(branding.mascotIconUrl()));
+                text(branding.mascotIconUrl()),
+                text(branding.supportEmail()));
     }
 
     /** Trimmed, and empty rather than blank: the UI has one single "not configured" case to handle. */
@@ -63,6 +64,8 @@ public class BrandingResource {
      * @param accentColor  empty leaves the compiled Material accent in place
      * @param mascotUrl    empty disables the mascot easter egg
      * @param mascotIconUrl empty falls back to a Material icon while a solve runs
+     * @param supportEmail  address the help page's « Contact et support » names;
+     *                      empty hides that paragraph and its link
      */
     public record BrandingView(
             String productName,
@@ -70,6 +73,7 @@ public class BrandingResource {
             String logoUrl,
             String accentColor,
             String mascotUrl,
-            String mascotIconUrl) {
+            String mascotIconUrl,
+            String supportEmail) {
     }
 }

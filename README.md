@@ -111,6 +111,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `BRANDING_ACCENT_COLOR` | *(vide = accent Material compilé)* | Couleur d'accent de l'IHM, toute couleur CSS ; alimente `--app-accent`. À choisir sur le thème clair : le thème sombre en dérive une jumelle éclaircie |
 | `BRANDING_MASCOT_URL` | *(vide = pas d'easter egg)* | Mascotte du déploiement en grand, montrée par le code Konami ; même syntaxe que `BRANDING_LOGO_URL` |
 | `BRANDING_MASCOT_ICON_URL` | *(vide = icône Material)* | La même mascotte découpée en petit : elle tourne dans la barre pendant une résolution et saute sur l'invite de défilement |
+| `BRANDING_SUPPORT_EMAIL` | `planning@sylvain.dev` | Adresse de support nommée par la page Aide (« Contact et support ») ; vide = le paragraphe et son lien disparaissent |
 | `BRANDING_PDF_LOGO` | *(vide = aucun logo)* | Logo de l'en-tête des PDF : `classpath:/branding/xxx.png` pour une image embarquée, sinon un chemin de fichier monté |
 | `BRANDING_PDF_STRIP` | *(vide = aucun bandeau)* | Bandeau décoratif de la première page du planning individuel, même syntaxe |
 | `BRANDING_PDF_HEADLINE` | `#1f2933` | Encre principale des PDF (titres, noms, corps des tableaux) |

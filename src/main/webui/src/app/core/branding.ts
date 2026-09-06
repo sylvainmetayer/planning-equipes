@@ -20,7 +20,8 @@ export const BRANDING_NEUTRE: Branding = {
   logoUrl: '',
   accentColor: '',
   mascotUrl: '',
-  mascotIconUrl: ''
+  mascotIconUrl: '',
+  supportEmail: ''
 };
 
 /**
@@ -55,7 +56,8 @@ export async function loadBranding(): Promise<Branding> {
       logoUrl: branding.logoUrl?.trim() ?? '',
       accentColor: branding.accentColor?.trim() ?? '',
       mascotUrl: branding.mascotUrl?.trim() ?? '',
-      mascotIconUrl: branding.mascotIconUrl?.trim() ?? ''
+      mascotIconUrl: branding.mascotIconUrl?.trim() ?? '',
+      supportEmail: branding.supportEmail?.trim() ?? ''
     };
   } catch (error) {
     console.error('Could not load the branding, falling back to a neutral identity.', error);

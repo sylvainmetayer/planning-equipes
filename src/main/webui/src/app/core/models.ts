@@ -996,6 +996,8 @@ export interface Branding {
   mascotUrl: string;
   /** Same mascot cut out small; empty falls back to a Material icon. */
   mascotIconUrl: string;
+  /** Address the help page names for support; empty hides that paragraph and its link. */
+  supportEmail: string;
 }
 
 /**
