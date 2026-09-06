@@ -12,6 +12,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AffectationExplanationService } from '../../core/affectation-explanation.service';
+import { NotificationService } from '../../core/notification.service';
+import { SolverJobService } from '../../core/solver-job.service';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
@@ -101,6 +104,10 @@ function mount(options: Options = {}) {
       provideZonelessChangeDetection(),
       { provide: ApiService, useValue: { get } },
       { provide: PlanningStateService, useValue: { loadForDisplay } },
+      { provide: SolverJobService, useValue: { editingLocked: () => false } },
+      { provide: NotificationService, useValue: { notify: vi.fn() } },
+      { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
+
       {
         provide: VerrouillageStore,
         useValue: {
@@ -189,6 +196,22 @@ describe('CalendarDayPage rendering', () => {
     expect(ligne.texte).toContain('(non assigné)');
     // Nobody is on it, so there is nothing to explain.
     expect(root(fixture).querySelectorAll('.affectation-link')).toHaveLength(0);
+  });
+
+  // Issue #308: every free seat is a drop target of its own, named by its poste id.
+  it('draws each free seat as a chip carrying its poste id, next to the names', async () => {
+    const { fixture } = mount({
+      planning: planning([
+        poste('p1', AMBIANCE, C1, animateur('a1', 'Camille')),
+        poste('p2', AMBIANCE, C1, null),
+        poste('p3', AMBIANCE, C1, null)
+      ])
+    });
+    await fixture.whenStable();
+
+    const libres = Array.from(root(fixture).querySelectorAll<HTMLElement>('.siege-libre'));
+    expect(libres.map((chip) => chip.dataset['posteId'])).toEqual(['p2', 'p3']);
+    expect(root(fixture).querySelector<HTMLElement>('.affectation-link')!.dataset['posteId']).toBe('p1');
   });
 
   it('flags an understaffed line with a warning icon naming the shortfall', async () => {

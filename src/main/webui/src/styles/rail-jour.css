@@ -289,3 +289,28 @@
     display: none;
   }
 }
+
+/* ------------------------- Glisser-déposer (issue #308) ------------------------- */
+
+.rail-bloc.cdk-drag {
+  cursor: grab;
+}
+
+.rail-bloc.cdk-drag-disabled {
+  cursor: default;
+}
+
+/* The lines a dragged vacation may land on: any other person, lit while the drag lasts. */
+.rail-cell.cdk-drop-list-receiving .rail-track {
+  outline: 2px dashed var(--app-accent);
+  outline-offset: -2px;
+}
+
+/* The block travelling with the pointer keeps its colour but loses its position. */
+.cdk-drag-preview.rail-bloc {
+  position: static;
+  height: 1.5rem;
+  min-width: 6rem;
+  border-radius: 4px;
+  box-shadow: var(--mat-sys-level3);
+}

@@ -4,7 +4,12 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
-import { AffectationExplanation, PlanningEvenement, SuggestionsReparation } from './models';
+import {
+  AffectationExplanation,
+  DeplacementSimulation,
+  PlanningEvenement,
+  SuggestionsReparation
+} from './models';
 
 @Injectable({ providedIn: 'root' })
 export class AffectationExplanationService {
@@ -34,6 +39,26 @@ export class AffectationExplanationService {
    * nothing else does. The only call here that writes — hence its own method
    * rather than a flag on the simulation.
    */
+  /**
+   * A seat dropped somewhere else (issue #308): on another seat, or on a
+   * person. Simulated and refused server-side when it would break a hard
+   * rule — one round trip, since the refusal names the rule; the day views
+   * do not simulate first. Writes on success, and answers what it did.
+   */
+  deplacer(posteId: string, cible: { posteId?: string; animateurId?: string }): Promise<DeplacementSimulation> {
+    const params = new URLSearchParams();
+    if (cible.posteId) {
+      params.set('cible', cible.posteId);
+    }
+    if (cible.animateurId) {
+      params.set('animateur', cible.animateurId);
+    }
+    return this.api.post<DeplacementSimulation>(
+      `/api/postes/${encodeURIComponent(posteId)}/deplacement?${params}`,
+      null
+    );
+  }
+
   appliquerReparation(posteId: string, animateurId: string): Promise<void> {
     const url = `/api/postes/${encodeURIComponent(posteId)}/affectation?animateurId=${encodeURIComponent(animateurId)}`;
     return this.api.post<void>(url, null);

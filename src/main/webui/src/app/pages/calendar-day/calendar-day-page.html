@@ -69,7 +69,7 @@
             }
           </h2>
         </mat-card-header>
-        <mat-card-content>
+        <mat-card-content cdkDropListGroup>
           @for (slot of day.slots; track slot.creneauId) {
             <div class="day-slot">
               <div class="day-slot-title">
@@ -80,7 +80,11 @@
                 <div class="day-slot-empty" i18n="@@calendarDay.noStand">Aucun stand</div>
               } @else {
                 @for (stand of slot.stands; track stand.standId + stand.heureDebut) {
-                  <div class="day-stand" [class.empty-slot]="stand.entries.length === 0" [class.understaffed-slot]="isUnderstaffed(stand)" [class.appreciation-mismatch-slot]="hasAppreciationMismatch(stand)">
+                  <div class="day-stand" [class.empty-slot]="stand.entries.length === 0" [class.understaffed-slot]="isUnderstaffed(stand)" [class.appreciation-mismatch-slot]="hasAppreciationMismatch(stand)"
+                       cdkDropList [cdkDropListData]="stand" [cdkDropListSortingDisabled]="true"
+                       [cdkDropListEnterPredicate]="peutRecevoir"
+                       [cdkDropListDisabled]="editingLocked() || estLigneVerrouillee(slot, stand)"
+                       (cdkDropListDropped)="onDrop($event)">
                     <strong>{{ stand.standNom }}</strong>
                     @if (stand.heureDebut !== slot.heureDebut || stand.heureFin !== slot.heureFin) {
                       <span class="day-stand-partial" i18n="@@calendarDay.partiallyClosed">
@@ -115,12 +119,19 @@
                           <button
                             type="button"
                             class="affectation-link"
-                            [title]="pourquoiLuiLabel"
+                            cdkDrag
+                            [cdkDragData]="entry.poste"
+                            [cdkDragDisabled]="editingLocked() || estLigneVerrouillee(slot, stand)"
+                            [attr.data-poste-id]="entry.poste.id"
+                            [title]="pourquoiLuiLabel + ' — ' + glisserTooltip"
                             (click)="openExplanation(entry.poste)"
                           >{{ entry.label }}</button
                           >{{ isLast ? '' : ', ' }}
                         }
                       </span>
+                    }
+                    @for (libre of stand.postesLibres; track libre.id) {
+                      <span class="siege-libre" [attr.data-poste-id]="libre.id" [title]="glisserTooltip">{{ siegeLibreLabel }}</span>
                     }
                   </div>
                 }

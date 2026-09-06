@@ -62,7 +62,7 @@ class McpAnnotationsStructurelleTest {
     /** Tools that write without destroying: creations, edits, toggles, locks. */
     private static final List<String> ECRITURE = List.of(
             "creer_", "modifier_", "ajouter_", "activer_", "desactiver_", "dupliquer_",
-            "renommer_", "definir_", "verrouiller", "capturer_", "arreter_", "affecter_",
+            "renommer_", "definir_", "verrouiller", "capturer_", "arreter_", "affecter_", "deplacer_",
             "configurer_", "appliquer_", "accepter_", "refuser_", "publier_", "envoyer_",
             "compacter_");
 

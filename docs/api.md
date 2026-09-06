@@ -511,6 +511,41 @@ l'assistant ci-dessous, pour ne pas laisser choisir un remplacement qui casse
 une règle dure. L'endpoint reste ouvert à l'API et à l'outil MCP
 `simuler_swap`.
 
+### Déplacer une affectation à la main
+
+Le glisser-déposer des vues journalières (#308), et le même geste par l'API
+et par les outils MCP `simuler_deplacement` / `deplacer_affectation`.
+
+| Endpoint | Effet |
+| --- | --- |
+| `POST /api/postes/{id}/deplacement/simulation?cible=P` ou `?animateur=A` | Chiffre le geste. Corps JSON : le planning à évaluer, vide pour le plan enregistré. Ne persiste rien. |
+| `POST /api/postes/{id}/deplacement?cible=P` ou `?animateur=A` | Applique le geste au plan enregistré. Écrit. |
+
+Une règle, trois gestes. Après le geste, le siège `{id}` tient
+`animateurCibleId` (personne quand il est nul) et `posteCibleId`, s'il y en a
+un, tient `animateurSourceId` :
+
+- déposé sur un siège **vide** (`cible`) : la personne y va, son siège reste
+  vide — le trou se déplace, le score dur ne bouge pas ;
+- déposé sur un siège **tenu** : les deux personnes échangent leurs sièges ;
+- déposé sur une **personne** (`animateur`, le rail) : elle prend le siège —
+  et si elle en tient déjà un sur le même créneau, les deux sièges sont
+  échangés plutôt que de la mettre à deux endroits à la fois.
+
+**Le verdict est celui du planning entier**, comme pour un échange : déplacer
+un siège peut casser une règle dure sur un siège qu'il ne touche pas (heures
+hebdomadaires, repos). `casseContrainteDure` vrai → l'écriture répond `400`
+en nommant les règles (`nouvellesViolationsDures`), et n'écrit rien. Cette
+simulation est faite **côté serveur au moment d'écrire**, sur le plan
+enregistré, quoi que le navigateur ait vérifié — les vues journalières
+n'appellent d'ailleurs que l'écriture, le refus portant déjà le motif. Un
+siège verrouillé refuse (`400`), une résolution en cours aussi (`409`), les
+deux lignes s'écrivent dans une seule transaction, et l'analyse de contraintes
+stockée est re-dérivée du plan après coup, comme après une restauration.
+
+Le clic sur un nom reste le chemin clavier de ce geste : « Pourquoi lui ? »
+et l'assistant de réparation ci-dessous.
+
 ### Assistant de réparation
 
 | Endpoint | Effet |

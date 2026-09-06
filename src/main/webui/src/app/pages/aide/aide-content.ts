@@ -691,7 +691,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.day:Calendrier journalier`,
-              text: $localize`:@@aide.views.def.day:Une journée, stand par stand et créneau par créneau. Pour vérifier une journée précise ou préparer une réparation manuelle.`
+              text: $localize`:@@aide.views.def.day:Une journée, stand par stand et créneau par créneau. Pour vérifier une journée précise ou préparer une réparation manuelle. On y corrige aussi à la main, en glissant un nom vers un autre stand de la journée : sur un siège libre la personne y est déplacée et son siège se vide, sur une personne les deux échangent leurs sièges. Le serveur simule le geste sur le plan enregistré et le refuse, en nommant la règle, s'il cassait une règle dure ; un siège verrouillé ne se déplace pas. Le clic sur un nom reste le chemin au clavier : « Pourquoi lui ? » et son assistant de réparation.`
             },
             {
               term: $localize`:@@aide.views.term.heatmap:Heatmap de charge`,
@@ -703,7 +703,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.railJour:Rail de la journée`,
-              text: $localize`:@@aide.views.def.railJour:La même journée que le calendrier journalier, mais vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » signalent au contraire de ne pas solliciter la personne.`
+              text: $localize`:@@aide.views.def.railJour:La même journée que le calendrier journalier, mais vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » signalent au contraire de ne pas solliciter la personne. Une vacation se glisse vers une autre ligne : la personne la prend, ou échange la sienne si elle travaille déjà à cette heure, aux mêmes conditions que sur le calendrier journalier.`
             },
             {
               term: $localize`:@@aide.views.term.repos:Jours de repos`,

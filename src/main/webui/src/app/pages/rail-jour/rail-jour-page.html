@@ -111,7 +111,7 @@
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody cdkDropListGroup>
             @for (ligne of lignesAffichees(); track ligne.animateurId; let index = $index) {
               <tr class="rail-ligne">
                 <th scope="row" class="rail-nom">
@@ -131,6 +131,12 @@
                   class="rail-cell"
                   [class.rail-cell-libre]="ligne.statut === 'libre'"
                   [class.rail-cell-indisponible]="ligne.statut === 'indisponible'"
+                  cdkDropList
+                  [cdkDropListData]="ligne"
+                  [cdkDropListSortingDisabled]="true"
+                  [cdkDropListEnterPredicate]="peutRecevoir"
+                  [cdkDropListDisabled]="editingLocked()"
+                  (cdkDropListDropped)="onDrop($event)"
                   [attr.data-ligne]="index"
                   [tabindex]="ligneCourante() === index ? 0 : -1"
                   (focus)="focusLigne(index)"
@@ -153,8 +159,11 @@
                         [class.rail-bloc-chevauchement]="bloc.chevauchement"
                         [style.left.%]="bloc.offsetPercent"
                         [style.width.%]="bloc.widthPercent"
-                        [title]="bloc.label"
+                        [title]="bloc.label + ' — ' + glisserTooltip"
                         [attr.data-poste-id]="bloc.posteId"
+                        cdkDrag
+                        [cdkDragData]="bloc"
+                        [cdkDragDisabled]="editingLocked()"
                       ><span class="rail-bloc-label">{{ bloc.standNom }}</span></span>
                     }
                     @for (pause of ligne.pauses; track pause.heureDebut) {

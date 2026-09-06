@@ -19,7 +19,9 @@ import dev.sylvain.planning.service.PlanningHoursService.HeuresAnimateur;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.AffectationExplanation;
+import dev.sylvain.planning.service.DeplacementService;
 import dev.sylvain.planning.service.PlanningService.ContrainteImpact;
+import dev.sylvain.planning.service.PlanningService.DeplacementSimulation;
 import dev.sylvain.planning.service.PlanningService.SuggestionsReparation;
 import dev.sylvain.planning.service.PlanningService.SwapSimulation;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
@@ -57,6 +59,9 @@ public class PlanningMcpTools {
      * {@code synthese_affectations} instead.
      */
     static final int LIMITE_AFFECTATIONS_DEFAUT = 200;
+
+    @Inject
+    DeplacementService deplacementService;
 
     @Inject
     PlanningService planningService;
@@ -291,6 +296,48 @@ public class PlanningMcpTools {
         return new ReaffectationView(posteId, precedent, animateurId);
     }
 
+    @Tool(description = "Chiffre le déplacement d'une affectation du planning persisté sans rien écrire : "
+            + "le siège posteId déposé sur un autre siège (posteCibleId — vide, l'animateur y va et son siège se "
+            + "libère ; occupé, les deux échangent) ou sur une personne (animateurId, qui prend le siège, ou "
+            + "échange le sien si elle en tient un sur le même créneau). Verdict sur tout le planning : "
+            + "casseContrainteDure vrai veut dire que deplacer_affectation refusera.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    DeplacementView simuler_deplacement(@ToolArg(description = "Id du poste dont l'affectation bouge") String posteId,
+            @ToolArg(description = "Id du poste qui la reçoit", required = false) String posteCibleId,
+            @ToolArg(description = "Id de l'animateur qui la reçoit, si aucun poste n'est donné", required = false) String animateurId,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return toView(deplacementService.simulate(null, posteId, posteCibleId, animateurId));
+    }
+
+    /**
+     * Kept apart from {@code simuler_deplacement} for the reason
+     * {@code affecter_poste} is kept apart from {@code simuler_swap}: a tool
+     * that scores a move and applies it in the same call leaves no step at
+     * which a human could say no.
+     */
+    @Tool(description = "Déplace une affectation du planning persisté, comme simuler_deplacement le décrit, "
+            + "et l'écrit : deux sièges au plus changent de main, aucune résolution n'est relancée. Refusé si le "
+            + "déplacement casserait une règle dure, si un des sièges est verrouillé, ou pendant une résolution.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
+    DeplacementView deplacer_affectation(@ToolArg(description = "Id du poste dont l'affectation bouge") String posteId,
+            @ToolArg(description = "Id du poste qui la reçoit", required = false) String posteCibleId,
+            @ToolArg(description = "Id de l'animateur qui la reçoit, si aucun poste n'est donné", required = false) String animateurId,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return toView(deplacementService.apply(posteId, posteCibleId, animateurId));
+    }
+
+    private static DeplacementView toView(DeplacementSimulation simulation) {
+        return new DeplacementView(simulation.posteSourceId(), simulation.posteCibleId(),
+                simulation.animateurSourceId(), simulation.animateurCibleId(),
+                String.valueOf(simulation.scoreAvant()), String.valueOf(simulation.scoreApres()),
+                String.valueOf(simulation.delta()), simulation.casseContrainteDure(),
+                simulation.nouvellesViolationsDures().stream()
+                        .map(violation -> violation.description() + " (+" + violation.matchesSupplementaires() + ")")
+                        .toList());
+    }
+
     private PlanningEvenement persistedPlanning() {
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null || planning.getPostes().isEmpty()) {
@@ -397,6 +444,16 @@ public class PlanningMcpTools {
 
     /** @param animateurPrecedentId who held the seat before, null when it was empty */
     public record ReaffectationView(String posteId, String animateurPrecedentId, String animateurId) {
+    }
+
+    /**
+     * A seat movement (issue #308): after it, {@code posteSourceId} holds
+     * {@code animateurCibleId} (nobody when null) and {@code posteCibleId}, when
+     * set, holds {@code animateurSourceId}. Ids only, like every seat listing here.
+     */
+    public record DeplacementView(String posteSourceId, String posteCibleId, String animateurSourceId,
+            String animateurCibleId, String scoreAvant, String scoreApres, String delta,
+            boolean casseContrainteDure, List<String> nouvellesViolationsDures) {
     }
 
     /** @param details readable lines describing every match, anonymised (animateur id, never a name) */

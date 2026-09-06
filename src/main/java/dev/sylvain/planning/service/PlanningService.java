@@ -2701,6 +2701,86 @@ public class PlanningService {
     }
 
     /**
+     * Simulates a seat changing hands by a gesture on a day view (issue #308),
+     * on an already-solved planning, nothing persisted — the substitution lives
+     * only for the second {@code analyze} call, like {@link #simulateSwap}.
+     *
+     * <p>One rule, three gestures. After the move, {@code posteSource} holds
+     * {@code animateurCible} and {@code posteCible}, when there is one, holds
+     * {@code animateurSource}:</p>
+     * <ul>
+     * <li>dropped on an <b>empty</b> seat: the animateur moves there and their
+     * seat is left empty (the hole moves, the hard score does not);</li>
+     * <li>dropped on a <b>held</b> seat: the two animateurs swap seats;</li>
+     * <li>dropped on a <b>person</b> (the rail): that person takes the seat —
+     * and when they already hold one on the same créneau, the two seats are
+     * swapped rather than leaving them in two places at once.</li>
+     * </ul>
+     *
+     * <p>The verdict is planning-wide, like {@link #simulateEchange}: moving a
+     * seat can break a hard rule on a seat it does not touch (weekly hours,
+     * rest), so feasibility is read on the global hard score and the extra
+     * hard matches — never on the two seats alone.</p>
+     *
+     * @param posteCibleId    the seat dropped on, or {@code null} when a person was
+     * @param animateurCibleId the person dropped on, ignored when a seat was given
+     */
+    public DeplacementSimulation simulateDeplacement(PlanningEvenement solved, String posteSourceId,
+            String posteCibleId, String animateurCibleId) {
+        PosteAffectation source = findPoste(solved, posteSourceId);
+        Animateur animateurSource = source.getAnimateur();
+        if (animateurSource == null) {
+            throw new BusinessError.Invalid("Le siège de départ est vide : rien à déplacer.");
+        }
+        PosteAffectation cible;
+        Animateur animateurCible;
+        if (posteCibleId != null) {
+            cible = findPoste(solved, posteCibleId);
+            if (cible == source) {
+                throw new BusinessError.Invalid("Le siège d'arrivée est le siège de départ : rien à déplacer.");
+            }
+            animateurCible = cible.getAnimateur();
+        } else {
+            if (animateurCibleId == null) {
+                throw new BusinessError.Invalid("Indiquez le siège ou la personne qui reçoit l'affectation.");
+            }
+            animateurCible = findAnimateur(solved, animateurCibleId);
+            if (animateurCible == animateurSource) {
+                throw new BusinessError.Invalid("Cette personne tient déjà ce siège : rien à déplacer.");
+            }
+            // The receiver's own seat on that créneau, if any: two people
+            // trading créneaux is a swap, not one of them in two places at once.
+            cible = solved.getPostes().stream()
+                    .filter(poste -> poste != source && poste.getAnimateur() == animateurCible
+                            && poste.getCreneau() != null && source.getCreneau() != null
+                            && poste.getCreneau().getId().equals(source.getCreneau().getId()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        PlanningAnalysis avant = constraintDiagnosticService.analyze(solved);
+        PlanningAnalysis apres;
+        source.setAnimateur(animateurCible);
+        if (cible != null) {
+            cible.setAnimateur(animateurSource);
+        }
+        try {
+            apres = constraintDiagnosticService.analyze(solved);
+        } finally {
+            source.setAnimateur(animateurSource);
+            if (cible != null) {
+                cible.setAnimateur(animateurCible);
+            }
+        }
+        HardMediumSoftScore scoreAvant = avant.score();
+        HardMediumSoftScore scoreApres = apres.score();
+        return new DeplacementSimulation(posteSourceId, cible == null ? null : cible.getId(),
+                animateurSource.getId(), animateurCible == null ? null : animateurCible.getId(),
+                scoreAvant, scoreApres, scoreApres.subtract(scoreAvant),
+                scoreApres.hardScore() < scoreAvant.hardScore(), extraHardViolations(avant, apres));
+    }
+
+    /**
      * Directed variant of {@link #simulateEchange}: the demandeur's seat on
      * (créneau, stand) goes to the target, and the CIBLE'S seat on
      * (créneau target, stand target) goes to the demandeur — two different
@@ -3250,6 +3330,23 @@ public class PlanningService {
 
     /** One hard constraint the simulated échange would newly violate, in business words. */
     public record HardViolation(String name, String description, int matchesSupplementaires) {
+    }
+
+    /**
+     * What a seat movement (issue #308) would do, and whether it may. After it,
+     * {@code posteSourceId} holds {@code animateurCibleId} (possibly nobody) and
+     * {@code posteCibleId}, when set, holds {@code animateurSourceId}.
+     *
+     * @param posteCibleId       the seat receiving the moved animateur; {@code null}
+     *                           when a person received the seat instead
+     * @param animateurCibleId   who ends up on the source seat: the receiver, or
+     *                           {@code null} when the seat is left empty
+     * @param casseContrainteDure true when the plan's hard score gets worse — the
+     *                           gesture is then refused, never applied
+     */
+    public record DeplacementSimulation(String posteSourceId, String posteCibleId, String animateurSourceId,
+            String animateurCibleId, HardMediumSoftScore scoreAvant, HardMediumSoftScore scoreApres,
+            HardMediumSoftScore delta, boolean casseContrainteDure, List<HardViolation> nouvellesViolationsDures) {
     }
 
     /**

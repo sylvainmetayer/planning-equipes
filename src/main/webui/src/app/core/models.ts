@@ -2042,6 +2042,27 @@ export interface ViolationDure {
   matchesSupplementaires: number;
 }
 
+/**
+ * A seat moved by hand on a day view (issue #308), as the server scored — and,
+ * on `POST /api/postes/{id}/deplacement`, applied — it. After the move the
+ * source seat holds `animateurCibleId` (nobody when null) and `posteCibleId`,
+ * when set, holds `animateurSourceId`: a drop on an empty seat moves, a drop on
+ * a held seat or on a person who already works that créneau swaps, a drop on a
+ * free person hands the seat over.
+ */
+export interface DeplacementSimulation {
+  posteSourceId: string;
+  posteCibleId: string | null;
+  animateurSourceId: string;
+  animateurCibleId: string | null;
+  scoreAvant: HardMediumSoftScore;
+  scoreApres: HardMediumSoftScore;
+  delta: HardMediumSoftScore;
+  /** True when the plan's hard score would get worse: the server refuses the write. */
+  casseContrainteDure: boolean;
+  nouvellesViolationsDures: ViolationDure[];
+}
+
 /** `/api/echanges/{id}/impact`: fresh simulation of a demande against the persisted planning. */
 export interface EchangeSimulation {
   posteDemandeurId: string;

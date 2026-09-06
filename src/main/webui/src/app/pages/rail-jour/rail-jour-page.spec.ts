@@ -8,6 +8,9 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
+import { AffectationExplanationService } from '../../core/affectation-explanation.service';
+import { NotificationService } from '../../core/notification.service';
+import { SolverJobService } from '../../core/solver-job.service';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { Animateur, Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
@@ -91,7 +94,10 @@ describe('RailJourPage', () => {
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
         { provide: ApiService, useValue: { get: vi.fn(async (url: string) => apiGet(url)) } },
-        { provide: PlanningStateService, useValue: { loadForDisplay } }
+        { provide: PlanningStateService, useValue: { loadForDisplay } },
+        { provide: SolverJobService, useValue: { editingLocked: () => false } },
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+        { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } }
       ]
     });
     fixture = TestBed.createComponent(RailJourPage);
@@ -311,7 +317,10 @@ describe('RailJourPage', () => {
           { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
           { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
           { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
-          { provide: PlanningStateService, useValue: { loadForDisplay } }
+          { provide: PlanningStateService, useValue: { loadForDisplay } },
+        { provide: SolverJobService, useValue: { editingLocked: () => false } },
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+        { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } }
         ]
       });
       fixture = TestBed.createComponent(RailJourPage);

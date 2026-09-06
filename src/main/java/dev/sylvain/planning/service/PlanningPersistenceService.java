@@ -411,6 +411,28 @@ public class PlanningPersistenceService {
         }) > 0;
     }
 
+    /**
+     * Several seats changing hands at once, one transaction (issue #308): a
+     * movement rewrites two rows, and a swap half done would leave one person
+     * in two places. {@code null} empties a seat, like {@link #reaffecterPoste}.
+     */
+    public void reaffecterPostes(Map<String, String> animateurParPoste) {
+        scope.write("Failed to move the seats", connection -> {
+            for (Map.Entry<String, String> entree : animateurParPoste.entrySet()) {
+                // Not prepareScoped: the SET clause claims placeholder 1.
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?")) {
+                    ps.setString(1, entree.getValue());
+                    ps.setString(2, editionId());
+                    ps.setString(3, entree.getKey());
+                    if (ps.executeUpdate() == 0) {
+                        throw new SQLException("Aucun poste " + entree.getKey() + " dans cette édition");
+                    }
+                }
+            }
+        });
+    }
+
     private int reaffecterSiege(Connection connection, long creneauId, String standId,
             String occupantActuelId, String nouvelOccupantId) throws SQLException {
         // Not prepareScoped: the SET clause claims placeholder 1, so the

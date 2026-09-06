@@ -1,3 +1,4 @@
+import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -7,15 +8,20 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
+import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { ApiService } from '../../core/api.service';
+import { errorMessage } from '../../core/error-message';
+import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
+import { SolverJobService } from '../../core/solver-job.service';
+import { resumeDeplacement } from '../../shared/deplacement';
 import { PlanningEvenement, TypologieItem, RapportPauses } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { TableFilter } from '../../shared/table-filter';
-import { RailJour, RailLigne, buildRailJours, compterStatuts } from './rail-jour';
+import { RailBloc, RailJour, RailLigne, buildRailJours, compterStatuts } from './rail-jour';
 
 /** Which lines the rail keeps: everyone, only the mobilisable ones, only the working ones. */
 export type RailVue = 'tous' | 'libres' | 'affectes';
@@ -41,6 +47,9 @@ interface RailLegendItem {
 @Component({
   selector: 'app-rail-jour-page',
   imports: [
+    CdkDrag,
+    CdkDropList,
+    CdkDropListGroup,
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,
@@ -179,6 +188,48 @@ export class RailJourPage {
   });
 
   protected readonly animateurColumnLabel = $localize`:@@railJour.column.animateur:Animateur`;
+  protected readonly glisserTooltip = $localize`:@@railJour.glisser:Glisser vers une autre personne : elle prend cette vacation, ou échange la sienne si elle travaille déjà à cette heure. Refusé si une règle dure serait cassée.`;
+
+  /* ----------------------------- Glisser-déposer (#308) ----------------------------- */
+
+  private readonly explications = inject(AffectationExplanationService);
+  private readonly notifications = inject(NotificationService);
+  /** A drop is a write to the plan: locked, like every other, while a solve is rewriting it. */
+  protected readonly editingLocked = inject(SolverJobService).editingLocked;
+
+  /** Any other person's line receives, whether they work at that hour (swap) or not (hand-over). */
+  protected readonly peutRecevoir = (drag: CdkDrag<RailBloc>, drop: CdkDropList<RailLigne>): boolean =>
+    drag.dropContainer !== drop && drop.data.statut !== 'indisponible';
+
+  /**
+   * A vacation dropped on another person's line: that person takes the seat,
+   * or — when they already hold one on the same créneau — the two swap. The
+   * server decides which, simulates on the persisted plan and refuses a drop
+   * that would break a hard rule, naming it.
+   */
+  protected async onDrop(event: CdkDragDrop<RailLigne, RailLigne, RailBloc>): Promise<void> {
+    if (event.previousContainer === event.container) {
+      return;
+    }
+    const bloc = event.item.data;
+    const receveur = event.container.data;
+    try {
+      const simulation = await this.explications.deplacer(bloc.posteId, { animateurId: receveur.animateurId });
+      this.notifications.notify({ ...resumeDeplacement(simulation, (id) => this.nomDe(id)), variant: 'success' });
+      this.planningState.set(null);
+      await this.refresh();
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@railJour.depotRefuse:Déplacement refusé`,
+        message: errorMessage(error),
+        variant: 'error'
+      });
+    }
+  }
+
+  private nomDe(animateurId: string): string {
+    return this.lignes().find((ligne) => ligne.animateurId === animateurId)?.nom ?? animateurId;
+  }
   protected readonly libreLabel = $localize`:@@railJour.statut.libre:Libre`;
   protected readonly indisponibleLabel = $localize`:@@railJour.statut.indisponible:Indisponible`;
   protected readonly chevauchementLabel = $localize`:@@railJour.chevauchement:Vacations qui se chevauchent : cet animateur est attendu à deux endroits en même temps`;

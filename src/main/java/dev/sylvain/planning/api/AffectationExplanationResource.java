@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.DeplacementService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.AffectationExplanation;
 import dev.sylvain.planning.service.PlanningService.SuggestionsReparation;
@@ -34,6 +35,9 @@ public class AffectationExplanationResource {
 
     @Inject
     PlanningService planningService;
+
+    @Inject
+    DeplacementService deplacementService;
 
     /**
      * Constraint matches (violated and not) involving the given poste in the
@@ -82,6 +86,34 @@ public class AffectationExplanationResource {
      *
      * @param animateurId omitted empties the seat
      */
+    /**
+     * Scores a seat movement (issue #308) without writing: the seat's animateur
+     * dropped on another seat ({@code cible}) or on a person
+     * ({@code animateur}). The body is the planning to score, or empty for the
+     * persisted one — the day views already hold the plan they show.
+     */
+    @POST
+    @Path("/{posteId}/deplacement/simulation")
+    public Response simulateDeplacement(@PathParam("posteId") String posteId,
+            @QueryParam("cible") String posteCibleId, @QueryParam("animateur") String animateurCibleId,
+            PlanningEvenement planning) {
+        return Response.ok(deplacementService.simulate(planning, posteId, posteCibleId, animateurCibleId)).build();
+    }
+
+    /**
+     * Applies a seat movement to the persisted plan: simulated server-side
+     * first and refused (400) when it would worsen the hard score, so a client
+     * that skipped the simulation is held to the same rule. Answers what was
+     * done, scores before and after included.
+     */
+    @POST
+    @Path("/{posteId}/deplacement")
+    @Consumes(MediaType.WILDCARD)
+    public Response applyDeplacement(@PathParam("posteId") String posteId,
+            @QueryParam("cible") String posteCibleId, @QueryParam("animateur") String animateurCibleId) {
+        return Response.ok(deplacementService.apply(posteId, posteCibleId, animateurCibleId)).build();
+    }
+
     @POST
     @Path("/{posteId}/affectation")
     @Consumes(MediaType.WILDCARD)
