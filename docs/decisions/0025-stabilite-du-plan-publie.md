@@ -41,10 +41,11 @@ poids près.
    Avant la première publication, la règle est muette et le solveur reste
    libre ; c'est en amont qu'on optimise.
 2. **Un point par siège dont le titulaire n'est pas celui du plan publié**
-   sur le même stand et le même créneau. Un stand ou un créneau créé depuis
-   est libre ; un siège publié devenu vide est déjà une violation dure et ne
-   se paie pas deux fois ; un siège ajouté sur une ligne publiée compte son
-   nouvel occupant.
+   sur le même stand et le même créneau — vide compris : le titulaire a été
+   prévenu qu'il y travaillait, le trou est le sien. Un stand ou un créneau
+   créé depuis est libre ; un siège ajouté sur une ligne publiée compte son
+   nouvel occupant. (La première version ne comptait pas le siège vide, « déjà
+   une violation dure » ; le banc a tranché, voir l'annexe.)
 3. **Les faits sont chargés côté serveur** avant chaque résolution et chaque
    diagnostic (`prepareProblem`), jamais envoyés par un client : un planning
    posté ne décide pas de ce que les gens ont reçu.
@@ -121,6 +122,44 @@ planning » depuis ce plan, 600 s de plus : un seul trou de comblé (−4 dur, 1
 « Corriger après un changement » (ne remplit que les trous, ne bouge
 personne), un second calcul, et enfin désactiver la règle pour ce calcul en
 acceptant de prévenir tout le monde.
+
+**Deuxième passe : le siège publié laissé vide compte aussi.** Rejoué au
+poids 5 avec cette symétrie (même fixture, base à froid `0hard/-6810medium`
+puis publiée) :
+
+| Changement | Avant (vide gratuit) | Après (vide = 1 point) |
+|---|---|---|
+| Trois absents | 10 personnes, 0 dur | 10 personnes, 0 dur, 9 sièges lâchés |
+| Stand ajouté | 66 personnes, 5 sièges non pourvus | 65 personnes, 4 sièges non pourvus |
+| Les deux | 67 personnes, 5 sièges non pourvus | 67 personnes, 4 sièges non pourvus |
+
+Jamais pire, un peu mieux sur les deux cas durs, et plus juste métier :
+adoptée. Mais les trous restent sur des lignes publiées (les 4 écarts de
+stabilité du cas « stand » sont les 4 sièges vides) : la symétrie ne
+déplace pas le mur, elle l'expose.
+
+**Troisième passe : franchir le mur d'un seul mouvement.** Le mur est une
+chaîne — A quitte son siège pour le trou, B, libre à cette heure, reprend
+celui de A — dont chaque maillon est neutre en dur et coûte medium. Plutôt
+qu'un mouvement composite maison, la phase de faisabilité reçoit un
+sélecteur **ruin and recreate** de Timefold (édition Community), restreint
+par `HoleNeighbourPosteFilter` aux sièges dont le créneau chevauche celui
+d'un siège vide : 3 à 10 sièges de cette heure-là sont défaits et
+reconstruits par l'heuristique de construction, la chaîne est évaluée
+comme un seul mouvement. Il ne sélectionne rien quand il n'y a plus de
+trou, ce qui est aussi le moment où la phase s'arrête. Même protocole,
+poids 5, symétrie comprise :
+
+| Changement | Sans ruin and recreate | Avec |
+|---|---|---|
+| Stand ajouté | 65 personnes, 4 sièges non pourvus | **0 dur** en 158 s, 77 personnes, 10 sièges lâchés |
+| Les deux | 67 personnes, 4 sièges non pourvus | **0 dur**, 77 personnes, 18 sièges lâchés |
+| Trois absents | 10 personnes, 0 dur | identique : rien à défaire sans trou |
+
+La faisabilité revient, au prix d'une dizaine de personnes de plus que le
+plan à trous — celles de la chaîne — et toujours à moitié de ce que fait la
+règle inactive (153). Retenu : c'est exactement l'arbitrage demandé, un
+planning tenable qui dérange le moins possible.
 
 **Ce que le banc ne dit pas.** Une mesure par case, sur une fixture
 anonymisée : les ordres de grandeur sont fiables, pas les unités. Le réel

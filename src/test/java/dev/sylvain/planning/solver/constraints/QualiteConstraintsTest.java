@@ -91,11 +91,21 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     }
 
     @Test
-    void anEmptySeatIsNotCountedTwice() {
-        // Nobody on a published seat is a hard hole already, not a stability cost.
+    void aPublishedSeatLeftEmptyCostsOneLikeAReplacement() {
+        // The holder was told they worked there: the hole is theirs to be told
+        // about, and counting it keeps the solver from emptying published seats
+        // for free (ADR 0025).
         verify("stabiliteDuPlanPublie")
                 .given(poste(standStrat, creneauMatin, null),
                         publie(standStrat, creneauMatin, "A1"))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void anEmptySeatOnALineNeverPublishedIsFree() {
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standStrat, creneauMatin, null),
+                        publie(standStrat, creneauAprem, "A1"))
                 .penalizesBy(0);
     }
 

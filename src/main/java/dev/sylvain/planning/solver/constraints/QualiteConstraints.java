@@ -55,25 +55,30 @@ public final class QualiteConstraints {
     }
 
     /**
-     * Stability of the published plan: every seat whose holder is not the one
-     * the published plan had on that stand and créneau costs one medium point
-     * — one point per person who would have to be told « votre emploi du temps
-     * a changé ». Measured on a real edition, a re-solve started from a good
-     * plan reshuffled dozens of people for a marginal equity gain, because
-     * nothing in the score said that moving a person already informed has a
-     * cost. This is that cost, dosed against the other medium rules.
+     * Stability of the published plan: every seat of a line (stand × créneau)
+     * the published plan had, whose holder is not the one that plan named,
+     * costs one medium point — one point per person who would have to be told
+     * « votre emploi du temps a changé ». Measured on a real edition, a
+     * re-solve started from a good plan reshuffled dozens of people for a
+     * marginal equity gain, because nothing in the score said that moving a
+     * person already informed has a cost. This is that cost, dosed against
+     * the other medium rules.
      *
-     * <p>Only a seat the published plan <em>had</em> (same stand, same
-     * créneau) is judged: a stand or a créneau created since is free, there is
-     * nobody to keep there. A seat the published plan had but that is now
-     * empty is not counted here — it is a hard violation already. Silent
+     * <p>Only a line the published plan <em>had</em> is judged: a stand or a
+     * créneau created since is free, there is nobody to keep there. A
+     * published seat left <em>empty</em> costs the same point as one given
+     * to somebody else — the holder was told they worked there, and the hole
+     * is theirs. It is also what keeps the solver from luring a published
+     * holder onto a new line for free and leaving behind a hole nobody can
+     * fill without paying: measured (ADR 0025), counting the hole moves the
+     * holes onto the new lines, where filling them costs nothing. Silent
      * while nothing has been published: the list of facts is then empty and
      * {@code ifExists} never matches.</p>
      */
     private Constraint stabiliteDuPlanPublie(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+        return ConstraintToggleSupport.actif(constraintFactory.forEachIncludingUnassigned(PosteAffectation.class),
                 "stabiliteDuPlanPublie")
-                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null
+                .filter(poste -> poste.getStand() != null
                         && poste.getCreneau() != null && poste.getCreneau().getId() != null)
                 .ifExists(AffectationPubliee.class,
                         Joiners.equal(poste -> poste.getStand().getId(), AffectationPubliee::standId),
@@ -81,9 +86,14 @@ public final class QualiteConstraints {
                 .ifNotExists(AffectationPubliee.class,
                         Joiners.equal(poste -> poste.getStand().getId(), AffectationPubliee::standId),
                         Joiners.equal(poste -> poste.getCreneau().getId(), AffectationPubliee::creneauId),
-                        Joiners.equal(poste -> poste.getAnimateur().getId(), AffectationPubliee::animateurId))
+                        Joiners.equal(QualiteConstraints::holderIdOrNobody, AffectationPubliee::animateurId))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("stabiliteDuPlanPublie");
+    }
+
+    /** The holder's id, or a value no published fact carries: an empty seat matches no holder. */
+    private static String holderIdOrNobody(PosteAffectation poste) {
+        return poste.getAnimateur() == null ? "" : poste.getAnimateur().getId();
     }
 
     private Constraint standComplexeAvecReferent(ConstraintFactory constraintFactory) {

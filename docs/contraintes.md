@@ -191,14 +191,18 @@ faits sont les sièges du dernier instantané publié (`AffectationPubliee`),
 chargés par `PlanningService.prepareProblem` avant chaque résolution et
 chaque diagnostic, jamais envoyés par un client.
 
+**Ce qu'elle compte aussi : un siège publié laissé vide**, au même prix
+qu'un remplacement. Son titulaire a été prévenu qu'il y travaillait, le trou
+est le sien — et c'est ce qui empêche le solveur d'attirer gratuitement un
+titulaire sur une ligne neuve en laissant derrière lui un trou que personne
+ne peut combler sans payer (mesuré, ADR 0025).
+
 **Ce qu'elle ne compte pas, délibérément.**
 
 - Rien tant que rien n'a été publié : la liste de faits est vide, la règle
   est muette, le solveur reste libre de tout remanier en amont.
 - Un stand ou un créneau créé après la publication : personne n'y a été
   prévenu de rien, le siège est libre.
-- Un siège publié devenu vide : c'est déjà une violation dure, la compter ici
-  ferait payer le trou deux fois.
 - Un siège ajouté sur une ligne publiée (l'effectif a grandi) compte son
   nouvel occupant : c'est bien une personne à prévenir.
 
@@ -216,27 +220,19 @@ Le défaut `planning.constraint-weights.stabiliteDuPlanPublie=5` sort du banc
 décrit ci-dessous ; il se dose par édition sur l'écran Contraintes comme les
 autres règles de qualité, et se désactive par l'interrupteur.
 
-**Sa limite : de la demande en plus aux heures pleines.** Quand le
-changement ajoute des sièges (un stand nouveau ouvert toute la journée), la
-règle peut laisser quelques écarts durs au bout du budget là où le calcul
-sans elle finit à 0 : pourvoir un siège neuf aux heures pleines demande une
-chaîne de déplacements que chaque point de stabilité rend plus coûteuse à
-franchir. Le récapitulatif montre le score dur ; les recours sont, dans
-l'ordre, « Corriger après un changement » (qui ne remplit que les trous), un
-second « Calculer le planning » depuis ce plan, et enfin la désactivation de
-la règle pour ce calcul — en acceptant alors de prévenir tout le monde.
-
-**Ce qu'elle ne retient pas : une grille qui change.** La règle tient des
-lignes stand × créneau. Tout ce qui rebat ces lignes lui retire sa prise : un
-découpage ou une dérivation qui remplace la grille (le plan enregistré part
-avec), mais aussi — moins visible — un stand ajouté dont l'identifiant se
-classe **avant** les autres quand la grille a plusieurs familles de relais :
-les stands sont répartis sur les familles à tour de rôle dans l'ordre de leurs
-identifiants (`PlanningService.spreadStandsByFamily`), et chaque stand
-suivant glisse d'une famille ; ses lignes publiées n'existent plus, tout le
-monde change d'horaires, et la règle n'a rien à retenir. Le banc l'a
-mesuré : 153 personnes sur 153 quel que soit le poids. Un identifiant qui se
-classe après les autres laisse la répartition intacte.
+**Le mur des heures pleines, et comment le solveur le franchit.** Quand le
+changement ajoute des sièges (un stand nouveau ouvert toute la journée),
+pourvoir un siège neuf aux heures pleines demande une chaîne de
+déplacements que chaque point de stabilité rend infranchissable pas à pas :
+le banc laissait 4 à 5 sièges non pourvus après 600 s. La phase de
+faisabilité du solveur porte pour cela un sélecteur *ruin and recreate*
+restreint aux sièges de l'heure d'un trou (`HoleNeighbourPosteFilter`,
+`solverConfig.xml`), qui évalue la chaîne comme un seul mouvement : 0 écart
+dur en moins de trois minutes sur le même cas, une dizaine de personnes de
+plus dérangées que le plan à trous, moitié moins que sans la règle. Si un
+calcul finit malgré tout avec des écarts durs, les recours sont, dans
+l'ordre, « Corriger après un changement », un second « Calculer le
+planning », et la désactivation de la règle pour ce calcul.
 
 **Le compte à côté du score.** Chaque résolution rend aussi
 `impactPublication.personnes`, le nombre de personnes que la publication

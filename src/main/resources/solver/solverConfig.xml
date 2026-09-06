@@ -113,6 +113,24 @@
                     <filterClass>dev.sylvain.planning.solver.UnassignedPosteFilter</filterClass>
                 </entitySelector>
             </swapMoveSelector>
+            <!--
+                Ruin and recreate around the holes (ADR 0025): a hole at a
+                saturated hour is filled by a chain of moves whose links are
+                hard-neutral and medium-worse once the published plan has a
+                price, so change and swap never walk it. Ruining a handful of
+                seats at the hole's hour and rebuilding them with the
+                construction heuristic evaluates the chain as ONE move.
+                HoleNeighbourPosteFilter keeps the ruined set at that hour;
+                it selects nothing once there is no hole left.
+            -->
+            <ruinRecreateMoveSelector>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+                <minimumRuinedCount>3</minimumRuinedCount>
+                <maximumRuinedCount>10</maximumRuinedCount>
+                <entitySelector>
+                    <filterClass>dev.sylvain.planning.solver.HoleNeighbourPosteFilter</filterClass>
+                </entitySelector>
+            </ruinRecreateMoveSelector>
         </unionMoveSelector>
         <acceptor>
             <lateAcceptanceSize>400</lateAcceptanceSize>
