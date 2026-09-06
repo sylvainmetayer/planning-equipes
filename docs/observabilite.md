@@ -24,6 +24,23 @@ souvent mineure**. Trois garde-fous :
 C'est ce qui rend vraie la phrase que la politique de confidentialité adresse
 aux animateurs. **Toute nouvelle voie d'envoi doit préserver cette propriété.**
 
+## Ce qu'une résolution qui meurt ne racontait à personne
+
+Un solve est lancé en `202` : la requête est acceptée tout de suite, la
+résolution tourne à part, et son échec arrive plus tard **dans le job**. Il ne
+traverse donc jamais `GlobalExceptionMapper`, et sans rien de plus il ne
+serait jamais remonté — la seule catégorie de panne que l'organisateur voit
+sur son écran et que personne d'autre ne voit jamais.
+
+`SolverJobService.reportFailure` la signale là où l'exception est encore en
+main, avec sa pile, et couvre du même coup l'écran, l'API, MCP et la file
+rejouée après un redémarrage. L'événement porte le type du job, son
+identifiant, l'édition et le périmètre. Au pire (traqueur absent ou en panne),
+la ligne de journal reste : une panne signalée ne doit pas devenir une panne
+perdue.
+
+Un job **annulé** n'est pas une panne et ne remonte pas.
+
 ## Deux pièges de configuration
 
 **La mesure d'audience est active par défaut en production** : le profil

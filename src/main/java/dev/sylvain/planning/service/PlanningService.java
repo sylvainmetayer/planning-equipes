@@ -2208,11 +2208,30 @@ public class PlanningService {
         if (publication == null) {
             return List.of();
         }
-        return publication.affectations().stream()
+        return factsPublies(publication.affectations());
+    }
+
+    /**
+     * The published seats as facts, <b>without duplicates</b>.
+     *
+     * <p>A fact says « this line had this person », a stand × créneau × person
+     * triple, which several seats can share: a créneau cut into segments gives
+     * one seat per segment, and the same person legitimately holds two of them
+     * (a stand open 10 h-18 h with a meal-cover shift, say) — and a plan may
+     * also have been published with a double booking on one line, which is a
+     * hard violation the rule has no business repeating. Timefold indexes
+     * problem facts by equality and refuses an equal one twice ("The fact …
+     * was already inserted"), so the list must be a set. The constraint only
+     * ever asks whether such a line exists, so collapsing the copies changes
+     * no score.</p>
+     */
+    static List<AffectationPubliee> factsPublies(List<PlanSnapshotService.AffectationSnapshot> affectations) {
+        return affectations.stream()
                 .filter(affectation -> affectation.animateurId() != null && affectation.standId() != null
                         && affectation.creneauId() != null)
                 .map(affectation -> new AffectationPubliee(affectation.standId(),
                         Long.parseLong(affectation.creneauId()), affectation.animateurId()))
+                .distinct()
                 .toList();
     }
 

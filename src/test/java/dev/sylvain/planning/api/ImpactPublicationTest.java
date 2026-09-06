@@ -117,6 +117,40 @@ class ImpactPublicationTest {
                 + ", '" + animateurId + "');";
     }
 
+    /**
+     * Two seats of one line held by the same person — a créneau cut into
+     * segments gives one seat per segment, and a plan published with a double
+     * booking gives the same shape — used to abort the next solve:
+     * « The fact (AffectationPubliee[…]) was already inserted ». Timefold
+     * indexes problem facts by equality, so the published seats have to reach
+     * it as a set.
+     */
+    @Test
+    void twoPublishedSeatsOfOneLineHeldByTheSamePersonDoNotBreakTheNextSolve() throws InterruptedException {
+        edition().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        solve();
+
+        List<Map<String, Object>> postes = edition().when().get("/api/planning/persisted").then().statusCode(200)
+                .extract().jsonPath().getList("postes.findAll { it.animateur != null }");
+        Map<String, Object> premier = postes.get(0);
+        String standId = standId(premier);
+        Object creneauId = creneauId(premier);
+        String tenant = animateurId(premier);
+        // A second seat on the very same line, same person, other half of the
+        // slot: what a segmented créneau produces.
+        edition().contentType("text/plain")
+                .body("INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id, "
+                        + "heure_debut_effective, heure_fin_effective) VALUES ('" + EDITION + "', 'DOUBLON', '"
+                        + standId + "', " + creneauId + ", '" + tenant + "', '14:00', '16:00');")
+                .when().post("/api/database/import").then().statusCode(200);
+
+        edition().when().post("/api/planning/publication").then().statusCode(200);
+
+        JsonPath apres = solve();
+        assertThat(apres.getString("status")).isEqualTo("COMPLETED");
+        assertThat(apres.getString("error")).isNull();
+    }
+
     private JsonPath solve() throws InterruptedException {
         attendreSolveurLibre();
         String jobId = edition().when().post("/api/solve/async/reference-data?seconds=2")

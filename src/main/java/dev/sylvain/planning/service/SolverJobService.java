@@ -28,6 +28,7 @@ import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.SolverJobRepository.LigneJob;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PreDestroy;
+import io.sentry.Sentry;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
@@ -463,6 +464,35 @@ public class SolverJobService {
     }
 
     /**
+     * Reports a solve that died to the error tracker, and to the log.
+     *
+     * <p>Nothing else does. The request that started the solve was accepted
+     * long before — {@code 202}, then the screen polls the job — so the
+     * failure never passes through {@code GlobalExceptionMapper} and never
+     * reaches Sentry: the one class of failure the operator sees and we never
+     * do. Here the exception is still in hand, with its stack, and every entry
+     * point goes through this method — the screen, the API, MCP and the queue
+     * replayed after a restart.</p>
+     *
+     * <p>Best-effort, and last: a tracker that is down, or absent (no
+     * {@code SENTRY_DSN}, where every call is a no-op), must not turn a
+     * reported failure into a lost one.</p>
+     */
+    private static void reportFailure(SolverJob job, Exception failure) {
+        LOG.errorf(failure, "Solver job %s (%s, edition %s) failed", job.getId(), job.getType(), job.getEditionId());
+        try {
+            Sentry.captureException(failure, scope -> {
+                scope.setTag("job.type", job.getType().name());
+                scope.setTag("job.id", job.getId());
+                scope.setTag("edition", job.getEditionId());
+                scope.setTag("solve.perimetre", job.getPerimetre() == null ? "complet" : "incremental");
+            });
+        } catch (RuntimeException e) {
+            LOG.warn("The solver failure could not be reported to the error tracker", e);
+        }
+    }
+
+    /**
      * Records the job's outcome and starts the next queued one, both under the
      * service monitor. Atomic on purpose: between "this job is finished" and
      * "the next one holds the solver" there must be no instant where a
@@ -479,6 +509,7 @@ public class SolverJobService {
                 job.markCancelled(null);
             } else {
                 job.markFailed(failure);
+                reportFailure(job, failure);
             }
         } else if (job.isCancelRequested()) {
             job.markCancelled(result);
