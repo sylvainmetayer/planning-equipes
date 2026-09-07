@@ -320,7 +320,16 @@ Single Quarkus service, no separate solver microservice. Package root:
 - **Everything is partitioned by `edition`** ("Année 2025", "Année
   2026"). Every business table carries an `edition_id`, business ids have a
   composite `(edition_id, id)` primary key, and the edition a request works in
-  comes from its `X-Edition-Id` header via `EditionContext`. A new reference
+  comes from its `X-Edition-Id` header via `EditionContext`. **Off a request,
+  `EditionContext` throws rather than guess**: work that outlives its request —
+  a solver job, the notification scheduler — must name its edition through
+  `executeIn`, because answering "the default one" to a write on a thread that
+  designated nothing is how one edition's data ends up in another. Inside a
+  request the default fallback stays: an absent or stale `X-Edition-Id` is the
+  ordinary case. An MCP call is *not* one of those: it is served inside a
+  request context activated by the extension, and a tool called without an
+  `edition` argument resolves to the default edition on purpose — see
+  `docs/mcp.md`. A new reference
   table must follow the same convention, and its SQL must go through
   `JdbcEditionScope` — the single helper that binds the edition to the
   statement's first placeholder and owns the transaction dance.

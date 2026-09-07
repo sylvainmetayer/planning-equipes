@@ -203,6 +203,14 @@ Mise en œuvre :
   d'erreur 400 : une édition supprimée dans un onglet resté ouvert ne doit pas
   casser l'écran. Les ids connus et l'id par défaut sont mis en cache, invalidé
   à chaque écriture sur `/api/editions` ;
+- **hors requête et hors `executeIn`, la résolution échoue** au lieu de retomber
+  sur l'édition `defaut`. Les deux replis n'ont rien à voir : dans une requête,
+  un en-tête absent ou périmé est le cas ordinaire et le défaut est la bonne
+  réponse ; sur un thread qui a quitté sa requête, personne n'a désigné quoi que
+  ce soit, et répondre « l'édition par défaut » à une **écriture** est
+  précisément le bug que raconte le javadoc de `JdbcEditionScope`. Un
+  `Multi.emitOn`, un `CompletableFuture`, un flux parallèle : chacun sortait du
+  cloisonnement sans un bruit ;
 - le contexte n'est pas lui-même `@RequestScoped` parce qu'il doit servir des
   threads sans requête (worker du solveur) : `EditionContext.executeIn(id, …)`
   lie explicitement une édition au thread courant ;

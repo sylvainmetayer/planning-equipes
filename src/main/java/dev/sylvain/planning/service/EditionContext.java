@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -61,11 +62,33 @@ public class EditionContext {
     private volatile Set<String> idsConnus;
     private volatile String defaultId;
 
-    /** Edition the current call reads and writes. Never {@code null}. */
+    /**
+     * Edition the current call reads and writes. Never {@code null}, and never a
+     * guess: outside a request and outside {@link #executeIn}, it <b>throws</b>
+     * rather than fall back on the default edition.
+     *
+     * <p>That fallback used to apply everywhere, which made every unwrapped
+     * thread hop — a {@code Multi.emitOn}, a {@code CompletableFuture}, a
+     * parallel stream — write into the default edition without a sound. It is
+     * the exact bug the javadoc of {@link JdbcEditionScope} tells the story of,
+     * and the one thing a silent default cannot be trusted with: writing.</p>
+     *
+     * <p>The <em>other</em> fallback stays, and is deliberate: inside a request,
+     * an absent or unknown {@code X-Edition-Id} still resolves to the default.
+     * A tab left open on an edition someone else deleted must fall back rather
+     * than break every screen, and a client that names no edition at all is the
+     * ordinary case.</p>
+     */
     public String editionIdCourant() {
         String override = OVERRIDE.get();
         if (override != null) {
             return override;
+        }
+        if (!servingRequest()) {
+            throw new IllegalStateException(
+                    "Aucune édition dans le contexte : ce code tourne hors requête et hors executeIn. "
+                            + "Enveloppez-le dans editionContext.executeIn(editionId, …) — sans cela il "
+                            + "écrirait dans l'édition par défaut, quelle que soit celle visée.");
         }
         String imposee = editionForcedByToken();
         if (imposee != null) {
@@ -76,11 +99,24 @@ public class EditionContext {
     }
 
     /**
+     * Whether a request is being served. {@code Arc.container()} is null-checked
+     * because unit tests instantiate this class outside a CDI container.
+     */
+    private static boolean servingRequest() {
+        var container = Arc.container();
+        return container != null && container.requestContext().isActive();
+    }
+
+    /**
      * Runs {@code work} as if the request had designated {@code editionId}. The
      * previous binding is restored afterwards, so nesting and thread reuse in a
      * pool are both safe.
      */
     public <T> T executeIn(String editionId, Callable<T> work) {
+        // Without this check, executeIn(null, …) is an empty wrapper: the call
+        // falls through to editionIdCourant's throw, deep inside a repository,
+        // far from the site that believed it had wrapped.
+        Objects.requireNonNull(editionId, "editionId");
         String precedent = OVERRIDE.get();
         OVERRIDE.set(editionId);
         try {
@@ -112,16 +148,8 @@ public class EditionContext {
         defaultId = null;
     }
 
-    /**
-     * The header of the request being served, or {@code null} outside any
-     * request. {@code Arc.container()} is null-checked because unit tests
-     * instantiate this class outside a CDI container.
-     */
+    /** The {@code X-Edition-Id} of the request being served, or {@code null}. */
     private String editionIdDemande() {
-        var container = Arc.container();
-        if (container == null || !container.requestContext().isActive()) {
-            return null;
-        }
         String demande = requestScope.getEditionIdDemande();
         return demande == null || demande.isBlank() ? null : demande;
     }
@@ -133,10 +161,6 @@ public class EditionContext {
      * itself. {@code null} off the espace routes or outside any request.
      */
     private String editionForcedByToken() {
-        var container = Arc.container();
-        if (container == null || !container.requestContext().isActive()) {
-            return null;
-        }
         var owner = requestScope.getTokenOwner();
         return owner == null ? null : owner.editionId();
     }
