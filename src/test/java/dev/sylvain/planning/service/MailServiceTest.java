@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.service.mail.MailTemplates;
 import io.quarkus.mailer.Mail;
 
 /**
@@ -34,6 +35,7 @@ class MailServiceTest {
         service.mailer = mails -> envoyes.addAll(List.of(mails));
         service.adminAddress = new AdminAddress(Optional.of("admin@example.org"));
         service.productName = ProductName.neutral();
+        service.templates = MailTemplates.standalone(ProductName.neutral());
     }
 
     @Test

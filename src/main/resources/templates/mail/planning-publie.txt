@@ -1,0 +1,28 @@
+Bonjour{#if prenom} {prenom}{/if},
+
+{#if premiereDiffusion}
+Vous trouverez en pièce jointe votre planning individuel pour l'événement.
+{#else}
+Votre planning a changé depuis le dernier envoi. Voici ce qui vous concerne :
+
+{#for changement in changements}
+- {changement}
+{/for}
+
+Le planning à jour est en pièce jointe.
+{/if}
+{#if demandes}
+
+Vos demandes d'échange :
+
+{#for demande in demandes}
+- {demande}
+{/for}
+{/if}
+{#if lienEspace}
+
+Votre espace en ligne (planning à jour, demandes d'échange) : {lienEspace}
+{/if}
+
+À bientôt,
+L'équipe d'organisation

@@ -1,0 +1,9 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">{#if nombre == 1}Une demande d'échange attend{#else}{nombre} demandes d'échange attendent{/if} depuis plus longtemps que le délai que vous avez fixé — la plus ancienne depuis {joursMax} {#if joursMax > 1}jours{#else}jour{/if}.</p>
+<p style="margin:0 0 12px;color:{muted};">Chacune n'est signalée qu'une fois : ce message ne reviendra pas chaque nuit.</p>
+{#if lien}
+<p style="margin:0;">À trancher depuis l'écran Échanges : <a href="{lien}" style="color:{accent};">{lien}</a></p>
+{/if}
+{/body}
+{/include}

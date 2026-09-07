@@ -1,0 +1,8 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">Bonjour{#if prenom} {prenom}{/if},</p>
+<p style="margin:0 0 12px;">Voici votre code d'accès à votre espace animateur :</p>
+<p style="margin:0 0 16px;font-size:26px;font-weight:bold;letter-spacing:.2em;color:{accent};">{code}</p>
+<p style="margin:0;color:{muted};">Il est valable 10 minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement ce message.</p>
+{/body}
+{/include}

@@ -1,0 +1,17 @@
+{#include mail/layout}
+{#body}
+{#if prenom}
+<p style="margin:0 0 12px;">Bonjour {prenom},</p>
+{/if}
+<p style="margin:0 0 12px;">Petit rappel : vous êtes attendu·e demain, <strong>{jour}</strong>.</p>
+<ul style="margin:0 0 12px;padding-left:20px;">
+{#for poste in postes}
+<li style="margin:0 0 4px;">{poste}</li>
+{/for}
+</ul>
+<p style="margin:0 0 12px;color:{muted};">C'est le planning qui vous a été communiqué ; s'il a changé depuis, vous auriez reçu un message le disant.</p>
+{#if lienEspace}
+<p style="margin:0;">Votre espace personnel : <a href="{lienEspace}" style="color:{accent};">{lienEspace}</a></p>
+{/if}
+{/body}
+{/include}

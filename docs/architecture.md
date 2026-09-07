@@ -112,6 +112,29 @@ vivent maintenant à deux endroits : `MailService` pour la seconde,
 (`Notification`, interface scellée), `NotificationWriter` le rédige par `switch`
 exhaustif, et le `catch` n'est écrit qu'une fois.
 
+### Le texte des mails est dans des gabarits, pas dans le Java
+
+Chaque mail est une paire de gabarits Qute sous
+`src/main/resources/templates/mail/` : `<nom>.txt`, la partie texte, et
+`<nom>.html`, l'alternative HTML, construite sur le `layout.html` commun —
+logo, palette et nom du déploiement autour du message. Le Java (`MailService`,
+`NotificationWriter`) ne fait plus que nommer le gabarit, décider du sujet et
+lui passer ses valeurs ; `service/mail/MailTemplates` rend les deux parties et
+assemble le `Mail` (texte **toujours** présent, HTML en alternative, logo en
+pièce jointe *inline* référencée par `cid:` — aucune image distante, donc
+aucun chargement à l'ouverture). Le `switch` exhaustif de `NotificationWriter`
+reste ce qui garantit qu'une notification nouvelle a un gabarit : sans son
+`case`, elle ne compile pas.
+
+Deux moteurs, un contrat : sous Quarkus, c'est l'`Engine` validé au
+démarrage ; dans les tests unitaires, `MailTemplates.standalone()` construit le
+même moteur depuis le classpath, avec les mêmes réglages (lignes de section
+supprimées, échappement HTML des valeurs), si bien que les assertions de
+libellé continuent de tourner sans conteneur. Le logo vient de
+`BRANDING_PDF_LOGO` — des octets que l'application tient —, pas de
+`BRANDING_LOGO_URL`, une URL que seul un navigateur sait résoudre ; la palette
+est celle des PDF, toujours un `#rrggbb` lisible en style inline.
+
 ## Frontend
 
 Quinoa lance `npm ci && npm run build` pendant `mvn package` et copie le bundle

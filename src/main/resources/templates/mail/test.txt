@@ -1,0 +1,2 @@
+Ce message confirme que l'envoi d'e-mails fonctionne pour cette instance.
+Envoyé depuis la page Débogage le {horodatage}.

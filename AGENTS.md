@@ -139,6 +139,19 @@ Single Quarkus service, no separate solver microservice. Package root:
   `NotificationDispatcher` observes it and owns the single `catch`. Do not add
   a `notifierXxx` to `MailService`: that would put two opposite policies behind
   identically-shaped methods again, which is what this split removed.
+- **A mail's wording lives in a Qute template, never in Java.** One pair per
+  mail under `src/main/resources/templates/mail/` — `<name>.txt` and
+  `<name>.html`, the latter built on the shared `layout.html` (deployment logo,
+  palette, product name). `service/mail/MailTemplates` renders both parts and
+  assembles the `Mail`: the text part is **always** sent, the HTML one is an
+  alternative, and the logo travels as an inline `cid:` attachment — never a
+  remote `<img src>`, which mail clients block and spam filters penalise. It
+  comes from `BRANDING_PDF_LOGO` (bytes the application holds), not
+  `BRANDING_LOGO_URL` (a URL only a browser can resolve). Java names the
+  template, decides the subject and passes values; adding a mail means adding
+  the two files. Unit tests keep asserting on the wording without a container
+  through `MailTemplates.standalone()`, which builds the same engine over the
+  same classpath templates.
 - **Never call `SolutionManager.analyze()` again.** Breaking a score down per
   constraint goes through `service/diagnostic/`
   (`ConstraintDiagnosticService` → `PlanningAnalysis`), and nothing else. That

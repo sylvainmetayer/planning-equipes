@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{sujet}</title>
+</head>
+<body style="margin:0;padding:0;background:{pill};font-family:Roboto,Helvetica,Arial,sans-serif;color:{headline};">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:{pill};">
+<tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;border-top:4px solid {accent};">
+<tr><td style="padding:24px 28px 4px;">
+{#if logoCid}
+<img src="cid:{logoCid}" alt="{productName}" style="display:block;max-height:56px;max-width:220px;margin:0 0 12px;">
+{/if}
+<div style="font-size:13px;letter-spacing:.02em;color:{muted};">{productName}</div>
+</td></tr>
+<tr><td style="padding:12px 28px 24px;font-size:15px;line-height:1.55;color:{headline};">
+{#insert body /}
+</td></tr>
+<tr><td style="padding:14px 28px 20px;font-size:12px;color:{muted};border-top:1px solid {highlight};">
+{#if organisation}{organisation} — {/if}{productName}
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

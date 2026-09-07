@@ -1,0 +1,10 @@
+Bonjour{#if prenom} {prenom}{/if},
+
+Vous trouverez en pièce jointe votre planning individuel pour l'événement.
+{#if lienEspace}
+
+Votre espace en ligne (planning à jour, demandes d'échange) : {lienEspace}
+{/if}
+
+À bientôt,
+L'équipe d'organisation

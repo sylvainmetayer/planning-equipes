@@ -14,6 +14,7 @@ import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.service.AdminAddress;
 import dev.sylvain.planning.service.ApplicationLinks;
 import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.mail.MailTemplates;
 import io.quarkus.mailer.Mail;
 
 /**
@@ -33,9 +34,11 @@ class NotificationDispatcherTest {
         redacteur.adminAddress = new AdminAddress(Optional.of("admin@example.org"));
         redacteur.liens = new ApplicationLinks(Optional.of("https://planning.example.org"));
         redacteur.productName = ProductName.neutral();
+        redacteur.templates = MailTemplates.standalone(ProductName.neutral());
 
         expediteur = new NotificationDispatcher();
         expediteur.redacteur = redacteur;
+        expediteur.templates = MailTemplates.standalone(ProductName.neutral());
         expediteur.mailer = mails -> envoyes.addAll(List.of(mails));
     }
 

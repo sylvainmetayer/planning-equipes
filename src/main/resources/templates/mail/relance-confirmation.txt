@@ -1,0 +1,13 @@
+{#if prenom}
+Bonjour {prenom},
+
+{/if}
+Votre planning a été publié et nous n'avons pas encore votre confirmation.
+
+Un clic suffit, depuis votre espace personnel : « J'ai lu et je serai là ».
+{#if lienEspace}
+
+{lienEspace}
+{/if}
+
+Si quelque chose ne va pas sur ce planning, c'est le moment de le dire.

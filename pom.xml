@@ -116,6 +116,13 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-mailer</artifactId>
         </dependency>
+        <!-- Every mail body is a Qute template under resources/templates/mail:
+             one .txt and one .html per mail, the HTML ones sharing a layout
+             carrying the deployment's branding. See docs/architecture.md. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-qute</artifactId>
+        </dependency>
         <!-- Admin authentication (issue #165): single admin account defined in
              configuration (embedded users), form login with an encrypted
              session cookie. Replaced by OIDC later without touching the

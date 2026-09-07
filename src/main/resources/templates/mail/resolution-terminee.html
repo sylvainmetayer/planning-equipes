@@ -1,0 +1,12 @@
+{#include mail/layout}
+{#body}
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 12px;font-size:15px;">
+<tr><td style="padding:2px 12px 2px 0;color:{muted};">Édition</td><td style="padding:2px 0;">{edition}</td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:{muted};">Score</td><td style="padding:2px 0;">{#if score}{score}{#else}non mesuré{/if}</td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:{muted};">Faisabilité</td><td style="padding:2px 0;">{#if faisable}aucune contrainte dure violée{#else}<strong>au moins une contrainte dure reste violée</strong> — le planning n'est pas utilisable en l'état{/if}</td></tr>
+</table>
+{#if lien}
+<p style="margin:0;">Détail des contraintes en défaut : <a href="{lien}" style="color:{accent};">{lien}</a></p>
+{/if}
+{/body}
+{/include}

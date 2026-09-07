@@ -3,20 +3,25 @@ package dev.sylvain.planning.service.notification;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.service.AdminAddress;
 import dev.sylvain.planning.service.ApplicationLinks;
 import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.mail.MailTemplates;
+import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
  * Turns a {@link Notification} into the {@link MailDraft} that says it — the
- * only place that knows the wording, and a pure function of the notification
- * plus the configuration: no transport, no I/O, no exception handling.
+ * only place that decides who is told and under which subject, and a pure
+ * function of the notification plus the configuration: no transport, no I/O,
+ * no exception handling. The body itself is a pair of Qute templates under
+ * {@code resources/templates/mail/}, rendered by {@link MailTemplates}: this
+ * class names the template and hands it its values.
  *
  * <p>An empty result means "nobody to tell": no admin address configured, or
  * an animateur with no address on their fiche. That is a normal outcome, not a
@@ -24,7 +29,7 @@ import jakarta.inject.Inject;
  *
  * <p>The dispatch is an exhaustive {@code switch} over the sealed
  * {@link Notification} hierarchy, deliberately without a {@code default}: a new
- * notification does not compile until its wording exists.</p>
+ * notification does not compile until its case — and so its template — exists.</p>
  */
 @ApplicationScoped
 public class NotificationWriter {
@@ -50,6 +55,9 @@ public class NotificationWriter {
     @Inject
     ProductName productName;
 
+    @Inject
+    MailTemplates templates;
+
     public Optional<MailDraft> rediger(Notification notification) {
         return switch (notification) {
             case Notification.TargetSolicited n -> targetSolicited(n);
@@ -68,25 +76,12 @@ public class NotificationWriter {
         if (admin.isEmpty()) {
             return Optional.empty();
         }
-        String sujet = productName.subject(
-                "déclaration de disponibilités de " + n.animateurNomComplet());
-        StringBuilder corps = new StringBuilder()
-                .append(n.animateurNomComplet())
-                .append(" a déclaré ses disponibilités depuis son espace : ")
-                .append(n.joursIndisponibles() == 0
-                        ? "aucun jour d'indisponibilité"
-                        : n.joursIndisponibles() + (n.joursIndisponibles() == 1
-                                ? " jour d'indisponibilité"
-                                : " jours d'indisponibilité"))
-                .append(", ")
-                .append(n.souhaits() == 0
-                        ? "aucun souhait"
-                        : n.souhaits() + (n.souhaits() == 1 ? " souhait" : " souhaits"))
-                .append(".\n\nRien n'est appliqué tant que vous ne l'avez pas validé.\n");
-        liens.disponibilitesScreen().ifPresent(lien -> corps
-                .append("\nÀ valider ou refuser depuis l'écran Disponibilités : ")
-                .append(lien).append('\n'));
-        return Optional.of(new MailDraft(admin.get(), sujet, corps.toString()));
+        String sujet = productName.subject("déclaration de disponibilités de " + n.animateurNomComplet());
+        return Optional.of(draft(admin.get(), "mail/declaration-soumise", sujet, MailTemplates.values(
+                "nom", n.animateurNomComplet(),
+                "joursIndisponibles", n.joursIndisponibles(),
+                "souhaits", n.souhaits(),
+                "lien", liens.disponibilitesScreen().orElse(null))));
     }
 
     /**
@@ -99,21 +94,11 @@ public class NotificationWriter {
             return Optional.empty();
         }
         String sujet = productName.subject("demain, " + JOUR.format(n.date()) + " — votre planning");
-        StringBuilder corps = new StringBuilder();
-        if (n.prenom() != null && !n.prenom().isBlank()) {
-            corps.append("Bonjour ").append(n.prenom()).append(",\n\n");
-        }
-        corps.append("Petit rappel : vous êtes attendu·e demain, ").append(JOUR.format(n.date()))
-                .append(".\n\n");
-        for (String poste : n.postes()) {
-            corps.append("- ").append(poste).append('\n');
-        }
-        corps.append("\nC'est le planning qui vous a été communiqué ; s'il a changé depuis, "
-                + "vous auriez reçu un message le disant.\n");
-        if (n.lienEspace() != null) {
-            corps.append("\nVotre espace personnel : ").append(n.lienEspace()).append('\n');
-        }
-        return Optional.of(new MailDraft(n.email(), sujet, corps.toString()));
+        return Optional.of(draft(n.email(), "mail/rappel-veille", sujet, MailTemplates.values(
+                "prenom", blankToNull(n.prenom()),
+                "jour", JOUR.format(n.date()),
+                "postes", n.postes(),
+                "lienEspace", n.lienEspace())));
     }
 
     /** One reminder, never a series: the RELANCE status is what makes it the last. */
@@ -121,18 +106,10 @@ public class NotificationWriter {
         if (withoutRecipient(n.email())) {
             return Optional.empty();
         }
-        StringBuilder corps = new StringBuilder();
-        if (n.prenom() != null && !n.prenom().isBlank()) {
-            corps.append("Bonjour ").append(n.prenom()).append(",\n\n");
-        }
-        corps.append("Votre planning a été publié et nous n'avons pas encore votre confirmation.\n\n")
-                .append("Un clic suffit, depuis votre espace personnel : « J'ai lu et je serai là ».\n");
-        if (n.lienEspace() != null) {
-            corps.append('\n').append(n.lienEspace()).append('\n');
-        }
-        corps.append("\nSi quelque chose ne va pas sur ce planning, c'est le moment de le dire.\n");
-        return Optional.of(new MailDraft(n.email(),
-                productName.subject("confirmez-vous votre planning ?"), corps.toString()));
+        return Optional.of(draft(n.email(), "mail/relance-confirmation",
+                productName.subject("confirmez-vous votre planning ?"), MailTemplates.values(
+                        "prenom", blankToNull(n.prenom()),
+                        "lienEspace", n.lienEspace())));
     }
 
     /**
@@ -147,14 +124,10 @@ public class NotificationWriter {
         String sujet = productName.subject(n.nombre() == 1
                 ? "une demande d'échange attend une décision"
                 : n.nombre() + " demandes d'échange attendent une décision");
-        StringBuilder corps = new StringBuilder()
-                .append(n.nombre() == 1 ? "Une demande d'échange attend" : n.nombre() + " demandes d'échange attendent")
-                .append(" depuis plus longtemps que le délai que vous avez fixé — la plus ancienne depuis ")
-                .append(n.joursMax()).append(n.joursMax() > 1 ? " jours" : " jour").append(".\n\n")
-                .append("Chacune n'est signalée qu'une fois : ce message ne reviendra pas chaque nuit.\n");
-        liens.echangesScreen().ifPresent(lien -> corps
-                .append("\nÀ trancher depuis l'écran Échanges : ").append(lien).append('\n'));
-        return Optional.of(new MailDraft(admin.get(), sujet, corps.toString()));
+        return Optional.of(draft(admin.get(), "mail/echanges-en-attente", sujet, MailTemplates.values(
+                "nombre", n.nombre(),
+                "joursMax", n.joursMax(),
+                "lien", liens.echangesScreen().orElse(null))));
     }
 
     private Optional<MailDraft> targetSolicited(Notification.TargetSolicited n) {
@@ -163,28 +136,19 @@ public class NotificationWriter {
         }
         String sujet = productName.subject(n.demandeurNomComplet()
                 + (n.nombre() == 1 ? " vous propose un échange de créneau" : " vous propose des échanges de créneaux"));
-        String corps = new StringBuilder()
-                .append(n.demandeurNomComplet()).append(" vous propose ")
-                .append(n.nombre() == 1 ? "un échange de créneau" : n.nombre() + " échanges de créneaux")
-                .append(".\n\nAcceptez ou déclinez depuis votre espace personnel (lien imprimé sur votre ")
-                .append("planning PDF), onglet Échanges : votre accord est nécessaire avant que ")
-                .append("l'organisation ne tranche.\n")
-                .toString();
-        return Optional.of(new MailDraft(n.emailCible(), sujet, corps));
+        return Optional.of(draft(n.emailCible(), "mail/echange-propose", sujet, MailTemplates.values(
+                "demandeur", n.demandeurNomComplet(),
+                "nombre", n.nombre())));
     }
 
     private Optional<MailDraft> demandeDeclinee(Notification.DemandeDeclinee n) {
         if (withoutRecipient(n.emailDemandeur())) {
             return Optional.empty();
         }
-        StringBuilder corps = new StringBuilder()
-                .append(n.cibleNomComplet()).append(" a décliné votre demande d'échange");
-        if (n.libelleCreneau() != null) {
-            corps.append(" (créneau ").append(n.libelleCreneau()).append(")");
-        }
-        corps.append(".\nVous pouvez proposer l'échange à quelqu'un d'autre depuis votre espace.\n");
-        return Optional.of(new MailDraft(n.emailDemandeur(),
-                productName.subject("votre demande d'échange a été déclinée"), corps.toString()));
+        return Optional.of(draft(n.emailDemandeur(), "mail/echange-decline",
+                productName.subject("votre demande d'échange a été déclinée"), MailTemplates.values(
+                        "cible", n.cibleNomComplet(),
+                        "libelleCreneau", n.libelleCreneau())));
     }
 
     private Optional<MailDraft> demandesSoumises(Notification.DemandesSoumises n) {
@@ -196,27 +160,14 @@ public class NotificationWriter {
         String sujet = productName.subject(demandes.size() == 1
                 ? "nouvelle demande d'échange de " + n.demandeurNomComplet()
                 : demandes.size() + " nouvelles demandes d'échange de " + n.demandeurNomComplet());
-        StringBuilder corps = new StringBuilder()
-                .append(n.demandeurNomComplet())
-                .append(" a soumis ")
-                .append(demandes.size() == 1
-                        ? "une demande d'échange de créneau"
-                        : demandes.size() + " demandes d'échange de créneaux")
-                .append(", déjà acceptée")
-                .append(demandes.size() == 1 ? "" : "s")
-                .append(" par le collègue concerné.\n\n");
         long infaisables = demandes.stream()
                 .filter(demande -> Boolean.FALSE.equals(demande.getPrevalidationOk()))
                 .count();
-        if (infaisables > 0) {
-            corps.append("Attention : ").append(infaisables)
-                    .append(infaisables == 1 ? " demande casse" : " demandes cassent")
-                    .append(" une contrainte dure en l'état du planning.\n\n");
-        }
-        liens.echangesScreen().ifPresent(lien -> corps
-                .append("À valider ou refuser depuis l'écran Échanges : ")
-                .append(lien).append('\n'));
-        return Optional.of(new MailDraft(admin.get(), sujet, corps.toString()));
+        return Optional.of(draft(admin.get(), "mail/demandes-soumises", sujet, MailTemplates.values(
+                "demandeur", n.demandeurNomComplet(),
+                "nombre", demandes.size(),
+                "infaisables", infaisables,
+                "lien", liens.echangesScreen().orElse(null))));
     }
 
     private Optional<MailDraft> resolutionTerminee(Notification.ResolutionTerminee n) {
@@ -226,19 +177,23 @@ public class NotificationWriter {
         }
         String etat = n.faisable() ? "planning faisable" : "planning NON faisable";
         String sujet = productName.subject("résolution terminée sur « " + n.editionNom() + " » : " + etat);
-        StringBuilder corps = new StringBuilder()
-                .append("Édition : ").append(n.editionNom()).append('\n')
-                .append("Score : ").append(n.score() == null ? "non mesuré" : n.score()).append('\n')
-                .append("Faisabilité : ").append(n.faisable()
-                        ? "aucune contrainte dure violée"
-                        : "au moins une contrainte dure reste violée — le planning n'est pas utilisable en l'état")
-                .append('\n');
-        liens.problemesScreen().ifPresent(lien -> corps
-                .append("\nDétail des contraintes en défaut : ").append(lien).append('\n'));
-        return Optional.of(new MailDraft(admin.get(), sujet, corps.toString()));
+        return Optional.of(draft(admin.get(), "mail/resolution-terminee", sujet, MailTemplates.values(
+                "edition", n.editionNom(),
+                "score", n.score(),
+                "faisable", n.faisable(),
+                "lien", liens.problemesScreen().orElse(null))));
+    }
+
+    private MailDraft draft(String destinataire, String template, String sujet, Map<String, Object> values) {
+        MailContent content = templates.render(template, sujet, values);
+        return new MailDraft(destinataire, content.subject(), content.text(), content.html());
     }
 
     private static boolean withoutRecipient(String email) {
         return email == null || email.isBlank();
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 }

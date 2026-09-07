@@ -1,0 +1,11 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">{demandeur} a soumis {#if nombre == 1}une demande d'échange de créneau{#else}{nombre} demandes d'échange de créneaux{/if}, déjà acceptée{#if nombre != 1}s{/if} par le collègue concerné.</p>
+{#if infaisables > 0}
+<p style="margin:0 0 12px;font-weight:bold;color:{accent};">Attention : {infaisables} {#if infaisables == 1}demande casse{#else}demandes cassent{/if} une contrainte dure en l'état du planning.</p>
+{/if}
+{#if lien}
+<p style="margin:0;">À valider ou refuser depuis l'écran Échanges : <a href="{lien}" style="color:{accent};">{lien}</a></p>
+{/if}
+{/body}
+{/include}

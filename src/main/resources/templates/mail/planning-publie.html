@@ -1,0 +1,28 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">Bonjour{#if prenom} {prenom}{/if},</p>
+{#if premiereDiffusion}
+<p style="margin:0 0 12px;">Vous trouverez en pièce jointe votre planning individuel pour l'événement.</p>
+{#else}
+<p style="margin:0 0 12px;">Votre planning a changé depuis le dernier envoi. Voici ce qui vous concerne :</p>
+<ul style="margin:0 0 12px;padding-left:20px;">
+{#for changement in changements}
+<li style="margin:0 0 4px;">{changement}</li>
+{/for}
+</ul>
+<p style="margin:0 0 12px;">Le planning à jour est en pièce jointe.</p>
+{/if}
+{#if demandes}
+<p style="margin:0 0 4px;">Vos demandes d'échange :</p>
+<ul style="margin:0 0 12px;padding-left:20px;">
+{#for demande in demandes}
+<li style="margin:0 0 4px;">{demande}</li>
+{/for}
+</ul>
+{/if}
+{#if lienEspace}
+<p style="margin:0 0 12px;">Votre espace en ligne (planning à jour, demandes d'échange) : <a href="{lienEspace}" style="color:{accent};">{lienEspace}</a></p>
+{/if}
+<p style="margin:16px 0 0;">À bientôt,<br>L'équipe d'organisation</p>
+{/body}
+{/include}

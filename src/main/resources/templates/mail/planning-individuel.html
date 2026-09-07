@@ -1,0 +1,10 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">Bonjour{#if prenom} {prenom}{/if},</p>
+<p style="margin:0 0 12px;">Vous trouverez en pièce jointe votre planning individuel pour l'événement.</p>
+{#if lienEspace}
+<p style="margin:0 0 12px;">Votre espace en ligne (planning à jour, demandes d'échange) : <a href="{lienEspace}" style="color:{accent};">{lienEspace}</a></p>
+{/if}
+<p style="margin:16px 0 0;">À bientôt,<br>L'équipe d'organisation</p>
+{/body}
+{/include}

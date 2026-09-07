@@ -1,0 +1,13 @@
+{#include mail/layout}
+{#body}
+{#if prenom}
+<p style="margin:0 0 12px;">Bonjour {prenom},</p>
+{/if}
+<p style="margin:0 0 12px;">Votre planning a été publié et nous n'avons pas encore votre confirmation.</p>
+<p style="margin:0 0 12px;">Un clic suffit, depuis votre espace personnel : « J'ai lu et je serai là ».</p>
+{#if lienEspace}
+<p style="margin:0 0 12px;"><a href="{lienEspace}" style="color:{accent};">{lienEspace}</a></p>
+{/if}
+<p style="margin:0;">Si quelque chose ne va pas sur ce planning, c'est le moment de le dire.</p>
+{/body}
+{/include}

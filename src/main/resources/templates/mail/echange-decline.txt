@@ -1,0 +1,2 @@
+{cible} a décliné votre demande d'échange{#if libelleCreneau} (créneau {libelleCreneau}){/if}.
+Vous pouvez proposer l'échange à quelqu'un d'autre depuis votre espace.

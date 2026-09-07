@@ -1,0 +1,15 @@
+{#if prenom}
+Bonjour {prenom},
+
+{/if}
+Petit rappel : vous êtes attendu·e demain, {jour}.
+
+{#for poste in postes}
+- {poste}
+{/for}
+
+C'est le planning qui vous a été communiqué ; s'il a changé depuis, vous auriez reçu un message le disant.
+{#if lienEspace}
+
+Votre espace personnel : {lienEspace}
+{/if}

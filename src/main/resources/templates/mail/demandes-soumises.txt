@@ -1,0 +1,9 @@
+{demandeur} a soumis {#if nombre == 1}une demande d'échange de créneau{#else}{nombre} demandes d'échange de créneaux{/if}, déjà acceptée{#if nombre != 1}s{/if} par le collègue concerné.
+
+{#if infaisables > 0}
+Attention : {infaisables} {#if infaisables == 1}demande casse{#else}demandes cassent{/if} une contrainte dure en l'état du planning.
+
+{/if}
+{#if lien}
+À valider ou refuser depuis l'écran Échanges : {lien}
+{/if}

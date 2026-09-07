@@ -1,0 +1,16 @@
+Bonjour{#if prenom} {prenom}{/if},
+
+L'organisation prépare le planning de l'événement et a besoin de vos disponibilités : les jours où vous ne pouvez pas venir, et les types de jeux que vous aimeriez animer.
+{#if fenetre}
+
+{fenetre}
+{/if}
+
+Votre espace personnel, onglet « Mes disponibilités » : {lienDeclaration}
+
+Ce lien est personnel. Un code vous sera demandé par e-mail à la première ouverture sur un appareil.
+
+Ce que vous déclarez est une proposition : l'organisation la relit avant de l'appliquer.
+
+Merci,
+L'équipe d'organisation

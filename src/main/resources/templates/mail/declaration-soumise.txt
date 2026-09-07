@@ -1,0 +1,7 @@
+{nom} a déclaré ses disponibilités depuis son espace : {#if joursIndisponibles == 0}aucun jour d'indisponibilité{#else}{joursIndisponibles} {#if joursIndisponibles == 1}jour{#else}jours{/if} d'indisponibilité{/if}, {#if souhaits == 0}aucun souhait{#else}{souhaits} {#if souhaits == 1}souhait{#else}souhaits{/if}{/if}.
+
+Rien n'est appliqué tant que vous ne l'avez pas validé.
+{#if lien}
+
+À valider ou refuser depuis l'écran Disponibilités : {lien}
+{/if}

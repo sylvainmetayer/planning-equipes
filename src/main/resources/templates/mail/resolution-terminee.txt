@@ -1,0 +1,7 @@
+Édition : {edition}
+Score : {#if score}{score}{#else}non mesuré{/if}
+Faisabilité : {#if faisable}aucune contrainte dure violée{#else}au moins une contrainte dure reste violée — le planning n'est pas utilisable en l'état{/if}
+{#if lien}
+
+Détail des contraintes en défaut : {lien}
+{/if}

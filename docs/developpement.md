@@ -48,7 +48,11 @@ Un `quarkus:dev` déjà lancé ne relit pas l'environnement : le relancer.
 - **Les mails partent réellement en dev**, vers `localhost:1025` :
   `docker compose up mailpit` fournit le puits et son UI sur `:8025`. Seul le
   profil de test mocke inconditionnellement ; `MAIL_MOCK=true` restaure le mock
-  ailleurs.
+  ailleurs. Mailpit rend la partie HTML : c'est là qu'on relit un gabarit de
+  `src/main/resources/templates/mail/` après l'avoir modifié — le bouton
+  « mail de test » de la page Débogage suffit pour la mise en page commune,
+  et les tests unitaires (`MailServiceTest`, `NotificationWriterTest`,
+  `MailTemplatesTest`) verrouillent le texte.
 
 Compte local : `admin` / `admin`. Le profil `%test` désactive la policy pour que
 les tests appellent l'API sans session — `AuthentificationAdminTest` la restaure

@@ -4,7 +4,8 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import io.quarkus.mailer.Mail;
+import dev.sylvain.planning.service.mail.MailTemplates;
+import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -30,6 +31,10 @@ import jakarta.inject.Inject;
  * {@code notifierXxx} method here would recreate the fork this split removed:
  * two opposite failure policies behind identically-shaped methods, with no way
  * to tell from the signature which one you were calling.</p>
+ *
+ * <p>The wording lives in {@code resources/templates/mail/}, one text and one
+ * HTML template per mail (see {@link MailTemplates}); this class names the
+ * template, hands it its values, and attaches what goes with it.</p>
  */
 @ApplicationScoped
 public class MailService {
@@ -48,22 +53,19 @@ public class MailService {
     @Inject
     ProductName productName;
 
+    @Inject
+    MailTemplates templates;
+
     /**
      * Sends one animateur their individual planning: the PDF attached, the
      * espace link in the body.
      */
     public void sendIndividualPlanning(String emailAnimateur, String prenom, String lienEspace,
             byte[] pdf, String fileName) {
-        StringBuilder corps = new StringBuilder()
-                .append("Bonjour").append(prenom == null || prenom.isBlank() ? "" : " " + prenom).append(",\n\n")
-                .append("Vous trouverez en pièce jointe votre planning individuel pour l'événement.\n");
-        if (lienEspace != null && !lienEspace.isBlank()) {
-            corps.append("\nVotre espace en ligne (planning à jour, demandes d'échange) : ")
-                    .append(lienEspace).append('\n');
-        }
-        corps.append("\nÀ bientôt,\nL'équipe d'organisation\n");
-        mailer.send(Mail.withText(emailAnimateur, productName.subject("votre planning individuel"), corps.toString())
-                .addAttachment(fileName, pdf, "application/pdf"));
+        MailContent content = templates.render("mail/planning-individuel",
+                productName.subject("votre planning individuel"),
+                MailTemplates.values("prenom", blankToNull(prenom), "lienEspace", blankToNull(lienEspace)));
+        mailer.send(templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
     }
 
     /**
@@ -85,41 +87,22 @@ public class MailService {
     public void sendPlanningPublie(String emailAnimateur, String prenom, String lienEspace,
             byte[] pdf, String fileName, boolean premiereDiffusion,
             List<String> changements, List<String> demandes) {
-        StringBuilder corps = new StringBuilder()
-                .append("Bonjour").append(prenom == null || prenom.isBlank() ? "" : " " + prenom).append(",\n\n");
-        if (premiereDiffusion) {
-            corps.append("Vous trouverez en pièce jointe votre planning individuel pour l'événement.\n");
-        } else {
-            corps.append("Votre planning a changé depuis le dernier envoi. Voici ce qui vous concerne :\n\n");
-            for (String changement : changements) {
-                corps.append("- ").append(changement).append('\n');
-            }
-            corps.append("\nLe planning à jour est en pièce jointe.\n");
-        }
-        if (demandes != null && !demandes.isEmpty()) {
-            corps.append("\nVos demandes d'échange :\n\n");
-            for (String demande : demandes) {
-                corps.append("- ").append(demande).append('\n');
-            }
-        }
-        if (lienEspace != null && !lienEspace.isBlank()) {
-            corps.append("\nVotre espace en ligne (planning à jour, demandes d'échange) : ")
-                    .append(lienEspace).append('\n');
-        }
-        corps.append("\nÀ bientôt,\nL'équipe d'organisation\n");
-        mailer.send(Mail.withText(emailAnimateur, productName.subject(premiereDiffusion
-                ? "votre planning individuel"
-                : "votre planning a changé"), corps.toString())
-                .addAttachment(fileName, pdf, "application/pdf"));
+        MailContent content = templates.render("mail/planning-publie",
+                productName.subject(premiereDiffusion ? "votre planning individuel" : "votre planning a changé"),
+                MailTemplates.values(
+                        "prenom", blankToNull(prenom),
+                        "lienEspace", blankToNull(lienEspace),
+                        "premiereDiffusion", premiereDiffusion,
+                        "changements", changements == null ? List.of() : changements,
+                        "demandes", demandes == null ? List.of() : demandes));
+        mailer.send(templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
     }
 
     /** Sends the espace access code — the second factor of the espace animateur. */
     public void sendAccessCode(String emailAnimateur, String prenom, String code) {
-        String corps = "Bonjour" + (prenom == null || prenom.isBlank() ? "" : " " + prenom) + ",\n\n"
-                + "Voici votre code d'accès à votre espace animateur : " + code + "\n\n"
-                + "Il est valable 10 minutes. Si vous n'êtes pas à l'origine de cette demande, "
-                + "ignorez simplement ce message.\n";
-        mailer.send(Mail.withText(emailAnimateur, productName.subject("votre code d'accès"), corps));
+        MailContent content = templates.render("mail/code-acces", productName.subject("votre code d'accès"),
+                MailTemplates.values("prenom", blankToNull(prenom), "code", code));
+        mailer.send(templates.toMail(emailAnimateur, content));
     }
 
     /**
@@ -139,24 +122,13 @@ public class MailService {
      */
     public void sendInvitationDeclaration(String emailAnimateur, String prenom, String lienDeclaration,
             LocalDate debut, LocalDate fin) {
-        StringBuilder corps = new StringBuilder()
-                .append("Bonjour").append(prenom == null || prenom.isBlank() ? "" : " " + prenom).append(",\n\n")
-                .append("L'organisation prépare le planning de l'événement et a besoin de vos ")
-                .append("disponibilités : les jours où vous ne pouvez pas venir, et les types de jeux ")
-                .append("que vous aimeriez animer.\n");
-        String fenetre = describeFenetre(debut, fin);
-        if (fenetre != null) {
-            corps.append('\n').append(fenetre).append('\n');
-        }
-        corps.append("\nVotre espace personnel, onglet « Mes disponibilités » : ")
-                .append(lienDeclaration).append('\n')
-                .append("\nCe lien est personnel. Un code vous sera demandé par e-mail à la première ")
-                .append("ouverture sur un appareil.\n")
-                .append("\nCe que vous déclarez est une proposition : l'organisation la relit avant de ")
-                .append("l'appliquer.\n")
-                .append("\nMerci,\nL'équipe d'organisation\n");
-        mailer.send(Mail.withText(emailAnimateur,
-                productName.subject("vos disponibilités sont attendues"), corps.toString()));
+        MailContent content = templates.render("mail/invitation-declaration",
+                productName.subject("vos disponibilités sont attendues"),
+                MailTemplates.values(
+                        "prenom", blankToNull(prenom),
+                        "lienDeclaration", lienDeclaration,
+                        "fenetre", describeFenetre(debut, fin)));
+        mailer.send(templates.toMail(emailAnimateur, content));
     }
 
     /** The window in one sentence, {@code null} when the admin bounded neither end. */
@@ -182,10 +154,13 @@ public class MailService {
         String destinataire = adminAddress.resolue()
                 .orElseThrow(() -> new IllegalStateException(
                         "Aucune adresse e-mail administrateur configurée (MAIL_ADMIN)."));
-        mailer.send(Mail.withText(destinataire,
-                productName.subject("mail de test"),
-                "Ce message confirme que l'envoi d'e-mails fonctionne pour cette instance.\n"
-                        + "Envoyé depuis la page Débogage le " + ZonedDateTime.now() + ".\n"));
+        MailContent content = templates.render("mail/test", productName.subject("mail de test"),
+                MailTemplates.values("horodatage", ZonedDateTime.now().toString()));
+        mailer.send(templates.toMail(destinataire, content));
         return destinataire;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 }

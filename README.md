@@ -106,17 +106,17 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `MAIL_FROM` | `planning-equipes@localhost` | Adresse expéditrice |
 | `MAIL_ADMIN` | *(vide = désactivé)* | Adresse de l'administrateur : demandes d'échange soumises, et fin de résolution si l'édition le demande |
 | `BRANDING_PRODUCT_NAME` | `Planning Équipes` | Nom du produit : onglet du navigateur, titre de chaque page, sujets des mails, en-tête du dump SQL, `PRODID` des exports ICS, en-tête des PDF |
-| `BRANDING_ORGANISATION` | *(vide)* | Client pour lequel cette instance est déployée, imprimé au pied des PDF ; vide = seule la date de génération y figure |
+| `BRANDING_ORGANISATION` | *(vide)* | Client pour lequel cette instance est déployée, imprimé au pied des PDF et des mails ; vide = seule la date de génération y figure |
 | `BRANDING_LOGO_URL` | *(vide = aucun logo)* | URL du logo affiché dans les barres d'outils et sur la carte de connexion (`logo.png` pour un fichier servi à la racine, ou une URL absolue) |
 | `BRANDING_ACCENT_COLOR` | *(vide = accent Material compilé)* | Couleur d'accent de l'IHM, toute couleur CSS ; alimente `--app-accent`. À choisir sur le thème clair : le thème sombre en dérive une jumelle éclaircie |
 | `BRANDING_MASCOT_URL` | *(vide = pas d'easter egg)* | Mascotte du déploiement en grand, montrée par le code Konami ; même syntaxe que `BRANDING_LOGO_URL` |
 | `BRANDING_MASCOT_ICON_URL` | *(vide = icône Material)* | La même mascotte découpée en petit : elle tourne dans la barre pendant une résolution et saute sur l'invite de défilement |
 | `BRANDING_SUPPORT_EMAIL` | `planning@sylvain.dev` | Adresse de support nommée par la page Aide (« Contact et support ») ; vide = le paragraphe et son lien disparaissent |
-| `BRANDING_PDF_LOGO` | *(vide = aucun logo)* | Logo de l'en-tête des PDF : `classpath:/branding/xxx.png` pour une image embarquée, sinon un chemin de fichier monté |
+| `BRANDING_PDF_LOGO` | *(vide = aucun logo)* | Logo de l'en-tête des PDF et de la version HTML des mails (embarqué dans le message, jamais chargé à distance) : `classpath:/branding/xxx.png` pour une image embarquée, sinon un chemin de fichier monté |
 | `BRANDING_PDF_STRIP` | *(vide = aucun bandeau)* | Bandeau décoratif de la première page du planning individuel, même syntaxe |
 | `BRANDING_PDF_HEADLINE` | `#1f2933` | Encre principale des PDF (titres, noms, corps des tableaux) |
 | `BRANDING_PDF_MUTED` | `#6b7280` | Texte secondaire des PDF (horaires, emplacements, coéquipiers, pied de page) |
-| `BRANDING_PDF_ACCENT` | `#3a6ea5` | Accent des PDF (pastilles de journée, titres d'encadré, bordures de carte, alertes) |
+| `BRANDING_PDF_ACCENT` | `#3a6ea5` | Accent des PDF (pastilles de journée, titres d'encadré, bordures de carte, alertes) et des mails HTML (liseré, liens, code d'accès) — la palette `BRANDING_PDF_*` habille aussi les mails |
 | `BRANDING_PDF_HIGHLIGHT` | `#e4eaf1` | Fond des tuiles de statistiques et des en-têtes de tableau |
 | `BRANDING_PDF_PILL` | `#f1f4f8` | Fond des pastilles d'horaire et couleur des filets de tableau |
 | `LEGAL_EDITEUR` | *(vide)* | Éditeur du site (nom, forme juridique, adresse, immatriculation) affiché sur `/mentions-legales` |

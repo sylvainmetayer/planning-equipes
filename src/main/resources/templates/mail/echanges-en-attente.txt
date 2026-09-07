@@ -1,0 +1,7 @@
+{#if nombre == 1}Une demande d'échange attend{#else}{nombre} demandes d'échange attendent{/if} depuis plus longtemps que le délai que vous avez fixé — la plus ancienne depuis {joursMax} {#if joursMax > 1}jours{#else}jour{/if}.
+
+Chacune n'est signalée qu'une fois : ce message ne reviendra pas chaque nuit.
+{#if lien}
+
+À trancher depuis l'écran Échanges : {lien}
+{/if}

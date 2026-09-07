@@ -1,0 +1,9 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">{nom} a déclaré ses disponibilités depuis son espace : {#if joursIndisponibles == 0}aucun jour d'indisponibilité{#else}{joursIndisponibles} {#if joursIndisponibles == 1}jour{#else}jours{/if} d'indisponibilité{/if}, {#if souhaits == 0}aucun souhait{#else}{souhaits} {#if souhaits == 1}souhait{#else}souhaits{/if}{/if}.</p>
+<p style="margin:0 0 12px;">Rien n'est appliqué tant que vous ne l'avez pas validé.</p>
+{#if lien}
+<p style="margin:0;">À valider ou refuser depuis l'écran Disponibilités : <a href="{lien}" style="color:{accent};">{lien}</a></p>
+{/if}
+{/body}
+{/include}

@@ -1,7 +1,7 @@
 package dev.sylvain.planning.service.notification;
 
+import dev.sylvain.planning.service.mail.MailTemplates;
 import io.quarkus.logging.Log;
-import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -41,6 +41,9 @@ public class NotificationDispatcher {
     @Inject
     NotificationWriter redacteur;
 
+    @Inject
+    MailTemplates templates;
+
     /**
      * The single {@code catch} of the whole notification path, and it wraps
      * writing as well as sending: whatever goes wrong between "a demande was
@@ -50,8 +53,8 @@ public class NotificationDispatcher {
     void surNotification(@Observes Notification notification) {
         try {
             redacteur.rediger(notification)
-                    .ifPresent(courrier -> mailer.send(Mail.withText(
-                            courrier.destinataire(), courrier.sujet(), courrier.corps())));
+                    .ifPresent(courrier -> mailer.send(templates.toMail(
+                            courrier.destinataire(), courrier.sujet(), courrier.corps(), courrier.html())));
         } catch (RuntimeException e) {
             Log.errorf(e, "Notification %s could not be delivered; the operation it describes stands",
                     notification.getClass().getSimpleName());
