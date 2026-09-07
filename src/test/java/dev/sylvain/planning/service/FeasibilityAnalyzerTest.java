@@ -176,7 +176,7 @@ class FeasibilityAnalyzerTest {
     void standFermeSurUnCreneauNeComptePasDansLaDemande() {
         // The stand requires 3 seats but is closed (an indisponibilite covering
         // the whole timeslot): no seat is generated, hence no demand (see
-        // PlanningService.buildPostes).
+        // ProblemBuilder.buildPostes).
         Stand stand = stand("stand-1", 3, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         stand.setIndisponibilites(List.of(
@@ -350,7 +350,7 @@ class FeasibilityAnalyzerTest {
 
     /**
      * {@code effectifMin} drives the demand: it is the number of seats
-     * {@code PlanningService.buildPostes} actually generates. {@code
+     * {@code ProblemBuilder.buildPostes} actually generates. {@code
      * effectifMax} is deliberately set higher so a regression back to counting
      * it would change the expected shortfalls.
      */

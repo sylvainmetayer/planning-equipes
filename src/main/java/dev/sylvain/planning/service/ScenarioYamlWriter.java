@@ -78,7 +78,7 @@ final class ScenarioYamlWriter {
      * as a fixed bug — one that silently fell back on the importing instance's
      * own settings. Real exports go through {@link #buildScenarioYaml(ScenarioExport)}.</p>
      *
-     * <p>Package-private and static, like {@link PlanningService#buildPostes}, so
+     * <p>Package-private and static, like {@link ProblemBuilder#buildPostes}, so
      * the tests need no database.</p>
      */
     static String buildScenarioYaml(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,

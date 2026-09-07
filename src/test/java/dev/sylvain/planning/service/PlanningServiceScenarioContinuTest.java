@@ -72,7 +72,7 @@ class PlanningServiceScenarioContinuTest {
         List<Creneau> creneauxScindes = VacationGeneratorService.generateVacations(
                 List.copyOf(reference.creneauxParId().values()), parametresDecoupage);
         List<Stand> stands = List.copyOf(reference.standsById().values());
-        List<PosteAffectation> postes = PlanningService.buildPostes(stands, creneauxScindes);
+        List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, creneauxScindes);
         PlanningEvenement problem = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes);
 
         PlanningEvenement solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);

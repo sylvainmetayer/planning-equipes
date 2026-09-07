@@ -83,7 +83,7 @@ public class StandService {
             if (grille.stream().anyMatch(creneau -> creneau.getFamille() > 0)) {
                 List<Stand> tous = new ArrayList<>(list());
                 tous.add(stand);
-                stand.setFamille(PlanningService.standFamilies(tous, grille).get(stand.getId()));
+                stand.setFamille(ProblemBuilder.standFamilies(tous, grille).get(stand.getId()));
             }
         }
         repository.saveStand(stand, true);
@@ -155,7 +155,7 @@ public class StandService {
         List<Stand> tous = list();
         Map<String, Stand> parId = new LinkedHashMap<>();
         tous.forEach(stand -> parId.put(stand.getId(), stand));
-        Map<String, Integer> familles = PlanningService.standFamilies(tous, edition);
+        Map<String, Integer> familles = ProblemBuilder.standFamilies(tous, edition);
         Set<Long> idsEdition = edition.stream().map(Creneau::getId).filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
@@ -176,7 +176,7 @@ public class StandService {
                 }
             }
             // A stand only ever receives seats on its own stagger family's
-            // créneaux (PlanningService#buildPostes), so the other families'
+            // créneaux (ProblemBuilder#buildPostes), so the other families'
             // cells are inert: they are neither read nor written, and writing
             // them would reopen days this stand never staffs.
             int famille = familles.getOrDefault(stand.getId(), 0);

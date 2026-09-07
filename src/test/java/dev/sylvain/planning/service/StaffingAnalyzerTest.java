@@ -481,7 +481,7 @@ class StaffingAnalyzerTest {
         return new Creneau(id, 1, JOUR, debut, fin);
     }
 
-    /** One poste per seat, exactly like {@code PlanningService#buildPostes} generates them. */
+    /** One poste per seat, exactly like {@code ProblemBuilder#buildPostes} generates them. */
     private static List<PosteAffectation> postes(Stand stand, Creneau creneau, int seats) {
         List<PosteAffectation> postes = new ArrayList<>();
         for (int seat = 0; seat < seats; seat++) {

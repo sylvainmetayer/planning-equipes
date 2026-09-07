@@ -111,7 +111,11 @@ Single Quarkus service, no separate solver microservice. Package root:
   served by `GET /api/constraints`; **every new constraint must be registered
   there too**.
 - `service/` — `PlanningService` (SolverFactory from `solver/solverConfig.xml`,
-  problem building, solve, what-if, diagnostic),
+  solve, what-if, diagnostic), `ProblemBuilder` (the edition's reference data
+  turned into a problem to solve — from scratch, réamorcé (#174) or
+  incremental (#86); the pieces needing no database stay static and
+  package-private, which is what lets the PosteGeneration / Reamorcage /
+  Incremental / Verrouillage tests run without a container),
   `ScenarioYamlReader` / `ScenarioYamlWriter` (the scenario file format, both
   pure and static, so `ScenarioYamlReaderTest` and `ScenarioYamlWriterTest`
   exercise reading and writing without a database — they are two hand-written traversals of the

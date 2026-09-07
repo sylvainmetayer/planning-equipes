@@ -506,7 +506,7 @@ public class PlanningPersistenceService {
      * skipped: a lock never freezes a hole.
      *
      * <p>Deliberately keyed on stand × créneau rather than on the poste id:
-     * {@code PlanningService.buildPostes} renumbers its seats
+     * {@code ProblemBuilder.buildPostes} renumbers its seats
      * ({@code poste-0}, {@code poste-1}, …) on every build, so adding a single
      * stand shifts every subsequent id. Seats of the same stand and créneau are
      * interchangeable anyway, so re-seeding them positionally restores the same

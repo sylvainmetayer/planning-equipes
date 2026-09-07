@@ -34,7 +34,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * together, are exactly the ones nobody will find by re-reading the form.</p>
  *
  * <p>The demand of a créneau is counted exactly as
- * {@link PlanningService#buildPostes(List, List)} generates seats: for every
+ * {@link ProblemBuilder#buildPostes(List, List)} generates seats: for every
  * stand open on that créneau, the seats of its busiest open segment —
  * {@link Creneau#siegesSimultanes(Stand)}, i.e. the window's own effectif or
  * the stand's {@code effectifMin} when the window names none, floored to one

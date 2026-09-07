@@ -34,7 +34,7 @@ public class Creneau {
      * meal pause, generated under
      * {@link ParametresDecoupage.PauseCoverageStrategy#EFFECTIF_REDUIT}.
      * Poste generation then staffs it at half the stand's usual headcount
-     * (see {@code PlanningService#buildPostes}).
+     * (see {@code ProblemBuilder#buildPostes}).
      *
      * <p>Always {@code false} under the two other strategies — {@code RELEVE}
      * covers the pause at full headcount and {@code FERMETURE} generates no

@@ -18,12 +18,12 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.service.PlanningService.StatistiquesIncremental;
+import dev.sylvain.planning.service.ProblemBuilder.StatistiquesIncremental;
 import dev.sylvain.planning.service.ReplanificationDiff.ChangementAffectation;
 
 /**
  * The reconciliation of an incremental re-solve (issue #86), exercised on
- * {@code PlanningService.figerPostesIncremental} and on the diff directly: no
+ * {@code ProblemBuilder.figerPostesIncremental} and on the diff directly: no
  * database, no Quarkus context, no solve.
  *
  * <p>What these tests pin down is the perimeter itself — which seats the solver
@@ -57,7 +57,7 @@ class PlanningServiceIncrementalTest {
     void unSiegeEncoreValideEstFigeAvecSonTitulaire() {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ1));
 
-        StatistiquesIncremental stats = PlanningService.figerPostesIncremental(postes, animateurs,
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1", "A2")), ReplanificationScope.automatic(), List.of());
 
         assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
@@ -74,7 +74,7 @@ class PlanningServiceIncrementalTest {
         alice.setJoursIndisponibles(Set.of(J1));
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ2));
 
-        StatistiquesIncremental stats = PlanningService.figerPostesIncremental(postes, animateurs,
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A1")),
                 ReplanificationScope.automatic(), List.of());
 
@@ -90,7 +90,7 @@ class PlanningServiceIncrementalTest {
     void unTitulaireSupprimeDuReferentielLibereSonSiege() {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1));
 
-        StatistiquesIncremental stats = PlanningService.figerPostesIncremental(postes, animateurs,
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("DISPARU")), ReplanificationScope.automatic(), List.of());
 
         assertThat(postes.get(0).getAnimateur()).isNull();
@@ -106,7 +106,7 @@ class PlanningServiceIncrementalTest {
                 poste("p1", standA, matinJ1),
                 poste("p2", standB, matinJ1));
 
-        StatistiquesIncremental stats = PlanningService.figerPostesIncremental(postes, animateurs,
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1")), ReplanificationScope.automatic(), List.of());
 
         assertThat(postes.get(1).getAnimateur()).isNull();
@@ -119,7 +119,7 @@ class PlanningServiceIncrementalTest {
         List<PosteAffectation> byAnimateur = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ1));
         Map<String, List<String>> persiste = Map.of(key("STAND-A", 1L), List.of("A1", "A2"));
 
-        StatistiquesIncremental stats = PlanningService.figerPostesIncremental(byAnimateur, animateurs, persiste,
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(byAnimateur, animateurs, persiste,
                 new ReplanificationScope(Set.of("A1"), Set.of(), Set.of()), List.of());
 
         // Alice's seat is re-opened even though nothing invalidated it — that is
@@ -129,14 +129,14 @@ class PlanningServiceIncrementalTest {
         assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 0, 1, 0));
 
         List<PosteAffectation> parJour = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ2));
-        PlanningService.figerPostesIncremental(parJour, animateurs,
+        ProblemBuilder.figerPostesIncremental(parJour, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A2")),
                 new ReplanificationScope(Set.of(), Set.of(J1), Set.of()), List.of());
         assertThat(parJour.get(0).getAnimateur()).isNull();
         assertThat(parJour.get(1).getAnimateur()).isEqualTo(bob);
 
         List<PosteAffectation> parStand = List.of(poste("p0", standA, matinJ1), poste("p1", standB, matinJ1));
-        PlanningService.figerPostesIncremental(parStand, animateurs,
+        ProblemBuilder.figerPostesIncremental(parStand, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-B", 1L), List.of("A2")),
                 new ReplanificationScope(Set.of(), Set.of(), Set.of("STAND-B")), List.of());
         assertThat(parStand.get(0).getAnimateur()).isEqualTo(alice);
@@ -153,7 +153,7 @@ class PlanningServiceIncrementalTest {
         indisponibilite.setCreneau(matinJ1);
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ2));
 
-        StatistiquesIncremental stats = PlanningService.figerPostesIncremental(postes, animateurs,
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A1")),
                 ReplanificationScope.automatic(), List.of(indisponibilite));
 

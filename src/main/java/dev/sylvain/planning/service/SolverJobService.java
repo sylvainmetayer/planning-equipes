@@ -257,12 +257,12 @@ public class SolverJobService {
     /** The work of {@link #submitSolveFromReferenceData}, see {@link #replayableTask}. */
     private JobTask solveTaskFromReferenceData(Long secondsLimit, Reamorcage reamorcage) {
         return job -> {
-            SolvePipeline.Resolution<PlanningService.ProblemeReamorce> resolution =
+            SolvePipeline.Resolution<ProblemBuilder.ProblemeReamorce> resolution =
                     pipeline.execute(job.getEditionNom(),
                             () -> planningService.buildFromReferenceData(reamorcage),
-                            PlanningService.ProblemeReamorce::planning,
+                            ProblemBuilder.ProblemeReamorce::planning,
                             secondsLimit, onSolverReady(job), this::isShutdownRequested);
-            PlanningService.ProblemeReamorce probleme = resolution.probleme();
+            ProblemBuilder.ProblemeReamorce probleme = resolution.probleme();
             return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(),
                     new ReamorcageEffectue(probleme.reamorcage(), probleme.postesReamorces(),
                             probleme.postesLiberes()),
@@ -278,7 +278,7 @@ public class SolverJobService {
      */
     public record ResultatSolveIncremental(
             PlanningService.PlanningDiagnostic diagnostic,
-            PlanningService.StatistiquesIncremental statistiques,
+            ProblemBuilder.StatistiquesIncremental statistiques,
             List<ReplanificationDiff.ChangementAffectation> changements,
             PreviousPlan previousPlan,
             SolvePipeline.ImpactPublication impactPublication,
@@ -306,12 +306,12 @@ public class SolverJobService {
     /** The work of {@link #submitSolveIncremental}, see {@link #replayableTask}. */
     private JobTask incrementalSolveTask(Long secondsLimit, ReplanificationScope scope) {
         return job -> {
-            SolvePipeline.Resolution<PlanningService.ProblemeIncremental> resolution =
+            SolvePipeline.Resolution<ProblemBuilder.ProblemeIncremental> resolution =
                     pipeline.execute(job.getEditionNom(),
                             () -> planningService.buildIncrementalFromReferenceData(scope),
-                            PlanningService.ProblemeIncremental::planning,
+                            ProblemBuilder.ProblemeIncremental::planning,
                             secondsLimit, onSolverReady(job), this::isShutdownRequested);
-            PlanningService.ProblemeIncremental probleme = resolution.probleme();
+            ProblemBuilder.ProblemeIncremental probleme = resolution.probleme();
             return new ResultatSolveIncremental(resolution.diagnostic(), probleme.statistiques(),
                     ReplanificationDiff.compute(probleme.affectationsPrecedentes(), resolution.planning()),
                     resolution.previousPlan(), resolution.impactPublication(), resolution.interruption());

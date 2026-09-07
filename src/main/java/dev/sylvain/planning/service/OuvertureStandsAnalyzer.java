@@ -24,7 +24,7 @@ import dev.sylvain.planning.service.HoraireStandResolver.SourceHoraire;
  *
  * <p>The point is validation, so nothing here re-derives the schedule its own
  * way: the cells are built from the very {@link PosteAffectation}s
- * {@link PlanningService#buildPostes} would hand the solver. Whatever the
+ * {@link ProblemBuilder#buildPostes} would hand the solver. Whatever the
  * admin sees is therefore, by construction, what the solver gets — recurring
  * horaires expanded, dated exceptions applied, windows clamped to each
  * créneau, relay-grid families included.</p>
@@ -136,7 +136,7 @@ public final class OuvertureStandsAnalyzer {
      */
     public static RapportOuvertures analyze(List<Stand> stands, List<Creneau> creneaux) {
         Map<LocalDate, List<Creneau>> creneauxParJour = creneauxByDay(creneaux);
-        Map<String, Integer> familles = PlanningService.standFamilies(stands, creneaux);
+        Map<String, Integer> familles = ProblemBuilder.standFamilies(stands, creneaux);
         List<JourAmplitude> jours = new ArrayList<>();
         Map<LocalDate, Integer> amplitudeParJour = new LinkedHashMap<>();
         creneauxParJour.forEach((date, duJour) -> {
@@ -160,7 +160,7 @@ public final class OuvertureStandsAnalyzer {
         // The seats the solver would receive, grouped by stand then by day:
         // this is the single source of truth of that screen.
         Map<String, Map<LocalDate, List<PosteAffectation>>> postesParStandEtJour = new LinkedHashMap<>();
-        for (PosteAffectation poste : PlanningService.buildPostes(stands, creneaux)) {
+        for (PosteAffectation poste : ProblemBuilder.buildPostes(stands, creneaux)) {
             if (poste.getStand() == null || poste.getCreneau() == null || poste.getCreneau().getDate() == null) {
                 continue;
             }
@@ -243,7 +243,7 @@ public final class OuvertureStandsAnalyzer {
     private static CelluleCreneau celluleCreneau(Stand stand, Creneau creneau, ColonneCreneau colonne,
             int familleStand) {
         if (creneau.getFamille() != familleStand) {
-            // Another family's créneau: PlanningService#buildPostes never pairs
+            // Another family's créneau: ProblemBuilder#buildPostes never pairs
             // it with this stand, so it holds no seat to read and none to type.
             return new CelluleCreneau(colonne.id(), null, false, true);
         }

@@ -63,7 +63,7 @@ class ScenarioYamlWriterTest {
         // buildPostes of a poste to build below.
         stand.setOuvertures(List.of(
                 new OuvertureStand(2L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), LocalTime.of(23, 0), null, 3)));
-        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(stand), List.of(creneau));
+        List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(creneau));
 
         String yaml = ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), postes);
         Map<String, Object> parsed = new Yaml().load(yaml);

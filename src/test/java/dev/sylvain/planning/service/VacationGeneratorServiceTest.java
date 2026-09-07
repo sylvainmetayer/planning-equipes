@@ -211,7 +211,7 @@ class VacationGeneratorServiceTest {
     void strategieEffectifReduitCouvreLaPauseEtMarqueLaVacation() {
         // The same scenario as RELEVE — the break is covered, with no
         // interruption — but the covering shift also carries the marker that will
-        // run the stand at half staffing (PlanningService#buildPostes).
+        // run the stand at half staffing (ProblemBuilder#buildPostes).
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(18, 0)); // 8h
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setDureeVacationMaxMinutes(8 * 60);
@@ -280,7 +280,7 @@ class VacationGeneratorServiceTest {
     void sansDecalageToutesLesVacationsSontTagueesFamilleZero() {
         // Default behaviour (nombreFamillesDecalage=1): nothing changes, every
         // shift generated carries family 0 — which is what guarantees backward
-        // compatibility on the PlanningService#buildPostes side (a single
+        // compatibility on the ProblemBuilder#buildPostes side (a single
         // family => no filtering per stand).
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
 

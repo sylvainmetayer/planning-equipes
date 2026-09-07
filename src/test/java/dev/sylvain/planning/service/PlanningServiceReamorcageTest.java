@@ -45,7 +45,7 @@ class PlanningServiceReamorcageTest {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matin), poste("p1", standA, matin),
                 poste("p2", standB, matin));
 
-        int[] bilan = PlanningService.reamorcerDepuisAffectations(postes, animateurs,
+        int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(postes, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1", "A2"), key("STAND-B", 1L), List.of("A1")), List.of());
 
         assertThat(postes).extracting(PosteAffectation::getAnimateur).containsExactly(alice, bob, alice);
@@ -62,7 +62,7 @@ class PlanningServiceReamorcageTest {
         postes.get(0).setAnimateur(bob);
         postes.get(0).setVerrouille(true);
 
-        int[] bilan = PlanningService.reamorcerDepuisAffectations(postes, animateurs,
+        int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(postes, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1", "A2")), List.of());
 
         assertThat(postes.get(0).getAnimateur()).isEqualTo(bob);
@@ -78,7 +78,7 @@ class PlanningServiceReamorcageTest {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matin), poste("p1", standA, matin),
                 poste("p2", standB, matin));
 
-        int[] bilan = PlanningService.reamorcerDepuisAffectations(postes, animateurs,
+        int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(postes, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1", "DISPARU"), key("STAND-B", 1L), List.of("A2")), List.of());
 
         assertThat(postes.get(0).getAnimateur()).isNull();
@@ -95,7 +95,7 @@ class PlanningServiceReamorcageTest {
         indisponibilite.setCreneau(matin);
         List<PosteAffectation> postes = List.of(poste("p0", standB, matin));
 
-        int[] bilan = PlanningService.reamorcerDepuisAffectations(postes, animateurs,
+        int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(postes, animateurs,
                 Map.of(key("STAND-B", 1L), List.of("A1")), List.of(indisponibilite));
 
         assertThat(postes.get(0).getAnimateur()).isNull();
@@ -106,7 +106,7 @@ class PlanningServiceReamorcageTest {
     void aSeatThePlanNeverStaffedStaysFree() {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matin), poste("p1", standA, matin));
 
-        int[] bilan = PlanningService.reamorcerDepuisAffectations(postes, animateurs,
+        int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(postes, animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1")), List.of());
 
         assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);

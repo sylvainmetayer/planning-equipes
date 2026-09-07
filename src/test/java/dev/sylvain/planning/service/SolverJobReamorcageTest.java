@@ -18,7 +18,7 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.PlanningService.ProblemeReamorce;
+import dev.sylvain.planning.service.ProblemBuilder.ProblemeReamorce;
 import dev.sylvain.planning.service.SolverJobService.JobStatus;
 import dev.sylvain.planning.service.SolverJobService.ResultatSolve;
 import dev.sylvain.planning.service.SolverJobService.SolverJob;

@@ -30,7 +30,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * <ol>
  * <li><b>What collapses if one animateur withdraws.</b> Seats are grouped by
  * stand × timeslot × window — the very grouping seat generation uses, since
- * {@code PlanningService.buildPostes} emits {@code max(1, effectifMin)} seats
+ * {@code ProblemBuilder.buildPostes} emits {@code max(1, effectifMin)} seats
  * per group (halved on a break-covering shift). The number of seats of a group
  * <em>is</em> its effectif floor, so a group drops below it as soon as one of
  * its filled seats is vacated. Reported per animateur, together with the

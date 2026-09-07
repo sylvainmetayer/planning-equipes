@@ -118,7 +118,7 @@ class PlanningServiceScenarioFestivalRealisteTest {
                 List.copyOf(reference.creneauxParId().values()), parametresDecoupage);
         List<Stand> stands = List.copyOf(reference.standsById().values());
         HoraireStandResolver.apply(stands, vacations);
-        List<PosteAffectation> postes = PlanningService.buildPostes(stands, vacations);
+        List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, vacations);
         PlanningEvenement problem = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes);
 
         PlanningEvenement solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);

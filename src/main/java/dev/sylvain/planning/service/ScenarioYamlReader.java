@@ -163,7 +163,7 @@ public final class ScenarioYamlReader {
         List<Map<String, Object>> postesList = YamlSections.objets(scenarioData, "postes");
         List<PosteAffectation> postes;
         if (postesList == null) {
-            postes = PlanningService.buildPostes(new ArrayList<>(reference.standsById().values()),
+            postes = ProblemBuilder.buildPostes(new ArrayList<>(reference.standsById().values()),
                     new ArrayList<>(reference.creneauxParId().values()));
         } else {
             postes = new ArrayList<>();
@@ -185,8 +185,8 @@ public final class ScenarioYamlReader {
                     int[] segment = segments.get(0);
                     boolean creneauEntierOuvert = segment[0] == 0 && segment[1] == creneau.getDureeMinutes();
                     if (!creneauEntierOuvert) {
-                        poste.setHeureDebutEffective(PlanningService.decaler(creneau.getHeureDebut(), segment[0]));
-                        poste.setHeureFinEffective(PlanningService.decaler(creneau.getHeureDebut(), segment[1]));
+                        poste.setHeureDebutEffective(ProblemBuilder.decaler(creneau.getHeureDebut(), segment[0]));
+                        poste.setHeureFinEffective(ProblemBuilder.decaler(creneau.getHeureDebut(), segment[1]));
                     }
                 }
                 postes.add(poste);
@@ -274,8 +274,8 @@ public final class ScenarioYamlReader {
      * hand-authored {@code postes:} list — unlike {@link PlanningService#buildExample},
      * which uses that list as-is. For tests that need to run découpage (see
      * {@link VacationGeneratorService}) on the raw créneaux themselves before
-     * building postes via {@link PlanningService#buildPostes}, the way
-     * {@code PlanningService.buildFromReferenceData} does against the database.
+     * building postes via {@link ProblemBuilder#buildPostes}, the way
+     * {@code ProblemBuilder.buildFromReferenceData} does against the database.
      */
     static ReferenceScenario loadReferenceScenario(String scenarioName) throws IOException {
         return loadReferenceScenario(readScenarioData(cheminScenario(scenarioName)));
