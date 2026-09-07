@@ -464,9 +464,11 @@ n'est pas un journal. Aucune suppression non plus — ce qui borne la table est
 une **rétention** (`JOURNAL_RETENTION`, 90 jours par défaut) appliquée par la
 tâche de nuit, pas un bouton.
 
-Une ligne porte : quand, **qui** (`ADMIN`, `ANIMATEUR`, `ASSISTANT` pour un
-appel MCP, `SYSTEME` pour la nuit), l'action et sa phrase en français, ce
-qu'elle visait, **les noms des champs qu'une modification a réellement
+Une ligne porte : quand, **qui** (`ADMIN`, `ANIMATEUR`, `ANONYME` pour un
+appel qui n'a présenté aucun justificatif valable — les routes de l'espace
+sont ouvertes, donc un jeton faux ou périmé va jusqu'au refus —, `ASSISTANT`
+pour un appel MCP, `SYSTEME` pour la nuit), l'action et sa phrase en français,
+ce qu'elle visait, **les noms des champs qu'une modification a réellement
 changés**, et si elle a abouti ou été refusée — avec son code HTTP.
 
 Deux choses n'y sont pas, et c'est le contrat :

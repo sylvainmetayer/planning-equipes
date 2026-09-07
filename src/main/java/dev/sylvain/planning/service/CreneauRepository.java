@@ -49,6 +49,32 @@ public class CreneauRepository {
     }
 
     /**
+     * One timeslot by id, {@code null} when the edition holds none — read for
+     * the history's field comparison (issue #406), which would otherwise pay a
+     * full grid read per single-row {@code PUT}.
+     *
+     * <p>The returned {@code jour} is <b>not</b> assigned: that number is
+     * computed over the whole grid, and no caller of this method reads it —
+     * {@code ChampsModifies} deliberately leaves it out of the comparison.</p>
+     */
+    public Creneau findCreneau(Long id) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection,
+                        """
+                        SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause,
+                        c.modifie_le
+                        FROM creneau c
+                        WHERE c.edition_id = ? AND c.id = ?""")) {
+            ps.setLong(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? readCreneau(rs) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read one timeslot", e);
+        }
+    }
+
+    /**
      * Replaces every créneau of the edition — how the découpage materializes
      * its vacations in place (issue #172: the amplitudes it read are consumed,
      * the edition only ever holds one grid). The persisted plan goes with the

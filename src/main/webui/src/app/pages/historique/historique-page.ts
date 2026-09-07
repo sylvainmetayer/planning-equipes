@@ -130,8 +130,14 @@ export class HistoriquePage {
     return new Date(iso).toLocaleTimeString(intlLocale(), { hour: '2-digit', minute: '2-digit' });
   }
 
+  /**
+   * `jour` is already a **local** calendar date (see `journeeLocale`), so it is
+   * rebuilt from its parts: `new Date('2026-09-07')` is UTC midnight, which
+   * renders as the 6th anywhere west of Greenwich.
+   */
   protected jourLisible(jour: string): string {
-    return new Date(jour).toLocaleDateString(intlLocale(), {
+    const [annee, mois, quantieme] = jour.split('-').map(Number);
+    return new Date(annee, mois - 1, quantieme).toLocaleDateString(intlLocale(), {
       weekday: 'long',
       day: 'numeric',
       month: 'long',

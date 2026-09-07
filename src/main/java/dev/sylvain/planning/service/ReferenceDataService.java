@@ -302,10 +302,7 @@ public class ReferenceDataService implements ReferenceData {
      * moved, hence the read of the grid beforehand (issue #406).
      */
     public WrittenCreneau writeCreneau(Long id, Creneau creneau) {
-        Creneau avant = creneaux.list().stream()
-                .filter(candidat -> Objects.equals(candidat.getId(), id))
-                .findFirst()
-                .orElse(null);
+        Creneau avant = creneaux.find(id);
         Creneau ecrit = updateCreneau(id, creneau);
         currentAction.champsModifies(ChampsModifies.surCreneau(avant, ecrit));
         return new WrittenCreneau(ecrit, coherence.onCreneau(ecrit));

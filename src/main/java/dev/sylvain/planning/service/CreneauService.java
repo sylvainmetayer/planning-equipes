@@ -36,6 +36,11 @@ public class CreneauService {
         return repository.listCreneaux();
     }
 
+    /** One timeslot by id, {@code null} when the edition holds none. */
+    public Creneau find(Long id) {
+        return repository.findCreneau(id);
+    }
+
     public Creneau create(Creneau creneau) {
         CreneauValidator.check(creneau);
         creneau.setId(null); // ignore any client-supplied id — the database always generates it

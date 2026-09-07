@@ -5,12 +5,12 @@ import { EntreeHistorique } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 
 /** Which actors the list keeps. `TOUS` is the default: the history is read whole. */
-export type FiltreActeur = 'TOUS' | 'ADMIN' | 'ANIMATEUR' | 'ASSISTANT' | 'SYSTEME';
+export type FiltreActeur = 'TOUS' | 'ADMIN' | 'ANIMATEUR' | 'ANONYME' | 'ASSISTANT' | 'SYSTEME';
 
 /** Which outcomes the list keeps. A refusal is often the line being looked for. */
 export type FiltreResultat = 'TOUS' | 'SUCCES' | 'REFUS';
 
-const ACTEURS: FiltreActeur[] = ['TOUS', 'ADMIN', 'ANIMATEUR', 'ASSISTANT', 'SYSTEME'];
+const ACTEURS: FiltreActeur[] = ['TOUS', 'ADMIN', 'ANIMATEUR', 'ANONYME', 'ASSISTANT', 'SYSTEME'];
 const RESULTATS: FiltreResultat[] = ['TOUS', 'SUCCES', 'REFUS'];
 
 /** Reads a filter off the URL, falling back to its default on anything unknown. */
@@ -74,6 +74,9 @@ export function qui(entree: EntreeHistorique): string {
   if (entree.acteur === 'ANIMATEUR') {
     return entree.acteurNom ?? entree.acteurId ?? $localize`:@@historique.acteur.animateur:Animateur`;
   }
+  if (entree.acteur === 'ANONYME') {
+    return $localize`:@@historique.acteur.anonyme:Visiteur non identifié`;
+  }
   return entree.acteurId ?? $localize`:@@historique.acteur.admin:Administration`;
 }
 
@@ -85,11 +88,27 @@ export function surQuoi(entree: EntreeHistorique): string {
   return entree.entiteNom ? `${entree.entiteNom} (${entree.entiteId})` : entree.entiteId;
 }
 
+/**
+ * The calendar day an instant falls on **where the reader is**, as
+ * `YYYY-MM-DD`.
+ *
+ * Not `survenuLe.slice(0, 10)`, which is the UTC date: the hour beside it is
+ * rendered in the browser's zone, so in Europe/Paris an action at 00h30 on the
+ * 8th (22:30Z on the 7th) would sit under « lundi 7 septembre » showing
+ * « 00:30 ». Evening and night work is exactly when this screen is read.
+ */
+export function journeeLocale(iso: string): string {
+  const date = new Date(iso);
+  const mois = `${date.getMonth() + 1}`.padStart(2, '0');
+  const jour = `${date.getDate()}`.padStart(2, '0');
+  return `${date.getFullYear()}-${mois}-${jour}`;
+}
+
 /** Groups the lines by calendar day, newest first — an event week piles up hundreds. */
 export function parJournee(entrees: EntreeHistorique[]): { jour: string; entrees: EntreeHistorique[] }[] {
   const journees = new Map<string, EntreeHistorique[]>();
   for (const entree of entrees) {
-    const jour = entree.survenuLe.slice(0, 10);
+    const jour = journeeLocale(entree.survenuLe);
     const existantes = journees.get(jour);
     if (existantes) {
       existantes.push(entree);

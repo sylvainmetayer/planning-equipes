@@ -3,6 +3,7 @@ import { EntreeHistorique } from '../../core/models';
 import {
   entitesPresentes,
   filtrer,
+  journeeLocale,
   lireFiltreActeur,
   lireFiltreResultat,
   parJournee,
@@ -81,13 +82,42 @@ describe('surQuoi', () => {
 
 describe('parJournee', () => {
   it('regroupe par jour civil dans l’ordre reçu', () => {
+    // Les jours attendus se dérivent de la même horloge que le code : écrits
+    // en dur, ce test tomberait sur une machine réglée sur un autre fuseau.
+    const midi = '2026-09-07T12:00:00Z';
+    const matin = '2026-09-07T09:05:00Z';
+    const veille = '2026-09-06T12:00:00Z';
     const journees = parJournee([
-      entree({ id: 1, survenuLe: '2026-09-07T14:32:00Z' }),
-      entree({ id: 2, survenuLe: '2026-09-07T09:05:00Z' }),
-      entree({ id: 3, survenuLe: '2026-09-06T18:00:00Z' })
+      entree({ id: 1, survenuLe: midi }),
+      entree({ id: 2, survenuLe: matin }),
+      entree({ id: 3, survenuLe: veille })
     ]);
-    expect(journees.map((j) => j.jour)).toEqual(['2026-09-07', '2026-09-06']);
+    expect(journees.map((j) => j.jour)).toEqual([journeeLocale(midi), journeeLocale(veille)]);
     expect(journees[0].entrees.map((e) => e.id)).toEqual([1, 2]);
+  });
+
+  /**
+   * Le jour est celui du lecteur, pas celui d'UTC : l'heure affichée à côté
+   * est locale, donc une action de 22h30 UTC un 7 septembre s'affiche « 00:30 »
+   * à Paris et appartient au 8. La regrouper sous le 7 mettrait minuit avant
+   * le soir de la veille — et c'est le travail de nuit qu'on vient relire.
+   */
+  it('range une action du soir sous la journée du lecteur, pas sous celle d’UTC', () => {
+    const veille = journeeLocale('2026-09-07T22:30:00Z');
+    const attendu = new Date('2026-09-07T22:30:00Z');
+    const mois = `${attendu.getMonth() + 1}`.padStart(2, '0');
+    expect(veille).toBe(`${attendu.getFullYear()}-${mois}-${`${attendu.getDate()}`.padStart(2, '0')}`);
+
+    const journees = parJournee([
+      entree({ id: 1, survenuLe: '2026-09-07T22:30:00Z' }),
+      entree({ id: 2, survenuLe: '2026-09-07T08:00:00Z' })
+    ]);
+    // Sur un fuseau à l'est de Greenwich les deux tombent des jours
+    // différents ; sur UTC elles tombent le même. Dans les deux cas le
+    // regroupement suit l'horloge du lecteur, ce que l'ancien `slice(0, 10)`
+    // ne faisait pas.
+    const memeJour = journeeLocale('2026-09-07T22:30:00Z') === journeeLocale('2026-09-07T08:00:00Z');
+    expect(journees).toHaveLength(memeJour ? 1 : 2);
   });
 });
 

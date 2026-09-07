@@ -1823,7 +1823,7 @@ export interface EntreeHistorique {
   id: number;
   survenuLe: string;
   /** Who did it, as coarsely as the application really knows. */
-  acteur: 'ADMIN' | 'ANIMATEUR' | 'ASSISTANT' | 'SYSTEME';
+  acteur: 'ADMIN' | 'ANIMATEUR' | 'ANONYME' | 'ASSISTANT' | 'SYSTEME';
   acteurId: string | null;
   /** Resolved at read time; `null` outside an animateur still on the roster. */
   acteurNom: string | null;

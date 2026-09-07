@@ -147,10 +147,17 @@ ni édition courante. Trois surfaces, donc trois coutures :
   `EditionHeaderFilter` : il voit toutes les routes, et écrit le statut sur
   lequel l'action s'est terminée — un refus est un fait qu'on cherche plus
   souvent qu'un succès ;
-- `mcp/JournalOutilInterceptor`, intercepteur lié à `@EditionCiblee`,
-  l'annotation que toute classe d'outils porte déjà et qu'un test structurel
-  impose ;
-- les tâches planifiées, qui appellent le service directement.
+- `mcp/JournalOutilInterceptor`, intercepteur lié à `@Journalise` — une
+  annotation à lui, et non `@EditionCiblee` comme au premier jet : les classes
+  qui agissent **entre** éditions (`EditionMcpTools`, `SauvegardeMcpTools`) ne
+  portent légitimement pas la seconde, si bien que six outils d'écriture, dont
+  la suppression d'une édition entière, figuraient au catalogue sans que
+  personne ne les intercepte. Deux questions tenaient à une seule annotation ;
+  elles en ont chacune une ;
+- la tâche de nuit, qui appelle `recordSystemAction` quand un envoi est
+  réellement parti — et elle seule : la sauvegarde et la purge sont
+  transverses aux éditions, or une ligne appartient à une édition, donc les
+  classer sous celle qui se trouvait courante serait un fait inventé.
 
 Ce qui tient la promesse n'est donc pas la discipline au point d'appel — il
 n'y en a pas — mais `service/journal/CatalogueActions` et le test qui le lit.
@@ -160,7 +167,12 @@ d'entrée l'effectue de l'autre, si bien qu'un stand créé depuis un écran et 
 stand créé par un assistant écrivent la même ligne.
 `JournalCoverageStructurelleTest` échoue sur toute route ou tout outil qui
 écrit sans figurer **ni** dans le catalogue **ni** dans sa liste d'exclusions
-motivées : on ne peut pas en sortir en oubliant.
+motivées : on ne peut pas en sortir en oubliant. Il vérifie aussi les deux
+bords que le premier jet avait laissés ouverts — qu'une classe d'outils
+journalisés porte bien `@Journalise`, l'appartenance au catalogue n'ayant
+jamais prouvé qu'une ligne s'écrive ; et qu'aucune action décrite ne soit
+inatteignable, un inventaire mort promettant à l'écran un filtre qui ne
+rendra rien.
 
 Les champs réellement modifiés viennent d'ailleurs : seul le service sait ce
 qui a changé. `ReferenceDataService` lit déjà la fiche telle qu'elle était

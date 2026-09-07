@@ -2448,5 +2448,7 @@
   "historique.acteur.assistant": "Assistant (MCP)",
   "historique.acteur.animateur": "Staff member",
   "historique.acteur.admin": "Administration",
-  "nav.link.historique": "History"
+  "nav.link.historique": "History",
+  "historique.filter.anonyme": "Unidentified",
+  "historique.acteur.anonyme": "Unidentified visitor"
 }
