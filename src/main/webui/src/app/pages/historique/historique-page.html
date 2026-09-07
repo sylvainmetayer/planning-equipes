@@ -1,0 +1,116 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@historique.title">Historique des actions</h1>
+    <mat-card-subtitle i18n="@@historique.subtitle">
+      Ce qui a été fait dans cette édition, et par qui. Les lignes ne portent que des identifiants et le nom des
+      champs modifiés : les noms des personnes sont retrouvés à l'affichage, jamais conservés ici.
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="historique-controles">
+      <mat-form-field appearance="outline" class="historique-search">
+        <mat-label i18n="@@historique.filter.search">Rechercher</mat-label>
+        <input
+          matInput
+          data-page-filter
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+          i18n-placeholder="@@historique.filter.searchPlaceholder"
+          placeholder="une action, une personne, un identifiant"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@historique.filter.entite">Objet</mat-label>
+        <mat-select [ngModel]="entite()" (ngModelChange)="entite.set($event)">
+          <mat-option value="" i18n="@@historique.filter.entiteAll">Tous</mat-option>
+          @for (valeur of entites(); track valeur) {
+            <mat-option [value]="valeur">{{ valeur }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-button-toggle-group
+        [ngModel]="acteur()"
+        (ngModelChange)="acteur.set($event)"
+        i18n-aria-label="@@historique.filter.acteurLabel"
+        aria-label="Filtrer par auteur"
+      >
+        <mat-button-toggle value="TOUS" i18n="@@historique.filter.tous">Tous</mat-button-toggle>
+        <mat-button-toggle value="ADMIN" i18n="@@historique.filter.admin">Administration</mat-button-toggle>
+        <mat-button-toggle value="ANIMATEUR" i18n="@@historique.filter.animateur">Animateurs</mat-button-toggle>
+        <mat-button-toggle value="ASSISTANT" i18n="@@historique.filter.assistant">Assistant</mat-button-toggle>
+        <mat-button-toggle value="SYSTEME" i18n="@@historique.filter.systeme">Application</mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <mat-button-toggle-group
+        [ngModel]="resultat()"
+        (ngModelChange)="resultat.set($event)"
+        i18n-aria-label="@@historique.filter.resultatLabel"
+        aria-label="Filtrer par résultat"
+      >
+        <mat-button-toggle value="TOUS" i18n="@@historique.filter.resultatTous">Tout</mat-button-toggle>
+        <mat-button-toggle value="SUCCES" i18n="@@historique.filter.succes">Abouti</mat-button-toggle>
+        <mat-button-toggle value="REFUS" i18n="@@historique.filter.refus">Refusé</mat-button-toggle>
+      </mat-button-toggle-group>
+
+      @if (vueModifiee()) {
+        <button matButton type="button" (click)="reinitialiser()">
+          <mat-icon>filter_alt_off</mat-icon>
+          <ng-container i18n="@@historique.filter.reset">Tout afficher</ng-container>
+        </button>
+      }
+
+      <button matButton type="button" (click)="recharger()" [disabled]="chargement()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+    </div>
+
+    @if (chargement()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    <app-status-message [text]="erreur()" tone="error" />
+
+    @if (!chargement() && filtrees().length === 0) {
+      <p class="empty-hint" i18n="@@historique.empty">
+        Aucune action à afficher. L'historique se remplit dès qu'une donnée change, et les lignes trop anciennes en
+        sortent d'elles-mêmes.
+      </p>
+    }
+
+    @for (journee of journees(); track journee.jour) {
+      <h2 class="historique-jour">{{ jourLisible(journee.jour) }}</h2>
+      <ul class="historique-liste">
+        @for (entree of journee.entrees; track entree.id) {
+          <li class="historique-ligne" [class.historique-refus]="entree.resultat === 'REFUS'">
+            <span class="historique-heure">{{ heure(entree.survenuLe) }}</span>
+            <span class="historique-libelle">
+              {{ entree.libelle }}
+              @if (entree.resultat === 'REFUS') {
+                <span
+                  class="historique-badge"
+                  i18n="@@historique.refuse"
+                  i18n-matTooltip="@@historique.refuseTooltip"
+                  matTooltip="L'action a été refusée : elle n'a rien changé."
+                  >refusée</span
+                >
+              }
+            </span>
+            <span class="historique-cible">{{ surQuoi(entree) }}</span>
+            @if (entree.champs.length > 0) {
+              <span
+                class="historique-champs"
+                i18n-matTooltip="@@historique.champsTooltip"
+                matTooltip="Les champs qui ont changé. Leurs valeurs ne sont pas conservées."
+                >{{ entree.champs.join(', ') }}</span
+              >
+            }
+            <span class="historique-qui">{{ qui(entree) }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </mat-card-content>
+</mat-card>

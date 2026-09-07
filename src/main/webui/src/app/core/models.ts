@@ -1812,6 +1812,42 @@ export interface ConfigurationFoire {
  * happen at four in the morning with nobody watching, so a log kept in this
  * browser's `localStorage` would never see them.
  */
+/**
+ * One line of the action history, from `GET /api/historique` (issue #406).
+ *
+ * The table stores identifiers and field *names*, never values and never an
+ * identity: `acteurNom` and `entiteNom` are resolved server-side when the list
+ * is read, so a fiche deleted since leaves a line that names nobody.
+ */
+export interface EntreeHistorique {
+  id: number;
+  survenuLe: string;
+  /** Who did it, as coarsely as the application really knows. */
+  acteur: 'ADMIN' | 'ANIMATEUR' | 'ASSISTANT' | 'SYSTEME';
+  acteurId: string | null;
+  /** Resolved at read time; `null` outside an animateur still on the roster. */
+  acteurNom: string | null;
+  /** Stable code of the action, never translated. */
+  action: string;
+  /** What it says in French, from the server's catalogue. */
+  libelle: string;
+  entite: string | null;
+  entiteId: string | null;
+  entiteNom: string | null;
+  /** Names of the fields an edit changed — never their values. */
+  champs: string[];
+  resultat: 'SUCCES' | 'REFUS';
+  /** HTTP status when the action came from a request, `null` for a scheduled one. */
+  statut: number | null;
+}
+
+/** One entry of the action inventory, from `GET /api/historique/actions`. */
+export interface ActionHistorique {
+  code: string;
+  libelle: string;
+  entite: string | null;
+}
+
 export interface AlerteView {
   /** Which job raised it: `RAPPEL_VEILLE_INJOIGNABLE`, `RELANCE_INJOIGNABLE`, `ALERTE_ECHANGE`. */
   type: string;

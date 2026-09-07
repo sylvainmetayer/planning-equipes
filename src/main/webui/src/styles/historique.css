@@ -1,0 +1,83 @@
+/* Action history: a dense, scannable list rather than a table. A day of an
+   event piles up hundreds of lines, and what a reader looks for is a moment
+   — so the eye follows the time column, and everything else hangs off it. */
+
+/* Same filter row as the other report screens: wraps rather than scrolls. */
+.historique-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.historique-jour {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 1.25rem 0 0.25rem;
+  text-transform: capitalize;
+}
+
+.historique-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.historique-ligne {
+  display: grid;
+  grid-template-columns: 4rem minmax(12rem, 2fr) minmax(8rem, 1.5fr) minmax(6rem, 1fr) minmax(7rem, 1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+/* One column under the other on a narrow screen: the grid above would squeeze
+   the sentence into a two-word column. */
+@media (max-width: 900px) {
+  .historique-ligne {
+    grid-template-columns: 4rem 1fr;
+  }
+
+  .historique-cible,
+  .historique-champs,
+  .historique-qui {
+    grid-column: 2;
+  }
+}
+
+.historique-heure {
+  color: var(--mat-sys-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+.historique-cible,
+.historique-qui {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.historique-champs {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+/* A refusal is what a reader is usually hunting for: it must not read like the
+   rest of the list. */
+.historique-refus .historique-libelle {
+  color: var(--mat-sys-error);
+}
+
+.historique-badge {
+  margin-left: 0.375rem;
+  padding: 0 0.375rem;
+  border-radius: 0.5rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-label-small);
+}
+
+.historique-search {
+  min-width: 18rem;
+}

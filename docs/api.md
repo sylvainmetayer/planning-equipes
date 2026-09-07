@@ -452,6 +452,37 @@ seulement d'une décision d'échange lit les mêmes journées qu'avant : lui
 redemander de confirmer transformerait le bouton en réflexe plutôt qu'en
 réponse.
 
+## Historique des actions
+
+`GET /api/historique?limite=200` — ce qui a été fait dans l'édition courante,
+du plus récent au plus ancien, plafonné à 500 lignes. `GET
+/api/historique/actions` rend l'inventaire des actions que l'application sait
+décrire, pour que l'écran propose un filtre qu'il n'a pas inventé.
+
+Lecture seule, et cette forme est définitive : un journal qu'on peut modifier
+n'est pas un journal. Aucune suppression non plus — ce qui borne la table est
+une **rétention** (`JOURNAL_RETENTION`, 90 jours par défaut) appliquée par la
+tâche de nuit, pas un bouton.
+
+Une ligne porte : quand, **qui** (`ADMIN`, `ANIMATEUR`, `ASSISTANT` pour un
+appel MCP, `SYSTEME` pour la nuit), l'action et sa phrase en français, ce
+qu'elle visait, **les noms des champs qu'une modification a réellement
+changés**, et si elle a abouti ou été refusée — avec son code HTTP.
+
+Deux choses n'y sont pas, et c'est le contrat :
+
+- **aucune valeur.** « nom, email » dit ce qui a bougé, jamais ce que c'est
+  devenu ;
+- **aucune identité.** La table stocke un identifiant ; `acteurNom` et
+  `entiteNom` sont résolus depuis le référentiel **à la lecture**, si bien
+  qu'une fiche supprimée laisse une ligne qui ne nomme plus personne.
+
+Sont tracées les écritures et les sorties de données (exports PDF, ICS, CSV,
+dump de base, envois de courriel), jamais les simples consultations : un
+`POST` qui ne fait que calculer — une prévisualisation, une simulation,
+l'analyse préalable d'un fichier — est déclaré **sans trace, avec son motif**,
+dans `CatalogueActions`.
+
 ## Notifications planifiées
 
 `GET` / `PUT /api/parametres-notifications` — ce que les envois de nuit ont le

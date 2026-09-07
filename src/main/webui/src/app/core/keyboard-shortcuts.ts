@@ -119,6 +119,7 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
     ['/comparateur', { label: $localize`:@@nav.link.comparateur:Comparateur A/B`, icon: 'compare_arrows' }],
     ['/parametres', { label: $localize`:@@nav.link.parametres:Paramètres`, icon: 'settings', touche: 'r' }],
     ['/mcp-client', { label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' }],
+    ['/historique', { label: $localize`:@@nav.link.historique:Historique`, icon: 'manage_search' }],
     ['/debug', { label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report', touche: 'd' }],
     ['/verrouillages', { label: $localize`:@@nav.link.verrouillages:Verrouillages`, icon: 'lock', touche: 'v' }],
     ['/mentions-legales', { label: $localize`:@@nav.link.mentionsLegales:Mentions légales`, icon: 'gavel' }],

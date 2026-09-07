@@ -198,6 +198,7 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
     title: $localize`:@@nav.group.tools:Outils`,
     links: [
       { path: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres`, icon: 'settings' },
+      { path: '/historique', label: $localize`:@@nav.link.historique:Historique`, icon: 'manage_search' },
       { path: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' },
       { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
       {

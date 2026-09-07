@@ -83,7 +83,7 @@ class IsolationEditionStructurelleTest {
             "demande_echange", "parametres_echange", "espace_session", "espace_acces",
             "plan_snapshot", "publication_destinataire",
             "declaration_disponibilite", "parametres_collecte", "confirmation_planning",
-            "parametres_notifications", "notification_planifiee");
+            "parametres_notifications", "notification_planifiee", "journal_action");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An
@@ -144,6 +144,13 @@ class IsolationEditionStructurelleTest {
      *       {@code BIGSERIAL}, so an id names one snapshot on its own. Both are
      *       reads: restoring a snapshot stays edition-scoped
      *       ({@code restaurer} goes through {@code load}).</li>
+     *   <li>{@code JournalActionRepository.purgeAvant} drops the history lines
+     *       that have aged out, across every edition at once. It is run by the
+     *       nightly job, which has no edition of its own, and scoping it would
+     *       leave the editions nobody visits growing forever — the retention
+     *       is a property of the table, not of an edition. Writing every other
+     *       statement of that repository through {@code prepareScoped} is what
+     *       keeps the exception to this one line.</li>
      * </ul>
      */
     private static final List<String> EXCEPTIONS_ASSUMEES = List.of(
@@ -155,7 +162,8 @@ class IsolationEditionStructurelleTest {
                     + " LEFT JOIN edition e ON e.id = s.edition_id ORDER BY s.cree_le DESC, s.id DESC",
             "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
                     + " s.publie_le, e.nom AS edition_nom , s.contenu, s.kpi FROM plan_snapshot s"
-                    + " LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?");
+                    + " LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
+            "DELETE FROM journal_action WHERE survenu_le < ?");
 
     /**
      * The call sites whose SQL the scan cannot resolve, keyed by

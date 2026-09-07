@@ -22,6 +22,8 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.journal.CurrentAction;
+import dev.sylvain.planning.service.journal.ChampsModifies;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -81,6 +83,15 @@ public class ReferenceDataService implements ReferenceData {
     @Inject
     CoherenceService coherence;
 
+    /**
+     * Where the fields an edit changed are deposited for the history
+     * (issue #406). The before-image is already read here for the write-time
+     * warnings, so this is the one place that can tell {@code nom} moved from
+     * a write that merely re-sent it.
+     */
+    @Inject
+    CurrentAction currentAction;
+
     @Inject
     CreneauGridService grille;
 
@@ -128,6 +139,7 @@ public class ReferenceDataService implements ReferenceData {
                 .findFirst()
                 .orElse(null);
         Animateur ecrit = updateAnimateur(id, animateur);
+        currentAction.champsModifies(ChampsModifies.surAnimateur(avant, ecrit));
         return new WrittenAnimateur(ecrit, coherence.onAnimateur(avant, ecrit));
     }
 
@@ -193,6 +205,7 @@ public class ReferenceDataService implements ReferenceData {
     public WrittenStand writeStand(String id, Stand stand) {
         Stand avant = stands.find(id);
         Stand ecrit = updateStand(id, stand);
+        currentAction.champsModifies(ChampsModifies.surStand(avant, ecrit));
         return new WrittenStand(ecrit, coherence.onStand(avant, ecrit));
     }
 
@@ -283,9 +296,18 @@ public class ReferenceDataService implements ReferenceData {
         return new WrittenCreneau(ecrit, coherence.onCreneau(ecrit));
     }
 
-    /** Same as {@link #writeCreneau(Creneau)}, for an edit of an existing timeslot. */
+    /**
+     * Same as {@link #writeCreneau(Creneau)}, for an edit of an existing
+     * timeslot — and the one place the history learns which of its fields
+     * moved, hence the read of the grid beforehand (issue #406).
+     */
     public WrittenCreneau writeCreneau(Long id, Creneau creneau) {
+        Creneau avant = creneaux.list().stream()
+                .filter(candidat -> Objects.equals(candidat.getId(), id))
+                .findFirst()
+                .orElse(null);
         Creneau ecrit = updateCreneau(id, creneau);
+        currentAction.champsModifies(ChampsModifies.surCreneau(avant, ecrit));
         return new WrittenCreneau(ecrit, coherence.onCreneau(ecrit));
     }
 

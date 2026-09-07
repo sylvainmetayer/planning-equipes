@@ -152,6 +152,21 @@ Single Quarkus service, no separate solver microservice. Package root:
   the two files. Unit tests keep asserting on the wording without a container
   through `MailTemplates.standalone()`, which builds the same engine over the
   same classpath templates.
+- **Every action is journalled, and a new entry point cannot opt out by
+  omission** (issue #406). `service/journal/CatalogueActions` is the business
+  inventory of what the application does — the same role `ConstraintCatalog`
+  plays for the solver's rules — and it is read by three seams, because there
+  is no single one: `api/JournalActionFilter` (a response filter, so a refusal
+  is recorded too), `mcp/JournalOutilInterceptor` (MCP answers before the
+  JAX-RS chain), and direct calls from the scheduled jobs.
+  `JournalCoverageStructurelleTest` fails on any write route or write tool that
+  is in neither the catalogue nor its **argued** exclusion list — a `POST` that
+  only computes is not an action, and saying so with a reason is what keeps the
+  list honest. Two things never enter the table: a **value** (an edit records
+  the field *names* it changed, from the before-image
+  `ReferenceDataService` already reads) and an **identity** (an id only; the
+  name is joined at read time, so a deleted fiche leaves a line naming nobody).
+  Adding a route means adding its line to the catalogue.
 - **Never call `SolutionManager.analyze()` again.** Breaking a score down per
   constraint goes through `service/diagnostic/`
   (`ConstraintDiagnosticService` → `PlanningAnalysis`), and nothing else. That

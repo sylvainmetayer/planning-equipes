@@ -8,6 +8,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.EditionRepository;
@@ -70,6 +71,10 @@ public class NotificationsPlanifieesService {
     @Inject
     Scheduler scheduler;
 
+    /** Applies the history's retention, once a night (issue #406). */
+    @Inject
+    JournalActionService journal;
+
     @ConfigProperty(name = "planning.notifications.zone")
     String zone;
 
@@ -92,6 +97,7 @@ public class NotificationsPlanifieesService {
      */
     public int run() {
         ZonedDateTime maintenant = ZonedDateTime.now(zoneId());
+        purgeHistory();
         int envois = 0;
         for (Edition edition : editionRepository.listEditions()) {
             try {
@@ -104,6 +110,27 @@ public class NotificationsPlanifieesService {
             }
         }
         return envois;
+    }
+
+    /**
+     * Drops the history lines that have aged out (issue #406).
+     *
+     * <p>Rides along with the nightly sweep rather than carrying a second
+     * {@code @Scheduled}: this application has exactly two schedulers, the
+     * backup and this one, and a third one for a delete statement would be a
+     * third thing to configure, to time-zone and to explain. Best-effort like
+     * everything else here — an unpurged journal is a table that grows, not a
+     * night that fails.</p>
+     */
+    private void purgeHistory() {
+        try {
+            int purgees = journal.purge();
+            if (purgees > 0) {
+                LOG.infof("History: %d lines older than %s dropped", purgees, journal.retention());
+            }
+        } catch (RuntimeException e) {
+            LOG.error("The history could not be purged; the nightly sends carry on", e);
+        }
     }
 
     /**

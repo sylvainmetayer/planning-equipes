@@ -88,6 +88,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `SENTRY_DSN` | *(vide = désactivé)* | Suivi d'erreurs (Bugsink ou tout endpoint compatible Sentry) |
 | `SENTRY_ENVIRONMENT` | `local` | Étiquette d'environnement jointe aux erreurs remontées |
 | `BACKUP_DIR` | *(vide = sauvegarde automatique désactivée)* | Répertoire où la sauvegarde de nuit écrit ses `pg_dump` — voir [`docs/exploitation.md`](docs/exploitation.md) |
+| `JOURNAL_RETENTION` | `P90D` | Durée de conservation de l'historique des actions ; la purge passe avec les envois de nuit |
 | `BACKUP_RETENTION` | `10` | Nombre de sauvegardes conservées, entre 1 et 30 ; hors bornes, le démarrage est refusé |
 | `BACKUP_TIMEZONE` | `Europe/Paris` | Fuseau dans lequel se lit l'heure de la sauvegarde (4 h) |
 | `PLANNING_MCP_API_KEY` | *(vide = MCP inutilisable)* | Clé API attendue pour authentifier le serveur MCP |
@@ -209,6 +210,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 
 | Fonctionnalité | En une phrase |
 | --- | --- |
+| Historique des actions | Ce qui a été fait dans l'édition et par qui : chaque écriture, chaque export, chaque envoi, qu'il vienne d'un écran, d'un assistant ou d'une tâche de nuit — avec les champs qu'une modification a réellement changés. Aucun nom n'y est conservé : les identités sont retrouvées à l'affichage, et les lignes trop anciennes sortent d'elles-mêmes |
 | Problèmes | Vue unique des blocages, triés par gravité : causes d'infaisabilité détectées sans résolution, et règles encore en défaut après la dernière analyse. Quand une règle a buté sur des exceptions saisies à la main, elles sont nommées une par une, et les pauses légales que personne ne peut relayer |
 | Ouvertures des stands | Grille stand × jour de ce que le planning retiendra réellement, et les trois erreurs de saisie d'horaires habituelles — à vérifier avant de lancer un calcul ; la même grille se retourne en saisie, un effectif par stand et par créneau comme dans un tableur |
 | Besoin en animateurs | Effectif minimum estimé à partir des seuls stands et créneaux : dit si le problème est un manque de monde plutôt qu'un manque de temps de calcul, et sur quelle typologie de jeu le vivier de compétents est trop mince |

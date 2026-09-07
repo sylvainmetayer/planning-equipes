@@ -58,6 +58,12 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage)
   },
   {
+    path: 'historique',
+    title: 'Historique des actions',
+    loadComponent: () =>
+      import('./pages/historique/historique-page').then((m) => m.HistoriquePage)
+  },
+  {
     path: 'aide',
     title: 'Aide',
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage)

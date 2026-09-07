@@ -95,8 +95,8 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès |
-| Traitements réalisés | Hébergement, planification et résolution, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, purge |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)** |
+| Traitements réalisés | Hébergement, planification et résolution, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, **journalisation des actions d'administration**, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les deux jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
 
@@ -307,6 +307,18 @@ complètes. Quatre points sont connus et se consignent :
   alerte qui ne nomme plus personne. Ce journal n'a pas de purge propre : il
   disparaît avec son édition, en cascade sur `edition_id`, donc à la purge
   annuelle ;
+- **l'historique des actions (`journal_action`) trace qui a fait quoi**, et
+  c'est un traitement à consigner comme tel. Il suit la même règle que le
+  journal ci-dessus, et deux de plus. Il ne stocke **ni nom, ni adresse, ni
+  date de naissance** : un identifiant d'animateur au plus, l'identité étant
+  jointe à la lecture. Il ne stocke **aucune valeur de champ** : une
+  modification y laisse les *noms* des champs qui ont bougé — « nom, email » —
+  jamais ce qu'ils sont devenus, ce qui suffit à retracer un geste sans
+  recopier la donnée. Et il porte, lui, **une purge propre** :
+  `JOURNAL_RETENTION`, quatre-vingt-dix jours par défaut, appliquée chaque nuit
+  — parce qu'un journal que personne ne relit deviendrait sinon un stockage de
+  plus, conservé sans limite et repris dans chaque sauvegarde. Il cascade en
+  outre avec son édition, donc disparaît au plus tard à la purge annuelle ;
 - **l'import CSV des animateurs fait entrer des données personnelles par un
   fichier que l'exploitant tient lui-même**, et c'est une entrée à consigner :
   ce tableur porte des noms, des dates de naissance — donc l'information qui

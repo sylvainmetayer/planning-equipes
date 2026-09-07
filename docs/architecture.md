@@ -135,6 +135,40 @@ libellé continuent de tourner sans conteneur. Le logo vient de
 `BRANDING_LOGO_URL`, une URL que seul un navigateur sait résoudre ; la palette
 est celle des PDF, toujours un `#rrggbb` lisible en style inline.
 
+## L'historique des actions n'a pas une couture, il en a trois
+
+« Tracer **chaque** action » (issue #406) se heurte à une réalité de cette
+application : il n'existe aucun point de passage unique. Une requête REST
+traverse la chaîne JAX-RS ; un appel d'outil MCP ne la voit jamais, parce que
+`quarkus-mcp-server-http` répond avant elle ; une tâche de nuit n'a ni requête
+ni édition courante. Trois surfaces, donc trois coutures :
+
+- `api/JournalActionFilter`, filtre de **réponse** non lié, comme
+  `EditionHeaderFilter` : il voit toutes les routes, et écrit le statut sur
+  lequel l'action s'est terminée — un refus est un fait qu'on cherche plus
+  souvent qu'un succès ;
+- `mcp/JournalOutilInterceptor`, intercepteur lié à `@EditionCiblee`,
+  l'annotation que toute classe d'outils porte déjà et qu'un test structurel
+  impose ;
+- les tâches planifiées, qui appellent le service directement.
+
+Ce qui tient la promesse n'est donc pas la discipline au point d'appel — il
+n'y en a pas — mais `service/journal/CatalogueActions` et le test qui le lit.
+Le catalogue est l'**inventaire métier** des actions, comme `ConstraintCatalog`
+l'est des règles du solveur : ce qu'une action *est* d'un côté, quel point
+d'entrée l'effectue de l'autre, si bien qu'un stand créé depuis un écran et un
+stand créé par un assistant écrivent la même ligne.
+`JournalCoverageStructurelleTest` échoue sur toute route ou tout outil qui
+écrit sans figurer **ni** dans le catalogue **ni** dans sa liste d'exclusions
+motivées : on ne peut pas en sortir en oubliant.
+
+Les champs réellement modifiés viennent d'ailleurs : seul le service sait ce
+qui a changé. `ReferenceDataService` lit déjà la fiche telle qu'elle était
+avant l'écriture — pour les avertissements de saisie — et dépose la
+comparaison dans `CurrentAction`, que le point d'entrée relève en fin d'appel.
+Enrichissement et non obligation : une ligne dont personne n'a fourni les
+champs s'écrit quand même.
+
 ## Frontend
 
 Quinoa lance `npm ci && npm run build` pendant `mvn package` et copie le bundle
