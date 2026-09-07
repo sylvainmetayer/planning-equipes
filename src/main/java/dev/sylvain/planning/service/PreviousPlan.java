@@ -63,6 +63,21 @@ public record PreviousPlan(long snapshotId, String score, boolean degraded) {
         return scoreAfter.compareTo(scoreBefore) < 0;
     }
 
+    /**
+     * Whether {@code after} is strictly better than {@code before}. The
+     * mirror of {@link #isDegraded}, with the same caution turned the other
+     * way: an unreadable score on either side is no proof of an improvement,
+     * so it answers {@code false} — the plan in place stands.
+     */
+    static boolean isImproved(String before, String after) {
+        HardMediumSoftScore scoreBefore = parse(before);
+        HardMediumSoftScore scoreAfter = parse(after);
+        if (scoreBefore == null || scoreAfter == null) {
+            return false;
+        }
+        return scoreAfter.compareTo(scoreBefore) > 0;
+    }
+
     private static HardMediumSoftScore parse(String score) {
         if (score == null || score.isBlank()) {
             return null;

@@ -97,9 +97,12 @@ public class SolverJobService {
         PENDING,
         /**
          * Was holding the solver when the server stopped. A terminal state, on
-         * purpose: the run is gone with the JVM and nothing will ever finish
-         * it, so it must not keep the solver lock. What it had computed is lost
-         * — only what a previous solve persisted remains.
+         * purpose: nothing will ever finish it, so it must not keep the solver
+         * lock. Two ways in. After a full restart, what it had computed is
+         * gone with the JVM. When the container stopped under it — a graceful
+         * shutdown, a live reload — the run was cut short and its best plan so
+         * far kept only if it beat the persisted one; the {@code error}
+         * message says which.
          */
         INTERROMPU,
         /** Waiting for the running job to finish; does not hold the solver yet. */
@@ -155,6 +158,12 @@ public class SolverJobService {
     /** FIFO of jobs waiting for the solver. Guarded by this service's monitor. */
     private final Deque<QueuedTask> file = new ArrayDeque<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, new SolverThreadFactory());
+    /**
+     * Raised by {@link #shutdown()} and never lowered: from then on a run that
+     * returns was cut short by the server, not by its budget. Read by the
+     * pipeline after the solver hands back, and by {@link #finishAndChain}.
+     */
+    private volatile boolean shutdownRequested;
 
     /** A queued job and the work it will run once the solver frees up. */
     private record QueuedTask(SolverJob job, JobTask task) {
@@ -175,7 +184,8 @@ public class SolverJobService {
         // terminal state or interrupted.
         return submit(JobType.SOLVE, secondsLimit, false, null, false,
                 job -> resultatSolve(
-                        pipeline.execute(job.getEditionNom(), problem, secondsLimit, onSolverReady(job))));
+                        pipeline.execute(job.getEditionNom(), problem, secondsLimit, onSolverReady(job),
+                                this::isShutdownRequested)));
     }
 
     /**
@@ -183,12 +193,17 @@ public class SolverJobService {
      * (issue #274) — a solve that announces only its own score lets an
      * operator walk away with a worse planning than the one they had, without
      * ever being told.
+     *
+     * @param interruption set when the server stopped under the run, and says
+     *                     whether its partial plan was kept; {@code null} for
+     *                     a solve that finished
      */
     public record ResultatSolve(
             PlanningService.PlanningDiagnostic diagnostic,
             PreviousPlan previousPlan,
             ReamorcageEffectue reamorcage,
-            SolvePipeline.ImpactPublication impactPublication) {
+            SolvePipeline.ImpactPublication impactPublication,
+            SolvePipeline.Interruption interruption) {
     }
 
     /**
@@ -210,7 +225,7 @@ public class SolverJobService {
      */
     private static ResultatSolve resultatSolve(SolvePipeline.Resolution<?> resolution) {
         return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(), null,
-                resolution.impactPublication());
+                resolution.impactPublication(), resolution.interruption());
     }
 
     /**
@@ -246,12 +261,12 @@ public class SolverJobService {
                     pipeline.execute(job.getEditionNom(),
                             () -> planningService.buildFromReferenceData(reamorcage),
                             PlanningService.ProblemeReamorce::planning,
-                            secondsLimit, onSolverReady(job));
+                            secondsLimit, onSolverReady(job), this::isShutdownRequested);
             PlanningService.ProblemeReamorce probleme = resolution.probleme();
             return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(),
                     new ReamorcageEffectue(probleme.reamorcage(), probleme.postesReamorces(),
                             probleme.postesLiberes()),
-                    resolution.impactPublication());
+                    resolution.impactPublication(), resolution.interruption());
         };
     }
 
@@ -266,7 +281,8 @@ public class SolverJobService {
             PlanningService.StatistiquesIncremental statistiques,
             List<ReplanificationDiff.ChangementAffectation> changements,
             PreviousPlan previousPlan,
-            SolvePipeline.ImpactPublication impactPublication) {
+            SolvePipeline.ImpactPublication impactPublication,
+            SolvePipeline.Interruption interruption) {
     }
 
     /**
@@ -294,11 +310,11 @@ public class SolverJobService {
                     pipeline.execute(job.getEditionNom(),
                             () -> planningService.buildIncrementalFromReferenceData(scope),
                             PlanningService.ProblemeIncremental::planning,
-                            secondsLimit, onSolverReady(job));
+                            secondsLimit, onSolverReady(job), this::isShutdownRequested);
             PlanningService.ProblemeIncremental probleme = resolution.probleme();
             return new ResultatSolveIncremental(resolution.diagnostic(), probleme.statistiques(),
                     ReplanificationDiff.compute(probleme.affectationsPrecedentes(), resolution.planning()),
-                    resolution.previousPlan(), resolution.impactPublication());
+                    resolution.previousPlan(), resolution.impactPublication(), resolution.interruption());
         };
     }
 
@@ -504,15 +520,27 @@ public class SolverJobService {
         // on the run's real final score — whether it completed, failed, or was
         // stopped by hand.
         scoreTrace.finish(job.getId());
+        SolvePipeline.Interruption interruption = interruptionOf(result);
         if (failure != null) {
             if (job.isCancelRequested()) {
                 job.markCancelled(null);
+            } else if (shutdownRequested) {
+                // Died while the server was going down — a pool already
+                // closed, a bean already gone. Not a bug to report: the run
+                // is lost, the persisted plan stands.
+                LOG.warnf(failure, "Solver job %s was stopped by the server shutdown and its run is lost",
+                        job.getId());
+                job.markInterrompu(SHUTDOWN_RUN_LOST, null);
             } else {
                 job.markFailed(failure);
                 reportFailure(job, failure);
             }
         } else if (job.isCancelRequested()) {
             job.markCancelled(result);
+        } else if (interruption != null) {
+            // Never COMPLETED: a run the server cut short would otherwise be
+            // indistinguishable from one that spent its budget.
+            job.markInterrompu(describe(interruption), result);
         } else {
             job.markCompleted(result);
         }
@@ -523,6 +551,34 @@ public class SolverJobService {
         // and publishing it would make every screen blink through a state that
         // never really existed.
         jobStream.publish();
+    }
+
+    private static final String SHUTDOWN_RUN_LOST =
+            "Interrompue par l'arrêt du serveur : le calcul en cours a été perdu.";
+
+    private static SolvePipeline.Interruption interruptionOf(Object result) {
+        return switch (result) {
+            case ResultatSolve solve -> solve.interruption();
+            case ResultatSolveIncremental solve -> solve.interruption();
+            case null, default -> null;
+        };
+    }
+
+    /** What the operator reads on a job the server stopped under: what became of its plan. */
+    private static String describe(SolvePipeline.Interruption interruption) {
+        if (interruption.partialPlanKept()) {
+            return interruption.persistedScore() == null
+                    ? "Interrompue par l'arrêt du serveur : le meilleur plan trouvé (" + interruption.partialScore()
+                            + ") a été enregistré, aucun plan ne l'était avant."
+                    : "Interrompue par l'arrêt du serveur : le meilleur plan trouvé (" + interruption.partialScore()
+                            + ") remplace le plan enregistré (" + interruption.persistedScore() + "), qu'il améliore.";
+        }
+        return "Interrompue par l'arrêt du serveur : le plan enregistré (" + interruption.persistedScore()
+                + ") est conservé, le calcul partiel (" + interruption.partialScore() + ") ne l'améliorait pas.";
+    }
+
+    private boolean isShutdownRequested() {
+        return shutdownRequested;
     }
 
     private synchronized void chain() {
@@ -537,6 +593,12 @@ public class SolverJobService {
      * across the hand-over. Must be called while holding the monitor.
      */
     private void startNext() {
+        if (shutdownRequested) {
+            // The server is going down: promoting a queued job would start a
+            // fresh solve the shutdown then has to interrupt. It stays QUEUED
+            // in `solver_job` and the next start replays it.
+            return;
+        }
         QueuedTask suivante;
         while ((suivante = file.pollFirst()) != null) {
             if (suivante.job().getStatus() == JobStatus.CANCELLED) {
@@ -796,15 +858,42 @@ public class SolverJobService {
         }
     }
 
+    /**
+     * The container going down — a graceful stop, or a live reload in dev.
+     *
+     * <p>The running solver is asked to stop and given a moment to hand back
+     * its best solution and go through {@link #finishAndChain}, which reads
+     * {@link #shutdownRequested} and ends the job {@code INTERROMPU} rather
+     * than {@code COMPLETED}. The pool is not interrupted first: an
+     * interrupted thread is refused by the connection pool, and the partial
+     * plan may deserve to be written. Only what is still running once the
+     * grace period is over gets interrupted, as a last resort; a job that
+     * still did not end is found {@code RUNNING} at the next start and
+     * marked by {@link #restaurer}.</p>
+     */
     @PreDestroy
     void shutdown() {
-        executor.shutdownNow();
+        shutdownRequested = true;
+        jobs.values().stream()
+                .filter(job -> job.getStatus() == JobStatus.RUNNING)
+                .forEach(SolverJob::stopSolver);
+        executor.shutdown();
         try {
-            executor.awaitTermination(5, TimeUnit.SECONDS);
+            if (!executor.awaitTermination(SHUTDOWN_GRACE, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
         } catch (InterruptedException e) {
+            executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
     }
+
+    /**
+     * How long a running solve gets to stop and write its outcome. Below the
+     * ten seconds Docker allows a container before killing it, so a graceful
+     * stop stays graceful.
+     */
+    private static final long SHUTDOWN_GRACE = 8;
 
     @FunctionalInterface
     private interface JobTask {
@@ -861,6 +950,8 @@ public class SolverJobService {
         private volatile Object result;
         private volatile String error;
         private volatile boolean cancelRequested;
+        /** A cancel or a shutdown asked the solver to stop; honoured by {@link #attachSolver} if it is not built yet. */
+        private volatile boolean stopRequested;
         private volatile Solver<PlanningEvenement> solver;
 
         private SolverJob(String id, JobType type, Long secondsLimit, String editionId, String editionNom,
@@ -937,7 +1028,18 @@ public class SolverJobService {
          * is the honest reading of "it never finished".
          */
         private void markInterrompu() {
-            error = "Interrompue par un redémarrage du serveur : le calcul en cours a été perdu.";
+            markInterrompu("Interrompue par un redémarrage du serveur : le calcul en cours a été perdu.", null);
+        }
+
+        /**
+         * Same state, reached while the server is still up: the container
+         * stopped under the run, and {@code message} says what became of its
+         * partial plan. {@code value} is the result the run still produced,
+         * so a screen can read its diagnostic like a cancelled job's.
+         */
+        private void markInterrompu(String message, Object value) {
+            error = message;
+            result = value;
             finishedAt = Instant.now();
             status = JobStatus.INTERROMPU;
         }
@@ -956,7 +1058,7 @@ public class SolverJobService {
          */
         private void attachSolver(Solver<PlanningEvenement> solver) {
             this.solver = solver;
-            if (cancelRequested) {
+            if (stopRequested) {
                 solver.terminateEarly();
             }
         }
@@ -964,6 +1066,16 @@ public class SolverJobService {
         /** Stops the solver as soon as it exists, and flags the job as cancelled. */
         private void requestCancel() {
             cancelRequested = true;
+            stopSolver();
+        }
+
+        /**
+         * Stops the solver as soon as it exists, without deciding what the job
+         * becomes: a cancel and a server shutdown both end here, and
+         * {@link #finishAndChain} tells them apart.
+         */
+        private void stopSolver() {
+            stopRequested = true;
             Solver<PlanningEvenement> currentSolver = solver;
             if (currentSolver != null) {
                 currentSolver.terminateEarly();

@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -82,10 +83,34 @@ public class SolvePipeline {
      * @param diagnostic   its score and its violations, already recorded
      * @param previousPlan the plan it replaced and whether that was a step
      *                     back (issue #274); {@code null} when there was none
+     * @param interruption how the run was cut short by the server going
+     *                     down; {@code null} for a solve that reached its own
+     *                     end — its budget, feasibility, or a cancel
      */
     public record Resolution<P>(P probleme, PlanningEvenement planning,
             PlanningService.PlanningDiagnostic diagnostic, PreviousPlan previousPlan,
-            ImpactPublication impactPublication) {
+            ImpactPublication impactPublication, Interruption interruption) {
+    }
+
+    /**
+     * A solve the server stopped under — a graceful shutdown, or the CDI
+     * container going down for a live reload — rather than one that ended on
+     * its own terms.
+     *
+     * <p>Timefold treats the stop as an ordinary termination and hands back
+     * its best solution so far; this records what became of it. That plan
+     * replaces the persisted one <b>only when it scores strictly higher</b>:
+     * a run cut short after a few seconds is usually far below the plan it
+     * would have overwritten, and the persisted plan is what an operator
+     * walks away with.</p>
+     *
+     * @param partialPlanKept whether the best solution so far was persisted
+     * @param partialScore    its score
+     * @param persistedScore  the score of the plan that was in place,
+     *                        {@code null} when there was none or it could not
+     *                        be established
+     */
+    public record Interruption(boolean partialPlanKept, String partialScore, String persistedScore) {
     }
 
     /**
@@ -112,13 +137,15 @@ public class SolvePipeline {
      */
     public Resolution<PlanningEvenement> execute(PlanningEvenement probleme, Long secondsLimit) {
         return execute(editionService.editionCourante().getNom(), () -> probleme,
-                Function.identity(), secondsLimit, null);
+                Function.identity(), secondsLimit, null, () -> false);
     }
 
     /** The same, for a background job that must be able to stop its solver. */
     public Resolution<PlanningEvenement> execute(String editionNom, PlanningEvenement probleme,
-            Long secondsLimit, Consumer<Solver<PlanningEvenement>> attacheSolveur) {
-        return execute(editionNom, () -> probleme, Function.identity(), secondsLimit, attacheSolveur);
+            Long secondsLimit, Consumer<Solver<PlanningEvenement>> attacheSolveur,
+            BooleanSupplier shutdownRequested) {
+        return execute(editionNom, () -> probleme, Function.identity(), secondsLimit, attacheSolveur,
+                shutdownRequested);
     }
 
     /**
@@ -131,10 +158,13 @@ public class SolvePipeline {
      * @param planningOf         extracts the planning to solve from the problem,
      *                           when the latter carries more than that
      * @param attacheSolveur     {@code null} when the caller has nothing to stop
+     * @param shutdownRequested  whether the server is going down — read once
+     *                           the solver has returned, to tell a run it cut
+     *                           short from one that reached its own end
      */
     public <P> Resolution<P> execute(String editionNom, Supplier<P> buildProblem,
             Function<P, PlanningEvenement> planningOf, Long secondsLimit,
-            Consumer<Solver<PlanningEvenement>> attacheSolveur) {
+            Consumer<Solver<PlanningEvenement>> attacheSolveur, BooleanSupplier shutdownRequested) {
         // The net of issue #138: the plan about to be overwritten is
         // snapshotted first, so a solve no longer destroys the previous result.
         PlanSnapshotService.SnapshotMeta replaced = snapshotService.captureBeforeSolve();
@@ -143,6 +173,13 @@ public class SolvePipeline {
         Instant debutSolve = Instant.now();
         PlanningEvenement resolu = planningService.solve(planningOf.apply(probleme), secondsLimit, attacheSolveur);
         long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
+        // Timefold also stops when its thread is interrupted — a pool being
+        // shut down does that — and returns as if the budget were spent.
+        // Either signal means the run was cut short by the server, not by the
+        // problem, and its plan must not overwrite a better one.
+        if (shutdownRequested.getAsBoolean() || Thread.currentThread().isInterrupted()) {
+            return interrupted(probleme, resolu, replaced, scoreBefore, dureeSolveSecondes);
+        }
         persistenceService.persist(resolu);
         PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         analysisStore.record(diagnostic);
@@ -153,7 +190,69 @@ public class SolvePipeline {
         announce(editionNom, diagnostic);
         return new Resolution<>(probleme, resolu, diagnostic,
                 PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
-                impactPublication(resolu));
+                impactPublication(resolu), null);
+    }
+
+    /**
+     * The end of a run the server stopped under. Its best plan so far is
+     * persisted only when it beats the plan in place — or when there is none
+     * to lose — and nothing else a finished solve does (KPI row, end-of-solve
+     * mail, publication impact) is done for a run that did not finish.
+     */
+    private <P> Resolution<P> interrupted(P probleme, PlanningEvenement resolu,
+            PlanSnapshotService.SnapshotMeta replaced, String scoreBefore, long dureeSolveSecondes) {
+        // Cleared before touching the database: a connection pool refuses an
+        // interrupted thread, and a plan worth keeping must be writable.
+        Thread.interrupted();
+        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
+        boolean kept = keepsPartialPlan(scoreBefore, diagnostic.score());
+        if (kept) {
+            persistenceService.persist(resolu);
+            analysisStore.record(diagnostic);
+            kpiHistoriqueService.recordAfterSolve(dureeSolveSecondes);
+            LOG.infof("Solve stopped by the server after %d s: its plan (%s) replaces the persisted one (%s)",
+                    dureeSolveSecondes, diagnostic.score(), scoreBefore);
+        } else {
+            LOG.infof("Solve stopped by the server after %d s: its plan (%s) is discarded, the persisted one (%s) stands",
+                    dureeSolveSecondes, diagnostic.score(), scoreBefore);
+        }
+        return new Resolution<>(probleme, resolu, diagnostic,
+                PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
+                null, new Interruption(kept, diagnostic.score(), scoreBefore));
+    }
+
+    /**
+     * Whether the plan of an interrupted run replaces the one in place.
+     *
+     * <p>Asks the database rather than trusting the snapshot: a capture that
+     * failed leaves {@code scoreBefore} null while a plan is very much still
+     * there, and that is precisely the case this guard exists for. With no
+     * plan stored there is nothing to lose, so the partial one is kept;
+     * otherwise it has to score strictly higher. Anything unreadable — the
+     * count, the score — answers no: the plan an operator already has is
+     * worth more than the one a live reload cut short.</p>
+     */
+    private boolean keepsPartialPlan(String scoreBefore, String scoreAfter) {
+        try {
+            if (persistenceService.countPersistedAssignments() == 0) {
+                return true;
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("The persisted plan could not be counted; the partial plan is discarded", e);
+            return false;
+        }
+        return PreviousPlan.isImproved(scoreBefore != null ? scoreBefore : scoreOfPersistedPlan(), scoreAfter);
+    }
+
+    /** The score of the plan in place, {@code null} when it cannot be established. */
+    private String scoreOfPersistedPlan() {
+        try {
+            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnosePersistedPlan();
+            return diagnostic == null ? null : diagnostic.score();
+        } catch (RuntimeException e) {
+            LOG.warn("The persisted plan's score could not be established", e);
+            return null;
+        }
     }
 
     /**

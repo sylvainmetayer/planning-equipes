@@ -1045,7 +1045,10 @@ export type JobType = 'SOLVE' | 'SOLVE_INCREMENTAL';
 /**
  * `QUEUED` waits for the solver without holding it; `PENDING` already holds it.
  * `INTERROMPU` is a job the server was running when it stopped: terminal, since
- * nothing will ever finish it (see SolverJobService.restaurer on the backend).
+ * nothing will ever finish it. After a full restart its run is lost; when the
+ * container stopped under it (graceful stop, live reload) its partial plan was
+ * kept only if better than the persisted one, and `error` says which (see
+ * SolverJobService on the backend).
  */
 export type JobStatus =
   | 'PENDING'
@@ -1551,6 +1554,8 @@ export interface ResultatSolve {
   reamorcage?: ReamorcageEffectue | null;
   /** Absent on payloads from before the stability rule. */
   impactPublication?: ImpactPublication | null;
+  /** Set on an `INTERROMPU` job the server stopped under; absent on a finished solve. */
+  interruption?: Interruption | null;
 }
 
 /** Payload of a finished incremental SOLVE job: a diagnostic plus what moved. */
@@ -1560,6 +1565,19 @@ export interface ResultatSolveIncremental {
   changements: ChangementAffectation[];
   previousPlan: PreviousPlan | null;
   impactPublication?: ImpactPublication | null;
+  /** Set on an `INTERROMPU` job the server stopped under; absent on a finished solve. */
+  interruption?: Interruption | null;
+}
+
+/**
+ * What became of the best plan of a solve the server stopped under: kept only
+ * when it scored strictly higher than the persisted plan.
+ */
+export interface Interruption {
+  partialPlanKept: boolean;
+  partialScore: string;
+  /** Score of the plan that was in place; `null` when there was none. */
+  persistedScore: string | null;
 }
 
 /** `POST /api/planning/snapshots/{id}/restore` on success. */

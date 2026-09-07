@@ -119,7 +119,7 @@ function statusLabel(status: string): string {
     return $localize`:@@job.status.cancelled:annulée`;
   }
   if (status === 'INTERROMPU') {
-    return $localize`:@@job.status.interrompu:interrompue par un redémarrage`;
+    return $localize`:@@job.status.interrompu:interrompue par l'arrêt du serveur`;
   }
   return status.toLowerCase();
 }
@@ -923,9 +923,10 @@ export class SolverJobService {
       // A cancelled job is not an empty job: the server keeps its partial
       // result (a stopped solve is still persisted and analyzed, a stopped
       // queue keeps its per-group summary — see SolverJobService.cancel on
-      // the backend). The pages must still consume it, or their caches
-      // silently diverge from what the database now holds.
-      if (job.status === 'CANCELLED' && job.result != null) {
+      // the backend). The same goes for a solve the server stopped under,
+      // whose partial plan may have been kept. The pages must still consume
+      // it, or their caches silently diverge from what the database now holds.
+      if ((job.status === 'CANCELLED' || job.status === 'INTERROMPU') && job.result != null) {
         this.dispatchResult(job);
       }
       return;

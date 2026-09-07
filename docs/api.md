@@ -184,6 +184,28 @@ Deux conséquences :
 
 Désactivable par `planning.jobs.reprise-au-demarrage=false`.
 
+### Un arrêt du serveur n'écrase pas le plan
+
+Le cas ci-dessus est celui de la JVM qui meurt. Quand c'est le conteneur qui
+s'arrête **sous** un calcul en cours — arrêt gracieux de l'application, live
+reload en développement —, Timefold rend sa meilleure solution du moment comme
+si le budget était épuisé. Ce résultat n'est pas un calcul abouti, et il est
+traité comme tel :
+
+- le job finit `INTERROMPU`, jamais `COMPLETED`, avec un message `error` qui
+  dit ce qu'il est advenu du plan partiel ;
+- ce plan partiel **ne remplace le plan enregistré que s'il le bat
+  strictement** (dur, puis medium, puis soft) — ou s'il n'y avait aucun plan.
+  Un calcul de quelques secondes interrompu par un redémarrage ne défait
+  donc plus un plan à 0 dur ;
+- `result.interruption: { partialPlanKept, partialScore, persistedScore }`
+  porte la même information pour un script ; ni ligne d'historique KPI, ni
+  courriel de fin de résolution ne sont produits quand le plan est écarté.
+
+Le serveur laisse au solveur quelques secondes pour s'arrêter et écrire ce
+verdict ; un calcul qui ne les respecte pas est retrouvé `RUNNING` au
+démarrage suivant et passe par le cas précédent.
+
 ### Suivi poussé, et pourquoi le polling reste
 
 `GET /api/jobs/stream` pousse en *server-sent events* l'agrégat

@@ -96,7 +96,7 @@
   "api.sessionExpiree": "Session expired — signing you back in.",
   "job.status.failed": "failed",
   "job.status.cancelled": "cancelled",
-  "job.status.interrompu": "interrupted by a restart",
+  "job.status.interrompu": "interrupted by the server stopping",
   "job.stateUnknown": "Solver state not known yet.",
   "job.runningMine": "{$jobLabel} has been running on edition “{$edition}” for {$duration}.",
   "job.runningOther": "{$jobLabel} has been running on edition “{$edition}” for {$duration} (started from another session).",
