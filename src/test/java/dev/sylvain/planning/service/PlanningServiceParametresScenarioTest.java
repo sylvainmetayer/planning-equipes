@@ -108,13 +108,13 @@ class PlanningServiceParametresScenarioTest {
 
         for (String nom : new String[] { null, "", "   " }) {
             assertThat(service.loadScenarioSections(nom).parametresLegaux().isPresent())
-                    .isEqualTo(service.loadScenarioSections(PlanningService.DEFAULT_SCENARIO).parametresLegaux().isPresent());
+                    .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO).parametresLegaux().isPresent());
             assertThat(service.loadScenarioSections(nom).parametresDecoupage()).isNotNull();
             assertThat(service.loadScenarioSections(nom).parametresSolveur()).isNotNull();
             assertThat(service.loadScenarioSections(nom).decoupageAuto()).isEqualTo(
-                    service.loadScenarioSections(PlanningService.DEFAULT_SCENARIO).decoupageAuto());
+                    service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO).decoupageAuto());
             assertThat(service.loadScenarioSections(nom).typologies())
-                    .isEqualTo(service.loadScenarioSections(PlanningService.DEFAULT_SCENARIO).typologies());
+                    .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO).typologies());
         }
     }
 

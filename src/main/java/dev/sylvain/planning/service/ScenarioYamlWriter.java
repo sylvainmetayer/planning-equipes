@@ -33,7 +33,7 @@ import dev.sylvain.planning.domain.Stand;
  * it serializes as an argument and reads nothing else, which is why it can sit
  * outside {@link PlanningService} and be unit-tested without a database.
  *
- * <p>Its counterpart on the way in is {@link PlanningService#loadReferenceScenario(String)}:
+ * <p>Its counterpart on the way in is {@link ScenarioYamlReader#loadReferenceScenario(String)}:
  * the two are hand-written traversals of the same {@code Map} shape and have to
  * be kept in step by hand. {@code PlanningServiceScenarioAllerRetourTest} is
  * what actually holds them together — it exports and re-imports, so a field
@@ -313,7 +313,7 @@ final class ScenarioYamlWriter {
         return result;
     }
 
-    /** Only the four fields a scenario file is read back with (see {@link PlanningService.ScenarioSections}). */
+    /** Only the four fields a scenario file is read back with (see {@link ScenarioYamlReader.ScenarioSections}). */
     private static Map<String, Object> parametresLegauxYaml(ParametresLegaux parametres) {
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("dureeHebdomadaireMaxMinutes", parametres.getDureeHebdomadaireMaxMinutes());
@@ -368,7 +368,7 @@ final class ScenarioYamlWriter {
 
     /**
      * Serializes a stand's {@link IndisponibiliteStand} closures to the shape
-     * {@link PlanningService#loadReferenceScenario(String)} reads back.
+     * {@link ScenarioYamlReader#loadReferenceScenario(String)} reads back.
      */
     private static List<Map<String, Object>> indisponibilitesYaml(List<IndisponibiliteStand> indisponibilites) {
         List<Map<String, Object>> result = new ArrayList<>();
@@ -385,7 +385,7 @@ final class ScenarioYamlWriter {
 
     /**
      * Serializes a stand's {@link OuvertureStand} openings to the shape
-     * {@link PlanningService#loadReferenceScenario(String)} reads back.
+     * {@link ScenarioYamlReader#loadReferenceScenario(String)} reads back.
      */
     private static List<Map<String, Object>> ouverturesYaml(List<OuvertureStand> ouvertures) {
         List<Map<String, Object>> result = new ArrayList<>();
@@ -403,7 +403,7 @@ final class ScenarioYamlWriter {
 
     /**
      * Serializes a stand's recurring {@link HoraireStand} rules to the shape
-     * {@link PlanningService#loadReferenceScenario(String)} reads back — the day selector flattened
+     * {@link ScenarioYamlReader#loadReferenceScenario(String)} reads back — the day selector flattened
      * onto the rule itself, so the common "every day" case stays a two-line
      * entry and the reader needs no polymorphism.
      *

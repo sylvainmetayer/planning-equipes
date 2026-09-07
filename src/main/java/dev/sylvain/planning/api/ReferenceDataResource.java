@@ -12,6 +12,7 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.EditionService;
 import dev.sylvain.planning.service.ImportImpact;
 import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.ScenarioYamlReader;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.inject.Inject;
@@ -158,8 +159,8 @@ public class ReferenceDataResource {
      * read from. It used to be written out twice, and the two copies had
      * drifted: the bundled path re-read the file once per optional section.
      */
-    private Response importReferenceData(PlanningService.ScenarioImporte importe) {
-        PlanningService.ScenarioSections sections = importe.sections();
+    private Response importReferenceData(ScenarioYamlReader.ScenarioImporte importe) {
+        ScenarioYamlReader.ScenarioSections sections = importe.sections();
         return importIntoTarget(sections.edition(), () -> {
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             sections.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
@@ -212,7 +213,7 @@ public class ReferenceDataResource {
      * explicit {@code {id, label}} pair from the scenario must be applied
      * afterwards to actually stick, not before.
      */
-    private void applyTypologies(PlanningService.ScenarioSections sections) {
+    private void applyTypologies(ScenarioYamlReader.ScenarioSections sections) {
         sections.typologies().forEach(referenceDataService::importTypologie);
     }
 
@@ -228,7 +229,7 @@ public class ReferenceDataResource {
      * different problem depending on where it landed — the very hole this
      * section closes.</p>
      */
-    private void applyContraintes(PlanningService.ScenarioSections sections) {
+    private void applyContraintes(ScenarioYamlReader.ScenarioSections sections) {
         sections.contraintes().ifPresent(contraintes -> {
             for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
                 referenceDataService.setContrainteActive(definition.name(),

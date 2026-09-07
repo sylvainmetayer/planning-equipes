@@ -68,7 +68,7 @@ class PlanningServiceScenarioFromTextTest {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-parametres-optionnels.yaml");
 
-        PlanningService.ScenarioImporte importe = service.buildFromScenarioText(yaml);
+        ScenarioYamlReader.ScenarioImporte importe = service.buildFromScenarioText(yaml);
 
         assertThat(importe.sections().parametresLegaux()).isPresent();
         assertThat(importe.sections().parametresLegaux().orElseThrow().getReposQuotidienMinimalMinutes()).isEqualTo(500);
@@ -89,7 +89,7 @@ class PlanningServiceScenarioFromTextTest {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-contraintes.yaml");
 
-        PlanningService.ScenarioSections sections = service.buildFromScenarioText(yaml).sections();
+        ScenarioYamlReader.ScenarioSections sections = service.buildFromScenarioText(yaml).sections();
 
         assertThat(sections.contraintes()).isPresent();
         assertThat(sections.contraintes().orElseThrow().desactivees())
@@ -159,7 +159,7 @@ class PlanningServiceScenarioFromTextTest {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-decoupage-auto.yaml");
 
-        PlanningService.ScenarioImporte importe = service.buildFromScenarioText(yaml);
+        ScenarioYamlReader.ScenarioImporte importe = service.buildFromScenarioText(yaml);
 
         assertThat(importe.sections().decoupageAuto()).isTrue();
     }

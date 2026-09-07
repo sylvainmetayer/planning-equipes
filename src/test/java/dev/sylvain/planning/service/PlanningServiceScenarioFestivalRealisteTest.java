@@ -111,7 +111,7 @@ class PlanningServiceScenarioFestivalRealisteTest {
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
                 new FeasibilityAnalyzer(), ConfigProvider.getConfig());
 
-        PlanningService.ReferenceScenario reference = planningService.loadReferenceScenario(scenario);
+        ScenarioYamlReader.ReferenceScenario reference = planningService.loadReferenceScenario(scenario);
         ParametresDecoupage parametresDecoupage = planningService.loadScenarioSections(scenario).parametresDecoupage()
                 .orElseGet(ParametresDecoupage::new);
         List<Creneau> vacations = VacationGeneratorService.generateVacations(

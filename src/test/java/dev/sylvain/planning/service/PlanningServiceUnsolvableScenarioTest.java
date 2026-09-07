@@ -54,8 +54,8 @@ class PlanningServiceUnsolvableScenarioTest {
     }
 
     /** Stands and créneaux as the screens see them: rules already expanded. */
-    private static PlanningService.ReferenceScenario reference() throws IOException {
-        PlanningService.ReferenceScenario reference = service().loadReferenceScenario(SCENARIO);
+    private static ScenarioYamlReader.ReferenceScenario reference() throws IOException {
+        ScenarioYamlReader.ReferenceScenario reference = service().loadReferenceScenario(SCENARIO);
         HoraireStandResolver.apply(reference.standsById().values(), reference.creneauxParId().values());
         return reference;
     }
@@ -77,7 +77,7 @@ class PlanningServiceUnsolvableScenarioTest {
      */
     @Test
     void theFixtureIsUnsolvableByConstructionNotByBadLuck() throws IOException {
-        PlanningService.ReferenceScenario reference = reference();
+        ScenarioYamlReader.ReferenceScenario reference = reference();
         List<Stand> stands = new ArrayList<>(reference.standsById().values());
         List<Creneau> creneaux = new ArrayList<>(reference.creneauxParId().values());
 
@@ -94,7 +94,7 @@ class PlanningServiceUnsolvableScenarioTest {
      */
     @Test
     void everyOpeningAnomalyOfTheScreenIsRepresentedOnItsOwnStand() throws IOException {
-        PlanningService.ReferenceScenario reference = reference();
+        ScenarioYamlReader.ReferenceScenario reference = reference();
         RapportOuvertures rapport = OuvertureStandsAnalyzer.analyze(
                 new ArrayList<>(reference.standsById().values()),
                 new ArrayList<>(reference.creneauxParId().values()));
@@ -121,7 +121,7 @@ class PlanningServiceUnsolvableScenarioTest {
      */
     @Test
     void aDatedExceptionReplacesTheRuleOfItsDayOnStandFour() throws IOException {
-        PlanningService.ReferenceScenario reference = reference();
+        ScenarioYamlReader.ReferenceScenario reference = reference();
         RapportOuvertures rapport = OuvertureStandsAnalyzer.analyze(
                 new ArrayList<>(reference.standsById().values()),
                 new ArrayList<>(reference.creneauxParId().values()));
