@@ -36,6 +36,8 @@ jobs:
   dependances:
     name: Vulnérabilités des dépendances
     runs-on: self-hosted
+    # Sans plafond, un job pendu garde le runner unique six heures.
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -73,6 +75,8 @@ jobs:
   code:
     name: Analyse statique du code (Semgrep)
     runs-on: self-hosted
+    # Sans plafond, un job pendu garde le runner unique six heures.
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository

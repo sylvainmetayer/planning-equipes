@@ -27,6 +27,8 @@ jobs:
     # what makes the provenance verifiable once the repository is public. Every
     # other workflow stays self-hosted until that opening.
     runs-on: ubuntu-latest
+    # ~23 min réels, dont arm64 sous QEMU.
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository

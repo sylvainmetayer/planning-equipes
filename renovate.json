@@ -31,6 +31,15 @@
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+[A-Z_]+\\s*:\\s*[^\\s:]+:(?<currentValue>[^\\s\"']+)"
       ],
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "The Dev Services PostgreSQL image in application.properties: no manager parses .properties, so the test database silently stayed a major behind the one every deployment runs",
+      "managerFilePatterns": ["src/main/resources/application.properties"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)[\\s\\S]*?devservices\\.image-name\\s*=\\s*[^\\s:]+:(?<currentValue>\\S+)"
+      ],
+      "versioningTemplate": "docker"
     }
   ],
   "packageRules": [

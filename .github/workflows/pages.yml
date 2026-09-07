@@ -30,6 +30,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Sans plafond, un job pendu brûle six heures de minutes facturées.
+    timeout-minutes: 20
     environment:
       name: github-pages
       url: ${{ steps.deploiement.outputs.page_url }}
