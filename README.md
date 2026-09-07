@@ -83,7 +83,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | Variable | Défaut | Usage |
 | --- | --- | --- |
 | `DB_URL` | `jdbc:postgresql://localhost:5432/festival` | Connexion PostgreSQL |
-| `DB_USER` / `DB_PASSWORD` | `festival` / `festival` | Identifiants base |
+| `DB_USER` / `DB_PASSWORD` | `festival` / `festival` | Identifiants base. En production, le mot de passe d'exemple refuse le démarrage |
 | `HTTP_PORT` | `8080` | Port HTTP exposé |
 | `SENTRY_DSN` | *(vide = désactivé)* | Suivi d'erreurs (Bugsink ou tout endpoint compatible Sentry) |
 | `SENTRY_ENVIRONMENT` | `local` | Étiquette d'environnement jointe aux erreurs remontées |
@@ -96,7 +96,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `PLANNING_MCP_REQUIRED_HEADERS` | *(vide)* | En-têtes supplémentaires exigés en plus de la clé, `Nom=valeur` séparés par des virgules (déploiement derrière un proxy type Pangolin) |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID` | *(vide)* | Identifiant du jeton d'accès Pangolin, révélable depuis la page MCP (même contrôle par mot de passe admin que la clé API) |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN` | *(vide)* | Jeton d'accès Pangolin correspondant, révélable de la même façon |
-| `ADMIN_PASSWORD` | `admin` | Mot de passe du compte administrateur `admin` (à changer hors local) |
+| `ADMIN_PASSWORD` | `admin` | Mot de passe du compte administrateur `admin`. En production, le défaut refuse le démarrage : il faut en donner un |
 | `PROXY_ADDRESS_FORWARDING` | `true` | Suivre les en-têtes `X-Forwarded-*` d'un reverse proxy qui termine le TLS, indispensable pour que la redirection de connexion reste en `https` — voir [`api.md`](docs/api.md#derrière-un-reverse-proxy-qui-termine-le-tls) |
 | `REMOTE_USER_ENABLED` | `false` | Authentification par en-tête derrière un proxy d'accès, en plus du form login — voir [`api.md`](docs/api.md#mode-remote-user-facultatif-désactivé-par-défaut) |
 | `REMOTE_USER_SECRET` | — | Secret partagé avec le proxy. **Obligatoire** si `REMOTE_USER_ENABLED=true` : sans lui le démarrage échoue |

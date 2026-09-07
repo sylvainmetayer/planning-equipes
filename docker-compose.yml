@@ -11,7 +11,7 @@ services:
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/festival
       DB_USER: festival
-      DB_PASSWORD: festival
+      DB_PASSWORD: ${DB_PASSWORD:-dev-db-Pw4hN8sJ}
       HTTP_PORT: 8080
       # Observability, both opt-in: blank (the default) disables error
       # reporting / analytics entirely. See docs/observabilite.md.
@@ -31,7 +31,9 @@ services:
       # Admin login (issue #165): username is "admin", change the password for
       # anything beyond local testing. Set SESSION_ENCRYPTION_KEY (>= 16 chars)
       # so admin sessions survive a restart.
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      # Pas la valeur d'exemple : DefaultSecrets refuse le boot dessus, ce
+      # profil lançant l'image en production. Redéfinissable par l'environnement.
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-dev-admin-Zc6qL1yV}
       QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY: ${SESSION_ENCRYPTION_KEY:-}
       # Échange notification mails (issue #165), delivered to Mailpit below
       # (UI on http://localhost:8025). MAIL_ADMIN blank disables the "new
@@ -73,7 +75,7 @@ services:
     environment:
       POSTGRES_DB: festival
       POSTGRES_USER: festival
-      POSTGRES_PASSWORD: festival
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev-db-Pw4hN8sJ}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U festival -d festival"]
       interval: 5s

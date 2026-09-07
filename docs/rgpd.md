@@ -110,7 +110,7 @@ crochet.
 | Hébergeur d'infrastructure | `LEGAL_HEBERGEUR` |
 | Relais SMTP | `MAIL_HOST` |
 | Suivi d'erreurs | `SENTRY_DSN` renseigné ⇒ Bugsink, hébergement UE, **pas de transfert à déclarer** |
-| Mesure d'audience | `CLOUDFLARE_WEB_ANALYTICS_TOKEN` renseigné ⇒ **transfert hors UE à déclarer**. La variable a un défaut en profil `%prod` : ne rien poser ne suffit pas à l'éteindre, il faut la **vider explicitement** (`observabilite.md`) |
+| Mesure d'audience | `CLOUDFLARE_WEB_ANALYTICS_TOKEN` renseigné ⇒ **transfert hors UE à déclarer**. Le défaut est vide : ne rien poser suffit à l'éteindre. Ce ne fut pas toujours le cas — le profil `%prod` portait le token de l'éditeur (`observabilite.md`) |
 | Contact de notification et son suppléant | Nommés dans la convention (§6) — **une personne, pas une adresse générique** |
 | Dates | Début et fin de l'hébergement |
 

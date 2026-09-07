@@ -34,6 +34,8 @@ concurrency:
 
 jobs:
   e2e:
+    # Pas de PR de fork sur le runner auto-hébergé (voir tests.yml).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     timeout-minutes: 45
 
@@ -61,7 +63,7 @@ jobs:
         env:
           POSTGRES_DB: festival
           POSTGRES_USER: festival
-          POSTGRES_PASSWORD: festival
+          POSTGRES_PASSWORD: e2e-db-Xq7mR2vL
         ports:
           - 5432:5432
         options: >-
@@ -113,9 +115,11 @@ jobs:
         env:
           DB_URL: jdbc:postgresql://postgres:5432/festival
           DB_USER: festival
-          DB_PASSWORD: festival
+          DB_PASSWORD: e2e-db-Xq7mR2vL
           HTTP_PORT: 8080
-          ADMIN_PASSWORD: admin
+          # Pas la valeur d'exemple : DefaultSecrets refuse le boot dessus, et
+          # ce job lance le jar packagé, donc en LaunchMode production.
+          ADMIN_PASSWORD: e2e-admin-Kd9nT4wB
           MAIL_MOCK: 'false'
           MAIL_HOST: mailpit
           MAIL_PORT: 1025
@@ -149,7 +153,7 @@ jobs:
           # une recette recopiée d'un job classique.
           E2E_BASE_URL: http://localhost:8080
           E2E_MAILPIT_URL: http://mailpit:8025
-          E2E_ADMIN_PASSWORD: admin
+          E2E_ADMIN_PASSWORD: e2e-admin-Kd9nT4wB
         run: npm run e2e
 
       # Les traces ne sont conservées qu'en cas d'échec (`trace:

@@ -1422,9 +1422,10 @@ d'immatriculation *sont* des données personnelles.
 La réponse porte aussi deux booléens, `mesureAudience` et `suiviErreurs` : vrai
 quand le token Cloudflare et le DSN Sentry ont une valeur — celle que lisent
 vraiment le beacon et le SDK, et non le fait d'avoir posé la variable
-d'environnement. La nuance compte en `%prod`, qui fournit un token Cloudflare de
-repli : `mesureAudience` y est vrai sans que `CLOUDFLARE_WEB_ANALYTICS_TOKEN`
-soit posé, parce que la mesure tourne bel et bien (voir `docs/observabilite.md`).
+d'environnement. La nuance a compté : le profil `%prod` fournissait un token
+Cloudflare de repli, et `mesureAudience` y était donc vrai sans que
+`CLOUDFLARE_WEB_ANALYTICS_TOKEN` soit posé, parce que la mesure tournait bel et
+bien. Ce repli a été retiré (voir `docs/observabilite.md`).
 La politique de confidentialité y accroche les paragraphes qui nomment Cloudflare
 et Bugsink — sans eux, un déploiement qui laisse les deux vides annonçait deux
 traitements qui n'ont pas lieu, dont un transfert hors UE. Ces drapeaux passent

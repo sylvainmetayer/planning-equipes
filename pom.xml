@@ -40,6 +40,10 @@
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <mcp-server.version>1.13.1</mcp-server.version>
         <skipITs>true</skipITs>
+        <!-- Mot de passe admin des tests d'intégration : ils lancent
+             l'application packagée en %prod, où la valeur d'exemple est
+             refusée au démarrage. -->
+        <it.admin.password>it-admin-Hs3vQ9zR</it.admin.password>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
         <!-- Full-scale scenario regression tests (@Tag("scenario-lent"):
              PlanningServiceScenarioCompletTest, PlanningServiceScenarioContinuTest)
@@ -293,6 +297,14 @@
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
+                    <!-- Les *IT lancent l'application packagée, donc en profil
+                         %prod : DefaultSecrets y refuse les mots de passe
+                         d'exemple. Ces valeurs leur en donnent de vrais, comme
+                         la garde le demande à un exploitant. Elles passent au
+                         processus lancé, pas à celui de Maven. -->
+                    <environmentVariables>
+                        <ADMIN_PASSWORD>${it.admin.password}</ADMIN_PASSWORD>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

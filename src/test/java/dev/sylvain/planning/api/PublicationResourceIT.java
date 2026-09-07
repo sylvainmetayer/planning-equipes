@@ -36,6 +36,13 @@ import io.restassured.path.json.JsonPath;
 @QuarkusIntegrationTest
 class PublicationResourceIT {
 
+    /**
+     * The password failsafe hands to the packaged application
+     * ({@code it.admin.password} in the pom). These run under the {@code %prod}
+     * profile, where {@code DefaultSecrets} refuses the shipped value.
+     */
+    private static final String MOT_DE_PASSE_ADMIN = "it-admin-Hs3vQ9zR";
+
     private static String cookieSession;
 
     /** Logs in once (default dev credentials, see {@code ADMIN_PASSWORD}). */
@@ -45,7 +52,7 @@ class PublicationResourceIT {
             cookieSession = RestAssured.given()
                     .contentType("application/x-www-form-urlencoded")
                     .formParam("j_username", "admin")
-                    .formParam("j_password", "admin")
+                    .formParam("j_password", MOT_DE_PASSE_ADMIN)
                     .redirects().follow(false)
                     .when().post("/j_security_check")
                     .then()

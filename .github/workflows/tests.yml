@@ -16,6 +16,12 @@ concurrency:
 
 jobs:
   test:
+    # Une PR de fork n'exécute rien sur ce runner. Il est auto-hébergé, avec
+    # accès au socket Docker (docs/runner/readme.md) : le workflow d'une PR
+    # externe y ferait tourner du code arbitraire en root sur l'hôte. À revoir
+    # le jour de l'ouverture publique (#286) — un job sur ubuntu-latest, ou une
+    # approbation manuelle, rendrait le retour aux contributeurs externes.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     # La suite backend tourne ~20 min : au-delà d'une heure, c'est pendu,
     # et un job pendu garde le runner unique six heures.
@@ -87,6 +93,8 @@ jobs:
           retention-days: 7
 
   frontend:
+    # Pas de PR de fork sur le runner auto-hébergé (voir tests.yml).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     # Self-hosted like every other job: GitHub-hosted minutes are a metered
     # budget, and a runner choice cannot be made dynamic on remaining credits
     # (the job picking the runner would itself need one — see docs/developpement.md).

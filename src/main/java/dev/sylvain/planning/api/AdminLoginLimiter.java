@@ -3,6 +3,9 @@ package dev.sylvain.planning.api;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigAdminLogin;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,6 +16,7 @@ import io.quarkus.security.spi.runtime.AuthenticationFailureEvent;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -71,6 +75,24 @@ public class AdminLoginLimiter {
 
     private final Map<String, Echecs> parAdresse = new ConcurrentHashMap<>();
 
+    /**
+     * Hard ceiling on the number of tracked addresses.
+     *
+     * <p>Only a successful login and a lockout check remove an entry, so an
+     * address that fails once and never comes back stays counted for good — and
+     * the map is fed by attempts, which is to say by anyone. Sweeping only the
+     * <em>expired</em> entries would not bound it: an attacker inserting
+     * distinct keys inside one window sees none of them expire, keeps them all,
+     * and makes every later failure pay a full O(n) scan. So past the ceiling
+     * the oldest entries are evicted outright, expired or not.</p>
+     *
+     * <p>Evicting a live counter is the lesser evil, and a narrow one: it costs
+     * one address its lock, it takes a thousand distinct addresses inside
+     * fifteen minutes to trigger, and the alternative is unbounded memory plus
+     * quadratic work on the request path.</p>
+     */
+    private static final int ADRESSES_MAX = 1_000;
+
     /** Consecutive failures of one address, and the instant of the last one. */
     private record Echecs(int nombre, Instant dernier) {
     }
@@ -112,6 +134,9 @@ public class AdminLoginLimiter {
             return;
         }
         Instant maintenant = Instant.now();
+        if (parAdresse.size() >= ADRESSES_MAX) {
+            evictDown(maintenant);
+        }
         parAdresse.compute(address(routage), (ignore, courant) -> {
             if (courant == null || courant.dernier().plus(config.dureeBlocage()).isBefore(maintenant)) {
                 return new Echecs(1, maintenant);
@@ -141,6 +166,24 @@ public class AdminLoginLimiter {
         return false;
     }
 
+    /**
+     * Brings the map back under its ceiling: expired entries first, then, if
+     * that is not enough, the oldest ones.
+     */
+    private void evictDown(Instant maintenant) {
+        parAdresse.entrySet().removeIf(
+                entree -> entree.getValue().dernier().plus(config.dureeBlocage()).isBefore(maintenant));
+        if (parAdresse.size() < ADRESSES_MAX) {
+            return;
+        }
+        parAdresse.entrySet().stream()
+                .sorted(Comparator.comparing(entree -> entree.getValue().dernier()))
+                .limit(Math.max(1, parAdresse.size() - ADRESSES_MAX + 1))
+                .map(Map.Entry::getKey)
+                .toList()
+                .forEach(parAdresse::remove);
+    }
+
     /** Seconds of lockout left, {@code 0} when the address may try its luck. */
     private long lockoutSeconds(String address) {
         Echecs echecs = parAdresse.get(address);
@@ -156,21 +199,79 @@ public class AdminLoginLimiter {
     }
 
     /**
-     * The address the proxy announces wins over the one of the connection:
-     * behind a reverse proxy every request comes from the same address, and
-     * counting on that would let the first attacker who shows up lock everybody
-     * else out. This header is only worth trusting when the origin cannot be
-     * reached without going through the proxy — the same condition as
-     * {@code proxy-address-forwarding}, which {@code docs/securite.md} makes a
-     * deployment prerequisite.
+     * The address the lock counts against.
+     *
+     * <p>Two steps, and the first is the one that matters. <b>The peer must be a
+     * declared proxy</b> — read from {@code connection().remoteAddress()}, not
+     * {@code request().remoteAddress()}, which {@code proxy-address-forwarding}
+     * has already rewritten with the client's own forged value. If the machine
+     * actually connecting is not in
+     * {@code planning.auth.connexion.proxys-fiables}, {@code X-Forwarded-For} is
+     * whatever that machine chose to write, so it is ignored entirely and the
+     * connection address is counted. Left empty — the default — no header is
+     * ever trusted, which is right for a deployment with no proxy and safe for
+     * one whose proxies have not been declared.</p>
+     *
+     * <p>When the peer <em>is</em> a declared proxy, the header is walked from
+     * the <b>right</b>, skipping further declared proxies, and the first
+     * remaining entry wins: that is the address the last trusted hop actually
+     * observed, appended by it. Everything to its left is client-supplied text.</p>
+     *
+     * <p>Reading from the left is what made the lock useless. A proxy
+     * <em>appends</em> its entry rather than replacing the header, so the
+     * leftmost element is the client's own. Both the previous version of this
+     * method and {@code remoteAddress()} under {@code proxy-address-forwarding}
+     * take exactly that one — Quarkus's {@code ForwardedParser} calls
+     * {@code getFirstElement(forHeader)} — so one forged header per attempt
+     * bought a fresh counter. {@code quarkus.http.proxy.trusted-proxies} does
+     * not help: it decides whether the header is read at all, never which
+     * element is kept.</p>
      */
-    private static String address(RoutingContext contexte) {
-        String transmise = contexte.request().getHeader("X-Forwarded-For");
-        if (transmise != null && !transmise.isBlank()) {
-            return transmise.split(",")[0].trim();
+    private String address(RoutingContext contexte) {
+        // connection(), not request(): proxy-address-forwarding has already
+        // rewritten remoteAddress() with the client's own forged value. Only the
+        // TCP peer says who is really speaking.
+        String pair = hostOf(contexte.request().connection().remoteAddress());
+        List<String> fiables = config.proxysFiables().orElse(List.of());
+        if (!fiables.contains(pair)) {
+            return pair;
         }
-        return contexte.request().remoteAddress() == null
-                ? "inconnue"
-                : contexte.request().remoteAddress().hostAddress();
+        List<String> transmises = forwardedFor(contexte);
+        for (int i = transmises.size() - 1; i >= 0; i--) {
+            String candidat = transmises.get(i);
+            if (!fiables.contains(candidat)) {
+                return candidat;
+            }
+        }
+        return pair;
+    }
+
+    /** {@code X-Forwarded-For} split into its entries, empty when absent. */
+    private static List<String> forwardedFor(RoutingContext contexte) {
+        String entete = contexte.request().getHeader("X-Forwarded-For");
+        if (entete == null || entete.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(entete.split(","))
+                .map(String::trim)
+                .filter(valeur -> !valeur.isEmpty())
+                .toList();
+    }
+
+    /**
+     * Vert.x renders a non-IP host as a {@code null} {@code hostAddress()} — a
+     * proxy emitting {@code unknown}, which Squid does, used to reach the
+     * counter map as a null key and answer 500 on {@code /j_security_check}.
+     */
+    private static String hostOf(SocketAddress adresse) {
+        if (adresse == null) {
+            return "inconnue";
+        }
+        String ip = adresse.hostAddress();
+        if (ip != null && !ip.isBlank()) {
+            return ip;
+        }
+        String hote = adresse.host();
+        return hote == null || hote.isBlank() ? "inconnue" : hote;
     }
 }

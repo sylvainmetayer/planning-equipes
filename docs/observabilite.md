@@ -43,9 +43,12 @@ Un job **annulé** n'est pas une panne et ne remonte pas.
 
 ## Deux pièges de configuration
 
-**La mesure d'audience est active par défaut en production** : le profil
-`%prod` fournit un token de repli. Ne rien configurer ne la désactive pas — il
-faut positionner `CLOUDFLARE_WEB_ANALYTICS_TOKEN` **à vide**.
+**La mesure d'audience est éteinte tant qu'on ne lui donne pas de token.** Le
+profil `%prod` fournissait autrefois un repli — celui du compte de l'éditeur —
+et toute instance déployée sans y penser envoyait donc son audience dans ce
+compte, tout en déclarant un transfert hors UE dans ses propres mentions
+légales. Le défaut est vide depuis ; poser `CLOUDFLARE_WEB_ANALYTICS_TOKEN` est
+maintenant le seul moyen d'allumer la mesure.
 
 **Le SDK Sentry n'est chargé que si un DSN est configuré**, par un `import()`
 dynamique à l'intérieur de la condition. Il pèse 462 ko (130 ko transférés) :
@@ -59,7 +62,7 @@ et y compris sur un déploiement sans DSN.
 | --- | --- | --- |
 | `SENTRY_DSN` | vide | DSN Bugsink, ou tout endpoint compatible Sentry. Vide = désactivé des deux côtés |
 | `SENTRY_ENVIRONMENT` | `local` | Étiquette jointe à chaque erreur |
-| `CLOUDFLARE_WEB_ANALYTICS_TOKEN` | un token en profil `%prod` | Vider pour désactiver |
+| `CLOUDFLARE_WEB_ANALYTICS_TOKEN` | vide | Token du compte Cloudflare qui reçoit l'audience. Vide = désactivé |
 
 Le frontend est construit **une seule fois** et servi tel quel : il ne peut pas
 recevoir ces clés au build sans dupliquer le bundle par environnement. Le
@@ -79,14 +82,12 @@ contrairement à Cloudflare.
 
 Elle ne le dit **que si l'outil tourne** : `/api/mentions-legales` renvoie
 `mesureAudience` et `suiviErreurs`, calculés sur la **valeur effective** de ces
-deux clés — celle que lisent le beacon et le SDK, repli `%prod` compris — et la
-page n'affiche que les paragraphes correspondants. En production, Cloudflare
-tourne donc et se déclare tant que `CLOUDFLARE_WEB_ANALYTICS_TOKEN` n'a pas été
-**explicitement vidé** : ne rien poser ne suffit pas. Vider une variable ne se
-contente pas d'éteindre l'outil, cela retire aussi sa déclaration — les deux vont
-ensemble, et c'est le point : un déploiement qui n'envoie rien à Cloudflare ne
-doit pas annoncer un transfert hors UE. Ajouter une troisième brique suppose
-donc un troisième drapeau, pas un paragraphe de plus en dur.
+deux clés — celle que lisent le beacon et le SDK — et la page n'affiche que les
+paragraphes correspondants. Poser une variable ne se contente donc pas d'allumer
+l'outil, cela ajoute aussi sa déclaration ; la vider retire les deux. Et c'est le
+point : un déploiement qui n'envoie rien à Cloudflare ne doit pas annoncer un
+transfert hors UE. Ajouter une troisième brique suppose donc un troisième
+drapeau, pas un paragraphe de plus en dur.
 
 ## Analytics produit : retirée
 

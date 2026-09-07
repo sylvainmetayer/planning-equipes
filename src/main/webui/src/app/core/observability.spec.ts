@@ -16,7 +16,7 @@ import { AppConfig } from './models';
 const CONFIG: AppConfig = {
   sentryDsn: 'https://key@bugsink.example.com/1',
   sentryEnvironment: 'production',
-  cloudflareWebAnalyticsToken: '987d563a0f264bbbb484df80ab2ab0f8',
+  cloudflareWebAnalyticsToken: 'token-de-test',
   devMode: false
 };
 

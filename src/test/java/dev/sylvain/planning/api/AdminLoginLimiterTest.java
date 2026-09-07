@@ -34,7 +34,13 @@ class AdminLoginLimiterTest {
         @Override
         public Map<String, String> getConfigOverrides() {
             return Map.of("planning.auth.connexion.max-echecs", "2",
-                    "planning.auth.connexion.duree-blocage", "PT15M");
+                    "planning.auth.connexion.duree-blocage", "PT15M",
+                    // The test client connects from the loopback: declaring it
+                    // as the proxy is what makes the announced address worth
+                    // trusting, exactly as a deployment declares its own. Without
+                    // this line the header is ignored — and that is the right
+                    // default, see AdminLoginLimiterProxyNonFiableTest.
+                    "planning.auth.connexion.proxys-fiables", "127.0.0.1");
         }
     }
 

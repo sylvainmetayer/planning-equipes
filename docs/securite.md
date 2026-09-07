@@ -187,12 +187,27 @@ HTTP donc l'adresse ; le succès sur la requête elle-même — l'événement Qu
 correspondant ne transporte aucun contexte, donc aucune adresse à qui rendre
 son crédit.
 
-**L'adresse retenue est celle annoncée par `X-Forwarded-For`**, la connexion
-réelle ne servant que faute de mieux : derrière un proxy, toutes les requêtes
-arrivent de la même adresse, et compter là-dessus laisserait le premier
-attaquant venu verrouiller la connexion de tout le monde. Cet en-tête n'est
-digne de confiance qu'à une condition : **l'origine ne doit pas être joignable
-sans passer par le proxy**.
+**L'adresse retenue est l'entrée la plus à droite de `X-Forwarded-For` qui n'est
+pas un proxy déclaré**, et l'en-tête n'est lu que si la connexion elle-même
+vient d'un proxy déclaré dans `CONNEXION_PROXYS_FIABLES`. Sans cette liste —
+le défaut — l'en-tête est entièrement ignoré et c'est l'adresse de connexion qui
+compte : sûr par construction, et correct pour un déploiement sans proxy.
+
+Lire l'en-tête **par la gauche** est ce qui rendait le verrou inopérant. Un proxy
+*ajoute* son entrée plutôt que de remplacer l'en-tête, donc le premier élément
+est celui que le client a écrit : un `X-Forwarded-For` forgé par tentative
+achetait un compteur neuf.
+
+`QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` **ne ferme pas ce trou**, et il ne faut pas
+compter dessus pour cela : il décide si Quarkus lit l'en-tête, jamais quel
+élément il retient — `ForwardedParser` prend toujours le premier. Passer par
+`remoteAddress()` ne corrigeait donc rien non plus. C'est la raison pour laquelle
+le verrou lit l'en-tête lui-même, par la droite, avec sa propre liste de proxys.
+
+**Renseignez `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses,
+telles qu'elles apparaissent côté application. Sans elle, tous les visiteurs
+derrière le proxy partagent un compteur, et le premier attaquant venu verrouille
+la connexion de tout le monde.
 
 Ce verrou ne remplace pas la limitation de débit par IP du proxy, qui vaut pour
 tout le reste — exports, résolution, API entière.
@@ -392,14 +407,17 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | À faire | Pourquoi |
 | --- | --- |
 | Terminer le TLS et rediriger tout le trafic http vers https | HSTS et le flag `Secure` du cookie de l'espace ne s'activent que sur une visite HTTPS |
-| **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-For` et `X-Forwarded-Proto` sont forgeables : le verrouillage de connexion se contourne en changeant d'adresse annoncée. À défaut, renseigner `TRUSTED_PROXIES` (`QUARKUS_HTTP_PROXY_TRUSTED_PROXIES`) |
+| **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses | Sans elle, le verrouillage de connexion ignore `X-Forwarded-For` et compte tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
+| **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-Proto` reste forgeable, et un attaquant qui joint l'origine directement est compté sur sa vraie adresse — ce qui est correct, mais le prive du bénéfice de la liste ci-dessus |
 | Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace) ; le reste — exports, résolution, API — n'en a pas |
 | Journaliser sans les URL de l'espace animateur **ni celles de l'abonnement ICS**, ou purger ces journaux | Les deux jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, et l'abonnement y revient à chaque synchronisation d'un agenda |
 | Ne pas réintroduire le site dans un index (page d'accueil du proxy, sitemap, annuaire interne) | L'application dit trois fois qu'elle ne veut pas être référencée (voir ci-dessus) ; un lien depuis une page publique, lui, se remarque |
 
 ### Avant d'ouvrir : la liste courte
 
-- [ ] `ADMIN_PASSWORD` long, généré, propre à ce déploiement ;
+- [ ] `ADMIN_PASSWORD` long, généré, propre à ce déploiement — l'application
+  **refuse de démarrer** en production s'il est resté sur l'exemple, `DB_PASSWORD`
+  compris ;
 - [ ] `SESSION_ENCRYPTION_KEY` définie (≥ 16 caractères) et gardée ;
 - [ ] `DB_PASSWORD` changé ;
 - [ ] `PUBLIC_URL` en `https://` ;
