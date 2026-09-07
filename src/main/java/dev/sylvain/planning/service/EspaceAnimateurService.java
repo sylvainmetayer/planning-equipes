@@ -236,7 +236,7 @@ public class EspaceAnimateurService {
      * every holder of a token how healthy (or not) the whole event's planning
      * is. What they need is the facts below.</p>
      *
-     * @param nature LIBERE / CROISE / DIRIGE — see {@link PlanningService.NatureEchange}
+     * @param nature LIBERE / CROISE / DIRIGE — see {@link PlanningWhatIf.NatureEchange}
      */
     public record SuggestionEchangeView(String animateurId, String nomComplet, String nature,
             Long creneauCibleId, LocalDate dateCible, LocalTime heureDebutCible, LocalTime heureFinCible,
@@ -261,7 +261,7 @@ public class EspaceAnimateurService {
      *
      * <p>Three families, deliberately — being freed, trading on the same
      * créneau, or trading against a colleague's seat on another day (see
-     * {@link PlanningService.NatureEchange}). An échange is not only « someone
+     * {@link PlanningWhatIf.NatureEchange}). An échange is not only « someone
      * takes my place », and an assistant that only proposed that would hide
      * half of what the foire allows.</p>
      *
@@ -280,7 +280,7 @@ public class EspaceAnimateurService {
         // what you were told about. Applying an accepted échange, on the other
         // hand, happens against the working plan — the admin arbitrates between
         // the two at validation time.
-        PlanningService.SuggestionsEchange suggestions = planningService.suggererEchanges(
+        PlanningWhatIf.SuggestionsEchange suggestions = planningService.suggererEchanges(
                 planPublieService.planPublie(), animateurId, creneauId, standId, plafond);
         Map<String, Animateur> animateurs = referenceDataService.listAnimateurs().stream()
                 .collect(Collectors.toMap(Animateur::getId, Function.identity()));
@@ -297,7 +297,7 @@ public class EspaceAnimateurService {
                 suggestions.optionsEvaluees() < suggestions.optionsEligibles(), vues);
     }
 
-    private static SuggestionEchangeView toView(PlanningService.SuggestionEchange suggestion,
+    private static SuggestionEchangeView toView(PlanningWhatIf.SuggestionEchange suggestion,
             Map<String, Animateur> animateurs, Map<String, Stand> stands, Map<Long, Creneau> creneaux) {
         Stand standCible = suggestion.standCibleId() == null ? null : stands.get(suggestion.standCibleId());
         Creneau creneauCible = suggestion.creneauCibleId() == null ? null

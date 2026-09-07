@@ -19,7 +19,7 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.PlanningService.EchangeSimulation;
+import dev.sylvain.planning.service.PlanningWhatIf.EchangeSimulation;
 
 /**
  * Simulation of a swap request (issue #165) straight on

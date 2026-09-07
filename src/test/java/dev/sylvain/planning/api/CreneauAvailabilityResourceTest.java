@@ -180,6 +180,53 @@ class CreneauAvailabilityResourceTest {
     }
 
     /** Loads the sample scenario, solves it once, and returns a créneau of the persisted plan. */
+    /**
+     * The bench is scored under the rules <b>currently in force</b>, not under
+     * the defaults — and that is what the server-side preparation is for.
+     *
+     * <p>This pins the one thing extracting the what-if made breakable. The
+     * preparation reaches {@code PlanningWhatIf} as a {@link java.util.function.Consumer},
+     * and rewiring it to a no-op left every test green: a constraint the
+     * organiser had switched off would come back to life here, and an animateur
+     * would be shown « indisponible » in the name of a rule nobody enforces
+     * any more.</p>
+     *
+     * <p>The check is indirect on purpose. Rather than assert a score, it
+     * switches a hard rule off and asserts that the bench stops naming it — the
+     * user-visible consequence, and the one a reader can judge.</p>
+     */
+    @Test
+    void leBancEstEvalueSousLesContraintesActivesDeLEdition() throws InterruptedException {
+        long creneauId = persistedPlan();
+        String regle = premierMotifDur(creneauId);
+        assertThat(regle).as("le plan doit produire au moins un motif dur à éteindre").isNotBlank();
+
+        try {
+            given().contentType("application/json").body("{\"actif\":false}")
+                    .when().put("/api/constraints/" + regle)
+                    .then().statusCode(200);
+
+            assertThat(motifs(creneauId))
+                    .as("une contrainte éteinte ne doit plus motiver une indisponibilité")
+                    .doesNotContain(regle);
+        } finally {
+            given().contentType("application/json").body("{\"actif\":true}")
+                    .when().put("/api/constraints/" + regle).then().statusCode(200);
+        }
+    }
+
+    /** The constraint names the bench cites for this créneau. */
+    private static java.util.List<String> motifs(long creneauId) {
+        return given().when().get("/api/banc-de-touche/" + creneauId)
+                .then().statusCode(200)
+                .extract().jsonPath().getList("animateurs.motifs.flatten().contrainte", String.class);
+    }
+
+    /** The first reason the bench cites, if it cites any. */
+    private static String premierMotifDur(long creneauId) {
+        return motifs(creneauId).stream().filter(nom -> nom != null && !nom.isBlank()).findFirst().orElse("");
+    }
+
     private long persistedPlan() throws InterruptedException {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);

@@ -19,12 +19,12 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.service.PlanningService.AnimateurAvailability;
-import dev.sylvain.planning.service.PlanningService.CreneauAvailability;
-import dev.sylvain.planning.service.PlanningService.MotifExclusion;
-import dev.sylvain.planning.service.PlanningService.SeatStatus;
-import dev.sylvain.planning.service.PlanningService.SuggestionReparation;
-import dev.sylvain.planning.service.PlanningService.SuggestionsReparation;
+import dev.sylvain.planning.service.PlanningWhatIf.AnimateurAvailability;
+import dev.sylvain.planning.service.PlanningWhatIf.CreneauAvailability;
+import dev.sylvain.planning.service.PlanningWhatIf.MotifExclusion;
+import dev.sylvain.planning.service.PlanningWhatIf.SeatStatus;
+import dev.sylvain.planning.service.PlanningWhatIf.SuggestionReparation;
+import dev.sylvain.planning.service.PlanningWhatIf.SuggestionsReparation;
 
 /**
  * The acceptance criterion of issue #303, written down: an animateur the
@@ -269,7 +269,7 @@ class CreneauAvailabilityCoherenceTest {
         CreneauAvailability banc = planningService.creneauAvailability(planning(), CRENEAU_CIBLE, null, null);
 
         assertThat(banc.statut()).isEqualTo(SeatStatus.EVALUATED);
-        assertThat(banc.creneauxAvecSieges()).extracting(PlanningService.CreneauSiege::id)
+        assertThat(banc.creneauxAvecSieges()).extracting(PlanningWhatIf.CreneauSiege::id)
                 .containsExactly(1L, 2L, 3L, 4L);
         // Described, not merely named: the selector is built from this alone,
         // so the screen never reads the créneau referential.

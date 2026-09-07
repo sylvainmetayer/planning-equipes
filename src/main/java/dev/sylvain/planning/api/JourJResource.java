@@ -8,7 +8,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JourJService;
 import dev.sylvain.planning.service.JourJService.AbsenceMarquee;
 import dev.sylvain.planning.service.JourJService.EtatJourJ;
-import dev.sylvain.planning.service.PlanningService.SuggestionsReparation;
+import dev.sylvain.planning.service.PlanningWhatIf.SuggestionsReparation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;

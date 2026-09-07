@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.PlanningService.DeplacementSimulation;
-import dev.sylvain.planning.service.PlanningService.HardViolation;
+import dev.sylvain.planning.service.PlanningWhatIf.DeplacementSimulation;
+import dev.sylvain.planning.service.PlanningWhatIf.HardViolation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

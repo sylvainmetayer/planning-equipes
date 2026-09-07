@@ -111,7 +111,11 @@ Single Quarkus service, no separate solver microservice. Package root:
   served by `GET /api/constraints`; **every new constraint must be registered
   there too**.
 - `service/` — `PlanningService` (SolverFactory from `solver/solverConfig.xml`,
-  solve, what-if, diagnostic), `ProblemBuilder` (the edition's reference data
+  solve, diagnostic), `PlanningWhatIf` (everything the application answers
+  about a plan without solving it again — explanation, repair, échange,
+  availability; still four responsibilities in one class, whose separation the
+  audit asks for and is now an internal matter),
+  `ProblemBuilder` (the edition's reference data
   turned into a problem to solve — from scratch, réamorcé (#174) or
   incremental (#86); the pieces needing no database stay static and
   package-private, which is what lets the PosteGeneration / Reamorcage /
