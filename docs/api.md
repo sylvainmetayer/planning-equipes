@@ -109,6 +109,25 @@ par le serveur. Toute autre session voit le même job actif via
 `/api/jobs/active` et se voit refuser un second lancement en `409`, le corps
 portant le job en cours.
 
+### Volumétrie du problème
+
+`GET /api/planning/volumetrie` (et l'outil MCP `volumes`) décrit le problème
+que la prochaine résolution construirait, calculé sur ce problème même — jamais
+sur un produit stands × créneaux :
+
+| Clé | Ce qu'elle compte |
+| --- | --- |
+| `animateurCount` | les valeurs possibles d'un poste, au sens Timefold |
+| `posteCount` | les entités : un poste par siège à pourvoir |
+| `contrainteAdHocCount` | les ajustements manuels appliqués par-dessus |
+| `hoursToFill` | la somme des durées effectives des postes, fermetures de stands déduites — la base de l'écran Heures |
+| `hoursAvailable` | le plafond légal de ce que les animateurs peuvent travailler sur les jours de l'événement : par animateur et par semaine ISO, les jours où il n'est pas indisponible (six au plus), chacun au plafond quotidien de son âge ce jour-là, le tout borné par le plafond hebdomadaire des paramètres légaux |
+
+Le rapport des deux dernières est un taux de remplissage. C'est un plafond,
+pas une prévision : compétences, repos entre vacations et règle de pause en
+retranchent encore, si bien qu'un taux proche de 1 annonce déjà un planning
+infaisable. Tout à zéro tant que l'édition n'a pas de données de référence.
+
 ### File d'attente
 
 `enFile=true` met la tâche en file au lieu de la refuser. Trois propriétés :

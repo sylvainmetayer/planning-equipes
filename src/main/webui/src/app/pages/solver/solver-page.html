@@ -355,7 +355,24 @@
         <div class="staffing-stat-value">{{ contrainteAdHocTotal() }}</div>
         <div class="staffing-stat-label" i18n="@@solver.volumetry.contraintesAdHoc">Ajustements manuels</div>
       </mat-card>
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ heuresAPourvoir() | number: '1.0-0' }} h</div>
+        <div class="staffing-stat-label" i18n="@@solver.volumetry.hoursToFill">Heures à pourvoir</div>
+      </mat-card>
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ heuresOffertes() | number: '1.0-0' }} h</div>
+        <div class="staffing-stat-label" i18n="@@solver.volumetry.hoursAvailable">Heures offertes</div>
+      </mat-card>
     </div>
+    @if (tauxRemplissage(); as taux) {
+      <p class="solver-volumetry-formula" i18n="@@solver.volumetry.hours">
+        Soit {{ heuresAPourvoir() | number: '1.0-0' }} heures à pourvoir pour un plafond légal de
+        {{ heuresOffertes() | number: '1.0-0' }} heures que les animateurs peuvent travailler, jours
+        d'indisponibilité déduits — un taux de remplissage de {{ taux | number: '1.2-2' }}. Ce plafond ignore les
+        compétences, le repos entre vacations et la règle de pause : un taux proche de 1 est déjà un planning
+        infaisable.
+      </p>
+    }
     <p class="solver-volumetry-formula">
       <ng-container i18n="@@solver.volumetry.formula">
         Timefold doit affecter {{ animateurTotal() }} animateurs sur {{ posteTotal() }} postes ({{ creneauTotal() }} créneaux), sous {{ contrainteAdHocTotal() }} ajustements manuels supplémentaires

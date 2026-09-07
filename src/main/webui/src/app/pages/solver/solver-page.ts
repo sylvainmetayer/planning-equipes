@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -102,6 +103,7 @@ function hardPart(score: string): number {
 @Component({
   selector: 'app-solver-page',
   imports: [
+    DecimalPipe,
     MatProgressBarModule,
     StatusMessage,
     FormsModule,
@@ -348,6 +350,20 @@ export class SolverPage {
   protected readonly posteTotal = computed(() => this.referenceData.volumetrie().posteCount);
   protected readonly contrainteAdHocTotal = computed(() => this.referenceData.volumetrie().contrainteAdHocCount);
   protected readonly creneauTotal = computed(() => this.referenceData.creneaux().length);
+  /** Hours the seats add up to, stand closures deducted — the same basis as the Heures page. */
+  protected readonly heuresAPourvoir = computed(() => this.referenceData.volumetrie().hoursToFill);
+  /** Legal ceiling of what the animateurs may work over the event, unavailable days deducted. */
+  protected readonly heuresOffertes = computed(() => this.referenceData.volumetrie().hoursAvailable);
+  /**
+   * Hours to fill over hours available. A ceiling, not a forecast: competences,
+   * rest between shifts and the pause rule all take from the denominator, so a
+   * ratio close to 1 is already an infeasible plan. `null` while nothing is
+   * offered, so the template says nothing rather than dividing by zero.
+   */
+  protected readonly tauxRemplissage = computed(() => {
+    const offertes = this.heuresOffertes();
+    return offertes > 0 ? this.heuresAPourvoir() / offertes : null;
+  });
 
   /**
    * Timefold's own "approximate problem scale": log10 of the search space size,

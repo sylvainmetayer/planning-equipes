@@ -10,6 +10,7 @@ import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.SolvePipeline;
+import dev.sylvain.planning.service.ProblemScaleService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -37,6 +38,9 @@ public class PlanningResource {
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
+
+    @Inject
+    ProblemScaleService problemScaleService;
 
     /**
      * Lists the scenario files available in the {@code scenarios} folder so the
@@ -71,28 +75,11 @@ public class PlanningResource {
                 .build();
     }
 
-    /**
-     * Real scale of the problem the next solve will build, computed the exact
-     * same way {@code buildFromReferenceData} does for an actual solve
-     * ({@code postes.size()} is Timefold's entity count, {@code animateurs.size()}
-     * its value count) — so this never drifts from what the solver logs report,
-     * unlike a naive stands × créneaux guess would. Returns all-zero rather than
-     * an error when reference data isn't loaded yet, since this only feeds a
-     * read-only summary card, not an actual solve.
-     */
+    /** Real scale of the problem the next solve will build — see {@link ProblemScaleService}. */
     @GET
     @Path("/planning/volumetrie")
-    public VolumeView volumes() {
-        try {
-            PlanningEvenement evenement = planningService.buildFromReferenceData();
-            return new VolumeView(evenement.getAnimateurs().size(), evenement.getPostes().size(),
-                    evenement.getContraintesAdHoc().size());
-        } catch (IllegalStateException e) {
-            return new VolumeView(0, 0, 0);
-        }
-    }
-
-    public record VolumeView(int animateurCount, int posteCount, int contrainteAdHocCount) {
+    public ProblemScaleService.ProblemScale volumes() {
+        return problemScaleService.compute();
     }
 
     @POST

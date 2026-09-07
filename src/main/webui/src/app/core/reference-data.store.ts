@@ -131,7 +131,13 @@ export class ReferenceDataStore {
   readonly emplacements = signal<Emplacement[]>([]);
   readonly contraintes = signal<ContrainteAdHoc[]>([]);
   /** Real problem scale for the next solve; see {@link Volumetrie}. */
-  readonly volumetrie = signal<Volumetrie>({ animateurCount: 0, posteCount: 0, contrainteAdHocCount: 0 });
+  readonly volumetrie = signal<Volumetrie>({
+    animateurCount: 0,
+    posteCount: 0,
+    contrainteAdHocCount: 0,
+    hoursToFill: 0,
+    hoursAvailable: 0
+  });
 
   private readonly api = inject(ApiService);
 

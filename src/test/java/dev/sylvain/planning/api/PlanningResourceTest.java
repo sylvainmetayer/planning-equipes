@@ -189,7 +189,12 @@ class PlanningResourceTest {
                 .then()
                 .statusCode(200)
                 .body("animateurCount", equalTo(sample.getList("animateurs").size()))
-                .body("posteCount", equalTo(sample.getList("postes").size()));
+                .body("posteCount", equalTo(sample.getList("postes").size()))
+                // The scenario's créneaux are whole hours, so the seats add up
+                // to a whole number of hours; the ceiling is a handful of full
+                // days per animateur, well above what the seats need.
+                .body("hoursToFill", greaterThan(0f))
+                .body("hoursAvailable", greaterThan(0f));
     }
 
     @Test
@@ -202,7 +207,9 @@ class PlanningResourceTest {
                 .statusCode(200)
                 .body("animateurCount", equalTo(0))
                 .body("posteCount", equalTo(0))
-                .body("contrainteAdHocCount", equalTo(0));
+                .body("contrainteAdHocCount", equalTo(0))
+                .body("hoursToFill", equalTo(0f))
+                .body("hoursAvailable", equalTo(0f));
     }
 
     @Test

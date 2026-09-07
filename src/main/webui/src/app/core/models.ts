@@ -593,12 +593,16 @@ export interface VerrouillagePlanning {
  * Real scale of the problem the next solve will build, from `/api/planning/volumetrie`
  * (mirrors what Timefold's own "Problem scale" log line reports): `posteCount` is one
  * entry per required seat, not per stand, and `contrainteAdHocCount` are the extra
- * ad hoc rules layered on top.
+ * ad hoc rules layered on top. `hoursToFill` sums the effective duration of every
+ * seat (stand closures deducted); `hoursAvailable` is the legal ceiling of what the
+ * animateurs may work over the event's days, unavailable days deducted.
  */
 export interface Volumetrie {
   animateurCount: number;
   posteCount: number;
   contrainteAdHocCount: number;
+  hoursToFill: number;
+  hoursAvailable: number;
 }
 
 export interface HardMediumSoftScore {

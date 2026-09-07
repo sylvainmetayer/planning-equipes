@@ -26,6 +26,7 @@ import dev.sylvain.planning.service.PlanningService.SuggestionsReparation;
 import dev.sylvain.planning.service.PlanningService.SwapSimulation;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.ProblemScaleService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -81,20 +82,19 @@ public class PlanningMcpTools {
     @Inject
     ReferenceDataChangeTracker changeTracker;
 
+    @Inject
+    ProblemScaleService problemScaleService;
+
     @Tool(description = "Volumétrie réelle du problème que construirait la prochaine résolution : nombre "
-            + "d'animateurs, de postes à pourvoir et de contraintes ad hoc. Tout à zéro si les données de "
-            + "référence ne sont pas chargées.",
+            + "d'animateurs, de postes à pourvoir et de contraintes ad hoc, heures à pourvoir (somme des durées "
+            + "effectives des postes) et heures offertes (plafond légal de ce que les animateurs peuvent travailler "
+            + "sur l'événement, jours d'indisponibilité déduits). Tout à zéro si les données de référence ne sont "
+            + "pas chargées.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    VolumeView volumes(
+    ProblemScaleService.ProblemScale volumes(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        try {
-            PlanningEvenement evenement = planningService.buildFromReferenceData();
-            return new VolumeView(evenement.getAnimateurs().size(), evenement.getPostes().size(),
-                    evenement.getContraintesAdHoc().size());
-        } catch (IllegalStateException e) {
-            return new VolumeView(0, 0, 0);
-        }
+        return problemScaleService.compute();
     }
 
     @Tool(description = "Diagnostic de faisabilité avant résolution : calcul de capacité en Java pur (aucune "
@@ -367,9 +367,6 @@ public class PlanningMcpTools {
 
     private static HeuresAnimateurView toView(HeuresAnimateur ligne) {
         return new HeuresAnimateurView(ligne.animateurId(), ligne.heuresParSemaine(), ligne.total());
-    }
-
-    public record VolumeView(int animateurCount, int posteCount, int contrainteAdHocCount) {
     }
 
     /** @param resolu false when nothing has ever been solved */
