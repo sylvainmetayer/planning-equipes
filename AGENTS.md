@@ -24,6 +24,11 @@ renamed between source and translation. Never call `$localize` at module scope
 `main.ts` has loaded translations, not at import time. See
 `docs/developpement.md` for the full workflow. Code comments and non-domain identifiers stay in English.
 
+A route `title` is a **function** returning a `$localize` string, never a
+literal: evaluated after bootstrap, it is seen by `ng extract-i18n` and counted
+by `i18n-check`, and the page name `admin-shell` announces to screen readers is
+then in the reader's language. `app.routes.spec.ts` refuses a literal.
+
 ## Project overview
 
 Quarkus + Timefold Solver application that schedules ~150 `Animateur`s (staff)

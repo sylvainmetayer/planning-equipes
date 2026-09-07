@@ -1,0 +1,91 @@
+import { Component, provideZonelessChangeDetection } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { Title } from '@angular/platform-browser';
+import { ResolveFn, Routes, TitleStrategy, provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
+import { describe, expect, it } from 'vitest';
+
+import { routes } from './app.routes';
+import { BRANDING } from './core/branding';
+import { BrandingTitleStrategy } from './core/branding-title.strategy';
+
+@Component({ template: '' })
+class PageVide {}
+
+/**
+ * Les titres de route étaient des chaînes en dur, moitié françaises moitié
+ * anglaises, qu'aucun contrôle ne voyait : `check-i18n` ne lit que ce qui passe
+ * par `$localize`. Ce n'est pas cosmétique — `admin-shell` annonce
+ * `title.getTitle()` au lecteur d'écran à chaque navigation, donc la moitié des
+ * écrans s'annonçait dans une langue que l'utilisateur ne lit pas.
+ *
+ * Deux choses sont vérifiées ici, et la seconde est celle qui manquait : que le
+ * routeur résout bien un titre **fonction** et que la stratégie de marque le
+ * reçoit. La spec de `BrandingTitleStrategy` simule `buildTitle`, donc rien ne
+ * couvrait ce passage-là — un titre fonction qui ne serait jamais appelé
+ * viderait chaque onglet sans faire échouer un seul test.
+ */
+describe('app.routes', () => {
+  /**
+   * Toutes les routes de l'arbre, enfants compris.
+   *
+   * <p>Ne descend pas dans `loadChildren` : il n'y en a aucun aujourd'hui, et
+   * le résoudre demanderait de charger les modules. Le jour où il en arrive un,
+   * la garantie « tout l'arbre » cesse d'être vraie sans que rien ne le dise.</p>
+   */
+  function toutesLesRoutes(liste: Routes): Routes {
+    return liste.flatMap((route) => [route, ...toutesLesRoutes(route.children ?? [])]);
+  }
+
+  /**
+   * Une route qui affiche un écran terminal doit porter un titre : sans lui
+   * l'onglet ne montre que le nom du produit, et `admin-shell` n'annonce rien à
+   * l'arrivée sur la page (son `annoncerNavigation` sort sur `if (titre)`).
+   *
+   * <p>Les coquilles de mise en page — le shell admin et celui de l'espace
+   * animateur — en sont exemptes : elles portent des enfants, et ce sont eux qui
+   * nomment l'écran.</p>
+   */
+  it('donne un titre à toute route qui affiche un écran terminal', () => {
+    const sansTitre = toutesLesRoutes(routes)
+      .filter((route) => route.component !== undefined || route.loadComponent !== undefined)
+      .filter((route) => route.children === undefined || route.children.length === 0)
+      .filter((route) => route.title === undefined)
+      .map((route) => route.path ?? '(vide)');
+
+    expect(sansTitre).toEqual([]);
+  });
+
+  it('donne un titre traduisible et non vide à chaque route qui en porte un', () => {
+    const titrees = toutesLesRoutes(routes).filter((route) => route.title !== undefined);
+
+    // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
+    // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
+    // annonçaient de travers.
+    expect(titrees).toHaveLength(47);
+    for (const route of titrees) {
+      // Une fonction, et non une chaîne : c'est ce qui permet au titre de
+      // passer par $localize sans être évalué au chargement du module, avant
+      // que les traductions ne soient chargées.
+      expect(typeof route.title, `route ${route.path}`).toBe('function');
+      const resolu = (route.title as ResolveFn<string>)(undefined as never, undefined as never);
+      expect(resolu, `route ${route.path}`).toBeTruthy();
+    }
+  });
+
+  it('résout un titre fonction jusqu\'au titre du document', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([{ path: 'essai', title: () => 'Titre résolu', component: PageVide }]),
+        { provide: BRANDING, useValue: { productName: 'Produit', organisation: '', logoUrl: '', accentColor: '' } },
+        { provide: TitleStrategy, useClass: BrandingTitleStrategy }
+      ]
+    });
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/essai');
+
+    expect(TestBed.inject(Title).getTitle()).toBe('Titre résolu — Produit');
+  });
+});
