@@ -109,7 +109,7 @@ class PlanningServiceDiagnosticViolationsTest {
 
         // A soft/medium constraint, if it matches at all here, must not carry a
         // per-match dump — that's reserved for hard constraints (see
-        // PlanningService.HARD_CONSTRAINT_NAMES).
+        // ConstraintCatalog.NOMS_DURS).
         assertThat(diagnostic.contraintes())
                 .filteredOn(c -> !c.name().equals("posteDoitEtrePourvu"))
                 .allSatisfy(c -> assertThat(c.violations()).isEmpty());

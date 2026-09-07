@@ -560,7 +560,7 @@ jamais. Il ne porte aujourd'hui qu'un champ :
 Différence assumée avec `ParametresLegaux` : ces seuils ne sont **pas stockés
 par édition** en base, ils viennent de la configuration de l'application. Ils
 n'engagent aucune obligation, seulement un arbitrage d'organisation, et
-`PlanningService.prepareProblem` les écrase systématiquement — un appelant ne
+`SolveRunner.prepareProblem` les écrase systématiquement — un appelant ne
 peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
 
 ## Invariants à ne pas casser

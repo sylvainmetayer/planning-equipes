@@ -65,7 +65,7 @@ public final class PlanningWhatIf {
     private final Supplier<PlanningPersistenceService> persistence;
 
     /**
-     * {@code PlanningService.prepareProblem}: the same preparation a solve runs
+     * {@code SolveRunner#prepareProblem}: the same preparation a solve runs
      * (ad hoc constraints, legal parameters, toggles, weights), so that a
      * what-if on a freshly loaded plan is comparable to a post-solve one.
      */
@@ -517,7 +517,7 @@ public final class PlanningWhatIf {
 
     /** A constraint name dressed with the business wording {@link ConstraintCatalog} already holds for it. */
     private static MotifExclusion motifExclusion(String contrainte) {
-        ConstraintCatalog.ConstraintDefinition definition = PlanningService.DEFINITIONS_PAR_NOM.get(contrainte);
+        ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(contrainte);
         return new MotifExclusion(contrainte,
                 definition == null ? null : definition.niveau().name(),
                 definition == null ? null : definition.categorie(),
@@ -986,14 +986,14 @@ public final class PlanningWhatIf {
         List<HardViolation> violations = new ArrayList<>();
         for (ConstraintContribution ca : apres.contributions()) {
             String name = ca.constraintName();
-            if (!PlanningDiagnosticService.HARD_CONSTRAINT_NAMES.contains(name)) {
+            if (!ConstraintCatalog.NOMS_DURS.contains(name)) {
                 continue;
             }
             int supplement = ca.matchCount() - matchesAvant.getOrDefault(name, 0);
             if (supplement <= 0) {
                 continue;
             }
-            ConstraintCatalog.ConstraintDefinition definition = PlanningService.DEFINITIONS_PAR_NOM.get(name);
+            ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(name);
             violations.add(new HardViolation(name,
                     definition == null ? name : definition.description(), supplement));
         }
@@ -1011,7 +1011,7 @@ public final class PlanningWhatIf {
                 continue;
             }
             ConstraintCatalog.ConstraintDefinition definition =
-                    PlanningService.DEFINITIONS_PAR_NOM.get(ca.constraintName());
+                    ConstraintCatalog.PAR_NOM.get(ca.constraintName());
             impacts.add(new ContrainteImpact(
                     ca.constraintName(),
                     definition == null ? null : definition.niveau().name(),

@@ -51,7 +51,7 @@ public class PlanningEvenement {
     /**
      * The seats of the last published plan, read by {@code stabiliteDuPlanPublie}
      * so a re-solve after publication moves as few people as the weight allows.
-     * Empty until a plan is published; filled by {@code PlanningService.prepareProblem}
+     * Empty until a plan is published; filled by {@code SolveRunner.prepareProblem}
      * before every solve and every diagnosis, never sent by a caller — and
      * never returned to one either: the field is the server's own knowledge,
      * and on a 3 500-seat plan it is a megabyte the response has no use for.
@@ -60,7 +60,7 @@ public class PlanningEvenement {
     @ProblemFactCollectionProperty
     private List<AffectationPubliee> affectationsPubliees = new ArrayList<>();
 
-    // Never exposed over the API: PlanningService.prepareProblem always sets
+    // Never exposed over the API: SolveRunner.prepareProblem always sets
     // this from server-side configuration before a solve. Auto-discovered by
     // Timefold from its type alone (no annotation needed), and must never be
     // null when a solve runs, hence the non-null default.

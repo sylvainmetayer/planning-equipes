@@ -1,7 +1,10 @@
 package dev.sylvain.planning.solver;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Business-facing catalogue of every constraint enforced by
@@ -196,6 +199,29 @@ public final class ConstraintCatalog {
 
     private ConstraintCatalog() {
     }
+    /**
+     * Every definition indexed by name, so a caller can attach the
+     * business-facing niveau/catégorie/description to a raw constraint analysis
+     * without a linear scan.
+     *
+     * <p>Lived in {@code PlanningService} for a while, which made three classes
+     * depend on the service for what is a pure index of the list below.</p>
+     */
+    public static final Map<String, ConstraintDefinition> PAR_NOM = definitions().stream()
+            .collect(Collectors.toUnmodifiableMap(ConstraintDefinition::name, Function.identity()));
+
+    /**
+     * Names of every constraint enforced at {@link Niveau#HARD}.
+     *
+     * <p>A diagnostic only builds per-match violations for these: a soft or
+     * medium constraint can have thousands of matches, which would bloat the
+     * payload for a detail nobody blocking on a failed solve needs to see.</p>
+     */
+    public static final Set<String> NOMS_DURS = definitions().stream()
+            .filter(definition -> definition.niveau() == Niveau.HARD)
+            .map(ConstraintDefinition::name)
+            .collect(Collectors.toUnmodifiableSet());
+
 
     public static List<ConstraintDefinition> definitions() {
         return DEFINITIONS;

@@ -176,7 +176,7 @@ public class ConstraintResource {
      * @param violations  one human-readable line per match, only for
      *                    constraints enforced at {@code Niveau.HARD} — always
      *                    empty for medium/soft ones (see
-     *                    {@code PlanningService.HARD_CONSTRAINT_NAMES})
+     *                    {@code ConstraintCatalog.NOMS_DURS})
      */
     public record ConstraintView(
             String name,

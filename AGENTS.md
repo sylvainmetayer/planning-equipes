@@ -109,10 +109,18 @@ Single Quarkus service, no separate solver microservice. Package root:
   `PreferenceConstraints`), one private method per constraint.
 - `solver/ConstraintCatalog.java` — business description of every constraint,
   served by `GET /api/constraints`; **every new constraint must be registered
-  there too**.
-- `service/` — `PlanningService` (a façade: it owns nothing but the six classes
-  below, which it builds in its constructor and delegates to — the entry points
-  `api/` and `mcp/` call are unchanged), `SolverConfiguration` (the
+  there too**. It also carries the two indexes the rest of the application
+  reads it through — `PAR_NOM` and `NOMS_DURS` — so nothing outside `solver/`
+  rebuilds them.
+- `service/` — `PlanningService` (a façade over the classes below: it builds
+  five of them in its constructor — `SolverConfiguration`, `SolveRunner`,
+  `ProblemBuilder`, `PlanningWhatIf`, `PlanningDiagnosticService` — and
+  delegates; the scenario entry points it keeps are the only ones with a body
+  of their own. The entry points `api/` and `mcp/` call are unchanged. Its
+  constructor wires the five with lazy suppliers because CDI injects its fields
+  *after* it runs: capturing them there would pin `null` in production, which
+  the repackaging pass (A4 of the audit) should settle rather than paper over),
+  `SolverConfiguration` (the
   `SolverFactory` from `solver/solverConfig.xml`, termination, constraint
   weights), `SolveRunner` (the solve, and the server-side preparation that
   always overwrites what a caller sent), `PlanningDiagnosticService` (score,

@@ -56,6 +56,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.scenario.YamlSections;
+import dev.sylvain.planning.solver.ConstraintCatalog;
 
 /**
  * Reads a scenario file: locates it on the classpath, parses the YAML and
@@ -744,7 +745,7 @@ public final class ScenarioYamlReader {
     }
 
     private static String requireKnownConstraint(String nom) {
-        if (!PlanningService.DEFINITIONS_PAR_NOM.containsKey(nom)) {
+        if (!ConstraintCatalog.PAR_NOM.containsKey(nom)) {
             throw new BusinessError.Invalid(
                     "La section contraintes cite « " + nom + " », qui n'est pas une contrainte du catalogue.");
         }

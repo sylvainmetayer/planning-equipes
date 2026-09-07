@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import ai.timefold.solver.core.api.solver.Solver;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -14,7 +12,6 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -22,7 +19,6 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.solver.ConstraintCatalog;
 
 @ApplicationScoped
 public class PlanningService {
@@ -78,12 +74,6 @@ public class PlanningService {
                 () -> planningPersistenceService.loadPersistedPlanning(), solveRunner::prepareProblem);
     }
 
-
-
-
-
-
-
     public PlanningEvenement buildExample() {
         return buildExample(ScenarioYamlReader.DEFAULT_SCENARIO);
     }
@@ -118,7 +108,6 @@ public class PlanningService {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
     }
-
 
     // --- Solver configuration: façade over SolverConfiguration --------------
 
@@ -207,7 +196,6 @@ public class PlanningService {
                 referenceDataService.snapshotContraintes()));
     }
 
-
     // --- Scenario reading: façade over ScenarioYamlReader -------------------
     //
     // The parsing itself lives in ScenarioYamlReader, which is static and needs
@@ -243,20 +231,6 @@ public class PlanningService {
     ScenarioYamlReader.ReferenceScenario loadReferenceScenario(String scenarioName) throws IOException {
         return ScenarioYamlReader.loadReferenceScenario(scenarioName);
     }
-
-
-    /**
-     * Every constraint definition indexed by name, so {@link PlanningWhatIf} can
-     * attach the business-facing niveau/catégorie/description to a raw
-     * {@code ConstraintAnalysis} without a linear scan. Read from there and from
-     * {@link ScenarioYamlReader}; the methods of this class that used to use it
-     * are now delegates.
-     */
-    static final Map<String, ConstraintCatalog.ConstraintDefinition> DEFINITIONS_PAR_NOM =
-            ConstraintCatalog.definitions().stream()
-                    .collect(Collectors.toUnmodifiableMap(ConstraintCatalog.ConstraintDefinition::name,
-                            Function.identity()));
-
 
     // --- What-if: façade over PlanningWhatIf --------------------------------
 
@@ -330,8 +304,6 @@ public class PlanningService {
         return whatIf.suggererEchanges(solved, demandeurId, creneauId, standId, plafondDemande);
     }
 
-
-
     // --- Solve: façade over SolveRunner -------------------------------------
 
     /** @see SolveRunner#solve(PlanningEvenement) */
@@ -360,11 +332,6 @@ public class PlanningService {
         solveRunner.prepareForAnalysis(planning);
     }
 
-    /** @see SolveRunner#affectationsPubliees() */
-    List<AffectationPubliee> affectationsPubliees() {
-        return solveRunner.affectationsPubliees();
-    }
-
     // --- Diagnostic: façade over PlanningDiagnosticService ------------------
 
     /** @see PlanningDiagnosticService#diagnosePersistedPlan() */
@@ -376,7 +343,5 @@ public class PlanningService {
     public PlanningDiagnosticService.PlanningDiagnostic diagnose(PlanningEvenement solved) {
         return diagnosticService.diagnose(solved);
     }
-
-
 
 }

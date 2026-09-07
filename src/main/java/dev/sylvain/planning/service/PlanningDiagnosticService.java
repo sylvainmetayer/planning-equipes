@@ -5,10 +5,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import ai.timefold.solver.core.api.solver.SolutionManager;
 
@@ -68,17 +66,6 @@ public final class PlanningDiagnosticService {
         this.preparation = preparation;
     }
 
-    /**
-     * Names of every constraint enforced at {@link ConstraintCatalog.Niveau#HARD}.
-     * {@link #diagnose} only builds per-match {@code violations} for these:
-     * a soft or medium constraint like {@code souhaitsIncompatibles} can have
-     * thousands of matches, which would bloat the diagnostic payload for a
-     * detail nobody blocking on a failed solve needs to see.
-     */
-    static final Set<String> HARD_CONSTRAINT_NAMES = ConstraintCatalog.definitions().stream()
-            .filter(definition -> definition.niveau() == ConstraintCatalog.Niveau.HARD)
-            .map(ConstraintCatalog.ConstraintDefinition::name)
-            .collect(Collectors.toUnmodifiableSet());
 
     /** Caps the per-constraint violation list: a UI detail view, not a full dump. */
     private static final int MAX_VIOLATIONS_PAR_CONTRAINTE = 100;
@@ -118,7 +105,7 @@ public final class PlanningDiagnosticService {
         Map<String, ContributionAdHoc> contributionsAdHoc = new LinkedHashMap<>();
         for (ConstraintContribution ca : analysis.contributions()) {
             String name = ca.constraintName();
-            boolean hard = HARD_CONSTRAINT_NAMES.contains(name);
+            boolean hard = ConstraintCatalog.NOMS_DURS.contains(name);
             List<String> violations = hard ? formatViolations(ca.matches()) : List.of();
             if (hard) {
                 collectContributionsAdHoc(name, ca.matches(), contributionsAdHoc);
@@ -222,7 +209,7 @@ public final class PlanningDiagnosticService {
      *                    constraints enforced at
      *                    {@link ConstraintCatalog.Niveau#HARD} — empty for
      *                    medium/soft ones, which can run into the thousands
-     *                    of matches (see {@link #HARD_CONSTRAINT_NAMES}).
+     *                    of matches (see {@link ConstraintCatalog#NOMS_DURS}).
      */
     public record ConstraintDiagnostic(String name, String score, int matchCount, List<String> violations) {
     }

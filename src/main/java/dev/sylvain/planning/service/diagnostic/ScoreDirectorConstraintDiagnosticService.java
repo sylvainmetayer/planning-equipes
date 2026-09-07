@@ -62,8 +62,8 @@ import dev.sylvain.planning.domain.PosteAffectation;
  * <li>{@code ConstraintRef} loses {@code constraintName()} — it becomes a
  *     one-component record whose accessor is {@code id()}. Verified on 2.5.0
  *     that this id is the <b>bare</b> constraint name, so the swap is safe:
- *     these names are looked up in {@code ConstraintCatalog} and matched
- *     against {@code HARD_CONSTRAINT_NAMES}, and a qualified id would have
+ *     these names are looked up in {@code ConstraintCatalog.PAR_NOM} and
+ *     matched against {@code NOMS_DURS}, and a qualified id would have
  *     broken every lookup silently rather than loudly;</li>
  * <li>{@code HardMediumSoftScore} moves to {@code api.score} and its components
  *     become {@code long} — project-wide, not specific to this class.</li>

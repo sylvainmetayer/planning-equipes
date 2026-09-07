@@ -188,7 +188,7 @@ informée a un coût. C'est ce coût.
 celui que le plan publié avait sur ce stand et ce créneau — un point par
 personne à qui la publication dirait « votre emploi du temps a changé ». Les
 faits sont les sièges du dernier instantané publié (`AffectationPubliee`),
-chargés par `PlanningService.prepareProblem` avant chaque résolution et
+chargés par `SolveRunner.prepareProblem` avant chaque résolution et
 chaque diagnostic, jamais envoyés par un client.
 
 **Ce qu'elle compte aussi : un siège publié laissé vide**, au même prix
