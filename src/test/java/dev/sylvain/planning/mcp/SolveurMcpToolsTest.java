@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.mcp.SolveurMcpTools.ViolationHardView;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
-import dev.sylvain.planning.service.PlanningService.ConstraintDiagnostic;
-import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
+import dev.sylvain.planning.service.PlanningDiagnosticService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.PlanningDiagnosticService.PlanningDiagnostic;
 
 /**
  * Covers the "connaître les erreurs exactes d'un run solveur avec des

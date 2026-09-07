@@ -986,7 +986,7 @@ public final class PlanningWhatIf {
         List<HardViolation> violations = new ArrayList<>();
         for (ConstraintContribution ca : apres.contributions()) {
             String name = ca.constraintName();
-            if (!PlanningService.HARD_CONSTRAINT_NAMES.contains(name)) {
+            if (!PlanningDiagnosticService.HARD_CONSTRAINT_NAMES.contains(name)) {
                 continue;
             }
             int supplement = ca.matchCount() - matchesAvant.getOrDefault(name, 0);
@@ -1018,7 +1018,7 @@ public final class PlanningWhatIf {
                     definition == null ? null : definition.categorie(),
                     definition == null ? null : definition.description(),
                     matches.size(),
-                    PlanningService.formatViolations(matches)));
+                    PlanningDiagnosticService.formatViolations(matches)));
         }
         return impacts;
     }

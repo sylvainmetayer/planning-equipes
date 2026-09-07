@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
+import dev.sylvain.planning.service.PlanningDiagnosticService.PlanningDiagnostic;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

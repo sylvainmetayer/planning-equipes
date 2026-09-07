@@ -18,7 +18,7 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.PlanningService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.PlanningDiagnosticService.ConstraintDiagnostic;
 
 /**
  * {@code diagnose()} must turn a hard-constraint match into a
@@ -49,7 +49,7 @@ class PlanningServiceDiagnosticViolationsTest {
         forcee.setCreneau(creneau);
         forcee.setRaison("Promesse faite en juin");
 
-        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(new PlanningEvenement(
+        PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(new PlanningEvenement(
                 creneau.getDate(), List.of(animateur, occupant), List.of(poste), List.of(forcee)));
 
         assertThat(diagnostic.contraintesAdHocEnCause())
@@ -82,7 +82,7 @@ class PlanningServiceDiagnosticViolationsTest {
         forcee.setAnimateursConcernes(List.of(animateur));
         forcee.setCreneau(creneau);
 
-        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(new PlanningEvenement(
+        PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(new PlanningEvenement(
                 creneau.getDate(), List.of(animateur), List.of(poste), List.of(forcee)));
 
         assertThat(diagnostic.contraintesAdHocEnCause()).isEmpty();
@@ -98,7 +98,7 @@ class PlanningServiceDiagnosticViolationsTest {
 
         PlanningEvenement evenement = new PlanningEvenement(creneau.getDate(), List.of(), List.of(posteNonPourvu));
 
-        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(evenement);
+        PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(evenement);
 
         ConstraintDiagnostic posteDoitEtrePourvu = diagnostic.contraintes().stream()
                 .filter(c -> c.name().equals("posteDoitEtrePourvu"))

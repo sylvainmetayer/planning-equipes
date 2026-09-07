@@ -16,7 +16,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.PlanSnapshotService.AffectationSnapshot;
-import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
+import dev.sylvain.planning.service.PlanningDiagnosticService.PlanningDiagnostic;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -159,7 +159,7 @@ public class PlanningKpiService {
             return Map.of();
         }
         Map<String, Integer> violations = new LinkedHashMap<>();
-        for (PlanningService.ConstraintDiagnostic contrainte : diagnostic.contraintes()) {
+        for (PlanningDiagnosticService.ConstraintDiagnostic contrainte : diagnostic.contraintes()) {
             violations.put(contrainte.name(), contrainte.matchCount());
         }
         return violations;

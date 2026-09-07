@@ -8,7 +8,7 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
  * What one constraint contributed to a planning's score: its total, and the
  * facts of every match that produced it.
  *
- * <p>Not to be confused with {@code PlanningService.ConstraintDiagnostic},
+ * <p>Not to be confused with {@code PlanningDiagnosticService.ConstraintDiagnostic},
  * which is the API payload derived from this one: there the matches are already
  * formatted into human-readable lines and capped for a popup, here they are
  * still the raw domain objects the constraint justified itself with.</p>

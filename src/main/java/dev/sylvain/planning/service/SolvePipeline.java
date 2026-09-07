@@ -88,7 +88,7 @@ public class SolvePipeline {
      *                     end — its budget, feasibility, or a cancel
      */
     public record Resolution<P>(P probleme, PlanningEvenement planning,
-            PlanningService.PlanningDiagnostic diagnostic, PreviousPlan previousPlan,
+            PlanningDiagnosticService.PlanningDiagnostic diagnostic, PreviousPlan previousPlan,
             ImpactPublication impactPublication, Interruption interruption) {
     }
 
@@ -181,7 +181,7 @@ public class SolvePipeline {
             return interrupted(probleme, resolu, replaced, scoreBefore, dureeSolveSecondes);
         }
         persistenceService.persist(resolu);
-        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
+        PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         analysisStore.record(diagnostic);
         // KPI history (issue #89): one row per finished solve, carrying the real
         // duration. Deliberately after the analysis — the KPI reads the score it
@@ -204,7 +204,7 @@ public class SolvePipeline {
         // Cleared before touching the database: a connection pool refuses an
         // interrupted thread, and a plan worth keeping must be writable.
         Thread.interrupted();
-        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
+        PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         boolean kept = keepsPartialPlan(scoreBefore, diagnostic.score());
         if (kept) {
             persistenceService.persist(resolu);
@@ -247,7 +247,7 @@ public class SolvePipeline {
     /** The score of the plan in place, {@code null} when it cannot be established. */
     private String scoreOfPersistedPlan() {
         try {
-            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnosePersistedPlan();
+            PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnosePersistedPlan();
             return diagnostic == null ? null : diagnostic.score();
         } catch (RuntimeException e) {
             LOG.warn("The persisted plan's score could not be established", e);
@@ -306,7 +306,7 @@ public class SolvePipeline {
             return replaced.score();
         }
         try {
-            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnosePersistedPlan();
+            PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnosePersistedPlan();
             if (diagnostic == null) {
                 return null;
             }
@@ -326,7 +326,7 @@ public class SolvePipeline {
      * written here, it is the delivery policy {@code NotificationDispatcher}
      * applies to every notification.
      */
-    private void announce(String editionNom, PlanningService.PlanningDiagnostic diagnostic) {
+    private void announce(String editionNom, PlanningDiagnosticService.PlanningDiagnostic diagnostic) {
         if (!referenceDataService.getParametresSolveur().mailFinResolution()) {
             return;
         }

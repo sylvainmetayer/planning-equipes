@@ -199,7 +199,7 @@ public class SolverJobService {
      *                     a solve that finished
      */
     public record ResultatSolve(
-            PlanningService.PlanningDiagnostic diagnostic,
+            PlanningDiagnosticService.PlanningDiagnostic diagnostic,
             PreviousPlan previousPlan,
             ReamorcageEffectue reamorcage,
             SolvePipeline.ImpactPublication impactPublication,
@@ -277,7 +277,7 @@ public class SolverJobService {
      * is impacted.
      */
     public record ResultatSolveIncremental(
-            PlanningService.PlanningDiagnostic diagnostic,
+            PlanningDiagnosticService.PlanningDiagnostic diagnostic,
             ProblemBuilder.StatistiquesIncremental statistiques,
             List<ReplanificationDiff.ChangementAffectation> changements,
             PreviousPlan previousPlan,

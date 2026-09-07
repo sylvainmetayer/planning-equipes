@@ -16,7 +16,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.PlanningPersistenceService;
-import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
+import dev.sylvain.planning.service.PlanningDiagnosticService.PlanningDiagnostic;
 import dev.sylvain.planning.service.Reamorcage;
 import dev.sylvain.planning.service.ReplanificationScope;
 import dev.sylvain.planning.service.SolverJobService;

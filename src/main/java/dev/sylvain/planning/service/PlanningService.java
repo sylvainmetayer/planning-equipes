@@ -1,80 +1,48 @@
 package dev.sylvain.planning.service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.Solver;
-import ai.timefold.solver.core.api.solver.SolutionManager;
-import ai.timefold.solver.core.api.solver.SolverFactory;
-import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
-import ai.timefold.solver.core.config.solver.termination.TerminationCompositionStyle;
-import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import ai.timefold.solver.core.config.solver.SolverConfig;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ConstraintToggle;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.service.diagnostic.ConstraintContribution;
-import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticMode;
-import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
-import dev.sylvain.planning.service.diagnostic.MatchFacts;
-import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
 import dev.sylvain.planning.solver.ConstraintCatalog;
-import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
 @ApplicationScoped
 public class PlanningService {
 
-    private final SolverFactory<PlanningEvenement> solverFactory;
-    /**
-     * Kept for {@link SolutionManager#update} alone — refreshing a reloaded
-     * plan's score. Everything that used to break a score down per constraint
-     * now goes through {@link #constraintDiagnosticService}.
-     */
-    private final SolutionManager<PlanningEvenement, ?> solutionManager;
-    private final ConstraintDiagnosticService constraintDiagnosticService;
+    /** How this deployment configures a solve: factory, termination, weights. */
+    private final SolverConfiguration solverConfiguration;
+
+    /** The solve itself, and the server-side preparation that precedes it. */
+    private final SolveRunner solveRunner;
+
     private final ReferenceData referenceDataService;
-    private final FeasibilityAnalyzer feasibilityAnalyzer;
-    private final long defaultSecondsLimit;
-    /**
-     * The deployment-wide weight of every constraint, read once from
-     * {@code application.properties}. An edition may override any of them
-     * (table {@code ponderation_contrainte}); see
-     * {@link #constraintWeightOverrides(Map)}.
-     */
-    private final Map<String, Integer> configuredWeights;
-    /** Cap fed to {@code limiterEmplacementsParJour} through {@link ParametresQualite}. */
-    private final int maxEmplacementsParJour;
 
     /** Everything that turns the edition's reference data into a problem to solve. */
     private final ProblemBuilder problemBuilder;
 
     /** Everything the application answers about a plan without solving it again. */
     private final PlanningWhatIf whatIf;
+
+    /** The business-facing reading of a solved or persisted plan. */
+    private final PlanningDiagnosticService diagnosticService;
 
     /**
      * Field-injected rather than a constructor parameter: the plain (non-CDI)
@@ -97,159 +65,24 @@ public class PlanningService {
             ReferenceData referenceDataService,
             FeasibilityAnalyzer feasibilityAnalyzer,
             Config config) {
-        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
-        applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit);
-        this.solverFactory = SolverFactory.create(solverConfig);
-        this.solutionManager = SolutionManager.create(this.solverFactory);
-        this.constraintDiagnosticService = ConstraintDiagnosticService.of(
-                readDiagnosticMode(config), this.solverFactory);
+        this.solverConfiguration = new SolverConfiguration(secondsLimit, unimprovedSecondsLimit,
+                maxEmplacementsParJour, referenceDataService, config);
         this.referenceDataService = referenceDataService;
-        this.feasibilityAnalyzer = feasibilityAnalyzer;
-        this.defaultSecondsLimit = secondsLimit;
-        this.maxEmplacementsParJour = maxEmplacementsParJour;
-        // Lazily reads the field injected below, which CDI sets after this runs.
+        // The two lambdas below lazily read the fields injected after this runs.
+        this.solveRunner = new SolveRunner(solverConfiguration, referenceDataService, () -> snapshotService);
         this.problemBuilder = new ProblemBuilder(referenceDataService, () -> planningPersistenceService);
-        this.whatIf = new PlanningWhatIf(constraintDiagnosticService, referenceDataService,
-                () -> planningPersistenceService, this::prepareProblem);
-        this.configuredWeights = readConfiguredWeights(config);
+        this.whatIf = new PlanningWhatIf(solverConfiguration.diagnosticService(), referenceDataService,
+                () -> planningPersistenceService, solveRunner::prepareProblem);
+        this.diagnosticService = new PlanningDiagnosticService(solverConfiguration.diagnosticService(),
+                solverConfiguration.solutionManager(), feasibilityAnalyzer,
+                () -> planningPersistenceService.loadPersistedPlanning(), solveRunner::prepareProblem);
     }
 
-    /**
-     * Which implementation breaks a score down per constraint. Read here rather
-     * than injected as a {@code @ConfigProperty} because the plain (non-CDI)
-     * tests build this service with {@code new}, and because the value is only
-     * ever consumed once, to pick the implementation.
-     */
-    private static ConstraintDiagnosticMode readDiagnosticMode(Config config) {
-        return config.getOptionalValue(ConstraintDiagnosticMode.CONFIG_PROPERTY, String.class)
-                .map(ConstraintDiagnosticMode::fromConfigValue)
-                .orElse(ConstraintDiagnosticMode.DEFAULT);
-    }
 
-    /**
-     * Reads {@code planning.constraint-weights.<constraintName>} for every
-     * constraint in {@link ConstraintCatalog}, defaulting to 1 — the
-     * {@code ONE_HARD}/{@code ONE_MEDIUM}/{@code ONE_SOFT} literal already
-     * baked into each constraint. Computed once at startup since
-     * {@code application.properties} does not change at runtime; the edition's
-     * own overrides are read at solve time instead (see
-     * {@link #effectiveConstraintWeights()}).
-     */
-    private static Map<String, Integer> readConfiguredWeights(Config config) {
-        Map<String, Integer> poids = new HashMap<>();
-        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-            poids.put(definition.name(), config
-                    .getOptionalValue("planning.constraint-weights." + definition.name(), Integer.class)
-                    .orElse(1));
-        }
-        return Map.copyOf(poids);
-    }
 
-    /**
-     * The weight actually applied to each constraint on the next solve: the
-     * configured default, overridden by whatever the current edition stored.
-     *
-     * <p>The configuration stays the value shipped with the deployment — the
-     * ratios the solver was tuned with — and an organiser retunes their own
-     * edition without changing it for the others. Read on every solve rather
-     * than cached: the Contraintes screen writes it, and two editions solved
-     * by the same process must not share one another's dosage.</p>
-     */
-    public Map<String, Integer> effectiveConstraintWeights() {
-        return effectiveConstraintWeights(null);
-    }
 
-    /**
-     * Same, for a planning built from a scenario that pinned its own dosage.
-     *
-     * <p>The scenario layer <b>replaces</b> the edition's rather than merging
-     * with it, exactly as importing the file would: a rule the file does not
-     * name goes back to the deployment default. Merging would let the ambient
-     * edition's leftovers decide, and the same scenario would solve a different
-     * problem depending on where it was run — the hole the {@code contraintes:}
-     * section exists to close.</p>
-     *
-     * @param scenario the weights the file pinned, or {@code null} when it
-     *                 pinned none — in which case the edition's own tuning
-     *                 applies, unchanged
-     */
-    public Map<String, Integer> effectiveConstraintWeights(Map<String, Integer> scenario) {
-        Map<String, Integer> poids = new HashMap<>(configuredWeights);
-        Map<String, Integer> surcharges = scenario != null ? scenario : referenceDataService.getConstraintWeights();
-        surcharges.forEach((nom, valeur) -> {
-            if (valeur != null && configuredWeights.containsKey(nom)) {
-                poids.put(nom, valeur);
-            }
-        });
-        return poids;
-    }
 
-    /** {@link #effectiveConstraintWeights()} turned into what Timefold applies at solve time. */
-    private ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides(Map<String, Integer> scenario) {
-        Map<String, HardMediumSoftScore> overrides = new HashMap<>();
-        Map<String, Integer> poids = effectiveConstraintWeights(scenario);
-        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-            int weight = poids.getOrDefault(definition.name(), 1);
-            if (weight == 1) {
-                continue;
-            }
-            overrides.put(definition.name(), switch (definition.niveau()) {
-                case HARD -> HardMediumSoftScore.ofHard(weight);
-                case MEDIUM -> HardMediumSoftScore.ofMedium(weight);
-                case SOFT -> HardMediumSoftScore.ofSoft(weight);
-            });
-        }
-        return overrides.isEmpty() ? ConstraintWeightOverrides.none() : ConstraintWeightOverrides.of(overrides);
-    }
 
-    /**
-     * Two ways for a solve to end, whichever comes first: the time budget is
-     * exhausted, or the planning is <b>already feasible</b> and has stopped
-     * improving for {@code unimprovedSecondsLimit}.
-     *
-     * <p>The second half is deliberately gated on feasibility
-     * ({@link TerminationConfig#withBestScoreFeasible}, AND-ed with the plateau
-     * limit). A bare unimproved-time limit — what this used to configure, and
-     * why it ended up disabled altogether — bails out of local search on a
-     * <em>hard-constraint</em> plateau too: the solver gave up minutes early on
-     * a planning that still had unfilled seats, exactly the case where it needs
-     * the rest of its budget. Gated this way, the bailout can only ever cut
-     * time that was being spent polishing medium/soft score on an already
-     * workable planning, never time spent reaching hard-feasibility.</p>
-     *
-     * <p>{@code unimprovedSecondsLimit <= 0} disables the plateau branch and
-     * leaves the plain time budget.</p>
-     */
-    private static void applyTermination(SolverConfig solverConfig, Long secondsLimit, Long unimprovedSecondsLimit) {
-        if (solverConfig.getTerminationConfig() == null) {
-            solverConfig.setTerminationConfig(new TerminationConfig());
-        }
-        TerminationConfig termination = solverConfig.getTerminationConfig();
-        termination.setSecondsSpentLimit(secondsLimit);
-        if (unimprovedSecondsLimit != null && unimprovedSecondsLimit > 0) {
-            termination.setTerminationConfigList(List.of(new TerminationConfig()
-                    .withBestScoreFeasible(true)
-                    .withUnimprovedSecondsSpentLimit(unimprovedSecondsLimit)
-                    .withTerminationCompositionStyle(TerminationCompositionStyle.AND)));
-        }
-    }
-
-    /**
-     * Names of every constraint enforced at {@link ConstraintCatalog.Niveau#HARD}.
-     * The diagnostic only builds per-match {@code violations} for these:
-     * a soft or medium constraint like {@code souhaitsIncompatibles} can have
-     * thousands of matches, which would bloat the diagnostic payload for a
-     * detail nobody blocking on a failed solve needs to see.
-     */
-    static final Set<String> HARD_CONSTRAINT_NAMES = ConstraintCatalog.definitions().stream()
-            .filter(definition -> definition.niveau() == ConstraintCatalog.Niveau.HARD)
-            .map(ConstraintCatalog.ConstraintDefinition::name)
-            .collect(Collectors.toUnmodifiableSet());
-
-    /** Caps the per-constraint violation list: a UI detail view, not a full dump. */
-    private static final int MAX_VIOLATIONS_PAR_CONTRAINTE = 100;
 
     public PlanningEvenement buildExample() {
         return buildExample(ScenarioYamlReader.DEFAULT_SCENARIO);
@@ -286,6 +119,18 @@ public class PlanningService {
         }
     }
 
+
+    // --- Solver configuration: façade over SolverConfiguration --------------
+
+    /** @see SolverConfiguration#effectiveConstraintWeights() */
+    public Map<String, Integer> effectiveConstraintWeights() {
+        return solverConfiguration.effectiveConstraintWeights();
+    }
+
+    /** @see SolverConfiguration#effectiveConstraintWeights(Map) */
+    public Map<String, Integer> effectiveConstraintWeights(Map<String, Integer> scenario) {
+        return solverConfiguration.effectiveConstraintWeights(scenario);
+    }
 
     // --- Problem building: façade over ProblemBuilder -----------------------
 
@@ -399,126 +244,6 @@ public class PlanningService {
         return ScenarioYamlReader.loadReferenceScenario(scenarioName);
     }
 
-    public PlanningEvenement solve(PlanningEvenement problem) {
-        return solve(problem, null);
-    }
-
-    public PlanningEvenement solve(PlanningEvenement problem, Long secondsLimitOverride) {
-        return solve(problem, secondsLimitOverride, null);
-    }
-
-    /**
-     * Same as {@link #solve(PlanningEvenement, Long)}, but hands the freshly
-     * built {@link Solver} to {@code onSolverReady} before blocking on
-     * {@code solve()} — the only way a caller running this on a background
-     * thread (see {@code SolverJobService}) can later call
-     * {@link Solver#terminateEarly()} to stop a solve started by mistake.
-     */
-    public PlanningEvenement solve(PlanningEvenement problem, Long secondsLimitOverride,
-            Consumer<Solver<PlanningEvenement>> onSolverReady) {
-        prepareProblem(problem);
-        Solver<PlanningEvenement> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
-        if (onSolverReady != null) {
-            onSolverReady.accept(solver);
-        }
-        return solver.solve(problem);
-    }
-
-    /**
-     * Solves until the plan becomes hard-feasible (or {@code secondsLimitSecurite}
-     * elapses, whichever comes first), instead of spending a full time budget on
-     * medium/soft polishing. Large scenarios (e.g. {@code scenario-complet.yaml},
-     * ~2000 postes) reach hard-feasibility in well under a minute but keep
-     * improving medium/soft for the rest of a production-sized budget; a caller
-     * that only cares about the hard score (e.g. a regression test) would
-     * otherwise wait out that whole budget for nothing.
-     */
-    public PlanningEvenement solveUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
-        prepareProblem(problem);
-        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
-        TerminationConfig termination = new TerminationConfig();
-        termination.setSecondsSpentLimit(secondsLimitSecurite);
-        termination.setBestScoreFeasible(true);
-        solverConfig.setTerminationConfig(termination);
-        Solver<PlanningEvenement> solver = SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
-        return solver.solve(problem);
-    }
-
-    /**
-     * Fills a planning read from the database with the server-side facts before
-     * anything scores it — the same overwrite a solve does. Package-private for
-     * {@link DeplacementService}, which must judge a gesture on the rules the
-     * edition really runs under.
-     */
-    void prepareForAnalysis(PlanningEvenement planning) {
-        prepareProblem(planning);
-    }
-
-    private void prepareProblem(PlanningEvenement problem) {
-        if (problem.getContraintesAdHoc() == null || problem.getContraintesAdHoc().isEmpty()) {
-            problem.setContraintesAdHoc(referenceDataService.snapshotContraintes());
-        }
-        if (problem.getParametresLegaux() == null || problem.getParametresLegaux().isEmpty()) {
-            problem.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
-        }
-        if (problem.getConstraintsDesactivees() == null || problem.getConstraintsDesactivees().isEmpty()) {
-            problem.setConstraintsDesactivees(referenceDataService.getContraintesDesactivees().stream()
-                    .map(ConstraintToggle::new)
-                    .toList());
-        }
-        // The published plan is the server's knowledge, never the caller's: a
-        // planning posted by a client cannot decide what people were told.
-        problem.setAffectationsPubliees(affectationsPubliees());
-        // Server-side configuration, like the weights below: always overwritten
-        // so a caller cannot loosen a quality threshold by sending its own.
-        problem.setParametresQualite(List.of(new ParametresQualite(maxEmplacementsParJour)));
-        // Never sent by a caller (the field is @JsonIgnore-d on PlanningEvenement),
-        // so this always overwrites the ConstraintWeightOverrides.none() default.
-        problem.setPonderationsContraintes(constraintWeightOverrides(problem.getPonderationsScenario()));
-    }
-
-    /**
-     * The seats of the last published plan, as facts of {@code stabiliteDuPlanPublie};
-     * empty when nothing was published, or when the snapshot service is not
-     * wired (a plain-Java harness). A seat the publication left empty carries
-     * nobody to keep and is skipped.
-     */
-    List<AffectationPubliee> affectationsPubliees() {
-        if (snapshotService == null) {
-            return List.of();
-        }
-        PlanSnapshotService.SnapshotDetail publication = snapshotService.loadLastPublication();
-        if (publication == null) {
-            return List.of();
-        }
-        return factsPublies(publication.affectations());
-    }
-
-    /**
-     * The published seats as facts, <b>without duplicates</b>.
-     *
-     * <p>A fact says « this line had this person », a stand × créneau × person
-     * triple, which several seats can share: a créneau cut into segments gives
-     * one seat per segment, and the same person legitimately holds two of them
-     * (a stand open 10 h-18 h with a meal-cover shift, say) — and a plan may
-     * also have been published with a double booking on one line, which is a
-     * hard violation the rule has no business repeating. Timefold indexes
-     * problem facts by equality and refuses an equal one twice ("The fact …
-     * was already inserted"), so the list must be a set. The constraint only
-     * ever asks whether such a line exists, so collapsing the copies changes
-     * no score.</p>
-     */
-    static List<AffectationPubliee> factsPublies(List<PlanSnapshotService.AffectationSnapshot> affectations) {
-        return affectations.stream()
-                .filter(affectation -> affectation.animateurId() != null && affectation.standId() != null
-                        && affectation.creneauId() != null)
-                .map(affectation -> new AffectationPubliee(affectation.standId(),
-                        Long.parseLong(affectation.creneauId()), affectation.animateurId()))
-                .distinct()
-                .toList();
-    }
 
     /**
      * Every constraint definition indexed by name, so {@link PlanningWhatIf} can
@@ -605,203 +330,53 @@ public class PlanningService {
         return whatIf.suggererEchanges(solved, demandeurId, creneauId, standId, plafondDemande);
     }
 
-    /**
-     * Builds the diagnostic of an already-solved planning, without solving it
-     * again. Used right after {@link #solve} so a solve is never run twice
-     * just to produce its own analysis.
-     */
-    /**
-     * Re-derives the constraint analysis of the plan currently persisted —
-     * called after a snapshot restore rewrote {@code poste_affectation}
-     * outside of any solve. Without it, the Contraintes screen kept
-     * describing the <b>last solve</b>: after a group switch plus a one-click
-     * restore (the issue #167 flow), it still showed the previous group's
-     * hard violations against the freshly restored plan. Runs the same
-     * preparation as a solve (ad hoc constraints, legal parameters, toggles,
-     * weights) so the diagnostic is comparable to a post-solve one. Returns
-     * {@code null} when nothing is persisted.
-     */
-    public PlanningDiagnostic diagnosePersistedPlan() {
-        PlanningEvenement persisted = planningPersistenceService.loadPersistedPlanning();
-        if (persisted.getPostes().isEmpty()) {
-            return null;
-        }
-        prepareProblem(persisted);
-        // diagnose() reads the solution's own score (hardScore, medium
-        // breakdown): a freshly reloaded plan has none until update() sets it.
-        solutionManager.update(persisted);
-        return diagnose(persisted);
+
+
+    // --- Solve: façade over SolveRunner -------------------------------------
+
+    /** @see SolveRunner#solve(PlanningEvenement) */
+    public PlanningEvenement solve(PlanningEvenement problem) {
+        return solveRunner.solve(problem);
     }
 
-    public PlanningDiagnostic diagnose(PlanningEvenement solved) {
-        PlanningAnalysis analysis = constraintDiagnosticService.analyze(solved);
-        List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();
-        Map<String, ContributionAdHoc> contributionsAdHoc = new LinkedHashMap<>();
-        for (ConstraintContribution ca : analysis.contributions()) {
-            String name = ca.constraintName();
-            boolean hard = HARD_CONSTRAINT_NAMES.contains(name);
-            List<String> violations = hard ? formatViolations(ca.matches()) : List.of();
-            if (hard) {
-                collectContributionsAdHoc(name, ca.matches(), contributionsAdHoc);
-            }
-            constraintDiagnostics.add(new ConstraintDiagnostic(
-                    name,
-                    String.valueOf(ca.score()),
-                    ca.matchCount(),
-                    violations));
-        }
-        constraintDiagnostics.sort((a, b) -> Integer.compare(b.matchCount, a.matchCount));
-        int unassigned = (int) solved.getPostes().stream()
-                .filter(p -> p.getAnimateur() == null)
-                .count();
-        FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyze(
-                solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved),
-                solved.getContraintesAdHoc());
-        int hardScore = solved.getScore() == null ? 0 : Math.toIntExact(solved.getScore().hardScore());
-        List<ContributionAdHoc> contraintesAdHocEnCause = contributionsAdHoc.values().stream()
-                .sorted(Comparator.comparingInt(ContributionAdHoc::violations).reversed()
-                        .thenComparing(ContributionAdHoc::contrainteId))
-                .toList();
-        return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics,
-                faisabilite, hardScore, contraintesAdHocEnCause);
+    /** @see SolveRunner#solve(PlanningEvenement, Long) */
+    public PlanningEvenement solve(PlanningEvenement problem, Long secondsLimitOverride) {
+        return solveRunner.solve(problem, secondsLimitOverride);
     }
 
-    /**
-     * Which hand-entered exceptions the still-violated hard constraints are
-     * about (issue #84).
-     *
-     * <p>A solve that ends hard-negative names the rules that failed, and
-     * "affectationForcee: 12" is where the user stops reading: nothing says
-     * <em>which</em> of their exceptions the solver could not honour, so the
-     * usual conclusion is that the solver is at fault. The three prescriptive
-     * ad hoc rules carry the {@code ContrainteAdHoc} itself in their
-     * justification, so the attribution is a matter of reading it back.</p>
-     *
-     * <p>Counted over the matches actually analysed, so a constraint capped by
-     * {@link #MAX_VIOLATIONS_PAR_CONTRAINTE} is not capped here — this reads
-     * the raw matches, not the formatted lines.</p>
-     */
-    private static void collectContributionsAdHoc(String constraintName,
-            List<MatchFacts> matches, Map<String, ContributionAdHoc> contributions) {
-        for (MatchFacts match : matches) {
-            for (Object fact : match.facts()) {
-                if (fact instanceof ContrainteAdHoc contrainte && contrainte.getId() != null) {
-                    contributions.merge(contrainte.getId(),
-                            new ContributionAdHoc(contrainte.getId(),
-                                    contrainte.getType() == null ? null : contrainte.getType().name(),
-                                    contrainte.getRaison(), 1, List.of(constraintName)),
-                            PlanningService::mergeContributions);
-                }
-            }
-        }
+    /** @see SolveRunner#solve(PlanningEvenement, Long, Consumer) */
+    public PlanningEvenement solve(PlanningEvenement problem, Long secondsLimitOverride,
+            Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        return solveRunner.solve(problem, secondsLimitOverride, onSolverReady);
     }
 
-    private static ContributionAdHoc mergeContributions(ContributionAdHoc existing, ContributionAdHoc addition) {
-        List<String> contraintes = new ArrayList<>(existing.contraintes());
-        for (String name : addition.contraintes()) {
-            if (!contraintes.contains(name)) {
-                contraintes.add(name);
-            }
-        }
-        return new ContributionAdHoc(existing.contrainteId(), existing.type(), existing.raison(),
-                existing.violations() + addition.violations(), List.copyOf(contraintes));
+    /** @see SolveRunner#solveUntilFeasible */
+    public PlanningEvenement solveUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
+        return solveRunner.solveUntilFeasible(problem, secondsLimitSecurite);
     }
 
-    /**
-     * One line per match, human-readable (see {@link ViolationFormatter}) —
-     * e.g. "Sarah Rousseau (A45)" for a {@code reposHebdomadaireMineur} hit, or
-     * "Stand tir à l'arc — 2026-07-16 12:30-15:30" for an unfilled
-     * {@code posteDoitEtrePourvu} seat. Capped at {@link #MAX_VIOLATIONS_PAR_CONTRAINTE}:
-     * this feeds a UI detail popup, not an export.
-     */
-    static List<String> formatViolations(List<MatchFacts> matches) {
-        return matches.stream()
-                .limit(MAX_VIOLATIONS_PAR_CONTRAINTE)
-                .map(match -> ViolationFormatter.describe(match.facts()))
-                .toList();
+    /** @see SolveRunner#prepareForAnalysis */
+    void prepareForAnalysis(PlanningEvenement planning) {
+        solveRunner.prepareForAnalysis(planning);
     }
 
-    private static List<Stand> distinctStands(PlanningEvenement solved) {
-        Map<String, Stand> byId = new LinkedHashMap<>();
-        for (PosteAffectation poste : solved.getPostes()) {
-            byId.putIfAbsent(poste.getStand().getId(), poste.getStand());
-        }
-        return new ArrayList<>(byId.values());
+    /** @see SolveRunner#affectationsPubliees() */
+    List<AffectationPubliee> affectationsPubliees() {
+        return solveRunner.affectationsPubliees();
     }
 
-    private static List<Creneau> distinctCreneaux(PlanningEvenement solved) {
-        Map<Long, Creneau> byId = new LinkedHashMap<>();
-        for (PosteAffectation poste : solved.getPostes()) {
-            byId.putIfAbsent(poste.getCreneau().getId(), poste.getCreneau());
-        }
-        return new ArrayList<>(byId.values());
+    // --- Diagnostic: façade over PlanningDiagnosticService ------------------
+
+    /** @see PlanningDiagnosticService#diagnosePersistedPlan() */
+    public PlanningDiagnosticService.PlanningDiagnostic diagnosePersistedPlan() {
+        return diagnosticService.diagnosePersistedPlan();
     }
 
-    private SolverFactory<PlanningEvenement> resolveSolverFactory(Long secondsLimitOverride) {
-        if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
-            return solverFactory;
-        }
-        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
-        // An explicit override means the caller wants exactly that many seconds;
-        // the ambient unimproved-time bailout (e.g. the test profile's 2s, far
-        // too tight for a large scenario solved with a bigger override) must not
-        // silently cut it short, so it is disabled rather than reused here.
-        applyTermination(solverConfig, secondsLimitOverride, 0L);
-        return SolverFactory.create(solverConfig);
+    /** @see PlanningDiagnosticService#diagnose(PlanningEvenement) */
+    public PlanningDiagnosticService.PlanningDiagnostic diagnose(PlanningEvenement solved) {
+        return diagnosticService.diagnose(solved);
     }
 
-    /**
-     * @param violations one human-readable line per match (see
-     *                    {@link ViolationFormatter}), populated only for
-     *                    constraints enforced at
-     *                    {@link ConstraintCatalog.Niveau#HARD} — empty for
-     *                    medium/soft ones, which can run into the thousands
-     *                    of matches (see {@link #HARD_CONSTRAINT_NAMES}).
-     */
-    public record ConstraintDiagnostic(String name, String score, int matchCount, List<String> violations) {
-    }
 
-    /**
-     * Business-facing result of a solve: score, unfilled seats and
-     * per-constraint breakdown. Deliberately excludes the {@link PlanningEvenement}
-     * itself (animateurs/stands/créneaux/postes) — that payload can reach several
-     * dozens of MB and is consulted through the dedicated screens instead, which
-     * load it from {@code /api/planning/persisted}.
-     *
-     * <p>{@code hardScore} is the actually-reached hard score, distinct from
-     * {@code faisabilite}: the latter is a cheap, optimistic pre-solve capacity
-     * estimate (see {@link FeasibilityAnalyzer}'s javadoc — it can under-report a
-     * shortfall it didn't account for, e.g. one only created by the vacation
-     * découpage or by a legal constraint on minors) and can say "réalisable"
-     * for a plan the solver still could not bring to zero hard within its time
-     * budget. Callers that need to know whether the plan actually in hand is
-     * fully legal/staffed must check {@code hardScore == 0}, not just
-     * {@code faisabilite.feasible()}.</p>
-     */
-    public record PlanningDiagnostic(
-            String score,
-            int postesNonPourvus,
-            List<ConstraintDiagnostic> contraintes,
-            FeasibilityAnalyzer.FeasibilityReport faisabilite,
-            int hardScore,
-            List<ContributionAdHoc> contraintesAdHocEnCause) {
-    }
-
-    /**
-     * One hand-entered exception the last analysis found still violated, most
-     * violated first.
-     *
-     * @param contrainteId id of the {@code ContrainteAdHoc}, the one shown on
-     *                     the ad hoc screen
-     * @param type         its {@code TypeContrainteAdHoc}, as a name
-     * @param raison       the free text its author typed, kept as-is
-     * @param violations   number of matches it accounts for
-     * @param contraintes  names of the solver rules it broke, usually one
-     */
-    public record ContributionAdHoc(String contrainteId, String type, String raison, int violations,
-            List<String> contraintes) {
-    }
 
 }
