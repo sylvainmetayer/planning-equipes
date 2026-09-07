@@ -9,3 +9,23 @@ target/
 src/main/webui/node_modules/
 src/main/webui/dist/
 src/main/webui/.angular/
+
+# Le contexte entier part au démon avant que le moindre COPY ne soit évalué, et
+# le Dockerfile ne copie que pom.xml, src et .git. Rien de ce qui suit n'est
+# donc atteint par un COPY, et tout était transféré pour rien.
+#
+# L'enjeu n'est pas l'image publiée : docker-ghcr.yml construit depuis un
+# checkout neuf, où ces dossiers pèsent environ 1 Mo (assets/ n'a aucun fichier
+# suivi, les node_modules d'explorbot/ non plus). C'est le build local —
+# `docker compose --profile app up --build` — qui payait le prix fort, et
+# assets/ qui n'a rien à faire dans un contexte d'image puisqu'il porte des
+# données réelles.
+explorbot/
+assets/
+site/
+# Node installé localement par Quinoa, réinstallé dans l'image.
+.quinoa/
+# Arbres de travail des agents : le plus gros poste du contexte local.
+.claude/worktrees/
+# Rapport de couverture du frontend, régénéré à la demande.
+src/main/webui/coverage/

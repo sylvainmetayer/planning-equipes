@@ -185,16 +185,38 @@
             <groupId>com.github.victools</groupId>
             <artifactId>jsonschema-generator</artifactId>
             <version>${jsonschema-generator.version}</version>
+            <!-- Stays `compile`, deliberately: quarkus-mcp-server-core depends
+                 on it non-optionally, so it ships whatever we say. Declaring it
+                 here is what pins the version that ships — and `provided` is
+                 precisely what would stop doing that: Maven resolves our
+                 version, then drops it from the runtime classpath and the
+                 Quarkus resolver puts the extension's own back. Measured: with
+                 the property at 4.37.0, `compile` ships 4.37.0 and `provided`
+                 ships 4.38.0. The Renovate rule below guards that pin. -->
         </dependency>
         <dependency>
             <groupId>com.github.victools</groupId>
             <artifactId>jsonschema-module-jackson</artifactId>
             <version>${jsonschema-generator.version}</version>
+            <!-- Build tooling, not runtime. quarkus-mcp-server-core marks this
+                 module `optional`, so it only shipped because we declared it:
+                 `provided` takes it out of the image, out of the signed SBOM and
+                 out of the Trivy scan. Its only user is
+                 ScenarioSchemaGenerator, under the opt-in generate-schema
+                 profile, whose exec plugin asks for the compile classpath. -->
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.github.victools</groupId>
             <artifactId>jsonschema-module-jakarta-validation</artifactId>
             <version>${jsonschema-generator.version}</version>
+            <!-- Build tooling, not runtime. quarkus-mcp-server-core marks this
+                 module `optional`, so it only shipped because we declared it:
+                 `provided` takes it out of the image, out of the signed SBOM and
+                 out of the Trivy scan. Its only user is
+                 ScenarioSchemaGenerator, under the opt-in generate-schema
+                 profile, whose exec plugin asks for the compile classpath. -->
+            <scope>provided</scope>
         </dependency>
         <!-- MCP (Model Context Protocol) server: exposes a curated,
              privacy-filtered set of tools (see dev.sylvain.planning.mcp)
@@ -356,6 +378,9 @@
                                 </goals>
                                 <configuration>
                                     <mainClass>dev.sylvain.planning.scenario.ScenarioSchemaGenerator</mainClass>
+                                    <!-- The victools jars are `provided`, which
+                                         the default `runtime` scope leaves out. -->
+                                    <classpathScope>compile</classpathScope>
                                 </configuration>
                             </execution>
                         </executions>

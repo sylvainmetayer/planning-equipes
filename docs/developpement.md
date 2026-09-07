@@ -458,6 +458,22 @@ points qui ne s'y voient pas :
   est le plus récent du dépôt. Le pourquoi — et toute la politique de
   release — est dans [`versioning.md`](versioning.md).
 
+## Contexte de construction de l'image
+
+Le démon Docker reçoit le contexte **entier** avant que le moindre `COPY` du
+`Dockerfile` ne soit évalué, et celui-ci ne copie que `pom.xml`, `src` et
+`.git`. Tout le reste de la racine était donc transféré pour rien.
+
+`.dockerignore` exclut en conséquence `explorbot/`, `assets/`, `site/`,
+`.quinoa/`, `.claude/worktrees/` et `src/main/webui/coverage/`. Sur un arbre de
+travail habité, le contexte passe de ~420 Mio à ~26. En CI le gain est
+négligeable — `docker-ghcr.yml` construit depuis un `checkout` neuf où ces
+dossiers pèsent environ 1 Mo — mais deux raisons demeurent : le
+`docker compose --profile app up --build` local, et le fait qu'`assets/` porte
+des **données réelles**, qui n'ont rien à faire dans un contexte d'image.
+
+Ajouter un dossier volumineux à la racine, c'est donc penser à l'exclure ici.
+
 ## Renovate
 
 Couvre Maven, le wrapper Maven, Docker, les actions GitHub, npm et
