@@ -147,9 +147,17 @@ public class NotificationsPlanifieesService {
         if (!parametres.actives()) {
             return 0;
         }
-        return rappelVeille.run(parametres, maintenant)
+        int envois = rappelVeille.run(parametres, maintenant)
                 + relanceConfirmation.run(parametres, maintenant.toInstant())
                 + alerteEchange.run(parametres, maintenant.toInstant());
+        if (envois > 0) {
+            // The third seam of the history (issue #406): what the application
+            // did on its own. Only when something actually left — a night that
+            // sent nothing is not an action, and a line every hour on every
+            // edition would bury the ones a reader is looking for.
+            journal.recordSystemAction("NOTIFICATIONS_ENVOYEES", null);
+        }
+        return envois;
     }
 
     /**

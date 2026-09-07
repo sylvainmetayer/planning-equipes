@@ -5,8 +5,10 @@ import java.time.Instant;
 import java.util.List;
 
 import dev.sylvain.planning.service.journal.EntreeJournal.Resultat;
+import io.quarkus.runtime.StartupEvent;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -50,6 +52,26 @@ public class JournalActionService {
     @ConfigProperty(name = "planning.journal.retention", defaultValue = "P90D")
     Duration retention;
 
+    /** A day at the very least: below that the nightly sweep would empty the table it purges. */
+    static final Duration RETENTION_MINIMALE = Duration.ofDays(1);
+
+    /** Ten years: past that the journal stops being a journal and becomes an archive nobody decided to keep. */
+    static final Duration RETENTION_MAXIMALE = Duration.ofDays(3650);
+
+    /**
+     * Refuses to start on a retention outside its bounds, rather than trimming
+     * it in silence — the same contract as {@code BACKUP_RETENTION}, and for a
+     * sharper reason: {@code JOURNAL_RETENTION=P0D} makes every night's sweep
+     * delete the entire history, and the only trace of it would be one
+     * information line in a log.
+     */
+    void verifierRetention(@Observes StartupEvent demarrage) {
+        if (retention.compareTo(RETENTION_MINIMALE) < 0 || retention.compareTo(RETENTION_MAXIMALE) > 0) {
+            throw new IllegalStateException("planning.journal.retention must be between "
+                    + RETENTION_MINIMALE + " and " + RETENTION_MAXIMALE + ", but is " + retention);
+        }
+    }
+
     /** Records an action carried out through a request, with the status it ended on. */
     public void record(ActionJournalisee action, Acteur acteur, String acteurId,
             String entiteId, List<String> champs, int statut) {
@@ -90,21 +112,6 @@ public class JournalActionService {
 
     public Duration retention() {
         return retention;
-    }
-
-    /**
-     * Who is acting, as coarsely as the application really knows.
-     *
-     * <p>An espace token beats the admin session: the espace routes are open
-     * to anonymous callers, and on the one deployment where a proxy asserts an
-     * admin identity for everybody, an animateur acting from their espace must
-     * still read as themselves.</p>
-     */
-    public Acteur acteurCourant(String animateurId) {
-        if (animateurId != null) {
-            return Acteur.ANIMATEUR;
-        }
-        return Acteur.ADMIN;
     }
 
     /** The admin's principal name, {@code null} when the request carries no identity. */

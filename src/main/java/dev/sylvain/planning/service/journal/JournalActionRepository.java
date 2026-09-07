@@ -93,6 +93,14 @@ public class JournalActionRepository {
      * plain statement rather than {@link JdbcEditionScope#prepareScoped}, and
      * named in {@code EXCEPTIONS_ASSUMEES} for that reason.
      *
+     * <p><b>It scans.</b> {@code idx_journal_action_recent} leads on
+     * {@code edition_id} — it serves the screen's read, not this sweep, and
+     * V70's comment claiming otherwise is wrong (a migration already applied
+     * is not rewritten, so the correction lives here). That is a deliberate
+     * trade rather than an oversight: a second index would be maintained on
+     * every write, and writes are this table's steady state, while the sweep
+     * runs once a night over ninety days at most.
+     *
      * @return how many lines were dropped
      */
     public int purgeBefore(Instant cutoff) {

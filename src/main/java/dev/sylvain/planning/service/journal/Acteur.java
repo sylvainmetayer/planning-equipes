@@ -15,6 +15,14 @@ public enum Acteur {
     ADMIN,
     /** An animateur acting from their espace; {@code acteurId} is their id, never their name. */
     ANIMATEUR,
+    /**
+     * A caller that presented no valid credential. The espace routes are open
+     * — the URL token <i>is</i> the credential — so a bad or expired one gets
+     * as far as being refused, and that refusal is worth a line. Filing it
+     * under {@link #ADMIN} would put somebody probing espace links under
+     * « Administration », precisely on the rows an operator goes looking for.
+     */
+    ANONYME,
     /** A tool call over MCP: an assistant, driven by whoever holds the API key. */
     ASSISTANT,
     /** The application itself: the nightly sends, the backup, a queue replayed at startup. */

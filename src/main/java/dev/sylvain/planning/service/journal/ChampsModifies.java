@@ -63,8 +63,14 @@ public final class ChampsModifies {
         map.put("horaires", Stand::getHoraires);
     });
 
+    /**
+     * {@code jour} is deliberately absent: it is derived from the edition's
+     * earliest date over the whole grid ({@code Creneau.assignerJours}), never
+     * stored, so comparing it would report a change on every edit read one row
+     * at a time — and an edit never sets it anyway. {@code date} is the field
+     * that actually moved.
+     */
     private static final Map<String, Function<Creneau, Object>> CRENEAU = champs(map -> {
-        map.put("jour", Creneau::getJour);
         map.put("date", Creneau::getDate);
         map.put("heureDebut", Creneau::getHeureDebut);
         map.put("heureFin", Creneau::getHeureFin);
