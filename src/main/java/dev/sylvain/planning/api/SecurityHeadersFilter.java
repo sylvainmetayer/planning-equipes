@@ -48,6 +48,11 @@ import jakarta.enterprise.event.Observes;
  * headers included, same rule as the espace cookie): sending it over http
  * would be ignored by browsers anyway, and pinning the local stack to
  * https would break it.</li>
+ * <li><b>X-Robots-Tag: noindex, nofollow</b> — nothing here is meant to be
+ * found through a search engine. {@code robots.txt} states the same thing,
+ * but it is a request a crawler may ignore and it does not de-list a URL
+ * already reached through a shared link; this header does, and it covers the
+ * espace animateur, whose path <b>is</b> somebody's access token.</li>
  * </ul>
  */
 @ApplicationScoped
@@ -78,6 +83,10 @@ public class SecurityHeadersFilter {
         reponse.putHeader("Referrer-Policy", "no-referrer");
         reponse.putHeader("Cross-Origin-Opener-Policy", "same-origin");
         reponse.putHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(), payment=()");
+        // Not configurable, unlike the CSP: a private staffing tool has no page
+        // worth indexing, and the one URL a crawler can reach without an account
+        // — an animateur's espace — carries that person's access token.
+        reponse.putHeader("X-Robots-Tag", "noindex, nofollow");
         if (config.csp().isPresent() && !contexte.normalizedPath().startsWith(PREFIXE_QUARKUS)) {
             reponse.putHeader("Content-Security-Policy", config.csp().get());
         }

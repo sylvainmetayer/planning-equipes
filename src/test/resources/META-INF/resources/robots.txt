@@ -1,0 +1,5 @@
+# Test fixture standing in for src/main/webui/public/robots.txt, which the
+# Angular build is not run to produce under %test (Quinoa is disabled there).
+# Keep the directives in step with the real file.
+User-agent: *
+Disallow: /

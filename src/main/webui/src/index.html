@@ -8,6 +8,10 @@
     <title>Planning</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Third statement of the same rule, after public/robots.txt and the
+         X-Robots-Tag header: an internal tool has nothing to index, and an
+         espace URL is somebody's access token. -->
+    <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <!-- Roboto and Material Icons are self-hosted (public/fonts + styles/fonts.css):
          no dependency on fonts.googleapis.com, so icons render offline too. -->

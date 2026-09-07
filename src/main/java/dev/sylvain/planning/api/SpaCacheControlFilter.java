@@ -66,7 +66,7 @@ public class SpaCacheControlFilter {
      * by {@code SpaCacheControlTest}.
      */
     static final Set<String> UNHASHED_FILES =
-            Set.of("/favicon.ico");
+            Set.of("/favicon.ico", "/robots.txt");
 
     public void register(@Observes Filters filters) {
         filters.register(this::apply, PRIORITE);

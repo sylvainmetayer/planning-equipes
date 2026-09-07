@@ -26,7 +26,31 @@ class SecurityHeadersTest {
                 .header("X-Frame-Options", equalTo("DENY"))
                 .header("Referrer-Policy", equalTo("no-referrer"))
                 .header("Cross-Origin-Opener-Policy", equalTo("same-origin"))
+                .header("X-Robots-Tag", equalTo("noindex, nofollow"))
                 .header("Content-Security-Policy", containsString("frame-ancestors 'none'"));
+    }
+
+    /**
+     * The three statements of « ne pas référencer » (issue #403), each covering
+     * what the others cannot: the file is a request a crawler may ignore, the
+     * meta tag only exists once the page is parsed as HTML, and the header
+     * de-lists a URL already reached — the case that matters, since an espace
+     * link is shared by mail and carries its holder's access token.
+     */
+    @Test
+    void aucunePageNEstIndexable() {
+        given().when().get("/robots.txt")
+                .then()
+                .statusCode(200)
+                .body(containsString("User-agent: *"))
+                .body(containsString("Disallow: /"))
+                .header("X-Robots-Tag", equalTo("noindex, nofollow"));
+
+        // The espace animateur: the one URL a crawler can reach without an
+        // account, and the one whose path is somebody's credential.
+        given().when().get("/api/espace-animateur/jeton-invente")
+                .then()
+                .header("X-Robots-Tag", equalTo("noindex, nofollow"));
     }
 
     /**

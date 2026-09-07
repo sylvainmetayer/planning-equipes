@@ -1,0 +1,8 @@
+# Outil de planification interne : rien ici n'a vocation à être indexé.
+# Les seules pages qu'un robot peut atteindre sans compte sont la page de
+# connexion, les mentions légales et l'espace d'un animateur — dont l'URL
+# porte un jeton d'accès personnel, qui n'a rien à faire dans un index.
+# Cette consigne se double d'un en-tête X-Robots-Tag sur chaque réponse et
+# d'une balise meta dans la page : un robot qui ignore ce fichier les lit.
+User-agent: *
+Disallow: /

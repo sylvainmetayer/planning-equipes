@@ -23,6 +23,23 @@ compris — les en-têtes suivants :
 | `X-Content-Type-Options` | `nosniff` | Les exports (PDF, ICS, SQL, CSV) sont servis avec leur type ; qu'un navigateur en devine un autre n'apporte rien |
 | `Permissions-Policy` | `geolocation=(), camera=(), microphone=(), payment=()` | Aucune de ces API n'est utilisée — le sélecteur de carte place un point à la souris |
 | `Strict-Transport-Security` | `planning.securite.hsts`, **seulement sur une visite HTTPS** | Un an, sous-domaines compris. Absent sur la pile locale, qui est en clair |
+| `X-Robots-Tag` | `noindex, nofollow` | Un outil de planification interne n'a rien à faire dans un moteur de recherche, et la seule URL qu'un robot peut atteindre sans compte — l'espace d'un animateur — **est** son jeton d'accès. Non réglable, contrairement à la CSP : il n'existe pas de page à référencer ici |
+
+### Ne pas être référencé, dit trois fois
+
+`robots.txt` (à la racine, recopié depuis `src/main/webui/public/`) interdit
+tout à tous les robots ; une balise `<meta name="robots">` dans `index.html`
+répète la consigne dans la page ; l'en-tête ci-dessus la répète sur **chaque
+réponse**. Les trois ne font pas double emploi :
+
+- le **fichier** est une consigne qu'un robot est libre d'ignorer, et il ne dit
+  rien d'une URL déjà connue ;
+- la **balise** n'existe qu'une fois la page interprétée comme du HTML — elle
+  ne couvre ni un PDF exporté, ni un flux ICS, ni une réponse d'API ;
+- l'**en-tête** est le seul des trois qui *désindexe* une adresse déjà
+  atteinte. C'est le cas qui compte : un lien d'espace circule par courriel,
+  et il suffit qu'il soit collé une fois sur une page publique pour être
+  visité.
 
 ### `script-src` interdit tout `on*=""`, et ce que ça oblige à désactiver
 
@@ -378,6 +395,7 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-For` et `X-Forwarded-Proto` sont forgeables : le verrouillage de connexion se contourne en changeant d'adresse annoncée. À défaut, renseigner `TRUSTED_PROXIES` (`QUARKUS_HTTP_PROXY_TRUSTED_PROXIES`) |
 | Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace) ; le reste — exports, résolution, API — n'en a pas |
 | Journaliser sans les URL de l'espace animateur **ni celles de l'abonnement ICS**, ou purger ces journaux | Les deux jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, et l'abonnement y revient à chaque synchronisation d'un agenda |
+| Ne pas réintroduire le site dans un index (page d'accueil du proxy, sitemap, annuaire interne) | L'application dit trois fois qu'elle ne veut pas être référencée (voir ci-dessus) ; un lien depuis une page publique, lui, se remarque |
 
 ### Avant d'ouvrir : la liste courte
 
