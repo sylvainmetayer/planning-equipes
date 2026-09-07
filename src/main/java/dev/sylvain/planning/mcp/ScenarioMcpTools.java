@@ -40,6 +40,7 @@ import jakarta.ws.rs.core.Response;
  * {@code DatabaseResource}, see docs/mcp.md.
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class ScenarioMcpTools {
 

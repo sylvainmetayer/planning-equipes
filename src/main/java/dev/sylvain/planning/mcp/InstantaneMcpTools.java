@@ -34,6 +34,7 @@ import jakarta.inject.Inject;
  * thousands of seats.</p>
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class InstantaneMcpTools {
 

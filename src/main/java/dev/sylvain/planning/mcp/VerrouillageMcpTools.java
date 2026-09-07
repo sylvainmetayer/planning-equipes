@@ -26,6 +26,7 @@ import jakarta.inject.Inject;
  * carries no personal data of its own.</p>
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class VerrouillageMcpTools {
 

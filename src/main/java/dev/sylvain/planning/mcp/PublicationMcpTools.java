@@ -45,6 +45,7 @@ import jakarta.inject.Inject;
  * other tools take as input anyway.</p>
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class PublicationMcpTools {
 

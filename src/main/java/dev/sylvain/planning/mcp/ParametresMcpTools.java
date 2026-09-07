@@ -31,6 +31,7 @@ import jakarta.inject.Inject;
  * only, like everything else animateur-related in this package.
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class ParametresMcpTools {
 

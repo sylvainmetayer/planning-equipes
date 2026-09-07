@@ -36,6 +36,7 @@ import jakarta.inject.Inject;
  * Omitted arguments therefore keep their persisted value.
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class AnimateurMcpTools {
 

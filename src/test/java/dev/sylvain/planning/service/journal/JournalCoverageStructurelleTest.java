@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -104,6 +105,72 @@ class JournalCoverageStructurelleTest {
             // Written for an organiser: a sentence, not a constant.
             assertThat(action.libelle()).as("libellé de %s", action.code()).doesNotContain("_");
         });
+    }
+
+    /**
+     * Every class declaring a journalled tool carries {@code @Journalise}.
+     *
+     * <p>The hole this closes was real and silent: the interceptor was bound
+     * to {@code @EditionCiblee}, which the cross-edition tool classes
+     * legitimately do not carry, so six write tools — deleting an entire
+     * edition among them — were in the catalogue and intercepted by nobody.
+     * Catalogue membership was never proof that a line gets written; this is.</p>
+     */
+    @Test
+    void everyClassHoldingAJournalledToolCarriesTheBinding() throws IOException {
+        List<String> sansBinding = new ArrayList<>();
+        try (Stream<Path> fichiers = Files.list(OUTILS)) {
+            for (Path fichier : fichiers.filter(f -> f.toString().endsWith("McpTools.java")).sorted().toList()) {
+                String source = Files.readString(fichier);
+                boolean journalise = CatalogueActions.outils().keySet().stream()
+                        .anyMatch(outil -> source.contains(" " + outil + "("));
+                if (journalise && !source.contains("@Journalise")) {
+                    sansBinding.add(fichier.getFileName().toString());
+                }
+            }
+        }
+        assertThat(sansBinding)
+                .as("classes d'outils journalisés que l'intercepteur ne verra jamais — il leur manque @Journalise")
+                .isEmpty();
+    }
+
+    /**
+     * No dead entry in the inventory. One that no route, no tool and no
+     * scheduled call can reach is a promise the screen cannot keep: its filter
+     * offers a line that will never appear.
+     */
+    @Test
+    void everyActionOfTheInventoryIsReachable() throws IOException {
+        Set<String> atteignables = new java.util.HashSet<>(CatalogueActions.routes().values());
+        atteignables.addAll(CatalogueActions.outils().values());
+        atteignables.addAll(codesQuotedBySources());
+
+        assertThat(CatalogueActions.actions().keySet())
+                .as("actions décrites que rien ne peut écrire")
+                .allSatisfy(code -> assertThat(atteignables).as("%s", code).contains(code));
+    }
+
+    /**
+     * Action codes named by the sources themselves — a scheduled call, or a
+     * route stating which of several actions it just performed. Also proves
+     * every such code exists, since the assertion above compares both ways.
+     */
+    private static Set<String> codesQuotedBySources() throws IOException {
+        Pattern cite = Pattern.compile("(?:recordSystemAction|currentAction\\.action)\\(\\s*[^)]*?\"([A-Z_]+)\"");
+        Set<String> codes = new TreeSet<>();
+        try (Stream<Path> fichiers = Files.walk(Path.of("src/main/java/dev/sylvain/planning"))) {
+            for (Path fichier : fichiers.filter(f -> f.toString().endsWith(".java")).toList()) {
+                Matcher matcher = cite.matcher(Files.readString(fichier));
+                while (matcher.find()) {
+                    codes.add(matcher.group(1));
+                }
+            }
+        }
+        assertThat(codes).as("codes cités par les sources").isNotEmpty();
+        assertThat(CatalogueActions.actions().keySet())
+                .as("un code cité par une source doit exister au catalogue")
+                .containsAll(codes);
+        return codes;
     }
 
     /** A reason that says nothing would be worse than no list at all. */

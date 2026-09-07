@@ -32,6 +32,7 @@ import jakarta.inject.Inject;
  * could not reach.</p>
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class DisponibiliteMcpTools {
 

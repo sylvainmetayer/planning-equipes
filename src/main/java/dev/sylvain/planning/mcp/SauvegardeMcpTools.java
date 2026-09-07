@@ -28,6 +28,7 @@ import jakarta.inject.Inject;
  * once. An {@code edition} argument would suggest a per-edition backup that
  * does not exist.</p>
  */
+@Journalise
 @ApplicationScoped
 public class SauvegardeMcpTools {
 

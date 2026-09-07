@@ -34,6 +34,7 @@ import jakarta.inject.Inject;
  * ("2025", "2026", "2026 canicule") gives an assistant nothing to recognise
  * the right one by, and editions are counted in units, not in thousands.</p>
  */
+@Journalise
 @ApplicationScoped
 public class EditionMcpTools {
 

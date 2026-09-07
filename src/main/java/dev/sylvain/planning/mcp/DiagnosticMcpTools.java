@@ -39,6 +39,7 @@ import jakarta.inject.Inject;
  * never who.</p>
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class DiagnosticMcpTools {
 

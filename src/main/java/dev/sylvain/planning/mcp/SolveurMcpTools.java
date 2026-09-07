@@ -50,6 +50,7 @@ import jakarta.inject.Inject;
  * would have solved the edition as it stood before its own edits.</p>
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class SolveurMcpTools {
 

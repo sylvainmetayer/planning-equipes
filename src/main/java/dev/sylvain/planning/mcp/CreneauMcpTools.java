@@ -34,6 +34,7 @@ import jakarta.inject.Inject;
  * and expensive to spot (see {@link CreneauGridService}).</p>
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class CreneauMcpTools {
 

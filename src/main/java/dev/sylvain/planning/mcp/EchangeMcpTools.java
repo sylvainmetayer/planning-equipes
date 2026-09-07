@@ -34,6 +34,7 @@ import jakarta.inject.Inject;
  * through {@link AnonymisationViolations} like everywhere else.</p>
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class EchangeMcpTools {
 

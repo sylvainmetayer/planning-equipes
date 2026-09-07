@@ -26,6 +26,7 @@ import jakarta.ws.rs.NotFoundException;
  * the last analysis) plus activation/désactivation.
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class ContrainteMcpTools {
 

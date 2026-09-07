@@ -42,6 +42,7 @@ import jakarta.inject.Inject;
  * data-loss bug, not a feature.
  */
 @EditionCiblee
+@Journalise
 @ApplicationScoped
 public class StandMcpTools {
 
