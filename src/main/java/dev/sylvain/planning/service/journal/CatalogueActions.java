@@ -152,9 +152,14 @@ public final class CatalogueActions {
         action("DECONNEXION", "Déconnexion", Entite.PARAMETRES);
 
         /* ------------------ The application itself ------------------ */
+        // The nightly sends are the only thing the application does on its own
+        // that belongs to one edition, which is what a row needs. The backup
+        // and the history purge are server-wide: filing them under whichever
+        // edition happened to be current would be an invented fact, and both
+        // already report themselves — the backup on the Paramètres screen, the
+        // purge in the log. `chaqueActionEstAtteignable` keeps this honest by
+        // failing on any entry no entry point can reach.
         action("NOTIFICATIONS_ENVOYEES", "Envois automatiques de nuit", Entite.PLANNING);
-        action("SAUVEGARDE_EFFECTUEE", "Sauvegarde nocturne effectuée", Entite.SAUVEGARDE);
-        action("JOURNAL_PURGE", "Historique purgé", Entite.PARAMETRES);
     }
 
     /**
@@ -396,6 +401,16 @@ public final class CatalogueActions {
     /** Same, for an MCP tool called by its name. */
     public static Optional<ActionJournalisee> forTool(String nom) {
         return Optional.ofNullable(OUTILS.get(nom)).map(ACTIONS::get);
+    }
+
+    /**
+     * The action a request named itself, for a route whose method serves
+     * several — see {@link CurrentAction#action(String)}. An unknown code
+     * answers empty, so the route's own action stands rather than nothing
+     * being recorded.
+     */
+    public static Optional<ActionJournalisee> forCode(String code) {
+        return code == null ? Optional.empty() : Optional.ofNullable(ACTIONS.get(code));
     }
 
     /** An action fired by the application itself, off any request. */

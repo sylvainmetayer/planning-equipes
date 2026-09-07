@@ -14,6 +14,7 @@ import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.PlanningService.ContributionAdHoc;
 import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import jakarta.inject.Inject;
@@ -41,6 +42,10 @@ public class ConstraintResource {
 
     @Inject
     ReferenceDataService referenceDataService;
+
+    /** Says which way the toggle went; see setActif. */
+    @Inject
+    CurrentAction currentAction;
 
     @Inject
     PlanningService planningService;
@@ -103,6 +108,10 @@ public class ConstraintResource {
     public ConstraintToggleUpdate setActif(@PathParam("name") String name, ConstraintToggleUpdate update) {
         requireKnown(name);
         referenceDataService.setContrainteActive(name, update.actif());
+        // One method, two actions: the history keys on the route, so without
+        // this it would record « Contrainte activée » for a deactivation —
+        // the one thing a journal must never do (issue #406).
+        currentAction.action(update.actif() ? "CONTRAINTE_ACTIVEE" : "CONTRAINTE_DESACTIVEE");
         return update;
     }
 

@@ -8,35 +8,43 @@ import java.util.Set;
 import jakarta.enterprise.context.RequestScoped;
 
 /**
- * What the services learned about the action being carried out, handed to
+ * What the request learned about the action being carried out, handed to
  * whoever writes the line at the end of the call.
  *
  * <p>The entry points — {@code JournalActionFilter} for REST,
- * {@code JournalOutilInterceptor} for MCP — know <em>which</em> action ran and
- * how it ended, but not what it changed. Only the service holds that: the
- * referential façade reads the fiche as it stood before the write (it already
- * does, for the write-time warnings) and can therefore say that this edit
- * touched {@code nom} and {@code email} and nothing else. It deposits that
- * here, and the entry point picks it up.</p>
+ * {@code JournalOutilInterceptor} for MCP — know <em>which route</em> ran and
+ * how it ended. Two things they cannot know sit here.</p>
  *
- * <p>Enrichment, never a requirement: a line whose fields nobody contributed
- * is written all the same, with an empty list. That matters because the
- * request context is not guaranteed on every path — an MCP call activates its
- * own, and a scheduled job has none at all — and an action must be recorded
- * even where its detail cannot be.</p>
+ * <p><b>What an edit changed.</b> Only the service holds that: the referential
+ * façade reads the fiche as it stood before the write (it already does, for
+ * the write-time warnings) and can therefore say that this edit touched
+ * {@code nom} and {@code email} and nothing else.</p>
+ *
+ * <p><b>Which action a route performed</b>, when the route alone does not say.
+ * One method toggles a constraint both ways, so the catalogue — which keys on
+ * the method — would have it record « Contrainte activée » for a
+ * deactivation. The resource states the direction here instead, and the
+ * journal stops asserting the opposite of what happened.</p>
+ *
+ * <p>Enrichment, never a requirement: a line nobody contributed to is written
+ * all the same, with the catalogue's own action and an empty field list.</p>
  */
 @RequestScoped
 public class CurrentAction {
 
-    private String entiteId;
+    private String action;
     private final Set<String> champs = new LinkedHashSet<>();
 
     /**
-     * Names what the action bears upon, when the service knows it better than
-     * the URL does — a créneau created without an id in the path, typically.
+     * States which action of {@link CatalogueActions} this call really
+     * performed, for a route whose method serves several.
+     *
+     * @param code a code of the catalogue; an unknown one is ignored rather
+     *             than written, and {@code JournalCoverageStructurelleTest}
+     *             checks that every code stated in the sources exists
      */
-    public void surEntite(String entiteId) {
-        this.entiteId = entiteId;
+    public void action(String code) {
+        this.action = code;
     }
 
     /** Adds the fields an edit really changed, in the order they are declared. */
@@ -46,8 +54,9 @@ public class CurrentAction {
         }
     }
 
-    public String entiteId() {
-        return entiteId;
+    /** The action the request declared, {@code null} when the route's own is right. */
+    public String action() {
+        return action;
     }
 
     public List<String> champs() {

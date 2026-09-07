@@ -106,6 +106,33 @@ class HistoriqueResourceTest {
                 .body("findAll { it.action == 'ANIMATEURS_LUS' }", empty());
     }
 
+    /**
+     * One route, two actions. The catalogue keys on the method, so without the
+     * resource stating the direction the journal would record « Contrainte
+     * activée » for a deactivation — asserting the opposite of what happened.
+     */
+    @Test
+    void aToggleRecordsTheDirectionItWentIn() {
+        given().contentType(ContentType.JSON).body("{\"actif\":false}")
+                .when().put("/api/constraints/equilibrerCharge")
+                .then().statusCode(200);
+
+        given().when().get("/api/historique")
+                .then()
+                .statusCode(200)
+                .body("find { it.entiteId == 'equilibrerCharge' }.action", equalTo("CONTRAINTE_DESACTIVEE"))
+                .body("find { it.entiteId == 'equilibrerCharge' }.libelle", equalTo("Contrainte désactivée"));
+
+        given().contentType(ContentType.JSON).body("{\"actif\":true}")
+                .when().put("/api/constraints/equilibrerCharge")
+                .then().statusCode(200);
+
+        given().when().get("/api/historique")
+                .then()
+                .statusCode(200)
+                .body("find { it.entiteId == 'equilibrerCharge' }.action", equalTo("CONTRAINTE_ACTIVEE"));
+    }
+
     @Test
     void theActionInventoryIsServedForTheScreensFilter() {
         given().when().get("/api/historique/actions")

@@ -61,16 +61,47 @@ public class JournalActionFilter implements ContainerResponseFilter {
 
     @Override
     public void filter(ContainerRequestContext requete, ContainerResponseContext reponse) {
-        Optional<ActionJournalisee> action = CatalogueActions.forRoute(key());
-        if (action.isEmpty()) {
+        Optional<ActionJournalisee> catalogue = CatalogueActions.forRoute(key());
+        if (catalogue.isEmpty()) {
             return;
         }
+        // A route whose method serves several actions says which one it was.
+        Optional<ActionJournalisee> action = CatalogueActions.forCode(currentAction.action()).or(() -> catalogue);
         TokenOwner proprietaire = requestScope.getTokenOwner();
         String animateurId = proprietaire == null ? null : proprietaire.animateurId();
-        Acteur acteur = journal.acteurCourant(animateurId);
+        Acteur acteur = acteur(animateurId);
         journal.record(action.get(), acteur,
                 acteur == Acteur.ANIMATEUR ? animateurId : journal.nomAdmin(),
                 entiteId(requete, reponse, animateurId), currentAction.champs(), reponse.getStatus());
+    }
+
+    /**
+     * Who acted. A resolved espace token names an animateur; on the espace
+     * routes without one, nobody — those routes are open, so a bad or expired
+     * token reaches the refusal, and calling that « Administration » would
+     * misfile the very rows an operator goes looking for. Everywhere else the
+     * admin session is the only way in.
+     */
+    private Acteur acteur(String animateurId) {
+        if (animateurId != null) {
+            return Acteur.ANIMATEUR;
+        }
+        return openRoute() ? Acteur.ANONYME : Acteur.ADMIN;
+    }
+
+    /**
+     * Whether the matched route is one of the two an unauthenticated caller
+     * may reach (see {@code quarkus.http.auth.permission.*}). Read off the
+     * resource class rather than off the identity: under {@code %test} the
+     * admin API is {@code permit}, so an anonymous identity there proves
+     * nothing about production.
+     */
+    private boolean openRoute() {
+        if (resourceInfo == null || resourceInfo.getResourceClass() == null) {
+            return false;
+        }
+        String classe = resourceInfo.getResourceClass().getSimpleName();
+        return classe.equals("EspaceAnimateurResource") || classe.equals("AbonnementIcsResource");
     }
 
     /** {@code SimpleClassName#methodName}, or {@code null} when no resource matched (a 404). */
@@ -83,17 +114,13 @@ public class JournalActionFilter implements ContainerResponseFilter {
     }
 
     /**
-     * What the action bore upon: what a service said it was, else the path
-     * parameter naming it, else the id of what the call returned — a creation
+     * What the action bore upon: the path parameter naming it, else the id of
+     * what the call returned — a creation
      * has no id in its URL, and « stand créé » without saying which one is
      * half a line — else, on the espace routes, the animateur the token
      * resolved to.
      */
     private String entiteId(ContainerRequestContext requete, ContainerResponseContext reponse, String animateurId) {
-        String depuisService = currentAction.entiteId();
-        if (depuisService != null) {
-            return depuisService;
-        }
         MultivaluedMap<String, String> params = requete.getUriInfo().getPathParameters();
         for (String nom : PARAMS_ENTITE) {
             String valeur = first(params, nom);
@@ -131,7 +158,9 @@ public class JournalActionFilter implements ContainerResponseFilter {
                         return imbrique;
                     }
                 } catch (ReflectiveOperationException | RuntimeException e) {
-                    return null;
+                    // One unreadable component is not the end of the search:
+                    // a later one may well carry the id.
+                    continue;
                 }
             }
         }
