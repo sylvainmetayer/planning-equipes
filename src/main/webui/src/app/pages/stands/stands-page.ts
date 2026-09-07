@@ -1,7 +1,5 @@
-import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -14,20 +12,20 @@ import { labelStandsPluriel } from '../../core/entity-labels';
 import { resumerHoraires } from '../../core/horaire-stand';
 import { NotificationService } from '../../core/notification.service';
 import { ProblemesStore } from '../../core/problemes.store';
-import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
-import { SolverJobService } from '../../core/solver-job.service';
-import { TableNavigation } from '../../core/table-navigation';
-import { TableSelection } from '../../core/table-selection';
-import { correspondAuFiltre } from '../../core/text-filter';
+import { ReferenceTablePage } from '../../core/reference-table-page';
 import { RapportCompactage, Stand } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
-import { DetailData, DetailDialog } from '../../shared/detail-dialog';
 import { TableFilter } from '../../shared/table-filter';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { buildStandDetail } from './stand-detail';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
+
+/** Relay families of the edition's grid: below two, the family says nothing (issue #390). */
+function nombreFamilles(store: ReferenceDataStore): number {
+  return Math.max(0, ...store.creneaux().map((creneau) => creneau.famille ?? 0)) + 1;
+}
 
 /**
  * Stands CRUD: identity, staffing bounds, adults-only flag and typologies.
@@ -55,72 +53,50 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
   templateUrl: './stands-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StandsPage {
+export class StandsPage extends ReferenceTablePage<Stand> {
   protected readonly columns = ['select', 'id', 'nom', 'effectif', 'typologies', 'emplacement', 'horaires', 'actions'];
-  protected readonly store = inject(ReferenceDataStore);
-  protected readonly jobs = inject(SolverJobService);
-  /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = this.jobs.editingLocked;
+
+  /** The template names the rows after the entity, as the other pages do. */
+  protected readonly standsFiltres = this.lignesFiltrees;
 
   /** True while the compaction round-trip is in flight, to keep it from being fired twice. */
   protected readonly compactageEnCours = signal(false);
 
-  /** Quick filter of the table: id, name, typologies and emplacement — everything a stand is looked up by. */
-  protected readonly filtre = signal('');
-  /** Relay families of the edition's grid: below two, the family says nothing (issue #390). */
-  private readonly nombreFamilles = computed(
-    () => Math.max(0, ...this.store.creneaux().map((creneau) => creneau.famille ?? 0)) + 1
-  );
-
-  protected readonly standsFiltres = computed(() =>
-    this.store
-      .stands()
-      .filter((stand) =>
-        correspondAuFiltre(this.filtre(), [
-          stand.id,
-          stand.nom,
-          ...(stand.typologiesProposees ?? []),
-          stand.emplacement?.nom,
-          stand.emplacement?.id
-        ])
-      )
-  );
-
-  /** Keyed on the filtered rows, so "tout sélectionner" follows what the table shows. */
-  protected readonly selection = new TableSelection<string>(
-    computed(() => this.standsFiltres().map((stand) => stand.id))
-  );
-
-  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
-
-  /**
-   * Roving tabindex over the rows: the arrows move the focus, Entrée opens the
-   * detail, Espace ticks the row. `core/table-navigation.ts` holds the whole
-   * mechanism, shared with the other reference-data tables.
-   */
-  protected readonly navigation = new TableNavigation({
-    rows: this.standsFiltres,
-    id: (stand: Stand) => stand.id,
-    host: () => this.hote.nativeElement,
-    selection: this.selection,
-    open: (stand: Stand) => {
-      void this.consult(stand);
-      return true;
-    },
-    announcer: inject(LiveAnnouncer)
-  });
-
   /** Holds `causeParStandId`: a memoised map, so each row only does a lookup. */
   protected readonly problemes = inject(ProblemesStore);
 
-  private readonly crud = inject(ReferenceCrudService);
-  private readonly dialog = inject(MatDialog);
   private readonly api = inject(ApiService);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
 
   constructor() {
-    void this.crud.reload();
+    super({
+      rows: (store) => store.stands(),
+      id: (stand) => stand.id,
+      champsFiltre: (stand) => [
+        stand.id,
+        stand.nom,
+        ...(stand.typologiesProposees ?? []),
+        stand.emplacement?.nom,
+        stand.emplacement?.id
+      ],
+      detail: (stand, store) => ({
+        title: stand.nom || stand.id,
+        subtitle: stand.id,
+        sections: buildStandDetail(stand, store.typologies(), nombreFamilles(store))
+      }),
+      formulaire: (stand, dialog: MatDialog) => {
+        dialog.open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {
+          data: { stand },
+          width: '40rem',
+          maxWidth: '95vw',
+          autoFocus: 'first-tabbable'
+        });
+      },
+      ressource: 'stands',
+      libelle: () => $localize`:@@stands.entityLabel:Stand`,
+      libellePluriel: labelStandsPluriel
+    });
     void this.problemes.reloadFeasibility();
   }
 
@@ -195,49 +171,6 @@ export class StandsPage {
       message: $localize`:@@stands.compactage.doneMessage:${rapport.standsCompactes}:stands: stand(s) compacté(s), ${rapport.fenetresAvant}:avant: plages ramenées à ${rapport.fenetresApres}:apres: entrées.`,
       variant: 'success'
     });
-  }
-
-  /**
-   * Read-only detail of one row, with an "Modifier" button handing over to the
-   * usual form dialog — locked, there as here, while a solve is running.
-   */
-  protected async consult(stand: Stand): Promise<void> {
-    const data: DetailData = {
-      title: stand.nom || stand.id,
-      subtitle: stand.id,
-      sections: buildStandDetail(stand, this.store.typologies(), this.nombreFamilles())
-    };
-    const result = await firstValueFrom(
-      this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed()
-    );
-    if (result === 'edit') {
-      this.edit(stand);
-    }
-  }
-
-  protected openCreate(): void {
-    this.openDialog(null);
-  }
-
-  protected edit(stand: Stand): void {
-    this.openDialog(stand);
-  }
-
-  private openDialog(stand: Stand | null): void {
-    this.dialog.open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {
-      data: { stand },
-      width: '40rem',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable'
-    });
-  }
-
-  protected async remove(stand: Stand): Promise<void> {
-    await this.crud.remove('stands', stand.id, $localize`:@@stands.entityLabel:Stand`);
-  }
-
-  protected async removeSelection(): Promise<void> {
-    await this.crud.removeMany('stands', this.selection.selectedIds(), labelStandsPluriel());
   }
 
   protected editSelection(): void {

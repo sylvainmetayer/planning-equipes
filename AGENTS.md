@@ -417,6 +417,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `models.ts`; `date-utils.ts`, week starts Monday; `planning-state.service.ts`;
   `reference-data.store.ts`; `reference-crud.service.ts` — save/delete, single
   or in bulk, plus snack-bar feedback shared by the five reference pages;
+  `reference-table-page.ts` — the shared half of a referential page: filter,
+  selection keyed on the filtered rows, roving tabindex, reload,
+  detail-then-edit, the two deletes. `typologies`, `emplacements` and `stands`
+  extend it and keep only a `ReferenceTableConfig` plus what they do
+  differently; TypeScript only, the templates stay per page since that is what
+  genuinely differs. `animateurs` stays out because it keys its selection on the
+  **sorted** rows rather than the filtered ones, `creneaux` because it generates
+  and groups its own;
   `table-selection.ts` — multi-row selection of those pages, always intersected
   with the displayed rows; `table-navigation.ts` — their keyboard navigation
   (roving tabindex over the rows: arrows, Home/End, Enter to open, Space to

@@ -1,7 +1,5 @@
-import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -9,30 +7,27 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { labelEmplacementsPluriel } from '../../core/entity-labels';
-import { ReferenceCrudService } from '../../core/reference-crud.service';
-import { ReferenceDataStore } from '../../core/reference-data.store';
-import { SolverJobService } from '../../core/solver-job.service';
-import { TableNavigation } from '../../core/table-navigation';
-import { TableSelection } from '../../core/table-selection';
-import { correspondAuFiltre } from '../../core/text-filter';
+import { ReferenceTablePage } from '../../core/reference-table-page';
 import { distanceMetres, formatDistance } from '../../core/distance';
 import { Emplacement } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
-import { DetailData, DetailDialog } from '../../shared/detail-dialog';
 import { TableFilter } from '../../shared/table-filter';
 import { EmplacementBulkEditData, EmplacementBulkEditDialog } from './emplacement-bulk-edit-dialog';
 import { buildEmplacementDetail } from './emplacement-detail';
 import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-dialog';
+
+/** Mirrors `QualiteConstraints.DISTANCE_ELOIGNEE_METRES` on the server. */
+const SEUIL_ELOIGNEMENT_METRES = 300;
 
 /**
  * Emplacements CRUD: named, GPS-located places a stand can be tied to.
  *
  * Rows are multi-selectable, for a bulk delete or to put several places on the
  * same GPS point at once.
+ *
+ * Everything shared with the other referential tables is in
+ * {@link ReferenceTablePage}; what is below is what this one does differently.
  */
-/** Mirrors `QualiteConstraints.DISTANCE_ELOIGNEE_METRES` on the server. */
-const SEUIL_ELOIGNEMENT_METRES = 300;
-
 @Component({
   selector: 'app-emplacements-page',
   imports: [
@@ -48,15 +43,48 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
   templateUrl: './emplacements-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EmplacementsPage {
+export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
   protected readonly columns = ['select', 'id', 'nom', 'coordonnees', 'voisin', 'actions'];
-  protected readonly store = inject(ReferenceDataStore);
-  protected readonly jobs = inject(SolverJobService);
-  /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = this.jobs.editingLocked;
 
-  /** Quick filter of the table: id, name and coordinates. */
-  protected readonly filtre = signal('');
+  /** The template names the rows after the entity, as the other pages do. */
+  protected readonly emplacementsFiltres = this.lignesFiltrees;
+
+  constructor() {
+    super({
+      rows: (store) => store.emplacements(),
+      id: (emplacement) => emplacement.id,
+      champsFiltre: (emplacement) => [
+        emplacement.id,
+        emplacement.nom,
+        emplacement.latitude,
+        emplacement.longitude
+      ],
+      detail: (emplacement, store) => ({
+        title: emplacement.nom || emplacement.id,
+        subtitle: emplacement.id,
+        sections: buildEmplacementDetail(emplacement, store.stands())
+      }),
+      formulaire: (emplacement, dialog: MatDialog) => {
+        dialog.open<EmplacementFormDialog, EmplacementFormData, boolean>(EmplacementFormDialog, {
+          data: { emplacement },
+          width: '40rem',
+          maxWidth: '95vw',
+          autoFocus: 'first-tabbable'
+        });
+      },
+      ressource: 'emplacements',
+      libelle: () => $localize`:@@emplacements.entityLabel:Emplacement`,
+      libellePluriel: labelEmplacementsPluriel
+    });
+  }
+
+  protected coordonneesLabel(emplacement: Emplacement): string {
+    if (emplacement.latitude == null || emplacement.longitude == null) {
+      return '—';
+    }
+    return `${emplacement.latitude.toFixed(5)}, ${emplacement.longitude.toFixed(5)}`;
+  }
+
   /**
    * Nearest other emplacement, in metres.
    *
@@ -86,100 +114,6 @@ export class EmplacementsPage {
     return plusProche.metres > SEUIL_ELOIGNEMENT_METRES
       ? $localize`:@@emplacements.voisin.loin:${distance}:distance: de ${nom}:nom: (au-delà du seuil d'éloignement)`
       : $localize`:@@emplacements.voisin:${distance}:distance: de ${nom}:nom:`;
-  }
-
-  protected readonly emplacementsFiltres = computed(() =>
-    this.store
-      .emplacements()
-      .filter((emplacement) =>
-        correspondAuFiltre(this.filtre(), [
-          emplacement.id,
-          emplacement.nom,
-          emplacement.latitude,
-          emplacement.longitude
-        ])
-      )
-  );
-
-  /** Keyed on the filtered rows, so "tout sélectionner" follows what the table shows. */
-  protected readonly selection = new TableSelection<string>(
-    computed(() => this.emplacementsFiltres().map((emplacement) => emplacement.id))
-  );
-
-  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
-
-  /**
-   * Roving tabindex over the rows: the arrows move the focus, Entrée opens the
-   * detail, Espace ticks the row. `core/table-navigation.ts` holds the whole
-   * mechanism, shared with the other reference-data tables.
-   */
-  protected readonly navigation = new TableNavigation({
-    rows: this.emplacementsFiltres,
-    id: (emplacement: Emplacement) => emplacement.id,
-    host: () => this.hote.nativeElement,
-    selection: this.selection,
-    open: (emplacement: Emplacement) => {
-      void this.consult(emplacement);
-      return true;
-    },
-    announcer: inject(LiveAnnouncer)
-  });
-
-  private readonly crud = inject(ReferenceCrudService);
-  private readonly dialog = inject(MatDialog);
-
-  constructor() {
-    void this.crud.reload();
-  }
-
-  protected coordonneesLabel(emplacement: Emplacement): string {
-    if (emplacement.latitude == null || emplacement.longitude == null) {
-      return '—';
-    }
-    return `${emplacement.latitude.toFixed(5)}, ${emplacement.longitude.toFixed(5)}`;
-  }
-
-  /**
-   * Read-only detail of one row, with an "Modifier" button handing over to the
-   * usual form dialog — locked, there as here, while a solve is running.
-   */
-  protected async consult(emplacement: Emplacement): Promise<void> {
-    const data: DetailData = {
-      title: emplacement.nom || emplacement.id,
-      subtitle: emplacement.id,
-      sections: buildEmplacementDetail(emplacement, this.store.stands())
-    };
-    const result = await firstValueFrom(
-      this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed()
-    );
-    if (result === 'edit') {
-      this.edit(emplacement);
-    }
-  }
-
-  protected openCreate(): void {
-    this.openDialog(null);
-  }
-
-  protected edit(emplacement: Emplacement): void {
-    this.openDialog(emplacement);
-  }
-
-  private openDialog(emplacement: Emplacement | null): void {
-    this.dialog.open<EmplacementFormDialog, EmplacementFormData, boolean>(EmplacementFormDialog, {
-      data: { emplacement },
-      width: '40rem',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable'
-    });
-  }
-
-  protected async remove(emplacement: Emplacement): Promise<void> {
-    await this.crud.remove('emplacements', emplacement.id, $localize`:@@emplacements.entityLabel:Emplacement`);
-  }
-
-  protected async removeSelection(): Promise<void> {
-    await this.crud.removeMany('emplacements', this.selection.selectedIds(), labelEmplacementsPluriel());
   }
 
   protected editSelection(): void {
