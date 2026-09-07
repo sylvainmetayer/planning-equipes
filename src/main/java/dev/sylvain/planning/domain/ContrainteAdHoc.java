@@ -4,6 +4,21 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A made-to-measure rule an organiser adds to their own data, next to the
+ * catalogue's constraints — « Ajustement manuel » on screen: place or rule
+ * out somebody, on a scope that may be one timeslot, one stand, or the whole
+ * event. Set <b>before</b> the solve and honoured by every one, including a
+ * cold start; when the solver cannot honour it, the plan comes back in breach
+ * and names it.
+ *
+ * <p>Not to be confused with a {@link VerrouillagePlanning}, which is a
+ * gesture on a plan <b>already solved</b>: a lock keeps what the last solve
+ * produced on part of the planning, says nothing about what should be there,
+ * and only holds for the persisted plan. To impose or forbid an assignment,
+ * this is the type; to protect a validated part of a plan about to be
+ * re-solved, a lock.</p>
+ */
 public class ContrainteAdHoc {
 
     private String id;

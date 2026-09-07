@@ -17,6 +17,7 @@ import { PlanningEvenement, TypeVerrouillage, VerrouillagePlanning } from '../..
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StatusMessage } from '../../shared/status-message';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
+import { RouterLink } from '@angular/router';
 import { errorMessage } from '../../core/error-message';
 
 /** Manually creatable types: ANIMATEUR_CRENEAU locks are only ever posed by an accepted échange (issue #165). */
@@ -64,7 +65,8 @@ interface VerrouillageRow extends VerrouillagePlanning {
     MatTableModule,
     MatTooltipModule,
     StatusMessage,
-    WorkInProgressBanner
+    WorkInProgressBanner,
+    RouterLink
   ],
   templateUrl: './verrouillages-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -74,6 +74,12 @@
               }
             </dl>
           }
+          @case ('callout') {
+            <aside class="aide-callout">
+              <strong class="aide-callout-title">{{ block.title }}</strong>
+              <p class="aide-callout-text">{{ block.text }}</p>
+            </aside>
+          }
         }
       }
       @if (section.links.length > 0) {

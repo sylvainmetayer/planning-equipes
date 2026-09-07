@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -38,7 +39,7 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
  */
 @Component({
   selector: 'app-ad-hoc-constraints-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule, RouterLink],
   templateUrl: './ad-hoc-constraints-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

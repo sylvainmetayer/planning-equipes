@@ -199,6 +199,17 @@ des verrous.
 Un verrou porte sur un animateur, un stand, une journée, un créneau, ou un
 couple animateur × créneau (posé automatiquement quand un échange est validé).
 
+**Un verrou n'est pas une contrainte ad hoc.** Les deux retirent de la liberté
+au solveur, mais pas au même moment ni sur la même matière. La contrainte ad
+hoc (voir [plus bas](#contraintes-ad-hoc)) est une règle sur mesure posée
+*avant* le calcul — placer ou écarter quelqu'un — que chaque résolution
+honore, y compris en repartant de zéro, et qu'un planning en défaut nomme
+quand elle n'a pas pu l'être. Le verrou est un geste sur un plan *déjà
+calculé* : il conserve ce qu'une résolution a produit sur une partie du
+planning, sans rien dire de ce qui devrait s'y trouver, et ne vaut que pour le
+plan enregistré. Imposer ou interdire une affectation, c'est une contrainte ad
+hoc ; protéger une partie validée d'un plan que l'on relance, c'est un verrou.
+
 **Une cible, jamais deux.** En base, un verrou est une ligne plate — cinq
 colonnes cibles nullables et un discriminant — que la contrainte `CHECK` garde
 cohérente. Dans le code, la cible est une hiérarchie scellée : une variante ne
@@ -456,6 +467,13 @@ Exceptions ponctuelles posées par l'administrateur, stockées en base et évalu
 dynamiquement — **jamais de contrainte codée en dur pour un cas particulier**.
 Quatre types : indisponibilité forcée, incompatibilité, affectation forcée,
 affinité.
+
+Ce sont des règles sur mesure posées **avant** le calcul, qui disent où placer
+ou ne pas placer quelqu'un ; chaque résolution les honore, y compris en
+repartant de zéro. À ne pas confondre avec le
+[verrouillage partiel](#verrouillage-partiel-du-planning), qui fige *après
+coup* ce qu'une résolution a produit sans rien dire de ce qui devrait s'y
+trouver.
 
 ## Paramètres légaux
 

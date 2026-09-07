@@ -201,8 +201,8 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | File d'attente du solveur | Planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file survit à un redémarrage du serveur ; la résolution qui était en cours, elle, est perdue et signalée comme interrompue |
 | Courbe de score en direct | Les trois niveaux de score se tracent pendant la résolution, chacun à sa propre échelle, pour voir quand le calcul plafonne et l'arrêter à propos plutôt qu'attendre la fin du budget. Seule la résolution en cours est tracée |
 | Replanification incrémentale | Repart du planning enregistré, fige ce qui reste valable et ne recalcule que ce qu'un changement tardif a invalidé — quelques dizaines de secondes au lieu de plusieurs minutes |
-| Verrouillage partiel | Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste |
-| Ajustements manuels | Exceptions ponctuelles tracées avec leur raison : indisponibilité forcée, incompatibilité entre deux personnes, affectation imposée, paire à privilégier |
+| Verrouillage partiel | Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Un verrou est un geste sur un plan déjà calculé : il conserve ce qu'une résolution a produit, sans rien dire de ce qui devrait s'y trouver |
+| Ajustements manuels | Exceptions ponctuelles tracées avec leur raison : indisponibilité forcée, incompatibilité entre deux personnes, affectation imposée, paire à privilégier. Ce sont des règles sur mesure posées avant le calcul, pour placer ou écarter quelqu'un — l'inverse d'un verrou, qui fige après coup |
 | Ajustements contradictoires refusés | Un ajustement qui ne peut pas tenir en même temps qu'un autre déjà saisi est refusé à l'enregistrement, avec un message qui nomme les deux — plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard, sans que rien n'en désigne la cause |
 
 ### Décider et diagnostiquer

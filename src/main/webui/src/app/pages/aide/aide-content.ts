@@ -30,7 +30,9 @@ export interface HelpDefinition {
 export type HelpBlock =
   | { kind: 'paragraph'; text: string }
   | { kind: 'list'; items: string[] }
-  | { kind: 'definitions'; items: HelpDefinition[] };
+  | { kind: 'definitions'; items: HelpDefinition[] }
+  /** A boxed aside the eye lands on: a distinction the prose around it keeps blurring. */
+  | { kind: 'callout'; title: string; text: string };
 
 export interface HelpSection {
   /** Anchor id, also used as the `track` key. */
@@ -327,7 +329,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.verrouillages:Verrouillages`,
-              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Utile pour figer une partie validée du planning. Une place restée non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou peut donc laisser une alerte visible plutôt que de masquer un problème.`
+              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Utile pour figer une partie validée du planning. Une place restée non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou peut donc laisser une alerte visible plutôt que de masquer un problème. Ce n'est pas un ajustement manuel : le verrou conserve ce qu'un calcul a produit, l'ajustement dit d'avance où placer ou ne pas placer quelqu'un — voir l'encart « Ajustement manuel ou verrouillage ? » de la section Ajustements manuels.`
             },
             {
               term: $localize`:@@aide.config.term.decoupage:Paramètres de découpage`,
@@ -565,6 +567,11 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue. Trois des quatre types sont appliqués au même niveau que le cadre légal : le solveur ne les contournera jamais, quitte à rendre un planning en défaut. Chacun se saisit avec une raison, qui reste lisible partout où l'ajustement est cité.`
+        },
+        {
+          kind: 'callout',
+          title: $localize`:@@aide.adHoc.callout.title:Ajustement manuel ou verrouillage ?`,
+          text: $localize`:@@aide.adHoc.callout.text:Les deux retirent de la liberté au solveur, mais pas au même moment ni sur la même matière. Un ajustement manuel est une règle sur mesure, posée avant le calcul, qui dit où placer — ou ne pas placer — quelqu'un : « elle ne peut pas venir dimanche », « ces deux-là ne travaillent pas ensemble », « il tient l'accueil samedi matin ». Le solveur en tient compte à chaque résolution, y compris en repartant de zéro, et un ajustement qu'il ne peut pas honorer laisse un planning en défaut qui le nomme. Un verrouillage est un geste sur un plan déjà calculé : il fige ce qu'une résolution a produit sur une partie du planning — un animateur, un stand, une journée, un créneau — pour que la suivante n'y touche plus et optimise le reste. Il ne dit rien de ce qui devrait s'y trouver, il conserve ce qui s'y trouve ; il ne vaut que pour le plan enregistré, et ne gèle jamais une place vide. En pratique : pour imposer ou interdire une affectation, un ajustement ; pour protéger une partie validée d'un plan que vous relancez, un verrouillage.`
         },
         {
           kind: 'definitions',
@@ -1077,6 +1084,8 @@ function searchableText(section: HelpSection): string {
         return block.items;
       case 'definitions':
         return block.items.flatMap((item) => [item.term, item.text]);
+      case 'callout':
+        return [block.title, block.text];
     }
   });
   return [section.title, section.summary, ...blockText, ...section.links.map((link) => link.label)].join(' ');

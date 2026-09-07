@@ -217,7 +217,8 @@ public class ParametresMcpTools {
     /* -------------------------- Contraintes ad hoc -------------------------- */
 
     @Tool(description = "Liste les contraintes ad hoc saisies au cas par cas (indisponibilité forcée, "
-            + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs). "
+            + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs) : des règles posées "
+            + "avant le calcul pour placer ou écarter quelqu'un, à distinguer des verrouillages qui figent après coup. "
             + "Les animateurs y sont désignés par id seul.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))

@@ -263,7 +263,12 @@ organisateur saisit là est une exception au plan, pas une règle du catalogue, 
 les deux se lisaient comme la même chose à côté de l'écran Contraintes. Les cas
 limites côté utilisateur — sémantique « l'un de ces animateurs », périmètre
 vide, créneau supprimé — sont détaillés dans l'aide en ligne (`/aide`, section
-« Ajustements manuels »).
+« Ajustements manuels »). L'autre confusion possible est avec le
+**verrouillage** : un ajustement est une règle posée *avant* le calcul (placer
+ou écarter quelqu'un), un verrou fige *après coup* ce qu'une résolution a
+produit sur une partie du plan — l'aide porte un encart « Ajustement manuel ou
+verrouillage ? », et [`domaine.md`](domaine.md#verrouillage-partiel-du-planning)
+la distinction côté modèle.
 
 Les exceptions saisies à la main s'appliquent en **dur**, à la même priorité que
 les règles légales. Rien n'empêche donc, en principe, d'en saisir deux qui ne

@@ -179,6 +179,29 @@ describe('buildHelpSections', () => {
     expect(texte).toContain('Passent donc délibérément');
     expect(texte).toContain('réenregistrer sous son propre identifiant');
   });
+
+  it('sets manual adjustments apart from locks, in a box, before the four types', () => {
+    const section = sections.find((candidate) => candidate.id === 'ajustements-manuels')!;
+    const callout = section.blocks.find((block) => block.kind === 'callout');
+    expect(callout).toBeDefined();
+    expect(callout?.kind === 'callout' && callout.title).toBe('Ajustement manuel ou verrouillage ?');
+    // Before the solve versus after it, a rule versus a freeze — and the
+    // practical answer, since that is what a reader came for.
+    const texte = callout?.kind === 'callout' ? callout.text : '';
+    expect(texte).toContain('avant le calcul');
+    expect(texte).toContain('déjà calculé');
+    expect(texte).toContain('ne gèle jamais une place vide');
+    expect(texte).toContain('En pratique');
+    expect(section.blocks.indexOf(callout!)).toBeLessThan(section.blocks.findIndex((block) => block.kind === 'definitions'));
+    // The lock definition of the solver section points back at it.
+    const config = sections.find((each) => each.id === 'configuration-solveur')!;
+    const verrous = config.blocks.flatMap((b) => (b.kind === 'definitions' ? b.items : [])).find((d) => d.term === 'Verrouillages')!;
+    expect(verrous.text).toContain('Ajustement manuel ou verrouillage ?');
+    // And the search finds the section by either word.
+    for (const mot of ['verrouillage', 'fige', 'ajustement']) {
+      expect(filterHelpSections(sections, mot).map((each) => each.id), mot).toContain('ajustements-manuels');
+    }
+  });
 });
 
 describe('filterHelpSections', () => {
@@ -238,7 +261,13 @@ describe('parametrer-pour-un-planning-complet', () => {
   it('names the three levers and the order to check them in', () => {
     const texte = section.blocks
       .flatMap((block) =>
-        block.kind === 'paragraph' ? [block.text] : block.kind === 'list' ? block.items : block.items.map((d) => d.term + ' ' + d.text)
+        block.kind === 'paragraph'
+          ? [block.text]
+          : block.kind === 'list'
+            ? block.items
+            : block.kind === 'callout'
+              ? [block.title + ' ' + block.text]
+              : block.items.map((d) => d.term + ' ' + d.text)
       )
       .join('\n');
     expect(texte).toContain('effectif par fenêtre');

@@ -1699,7 +1699,12 @@ sur B.
 Contraintes ad hoc et verrouillages sont des **états** : on ne les met pas à
 jour, on les supprime et on les recrée. Une même paire d'animateurs ne peut pas
 être à la fois en incompatibilité et en affinité (`400`). Une cible déjà
-verrouillée renvoie `200` sans doublon.
+verrouillée renvoie `200` sans doublon. Ils ne répondent pas à la même
+question : la contrainte ad hoc dit, *avant* le calcul, où placer ou ne pas
+placer quelqu'un et vaut pour toute résolution ; le verrouillage fige, *après
+coup*, ce que la dernière résolution a produit sur une partie du plan, et ne
+vaut que pour le plan enregistré (voir
+[`domaine.md`](domaine.md#verrouillage-partiel-du-planning)).
 
 ### Ce qu'une suppression emporte
 

@@ -32,7 +32,9 @@ public class VerrouillageMcpTools {
     @Inject
     ReferenceDataService referenceDataService;
 
-    @Tool(description = "Liste les verrouillages du planning : ce que le solveur n'a plus le droit de déplacer. "
+    @Tool(description = "Liste les verrouillages du planning : ce que le solveur n'a plus le droit de déplacer. Un "
+            + "verrouillage conserve ce que la dernière résolution a produit ; pour imposer ou interdire une "
+            + "affectation avant le calcul, c'est une contrainte ad hoc (creer_contrainte_ad_hoc). "
             + "Les animateurs y sont désignés par id seul.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))

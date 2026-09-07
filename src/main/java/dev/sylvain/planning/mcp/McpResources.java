@@ -79,7 +79,8 @@ public class McpResources {
                 | **Découpage** | l'opération qui remplace les amplitudes par des vacations, selon les paramètres de découpage. |
                 | **Poste** | un siège à pourvoir : un stand, un créneau, une place. C'est l'unité que le solveur affecte, et ce que comptent `volumes` et `synthese_affectations`. |
                 | **Édition** | un événement complet et son référentiel. Chaque outil accepte un argument `edition` ; sans lui, il travaille dans l'édition par défaut. Une variante d'une édition est **une autre édition**. |
-                | **Verrouillage** | une partie du planning que le solveur n'a plus le droit de déplacer. |
+                | **Contrainte ad hoc** | une règle sur mesure posée **avant** le calcul pour placer ou écarter quelqu'un (indisponibilité forcée, incompatibilité, affectation forcée, affinité) ; « Ajustement manuel » à l'écran. Toute résolution l'honore, y compris en repartant de zéro. |
+                | **Verrouillage** | une partie du planning que le solveur n'a plus le droit de déplacer : un geste **après** le calcul, qui conserve ce que la dernière résolution a produit sans rien dire de ce qui devrait s'y trouver. Pour imposer une affectation, c'est une contrainte ad hoc, pas un verrou. |
                 | **Instantané** | une copie datée d'un planning résolu, qu'on peut comparer et restaurer. |
                 | **Publication** | l'envoi du planning aux animateurs concernés. Elle capture au passage un **instantané publié** : c'est lui que les animateurs lisent, pas le planning de travail. Résoudre ne prévient personne — `etat_planning` date la dernière résolution, `etat_publication` la dernière publication. |
                 | **Déclaration de disponibilité** | ce qu'un animateur propose depuis son espace pendant la fenêtre de collecte. Elle n'entre dans le référentiel que si quelqu'un l'applique. |

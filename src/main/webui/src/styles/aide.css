@@ -21,8 +21,29 @@
 /* Prose is capped: full-width lines are unreadable on a wide screen. */
 .aide-paragraph,
 .aide-list,
-.aide-definitions {
+.aide-definitions,
+.aide-callout {
   max-width: 68ch;
+}
+
+/* A boxed aside: the one distinction a section wants the eye to land on. */
+.aide-callout {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--app-accent);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: var(--mat-sys-surface-container);
+}
+
+.aide-callout-title {
+  display: block;
+  font: var(--mat-sys-title-small);
+  margin-bottom: 0.375rem;
+}
+
+.aide-callout-text {
+  font: var(--mat-sys-body-medium);
+  margin: 0;
 }
 
 .aide-paragraph {
