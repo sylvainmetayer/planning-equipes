@@ -653,12 +653,25 @@ The doc layout is intentional — respect it when adding or updating docs.
    `docs/README.md` — not a new root-level file and not a new README section.
 4. Docs are written in **French**; keep the existing tone and Markdown style
    (tables for enumerable facts, fenced code blocks for commands).
-5. When behaviour changes, update the doc that owns it: new endpoint →
-   `docs/api.md`; new constraint → `docs/contraintes.md` **and**
-   `ConstraintCatalog`; new business capability → README section 2; new
-   command/CI/tooling → `docs/developpement.md`; anything touching the
-   version contract, the release flow or the Docker image tags →
-   `docs/versioning.md`.
+5. When behaviour changes, update the doc that owns it. Two owners are **not**
+   Markdown files, and writing prose instead of touching them is the mistake
+   this rule exists to prevent:
+   - **new endpoint → the OpenAPI the application publishes**, which is the
+     contract (audit #392, question 12). `docs/api.md` does not list endpoints
+     and must not start: it carries what a schema cannot express — the
+     cross-cutting invariants, the business trade-offs, and the traps that cost
+     half a day. Add to it only when there is such a thing to say. The
+     committed `docs/schema/openapi.json` is refreshed by `npm run api-schema`,
+     and `npm run api-types-check` fails when the frontend's hand-written
+     models drift from it;
+   - **new constraint → `ConstraintCatalog`**, which `GET /api/constraints`
+     serves and which is therefore the documentation the application itself
+     hands out. `docs/contraintes.md` no longer enumerates the constraints and
+     must not go back to it: it answers *why* a rule exists and what it costs,
+     which the catalogue's one-line description cannot carry;
+   - new business capability → README section 2; new command/CI/tooling →
+     `docs/developpement.md`; anything touching the version contract, the
+     release flow or the Docker image tags → `docs/versioning.md`.
 6. **Architecture decisions go to `docs/decisions/`**, one file per decision,
    named `NNNN-short-title.md` and listed in `docs/decisions/README.md`. A
    decision record answers *why*, where the rest of `docs/` answers *what*.
