@@ -20,7 +20,7 @@ Read `AGENTS.md` at the repo root before anything else — in particular
 - `.github/workflows/tests.yml` — backend (`./mvnw verify -DskipITs=false`)
   and frontend (`npm test`) CI jobs
 - `.github/workflows/docker-ghcr.yml` — image build/publish pipeline
-- `Dockerfile` and `src/main/docker/Dockerfile.{jvm,legacy-jar,native,native-micro}`
+- `Dockerfile` (the only one: the Quarkus starter's `src/main/docker/*` were removed with the native profile)
 - `docker-compose.yml` — `app`/`postgres`/`pgadmin` services and profiles
 - `mise.toml` — pinned toolchain (`temurin-25`, `maven 3.9.9`, `node 24`)
 - `renovate.json` — dependency update policy and grouping rules
@@ -38,11 +38,12 @@ failure vs always. You know this repo runs unit + failsafe integration tests
 container needed because Docker is preinstalled on the runner), and a
 separate frontend job running Vitest once (non-watch) in Node/jsdom.
 
-**Container builds.** Multi-stage JVM vs native (GraalVM `-Dnative`) Quarkus
-images, the trade-offs between `Dockerfile.jvm` (fast build, needs a JVM at
-runtime) and `Dockerfile.native`/`Dockerfile.native-micro` (slow build, small
-distroless-style runtime, no JIT warm-up), image layer caching, non-root
-container users, and pinning base image digests vs tags. GHCR
+**Container builds.** One multi-stage JVM image, built by the root
+`Dockerfile`. Native compilation was dropped (audit #392, question 24): Timefold
+measures its own solver ~42% slower under an AOT image, the JIT being unable to
+profile-and-speculate, and this application's core workload is a 300-second
+solve. Reviewing here means image layer caching, non-root container users, and
+pinning base image digests vs tags. GHCR
 (`ghcr.io/sylvainmetayer/planning-equipes`) auth via `GITHUB_TOKEN` and tagging
 strategy (`:main`, semver, `:sha`).
 
