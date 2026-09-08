@@ -72,6 +72,15 @@ jobs:
           # dépendance de l'application. Le faire échouer sur une CVE d'outil
           # de test bloquerait des PR sans réduire la surface d'attaque de
           # l'application déployée.
+          #
+          # EXCEPTION DATÉE. C'est une expérience, pas un outil retenu (audit
+          # #392, question 21) : neuf fichiers, dernière touche le 2026-09-03,
+          # et l'essai d'Obscura v0.2.2 du 2026-09-06 a échoué. Elle survit
+          # parce qu'elle est gratuite, mais elle coûte cette ligne — un
+          # dossier que le scan de sécurité ne regarde pas, dans un dépôt qui
+          # va devenir public. Si l'expérience n'est pas reprise, supprimer le
+          # dossier **et** cette exception : garder l'un sans l'autre laisse un
+          # angle mort qui ne protège plus rien.
           skip-dirs: explorbot
 
   code:
