@@ -67,3 +67,6 @@ assets/
 # Explorbot (branche test/explorbot)
 /explorbot/output/
 /explorbot/experience/
+
+# Added by ggshield
+.cache_ggshield

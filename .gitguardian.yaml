@@ -13,3 +13,35 @@ secret:
     - src/test/**
     - src/main/webui/e2e/**
     - src/main/webui/src/**/*.spec.ts
+
+  # Valeurs nommées une par une, jamais des chemins : docker-compose.yml,
+  # pom.xml et les workflows restent scannés, et tout autre secret qui y
+  # atterrirait déclenche toujours.
+  #
+  # Ces cinq-là sont des identifiants de développement et d'intégration
+  # introduits par #405 (D1 de l'audit #392). Ils existent précisément parce
+  # que DefaultSecrets refuse désormais de démarrer en production sur la
+  # valeur d'exemple : il fallait donner une vraie valeur aux chemins dev, CI
+  # et @QuarkusIntegrationTest, sans quoi le durcissement cassait le build.
+  # Aucun ne protège quoi que ce soit d'accessible : bases jetables de CI,
+  # compose de développement local, application packagée d'un test.
+  ignored_matches:
+    # docker-compose.yml — défauts de développement local, surchargeables par
+    # ${DB_PASSWORD} / ${ADMIN_PASSWORD}. Postgres n'est pas publié hors du
+    # réseau compose.
+    - name: "compose de développement, Postgres (#405)"
+      match: 67cb872e0b5cc3bfc76b56de7ffff1fbb46c00153c28901603ce8f0ae77384e4
+    - name: "compose de développement, compte admin (#405)"
+      match: d65d287eda9c1c0cc28e259ad8e69a8946cefde36729727b746b005ae2867549
+
+    # .github/workflows/e2e.yml — conteneurs éphémères du job e2e, détruits
+    # avec le runner.
+    - name: "job e2e, Postgres éphémère (#405)"
+      match: 643a01e0abb88f1ff40b0ff5802e71189dc027dc5ccec396c575951bbe882f05
+    - name: "job e2e, compte admin (#405)"
+      match: a630695b28cc4971f9b634dbeecdc67d4d1778cbb6705c66951db29aa63715a5
+
+    # pom.xml — passé par failsafe à l'application packagée des *IT, qui tourne
+    # en %prod le temps du `verify`.
+    - name: "@QuarkusIntegrationTest, compte admin (#405)"
+      match: 997b8be165f243b507927a428df87164d46bf28280d077684dfcd31d3f174101
