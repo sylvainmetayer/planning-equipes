@@ -17,6 +17,8 @@
     "test:coverage": "ng test --coverage --coverage-reporters lcovonly --coverage-reporters html --coverage-reporters text-summary",
     "lint": "eslint .",
     "i18n-check": "node scripts/generate-version.js && node scripts/check-i18n.js",
+    "api-types-check": "node scripts/check-api-types.js",
+    "api-schema": "node scripts/refresh-api-schema.js",
     "e2e": "playwright test"
   },
   "private": true,

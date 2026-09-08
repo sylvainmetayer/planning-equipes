@@ -27,6 +27,7 @@ export interface TypologieItem {
 }
 
 export interface Animateur {
+  ninja?: boolean;
   id: string;
   prenom: string;
   nom: string;
@@ -477,6 +478,7 @@ export interface WrittenStand {
 }
 
 export interface Creneau {
+  dureeMinutes?: number;
   id: number;
   jour: number;
   /**
@@ -537,6 +539,8 @@ export interface PlanningResolution {
 
 /** One seat to fill: a stand on a timeslot, with its animator once solved. */
 export interface PosteAffectation {
+  dureeEffectiveMinutes?: number;
+  verrouille?: boolean;
   id: string;
   stand: Stand | null;
   creneau: Creneau | null;
@@ -605,13 +609,35 @@ export interface Volumetrie {
   hoursAvailable: number;
 }
 
+/** Une contrainte que l'édition a éteinte, telle que le serveur l'attache au problème. */
+export interface ConstraintToggle {
+  nom?: string;
+}
+
+/** Plafonds de qualité, imposés par la configuration serveur à chaque résolution. */
+export interface ParametresQualite {
+  maxEmplacementsDistinctsParJour?: number;
+}
+
 export interface HardMediumSoftScore {
   hardScore: number;
   mediumScore: number;
   softScore: number;
+  /**
+   * Envoyé par le serveur et jusqu'ici absent d'ici : le front était aveugle à
+   * ce champ (contrat OpenAPI, `docs/schema/openapi.json`). Déclaré optionnel
+   * plutôt que requis parce que le schéma ne porte aucun `required` — affirmer
+   * une garantie que le contrat n'exprime pas serait une invention.
+   */
+  feasible?: boolean;
+  zero?: boolean;
 }
 
 export interface PlanningEvenement {
+  constraintsDesactivees?: ConstraintToggle[];
+  parametresLegaux?: ParametresLegaux[];
+  parametresQualite?: ParametresQualite[];
+  verrouillages?: VerrouillagePlanning[];
   dateDebutFestival?: string;
   animateurs: Animateur[];
   postes: PosteAffectation[];
@@ -1065,6 +1091,7 @@ export type JobStatus =
 
 /** `/api/jobs/...` view: the server owns the solver state, elapsed included. */
 export interface JobView {
+  message?: string;
   id: string;
   type: JobType;
   status: JobStatus;
