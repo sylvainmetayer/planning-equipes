@@ -3,6 +3,13 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    /* The whole family at once: strictNullChecks, noImplicitAny,
+       strictFunctionTypes, strictBindCallApply, strictPropertyInitialization,
+       noImplicitThis, useUnknownInCatchVariables, alwaysStrict. The four
+       options below were enabled one by one and `strict` never was, which
+       read as a deliberate opt-out; it was an omission. Measured before
+       flipping it: zero error, on the app program and on the specs. */
+    "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
@@ -16,6 +23,10 @@
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
+    /* Type-checks the templates, which `strict` alone does not reach: an
+       expression in a template is compiled by ngc, not by tsc. Measured the
+       same way — `ng build` is green with it. */
+    "strictTemplates": true,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true
   },
