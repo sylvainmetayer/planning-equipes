@@ -94,7 +94,7 @@ git tag -a v1.2.0 -m "…"
 git push origin main v1.2.0
 ```
 
-Le push du tag déclenche `docker-ghcr.yml` : build multi-arch, tags d'image
+Le push du tag déclenche `docker-ghcr.yml` : build `linux/amd64`, tags d'image
 `1.2.0` et `1.2`, SBOM, signature cosign — rien de tout cela ne demande de
 geste. Reste à créer la **release GitHub** sur le tag, corps = la section
 fraîche du CHANGELOG : c'est ce que lira quelqu'un qui découvre le dépôt.

@@ -27,7 +27,9 @@ jobs:
     # what makes the provenance verifiable once the repository is public. Every
     # other workflow stays self-hosted until that opening.
     runs-on: ubuntu-latest
-    # ~23 min réels, dont arm64 sous QEMU.
+    # ~23 min réels tant que l'image se construisait aussi pour arm64 sous
+    # QEMU ; sans elle, c'est la moitié. Le plafond reste large : c'est un
+    # garde-fou contre un blocage, pas une prévision.
     timeout-minutes: 60
 
     steps:
@@ -57,8 +59,9 @@ jobs:
             exit 1
           fi
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
+      # Pas de QEMU : l'image ne vise que linux/amd64. Il n'était là que pour
+      # émuler arm64, et c'est ce qui coûtait la moitié du job. (Renovate l'a
+      # fait passer en v4.3.0 entre-temps : le bump devient sans objet.)
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
@@ -93,7 +96,11 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          # Une seule cible : aucun déploiement ARM n'existe ni n'est prévu
+          # (audit #392, question 3). La construire sous QEMU doublait le job
+          # pour un artefact que personne n'exécutait. À rétablir le jour où
+          # une machine ARM sert vraiment cette image — la ligne suffit.
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
