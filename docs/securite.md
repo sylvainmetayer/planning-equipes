@@ -209,6 +209,31 @@ telles qu'elles apparaissent côté application. Sans elle, tous les visiteurs
 derrière le proxy partagent un compteur, et le premier attaquant venu verrouille
 la connexion de tout le monde.
 
+Le réglage accepte des **adresses littérales et des blocs CIDR**, séparés par des
+virgules : `172.18.0.0/16`, ou `127.0.0.1,10.0.0.0/8`. Une entrée mal formée
+empêche le démarrage plutôt que d'être ignorée — sans quoi vous croiriez avoir
+déclaré votre proxy pendant que le verrou compterait tout le monde ensemble.
+
+Déclarer un bloc, c'est faire confiance à toutes les machines qu'il contient.
+C'est la bonne granularité pour un réseau privé dont les membres sont vos
+propres services, et la mauvaise pour une plage publique.
+
+> **Derrière un tunnel (Pangolin, Cloudflare Tunnel, `newt`…)**, l'adresse à
+> déclarer n'est ni celle du client, ni l'IP publique du proxy : c'est celle du
+> client de tunnel **tel que votre application le voit**, c'est-à-dire un
+> conteneur sur un réseau bridge. Cette adresse est attribuée à l'attachement et
+> bouge au redémarrage ; le sous-réseau, lui, est fixé à la création du réseau.
+> D'où le bloc :
+>
+> ```bash
+> docker network inspect <réseau> -f '{{(index .IPAM.Config 0).Subnet}}'
+> # → 172.18.0.0/16, la valeur à passer en CONNEXION_PROXYS_FIABLES
+> ```
+>
+> Vérifiez d'abord que l'en-tête arrive : si votre client de tunnel relaie en
+> TCP sans que rien n'ait posé `X-Forwarded-For` en amont, ce réglage ne vous
+> apportera rien et il faut d'abord le faire ajouter côté proxy.
+
 Ce verrou ne remplace pas la limitation de débit par IP du proxy, qui vaut pour
 tout le reste — exports, résolution, API entière.
 
@@ -407,7 +432,7 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | À faire | Pourquoi |
 | --- | --- |
 | Terminer le TLS et rediriger tout le trafic http vers https | HSTS et le flag `Secure` du cookie de l'espace ne s'activent que sur une visite HTTPS |
-| **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses | Sans elle, le verrouillage de connexion ignore `X-Forwarded-For` et compte tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
+| **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses (littérales ou blocs CIDR) | Sans elle, le verrouillage de connexion ignore `X-Forwarded-For` et compte tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
 | **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-Proto` reste forgeable, et un attaquant qui joint l'origine directement est compté sur sa vraie adresse — ce qui est correct, mais le prive du bénéfice de la liste ci-dessus |
 | Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace) ; le reste — exports, résolution, API — n'en a pas |
 | Journaliser sans les URL de l'espace animateur **ni celles de l'abonnement ICS**, ou purger ces journaux | Les deux jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, et l'abonnement y revient à chaque synchronisation d'un agenda |

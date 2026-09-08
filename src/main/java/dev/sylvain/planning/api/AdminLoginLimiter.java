@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigAdminLogin;
+import dev.sylvain.planning.config.TrustedProxies;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -97,7 +98,16 @@ public class AdminLoginLimiter {
     private record Echecs(int nombre, Instant dernier) {
     }
 
+    /**
+     * The declared proxies, parsed once. Built here rather than lazily so a
+     * malformed entry fails the boot: skipping it would leave the deployment
+     * believing it had declared its proxy, while the lock quietly counted every
+     * visitor on the proxy's own single counter.
+     */
+    private volatile TrustedProxies proxysFiables = TrustedProxies.NONE;
+
     public void register(@Observes Filters filtres) {
+        proxysFiables = TrustedProxies.of(config.proxysFiables().orElse(List.of()));
         filtres.register(this::apply, PRIORITE);
     }
 
@@ -206,9 +216,10 @@ public class AdminLoginLimiter {
      * {@code request().remoteAddress()}, which {@code proxy-address-forwarding}
      * has already rewritten with the client's own forged value. If the machine
      * actually connecting is not in
-     * {@code planning.auth.connexion.proxys-fiables}, {@code X-Forwarded-For} is
-     * whatever that machine chose to write, so it is ignored entirely and the
-     * connection address is counted. Left empty — the default — no header is
+     * {@code planning.auth.connexion.proxys-fiables} — as a literal address or
+     * within one of its CIDR blocks — {@code X-Forwarded-For} is whatever that
+     * machine chose to write, so it is ignored entirely and the connection
+     * address is counted. Left empty — the default — no header is
      * ever trusted, which is right for a deployment with no proxy and safe for
      * one whose proxies have not been declared.</p>
      *
@@ -232,7 +243,7 @@ public class AdminLoginLimiter {
         // rewritten remoteAddress() with the client's own forged value. Only the
         // TCP peer says who is really speaking.
         String pair = hostOf(contexte.request().connection().remoteAddress());
-        List<String> fiables = config.proxysFiables().orElse(List.of());
+        TrustedProxies fiables = proxysFiables;
         if (!fiables.contains(pair)) {
             return pair;
         }

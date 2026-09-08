@@ -16,7 +16,12 @@ public interface ConfigAdminLogin {
 
     /**
      * Addresses of the reverse proxies in front of this deployment, in
-     * {@code X-Forwarded-For} terms.
+     * {@code X-Forwarded-For} terms — literal addresses, CIDR blocks, or both.
+     *
+     * <p>A block is what a containerised deployment usually needs: the proxy is
+     * a container on a bridge network and its address is handed out at attach
+     * time, while the network's subnet is fixed at creation. See
+     * {@link TrustedProxies}.</p>
      *
      * <p>The lock walks that header from the right and stops at the first entry
      * that is <b>not</b> in this list: that is the address the last trusted hop
