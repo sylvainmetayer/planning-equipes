@@ -94,18 +94,30 @@ async function occupants(): Promise<Record<string, string | null>> {
  * target's centre. `dragTo` skips the intermediate moves the CDK needs.
  */
 async function glisser(page: Page, source: Locator, cible: Locator): Promise<void> {
+  await source.scrollIntoViewIfNeeded();
   const depart = await source.boundingBox();
-  const arrivee = await cible.boundingBox();
   expect(depart, 'the dragged element should be on screen').not.toBeNull();
-  expect(arrivee, 'the drop target should be on screen').not.toBeNull();
   const x0 = depart!.x + depart!.width / 2;
   const y0 = depart!.y + depart!.height / 2;
-  const x1 = arrivee!.x + arrivee!.width / 2;
-  const y1 = arrivee!.y + arrivee!.height / 2;
   await page.mouse.move(x0, y0);
   await page.mouse.down();
   await page.mouse.move(x0 + 8, y0 + 8);
-  await page.mouse.move(x1, y1, { steps: 12 });
+
+  // The target is read *here*, once the drag has started, and not before the
+  // mousedown with the source. Taking the drop point up front is what made
+  // this helper wrong: the CDK inserts a preview and a placeholder when the
+  // threshold is crossed, which moves every row below the source, so the
+  // coordinate captured beforehand no longer covers the intended row when the
+  // pointer arrives — it covers its neighbour, and the drop lands there.
+  //
+  // The bug only shows when the target sits far enough below the source for
+  // the shift to cross a row boundary, which depends on how many rows the rail
+  // holds — that is, on the animateurs other specs left in the edition. So it
+  // passed in isolation and failed in the full suite, deterministically.
+  await cible.scrollIntoViewIfNeeded();
+  const arrivee = await cible.boundingBox();
+  expect(arrivee, 'the drop target should be on screen').not.toBeNull();
+  await page.mouse.move(arrivee!.x + arrivee!.width / 2, arrivee!.y + arrivee!.height / 2, { steps: 12 });
   await page.mouse.up();
 }
 
