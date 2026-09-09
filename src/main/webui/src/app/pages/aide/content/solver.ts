@@ -147,12 +147,16 @@ export function buildSolverSections(): HelpSection[] {
               term: $localize`:@@aide.setup.term.contraintes:Les autres règles : n'en désactivez aucune pour remplir`,
               text: $localize`:@@aide.setup.def.contraintes:Six jours par semaine, dix heures par jour, onze heures de repos quotidien, quarante-huit heures par semaine sont le droit, et le planning décrit ci-dessus les respecte toutes. Désactiver une règle légale sert à comprendre ce qui bloque, jamais à produire le planning qu'on diffuse. Les règles de confort — six jours consécutifs au plus, roulement limité sur les stands premium — pèsent en score moyen : elles n'empêchent pas un planning complet, elles le classent.`,
             },
+            {
+              term: $localize`:@@aide.setup.term.coupureRepas:La coupure repas : une règle à part`,
+              text: $localize`:@@aide.setup.def.coupureRepas:La coupure repas ne se confond pas avec la pause légale de vingt minutes, et déclarer celle-ci prise sur le poste ne la lève pas. Toute personne qui travaille de part et d'autre d'une fenêtre repas — midi et soir, réglées avec le découpage sur la page Créneaux — doit disposer, entièrement dans cette fenêtre, d'un trou libre de la durée demandée. Commencer son service à l'ouverture de la fenêtre ou le terminer à sa fermeture ne doit rien : on a mangé avant, ou on mangera après. Une journée à cheval sur les deux fenêtres en doit deux. Ce n'est pas une obligation du Code du travail mais la règle que l'organisation s'est donnée ; elle est tenue en contrainte dure, et se désactive depuis la page Contraintes sous confirmation. À savoir avant de découper : si un seul créneau couvre toute la fenêtre — une vacation de 10 h à 20 h d'un bloc — son titulaire ne peut pas s'absenter, et aucune résolution n'atteindra zéro écart dur tant que la grille n'est pas recoupée.`,
+            },
           ],
         },
         {
           kind: 'steps',
           items: [
-            $localize`:@@aide.setup.step1:Besoin en animateurs : les quatre bornes disent le plancher. Si l'effectif est sous le plancher, aucun réglage n'y changera rien ; si le plancher dépasse l'effectif de peu, revoyez la grille et la pause entre vacations avant tout.`,
+            $localize`:@@aide.setup.step1:Besoin en animateurs : les cinq bornes disent le plancher. Si l'effectif est sous le plancher, aucun réglage n'y changera rien ; si le plancher dépasse l'effectif de peu, revoyez la grille et la pause entre vacations avant tout.`,
             $localize`:@@aide.setup.step2:Ouvertures des stands, puis faisabilité : le besoin lu fenêtre par fenêtre, et la capacité jour par jour, sans calcul.`,
             $localize`:@@aide.setup.step3:Une résolution courte, puis la page Problèmes : les écarts restants disent laquelle des règles tient les sièges vides.`,
             $localize`:@@aide.setup.step4:Une résolution longue, une fois la configuration stable — en ne changeant qu'une chose à la fois entre deux essais.`,

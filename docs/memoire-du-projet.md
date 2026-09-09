@@ -269,7 +269,7 @@ contrainte ne le contourne.
 
 ---
 
-## 3. D'où viennent les 39 contraintes
+## 3. D'où viennent les 42 contraintes
 
 Les contraintes légales ne sont pas nées d'une intuition mais d'un **audit daté
 du référentiel contre le Code du travail** (audit interne, hors dépôt),
@@ -373,7 +373,7 @@ qu'ils préviennent.
 | `LanguagePolicyStructuralTest` — relit les sources, refuse la prose française et les noms bâtis sur un mot français hors glossaire | La règle « code et commentaires en anglais » existait depuis longtemps et **les quatorze derniers commits avaient à eux seuls ajouté un tiers du français du dépôt**. À sa première exécution, le test relevait 315 blocs de prose et 522 noms. |
 | `JsonContractTest` — gèle les clés JSON de chaque type exposé | La remédiation du franglais a déplacé **13 clés d'un coup**, dont une poignée seulement était assertée quelque part. Les autres ont changé de forme sur le fil avec un build vert, et le frontend aurait lu `undefined` en silence. |
 | `McpToolNamesTest` — tout nom d'outil cité hors du code Java doit désigner un outil réel | Le prompt prêt à copier de la page MCP nommait un outil que l'application n'a jamais exposé, dans les deux langues. Le contrôle d'i18n compare les identifiants, jamais le texte : rien ne pouvait le voir. |
-| `ConstraintToggleStructurelleTest` — les 39 contraintes, pas 6 | Le nom d'une contrainte est écrit à trois endroits sans qu'aucun compilateur ne relie les trois. Une faute de frappe rendait l'interrupteur d'IHM inopérant — c'était déjà arrivé. |
+| `ConstraintToggleStructurelleTest` — les 42 contraintes, pas 6 | Le nom d'une contrainte est écrit à trois endroits sans qu'aucun compilateur ne relie les trois. Une faute de frappe rendait l'interrupteur d'IHM inopérant — c'était déjà arrivé. |
 | `ScenarioSchemaGeneratorTest` — échoue dès que le schéma publié diverge des DTO | Deux champs ajoutés au DTO sans relancer le profil de génération (opt-in, hors CI) : un éditeur validant contre le schéma signalait deux clés valides comme inconnues. |
 | `McpConfidentialiteStructurelleTest` — parcourt les outils par réflexion, échoue si l'un expose un champ personnel | Les messages de violation partaient bruts vers MCP, formatés pour l'IHM, donc porteurs de « Prénom Nom (id) ». |
 | `npm run i18n-check` | `$localize` retombe silencieusement sur la source française : un écran à moitié traduit ne lève d'erreur ni au build, ni à l'exécution, ni dans les tests. **56 identifiants s'étaient accumulés** avant que le contrôle n'existe, et il a trouvé six messages divergents à sa première exécution. |
@@ -399,7 +399,7 @@ de filet, parce qu'on le croit.**
 Ce qui suit ne se renomme pas, ou pas sans migration. Chaque entrée a une
 raison qui n'est pas de la prudence de principe.
 
-- **Les 39 noms de contraintes Timefold.** Ils sont clé primaire de
+- **Les 42 noms de contraintes Timefold.** Ils sont clé primaire de
   `constraint_toggle` : un renommage sans migration **réactiverait en silence
   une contrainte désactivée**. Les méthodes qui les portent gardent donc leur
   nom, et `LanguagePolicyStructuralTest` porte une exemption vérifiée pour ça.

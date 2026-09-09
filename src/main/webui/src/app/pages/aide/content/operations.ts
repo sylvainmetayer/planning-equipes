@@ -125,7 +125,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.pauses:Pauses`,
-              text: $localize`:@@aide.views.def.pauses:La rotation des pauses légales, jour par jour et stand par stand : qui sort de quelle heure à quelle heure, une personne à la fois par stand, et qui est là pour relayer. Le solveur ne planifie pas la pause de vingt minutes due à la sixième heure (trente à quatre heures et demie pour un mineur) ; quand elle est déclarée prise sur le poste, l'écran la pose au plus tard possible avant la sixième heure, après celle du collègue. Les trous déjà planifiés par la grille sont listés à part. Chaque animateur retrouve ses pauses sur son propre planning.`,
+              text: $localize`:@@aide.views.def.pauses:La rotation des pauses légales, jour par jour et stand par stand : qui sort de quelle heure à quelle heure, une personne à la fois par stand, et qui est là pour relayer. Le solveur ne planifie pas la pause de vingt minutes due à la sixième heure (trente à quatre heures et demie pour un mineur) ; quand elle est déclarée prise sur le poste, l'écran la pose au plus tard possible avant la sixième heure, après celle du collègue. Les trous déjà planifiés par la grille sont listés à part. Une seconde section liste les coupures repas : qui en doit une, dans quelle fenêtre, et combien de minutes manquent quand la grille ne lui laisse pas de place — les journées en rouge sont celles que le solveur refuse. Chaque animateur retrouve ses pauses sur son propre planning.`,
             },
           ],
         },

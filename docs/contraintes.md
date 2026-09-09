@@ -7,7 +7,7 @@ Trois niveaux, alignés sur le `HardMediumSoftScore` de Timefold : **dur**
 > **Ne jamais reclasser une contrainte dure en medium ou soft sans validation
 > explicite**, en particulier tout ce qui touche au cadre légal des mineurs.
 
-**La liste des 39 contraintes, leur niveau, leur catégorie, leur description
+**La liste des 42 contraintes, leur niveau, leur catégorie, leur description
 métier et l'article de loi qui les fonde vivent dans `ConstraintCatalog`** — et
 sont servies par `GET /api/constraints`, affichées sur la page Contraintes. Ce
 document ne les recopie pas : il porte les mécanismes et les arbitrages.
@@ -108,15 +108,23 @@ branche le toggle sur les quelques faits ad hoc, pas sur les milliers de postes.
 Le solveur peut alors produire un planning **contraire au Code du travail tout
 en affichant un score dur à zéro**, et rien dans le score ne le signale.
 
-Trois catégories sont protégées (`CATEGORIES_PROTEGEES`, champ `protegee` de
-l'API) : « Légal (mineurs) », « Légal (temps de travail) » et « Sécurité
-(mineurs) » — cette dernière n'est pas une obligation du Code du travail mais
-une règle posée par l'organisateur, et la lever engage tout autant. Les autres
-se décochent sans friction : elles arbitrent du confort.
+Quatre catégories sont protégées (`CATEGORIES_PROTEGEES`, champ `protegee` de
+l'API) : « Légal (mineurs) », « Légal (temps de travail) », « Sécurité
+(mineurs) » et « Organisation (repas) ». Les autres se décochent sans friction :
+elles arbitrent du confort.
 
-L'IHM demande une confirmation qui nomme la règle, rappelle l'article qui la
-fonde et reprend la formule des conditions d'utilisation — **l'organisateur
-reste l'employeur et le responsable** du planning produit. Réactiver ne demande
+**Deux d'entre elles seulement sont fondées en droit** (`CATEGORIES_LEGALES`,
+champ `legale`) : les deux « Légal (…) ». « Sécurité (mineurs) » et
+« Organisation (repas) » sont des règles que l'organisateur s'est données — la
+lever l'engage tout autant, mais le planning n'en devient pas illégal, et la
+modale ne doit pas le prétendre. Un avertissement qui en dit trop est un
+avertissement qu'on apprend à passer : la modale choisit donc sa formulation
+sur `legale`, et le serveur décide, jamais un test sur le libellé de
+catégorie côté client.
+
+L'IHM demande une confirmation qui nomme la règle, rappelle ce qui la fonde et
+reprend la formule des conditions d'utilisation — **l'organisateur reste
+l'employeur et le responsable** du planning produit. Réactiver ne demande
 rien : remettre une règle légale ne mérite aucune cérémonie.
 
 **L'API, elle, ne demande rien** : un client MCP ou un `curl` désactive sans
@@ -157,7 +165,7 @@ respectée ou le planning est invalide, son poids ne change que la vitesse de
 convergence. **Repondérer une règle légale ne la rend ni plus ni moins
 obligatoire.**
 
-Le contrôle, lui, est le **même pour les 39 règles** : un champ « Poids » de 1
+Le contrôle, lui, est le **même pour les 42 règles** : un champ « Poids » de 1
 à 100. Deux contrôles différents selon la famille laissaient croire à deux
 mécanismes ; il n'y en a qu'un, seul le sens de la valeur change.
 
@@ -371,6 +379,86 @@ la règle : les deux jours doivent se suivre, et une semaine ouverte en pointill
 — lundi, mercredi, vendredi, dimanche — reste pénalisée si le mineur les tient
 tous.
 
+## La coupure repas
+
+`coupureRepasObligatoire` (dure) et `coupureRepasAuPlusTot` (souple) portent la
+coupure repas. Avant elles, **aucune contrainte ne la modélisait** : une journée
+de dix heures d'affilée sortait à zéro dur, sans que rien ne le signale
+(issue #438).
+
+### Ce n'est pas le Code du travail
+
+La seule pause que le Code impose est celle de [L3121-16] — vingt minutes
+consécutives dès que le temps de travail quotidien atteint six heures — et
+`travailContinuMaxMajeur` la porte déjà. La coupure repas est la règle
+d'organisation de l'événement, celle pour laquelle la grille du classeur source
+taille ses vacations de midi. Elle est tenue **en dur par choix**, sous une
+catégorie « Organisation (repas) » protégée : le catalogue n'avait pas de case
+pour une règle d'organisation dure, il en a une maintenant.
+
+### La règle, exactement
+
+Pour un couple (animateur, date) et chaque fenêtre repas déclarée :
+
+- **due** si la personne travaille **de part et d'autre** : un poste commence
+  avant l'ouverture de la fenêtre, un poste finit après sa fermeture. Qui
+  commence son service à 19 h a mangé avant ; qui termine à 14 h mangera
+  après ; ni l'un ni l'autre ne doit quoi que ce soit.
+- **satisfaite** si un trou libre d'au moins la durée paramétrée tient
+  **entièrement dans la fenêtre**. Sur une fenêtre 12 h-14 h à 60 minutes,
+  c'est 12-13 ou 13-14 — les deux créneaux que la grille taille pour la
+  rotation — et tout ce qui se place entre, 12 h 30-13 h 30 compris. Une
+  coupure 13 h 45-14 h 45 ne compte que pour ses quinze premières minutes : la
+  fenêtre est le service de restauration, pas une indication vague.
+- **pénalité** : les minutes manquantes, jamais un tout-ou-rien. Une journée à
+  un quart d'heure près et une journée qui ne s'arrête jamais ne sont pas le
+  même problème, et un palier ne laisserait au solveur aucune pente à
+  descendre.
+- **une coupure par fenêtre traversée** : une journée 10 h-23 h en doit deux.
+
+`coupureRepasAuPlusTot` départage ensuite 12-13 de 13-14 en pénalisant le
+retard sur l'ouverture. La couverture des stands étant dure, c'est son
+arbitrage avec cette préférence qui répartit la rotation du midi.
+
+### Deux indépendances, qui sont le fond du sujet
+
+**Indépendante de `pauseSurPoste`.** Déclarer la pause légale prise sur le
+poste, par relais entre collègues, dit que les vingt minutes ont lieu à
+l'intérieur de la vacation. Cela ne dit rien du déjeuner. Le paramètre qui
+neutralise `travailContinuMaxMajeur` ne doit pas emporter la coupure repas —
+c'est exactement ainsi qu'une journée 10 h-20 h passait inaperçue.
+
+**Indépendante du `modeGrille`.** Les fenêtres repas n'étaient lues que
+lorsqu'une grille AMPLITUDES était découpée en vacations ; une grille saisie
+en VACATIONS n'est jamais découpée, donc personne ne les regardait. Elles
+voyagent désormais en faits de problème (`FenetreRepas`, projeté depuis
+`ParametresDecoupage`), quel que soit le mode. Le stockage n'a pas bougé : une
+seconde table ne créerait qu'une seconde vérité sur « la fenêtre du midi ».
+
+### Ce que ça peut rendre infaisable
+
+Sur une grille dont **un seul créneau couvre toute la fenêtre** — une vacation
+10 h-20 h d'un bloc — son titulaire ne peut pas s'absenter, et le siège doit
+être pourvu (`posteDoitEtrePourvu`, dure aussi). Aucune affectation n'atteint
+alors zéro dur. La réponse est de retailler la grille, ou d'éteindre la règle
+depuis l'écran Contraintes. Une fenêtre **plus courte que la coupure qu'elle
+exige** est en revanche écartée d'office (`FenetreRepas.depuis`) : personne ne
+pourrait la satisfaire, et sanctionner une saisie n'est pas le rôle du score.
+
+### Les autres écrans
+
+L'écran **Pauses** liste la coupure due, le plus grand trou libre et ce qui
+manque, à côté des pauses légales. Il appelle le **même `CoupureRepas`** que la
+contrainte : les deux ne peuvent pas diverger, parce qu'il n'y en a qu'un.
+
+L'écran **Besoin** compte la coupure dans son plancher — c'est la cinquième
+borne de `StaffingAnalyzer`, démontrée dans sa javadoc. `StaffingResource` ne
+lui transmet les fenêtres que si la règle est active : une règle que le solveur
+n'a pas à honorer ne doit pas relever le nombre d'animateurs à recruter.
+
+L'écran **Problèmes** n'a rien de spécifique à faire : la règle étant dure, ses
+écarts remontent déjà par `ConstraintCatalog.NOMS_DURS`.
+
 ## Hors périmètre assumé
 
 Ces obligations sont réelles et **volontairement non implémentées**. Elles sont
@@ -484,6 +572,7 @@ Chiffres mesurés et protocole dans
      numéro d'article, qui résout toujours la version en vigueur : un
      identifiant LEGIARTI désigne une version datée, et vieillit en silence. -->
 [D4153-2]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=D4153-2
+[L3121-16]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3121-16
 [L3121-22]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3121-22
 [L3121-30]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3121-30
 [L3122-1]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3122-1

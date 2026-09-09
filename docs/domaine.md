@@ -545,6 +545,31 @@ Une journée 14 h-minuit vaut ainsi 9 h 40 de travail effectif ; 13 h-minuit en
 vaut 10 h 40 et reste refusée. Le paramètre est **déclaratif** : l'outil ne
 vérifie pas que le stand peut relayer, c'est l'organisateur qui l'affirme.
 
+## Fenêtres repas
+
+`FenetreRepas` est un fait de problème (`@ProblemFactCollectionProperty` sur
+`PlanningEvenement`), **un par fenêtre déclarée** : le début, la fin et la durée
+de la coupure qu'elle exige. Consommé par `coupureRepasObligatoire` et
+`coupureRepasAuPlusTot` — voir [`contraintes.md`](contraintes.md#la-coupure-repas)
+pour la règle elle-même.
+
+Un fait par fenêtre plutôt qu'un objet portant les deux : la contrainte joint la
+fenêtre qu'elle juge, donc une journée à cheval sur midi *et* sur le soir
+produit **une violation par fenêtre**, chacune nommant ses propres horaires,
+plutôt qu'un agrégat sur lequel personne ne peut agir.
+
+Les valeurs restent stockées où l'organisateur les saisit, dans
+`ParametresDecoupage` (`parametres_decoupage`) ; `FenetreRepas.from(...)` les
+projette. Une seconde table ne créerait qu'une seconde vérité sur « la fenêtre
+du midi ». C'est la seule partie de `ParametresDecoupage` qui atteint le
+solveur : les dix autres champs restent bien de la génération pure, et sa
+javadoc dit maintenant laquelle est laquelle.
+
+Une fenêtre est écartée si ses bornes manquent, si elle est vide ou inversée, si
+la durée est nulle, ou si elle est **plus courte que la coupure qu'elle exige** —
+personne ne pourrait la satisfaire, et une règle qu'aucune affectation n'atteint
+sanctionnerait une saisie plutôt qu'un planning.
+
 ## Paramètres de qualité
 
 `ParametresQualite` est un fait de problème du même type que `ParametresLegaux`,

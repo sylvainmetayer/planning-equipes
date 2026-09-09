@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>This is not theoretical: {@code eviterChangementEmplacementEloigne} shipped
  * without its {@code actif} wrapper (see {@link ConstraintToggleTest}). This
- * test covers the 39 constraints, where {@link ConstraintToggleTest} checks the
+ * test covers the 42 constraints, where {@link ConstraintToggleTest} checks the
  * mechanism itself on one representative per family — the two complete each
  * other, neither replaces the other.</p>
  */
