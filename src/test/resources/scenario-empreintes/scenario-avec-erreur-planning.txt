@@ -1,0 +1,67 @@
+.planning.affectationsPubliees = (vide)
+.planning.animateurs[0]  8102265b976a93e8
+.planning.animateurs[1]  c4f3cde6b4f8111b
+.planning.animateurs[2]  a91d265dc8bb29fc
+.planning.animateurs[3]  a097cf1de64e0d80
+.planning.animateurs[4]  780dc606bacb7163
+.planning.constraintsDesactivees = (vide)
+.planning.contraintesAdHoc = (vide)
+.planning.dateDebutFestival = 2026-07-08
+.planning.parametresLegaux[0]  98e935f9abd6c3c2
+.planning.parametresQualite[0]  33dd46864ff3cece
+.planning.ponderationsContraintes.constraintWeightMap = (vide)
+.planning.ponderationsScenario{appreciationIncompatible} = 3
+.planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 5
+.planning.postes[0]  447fae38fd2f702d
+.planning.postes[1]  0191094672add96f
+.planning.postes[2]  7e882208428c4ba5
+.planning.postes[3]  42eb51946106e780
+.planning.postes[4]  67c0cb984b58286c
+.planning.postes[5]  3b6c833f95372d2e
+.planning.postes[6]  8e8eb822d2f7c8cb
+.planning.postes[7]  67dac8e63f229dca
+.planning.postes[8]  bb71f2fcf78c467c
+.planning.postes[9]  4bd9c816b19f41e6
+.planning.postes[10]  610a7198a35ffffc
+.planning.postes[11]  3ae6658dd172a403
+.planning.postes[12]  522d5f2b03d56dfb
+.planning.postes[13]  7d69b0b9c870cd6d
+.planning.postes[14]  be2cc20d31c2388b
+.planning.postes[15]  39d299e700c94863
+.planning.postes[16]  c4781e2ba5fac7b6
+.planning.postes[17]  116e08022b5a37d3
+.planning.postes[18]  8e16e4ec206b3181
+.planning.postes[19]  d1e0cf53911060da
+.planning.postes[20]  6a78e37f51c30fc3
+.planning.postes[21]  61146d45579c5ae4
+.planning.postes[22]  2eda74fd717608db
+.planning.postes[23]  38b661702c0265b3
+.planning.postes[24]  11cfdae3e4f007c5
+.planning.postes[25]  c0625c102ef2e5c4
+.planning.postes[26]  ad89ac4a5f1572cd
+.planning.postes[27]  38ac09ea198d55cb
+.planning.postes[28]  f9e9faedcff6e46b
+.planning.postes[29]  1b78dc827f6e114e
+.planning.postes[30]  a94cd5f8934ba827
+.planning.postes[31]  1121f4e989df1017
+.planning.postes[32]  7675478ef37c19ed
+.planning.postes[33]  88f3842ddf766cfe
+.planning.postes[34]  256ddd912d335f85
+.planning.postes[35]  3b47447be0d40dcd
+.planning.postes[36]  5878d857162cfe59
+.planning.postes[37]  33ccf7a228e018ef
+.planning.postes[38]  dddeed17a8197e45
+.planning.score = null
+.planning.verrouillages = (vide)
+.sections.contraintes.desactivees = (vide)
+.sections.contraintes.poids{appreciationIncompatible} = 3
+.sections.contraintes.poids{maxJoursConsecutifsTravailles} = 5
+.sections.decoupageAuto = false
+.sections.edition.id = event-avec-erreur-planning
+.sections.edition.nom = event-avec-erreur-planning
+.sections.parametresDecoupage = null
+.sections.parametresLegaux = null
+.sections.parametresSolveur = null
+.sections.typologies[0]  45baeafd2ff3fd7d
+.sections.typologies[1]  3e81c3c0ae198646
+.sections.typologies[2]  a6533bdf2e89e765
