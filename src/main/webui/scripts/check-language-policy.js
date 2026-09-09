@@ -24,6 +24,26 @@
  * français pour une déclaration nommée « de ». La première version de ce
  * script le faisait, et sur-comptait.
  *
+ * <h2>Le frontend est tenu plus strict que le backend, et c'est délibéré</h2>
+ *
+ * `LanguagePolicyStructuralTest` ne regarde que les **types, méthodes et
+ * fonctions** : ses motifs ne voient ni les champs de classe ni les variables.
+ * Ce n'est pas un oubli. Un champ Java est sérialisé par Jackson : il *est* la
+ * clé JSON, comme un accesseur, et son javadoc le dit — renommer
+ * `DemandeEchange.cibleId` renommerait le contrat, ce qui reste hors périmètre
+ * tant qu'aucune couche `@JsonProperty` ne découple les deux.
+ *
+ * Ici, rien de tel : les noms internes du frontend ne sont sérialisés nulle
+ * part — les formes échangées vivent dans `models.ts`, dont ce contrôle exclut
+ * les propriétés d'interface. Le frontend peut donc se tenir à la règle plus
+ * exigeante sans rien casser, et c'est ce qu'il fait : propriétés de classe et
+ * variables comprises, soit 222 noms de plus que la règle du backend.
+ *
+ * Mesuré avant de trancher : durcir le backend au même niveau y trouverait 381
+ * variables et 51 champs, dont 35 dans `domain/` et `api/` — les clés du fil,
+ * précisément celles qu'on ne peut pas toucher. L'asymétrie est donc le seul
+ * choix qui donne une règle applicable des deux côtés.
+ *
  * Ce qu'il ne regarde pas encore, et qu'il faudra ajouter avant de le rendre
  * bloquant : les 68 gabarits `.html`, `material-theme.scss`, `e2e/` et
  * `scripts/` — dont ce fichier, écrit en français comme ses voisins. Étendre le
@@ -58,6 +78,11 @@ function vocabulaire(nom) {
 }
 
 const ts = require(join(RACINE, 'node_modules/typescript/lib/typescript.js'));
+
+/** Les noms français explicitement excusés, avec leur raison. */
+const { exceptions: EXCEPTIONS } = JSON.parse(
+  readFileSync(join(__dirname, 'language-policy-exceptions.json'), 'utf8')
+);
 
 const GLOSSAIRE = vocabulaire('GLOSSAIRE');
 const LEXIQUE = vocabulaire('LEXIQUE_FR');
@@ -201,7 +226,7 @@ for (const fichier of fichiers(SOURCES)) {
       ts.isEnumDeclaration(noeud) ||
       ts.isMethodDeclaration(noeud) ||
       ts.isPropertyDeclaration(noeud);
-    if (declare && noeud.name && ts.isIdentifier(noeud.name)) {
+    if (declare && noeud.name && ts.isIdentifier(noeud.name) && !Object.hasOwn(EXCEPTIONS, noeud.name.text)) {
       const fautifs = motsDuNom(noeud.name.text).filter((mot) => LEXIQUE.has(mot) && !GLOSSAIRE.has(mot));
       if (fautifs.length > 0) {
         nomsFautifs.push(`${nom} : ${noeud.name.text} [${fautifs.join(', ')}]`);
@@ -213,7 +238,22 @@ for (const fichier of fichiers(SOURCES)) {
 }
 
 const inventaire = process.argv.includes('--inventaire');
-const total = commentairesFrancais.length + nomsFautifs.length;
+
+const nomsVus = new Set();
+for (const fichier of fichiers(SOURCES)) {
+  if (fichier.endsWith('.ts')) {
+    const sf = ts.createSourceFile(fichier, readFileSync(fichier, 'utf8'), ts.ScriptTarget.ES2022, true);
+    const noter = (noeud) => {
+      if (noeud.name && ts.isIdentifier(noeud.name)) nomsVus.add(noeud.name.text);
+      ts.forEachChild(noeud, noter);
+    };
+    noter(sf);
+  }
+}
+const exceptionsMortes = Object.keys(EXCEPTIONS).filter((nom) => !nomsVus.has(nom));
+const exceptionsSansRaison = Object.entries(EXCEPTIONS)
+  .filter(([, raison]) => !raison || raison.trim().length < 20)
+  .map(([nom]) => nom);
 
 if (inventaire) {
   const parFichier = (liste) => new Set(liste.map((entree) => entree.split(/[: ]/)[0])).size;
@@ -234,6 +274,15 @@ if (inventaire) {
   console.log(`  mots les plus fréquents : ${classement.map(([m, n]) => `${m} (${n})`).join(', ')}`);
   process.exit(0);
 }
+
+for (const nom of exceptionsMortes) {
+  nomsFautifs.push(`${nom} est excusé dans language-policy-exceptions.json mais n'existe plus`);
+}
+for (const nom of exceptionsSansRaison) {
+  nomsFautifs.push(`${nom} est excusé sans raison écrite — une exception sans motif se lit comme un oubli`);
+}
+
+const total = commentairesFrancais.length + nomsFautifs.length;
 
 if (total > 0) {
   console.error(`check-language-policy : ${total} écart(s) à la politique linguistique.\n`);

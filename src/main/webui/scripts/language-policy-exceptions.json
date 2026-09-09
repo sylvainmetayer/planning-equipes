@@ -1,0 +1,14 @@
+{
+  "_lisezMoi": [
+    "Les noms français que le contrôle laisse passer, chacun avec sa raison.",
+    "L'équivalent d'EXCEPTIONS_ASSUMEES dans LanguagePolicyStructuralTest.java.",
+    "",
+    "Sans cette liste, la seule façon de faire passer une exception légitime",
+    "serait d'affaiblir le lexique partagé avec le backend — c'est-à-dire de",
+    "désarmer la règle pour tout le dépôt afin d'excuser un nom.",
+    "",
+    "Une entrée sans raison, ou dont le nom n'existe plus, fait échouer le",
+    "contrôle : une exception périmée se lit comme une décision."
+  ],
+  "exceptions": {}
+}
