@@ -70,6 +70,19 @@ jobs:
       - name: Run tests
         run: ./mvnw -B --no-transfer-progress verify -DskipITs=false -Pcoverage
 
+      # Le contrat commité doit être celui que ce build vient de produire. Ce
+      # contrôle ne peut vivre que dans ce job : c'est le seul qui a un
+      # `target/`. Le job `frontend` compare models.ts au contrat, mais ne peut
+      # pas savoir si le contrat lui-même a pris du retard.
+      - name: Check the committed OpenAPI contract is the one this build produces
+        run: |
+          if ! diff -q target/openapi/openapi.json docs/schema/openapi.json > /dev/null; then
+            echo "::error::docs/schema/openapi.json ne correspond plus à l'API."
+            echo "Régénérez-le : ./mvnw package -DskipTests puis, depuis src/main/webui, npm run api-schema"
+            diff target/openapi/openapi.json docs/schema/openapi.json | head -40
+            exit 1
+          fi
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

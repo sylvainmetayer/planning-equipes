@@ -41,7 +41,6 @@
     "FichierSauvegarde": "BackupFile",
     "ExecutionSauvegarde": "BackupRun",
     "EtatSauvegarde": "BackupState",
-    "ImportCsvLigne": "ImportedRow",
     "ImportCsvRapport": "AnimateurCsvImportReport",
     "ImportGrilleColonne": "ImportedColumn",
     "ImportGrilleRapport": "StandGrilleImportReport",
@@ -70,6 +69,7 @@
     "CleMcp": "Clé MCP telle que l'écran l'affiche ; le serveur ne renvoie jamais la valeur.",
     "ViolationDure": "Ligne de violation reconstruite depuis le diagnostic.",
     "DeplacementSimulation": "Simulation de déplacement, réemballée par la resource.",
-    "EchangeSimulation": "Idem DeplacementSimulation."
+    "EchangeSimulation": "Idem DeplacementSimulation.",
+    "ImportCsvLigne": "Même instabilité que ImportGrilleLigne, à l'autre bout de la même collision : deux records portent le nom simple « ImportedRow », et lequel garde le nom nu dépend de l'ordre de génération. S'y rattacher rendrait la vérification instable — la collision touche aussi « Decision1 » et « ImportAction1 ». À traiter en renommant l'un des records côté serveur."
   }
 }

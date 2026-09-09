@@ -18,6 +18,18 @@
  * par l'application, donc ce qu'elle sert réellement, et non une description
  * tenue à jour à la main.
  *
+ * CE QU'IL NE VÉRIFIE PAS NON PLUS : que `docs/schema/openapi.json` soit à jour.
+ * Ce contrôle-là vit dans le job `test` de la CI, seul endroit où le build vient
+ * de produire le schéma. Le tenter ici ne marchait pas : le job `frontend` n'a
+ * pas de `target/`, donc la comparaison ne se déclenchait jamais — et en local
+ * elle se déclenchait à tort, un `target/` survivant aux changements de branche
+ * et faisant passer pour périmé un contrat parfaitement à jour.
+ *
+ * CE QU'IL NE VOIT PAS ENCORE : les énumérations. Les 28 schémas sans
+ * `properties` et les 30 `export type` du front sortent des deux inventaires,
+ * donc une constante ajoutée côté serveur passe inaperçue. À traiter avec la
+ * génération, quand le schéma portera de quoi la produire.
+ *
  * CE QUE CE SCRIPT NE VÉRIFIE PAS, et pourquoi : l'optionalité. Le schéma ne
  * porte aucun `required` — 0 propriété sur 944 —, SmallRye ne le déduisant que
  * de `@NotNull` ou `@Schema(required = true)`, que les records de l'API ne
@@ -28,12 +40,11 @@
  * lieu de générer. Annoter les records côté serveur est le préalable à la
  * génération, et un chantier à part entière.
  */
-const { readFileSync, existsSync } = require('node:fs');
+const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 
 const RACINE = join(__dirname, '..');
 const SCHEMA = join(RACINE, '../../../docs/schema/openapi.json');
-const SCHEMA_FRAIS = join(RACINE, '../../../target/openapi/openapi.json');
 const MODELS = join(RACINE, 'src/app/core/models.ts');
 const MAPPING = join(__dirname, 'api-types-mapping.json');
 
@@ -73,25 +84,6 @@ const ecarts = [];
 const front = interfacesDuFront();
 const contrat = schemasDuContrat(SCHEMA);
 const { renommes, horsContrat } = JSON.parse(readFileSync(MAPPING, 'utf8'));
-
-// Le contrat commité est-il encore celui que le build produit ? Sans ce
-// contrôle, une API modifiée sans régénérer le schéma passerait inaperçue —
-// et la vérification ci-dessous porterait sur une photo périmée.
-if (existsSync(SCHEMA_FRAIS)) {
-  const frais = schemasDuContrat(SCHEMA_FRAIS);
-  const apparus = [...frais.keys()].filter((nom) => !contrat.has(nom));
-  const disparus = [...contrat.keys()].filter((nom) => !frais.has(nom));
-  const modifies = [...frais.keys()].filter(
-    (nom) => contrat.has(nom) && contrat.get(nom).join() !== frais.get(nom).join()
-  );
-  if (apparus.length + disparus.length + modifies.length > 0) {
-    ecarts.push(
-      `docs/schema/openapi.json est périmé : ${apparus.length} schéma(s) apparu(s), ` +
-        `${disparus.length} disparu(s), ${modifies.length} modifié(s). ` +
-        'Régénérez-le avec `npm run api-schema`.'
-    );
-  }
-}
 
 for (const [nom, proprietesFront] of front) {
   if (Object.hasOwn(horsContrat, nom)) {
