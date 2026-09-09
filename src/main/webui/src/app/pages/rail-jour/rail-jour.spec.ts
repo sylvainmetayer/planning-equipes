@@ -493,6 +493,8 @@ describe('buildRailJours', () => {
         journeesAnalysees: 1,
         pausesDues: 1,
         relaisManquants: 1,
+        coupuresRepasDues: 0,
+        coupuresRepasManquantes: 0,
         message: '',
         journees: [
           {
@@ -522,6 +524,7 @@ describe('buildRailJours', () => {
               },
             ],
             pausesPlanifiees: [],
+            coupuresRepas: [],
           },
         ],
       };

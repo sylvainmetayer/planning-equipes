@@ -24,12 +24,14 @@ import { dayNavigation } from '../../core/day-navigation';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
+  coupuresRepasDuJour,
   GroupeStand,
   groupesDuJour,
   heure,
   JourPauses,
   joursDuRapport,
   libelleRelais,
+  LigneCoupureRepas,
   LignePausePlanifiee,
   planifieesDuJour,
   syntheseDuJour,
@@ -43,7 +45,12 @@ import {
  * « who gets a day off », over the whole event; this one lives inside a day,
  * where relays are organised. Everything shown comes from `GET /api/pauses`,
  * computed server-side from the persisted plan under the organiser's current
- * legal parameters — no solve is launched, here or there.
+ * legal parameters and meal windows — no solve is launched, here or there.
+ *
+ * The meal break sits on this screen next to the legal ones, and is read by
+ * the very same calculation the solver scores (`CoupureRepas`): two screens
+ * telling two stories about the same day is exactly the failure issue #438
+ * describes.
  */
 @Component({
   selector: 'app-pauses-page',
@@ -76,6 +83,8 @@ export class PausesPage {
   protected readonly erreur = signal('');
   protected readonly recherche = signal('');
   protected readonly sansRelaisSeulement = signal(false);
+  /** Narrows the meal-break section to the days that have no room for one. */
+  protected readonly coupuresManquantesSeulement = signal(false);
 
   protected readonly messageEssai = signal(
     $localize`:@@pauses.messageEssai:Les pauses sont lues sur le planning persisté et les paramètres légaux du jour ; l'outil ne les planifie pas, il dit où elles tombent et qui peut relayer.`,
@@ -100,12 +109,23 @@ export class PausesPage {
   protected readonly planifiees = computed<LignePausePlanifiee[]>(() =>
     planifieesDuJour(this.rapport(), this.jourCourant()?.date ?? null, this.recherche()),
   );
+  protected readonly coupuresRepas = computed<LigneCoupureRepas[]>(() =>
+    coupuresRepasDuJour(
+      this.rapport(),
+      this.jourCourant()?.date ?? null,
+      this.recherche(),
+      this.coupuresManquantesSeulement(),
+    ),
+  );
   protected readonly synthese = computed(() =>
     syntheseDuJour(this.rapport(), this.jourCourant()?.date ?? null),
   );
   /** True as soon as a filter narrows the day; the day itself is navigation, not a filter. */
   protected readonly viewChanged = computed(
-    () => this.recherche().trim() !== '' || this.sansRelaisSeulement(),
+    () =>
+      this.recherche().trim() !== '' ||
+      this.sansRelaisSeulement() ||
+      this.coupuresManquantesSeulement(),
   );
 
   protected readonly heure = heure;
@@ -117,11 +137,13 @@ export class PausesPage {
     const params = this.route.snapshot.queryParamMap;
     this.recherche.set(params.get('q') ?? '');
     this.sansRelaisSeulement.set(params.get('vue') === 'sans-relais');
+    this.coupuresManquantesSeulement.set(params.get('repas') === 'manquantes');
     void this.recharger();
     keepViewInQueryParams(() => ({
       jour: this.navigation.queryParam(),
       q: optionalParam(this.recherche()),
       vue: this.sansRelaisSeulement() ? 'sans-relais' : null,
+      repas: this.coupuresManquantesSeulement() ? 'manquantes' : null,
     }));
   }
 
@@ -141,6 +163,7 @@ export class PausesPage {
   protected reinitialiser(): void {
     this.recherche.set('');
     this.sansRelaisSeulement.set(false);
+    this.coupuresManquantesSeulement.set(false);
   }
 
   protected selectionnerJour(date: string): void {

@@ -328,6 +328,7 @@ describe('RailJourPage', () => {
             },
           ],
           pausesPlanifiees: [],
+          coupuresRepas: [],
         },
       ],
     };

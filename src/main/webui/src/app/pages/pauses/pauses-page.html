@@ -71,6 +71,9 @@
           </mat-form-field>
           <mat-checkbox [checked]="sansRelaisSeulement()" (change)="sansRelaisSeulement.set($event.checked)"
                         i18n="@@pauses.filter.sansRelais">Seulement sans relais</mat-checkbox>
+          <mat-checkbox [checked]="coupuresManquantesSeulement()"
+                        (change)="coupuresManquantesSeulement.set($event.checked)"
+                        i18n="@@pauses.filter.coupuresManquantes">Seulement les coupures repas manquantes</mat-checkbox>
         </div>
 
         @if (synthese(); as bilan) {
@@ -79,6 +82,7 @@
             <span [class.synthese-alerte]="bilan.relaisManquants > 0"><strong>{{ bilan.relaisManquants }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.sansRelais">sans relais sur le stand</ng-container></span>
             <span><strong>{{ bilan.animateurs }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.animateurs">animateurs concernés</ng-container></span>
             <span><strong>{{ bilan.planifiees }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.planifiees">pauses déjà planifiées</ng-container></span>
+            <span [class.synthese-alerte]="bilan.coupuresRepasManquantes > 0"><strong>{{ bilan.coupuresRepasManquantes }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.coupuresManquantes">coupures repas sans place</ng-container></span>
           </div>
         }
 
@@ -129,6 +133,55 @@
                           {{ libelleRelais(ligne) }}
                         } @else {
                           <span class="pauses-aucun-relais" i18n="@@pauses.relais.aucun">Personne d'autre sur le stand</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+
+        @if (coupuresRepas().length > 0) {
+          <section class="pauses-repas">
+            <h2 class="pauses-stand-titre">
+              <mat-icon inline>restaurant</mat-icon>
+              <ng-container i18n="@@pauses.repas.title">Coupures repas dues</ng-container>
+            </h2>
+            <p class="pauses-repas-note" i18n="@@pauses.repas.note">
+              Due à qui travaille de part et d'autre d'une fenêtre repas, la coupure doit tenir dedans. Règle de l'organisation, pas du Code du travail, tenue en dur : les journées sans place sont pénalisées.
+            </p>
+            <div class="table-wrapper">
+              <table class="pauses-table">
+                <caption class="visually-hidden" i18n="@@pauses.repas.caption">Coupures repas de la journée, celles sans place d'abord</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" i18n="@@pauses.repas.col.animateur">Animateur</th>
+                    <th scope="col" i18n="@@pauses.repas.col.fenetre">Fenêtre</th>
+                    <th scope="col" i18n="@@pauses.repas.col.requise">Coupure due</th>
+                    <th scope="col" i18n="@@pauses.repas.col.placee">Placée</th>
+                    <th scope="col" i18n="@@pauses.repas.col.manque">Manque</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (coupure of coupuresRepas(); track coupure.animateurId + coupure.libelle) {
+                    <tr [class.pauses-ligne-alerte]="!coupure.satisfaite">
+                      <td>{{ coupure.nomComplet }}</td>
+                      <td>{{ coupure.libelle }} · {{ heure(coupure.fenetreDebut) }}–{{ heure(coupure.fenetreFin) }}</td>
+                      <td>{{ coupure.dureeRequiseMinutes }} min</td>
+                      <td>
+                        @if (coupure.debut && coupure.fin) {
+                          {{ heure(coupure.debut) }}–{{ heure(coupure.fin) }}
+                        } @else {
+                          <span class="pauses-badge" i18n="@@pauses.repas.aucunePlace">aucune place</span>
+                        }
+                      </td>
+                      <td>
+                        @if (coupure.minutesManquantes > 0) {
+                          <strong>{{ coupure.minutesManquantes }} min</strong>
+                        } @else {
+                          —
                         }
                       </td>
                     </tr>

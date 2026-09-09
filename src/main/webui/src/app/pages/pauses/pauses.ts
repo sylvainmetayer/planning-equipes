@@ -7,7 +7,13 @@
 
 import { correspondAuFiltre } from '../../core/text-filter';
 import { formatHeure } from '../../core/time-of-day';
-import { JourneeAnimateurPauses, PauseDueView, RapportPauses, RelaisView } from '../../core/models';
+import {
+  CoupureRepasView,
+  JourneeAnimateurPauses,
+  PauseDueView,
+  RapportPauses,
+  RelaisView,
+} from '../../core/models';
 
 /** One day of the event the report has something to say about. */
 export interface JourPauses {
@@ -54,11 +60,29 @@ export interface LignePausePlanifiee {
   minutes: number;
 }
 
+/** One meal break of the selected day, flattened: who owes it, and what the day leaves. */
+export interface LigneCoupureRepas {
+  animateurId: string;
+  nomComplet: string;
+  libelle: string;
+  fenetreDebut: string;
+  fenetreFin: string;
+  dureeRequiseMinutes: number;
+  debut: string | null;
+  fin: string | null;
+  plusGrandTrouMinutes: number;
+  satisfaite: boolean;
+  /** What `coupureRepasObligatoire` penalises, in minutes; 0 when the break fits. */
+  minutesManquantes: number;
+}
+
 export interface SynthesePauses {
   animateurs: number;
   pauses: number;
   relaisManquants: number;
   planifiees: number;
+  coupuresRepas: number;
+  coupuresRepasManquantes: number;
 }
 
 /** The days the report covers, chronological — the selector's options. */
@@ -196,9 +220,71 @@ export function planifieesDuJour(
   );
 }
 
+/**
+ * The meal breaks owed on that day, the days short of one first — that is the
+ * list the organiser has to act on — then by start time and name.
+ */
+export function coupuresRepasDuJour(
+  rapport: RapportPauses | null,
+  date: string | null,
+  recherche = '',
+  manquantesSeulement = false,
+): LigneCoupureRepas[] {
+  if (!rapport || !date) {
+    return [];
+  }
+  const lignes: LigneCoupureRepas[] = [];
+  for (const journee of rapport.journees) {
+    if (
+      journee.date !== date ||
+      (recherche.trim() !== '' && !correspondAuFiltre(recherche, [journee.nomComplet]))
+    ) {
+      continue;
+    }
+    for (const coupure of journee.coupuresRepas) {
+      if (manquantesSeulement && coupure.satisfaite) {
+        continue;
+      }
+      lignes.push({
+        animateurId: journee.animateurId,
+        nomComplet: journee.nomComplet,
+        libelle: coupure.libelle,
+        fenetreDebut: coupure.fenetreDebut,
+        fenetreFin: coupure.fenetreFin,
+        dureeRequiseMinutes: coupure.dureeRequiseMinutes,
+        debut: coupure.debut,
+        fin: coupure.fin,
+        plusGrandTrouMinutes: coupure.plusGrandTrouMinutes,
+        satisfaite: coupure.satisfaite,
+        minutesManquantes: minutesManquantes(coupure),
+      });
+    }
+  }
+  return lignes.sort(
+    (a, b) =>
+      Number(a.satisfaite) - Number(b.satisfaite) ||
+      a.fenetreDebut.localeCompare(b.fenetreDebut) ||
+      a.nomComplet.localeCompare(b.nomComplet),
+  );
+}
+
+/** What the hard rule penalises: the break owed, less the longest free stretch the window holds. */
+export function minutesManquantes(
+  coupure: Pick<CoupureRepasView, 'dureeRequiseMinutes' | 'plusGrandTrouMinutes'>,
+): number {
+  return Math.max(0, coupure.dureeRequiseMinutes - coupure.plusGrandTrouMinutes);
+}
+
 /** The counters of the selected day: breaks to organise, of which without relay, over how many people. */
 export function syntheseDuJour(rapport: RapportPauses | null, date: string | null): SynthesePauses {
-  const synthese: SynthesePauses = { animateurs: 0, pauses: 0, relaisManquants: 0, planifiees: 0 };
+  const synthese: SynthesePauses = {
+    animateurs: 0,
+    pauses: 0,
+    relaisManquants: 0,
+    planifiees: 0,
+    coupuresRepas: 0,
+    coupuresRepasManquantes: 0,
+  };
   if (!rapport || !date) {
     return synthese;
   }
@@ -215,6 +301,10 @@ export function syntheseDuJour(rapport: RapportPauses | null, date: string | nul
       }
     }
     synthese.planifiees += journee.pausesPlanifiees.length;
+    synthese.coupuresRepas += journee.coupuresRepas.length;
+    synthese.coupuresRepasManquantes += journee.coupuresRepas.filter(
+      (coupure) => !coupure.satisfaite,
+    ).length;
   }
   synthese.animateurs = animateurs.size;
   return synthese;

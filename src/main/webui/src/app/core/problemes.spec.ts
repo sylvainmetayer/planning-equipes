@@ -132,6 +132,8 @@ describe('construireProblemes', () => {
       journeesAnalysees: 2,
       pausesDues: 2,
       relaisManquants: 1,
+      coupuresRepasDues: 0,
+      coupuresRepasManquantes: 0,
       message: '',
       journees: [
         {
@@ -172,6 +174,7 @@ describe('construireProblemes', () => {
             },
           ],
           pausesPlanifiees: [],
+          coupuresRepas: [],
         },
       ],
     };

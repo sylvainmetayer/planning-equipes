@@ -1722,6 +1722,27 @@ export interface PausePlanifieeView {
   minutes: number;
 }
 
+/**
+ * The meal break one day owes on one window, and what the plan leaves for it.
+ * Listed only for the days that straddle the window — starting when it opens,
+ * or stopping when it closes, owes nothing.
+ */
+export interface CoupureRepasView {
+  /** `midi` / `soir`. */
+  libelle: string;
+  /** `HH:mm:ss`, the window's own bounds. */
+  fenetreDebut: string;
+  fenetreFin: string;
+  dureeRequiseMinutes: number;
+  /** `HH:mm:ss`, earliest the break can be taken; `null` when the day leaves no room. */
+  debut: string | null;
+  fin: string | null;
+  /** Longest free stretch entirely inside the window. */
+  plusGrandTrouMinutes: number;
+  /** False when that stretch is too short: the day `coupureRepasObligatoire` penalises. */
+  satisfaite: boolean;
+}
+
 /** One animateur on one day, as `GET /api/pauses` reads it. */
 export interface JourneeAnimateurPauses {
   animateurId: string;
@@ -1733,16 +1754,23 @@ export interface JourneeAnimateurPauses {
   jour: number;
   sequences: SequenceTravailView[];
   pausesPlanifiees: PausePlanifieeView[];
+  coupuresRepas: CoupureRepasView[];
 }
 
-/** `GET /api/pauses`: where the legal breaks of the persisted plan fall. */
+/**
+ * `GET /api/pauses`: where the legal breaks of the persisted plan fall, and
+ * which days owe a meal break.
+ */
 export interface RapportPauses {
   /** The organiser's declaration that breaks are taken on the post, as it stands today. */
   pauseSurPoste: boolean;
   journeesAnalysees: number;
   pausesDues: number;
   relaisManquants: number;
-  /** Only the days that owe a break or list a scheduled one, by date then name. */
+  coupuresRepasDues: number;
+  /** Those the plan leaves no room for — the days `coupureRepasObligatoire` penalises. */
+  coupuresRepasManquantes: number;
+  /** Only the days that owe a break, list a scheduled one, or owe a meal break; by date then name. */
   journees: JourneeAnimateurPauses[];
   message: string;
 }

@@ -118,6 +118,21 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+.pauses-repas {
+  margin-bottom: 1.5rem;
+}
+
+.pauses-repas-note {
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+}
+
+/* A day short of its meal break is what the organiser has to act on. */
+.pauses-repas .pauses-ligne-alerte td {
+  color: var(--mat-sys-error);
+}
+
 .pauses-planifiees-liste {
   list-style: none;
   margin: 0;

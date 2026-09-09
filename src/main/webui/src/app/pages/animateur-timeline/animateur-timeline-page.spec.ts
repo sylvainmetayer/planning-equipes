@@ -711,6 +711,7 @@ describe('AnimateurTimelinePage', () => {
             },
           ],
           pausesPlanifiees: [],
+          coupuresRepas: [],
         },
       ],
     };

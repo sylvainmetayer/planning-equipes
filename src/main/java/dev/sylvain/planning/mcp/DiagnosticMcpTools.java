@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
@@ -193,7 +194,7 @@ public class DiagnosticMcpTools {
 
     /**
      * Built exactly like {@code PauseResource}: the persisted plan, read under
-     * the organiser's <em>current</em> legal parameters. Mapped to records of
+     * the organiser's <em>current</em> legal parameters and meal windows. Mapped to records of
      * its own so that no name crosses MCP — the analyzer's own views carry the
      * animateur's display name for the screens.
      */
@@ -202,7 +203,9 @@ public class DiagnosticMcpTools {
                     + "jour, les séquences de travail ininterrompu, la pause due (20 min à la sixième heure, 30 min à "
                     + "4 h 30 pour un mineur) posée de telle heure à telle heure — une personne à la fois par stand, au "
                     + "plus tard possible —, le stand tenu et les collègues présents pendant la pause, plus les trous déjà "
-                    + "planifiés par la grille. Lu sous les paramètres légaux courants — "
+                    + "planifiés par la grille, et la coupure repas due par chaque journée à cheval sur une fenêtre "
+                    + "repas — avec le plus grand trou libre que la journée y laisse, donc ce qui manque quand la règle "
+                    + "coupureRepasObligatoire mord. Lu sous les paramètres légaux et les fenêtres repas courants — "
                     + "pauseSurPoste déclaré ou non — sans lancer de résolution. Filtrable par date, par stand, ou aux "
                     + "seules pauses sans relais.",
             annotations =
@@ -221,7 +224,9 @@ public class DiagnosticMcpTools {
                     Boolean sansRelaisSeulement,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         PauseAnalyzer.RapportPauses rapport = pauseAnalyzer.analyze(
-                persistenceService.loadPersistedPlanning(), referenceDataService.getParametresLegaux());
+                persistenceService.loadPersistedPlanning(),
+                referenceDataService.getParametresLegaux(),
+                FenetreRepas.depuis(referenceDataService.getParametresDecoupage()));
         LocalDate jour = McpArgs.date(date, "date");
         boolean sansRelais = Boolean.TRUE.equals(sansRelaisSeulement);
         boolean planifieesVisibles = standId == null && !sansRelais;
@@ -251,8 +256,9 @@ public class DiagnosticMcpTools {
                     sequences.add(new SequencePausesView(sequence.debut(), sequence.fin(), sequence.minutes(), dues));
                 }
             }
-            boolean planifiees =
-                    planifieesVisibles && !journee.pausesPlanifiees().isEmpty();
+            boolean planifiees = planifieesVisibles
+                    && (!journee.pausesPlanifiees().isEmpty()
+                            || !journee.coupuresRepas().isEmpty());
             if (sequences.isEmpty() && !planifiees) {
                 continue;
             }
@@ -262,7 +268,8 @@ public class DiagnosticMcpTools {
                     journee.date(),
                     journee.jour(),
                     sequences,
-                    planifieesVisibles ? journee.pausesPlanifiees() : List.of()));
+                    planifieesVisibles ? journee.pausesPlanifiees() : List.of(),
+                    planifieesVisibles ? journee.coupuresRepas() : List.of()));
         }
         int pausesDues = 0;
         int relaisManquants = 0;
@@ -279,6 +286,8 @@ public class DiagnosticMcpTools {
                 rapport.journeesAnalysees(),
                 pausesDues,
                 relaisManquants,
+                rapport.coupuresRepasDues(),
+                rapport.coupuresRepasManquantes(),
                 journees,
                 rapport.message());
     }
@@ -312,12 +321,19 @@ public class DiagnosticMcpTools {
             LocalDate date,
             int jour,
             List<SequencePausesView> sequences,
-            List<PauseAnalyzer.PausePlanifieeView> pausesPlanifiees) {}
+            List<PauseAnalyzer.PausePlanifieeView> pausesPlanifiees,
+            List<PauseAnalyzer.CoupureRepasView> coupuresRepas) {}
 
     /**
      * @param journeesAnalysees animateur-days holding at least one seat, over the whole plan — not
      *                          reduced by the filters
      * @param pausesDues        breaks kept after the filters; {@code relaisManquants} those without relay
+     * @param coupuresRepasDues meal breaks owed over the whole plan, and
+     *                          {@code coupuresRepasManquantes} those the plan
+     *                          leaves no room for — the days
+     *                          {@code coupureRepasObligatoire} penalises. Not
+     *                          reduced by the filters, which are about the
+     *                          legal breaks and their relays.
      * @param message           the analyzer's own sentence, over the whole plan
      */
     public record PausesView(
@@ -325,6 +341,8 @@ public class DiagnosticMcpTools {
             int journeesAnalysees,
             int pausesDues,
             int relaisManquants,
+            int coupuresRepasDues,
+            int coupuresRepasManquantes,
             List<JourneePausesView> journees,
             String message) {}
 }

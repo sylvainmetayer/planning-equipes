@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { JourneeAnimateurPauses, PauseDueView, RapportPauses } from '../../core/models';
 import {
+  coupuresRepasDuJour,
   groupesDuJour,
   heure,
   joursDuRapport,
   libelleRelais,
+  minutesManquantes,
   planifieesDuJour,
   syntheseDuJour,
 } from './pauses';
@@ -33,6 +35,7 @@ function journee(overrides: Partial<JourneeAnimateurPauses> = {}): JourneeAnimat
     jour: 3,
     sequences: [{ debut: '13:00:00', fin: '20:00:00', minutes: 420, pausesDues: [pause()] }],
     pausesPlanifiees: [],
+    coupuresRepas: [],
     ...overrides,
   };
 }
@@ -46,6 +49,9 @@ function rapport(
     journeesAnalysees: journees.length,
     pausesDues: journees.flatMap((j) => j.sequences).flatMap((s) => s.pausesDues).length,
     relaisManquants: 0,
+    coupuresRepasDues: journees.flatMap((j) => j.coupuresRepas).length,
+    coupuresRepasManquantes: journees.flatMap((j) => j.coupuresRepas).filter((c) => !c.satisfaite)
+      .length,
     journees,
     message: '',
     ...overrides,
@@ -263,25 +269,90 @@ describe('planifieesDuJour / syntheseDuJour', () => {
     expect(planifieesDuJour(null, '2026-07-10')).toEqual([]);
   });
 
-  it('counts the day: breaks, of which without relay, people, scheduled gaps', () => {
+  it('counts the day: breaks, of which without relay, people, scheduled gaps, meal breaks', () => {
     expect(syntheseDuJour(rapport(journees), '2026-07-10')).toEqual({
       animateurs: 2,
       pauses: 2,
       relaisManquants: 1,
       planifiees: 2,
+      coupuresRepas: 0,
+      coupuresRepasManquantes: 0,
     });
     expect(syntheseDuJour(rapport(journees), '2026-07-11')).toEqual({
       animateurs: 1,
       pauses: 1,
       relaisManquants: 0,
       planifiees: 1,
+      coupuresRepas: 0,
+      coupuresRepasManquantes: 0,
     });
     expect(syntheseDuJour(null, '2026-07-10')).toEqual({
       animateurs: 0,
       pauses: 0,
       relaisManquants: 0,
       planifiees: 0,
+      coupuresRepas: 0,
+      coupuresRepasManquantes: 0,
     });
+  });
+});
+
+describe('coupuresRepasDuJour', () => {
+  const midi = {
+    libelle: 'midi',
+    fenetreDebut: '12:00:00',
+    fenetreFin: '14:00:00',
+    dureeRequiseMinutes: 60,
+  };
+
+  const sansPlace = journee({
+    animateurId: 'a84',
+    nomComplet: 'Zoé Nguyen',
+    coupuresRepas: [
+      { ...midi, debut: null, fin: null, plusGrandTrouMinutes: 0, satisfaite: false },
+    ],
+  });
+  const avecPlace = journee({
+    animateurId: 'alice',
+    nomComplet: 'Alice Martin',
+    coupuresRepas: [
+      { ...midi, debut: '13:00:00', fin: '14:00:00', plusGrandTrouMinutes: 60, satisfaite: true },
+    ],
+  });
+
+  it('puts the days short of a meal break first, and says how many minutes are missing', () => {
+    const lignes = coupuresRepasDuJour(rapport([avecPlace, sansPlace]), '2026-07-10');
+
+    expect(
+      lignes.map((ligne) => [ligne.nomComplet, ligne.satisfaite, ligne.minutesManquantes]),
+    ).toEqual([
+      ['Zoé Nguyen', false, 60],
+      ['Alice Martin', true, 0],
+    ]);
+  });
+
+  it('narrows to the missing ones on demand, and filters by name', () => {
+    expect(
+      coupuresRepasDuJour(rapport([avecPlace, sansPlace]), '2026-07-10', '', true),
+    ).toHaveLength(1);
+    expect(
+      coupuresRepasDuJour(rapport([avecPlace, sansPlace]), '2026-07-10', 'alice'),
+    ).toHaveLength(1);
+    expect(coupuresRepasDuJour(rapport([avecPlace, sansPlace]), '2026-07-11')).toEqual([]);
+    expect(coupuresRepasDuJour(null, '2026-07-10')).toEqual([]);
+  });
+
+  it('counts a day that owes a meal break, whether or not it fits', () => {
+    expect(syntheseDuJour(rapport([avecPlace, sansPlace]), '2026-07-10')).toMatchObject({
+      coupuresRepas: 2,
+      coupuresRepasManquantes: 1,
+    });
+  });
+
+  // What the hard rule penalises, never below zero.
+  it('never reports a negative shortfall', () => {
+    expect(minutesManquantes({ dureeRequiseMinutes: 60, plusGrandTrouMinutes: 90 })).toBe(0);
+    expect(minutesManquantes({ dureeRequiseMinutes: 60, plusGrandTrouMinutes: 15 })).toBe(45);
   });
 });
 

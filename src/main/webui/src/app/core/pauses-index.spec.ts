@@ -32,6 +32,7 @@ function journee(overrides: Partial<JourneeAnimateurPauses> = {}): JourneeAnimat
     jour: 3,
     sequences: [{ debut: '13:00:00', fin: '20:00:00', minutes: 420, pausesDues: [pause()] }],
     pausesPlanifiees: [],
+    coupuresRepas: [],
     ...overrides,
   };
 }
@@ -42,6 +43,8 @@ function rapport(journees: JourneeAnimateurPauses[]): RapportPauses {
     journeesAnalysees: journees.length,
     pausesDues: 0,
     relaisManquants: 0,
+    coupuresRepasDues: 0,
+    coupuresRepasManquantes: 0,
     journees,
     message: '',
   };

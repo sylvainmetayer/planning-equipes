@@ -1,6 +1,8 @@
 package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.CoupureRepas;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
@@ -88,6 +90,33 @@ public class PauseAnalyzer {
             boolean relaisDisponible,
             boolean simultanee) {}
 
+    /**
+     * The meal break a day owes on one window, and what the plan leaves for it
+     * — the read-out of {@code coupureRepasObligatoire}, computed by the very
+     * same {@link CoupureRepas}, so this screen and the score can never tell
+     * two stories about the same day.
+     *
+     * @param libelle             « midi » / « soir »
+     * @param dureeRequiseMinutes the break the window owes
+     * @param debut               when it can be taken, at the earliest;
+     *                            {@code null} when the day leaves no room
+     * @param fin                 {@code debut} plus the duration
+     * @param plusGrandTrouMinutes longest free stretch inside the window
+     * @param satisfaite          false when that stretch is too short: the
+     *                            missing minutes are what the solver is
+     *                            penalising
+     */
+    @Schema(requiredProperties = {"dureeRequiseMinutes", "plusGrandTrouMinutes", "satisfaite"})
+    public record CoupureRepasView(
+            String libelle,
+            LocalTime fenetreDebut,
+            LocalTime fenetreFin,
+            int dureeRequiseMinutes,
+            LocalTime debut,
+            LocalTime fin,
+            int plusGrandTrouMinutes,
+            boolean satisfaite) {}
+
     /** An uninterrupted working stretch of the day, with the breaks it owes inside. */
     @Schema(requiredProperties = {"minutes"})
     public record SequenceView(LocalTime debut, LocalTime fin, int minutes, List<PauseDueView> pausesDues) {}
@@ -96,7 +125,10 @@ public class PauseAnalyzer {
     @Schema(requiredProperties = {"minutes"})
     public record PausePlanifieeView(LocalTime debut, LocalTime fin, int minutes) {}
 
-    /** One animateur on one day: their stretches, and the breaks between them. */
+    /**
+     * One animateur on one day: their stretches, the breaks between them, and
+     * the meal breaks the day owes.
+     */
     @Schema(requiredProperties = {"jour", "mineur"})
     public record JourneeAnimateurView(
             String animateurId,
@@ -105,7 +137,8 @@ public class PauseAnalyzer {
             LocalDate date,
             int jour,
             List<SequenceView> sequences,
-            List<PausePlanifieeView> pausesPlanifiees) {}
+            List<PausePlanifieeView> pausesPlanifiees,
+            List<CoupureRepasView> coupuresRepas) {}
 
     /**
      * The whole read-out.
@@ -114,31 +147,65 @@ public class PauseAnalyzer {
      * @param journeesAnalysees animateur-days holding at least one seat
      * @param pausesDues        breaks owed inside a stretch, over the plan
      * @param relaisManquants   those with nobody else on the stand
-     * @param journees          only the days that owe at least one break, or
-     *                          list a scheduled one; a day of short stretches
-     *                          with no gap has nothing to show
+     * @param coupuresRepasDues     meal breaks owed over the plan — one per
+     *                          animateur-day straddling a declared window
+     * @param coupuresRepasManquantes those the plan leaves no room for: the
+     *                          days {@code coupureRepasObligatoire} is
+     *                          penalising, listed here so the two screens
+     *                          agree
+     * @param journees          only the days that owe at least one break, list
+     *                          a scheduled one, or owe a meal break; a day of
+     *                          short stretches with no gap has nothing to show
      */
-    @Schema(requiredProperties = {"journeesAnalysees", "pauseSurPoste", "pausesDues", "relaisManquants"})
+    @Schema(
+            requiredProperties = {
+                "coupuresRepasDues",
+                "coupuresRepasManquantes",
+                "journeesAnalysees",
+                "pauseSurPoste",
+                "pausesDues",
+                "relaisManquants"
+            })
     public record RapportPauses(
             boolean pauseSurPoste,
             int journeesAnalysees,
             int pausesDues,
             int relaisManquants,
+            int coupuresRepasDues,
+            int coupuresRepasManquantes,
             List<JourneeAnimateurView> journees,
             String message) {}
 
-    /** Same read-out, under the legal parameters the plan itself carries (the protective default when it carries none). */
+    /** Same read-out, under the parameters and meal windows the plan itself carries (the protective default when it carries none). */
     public RapportPauses analyze(PlanningEvenement planning) {
         ParametresLegaux parametres = planning == null
                         || planning.getParametresLegaux() == null
                         || planning.getParametresLegaux().isEmpty()
                 ? null
                 : planning.getParametresLegaux().get(0);
-        return analyze(planning, parametres);
+        return analyze(
+                planning,
+                parametres,
+                planning == null || planning.getFenetresRepas() == null ? List.of() : planning.getFenetresRepas());
     }
 
     public RapportPauses analyze(PlanningEvenement planning, ParametresLegaux parametres) {
+        return analyze(
+                planning,
+                parametres,
+                planning == null || planning.getFenetresRepas() == null ? List.of() : planning.getFenetresRepas());
+    }
+
+    /**
+     * @param fenetres the meal windows to read the days against — the
+     *                 organiser's <em>current</em> ones when the caller is the
+     *                 Pauses screen, exactly as it already does for the legal
+     *                 parameters: the question is « with what I declare today,
+     *                 what is there to organise ».
+     */
+    public RapportPauses analyze(PlanningEvenement planning, ParametresLegaux parametres, List<FenetreRepas> fenetres) {
         boolean pauseSurPoste = parametres != null && parametres.isPauseSurPoste();
+        List<FenetreRepas> fenetresRepas = fenetres == null ? List.of() : fenetres;
         List<PosteAffectation> postes =
                 planning == null || planning.getPostes() == null ? List.of() : planning.getPostes();
         List<PosteAffectation> tenus = postes.stream()
@@ -159,7 +226,7 @@ public class PauseAnalyzer {
         //    the window each break may fall in.
         List<Journee> journees = new ArrayList<>();
         for (List<PosteAffectation> postesDuJour : parJournee.values()) {
-            journees.add(journee(postesDuJour));
+            journees.add(journee(postesDuJour, fenetresRepas));
         }
         // 2. Each stand-day: the rotation, one break after the other.
         Map<String, List<Demande>> parStandJour = new LinkedHashMap<>();
@@ -178,11 +245,14 @@ public class PauseAnalyzer {
         List<JourneeAnimateurView> vues = new ArrayList<>();
         int pausesDues = 0;
         int relaisManquants = 0;
+        int coupuresRepasDues = 0;
+        int coupuresRepasManquantes = 0;
         for (Journee journee : journees) {
             JourneeAnimateurView vue = toView(journee, tenus);
             if (vue.sequences().stream()
                             .allMatch(sequence -> sequence.pausesDues().isEmpty())
-                    && vue.pausesPlanifiees().isEmpty()) {
+                    && vue.pausesPlanifiees().isEmpty()
+                    && vue.coupuresRepas().isEmpty()) {
                 continue;
             }
             vues.add(vue);
@@ -192,6 +262,10 @@ public class PauseAnalyzer {
                         .filter(pause -> !pause.relaisDisponible())
                         .count();
             }
+            coupuresRepasDues += vue.coupuresRepas().size();
+            coupuresRepasManquantes += (int) vue.coupuresRepas().stream()
+                    .filter(coupure -> !coupure.satisfaite())
+                    .count();
         }
         vues.sort(Comparator.comparing(JourneeAnimateurView::date)
                 .thenComparing(JourneeAnimateurView::nomComplet, String.CASE_INSENSITIVE_ORDER)
@@ -201,8 +275,10 @@ public class PauseAnalyzer {
                 parJournee.size(),
                 pausesDues,
                 relaisManquants,
+                coupuresRepasDues,
+                coupuresRepasManquantes,
                 List.copyOf(vues),
-                buildMessage(pauseSurPoste, pausesDues, relaisManquants));
+                buildMessage(pauseSurPoste, pausesDues, relaisManquants, coupuresRepasManquantes));
     }
 
     /** The days of one animateur only — what their own planning shows. */
@@ -307,7 +383,7 @@ public class PauseAnalyzer {
     }
 
     /** The stretches of one animateur's day, with the breaks each owes and the window of each. */
-    private static Journee journee(List<PosteAffectation> postesDuJour) {
+    private static Journee journee(List<PosteAffectation> postesDuJour, List<FenetreRepas> fenetres) {
         Animateur animateur = postesDuJour.get(0).getAnimateur();
         LocalDate date = postesDuJour.get(0).getCreneau().getDate();
         boolean mineur = animateur.isMineurOn(date);
@@ -345,7 +421,33 @@ public class PauseAnalyzer {
                 .mapToInt(poste -> poste.getCreneau().getJour())
                 .min()
                 .orElse(0);
-        return new Journee(animateur, date, jour, mineur, sequences);
+        return new Journee(animateur, date, jour, mineur, sequences, coupuresRepas(postesDuJour, fenetres));
+    }
+
+    /**
+     * The meal breaks this day owes, in window order. Only the windows the day
+     * straddles produce a line: a day that starts after the window opens, or
+     * ends when it closes, owes nothing — see {@link CoupureRepas}.
+     */
+    private static List<CoupureRepasView> coupuresRepas(
+            List<PosteAffectation> postesDuJour, List<FenetreRepas> fenetres) {
+        List<CoupureRepasView> vues = new ArrayList<>();
+        for (FenetreRepas fenetre : fenetres) {
+            CoupureRepas coupure = CoupureRepas.analyser(postesDuJour, fenetre);
+            if (!coupure.due()) {
+                continue;
+            }
+            vues.add(new CoupureRepasView(
+                    fenetre.libelle(),
+                    fenetre.debut(),
+                    fenetre.fin(),
+                    fenetre.dureeMinutes(),
+                    coupure.debut(),
+                    coupure.fin(),
+                    coupure.plusGrandTrouMinutes(),
+                    !coupure.manquante()));
+        }
+        return List.copyOf(vues);
     }
 
     /**
@@ -418,7 +520,8 @@ public class PauseAnalyzer {
                 journee.date,
                 journee.jour,
                 List.copyOf(vues),
-                List.copyOf(planifiees));
+                List.copyOf(planifiees),
+                journee.coupuresRepas);
     }
 
     private static LocalDateTime maxOf(LocalDateTime a, LocalDateTime b) {
@@ -468,9 +571,15 @@ public class PauseAnalyzer {
                 .toList();
     }
 
-    private static String buildMessage(boolean pauseSurPoste, int pausesDues, int relaisManquants) {
+    private static String buildMessage(
+            boolean pauseSurPoste, int pausesDues, int relaisManquants, int coupuresRepasManquantes) {
+        String repas = coupuresRepasManquantes == 0
+                ? ""
+                : " " + coupuresRepasManquantes
+                        + (coupuresRepasManquantes > 1 ? " journées ne laissent" : " journée ne laisse")
+                        + " aucune place à la coupure repas dans sa fenêtre.";
         if (pausesDues == 0) {
-            return "Aucune séquence ne dépasse la durée légale de travail continu : rien à organiser.";
+            return "Aucune séquence ne dépasse la durée légale de travail continu : rien à organiser." + repas;
         }
         String base = pausesDues + (pausesDues > 1 ? " pauses" : " pause")
                 + (pauseSurPoste ? " à prendre sur le poste" : " due sans être déclarée sur le poste")
@@ -478,9 +587,11 @@ public class PauseAnalyzer {
                         ? ", dont " + relaisManquants + " sans relais possible sur le stand"
                         : ", chacune avec un relais possible sur le stand")
                 + ".";
-        return pauseSurPoste
-                ? base
-                : base + " Déclarez la pause prise sur le poste dans les paramètres légaux, ou planifiez un trou.";
+        return (pauseSurPoste
+                        ? base
+                        : base
+                                + " Déclarez la pause prise sur le poste dans les paramètres légaux, ou planifiez un trou.")
+                + repas;
     }
 
     private static LocalDateTime debut(PosteAffectation poste) {
@@ -492,7 +603,13 @@ public class PauseAnalyzer {
     }
 
     /** One animateur's day, before the rotation places its breaks. */
-    private record Journee(Animateur animateur, LocalDate date, int jour, boolean mineur, List<Sequence> sequences) {}
+    private record Journee(
+            Animateur animateur,
+            LocalDate date,
+            int jour,
+            boolean mineur,
+            List<Sequence> sequences,
+            List<CoupureRepasView> coupuresRepas) {}
 
     /**
      * One break to place: its window, the seat it falls in, and — once the

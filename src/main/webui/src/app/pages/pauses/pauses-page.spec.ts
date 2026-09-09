@@ -17,6 +17,8 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
     journeesAnalysees: 3,
     pausesDues: 2,
     relaisManquants: 1,
+    coupuresRepasDues: 0,
+    coupuresRepasManquantes: 0,
     message: '2 pauses à prendre sur le poste, dont 1 sans relais possible sur le stand.',
     journees: [
       {
@@ -46,6 +48,7 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
           },
         ],
         pausesPlanifiees: [{ debut: '12:00:00', fin: '13:00:00', minutes: 60 }],
+        coupuresRepas: [],
       },
       {
         animateurId: 'carol',
@@ -74,6 +77,7 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
           },
         ],
         pausesPlanifiees: [],
+        coupuresRepas: [],
       },
     ],
     ...overrides,
@@ -182,7 +186,14 @@ describe('PausesPage', () => {
     ).toContain('Aucun planning persisté');
 
     const rien = await mount(
-      rapport({ journees: [], pausesDues: 0, relaisManquants: 0, message: 'Rien.' }),
+      rapport({
+        journees: [],
+        pausesDues: 0,
+        relaisManquants: 0,
+        coupuresRepasDues: 0,
+        coupuresRepasManquantes: 0,
+        message: 'Rien.',
+      }),
     );
     expect(text(rien)).toContain('rien à organiser');
     expect(rien.nativeElement.querySelector('.pauses-alerte')).toBeNull();
