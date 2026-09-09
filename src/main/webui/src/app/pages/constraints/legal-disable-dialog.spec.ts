@@ -19,6 +19,7 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     description: 'Pas de travail de nuit pour un mineur (art. L3163-1).',
     actif: true,
     protegee: true,
+    fondeeEnDroit: true,
     dosable: false,
     poids: 1,
     score: null,
@@ -61,7 +62,28 @@ describe('LegalDisableConfirmService', () => {
       name: 'travailDeNuitInterditPourMineur',
       description: 'Pas de travail de nuit pour un mineur (art. L3163-1).',
       categorie: 'Légal (mineurs)',
+      fondeeEnDroit: true,
     });
+  });
+
+  // The meal break is protected but is not the law: the dialog must be able to
+  // say so, so the flag has to reach it rather than be inferred from the
+  // category label on the client side.
+  it('marks a protected rule that is not founded in law', async () => {
+    answers(true);
+
+    await expect(
+      service.allowsDisabling(
+        contrainte({
+          name: 'coupureRepasObligatoire',
+          categorie: 'Organisation (repas)',
+          description: 'Une coupure repas est due de part et d’autre de chaque fenêtre repas.',
+          fondeeEnDroit: false,
+        }),
+      ),
+    ).resolves.toBe(true);
+
+    expect(dialog.open.mock.calls[0][1].data.fondeeEnDroit).toBe(false);
   });
 
   it('refuses when the dialog is cancelled', async () => {

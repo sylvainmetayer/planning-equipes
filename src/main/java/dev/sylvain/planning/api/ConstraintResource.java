@@ -154,6 +154,7 @@ public class ConstraintResource {
                 definition.description(),
                 !desactivees.contains(definition.name()),
                 definition.protegee(),
+                definition.fondeeEnDroit(),
                 definition.dosable(),
                 poids.getOrDefault(definition.name(), 1),
                 diagnostic == null ? null : diagnostic.score(),
@@ -163,10 +164,17 @@ public class ConstraintResource {
 
     /**
      * @param actif       whether the constraint is applied on the next solve
-     * @param protegee    whether this rule founds the plan in law or in the
-     *                    minors' safety policy — the UI confirms before
-     *                    switching one off (see
-     *                    {@code ConstraintCatalog.CATEGORIES_PROTEGEES})
+     * @param protegee    whether this rule founds the plan in law, in the
+     *                    minors' safety policy, or in the meal rule the event
+     *                    is built on — the UI confirms before switching one off
+     *                    (see {@code ConstraintCatalog.CATEGORIES_PROTEGEES})
+     * @param fondeeEnDroit whether an article of the Code du travail is what
+     *                    founds it. A protected rule that is not — the minors'
+     *                    safety policy, the meal break — is no less binding on
+     *                    the organiser, but switching it off does not make the
+     *                    plan unlawful, and the confirmation says so in its own
+     *                    words rather than over-claiming (see
+     *                    {@code ConstraintCatalog.CATEGORIES_LEGALES})
      * @param dosable     whether this rule is one of those meant to be dosed
      *                    rather than switched off (the MEDIUM rules of
      *                    « Qualité d'organisation »)
@@ -182,7 +190,7 @@ public class ConstraintResource {
      *                    empty for medium/soft ones (see
      *                    {@code ConstraintCatalog.NOMS_DURS})
      */
-    @Schema(requiredProperties = {"actif", "dosable", "poids", "protegee"})
+    @Schema(requiredProperties = {"actif", "dosable", "fondeeEnDroit", "poids", "protegee"})
     public record ConstraintView(
             String name,
             String niveau,
@@ -190,6 +198,7 @@ public class ConstraintResource {
             String description,
             boolean actif,
             boolean protegee,
+            boolean fondeeEnDroit,
             boolean dosable,
             int poids,
             String score,

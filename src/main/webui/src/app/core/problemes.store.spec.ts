@@ -48,6 +48,7 @@ function constraintsView(): ConstraintsView {
         description: 'Durée hebdomadaire maximale.',
         actif: true,
         protegee: true,
+        fondeeEnDroit: true,
         dosable: false,
         poids: 1,
         score: '-2hard/0medium/0soft',

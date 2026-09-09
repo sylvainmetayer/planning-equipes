@@ -1,6 +1,10 @@
 <h2 mat-dialog-title class="legal-disable-title">
   <mat-icon color="warn">gavel</mat-icon>
-  <span i18n="@@constraints.legalDisable.title">Désactiver une règle qui fonde le planning en droit ?</span>
+  @if (data.fondeeEnDroit) {
+    <span i18n="@@constraints.legalDisable.title">Désactiver une règle qui fonde le planning en droit ?</span>
+  } @else {
+    <span i18n="@@constraints.legalDisable.titreOrganisation">Désactiver une règle que l'organisation s'est donnée ?</span>
+  }
 </h2>
 
 <mat-dialog-content>
@@ -10,10 +14,18 @@
   </p>
   <p class="legal-disable-description"><app-legal-text [text]="data.description" /></p>
 
-  <p i18n="@@constraints.legalDisable.effet">
-    Désactivée, la règle n'est plus évaluée : le solveur peut produire un planning
-    <strong>contraire au Code du travail avec un score dur à zéro</strong>, sans que rien le signale.
-  </p>
+  @if (data.fondeeEnDroit) {
+    <p i18n="@@constraints.legalDisable.effet">
+      Désactivée, la règle n'est plus évaluée : le solveur peut produire un planning
+      <strong>contraire au Code du travail avec un score dur à zéro</strong>, sans que rien le signale.
+    </p>
+  } @else {
+    <p i18n="@@constraints.legalDisable.effetOrganisation">
+      Cette règle n'est pas une obligation du Code du travail mais une règle que l'organisation s'est donnée.
+      Désactivée, elle n'est plus évaluée : le solveur peut produire un planning
+      <strong>qui l'ignore avec un score dur à zéro</strong>, sans que rien le signale.
+    </p>
+  }
   <p i18n="@@constraints.legalDisable.responsabilite">
     L'organisation qui exploite l'application demeure <strong>l'employeur ou le donneur d'ordre</strong> des personnes
     planifiées, et reste seule responsable du respect de la réglementation applicable — durées maximales et repos,

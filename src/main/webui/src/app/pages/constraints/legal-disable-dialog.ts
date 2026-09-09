@@ -1,13 +1,20 @@
 // Confirmation asked before switching off a rule that founds the plan in law
-// (« Légal (mineurs) », « Légal (temps de travail) ») or in the organiser's
-// safety policy for young workers (« Sécurité (mineurs) »).
+// (« Légal (mineurs) », « Légal (temps de travail) »), in the organiser's
+// safety policy for young workers (« Sécurité (mineurs) ») or in the meal rule
+// the event is built on (« Organisation (repas) »).
 //
-// The other 24 rules switch off without friction: they arbitrate comfort, and
-// a plan that ignores one is merely worse. These fifteen are different — the
-// solver then returns a plan scoring *zero hard* that nonetheless breaks the
-// Code du travail, and nothing on the score says so. The dialog names the rule
-// and the article behind it, and restates what the conditions of use already
-// say: the organiser stays the employer, the application is decision support.
+// The other rules switch off without friction: they arbitrate comfort, and a
+// plan that ignores one is merely worse. These are different — the solver then
+// returns a plan scoring *zero hard* that nonetheless breaks the Code du
+// travail, or holds a ten-hour day with no meal break, and nothing on the score
+// says so. The dialog names the rule and what founds it, and restates what the
+// conditions of use already say: the organiser stays the employer, the
+// application is decision support.
+//
+// `fondeeEnDroit` decides which consequence is stated. Only the two « Légal »
+// categories rest on an article of the Code du travail; saying so of the
+// minors' safety policy or of the meal break would over-claim, and a warning
+// that over-claims is one an administrator learns to skip.
 //
 // Confirmation only. No reason typed, nothing journalled: migration V39
 // removed exactly those columns because, with no authenticated user, the
@@ -32,9 +39,11 @@ import { LegalText } from '../../shared/legal-text';
 export interface LegalDisableData {
   /** Technical name of the rule, as shown on its card. */
   name: string;
-  /** Business description — it is what cites the article of the Code du travail. */
+  /** Business description — for a legal rule, it is what cites the article of the Code du travail. */
   description: string;
   categorie: string;
+  /** True only for the two « Légal (…) » categories — see the note at the top of this file. */
+  fondeeEnDroit: boolean;
 }
 
 @Component({
@@ -69,6 +78,7 @@ export class LegalDisableConfirmService {
           name: constraint.name,
           description: constraint.description,
           categorie: constraint.categorie,
+          fondeeEnDroit: constraint.fondeeEnDroit,
         },
         width: '38rem',
         autoFocus: 'dialog',

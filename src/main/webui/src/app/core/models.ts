@@ -818,12 +818,21 @@ export interface ConstraintView {
   description: string;
   actif: boolean;
   /**
-   * The rule founds the plan in law (« Légal (…) ») or in the minors' safety
-   * policy (« Sécurité (mineurs) »). Switching one off lets the solver return
-   * a plan scoring zero hard that still breaks the Code du travail, so the UI
-   * confirms first — see `LegalDisableDialog`.
+   * The rule founds the plan in law (« Légal (…) »), in the minors' safety
+   * policy (« Sécurité (mineurs) ») or in the meal rule the event is built on
+   * (« Organisation (repas) »). Switching one off lets the solver return a plan
+   * scoring zero hard that still breaks the Code du travail — or holds a
+   * ten-hour day with no meal break — so the UI confirms first; see
+   * `LegalDisableDialog`.
    */
   protegee: boolean;
+  /**
+   * Among the protected rules, the ones an article of the Code du travail
+   * actually founds. The others are the organiser's own — no less binding on
+   * them, but switching one off does not make the plan unlawful, and the
+   * confirmation must not claim it does.
+   */
+  fondeeEnDroit: boolean;
   /**
    * The rule is one of those meant to be **dosed** rather than switched off:
    * the MEDIUM rules of « Qualité d'organisation », the only ones whose
