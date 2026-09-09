@@ -5,7 +5,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.scenario.ScenarioValidator;
@@ -16,7 +15,7 @@ import dev.sylvain.planning.service.ImportImpact;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ScenarioYamlReader;
 import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.solver.ConstraintCatalog;
+import dev.sylvain.planning.service.ScenarioImportService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -53,6 +52,9 @@ public class ReferenceDataResource {
 
     @Inject
     EditionContext editionContext;
+
+    @Inject
+    ScenarioImportService scenarioImportService;
 
     @POST
     @Path("/import")
@@ -137,7 +139,7 @@ public class ReferenceDataResource {
     @Path("/import-scenario")
     @Consumes(MediaType.WILDCARD)
     public Response importScenario(@QueryParam("name") String name) {
-        return importReferenceData(planningService.loadScenario(name));
+        return toResponse(scenarioImportService.importBundled(name));
     }
 
     /**
@@ -153,94 +155,19 @@ public class ReferenceDataResource {
     @Path("/import-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
     public Response importScenarioFile(String yamlContent) {
-        return importReferenceData(planningService.buildFromScenarioText(yamlContent));
+        return toResponse(scenarioImportService.importYaml(yamlContent));
     }
 
     /**
-     * The import itself, identical whether the scenario came bundled or was
-     * uploaded — the two endpoints now differ only in where the bytes were
-     * read from. It used to be written out twice, and the two copies had
-     * drifted: the bundled path re-read the file once per optional section.
+     * The only thing left of the import in this class: turning where the data
+     * landed into a body. The order the sections are applied in, and the
+     * resolution of the target edition, belong to
+     * {@link ScenarioImportService} — see its javadoc for why the order is the
+     * rule.
      */
-    private Response importReferenceData(ScenarioYamlReader.ScenarioImporte importe) {
-        ScenarioYamlReader.ScenarioSections sections = importe.sections();
-        return importIntoTarget(sections.edition(), () -> {
-            sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
-            sections.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
-            sections.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
-            if (sections.decoupageAuto()) {
-                referenceDataService.applyAutomaticDecoupage(importe.planning());
-                applyTypologies(sections);
-                applyContraintes(sections);
-                return true;
-            }
-            referenceDataService.importFromPlanning(importe.planning());
-            applyTypologies(sections);
-            applyContraintes(sections);
-            return false;
-        });
-    }
-
-    /**
-     * Runs {@code importAction} against the edition the scenario's optional
-     * {@code edition:} section designates — created empty when missing, reused
-     * otherwise — or plainly against the caller's current edition when the
-     * file names none. The response always reports where the data landed (and
-     * whether the edition was just created), because the operator's browser
-     * may be sitting on a different edition than the one that was written:
-     * the UI shows that recap unconditionally.
-     */
-    private Response importIntoTarget(Optional<EditionCibleDto> cibleDto, Callable<Boolean> importAction) {
-        try {
-            if (cibleDto.isEmpty()) {
-                return Response.ok(new ImportScenarioResult(importAction.call(), null, null, null)).build();
-            }
-            EditionService.ImportTarget target =
-                    editionService.resolveForImport(cibleDto.get().id(), cibleDto.get().nom());
-            boolean decoupageAuto = editionContext.executeIn(target.edition().getId(), importAction);
-            return Response.ok(new ImportScenarioResult(decoupageAuto,
-                    target.edition().getId(), target.edition().getNom(), target.creee())).build();
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IllegalStateException("Import de scénario échoué", e);
-        }
-    }
-
-    /**
-     * Applies the scenario's optional {@code typologies:} section, if any,
-     * <b>after</b> the planning itself has been imported: {@code
-     * ReferenceDataImportRepository#importFromPlanning} auto-derives an id-as-its-
-     * own-label typologie entry for every id a stand/animateur references and
-     * unconditionally overwrites any existing label when it does — so an
-     * explicit {@code {id, label}} pair from the scenario must be applied
-     * afterwards to actually stick, not before.
-     */
-    private void applyTypologies(ScenarioYamlReader.ScenarioSections sections) {
-        sections.typologies().forEach(referenceDataService::importTypologie);
-    }
-
-    /**
-     * Applies the scenario's {@code contraintes:} section to the target
-     * edition: which rules are switched off, and what weight the others carry.
-     *
-     * <p>The section is applied <b>wholesale</b> over the whole catalogue, not
-     * merged: a scenario that pins its tuning describes the problem it was
-     * verified against, so a rule it does not name goes back to active, at its
-     * configured weight. Merging would leave the importing edition's own
-     * leftovers in place, and the "same" scenario would keep solving a
-     * different problem depending on where it landed — the very hole this
-     * section closes.</p>
-     */
-    private void applyContraintes(ScenarioYamlReader.ScenarioSections sections) {
-        sections.contraintes().ifPresent(contraintes -> {
-            for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-                referenceDataService.setContrainteActive(definition.name(),
-                        !contraintes.desactivees().contains(definition.name()));
-                referenceDataService.setConstraintWeight(definition.name(),
-                        contraintes.poids().get(definition.name()));
-            }
-        });
+    private static Response toResponse(ScenarioImportService.ScenarioImportOutcome outcome) {
+        return Response.ok(new ImportScenarioResult(outcome.decoupageAuto(), outcome.editionId(),
+                outcome.editionNom(), outcome.editionCreee())).build();
     }
 
     /**

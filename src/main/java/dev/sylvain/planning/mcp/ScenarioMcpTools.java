@@ -1,22 +1,18 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.service.BusinessError;
 import java.io.IOException;
 import java.util.List;
 
-import dev.sylvain.planning.api.ReferenceDataResource.ImportScenarioResult;
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.api.ValidationError;
-import dev.sylvain.planning.api.ReferenceDataResource;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.EditionService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.ScenarioImportService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.core.Response;
 
 /**
  * MCP tools for the scenario lifecycle of {@code PlanningResource} /
@@ -25,12 +21,14 @@ import jakarta.ws.rs.core.Response;
  * importing it, export the current referential as a scenario, and wipe an
  * edition's data.
  *
- * <p>The two import tools delegate to {@link ReferenceDataResource} rather
- * than re-implementing the orchestration it owns (paramètres légaux /
- * découpage / solveur pinned by the scenario, then the planning itself, then
- * the optional {@code decoupageAuto:} and {@code typologies:} sections, in
- * that order — the order matters, see that class's javadoc). Duplicating it
- * here is exactly how the two would drift.
+ * <p>The two import tools delegate to {@link ScenarioImportService} rather
+ * than re-implementing the order it owns (paramètres légaux / découpage /
+ * solveur pinned by the scenario, then the planning itself, then the optional
+ * {@code decoupageAuto:} and {@code typologies:} sections — the order matters,
+ * see that class's javadoc). Duplicating it here is exactly how the two would
+ * drift. Until #392's A3 they delegated to {@code ReferenceDataResource}
+ * instead, which meant reaching for a JAX-RS {@code Response} to read a
+ * business outcome.
  *
  * <p>Deliberately <b>not</b> exposed, unlike its REST counterpart
  * {@code GET /api/planning/export-scenario}: the scenario export. That YAML
@@ -51,7 +49,7 @@ public class ScenarioMcpTools {
     PlanningPersistenceService persistenceService;
 
     @Inject
-    ReferenceDataResource referenceDataResource;
+    ScenarioImportService scenarioImportService;
 
     @Inject
     EditionService editionService;
@@ -70,7 +68,7 @@ public class ScenarioMcpTools {
                     idempotentHint = true, openWorldHint = false))
     ImportResult importer_scenario(@ToolArg(description = "Nom du scénario (voir lister_scenarios)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return toImportResult(referenceDataResource.importScenario(nom));
+        return toImportResult(scenarioImportService.importBundled(nom));
     }
 
     @Tool(description = "Importe un scénario fourni sous forme de contenu YAML (même format que l'export). "
@@ -79,11 +77,7 @@ public class ScenarioMcpTools {
                     idempotentHint = true, openWorldHint = false))
     ImportResult importer_scenario_yaml(@ToolArg(description = "Contenu YAML du scénario") String yaml,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Response response = referenceDataResource.importScenarioFile(yaml);
-        if (response.getStatus() >= 400) {
-            throw new BusinessError.Invalid("Scénario invalide : " + messageErreur(response));
-        }
-        return toImportResult(response);
+        return toImportResult(scenarioImportService.importYaml(yaml));
     }
 
     @Tool(description = "Valide la structure d'un scénario YAML sans rien importer. Renvoie la liste des erreurs "
@@ -116,27 +110,19 @@ public class ScenarioMcpTools {
                 + "créneaux, animateurs, affectations et contraintes ad hoc.");
     }
 
-    private ImportResult toImportResult(Response response) {
-        if (response.getEntity() instanceof ImportScenarioResult result && result.editionId() != null) {
+    private ImportResult toImportResult(ScenarioImportService.ScenarioImportOutcome outcome) {
+        if (outcome.editionId() != null) {
             // The scenario's own `edition:` section wins over the call's
             // `edition` argument, and may even have created the edition it
             // names: an import that says nothing about where it landed is
             // exactly the silence issue #181 closes.
-            return new ImportResult(true, result.decoupageAuto(), result.editionId(), result.editionNom(),
-                    Boolean.TRUE.equals(result.editionCreee()));
+            return new ImportResult(true, outcome.decoupageAuto(), outcome.editionId(), outcome.editionNom(),
+                    Boolean.TRUE.equals(outcome.editionCreee()));
         }
-        boolean decoupageAuto = response.getEntity() instanceof ImportScenarioResult result
-                && result.decoupageAuto();
+        // The scenario named no edition, so the data landed wherever the call
+        // was already pointing — which the outcome cannot know and this can.
         Edition courante = editionService.editionCourante();
-        return new ImportResult(true, decoupageAuto, courante.getId(), courante.getNom(), false);
-    }
-
-    private static String messageErreur(Response response) {
-        Object entity = response.getEntity();
-        if (entity instanceof ValidationError erreur) {
-            return erreur.message();
-        }
-        return String.valueOf(entity);
+        return new ImportResult(true, outcome.decoupageAuto(), courante.getId(), courante.getNom(), false);
     }
 
     /**

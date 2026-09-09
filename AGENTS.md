@@ -230,7 +230,10 @@ Single Quarkus service, no separate solver microservice. Package root:
   one resource per referential family (`StandResource`, `AnimateurResource`, …)
   and `ReferenceDataResource` for scenario import. A resource holds transport
   only — status codes and payload shapes; anything that decides something
-  belongs to a service. The endpoint list is the published OpenAPI.
+  belongs to a service. The scenario import is the worked example: the order
+  its sections are applied in lives in `ScenarioImportService`, and
+  `ReferenceDataResource` is left turning the outcome into a body. The endpoint
+  list is the published OpenAPI.
 - HTTP security (issue #165): everything under `/api` requires the admin form
   login (single `admin` account from config) **except**
   `/api/espace-animateur/*` (its URL token is the credential and resolves the
@@ -261,8 +264,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   functional tests skip the session; `AuthentificationAdminTest` restores and
   covers the real policy.
 - `mcp/` — MCP tools (`@Tool`) exposing the same capabilities to an AI
-  assistant, delegating to the services above. Two hard rules, both enforced
-  reflectively over every tool so a new one cannot opt out by omission:
+  assistant, delegating to the services above — **to the services, never to a
+  resource**: MCP and REST are two callers of the same rules, and a tool that
+  injects a resource can only read a business outcome through a JAX-RS
+  `Response` it never actually received over HTTP
+  (`LayeringStructuralTest`). Three hard rules, all enforced over every tool so
+  a new one cannot opt out by omission:
   1. animateur nom/prénom/dateNaissance never leave over MCP (issue #107) —
      return dedicated view records, never domain objects, and run violation
      messages through `AnonymisationViolations`
