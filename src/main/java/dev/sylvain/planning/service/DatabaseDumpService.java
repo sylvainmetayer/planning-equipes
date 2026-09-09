@@ -37,16 +37,18 @@ import jakarta.inject.Inject;
  * follow the current edition.
  *
  * <p>
- * <b>It is not a backup of the database</b>, and reading it as one is the
- * mistake to avoid. What it restores is exactly {@link #TABLES} — the
- * referential, the plan, and the settings that shape a solve. Fifteen live
- * tables are outside it: the availability declarations and wishes, the
- * published snapshots, the notification and exchange settings, the access
- * spaces and their sessions, the action journal, the solver jobs, the backup
- * settings, and the day-J clock. Some are deliberate (a clock, a session, a
- * journal have no business travelling between instances), others are simply
- * unexamined. The backup that does cover everything is the nightly
- * {@code pg_dump} of ADR 0015, restored outside the application.
+ * <b>It is still not a backup of the database.</b> What it restores is exactly
+ * {@link #TABLES}: the referential, the plan and its publications, what the
+ * animateurs declared, and the settings that shape a solve. Six tables stay
+ * out, and {@link #DELIBERATELY_NOT_DUMPED} says why each one does — they
+ * describe the machine, its current sessions, or what it has been asked to do
+ * next, none of which is the dataset. {@code DatabaseDumpCoverageTest} keeps
+ * the two lists between them covering every table that exists, so a new
+ * migration cannot land in neither.
+ *
+ * <p>
+ * The backup that does cover everything, journal and sessions included, is the
+ * nightly {@code pg_dump} of ADR 0015, restored outside the application.
  */
 @ApplicationScoped
 public class DatabaseDumpService {
@@ -81,25 +83,69 @@ public class DatabaseDumpService {
             "parametres_solveur",
             "constraint_toggle",
             "ponderation_contrainte",
-            // Missing until now, and worse than merely absent: its edition_id
-            // carries no foreign key, so the dump's DELETE FROM edition never
-            // reached it either. An operator restoring a dump kept whatever
-            // history the target already had and lost the one being restored,
-            // silently — of the fifteen tables still outside this list, this
-            // was the one whose absence actively destroyed something.
+            // Settings, alongside the three already above: an edition's
+            // collection window, exchange fair and notification schedule shape
+            // what it does as surely as its legal parameters do.
+            "parametres_collecte",
+            "parametres_echange",
+            "parametres_notifications",
+            // What the animateurs themselves said. Wishes and declarations are
+            // the input the plan is built from, not a by-product of it, and a
+            // restore that dropped them handed the organiser an edition whose
+            // plan no longer had a justification.
+            "animateur_souhait",
+            "declaration_disponibilite",
+            "confirmation_planning",
+            // The ledger of what the scheduled jobs have already sent. Read
+            // JournalNotificationsRepository's javadoc for why this one is not
+            // optional: it is "the only thing standing between them and a
+            // mailbox full of duplicates". Left out of the dump, a restore
+            // re-arms every reminder already delivered.
+            "notification_planifiee",
+            // The published plan, and who was told about it. Before
+            // publication_destinataire, "already told" and "still to tell" are
+            // the same thing.
+            "plan_snapshot",
+            "publication_destinataire",
+            // Its edition_id carries no foreign key, so the dump's DELETE FROM
+            // edition never reached it either: an operator restoring a dump
+            // kept whatever history the target already had and lost the one
+            // being restored, silently.
             //
             // Last in the list because it depends on nothing: deletes are
             // issued in reverse, so it goes first, and nothing references it.
-            //
-            // horloge_jour_j stays out, deliberately, and the reason is not
-            // symmetry with the above. It describes the server's clock rather
-            // than the dataset, and importing a colleague's dump to reproduce a
-            // bug has no business moving the date you had frozen. On a deployed
-            // instance the question does not even arise: JourJClock ignores the
-            // row outside dev mode, so nothing there could be unfrozen. The
-            // damage would be a developer's, on their own machine — which is
-            // reason enough, and the only one.
             "kpi_historique");
+
+    /**
+     * The six tables deliberately left out, and why each one stays out.
+     *
+     * <p>They share a shape: none of them describes <em>the dataset</em>. They
+     * describe the machine it runs on, or who is currently allowed to touch it,
+     * or what it has been asked to do next. Replaying them would not restore an
+     * edition, it would reach into the receiving instance.
+     *
+     * <ul>
+     *   <li>{@code horloge_jour_j} — the server's clock. Importing a
+     *       colleague's dump to reproduce a bug has no business moving the date
+     *       you had frozen. (On a deployed instance the question does not even
+     *       arise: {@code JourJClock} ignores the row outside dev mode.)</li>
+     *   <li>{@code backup_settings} — this server's backup schedule and the
+     *       outcome of its last attempt. Same nature as the clock.</li>
+     *   <li>{@code espace_acces}, {@code espace_session} — code hashes,
+     *       remaining attempts, live sessions. Restoring them would hand
+     *       another instance credentials and reset a lockout counter.</li>
+     *   <li>{@code solver_job} — the queue, replayed at startup. A restore
+     *       would make the receiving instance run somebody else's solves.</li>
+     *   <li>{@code journal_action} — the audit trail. This one is out for the
+     *       opposite reason to all the others: including it would mean every
+     *       import <em>erases</em> the local journal, since the dump deletes
+     *       what it carries. An audit trail that an import can wipe is not
+     *       one.</li>
+     * </ul>
+     */
+    static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
+            "horloge_jour_j", "backup_settings", "espace_acces", "espace_session",
+            "solver_job", "journal_action");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 
@@ -115,7 +161,9 @@ public class DatabaseDumpService {
             // BIGSERIAL since V48: left unsynced, the first measurement
             // written after an import would collide with an id the dump just
             // replayed.
-            "kpi_historique");
+            "kpi_historique",
+            // BIGSERIAL too, V40 and V54, for the same reason.
+            "plan_snapshot", "publication_destinataire");
 
     private static final Pattern STATEMENT_PATTERN = Pattern.compile(
             "^(insert\\s+into|delete\\s+from|truncate\\s+table|truncate)\\s+([a-z_][a-z0-9_]*)");

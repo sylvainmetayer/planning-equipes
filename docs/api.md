@@ -16,11 +16,16 @@ et **rien ne circule de l'une à l'autre** — voir
 
 Le client la désigne par l'en-tête `X-Edition-Id`, sur **tous** les endpoints
 sauf le dump SQL (`/api/database/*`), qui ignore l'en-tête et emporte toutes les
-éditions. Ce n'est pas pour autant une sauvegarde de la base : quinze tables
-vivantes en sont absentes (déclarations, snapshots publiés, paramètres de
-notification et d'échange, espaces et sessions, journal, jobs, horloge) — la
-sauvegarde complète est le `pg_dump` de nuit ([ADR
-0015](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md)).
+éditions. Ce n'est pas pour autant une sauvegarde de la base : **six tables en
+restent absentes**, et délibérément — l'horloge, les paramètres de sauvegarde,
+les accès et sessions d'espace, la file de jobs et le journal d'actions. Elles
+décrivent la machine, qui a le droit d'y toucher en ce moment, ou ce qu'on lui a
+demandé de faire ensuite ; aucune ne décrit le jeu de données. Le journal est
+dehors pour la raison inverse des autres : l'inclure ferait qu'un import
+**efface** le journal local, puisqu'un dump supprime ce qu'il emporte.
+
+La sauvegarde qui couvre tout, journal et sessions compris, est le `pg_dump` de
+nuit ([ADR 0015](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md)).
 
 Deux propriétés qui expliquent la plupart des surprises :
 

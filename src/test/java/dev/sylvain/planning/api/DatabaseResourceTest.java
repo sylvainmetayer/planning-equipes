@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.nullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -329,6 +330,96 @@ class DatabaseResourceTest {
 
     private static void deleteEdition(String id) {
         given().when().delete("/api/editions/" + id).then().statusCode(204);
+    }
+
+    /**
+     * The published plan and its recipients survive being deleted and restored.
+     *
+     * <p>Chosen among the nine tables this dump gained because it is the one
+     * that exercises the most: {@code publication_destinataire} carries a
+     * foreign key to {@code plan_snapshot}, so the insert order in
+     * {@code TABLES} has to be right and the delete order — issued in reverse —
+     * has to be right too. Both rows also have a {@code BIGSERIAL} id, so both
+     * belong in {@code IDENTITY_TABLES}.</p>
+     *
+     * <p>Deleted through the API rather than through {@code /api/planning/reset}:
+     * reset does not touch {@code plan_snapshot}, so a restore that changed
+     * nothing would still have looked green.</p>
+     */
+    @Test
+    void thePublishedPlanAndItsRecipientsSurviveARestore() {
+        sqlRequest("INSERT INTO plan_snapshot (edition_id, id, libelle, nombre_affectations, contenu) VALUES "
+                + "(\'DEFAUT\', 777, \'Plan du test\', 3, \'{\"postes\": []}\');\n"
+                + "INSERT INTO publication_destinataire "
+                + "(edition_id, id, snapshot_id, animateur_id, nom_affiche, email, statut) VALUES "
+                + "(\'DEFAUT\', 888, 777, \'ani-test\', \'Camille Essai\', \'camille@example.test\', \'ENVOYE\');")
+                .when().post("/api/database/import")
+                .then()
+                .statusCode(200);
+
+        try {
+            given().when().get("/api/planning/snapshots")
+                    .then().statusCode(200)
+                    .body("find { it.id == 777 }.libelle", equalTo("Plan du test"));
+
+            String dump = exportDump();
+            assertThat(dump).contains("INSERT INTO plan_snapshot (")
+                    .contains("INSERT INTO publication_destinataire (");
+
+            // The wipe the restore is supposed to undo: the delete cascades onto
+            // the recipient, so both rows go.
+            given().when().delete("/api/planning/snapshots/777").then().statusCode(204);
+            given().when().get("/api/planning/snapshots")
+                    .then().statusCode(200)
+                    .body("find { it.id == 777 }", nullValue());
+
+            sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
+
+            given().when().get("/api/planning/snapshots")
+                    .then().statusCode(200)
+                    .body("find { it.id == 777 }.libelle", equalTo("Plan du test"));
+
+            // The recipient has no read endpoint of its own; a second export is
+            // the honest way to say the row is back in the database.
+            assertThat(exportDump()).contains("camille@example.test");
+        } finally {
+            given().when().delete("/api/planning/snapshots/777")
+                    .then().statusCode(anyOf(equalTo(204), equalTo(404)));
+        }
+    }
+
+    /**
+     * The nine tables the dump gained are all actually emitted.
+     *
+     * <p>A cheap assertion, and the one that would have caught the original
+     * defect: a table absent from {@code TABLES} produces neither a
+     * {@code DELETE FROM} nor an {@code INSERT}, so its name simply never
+     * appears. {@code DatabaseDumpCoverageTest} guards the classification; this
+     * guards the emission.</p>
+     */
+    @Test
+    void theDumpNamesEveryTableItClaimsToCarry() {
+        String dump = exportDump();
+        assertThat(dump)
+                .contains("DELETE FROM parametres_collecte")
+                .contains("DELETE FROM parametres_echange")
+                .contains("DELETE FROM parametres_notifications")
+                .contains("DELETE FROM animateur_souhait")
+                .contains("DELETE FROM declaration_disponibilite")
+                .contains("DELETE FROM confirmation_planning")
+                .contains("DELETE FROM notification_planifiee")
+                .contains("DELETE FROM plan_snapshot")
+                .contains("DELETE FROM publication_destinataire")
+                .contains("DELETE FROM kpi_historique");
+
+        // And the six that must not travel stay out, in both directions.
+        assertThat(dump)
+                .doesNotContain("horloge_jour_j")
+                .doesNotContain("backup_settings")
+                .doesNotContain("espace_acces")
+                .doesNotContain("espace_session")
+                .doesNotContain("solver_job")
+                .doesNotContain("journal_action");
     }
 
     /**

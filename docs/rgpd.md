@@ -273,7 +273,10 @@ complètes. Quatre points sont connus et se consignent :
   explique aux animateurs ;
 - **les sauvegardes sont un lieu de stockage à part entière** : depuis qu'elles
   sont automatiques, un dump complet — mineurs et jetons compris — existe en
-  permanence sur le volume. Le registre doit le dire, et l'entrée n'est
+  permanence sur le volume. L'export SQL de l'application est plus étroit — il
+  laisse dehors les accès et sessions d'espace, le journal et l'horloge — mais
+  il porte désormais les déclarations, les confirmations et les destinataires de
+  publication, adresse comprise ; il se traite avec les mêmes égards. Le registre doit le dire, et l'entrée n'est
   honnête que si l'externalisation chiffrée annoncée au socle existe
   réellement ;
 - **une déclaration de disponibilités traitée survit à sa décision** : appliquée
@@ -289,7 +292,12 @@ complètes. Quatre points sont connus et se consignent :
   proposition en attente existe par personne. Le mot libre reste le point
   sensible : c'est le seul champ où quelqu'un peut écrire une raison de santé
   ou de famille que personne ne lui a demandée, et il part tel quel dans le dump
-  nocturne. **Le choix est fait de le conserver** plutôt que de le supprimer ou
+  nocturne — **et, depuis que l'export SQL de l'application emporte
+  `declaration_disponibilite`, dans le fichier qu'un administrateur télécharge
+  depuis l'écran Paramètres**. C'est la même donnée, dans la même finalité, mais
+  par une seconde voie et sous une forme qui quitte la machine à la main : le
+  registre la consigne comme telle, et la consigne d'`exploitation.md` §5 sur le
+  traitement d'un dump vaut mot pour mot pour celui-ci. **Le choix est fait de le conserver** plutôt que de le supprimer ou
   d'en borner le contenu : un animateur qui explique son indisponibilité aide
   l'organisation à décider, et un champ contraint le pousserait à écrire la même
   chose ailleurs. Il est donc consigné au registre **comme donnée en champ
