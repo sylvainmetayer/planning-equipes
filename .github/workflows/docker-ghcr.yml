@@ -98,8 +98,11 @@ jobs:
           file: ./Dockerfile
           # Une seule cible : aucun déploiement ARM n'existe ni n'est prévu
           # (audit #392, question 3). La construire sous QEMU doublait le job
-          # pour un artefact que personne n'exécutait. À rétablir le jour où
-          # une machine ARM sert vraiment cette image — la ligne suffit.
+          # pour un artefact que personne n'exécutait. Pour rétablir arm64 le
+          # jour où une machine ARM sert cette image, il faut **deux** gestes :
+          # cette ligne, ET l'étape `docker/setup-qemu-action` retirée plus
+          # haut. Sans elle, la branche arm64 échoue en `exec format error`
+          # au milieu d'une release.
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -172,7 +175,7 @@ jobs:
       # `:latest` only when the tag being built is the highest stable version
       # of the whole repository — a maintenance patch on an older line must
       # not move it. `imagetools create` re-points the manifest list without
-      # rebuilding, so `:latest` is the exact multi-arch image just pushed.
+      # rebuilding, so `:latest` is the exact image just pushed.
       #
       # The depth-1 checkout only carries the tag being built, so the whole
       # tag list is fetched here. `--prune --prune-tags` keeps the comparison
