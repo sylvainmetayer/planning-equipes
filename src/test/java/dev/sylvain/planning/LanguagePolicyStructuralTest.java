@@ -58,6 +58,13 @@ class LanguagePolicyStructuralTest {
      * business term: it names a row of the staffing workbook, a legal notion, or a
      * key already frozen on the wire (a JSON property, an SQL column, a YAML
      * section) that no rename can move alone.
+     *
+     * <p>{@code jeton} is here for that last reason: the espace's path parameter
+     * is {@code @Path("/{jeton}")} and the SPA route {@code animateur/:jeton},
+     * so renaming one side would only widen the gap. Its scope is that
+     * parameter and the identifiers carrying it — the credential itself says
+     * {@code token} wherever it is stored or serialised (see the token
+     * paragraph of {@code AGENTS.md}).</p>
      */
     private static final Set<String> GLOSSAIRE = mots("""
             animateur animateurs stand stands creneau creneaux poste postes
@@ -69,6 +76,7 @@ class LanguagePolicyStructuralTest {
             competence competences souhait souhaits parametre parametres legal legaux
             mineur mineurs majeur majeurs effectif effectifs repos scenario scenarios
             solveur foire ninja premium qualite niveau referent
+            jeton jetons
             jour jours journee semaine semaines heure heures duree fenetre fenetres
             repas pause midi soir nuit matin ferie hebdomadaire quotidien quotidienne
             nom prenom naissance motif raison statut libelle commentaire acces
@@ -78,7 +86,7 @@ class LanguagePolicyStructuralTest {
      * The French words this test refuses inside a declared name. It is the
      * lexicon of the franglais audit, minus the glossary above: verbs first
      * ("construire", "verifier", "lire"), then the common nouns and grammar
-     * words that carry no business meaning ("cible", "jeton", "statement",
+     * words that carry no business meaning ("cible", "ecran", "statement",
      * "par", "de").
      *
      * <p>Words that are also English keep out of it on purpose — "sections",
@@ -103,7 +111,7 @@ class LanguagePolicyStructuralTest {
             est sont soit
             adresse anomalie blocage chevauchement cible cle cles collegue
             connexion couverture donnees dure dures ecart ecran famille familles
-            fichier jeton lot paire perimetre plafond ponderation ponderations
+            fichier lot paire perimetre plafond ponderation ponderations
             proprietaire requete requis requise strategie tache taches texte
             travail travailles utilisateur visite volumetrie vue vues
             absents automatique chiffree concerne concernes concernant continu

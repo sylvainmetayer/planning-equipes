@@ -797,7 +797,10 @@ HTTP path (`POST /api/animateurs/{id}/token`) were aligned together in issue
 explained where it showed. What stays French is the **path parameter** of the
 espace itself (`@Path("/{jeton}")`, route `animateur/:jeton`): it names a
 variable, never a published segment, so the links already printed on the PDFs
-are unaffected. The subscription token of issue #324 carries no such history,
+are unaffected. `jeton` is in the glossary for that reason, and for that scope:
+the espace's path parameter and the identifiers that carry it. The credential
+itself is `token` everywhere it is stored or serialised — a `jetonAcces` would
+be as wrong after this as before. The subscription token of issue #324 carries no such history,
 so it says `token` everywhere the credential appears — column
 `animateur.abonnement_token`, JSON key `abonnementToken`, path parameter
 `@Path("/{token}")` — while the *concept* is named `abonnement` in the

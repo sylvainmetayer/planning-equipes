@@ -69,14 +69,14 @@ export class EspaceAnimateurService {
    * it went to, for the confirmation line under the input.
    */
   async demanderCode(): Promise<string> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     const reponse = await this.api.post<{ emailMasque: string }>(`/api/espace-animateur/${jeton}/code`, null);
     return reponse.emailMasque;
   }
 
   /** Exchanges the received code for the session cookie, then loads the espace. */
   async validerCode(code: string): Promise<void> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     await this.api.post<void>(`/api/espace-animateur/${jeton}/session`, { code });
     await this.charger(jeton);
   }
@@ -87,7 +87,7 @@ export class EspaceAnimateurService {
    */
   /** Agrees with a demande targeting me: it enters the admin queue, both sides now OK. */
   async accorderRecue(demandeId: string): Promise<void> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     const demande = await this.api.post<DemandeEchangeView>(
       `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/accord`, null);
     this.demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
@@ -95,7 +95,7 @@ export class EspaceAnimateurService {
 
   /** Declines a demande targeting me: terminal, the demandeur is told. */
   async declinerRecue(demandeId: string): Promise<void> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     const demande = await this.api.post<DemandeEchangeView>(
       `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/refus`, null);
     this.demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
@@ -107,7 +107,7 @@ export class EspaceAnimateurService {
    * state, and nothing else on the page can have moved because of the click.
    */
   async confirmerPlanning(): Promise<void> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     const accuse = await this.api.post<AccuseReception>(`/api/espace-animateur/${jeton}/confirmation`, null);
     const view = this.vue();
     if (view) {
@@ -121,7 +121,7 @@ export class EspaceAnimateurService {
    * nothing else on the page can have moved because of the click.
    */
   async regenererAbonnement(): Promise<void> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     const reponse = await this.api.post<{ abonnementToken: string }>(
       `/api/espace-animateur/${jeton}/abonnement`, null);
     const view = this.vue();
@@ -142,14 +142,14 @@ export class EspaceAnimateurService {
    * nobody in mind. Read-only: it creates no demande.
    */
   async suggestionsEchange(creneauId: number, standId: string): Promise<SuggestionsEchangeView> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     return this.api.get<SuggestionsEchangeView>(
       `/api/espace-animateur/${jeton}/suggestions-echange`
         + `?creneauId=${creneauId}&standId=${encodeURIComponent(standId)}`);
   }
 
   async soumettre(nouvelles: NouvelleDemandeEchange[]): Promise<DemandeEchangeView[]> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     const soumises = await this.api.post<DemandeEchangeView[]>(
       `/api/espace-animateur/${jeton}/demandes`,
       nouvelles
@@ -160,7 +160,7 @@ export class EspaceAnimateurService {
 
   /** Withdraws one still-pending demande, then refreshes the list. */
   async annuler(demandeId: string): Promise<void> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     await this.api.post<void>(`/api/espace-animateur/${jeton}/demandes/${demandeId}/annulation`, null);
     this.demandes.set(
       await this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`)
@@ -176,7 +176,7 @@ export class EspaceAnimateurService {
    * requests already fire on entering the espace, and most visits never open
    * this tab. */
   async chargerDeclaration(): Promise<void> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     this.declaration.set(
       await this.api.get<DeclarationEspaceView>(`/api/espace-animateur/${jeton}/disponibilites`)
     );
@@ -188,13 +188,13 @@ export class EspaceAnimateurService {
    * before they apply it.
    */
   async declarer(nouvelle: NouvelleDeclaration): Promise<void> {
-    const jeton = this.jetonRequis();
+    const jeton = this.requireJeton();
     this.declaration.set(
       await this.api.post<DeclarationEspaceView>(`/api/espace-animateur/${jeton}/disponibilites`, nouvelle)
     );
   }
 
-  private jetonRequis(): string {
+  private requireJeton(): string {
     const jeton = this.jeton();
     if (!jeton) {
       throw new Error('Espace animateur non chargé');
