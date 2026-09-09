@@ -119,7 +119,7 @@ describe('colonnes et cellules', () => {
   });
 });
 
-describe('readCell', () => {
+describe('lireCellule', () => {
   it('lit un effectif, et trois façons d’écrire une case fermée', () => {
     expect(readCell('3')).toBe(3);
     expect(readCell(' 12 ')).toBe(12);

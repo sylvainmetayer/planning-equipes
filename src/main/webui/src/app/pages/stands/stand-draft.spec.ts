@@ -96,7 +96,7 @@ describe('basculerJour', () => {
   });
 });
 
-describe('datesFromText', () => {
+describe('datesDepuisTexte', () => {
   it('keeps the ISO dates and trims the spacing around them', () => {
     expect(datesFromText(' 2026-07-10 , 2026-07-11 ')).toEqual(['2026-07-10', '2026-07-11']);
   });

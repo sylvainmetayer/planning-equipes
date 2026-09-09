@@ -48,7 +48,7 @@ export class HoursPage {
   protected readonly columns = computed(() => ['animateur', ...(this.rapport()?.semaines ?? []), 'total']);
   protected readonly sort = signal<Sort>(NO_SORT);
   /** True as soon as the table is sorted on something other than its source order. */
-  protected readonly vueModifiee = computed(() => this.sort().active !== '' && this.sort().direction !== '');
+  protected readonly viewChanged = computed(() => this.sort().active !== '' && this.sort().direction !== '');
 
   /**
    * Weekly ceilings the table marks up. The point of this screen is to catch an

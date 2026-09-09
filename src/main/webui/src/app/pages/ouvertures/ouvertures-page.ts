@@ -109,7 +109,7 @@ export class OuverturesPage {
   protected readonly filtre = signal<FiltreOuvertures>('TOUS');
   protected readonly recherche = signal('');
   protected readonly view = signal<VueOuvertures>(
-    this.route.snapshot.queryParamMap.get('view') === 'saisie' ? 'SAISIR' : 'CONSULTER'
+    this.route.snapshot.queryParamMap.get('vue') === 'saisie' ? 'SAISIR' : 'CONSULTER'
   );
 
   /* ------------------------------- entry grid ------------------------------ */
@@ -143,7 +143,7 @@ export class OuverturesPage {
   private readonly anomaliesParStand = computed(() => anomaliesParStand(this.rapport()?.anomalies ?? []));
 
   constructor() {
-    keepViewInQueryParams(() => ({ view: optionalParam(this.view() === 'SAISIR' ? 'saisie' : '') }));
+    keepViewInQueryParams(() => ({ vue: optionalParam(this.view() === 'SAISIR' ? 'saisie' : '') }));
     void this.recharger();
   }
 

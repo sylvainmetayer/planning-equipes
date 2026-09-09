@@ -8,14 +8,14 @@
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <mat-button-toggle-group [value]="view()" (valueChange)="changeView($event)" hideSingleSelectionIndicator
-                             i18n-aria-label="@@ouvertures.view.label" aria-label="Vue">
+                             i18n-aria-label="@@ouvertures.vue.label" aria-label="Vue">
       <mat-button-toggle value="CONSULTER">
         <mat-icon>visibility</mat-icon>
-        <ng-container i18n="@@ouvertures.view.consulter">Consulter</ng-container>
+        <ng-container i18n="@@ouvertures.vue.consulter">Consulter</ng-container>
       </mat-button-toggle>
       <mat-button-toggle value="SAISIR">
         <mat-icon>grid_on</mat-icon>
-        <ng-container i18n="@@ouvertures.view.saisir">Saisir</ng-container>
+        <ng-container i18n="@@ouvertures.vue.saisir">Saisir</ng-container>
       </mat-button-toggle>
     </mat-button-toggle-group>
     @if (view() === 'SAISIR') {

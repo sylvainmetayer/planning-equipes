@@ -13,10 +13,10 @@
       <mat-icon>refresh</mat-icon>
       <ng-container i18n="@@common.refresh">Actualiser</ng-container>
     </button>
-    @if (vueModifiee()) {
+    @if (viewChanged()) {
       <button matButton type="button" (click)="reinitialiser()">
         <mat-icon>filter_alt_off</mat-icon>
-        <ng-container i18n="@@common.resetView">Réinitialiser la view</ng-container>
+        <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
       </button>
     }
   </mat-card-actions>

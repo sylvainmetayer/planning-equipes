@@ -14,10 +14,10 @@
       <mat-icon>refresh</mat-icon>
       <ng-container i18n="@@common.refresh">Actualiser</ng-container>
     </button>
-    @if (vueModifiee()) {
+    @if (viewChanged()) {
       <button matButton type="button" (click)="reinitialiser()">
         <mat-icon>filter_alt_off</mat-icon>
-        <ng-container i18n="@@fragilite.reset">Réinitialiser la view</ng-container>
+        <ng-container i18n="@@fragilite.reset">Réinitialiser la vue</ng-container>
       </button>
     }
   </mat-card-actions>
@@ -51,8 +51,8 @@
 
       <div class="fragilite-controles">
         <mat-button-toggle-group [value]="view()" (valueChange)="view.set($event)" hideSingleSelectionIndicator>
-          <mat-button-toggle value="ANIMATEURS" i18n="@@fragilite.view.animateurs">Animateurs</mat-button-toggle>
-          <mat-button-toggle value="COMPETENCES" i18n="@@fragilite.view.competences">Compétences rares</mat-button-toggle>
+          <mat-button-toggle value="ANIMATEURS" i18n="@@fragilite.vue.animateurs">Animateurs</mat-button-toggle>
+          <mat-button-toggle value="COMPETENCES" i18n="@@fragilite.vue.competences">Compétences rares</mat-button-toggle>
         </mat-button-toggle-group>
         <mat-button-toggle-group [value]="filtre()" (valueChange)="filtre.set($event)" hideSingleSelectionIndicator>
           <mat-button-toggle value="TOUS" i18n="@@fragilite.filtre.tous">Tous</mat-button-toggle>

@@ -170,7 +170,7 @@ export class RailJourPage {
   });
 
   /** True as soon as the filters differ from the ones this page opens on — the day itself is navigation, not a filter. */
-  protected readonly vueModifiee = computed(() => this.view() !== 'tous' || this.filtre().trim() !== '');
+  protected readonly viewChanged = computed(() => this.view() !== 'tous' || this.filtre().trim() !== '');
 
   /**
    * The line the grid hands the focus to (roving tabindex): one stop for the
@@ -252,7 +252,7 @@ export class RailJourPage {
     const jour = Number(params.get('jour'));
     this.jourSelectionne.set(Number.isFinite(jour) && jour > 0 ? jour : null);
     this.filtre.set(params.get('q') ?? '');
-    const view = params.get('view');
+    const view = params.get('vue');
     this.view.set(view === 'libres' || view === 'affectes' ? view : 'tous');
     void this.refresh();
     keepViewInQueryParams(() => {
@@ -262,7 +262,7 @@ export class RailJourPage {
         // The first day is the default, and a default is the absence of its param.
         jour: courant && premier && courant.jour !== premier.jour ? String(courant.jour) : null,
         q: optionalParam(this.filtre()),
-        view: this.view() === 'tous' ? null : this.view()
+        vue: this.view() === 'tous' ? null : this.view()
       };
     });
   }

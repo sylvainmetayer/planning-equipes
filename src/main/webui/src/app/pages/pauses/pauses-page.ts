@@ -94,7 +94,7 @@ export class PausesPage {
   );
   protected readonly synthese = computed(() => syntheseDuJour(this.rapport(), this.jourCourant()?.date ?? null));
   /** True as soon as a filter narrows the day; the day itself is navigation, not a filter. */
-  protected readonly vueModifiee = computed(() => this.recherche().trim() !== '' || this.sansRelaisSeulement());
+  protected readonly viewChanged = computed(() => this.recherche().trim() !== '' || this.sansRelaisSeulement());
 
   protected readonly heure = heure;
   protected readonly libelleRelais = libelleRelais;
@@ -105,7 +105,7 @@ export class PausesPage {
     const params = this.route.snapshot.queryParamMap;
     this.jourSelectionne.set(params.get('jour'));
     this.recherche.set(params.get('q') ?? '');
-    this.sansRelaisSeulement.set(params.get('view') === 'sans-relais');
+    this.sansRelaisSeulement.set(params.get('vue') === 'sans-relais');
     void this.recharger();
     keepViewInQueryParams(() => {
       const courant = this.jourCourant();
@@ -114,7 +114,7 @@ export class PausesPage {
         // The first day is the default, and a default is the absence of its param.
         jour: courant && premier && courant.date !== premier.date ? courant.date : null,
         q: optionalParam(this.recherche()),
-        view: this.sansRelaisSeulement() ? 'sans-relais' : null
+        vue: this.sansRelaisSeulement() ? 'sans-relais' : null
       };
     });
   }

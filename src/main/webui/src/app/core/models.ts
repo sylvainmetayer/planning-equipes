@@ -183,7 +183,7 @@ export interface FenetreHoraire {
 /**
  * What `POST /api/stands/compactage-horaires` reports, per stand: dated windows
  * before, rules and exceptions after, plus why a stand was left alone. A call
- * with `apply=false` returns the same shape without writing anything.
+ * with `appliquer=false` returns the same shape without writing anything.
  */
 export interface LigneCompactage {
   standId: string;
@@ -594,7 +594,7 @@ export interface VerrouillagePlanning {
 }
 
 /**
- * Real scale of the problem the next solve will build, from `/api/planning/scale`
+ * Real scale of the problem the next solve will build, from `/api/planning/volumetrie`
  * (mirrors what Timefold's own "Problem scale" log line reports): `posteCount` is one
  * entry per required seat, not per stand, and `contrainteAdHocCount` are the extra
  * ad hoc rules layered on top. `hoursToFill` sums the effective duration of every
@@ -626,8 +626,8 @@ export interface HardMediumSoftScore {
   /**
    * Sent by the server and missing from here until now: the frontend was blind
    * to this field (OpenAPI contract, `docs/schema/openapi.json`). Declared
-   * optional rather than required because the schema carries no `required` at
-   * all — asserting a guarantee the contract does not express would be an
+   * optional rather than required because the schema carries no `required` for
+   * it — asserting a guarantee the contract does not express would be an
    * invention.
    */
   feasible?: boolean;

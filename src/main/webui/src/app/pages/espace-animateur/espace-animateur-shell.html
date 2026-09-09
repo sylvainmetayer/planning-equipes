@@ -2,8 +2,8 @@
   <app-brand-logo />
   <span class="app-title" i18n="@@espace.title">Espace animateur</span>
   <span class="app-toolbar-spacer"></span>
-  @if (espace.view(); as view) {
-    <span class="espace-identite">{{ view.prenom }} {{ view.nom }}</span>
+  @if (espace.view(); as vue) {
+    <span class="espace-identite">{{ vue.prenom }} {{ vue.nom }}</span>
   }
   <!-- Repliés dans un menu : sur un téléphone, trois libellés de plus dans la
        barre repoussaient l'identité et le sélecteur de langue hors de l'écran.

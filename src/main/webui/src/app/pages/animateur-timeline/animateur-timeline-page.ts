@@ -187,7 +187,7 @@ export class AnimateurTimelinePage {
     // bookmarked/shared — « regarde le planning d'Untel » is a link, not a
     // description. This page had its own copy of that effect, written before
     // the shared helper existed and still navigating on every change; see
-    // `docs/decisions/0018-ecrire-l-url-de-view-sans-naviguer.md`.
+    // `docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md`.
     keepViewInQueryParams(() => ({ animateur: optionalParam(this.selectedAnimateurId()) }));
   }
 

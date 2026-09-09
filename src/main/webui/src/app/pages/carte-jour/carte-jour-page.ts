@@ -129,7 +129,7 @@ export class CarteJourPage {
   );
 
   /** True as soon as the cursor left the day's opening, or a place was picked. */
-  protected readonly vueModifiee = computed(
+  protected readonly viewChanged = computed(
     () => this.minutes() !== (this.jourCourant()?.debutMinutes ?? 0) || this.selection() !== null
   );
 

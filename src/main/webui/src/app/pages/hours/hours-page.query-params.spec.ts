@@ -25,7 +25,7 @@ const RAPPORT: HeuresRapport = {
 
 type PageInternals = {
   sort: WritableSignal<Sort>;
-  vueModifiee: Signal<boolean>;
+  viewChanged: Signal<boolean>;
   sortedAnimateurs: Signal<HeuresAnimateur[]>;
   reinitialiserVue(): void;
 };
@@ -63,7 +63,7 @@ describe('HoursPage query-param sync', () => {
     await fixture.whenStable();
 
     expect(page.sort()).toEqual({ active: '', direction: '' });
-    expect(page.vueModifiee()).toBe(false);
+    expect(page.viewChanged()).toBe(false);
     expect(page.sortedAnimateurs().map((row) => row.nom)).toEqual(['Bob', 'Alice']);
   });
 
@@ -92,7 +92,7 @@ describe('HoursPage query-param sync', () => {
   it('clears both params once the sort is reset', async () => {
     const { fixture, replaceState, page } = setUp({ sort: 'total', dir: 'desc' });
     await fixture.whenStable();
-    expect(page.vueModifiee()).toBe(true);
+    expect(page.viewChanged()).toBe(true);
     replaceState.mockClear();
 
     page.reinitialiserVue();

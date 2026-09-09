@@ -350,7 +350,7 @@ describe('parseFenetres', () => {
   });
 });
 
-describe('normaliseHour', () => {
+describe('normaliserHeure', () => {
   it('ramène toute écriture usuelle à HH:MM', () => {
     expect(normaliseHour('9')).toBe('09:00');
     expect(normaliseHour('9h')).toBe('09:00');

@@ -44,7 +44,7 @@ function creneau(id: number, date: string, heureDebut: string, heureFin: string)
   return { id, jour: 1, date, heureDebut, heureFin };
 }
 
-describe('isInputField', () => {
+describe('estChampDeSaisie', () => {
   it('holds back the shortcuts inside every kind of text entry', () => {
     expect(isInputField(element('input'))).toBe(true);
     expect(isInputField(element('textarea'))).toBe(true);

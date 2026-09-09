@@ -94,7 +94,7 @@ export class EspaceEchangesPage {
   protected readonly suggestionsTronquees = computed(() => this.suggestions()?.listeTronquee ?? false);
 
   /** Closed foire = read-only history: no submission form, no withdrawals. */
-  protected readonly foireOuverte = computed(() => this.espace.view()?.foireOuverte ?? true);
+  protected readonly foireOpen = computed(() => this.espace.view()?.foireOuverte ?? true);
 
   /**
    * The day the foire opens, when it is shut only because it has not started
@@ -107,7 +107,7 @@ export class EspaceEchangesPage {
   protected readonly ouvertureAVenir = computed(() => this.espace.view()?.foireOuvreLe ?? null);
 
   /** Last day demandes are accepted, `null` when the window has no end. */
-  protected readonly foireFermeLe = computed(() => this.espace.view()?.foireFermeLe ?? null);
+  protected readonly foireClosesOn = computed(() => this.espace.view()?.foireFermeLe ?? null);
 
   protected readonly demandes = computed<DemandeRow[]>(() =>
     this.espace.demandes().map((demande) => ({

@@ -210,7 +210,7 @@ export function deplacement(
  * A block pasted from a spreadsheet, laid from `depuis` over the displayed
  * rows and columns: one line per stand, one tab-separated value per créneau.
  * Cells past the last row or column are dropped, a value that is not one
- * (`readCell`) leaves its cell alone.
+ * (`lireCellule`) leaves its cell alone.
  */
 export function collerBloc(
   cellules: Cellules,

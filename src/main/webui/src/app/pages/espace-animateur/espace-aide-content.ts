@@ -48,7 +48,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.espace.intro:L'organisation construit le planning de l'événement en répartissant les animateurs sur les stands, créneau par créneau. Cet espace est votre view personnelle de ce planning : vos créneaux à vous, et rien d'autre.`
+          text: $localize`:@@espace.aide.espace.intro:L'organisation construit le planning de l'événement en répartissant les animateurs sur les stands, créneau par créneau. Cet espace est votre vue personnelle de ce planning : vos créneaux à vous, et rien d'autre.`
         },
         {
           kind: 'list',

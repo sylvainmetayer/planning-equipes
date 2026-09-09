@@ -85,7 +85,7 @@ export class ReposPage {
   });
 
   /** True as soon as the view differs from the one this page opens on. */
-  protected readonly vueModifiee = computed(() => this.filtre().trim() !== '' || this.sansReposSeulement());
+  protected readonly viewChanged = computed(() => this.filtre().trim() !== '' || this.sansReposSeulement());
 
   protected readonly animateurColumnLabel = $localize`:@@repos.column.animateur:Animateur`;
   protected readonly sansReposLabel = $localize`:@@repos.row.sansRepos:Aucun jour de repos sur tout l'événement`;

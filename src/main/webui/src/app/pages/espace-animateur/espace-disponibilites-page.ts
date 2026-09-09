@@ -68,7 +68,7 @@ export class EspaceDisponibilitesPage {
   protected readonly modifiee = computed(() => declarationModifiee(this.view(), this.brouillon()));
 
   /** No créneau exists yet: the days cannot be offered, but the wishes still can. */
-  protected readonly sansJours = computed(() => (this.view()?.joursEvenement.length ?? 0) === 0);
+  protected readonly noDays = computed(() => (this.view()?.joursEvenement.length ?? 0) === 0);
 
   /**
    * The day collection opens, when it is closed only because it has not

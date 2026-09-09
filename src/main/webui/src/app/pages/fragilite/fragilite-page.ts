@@ -84,18 +84,18 @@ export class FragilitePage {
     filtrerCompetences(this.rapport(), this.filtre(), this.recherche()),
   );
   /** True as soon as the screen shows something other than its default view. */
-  protected readonly vueModifiee = computed(
+  protected readonly viewChanged = computed(
     () => this.view() !== 'ANIMATEURS' || this.filtre() !== 'TOUS' || this.recherche().trim() !== '',
   );
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
-    this.view.set(lireVue(params.get('view')));
+    this.view.set(lireVue(params.get('vue')));
     this.filtre.set(lireFiltre(params.get('filtre')));
     this.recherche.set(params.get('q') ?? '');
     void this.recharger();
     keepViewInQueryParams(() => ({
-      view: this.view() === 'ANIMATEURS' ? null : this.view(),
+      vue: this.view() === 'ANIMATEURS' ? null : this.view(),
       filtre: this.filtre() === 'TOUS' ? null : this.filtre(),
       q: optionalParam(this.recherche()),
     }));

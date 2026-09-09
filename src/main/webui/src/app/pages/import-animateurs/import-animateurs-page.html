@@ -49,10 +49,10 @@
     @if (nomFichier()) {
       <p class="empty-hint">
         <span i18n="@@importCsv.fichier.nom">Fichier chargé :</span> {{ nomFichier() }}
-        @if (rapport(); as view) {
+        @if (rapport(); as vue) {
           <span i18n="@@importCsv.fichier.detail"
-            >&nbsp;— séparateur « {{ view.separator }} », {{ view.columns.length }} colonne(s),
-            {{ view.total }} ligne(s) de données.</span
+            >&nbsp;— séparateur « {{ vue.separator }} », {{ vue.columns.length }} colonne(s),
+            {{ vue.total }} ligne(s) de données.</span
           >
         }
       </p>
@@ -138,18 +138,18 @@
   </mat-card>
 }
 
-@if (rapport(); as view) {
+@if (rapport(); as vue) {
   <mat-card class="page-card" appearance="outlined">
     <mat-card-header>
       <mat-card-title>
-        @if (view.applied) {
+        @if (vue.applied) {
           <ng-container i18n="@@importCsv.rapport.titreApplique">4. Ce qui a été importé</ng-container>
         } @else {
           <ng-container i18n="@@importCsv.rapport.titrePreview">4. Ce que l'import ferait</ng-container>
         }
       </mat-card-title>
       <mat-card-subtitle>
-        @if (view.applied) {
+        @if (vue.applied) {
           <ng-container i18n="@@importCsv.rapport.sousTitreApplique"
             >Import effectué en une seule transaction : ces chiffres sont ceux de la base.</ng-container
           >
@@ -165,31 +165,31 @@
       <ul class="import-compteurs">
         <li>
           <span i18n="@@importCsv.rapport.acceptees">Lignes acceptées</span> :
-          <strong>{{ view.accepted }}</strong> / {{ view.total }}
+          <strong>{{ vue.accepted }}</strong> / {{ vue.total }}
         </li>
         <li>
           <span i18n="@@importCsv.rapport.rejetees">Lignes rejetées</span> :
-          <strong>{{ view.rejected }}</strong>
+          <strong>{{ vue.rejected }}</strong>
         </li>
         <li>
           <span i18n="@@importCsv.rapport.creations">Fiches créées</span> :
-          <strong>{{ view.created }}</strong>
+          <strong>{{ vue.created }}</strong>
         </li>
         <li>
           <span i18n="@@importCsv.rapport.majs">Fiches mises à jour</span> :
-          <strong>{{ view.updated }}</strong>
+          <strong>{{ vue.updated }}</strong>
         </li>
         <li>
           <span i18n="@@importCsv.rapport.suppressions">Fiches supprimées</span> :
-          <strong>{{ view.deleted }}</strong>
+          <strong>{{ vue.deleted }}</strong>
         </li>
       </ul>
 
-      @for (avertissement of view.warnings; track avertissement) {
+      @for (avertissement of vue.warnings; track avertissement) {
         <p class="empty-hint">{{ avertissement }}</p>
       }
 
-      @if (view.rows.length === 0) {
+      @if (vue.rows.length === 0) {
         <p class="empty-hint" i18n="@@importCsv.rapport.vide">
           Le fichier ne porte aucune ligne de données sous son en-tête.
         </p>
@@ -205,7 +205,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (ligne of view.rows; track ligne.line) {
+              @for (ligne of vue.rows; track ligne.line) {
                 <tr [class]="classeAction(ligne.action)" [attr.data-ligne]="ligne.line">
                   <td>{{ ligne.line }}</td>
                   <td>
@@ -250,7 +250,7 @@
       }
     </mat-card-content>
     <mat-card-actions class="card-actions">
-      @if (!view.applied) {
+      @if (!vue.applied) {
         <button matButton="filled" (click)="importer()" [disabled]="!peutImporter()">
           <mat-icon>done_all</mat-icon>
           <span i18n="@@importCsv.importer">Importer</span>

@@ -132,7 +132,7 @@ type PageInternals = {
   brouillons: WritableSignal<BrouillonDemande[]>;
   envoiEnCours: Signal<boolean>;
   formulaireComplet: Signal<boolean>;
-  foireOuverte: Signal<boolean>;
+  foireOpen: Signal<boolean>;
   demandes: Signal<{ id: string; statutLabel: string; statutClasse: string }[]>;
   recuesEnAttente: Signal<{ id: string }[]>;
   choisirCible: (cibleId: string) => Promise<void>;
@@ -620,10 +620,10 @@ describe('EspaceEchangesPage', () => {
 
     it('treats a closed foire as read-only, and an unloaded espace as open', () => {
       espaceView.set(view({ foireOuverte: false }));
-      expect(createPage().foireOuverte()).toBe(false);
+      expect(createPage().foireOpen()).toBe(false);
 
       espaceView.set(null);
-      expect(createPage().foireOuverte()).toBe(true);
+      expect(createPage().foireOpen()).toBe(true);
     });
   });
 

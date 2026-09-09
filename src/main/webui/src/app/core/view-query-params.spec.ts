@@ -91,11 +91,11 @@ describe('keepViewInQueryParams', () => {
     return { location, navigations };
   }
 
-  it("écrit l'état de view dans la barre d'adresse", () => {
-    const { location } = monter(() => ({ q: 'Alice', view: 'COMPETENCES' }));
+  it("écrit l'état de vue dans la barre d'adresse", () => {
+    const { location } = monter(() => ({ q: 'Alice', vue: 'COMPETENCES' }));
 
     expect(location.path()).toContain('q=Alice');
-    expect(location.path()).toContain('view=COMPETENCES');
+    expect(location.path()).toContain('vue=COMPETENCES');
   });
 
   it("ne déclenche aucune navigation du routeur — c'est elle qui coûtait le focus", () => {

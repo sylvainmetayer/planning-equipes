@@ -30,7 +30,7 @@ function animateur(id: string, prenom: string, nom: string): Animateur {
 type PageInternals = {
   filtre: WritableSignal<string>;
   sort: WritableSignal<Sort>;
-  vueModifiee: Signal<boolean>;
+  viewChanged: Signal<boolean>;
   animateursFiltres: Signal<Animateur[]>;
   reinitialiserVue(): void;
 };
@@ -72,7 +72,7 @@ describe('AnimateursPage query-param sync', () => {
 
     expect(page.filtre()).toBe('');
     expect(page.sort()).toEqual({ active: '', direction: '' });
-    expect(page.vueModifiee()).toBe(false);
+    expect(page.viewChanged()).toBe(false);
   });
 
   it('ignores a sort whose direction is not a direction', () => {
@@ -91,13 +91,13 @@ describe('AnimateursPage query-param sync', () => {
   it('clears every param once the view is reset', async () => {
     const { fixture, replaceState, page } = setUp({ q: 'durand', sort: 'majorite', dir: 'asc' });
     await fixture.whenStable();
-    expect(page.vueModifiee()).toBe(true);
+    expect(page.viewChanged()).toBe(true);
     replaceState.mockClear();
 
     page.reinitialiserVue();
     await fixture.whenStable();
 
-    expect(page.vueModifiee()).toBe(false);
+    expect(page.viewChanged()).toBe(false);
     expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
   });
 });

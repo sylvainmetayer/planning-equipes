@@ -94,7 +94,7 @@ export class HeatmapPage {
   protected readonly view = signal<HeatmapView>('stand');
   protected readonly animateurFilter = signal('');
   /** True as soon as the view differs from the one this page opens on. */
-  protected readonly vueModifiee = computed(() => this.view() !== 'stand' || this.animateurFilter().trim() !== '');
+  protected readonly viewChanged = computed(() => this.view() !== 'stand' || this.animateurFilter().trim() !== '');
   protected readonly standColumnLabel = $localize`:@@heatmap.column.stand:Stand`;
   protected readonly animateurColumnLabel = $localize`:@@heatmap.column.animateur:Animateur`;
   /** Typologie referential, only used to turn ids into display labels. */

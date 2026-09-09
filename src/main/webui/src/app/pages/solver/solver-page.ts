@@ -340,7 +340,7 @@ export class SolverPage {
    * Volumetry of the problem Timefold is about to explore, recomputed live as
    * `referenceData`'s signals change (a CRUD edit, a sample load, a CSV/SQL
    * import...). `animateurTotal`/`posteTotal`/`contrainteAdHocTotal` come from
-   * `/api/planning/scale`, built server-side the exact same way an actual
+   * `/api/planning/volumetrie`, built server-side the exact same way an actual
    * solve is (one poste per required seat, not per stand) so they never drift
    * from what the solver logs report. `créneauTotal` counts the
    * edition's slots — exactly what the solver consumes.

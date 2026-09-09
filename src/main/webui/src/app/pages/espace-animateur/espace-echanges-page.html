@@ -1,4 +1,4 @@
-@if (!foireOuverte()) {
+@if (!foireOpen()) {
   @if (ouvertureAVenir(); as debut) {
     <!-- « Pas encore ouverte » et « fermée » sont le même booléen côté serveur
          et disent le contraire à celui qui lit : un animateur à qui on annonce
@@ -21,7 +21,7 @@
       </p>
     </div>
   }
-} @else if (foireFermeLe(); as fin) {
+} @else if (foireClosesOn(); as fin) {
   <p class="espace-foire-echeance">
     <mat-icon inline>event_available</mat-icon>
     <span i18n="@@espace.echanges.foireJusquAu"
@@ -29,7 +29,7 @@
     >
   </p>
 }
-@if (foireOuverte()) {
+@if (foireOpen()) {
 <mat-card class="espace-form" appearance="outlined">
   <mat-card-header>
     <mat-card-title i18n="@@espace.echanges.formTitre">Proposer un échange</mat-card-title>
@@ -238,7 +238,7 @@
           Votre accord envoie la demande à l'organisation, qui tranche — rien n'est échangé sans sa
           validation. Décliner clôt la demande.
         </p>
-        @if (foireOuverte()) {
+        @if (foireOpen()) {
           <div class="espace-recue-actions">
             <button matButton="filled" (click)="accorder(demande)">
               <mat-icon>thumb_up</mat-icon>
@@ -304,7 +304,7 @@
             {{ demande.commentaireAdmin }}
           </p>
         }
-        @if ((demande.statut === 'PROPOSEE' || demande.statut === 'EN_ATTENTE_CIBLE') && foireOuverte()) {
+        @if ((demande.statut === 'PROPOSEE' || demande.statut === 'EN_ATTENTE_CIBLE') && foireOpen()) {
           <button matButton (click)="annuler(demande)">
             <mat-icon>undo</mat-icon>
             <span i18n="@@espace.echanges.annuler">Annuler cette demande</span>

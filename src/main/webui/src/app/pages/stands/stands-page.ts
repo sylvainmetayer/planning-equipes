@@ -147,7 +147,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
   }
 
   private async lancerCompactage(): Promise<void> {
-    const apercu = await this.api.post<RapportCompactage>('/api/stands/compactage-horaires?apply=false', {});
+    const apercu = await this.api.post<RapportCompactage>('/api/stands/compactage-horaires?appliquer=false', {});
     if (apercu.standsCompactes === 0) {
       this.notifications.notify({
         title: $localize`:@@stands.compactage.rienATitle:Aucun horaire à compacter`,
@@ -164,7 +164,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
     if (!confirme) {
       return;
     }
-    const rapport = await this.api.post<RapportCompactage>('/api/stands/compactage-horaires?apply=true', {});
+    const rapport = await this.api.post<RapportCompactage>('/api/stands/compactage-horaires?appliquer=true', {});
     await this.crud.reload();
     this.notifications.notify({
       title: $localize`:@@stands.compactage.doneTitle:Horaires compactés`,

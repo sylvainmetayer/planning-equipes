@@ -77,7 +77,7 @@ describe('EspaceAnimateurService', () => {
     service = TestBed.inject(EspaceAnimateurService);
   });
 
-  it('charge la view et les demandes du jeton, et vide toute erreur passée', async () => {
+  it('charge la vue et les demandes du jeton, et vide toute erreur passée', async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('D1')] : view()
     );
@@ -93,7 +93,7 @@ describe('EspaceAnimateurService', () => {
     expect(service.chargement()).toBe(false);
   });
 
-  it('un échec de chargement pose le message et remet la view à zéro', async () => {
+  it('un échec de chargement pose le message et remet la vue à zéro', async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('D1')] : view()
     );

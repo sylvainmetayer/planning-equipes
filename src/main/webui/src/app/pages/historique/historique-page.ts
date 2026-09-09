@@ -75,7 +75,7 @@ export class HistoriquePage {
   protected readonly journees = computed(() => parJournee(this.filtrees()));
 
   /** True as soon as the screen shows something other than its default view. */
-  protected readonly vueModifiee = computed(
+  protected readonly viewChanged = computed(
     () =>
       this.acteur() !== 'TOUS' ||
       this.resultat() !== 'TOUS' ||

@@ -59,7 +59,7 @@ export class EchangesPage {
   protected readonly impactEnCours = signal<string | null>(null);
   protected readonly decisionEnCours = signal<string | null>(null);
   /** `null` while the configuration has not been fetched yet. */
-  protected readonly foireOuverte = signal<boolean | null>(null);
+  protected readonly foireOpen = signal<boolean | null>(null);
 
   /**
    * Optional bounds of the foire, same shape as the collection window of issue
@@ -115,7 +115,7 @@ export class EchangesPage {
 
   /** One place to fold the server's answer back into the screen. */
   private apply(configuration: ConfigurationFoire): void {
-    this.foireOuverte.set(configuration.foireOuverte);
+    this.foireOpen.set(configuration.foireOuverte);
     this.debut.set(configuration.debut);
     this.fin.set(configuration.fin);
     this.horsFenetre.set(configuration.foireOuverte && !configuration.ouverteAujourdhui);
@@ -132,7 +132,7 @@ export class EchangesPage {
 
   /** Saves the bounds without touching the switch. */
   protected async saveWindow(): Promise<void> {
-    await this.basculerFoire(this.foireOuverte() === true);
+    await this.basculerFoire(this.foireOpen() === true);
   }
 
   /**

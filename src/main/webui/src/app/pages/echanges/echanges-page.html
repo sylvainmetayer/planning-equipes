@@ -13,13 +13,13 @@
   </button>
 </div>
 
-@if (foireOuverte() !== null) {
-  <div class="echanges-foire" [class.echanges-foire-fermee]="foireOuverte() === false">
-    <mat-slide-toggle [checked]="foireOuverte() === true" [disabled]="foireEnCours()"
+@if (foireOpen() !== null) {
+  <div class="echanges-foire" [class.echanges-foire-fermee]="foireOpen() === false">
+    <mat-slide-toggle [checked]="foireOpen() === true" [disabled]="foireEnCours()"
                       (change)="basculerFoire($event.checked)">
       <ng-container i18n="@@echanges.foireToggle">Foire au planning ouverte</ng-container>
     </mat-slide-toggle>
-    @if (foireOuverte() === false) {
+    @if (foireOpen() === false) {
       <span class="echanges-foire-etat" i18n="@@echanges.foireEtatFerme">
         Fermée : les animateurs consultent leur planning (et le téléchargent), sans pouvoir
         proposer ni annuler d'échange.

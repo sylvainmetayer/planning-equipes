@@ -70,7 +70,7 @@ export class AnimateursPage {
   /** Quick filter of the table: id, identity and compétences. Applied before the sort. */
   protected readonly filtre = signal('');
   /** True as soon as the table shows something other than the whole referential, unsorted. */
-  protected readonly vueModifiee = computed(
+  protected readonly viewChanged = computed(
     () => this.filtre().trim() !== '' || (this.sort().active !== '' && this.sort().direction !== '')
   );
   protected readonly animateursFiltres = computed(() =>
@@ -161,7 +161,7 @@ export class AnimateursPage {
       });
     } catch {
       this.notifications.notify({
-        title: $localize`:@@animateurs.lienCopieEchec:Impossible de copy le lien`,
+        title: $localize`:@@animateurs.lienCopieEchec:Impossible de copier le lien`,
         message: lien,
         variant: 'warning'
       });

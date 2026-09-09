@@ -15,7 +15,7 @@ import { HeatmapPage, HeatmapView } from './heatmap-page';
 type PageInternals = {
   view: Signal<HeatmapView>;
   animateurFilter: WritableSignal<string>;
-  vueModifiee: Signal<boolean>;
+  viewChanged: Signal<boolean>;
   setView(view: HeatmapView): void;
   reinitialiserVue(): void;
 };
@@ -52,7 +52,7 @@ describe('HeatmapPage query-param sync', () => {
 
     expect(page.view()).toBe('stand');
     expect(page.animateurFilter()).toBe('');
-    expect(page.vueModifiee()).toBe(false);
+    expect(page.viewChanged()).toBe(false);
   });
 
   it('ignores a view this page does not know, instead of showing a grid under the wrong toggle', () => {
@@ -72,13 +72,13 @@ describe('HeatmapPage query-param sync', () => {
   it('clears both params from the URL once the view is reset', async () => {
     const { fixture, replaceState, page } = setUp({ view: 'animateur', q: 'durand' });
     await fixture.whenStable();
-    expect(page.vueModifiee()).toBe(true);
+    expect(page.viewChanged()).toBe(true);
     replaceState.mockClear();
 
     page.reinitialiserVue();
     await fixture.whenStable();
 
-    expect(page.vueModifiee()).toBe(false);
+    expect(page.viewChanged()).toBe(false);
     expect(replaceState).toHaveBeenLastCalledWith('/heatmap');
   });
 

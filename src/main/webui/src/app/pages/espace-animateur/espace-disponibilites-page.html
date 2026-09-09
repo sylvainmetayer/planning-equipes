@@ -6,7 +6,7 @@
       <p i18n="@@espace.dispo.intro">
         Dites à l'organisation les jours où vous ne pouvez pas venir, et les types de jeux que vous
         aimeriez animer. Ce que vous envoyez est une <strong>proposition</strong> : l'organisation la
-        relit avant de l'apply.
+        relit avant de l'appliquer.
       </p>
       @if (declaration.collecteOuverte) {
         <p class="espace-dispo-fenetre">
@@ -62,7 +62,7 @@
   @if (declaration.collecteOuverte) {
     <section class="espace-dispo-section">
       <h2 i18n="@@espace.dispo.jours.titre">Les jours où je ne peux pas venir</h2>
-      @if (sansJours()) {
+      @if (noDays()) {
         <p class="espace-vide" i18n="@@espace.dispo.jours.vide">
           Les dates de l'événement ne sont pas encore connues : vous pouvez déjà déclarer vos souhaits.
         </p>

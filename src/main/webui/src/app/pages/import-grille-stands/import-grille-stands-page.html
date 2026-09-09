@@ -29,7 +29,7 @@
         <mat-icon>download</mat-icon>
         <span i18n="@@importGrille.fichier.exemple">Télécharger la grille actuelle comme modèle</span>
       </button>
-      <a matButton routerLink="/ouvertures" [queryParams]="{ view: 'saisie' }">
+      <a matButton routerLink="/ouvertures" [queryParams]="{ vue: 'saisie' }">
         <mat-icon>grid_on</mat-icon>
         <span i18n="@@importGrille.fichier.versGrille">La saisir à l'écran plutôt</span>
       </a>
@@ -54,8 +54,8 @@
     @if (nomFichier()) {
       <p class="empty-hint">
         <span i18n="@@importCsv.fichier.nom">Fichier chargé :</span> {{ nomFichier() }}
-        @if (rapport(); as view) {
-          <span i18n="@@importGrille.fichier.detail">&nbsp;— séparateur « {{ view.separator }} », {{ colonnesReconnues().length }} colonne(s) reconnue(s), {{ view.total }} ligne(s) de stand.</span>
+        @if (rapport(); as vue) {
+          <span i18n="@@importGrille.fichier.detail">&nbsp;— séparateur « {{ vue.separator }} », {{ colonnesReconnues().length }} colonne(s) reconnue(s), {{ vue.total }} ligne(s) de stand.</span>
         }
       </p>
     }
@@ -68,7 +68,7 @@
   </mat-card-content>
 </mat-card>
 
-@if (rapport(); as view) {
+@if (rapport(); as vue) {
   <mat-card class="page-card" appearance="outlined">
     <mat-card-header>
       <mat-card-title i18n="@@importGrille.colonnes.titre">2. Les colonnes</mat-card-title>
@@ -81,7 +81,7 @@
       <ul class="import-compteurs">
         <li><span i18n="@@importGrille.colonnes.reconnues">Colonnes reconnues</span> : <strong>{{ colonnesReconnues().length }}</strong></li>
         <li><span i18n="@@importGrille.colonnes.ignorees">Colonnes ignorées</span> : <strong>{{ colonnesIgnorees().length }}</strong></li>
-        <li><span i18n="@@importGrille.colonnes.absents">Créneaux sans colonne</span> : <strong>{{ view.creneauxAbsents.length }}</strong></li>
+        <li><span i18n="@@importGrille.colonnes.absents">Créneaux sans colonne</span> : <strong>{{ vue.creneauxAbsents.length }}</strong></li>
         @if (colonnesPartagees().length > 0) {
           <li><span i18n="@@importGrille.colonnes.familles">Colonnes posées sur plusieurs créneaux d'une même bande</span> :
             <strong>{{ colonnesPartagees().length }}</strong></li>
@@ -94,7 +94,7 @@
           }
         </ul>
       }
-      @for (avertissement of view.warnings; track avertissement) {
+      @for (avertissement of vue.warnings; track avertissement) {
         <p class="empty-hint">{{ avertissement }}</p>
       }
     </mat-card-content>
@@ -103,14 +103,14 @@
   <mat-card class="page-card" appearance="outlined">
     <mat-card-header>
       <mat-card-title>
-        @if (view.applied) {
+        @if (vue.applied) {
           <ng-container i18n="@@importGrille.rapport.titreApplique">3. Ce qui a été importé</ng-container>
         } @else {
           <ng-container i18n="@@importGrille.rapport.titrePreview">3. Ce que l'import ferait</ng-container>
         }
       </mat-card-title>
       <mat-card-subtitle>
-        @if (view.applied) {
+        @if (vue.applied) {
           <ng-container i18n="@@importCsv.rapport.sousTitreApplique">Import effectué en une seule transaction : ces chiffres sont ceux de la base.</ng-container>
         } @else {
           <ng-container i18n="@@importCsv.rapport.sousTitrePreview">Aucune écriture n'a eu lieu. Rien ne part en base tant que vous n'avez pas cliqué sur « Importer ».</ng-container>
@@ -119,10 +119,10 @@
     </mat-card-header>
     <mat-card-content>
       <ul class="import-compteurs">
-        <li><span i18n="@@importGrille.rapport.acceptees">Stands acceptés</span> : <strong>{{ view.accepted }}</strong> / {{ view.total }}</li>
-        <li><span i18n="@@importGrille.rapport.rejetees">Lignes rejetées</span> : <strong>{{ view.rejected }}</strong></li>
+        <li><span i18n="@@importGrille.rapport.acceptees">Stands acceptés</span> : <strong>{{ vue.accepted }}</strong> / {{ vue.total }}</li>
+        <li><span i18n="@@importGrille.rapport.rejetees">Lignes rejetées</span> : <strong>{{ vue.rejected }}</strong></li>
       </ul>
-      @if (view.rows.length === 0) {
+      @if (vue.rows.length === 0) {
         <p class="empty-hint" i18n="@@importGrille.rapport.vide">Le fichier ne porte aucune ligne de stand sous ses en-têtes.</p>
       } @else {
         <div class="table-wrapper">
@@ -136,7 +136,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (ligne of view.rows; track ligne.line) {
+              @for (ligne of vue.rows; track ligne.line) {
                 <tr [class]="classeAction(ligne.action)" [attr.data-ligne]="ligne.line">
                   <td>{{ ligne.line }}</td>
                   <td>
@@ -170,7 +170,7 @@
           </table>
         </div>
       }
-      @if (!view.applied) {
+      @if (!vue.applied) {
         <div class="card-actions">
           <button matButton="filled" (click)="importer()" [disabled]="!peutImporter()">
             <mat-icon>publish</mat-icon>
