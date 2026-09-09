@@ -76,7 +76,6 @@
         }
       },
       "ActiveRequest" : {
-        "required" : [ "active" ],
         "type" : "object",
         "properties" : {
           "active" : {
@@ -900,7 +899,7 @@
         }
       },
       "ConfigurationFoire" : {
-        "required" : [ "foireOuverte", "ouverteAujourdhui" ],
+        "required" : [ "foireOuverte" ],
         "type" : "object",
         "properties" : {
           "foireOuverte" : {
@@ -1311,7 +1310,6 @@
         }
       },
       "DateJourJView" : {
-        "required" : [ "modifiable" ],
         "type" : "object",
         "properties" : {
           "dateDuJour" : {
