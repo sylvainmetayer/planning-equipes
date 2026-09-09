@@ -469,6 +469,18 @@ public final class ScenarioYamlReader {
     private static Map<String, Object> parserYaml(InputStream inputStream) throws IOException {
         LoaderOptions loaderOptions = new LoaderOptions();
         loaderOptions.setCodePointLimit(Integer.MAX_VALUE);
+        // SnakeYAML caps aliases at 50 by default, as a billion-laughs guard.
+        // Our own exporter used to emit one anchor and an alias per animateur
+        // sharing the same list — 152 of them on a real edition — so the
+        // application refused to re-import files it had itself produced, with
+        // a message about aliases that says nothing to the operator who reads
+        // it. The exporter no longer emits any (fbe062e6), but the files
+        // people already downloaded are still on their disks.
+        //
+        // Raised rather than lifted: an alias per row leaves headroom for an
+        // edition ten times the size of the real one, and the guard still
+        // stops a file whose aliases nest into an expansion bomb.
+        loaderOptions.setMaxAliasesForCollections(10_000);
         Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(loaderOptions));
         Object contenu = yaml.load(inputStream);
         // An empty file loads as null, and anything that is not a mapping (a bare
