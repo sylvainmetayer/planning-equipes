@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.util.List;
 
 import java.time.DayOfWeek;
@@ -66,6 +68,7 @@ public class CreneauResource {
     }
 
     /** What a rule produced (or would produce), and the verdict on the resulting grid. */
+    @Schema(requiredProperties = {"nombreGeneres"})
     public record RapportRecurrence(int nombreGeneres, List<Creneau> creneaux, RapportGrille controle) {
 
         static RapportRecurrence of(ReferenceDataService.RecurrenceGrille resultat) {
@@ -102,6 +105,7 @@ public class CreneauResource {
      * slot (default 15); {@code remplacer} judges — and, on the write,
      * replaces — the whole grid rather than adding to it.
      */
+    @Schema(requiredProperties = {"remplacer"})
     public record DerivationRequest(LocalDate dateDebut, LocalDate dateFin, LocalTime heureFermeture,
             Integer dureeMinimaleMinutes, boolean remplacer) {
 

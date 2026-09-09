@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -106,6 +108,7 @@ public class PlanningResource {
         return new ResetSummary(0, 0, 0, 0);
     }
 
+    @Schema(requiredProperties = {"animateurs", "creneaux", "postes", "stands"})
     public record ResetSummary(int animateurs, int stands, int creneaux, int postes) {
     }
 
@@ -130,6 +133,7 @@ public class PlanningResource {
         return new PersistenceStatus(persistenceService.countPersistedAssignments());
     }
 
+    @Schema(requiredProperties = {"assignments"})
     public record PersistenceStatus(int assignments) {
     }
 
@@ -152,6 +156,7 @@ public class PlanningResource {
         return new PlanningResolutionView(true, resolution.resoluLe(), derniereModificationDonnees);
     }
 
+    @Schema(requiredProperties = {"solved"})
     public record PlanningResolutionView(boolean solved, Instant resoluLe, Instant derniereModificationDonnees) {
     }
 

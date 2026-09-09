@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -194,6 +196,7 @@ public class StaffingAnalyzer {
      * pause-adjusted peak, or its hours over the daily legal ceiling when a
      * flat, long day demands more people than its peak shows.
      */
+    @Schema(requiredProperties = {"disponibles", "heures", "jour", "minimumJour", "picAvecPause", "picSimultane", "sieges", "standsOuverts"})
     public record JourStaffing(
             LocalDate date,
             int jour,
@@ -225,6 +228,7 @@ public class StaffingAnalyzer {
      *                      (animateur, jour travaillé) pairs the week requires
      * @param rotationTotal {@code joursPersonne / joursTravaillables}
      */
+    @Schema(requiredProperties = {"capaciteHeuresParAnimateur", "chargeTotal", "heures", "jours", "joursPersonne", "joursTravaillables", "rotationTotal"})
     public record SemaineStaffing(
             String semaine,
             LocalDate debut,
@@ -237,6 +241,7 @@ public class StaffingAnalyzer {
             int rotationTotal) {
     }
 
+    @Schema(requiredProperties = {"capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "minimumMajeurs", "minimumMineurs", "minimumTotal", "nombreSemaines", "pauseMinimaleMinutes", "picAvecPause", "picSimultane", "rotationTotal", "totalDemandeHeures"})
     public record StaffingSummary(
             List<JourStaffing> parJour,
             List<SemaineStaffing> parSemaine,
@@ -269,6 +274,7 @@ public class StaffingAnalyzer {
      * of: zero when the bound is met, and zero as long as no animateur is
      * known at all, since there is then nothing to compare the bound to.
      */
+    @Schema(requiredProperties = {"chargeTotal", "heures", "manque", "minimumTotal", "ninja", "nombreSemaines", "picAvecPause", "picSimultane", "rotationTotal", "sieges", "specialistes"})
     public record TypologieStaffing(
             String typologie,
             String label,
@@ -313,6 +319,7 @@ public class StaffingAnalyzer {
      *                          reserve of zero must be read as "no such notion
      *                          here" rather than as a shortage of backup
      */
+    @Schema(requiredProperties = {"animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologieNinjaDefinie"})
     public record CompetenceStaffing(
             List<TypologieStaffing> parTypologie,
             int polyvalents,

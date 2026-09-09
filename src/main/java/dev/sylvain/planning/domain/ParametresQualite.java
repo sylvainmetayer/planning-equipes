@@ -1,5 +1,7 @@
 package dev.sylvain.planning.domain;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 /**
  * Organisational-quality thresholds a constraint needs at solve time, carried
  * as a problem fact so a rule can join them exactly like
@@ -19,6 +21,7 @@ package dev.sylvain.planning.domain;
  *        in the evening) pass untouched, so the default changes nothing on an
  *        existing plan — it only catches the genuinely scattered days.
  */
+@Schema(requiredProperties = {"maxEmplacementsDistinctsParJour"})
 public record ParametresQualite(int maxEmplacementsDistinctsParJour) {
 
     /** @see #maxEmplacementsDistinctsParJour() */

@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 
 /**
@@ -10,6 +12,7 @@ import java.time.Instant;
  *                  {@link ConcurrentModificationGuard}; {@code null} on an item
  *                  built in memory or on a write carrying no precondition
  */
+@Schema(requiredProperties = {"ninja"})
 public record TypologieItem(String id, String label, boolean ninja, Instant modifieLe) {
 
     public TypologieItem {

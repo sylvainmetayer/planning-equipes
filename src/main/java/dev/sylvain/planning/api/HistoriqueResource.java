@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +91,7 @@ public class HistoriqueResource {
      * @param entiteNom  same as {@code acteurNom}, for what the action bore upon
      * @param champs     the field names an edit changed, never their values
      */
+    @Schema(requiredProperties = {"id"})
     public record EntreeHistoriqueView(
             long id,
             Instant survenuLe,

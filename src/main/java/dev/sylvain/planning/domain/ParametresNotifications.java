@@ -1,5 +1,7 @@
 package dev.sylvain.planning.domain;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalTime;
 
 /**
@@ -22,6 +24,7 @@ import java.time.LocalTime;
  * @param ancienneteEchangeJours  how long a swap request may wait for a
  *                                decision before the admin is alerted
  */
+@Schema(requiredProperties = {"actives", "ancienneteEchangeJours", "delaiRelanceHeures"})
 public record ParametresNotifications(boolean actives, LocalTime heureRappelVeille,
         int delaiRelanceHeures, int ancienneteEchangeJours) {
 

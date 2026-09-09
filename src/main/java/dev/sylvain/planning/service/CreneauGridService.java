@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -434,6 +436,7 @@ public class CreneauGridService {
      * @param faisabilite    {@link FeasibilityAnalyzer}'s headcount verdict, {@code null} when
      *                       there is nothing to judge (no stand, or no créneau)
      */
+    @Schema(requiredProperties = {"nombreCreneaux"})
     public record RapportGrille(ModeGrilleCreneaux mode, int nombreCreneaux, List<GridAnomaly> anomalies,
             List<Anomaly> ouvertures, FeasibilityReport faisabilite) {
 
@@ -448,6 +451,7 @@ public class CreneauGridService {
      *                    (a famille or a meal-pause créneau) or merely inferred
      *                    from durations
      */
+    @Schema(requiredProperties = {"contientCouverturePause", "modeCertain", "nombreCreneaux", "nombreFamilles"})
     public record DiagnosticGrille(int nombreCreneaux, LocalDate premiereDate, LocalDate derniereDate,
             int nombreFamilles, boolean contientCouverturePause, ModeGrilleCreneaux modeProbable,
             boolean modeCertain, String explication) {

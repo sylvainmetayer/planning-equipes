@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -62,6 +64,7 @@ public class SnapshotComparisonService {
      *                      be recomputed in degraded mode: coverage and
      *                      volumetry are exact, violations are not measured
      */
+    @Schema(requiredProperties = {"kpiRecalcule"})
     public record CoteComparaison(
             Long snapshotId,
             String libelle,
@@ -89,6 +92,7 @@ public class SnapshotComparisonService {
      *                               seats, so absolute scores are not directly
      *                               comparable whatever the editions
      */
+    @Schema(requiredProperties = {"editionsDifferentes", "volumetriesDifferentes"})
     public record ComparaisonSnapshots(
             CoteComparaison base,
             CoteComparaison variante,

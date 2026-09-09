@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -80,11 +82,13 @@ public final class OuvertureStandsAnalyzer {
      * {@code null} for a créneau not written yet — the recurrence preview
      * validates a grid holding the rows a rule <em>would</em> add.
      */
+    @Schema(requiredProperties = {"couverturePause", "famille"})
     public record ColonneCreneau(Long id, LocalTime heureDebut, LocalTime heureFin, int famille,
             boolean couverturePause) {
     }
 
     /** One event day, the amplitude the cells of that column are measured against, and its créneaux. */
+    @Schema(requiredProperties = {"jour", "minutes", "nombreCreneaux"})
     public record JourAmplitude(LocalDate date, int jour, LocalTime heureDebut, LocalTime heureFin, int minutes,
             int nombreCreneaux, List<ColonneCreneau> creneaux) {
     }
@@ -102,6 +106,7 @@ public final class OuvertureStandsAnalyzer {
      *                    stand's, so the stand never receives a seat on it —
      *                    the cell is shown inert rather than editable
      */
+    @Schema(requiredProperties = {"horsFamille", "partiel"})
     public record CelluleCreneau(Long creneauId, Integer effectif, boolean partiel, boolean horsFamille) {
     }
 
@@ -109,6 +114,7 @@ public final class OuvertureStandsAnalyzer {
     public record FenetreEffective(LocalTime heureDebut, LocalTime heureFin) {
     }
 
+    @Schema(requiredProperties = {"minutesAmplitude", "minutesOuvertes", "postes"})
     public record CelluleJour(LocalDate date, EtatOuverture etat, SourceHoraire source,
             List<FenetreEffective> fenetres, int minutesOuvertes, int minutesAmplitude, int postes,
             List<CelluleCreneau> creneaux) {
@@ -118,6 +124,7 @@ public final class OuvertureStandsAnalyzer {
      * @param modifieLe the stand's stamp as this grid read it, echoed back by
      *                  the save as its precondition (issue #362)
      */
+    @Schema(requiredProperties = {"effectifMin", "minutesOuvertes", "postes"})
     public record LigneStand(String standId, String nom, int effectifMin, List<CelluleJour> jours, int minutesOuvertes,
             int postes, Instant modifieLe) {
     }
@@ -125,6 +132,7 @@ public final class OuvertureStandsAnalyzer {
     public record Anomaly(AnomalyType type, String standId, String standNom, LocalDate date, String message) {
     }
 
+    @Schema(requiredProperties = {"postesTotal", "standsJamaisOuverts"})
     public record RapportOuvertures(List<JourAmplitude> jours, List<LigneStand> stands, int standsJamaisOuverts,
             int postesTotal, List<Anomaly> anomalies) {
     }

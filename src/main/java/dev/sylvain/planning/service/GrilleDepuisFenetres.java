@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -71,6 +73,7 @@ public final class GrilleDepuisFenetres {
     }
 
     /** One cut of one day, and the stands whose windows start or end there — the first few, by id. */
+    @Schema(requiredProperties = {"nombreStands"})
     public record Coupure(LocalDate date, LocalTime heure, List<String> standIds, int nombreStands) {
     }
 

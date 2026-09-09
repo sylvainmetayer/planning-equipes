@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,6 +58,7 @@ public class PlanningKpiService {
      *                          créneau the referential no longer holds, so the
      *                          hour metrics under-count them
      */
+    @Schema(requiredProperties = {"animateursAffectes", "creneauxDistincts", "heuresIncompletes", "postesPourvus", "postesTotal", "standsDistincts"})
     public record PlanningKpi(
             String score,
             Integer scoreHard,

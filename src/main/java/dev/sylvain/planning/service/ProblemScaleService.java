@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.time.temporal.IsoFields;
 import java.util.ArrayList;
@@ -52,6 +54,7 @@ public class ProblemScaleService {
      * @param hoursToFill          sum of the effective duration of every seat
      * @param hoursAvailable       legal ceiling of what the animateurs may work
      */
+    @Schema(requiredProperties = {"animateurCount", "contrainteAdHocCount", "hoursAvailable", "hoursToFill", "posteCount"})
     public record ProblemScale(int animateurCount, int posteCount, int contrainteAdHocCount,
             double hoursToFill, double hoursAvailable) {
 

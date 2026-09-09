@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service.backup;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 
 /**
@@ -15,6 +17,7 @@ import java.time.Instant;
  * @param file        the dump it wrote, {@code null} on failure
  * @param message     what happened, in the words shown on the Paramètres screen
  */
+@Schema(requiredProperties = {"succeeded"})
 public record BackupRun(Instant attemptedAt, boolean succeeded, String file, String message) {
 
     /** Nothing has run yet on this instance. */

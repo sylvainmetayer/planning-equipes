@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import dev.sylvain.planning.config.ConfigMcp;
 import dev.sylvain.planning.mcp.McpPrompts;
 import dev.sylvain.planning.mcp.McpPrompts.PromptExpose;
@@ -149,6 +151,7 @@ public class McpResource {
                 presente.getBytes(StandardCharsets.UTF_8));
     }
 
+    @Schema(requiredProperties = {"configuree"})
     public record StatutMcp(boolean configuree, String header) {
     }
 

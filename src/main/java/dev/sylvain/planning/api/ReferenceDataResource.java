@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -77,6 +79,7 @@ public class ReferenceDataResource {
      * editions. {@code editionId} null = no section, the import would write
      * to the caller's current edition.
      */
+    @Schema(requiredProperties = {"existe"})
     public record ImportTargetView(String editionId, String editionNomFichier, boolean existe,
             String editionNomExistant) {
     }
@@ -282,6 +285,7 @@ public class ReferenceDataResource {
         }
     }
 
+    @Schema(requiredProperties = {"valide"})
     public record ScenarioValidationResult(boolean valide, List<String> erreurs) {
     }
 }

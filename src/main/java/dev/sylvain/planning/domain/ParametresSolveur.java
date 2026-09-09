@@ -1,5 +1,7 @@
 package dev.sylvain.planning.domain;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 /**
  * Admin-configurable solver termination duration (Données tab). Never seen
  * by the solver as a problem fact — it is only read back by the frontend to
@@ -17,6 +19,7 @@ package dev.sylvain.planning.domain;
  *                                start doing on its own — and inert until
  *                                {@code MAIL_ADMIN} is configured
  */
+@Schema(requiredProperties = {"dureeResolutionSecondes", "mailFinResolution"})
 public record ParametresSolveur(int dureeResolutionSecondes, boolean mailFinResolution) {
 
     /** Mirrors the default of `planning.solver.seconds-limit` in application.properties. */

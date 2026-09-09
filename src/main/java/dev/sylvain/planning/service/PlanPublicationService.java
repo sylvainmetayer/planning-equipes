@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -98,6 +100,7 @@ public class PlanPublicationService {
      *                    recipient unless a decision was taken: nothing decided
      *                    means nothing to announce.
      */
+    @Schema(requiredProperties = {"premiereDiffusion"})
     public record DestinatairePublication(String animateurId, String nomAffiche, String email,
             boolean premiereDiffusion, List<String> changements, List<String> demandes) {
 
@@ -120,6 +123,7 @@ public class PlanPublicationService {
      * @param dernierePublicationLe when the last publication left, {@code null}
      *                          if there has never been one
      */
+    @Schema(requiredProperties = {"jamaisPublie", "nombreConcernes", "planVide", "solveEnCours"})
     public record ApercuPublication(boolean jamaisPublie, boolean planVide, boolean solveEnCours,
             Instant dernierePublicationLe, int nombreConcernes,
             List<DestinatairePublication> destinataires) {
@@ -131,6 +135,7 @@ public class PlanPublicationService {
      * @param sansEmail names of concerned people with no address on their fiche
      * @param echecs    names of concerned people whose mail did not leave
      */
+    @Schema(requiredProperties = {"envoyes", "snapshotId"})
     public record RapportPublication(long snapshotId, Instant publieLe, int envoyes,
             List<String> sansEmail, List<String> echecs) {
     }

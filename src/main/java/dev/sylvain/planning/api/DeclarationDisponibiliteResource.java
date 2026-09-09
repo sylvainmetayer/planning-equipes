@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -96,6 +98,7 @@ public class DeclarationDisponibiliteResource {
      *                           address, whose send failed; {@code null} when
      *                           no invitation was asked for
      */
+    @Schema(requiredProperties = {"collecteOuverte", "prevenirAnimateurs"})
     public record ConfigurationCollecte(boolean collecteOuverte, LocalDate debut, LocalDate fin,
             boolean prevenirAnimateurs, InvitationReport invitation) {
 

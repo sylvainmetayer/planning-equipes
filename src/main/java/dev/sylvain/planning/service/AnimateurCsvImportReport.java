@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -28,6 +30,7 @@ import java.util.List;
  * @param rows       one entry per data row, in file order
  * @param warnings   what concerns the import as a whole rather than one row
  */
+@Schema(requiredProperties = {"accepted", "applied", "created", "deleted", "rejected", "total", "updated"})
 public record AnimateurCsvImportReport(
         boolean applied,
         List<String> columns,

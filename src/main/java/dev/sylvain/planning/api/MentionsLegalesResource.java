@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigMentionsLegales;
 import dev.sylvain.planning.config.ConfigObservabilite;
@@ -98,6 +100,7 @@ public class MentionsLegalesResource {
      * @param mesureAudience       whether Cloudflare Web Analytics runs on this deployment
      * @param suiviErreurs         whether error reports are sent to a Sentry-protocol endpoint
      */
+    @Schema(requiredProperties = {"mesureAudience", "suiviErreurs"})
     public record MentionsLegalesView(
             String editeur,
             String directeurPublication,

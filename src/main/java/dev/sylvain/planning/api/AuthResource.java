@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -54,6 +56,7 @@ public class AuthResource {
         return Response.noContent().cookie(expiration).build();
     }
 
+    @Schema(requiredProperties = {"authentifie"})
     public record StatutSession(boolean authentifie, String nom) {
     }
 }

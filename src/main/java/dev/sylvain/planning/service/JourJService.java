@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -608,6 +610,7 @@ public class JourJService {
      *                        {@code animateursDeService}, and they still have to
      *                        be named on the button that hands them a seat
      */
+    @Schema(requiredProperties = {"creneauxDuJour"})
     public record EtatJourJ(LocalDate date, LocalDateTime maintenant, int creneauxDuJour,
             List<CreneauJourJ> creneauxRestants, List<AnimateurAffecte> animateursDeService,
             List<PosteAPourvoir> postesAPourvoir, List<AbsenceJourJ> absences,
@@ -619,6 +622,7 @@ public class JourJService {
     }
 
     /** One timeslot still ahead. */
+    @Schema(requiredProperties = {"enCours", "id"})
     public record CreneauJourJ(long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
             boolean enCours) {
     }
@@ -627,6 +631,7 @@ public class JourJService {
      * Somebody holding at least one seat over the remaining timeslots — the
      * list the operator picks the missing person from.
      */
+    @Schema(requiredProperties = {"absent", "postesRestants"})
     public record AnimateurAffecte(String animateurId, String nomAffiche, int postesRestants,
             boolean absent) {
     }
@@ -638,6 +643,7 @@ public class JourJService {
      *                   write here until it is lifted, and the screen has to say
      *                   so instead of offering a button that cannot work
      */
+    @Schema(requiredProperties = {"creneauId", "verrouille"})
     public record PosteAPourvoir(String posteId, String standId, String standNom, long creneauId,
             LocalTime heureDebut, LocalTime heureFin, boolean verrouille) {
     }
@@ -653,6 +659,7 @@ public class JourJService {
      *                  not written by this screen and undoing it here would free
      *                  people nobody asked about
      */
+    @Schema(requiredProperties = {"annulable", "creneauId"})
     public record EntreeAbsence(String contrainteId, long creneauId, LocalTime heureDebut,
             LocalTime heureFin, String raison, String creeParUtilisateurId, Instant creeLe,
             boolean annulable) {

@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 /**
  * What the browser sends to preview an import, and — unchanged — to apply it.
  *
@@ -21,6 +23,7 @@ package dev.sylvain.planning.service;
  * @param replaceJoursIndisponibles  overwrite an existing fiche's off days
  *                                   instead of adding to them — off by default
  */
+@Schema(requiredProperties = {"replaceAnimateurs", "replaceJoursIndisponibles"})
 public record AnimateurCsvImportRequest(
         String fileName,
         String content,

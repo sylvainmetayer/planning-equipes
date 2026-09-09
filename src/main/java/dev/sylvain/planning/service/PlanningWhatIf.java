@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -1056,6 +1058,7 @@ public final class PlanningWhatIf {
      *
      * @param details one human-readable line per match (see {@link ViolationFormatter}), empty when not violated
      */
+    @Schema(requiredProperties = {"matchCount"})
     public record ContrainteImpact(String name, String niveau, String categorie, String description,
             int matchCount, List<String> details) {
     }
@@ -1099,6 +1102,7 @@ public final class PlanningWhatIf {
      *
      * @param animateurActuelId the poste's occupant before any repair, {@code null} when the seat is empty
      */
+    @Schema(requiredProperties = {"candidatsEligibles", "candidatsEvalues", "plafond"})
     public record SuggestionsReparation(String posteId, String animateurActuelId,
             HardMediumSoftScore scoreAvant, List<ContrainteImpact> contraintesVioleesAvant,
             int candidatsEligibles, int candidatsEvalues, int plafond,
@@ -1149,6 +1153,7 @@ public final class PlanningWhatIf {
      *               point of the screen is to tell « lever l'indisponibilité
      *               suffirait » apart from « il en resterait trois »
      */
+    @Schema(requiredProperties = {"degradeLePlan", "disponible"})
     public record AnimateurAvailability(String animateurId, boolean disponible, boolean degradeLePlan,
             HardMediumSoftScore delta, List<MotifExclusion> motifs) {
     }
@@ -1199,6 +1204,7 @@ public final class PlanningWhatIf {
      *                           here means nothing is staffed at all, which is
      *                           exactly {@link SeatStatus#NO_PLAN}
      */
+    @Schema(requiredProperties = {"disponibles", "total"})
     public record CreneauAvailability(Long creneauId, SeatStatus statut, String posteCibleId, String standCibleId,
             String animateurCibleId, int total, int disponibles, List<CreneauSiege> creneauxAvecSieges,
             List<AnimateurAvailability> animateurs) {
@@ -1211,6 +1217,7 @@ public final class PlanningWhatIf {
      * @param famille the découpage stagger family, meaningful only once a
      *                découpage has produced several variants of the same hours
      */
+    @Schema(requiredProperties = {"famille", "jour"})
     public record CreneauSiege(Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
             int famille) {
     }

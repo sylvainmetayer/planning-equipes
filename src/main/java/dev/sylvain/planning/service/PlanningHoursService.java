@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -95,6 +97,7 @@ public class PlanningHoursService {
         return valeur;
     }
 
+    @Schema(requiredProperties = {"total"})
     public record HeuresAnimateur(String animateurId, String nom, Map<String, Double> heuresParSemaine, double total) {
     }
 

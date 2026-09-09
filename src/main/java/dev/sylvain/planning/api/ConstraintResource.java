@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -178,6 +180,7 @@ public class ConstraintResource {
      *                    empty for medium/soft ones (see
      *                    {@code ConstraintCatalog.NOMS_DURS})
      */
+    @Schema(requiredProperties = {"actif", "dosable", "poids", "protegee"})
     public record ConstraintView(
             String name,
             String niveau,
@@ -195,6 +198,7 @@ public class ConstraintResource {
     /**
      * @param actif whether the constraint is applied on the next solve
      */
+    @Schema(requiredProperties = {"actif"})
     public record ConstraintToggleUpdate(boolean actif) {
     }
 

@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -108,6 +110,7 @@ public class PlanSnapshotService {
      *                   (issue #245), {@code null} on a working snapshot —
      *                   which every snapshot is until someone publishes one
      */
+    @Schema(requiredProperties = {"automatique", "id", "nombreAffectations"})
     public record SnapshotMeta(
             long id,
             String libelle,

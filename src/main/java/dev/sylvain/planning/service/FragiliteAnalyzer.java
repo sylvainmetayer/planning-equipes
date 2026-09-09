@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -116,6 +118,7 @@ public class FragiliteAnalyzer {
      * @param remplacants      animateurs who could take one of them over
      * @param irremplacable    true when {@code remplacants} is zero
      */
+    @Schema(requiredProperties = {"couverturePause", "creneauId", "effectifMin", "irremplacable", "jour", "remplacants", "siegesLiberes", "siegesPourvus", "siegesRequis"})
     public record PosteFragile(
             String standId,
             String standNom,
@@ -137,6 +140,7 @@ public class FragiliteAnalyzer {
      * One animateur of the persisted plan, and what leaves with them. Animateurs
      * holding no seat are not listed: they cannot be a point of failure.
      */
+    @Schema(requiredProperties = {"affectations", "competencesRares", "ninja", "postesEffondres", "postesIrremplacables", "postesNonDetailles"})
     public record AnimateurFragilite(
             String animateurId,
             String nom,
@@ -159,6 +163,7 @@ public class FragiliteAnalyzer {
      * @param renforts     ninjas free that day, who could stand in
      * @param pourvu       true when the plan already staffs the group in full
      */
+    @Schema(requiredProperties = {"creneauId", "jour", "pourvu", "renforts", "specialistes"})
     public record CompetenceRare(
             String standId,
             String standNom,
@@ -184,6 +189,7 @@ public class FragiliteAnalyzer {
      *                               can hold, open on forty timeslots, weighs
      *                               forty here.
      */
+    @Schema(requiredProperties = {"animateursIrremplacables", "groupesAnalyses", "groupesDejaSousEffectif", "groupesSansSpecialiste", "ninjaConfigure", "totalCompetencesRares"})
     public record RapportFragilite(
             List<AnimateurFragilite> animateurs,
             List<CompetenceRare> competencesRares,

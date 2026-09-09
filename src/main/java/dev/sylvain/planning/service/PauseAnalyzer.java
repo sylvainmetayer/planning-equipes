@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -85,14 +87,17 @@ public class PauseAnalyzer {
     }
 
     /** An uninterrupted working stretch of the day, with the breaks it owes inside. */
+    @Schema(requiredProperties = {"minutes"})
     public record SequenceView(LocalTime debut, LocalTime fin, int minutes, List<PauseDueView> pausesDues) {
     }
 
     /** A break the grid already schedules: the gap between two stretches. */
+    @Schema(requiredProperties = {"minutes"})
     public record PausePlanifieeView(LocalTime debut, LocalTime fin, int minutes) {
     }
 
     /** One animateur on one day: their stretches, and the breaks between them. */
+    @Schema(requiredProperties = {"jour", "mineur"})
     public record JourneeAnimateurView(String animateurId, String nomComplet, boolean mineur, LocalDate date,
             int jour, List<SequenceView> sequences, List<PausePlanifieeView> pausesPlanifiees) {
     }
@@ -108,6 +113,7 @@ public class PauseAnalyzer {
      *                          list a scheduled one; a day of short stretches
      *                          with no gap has nothing to show
      */
+    @Schema(requiredProperties = {"journeesAnalysees", "pauseSurPoste", "pausesDues", "relaisManquants"})
     public record RapportPauses(boolean pauseSurPoste, int journeesAnalysees, int pausesDues,
             int relaisManquants, List<JourneeAnimateurView> journees, String message) {
     }
@@ -226,6 +232,7 @@ public class PauseAnalyzer {
      * 18:20 à 18:40 ». {@code date} is the day of the seat it falls in, which a
      * break past midnight shares with the evening it belongs to.
      */
+    @Schema(requiredProperties = {"dureeMinutes", "relaisDisponible"})
     public record PauseAnimateurView(LocalDate date, LocalTime debut, LocalTime fin, LocalTime heureLimite,
             int dureeMinutes, String standId, String standNom, boolean relaisDisponible) {
 

@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +46,7 @@ public class ConfirmationPlanningService {
      *                people the question is even asked of; the others show as
      *                "sans objet" rather than as silent
      */
+    @Schema(requiredProperties = {"affecte"})
     public record ConfirmationView(String animateurId, String nomAffiche, String statut, boolean affecte,
             Instant confirmeLe, Instant relanceLe) {
     }

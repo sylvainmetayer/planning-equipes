@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -248,6 +250,7 @@ public class FeasibilityAnalyzer {
      * @param capacite      animateurs able to fill them
      * @param manque        {@code demande - capacite}
      */
+    @Schema(requiredProperties = {"capacite", "demande", "manque"})
     public record CauseInfaisabilite(
             TypeCauseInfaisabilite type,
             SeveriteInfaisabilite severite,
@@ -270,6 +273,7 @@ public class FeasibilityAnalyzer {
      * @param totalCauses      number of causes found <em>before</em> capping,
      *                         so the UI can say "+N autres"
      */
+    @Schema(requiredProperties = {"feasible", "manqueAnimateurs", "totalCauses"})
     public record FeasibilityReport(
             boolean feasible,
             int manqueAnimateurs,

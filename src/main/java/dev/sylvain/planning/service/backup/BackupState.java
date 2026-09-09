@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service.backup;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -21,6 +23,7 @@ import java.util.List;
  * @param directoryError why the directory could not be listed, {@code null}
  *                       when it could
  */
+@Schema(requiredProperties = {"active", "configured", "retention"})
 public record BackupState(
         boolean configured,
         String directory,

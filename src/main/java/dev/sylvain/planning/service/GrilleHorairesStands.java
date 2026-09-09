@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -54,10 +56,12 @@ public final class GrilleHorairesStands {
     }
 
     /** The headcount typed under one créneau; {@code null} or absent means closed. */
+    @Schema(requiredProperties = {"creneauId"})
     public record SaisieCellule(long creneauId, Integer effectif) {
     }
 
     /** What the conversion did to one stand — the compaction's own line, plus the bounds it derived. */
+    @Schema(requiredProperties = {"compacte", "effectifMax", "effectifMin", "exceptions", "regles"})
     public record LigneGrille(String standId, int regles, int exceptions, int effectifMin, int effectifMax,
             boolean compacte, String raison) {
     }

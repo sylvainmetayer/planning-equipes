@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,6 +49,7 @@ public class PublicationTraceRepository {
      *
      * @param changements the exact sentences that were sent, in order
      */
+    @Schema(requiredProperties = {"snapshotId"})
     public record Destinataire(long snapshotId, String animateurId, String nomAffiche, String email,
             StatutEnvoi statut, Instant envoyeLe, List<String> changements) {
     }

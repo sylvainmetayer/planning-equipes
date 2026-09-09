@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -88,6 +90,7 @@ public class DemandeEchangeResource {
      *                     than showing a switch that reads « on » while nothing
      *                     is accepted
      */
+    @Schema(requiredProperties = {"foireOuverte", "ouverteAujourdhui"})
     public record ConfigurationFoire(boolean foireOuverte, LocalDate debut, LocalDate fin,
             boolean ouverteAujourdhui) {
     }

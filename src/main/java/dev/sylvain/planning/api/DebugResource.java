@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
@@ -87,6 +89,7 @@ public class DebugResource {
      *
      * @param dateDuJour {@code null} when the real clock is in use
      */
+    @Schema(requiredProperties = {"modifiable"})
     public record DateJourJView(String dateDuJour, boolean modifiable) {
     }
 

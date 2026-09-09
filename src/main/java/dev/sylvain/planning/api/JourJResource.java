@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -128,6 +130,7 @@ public class JourJResource {
     }
 
     /** How many exceptions a cancellation removed. */
+    @Schema(requiredProperties = {"supprimees"})
     public record AnnulationAbsence(int supprimees) {
     }
 }

@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -59,6 +61,7 @@ public final class HoraireCompaction {
     }
 
     /** What compaction would do, or did, to one stand. */
+    @Schema(requiredProperties = {"compacte", "ecartMinutes", "exceptionsApres", "fenetresAvant", "reglesApres"})
     public record LigneCompactage(
             String standId,
             int fenetresAvant,
@@ -70,6 +73,7 @@ public final class HoraireCompaction {
     }
 
     /** Overall outcome, plus one line per stand that was looked at. */
+    @Schema(requiredProperties = {"applique", "fenetresApres", "fenetresAvant", "standsCompactes"})
     public record RapportCompactage(
             boolean applique,
             int standsCompactes,

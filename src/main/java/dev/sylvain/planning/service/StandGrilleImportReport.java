@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.List;
  * @param rows             one entry per stand row, in file order
  * @param warnings         what concerns the import as a whole rather than one row
  */
+@Schema(requiredProperties = {"accepted", "applied", "rejected", "total"})
 public record StandGrilleImportReport(
         boolean applied,
         String separator,
@@ -31,6 +34,7 @@ public record StandGrilleImportReport(
      * @param creneaux  how many créneaux it lands on — more than one when the grid is staggered
      *                  into families, the column then carrying the same cell to each of them
      */
+    @Schema(requiredProperties = {"creneaux", "index"})
     public record ImportedColumn(int index, String label, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
             Long creneauId, int creneaux, String reason) {
     }

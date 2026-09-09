@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service.backup;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 
 /**
@@ -10,5 +12,6 @@ import java.time.Instant;
  *                  visible sign that something went wrong upstream
  * @param createdAt last modification time of the file
  */
+@Schema(requiredProperties = {"sizeBytes"})
 public record BackupFile(String name, long sizeBytes, Instant createdAt) {
 }

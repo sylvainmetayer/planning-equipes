@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigObservabilite;
 import java.util.Optional;
@@ -54,6 +56,7 @@ public class ConfigResource {
      *                           Dev UI exists at {@code /q/dev-ui}, so the
      *                           interface may link to it
      */
+    @Schema(requiredProperties = {"devMode"})
     public record ConfigView(
             String sentryDsn,
             String sentryEnvironment,

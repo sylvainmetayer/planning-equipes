@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -251,6 +253,7 @@ public final class PlanningDiagnosticService {
      * @param violations   number of matches it accounts for
      * @param contraintes  names of the solver rules it broke, usually one
      */
+    @Schema(requiredProperties = {"violations"})
     public record ContributionAdHoc(String contrainteId, String type, String raison, int violations,
             List<String> contraintes) {
     }

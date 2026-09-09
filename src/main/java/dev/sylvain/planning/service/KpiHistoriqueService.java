@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -66,6 +68,7 @@ public class KpiHistoriqueService {
     ObjectMapper objectMapper;
 
     /** One history row: where it came from (labels survive deletions) and the KPI. */
+    @Schema(requiredProperties = {"id"})
     public record KpiHistoriqueEntry(
             long id,
             String editionId,

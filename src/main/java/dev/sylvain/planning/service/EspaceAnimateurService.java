@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -119,6 +121,7 @@ public class EspaceAnimateurService {
      *                 plan as {@code postes}, so the note never contradicts
      *                 the shifts it sits under (see {@link PauseAnalyzer})
      */
+    @Schema(requiredProperties = {"foireOuverte"})
     public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant publieLe,
             boolean foireOuverte, List<PosteAnimateurView> postes,
             List<LocalDate> joursRepos, List<ColleagueView> collegues,
@@ -250,6 +253,7 @@ public class EspaceAnimateurService {
      *                      best of what was tried, and the interface must say so
      *                      rather than let « personne d'autre » be read into it
      */
+    @Schema(requiredProperties = {"listeTronquee", "optionsEligibles", "optionsEvaluees"})
     public record SuggestionsEchangeView(Long creneauId, String standId, int optionsEligibles,
             int optionsEvaluees, boolean listeTronquee, List<SuggestionEchangeView> suggestions) {
     }
@@ -398,6 +402,7 @@ public class EspaceAnimateurService {
      * @param enAttente       my single pending proposal, {@code null} when I
      *                        have none: submitting again replaces it
      */
+    @Schema(requiredProperties = {"collecteOuverte"})
     public record DeclarationEspaceView(boolean collecteOuverte, LocalDate collecteDebut, LocalDate collecteFin,
             List<LocalDate> joursEvenement, List<TypologieChoixView> typologies,
             List<LocalDate> joursActuels, List<String> souhaitsActuels,

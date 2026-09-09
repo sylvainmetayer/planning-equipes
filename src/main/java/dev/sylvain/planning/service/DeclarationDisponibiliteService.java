@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -182,6 +184,7 @@ public class DeclarationDisponibiliteService {
      * {@link PlanningDeliveryService.DeliveryReport} already uses: names ready
      * to be shown to the admin as-is.
      */
+    @Schema(requiredProperties = {"envoyes"})
     public record InvitationReport(int envoyes, List<String> sansEmail, List<String> echecs) {
     }
 
