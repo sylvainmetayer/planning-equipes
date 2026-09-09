@@ -38,13 +38,15 @@ public class ScenarioImportService {
     @Inject
     EditionContext editionContext;
 
+    @Inject
+    PlanningService planningService;
+
     /**
      * Imports one of the scenarios bundled under
      * {@code src/main/resources/scenarios}, by name.
      */
     public ScenarioImportOutcome importBundled(String name) {
-        return importScenario(
-                ScenarioYamlReader.loadScenario(name, referenceDataService::getParametresLegaux));
+        return importScenario(planningService.loadScenario(name));
     }
 
     /**
@@ -54,8 +56,7 @@ public class ScenarioImportService {
      * document rather than importing part of it.
      */
     public ScenarioImportOutcome importYaml(String yamlContent) {
-        return importScenario(ScenarioYamlReader.buildFromScenarioText(
-                yamlContent, referenceDataService::getParametresLegaux));
+        return importScenario(planningService.buildFromScenarioText(yamlContent));
     }
 
     /**

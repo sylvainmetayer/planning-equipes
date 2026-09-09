@@ -9,11 +9,9 @@ import java.util.Optional;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
-import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.EditionService;
 import dev.sylvain.planning.service.ImportImpact;
 import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.ScenarioYamlReader;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ScenarioImportService;
 import jakarta.inject.Inject;
@@ -49,9 +47,6 @@ public class ReferenceDataResource {
 
     @Inject
     EditionService editionService;
-
-    @Inject
-    EditionContext editionContext;
 
     @Inject
     ScenarioImportService scenarioImportService;

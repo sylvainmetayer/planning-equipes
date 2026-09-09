@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +31,14 @@ class LayeringStructuralTest {
 
     private static final Path MCP = Path.of("src/main/java/dev/sylvain/planning/mcp");
 
-    private static final String API_IMPORT = "import dev.sylvain.planning.api.";
+    /**
+     * Any mention of the REST package in code, not just a plain {@code import}
+     * of it. Two ways round a narrower check, and the second is exactly how the
+     * dependency would come back: {@code import static
+     * dev.sylvain.planning.api.ValidationError.…}, and a fully qualified
+     * reference with no import at all.
+     */
+    private static final Pattern MENTION_DE_LA_COUCHE_REST = Pattern.compile("\\bdev\\.sylvain\\.planning\\.api\\.");
 
     @Test
     void noMcpToolImportsTheRestLayer() throws IOException {
@@ -40,7 +48,12 @@ class LayeringStructuralTest {
                 int line = 0;
                 for (String content : Files.readAllLines(file, StandardCharsets.UTF_8)) {
                     line++;
-                    if (content.startsWith(API_IMPORT)) {
+                    // Comment lines excluded: this class's own javadoc names the
+                    // resource the tools used to reach for, and a rule that
+                    // forbids talking about the thing it forbids is a nuisance.
+                    String nu = content.strip();
+                    boolean commentaire = nu.startsWith("//") || nu.startsWith("*") || nu.startsWith("/*");
+                    if (!commentaire && MENTION_DE_LA_COUCHE_REST.matcher(content).find()) {
                         offenders.add(MCP.relativize(file) + ":" + line + " — " + content.trim());
                     }
                 }
