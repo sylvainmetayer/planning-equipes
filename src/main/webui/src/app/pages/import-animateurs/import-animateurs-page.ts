@@ -176,16 +176,16 @@ export class ImportAnimateursPage {
 
   protected async onFichierChoisi(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    const fichier = input.files?.[0] ?? null;
+    const file = input.files?.[0] ?? null;
     input.value = '';
-    if (!fichier) {
+    if (!file) {
       return;
     }
     this.derniereAnalyse++;
     this.rapport.set(null);
     this.mapping.set(null);
-    this.nomFichier.set(fichier.name);
-    this.contenu.set(await fichier.text());
+    this.nomFichier.set(file.name);
+    this.contenu.set(await file.text());
     await this.analyser();
   }
 
@@ -260,9 +260,9 @@ export class ImportAnimateursPage {
       return;
     }
     const accepted = rapport.accepted;
-    const supprimes = rapport.deleted;
+    const removed = rapport.deleted;
     const question = this.remplacerAnimateurs()
-      ? $localize`:@@importCsv.confirmer.remplacement:Importer ${accepted}:acceptees: ligne(s) et supprimer ${supprimes}:supprimes: animateur(s) absent(s) du fichier ?`
+      ? $localize`:@@importCsv.confirmer.remplacement:Importer ${accepted}:acceptees: ligne(s) et supprimer ${removed}:supprimes: animateur(s) absent(s) du fichier ?`
       : $localize`:@@importCsv.confirmer.ajout:Importer ${accepted}:acceptees: ligne(s) ? Les animateurs absents du fichier sont conservés.`;
     const confirme = await this.confirm.ask({
       title: $localize`:@@importCsv.confirmer.titre:Confirmer l'import`,

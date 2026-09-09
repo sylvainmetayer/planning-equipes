@@ -48,7 +48,7 @@ describe('ConfirmDialog', () => {
    * paragraph when they land, never wait.
    */
   it('opens without the detail it was still fetching, then shows it', async () => {
-    let repondre: (texte: string) => void = () => undefined;
+    let repondre: (text: string) => void = () => undefined;
     const detail = new Promise<string>((resolve) => {
       repondre = resolve;
     });

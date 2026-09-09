@@ -46,7 +46,7 @@ function saisir(fixture: ComponentFixture<CreneauBulkEditDialog>, name: string, 
   input.dispatchEvent(new Event('input'));
 }
 
-function soumettre(fixture: ComponentFixture<CreneauBulkEditDialog>): void {
+function submit(fixture: ComponentFixture<CreneauBulkEditDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
@@ -68,7 +68,7 @@ describe('CreneauBulkEditDialog', () => {
 
     expect(bouton(fixture).disabled).toBe(true);
     // Even forced through, an empty patch must write nothing.
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(saveMany).not.toHaveBeenCalled();
   });
@@ -81,7 +81,7 @@ describe('CreneauBulkEditDialog', () => {
     await fixture.whenStable();
     expect(bouton(fixture).disabled).toBe(false);
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     const [resource, payloads] = saveMany.mock.calls[0] as unknown as [string, Creneau[]];
@@ -107,7 +107,7 @@ describe('CreneauBulkEditDialog', () => {
     expect(racine(fixture).textContent).toContain('franchiraient minuit');
     expect(bouton(fixture).disabled).toBe(false);
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(saveMany).toHaveBeenCalledOnce();
   });
@@ -128,15 +128,15 @@ describe('CreneauBulkEditDialog', () => {
 
     saisir(fixture, 'heureFin', '20:00');
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(close).not.toHaveBeenCalled();
   });
 
   it('never fires two batches for two submits', async () => {
-    let resoudre = (_count: number) => undefined as void;
-    const saveMany = vi.fn(() => new Promise<number>((resolve) => (resoudre = resolve)));
+    let solve = (_count: number) => undefined as void;
+    const saveMany = vi.fn(() => new Promise<number>((resolve) => (solve = resolve)));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -153,13 +153,13 @@ describe('CreneauBulkEditDialog', () => {
 
     saisir(fixture, 'heureFin', '20:00');
     await fixture.whenStable();
-    soumettre(fixture);
-    soumettre(fixture);
+    submit(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     // A double Enter on a fifty-row batch would otherwise write it twice.
     expect(saveMany).toHaveBeenCalledOnce();
-    resoudre(2);
+    solve(2);
   });
 
   it('disables the whole form and says why while a solve is running', async () => {

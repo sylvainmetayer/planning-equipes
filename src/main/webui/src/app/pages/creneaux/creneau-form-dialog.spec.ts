@@ -47,7 +47,7 @@ function saisir(fixture: ComponentFixture<CreneauFormDialog>, name: string, vale
   input.dispatchEvent(new Event('input'));
 }
 
-function soumettre(fixture: ComponentFixture<CreneauFormDialog>): void {
+function submit(fixture: ComponentFixture<CreneauFormDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
@@ -102,7 +102,7 @@ describe('CreneauFormDialog', () => {
     saisir(fixture, 'heureDebut', '14:00');
     saisir(fixture, 'heureFin', '19:00');
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(save).toHaveBeenCalledOnce();
@@ -126,7 +126,7 @@ describe('CreneauFormDialog', () => {
 
     saisir(fixture, 'heureFin', '13:00');
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payload(save)).toEqual({ id: 7, date: '2026-07-14', heureDebut: '10:00', heureFin: '13:00', modifieLe: null });
@@ -137,7 +137,7 @@ describe('CreneauFormDialog', () => {
     const { fixture, close } = monter(CRENEAU, { saveOk: false });
     await fixture.whenStable();
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(close).not.toHaveBeenCalled();
@@ -172,7 +172,7 @@ describe('CreneauFormDialog', () => {
 
     expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(save).not.toHaveBeenCalled();
@@ -195,7 +195,7 @@ describe('CreneauFormDialog', () => {
     expect(racine(fixture).textContent).toContain('franchit minuit');
     expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(false);
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payload(save)).toEqual({ date: '2026-07-08', heureDebut: '20:00', heureFin: '00:00', modifieLe: null });

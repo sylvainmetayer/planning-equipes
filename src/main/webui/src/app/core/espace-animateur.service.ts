@@ -42,12 +42,12 @@ export class EspaceAnimateurService {
     this.erreur.set(null);
     this.authRequise.set(false);
     try {
-      const [vue, demandes, recues] = await Promise.all([
+      const [view, demandes, recues] = await Promise.all([
         this.api.getPreservingHttpError<EspaceAnimateurView>(`/api/espace-animateur/${jeton}`),
         this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`),
         this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes-recues`)
       ]);
-      this.vue.set(vue);
+      this.vue.set(view);
       this.demandes.set(demandes);
       this.demandesRecues.set(recues);
     } catch (error) {
@@ -109,9 +109,9 @@ export class EspaceAnimateurService {
   async confirmerPlanning(): Promise<void> {
     const jeton = this.jetonRequis();
     const accuse = await this.api.post<AccuseReception>(`/api/espace-animateur/${jeton}/confirmation`, null);
-    const vue = this.vue();
-    if (vue) {
-      this.vue.set({ ...vue, statutConfirmation: accuse.statut, confirmeLe: accuse.confirmeLe });
+    const view = this.vue();
+    if (view) {
+      this.vue.set({ ...view, statutConfirmation: accuse.statut, confirmeLe: accuse.confirmeLe });
     }
   }
 
@@ -124,9 +124,9 @@ export class EspaceAnimateurService {
     const jeton = this.jetonRequis();
     const reponse = await this.api.post<{ abonnementToken: string }>(
       `/api/espace-animateur/${jeton}/abonnement`, null);
-    const vue = this.vue();
-    if (vue) {
-      this.vue.set({ ...vue, abonnementToken: reponse.abonnementToken });
+    const view = this.vue();
+    if (view) {
+      this.vue.set({ ...view, abonnementToken: reponse.abonnementToken });
     }
   }
 

@@ -157,32 +157,32 @@ export class HeatmapPage {
     const derniereLigne = table.rows.length - 1;
     const derniereColonne = (table.rows[ligne]?.cells.length ?? 1) - 1;
     // Every branch below assigns it, and the default returns.
-    let cible: { ligne: number; colonne: number };
+    let target: { ligne: number; colonne: number };
     switch (event.key) {
       case 'ArrowRight':
-        cible = { ligne, colonne: Math.min(colonne + 1, derniereColonne) };
+        target = { ligne, colonne: Math.min(colonne + 1, derniereColonne) };
         break;
       case 'ArrowLeft':
-        cible = { ligne, colonne: Math.max(colonne - 1, 0) };
+        target = { ligne, colonne: Math.max(colonne - 1, 0) };
         break;
       case 'ArrowDown':
-        cible = { ligne: Math.min(ligne + 1, derniereLigne), colonne };
+        target = { ligne: Math.min(ligne + 1, derniereLigne), colonne };
         break;
       case 'ArrowUp':
-        cible = { ligne: Math.max(ligne - 1, 0), colonne };
+        target = { ligne: Math.max(ligne - 1, 0), colonne };
         break;
       case 'Home':
-        cible = { ligne, colonne: 0 };
+        target = { ligne, colonne: 0 };
         break;
       case 'End':
-        cible = { ligne, colonne: derniereColonne };
+        target = { ligne, colonne: derniereColonne };
         break;
       default:
         return;
     }
     event.preventDefault();
-    this.celluleCourante.set(cible);
-    const selecteur = `[data-ligne="${cible.ligne}"][data-colonne="${cible.colonne}"]`;
+    this.celluleCourante.set(target);
+    const selecteur = `[data-ligne="${target.ligne}"][data-colonne="${target.colonne}"]`;
     this.hote.nativeElement.querySelector<HTMLElement>(selecteur)?.focus();
   }
 

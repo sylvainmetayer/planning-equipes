@@ -164,8 +164,8 @@ export class NotificationService {
       return faisabilite.message;
     }
     const total = faisabilite.totalCauses;
-    const premiere = causes[0].message;
-    const detail = $localize`:@@feasibility.notification.causes:${total}:count: cause(s) identifiée(s), la plus grave : ${premiere}:cause:`;
+    const first = causes[0].message;
+    const detail = $localize`:@@feasibility.notification.causes:${total}:count: cause(s) identifiée(s), la plus grave : ${first}:cause:`;
     return `${faisabilite.message} ${detail}`;
   }
 

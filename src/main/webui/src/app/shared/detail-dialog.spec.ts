@@ -33,7 +33,7 @@ function monter(data: DetailData, options: { editingLocked?: boolean } = {}) {
   return { fixture, close, racine: fixture.nativeElement as HTMLElement };
 }
 
-const DONNEES: DetailData = {
+const DATA: DetailData = {
   title: 'Loup-Garou',
   subtitle: 'Stand s42',
   sections: [
@@ -64,7 +64,7 @@ function actions(racine: HTMLElement): HTMLButtonElement[] {
 
 describe('DetailDialog', () => {
   it('renders the title, the subtitle and one section per entry', () => {
-    const { racine } = monter(DONNEES);
+    const { racine } = monter(DATA);
 
     expect(racine.querySelector('h2')!.textContent!.trim()).toBe('Loup-Garou');
     expect(racine.querySelector('.detail-subtitle')!.textContent!.trim()).toBe('Stand s42');
@@ -80,7 +80,7 @@ describe('DetailDialog', () => {
   });
 
   it('pairs every label with its value', () => {
-    const { racine } = monter(DONNEES);
+    const { racine } = monter(DATA);
 
     const identite = racine.querySelector('.detail-section')!;
     expect(Array.from(identite.querySelectorAll('dt')).map((each) => each.textContent!.trim())).toEqual([
@@ -91,7 +91,7 @@ describe('DetailDialog', () => {
   });
 
   it('mutes only the rows marked as hints', () => {
-    const { racine } = monter(DONNEES);
+    const { racine } = monter(DATA);
 
     const valeurs = Array.from(racine.querySelectorAll('.detail-section')[0].querySelectorAll('dd'));
     expect(valeurs[0].classList.contains('detail-muted')).toBe(false);
@@ -99,21 +99,21 @@ describe('DetailDialog', () => {
   });
 
   it('renders a chips row as one chip per entry, never as a joined string', () => {
-    const { racine } = monter(DONNEES);
+    const { racine } = monter(DATA);
 
     const chips = Array.from(racine.querySelectorAll('mat-chip'));
     expect(chips.map((each) => each.textContent!.trim())).toEqual(['Ambiance', 'Expert']);
   });
 
   it('closes with "edit" when the user asks to edit, so the caller opens its own form', () => {
-    const { racine, close } = monter(DONNEES);
+    const { racine, close } = monter(DATA);
 
     actions(racine)[1].click();
     expect(close).toHaveBeenCalledWith('edit');
   });
 
   it('disables the edit button and says why while a solve is running', () => {
-    const { fixture, racine } = monter(DONNEES, { editingLocked: true });
+    const { fixture, racine } = monter(DATA, { editingLocked: true });
 
     expect(actions(racine)[1].disabled).toBe(true);
     // A disabled button with no explanation reads as a bug; the tooltip is the
@@ -122,7 +122,7 @@ describe('DetailDialog', () => {
   });
 
   it('leaves the edit button available, and unexplained, when no solve is running', () => {
-    const { fixture, racine } = monter(DONNEES);
+    const { fixture, racine } = monter(DATA);
 
     expect(actions(racine)[1].disabled).toBe(false);
     expect(infobulle(fixture)).toBe('');

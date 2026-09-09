@@ -42,7 +42,7 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
   };
 }
 
-function vue(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
+function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
     joursRepos: [],
     animateurId: 'alice',
@@ -152,7 +152,7 @@ type PageInternals = {
 };
 
 describe('EspaceEchangesPage', () => {
-  const espaceVue = signal<EspaceAnimateurView | null>(vue());
+  const espaceVue = signal<EspaceAnimateurView | null>(view());
   const espaceDemandes = signal<DemandeEchangeView[]>([]);
   const espaceRecues = signal<DemandeEchangeView[]>([]);
   const espace = {
@@ -169,7 +169,7 @@ describe('EspaceEchangesPage', () => {
   const notifications = { notify: vi.fn() };
 
   beforeEach(() => {
-    espaceVue.set(vue());
+    espaceVue.set(view());
     espaceDemandes.set([]);
     espaceRecues.set([]);
     for (const stub of [
@@ -433,7 +433,7 @@ describe('EspaceEchangesPage', () => {
     });
 
     it('falls back to the colleague id when the view does not name them', () => {
-      espaceVue.set(vue({ collegues: [] }));
+      espaceVue.set(view({ collegues: [] }));
       const page = createPage();
       page.posteChoisi.set(poste());
       page.cibleId.set('bob');
@@ -619,7 +619,7 @@ describe('EspaceEchangesPage', () => {
     });
 
     it('treats a closed foire as read-only, and an unloaded espace as open', () => {
-      espaceVue.set(vue({ foireOuverte: false }));
+      espaceVue.set(view({ foireOuverte: false }));
       expect(createPage().foireOuverte()).toBe(false);
 
       espaceVue.set(null);
@@ -676,7 +676,7 @@ describe('EspaceEchangesPage', () => {
 
 describe('EspaceEchangesPage rendering', () => {
   let fixture: ComponentFixture<EspaceEchangesPage>;
-  const espaceVue = signal<EspaceAnimateurView | null>(vue());
+  const espaceVue = signal<EspaceAnimateurView | null>(view());
   const espaceDemandes = signal<DemandeEchangeView[]>([]);
   const espaceRecues = signal<DemandeEchangeView[]>([]);
   let espace: {
@@ -714,7 +714,7 @@ describe('EspaceEchangesPage rendering', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function texte(): string {
+  function text(): string {
     return racine().textContent!.replace(/\s+/g, ' ');
   }
 
@@ -723,7 +723,7 @@ describe('EspaceEchangesPage rendering', () => {
   }
 
   beforeEach(() => {
-    espaceVue.set(vue());
+    espaceVue.set(view());
     espaceDemandes.set([]);
     espaceRecues.set([]);
   });
@@ -731,7 +731,7 @@ describe('EspaceEchangesPage rendering', () => {
   it('says there is nothing yet rather than showing an empty list', async () => {
     await rendre();
 
-    expect(texte()).toContain('Aucune demande pour le moment.');
+    expect(text()).toContain('Aucune demande pour le moment.');
   });
 
   it('shows the form while the foire is open', async () => {
@@ -744,7 +744,7 @@ describe('EspaceEchangesPage rendering', () => {
   });
 
   it('withdraws every action once the foire is closed, and says so', async () => {
-    espaceVue.set(vue({ foireOuverte: false }));
+    espaceVue.set(view({ foireOuverte: false }));
     espaceDemandes.set([demande('d1', 'PROPOSEE')]);
     espaceRecues.set([demande('d2', 'EN_ATTENTE_CIBLE', { demandeurId: 'bob', cibleId: 'alice' })]);
     await rendre();
@@ -755,8 +755,8 @@ describe('EspaceEchangesPage rendering', () => {
     expect(bouton("Je suis d'accord")).toBeUndefined();
     expect(bouton('Décliner')).toBeUndefined();
     // The history stays readable: only acting is closed.
-    expect(texte()).toContain('Mes demandes');
-    expect(texte()).toContain('Bob Durand');
+    expect(text()).toContain('Mes demandes');
+    expect(text()).toContain('Bob Durand');
   });
 
   it('lists a received request with its two seats, and both answers', async () => {
@@ -775,10 +775,10 @@ describe('EspaceEchangesPage rendering', () => {
     ]);
     await rendre();
 
-    expect(texte()).toContain('vous propose de reprendre');
-    expect(texte()).toContain('contre votre créneau');
-    expect(texte()).toContain('Molkky');
-    expect(texte()).toContain('Mariage');
+    expect(text()).toContain('vous propose de reprendre');
+    expect(text()).toContain('contre votre créneau');
+    expect(text()).toContain('Molkky');
+    expect(text()).toContain('Mariage');
 
     bouton("Je suis d'accord")!.click();
     await fixture.whenStable();
@@ -824,7 +824,7 @@ describe('EspaceEchangesPage rendering', () => {
     expect(racine().querySelector('.espace-demande-alerte')).toBeNull();
     expect(bouton('Annuler cette demande')).toBeUndefined();
     // The organisation's answer, however, must be shown.
-    expect(texte()).toContain('Impossible ce week-end.');
+    expect(text()).toContain('Impossible ce week-end.');
   });
 
   it('lets a pending request be cancelled, and names its status', async () => {

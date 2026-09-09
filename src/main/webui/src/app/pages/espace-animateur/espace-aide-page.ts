@@ -48,16 +48,16 @@ export class EspaceAidePage {
   }
 
   /** Route of the tab a section acts on, or `null` while the token is unknown. */
-  protected lienVers(cible: EspaceAideCible): unknown[] | null {
+  protected lienVers(target: EspaceAideCible): unknown[] | null {
     const jeton = this.jeton();
     if (!jeton) {
       return null;
     }
-    return cible === 'planning' ? ['/animateur', jeton] : ['/animateur', jeton, cible];
+    return target === 'planning' ? ['/animateur', jeton] : ['/animateur', jeton, target];
   }
 
-  protected libelleCible(cible: EspaceAideCible): string {
-    switch (cible) {
+  protected libelleCible(target: EspaceAideCible): string {
+    switch (target) {
       case 'echanges':
         return $localize`:@@espace.nav.echanges:Mes échanges`;
       case 'disponibilites':

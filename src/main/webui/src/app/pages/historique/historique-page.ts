@@ -20,7 +20,7 @@ import {
   FiltreActeur,
   FiltreResultat,
   entitesPresentes,
-  filtrer,
+  filter,
   lireFiltreActeur,
   lireFiltreResultat,
   parJournee,
@@ -70,7 +70,7 @@ export class HistoriquePage {
 
   protected readonly entites = computed(() => entitesPresentes(this.entrees()));
   protected readonly filtrees = computed(() =>
-    filtrer(this.entrees(), this.acteur(), this.resultat(), this.entite(), this.recherche())
+    filter(this.entrees(), this.acteur(), this.resultat(), this.entite(), this.recherche())
   );
   protected readonly journees = computed(() => parJournee(this.filtrees()));
 

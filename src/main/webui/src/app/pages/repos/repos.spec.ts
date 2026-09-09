@@ -183,12 +183,12 @@ describe('buildTableauRepos', () => {
 
     // Scoped to one créneau or one stand, the exception still leaves the day
     // workable: counting it as a day off would invent rest nobody granted.
-    const cible = buildTableauRepos(postes, [animateur('Zoe')], [
+    const target = buildTableauRepos(postes, [animateur('Zoe')], [
       indisponibiliteForcee(['Zoe'], { creneau: { id: 1 } }),
       indisponibiliteForcee(['Zoe'], { stand: { id: 'Tir' } })
     ]);
-    expect(ligne(cible.lignes, 'Zoe').joursIndisponibles).toBe(0);
-    expect(ligne(cible.lignes, 'Zoe').joursRepos).toBe(3);
+    expect(ligne(target.lignes, 'Zoe').joursIndisponibles).toBe(0);
+    expect(ligne(target.lignes, 'Zoe').joursRepos).toBe(3);
   });
 
   it('puts the longest runs first, so the top of the grid is the list to act on', () => {

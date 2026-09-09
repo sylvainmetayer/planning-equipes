@@ -79,10 +79,10 @@ export function resoudreJour(stand: Stand, date: string): JourResolu {
   const ouvertures = (stand.ouvertures ?? []).filter((ouverture) => ouverture.date === date);
   const fermetures = (stand.indisponibilites ?? []).filter((indispo) => indispo.date === date);
   if (ouvertures.length > 0) {
-    return { date, mode: 'OUVERTURE', fenetres: trier(ouvertures), source: 'EXCEPTION' };
+    return { date, mode: 'OUVERTURE', fenetres: sort(ouvertures), source: 'EXCEPTION' };
   }
   if (fermetures.length > 0) {
-    return { date, mode: 'FERMETURE', fenetres: trier(fermetures), source: 'EXCEPTION' };
+    return { date, mode: 'FERMETURE', fenetres: sort(fermetures), source: 'EXCEPTION' };
   }
 
   const couvrantes = (stand.horaires ?? []).filter(
@@ -99,14 +99,14 @@ export function resoudreJour(stand: Stand, date: string): JourResolu {
   const fenetres = gagnantes
     .filter((horaire) => horaire.mode === mode)
     .flatMap((horaire) => horaire.fenetres.filter(fenetreValide));
-  return { date, mode, fenetres: trier(fenetres), source: 'REGLE' };
+  return { date, mode, fenetres: sort(fenetres), source: 'REGLE' };
 }
 
 export function resoudreHoraires(stand: Stand, dates: readonly string[]): JourResolu[] {
   return dates.map((date) => resoudreJour(stand, date));
 }
 
-function trier(fenetres: readonly FenetreHoraire[]): FenetreHoraire[] {
+function sort(fenetres: readonly FenetreHoraire[]): FenetreHoraire[] {
   return [...fenetres]
     .map((fenetre) => ({
       heureDebut: fenetre.heureDebut,
@@ -199,11 +199,11 @@ export type SaisieFenetres =
  * Hours run 0-23 and minutes 0-59: a window never crosses midnight, so `24:00`
  * is not a time here — the open-ended form is how "until closing" is written.
  */
-export function normaliserHeure(texte: string): string | null {
+export function normaliserHeure(text: string): string | null {
   // A lone digit after the separator is refused rather than guessed: `9:5`
   // reads as 9 h 50 to one person and 9 h 05 to the next, and either reading
   // silently rewrites an hour the user believes they typed.
-  const m = /^(\d{1,2})(?:[h:.](\d{2})?)?$/i.exec(texte.trim());
+  const m = /^(\d{1,2})(?:[h:.](\d{2})?)?$/i.exec(text.trim());
   if (!m) {
     return null;
   }
@@ -215,9 +215,9 @@ export function normaliserHeure(texte: string): string | null {
   return `${String(heures).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
-export function parseFenetres(texte: string): SaisieFenetres {
+export function parseFenetres(text: string): SaisieFenetres {
   const fenetres: FenetreHoraire[] = [];
-  for (const brut of texte.split(/[,;]/)) {
+  for (const brut of text.split(/[,;]/)) {
     const morceau = brut.trim();
     if (morceau === '') {
       continue;
@@ -248,7 +248,7 @@ export function parseFenetres(texte: string): SaisieFenetres {
     fenetres.push({ heureDebut, heureFin, effectif });
   }
   if (fenetres.length === 0) {
-    return { fenetres: null, erreur: 'VIDE', morceau: texte.trim() };
+    return { fenetres: null, erreur: 'VIDE', morceau: text.trim() };
   }
   return { fenetres, erreur: null, morceau: null };
 }

@@ -90,12 +90,12 @@ export class NotificationsPage {
     const journees: { cle: string; libelle: string; notifications: AppNotification[] }[] = [];
     for (const notification of this.notifications.notifications()) {
       const date = new Date(notification.timestamp);
-      const cle = date.toDateString();
-      const derniere = journees.at(-1);
-      if (derniere?.cle === cle) {
-        derniere.notifications.push(notification);
+      const key = date.toDateString();
+      const last = journees.at(-1);
+      if (last?.cle === key) {
+        last.notifications.push(notification);
       } else {
-        journees.push({ cle, libelle: this.libelleJour(date), notifications: [notification] });
+        journees.push({ cle: key, libelle: this.libelleJour(date), notifications: [notification] });
       }
     }
     return journees;

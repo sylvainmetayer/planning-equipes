@@ -80,7 +80,7 @@ function cliquer(fixture: ComponentFixture<AnimateurFormDialog>, libelle: string
   bouton!.click();
 }
 
-function soumettre(fixture: ComponentFixture<AnimateurFormDialog>): void {
+function submit(fixture: ComponentFixture<AnimateurFormDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
@@ -189,10 +189,10 @@ describe('AnimateurFormDialog', () => {
     const { fixture, save } = monter(animateur({ competences: { ambiance: 'REFERENT', expert: 'DEBUTANT' } }));
     await fixture.whenStable();
 
-    const supprimer = Array.from(racine(fixture).querySelectorAll('.competence-row button.danger-action'));
-    (supprimer[0] as HTMLButtonElement).click();
+    const remove = Array.from(racine(fixture).querySelectorAll('.competence-row button.danger-action'));
+    (remove[0] as HTMLButtonElement).click();
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payload(save).competences).toEqual({ expert: 'DEBUTANT' });
@@ -220,7 +220,7 @@ describe('AnimateurFormDialog', () => {
         each.textContent!.replace('cancel', '').trim()
       )
     ).toEqual(['2026-07-14']);
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(payload(save).joursIndisponibles).toEqual(['2026-07-14']);
   });
@@ -242,7 +242,7 @@ describe('AnimateurFormDialog', () => {
     saisir(fixture, 'prenom', '  Marcel  ');
     saisir(fixture, 'nom', '  Proust  ');
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payload(save)).toEqual({
@@ -264,7 +264,7 @@ describe('AnimateurFormDialog', () => {
   it('keeps the dialog open when the save is refused, and closes on cancel', async () => {
     const { fixture, close } = monter(animateur(), { saveOk: false });
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(close).not.toHaveBeenCalled();
 
@@ -293,7 +293,7 @@ describe('AnimateurFormDialog', () => {
     await fixture.whenStable();
     expect(racine(fixture).querySelectorAll('.competence-row')).toHaveLength(3); // 2 appréciations + la ligne « Jour »
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payload(save).competences).toEqual({ ambiance: 'REFERENT', expert: 'AUTONOME' });
@@ -308,9 +308,9 @@ describe('AnimateurFormDialog', () => {
     cliquer(fixture, 'Ajouter une appréciation');
     await fixture.whenStable();
 
-    const ajouter = [...racine(fixture).querySelectorAll('button')].find((bouton) =>
+    const add = [...racine(fixture).querySelectorAll('button')].find((bouton) =>
       bouton.textContent?.includes('Ajouter une appréciation')
     ) as HTMLButtonElement;
-    expect(ajouter.disabled).toBe(true);
+    expect(add.disabled).toBe(true);
   });
 });

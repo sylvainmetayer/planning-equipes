@@ -30,7 +30,7 @@ const RESOURCES_COMPTEES: readonly string[] = ['stands', 'animateurs', 'creneaux
  * hundred. Half the server's limit leaves room for the path, the host and the
  * headers of the request line.
  */
-const LONGUEUR_MAX_REQUETE = 2000;
+const MAX_REQUEST_LENGTH = 2000;
 
 const AUCUN: ReferenceUsage = { affectations: 0, contraintesAdHoc: 0, verrouillages: 0 };
 
@@ -54,7 +54,7 @@ export class ReferenceUsageService {
     }
     try {
       const lots = await Promise.all(
-        decouper(ids).map((lot) => this.api.get<ReferenceUsage>(`/api/${resource}/usages?${lot}`))
+        split(ids).map((lot) => this.api.get<ReferenceUsage>(`/api/${resource}/usages?${lot}`))
       );
       return phraseUsages(lots.reduce(additionner, AUCUN));
     } catch {
@@ -69,14 +69,14 @@ export class ReferenceUsageService {
  * being dropped: an over-long URL that the server refuses costs the count, and
  * silently skipping the id would falsify it.
  */
-function decouper(ids: readonly (string | number)[]): string[] {
+function split(ids: readonly (string | number)[]): string[] {
   const lots: string[] = [];
   let courant = '';
   for (const id of ids) {
     const parametre = `id=${encodeURIComponent(String(id))}`;
     if (courant === '') {
       courant = parametre;
-    } else if (courant.length + 1 + parametre.length <= LONGUEUR_MAX_REQUETE) {
+    } else if (courant.length + 1 + parametre.length <= MAX_REQUEST_LENGTH) {
       courant += `&${parametre}`;
     } else {
       lots.push(courant);

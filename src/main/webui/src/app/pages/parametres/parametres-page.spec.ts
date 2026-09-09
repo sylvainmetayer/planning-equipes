@@ -23,7 +23,7 @@ import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { ScenarioImportService } from '../../core/scenario-import.service';
-import { MOT_CLE_REMPLACER, ParametresPage } from './parametres-page';
+import { REPLACE_KEYWORD, ParametresPage } from './parametres-page';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
 import type { EtatSauvegarde, TypologieItem } from '../../core/models';
 
@@ -295,12 +295,12 @@ describe('ParametresPage rendering', () => {
     return trouve as HTMLElement;
   }
 
-  function texte(element: HTMLElement): string {
+  function text(element: HTMLElement): string {
     return element.textContent!.replace(/\s+/g, ' ').trim();
   }
 
   /** A `File` jsdom can read: its own implementation has no `text()`. */
-  function fichier(nom: string, contenu: string): File {
+  function file(nom: string, contenu: string): File {
     const file = new File([contenu], nom);
     Object.defineProperty(file, 'text', { value: async () => contenu });
     return file;
@@ -393,7 +393,7 @@ describe('ParametresPage rendering', () => {
   /** Picks the dump file the SQL card's hidden input reacts to. */
   function choisirDump(): void {
     const input = racine().querySelector('input[type="file"][accept^=".sql"]') as HTMLInputElement;
-    Object.defineProperty(input, 'files', { configurable: true, value: [fichier('sauvegarde.sql', '-- dump')] });
+    Object.defineProperty(input, 'files', { configurable: true, value: [file('sauvegarde.sql', '-- dump')] });
     input.dispatchEvent(new Event('change'));
   }
 
@@ -427,7 +427,7 @@ describe('ParametresPage rendering', () => {
     await fixture.whenStable();
 
     const demande = recopie.demander.mock.calls[0][0] as DemandeRecopie;
-    expect(demande.valeurAttendue).toBe(MOT_CLE_REMPLACER);
+    expect(demande.valeurAttendue).toBe(REPLACE_KEYWORD);
     expect(demande.message).toContain('toutes les éditions sont écrasées');
     expect(demande.message).toContain('sauvegarde.sql');
   });
@@ -451,7 +451,7 @@ describe('ParametresPage rendering', () => {
   it('shows where the dumps go, how many are kept and which ones are there', async () => {
     await rendre();
 
-    const contenu = texte(carte('Sauvegarde automatique'));
+    const contenu = text(carte('Sauvegarde automatique'));
     expect(contenu).toContain('/backups');
     expect(contenu).toContain('10 sauvegardes');
     expect(contenu).toContain('planning-20260308-040000.dump');
@@ -471,7 +471,7 @@ describe('ParametresPage rendering', () => {
       }
     });
 
-    expect(texte(carte('Sauvegarde automatique'))).toContain('connection refused');
+    expect(text(carte('Sauvegarde automatique'))).toContain('connection refused');
   });
 
   it('says the feature is inert when the deployment configured no directory', async () => {
@@ -479,7 +479,7 @@ describe('ParametresPage rendering', () => {
       sauvegarde: { ...SAUVEGARDE, configured: false, directory: null, files: [], nextRun: null }
     });
 
-    const contenu = texte(carte('Sauvegarde automatique'));
+    const contenu = text(carte('Sauvegarde automatique'));
     expect(contenu).toContain('BACKUP_DIR');
     // No switch to flip: turning one on would promise a backup nothing writes.
     expect(carte('Sauvegarde automatique').querySelector('mat-slide-toggle')).toBeNull();

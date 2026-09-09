@@ -227,7 +227,7 @@ describe('StandFormDialog', () => {
     // The message is tied to the two fields it is about, not just floating nearby.
     const min = root(fixture).querySelector('input[name="effectifMin"]')!;
     expect(min.getAttribute('aria-describedby')).toBe('stand-effectif-erreur');
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
     // NOTE: the template also writes `[attr.aria-invalid]="effectifInvalid() || null"`
     // on these two inputs, and it never reaches the DOM: `matInput` host-binds
     // `aria-invalid` from its own `errorState`, which stays false because no
@@ -246,7 +246,7 @@ describe('StandFormDialog', () => {
     expect(erreur).not.toBeNull();
     expect(erreur!.getAttribute('role')).toBe('alert');
     expect(erreur!.textContent).toContain('au moins une typologie');
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('accepts a stand whose bounds are coherent', async () => {
@@ -254,10 +254,10 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     expect(root(fixture).querySelector('#stand-effectif-erreur')).toBeNull();
-    expect(soumettre(fixture).disabled).toBe(false);
+    expect(submit(fixture).disabled).toBe(false);
   });
 
-  function soumettre(fixture: ComponentFixture<StandFormDialog>): HTMLButtonElement {
+  function submit(fixture: ComponentFixture<StandFormDialog>): HTMLButtonElement {
     return root(fixture).querySelector('button[type="submit"]') as HTMLButtonElement;
   }
 
@@ -367,7 +367,7 @@ describe('StandFormDialog', () => {
     expect(erreur.textContent).toContain('au moins une fenêtre');
     // Material prepends its own hint id: the error id must be among them.
     expect(ligne(fixture).getAttribute('aria-describedby')!.split(/\s+/)).toContain('stand-horaire-erreur-0');
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('keeps a line that does not parse as typed, reports it on its card and blocks the submit', async () => {
@@ -390,7 +390,7 @@ describe('StandFormDialog', () => {
     expect(cartes[0].querySelector('.field-error')!.textContent).toContain('14:0');
     // The other rule is fine and says nothing: one error, on the card it is about.
     expect(cartes[1].querySelector('.field-error')).toBeNull();
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('reveals the seven weekday checkboxes, correctly labelled, on the weekday scope', async () => {
@@ -446,8 +446,8 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
-    expect(alertes.some((texte) => texte.includes('au moins une fenêtre'))).toBe(true);
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(alertes.some((text) => text.includes('au moins une fenêtre'))).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('sends the effectif typed on the line, and null for a window left without one', async () => {
@@ -536,8 +536,8 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
-    expect(alertes.some((texte) => texte.includes("L'effectif d'une fenêtre"))).toBe(true);
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(alertes.some((text) => text.includes("L'effectif d'une fenêtre"))).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('refuses a zero effectif on a dated opening, and accepts one from one up', async () => {
@@ -551,8 +551,8 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     let alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
-    expect(alertes.some((texte) => texte.includes("L'effectif d'une ouverture"))).toBe(true);
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(alertes.some((text) => text.includes("L'effectif d'une ouverture"))).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
 
     const champ = root(fixture).querySelector<HTMLInputElement>('.indisponibilite-row input[type="number"]')!;
     champ.value = '5';
@@ -560,8 +560,8 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
-    expect(alertes.some((texte) => texte.includes("L'effectif d'une ouverture"))).toBe(false);
-    expect(soumettre(fixture).disabled).toBe(false);
+    expect(alertes.some((text) => text.includes("L'effectif d'une ouverture"))).toBe(false);
+    expect(submit(fixture).disabled).toBe(false);
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
     const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
@@ -592,8 +592,8 @@ describe('StandFormDialog', () => {
 
     const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
     // The two numbers that disagree, not a sentence about zero.
-    expect(alertes.some((texte) => texte.includes('(5)') && texte.includes('(2)'))).toBe(true);
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(alertes.some((text) => text.includes('(5)') && text.includes('(2)'))).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('refuses a day carrying both a closure and an opening', async () => {
@@ -606,8 +606,8 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
-    expect(alertes.some((texte) => texte.includes('à la fois une fermeture et une ouverture'))).toBe(true);
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(alertes.some((text) => text.includes('à la fois une fermeture et une ouverture'))).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('disables the whole form and says why while a solve is running', async () => {
@@ -616,7 +616,7 @@ describe('StandFormDialog', () => {
 
     expect(root(fixture).querySelector('.locked-hint')).not.toBeNull();
     expect((root(fixture).querySelector('fieldset.form-fieldset') as HTMLFieldSetElement).disabled).toBe(true);
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('saves the edited stand and closes on success', async () => {

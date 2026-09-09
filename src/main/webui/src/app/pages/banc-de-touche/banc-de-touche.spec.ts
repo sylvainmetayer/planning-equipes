@@ -10,13 +10,13 @@ import {
   ordreMotifs
 } from './banc-de-touche';
 
-const creneauSiege = (id: number, famille = 0): CreneauSiege => ({
+const creneauSiege = (id: number, family = 0): CreneauSiege => ({
   id,
   jour: 3,
   date: '2026-07-16',
   heureDebut: '10:00',
   heureFin: '13:00',
-  famille
+  famille: family
 });
 
 const motif = (contrainte: string, niveau: MotifExclusion['niveau']): MotifExclusion => ({

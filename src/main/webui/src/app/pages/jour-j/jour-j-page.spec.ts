@@ -137,7 +137,7 @@ describe('JourJPage', () => {
     fixture.detectChanges();
   }
 
-  function texte(): string {
+  function text(): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
@@ -170,18 +170,18 @@ describe('JourJPage', () => {
   });
 
   it('shows who is on duty over the remaining timeslots', () => {
-    expect(texte()).toContain('Alice Referente');
-    expect(texte()).toContain('14:00 – 18:00');
+    expect(text()).toContain('Alice Referente');
+    expect(text()).toContain('14:00 – 18:00');
   });
 
   /** Issue #245: a reminder with a link, never a send button inside an emergency screen. */
   it('reminds how many people are waiting for a publication, without offering to publish', () => {
-    expect(texte()).toContain('3');
-    expect(texte()).toContain('publi');
-    const envoyer = Array.from(
+    expect(text()).toContain('3');
+    expect(text()).toContain('publi');
+    const send = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('button')
     ).find((each) => /publier|envoyer/i.test(each.textContent ?? ''));
-    expect(envoyer).toBeUndefined();
+    expect(send).toBeUndefined();
   });
 
   it('asks for a confirmation before writing an absence', async () => {
@@ -190,7 +190,7 @@ describe('JourJPage', () => {
     fixture.detectChanges();
 
     expect(jourJ.marquerAbsent).not.toHaveBeenCalled();
-    expect(texte()).toContain("Confirmer l'absence");
+    expect(text()).toContain("Confirmer l'absence");
   });
 
   it('marks the absence and immediately looks for a replacement on each freed seat', async () => {
@@ -205,7 +205,7 @@ describe('JourJPage', () => {
 
     expect(jourJ.marquerAbsent).toHaveBeenCalledWith('A1', '');
     expect(jourJ.suggestions).toHaveBeenCalledWith('P2');
-    expect(texte()).toContain('Stand stratégie');
+    expect(text()).toContain('Stand stratégie');
   });
 
   /**
@@ -219,9 +219,9 @@ describe('JourJPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texte()).toContain('20');
-    expect(texte()).toContain('137');
-    expect(texte()).toContain('pas tout le vivier');
+    expect(text()).toContain('20');
+    expect(text()).toContain('137');
+    expect(text()).toContain('pas tout le vivier');
   });
 
   /**
@@ -236,7 +236,7 @@ describe('JourJPage', () => {
     fixture.detectChanges();
     // Named from the roster: A2 works nowhere on the remaining timeslots, which
     // is exactly why they are the best replacement.
-    expect(texte()).toContain('Bruno Autonome');
+    expect(text()).toContain('Bruno Autonome');
 
     bouton('Affecter').click();
     await fixture.whenStable();
@@ -280,11 +280,11 @@ describe('JourJPage', () => {
   it('explains a locked seat instead of offering a search that would be refused', async () => {
     await rendre(etat({ postesAPourvoir: [{ ...posteLibere, verrouille: true }] }));
 
-    expect(texte()).toContain('verrou');
-    const chercher = Array.from(
+    expect(text()).toContain('verrou');
+    const find = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('button')
     ).find((each) => (each.textContent ?? '').includes('Trouver un remplaçant'));
-    expect(chercher).toBeUndefined();
+    expect(find).toBeUndefined();
   });
 
   /**
@@ -342,11 +342,11 @@ describe('JourJPage', () => {
       })
     );
 
-    const annuler = Array.from(
+    const cancel = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('button')
     ).find((each) => (each.textContent ?? '').includes("Annuler toute l'absence"));
-    expect(annuler).toBeUndefined();
-    expect(texte()).toContain('Ajustement partagé');
+    expect(cancel).toBeUndefined();
+    expect(text()).toContain('Ajustement partagé');
   });
 
   it('cancels one timeslot of an absence without touching the others', async () => {

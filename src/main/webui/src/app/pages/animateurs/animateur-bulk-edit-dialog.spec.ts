@@ -68,7 +68,7 @@ function bouton(fixture: ComponentFixture<AnimateurBulkEditDialog>): HTMLButtonE
   return racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement;
 }
 
-function soumettre(fixture: ComponentFixture<AnimateurBulkEditDialog>): void {
+function submit(fixture: ComponentFixture<AnimateurBulkEditDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
@@ -109,7 +109,7 @@ describe('AnimateurBulkEditDialog', () => {
     await choisir(fixture, 'manager', 'Oui');
     expect(bouton(fixture).disabled).toBe(false);
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payloads(saveMany).map((each) => [each.id, each.manager])).toEqual([
@@ -140,7 +140,7 @@ describe('AnimateurBulkEditDialog', () => {
     await choisir(fixture, 'competenceMode', 'Ajouter');
     // An action with no typologie describes nothing: the button stays dead.
     expect(bouton(fixture).disabled).toBe(true);
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(saveMany).not.toHaveBeenCalled();
 
@@ -155,7 +155,7 @@ describe('AnimateurBulkEditDialog', () => {
     await choisir(fixture, 'competenceMode', 'Ajouter');
     await choisir(fixture, 'competenceTypologie', 'Ambiance');
     await choisir(fixture, 'competenceNiveau', 'REFERENT');
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payloads(saveMany).map((each) => each.competences)).toEqual([
@@ -174,7 +174,7 @@ describe('AnimateurBulkEditDialog', () => {
       'true'
     );
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(payloads(saveMany).map((each) => each.competences)).toEqual([{}, {}]);
   });
@@ -188,7 +188,7 @@ describe('AnimateurBulkEditDialog', () => {
     // bulk, so this is the one mode enabled with no typologie picked.
     expect(bouton(fixture).disabled).toBe(false);
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(payloads(saveMany).map((each) => each.souhaits)).toEqual([[], []]);
   });
@@ -206,7 +206,7 @@ describe('AnimateurBulkEditDialog', () => {
     await fixture.whenStable();
     expect(bouton(fixture).disabled).toBe(false);
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(payloads(saveMany).map((each) => each.joursIndisponibles)).toEqual([['2026-07-14'], ['2026-07-14']]);
   });
@@ -216,7 +216,7 @@ describe('AnimateurBulkEditDialog', () => {
     await fixture.whenStable();
 
     await choisir(fixture, 'manager', 'Non');
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(close).not.toHaveBeenCalled();

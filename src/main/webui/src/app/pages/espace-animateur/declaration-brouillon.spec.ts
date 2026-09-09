@@ -9,7 +9,7 @@ import {
   versNouvelleDeclaration
 } from './declaration-brouillon';
 
-function vue(overrides: Partial<DeclarationEspaceView> = {}): DeclarationEspaceView {
+function view(overrides: Partial<DeclarationEspaceView> = {}): DeclarationEspaceView {
   return {
     collecteOuverte: true,
     collecteDebut: null,
@@ -41,7 +41,7 @@ function enAttente(overrides: Partial<DeclarationView> = {}): DeclarationView {
 
 describe('brouillonInitial', () => {
   it('opens on the pending proposal so a correction is not retyped', () => {
-    const brouillon = brouillonInitial(vue({ enAttente: enAttente({ commentaire: 'je pars tôt' }) }));
+    const brouillon = brouillonInitial(view({ enAttente: enAttente({ commentaire: 'je pars tôt' }) }));
 
     expect(brouillon.joursIndisponibles).toEqual(['2026-07-10']);
     expect(brouillon.souhaits).toEqual(['T1']);
@@ -51,7 +51,7 @@ describe('brouillonInitial', () => {
   it('otherwise opens on what the organisation currently holds', () => {
     // Une page blanche voudrait dire « je suis disponible tous les jours »,
     // ce que personne n'a voulu déclarer.
-    const brouillon = brouillonInitial(vue({ joursActuels: ['2026-07-11'], souhaitsActuels: ['T1'] }));
+    const brouillon = brouillonInitial(view({ joursActuels: ['2026-07-11'], souhaitsActuels: ['T1'] }));
 
     expect(brouillon.joursIndisponibles).toEqual(['2026-07-11']);
     expect(brouillon.souhaits).toEqual(['T1']);
@@ -59,7 +59,7 @@ describe('brouillonInitial', () => {
   });
 
   it('never shares the arrays it opened on', () => {
-    const source = vue({ joursActuels: ['2026-07-11'] });
+    const source = view({ joursActuels: ['2026-07-11'] });
     brouillonInitial(source).joursIndisponibles.push('2026-07-10');
 
     expect(source.joursActuels).toEqual(['2026-07-11']);
@@ -86,29 +86,29 @@ describe('ouvertureAVenir', () => {
   it('names the opening day when the window has not started yet', () => {
     // « Fermée » et « pas encore ouverte » sont le même booléen côté serveur,
     // et disent le contraire à celui qui lit.
-    const source = vue({ collecteOuverte: false, collecteDebut: '2026-09-15' });
+    const source = view({ collecteOuverte: false, collecteDebut: '2026-09-15' });
 
     expect(ouvertureAVenir(source, '2026-09-01')).toBe('2026-09-15');
   });
 
   it('says nothing once the window is open', () => {
-    expect(ouvertureAVenir(vue({ collecteOuverte: true, collecteDebut: '2026-09-15' }), '2026-09-20')).toBeNull();
+    expect(ouvertureAVenir(view({ collecteOuverte: true, collecteDebut: '2026-09-15' }), '2026-09-20')).toBeNull();
   });
 
   it('says nothing when the window is really over', () => {
-    const source = vue({ collecteOuverte: false, collecteDebut: '2026-09-01', collecteFin: '2026-09-10' });
+    const source = view({ collecteOuverte: false, collecteDebut: '2026-09-01', collecteFin: '2026-09-10' });
 
     expect(ouvertureAVenir(source, '2026-09-20')).toBeNull();
   });
 
   it('says nothing on the opening day itself — closed then is a closure', () => {
-    const source = vue({ collecteOuverte: false, collecteDebut: '2026-09-15' });
+    const source = view({ collecteOuverte: false, collecteDebut: '2026-09-15' });
 
     expect(ouvertureAVenir(source, '2026-09-15')).toBeNull();
   });
 
   it('says nothing without a start date, nor without a view', () => {
-    expect(ouvertureAVenir(vue({ collecteOuverte: false }), '2026-09-01')).toBeNull();
+    expect(ouvertureAVenir(view({ collecteOuverte: false }), '2026-09-01')).toBeNull();
     expect(ouvertureAVenir(null, '2026-09-01')).toBeNull();
   });
 });
@@ -125,19 +125,19 @@ describe('basculer', () => {
 
 describe('declarationModifiee', () => {
   it('is false while the draft still says what is pending', () => {
-    const source = vue({ enAttente: enAttente() });
+    const source = view({ enAttente: enAttente() });
 
     expect(declarationModifiee(source, brouillonInitial(source))).toBe(false);
   });
 
   it('is false while the draft still says what the fiche says', () => {
-    const source = vue({ joursActuels: ['2026-07-10'], souhaitsActuels: ['T1'] });
+    const source = view({ joursActuels: ['2026-07-10'], souhaitsActuels: ['T1'] });
 
     expect(declarationModifiee(source, brouillonInitial(source))).toBe(false);
   });
 
   it('ignores the order the days were ticked in', () => {
-    const source = vue({ enAttente: enAttente({ joursIndisponibles: ['2026-07-10', '2026-07-11'] }) });
+    const source = view({ enAttente: enAttente({ joursIndisponibles: ['2026-07-10', '2026-07-11'] }) });
 
     expect(
       declarationModifiee(source, {
@@ -149,7 +149,7 @@ describe('declarationModifiee', () => {
   });
 
   it('sees a day added, a wish dropped and a comment written', () => {
-    const source = vue({ enAttente: enAttente() });
+    const source = view({ enAttente: enAttente() });
 
     expect(
       declarationModifiee(source, {
@@ -173,7 +173,7 @@ describe('declarationModifiee', () => {
   it('sees « je suis disponible tous les jours » as a change worth sending', () => {
     // Retirer sa seule indisponibilité est une déclaration, pas un retour à
     // l'état initial : le bouton doit rester actif.
-    const source = vue({ joursActuels: ['2026-07-10'] });
+    const source = view({ joursActuels: ['2026-07-10'] });
 
     expect(
       declarationModifiee(source, { joursIndisponibles: [], souhaits: [], commentaire: '' })

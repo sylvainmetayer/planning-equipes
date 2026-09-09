@@ -276,7 +276,7 @@ describe('HeatmapPage grid', () => {
 
     expect(racine().querySelector('.heatmap-table')).toBeNull();
     const messages = Array.from(racine().querySelectorAll('.empty-hint')).map((each) => each.textContent!);
-    expect(messages.some((texte) => texte.includes('boom'))).toBe(true);
+    expect(messages.some((text) => text.includes('boom'))).toBe(true);
   });
 
   it('offers the name filter on the animateur view only', async () => {

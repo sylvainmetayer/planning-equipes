@@ -17,7 +17,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
-import { ANCRE_DATE_DU_JOUR, DateMockService } from '../../core/date-mock.service';
+import { TODAY_ANCHOR, DateMockService } from '../../core/date-mock.service';
 import { EditionStore } from '../../core/edition.store';
 import { ConstraintsView, ResetSummary } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -40,7 +40,7 @@ import { errorMessage, errorPrefix } from '../../core/error-message';
  * untranslated on purpose: a keyword whose spelling follows the interface
  * language is a keyword an administrator gets wrong after a language switch.
  */
-export const MOT_CLE_VIDER = 'VIDER';
+export const CLEAR_KEYWORD = 'VIDER';
 
 /**
  * Raw dump of the last constraint analysis (`GET /api/constraints`):
@@ -90,7 +90,7 @@ export class DebugPage {
   private readonly problemes = inject(ProblemesStore);
   protected readonly dates = inject(DateMockService);
 
-  protected readonly ancreDateDuJour = ANCRE_DATE_DU_JOUR;
+  protected readonly ancreDateDuJour = TODAY_ANCHOR;
   protected readonly dateDuJourErreur = signal('');
 
   /**
@@ -108,7 +108,7 @@ export class DebugPage {
    */
   private focusEnAttente =
     inject(ActivatedRoute, { optional: true })?.snapshot.queryParamMap.get('focus') ===
-    ANCRE_DATE_DU_JOUR;
+    TODAY_ANCHOR;
 
   constructor() {
     void this.chargerMailConfig();
@@ -192,7 +192,7 @@ export class DebugPage {
       message: nomEdition
         ? $localize`:@@dataSetup.resetPromptMessage:Tous les stands, créneaux, animateurs, affectations et ajustements manuels de l'édition « ${nomEdition}:edition: » sont supprimés, et rien n'est rechargé. Les autres éditions ne sont pas touchées.`
         : $localize`:@@dataSetup.resetPromptMessageSansEdition:Tous les stands, créneaux, animateurs, affectations et ajustements manuels de l'édition courante sont supprimés, et rien n'est rechargé. Les autres éditions ne sont pas touchées.`,
-      valeurAttendue: nomEdition ?? MOT_CLE_VIDER,
+      valeurAttendue: nomEdition ?? CLEAR_KEYWORD,
       confirmLabel: $localize`:@@dataSetup.resetConfirmLabel:Vider`
     });
     if (!confirmed) {

@@ -36,20 +36,20 @@ describe('ConditionsUtilisationPage', () => {
     const fixture = monter();
     await fixture.whenStable();
 
-    const texte = fixture.nativeElement.textContent as string;
-    expect(texte).toContain('aide à la décision');
-    expect(texte).toContain("ni certification de conformité");
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('aide à la décision');
+    expect(text).toContain("ni certification de conformité");
   });
 
   it('dit que l’organisateur reste l’employeur et le responsable du respect de la réglementation', async () => {
     const fixture = monter();
     await fixture.whenStable();
 
-    const texte = fixture.nativeElement.textContent as string;
-    expect(texte).toContain('employeur ou le donneur d');
-    expect(texte).toContain('droit du travail');
-    expect(texte).toContain('travail des mineurs');
-    expect(texte).toContain('responsable des données');
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('employeur ou le donneur d');
+    expect(text).toContain('droit du travail');
+    expect(text).toContain('travail des mineurs');
+    expect(text).toContain('responsable des données');
   });
 
   it('limite la responsabilité sans prétendre écarter ce que la loi protège', async () => {
@@ -59,9 +59,9 @@ describe('ConditionsUtilisationPage', () => {
     const fixture = monter();
     await fixture.whenStable();
 
-    const texte = fixture.nativeElement.textContent as string;
-    expect(texte).toContain("en l'état");
-    expect(texte).toContain('faute lourde');
-    expect(texte).toContain('dommages corporels');
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain("en l'état");
+    expect(text).toContain('faute lourde');
+    expect(text).toContain('dommages corporels');
   });
 });

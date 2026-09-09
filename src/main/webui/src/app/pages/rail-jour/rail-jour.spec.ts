@@ -438,8 +438,8 @@ describe('buildRailJours — pauses', () => {
     const alice = animateur('alice');
     const postes = [poste({ id: 'p1', creneau: creneau({ id: 1, date: '2026-08-01', heureDebut: '13:00', heureFin: '20:00' }), stand: stand('Tir'), animateur: alice })];
 
-    const [sans] = buildRailJours(postes, [alice, animateur('bob')], []);
-    expect(sans.lignes.every((ligne) => ligne.pauses.length === 0)).toBe(true);
+    const [without] = buildRailJours(postes, [alice, animateur('bob')], []);
+    expect(without.lignes.every((ligne) => ligne.pauses.length === 0)).toBe(true);
   });
 });
 });

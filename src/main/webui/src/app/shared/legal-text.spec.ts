@@ -22,9 +22,9 @@ describe('LegalText', () => {
   }
 
   it('renders the sentence unchanged, spacing included', async () => {
-    const texte = 'Pas de travail de nuit pour un mineur (Code du travail art. L3163-1).';
-    const host = await render(texte);
-    expect(host.textContent).toBe(texte);
+    const text = 'Pas de travail de nuit pour un mineur (Code du travail art. L3163-1).';
+    const host = await render(text);
+    expect(host.textContent).toBe(text);
   });
 
   it('links each cited article to Légifrance, in a new tab', async () => {

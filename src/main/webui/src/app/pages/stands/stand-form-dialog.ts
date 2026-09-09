@@ -118,7 +118,7 @@ export class StandFormDialog {
   /** Relay families of the grid; the field only shows when there is more than one to choose from. */
   protected readonly familles = computed<number[]>(() => {
     const max = Math.max(-1, ...this.store.creneaux().map((creneau) => creneau.famille ?? 0));
-    return max < 1 ? [] : Array.from({ length: max + 1 }, (_, famille) => famille);
+    return max < 1 ? [] : Array.from({ length: max + 1 }, (_, family) => family);
   });
 
   /** The schedule as the solver will read it, day by day — the point of the whole editor. */

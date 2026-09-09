@@ -56,20 +56,20 @@ describe('buildEspaceAideSections', () => {
   it('only sends the reader to a tab of the espace', () => {
     const cibles = sections.map((section) => section.cible).filter(Boolean);
     expect(cibles.length).toBeGreaterThan(0);
-    for (const cible of cibles) {
-      expect(['planning', 'echanges', 'disponibilites']).toContain(cible);
+    for (const target of cibles) {
+      expect(['planning', 'echanges', 'disponibilites']).toContain(target);
     }
   });
 
   it('speaks the vocabulary of the screens, not the solver', () => {
-    const texte = sections.map(textOf).join(' ');
+    const text = sections.map(textOf).join(' ');
     for (const mot of ['créneau', 'stand', 'coéquipiers', 'foire au planning', 'organisation']) {
-      expect(texte).toContain(mot);
+      expect(text).toContain(mot);
     }
     // Le vocabulaire d'organisateur n'a pas de sens pour un animateur : il ne
     // voit ni le solveur, ni un score, ni un découpage.
     for (const mot of ['solveur', 'score dur', 'découpage', 'contrainte souple']) {
-      expect(texte).not.toContain(mot);
+      expect(text).not.toContain(mot);
     }
   });
 

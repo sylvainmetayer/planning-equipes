@@ -21,8 +21,8 @@ import { Injector, afterNextRender } from '@angular/core';
 export function focusApresSuppression(hote: HTMLElement, selecteur: string, injector: Injector): void {
   afterNextRender(
     () => {
-      const cible = hote.querySelector<HTMLElement>(selecteur);
-      cible?.focus();
+      const target = hote.querySelector<HTMLElement>(selecteur);
+      target?.focus();
     },
     { injector }
   );

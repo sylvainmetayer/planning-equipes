@@ -145,9 +145,9 @@ export class PausesPage {
   protected decalerJour(delta: number): void {
     const jours = this.jours();
     const index = jours.findIndex((jour) => jour.date === this.jourCourant()?.date);
-    const cible = jours[index + delta];
-    if (cible) {
-      this.selectionnerJour(cible.date);
+    const target = jours[index + delta];
+    if (target) {
+      this.selectionnerJour(target.date);
     }
   }
 }

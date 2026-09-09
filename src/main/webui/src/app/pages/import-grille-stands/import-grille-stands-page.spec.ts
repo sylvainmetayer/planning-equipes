@@ -90,11 +90,11 @@ describe('ImportGrilleStandsPage', () => {
     expect(api.post).toHaveBeenCalledOnce();
     expect((api.post.mock.calls[0] as unknown as [string, { fileName: string }])[0]).toBe('/api/stands/import-grille/analyse');
     expect((api.post.mock.calls[0] as unknown as [string, { fileName: string }])[1].fileName).toBe('grille.csv');
-    const texte = racine().textContent!.replace(/\s+/g, ' ');
-    expect(texte).toContain('1 colonne(s) reconnue(s)');
-    expect(texte).toContain('2026-07-08 montage');
-    expect(texte).toContain('En-tête illisible');
-    expect(texte).toContain('1 créneau(x) sans colonne.');
+    const text = racine().textContent!.replace(/\s+/g, ' ');
+    expect(text).toContain('1 colonne(s) reconnue(s)');
+    expect(text).toContain('2026-07-08 montage');
+    expect(text).toContain('En-tête illisible');
+    expect(text).toContain('1 créneau(x) sans colonne.');
     expect(racine().querySelectorAll('tbody tr')).toHaveLength(2);
     expect(racine().querySelector('tr[data-ligne="3"]')!.textContent).toContain('1 règle(s)');
     expect(racine().querySelector('tr[data-ligne="4"]')!.textContent).toContain('Aucun stand « Inconnu »');

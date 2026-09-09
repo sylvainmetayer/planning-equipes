@@ -21,7 +21,7 @@ import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { EspaceAnimateurView, PosteAnimateurView } from '../../core/models';
 import { EspacePlanningPage } from './espace-planning-page';
 
-function vue(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
+function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
     joursRepos: [],
     animateurId: 'alice',
@@ -54,7 +54,7 @@ function poste(): PosteAnimateurView {
 }
 
 describe('EspacePlanningPage — « Emporter mon planning »', () => {
-  const espaceVue = signal<EspaceAnimateurView | null>(vue());
+  const espaceVue = signal<EspaceAnimateurView | null>(view());
   const espaceJeton = signal<string | null>('jeton-1');
   const regenererAbonnement = vi.fn(async () => undefined);
   let fixture: ComponentFixture<EspacePlanningPage>;
@@ -107,7 +107,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     await fixture.whenStable();
   }
 
-  async function copier(): Promise<void> {
+  async function copy(): Promise<void> {
     bouton("Copier l'adresse").click();
     await fixture.whenStable();
   }
@@ -121,7 +121,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
   }
 
   beforeEach(() => {
-    espaceVue.set(vue());
+    espaceVue.set(view());
     espaceJeton.set('jeton-1');
     regenererAbonnement.mockClear();
   });
@@ -140,7 +140,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
   });
 
   it('puts the band above the day cards, and the subscription first in it', async () => {
-    espaceVue.set(vue({ postes: [poste()] }));
+    espaceVue.set(view({ postes: [poste()] }));
     await rendre();
 
     const bande = racine().querySelector('.espace-agenda')!;
@@ -203,7 +203,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
   });
 
   it('offers the subscription with nothing published, and the files only with one', async () => {
-    espaceVue.set(vue({ publieLe: null, postes: [] }));
+    espaceVue.set(view({ publieLe: null, postes: [] }));
     await rendre();
 
     // Subscribing ahead of the publication is the good gesture: the feed fills
@@ -211,7 +211,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     expect(racine().querySelector('.espace-agenda-abonnement')).not.toBeNull();
     expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(1);
 
-    espaceVue.set(vue({ postes: [poste()] }));
+    espaceVue.set(view({ postes: [poste()] }));
     await rendre();
 
     expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(3);
@@ -229,7 +229,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     await rendre();
     await deplier();
 
-    await copier();
+    await copy();
 
     expect(writeText).toHaveBeenCalledExactlyOnceWith(
       `${window.location.origin}/api/abonnements/abo-1/planning.ics`
@@ -242,11 +242,11 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     clipboard('accepte');
     await rendre();
     await deplier();
-    await copier();
+    await copy();
     expect(succes()).not.toBeNull();
 
     clipboard('refuse');
-    await copier();
+    await copy();
 
     // The fallback the error asks for is « select the address above »; a
     // leftover « Adresse copiée » would tell the animateur not to bother.
@@ -258,11 +258,11 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     clipboard('refuse');
     await rendre();
     await deplier();
-    await copier();
+    await copy();
     expect(erreur()).not.toBeNull();
 
     clipboard('accepte');
-    await copier();
+    await copy();
 
     expect(erreur()).toBeNull();
     expect(succes()).not.toBeNull();
@@ -270,7 +270,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
 
   it('prints the break of the day under its title, and says when nobody can relay', async () => {
     espaceVue.set(
-      vue({
+      view({
         postes: [poste()],
         pauses: [
           { date: '2026-07-10', debut: '18:40:00', fin: '19:00:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: true }
@@ -284,7 +284,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     expect(note.querySelector('.espace-pause-seul')).toBeNull();
 
     espaceVue.set(
-      vue({
+      view({
         postes: [poste()],
         pauses: [
           { date: '2026-07-10', debut: '18:40:00', fin: '19:00:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: false }

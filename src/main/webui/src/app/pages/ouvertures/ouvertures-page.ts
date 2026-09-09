@@ -38,7 +38,7 @@ import {
   cellulesDepuis,
   cellulesInertes,
   cellulesPartielles,
-  cle,
+  key,
   collerBloc,
   compterRecopiees,
   colonnes,
@@ -165,8 +165,8 @@ export class OuverturesPage {
   }
 
   /** Leaving the entry view with unsaved cells asks first: they would silently survive, invisible, until the next reload. */
-  protected async changerVue(vue: VueOuvertures): Promise<void> {
-    if (vue === 'CONSULTER' && this.standsModifies().length > 0) {
+  protected async changerVue(view: VueOuvertures): Promise<void> {
+    if (view === 'CONSULTER' && this.standsModifies().length > 0) {
       const abandon = await this.confirm.ask({
         title: $localize`:@@ouvertures.saisie.quitterTitle:Abandonner les modifications ?`,
         message: $localize`:@@ouvertures.saisie.quitterMessage:${this.standsModifies().length}:stands: stand(s) ont des cases modifiées non enregistrées.`,
@@ -178,7 +178,7 @@ export class OuverturesPage {
       }
       this.cellules.set(this.reference());
     }
-    this.vue.set(vue);
+    this.vue.set(view);
   }
 
   protected infobullePartielle(): string {
@@ -200,7 +200,7 @@ export class OuverturesPage {
 
   /** A créneau of another stagger family: this stand never holds a seat there. */
   protected estInerte(standId: string, creneauId: number): boolean {
-    return this.inertes().has(cle(standId, creneauId));
+    return this.inertes().has(key(standId, creneauId));
   }
 
   protected infobulleInerte(): string {
@@ -212,15 +212,15 @@ export class OuverturesPage {
   }
 
   protected identifiant(standId: string, creneauId: number): string {
-    return cle(standId, creneauId);
+    return key(standId, creneauId);
   }
 
   /** A keystroke in a cell: digits become the headcount, an emptied field closes the stand; anything else is left as typed. */
-  protected saisir(standId: string, creneauId: number, texte: string): void {
+  protected saisir(standId: string, creneauId: number, text: string): void {
     if (this.estInerte(standId, creneauId)) {
       return;
     }
-    const lu = lireCellule(texte);
+    const lu = lireCellule(text);
     if (lu !== undefined) {
       this.cellules.update((cellules) => ecrireCellule(cellules, { standId, creneauId }, lu));
     }
@@ -256,23 +256,23 @@ export class OuverturesPage {
     if (event.key === 'ArrowRight' && (champ.selectionEnd ?? 0) < champ.value.length) {
       return;
     }
-    const cible = deplacement(event.key, { standId, creneauId }, this.standIdsAffiches(), this.colonnes());
-    if (cible === null) {
+    const target = deplacement(event.key, { standId, creneauId }, this.standIdsAffiches(), this.colonnes());
+    if (target === null) {
       return;
     }
     event.preventDefault();
-    this.hote.nativeElement.querySelector<HTMLInputElement>(`[data-cellule="${cle(cible.standId, cible.creneauId)}"]`)?.focus();
+    this.hote.nativeElement.querySelector<HTMLInputElement>(`[data-cellule="${key(target.standId, target.creneauId)}"]`)?.focus();
   }
 
   /** A block copied from a spreadsheet lands from the cell it is pasted in; a single value pastes as typed. */
   protected auCollage(event: ClipboardEvent, standId: string, creneauId: number): void {
-    const texte = event.clipboardData?.getData('text') ?? '';
-    if (!/[\t\n]/.test(texte)) {
+    const text = event.clipboardData?.getData('text') ?? '';
+    if (!/[\t\n]/.test(text)) {
       return;
     }
     event.preventDefault();
     this.cellules.update((cellules) =>
-      collerBloc(cellules, texte, { standId, creneauId }, this.standIdsAffiches(), this.colonnes(), this.inertes())
+      collerBloc(cellules, text, { standId, creneauId }, this.standIdsAffiches(), this.colonnes(), this.inertes())
     );
   }
 
@@ -301,10 +301,10 @@ export class OuverturesPage {
    * then does nothing at all — silence would read as success.
    */
   private appliquerRecopie(recopie: (cellules: Cellules) => Cellules): void {
-    const avant = this.cellules();
-    const apres = recopie(avant);
-    const changees = compterRecopiees(avant, apres, this.colonnes());
-    this.cellules.set(apres);
+    const before = this.cellules();
+    const after = recopie(before);
+    const changees = compterRecopiees(before, after, this.colonnes());
+    this.cellules.set(after);
     if (changees === 0) {
       this.notifications.notify({
         title: $localize`:@@ouvertures.saisie.recopieVide:Aucune case recopiée : les créneaux des autres jours n'ont pas les mêmes horaires.`,
@@ -393,7 +393,7 @@ export class OuverturesPage {
 
   protected infobulleStand(ligne: LigneStandOuverture): string {
     const anomalies = this.anomaliesDe(ligne.standId);
-    return anomalies.length === 0 ? '' : anomalies.map((anomalie) => anomalie.message).join('\n');
+    return anomalies.length === 0 ? '' : anomalies.map((anomaly) => anomaly.message).join('\n');
   }
 
   /** Everything a cell says, for its tooltip — state, windows, decisive layer, postes. */

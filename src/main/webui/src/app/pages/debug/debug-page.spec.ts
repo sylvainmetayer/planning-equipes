@@ -18,7 +18,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
-import { DebugPage, MOT_CLE_VIDER } from './debug-page';
+import { DebugPage, CLEAR_KEYWORD } from './debug-page';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
 import type { Edition } from '../../core/models';
 
@@ -122,7 +122,7 @@ describe('DebugPage reset', () => {
 
     await page().onResetDatabase();
 
-    expect(demande().valeurAttendue).toBe(MOT_CLE_VIDER);
+    expect(demande().valeurAttendue).toBe(CLEAR_KEYWORD);
     expect(demande().message).toContain("l'édition courante");
   });
 
@@ -133,7 +133,7 @@ describe('DebugPage reset', () => {
 
     await page().onResetDatabase();
 
-    expect(demande().valeurAttendue).toBe(MOT_CLE_VIDER);
+    expect(demande().valeurAttendue).toBe(CLEAR_KEYWORD);
   });
 
   // The solver lock comes first: no point asking for a transcription of

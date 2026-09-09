@@ -78,8 +78,8 @@ export function masquerJetonPartout<T>(valeur: T): T {
   }
   if (valeur && typeof valeur === 'object') {
     const objet = valeur as Record<string, unknown>;
-    for (const cle of Object.keys(objet)) {
-      objet[cle] = masquerJetonPartout(objet[cle]);
+    for (const key of Object.keys(objet)) {
+      objet[key] = masquerJetonPartout(objet[key]);
     }
     return valeur;
   }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EntreeHistorique } from '../../core/models';
 import {
   entitesPresentes,
-  filtrer,
+  filter,
   journeeLocale,
   lireFiltreActeur,
   lireFiltreResultat,
@@ -33,7 +33,7 @@ function entree(partial: Partial<EntreeHistorique> = {}): EntreeHistorique {
 describe('filtrer', () => {
   it('garde tout par défaut', () => {
     const entrees = [entree(), entree({ id: 2, acteur: 'ANIMATEUR' })];
-    expect(filtrer(entrees, 'TOUS', 'TOUS', '', '')).toHaveLength(2);
+    expect(filter(entrees, 'TOUS', 'TOUS', '', '')).toHaveLength(2);
   });
 
   it('filtre par auteur, par résultat et par objet', () => {
@@ -43,19 +43,19 @@ describe('filtrer', () => {
       entree({ id: 3, resultat: 'REFUS', statut: 409 }),
       entree({ id: 4, entite: 'STAND', entiteId: 'S1', entiteNom: null })
     ];
-    expect(filtrer(entrees, 'ASSISTANT', 'TOUS', '', '').map((e) => e.id)).toEqual([2]);
-    expect(filtrer(entrees, 'TOUS', 'REFUS', '', '').map((e) => e.id)).toEqual([3]);
-    expect(filtrer(entrees, 'TOUS', 'TOUS', 'STAND', '').map((e) => e.id)).toEqual([4]);
+    expect(filter(entrees, 'ASSISTANT', 'TOUS', '', '').map((e) => e.id)).toEqual([2]);
+    expect(filter(entrees, 'TOUS', 'REFUS', '', '').map((e) => e.id)).toEqual([3]);
+    expect(filter(entrees, 'TOUS', 'TOUS', 'STAND', '').map((e) => e.id)).toEqual([4]);
   });
 
   /** The search covers what the row shows — and only that, or it would look broken. */
   it('cherche dans la phrase, la personne, l’objet et les champs', () => {
     const entrees = [entree(), entree({ id: 2, libelle: 'Stand ajouté', entite: 'STAND', entiteId: 'S1', entiteNom: null, champs: [] })];
-    expect(filtrer(entrees, 'TOUS', 'TOUS', '', 'alice').map((e) => e.id)).toEqual([1]);
-    expect(filtrer(entrees, 'TOUS', 'TOUS', '', 'email').map((e) => e.id)).toEqual([1]);
-    expect(filtrer(entrees, 'TOUS', 'TOUS', '', 'stand').map((e) => e.id)).toEqual([2]);
+    expect(filter(entrees, 'TOUS', 'TOUS', '', 'alice').map((e) => e.id)).toEqual([1]);
+    expect(filter(entrees, 'TOUS', 'TOUS', '', 'email').map((e) => e.id)).toEqual([1]);
+    expect(filter(entrees, 'TOUS', 'TOUS', '', 'stand').map((e) => e.id)).toEqual([2]);
     // Accent- and case-insensitive, like every other quick filter here.
-    expect(filtrer(entrees, 'TOUS', 'TOUS', '', 'MODIFIEE').map((e) => e.id)).toEqual([1]);
+    expect(filter(entrees, 'TOUS', 'TOUS', '', 'MODIFIEE').map((e) => e.id)).toEqual([1]);
   });
 });
 

@@ -12,7 +12,7 @@ import {
   trierAnomalies
 } from './grille-creneaux';
 
-function anomalie(patch: Partial<AnomalieGrille>): AnomalieGrille {
+function anomaly(patch: Partial<AnomalieGrille>): AnomalieGrille {
   return { severite: 'AVERTISSEMENT', type: 'TROU_DANS_LA_JOURNEE', date: '2026-07-08', message: 'trou', ...patch };
 }
 
@@ -93,22 +93,22 @@ describe('regleDepuis', () => {
 
 describe('verdict', () => {
   it('compte erreurs, avertissements et ouvertures, et lit la faisabilité', () => {
-    const bilan = bilanGrille({ ...rapport([anomalie({ severite: 'ERREUR' }), anomalie({})], false), ouvertures: [{ type: 'STAND_JAMAIS_OUVERT', standId: 'S', standNom: 'S', date: null, message: '' }] });
+    const bilan = bilanGrille({ ...rapport([anomaly({ severite: 'ERREUR' }), anomaly({})], false), ouvertures: [{ type: 'STAND_JAMAIS_OUVERT', standId: 'S', standNom: 'S', date: null, message: '' }] });
     expect(bilan).toEqual({ erreurs: 1, avertissements: 1, ouvertures: 1, faisable: false });
     expect(bilanGrille(rapport([], null)).faisable).toBeNull();
   });
 
   it('ne bloque que sur une erreur', () => {
     expect(grilleBloquee(null)).toBe(false);
-    expect(grilleBloquee(rapport([anomalie({})]))).toBe(false);
-    expect(grilleBloquee(rapport([anomalie({ severite: 'ERREUR', type: 'DOUBLON' })]))).toBe(true);
+    expect(grilleBloquee(rapport([anomaly({})]))).toBe(false);
+    expect(grilleBloquee(rapport([anomaly({ severite: 'ERREUR', type: 'DOUBLON' })]))).toBe(true);
   });
 
   // Le verdict porte sur toute la grille obtenue : une édition qui traîne déjà
   // une erreur rendrait sinon toute règle inécrivable, en accusant la règle.
   it('ne bloque pas sur une erreur que la grille portait déjà', () => {
-    const deja = anomalie({ severite: 'ERREUR', type: 'REPOS_QUOTIDIEN_IMPOSSIBLE', message: 'trop long' });
-    const nouvelle = anomalie({ severite: 'ERREUR', type: 'DOUBLON', message: 'doublon' });
+    const deja = anomaly({ severite: 'ERREUR', type: 'REPOS_QUOTIDIEN_IMPOSSIBLE', message: 'trop long' });
+    const nouvelle = anomaly({ severite: 'ERREUR', type: 'DOUBLON', message: 'doublon' });
 
     expect(grilleBloquee(rapport([deja]), rapport([deja]))).toBe(false);
     expect(grilleBloquee(rapport([deja, nouvelle]), rapport([deja]))).toBe(true);
@@ -117,9 +117,9 @@ describe('verdict', () => {
 
   it('trie les erreurs avant les avertissements, puis par date', () => {
     const triees = trierAnomalies([
-      anomalie({ date: '2026-07-09', message: 'b' }),
-      anomalie({ severite: 'ERREUR', date: '2026-07-10', message: 'c' }),
-      anomalie({ date: null, message: 'a' })
+      anomaly({ date: '2026-07-09', message: 'b' }),
+      anomaly({ severite: 'ERREUR', date: '2026-07-10', message: 'c' }),
+      anomaly({ date: null, message: 'a' })
     ]);
     expect(triees.map((each) => each.message)).toEqual(['c', 'a', 'b']);
     expect(iconeAnomalieGrille(triees[0])).toBe('error');

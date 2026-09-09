@@ -180,8 +180,8 @@ export class SolverPage {
   /** The comparison is only worth showing when both scores are known. */
   protected readonly comparaisonPlan = computed(() => {
     const precedent = this.planPrecedent();
-    const apres = this.score();
-    return precedent?.score && apres ? { avant: precedent.score, apres } : null;
+    const after = this.score();
+    return precedent?.score && after ? { avant: precedent.score, apres: after } : null;
   });
   protected readonly restaurationEnCours = signal(false);
 
@@ -600,10 +600,10 @@ export class SolverPage {
    * result says exactly which crews moved.
    */
   protected async onSolveIncremental(): Promise<void> {
-    const perimetre = await firstValueFrom(
+    const scope = await firstValueFrom(
       this.dialog.open(ReplanificationDialog, { width: '640px' }).afterClosed()
     );
-    if (!perimetre) {
+    if (!scope) {
       return;
     }
     // Busy solver: plan it instead of refusing. Read once, before the await, so
@@ -618,7 +618,7 @@ export class SolverPage {
     try {
       // No duration passed on purpose: the server applies its own short budget,
       // an order of magnitude under the full-solve one.
-      await this.jobs.submitSolveIncremental(perimetre as PerimetreReplanification, undefined, enFile);
+      await this.jobs.submitSolveIncremental(scope as PerimetreReplanification, undefined, enFile);
       this.output.set(
         enFile
           ? $localize`:@@solver.incremental.planned:Replanification planifiée : elle démarrera d'elle-même sur cette édition dès que la tâche en cours sera terminée.`
@@ -841,18 +841,18 @@ export class SolverPage {
       return;
     }
     const apercu = this.publicationApercu();
-    const nombre = apercu ? apercu.nombreConcernes : 0;
+    const count = apercu ? apercu.nombreConcernes : 0;
     // Raised BEFORE the confirmation, not after it: the button drives it, and
     // leaving it live while the dialog is open lets a second click open a
     // second dialog — two confirmations, two POSTs, two waves of mail. On this
     // action the double click is the failure mode, so the guard has to cover
     // the whole gesture and not only the request.
     this.publicationBusy.set(true);
-    this.publicationDestinatairesEnCours.set(nombre);
+    this.publicationDestinatairesEnCours.set(count);
     try {
       const confirme = await this.confirm.ask({
         title: $localize`:@@publication.confirmTitre:Publier le planning ?`,
-        message: $localize`:@@publication.confirmMessage:${nombre}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`,
+        message: $localize`:@@publication.confirmMessage:${count}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`,
         confirmLabel: $localize`:@@publication.confirmAction:Publier`
       });
       if (!confirme) {
@@ -889,9 +889,9 @@ export class SolverPage {
   }
 
   protected async onBasculerListePublication(): Promise<void> {
-    const ouverte = !this.publicationListeOuverte();
-    this.publicationListeOuverte.set(ouverte);
-    if (ouverte) {
+    const open = !this.publicationListeOuverte();
+    this.publicationListeOuverte.set(open);
+    if (open) {
       await this.chargerApercuPublication();
     }
   }

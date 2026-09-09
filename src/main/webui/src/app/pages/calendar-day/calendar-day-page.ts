@@ -193,19 +193,19 @@ export class CalendarDayPage {
     const source = event.item.data;
     const ligne = event.container.data;
     const sousLePointeur = document.elementFromPoint(event.dropPoint.x, event.dropPoint.y);
-    const cible = cibleDepot(
+    const target = cibleDepot(
       sousLePointeur,
       ligne.postesLibres,
       ligne.entries.map((entry) => entry.poste)
     );
-    if (!cible) {
+    if (!target) {
       this.notifications.notify({
         title: $localize`:@@calendarDay.depotSansSiege:Aucun siège libre sur cette ligne : déposez sur une personne pour échanger.`,
         variant: 'warning'
       });
       return;
     }
-    await this.deplacer(source.id, cible, source.animateur?.id ?? null);
+    await this.deplacer(source.id, target, source.animateur?.id ?? null);
   }
 
   private async deplacer(posteSourceId: string, posteCibleId: string, occupant: string | null): Promise<void> {

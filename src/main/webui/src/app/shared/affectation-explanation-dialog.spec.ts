@@ -151,7 +151,7 @@ function mount(
 }
 
 /** Everything the dialog is currently showing, whitespace-normalised. */
-function texte(fixture: ComponentFixture<AffectationExplanationDialog>): string {
+function text(fixture: ComponentFixture<AffectationExplanationDialog>): string {
   return (fixture.nativeElement as HTMLElement).textContent!.replace(/\s+/g, ' ').trim();
 }
 
@@ -177,7 +177,7 @@ describe('AffectationExplanationDialog', () => {
     await fixture.whenStable();
 
     expect(root(fixture).querySelector('mat-spinner')).not.toBeNull();
-    expect(texte(fixture)).not.toContain('Score global');
+    expect(text(fixture)).not.toContain('Score global');
 
     pending.resolve(explication());
     // Awaiting the very promise the component awaited: our continuation is
@@ -189,7 +189,7 @@ describe('AffectationExplanationDialog', () => {
     await fixture.whenStable();
 
     expect(root(fixture).querySelector('mat-spinner')).toBeNull();
-    expect(texte(fixture)).toContain('Score global');
+    expect(text(fixture)).toContain('Score global');
   });
 
   it('names the seat it is explaining: the stand and its current occupant', async () => {
@@ -226,7 +226,7 @@ describe('AffectationExplanationDialog', () => {
     });
     await fixture.whenStable();
 
-    const affiche = texte(fixture);
+    const affiche = text(fixture);
     expect(affiche).toContain('Contraintes non respectées pour ce poste');
     // The description wins over the raw constraint name when the server sends one.
     expect(affiche).toContain('Repos quotidien de 11 h');
@@ -242,14 +242,14 @@ describe('AffectationExplanationDialog', () => {
     });
     await fixture.whenStable();
 
-    expect(texte(fixture)).toContain('mineurApres22h');
+    expect(text(fixture)).toContain('mineurApres22h');
   });
 
   it('says so explicitly when nothing is violated, instead of showing an empty list', async () => {
     const { fixture } = mount({});
     await fixture.whenStable();
 
-    expect(texte(fixture)).toContain('Aucun écart détecté sur ce poste');
+    expect(text(fixture)).toContain('Aucun écart détecté sur ce poste');
     expect(root(fixture).querySelectorAll('.affectation-explanation-list')).toHaveLength(0);
   });
 
@@ -274,7 +274,7 @@ describe('AffectationExplanationDialog', () => {
 
     expect(root(fixture).querySelector('.affectation-explanation-error')!.textContent).toContain('poste introuvable');
     expect(root(fixture).querySelector('mat-spinner')).toBeNull();
-    expect(texte(fixture)).not.toContain('Score global');
+    expect(text(fixture)).not.toContain('Score global');
   });
 
   it('closes on the Fermer button', async () => {
@@ -307,7 +307,7 @@ describe('AffectationExplanationDialog', () => {
       await fixture.whenStable();
 
       expect(suggererReparations).not.toHaveBeenCalled();
-      expect(texte(fixture)).toContain('Suggestions de réparation');
+      expect(text(fixture)).toContain('Suggestions de réparation');
     });
 
     it('lists the viable replacements with the constraints each one settles', async () => {
@@ -325,8 +325,8 @@ describe('AffectationExplanationDialog', () => {
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
 
-      expect(texte(fixture)).toContain('Alex Martin');
-      expect(texte(fixture)).toContain('Pas de chevauchement');
+      expect(text(fixture)).toContain('Alex Martin');
+      expect(text(fixture)).toContain('Pas de chevauchement');
     });
 
     it('says so plainly when no candidate can take the seat without breaking a hard rule', async () => {
@@ -336,7 +336,7 @@ describe('AffectationExplanationDialog', () => {
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
 
-      expect(texte(fixture)).toContain('Aucun remplacement possible');
+      expect(text(fixture)).toContain('Aucun remplacement possible');
     });
 
     /**
@@ -353,7 +353,7 @@ describe('AffectationExplanationDialog', () => {
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
 
-      expect(texte(fixture)).toContain('pas une réponse exhaustive');
+      expect(text(fixture)).toContain('pas une réponse exhaustive');
     });
 
     it('stays silent about truncation when the whole eligible pool was evaluated', async () => {
@@ -365,7 +365,7 @@ describe('AffectationExplanationDialog', () => {
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
 
-      expect(texte(fixture)).not.toContain('pas une réponse exhaustive');
+      expect(text(fixture)).not.toContain('pas une réponse exhaustive');
     });
 
     it('applies a suggestion and closes with what changed, so the calendar can reload', async () => {
@@ -394,7 +394,7 @@ describe('AffectationExplanationDialog', () => {
       await cliquer(fixture, 'Appliquer');
 
       expect(close).not.toHaveBeenCalled();
-      expect(texte(fixture)).toContain('Ce poste est verrouillé');
+      expect(text(fixture)).toContain('Ce poste est verrouillé');
     });
 
     it('reports a failed search without wiping the explanation already on screen', async () => {
@@ -406,8 +406,8 @@ describe('AffectationExplanationDialog', () => {
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
 
-      expect(texte(fixture)).toContain('recherche impossible');
-      expect(texte(fixture)).toContain('Score global');
+      expect(text(fixture)).toContain('recherche impossible');
+      expect(text(fixture)).toContain('Score global');
     });
   });
 });

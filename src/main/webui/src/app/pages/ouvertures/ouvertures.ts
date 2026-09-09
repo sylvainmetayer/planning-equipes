@@ -44,7 +44,7 @@ export function dureeCourte(minutes: number, libelles: { heures: string; minutes
 
 /** Ids of the stands carrying at least one anomaly, for the filter and the row badge. */
 export function standsEnAnomalie(anomalies: readonly AnomalieOuverture[]): Set<string> {
-  return new Set(anomalies.map((anomalie) => anomalie.standId));
+  return new Set(anomalies.map((anomaly) => anomaly.standId));
 }
 
 /** The anomalies of one stand, so a row can carry its own tooltip. */
@@ -52,10 +52,10 @@ export function anomaliesParStand(
   anomalies: readonly AnomalieOuverture[]
 ): Map<string, AnomalieOuverture[]> {
   const parStand = new Map<string, AnomalieOuverture[]>();
-  for (const anomalie of anomalies) {
-    const liste = parStand.get(anomalie.standId) ?? [];
-    liste.push(anomalie);
-    parStand.set(anomalie.standId, liste);
+  for (const anomaly of anomalies) {
+    const liste = parStand.get(anomaly.standId) ?? [];
+    liste.push(anomaly);
+    parStand.set(anomaly.standId, liste);
   }
   return parStand;
 }

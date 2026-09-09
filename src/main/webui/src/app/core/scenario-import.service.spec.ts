@@ -22,7 +22,7 @@ import type { CibleImport, Edition, ImpactImport, ImportScenarioResult } from '.
 
 const EDITION_COURANTE = { id: 'ed-2026', nom: 'Année 2026' } as Edition;
 
-function cible(overrides: Partial<CibleImport> = {}): CibleImport {
+function target(overrides: Partial<CibleImport> = {}): CibleImport {
   return { editionId: null, existe: false, editionNomFichier: null, editionNomExistant: null, ...overrides };
 }
 
@@ -62,7 +62,7 @@ describe('ScenarioImportService', () => {
           return impactResponse;
         }
         if (url.includes('cible-scenario')) {
-          return cible();
+          return target();
         }
         throw new Error(`Unexpected GET ${url}`);
       }),
@@ -73,7 +73,7 @@ describe('ScenarioImportService', () => {
         return impactResponse;
       }),
       post: vi.fn(async () => importResult),
-      postRaw: vi.fn(async (url: string) => (url.includes('cible') ? cible() : importResult))
+      postRaw: vi.fn(async (url: string) => (url.includes('cible') ? target() : importResult))
     };
     confirm = { ask: vi.fn(async () => true) };
     snapshots = { capturer: vi.fn(async () => undefined) };
@@ -201,7 +201,7 @@ describe('ScenarioImportService', () => {
       impactResponse = impact({ planningResolu: true });
       api.postRaw = vi.fn(async (url: string) =>
         url.includes('cible')
-          ? cible({ editionId: 'ed-2027', existe: true, editionNomExistant: 'Année 2027' })
+          ? target({ editionId: 'ed-2027', existe: true, editionNomExistant: 'Année 2027' })
           : importResult
       );
 

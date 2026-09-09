@@ -66,17 +66,17 @@ function frapper(
   key: string,
   modifiers: Partial<KeyboardEventInit> = {},
 ): KeyboardEvent {
-  const cible = ctx.element.querySelector<HTMLElement>(`[${ROW_INDEX_ATTRIBUTE}="${index}"]`);
+  const target = ctx.element.querySelector<HTMLElement>(`[${ROW_INDEX_ATTRIBUTE}="${index}"]`);
   const event = new KeyboardEvent('keydown', {
     key,
     bubbles: true,
     cancelable: true,
     ...modifiers,
   });
-  cible?.addEventListener('keydown', (e) => ctx.navigation.onKeydown(e as KeyboardEvent, index), {
+  target?.addEventListener('keydown', (e) => ctx.navigation.onKeydown(e as KeyboardEvent, index), {
     once: true,
   });
-  cible?.dispatchEvent(event);
+  target?.dispatchEvent(event);
   return event;
 }
 
@@ -87,12 +87,12 @@ function frappeSur(
   navigation: TableNavigation<Ligne, string>,
   key: string,
 ): KeyboardEvent {
-  const cible = ctx.element.querySelector<HTMLElement>(`[${ROW_INDEX_ATTRIBUTE}="${index}"]`)!;
+  const target = ctx.element.querySelector<HTMLElement>(`[${ROW_INDEX_ATTRIBUTE}="${index}"]`)!;
   const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
-  cible.addEventListener('keydown', (e) => navigation.onKeydown(e as KeyboardEvent, index), {
+  target.addEventListener('keydown', (e) => navigation.onKeydown(e as KeyboardEvent, index), {
     once: true,
   });
-  cible.dispatchEvent(event);
+  target.dispatchEvent(event);
   return event;
 }
 

@@ -64,8 +64,8 @@ export class ScenarioImportService {
    * `cancelled` rather than as an error, because nothing went wrong.
    */
   async importer(source: ScenarioSource): Promise<ScenarioImportOutcome> {
-    const cible = await this.resoudreCible(source);
-    if (!(await this.confirmerImport(source, cible))) {
+    const target = await this.resoudreCible(source);
+    if (!(await this.confirmerImport(source, target))) {
       return { status: 'cancelled', result: null };
     }
     const result = await this.lancerImport(source);
@@ -128,7 +128,7 @@ export class ScenarioImportService {
    * operator has said yes — snapshots the plan the import is about to destroy,
    * so the operation stays reversible on the planning side. `false` aborts.
    */
-  private async confirmerImport(source: ScenarioSource, cible: CibleImport): Promise<boolean> {
+  private async confirmerImport(source: ScenarioSource, target: CibleImport): Promise<boolean> {
     const intitule = this.intitule(source);
     const courante = this.editions.courant()?.nom ?? '';
     const lignes: string[] = [];
@@ -137,19 +137,19 @@ export class ScenarioImportService {
     let editionImpact: string | null = null;
     let importDansEditionCourante = true;
     let compterImpact = true;
-    if (!cible.editionId) {
+    if (!target.editionId) {
       lignes.push($localize`:@@parametres.impact.edition:L'import écrit dans l'édition « ${courante}:edition: », et elle seule.`);
-    } else if (!cible.existe) {
-      const nom = cible.editionNomFichier ?? cible.editionId;
+    } else if (!target.existe) {
+      const nom = target.editionNomFichier ?? target.editionId;
       lignes.push($localize`:@@parametres.cible.creation:Ce fichier désigne l'édition « ${nom}:cible: » : elle sera CRÉÉE et recevra l'import — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`);
       importDansEditionCourante = false;
       compterImpact = false;
-    } else if (cible.editionId === this.editions.courant()?.id) {
+    } else if (target.editionId === this.editions.courant()?.id) {
       lignes.push($localize`:@@parametres.cible.courante:Ce fichier désigne l'édition « ${courante}:edition: » — votre édition actuelle : l'import y écrit, et dans elle seule.`);
     } else {
-      const nom = cible.editionNomExistant ?? cible.editionId;
+      const nom = target.editionNomExistant ?? target.editionId;
       lignes.push($localize`:@@parametres.cible.existante:Ce fichier désigne l'édition existante « ${nom}:cible: » : l'import remplacera SES données — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`);
-      editionImpact = cible.editionId;
+      editionImpact = target.editionId;
       importDansEditionCourante = false;
     }
     let impact: ImpactImport | null = null;

@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { DateMockService } from './date-mock.service';
 
-interface Vue {
+interface View {
   dateDuJour: string | null;
   modifiable: boolean;
 }
 
 class FakeApi {
-  vue: Vue = { dateDuJour: null, modifiable: true };
+  vue: View = { dateDuJour: null, modifiable: true };
   get = vi.fn(async (_url: string) => this.vue);
   put = vi.fn(async (_url: string, body: { dateDuJour: string | null }) => {
     this.vue = { ...this.vue, dateDuJour: body.dateDuJour };
@@ -22,9 +22,9 @@ describe('DateMockService', () => {
   let service: DateMockService;
   let api: FakeApi;
 
-  function creer(vue: Vue): void {
+  function create(view: View): void {
     api = new FakeApi();
-    api.vue = vue;
+    api.vue = view;
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -36,7 +36,7 @@ describe('DateMockService', () => {
     service = TestBed.inject(DateMockService);
   }
 
-  beforeEach(() => creer({ dateDuJour: null, modifiable: true }));
+  beforeEach(() => create({ dateDuJour: null, modifiable: true }));
 
   it('reads the setting from the server, never from the browser', async () => {
     await service.refresh();
@@ -47,7 +47,7 @@ describe('DateMockService', () => {
   });
 
   it('reports the mock as active once a date is frozen', async () => {
-    creer({ dateDuJour: '2026-07-08', modifiable: true });
+    create({ dateDuJour: '2026-07-08', modifiable: true });
     await service.refresh();
 
     expect(service.dateDuJour()).toBe('2026-07-08');
@@ -76,7 +76,7 @@ describe('DateMockService', () => {
    * that believes otherwise still gets refused — this only checks the reading.
    */
   it('carries whether this server would accept a frozen date at all', async () => {
-    creer({ dateDuJour: null, modifiable: false });
+    create({ dateDuJour: null, modifiable: false });
     await service.refresh();
 
     expect(service.modifiable()).toBe(false);

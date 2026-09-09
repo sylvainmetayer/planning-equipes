@@ -107,10 +107,10 @@ describe('resoudreJour', () => {
       ]
     });
 
-    const resolus = resoudreHoraires(bourse, DATES);
+    const solved = resoudreHoraires(bourse, DATES);
 
-    expect(resolus).toHaveLength(5);
-    for (const jour of resolus) {
+    expect(solved).toHaveLength(5);
+    for (const jour of solved) {
       expect(jour.mode).toBe('OUVERTURE');
       expect(jour.source).toBe('REGLE');
       expect(jour.fenetres).toEqual([

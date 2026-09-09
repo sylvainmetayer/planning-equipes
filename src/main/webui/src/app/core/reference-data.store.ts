@@ -11,7 +11,7 @@ import {
   Emplacement,
   Stand,
   TypologieItem,
-  Volumetrie
+  Scale
 } from './models';
 import { errorMessage } from './error-message';
 
@@ -62,8 +62,8 @@ function idEcrit(reponse: unknown): string | number | null {
   if (typeof direct === 'string' || typeof direct === 'number') {
     return direct;
   }
-  for (const [cle, valeur] of Object.entries(corps)) {
-    if (cle === 'avertissements' || !valeur || typeof valeur !== 'object') {
+  for (const [key, valeur] of Object.entries(corps)) {
+    if (key === 'avertissements' || !valeur || typeof valeur !== 'object') {
       continue;
     }
     const imbrique = (valeur as Record<string, unknown>)['id'];
@@ -131,7 +131,7 @@ export class ReferenceDataStore {
   readonly emplacements = signal<Emplacement[]>([]);
   readonly contraintes = signal<ContrainteAdHoc[]>([]);
   /** Real problem scale for the next solve; see {@link Volumetrie}. */
-  readonly volumetrie = signal<Volumetrie>({
+  readonly volumetrie = signal<Scale>({
     animateurCount: 0,
     posteCount: 0,
     contrainteAdHocCount: 0,
@@ -155,7 +155,7 @@ export class ReferenceDataStore {
       this.reloadIf(wanted, 'stands', '/api/stands', this.stands),
       this.reloadIf(wanted, 'emplacements', '/api/emplacements', this.emplacements),
       this.reloadIf(wanted, 'contraintes', '/api/contraintes-ad-hoc', this.contraintes),
-      this.api.get<Volumetrie>('/api/planning/volumetrie').then((volumetrie) => this.volumetrie.set(volumetrie))
+      this.api.get<Scale>('/api/planning/volumetrie').then((scale) => this.volumetrie.set(scale))
     ]);
   }
 
@@ -163,12 +163,12 @@ export class ReferenceDataStore {
     wanted: ReadonlySet<ReferenceFamily>,
     family: ReferenceFamily,
     url: string,
-    cible: { set(value: T[]): void }
+    target: { set(value: T[]): void }
   ): Promise<void> {
     if (!wanted.has(family)) {
       return;
     }
-    cible.set(await this.api.get<T[]>(url));
+    target.set(await this.api.get<T[]>(url));
   }
 
   /** What a write to this resource invalidates; everything when it is not listed. */

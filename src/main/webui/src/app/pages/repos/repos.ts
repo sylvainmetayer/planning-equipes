@@ -128,7 +128,7 @@ function indisponiblesSurToutLEvenement(contraintes: ContrainteAdHoc[]): Set<str
     if (contrainte.type !== 'INDISPONIBILITE_FORCEE' || contrainte.stand || contrainte.creneau) {
       return;
     }
-    (contrainte.animateursConcernes ?? []).forEach((cible) => cibles.add(cible.id));
+    (contrainte.animateursConcernes ?? []).forEach((target) => cibles.add(target.id));
   });
   return cibles;
 }

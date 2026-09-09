@@ -127,7 +127,7 @@ function root(fixture: ComponentFixture<CalendarDayPage>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
 
-function texte(fixture: ComponentFixture<CalendarDayPage>): string {
+function text(fixture: ComponentFixture<CalendarDayPage>): string {
   return root(fixture).textContent!.replace(/\s+/g, ' ').trim();
 }
 
@@ -153,7 +153,7 @@ describe('CalendarDayPage rendering', () => {
     await fixture.whenStable();
 
     expect(root(fixture).querySelector('.empty-hint')).not.toBeNull();
-    expect(texte(fixture)).toContain('Aucune donnée de planning disponible');
+    expect(text(fixture)).toContain('Aucune donnée de planning disponible');
     expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(0);
   });
 
@@ -378,7 +378,7 @@ describe('CalendarDayPage rendering', () => {
     await fixture.whenStable();
 
     expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(0);
-    expect(texte(fixture)).toContain('Aucune donnée de planning disponible');
+    expect(text(fixture)).toContain('Aucune donnée de planning disponible');
   });
 
   function filtrerProblemes(fixture: ComponentFixture<CalendarDayPage>, actif: boolean): void {

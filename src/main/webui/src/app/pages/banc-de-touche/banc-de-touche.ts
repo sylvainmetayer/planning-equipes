@@ -76,8 +76,8 @@ export function lignes(banc: BancDeTouche | null, animateurs: Animateur[]): Lign
  * for — telling two otherwise identical vacations apart.
  */
 export function libelleCreneau(creneau: CreneauSiege, avecFamille = false): string {
-  const famille = avecFamille ? ` (F${(creneau.famille ?? 0) + 1})` : '';
-  return `J${creneau.jour} · ${creneau.date} · ${heure(creneau.heureDebut)}-${heure(creneau.heureFin)}${famille}`;
+  const family = avecFamille ? ` (F${(creneau.famille ?? 0) + 1})` : '';
+  return `J${creneau.jour} · ${creneau.date} · ${heure(creneau.heureDebut)}-${heure(creneau.heureFin)}${family}`;
 }
 
 /** Hours arrive as `HH:mm:ss` from the API; the seconds are always zero and never read. */

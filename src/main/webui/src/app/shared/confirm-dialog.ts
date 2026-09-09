@@ -75,7 +75,7 @@ export class ConfirmDialog {
   protected readonly detail = signal('');
 
   constructor() {
-    void this.data.detail?.then((texte) => this.detail.set(texte)).catch(() => undefined);
+    void this.data.detail?.then((text) => this.detail.set(text)).catch(() => undefined);
   }
 }
 

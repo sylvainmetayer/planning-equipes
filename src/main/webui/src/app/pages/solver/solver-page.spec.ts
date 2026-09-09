@@ -737,15 +737,15 @@ describe('SolverPage', () => {
 
     /** A publication that hangs until the test lets it finish. */
     function envoiSuspendu(): { terminer: () => void } {
-      let terminer = (): void => undefined;
+      let finish = (): void => undefined;
       api.post.mockImplementation(
         () =>
           new Promise((resolve) => {
-            terminer = () => resolve({ envoyes: 3, sansEmail: [], echecs: [] });
+            finish = () => resolve({ envoyes: 3, sansEmail: [], echecs: [] });
           })
       );
       return {
-        terminer: () => terminer()
+        terminer: () => finish()
       };
     }
 

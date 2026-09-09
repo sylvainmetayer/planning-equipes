@@ -36,10 +36,10 @@ describe('MentionsLegalesPage', () => {
     const fixture = monter(VIDE);
     await fixture.whenStable();
 
-    const texte = fixture.nativeElement.textContent as string;
+    const text = fixture.nativeElement.textContent as string;
     // L'avertissement global, et le champ par champ : une mention légale
     // incomplète doit se signaler comme telle, jamais passer inaperçue.
-    expect(texte).toContain("Aucune information légale n'a été renseignée");
+    expect(text).toContain("Aucune information légale n'a été renseignée");
     expect(fixture.nativeElement.querySelectorAll('.mentions-manquant').length).toBeGreaterThan(0);
   });
 
@@ -52,10 +52,10 @@ describe('MentionsLegalesPage', () => {
     });
     await fixture.whenStable();
 
-    const texte = fixture.nativeElement.textContent as string;
-    expect(texte).toContain('Association Ludique');
-    expect(texte).toContain('Hébergeur SAS');
-    expect(texte).not.toContain("Aucune information légale n'a été renseignée");
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Association Ludique');
+    expect(text).toContain('Hébergeur SAS');
+    expect(text).not.toContain("Aucune information légale n'a été renseignée");
   });
 
   it('renvoie vers la politique de confidentialité pour tout ce qui touche aux données', async () => {

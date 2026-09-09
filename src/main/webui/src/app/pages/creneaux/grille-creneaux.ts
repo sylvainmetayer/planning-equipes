@@ -28,8 +28,8 @@ export function serieVide(): SerieDraft {
 }
 
 /** Comma-separated ISO dates; anything that is not one is dropped. */
-export function datesDepuisTexte(texte: string): string[] {
-  return texte
+export function datesDepuisTexte(text: string): string[] {
+  return text
     .split(/[,;\s]+/)
     .map((date) => date.trim())
     .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date));
@@ -57,8 +57,8 @@ export type RegleOuErreur =
   | { readonly regle: null; readonly erreur: ErreurSerie; readonly morceau: string | null };
 
 /** Dates the user typed that are not dates at all — dropped, and worth saying. */
-export function datesIllisibles(texte: string): string[] {
-  return texte
+export function datesIllisibles(text: string): string[] {
+  return text
     .split(/[,;\s]+/)
     .map((date) => date.trim())
     .filter((date) => date !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(date));
@@ -132,8 +132,8 @@ export interface BilanGrille {
 
 export function bilanGrille(rapport: RapportGrille): BilanGrille {
   return {
-    erreurs: rapport.anomalies.filter((anomalie) => anomalie.severite === 'ERREUR').length,
-    avertissements: rapport.anomalies.filter((anomalie) => anomalie.severite === 'AVERTISSEMENT').length,
+    erreurs: rapport.anomalies.filter((anomaly) => anomaly.severite === 'ERREUR').length,
+    avertissements: rapport.anomalies.filter((anomaly) => anomaly.severite === 'AVERTISSEMENT').length,
     ouvertures: rapport.ouvertures.length,
     faisable: rapport.faisabilite ? rapport.faisabilite.feasible : null
   };
@@ -148,21 +148,21 @@ export function bilanGrille(rapport: RapportGrille): BilanGrille {
  * make every rule unwritable, blaming a rule that is fine for an error about
  * another date.
  */
-export function erreursIntroduites(apres: RapportGrille, avant: RapportGrille | null): AnomalieGrille[] {
+export function erreursIntroduites(after: RapportGrille, before: RapportGrille | null): AnomalieGrille[] {
   const connues = new Set(
-    (avant?.anomalies ?? [])
-      .filter((anomalie) => anomalie.severite === 'ERREUR')
-      .map((anomalie) => `${anomalie.type}#${anomalie.date}#${anomalie.message}`)
+    (before?.anomalies ?? [])
+      .filter((anomaly) => anomaly.severite === 'ERREUR')
+      .map((anomaly) => `${anomaly.type}#${anomaly.date}#${anomaly.message}`)
   );
-  return apres.anomalies.filter(
-    (anomalie) =>
-      anomalie.severite === 'ERREUR' && !connues.has(`${anomalie.type}#${anomalie.date}#${anomalie.message}`)
+  return after.anomalies.filter(
+    (anomaly) =>
+      anomaly.severite === 'ERREUR' && !connues.has(`${anomaly.type}#${anomaly.date}#${anomaly.message}`)
   );
 }
 
 /** Whether the verdict allows a rule to be written: warnings do, an error (a doublon, say) does not. */
-export function grilleBloquee(rapport: RapportGrille | null, avant: RapportGrille | null = null): boolean {
-  return rapport !== null && erreursIntroduites(rapport, avant).length > 0;
+export function grilleBloquee(rapport: RapportGrille | null, before: RapportGrille | null = null): boolean {
+  return rapport !== null && erreursIntroduites(rapport, before).length > 0;
 }
 
 /** Errors first, then warnings; within a severity, by date then message — the order a reader wants. */
@@ -176,6 +176,6 @@ export function trierAnomalies(anomalies: readonly AnomalieGrille[]): AnomalieGr
 }
 
 /** Icon of a grid anomaly, so the list reads without colour alone. */
-export function iconeAnomalieGrille(anomalie: AnomalieGrille): string {
-  return anomalie.severite === 'ERREUR' ? 'error' : 'warning';
+export function iconeAnomalieGrille(anomaly: AnomalieGrille): string {
+  return anomaly.severite === 'ERREUR' ? 'error' : 'warning';
 }

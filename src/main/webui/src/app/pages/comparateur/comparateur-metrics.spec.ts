@@ -27,9 +27,9 @@ function kpi(overrides: Partial<PlanningKpi> = {}): PlanningKpi {
   };
 }
 
-function ligne(base: PlanningKpi, variante: PlanningKpi, cle: string) {
-  const trouvee = construireLignesMetriques(base, variante).find((candidate) => candidate.cle === cle);
-  expect(trouvee, `ligne ${cle}`).toBeDefined();
+function ligne(base: PlanningKpi, variante: PlanningKpi, key: string) {
+  const trouvee = construireLignesMetriques(base, variante).find((candidate) => candidate.cle === key);
+  expect(trouvee, `ligne ${key}`).toBeDefined();
   return trouvee!;
 }
 
@@ -72,15 +72,15 @@ describe('construireLignesMetriques', () => {
   });
 
   it('la couverture est un pourcentage, et une meilleure couverture est une amélioration', () => {
-    const couverture = ligne(
+    const coverage = ligne(
       kpi({ postesTotal: 100, postesPourvus: 90 }),
       kpi({ postesTotal: 100, postesPourvus: 100 }),
       'couverture'
     );
 
-    expect(couverture.base).toBe('90.0 %');
-    expect(couverture.variante).toBe('100.0 %');
-    expect(couverture.tendance).toBe('amelioration');
+    expect(coverage.base).toBe('90.0 %');
+    expect(coverage.variante).toBe('100.0 %');
+    expect(coverage.tendance).toBe('amelioration');
   });
 
   it('un plan sans poste n’a pas de couverture calculable plutôt qu’une couverture nulle', () => {

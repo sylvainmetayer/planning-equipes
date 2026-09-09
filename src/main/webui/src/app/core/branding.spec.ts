@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BRANDING_NEUTRE, accentForBothSchemes, appliquerBranding, loadBranding, slugMarque } from './branding';
 
 /** Ce que `core/branding.ts` doit produire pour `#8b1e3f`, moitié claire intacte. */
-const PAIRE_8B1E3F = 'light-dark(#8b1e3f, oklch(from #8b1e3f max(l, 0.78) min(c, 0.14) h))';
+const PAIR_8B1E3F = 'light-dark(#8b1e3f, oklch(from #8b1e3f max(l, 0.78) min(c, 0.14) h))';
 
 /**
  * La marque est lue avant le bootstrap : ce qui est vérifié ici, c'est qu'un
@@ -90,7 +90,7 @@ describe('branding', () => {
 
       appliquerBranding({ ...BRANDING_NEUTRE, accentColor: '#8b1e3f' });
 
-      expect(document.documentElement.style.getPropertyValue('--app-accent')).toBe(PAIRE_8B1E3F);
+      expect(document.documentElement.style.getPropertyValue('--app-accent')).toBe(PAIR_8B1E3F);
     });
 
     it('pose la couleur brute quand le navigateur ne sait pas la dériver', () => {
@@ -116,7 +116,7 @@ describe('branding', () => {
     it('garde la couleur configurée en clair et l\'éclaircit en sombre', () => {
       navigateurSachantDeriver(true);
 
-      expect(accentForBothSchemes('#8b1e3f')).toBe(PAIRE_8B1E3F);
+      expect(accentForBothSchemes('#8b1e3f')).toBe(PAIR_8B1E3F);
     });
 
     it('accepte n\'importe quelle notation de couleur CSS', () => {

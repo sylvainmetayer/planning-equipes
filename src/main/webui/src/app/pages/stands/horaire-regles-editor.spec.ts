@@ -82,7 +82,7 @@ describe('HoraireReglesEditor', () => {
   it('registers its controls with the host form, under the prefix, and never mutates the input', async () => {
     const fixture = monter();
     await fixture.whenStable();
-    const avant = fixture.componentInstance.horaires();
+    const before = fixture.componentInstance.horaires();
 
     bouton(fixture, "Ajouter une règle d'horaire").click();
     await fixture.whenStable();
@@ -93,7 +93,7 @@ describe('HoraireReglesEditor', () => {
     expect(nomsEnregistres(fixture)).toHaveLength(controles(fixture).length);
     expect(erreursConsole.filter((args) => JSON.stringify(args).includes('NG01352'))).toEqual([]);
     expect(fixture.componentInstance.recu).toHaveLength(1);
-    expect(avant).toHaveLength(0);
+    expect(before).toHaveLength(0);
     expect(fixture.componentInstance.horaires()).toHaveLength(1);
   });
 

@@ -67,14 +67,14 @@ export class EditionsPage {
     if (!nom || this.enCours()) {
       return;
     }
-    const cible: Pick<Edition, 'id' | 'nom'> = {
+    const target: Pick<Edition, 'id' | 'nom'> = {
       id: slugify(nom, this.store.editions().map((edition) => edition.id)),
       nom
     };
     const source = this.sourceDuplication();
     const url = source ? `/api/editions/${encodeURIComponent(source)}/dupliquer` : '/api/editions';
     await this.executer(async () => {
-      await this.api.post<Edition>(url, cible);
+      await this.api.post<Edition>(url, target);
       this.nouveauNom.set('');
       this.sourceDuplication.set(null);
       this.notifications.notify({

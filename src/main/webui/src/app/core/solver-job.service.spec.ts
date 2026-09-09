@@ -144,8 +144,8 @@ describe('SolverJobService', () => {
 
   describe('file d’attente', () => {
     /** 409 the server answers when something already covers this run. */
-    function conflit(vue: JobView): HttpErrorResponse {
-      return new HttpErrorResponse({ status: 409, error: vue });
+    function conflit(view: JobView): HttpErrorResponse {
+      return new HttpErrorResponse({ status: 409, error: view });
     }
 
     it('publie la file telle que le serveur la rapporte', async () => {

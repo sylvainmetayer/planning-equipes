@@ -240,7 +240,7 @@ export class EspaceEchangesPage {
     if (!poste || !this.formulaireComplet()) {
       return;
     }
-    const cible = this.espace.vue()?.collegues.find((collegue) => collegue.id === this.cibleId());
+    const target = this.espace.vue()?.collegues.find((collegue) => collegue.id === this.cibleId());
     const posteCible = this.posteCibleChoisi();
     this.brouillons.set(
       ajouterBrouillon(this.brouillons(), {
@@ -252,7 +252,7 @@ export class EspaceEchangesPage {
         standCibleId: posteCible?.standId ?? null,
         creneauLabel: `${poste.date ?? ''} ${poste.heureDebut}–${poste.heureFin}`.trim(),
         standNom: poste.standNom,
-        cibleNom: cible?.nomComplet ?? this.cibleId(),
+        cibleNom: target?.nomComplet ?? this.cibleId(),
         creneauCibleLabel: posteCible
           ? `${posteCible.date ?? ''} ${posteCible.heureDebut}–${posteCible.heureFin} · ${posteCible.standNom}`.trim()
           : null

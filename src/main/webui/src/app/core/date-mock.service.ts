@@ -20,7 +20,7 @@ import { ApiService } from './api.service';
 import { DateJourJView } from './models';
 
 /** Query param and anchor the toolbar indicator deep-links to. */
-export const ANCRE_DATE_DU_JOUR = 'date-du-jour';
+export const TODAY_ANCHOR = 'date-du-jour';
 
 @Injectable({ providedIn: 'root' })
 export class DateMockService {
@@ -52,8 +52,8 @@ export class DateMockService {
     );
   }
 
-  private appliquer(vue: DateJourJView): void {
-    this.dateDuJour.set(vue.dateDuJour ?? '');
-    this.modifiable.set(vue.modifiable);
+  private appliquer(view: DateJourJView): void {
+    this.dateDuJour.set(view.dateDuJour ?? '');
+    this.modifiable.set(view.modifiable);
   }
 }

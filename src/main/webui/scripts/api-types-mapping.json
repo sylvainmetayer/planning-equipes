@@ -18,7 +18,6 @@
     "SaisieStandGrille": "SaisieStand",
     "LigneSaisieGrille": "LigneGrille",
     "PlanningResolution": "PlanningResolutionView",
-    "Volumetrie": "ProblemScale",
     "AnomalieGrille": "GridAnomaly",
     "RegleRecurrence": "RecurrenceRequest",
     "CoupureDerivation": "Coupure",
@@ -47,7 +46,8 @@
     "ImportGrilleDemande": "StandGrilleImportRequest",
     "ImportCsvDemande": "AnimateurCsvImportRequest",
     "ImportCsvLigne": "ImportedRow",
-    "ImportGrilleLigne": "ImportedGrilleRow"
+    "ImportGrilleLigne": "ImportedGrilleRow",
+    "Scale": "ProblemScale"
   },
   "horsContrat": {
     "ConstraintDiagnostic": "ConstraintResource réemballe le diagnostic dans ses propres vues ; ce type-ci est la forme du front, sans schéma équivalent.",

@@ -88,7 +88,7 @@ describe('PausesPage', () => {
   });
 
   async function mount(
-    donnees: RapportPauses | (() => Promise<RapportPauses>),
+    data: RapportPauses | (() => Promise<RapportPauses>),
     queryParams: Record<string, string> = {}
   ): Promise<ComponentFixture<PausesPage>> {
     TestBed.resetTestingModule();
@@ -100,13 +100,13 @@ describe('PausesPage', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
       ]
     });
-    api.get.mockImplementation(typeof donnees === 'function' ? donnees : async () => donnees);
+    api.get.mockImplementation(typeof data === 'function' ? data : async () => data);
     const fixture = TestBed.createComponent(PausesPage);
     await fixture.whenStable();
     return fixture;
   }
 
-  function texte(fixture: ComponentFixture<PausesPage>): string {
+  function text(fixture: ComponentFixture<PausesPage>): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
@@ -120,7 +120,7 @@ describe('PausesPage', () => {
 
     expect(api.get).toHaveBeenCalledWith('/api/pauses');
     expect(titresStands(fixture)[0]).toContain('Village des jeux');
-    const contenu = texte(fixture);
+    const contenu = text(fixture);
     expect(contenu).toContain('Alice Martin');
     expect(contenu).toContain('13:00–20:00');
     expect(contenu).toContain('18:40–19:00');
@@ -140,7 +140,7 @@ describe('PausesPage', () => {
     suivant.click();
     await fixture.whenStable();
 
-    const contenu = texte(fixture);
+    const contenu = text(fixture);
     expect(contenu).toContain('Carol Petit');
     expect(contenu).toContain('mineur');
     expect(contenu).toContain('30 min');
@@ -153,12 +153,12 @@ describe('PausesPage', () => {
   });
 
   it('opens on the day named in the URL', async () => {
-    expect(texte(await mount(rapport(), { jour: '2026-07-11' }))).toContain('Carol Petit');
+    expect(text(await mount(rapport(), { jour: '2026-07-11' }))).toContain('Carol Petit');
   });
 
   it('falls back on the first day for a day the report does not know', async () => {
     const fixture = await mount(rapport(), { jour: '2030-01-01' });
-    expect(texte(fixture)).toContain('Alice Martin');
+    expect(text(fixture)).toContain('Alice Martin');
     expect(TestBed.inject(Location).path()).not.toContain('jour=');
   });
 
@@ -171,10 +171,10 @@ describe('PausesPage', () => {
   });
 
   it('says so when nothing is persisted, and when nothing is to organise', async () => {
-    expect(texte(await mount(rapport({ journeesAnalysees: 0, journees: [], pausesDues: 0 })))).toContain('Aucun planning persisté');
+    expect(text(await mount(rapport({ journeesAnalysees: 0, journees: [], pausesDues: 0 })))).toContain('Aucun planning persisté');
 
     const rien = await mount(rapport({ journees: [], pausesDues: 0, relaisManquants: 0, message: 'Rien.' }));
-    expect(texte(rien)).toContain('rien à organiser');
+    expect(text(rien)).toContain('rien à organiser');
     expect(rien.nativeElement.querySelector('.pauses-alerte')).toBeNull();
   });
 
@@ -189,7 +189,7 @@ describe('PausesPage', () => {
     expect(page.recherche()).toBe('');
     expect(page.sansRelaisSeulement()).toBe(false);
     expect(page.vueModifiee()).toBe(false);
-    expect(texte(fixture)).toContain('Carol Petit');
+    expect(text(fixture)).toContain('Carol Petit');
   });
 
   it('shows the error instead of an empty screen when the request fails', async () => {
@@ -197,6 +197,6 @@ describe('PausesPage', () => {
       throw new Error('boom');
     });
 
-    expect(texte(fixture)).toContain('boom');
+    expect(text(fixture)).toContain('boom');
   });
 });

@@ -35,9 +35,9 @@ async function monter(): Promise<{
   return { fixture, dialogRef, store };
 }
 
-function saisir(fixture: ComponentFixture<CommandPaletteDialog>, texte: string): HTMLInputElement {
+function saisir(fixture: ComponentFixture<CommandPaletteDialog>, text: string): HTMLInputElement {
   const champ = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-  champ.value = texte;
+  champ.value = text;
   champ.dispatchEvent(new Event('input'));
   return champ;
 }

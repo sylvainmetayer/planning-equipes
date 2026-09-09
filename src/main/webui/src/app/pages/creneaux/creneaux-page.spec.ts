@@ -614,7 +614,7 @@ describe('CreneauxPage rendering', () => {
       await fixture.whenStable();
     }
 
-    function texte(selecteur: string): string {
+    function text(selecteur: string): string {
       return racine().querySelector(selecteur)!.textContent!.replace(/\s+/g, ' ').trim();
     }
 
@@ -670,8 +670,8 @@ describe('CreneauxPage rendering', () => {
       expect(messages[0]).toContain('Doublon');
       expect(messages[1]).toContain('Trou');
       expect(messages[2]).toContain('Stand un');
-      expect(texte('.controle-bilan')).toContain('1 erreur(s)');
-      expect(texte('.controle-bilan')).toContain('Il manque 2 animateurs.');
+      expect(text('.controle-bilan')).toContain('1 erreur(s)');
+      expect(text('.controle-bilan')).toContain('Il manque 2 animateurs.');
     });
 
     it('says so when there is nothing to report', async () => {

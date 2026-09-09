@@ -338,7 +338,7 @@ describe('AnimateurTimelinePage', () => {
   }
 
   /** Le geste de l'écran : choisir quelqu'un d'autre dans la liste. */
-  function selectionner(animateurId: string): void {
+  function select(animateurId: string): void {
     (fixture.componentInstance as unknown as { selectAnimateur(id: string): void }).selectAnimateur(animateurId);
   }
 
@@ -381,7 +381,7 @@ describe('AnimateurTimelinePage', () => {
     await rendre(planningDeDeux());
     expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a1');
 
-    selectionner('a2');
+    select('a2');
     await fixture.whenStable();
 
     expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a2');

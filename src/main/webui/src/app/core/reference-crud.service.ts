@@ -242,8 +242,8 @@ export class ReferenceCrudService {
       this.refreshResolution();
       this.reportBulk(
         result,
-        (nombre) => $localize`:@@crud.deletedMany:Suppression de ${nombre}:count: ${labelPluriel}:label: effectuée.`,
-        (nombre) => $localize`:@@crud.deleteManyFailed:${nombre}:count: ${labelPluriel}:label: n'ont pas pu être supprimés.`
+        (count) => $localize`:@@crud.deletedMany:Suppression de ${count}:count: ${labelPluriel}:label: effectuée.`,
+        (count) => $localize`:@@crud.deleteManyFailed:${count}:count: ${labelPluriel}:label: n'ont pas pu être supprimés.`
       );
       return result.succes.length;
     } catch (error) {
@@ -270,8 +270,8 @@ export class ReferenceCrudService {
       this.refreshResolution();
       this.reportBulk(
         result,
-        (nombre) => $localize`:@@crud.updatedMany:Modification de ${nombre}:count: ${labelPluriel}:label: effectuée.`,
-        (nombre) => $localize`:@@crud.updateManyFailed:${nombre}:count: ${labelPluriel}:label: n'ont pas pu être modifiés.`
+        (count) => $localize`:@@crud.updatedMany:Modification de ${count}:count: ${labelPluriel}:label: effectuée.`,
+        (count) => $localize`:@@crud.updateManyFailed:${count}:count: ${labelPluriel}:label: n'ont pas pu être modifiés.`
       );
       return result.succes.length;
     } catch (error) {

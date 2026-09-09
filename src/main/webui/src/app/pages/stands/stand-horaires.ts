@@ -134,6 +134,6 @@ export function decrireJour(jour: JourResolu): string {
  * anything that is not a number leaves each stand's own bound alone.
  */
 export function effectifDepuisSaisie(valeur: unknown): number | null {
-  const nombre = valeur === '' || valeur === null || valeur === undefined ? null : Number(valeur);
-  return nombre === null || Number.isNaN(nombre) ? null : nombre;
+  const count = valeur === '' || valeur === null || valeur === undefined ? null : Number(valeur);
+  return count === null || Number.isNaN(count) ? null : count;
 }

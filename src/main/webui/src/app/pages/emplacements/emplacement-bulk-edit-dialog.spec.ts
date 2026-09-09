@@ -45,7 +45,7 @@ function bouton(fixture: ComponentFixture<EmplacementBulkEditDialog>): HTMLButto
   return racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement;
 }
 
-function soumettre(fixture: ComponentFixture<EmplacementBulkEditDialog>): void {
+function submit(fixture: ComponentFixture<EmplacementBulkEditDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
@@ -120,7 +120,7 @@ describe('EmplacementBulkEditDialog', () => {
 
     cliquerSurLaCarte(fixture, 47.2, -1.55);
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     const [resource, payloads] = saveMany.mock.calls[0] as unknown as [string, Emplacement[]];
@@ -143,7 +143,7 @@ describe('EmplacementBulkEditDialog', () => {
     expect(fixture.debugElement.query(By.directive(MapPicker))).toBeNull();
     expect(bouton(fixture).disabled).toBe(false);
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     const payloads = (saveMany.mock.calls[0] as unknown as [string, Emplacement[]])[1];
@@ -161,7 +161,7 @@ describe('EmplacementBulkEditDialog', () => {
     await fixture.whenStable();
 
     expect(bouton(fixture).disabled).toBe(true);
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(saveMany).not.toHaveBeenCalled();
   });

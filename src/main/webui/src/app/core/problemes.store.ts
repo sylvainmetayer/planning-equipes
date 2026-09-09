@@ -70,12 +70,12 @@ export class ProblemesStore {
   });
 
   readonly alerteReglesLegales = computed(() => {
-    const desactivees = this.reglesLegalesDesactivees();
-    if (desactivees.length === 0) {
+    const disabled = this.reglesLegalesDesactivees();
+    if (disabled.length === 0) {
       return '';
     }
-    const noms = desactivees.map((contrainte) => contrainte.name).join(', ');
-    return $localize`:@@constraints.legalDisabled:${desactivees.length}:count: règle(s) légale(s) ou de sécurité désactivée(s) : ${noms}:noms:. Le solveur peut produire un planning contraire au Code du travail tout en affichant un score dur à zéro.`;
+    const noms = disabled.map((contrainte) => contrainte.name).join(', ');
+    return $localize`:@@constraints.legalDisabled:${disabled.length}:count: règle(s) légale(s) ou de sécurité désactivée(s) : ${noms}:noms:. Le solveur peut produire un planning contraire au Code du travail tout en affichant un score dur à zéro.`;
   });
 
   /**

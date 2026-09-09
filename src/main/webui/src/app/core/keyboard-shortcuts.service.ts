@@ -204,9 +204,9 @@ export class KeyboardShortcutsService {
     if (!formulaire) {
       return false;
     }
-    const soumettre = formulaire.querySelector<HTMLButtonElement>('button[type="submit"]:not([disabled])');
-    if (soumettre) {
-      soumettre.click();
+    const submit = formulaire.querySelector<HTMLButtonElement>('button[type="submit"]:not([disabled])');
+    if (submit) {
+      submit.click();
       return true;
     }
     if (formulaire.querySelector('button[type="submit"]')) {

@@ -102,10 +102,10 @@ export function keepViewInQueryParams(queryParams: () => Params): void {
  */
 function queryString(params: Params): string {
   const morceaux: string[] = [];
-  for (const [cle, valeur] of Object.entries(params)) {
+  for (const [key, valeur] of Object.entries(params)) {
     for (const unique of Array.isArray(valeur) ? valeur : [valeur]) {
       if (unique !== null && unique !== undefined && unique !== '') {
-        morceaux.push(encodeURIComponent(cle) + '=' + encodeURIComponent(String(unique)));
+        morceaux.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(unique)));
       }
     }
   }

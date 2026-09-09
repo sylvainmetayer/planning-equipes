@@ -50,18 +50,18 @@ describe('buildAnimateurDetail', () => {
   });
 
   it('sorts the unavailable days and keeps them out of the chips when there are none', () => {
-    const avec = buildAnimateurDetail(
+    const withDays = buildAnimateurDetail(
       animateur({ joursIndisponibles: ['2026-07-12', '2026-07-06'] }),
       [],
       new Date(2026, 6, 8)
     );
-    expect(avec.flatMap((section) => section.rows).find((row) => row.chips)?.chips).toEqual([
+    expect(withDays.flatMap((section) => section.rows).find((row) => row.chips)?.chips).toEqual([
       '2026-07-06',
       '2026-07-12'
     ]);
 
-    const sans = buildAnimateurDetail(animateur(), [], new Date(2026, 6, 8));
-    expect(rowValue(sans, 'Indisponibilités')).toBe('Disponible tous les jours');
+    const without = buildAnimateurDetail(animateur(), [], new Date(2026, 6, 8));
+    expect(rowValue(without, 'Indisponibilités')).toBe('Disponible tous les jours');
   });
 
   it("montre l'e-mail et le lien espace quand la fiche les porte (issue #165)", () => {

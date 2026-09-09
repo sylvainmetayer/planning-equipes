@@ -38,9 +38,9 @@ function configure() {
 
 /** Dispatches a real `keydown` on the document, from `cible` when one is given. */
 function frapper(key: string, options: KeyboardEventInit & { cible?: Element } = {}): KeyboardEvent {
-  const { cible, ...init } = options;
+  const { cible: target, ...init } = options;
   const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
-  (cible ?? document.body).dispatchEvent(event);
+  (target ?? document.body).dispatchEvent(event);
   return event;
 }
 
@@ -59,27 +59,27 @@ describe('KeyboardShortcutsService', () => {
     document.body.innerHTML = '';
   });
 
-  function demarrer() {
+  function start() {
     const contexte = configure();
     ouverts.push(contexte.service);
     return contexte;
   }
 
   it('opens the palette on Ctrl+K, and takes the shortcut from the browser', () => {
-    const { dialog } = demarrer();
+    const { dialog } = start();
     const event = frapper('k', { ctrlKey: true });
     expect(dialog.open).toHaveBeenCalledWith(CommandPaletteDialog, expect.anything());
     expect(event.defaultPrevented).toBe(true);
   });
 
   it('opens the palette on Cmd+K too, for the macOS keyboard', () => {
-    const { dialog } = demarrer();
+    const { dialog } = start();
     frapper('k', { metaKey: true });
     expect(dialog.open).toHaveBeenCalledWith(CommandPaletteDialog, expect.anything());
   });
 
   it('opens the palette even from inside a field: a modifier is never mistaken for typing', () => {
-    const { dialog } = demarrer();
+    const { dialog } = start();
     const champ = document.createElement('input');
     document.body.append(champ);
     frapper('k', { ctrlKey: true, cible: champ });
@@ -87,7 +87,7 @@ describe('KeyboardShortcutsService', () => {
   });
 
   it('closes the palette on a second Ctrl+K instead of stacking a second one', () => {
-    const { dialog } = demarrer();
+    const { dialog } = start();
     frapper('k', { ctrlKey: true });
     frapper('k', { ctrlKey: true });
     expect(dialog.reference.close).toHaveBeenCalledOnce();
@@ -95,35 +95,35 @@ describe('KeyboardShortcutsService', () => {
   });
 
   it('navigates to the picked entry once the palette closes', () => {
-    const { dialog, router } = demarrer();
+    const { dialog, router } = start();
     frapper('k', { ctrlKey: true });
     dialog.ferme.next({ route: '/timeline', queryParams: { animateur: 'a1' } });
     expect(router.navigate).toHaveBeenCalledWith(['/timeline'], { queryParams: { animateur: 'a1' } });
   });
 
   it('navigates nowhere when the palette is dismissed', () => {
-    const { dialog, router } = demarrer();
+    const { dialog, router } = start();
     frapper('k', { ctrlKey: true });
     dialog.ferme.next(null);
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
   it('navigates on `g` then the letter of the page', () => {
-    const { router } = demarrer();
+    const { router } = start();
     frapper('g');
     frapper('a');
     expect(router.navigateByUrl).toHaveBeenCalledWith('/animateurs');
   });
 
   it('does nothing on `g` followed by an unassigned letter', () => {
-    const { router } = demarrer();
+    const { router } = start();
     frapper('g');
     frapper('w');
     expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
 
   it('forgets the prefix after one key: `g` then `x` then `a` is not a navigation to /animateurs', () => {
-    const { router } = demarrer();
+    const { router } = start();
     frapper('g');
     frapper('x');
     router.navigateByUrl.mockClear();
@@ -132,7 +132,7 @@ describe('KeyboardShortcutsService', () => {
   });
 
   it('stays silent while the focus is in a text field', () => {
-    const { router, dialog } = demarrer();
+    const { router, dialog } = start();
     const champ = document.createElement('input');
     document.body.append(champ);
     frapper('g', { cible: champ });
@@ -143,21 +143,21 @@ describe('KeyboardShortcutsService', () => {
   });
 
   it('opens the shortcut list on `?`', () => {
-    const { dialog } = demarrer();
+    const { dialog } = start();
     const event = frapper('?');
     expect(dialog.open).toHaveBeenCalledWith(KeyboardShortcutsDialog, expect.anything());
     expect(event.defaultPrevented).toBe(true);
   });
 
   it('never stacks a single-key dialog over an open one', () => {
-    const { dialog } = demarrer();
+    const { dialog } = start();
     dialog.openDialogs.push({});
     frapper('?');
     expect(dialog.open).not.toHaveBeenCalled();
   });
 
   it('puts the caret in the page filter on `/`, selecting what is already typed', () => {
-    demarrer();
+    start();
     const filtre = document.createElement('input');
     filtre.setAttribute('data-page-filter', '');
     filtre.value = 'village';
@@ -170,13 +170,13 @@ describe('KeyboardShortcutsService', () => {
   });
 
   it('leaves `/` to the browser on a page that has no filter', () => {
-    demarrer();
+    start();
     const event = frapper('/');
     expect(event.defaultPrevented).toBe(false);
   });
 
   it('submits the focused form on Ctrl+Entrée, through its own submit button', () => {
-    demarrer();
+    start();
     document.body.innerHTML = `
       <form><input name="nom" /><button type="submit">Enregistrer</button></form>
     `;
@@ -194,7 +194,7 @@ describe('KeyboardShortcutsService', () => {
   });
 
   it('refuses to submit a form whose save button the page has disabled', () => {
-    demarrer();
+    start();
     document.body.innerHTML = `
       <form><input name="nom" /><button type="submit" disabled>Enregistrer</button></form>
     `;
@@ -208,13 +208,13 @@ describe('KeyboardShortcutsService', () => {
   });
 
   it('leaves Ctrl+Entrée alone outside any form', () => {
-    demarrer();
+    start();
     const event = frapper('Enter', { ctrlKey: true });
     expect(event.defaultPrevented).toBe(false);
   });
 
   it('ignores a key another listener has already handled', () => {
-    const { dialog } = demarrer();
+    const { dialog } = start();
     const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true });
     event.preventDefault();
     document.body.dispatchEvent(event);
@@ -222,7 +222,7 @@ describe('KeyboardShortcutsService', () => {
   });
 
   it('stops listening once the shell that started it is gone', () => {
-    const { service, router } = demarrer();
+    const { service, router } = start();
     service.stop();
     frapper('g');
     frapper('a');
@@ -230,7 +230,7 @@ describe('KeyboardShortcutsService', () => {
   });
 
   it('registers a single listener however often start() is called', () => {
-    const { service, router } = demarrer();
+    const { service, router } = start();
     service.start();
     service.start();
     frapper('g');

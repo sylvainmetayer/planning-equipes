@@ -100,11 +100,11 @@ export class SelectionRecherche {
   });
 
   protected readonly optionsFiltrees = computed(() => {
-    const requete = normaliserPourFiltre(this.saisie().trim());
+    const request = normaliserPourFiltre(this.saisie().trim());
     const dejaChoisies = new Set(this.multiple() ? this.valeurs() : []);
     return this.options()
       .filter((option) => !dejaChoisies.has(option.id))
-      .filter((option) => !requete || normaliserPourFiltre(option.label).includes(requete))
+      .filter((option) => !request || normaliserPourFiltre(option.label).includes(request))
       .slice(0, 50);
   });
 

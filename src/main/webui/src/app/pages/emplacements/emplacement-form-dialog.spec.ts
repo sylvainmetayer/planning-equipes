@@ -48,7 +48,7 @@ function saisir(fixture: ComponentFixture<EmplacementFormDialog>, name: string, 
   input.dispatchEvent(new Event('input'));
 }
 
-function soumettre(fixture: ComponentFixture<EmplacementFormDialog>): void {
+function submit(fixture: ComponentFixture<EmplacementFormDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
@@ -132,7 +132,7 @@ describe('EmplacementFormDialog', () => {
     await fixture.whenStable();
     cliquerSurLaCarte(fixture, 47.2, -1.55);
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payload(save)).toEqual({ id: 'hall', nom: 'Hall A', latitude: 47.2, longitude: -1.55, modifieLe: null });
@@ -143,7 +143,7 @@ describe('EmplacementFormDialog', () => {
     const { fixture, save } = monter({ id: 'hall', nom: 'Hall A', latitude: null, longitude: null });
     await fixture.whenStable();
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payload(save).latitude).toBeNull();
@@ -157,7 +157,7 @@ describe('EmplacementFormDialog', () => {
     saisir(fixture, 'latitude', '');
     saisir(fixture, 'longitude', '');
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(payload(save).latitude).toBeNull();
@@ -167,7 +167,7 @@ describe('EmplacementFormDialog', () => {
   it('keeps the dialog open when the save is refused, and closes on cancel', async () => {
     const { fixture, close } = monter(HALL, { saveOk: false });
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
     expect(close).not.toHaveBeenCalled();
 

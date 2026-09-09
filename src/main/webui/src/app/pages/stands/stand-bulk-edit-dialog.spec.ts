@@ -112,12 +112,12 @@ function boutonAjouterHoraire(fixture: ComponentFixture<StandBulkEditDialog>): H
   );
 }
 
-function soumettre(fixture: ComponentFixture<StandBulkEditDialog>): HTMLButtonElement {
+function submit(fixture: ComponentFixture<StandBulkEditDialog>): HTMLButtonElement {
   return root(fixture).querySelector('button[type="submit"]') as HTMLButtonElement;
 }
 
 /** Writes into the dialog's patch signal the way a filled-in field would. */
-async function remplir(
+async function fill(
   fixture: ComponentFixture<StandBulkEditDialog>,
   patch: Partial<StandBulkPatch>
 ): Promise<void> {
@@ -194,7 +194,7 @@ describe('StandBulkEditDialog', () => {
 
     // The safety property of the whole screen: opening it and pressing save
     // must be incapable of changing anything.
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
     expect(root(fixture).textContent).toContain('Seuls les champs renseignés ci-dessous sont modifiés');
   });
 
@@ -202,9 +202,9 @@ describe('StandBulkEditDialog', () => {
     const { fixture } = mount([stand('s1')]);
     await fixture.whenStable();
 
-    await remplir(fixture, { effectifMin: 2 });
+    await fill(fixture, { effectifMin: 2 });
 
-    expect(soumettre(fixture).disabled).toBe(false);
+    expect(submit(fixture).disabled).toBe(false);
   });
 
   it('keeps the submit disabled for a mode that names no target yet', async () => {
@@ -212,11 +212,11 @@ describe('StandBulkEditDialog', () => {
     await fixture.whenStable();
 
     // "Définir l'emplacement" without saying which one changes nothing.
-    await remplir(fixture, { emplacement: { mode: 'DEFINIR', emplacementId: null } });
-    expect(soumettre(fixture).disabled).toBe(true);
+    await fill(fixture, { emplacement: { mode: 'DEFINIR', emplacementId: null } });
+    expect(submit(fixture).disabled).toBe(true);
 
-    await remplir(fixture, { emplacement: { mode: 'DEFINIR', emplacementId: 'hall' } });
-    expect(soumettre(fixture).disabled).toBe(false);
+    await fill(fixture, { emplacement: { mode: 'DEFINIR', emplacementId: 'hall' } });
+    expect(submit(fixture).disabled).toBe(false);
   });
 
   it('names the stands a staffing patch would leave inconsistent, and blocks the batch', async () => {
@@ -225,13 +225,13 @@ describe('StandBulkEditDialog', () => {
 
     // effectifMax 2 against s1's own min of 4: the batch is refused as a whole,
     // and the message has to say which row is the problem.
-    await remplir(fixture, { effectifMax: 2 });
+    await fill(fixture, { effectifMax: 2 });
 
     const erreur = root(fixture).querySelector('.field-error[role="alert"]');
     expect(erreur).not.toBeNull();
     expect(erreur!.textContent).toContain('Loup-Garou');
     expect(erreur!.textContent).not.toContain('Dixit');
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('shows no horaire editor, not even its add button, until a horaire mode is chosen', async () => {
@@ -243,19 +243,19 @@ describe('StandBulkEditDialog', () => {
     // modifier" would invite rules that the chosen mode then discards.
     expect(boutonAjouterHoraire(fixture)).toBeUndefined();
 
-    await remplir(fixture, { horaires: { mode: 'AJOUTER', horaires: [] } });
+    await fill(fixture, { horaires: { mode: 'AJOUTER', horaires: [] } });
     expect(boutonAjouterHoraire(fixture)).toBeDefined();
   });
 
   it('adds horaire rules under the AJOUTER mode, uniquely named per row', async () => {
     const { fixture } = mount([stand('s1')]);
     await fixture.whenStable();
-    await remplir(fixture, { horaires: { mode: 'AJOUTER', horaires: [] } });
+    await fill(fixture, { horaires: { mode: 'AJOUTER', horaires: [] } });
 
-    const ajouter = boutonAjouterHoraire(fixture)!;
-    ajouter.click();
+    const add = boutonAjouterHoraire(fixture)!;
+    add.click();
     await fixture.whenStable();
-    ajouter.click();
+    add.click();
     await fixture.whenStable();
 
     expect(root(fixture).querySelectorAll('.horaire-carte')).toHaveLength(2);
@@ -267,7 +267,7 @@ describe('StandBulkEditDialog', () => {
   it('applies a rule typed on the compact line to every selected stand', async () => {
     const { fixture, saveMany } = mount([stand('s1'), stand('s2')]);
     await fixture.whenStable();
-    await remplir(fixture, { horaires: { mode: 'REMPLACER', horaires: [] } });
+    await fill(fixture, { horaires: { mode: 'REMPLACER', horaires: [] } });
     boutonAjouterHoraire(fixture)!.click();
     await fixture.whenStable();
 
@@ -291,7 +291,7 @@ describe('StandBulkEditDialog', () => {
   it('blocks the batch on an invalid horaire rule and says why', async () => {
     const { fixture } = mount([stand('s1')]);
     await fixture.whenStable();
-    await remplir(fixture, {
+    await fill(fixture, {
       horaires: {
         mode: 'REMPLACER',
         horaires: [
@@ -311,33 +311,33 @@ describe('StandBulkEditDialog', () => {
     });
 
     const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
-    expect(alertes.some((texte) => texte.includes('au moins une fenêtre'))).toBe(true);
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(alertes.some((text) => text.includes('au moins une fenêtre'))).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('allows EFFACER, which carries no rule to validate', async () => {
     const { fixture } = mount([stand('s1')]);
     await fixture.whenStable();
-    await remplir(fixture, { horaires: { mode: 'EFFACER', horaires: [] } });
+    await fill(fixture, { horaires: { mode: 'EFFACER', horaires: [] } });
 
     expect(root(fixture).querySelectorAll('.field-error')).toHaveLength(0);
-    expect(soumettre(fixture).disabled).toBe(false);
+    expect(submit(fixture).disabled).toBe(false);
   });
 
   it('disables the whole form and says why while a solve is running', async () => {
     const { fixture } = mount([stand('s1')], { editingLocked: true });
     await fixture.whenStable();
-    await remplir(fixture, { effectifMin: 2 });
+    await fill(fixture, { effectifMin: 2 });
 
     expect(root(fixture).querySelector('.locked-hint')).not.toBeNull();
     expect((root(fixture).querySelector('fieldset.form-fieldset') as HTMLFieldSetElement).disabled).toBe(true);
-    expect(soumettre(fixture).disabled).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
   });
 
   it('applies the patch to every selected stand and closes', async () => {
     const { fixture, saveMany, close } = mount([stand('s1'), stand('s2')]);
     await fixture.whenStable();
-    await remplir(fixture, { premium: 'OUI' });
+    await fill(fixture, { premium: 'OUI' });
 
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
@@ -367,7 +367,7 @@ describe('StandBulkEditDialog', () => {
   it('stays open when the batch saved nothing', async () => {
     const { fixture, saveMany, close } = mount([stand('s1')], { saveMany: 0 });
     await fixture.whenStable();
-    await remplir(fixture, { premium: 'OUI' });
+    await fill(fixture, { premium: 'OUI' });
 
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();

@@ -50,9 +50,9 @@ describe('segmenterArticles', () => {
   });
 
   it('reproduces the input exactly when the segments are joined back', () => {
-    const texte =
+    const text =
       "Le repos quotidien est de 11 h pour un majeur (art. L3131-1), 12 h pour un mineur et 14 h avant 16 ans (art. L3164-1).";
-    expect(segmenterArticles(texte).map((segment) => segment.text).join('')).toBe(texte);
+    expect(segmenterArticles(text).map((segment) => segment.text).join('')).toBe(text);
   });
 
   it('does not mistake a plain number, or a word ending in L, for an article', () => {

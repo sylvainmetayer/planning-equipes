@@ -105,13 +105,13 @@ export class RailJourPage {
   protected readonly lignes = computed<RailLigne[]>(() => this.jourCourant()?.lignes ?? []);
 
   protected readonly lignesAffichees = computed<RailLigne[]>(() => {
-    const vue = this.vue();
+    const view = this.vue();
     const filtre = this.filtre();
     return this.lignes().filter((ligne) => {
-      if (vue === 'libres' && ligne.statut !== 'libre') {
+      if (view === 'libres' && ligne.statut !== 'libre') {
         return false;
       }
-      if (vue === 'affectes' && ligne.statut !== 'affecte') {
+      if (view === 'affectes' && ligne.statut !== 'affecte') {
         return false;
       }
       return correspondAuFiltre(filtre, [ligne.nom]);
@@ -252,8 +252,8 @@ export class RailJourPage {
     const jour = Number(params.get('jour'));
     this.jourSelectionne.set(Number.isFinite(jour) && jour > 0 ? jour : null);
     this.filtre.set(params.get('q') ?? '');
-    const vue = params.get('vue');
-    this.vue.set(vue === 'libres' || vue === 'affectes' ? vue : 'tous');
+    const view = params.get('vue');
+    this.vue.set(view === 'libres' || view === 'affectes' ? view : 'tous');
     void this.refresh();
     keepViewInQueryParams(() => {
       const courant = this.jourCourant();
@@ -298,9 +298,9 @@ export class RailJourPage {
   protected decalerJour(delta: number): void {
     const jours = this.jours();
     const index = jours.findIndex((jour) => jour.jour === this.jourCourant()?.jour);
-    const cible = jours[index + delta];
-    if (cible) {
-      this.selectionnerJour(cible.jour);
+    const target = jours[index + delta];
+    if (target) {
+      this.selectionnerJour(target.jour);
     }
   }
 
@@ -324,26 +324,26 @@ export class RailJourPage {
   }
 
   protected naviguer(event: KeyboardEvent, index: number): void {
-    const derniere = this.lignesAffichees().length - 1;
-    let cible: number;
+    const last = this.lignesAffichees().length - 1;
+    let target: number;
     switch (event.key) {
       case 'ArrowDown':
-        cible = Math.min(index + 1, derniere);
+        target = Math.min(index + 1, last);
         break;
       case 'ArrowUp':
-        cible = Math.max(index - 1, 0);
+        target = Math.max(index - 1, 0);
         break;
       case 'Home':
-        cible = 0;
+        target = 0;
         break;
       case 'End':
-        cible = derniere;
+        target = last;
         break;
       default:
         return;
     }
     event.preventDefault();
-    this.ligneFocus.set(cible);
-    this.hote.nativeElement.querySelector<HTMLElement>(`[data-ligne="${cible}"]`)?.focus();
+    this.ligneFocus.set(target);
+    this.hote.nativeElement.querySelector<HTMLElement>(`[data-ligne="${target}"]`)?.focus();
   }
 }

@@ -139,11 +139,11 @@ export class EchangesPage {
    * Opens or closes the foire. Enforced server-side: closed, the espaces
    * animateurs turn read-only (planning still consultable and downloadable).
    */
-  protected async basculerFoire(ouverte: boolean): Promise<void> {
+  protected async basculerFoire(open: boolean): Promise<void> {
     this.foireEnCours.set(true);
     try {
       const configuration = await this.api.put<ConfigurationFoire>('/api/echanges/configuration', {
-        foireOuverte: ouverte,
+        foireOuverte: open,
         debut: this.debut(),
         fin: this.fin()
       });

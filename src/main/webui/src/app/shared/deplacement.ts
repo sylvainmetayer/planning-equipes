@@ -35,14 +35,14 @@ export function resumeDeplacement(
   nomDe: (animateurId: string) => string
 ): { title: string; message: string } {
   const source = nomDe(simulation.animateurSourceId);
-  const cible = simulation.animateurCibleId ? nomDe(simulation.animateurCibleId) : null;
+  const target = simulation.animateurCibleId ? nomDe(simulation.animateurCibleId) : null;
   let title: string;
-  if (simulation.posteCibleId && cible) {
-    title = $localize`:@@deplacement.echange:${source}:source: et ${cible}:cible: ont échangé leurs sièges.`;
+  if (simulation.posteCibleId && target) {
+    title = $localize`:@@deplacement.echange:${source}:source: et ${target}:cible: ont échangé leurs sièges.`;
   } else if (simulation.posteCibleId) {
     title = $localize`:@@deplacement.deplace:${source}:source: a changé de siège ; l'ancien reste libre.`;
   } else {
-    title = $localize`:@@deplacement.attribue:${cible}:cible: prend le siège de ${source}:source:.`;
+    title = $localize`:@@deplacement.attribue:${target}:cible: prend le siège de ${source}:source:.`;
   }
   const message = $localize`:@@deplacement.score:Score : ${scoreLabel(simulation.scoreAvant)}:avant: → ${scoreLabel(simulation.scoreApres)}:apres:.`;
   return { title, message };

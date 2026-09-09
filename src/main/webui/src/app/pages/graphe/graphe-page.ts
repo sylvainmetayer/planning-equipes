@@ -23,7 +23,7 @@ export interface NoeudGraphe {
 export type NiveauGraphe = 'emplacement' | 'stand' | 'creneau' | 'animateur';
 
 /** Stands with no emplacement still have to be reachable, so they get a bucket of their own. */
-const SANS_EMPLACEMENT = '__sans_emplacement__';
+const NO_EMPLACEMENT = '__sans_emplacement__';
 
 /**
  * Descending navigation through the data: emplacement → stands → créneaux →
@@ -98,8 +98,8 @@ export class GraphePage {
   private readonly standsParEmplacement = computed(() => {
     const index = new Map<string, Stand[]>();
     for (const stand of this.reference.stands()) {
-      const cle = stand.emplacement?.id ?? SANS_EMPLACEMENT;
-      index.set(cle, [...(index.get(cle) ?? []), stand]);
+      const key = stand.emplacement?.id ?? NO_EMPLACEMENT;
+      index.set(key, [...(index.get(key) ?? []), stand]);
     }
     return index;
   });
@@ -114,10 +114,10 @@ export class GraphePage {
       detail: this.coordonnees(emplacement),
       descendants: parEmplacement.get(emplacement.id)?.length ?? 0
     }));
-    const orphelins = parEmplacement.get(SANS_EMPLACEMENT)?.length ?? 0;
+    const orphelins = parEmplacement.get(NO_EMPLACEMENT)?.length ?? 0;
     if (orphelins > 0) {
       noeuds.push({
-        id: SANS_EMPLACEMENT,
+        id: NO_EMPLACEMENT,
         libelle: $localize`:@@graphe.sansEmplacement:Sans emplacement`,
         detail: $localize`:@@graphe.sansEmplacement.detail:Stands dont la fiche ne porte aucun lieu`,
         descendants: orphelins
@@ -222,16 +222,16 @@ export class GraphePage {
   /** Trail of what is currently selected, deepest last — the reader's "where am I". */
   protected readonly filAriane = computed(() => {
     const etapes: { niveau: NiveauGraphe; libelle: string }[] = [];
-    const ajouter = (niveau: NiveauGraphe, noeuds: NoeudGraphe[], id: string | null) => {
+    const add = (niveau: NiveauGraphe, noeuds: NoeudGraphe[], id: string | null) => {
       const noeud = id ? noeuds.find((candidat) => candidat.id === id) : undefined;
       if (noeud) {
         etapes.push({ niveau, libelle: noeud.libelle });
       }
     };
-    ajouter('emplacement', this.emplacements(), this.emplacementSelectionne());
-    ajouter('stand', this.stands(), this.standSelectionne());
-    ajouter('creneau', this.creneaux(), this.creneauSelectionne());
-    ajouter('animateur', this.animateurs(), this.animateurSelectionne());
+    add('emplacement', this.emplacements(), this.emplacementSelectionne());
+    add('stand', this.stands(), this.standSelectionne());
+    add('creneau', this.creneaux(), this.creneauSelectionne());
+    add('animateur', this.animateurs(), this.animateurSelectionne());
     return etapes;
   });
 

@@ -24,8 +24,8 @@ import { Animateur, Creneau, Stand } from './models';
  * (Ctrl+K, Ctrl+Enter) cannot be confused with typing, and Ctrl+Enter is
  * precisely meant to be pressed from inside a field.</p>
  */
-export function estChampDeSaisie(cible: EventTarget | null): boolean {
-  const element = cible as HTMLElement | null;
+export function estChampDeSaisie(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
   if (!element || typeof element.tagName !== 'string') {
     return false;
   }
@@ -203,7 +203,7 @@ export interface SourcesPalette {
  * page rendered inside a dialog. The cap keeps the list scannable and the DOM
  * small; narrowing the query is the way to see the rest.</p>
  */
-export const MAX_PAR_FAMILLE = 8;
+export const MAX_PER_FAMILY = 8;
 
 /** Where an animateur found in the palette leads: their own timeline, pre-selected. */
 function commandeAnimateur(animateur: Animateur): CommandePalette {
@@ -261,17 +261,17 @@ export function chercherCommandes(query: string, sources: SourcesPalette): Comma
   }
   const animateurs = sources.animateurs
     .filter((animateur) => correspondAuFiltre(query, [animateur.prenom, animateur.nom, animateur.id]))
-    .slice(0, MAX_PAR_FAMILLE)
+    .slice(0, MAX_PER_FAMILY)
     .map(commandeAnimateur);
   const stands = sources.stands
     .filter((stand) => correspondAuFiltre(query, [stand.nom, stand.id, stand.emplacement?.nom]))
-    .slice(0, MAX_PAR_FAMILLE)
+    .slice(0, MAX_PER_FAMILY)
     .map(commandeStand);
   const creneaux = sources.creneaux
     .filter((creneau) =>
       correspondAuFiltre(query, [creneau.date, creneau.heureDebut, creneau.heureFin, `jour ${creneau.jour}`])
     )
-    .slice(0, MAX_PAR_FAMILLE)
+    .slice(0, MAX_PER_FAMILY)
     .map(commandeCreneau);
-  return [...destinations.slice(0, MAX_PAR_FAMILLE), ...animateurs, ...stands, ...creneaux];
+  return [...destinations.slice(0, MAX_PER_FAMILY), ...animateurs, ...stands, ...creneaux];
 }

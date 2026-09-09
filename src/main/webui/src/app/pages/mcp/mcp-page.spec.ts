@@ -28,7 +28,7 @@ const PROMPTS: PromptMcp[] = [
 
 describe('McpPage prompts', () => {
   let fixture: ComponentFixture<McpPage>;
-  let ecrire: ReturnType<typeof vi.fn>;
+  let write: ReturnType<typeof vi.fn>;
 
   async function rendre(prompts: PromptMcp[] | Error): Promise<void> {
     const api = {
@@ -62,10 +62,10 @@ describe('McpPage prompts', () => {
   }
 
   beforeEach(() => {
-    ecrire = vi.fn(async () => undefined);
+    write = vi.fn(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
-      value: { writeText: ecrire }
+      value: { writeText: write }
     });
   });
 
@@ -103,6 +103,6 @@ describe('McpPage prompts', () => {
     boutons[1].click();
     await fixture.whenStable();
 
-    expect(ecrire).toHaveBeenCalledWith(PROMPTS[1].texte);
+    expect(write).toHaveBeenCalledWith(PROMPTS[1].texte);
   });
 });

@@ -145,15 +145,15 @@ interface Echelle {
 }
 
 /** Overlapping or touching windows merged into one, ordered — so a coverage test is a single comparison. */
-function fusionner(fenetres: Fenetre[]): Fenetre[] {
+function merge(fenetres: Fenetre[]): Fenetre[] {
   const ordonnees = [...fenetres].sort((left, right) => left.debutMinutes - right.debutMinutes);
   const fusionnees: Fenetre[] = [];
   ordonnees.forEach((fenetre) => {
-    const derniere = fusionnees[fusionnees.length - 1];
-    if (derniere && fenetre.debutMinutes <= derniere.finMinutes) {
-      if (fenetre.finMinutes > derniere.finMinutes) {
-        derniere.finMinutes = fenetre.finMinutes;
-        derniere.heureFin = fenetre.heureFin;
+    const last = fusionnees[fusionnees.length - 1];
+    if (last && fenetre.debutMinutes <= last.finMinutes) {
+      if (fenetre.finMinutes > last.finMinutes) {
+        last.finMinutes = fenetre.finMinutes;
+        last.heureFin = fenetre.heureFin;
       }
       return;
     }
@@ -188,8 +188,8 @@ function blocagesParAnimateur(
       // A créneau of another day, or one no poste was generated for.
       return;
     }
-    (contrainte.animateursConcernes ?? []).forEach((cible) => {
-      blocages.set(cible.id, [...(blocages.get(cible.id) ?? []), fenetre]);
+    (contrainte.animateursConcernes ?? []).forEach((target) => {
+      blocages.set(target.id, [...(blocages.get(target.id) ?? []), fenetre]);
     });
   });
   return blocages;
@@ -319,7 +319,7 @@ function buildRailJour(
         noms.get(animateur.id) ?? animateur.id,
         date,
         spansParAnimateur.get(animateur.id) ?? [],
-        fusionner(blocages.get(animateur.id) ?? []),
+        merge(blocages.get(animateur.id) ?? []),
         echelle,
         pausesDe(indexPauses, date, animateur.id)
       )
@@ -366,7 +366,7 @@ function buildRailLigne(
   const ordonnes = [...spans].sort((left, right) => left.debutMinutes - right.debutMinutes);
   let finPrecedente = -1;
   const blocs: RailBloc[] = ordonnes.map((span) => {
-    const chevauchement = span.debutMinutes < finPrecedente;
+    const overlap = span.debutMinutes < finPrecedente;
     finPrecedente = Math.max(finPrecedente, span.finMinutes);
     return {
       posteId: span.posteId,
@@ -377,7 +377,7 @@ function buildRailLigne(
       widthPercent: ((span.finMinutes - span.debutMinutes) / amplitude) * 100,
       typologie: span.typologie,
       colorClass: span.colorClass,
-      chevauchement,
+      chevauchement: overlap,
       label: `${span.standNom} · ${span.heureDebut} – ${span.heureFin}`
     };
   });
@@ -413,12 +413,12 @@ function buildRailLigne(
   const minutesTravaillees = ordonnes.reduce((total, span) => total + (span.finMinutes - span.debutMinutes), 0);
   const dureeLabel = formatDuration(minutesTravaillees);
   const amplitudeDebut = ordonnes[0].heureDebut;
-  const amplitudeFin = ordonnes.reduce((derniere, span) =>
-    span.finMinutes >= derniere.finMinutes ? span : derniere
+  const amplitudeFin = ordonnes.reduce((last, span) =>
+    span.finMinutes >= last.finMinutes ? span : last
   ).heureFin;
   const detail = blocs.map((bloc) => bloc.label).join(' ; ');
   const count = blocs.length;
-  const chevauchement = blocs.some((bloc) => bloc.chevauchement);
+  const overlap = blocs.some((bloc) => bloc.chevauchement);
   const base = $localize`:@@railJour.resume.affecte:${nom}:animateur: — ${count}:count: vacation(s), ${dureeLabel}:duree:, de ${amplitudeDebut}:debut: à ${amplitudeFin}:fin: : ${detail}:detail:`;
 
   return {
@@ -430,11 +430,11 @@ function buildRailLigne(
     dureeLabel,
     amplitudeDebut,
     amplitudeFin,
-    chevauchement,
+    chevauchement: overlap,
     // The red outline and the warning icon are visual only; a line read out
     // loud must say the one anomaly this view exists to make visible.
     pauses,
-    resume: mentionnerPauses(mentionnerChevauchement(mentionnerBlocages(base, plages), chevauchement), pauses)
+    resume: mentionnerPauses(mentionnerChevauchement(mentionnerBlocages(base, plages), overlap), pauses)
   };
 }
 
@@ -456,8 +456,8 @@ function mentionnerBlocages(base: string, plages: string): string {
 }
 
 /** Same, for the overlap the outline alone would only tell a sighted reader. */
-function mentionnerChevauchement(base: string, chevauchement: boolean): string {
-  if (!chevauchement) {
+function mentionnerChevauchement(base: string, overlap: boolean): string {
+  if (!overlap) {
     return base;
   }
   return $localize`:@@railJour.resume.chevauchement:${base}:ligne: — attention, deux vacations se chevauchent`;

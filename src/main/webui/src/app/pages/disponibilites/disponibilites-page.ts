@@ -100,14 +100,14 @@ export class DisponibilitesPage {
    * Opens or closes the window. Closing is enforced server-side: the espaces
    * refuse a declaration, they do not merely hide the form.
    */
-  protected async enregistrerFenetre(ouverte: boolean): Promise<void> {
+  protected async enregistrerFenetre(open: boolean): Promise<void> {
     this.fenetreEnCours.set(true);
     try {
       const reponse = await this.api.put<ConfigurationCollecte>('/api/disponibilites/configuration', {
-        collecteOuverte: ouverte,
+        collecteOuverte: open,
         debut: this.debut() || null,
         fin: this.fin() || null,
-        prevenirAnimateurs: ouverte && this.prevenir()
+        prevenirAnimateurs: open && this.prevenir()
       });
       this.configuration.set(reponse);
       this.prevenir.set(false);

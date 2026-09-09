@@ -38,7 +38,7 @@ import { errorMessage, errorPrefix } from '../../core/error-message';
  * keyword whose spelling follows the interface language is a keyword an
  * administrator gets wrong after a language switch.
  */
-export const MOT_CLE_REMPLACER = 'REMPLACER';
+export const REPLACE_KEYWORD = 'REMPLACER';
 
 /**
  * The single settings page, split in two sections mirroring the data model:
@@ -305,11 +305,11 @@ export class ParametresPage {
       return '';
     }
     const heures = (minutes: number) => (minutes / 60).toFixed(1).replace('.0', '').replace('.', ',');
-    const familles =
+    const families =
       p.nombreFamillesDecalage > 1
         ? $localize`:@@decoupage.apercu.familles:, réparties sur ${p.nombreFamillesDecalage}:count: grilles décalées`
         : '';
-    return $localize`:@@decoupage.apercu:Avec ces réglages : des vacations d'environ ${heures(p.dureeVacationCibleMinutes)}:cible: h (jamais plus de ${heures(p.dureeVacationMaxMinutes)}:max: h), un relais de ${p.dureeChevauchementMinutes}:chevauchement: min et une pause repas de ${p.dureePauseRepasMinutes}:repas: min${familles}:familles:.`;
+    return $localize`:@@decoupage.apercu:Avec ces réglages : des vacations d'environ ${heures(p.dureeVacationCibleMinutes)}:cible: h (jamais plus de ${heures(p.dureeVacationMaxMinutes)}:max: h), un relais de ${p.dureeChevauchementMinutes}:chevauchement: min et une pause repas de ${p.dureePauseRepasMinutes}:repas: min${families}:familles:.`;
   });
 
   /**
@@ -392,9 +392,9 @@ export class ParametresPage {
       }
       return;
     }
-    const cible = this.store.typologies().find((typologie) => typologie.id === id);
-    if (cible) {
-      await this.crud.save('typologies', { ...cible, ninja: true }, cible.id, label);
+    const target = this.store.typologies().find((typologie) => typologie.id === id);
+    if (target) {
+      await this.crud.save('typologies', { ...target, ninja: true }, target.id, label);
     }
   }
 
@@ -473,7 +473,7 @@ export class ParametresPage {
     const confirmed = await this.recopie.demander({
       title: $localize`:@@dataTransfer.replaySqlTitle:Rejouer ce dump SQL ?`,
       message: $localize`:@@dataTransfer.replaySqlPromptMessage:${file.name}:fileName: remplace la base de données entière : toutes les éditions sont écrasées, pas seulement l'édition courante. L'opération est irréversible.`,
-      valeurAttendue: MOT_CLE_REMPLACER,
+      valeurAttendue: REPLACE_KEYWORD,
       confirmLabel: $localize`:@@dataTransfer.replaySqlAction:Remplacer la base`
     });
     if (!confirmed) {

@@ -382,33 +382,33 @@ export class CalendarMonthPage {
     const total = this.cells().length;
     const courant = this.indexJourCourant();
     // Every branch below assigns it, and the default returns.
-    let cible: number;
+    let target: number;
     switch (event.key) {
       case 'ArrowRight':
-        cible = Math.min(courant + 1, total - 1);
+        target = Math.min(courant + 1, total - 1);
         break;
       case 'ArrowLeft':
-        cible = Math.max(courant - 1, 0);
+        target = Math.max(courant - 1, 0);
         break;
       // A week is seven columns, so a vertical move is a seven-day jump.
       case 'ArrowDown':
-        cible = Math.min(courant + 7, total - 1);
+        target = Math.min(courant + 7, total - 1);
         break;
       case 'ArrowUp':
-        cible = Math.max(courant - 7, 0);
+        target = Math.max(courant - 7, 0);
         break;
       case 'Home':
-        cible = courant - (courant % 7);
+        target = courant - (courant % 7);
         break;
       case 'End':
-        cible = Math.min(courant - (courant % 7) + 6, total - 1);
+        target = Math.min(courant - (courant % 7) + 6, total - 1);
         break;
       default:
         return;
     }
     event.preventDefault();
-    this.indexJourCourant.set(cible);
-    this.hote.nativeElement.querySelector<HTMLElement>(`[data-jour="${cible}"]`)?.focus();
+    this.indexJourCourant.set(target);
+    this.hote.nativeElement.querySelector<HTMLElement>(`[data-jour="${target}"]`)?.focus();
   }
 
   protected selectDay(cell: MonthCell): void {

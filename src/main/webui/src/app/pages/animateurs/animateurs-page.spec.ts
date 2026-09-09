@@ -190,7 +190,7 @@ describe('AnimateursPage table', () => {
   }
 
   /** Clicks the sort header whose label starts with `libelle`. */
-  async function trier(libelle: string): Promise<void> {
+  async function sort(libelle: string): Promise<void> {
     const entete = Array.from(racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]')).find(
       (cell) => cell.textContent!.trim().startsWith(libelle)
     );
@@ -199,9 +199,9 @@ describe('AnimateursPage table', () => {
     await fixture.whenStable();
   }
 
-  async function filtrer(texte: string): Promise<void> {
+  async function filter(text: string): Promise<void> {
     const input = racine().querySelector('app-table-filter input') as HTMLInputElement;
-    input.value = texte;
+    input.value = text;
     input.dispatchEvent(new Event('input'));
     await fixture.whenStable();
   }
@@ -262,17 +262,17 @@ describe('AnimateursPage table', () => {
       personne('majeur', { dateNaissance: '1990-01-01' })
     ]);
 
-    await trier('Majeur');
+    await sort('Majeur');
     expect(lignes().map((row) => row[1])).toEqual(['majeur', 'mineur', 'inconnu']);
 
-    await trier('Majeur');
+    await sort('Majeur');
     expect(lignes().map((row) => row[1])).toEqual(['inconnu', 'mineur', 'majeur']);
   });
 
   it('sorts the identifiers as numbers where they carry one, not as text', async () => {
     await rendre([personne('A10'), personne('A2'), personne('A1')]);
 
-    await trier('Id');
+    await sort('Id');
     expect(lignes().map((row) => row[1])).toEqual(['A1', 'A2', 'A10']);
   });
 
@@ -283,14 +283,14 @@ describe('AnimateursPage table', () => {
       personne('b', { prenom: 'Adrien', nom: 'Costa' })
     ]);
 
-    await trier('Nom');
+    await sort('Nom');
     expect(lignes().map((row) => row[2])).toEqual(['Adrien Costa', 'Élodie Blanc', 'Zoé Abadie']);
   });
 
   it('brings the managers up first, like the majority column', async () => {
     await rendre([personne('a', { manager: false }), personne('b', { manager: true })]);
 
-    await trier('Manager');
+    await sort('Manager');
     expect(lignes().map((row) => row[1])).toEqual(['b', 'a']);
   });
 
@@ -301,7 +301,7 @@ describe('AnimateursPage table', () => {
       personne('une', { joursIndisponibles: ['2026-07-01'] })
     ]);
 
-    await trier('Indisponibilités');
+    await sort('Indisponibilités');
     expect(lignes().map((row) => row[1])).toEqual(['aucune', 'une', 'trois']);
   });
 
@@ -323,7 +323,7 @@ describe('AnimateursPage table', () => {
     await rendre([personne('confirme'), personne('sansPoste'), personne('relance'), personne('silencieux')]);
     await fixture.whenStable();
 
-    await trier('Accusé de réception');
+    await sort('Accusé de réception');
     // Silencieux, relancé, confirmé — and last the person nothing was asked of.
     expect(lignes().map((row) => row[1])).toEqual(['silencieux', 'relance', 'confirme', 'sansPoste']);
   });
@@ -354,10 +354,10 @@ describe('AnimateursPage table', () => {
   it('narrows the table on the quick filter, and says when nothing matches', async () => {
     await rendre([personne('alice', { prenom: 'Amélie', nom: 'Nothomb' }), personne('bob', { prenom: 'Bob', nom: 'Ados' })]);
 
-    await filtrer('nothomb');
+    await filter('nothomb');
     expect(lignes().map((row) => row[1])).toEqual(['alice']);
 
-    await filtrer('zzz');
+    await filter('zzz');
     expect(lignes()).toEqual([]);
     expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucune ligne ne correspond au filtre.');
   });
@@ -371,7 +371,7 @@ describe('AnimateursPage table', () => {
   it('ticks only the displayed rows on "tout sélectionner", and warns that the scope is filtered', async () => {
     await rendre([personne('alice', { nom: 'Nothomb' }), personne('bob', { nom: 'Ados' })]);
 
-    await filtrer('nothomb');
+    await filter('nothomb');
     (racine().querySelector('thead mat-checkbox input') as HTMLInputElement).click();
     await fixture.whenStable();
 

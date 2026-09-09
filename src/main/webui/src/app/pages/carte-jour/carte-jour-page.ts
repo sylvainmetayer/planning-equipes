@@ -198,9 +198,9 @@ export class CarteJourPage {
   protected decalerJour(delta: number): void {
     const jours = this.jours();
     const index = jours.findIndex((jour) => jour.jour === this.jourCourant()?.jour);
-    const cible = jours[index + delta];
-    if (cible) {
-      this.selectionnerJour(cible.jour);
+    const target = jours[index + delta];
+    if (target) {
+      this.selectionnerJour(target.jour);
     }
   }
 

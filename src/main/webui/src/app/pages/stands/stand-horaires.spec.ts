@@ -143,12 +143,12 @@ describe('decrireJour', () => {
   });
 
   it('lists the windows a day is open on', () => {
-    const texte = decrireJour(jour({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }));
-    expect(texte).toBe('Ouvert 10:00 → 12:00');
+    const text = decrireJour(jour({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }));
+    expect(text).toBe('Ouvert 10:00 → 12:00');
   });
 
   it('joins several windows of the same day', () => {
-    const texte = decrireJour(
+    const text = decrireJour(
       jour({
         fenetres: [
           { heureDebut: '10:00', heureFin: '12:00' },
@@ -156,11 +156,11 @@ describe('decrireJour', () => {
         ]
       })
     );
-    expect(texte).toBe('Ouvert 10:00 → 12:00, 14:00 → fermeture');
+    expect(text).toBe('Ouvert 10:00 → 12:00, 14:00 → fermeture');
   });
 
   it('shows the seats of a window that names them, and nothing for the others', () => {
-    const texte = decrireJour(
+    const text = decrireJour(
       jour({
         fenetres: [
           { heureDebut: '10:00', heureFin: '12:00' },
@@ -168,7 +168,7 @@ describe('decrireJour', () => {
         ]
       })
     );
-    expect(texte).toBe('Ouvert 10:00 → 12:00, 14:00 → 20:00 ×3');
+    expect(text).toBe('Ouvert 10:00 → 12:00, 14:00 → 20:00 ×3');
   });
 
   it('says "fermeture" for a window running to the end of the day', () => {

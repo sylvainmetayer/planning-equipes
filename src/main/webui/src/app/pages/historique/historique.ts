@@ -27,7 +27,7 @@ export function lireFiltreResultat(valeur: string | null): FiltreResultat {
  * the sentence, the actor, the entity and its id — and nothing else: searching
  * a name that the table does not store would silently return nothing.
  */
-export function filtrer(
+export function filter(
   entrees: EntreeHistorique[],
   acteur: FiltreActeur,
   resultat: FiltreResultat,

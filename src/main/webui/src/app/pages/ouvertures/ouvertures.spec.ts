@@ -112,7 +112,7 @@ describe('classeCellule', () => {
 });
 
 describe('filtrerStands', () => {
-  const anomalie: AnomalieOuverture = {
+  const anomaly: AnomalieOuverture = {
     type: 'STAND_JAMAIS_OUVERT',
     standId: 'FERME-PARTOUT',
     standNom: 'Fermé partout',
@@ -125,7 +125,7 @@ describe('filtrerStands', () => {
       ligne({ standId: 'PARTIEL', nom: 'Partiel', jours: [cellule({ etat: 'OUVERT_PARTIEL' })] }),
       ligne({ standId: 'FERME-PARTOUT', nom: 'Fermé partout', jours: [cellule({ etat: 'FERME' })], postes: 0 })
     ],
-    anomalies: [anomalie]
+    anomalies: [anomaly]
   });
 
   it('rend tout par défaut', () => {

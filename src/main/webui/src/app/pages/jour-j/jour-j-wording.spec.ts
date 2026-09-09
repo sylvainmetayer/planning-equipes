@@ -100,10 +100,10 @@ describe('heure / plage', () => {
 
 describe('resumeDuJour', () => {
   it('states the remaining count against the whole day', () => {
-    const texte = resumeDuJour(etat({ creneauxRestants: [creneau(), creneau({ id: 3 })] }));
-    expect(texte).toContain('2');
-    expect(texte).toContain('4');
-    expect(texte).toContain('13:30');
+    const text = resumeDuJour(etat({ creneauxRestants: [creneau(), creneau({ id: 3 })] }));
+    expect(text).toContain('2');
+    expect(text).toContain('4');
+    expect(text).toContain('13:30');
   });
 
   it('says the day is over rather than showing a zero', () => {
@@ -115,9 +115,9 @@ describe('resumeDuJour', () => {
    * that "over" would be a lie the operator acts on.
    */
   it('tells an empty journée from a finished one', () => {
-    const texte = resumeDuJour(etat({ creneauxDuJour: 0 }));
-    expect(texte).toContain('Aucun créneau');
-    expect(texte).not.toContain('terminée');
+    const text = resumeDuJour(etat({ creneauxDuJour: 0 }));
+    expect(text).toContain('Aucun créneau');
+    expect(text).not.toContain('terminée');
   });
 
   it('says nothing before the state has loaded', () => {
@@ -152,20 +152,20 @@ describe('porteeDesSuggestions', () => {
    * reads as "there is nobody else", which is the one thing it must not say.
    */
   it('names both counts when the search stopped at the plafond', () => {
-    const texte = porteeDesSuggestions(
+    const text = porteeDesSuggestions(
       suggestions({ candidatsEligibles: 137, candidatsEvalues: 20 })
     );
-    expect(texte).toContain('20');
-    expect(texte).toContain('137');
-    expect(texte).toContain('pas tout le vivier');
+    expect(text).toContain('20');
+    expect(text).toContain('137');
+    expect(text).toContain('pas tout le vivier');
   });
 
   it('says so plainly when the whole pool was evaluated', () => {
-    const texte = porteeDesSuggestions(
+    const text = porteeDesSuggestions(
       suggestions({ candidatsEligibles: 12, candidatsEvalues: 12 })
     );
-    expect(texte).toContain('12');
-    expect(texte).not.toContain('pas tout le vivier');
+    expect(text).toContain('12');
+    expect(text).not.toContain('pas tout le vivier');
   });
 
   it('says nothing before a search has run', () => {

@@ -22,30 +22,30 @@ function storageQuiRefuse(): Pick<Storage, 'getItem' | 'setItem'> {
   };
 }
 
-const CLE = 'planning-equipes.solver.scoreCurveCollapsed';
+const KEY = 'planning-equipes.solver.scoreCurveCollapsed';
 
 describe('panel-collapse', () => {
   it('déplie par défaut : rien n’a jamais été écrit', () => {
-    expect(readPanelCollapsed(storage(), CLE)).toBe(false);
+    expect(readPanelCollapsed(storage(), KEY)).toBe(false);
   });
 
   it('relit ce qui a été écrit', () => {
     const memoire = storage();
-    writePanelCollapsed(memoire, CLE, true);
+    writePanelCollapsed(memoire, KEY, true);
 
-    expect(readPanelCollapsed(memoire, CLE)).toBe(true);
+    expect(readPanelCollapsed(memoire, KEY)).toBe(true);
   });
 
   it('rouvre le panneau quand on le déplie', () => {
-    const memoire = storage({ [CLE]: 'true' });
-    writePanelCollapsed(memoire, CLE, false);
+    const memoire = storage({ [KEY]: 'true' });
+    writePanelCollapsed(memoire, KEY, false);
 
-    expect(readPanelCollapsed(memoire, CLE)).toBe(false);
+    expect(readPanelCollapsed(memoire, KEY)).toBe(false);
   });
 
   it('garde chaque panneau indépendant de ses voisins', () => {
     const memoire = storage();
-    writePanelCollapsed(memoire, CLE, true);
+    writePanelCollapsed(memoire, KEY, true);
 
     expect(readPanelCollapsed(memoire, 'planning-equipes.autre.panneau')).toBe(false);
   });
@@ -53,14 +53,14 @@ describe('panel-collapse', () => {
   it('déplie plutôt que de croire une valeur écrite par une version antérieure', () => {
     // Masquer un panneau que l'utilisateur attend lui coûte la fonctionnalité ;
     // en afficher un qu'il avait rangé ne lui coûte que de la place.
-    expect(readPanelCollapsed(storage({ [CLE]: 'oui' }), CLE)).toBe(false);
+    expect(readPanelCollapsed(storage({ [KEY]: 'oui' }), KEY)).toBe(false);
   });
 
   it('survit à une absence de stockage, et à un stockage qui lève', () => {
-    expect(readPanelCollapsed(null, CLE)).toBe(false);
-    expect(readPanelCollapsed(storageQuiRefuse(), CLE)).toBe(false);
+    expect(readPanelCollapsed(null, KEY)).toBe(false);
+    expect(readPanelCollapsed(storageQuiRefuse(), KEY)).toBe(false);
     // Ni l'un ni l'autre ne doit faire tomber l'écran au moment du clic.
-    expect(() => writePanelCollapsed(null, CLE, true)).not.toThrow();
-    expect(() => writePanelCollapsed(storageQuiRefuse(), CLE, true)).not.toThrow();
+    expect(() => writePanelCollapsed(null, KEY, true)).not.toThrow();
+    expect(() => writePanelCollapsed(storageQuiRefuse(), KEY, true)).not.toThrow();
   });
 });

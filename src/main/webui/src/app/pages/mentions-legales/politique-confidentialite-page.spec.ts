@@ -39,13 +39,13 @@ describe('PolitiqueConfidentialitePage', () => {
     const fixture = monter({ ...VIDE, mesureAudience: true, suiviErreurs: true });
     await fixture.whenStable();
 
-    const texte = fixture.nativeElement.textContent as string;
-    expect(texte).toContain('Cloudflare');
-    expect(texte).toContain("l'espace personnel des animateurs sont exclues");
-    expect(texte).toContain('Suivi des erreurs');
-    expect(texte).toContain('Ces deux traitements');
-    expect(texte).toContain('les outils techniques décrits ci-dessous');
-    expect(texte).toContain("Mesure d'audience et suivi technique");
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Cloudflare');
+    expect(text).toContain("l'espace personnel des animateurs sont exclues");
+    expect(text).toContain('Suivi des erreurs');
+    expect(text).toContain('Ces deux traitements');
+    expect(text).toContain('les outils techniques décrits ci-dessous');
+    expect(text).toContain("Mesure d'audience et suivi technique");
   });
 
   it('ne nomme aucun outil tiers quand le déploiement n’en fait tourner aucun', async () => {
@@ -56,13 +56,13 @@ describe('PolitiqueConfidentialitePage', () => {
     const fixture = monter(VIDE);
     await fixture.whenStable();
 
-    const texte = fixture.nativeElement.textContent as string;
-    expect(texte).not.toContain('Cloudflare');
-    expect(texte).not.toContain('Bugsink');
-    expect(texte).not.toContain("Mesure d'audience");
-    expect(texte).not.toContain('décrits ci-dessous');
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).not.toContain('Cloudflare');
+    expect(text).not.toContain('Bugsink');
+    expect(text).not.toContain("Mesure d'audience");
+    expect(text).not.toContain('décrits ci-dessous');
     // Les sous-traitants qui restent, eux, sont toujours là.
-    expect(texte).toContain("le service d'envoi des e-mails");
+    expect(text).toContain("le service d'envoi des e-mails");
   });
 
   it('ne décrit que l’outil actif, et accorde le titre comme le paragraphe d’opposition', async () => {
@@ -97,10 +97,10 @@ describe('PolitiqueConfidentialitePage', () => {
     const fixture = monter(VIDE);
     await fixture.whenStable();
 
-    const texte = fixture.nativeElement.textContent as string;
-    expect(texte).toContain('Si vous êtes mineur');
-    expect(texte).toContain('moins de 18 ans');
-    expect(texte).toContain('représentant légal');
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Si vous êtes mineur');
+    expect(text).toContain('moins de 18 ans');
+    expect(text).toContain('représentant légal');
   });
 
   it('signale une base légale ou une durée manquante au lieu de les passer sous silence', async () => {

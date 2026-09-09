@@ -27,20 +27,20 @@ export interface MoisCollecte {
  * organisation currently holds. A blank form would read as « I am available
  * every day », which is a statement nobody meant to make.
  */
-export function brouillonInitial(vue: DeclarationEspaceView | null): BrouillonDeclaration {
-  if (!vue) {
+export function brouillonInitial(view: DeclarationEspaceView | null): BrouillonDeclaration {
+  if (!view) {
     return { joursIndisponibles: [], souhaits: [], commentaire: '' };
   }
-  if (vue.enAttente) {
+  if (view.enAttente) {
     return {
-      joursIndisponibles: [...vue.enAttente.joursIndisponibles],
-      souhaits: [...vue.enAttente.souhaits],
-      commentaire: vue.enAttente.commentaire ?? ''
+      joursIndisponibles: [...view.enAttente.joursIndisponibles],
+      souhaits: [...view.enAttente.souhaits],
+      commentaire: view.enAttente.commentaire ?? ''
     };
   }
   return {
-    joursIndisponibles: [...vue.joursActuels],
-    souhaits: [...vue.souhaitsActuels],
+    joursIndisponibles: [...view.joursActuels],
+    souhaits: [...view.souhaitsActuels],
     commentaire: ''
   };
 }
@@ -57,15 +57,15 @@ export function brouillonInitial(vue: DeclarationEspaceView | null): BrouillonDe
  *                   rule is testable without freezing a clock
  */
 export function ouvertureAVenir(
-  vue: DeclarationEspaceView | null,
+  view: DeclarationEspaceView | null,
   aujourdHui: string
 ): string | null {
-  if (!vue || vue.collecteOuverte || !vue.collecteDebut) {
+  if (!view || view.collecteOuverte || !view.collecteDebut) {
     return null;
   }
   // Closed AND past the start means the window really is over — or that the
   // admin flipped the switch off, which is a closure whatever the dates say.
-  return vue.collecteDebut > aujourdHui ? vue.collecteDebut : null;
+  return view.collecteDebut > aujourdHui ? view.collecteDebut : null;
 }
 
 /** Groups the event days by calendar month, in chronological order. */
@@ -96,19 +96,19 @@ export function basculer(valeurs: readonly string[], valeur: string): string[] {
  * tell the admin nothing, so the button stays disabled.
  */
 export function declarationModifiee(
-  vue: DeclarationEspaceView | null,
+  view: DeclarationEspaceView | null,
   brouillon: BrouillonDeclaration
 ): boolean {
-  if (!vue) {
+  if (!view) {
     return false;
   }
-  const reference = vue.enAttente
+  const reference = view.enAttente
     ? {
-        jours: vue.enAttente.joursIndisponibles,
-        souhaits: vue.enAttente.souhaits,
-        commentaire: vue.enAttente.commentaire ?? ''
+        jours: view.enAttente.joursIndisponibles,
+        souhaits: view.enAttente.souhaits,
+        commentaire: view.enAttente.commentaire ?? ''
       }
-    : { jours: vue.joursActuels, souhaits: vue.souhaitsActuels, commentaire: '' };
+    : { jours: view.joursActuels, souhaits: view.souhaitsActuels, commentaire: '' };
   return (
     !memesValeurs(reference.jours, brouillon.joursIndisponibles) ||
     !memesValeurs(reference.souhaits, brouillon.souhaits) ||

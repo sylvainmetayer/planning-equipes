@@ -7,7 +7,7 @@ import type { TypeVerrouillage, VerrouillagePlanning } from './models';
 function verrouillage(
   id: string,
   type: TypeVerrouillage,
-  cible: Partial<VerrouillagePlanning>
+  target: Partial<VerrouillagePlanning>
 ): VerrouillagePlanning {
   return {
     id,
@@ -17,7 +17,7 @@ function verrouillage(
     creneauId: null,
     jour: null,
     raison: null,
-    ...cible
+    ...target
   };
 }
 

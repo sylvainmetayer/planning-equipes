@@ -601,7 +601,7 @@ export interface VerrouillagePlanning {
  * seat (stand closures deducted); `hoursAvailable` is the legal ceiling of what the
  * animateurs may work over the event's days, unavailable days deducted.
  */
-export interface Volumetrie {
+export interface Scale {
   animateurCount: number;
   posteCount: number;
   contrainteAdHocCount: number;

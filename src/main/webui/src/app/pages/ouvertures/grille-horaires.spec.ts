@@ -172,9 +172,9 @@ describe('standsModifies et saisie', () => {
   it('compte les cases qu’une recopie a changées', () => {
     const cols = colonnes(rapport());
     const depart = cellulesDepuis(rapport());
-    const apres = recopierJour(ecrireCellule(depart, { standId: 'A', creneauId: 4 }, 7), '2026-07-09', ['A'], cols);
+    const after = recopierJour(ecrireCellule(depart, { standId: 'A', creneauId: 4 }, 7), '2026-07-09', ['A'], cols);
 
-    expect(compterRecopiees(depart, apres, cols)).toBeGreaterThan(0);
+    expect(compterRecopiees(depart, after, cols)).toBeGreaterThan(0);
     expect(compterRecopiees(depart, depart, cols)).toBe(0);
   });
 

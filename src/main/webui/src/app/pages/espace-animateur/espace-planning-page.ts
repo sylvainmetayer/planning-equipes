@@ -49,8 +49,8 @@ export class EspacePlanningPage {
    * refuses it too, this only avoids offering the gesture.
    */
   protected readonly confirmationDemandee = computed(() => {
-    const vue = this.espace.vue();
-    return !!vue?.publieLe && vue.postes.length > 0 && vue.statutConfirmation !== 'CONFIRME';
+    const view = this.espace.vue();
+    return !!view?.publieLe && view.postes.length > 0 && view.statutConfirmation !== 'CONFIRME';
   });
 
   protected async confirmer(): Promise<void> {

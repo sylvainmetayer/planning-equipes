@@ -430,8 +430,8 @@ export class AdminShell {
       'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     let position = 0;
     const onKey = (event: KeyboardEvent): void => {
-      const cible = event.target as HTMLElement | null;
-      if (cible && ['INPUT', 'TEXTAREA', 'SELECT'].includes(cible.tagName)) {
+      const target = event.target as HTMLElement | null;
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
         return;
       }
       const touche = event.key.length === 1 ? event.key.toLowerCase() : event.key;

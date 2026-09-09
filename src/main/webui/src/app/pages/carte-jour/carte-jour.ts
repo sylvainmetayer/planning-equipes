@@ -313,11 +313,11 @@ export function instantCarte(
   const referentiel = new Map(emplacements.map((emplacement) => [emplacement.id, emplacement]));
   const groupes = new Map<string, { point: PointEmplacement; stands: StandInstant[] }>();
   const nonSitues: StandInstant[] = [];
-  const tous: StandInstant[] = [];
+  const all: StandInstant[] = [];
 
   journee.stands.forEach((stand) => {
     const instant = etatStandInstant(stand, minutes);
-    tous.push(instant);
+    all.push(instant);
     const point = pointDe(stand, referentiel);
     if (!point) {
       // The list says *why* the stand is not on the map: "no emplacement" and
@@ -351,12 +351,12 @@ export function instantCarte(
     marqueurs,
     nonSitues,
     compteurs: {
-      standsOuverts: tous.filter((stand) => stand.etat !== 'ferme').length,
-      standsTotal: tous.length,
-      sieges: tous.reduce((total, stand) => total + stand.sieges, 0),
-      pourvus: tous.reduce((total, stand) => total + stand.pourvus, 0),
-      decouverts: tous.filter((stand) => stand.etat === 'decouvert').length,
-      partiels: tous.filter((stand) => stand.etat === 'partiel').length,
+      standsOuverts: all.filter((stand) => stand.etat !== 'ferme').length,
+      standsTotal: all.length,
+      sieges: all.reduce((total, stand) => total + stand.sieges, 0),
+      pourvus: all.reduce((total, stand) => total + stand.pourvus, 0),
+      decouverts: all.filter((stand) => stand.etat === 'decouvert').length,
+      partiels: all.filter((stand) => stand.etat === 'partiel').length,
       nonSitues: nonSitues.length,
       emplacementsSansStand
     }

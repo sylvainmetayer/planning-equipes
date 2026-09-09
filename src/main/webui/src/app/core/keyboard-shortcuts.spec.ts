@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Route } from '@angular/router';
 import { routes } from '../app.routes';
 import {
-  MAX_PAR_FAMILLE,
+  MAX_PER_FAMILY,
   buildDestinationsNavigation,
   buildRaccourcisNavigation,
   chercherCommandes,
@@ -102,8 +102,8 @@ describe('buildDestinationsNavigation', () => {
   /** Every page `app.routes.ts` declares, redirects and parameterised routes aside. */
   function routesReelles(): string[] {
     const shell = routes.find((route) => route.path === '' && route.children);
-    const toutes: Route[] = [...routes, ...(shell?.children ?? [])];
-    return toutes
+    const all: Route[] = [...routes, ...(shell?.children ?? [])];
+    return all
       .filter(
         (route) =>
           route.loadComponent !== undefined &&
@@ -187,7 +187,7 @@ describe('chercherCommandes', () => {
       animateurs: Array.from({ length: 40 }, (_, index) => animateur(`a${index}`, 'Alex', `Nom${index}`))
     };
     const animateurs = chercherCommandes('alex', beaucoup).filter((commande) => commande.famille === 'animateur');
-    expect(animateurs).toHaveLength(MAX_PAR_FAMILLE);
+    expect(animateurs).toHaveLength(MAX_PER_FAMILY);
   });
 
   it('gives every entry a unique id, so the list can be tracked', () => {

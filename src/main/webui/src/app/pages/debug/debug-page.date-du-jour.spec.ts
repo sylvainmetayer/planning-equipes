@@ -105,10 +105,10 @@ describe('DebugPage — date du jour', () => {
     await fixture.whenStable();
 
     expect(dates.set).toHaveBeenCalledWith('2026-07-08');
-    const valider = Array.from(
+    const validate = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('button')
     ).find((each) => /valider|enregistrer/i.test(each.textContent ?? ''));
-    expect(valider).toBeUndefined();
+    expect(validate).toBeUndefined();
   });
 
   it('clears the field back to the real clock', async () => {

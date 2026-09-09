@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { ANCRE_DATE_DU_JOUR, DateMockService } from '../core/date-mock.service';
+import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
 
 /**
  * Toolbar warning that this server's notion of today has been frozen
@@ -49,7 +49,7 @@ import { ANCRE_DATE_DU_JOUR, DateMockService } from '../core/date-mock.service';
 })
 export class DateMockIndicator {
   protected readonly dates = inject(DateMockService);
-  protected readonly ancre = ANCRE_DATE_DU_JOUR;
+  protected readonly ancre = TODAY_ANCHOR;
 
   protected readonly tooltip = computed(
     () =>

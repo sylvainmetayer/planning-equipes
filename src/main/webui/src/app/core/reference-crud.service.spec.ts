@@ -413,9 +413,9 @@ describe('ReferenceCrudService', () => {
 
   describe('removeMany', () => {
     it('supprime toute la sélection après une seule confirmation', async () => {
-      const supprimes = await service.removeMany('stands', ['S1', 'S2'], 'stands');
+      const removed = await service.removeMany('stands', ['S1', 'S2'], 'stands');
 
-      expect(supprimes).toBe(2);
+      expect(removed).toBe(2);
       expect(confirm.ask).toHaveBeenCalledTimes(1);
       expect(store.removeMany).toHaveBeenCalledWith('stands', ['S1', 'S2']);
       expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
@@ -456,9 +456,9 @@ describe('ReferenceCrudService', () => {
         avertissements: []
       });
 
-      const supprimes = await service.removeMany('stands', ['S1', 'S2'], 'stands');
+      const removed = await service.removeMany('stands', ['S1', 'S2'], 'stands');
 
-      expect(supprimes).toBe(1);
+      expect(removed).toBe(1);
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'error', message: expect.stringContaining('encore référencé') })
       );

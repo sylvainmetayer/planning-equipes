@@ -205,12 +205,12 @@ describe('conflitOuvertureFermeture', () => {
   });
 
   it('accepts a closure and an opening on two different days', () => {
-    const valide = draft({
+    const valid = draft({
       indisponibilites: [plage({ date: '2026-07-10' })],
       ouvertures: [plage({ date: '2026-07-11' })]
     });
 
-    expect(conflitOuvertureFermeture(valide)).toBe(false);
+    expect(conflitOuvertureFermeture(valid)).toBe(false);
   });
 
   it('does not count a row whose date has not been filled in yet as a conflict', () => {
@@ -242,13 +242,13 @@ describe('brouillonInvalide', () => {
 
 describe('typologiesVides — un stand a toujours au moins une typologie (#343)', () => {
   it('rend le brouillon invalide tant qu\'aucune typologie n\'est choisie', () => {
-    const sans = { ...draft(), typologiesProposees: [] };
-    expect(typologiesVides(sans)).toBe(true);
-    expect(brouillonInvalide(sans)).toBe(true);
+    const without = { ...draft(), typologiesProposees: [] };
+    expect(typologiesVides(without)).toBe(true);
+    expect(brouillonInvalide(without)).toBe(true);
 
-    const avec = { ...sans, typologiesProposees: ['STRATEGIE'] };
-    expect(typologiesVides(avec)).toBe(false);
-    expect(brouillonInvalide(avec)).toBe(false);
+    const withTypologies = { ...without, typologiesProposees: ['STRATEGIE'] };
+    expect(typologiesVides(withTypologies)).toBe(false);
+    expect(brouillonInvalide(withTypologies)).toBe(false);
   });
 });
 

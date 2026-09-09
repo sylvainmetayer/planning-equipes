@@ -116,11 +116,11 @@ export class ParametresNotificationsPanel {
     if (!valeur.trim()) {
       return null;
     }
-    const nombre = Number(valeur);
-    if (!Number.isFinite(nombre)) {
+    const count = Number(valeur);
+    if (!Number.isFinite(count)) {
       return null;
     }
-    return Math.min(Math.max(Math.round(nombre), min), max);
+    return Math.min(Math.max(Math.round(count), min), max);
   }
 
   private patch(champs: Partial<ParametresNotifications>): void {

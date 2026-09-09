@@ -57,35 +57,35 @@ describe('buildHelpSections', () => {
   it('walks the whole cycle in getting started, not just up to the export', () => {
     const section = sections.find((candidate) => candidate.id === 'prise-en-main');
     expect(section).toBeDefined();
-    const texte = textOf(section as HelpSection);
+    const text = textOf(section as HelpSection);
     // The two windows an organiser opens and closes by hand: they are the only
     // places an animateur writes anything, and they were missing here.
-    expect(texte).toContain('Ouvrir la collecte des disponibilités');
-    expect(texte).toContain('fermer la collecte');
+    expect(text).toContain('Ouvrir la collecte des disponibilités');
+    expect(text).toContain('fermer la collecte');
     // The fair is open by default (`V42__foire_ouverture.sql`), so the step is
     // a check, not an action: a reader must not go looking for a switch to flip.
-    expect(texte).toContain('foire au planning est ouverte');
-    expect(texte).not.toContain('10. Ouvrir la foire');
+    expect(text).toContain('foire au planning est ouverte');
+    expect(text).not.toContain('10. Ouvrir la foire');
     // The cycle does not end at the export: it ends at a schedule people have
     // received and acknowledged.
-    expect(texte).toContain('Publier');
-    expect(texte).toContain('accusés de réception');
+    expect(text).toContain('Publier');
+    expect(text).toContain('accusés de réception');
     // Entering the staff is the very first thing the cycle does, and the CSV
     // import is one of the two ways to do it: naming it only in its own
     // section would hide it from the one reader who has not started yet.
-    expect(texte).toContain('import CSV');
+    expect(text).toContain('import CSV');
     // Nothing on a reference screen refuses in silence, and the cycle says so
     // where the reader is about to type for the first time.
-    expect(texte).toContain('avertissement');
+    expect(text).toContain('avertissement');
     // The « notify » box mails the espace link: it has nothing to send before
     // the records exist, so the order of the steps is part of the content.
     // `indexOf` returns -1 for a label that moved, which is below every real
     // index: without these two assertions the ordering one would pass on a
     // section that no longer holds either step.
-    expect(texte).toContain('2. Saisir les référentiels');
-    expect(texte).toContain('3. Ouvrir la collecte');
-    expect(texte.indexOf('2. Saisir les référentiels')).toBeLessThan(
-      texte.indexOf('3. Ouvrir la collecte')
+    expect(text).toContain('2. Saisir les référentiels');
+    expect(text).toContain('3. Ouvrir la collecte');
+    expect(text.indexOf('2. Saisir les référentiels')).toBeLessThan(
+      text.indexOf('3. Ouvrir la collecte')
     );
   });
 
@@ -96,12 +96,12 @@ describe('buildHelpSections', () => {
    */
   it('answers the calendar subscription from the admin side, not only in the espace help', () => {
     const section = sections.find((candidate) => candidate.id === 'foire-au-planning');
-    const texte = textOf(section as HelpSection);
-    expect(texte).toContain('Abonnement au calendrier');
-    expect(texte).toContain('planning publié');
+    const text = textOf(section as HelpSection);
+    expect(text).toContain('Abonnement au calendrier');
+    expect(text).toContain('planning publié');
     // The two credentials are rotated separately server-side; saying otherwise
     // would send an organiser to regenerate the wrong one.
-    expect(texte).toContain("ne coupe pas son abonnement");
+    expect(text).toContain("ne coupe pas son abonnement");
     // And it is findable by the words somebody would actually type.
     const ids = filterHelpSections(sections, 'agenda').map((found) => found.id);
     expect(ids).toContain('foire-au-planning');
@@ -123,15 +123,15 @@ describe('buildHelpSections', () => {
   it('gives the CSV import an anchor of its own, reachable by that exact id', () => {
     const section = sections.find((candidate) => candidate.id === 'import-csv-animateurs');
     expect(section).toBeDefined();
-    const texte = textOf(section as HelpSection);
+    const text = textOf(section as HelpSection);
     // What the screen's own help text claims, said again where the link lands.
-    expect(texte).toContain('« | »');
-    expect(texte).toContain('typologie:REFERENT');
-    expect(texte).toContain('date de naissance');
-    expect(texte).toContain("Télécharger un fichier d'exemple");
+    expect(text).toContain('« | »');
+    expect(text).toContain('typologie:REFERENT');
+    expect(text).toContain('date de naissance');
+    expect(text).toContain("Télécharger un fichier d'exemple");
     // And nothing else still explains the import from inside another section.
-    const donnees = sections.find((candidate) => candidate.id === 'donnees');
-    expect(textOf(donnees as HelpSection)).not.toContain('CSV UTF-8');
+    const data = sections.find((candidate) => candidate.id === 'donnees');
+    expect(textOf(data as HelpSection)).not.toContain('CSV UTF-8');
     // The two words a lost user types into the search box of this very page.
     expect(filterHelpSections(sections, 'CSV')).toContainEqual(section);
     expect(filterHelpSections(sections, 'tableur')).toContainEqual(section);
@@ -147,14 +147,14 @@ describe('buildHelpSections', () => {
   it('documents the keyboard shortcuts, and can be found by looking for them', () => {
     const section = sections.find((candidate) => candidate.id === 'raccourcis-clavier');
     expect(section).toBeDefined();
-    const texte = textOf(section as HelpSection);
+    const text = textOf(section as HelpSection);
     // The entry points, spelled the way a reader would look for them.
     for (const raccourci of ['Ctrl+K', 'Ctrl+Entrée', 'Échap']) {
-      expect(texte).toContain(raccourci);
+      expect(text).toContain(raccourci);
     }
     // The `g` + letter table itself, not just a mention that one exists.
     for (const raccourci of buildRaccourcisNavigation()) {
-      expect(texte).toContain(`g ${raccourci.touche}`);
+      expect(text).toContain(`g ${raccourci.touche}`);
     }
     // Both words a lost user types into the search box of this very page.
     expect(filterHelpSections(sections, 'raccourci')).toContainEqual(section);
@@ -164,20 +164,20 @@ describe('buildHelpSections', () => {
   it('spells out the edge cases of the manual adjustments, not just what the four types are', () => {
     const section = sections.find((candidate) => candidate.id === 'ajustements-manuels');
     expect(section).toBeDefined();
-    const texte = textOf(section as HelpSection);
+    const text = textOf(section as HelpSection);
 
     // The four types, each with what it actually covers.
     for (const type of ['Indisponibilité forcée', 'Affectation forcée', 'Incompatibilité', 'Affinité']) {
-      expect(texte).toContain(type);
+      expect(text).toContain(type);
     }
     // The traps: any-one-of semantics, slot-not-stand, the empty scope, the
     // deleted slot, what is refused and what deliberately is not.
-    expect(texte).toContain('jamais un « tous »');
-    expect(texte).toContain('Elle porte sur le créneau, pas sur le stand');
-    expect(texte).toContain('créneau supprimé');
-    expect(texte).toContain('refusés à l\'enregistrement');
-    expect(texte).toContain('Passent donc délibérément');
-    expect(texte).toContain('réenregistrer sous son propre identifiant');
+    expect(text).toContain('jamais un « tous »');
+    expect(text).toContain('Elle porte sur le créneau, pas sur le stand');
+    expect(text).toContain('créneau supprimé');
+    expect(text).toContain('refusés à l\'enregistrement');
+    expect(text).toContain('Passent donc délibérément');
+    expect(text).toContain('réenregistrer sous son propre identifiant');
   });
 
   it('sets manual adjustments apart from locks, in a box, before the four types', () => {
@@ -187,11 +187,11 @@ describe('buildHelpSections', () => {
     expect(callout?.kind === 'callout' && callout.title).toBe('Ajustement manuel ou verrouillage ?');
     // Before the solve versus after it, a rule versus a freeze — and the
     // practical answer, since that is what a reader came for.
-    const texte = callout?.kind === 'callout' ? callout.text : '';
-    expect(texte).toContain('avant le calcul');
-    expect(texte).toContain('déjà calculé');
-    expect(texte).toContain('ne gèle jamais une place vide');
-    expect(texte).toContain('En pratique');
+    const text = callout?.kind === 'callout' ? callout.text : '';
+    expect(text).toContain('avant le calcul');
+    expect(text).toContain('déjà calculé');
+    expect(text).toContain('ne gèle jamais une place vide');
+    expect(text).toContain('En pratique');
     expect(section.blocks.indexOf(callout!)).toBeLessThan(section.blocks.findIndex((block) => block.kind === 'definitions'));
     // The lock definition of the solver section points back at it.
     const config = sections.find((each) => each.id === 'configuration-solveur')!;
@@ -259,7 +259,7 @@ describe('parametrer-pour-un-planning-complet', () => {
   });
 
   it('names the three levers and the order to check them in', () => {
-    const texte = section.blocks
+    const text = section.blocks
       .flatMap((block) =>
         block.kind === 'paragraph'
           ? [block.text]
@@ -270,10 +270,10 @@ describe('parametrer-pour-un-planning-complet', () => {
               : block.items.map((d) => d.term + ' ' + d.text)
       )
       .join('\n');
-    expect(texte).toContain('effectif par fenêtre');
-    expect(texte).toContain('pause minimale entre vacations');
-    expect(texte).toContain('Pause légale prise sur le poste');
-    expect(texte).toContain('lu d\'un tenant');
+    expect(text).toContain('effectif par fenêtre');
+    expect(text).toContain('pause minimale entre vacations');
+    expect(text).toContain('Pause légale prise sur le poste');
+    expect(text).toContain('lu d\'un tenant');
     const etapes = section.blocks.find((block) => block.kind === 'list')!;
     expect(etapes.kind === 'list' && etapes.items.map((item) => item.slice(0, 2))).toEqual(['1.', '2.', '3.', '4.', '5.']);
     expect(etapes.kind === 'list' && etapes.items[0]).toContain('Besoin en animateurs');
@@ -293,8 +293,8 @@ describe('parametrer-pour-un-planning-complet', () => {
   });
 
   it('tells the stand and legal definitions about the new fields, without duplicating the guide', () => {
-    const donnees = sections.find((each) => each.id === 'donnees')!;
-    const stands = donnees.blocks.flatMap((b) => (b.kind === 'definitions' ? b.items : [])).find((d) => d.term === 'Stands')!;
+    const data = sections.find((each) => each.id === 'donnees')!;
+    const stands = data.blocks.flatMap((b) => (b.kind === 'definitions' ? b.items : [])).find((d) => d.term === 'Stands')!;
     expect(stands.text).toContain('son propre effectif');
     const config = sections.find((each) => each.id === 'configuration-solveur')!;
     const legaux = config.blocks.flatMap((b) => (b.kind === 'definitions' ? b.items : [])).find((d) => d.term === 'Paramètres légaux')!;

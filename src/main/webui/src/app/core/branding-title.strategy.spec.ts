@@ -15,7 +15,7 @@ import { BrandingTitleStrategy } from './branding-title.strategy';
  * shell découpe pour annoncer la page aux lecteurs d'écran.
  */
 describe('BrandingTitleStrategy', () => {
-  function strategie(productName: string): BrandingTitleStrategy {
+  function buildStrategy(productName: string): BrandingTitleStrategy {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -40,7 +40,7 @@ describe('BrandingTitleStrategy', () => {
   });
 
   it('accole le nom du produit au titre de la page', () => {
-    const strategy = strategie('Planning Bénévoles');
+    const strategy = buildStrategy('Planning Bénévoles');
 
     titreDePage(strategy, 'Stands');
 
@@ -50,7 +50,7 @@ describe('BrandingTitleStrategy', () => {
   // Une route sans titre (les redirections héritées) ne doit pas produire un
   // onglet ouvrant sur un tiret orphelin.
   it('affiche le seul nom du produit quand la route n\'a pas de titre', () => {
-    const strategy = strategie('Planning Bénévoles');
+    const strategy = buildStrategy('Planning Bénévoles');
 
     titreDePage(strategy, undefined);
 

@@ -27,8 +27,8 @@ type Sens = 'plus' | 'moins' | null;
 
 export function construireLignesMetriques(base: PlanningKpi, variante: PlanningKpi): LigneMetrique[] {
   const lignes: LigneMetrique[] = [];
-  const ajouter = (
-    cle: string,
+  const add = (
+    key: string,
     label: string,
     valeurBase: number | null,
     valeurVariante: number | null,
@@ -37,7 +37,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
   ): void => {
     const delta = valeurBase === null || valeurVariante === null ? null : valeurVariante - valeurBase;
     lignes.push({
-      cle,
+      cle: key,
       label,
       base: valeurBase === null ? '—' : formatter(valeurBase),
       variante: valeurVariante === null ? '—' : formatter(valeurVariante),
@@ -47,16 +47,16 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
   };
 
   const heures = (valeur: number): string => `${valeur.toFixed(1)} h`;
-  ajouter('scoreHard', $localize`:@@comparateur.metric.scoreHard:Score hard`, base.scoreHard, variante.scoreHard, 'plus');
-  ajouter(
+  add('scoreHard', $localize`:@@comparateur.metric.scoreHard:Score hard`, base.scoreHard, variante.scoreHard, 'plus');
+  add(
     'scoreMedium',
     $localize`:@@comparateur.metric.scoreMedium:Score medium`,
     base.scoreMedium,
     variante.scoreMedium,
     'plus'
   );
-  ajouter('scoreSoft', $localize`:@@comparateur.metric.scoreSoft:Score soft`, base.scoreSoft, variante.scoreSoft, 'plus');
-  ajouter(
+  add('scoreSoft', $localize`:@@comparateur.metric.scoreSoft:Score soft`, base.scoreSoft, variante.scoreSoft, 'plus');
+  add(
     'couverture',
     $localize`:@@comparateur.metric.couverture:Couverture (postes pourvus)`,
     couverturePourcent(base),
@@ -64,7 +64,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     'plus',
     (valeur) => `${valeur.toFixed(1)} %`
   );
-  ajouter(
+  add(
     'heuresEcartType',
     $localize`:@@comparateur.metric.heuresEcartType:Équilibre — écart-type des heures`,
     base.heuresEcartType,
@@ -72,7 +72,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     'moins',
     heures
   );
-  ajouter(
+  add(
     'heuresMoyenne',
     $localize`:@@comparateur.metric.heuresMoyenne:Heures moyennes par animateur`,
     base.heuresMoyenne,
@@ -80,7 +80,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     null,
     heures
   );
-  ajouter(
+  add(
     'heuresMin',
     $localize`:@@comparateur.metric.heuresMin:Heures du moins chargé`,
     base.heuresMin,
@@ -88,7 +88,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     null,
     heures
   );
-  ajouter(
+  add(
     'heuresMax',
     $localize`:@@comparateur.metric.heuresMax:Heures du plus chargé`,
     base.heuresMax,
@@ -96,30 +96,30 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     'moins',
     heures
   );
-  ajouter('postesTotal', $localize`:@@comparateur.metric.postesTotal:Postes`, base.postesTotal, variante.postesTotal, null);
-  ajouter(
+  add('postesTotal', $localize`:@@comparateur.metric.postesTotal:Postes`, base.postesTotal, variante.postesTotal, null);
+  add(
     'animateursAffectes',
     $localize`:@@comparateur.metric.animateursAffectes:Animateurs affectés`,
     base.animateursAffectes,
     variante.animateursAffectes,
     null
   );
-  ajouter('standsDistincts', $localize`:@@comparateur.metric.stands:Stands`, base.standsDistincts, variante.standsDistincts, null);
-  ajouter(
+  add('standsDistincts', $localize`:@@comparateur.metric.stands:Stands`, base.standsDistincts, variante.standsDistincts, null);
+  add(
     'creneauxDistincts',
     $localize`:@@comparateur.metric.creneaux:Créneaux`,
     base.creneauxDistincts,
     variante.creneauxDistincts,
     null
   );
-  ajouter(
+  add(
     'modificationsManuelles',
     $localize`:@@comparateur.metric.modifications:Modifications manuelles (ajustements manuels + verrouillages)`,
     base.modificationsManuelles,
     variante.modificationsManuelles,
     null
   );
-  ajouter(
+  add(
     'dureeSolve',
     $localize`:@@comparateur.metric.dureeSolve:Durée de résolution`,
     base.dureeSolveSecondes,

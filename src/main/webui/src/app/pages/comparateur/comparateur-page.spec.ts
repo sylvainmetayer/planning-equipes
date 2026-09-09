@@ -416,7 +416,7 @@ describe('ComparateurPage rendering', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function texte(): string {
+  function text(): string {
     return racine().textContent!.replace(/\s+/g, ' ');
   }
 
@@ -436,7 +436,7 @@ describe('ComparateurPage rendering', () => {
   it('tells the user how to get a first snapshot instead of showing empty pickers', async () => {
     await rendre([]);
 
-    expect(texte()).toContain('Aucun instantané enregistré');
+    expect(text()).toContain('Aucun instantané enregistré');
     expect(racine().querySelector('.comparateur-selection')).toBeNull();
   });
 
@@ -482,13 +482,13 @@ describe('ComparateurPage rendering', () => {
   it('warns that two plans of different editions are not comparable all things equal', async () => {
     await comparerAvec({ editionsDifferentes: true });
 
-    expect(texte()).toContain('éditions différentes');
+    expect(text()).toContain('éditions différentes');
   });
 
   it('warns that a volumetry gap is not a quality gap', async () => {
     await comparerAvec({ volumetriesDifferentes: true });
 
-    expect(texte()).toContain("n'ont pas le même nombre de postes");
+    expect(text()).toContain("n'ont pas le même nombre de postes");
   });
 
   it('warns when a snapshot predates the KPI and had to be recomputed', async () => {
@@ -496,7 +496,7 @@ describe('ComparateurPage rendering', () => {
 
     // Its violations are simply not measured: saying so is what keeps the
     // "0 violation" of that column from being read as good news.
-    expect(texte()).toContain('mode dégradé');
+    expect(text()).toContain('mode dégradé');
   });
 
   it('stays silent about all three caveats when none applies', async () => {
@@ -507,14 +507,14 @@ describe('ComparateurPage rendering', () => {
 
   it('lists the violations per constraint, and only when there are some', async () => {
     await comparerAvec({});
-    expect(texte()).not.toContain('Écarts par contrainte');
+    expect(text()).not.toContain('Écarts par contrainte');
 
     await comparerAvec({
       diffViolations: [{ contrainte: 'Repos quotidien', base: 3, variante: 0 }]
     } as Partial<ComparaisonSnapshots>);
 
-    expect(texte()).toContain('Écarts par contrainte');
-    expect(texte()).toContain('Repos quotidien');
+    expect(text()).toContain('Écarts par contrainte');
+    expect(text()).toContain('Repos quotidien');
   });
 
   it('shows the comparison error instead of a stale table', async () => {
@@ -526,7 +526,7 @@ describe('ComparateurPage rendering', () => {
 
     await comparer();
 
-    expect(texte()).toContain('comparaison impossible');
+    expect(text()).toContain('comparaison impossible');
     expect(racine().querySelector('tbody tr')).toBeNull();
   });
 });

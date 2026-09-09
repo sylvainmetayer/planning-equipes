@@ -61,19 +61,19 @@ export function urlLegifrance(article: string): string {
  * their `text` reproduces the input exactly — a rendered description reads
  * identically to the string the backend sent.</p>
  */
-export function segmenterArticles(texte: string): LegalSegment[] {
+export function segmenterArticles(text: string): LegalSegment[] {
   const segments: LegalSegment[] = [];
   let curseur = 0;
-  for (const found of texte.matchAll(ARTICLE)) {
+  for (const found of text.matchAll(ARTICLE)) {
     const debut = found.index;
     if (debut > curseur) {
-      segments.push({ text: texte.slice(curseur, debut), url: null });
+      segments.push({ text: text.slice(curseur, debut), url: null });
     }
     segments.push({ text: found[0], url: urlLegifrance(found[0]) });
     curseur = debut + found[0].length;
   }
-  if (curseur < texte.length) {
-    segments.push({ text: texte.slice(curseur), url: null });
+  if (curseur < text.length) {
+    segments.push({ text: text.slice(curseur), url: null });
   }
   return segments;
 }

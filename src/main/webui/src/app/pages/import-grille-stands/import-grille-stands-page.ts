@@ -82,15 +82,15 @@ export class ImportGrilleStandsPage {
 
   protected async onFichierChoisi(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    const fichier = input.files?.[0] ?? null;
+    const file = input.files?.[0] ?? null;
     input.value = '';
-    if (!fichier) {
+    if (!file) {
       return;
     }
     this.derniereAnalyse++;
     this.rapport.set(null);
-    this.nomFichier.set(fichier.name);
-    this.contenu.set(await fichier.text());
+    this.nomFichier.set(file.name);
+    this.contenu.set(await file.text());
     await this.analyser();
   }
 

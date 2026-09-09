@@ -136,7 +136,7 @@ export class BancDeTouchePage {
   private requeteCourante = 0;
 
   private async charger(): Promise<void> {
-    const requete = ++this.requeteCourante;
+    const request = ++this.requeteCourante;
     const creneauId = this.creneauId();
     const standId = this.standId();
     this.chargement.set(true);
@@ -147,20 +147,20 @@ export class BancDeTouchePage {
       const chemin = creneauId === null ? '/api/banc-de-touche' : `/api/banc-de-touche/${creneauId}`;
       const query = standId ? `?standId=${encodeURIComponent(standId)}` : '';
       const banc = await this.api.get<BancDeTouche>(`${chemin}${query}`);
-      if (requete !== this.requeteCourante) {
+      if (request !== this.requeteCourante) {
         return;
       }
       this.banc.set(banc);
       this.creneauId.set(banc.creneauId);
       this.erreur.set('');
     } catch (error) {
-      if (requete !== this.requeteCourante) {
+      if (request !== this.requeteCourante) {
         return;
       }
       this.banc.set(null);
       this.erreur.set(errorPrefix(error));
     } finally {
-      if (requete === this.requeteCourante) {
+      if (request === this.requeteCourante) {
         this.chargement.set(false);
       }
     }

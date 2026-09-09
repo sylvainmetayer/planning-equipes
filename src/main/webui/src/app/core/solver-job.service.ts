@@ -418,11 +418,11 @@ export class SolverJobService {
    * short budget rather than the full-solve one.
    */
   submitSolveIncremental(
-    perimetre: PerimetreReplanification,
+    scope: PerimetreReplanification,
     seconds?: number,
     enFile = false
   ): Promise<JobView> {
-    return this.submit('/api/solve/incremental/async', perimetre, 'SOLVE_INCREMENTAL', seconds, enFile);
+    return this.submit('/api/solve/incremental/async', scope, 'SOLVE_INCREMENTAL', seconds, enFile);
   }
 
   /**

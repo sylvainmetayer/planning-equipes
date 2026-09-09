@@ -78,13 +78,13 @@ describe('versNouvellesDemandes', () => {
   });
 
   it("transmet le créneau souhaité d'un échange dirigé, et l'ignore sans créneau cible", () => {
-    const dirige = {
+    const directed = {
       ...brouillon(1, 'S1', 'a2', null),
       creneauCibleId: 7,
       standCibleId: 'S9',
       creneauCibleLabel: 'mar. 14 juil. 10:00–12:00 · Stand neuf'
     };
-    expect(versNouvellesDemandes([dirige])).toEqual([
+    expect(versNouvellesDemandes([directed])).toEqual([
       { creneauId: 1, standId: 'S1', cibleId: 'a2', motif: null, creneauCibleId: 7, standCibleId: 'S9' }
     ]);
   });

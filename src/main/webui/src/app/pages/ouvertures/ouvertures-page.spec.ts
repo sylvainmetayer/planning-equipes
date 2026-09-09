@@ -300,7 +300,7 @@ describe('OuverturesPage — saisie', () => {
 
     taper(champ(fixture, 'B', 2), '3');
     await fixture.whenStable();
-    (fixture.componentInstance as unknown as { changerVue(vue: string): Promise<void> }).changerVue('CONSULTER');
+    (fixture.componentInstance as unknown as { changerVue(view: string): Promise<void> }).changerVue('CONSULTER');
     await fixture.whenStable();
     expect(ask).toHaveBeenCalledOnce();
     // Refused: still on the entry view, cells intact.

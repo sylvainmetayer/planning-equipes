@@ -48,7 +48,7 @@ function saisir(fixture: ComponentFixture<TypologieFormDialog>, name: string, va
   input.dispatchEvent(new Event('input'));
 }
 
-function soumettre(fixture: ComponentFixture<TypologieFormDialog>): void {
+function submit(fixture: ComponentFixture<TypologieFormDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
@@ -106,7 +106,7 @@ describe('TypologieFormDialog', () => {
 
     saisir(fixture, 'label', '  Ambiance festive  ');
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(save).toHaveBeenCalledOnce();
@@ -123,7 +123,7 @@ describe('TypologieFormDialog', () => {
 
     saisir(fixture, 'label', 'Ninja warrior');
     await fixture.whenStable();
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     // The flag is invisible in this dialog: dropping it would silently move the
@@ -135,7 +135,7 @@ describe('TypologieFormDialog', () => {
     const { fixture, close } = monter({ id: 'ambiance', label: 'Ambiance', ninja: false }, { saveOk: false });
     await fixture.whenStable();
 
-    soumettre(fixture);
+    submit(fixture);
     await fixture.whenStable();
 
     expect(close).not.toHaveBeenCalled();

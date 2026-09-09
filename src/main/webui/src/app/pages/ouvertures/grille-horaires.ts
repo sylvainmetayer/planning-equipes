@@ -71,7 +71,7 @@ export function cellulesInertes(rapport: RapportOuvertures): Set<string> {
     for (const jour of ligne.jours) {
       for (const cellule of jour.creneaux) {
         if (cellule.horsFamille) {
-          inertes.add(cle(ligne.standId, cellule.creneauId));
+          inertes.add(key(ligne.standId, cellule.creneauId));
         }
       }
     }
@@ -86,7 +86,7 @@ export function cellulesPartielles(rapport: RapportOuvertures): Set<string> {
     for (const jour of ligne.jours) {
       for (const cellule of jour.creneaux) {
         if (cellule.partiel) {
-          partielles.add(cle(ligne.standId, cellule.creneauId));
+          partielles.add(key(ligne.standId, cellule.creneauId));
         }
       }
     }
@@ -94,7 +94,7 @@ export function cellulesPartielles(rapport: RapportOuvertures): Set<string> {
   return partielles;
 }
 
-export function cle(standId: string, creneauId: number): string {
+export function key(standId: string, creneauId: number): string {
   return `${standId}#${creneauId}`;
 }
 
@@ -103,8 +103,8 @@ export function cle(standId: string, creneauId: number): string {
  * dash or a zero all mean "closed" — the three ways a spreadsheet writes an
  * empty cell. Anything else is not a value, and `undefined` says so.
  */
-export function lireCellule(texte: string): number | null | undefined {
-  const propre = texte.trim();
+export function lireCellule(text: string): number | null | undefined {
+  const propre = text.trim();
   if (propre === '' || propre === '-' || propre === '—' || propre === '0') {
     return null;
   }
@@ -157,7 +157,7 @@ export function saisie(
     standId,
     modifieLe: modifieLeParStand.get(standId) ?? null,
     cellules: Array.from(cellules.get(standId) ?? [])
-      .filter(([creneauId]) => !inertes.has(cle(standId, creneauId)))
+      .filter(([creneauId]) => !inertes.has(key(standId, creneauId)))
       .map(([creneauId, effectif]) => ({ creneauId, effectif }))
   }));
 }
@@ -214,7 +214,7 @@ export function deplacement(
  */
 export function collerBloc(
   cellules: Cellules,
-  texte: string,
+  text: string,
   depuis: AdresseCellule,
   standIds: readonly string[],
   colonnesGrille: readonly ColonneGrille[],
@@ -226,7 +226,7 @@ export function collerBloc(
     return cellules;
   }
   let resultat = cellules;
-  const lignes = texte.replace(/\r/g, '').split('\n');
+  const lignes = text.replace(/\r/g, '').split('\n');
   // A trailing newline, which every spreadsheet copy carries, is not a row.
   if (lignes.length > 1 && lignes[lignes.length - 1] === '') {
     lignes.pop();
@@ -242,7 +242,7 @@ export function collerBloc(
         return;
       }
       const lu = lireCellule(valeur);
-      if (lu !== undefined && !inertes.has(cle(standId, colonne.creneauId))) {
+      if (lu !== undefined && !inertes.has(key(standId, colonne.creneauId))) {
         resultat = ecrireCellule(resultat, { standId, creneauId: colonne.creneauId }, lu);
       }
     });
@@ -268,21 +268,21 @@ export function recopierJour(
   }
   const parHeures = new Map(source.map((colonne) => [colonne.heureDebut + '-' + colonne.heureFin, colonne.creneauId]));
   let resultat = cellules;
-  for (const cible of colonnesGrille) {
-    if (cible.date === dateSource) {
+  for (const target of colonnesGrille) {
+    if (target.date === dateSource) {
       continue;
     }
-    const origine = parHeures.get(cible.heureDebut + '-' + cible.heureFin);
+    const origine = parHeures.get(target.heureDebut + '-' + target.heureFin);
     if (origine === undefined) {
       continue;
     }
     for (const standId of standIds) {
-      if (inertes.has(cle(standId, cible.creneauId)) || inertes.has(cle(standId, origine))) {
+      if (inertes.has(key(standId, target.creneauId)) || inertes.has(key(standId, origine))) {
         continue;
       }
       const valeur = resultat.get(standId)?.get(origine) ?? null;
-      if ((resultat.get(standId)?.get(cible.creneauId) ?? null) !== valeur) {
-        resultat = ecrireCellule(resultat, { standId, creneauId: cible.creneauId }, valeur);
+      if ((resultat.get(standId)?.get(target.creneauId) ?? null) !== valeur) {
+        resultat = ecrireCellule(resultat, { standId, creneauId: target.creneauId }, valeur);
       }
     }
   }
@@ -290,11 +290,11 @@ export function recopierJour(
 }
 
 /** How many cells a copy of one day onto the others actually changed. */
-export function compterRecopiees(avant: Cellules, apres: Cellules, colonnesGrille: readonly ColonneGrille[]): number {
+export function compterRecopiees(before: Cellules, after: Cellules, colonnesGrille: readonly ColonneGrille[]): number {
   let changees = 0;
-  for (const [standId, ligne] of apres) {
+  for (const [standId, ligne] of after) {
     for (const colonne of colonnesGrille) {
-      if ((ligne.get(colonne.creneauId) ?? null) !== (avant.get(standId)?.get(colonne.creneauId) ?? null)) {
+      if ((ligne.get(colonne.creneauId) ?? null) !== (before.get(standId)?.get(colonne.creneauId) ?? null)) {
         changees++;
       }
     }
@@ -341,7 +341,7 @@ export function libelleColonne(colonne: ColonneGrille): string {
 
 /** Whether the report knows this cell as partial. */
 export function estPartielle(partielles: ReadonlySet<string>, adresse: AdresseCellule): boolean {
-  return partielles.has(cle(adresse.standId, adresse.creneauId));
+  return partielles.has(key(adresse.standId, adresse.creneauId));
 }
 
 export type { CelluleCreneauOuverture };

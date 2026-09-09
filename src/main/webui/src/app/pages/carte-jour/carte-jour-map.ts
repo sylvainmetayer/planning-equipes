@@ -123,7 +123,7 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
         this.legender(existant, marqueur);
         return;
       }
-      const cree = L.marker([marqueur.latitude, marqueur.longitude], {
+      const created = L.marker([marqueur.latitude, marqueur.longitude], {
         icon: icone,
         // Leaflet gives a keyboard-reachable marker a tabindex of its own; the
         // real accessible equivalent of this map is the list next to it.
@@ -131,20 +131,20 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
         // No `title` here: see `legender` — Leaflet would keep it alongside its
         // own tooltip.
       });
-      cree.on('click', () => this.marqueurChoisi.emit(marqueur.emplacementId));
+      created.on('click', () => this.marqueurChoisi.emit(marqueur.emplacementId));
       // Leaflet callbacks run outside Angular's knowledge and the app is
       // zoneless: the value has to travel through an output() for the parent's
       // signal write — and the resulting render — to happen at all.
-      cree.on('keypress', (event: L.LeafletKeyboardEvent) => {
+      created.on('keypress', (event: L.LeafletKeyboardEvent) => {
         if (event.originalEvent.key === 'Enter' || event.originalEvent.key === ' ') {
           this.marqueurChoisi.emit(marqueur.emplacementId);
         }
       });
-      cree.addTo(this.map!);
+      created.addTo(this.map!);
       // After `addTo`, not before: the icon element only exists once the marker
       // is on the map, and `legender` writes an attribute on it.
-      this.legender(cree, marqueur);
-      this.couche.set(marqueur.emplacementId, cree);
+      this.legender(created, marqueur);
+      this.couche.set(marqueur.emplacementId, created);
     });
     this.couche.forEach((marqueur, id) => {
       if (!vus.has(id)) {
@@ -158,9 +158,9 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
    * The tooltip, built as a text node rather than as HTML: an emplacement name
    * is user input, and Leaflet's string form goes through `innerHTML`.
    */
-  private legender(marqueur: L.Marker, donnees: MarqueurJour): void {
+  private legender(marqueur: L.Marker, data: MarqueurJour): void {
     const contenu = document.createElement('span');
-    contenu.textContent = donnees.resume;
+    contenu.textContent = data.resume;
     if (marqueur.getTooltip()) {
       marqueur.setTooltipContent(contenu);
     } else {
@@ -172,7 +172,7 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
     // once as the accessible name taken from `title`, once through the
     // `aria-describedby` Leaflet points at the open tooltip. The name is the
     // place, the summary is its description.
-    marqueur.getElement()?.setAttribute('aria-label', donnees.nom);
+    marqueur.getElement()?.setAttribute('aria-label', data.nom);
   }
 
   /**

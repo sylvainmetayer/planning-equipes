@@ -20,8 +20,8 @@ const AIDE = "Ce que l'animateur a répondu. Confirmé, relancé, silencieux.";
 function nomAccessible(element: Element): string {
   const referenceId = element.getAttribute('aria-labelledby');
   if (referenceId) {
-    const cible = element.ownerDocument.getElementById(referenceId);
-    return (cible?.textContent ?? '').trim();
+    const target = element.ownerDocument.getElementById(referenceId);
+    return (target?.textContent ?? '').trim();
   }
   const explicite = element.getAttribute('aria-label');
   if (explicite) {

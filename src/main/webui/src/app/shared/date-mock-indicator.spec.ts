@@ -6,7 +6,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
-import { ANCRE_DATE_DU_JOUR, DateMockService } from '../core/date-mock.service';
+import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
 import { DateMockIndicator } from './date-mock-indicator';
 
 describe('DateMockIndicator', () => {
@@ -63,7 +63,7 @@ describe('DateMockIndicator', () => {
 
     const href = racine().querySelector('a')!.getAttribute('href');
     expect(href).toContain('/debug');
-    expect(href).toContain(`focus=${ANCRE_DATE_DU_JOUR}`);
-    expect(href).toContain(`#${ANCRE_DATE_DU_JOUR}`);
+    expect(href).toContain(`focus=${TODAY_ANCHOR}`);
+    expect(href).toContain(`#${TODAY_ANCHOR}`);
   });
 });

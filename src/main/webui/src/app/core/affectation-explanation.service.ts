@@ -47,16 +47,16 @@ export class AffectationExplanationService {
    */
   deplacer(
     posteId: string,
-    cible: { posteId?: string; animateurId?: string },
+    target: { posteId?: string; animateurId?: string },
     /** Who the view believes holds the seat: the server refuses (409) if somebody else does now. */
     occupant?: string | null
   ): Promise<DeplacementSimulation> {
     const params = new URLSearchParams();
-    if (cible.posteId) {
-      params.set('cible', cible.posteId);
+    if (target.posteId) {
+      params.set('cible', target.posteId);
     }
-    if (cible.animateurId) {
-      params.set('animateur', cible.animateurId);
+    if (target.animateurId) {
+      params.set('animateur', target.animateurId);
     }
     if (occupant) {
       params.set('occupant', occupant);
