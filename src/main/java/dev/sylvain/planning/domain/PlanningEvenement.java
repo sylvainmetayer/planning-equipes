@@ -38,6 +38,16 @@ public class PlanningEvenement {
     private List<ConstraintToggle> constraintsDesactivees = new ArrayList<>();
 
     /**
+     * The edition's meal windows, read by {@code coupureRepasObligatoire}.
+     * Empty means no meal rule applies to this solve — which is what a plain
+     * Java harness building a problem by hand gets, and what an edition whose
+     * windows cannot be honoured gets too (see
+     * {@link FenetreRepas#depuis(ParametresDecoupage)}).
+     */
+    @ProblemFactCollectionProperty
+    private List<FenetreRepas> fenetresRepas = new ArrayList<>();
+
+    /**
      * Locks applying to this solve, already filtered on the active groupe de
      * créneaux. Most of their effect is applied before the solve, by pinning
      * the covered seats; they travel as facts only so
@@ -165,6 +175,14 @@ public class PlanningEvenement {
 
     public void setConstraintsDesactivees(List<ConstraintToggle> constraintsDesactivees) {
         this.constraintsDesactivees = constraintsDesactivees;
+    }
+
+    public List<FenetreRepas> getFenetresRepas() {
+        return fenetresRepas;
+    }
+
+    public void setFenetresRepas(List<FenetreRepas> fenetresRepas) {
+        this.fenetresRepas = fenetresRepas == null ? new ArrayList<>() : fenetresRepas;
     }
 
     public List<VerrouillagePlanning> getVerrouillages() {

@@ -7,6 +7,7 @@ import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.ConstraintToggle;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
@@ -108,6 +109,9 @@ final class SolveRunner {
         if (problem.getParametresLegaux() == null
                 || problem.getParametresLegaux().isEmpty()) {
             problem.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        }
+        if (problem.getFenetresRepas() == null || problem.getFenetresRepas().isEmpty()) {
+            problem.setFenetresRepas(FenetreRepas.depuis(referenceDataService.getParametresDecoupage()));
         }
         if (problem.getConstraintsDesactivees() == null
                 || problem.getConstraintsDesactivees().isEmpty()) {

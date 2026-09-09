@@ -5,9 +5,17 @@ import java.time.LocalTime;
 /**
  * Admin-configurable parameters for {@code VacationGeneratorService}, which
  * slices a day-long "amplitude" (opening window) into shorter, overlapping
- * work vacations. Generation-time only: never exposed to the solver as a
- * problem fact (unlike {@link ParametresLegaux}), since it drives what
- * {@link Creneau} rows get created, not how the solver scores them.
+ * work vacations. Ten of the thirteen fields are generation-time only: they
+ * drive what {@link Creneau} rows get created, not how the solver scores them.
+ *
+ * <p><b>The three meal fields are the exception</b>: {@code dureePauseRepasMinutes}
+ * and the two meal windows are projected into {@link FenetreRepas} facts and
+ * read at solve time by {@code coupureRepasObligatoire} (issue #438). They were
+ * generation-time only until then, and that is exactly what made a ten-hour
+ * unbroken day invisible: a grid entered as {@link ModeGrilleCreneaux#VACATIONS}
+ * is never sliced, so nothing ever looked at the meal windows at all. The
+ * values stay stored here, where the organiser enters them — a second table
+ * would only create a second truth about "the midday window".</p>
  */
 public class ParametresDecoupage {
 

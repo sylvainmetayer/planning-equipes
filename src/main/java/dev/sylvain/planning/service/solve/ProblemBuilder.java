@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -133,6 +134,7 @@ public final class ProblemBuilder {
         PlanningEvenement evenement =
                 new PlanningEvenement(dateDebut, animateurs, postes, referenceDataService.snapshotContraintes());
         evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        evenement.setFenetresRepas(FenetreRepas.depuis(referenceDataService.getParametresDecoupage()));
         evenement.setVerrouillages(verrouillages);
         return evenement;
     }
