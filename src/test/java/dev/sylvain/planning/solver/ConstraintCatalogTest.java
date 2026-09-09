@@ -105,7 +105,7 @@ class ConstraintCatalogTest {
     @Test
     void seulesLesReglesLegalesSontFondeesEnDroit() {
         List<String> fondees = ConstraintCatalog.definitions().stream()
-                .filter(ConstraintCatalog.ConstraintDefinition::fondeeEnDroit)
+                .filter(ConstraintCatalog.ConstraintDefinition::legale)
                 .map(ConstraintCatalog.ConstraintDefinition::name)
                 .toList();
 
@@ -113,7 +113,7 @@ class ConstraintCatalogTest {
                 .doesNotContain("mineurNecessiteEncadrementMajeur", "coupureRepasObligatoire")
                 .contains("dureeQuotidienneMaxMajeur", "travailDeNuitInterditPourMineur");
         assertThat(ConstraintCatalog.definitions())
-                .filteredOn(ConstraintCatalog.ConstraintDefinition::fondeeEnDroit)
+                .filteredOn(ConstraintCatalog.ConstraintDefinition::legale)
                 .allMatch(ConstraintCatalog.ConstraintDefinition::protegee);
     }
 

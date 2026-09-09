@@ -19,7 +19,7 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     description: 'Pas de travail de nuit pour un mineur (art. L3163-1).',
     actif: true,
     protegee: true,
-    fondeeEnDroit: true,
+    legale: true,
     dosable: false,
     poids: 1,
     score: null,
@@ -62,7 +62,7 @@ describe('LegalDisableConfirmService', () => {
       name: 'travailDeNuitInterditPourMineur',
       description: 'Pas de travail de nuit pour un mineur (art. L3163-1).',
       categorie: 'Légal (mineurs)',
-      fondeeEnDroit: true,
+      legale: true,
     });
   });
 
@@ -78,12 +78,12 @@ describe('LegalDisableConfirmService', () => {
           name: 'coupureRepasObligatoire',
           categorie: 'Organisation (repas)',
           description: 'Une coupure repas est due de part et d’autre de chaque fenêtre repas.',
-          fondeeEnDroit: false,
+          legale: false,
         }),
       ),
     ).resolves.toBe(true);
 
-    expect(dialog.open.mock.calls[0][1].data.fondeeEnDroit).toBe(false);
+    expect(dialog.open.mock.calls[0][1].data.legale).toBe(false);
   });
 
   it('refuses when the dialog is cancelled', async () => {

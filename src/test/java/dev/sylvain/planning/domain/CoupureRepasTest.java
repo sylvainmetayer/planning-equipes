@@ -32,17 +32,14 @@ class CoupureRepasTest {
 
     @Test
     void rienNEstDuSansTravailDeChaqueCoteDeLaFenetre() {
-        assertThat(CoupureRepas.analyser(List.of(poste(10, 0, 14, 0)), MIDI).due())
-                .isFalse();
-        assertThat(CoupureRepas.analyser(List.of(poste(12, 0, 20, 0)), MIDI).due())
-                .isFalse();
-        assertThat(CoupureRepas.analyser(List.of(poste(8, 0, 11, 0)), MIDI).due())
-                .isFalse();
+        assertThat(CoupureRepas.of(List.of(poste(10, 0, 14, 0)), MIDI).due()).isFalse();
+        assertThat(CoupureRepas.of(List.of(poste(12, 0, 20, 0)), MIDI).due()).isFalse();
+        assertThat(CoupureRepas.of(List.of(poste(8, 0, 11, 0)), MIDI).due()).isFalse();
     }
 
     @Test
     void leCasRapporteNeLaisseAucunTrou() {
-        CoupureRepas coupure = CoupureRepas.analyser(
+        CoupureRepas coupure = CoupureRepas.of(
                 List.of(poste(10, 0, 12, 0), poste(12, 0, 13, 0), poste(13, 0, 14, 0), poste(14, 0, 20, 0)), MIDI);
 
         assertThat(coupure.due()).isTrue();
@@ -54,7 +51,7 @@ class CoupureRepasTest {
 
     @Test
     void leTrouDeMidiEstLuAuPlusTot() {
-        CoupureRepas coupure = CoupureRepas.analyser(List.of(poste(10, 0, 12, 0), poste(13, 0, 20, 0)), MIDI);
+        CoupureRepas coupure = CoupureRepas.of(List.of(poste(10, 0, 12, 0), poste(13, 0, 20, 0)), MIDI);
 
         assertThat(coupure.manquante()).isFalse();
         assertThat(coupure.debut()).isEqualTo(LocalTime.of(12, 0));
@@ -64,7 +61,7 @@ class CoupureRepasTest {
 
     @Test
     void leTrouDeTreizeHeuresPorteSonRetard() {
-        CoupureRepas coupure = CoupureRepas.analyser(List.of(poste(10, 0, 13, 0), poste(14, 0, 20, 0)), MIDI);
+        CoupureRepas coupure = CoupureRepas.of(List.of(poste(10, 0, 13, 0), poste(14, 0, 20, 0)), MIDI);
 
         assertThat(coupure.manquante()).isFalse();
         assertThat(coupure.debut()).isEqualTo(LocalTime.of(13, 0));
@@ -74,7 +71,7 @@ class CoupureRepasTest {
     /** A break need not follow the grid's own cuts: 12:30-13:30 is a break too. */
     @Test
     void unTrouAChevalSurLesDeuxDemiFenetresCompte() {
-        CoupureRepas coupure = CoupureRepas.analyser(List.of(poste(10, 0, 12, 30), poste(13, 30, 20, 0)), MIDI);
+        CoupureRepas coupure = CoupureRepas.of(List.of(poste(10, 0, 12, 30), poste(13, 30, 20, 0)), MIDI);
 
         assertThat(coupure.manquante()).isFalse();
         assertThat(coupure.debut()).isEqualTo(LocalTime.of(12, 30));
@@ -83,7 +80,7 @@ class CoupureRepasTest {
 
     @Test
     void seuleLaPartInterneDUnTrouDebordantCompte() {
-        CoupureRepas coupure = CoupureRepas.analyser(List.of(poste(10, 0, 13, 45), poste(14, 45, 20, 0)), MIDI);
+        CoupureRepas coupure = CoupureRepas.of(List.of(poste(10, 0, 13, 45), poste(14, 45, 20, 0)), MIDI);
 
         assertThat(coupure.plusGrandTrouMinutes()).isEqualTo(15);
         assertThat(coupure.minutesManquantes()).isEqualTo(45);
@@ -92,7 +89,7 @@ class CoupureRepasTest {
     /** Overlapping seats — two stands sharing an hour — must not read as a hole. */
     @Test
     void desPostesQuiSeChevauchentNeCreentPasDeTrou() {
-        CoupureRepas coupure = CoupureRepas.analyser(List.of(poste(10, 0, 13, 0), poste(12, 0, 20, 0)), MIDI);
+        CoupureRepas coupure = CoupureRepas.of(List.of(poste(10, 0, 13, 0), poste(12, 0, 20, 0)), MIDI);
 
         assertThat(coupure.plusGrandTrouMinutes()).isZero();
         assertThat(coupure.minutesManquantes()).isEqualTo(60);
@@ -100,18 +97,18 @@ class CoupureRepasTest {
 
     @Test
     void unePosteFranchissantMinuitNeFaussePasLaFenetre() {
-        CoupureRepas coupure = CoupureRepas.analyser(List.of(poste(10, 0, 12, 0), poste(13, 0, 2, 0)), MIDI);
+        CoupureRepas coupure = CoupureRepas.of(List.of(poste(10, 0, 12, 0), poste(13, 0, 2, 0)), MIDI);
 
         assertThat(coupure.due()).isTrue();
         assertThat(coupure.manquante()).isFalse();
         assertThat(coupure.debut()).isEqualTo(LocalTime.of(12, 0));
     }
 
-    // --- FenetreRepas.depuis ------------------------------------------------
+    // --- FenetreRepas.from ------------------------------------------------
 
     @Test
     void lesDeuxFenetresParDefautSontExploitables() {
-        assertThat(FenetreRepas.depuis(new ParametresDecoupage()))
+        assertThat(FenetreRepas.from(new ParametresDecoupage()))
                 .extracting(FenetreRepas::libelle)
                 .containsExactly(FenetreRepas.MIDI, FenetreRepas.SOIR);
     }
@@ -124,7 +121,7 @@ class CoupureRepasTest {
         parametres.setFenetreRepasMidiDebut(LocalTime.of(12, 0));
         parametres.setFenetreRepasMidiFin(LocalTime.of(12, 30));
 
-        assertThat(FenetreRepas.depuis(parametres))
+        assertThat(FenetreRepas.from(parametres))
                 .extracting(FenetreRepas::libelle)
                 .containsExactly(FenetreRepas.SOIR);
     }
@@ -134,6 +131,6 @@ class CoupureRepasTest {
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setDureePauseRepasMinutes(0);
 
-        assertThat(FenetreRepas.depuis(parametres)).isEmpty();
+        assertThat(FenetreRepas.from(parametres)).isEmpty();
     }
 }

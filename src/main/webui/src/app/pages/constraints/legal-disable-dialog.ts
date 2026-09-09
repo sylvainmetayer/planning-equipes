@@ -11,7 +11,7 @@
 // conditions of use already say: the organiser stays the employer, the
 // application is decision support.
 //
-// `fondeeEnDroit` decides which consequence is stated. Only the two « Légal »
+// `legale` decides which consequence is stated. Only the two « Légal »
 // categories rest on an article of the Code du travail; saying so of the
 // minors' safety policy or of the meal break would over-claim, and a warning
 // that over-claims is one an administrator learns to skip.
@@ -43,7 +43,7 @@ export interface LegalDisableData {
   description: string;
   categorie: string;
   /** True only for the two « Légal (…) » categories — see the note at the top of this file. */
-  fondeeEnDroit: boolean;
+  legale: boolean;
 }
 
 @Component({
@@ -78,7 +78,7 @@ export class LegalDisableConfirmService {
           name: constraint.name,
           description: constraint.description,
           categorie: constraint.categorie,
-          fondeeEnDroit: constraint.fondeeEnDroit,
+          legale: constraint.legale,
         },
         width: '38rem',
         autoFocus: 'dialog',

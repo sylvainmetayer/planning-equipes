@@ -1,6 +1,6 @@
 <h2 mat-dialog-title class="legal-disable-title">
   <mat-icon color="warn">gavel</mat-icon>
-  @if (data.fondeeEnDroit) {
+  @if (data.legale) {
     <span i18n="@@constraints.legalDisable.title">Désactiver une règle qui fonde le planning en droit ?</span>
   } @else {
     <span i18n="@@constraints.legalDisable.titreOrganisation">Désactiver une règle que l'organisation s'est donnée ?</span>
@@ -14,7 +14,7 @@
   </p>
   <p class="legal-disable-description"><app-legal-text [text]="data.description" /></p>
 
-  @if (data.fondeeEnDroit) {
+  @if (data.legale) {
     <p i18n="@@constraints.legalDisable.effet">
       Désactivée, la règle n'est plus évaluée : le solveur peut produire un planning
       <strong>contraire au Code du travail avec un score dur à zéro</strong>, sans que rien le signale.

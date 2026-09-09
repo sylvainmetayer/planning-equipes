@@ -79,11 +79,11 @@ public final class RepasConstraints {
                         ConstraintCollectors.toList())
                 .join(FenetreRepas.class)
                 .filter((animateur, date, postes, fenetre) ->
-                        CoupureRepas.analyser(postes, fenetre).manquante())
+                        CoupureRepas.of(postes, fenetre).manquante())
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
                         (animateur, date, postes, fenetre) ->
-                                CoupureRepas.analyser(postes, fenetre).minutesManquantes())
+                                CoupureRepas.of(postes, fenetre).minutesManquantes())
                 .asConstraint("coupureRepasObligatoire");
     }
 
@@ -111,11 +111,11 @@ public final class RepasConstraints {
                         ConstraintCollectors.toList())
                 .join(FenetreRepas.class)
                 .filter((animateur, date, postes, fenetre) ->
-                        CoupureRepas.analyser(postes, fenetre).retardMinutes() > 0)
+                        CoupureRepas.of(postes, fenetre).retardMinutes() > 0)
                 .penalize(
                         HardMediumSoftScore.ONE_SOFT,
                         (animateur, date, postes, fenetre) ->
-                                CoupureRepas.analyser(postes, fenetre).retardMinutes())
+                                CoupureRepas.of(postes, fenetre).retardMinutes())
                 .asConstraint("coupureRepasAuPlusTot");
     }
 

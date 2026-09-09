@@ -154,7 +154,7 @@ public class ConstraintResource {
                 definition.description(),
                 !desactivees.contains(definition.name()),
                 definition.protegee(),
-                definition.fondeeEnDroit(),
+                definition.legale(),
                 definition.dosable(),
                 poids.getOrDefault(definition.name(), 1),
                 diagnostic == null ? null : diagnostic.score(),
@@ -168,7 +168,7 @@ public class ConstraintResource {
      *                    minors' safety policy, or in the meal rule the event
      *                    is built on — the UI confirms before switching one off
      *                    (see {@code ConstraintCatalog.CATEGORIES_PROTEGEES})
-     * @param fondeeEnDroit whether an article of the Code du travail is what
+     * @param legale whether an article of the Code du travail is what
      *                    founds it. A protected rule that is not — the minors'
      *                    safety policy, the meal break — is no less binding on
      *                    the organiser, but switching it off does not make the
@@ -190,7 +190,7 @@ public class ConstraintResource {
      *                    empty for medium/soft ones (see
      *                    {@code ConstraintCatalog.NOMS_DURS})
      */
-    @Schema(requiredProperties = {"actif", "dosable", "fondeeEnDroit", "poids", "protegee"})
+    @Schema(requiredProperties = {"actif", "dosable", "legale", "poids", "protegee"})
     public record ConstraintView(
             String name,
             String niveau,
@@ -198,7 +198,7 @@ public class ConstraintResource {
             String description,
             boolean actif,
             boolean protegee,
-            boolean fondeeEnDroit,
+            boolean legale,
             boolean dosable,
             int poids,
             String score,

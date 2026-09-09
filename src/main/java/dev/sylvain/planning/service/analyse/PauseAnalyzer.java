@@ -433,7 +433,7 @@ public class PauseAnalyzer {
             List<PosteAffectation> postesDuJour, List<FenetreRepas> fenetres) {
         List<CoupureRepasView> vues = new ArrayList<>();
         for (FenetreRepas fenetre : fenetres) {
-            CoupureRepas coupure = CoupureRepas.analyser(postesDuJour, fenetre);
+            CoupureRepas coupure = CoupureRepas.of(postesDuJour, fenetre);
             if (!coupure.due()) {
                 continue;
             }

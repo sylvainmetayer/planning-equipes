@@ -134,7 +134,7 @@ public final class ProblemBuilder {
         PlanningEvenement evenement =
                 new PlanningEvenement(dateDebut, animateurs, postes, referenceDataService.snapshotContraintes());
         evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
-        evenement.setFenetresRepas(FenetreRepas.depuis(referenceDataService.getParametresDecoupage()));
+        evenement.setFenetresRepas(FenetreRepas.from(referenceDataService.getParametresDecoupage()));
         evenement.setVerrouillages(verrouillages);
         return evenement;
     }

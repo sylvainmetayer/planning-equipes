@@ -68,7 +68,7 @@ public final class ConstraintCatalog {
          * the law, and the confirmation asked before switching it off says so
          * in its own words.
          */
-        public boolean fondeeEnDroit() {
+        public boolean legale() {
             return CATEGORIES_LEGALES.contains(categorie);
         }
 

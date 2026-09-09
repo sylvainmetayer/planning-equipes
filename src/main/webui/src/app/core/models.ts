@@ -832,7 +832,7 @@ export interface ConstraintView {
    * them, but switching one off does not make the plan unlawful, and the
    * confirmation must not claim it does.
    */
-  fondeeEnDroit: boolean;
+  legale: boolean;
   /**
    * The rule is one of those meant to be **dosed** rather than switched off:
    * the MEDIUM rules of « Qualité d'organisation », the only ones whose

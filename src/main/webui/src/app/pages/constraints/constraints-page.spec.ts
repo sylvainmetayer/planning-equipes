@@ -29,7 +29,7 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     description: 'La charge de travail doit être répartie équitablement.',
     actif: true,
     protegee: false,
-    fondeeEnDroit: false,
+    legale: false,
     dosable: true,
     poids: 1,
     score: null,
@@ -45,7 +45,7 @@ const REGLE_LEGALE = contrainte({
   categorie: 'Légal (mineurs)',
   description: 'Pas de travail de nuit pour un mineur (art. L3163-1).',
   protegee: true,
-  fondeeEnDroit: true,
+  legale: true,
   dosable: false,
 });
 

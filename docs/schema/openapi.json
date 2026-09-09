@@ -553,7 +553,7 @@
       },
       "BorneRetenue" : {
         "type" : "string",
-        "enum" : [ "PIC_SIMULTANE", "PIC_AVEC_PAUSE", "CHARGE_HORAIRE", "ROTATION_JOURS" ]
+        "enum" : [ "PIC_SIMULTANE", "PIC_AVEC_PAUSE", "CHARGE_HORAIRE", "ROTATION_JOURS", "COUPURE_REPAS" ]
       },
       "BrandingView" : {
         "type" : "object",
@@ -968,7 +968,7 @@
         }
       },
       "ConstraintView" : {
-        "required" : [ "actif", "dosable", "poids", "protegee" ],
+        "required" : [ "actif", "dosable", "legale", "poids", "protegee" ],
         "type" : "object",
         "properties" : {
           "name" : {
@@ -987,6 +987,9 @@
             "type" : "boolean"
           },
           "protegee" : {
+            "type" : "boolean"
+          },
+          "legale" : {
             "type" : "boolean"
           },
           "dosable" : {
@@ -1180,6 +1183,38 @@
           "nombreStands" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "CoupureRepasView" : {
+        "required" : [ "dureeRequiseMinutes", "plusGrandTrouMinutes", "satisfaite" ],
+        "type" : "object",
+        "properties" : {
+          "libelle" : {
+            "type" : "string"
+          },
+          "fenetreDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fenetreFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "dureeRequiseMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "plusGrandTrouMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "satisfaite" : {
+            "type" : "boolean"
           }
         }
       },
@@ -2018,6 +2053,24 @@
           }
         }
       },
+      "FenetreRepas" : {
+        "type" : "object",
+        "properties" : {
+          "libelle" : {
+            "type" : "string"
+          },
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "dureeMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "GridAnomaly" : {
         "type" : "object",
         "properties" : {
@@ -2451,7 +2504,7 @@
         }
       },
       "JourStaffing" : {
-        "required" : [ "disponibles", "heures", "jour", "minimumJour", "picAvecPause", "picSimultane", "sieges", "standsOuverts" ],
+        "required" : [ "disponibles", "heures", "jour", "minimumJour", "picAvecPause", "picRepas", "picSimultane", "sieges", "standsOuverts" ],
         "type" : "object",
         "properties" : {
           "date" : {
@@ -2478,6 +2531,10 @@
             "format" : "int32"
           },
           "picAvecPause" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "picRepas" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -2521,6 +2578,12 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PausePlanifieeView"
+            }
+          },
+          "coupuresRepas" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CoupureRepasView"
             }
           }
         }
@@ -3130,6 +3193,12 @@
               "$ref" : "#/components/schemas/ConstraintToggle"
             }
           },
+          "fenetresRepas" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/FenetreRepas"
+            }
+          },
           "verrouillages" : {
             "type" : "array",
             "items" : {
@@ -3589,7 +3658,7 @@
         }
       },
       "RapportPauses" : {
-        "required" : [ "journeesAnalysees", "pauseSurPoste", "pausesDues", "relaisManquants" ],
+        "required" : [ "coupuresRepasDues", "coupuresRepasManquantes", "journeesAnalysees", "pauseSurPoste", "pausesDues", "relaisManquants" ],
         "type" : "object",
         "properties" : {
           "pauseSurPoste" : {
@@ -3604,6 +3673,14 @@
             "format" : "int32"
           },
           "relaisManquants" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "coupuresRepasDues" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "coupuresRepasManquantes" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -4027,6 +4104,10 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "picRepas" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "jourCritique" : {
             "$ref" : "#/components/schemas/JourStaffing"
           },
@@ -4428,7 +4509,7 @@
       },
       "TypologieStaffing" : {
         "type" : "object",
-        "required" : [ "chargeTotal", "heures", "manque", "minimumTotal", "ninja", "nombreSemaines", "picAvecPause", "picSimultane", "rotationTotal", "sieges", "specialistes" ],
+        "required" : [ "chargeTotal", "heures", "manque", "minimumTotal", "ninja", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "rotationTotal", "sieges", "specialistes" ],
         "properties" : {
           "typologie" : {
             "type" : "string"
@@ -4456,6 +4537,10 @@
             "format" : "int32"
           },
           "picAvecPause" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "picRepas" : {
             "type" : "integer",
             "format" : "int32"
           },

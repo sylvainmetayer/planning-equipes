@@ -956,7 +956,7 @@ public class StaffingAnalyzer {
      * distinct animateurs. The fifth bound of the class javadoc, and like the
      * others a <em>proof</em> rather than an estimate.
      *
-     * <h3>Démonstration</h3>
+     * <h3>Proof</h3>
      *
      * <p>Let {@code N} be the animateurs staffing the day, the window be
      * {@code F = [W1, W2)} of length {@code L}, and {@code D} the break it

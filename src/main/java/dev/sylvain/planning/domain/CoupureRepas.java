@@ -11,7 +11,7 @@ import java.util.List;
  * {@code coupureRepasAuPlusTot} and the Pauses screen. Written once so the
  * solver and the read-out can never tell two stories about the same day.
  *
- * <h2>Quand une coupure est due</h2>
+ * <h2>When a break is owed</h2>
  *
  * <p>When the animateur works <b>on both sides</b> of the window: a seat starts
  * before it, and a seat ends after it. Someone whose shift begins at the
@@ -19,7 +19,7 @@ import java.util.List;
  * after leaving. Neither owes anything — which is the organiser's own reading
  * of the rule, and the reason this is not simply "anybody present at midday".</p>
  *
- * <h2>Ce qui la satisfait</h2>
+ * <h2>What satisfies it</h2>
  *
  * <p>A free stretch of {@link FenetreRepas#dureeMinutes()} minutes lying
  * <b>entirely inside</b> the window. On a 12:00-14:00 window owing 60 minutes,
@@ -82,10 +82,10 @@ public record CoupureRepas(
     }
 
     /**
-     * Analyses one animateur's seats on one day against one window. The seats
-     * may overlap and need not be sorted.
+     * Reads one animateur's seats on one day against one window. The seats may
+     * overlap and need not be sorted.
      */
-    public static CoupureRepas analyser(List<PosteAffectation> postesDuJour, FenetreRepas fenetre) {
+    public static CoupureRepas of(List<PosteAffectation> postesDuJour, FenetreRepas fenetre) {
         int ouverture = fenetre.debutMinutes();
         int fermeture = fenetre.finMinutes();
         boolean travailleAvant = false;

@@ -22,7 +22,7 @@ import java.util.List;
  *
  * <p>The values are the ones the organiser already enters on the Découpage
  * screen ({@link ParametresDecoupage}). They were, until issue #438,
- * generation-time only; {@link #depuis(ParametresDecoupage)} is what turns the
+ * generation-time only; {@link #from(ParametresDecoupage)} is what turns the
  * three that matter into facts the solver reads, whatever the
  * {@link ModeGrilleCreneaux} — a grid entered as vacations is never sliced, and
  * used to escape the rule entirely.</p>
@@ -48,18 +48,18 @@ public record FenetreRepas(String libelle, LocalTime debut, LocalTime fin, int d
      * permanently above zero hard for a reason that is a data entry mistake,
      * not a planning one.</p>
      */
-    public static List<FenetreRepas> depuis(ParametresDecoupage parametres) {
+    public static List<FenetreRepas> from(ParametresDecoupage parametres) {
         if (parametres == null) {
             return List.of();
         }
         List<FenetreRepas> fenetres = new ArrayList<>(2);
-        ajouter(
+        add(
                 fenetres,
                 MIDI,
                 parametres.getFenetreRepasMidiDebut(),
                 parametres.getFenetreRepasMidiFin(),
                 parametres.getDureePauseRepasMinutes());
-        ajouter(
+        add(
                 fenetres,
                 SOIR,
                 parametres.getFenetreRepasSoirDebut(),
@@ -68,7 +68,7 @@ public record FenetreRepas(String libelle, LocalTime debut, LocalTime fin, int d
         return List.copyOf(fenetres);
     }
 
-    private static void ajouter(
+    private static void add(
             List<FenetreRepas> fenetres, String libelle, LocalTime debut, LocalTime fin, int dureeMinutes) {
         if (debut == null || fin == null || !fin.isAfter(debut) || dureeMinutes <= 0) {
             return;
