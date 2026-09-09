@@ -1,6 +1,6 @@
 ---
 name: add-endpoint
-description: Scaffold a new JAX-RS REST endpoint end-to-end for planning-equipes (resource method, service-layer call, docs/api.md entry, test, optional frontend ApiService wiring). Use when the user asks to add, create, or expose a new backend API endpoint.
+description: Scaffold a new JAX-RS REST endpoint end-to-end for planning-equipes (resource method, service-layer call, refreshed OpenAPI schema, test, optional frontend ApiService wiring). Use when the user asks to add, create, or expose a new backend API endpoint.
 ---
 
 # Add a new REST endpoint
@@ -57,9 +57,14 @@ the obvious error case (not-found, invalid input).
 
 ## 6. Update documentation
 
-Add the endpoint to `docs/api.md` (French, matching the existing table/style
-— see "Documentation rules" in `AGENTS.md`). If the endpoint changes
-CSV/dump/PDF/ICS formats, also update `docs/import-export.md`.
+The contract is the OpenAPI the application publishes, not a Markdown table:
+refresh the committed schema with `npm run api-schema` from `src/main/webui`,
+and check the frontend still matches with `npm run api-types-check`.
+
+`docs/api.md` does **not** list endpoints and must not start — it carries what a
+schema cannot express (cross-cutting invariants, business trade-offs, traps).
+Add a paragraph there only if this endpoint brings such a thing. If it changes
+CSV/dump/PDF/ICS formats, update `docs/import-export.md`.
 
 ## 7. Wire the frontend if needed
 

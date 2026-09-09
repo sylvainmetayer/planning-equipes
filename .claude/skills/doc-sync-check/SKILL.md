@@ -15,8 +15,8 @@ Match what changed to the doc that owns it:
 
 | Change | Doc(s) to update |
 | --- | --- |
-| New/changed REST endpoint (`api/*Resource.java`) | `docs/api.md` |
-| New/changed Timefold constraint | `docs/contraintes.md` **and** `solver/ConstraintCatalog.java` |
+| New/changed REST endpoint (`api/*Resource.java`) | the published OpenAPI — refresh `docs/schema/openapi.json` with `npm run api-schema` from `src/main/webui`. `docs/api.md` only if there is a cross-cutting invariant or trap to record: it does **not** list endpoints |
+| New/changed Timefold constraint | `solver/ConstraintCatalog.java`, which `GET /api/constraints` serves. `docs/contraintes.md` only for the *why* and the cost: it no longer enumerates the constraints |
 | New business capability visible to end users | `README.md` section 2 (*Fonctionnalités métier*) — business language only, no class names, no file paths |
 | New/changed **screen behaviour an operator must understand** (new button or workflow, changed meaning of a banner/badge/setting, new lifecycle rule like retention or locking) | the in-app help page: `src/main/webui/src/app/pages/aide/aide-content.ts` (+ its new keys in `public/i18n/messages.en.json`). The guide answers "how do I use this screen" in business language — update the section covering that screen, don't create a doc-like dump. Skip for invisible or purely technical changes |
 | Change to Timefold model / invariants (`domain/*`) | `docs/domaine.md` |

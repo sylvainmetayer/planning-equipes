@@ -30,8 +30,9 @@ cd src/main/webui && npm test && npm run lint && npm run i18n-check
 - [ ] La prose du dépôt est en anglais — commentaires et noms déclarés —
       seul le vocabulaire métier reste français (`LanguagePolicyStructuralTest`)
 - [ ] La documentation concernée est à jour : une nouvelle contrainte se
-      déclare aussi dans `docs/contraintes.md`, un nouvel endpoint dans
-      `docs/api.md`, une décision structurante dans `docs/decisions/`
+      déclare dans `ConstraintCatalog`, un nouvel endpoint se reflète dans
+      `docs/schema/openapi.json` (`npm run api-schema`), une décision
+      structurante dans `docs/decisions/`
 - [ ] **Aucune donnée nominative** dans le diff, les fixtures ou la description
 
 <!--

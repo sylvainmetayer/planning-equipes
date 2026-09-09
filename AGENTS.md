@@ -38,7 +38,7 @@ Read before working on constraints or the domain model:
 
 - `README.md` (section *Fonctionnalités métier*) — functional scope and business capabilities
 - `docs/domaine.md` — Timefold model and its invariants
-- `docs/contraintes.md` — implemented constraints and how to add one
+- `docs/contraintes.md` — why each rule exists and what it costs (the list itself is `ConstraintCatalog`)
 - `docs/architecture.md` — backend/frontend module layout
 
 ## Build, test, run
@@ -230,7 +230,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   one resource per referential family (`StandResource`, `AnimateurResource`, …)
   and `ReferenceDataResource` for scenario import. A resource holds transport
   only — status codes and payload shapes; anything that decides something
-  belongs to a service. Endpoint list in `docs/api.md`.
+  belongs to a service. The endpoint list is the published OpenAPI.
 - HTTP security (issue #165): everything under `/api` requires the admin form
   login (single `admin` account from config) **except**
   `/api/espace-animateur/*` (its URL token is the credential and resolves the
@@ -661,9 +661,10 @@ The doc layout is intentional — respect it when adding or updating docs.
      and must not start: it carries what a schema cannot express — the
      cross-cutting invariants, the business trade-offs, and the traps that cost
      half a day. Add to it only when there is such a thing to say. The
-     committed `docs/schema/openapi.json` is refreshed by `npm run api-schema`,
-     and `npm run api-types-check` fails when the frontend's hand-written
-     models drift from it;
+     committed `docs/schema/openapi.json` is refreshed by `npm run api-schema`
+     (from `src/main/webui`, like every npm command here), and `npm run
+     api-types-check` fails when the frontend's hand-written models drift from
+     it;
    - **new constraint → `ConstraintCatalog`**, which `GET /api/constraints`
      serves and which is therefore the documentation the application itself
      hands out. `docs/contraintes.md` no longer enumerates the constraints and

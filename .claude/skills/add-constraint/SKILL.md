@@ -1,6 +1,6 @@
 ---
 name: add-constraint
-description: Scaffold a new Timefold constraint end-to-end (constraint method, ConstraintCatalog entry, unit test, docs/contraintes.md, hard-constraint regression test). Use when the user asks to add, create, or implement a new planning constraint for planning-equipes.
+description: Scaffold a new Timefold constraint end-to-end (constraint method, ConstraintCatalog entry, unit test, hard-constraint regression test). Use when the user asks to add, create, or implement a new planning constraint for planning-equipes.
 ---
 
 # Add a new constraint
@@ -66,8 +66,11 @@ consider the change done until this passes.
 
 ## 6. Update documentation
 
-Add the constraint to `docs/contraintes.md` (French, matching the existing
-table/section style — see "Documentation rules" in `AGENTS.md`). If the
+The constraint's business description lives in `ConstraintCatalog` (step
+above), which `GET /api/constraints` serves: that is the documentation the
+application hands out, and `docs/contraintes.md` no longer enumerates the
+constraints. Add a section there only for the *why* and the cost — the
+arbitration a one-line description cannot carry. If the
 constraint introduces a new business capability visible to end users, also
 check whether `README.md` section *Fonctionnalités métier* needs a line —
 but keep that section free of class names/file paths.

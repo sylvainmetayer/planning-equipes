@@ -27,7 +27,8 @@ npm run lint && npm run i18n-check   # lint et cohérence des traductions
   de son entrée dans `public/i18n/messages.en.json` — `npm run i18n-check`
   échoue sinon.
 - Une nouvelle contrainte de planification se déclare aussi dans
-  `ConstraintCatalog` et dans [`docs/contraintes.md`](../docs/contraintes.md).
+  `ConstraintCatalog`, que `GET /api/constraints` sert ; [`docs/contraintes.md`](../docs/contraintes.md)
+  ne porte que le *pourquoi* de la règle, pas sa fiche.
 - Le vocabulaire métier reste en français, le reste du code en anglais : la
   règle est vérifiée par un test, et expliquée dans [`AGENTS.md`](../AGENTS.md).
 
