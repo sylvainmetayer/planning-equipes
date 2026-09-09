@@ -249,7 +249,7 @@ public class DeclarationDisponibiliteService {
         }
         // Before any validation and any write: the point is to stop the loop,
         // not to describe what the last payload of it got wrong.
-        DeclarationRateLimiter.Verdict verdict = rateLimiter.submit(animateurId);
+        RateLimitVerdict verdict = rateLimiter.submit(animateurId);
         if (!verdict.autorise()) {
             throw new TooManyRequests(verdict.secondsBeforeNextTry());
         }

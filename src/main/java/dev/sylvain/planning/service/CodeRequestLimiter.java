@@ -26,14 +26,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class CodeRequestLimiter {
 
-    /** What the request tells the caller: go ahead, or come back in so many seconds. */
-    public record Verdict(boolean autorise, long secondsBeforeNextTry) {
-
-        static Verdict ok() {
-            return new Verdict(true, 0);
-        }
-    }
-
     @Inject
     ConfigEspaceCode config;
 
@@ -44,9 +36,8 @@ public class CodeRequestLimiter {
      * the delay left before the window reopens, ready to be used as is for
      * {@code Retry-After}.
      */
-    public Verdict request(String key) {
-        SlidingWindowCounter.Verdict verdict = counter.use(key, config.maxDemandes(), config.fenetre());
-        return new Verdict(verdict.autorise(), verdict.secondsBeforeNextTry());
+    public RateLimitVerdict request(String key) {
+        return counter.use(key, config.maxDemandes(), config.fenetre());
     }
 
     /** The code was used: the run of requests with no follow-up stops there. */

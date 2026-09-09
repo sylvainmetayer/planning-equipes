@@ -100,7 +100,7 @@ public class EspaceAccesService {
         }
         // After the address check, before the send: a record without an address
         // consumes nothing, and every mail actually sent is counted.
-        CodeRequestLimiter.Verdict verdict = limiteurDemandesCode.request(rateKey(animateurId));
+        RateLimitVerdict verdict = limiteurDemandesCode.request(rateKey(animateurId));
         if (!verdict.autorise()) {
             throw new TooManyRequests(verdict.secondsBeforeNextTry());
         }

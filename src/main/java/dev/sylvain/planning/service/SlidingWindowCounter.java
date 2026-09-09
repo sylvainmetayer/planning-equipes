@@ -22,14 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class SlidingWindowCounter {
 
-    /** What the request tells the caller: go ahead, or come back in so many seconds. */
-    record Verdict(boolean autorise, long secondsBeforeNextTry) {
-
-        static Verdict ok() {
-            return new Verdict(true, 0);
-        }
-    }
-
     private final Map<String, Window> byKey = new ConcurrentHashMap<>();
 
     /** Uses counted, and the start of the window counting them. */
@@ -41,7 +33,7 @@ class SlidingWindowCounter {
      * left before the window reopens, ready to be used as is for
      * {@code Retry-After}.
      */
-    Verdict use(String key, int ceiling, Duration window) {
+    RateLimitVerdict use(String key, int ceiling, Duration window) {
         Instant maintenant = Instant.now();
         Window apres = byKey.compute(key, (ignore, courante) -> {
             if (courante == null || courante.debut().plus(window).isBefore(maintenant)) {
@@ -50,10 +42,10 @@ class SlidingWindowCounter {
             return new Window(courante.uses() + 1, courante.debut());
         });
         if (apres.uses() <= ceiling) {
-            return Verdict.ok();
+            return RateLimitVerdict.ok();
         }
         long restant = Duration.between(maintenant, apres.debut().plus(window)).toSeconds();
-        return new Verdict(false, Math.max(restant, 1));
+        return new RateLimitVerdict(false, Math.max(restant, 1));
     }
 
     /** The run of uses with no follow-up stops there. */

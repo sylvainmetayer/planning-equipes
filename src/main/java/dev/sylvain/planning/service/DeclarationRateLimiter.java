@@ -26,17 +26,12 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class DeclarationRateLimiter {
 
-    /** What the request tells the caller: go ahead, or come back in so many seconds. */
-    public record Verdict(boolean autorise, long secondsBeforeNextTry) {
-    }
-
     @Inject
     ConfigEspaceDeclaration config;
 
     private final SlidingWindowCounter counter = new SlidingWindowCounter();
 
-    public Verdict submit(String animateurId) {
-        SlidingWindowCounter.Verdict verdict = counter.use(animateurId, config.maxEnvois(), config.fenetre());
-        return new Verdict(verdict.autorise(), verdict.secondsBeforeNextTry());
+    public RateLimitVerdict submit(String animateurId) {
+        return counter.use(animateurId, config.maxEnvois(), config.fenetre());
     }
 }
