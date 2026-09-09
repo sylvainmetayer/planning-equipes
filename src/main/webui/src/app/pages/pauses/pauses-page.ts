@@ -24,7 +24,7 @@ import { dayNavigation } from '../../core/day-navigation';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
-  coupuresRepasDuJour,
+  coupuresRepasJournee,
   GroupeStand,
   groupesDuJour,
   heure,
@@ -110,7 +110,7 @@ export class PausesPage {
     planifieesDuJour(this.rapport(), this.jourCourant()?.date ?? null, this.recherche()),
   );
   protected readonly coupuresRepas = computed<LigneCoupureRepas[]>(() =>
-    coupuresRepasDuJour(
+    coupuresRepasJournee(
       this.rapport(),
       this.jourCourant()?.date ?? null,
       this.recherche(),

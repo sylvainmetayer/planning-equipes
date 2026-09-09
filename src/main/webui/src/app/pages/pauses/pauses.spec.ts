@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { JourneeAnimateurPauses, PauseDueView, RapportPauses } from '../../core/models';
 import {
-  coupuresRepasDuJour,
+  coupuresRepasJournee,
   groupesDuJour,
   heure,
   joursDuRapport,
@@ -297,7 +297,7 @@ describe('planifieesDuJour / syntheseDuJour', () => {
   });
 });
 
-describe('coupuresRepasDuJour', () => {
+describe('coupuresRepasJournee', () => {
   const midi = {
     libelle: 'midi',
     fenetreDebut: '12:00:00',
@@ -305,14 +305,14 @@ describe('coupuresRepasDuJour', () => {
     dureeRequiseMinutes: 60,
   };
 
-  const sansPlace = journee({
+  const noRoom = journee({
     animateurId: 'a84',
     nomComplet: 'Zoé Nguyen',
     coupuresRepas: [
       { ...midi, debut: null, fin: null, plusGrandTrouMinutes: 0, satisfaite: false },
     ],
   });
-  const avecPlace = journee({
+  const withRoom = journee({
     animateurId: 'alice',
     nomComplet: 'Alice Martin',
     coupuresRepas: [
@@ -321,7 +321,7 @@ describe('coupuresRepasDuJour', () => {
   });
 
   it('puts the days short of a meal break first, and says how many minutes are missing', () => {
-    const lignes = coupuresRepasDuJour(rapport([avecPlace, sansPlace]), '2026-07-10');
+    const lignes = coupuresRepasJournee(rapport([withRoom, noRoom]), '2026-07-10');
 
     expect(
       lignes.map((ligne) => [ligne.nomComplet, ligne.satisfaite, ligne.minutesManquantes]),
@@ -332,18 +332,18 @@ describe('coupuresRepasDuJour', () => {
   });
 
   it('narrows to the missing ones on demand, and filters by name', () => {
-    expect(
-      coupuresRepasDuJour(rapport([avecPlace, sansPlace]), '2026-07-10', '', true),
-    ).toHaveLength(1);
-    expect(
-      coupuresRepasDuJour(rapport([avecPlace, sansPlace]), '2026-07-10', 'alice'),
-    ).toHaveLength(1);
-    expect(coupuresRepasDuJour(rapport([avecPlace, sansPlace]), '2026-07-11')).toEqual([]);
-    expect(coupuresRepasDuJour(null, '2026-07-10')).toEqual([]);
+    expect(coupuresRepasJournee(rapport([withRoom, noRoom]), '2026-07-10', '', true)).toHaveLength(
+      1,
+    );
+    expect(coupuresRepasJournee(rapport([withRoom, noRoom]), '2026-07-10', 'alice')).toHaveLength(
+      1,
+    );
+    expect(coupuresRepasJournee(rapport([withRoom, noRoom]), '2026-07-11')).toEqual([]);
+    expect(coupuresRepasJournee(null, '2026-07-10')).toEqual([]);
   });
 
   it('counts a day that owes a meal break, whether or not it fits', () => {
-    expect(syntheseDuJour(rapport([avecPlace, sansPlace]), '2026-07-10')).toMatchObject({
+    expect(syntheseDuJour(rapport([withRoom, noRoom]), '2026-07-10')).toMatchObject({
       coupuresRepas: 2,
       coupuresRepasManquantes: 1,
     });

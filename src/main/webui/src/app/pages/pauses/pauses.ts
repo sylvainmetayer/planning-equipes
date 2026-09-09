@@ -224,7 +224,7 @@ export function planifieesDuJour(
  * The meal breaks owed on that day, the days short of one first — that is the
  * list the organiser has to act on — then by start time and name.
  */
-export function coupuresRepasDuJour(
+export function coupuresRepasJournee(
   rapport: RapportPauses | null,
   date: string | null,
   recherche = '',

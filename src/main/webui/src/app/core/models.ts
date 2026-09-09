@@ -629,10 +629,27 @@ export interface HardMediumSoftScore {
   zero?: boolean;
 }
 
+/**
+ * One meal window of the event day, as the solver reads it: a break of
+ * `dureeMinutes` must fit entirely inside `debut`–`fin` for whoever works
+ * either side of it. Not the twenty-minute legal break — see
+ * `CoupureRepasView`.
+ */
+export interface FenetreRepas {
+  /** `midi` / `soir`. */
+  libelle: string;
+  /** `HH:mm:ss`. */
+  debut: string;
+  fin: string;
+  dureeMinutes: number;
+}
+
 export interface PlanningEvenement {
   constraintsDesactivees?: ConstraintToggle[];
   parametresLegaux?: ParametresLegaux[];
   parametresQualite?: ParametresQualite[];
+  /** The edition's meal windows, as `coupureRepasObligatoire` reads them; empty when none applies. */
+  fenetresRepas?: FenetreRepas[];
   verrouillages?: VerrouillagePlanning[];
   dateDebutFestival?: string;
   animateurs: Animateur[];
@@ -1714,7 +1731,7 @@ export interface PauseDueView {
 }
 
 /** An uninterrupted working stretch of one animateur's day, with the breaks it owes. */
-export interface SequenceTravailView {
+export interface SequenceView {
   debut: string;
   fin: string;
   minutes: number;
@@ -1758,7 +1775,7 @@ export interface JourneeAnimateurPauses {
   /** ISO date. */
   date: string;
   jour: number;
-  sequences: SequenceTravailView[];
+  sequences: SequenceView[];
   pausesPlanifiees: PausePlanifieeView[];
   coupuresRepas: CoupureRepasView[];
 }

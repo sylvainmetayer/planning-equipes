@@ -30,7 +30,6 @@
     "PerimetreReplanification": "ReplanificationScope",
     "PromptMcp": "PromptExpose",
     "CollegueView": "ColleagueView",
-    "SequenceTravailView": "SequenceView",
     "JourneeAnimateurPauses": "JourneeAnimateurView",
     "EntreeHistorique": "EntreeHistoriqueView",
     "ActionHistorique": "ActionView",
