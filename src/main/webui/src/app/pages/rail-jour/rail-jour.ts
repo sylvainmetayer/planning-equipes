@@ -434,7 +434,7 @@ function buildRailLigne(
     // The red outline and the warning icon are visual only; a line read out
     // loud must say the one anomaly this view exists to make visible.
     pauses,
-    resume: mentionnerPauses(mentionnerChevauchement(mentionnerBlocages(base, plages), overlap), pauses)
+    resume: mentionnerPauses(mentionOverlap(mentionnerBlocages(base, plages), overlap), pauses)
   };
 }
 
@@ -456,7 +456,7 @@ function mentionnerBlocages(base: string, plages: string): string {
 }
 
 /** Same, for the overlap the outline alone would only tell a sighted reader. */
-function mentionnerChevauchement(base: string, overlap: boolean): string {
+function mentionOverlap(base: string, overlap: boolean): string {
   if (!overlap) {
     return base;
   }

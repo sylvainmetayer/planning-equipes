@@ -42,7 +42,7 @@ import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 import { CreneauDerivationData, CreneauDerivationDialog } from './creneau-derivation-dialog';
 import { CreneauSerieData, CreneauSerieDialog } from './creneau-serie-dialog';
-import { bilanGrille, iconeAnomalieGrille, trierAnomalies } from './grille-creneaux';
+import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
 
 /**
  * Timeslots CRUD: event day, date and hours of every schedulable slot,
@@ -224,7 +224,7 @@ export class CreneauxPage {
     const diagnostic = this.diagnostic();
     return diagnostic !== null && diagnostic.modeCertain && diagnostic.modeProbable !== null && diagnostic.modeProbable !== this.mode();
   });
-  protected readonly iconeAnomalieGrille = iconeAnomalieGrille;
+  protected readonly gridAnomalyIcon = gridAnomalyIcon;
 
   private async chargerGrille(): Promise<void> {
     try {

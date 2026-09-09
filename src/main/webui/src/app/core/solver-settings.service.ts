@@ -31,7 +31,7 @@ export class SolverSettingsService {
   }
 
   async refresh(): Promise<void> {
-    this.appliquer(await this.api.get<ParametresSolveur>('/api/parametres-solveur'));
+    this.apply(await this.api.get<ParametresSolveur>('/api/parametres-solveur'));
   }
 
   async setSecondsLimit(seconds: number): Promise<void> {
@@ -44,10 +44,10 @@ export class SolverSettingsService {
   }
 
   private async enregistrer(parametres: ParametresSolveur): Promise<void> {
-    this.appliquer(await this.api.put<ParametresSolveur>('/api/parametres-solveur', parametres));
+    this.apply(await this.api.put<ParametresSolveur>('/api/parametres-solveur', parametres));
   }
 
-  private appliquer(parametres: ParametresSolveur): void {
+  private apply(parametres: ParametresSolveur): void {
     this.secondsLimit.set(parametres.dureeResolutionSecondes);
     this.mailFinResolution.set(parametres.mailFinResolution ?? false);
   }

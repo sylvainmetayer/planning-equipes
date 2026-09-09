@@ -22,7 +22,7 @@ export class EspaceAnimateurService {
 
   /** Token of the espace currently displayed; set by the shell from the URL. */
   readonly jeton = signal<string | null>(null);
-  readonly vue = signal<EspaceAnimateurView | null>(null);
+  readonly view = signal<EspaceAnimateurView | null>(null);
   readonly demandes = signal<DemandeEchangeView[]>([]);
   /** Demandes targeting ME — awaiting my agreement before the admin sees them, plus history. */
   readonly demandesRecues = signal<DemandeEchangeView[]>([]);
@@ -47,11 +47,11 @@ export class EspaceAnimateurService {
         this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`),
         this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes-recues`)
       ]);
-      this.vue.set(view);
+      this.view.set(view);
       this.demandes.set(demandes);
       this.demandesRecues.set(recues);
     } catch (error) {
-      this.vue.set(null);
+      this.view.set(null);
       this.demandes.set([]);
       this.demandesRecues.set([]);
       if (error instanceof HttpErrorResponse && error.status === 401) {
@@ -109,9 +109,9 @@ export class EspaceAnimateurService {
   async confirmerPlanning(): Promise<void> {
     const jeton = this.requireJeton();
     const accuse = await this.api.post<AccuseReception>(`/api/espace-animateur/${jeton}/confirmation`, null);
-    const view = this.vue();
+    const view = this.view();
     if (view) {
-      this.vue.set({ ...view, statutConfirmation: accuse.statut, confirmeLe: accuse.confirmeLe });
+      this.view.set({ ...view, statutConfirmation: accuse.statut, confirmeLe: accuse.confirmeLe });
     }
   }
 
@@ -124,9 +124,9 @@ export class EspaceAnimateurService {
     const jeton = this.requireJeton();
     const reponse = await this.api.post<{ abonnementToken: string }>(
       `/api/espace-animateur/${jeton}/abonnement`, null);
-    const view = this.vue();
+    const view = this.view();
     if (view) {
-      this.vue.set({ ...view, abonnementToken: reponse.abonnementToken });
+      this.view.set({ ...view, abonnementToken: reponse.abonnementToken });
     }
   }
 

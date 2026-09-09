@@ -24,6 +24,21 @@
  * français pour une déclaration nommée « de ». La première version de ce
  * script le faisait, et sur-comptait.
  *
+ * <h2>Le glossaire est une permission, pas une obligation</h2>
+ *
+ * Un mot du glossaire *peut* rester français parce qu'il **est** le terme
+ * métier ; rien n'oblige à l'employer. Le tableau d'`AGENTS.md` tranche lequel
+ * l'est vraiment : ce sont les **types du domaine** — `Animateur`, `Stand`,
+ * `Creneau`, `PosteAffectation`, `Emplacement`, `Vacation`, `Amplitude` —, et
+ * ce même tableau donne la prose anglaise du reste (*timeslot*, *shift*,
+ * *opening span*).
+ *
+ * Concrètement : on écrit `perDay` et non `parJour`, `breaksFor` et non
+ * `pausesDe`, `workedDays` et non `joursTravailles` — mais `causesByCreneauId`
+ * et non `causesByTimeslotId`, parce que `Creneau` est le type. Traduire un
+ * mot-outil en gardant le nom commun autour donne du franglais qui se lit plus
+ * mal que l'original, et la règle n'est pas là pour ça.
+ *
  * <h2>Le frontend est tenu plus strict que le backend, et c'est délibéré</h2>
  *
  * `LanguagePolicyStructuralTest` ne regarde que les **types, méthodes et
@@ -49,13 +64,30 @@
  * `scripts/` — dont ce fichier, écrit en français comme ses voisins. Étendre le
  * périmètre agrandira l'inventaire ; autant le savoir avant de le croire fini.
  *
- * MODE INVENTAIRE : `--inventaire` liste ce qui reste sans faire échouer.
- * Le chantier de renommage est en cours (voir la description de la PR qui
- * introduit ce script) ; tant qu'il n'est pas fini, faire échouer bloquerait
- * son propre correctif.
+ * <h2>Un cliquet, plutôt qu'une PR de 589 renommages</h2>
+ *
+ * L'inventaire est trop gros pour une passe : chaque nom demande d'être
+ * *choisi*, pas traduit — une table produit `afterNoon` pour `apresMidi` et
+ * `dateOfDay` pour `dateDuJour`. Le contrôle s'applique donc, par défaut en
+ * CI, aux **seuls fichiers que la branche modifie**. Tout code neuf ou réécrit
+ * respecte la règle immédiatement ; la dette se paie au fil des passages, sans
+ * qu'une revue ait jamais à absorber des centaines de renommages mécaniques.
+ *
+ * Trois modes :
+ * <ul>
+ * <li>`--modifies [base]` — les **lignes** modifiées par rapport à `base`
+ *     (`origin/main` par défaut). C'est ce que la CI lance. Les lignes, et non
+ *     les fichiers : une PR qui renomme mécaniquement dans 130 fichiers ne doit
+ *     pas devoir traduire au passage les commentaires qu'elle n'a pas écrits —
+ *     mesuré, c'était 478 écarts hérités contre une poignée d'écrits ;</li>
+ * <li>`--inventaire` — compte tout le dépôt, sans faire échouer ;</li>
+ * <li>sans option — vérifie tout le dépôt et échoue. Le jour où le solde est
+ *     payé, c'est ce mode que la CI prendra.</li>
+ * </ul>
  */
-const { readFileSync, readdirSync } = require('node:fs');
-const { join, relative } = require('node:path');
+const { execFileSync } = require('node:child_process');
+const { existsSync, readFileSync, readdirSync } = require('node:fs');
+const { join, relative, resolve } = require('node:path');
 
 const RACINE = join(__dirname, '..');
 const DEPOT = join(RACINE, '../../..');
@@ -157,7 +189,73 @@ const motsDuNom = (nom) => (nom.match(/[A-Z]?[a-z\u00e0-\u00ff]+|[A-Z]+(?![a-z])
 const commentairesFrancais = [];
 const nomsFautifs = [];
 
-for (const fichier of fichiers(SOURCES)) {
+/**
+ * Les fichiers à contrôler : ceux que la branche modifie en mode cliquet, tout
+ * le dépôt sinon.
+ *
+ * <p>Un fichier supprimé ou renommé ne se lit plus : `git diff` le liste
+ * quand même, d'où le filtre sur l'existence.</p>
+ */
+function aVerifier() {
+  if (!lignesModifiees) {
+    return fichiers(SOURCES);
+  }
+  return [...lignesModifiees.keys()].filter((chemin) => existsSync(chemin));
+}
+
+/**
+ * Les lignes ajoutées par la branche, par fichier — `null` hors mode cliquet.
+ *
+ * <p>Lues dans un `git diff -U0` : chaque en-tête `@@ … +debut,longueur @@`
+ * donne la plage écrite côté HEAD. Une plage vide (longueur 0) est une
+ * suppression, qui n'ajoute rien à contrôler.</p>
+ */
+function releverLesLignesModifiees() {
+  const drapeau = process.argv.indexOf('--modifies');
+  if (drapeau < 0) {
+    return null;
+  }
+  const base = process.argv[drapeau + 1] ?? 'origin/main';
+  const diff = execFileSync('git', ['diff', '-U0', `${base}...HEAD`], {
+    cwd: DEPOT,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024
+  });
+  const parFichier = new Map();
+  let courant = null;
+  for (const ligne of diff.split('\n')) {
+    const fichier = /^\+\+\+ b\/(.+)$/.exec(ligne);
+    if (fichier) {
+      const chemin = resolve(DEPOT, fichier[1]);
+      courant = chemin.startsWith(SOURCES) && /\.(ts|css)$/.test(chemin) ? chemin : null;
+      if (courant && !parFichier.has(courant)) {
+        parFichier.set(courant, []);
+      }
+      continue;
+    }
+    const plage = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(ligne);
+    if (plage && courant) {
+      const debut = Number(plage[1]);
+      const longueur = plage[2] === undefined ? 1 : Number(plage[2]);
+      if (longueur > 0) {
+        parFichier.get(courant).push([debut, debut + longueur - 1]);
+      }
+    }
+  }
+  return parFichier;
+}
+
+const lignesModifiees = releverLesLignesModifiees();
+
+/** Une ligne est-elle dans le périmètre ? Toujours, hors mode cliquet. */
+function dansLePerimetre(fichier, ligne) {
+  if (!lignesModifiees) {
+    return true;
+  }
+  return (lignesModifiees.get(fichier) ?? []).some(([debut, fin]) => ligne >= debut && ligne <= fin);
+}
+
+for (const fichier of aVerifier()) {
   const source = readFileSync(fichier, 'utf8');
   const nom = relative(DEPOT, fichier);
 
@@ -165,8 +263,9 @@ for (const fichier of fichiers(SOURCES)) {
 
   if (fichier.endsWith('.css')) {
     for (const bloc of source.matchAll(/\/\*[\s\S]*?\*\//g)) {
-      if (estFrancais(bloc[0])) {
-        commentairesFrancais.push(`${nom}:${ligneDe(bloc.index)}`);
+      const ligne = ligneDe(bloc.index);
+      if (estFrancais(bloc[0]) && dansLePerimetre(fichier, ligne)) {
+        commentairesFrancais.push(`${nom}:${ligne}`);
       }
     }
     continue;
@@ -209,8 +308,9 @@ for (const fichier of fichiers(SOURCES)) {
     }
   }
   for (const bloc of blocs) {
-    if (estFrancais(source.slice(bloc.pos, bloc.end))) {
-      commentairesFrancais.push(`${nom}:${ligneDe(bloc.pos)}`);
+    const ligne = ligneDe(bloc.pos);
+    if (estFrancais(source.slice(bloc.pos, bloc.end)) && dansLePerimetre(fichier, ligne)) {
+      commentairesFrancais.push(`${nom}:${ligne}`);
     }
   }
 
@@ -228,7 +328,7 @@ for (const fichier of fichiers(SOURCES)) {
       ts.isPropertyDeclaration(noeud);
     if (declare && noeud.name && ts.isIdentifier(noeud.name) && !Object.hasOwn(EXCEPTIONS, noeud.name.text)) {
       const fautifs = motsDuNom(noeud.name.text).filter((mot) => LEXIQUE.has(mot) && !GLOSSAIRE.has(mot));
-      if (fautifs.length > 0) {
+      if (fautifs.length > 0 && dansLePerimetre(fichier, ligneDe(noeud.name.getStart(fichierTs)))) {
         nomsFautifs.push(`${nom} : ${noeud.name.text} [${fautifs.join(', ')}]`);
       }
     }

@@ -48,7 +48,7 @@ export class EspaceAidePage {
   }
 
   /** Route of the tab a section acts on, or `null` while the token is unknown. */
-  protected lienVers(target: EspaceAideCible): unknown[] | null {
+  protected linkTo(target: EspaceAideCible): unknown[] | null {
     const jeton = this.jeton();
     if (!jeton) {
       return null;
@@ -56,7 +56,7 @@ export class EspaceAidePage {
     return target === 'planning' ? ['/animateur', jeton] : ['/animateur', jeton, target];
   }
 
-  protected libelleCible(target: EspaceAideCible): string {
+  protected targetLabel(target: EspaceAideCible): string {
     switch (target) {
       case 'echanges':
         return $localize`:@@espace.nav.echanges:Mes échanges`;

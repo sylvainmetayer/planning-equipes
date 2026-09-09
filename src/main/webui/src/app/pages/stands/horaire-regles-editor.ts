@@ -19,7 +19,7 @@ import {
   HoraireDraft,
   ajouterA,
   basculerJour,
-  datesDepuisTexte,
+  datesFromText,
   fenetreVide,
   patchDansListe,
   retirerDe
@@ -173,7 +173,7 @@ export class HoraireReglesEditor {
 
   /** Comma-separated ISO dates, for the `DATES` scope — a plain text field beats seven date pickers. */
   protected patchDates(indexHoraire: number, valeur: string): void {
-    this.patchHoraire(indexHoraire, { dates: datesDepuisTexte(valeur) });
+    this.patchHoraire(indexHoraire, { dates: datesFromText(valeur) });
   }
 
   private majFenetres(indexHoraire: number, transformer: (fenetres: FenetreHoraire[]) => FenetreHoraire[]): void {

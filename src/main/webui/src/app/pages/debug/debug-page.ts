@@ -90,7 +90,7 @@ export class DebugPage {
   private readonly problemes = inject(ProblemesStore);
   protected readonly dates = inject(DateMockService);
 
-  protected readonly ancreDateDuJour = TODAY_ANCHOR;
+  protected readonly todayAnchor = TODAY_ANCHOR;
   protected readonly dateDuJourErreur = signal('');
 
   /**

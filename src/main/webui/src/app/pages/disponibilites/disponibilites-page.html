@@ -3,7 +3,7 @@
   <p i18n="@@dispo.intro">
     Les jours d'indisponibilité et les souhaits que les animateurs déclarent eux-mêmes depuis leur
     espace, pendant la fenêtre de collecte que vous ouvrez. Une déclaration ne modifie rien tant
-    que vous ne l'avez pas appliquée : appliquer écrit la proposition entière sur la fiche de
+    que vous ne l'avez pas appliquée : apply écrit la proposition entière sur la fiche de
     l'animateur, refuser ne touche à rien. Un animateur n'a jamais qu'une proposition en attente —
     la dernière qu'il a envoyée.
   </p>
@@ -53,12 +53,12 @@
         <button
           matButton="filled"
           [disabled]="fenetreEnCours()"
-          (click)="enregistrerFenetre(true)"
+          (click)="saveWindow(true)"
         >
           <mat-icon>lock_open</mat-icon>
           <span i18n="@@dispo.fenetre.ouvrir">Ouvrir la collecte</span>
         </button>
-        <button matButton [disabled]="fenetreEnCours()" (click)="enregistrerFenetre(false)">
+        <button matButton [disabled]="fenetreEnCours()" (click)="saveWindow(false)">
           <mat-icon>lock</mat-icon>
           <span i18n="@@dispo.fenetre.fermer">Fermer la collecte</span>
         </button>
@@ -130,10 +130,10 @@
         <button
           matButton="filled"
           [disabled]="decisionEnCours() === declaration.id"
-          (click)="appliquer(declaration)"
+          (click)="apply(declaration)"
         >
           <mat-icon>check</mat-icon>
-          <span i18n="@@dispo.appliquer">Appliquer</span>
+          <span i18n="@@dispo.apply">Appliquer</span>
         </button>
         <button matButton [disabled]="decisionEnCours() === declaration.id" (click)="refuser(declaration)">
           <mat-icon>close</mat-icon>

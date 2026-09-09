@@ -103,7 +103,7 @@ export function key(standId: string, creneauId: number): string {
  * dash or a zero all mean "closed" — the three ways a spreadsheet writes an
  * empty cell. Anything else is not a value, and `undefined` says so.
  */
-export function lireCellule(text: string): number | null | undefined {
+export function readCell(text: string): number | null | undefined {
   const propre = text.trim();
   if (propre === '' || propre === '-' || propre === '—' || propre === '0') {
     return null;
@@ -210,7 +210,7 @@ export function deplacement(
  * A block pasted from a spreadsheet, laid from `depuis` over the displayed
  * rows and columns: one line per stand, one tab-separated value per créneau.
  * Cells past the last row or column are dropped, a value that is not one
- * (`lireCellule`) leaves its cell alone.
+ * (`readCell`) leaves its cell alone.
  */
 export function collerBloc(
   cellules: Cellules,
@@ -241,7 +241,7 @@ export function collerBloc(
       if (colonne === undefined) {
         return;
       }
-      const lu = lireCellule(valeur);
+      const lu = readCell(valeur);
       if (lu !== undefined && !inertes.has(key(standId, colonne.creneauId))) {
         resultat = ecrireCellule(resultat, { standId, creneauId: colonne.creneauId }, lu);
       }
@@ -290,7 +290,7 @@ export function recopierJour(
 }
 
 /** How many cells a copy of one day onto the others actually changed. */
-export function compterRecopiees(before: Cellules, after: Cellules, colonnesGrille: readonly ColonneGrille[]): number {
+export function countCopied(before: Cellules, after: Cellules, colonnesGrille: readonly ColonneGrille[]): number {
   let changees = 0;
   for (const [standId, ligne] of after) {
     for (const colonne of colonnesGrille) {

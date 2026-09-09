@@ -199,7 +199,7 @@ export type SaisieFenetres =
  * Hours run 0-23 and minutes 0-59: a window never crosses midnight, so `24:00`
  * is not a time here — the open-ended form is how "until closing" is written.
  */
-export function normaliserHeure(text: string): string | null {
+export function normaliseHour(text: string): string | null {
   // A lone digit after the separator is refused rather than guessed: `9:5`
   // reads as 9 h 50 to one person and 9 h 05 to the next, and either reading
   // silently rewrites an hour the user believes they typed.
@@ -239,9 +239,9 @@ export function parseFenetres(text: string): SaisieFenetres {
     if (!m) {
       return { fenetres: null, erreur: 'FORME', morceau };
     }
-    const heureDebut = normaliserHeure(m[1]);
+    const heureDebut = normaliseHour(m[1]);
     const finTexte = m[2].trim();
-    const heureFin = finTexte === '' ? null : normaliserHeure(finTexte);
+    const heureFin = finTexte === '' ? null : normaliseHour(finTexte);
     if (heureDebut === null || (finTexte !== '' && heureFin === null)) {
       return { fenetres: null, erreur: 'HEURE', morceau };
     }

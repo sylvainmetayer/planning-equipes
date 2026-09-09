@@ -63,12 +63,12 @@ export class EspaceDisponibilitesPage {
     commentaire: ''
   });
 
-  protected readonly vue = computed(() => this.espace.declaration());
-  protected readonly mois = computed(() => moisDeCollecte(this.vue()?.joursEvenement ?? []));
-  protected readonly modifiee = computed(() => declarationModifiee(this.vue(), this.brouillon()));
+  protected readonly view = computed(() => this.espace.declaration());
+  protected readonly mois = computed(() => moisDeCollecte(this.view()?.joursEvenement ?? []));
+  protected readonly modifiee = computed(() => declarationModifiee(this.view(), this.brouillon()));
 
   /** No créneau exists yet: the days cannot be offered, but the wishes still can. */
-  protected readonly sansJours = computed(() => (this.vue()?.joursEvenement.length ?? 0) === 0);
+  protected readonly sansJours = computed(() => (this.view()?.joursEvenement.length ?? 0) === 0);
 
   /**
    * The day collection opens, when it is closed only because it has not
@@ -76,7 +76,7 @@ export class EspaceDisponibilitesPage {
    * opening in two weeks is already over.
    */
   protected readonly pasEncoreOuverte = computed(() =>
-    ouvertureAVenir(this.vue(), toDateKey(new Date()))
+    ouvertureAVenir(this.view(), toDateKey(new Date()))
   );
 
   constructor() {
@@ -88,7 +88,7 @@ export class EspaceDisponibilitesPage {
     this.erreur.set(null);
     try {
       await this.espace.chargerDeclaration();
-      this.brouillon.set(brouillonInitial(this.vue()));
+      this.brouillon.set(brouillonInitial(this.view()));
     } catch (error) {
       this.erreur.set(errorMessage(error));
     } finally {
@@ -130,7 +130,7 @@ export class EspaceDisponibilitesPage {
     this.erreur.set(null);
     try {
       await this.espace.declarer(versNouvelleDeclaration(this.brouillon()));
-      this.brouillon.set(brouillonInitial(this.vue()));
+      this.brouillon.set(brouillonInitial(this.view()));
       this.envoye.set(true);
     } catch (error) {
       this.erreur.set(errorMessage(error));

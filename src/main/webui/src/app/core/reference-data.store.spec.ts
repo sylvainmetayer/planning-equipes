@@ -6,7 +6,7 @@ import { ReferenceDataStore } from './reference-data.store';
 
 /** Answers every collection with an empty list, so `reload()` succeeds. */
 class FakeApi {
-  get = vi.fn(async (url: string) => (url.endsWith('/volumetrie') ? {} : []));
+  get = vi.fn(async (url: string) => (url.endsWith('/scale') ? {} : []));
   // Typed `unknown`: two resources answer `{ <entite>, avertissements }` and
   // the others the bare entity, which is exactly what `save` has to tell apart.
   post = vi.fn(async (): Promise<unknown> => undefined);
@@ -129,7 +129,7 @@ describe('ReferenceDataStore bulk operations', () => {
 
       const urls = api.get.mock.calls.map(([url]) => url);
       expect(urls).toEqual(
-        expect.arrayContaining(['/api/typologies', '/api/planning/volumetrie'])
+        expect.arrayContaining(['/api/typologies', '/api/planning/scale'])
       );
       // Renommer une typologie ne doit plus rapatrier 150 animateurs et 65 stands.
       expect(urls).not.toContain('/api/animateurs');
@@ -166,7 +166,7 @@ describe('ReferenceDataStore bulk operations', () => {
         '/api/stands',
         '/api/emplacements',
         '/api/contraintes-ad-hoc',
-        '/api/planning/volumetrie'
+        '/api/planning/scale'
       ]) {
         expect(urls).toContain(url);
       }

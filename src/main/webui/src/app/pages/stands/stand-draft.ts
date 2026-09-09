@@ -110,7 +110,7 @@ export function basculerJour(
  * beats seven date pickers. Anything that is not an ISO date is dropped rather
  * than sent to a backend that would reject the whole rule.
  */
-export function datesDepuisTexte(valeur: string): string[] {
+export function datesFromText(valeur: string): string[] {
   return valeur
     .split(',')
     .map((date) => date.trim())

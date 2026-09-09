@@ -47,7 +47,7 @@
         <mat-label i18n="@@echanges.foireFenetre.fin">Jusqu'au</mat-label>
         <input matInput type="date" [value]="fin() ?? ''" (change)="majFin($any($event.target).value)" />
       </mat-form-field>
-      <button matButton="filled" type="button" [disabled]="foireEnCours()" (click)="enregistrerFenetre()">
+      <button matButton="filled" type="button" [disabled]="foireEnCours()" (click)="saveWindow()">
         <mat-icon>save</mat-icon>
         <ng-container i18n="@@common.save">Enregistrer</ng-container>
       </button>

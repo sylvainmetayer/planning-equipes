@@ -179,7 +179,7 @@ describe('PausesPage', () => {
   });
 
   it('resets the filters with one button, and leaves the day alone', async () => {
-    const fixture = await mount(rapport(), { jour: '2026-07-11', q: 'carol', vue: 'sans-relais' });
+    const fixture = await mount(rapport(), { jour: '2026-07-11', q: 'carol', view: 'sans-relais' });
     const page = fixture.componentInstance as unknown as { reinitialiser(): void; recherche(): string; sansRelaisSeulement(): boolean; vueModifiee(): boolean };
     expect(page.vueModifiee()).toBe(true);
 

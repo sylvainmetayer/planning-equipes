@@ -82,9 +82,9 @@
           <div class="mcp-cle-revelee">
             <pre class="mcp-pre">{{ cle() }}</pre>
             <div class="card-actions">
-              <button matButton="tonal" type="button" (click)="copier(cle())">
+              <button matButton="tonal" type="button" (click)="copy(cle())">
                 <mat-icon>content_copy</mat-icon>
-                <ng-container i18n="@@mcp.cle.copier">Copier la clé</ng-container>
+                <ng-container i18n="@@mcp.cle.copy">Copier la clé</ng-container>
               </button>
             </div>
             <p class="mcp-cle-note" i18n="@@mcp.cle.ephemere">
@@ -99,7 +99,7 @@
     <p i18n="@@mcp.connexion.config">Configuration à déclarer dans votre client MCP :</p>
     <pre class="mcp-pre">{{ configurationClient() }}</pre>
     <div class="card-actions">
-      <button matButton="tonal" type="button" (click)="copier(configurationClient())">
+      <button matButton="tonal" type="button" (click)="copy(configurationClient())">
         <mat-icon>content_copy</mat-icon>
         <ng-container i18n="@@mcp.copierConfig">Copier la configuration</ng-container>
       </button>
@@ -152,7 +152,7 @@
       <h2 mat-card-title i18n="@@mcp.prompts.title">Prompts prêts à l'emploi</h2>
       <mat-card-subtitle i18n="@@mcp.prompts.subtitle">
         Ce sont les prompts que le serveur annonce lui-même : un client qui gère les prompts MCP les
-        propose directement, sans copier-coller. Pour les autres, collez le texte dans votre assistant.
+        propose directement, sans copy-coller. Pour les autres, collez le texte dans votre assistant.
         Ils sont rédigés en français, comme le reste du métier.
       </mat-card-subtitle>
     </mat-card-header>
@@ -163,7 +163,7 @@
           <p class="mcp-prompt-description">{{ prompt.description }}</p>
           <pre class="mcp-pre mcp-prompt">{{ prompt.texte }}</pre>
           <div class="card-actions">
-            <button matButton="tonal" type="button" (click)="copier(prompt.texte)">
+            <button matButton="tonal" type="button" (click)="copy(prompt.texte)">
               <mat-icon>content_copy</mat-icon>
               <ng-container i18n="@@mcp.copierPrompt">Copier le prompt</ng-container>
             </button>

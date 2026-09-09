@@ -13,7 +13,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DerivationRequest, ModeGrilleCreneaux, RapportDerivation } from '../../core/models';
 import { summarizeVacationsByDay } from './decoupage';
-import { bilanGrille, grilleBloquee, iconeAnomalieGrille, trierAnomalies } from './grille-creneaux';
+import { bilanGrille, grilleBloquee, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
 
 export interface CreneauDerivationData {
   /** The mode the edition declares: what the preview's verdict is read in. */
@@ -106,7 +106,7 @@ export class CreneauDerivationDialog {
   protected readonly peutEcrire = computed(
     () => this.apercuAJour() && !this.bloquee() && (this.apercu()?.nombreGeneres ?? 0) > 0 && !this.ecriture() && !this.editingLocked()
   );
-  protected readonly iconeAnomalieGrille = iconeAnomalieGrille;
+  protected readonly gridAnomalyIcon = gridAnomalyIcon;
 
   /** The cuts of one day, `10:00 (A, B et 3 autres)`, for the preview. */
   protected coupuresDe(date: string): string[] {

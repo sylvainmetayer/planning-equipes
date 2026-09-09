@@ -23,7 +23,7 @@
               [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
         <mat-icon>chevron_right</mat-icon>
       </button>
-      <mat-button-toggle-group [value]="vue()" (change)="vue.set($event.value)"
+      <mat-button-toggle-group [value]="view()" (change)="view.set($event.value)"
                                aria-label="Lignes affichées" i18n-aria-label="@@railJour.view.label">
         <mat-button-toggle value="tous" i18n="@@railJour.view.all">Tous</mat-button-toggle>
         <mat-button-toggle value="libres" i18n="@@railJour.view.free">Mobilisables</mat-button-toggle>
@@ -32,7 +32,7 @@
       @if (vueModifiee()) {
         <button matButton type="button" (click)="reinitialiserVue()">
           <mat-icon>filter_alt_off</mat-icon>
-          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+          <ng-container i18n="@@common.resetView">Réinitialiser la view</ng-container>
         </button>
       }
       <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">

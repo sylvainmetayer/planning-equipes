@@ -74,7 +74,7 @@ export class RailJourPage {
   /** Day the rail shows; null until the plan is loaded, then the first day of the event. */
   protected readonly jourSelectionne = signal<number | null>(null);
   protected readonly filtre = signal('');
-  protected readonly vue = signal<RailVue>('tous');
+  protected readonly view = signal<RailVue>('tous');
 
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
@@ -105,7 +105,7 @@ export class RailJourPage {
   protected readonly lignes = computed<RailLigne[]>(() => this.jourCourant()?.lignes ?? []);
 
   protected readonly lignesAffichees = computed<RailLigne[]>(() => {
-    const view = this.vue();
+    const view = this.view();
     const filtre = this.filtre();
     return this.lignes().filter((ligne) => {
       if (view === 'libres' && ligne.statut !== 'libre') {
@@ -170,7 +170,7 @@ export class RailJourPage {
   });
 
   /** True as soon as the filters differ from the ones this page opens on — the day itself is navigation, not a filter. */
-  protected readonly vueModifiee = computed(() => this.vue() !== 'tous' || this.filtre().trim() !== '');
+  protected readonly vueModifiee = computed(() => this.view() !== 'tous' || this.filtre().trim() !== '');
 
   /**
    * The line the grid hands the focus to (roving tabindex): one stop for the
@@ -252,8 +252,8 @@ export class RailJourPage {
     const jour = Number(params.get('jour'));
     this.jourSelectionne.set(Number.isFinite(jour) && jour > 0 ? jour : null);
     this.filtre.set(params.get('q') ?? '');
-    const view = params.get('vue');
-    this.vue.set(view === 'libres' || view === 'affectes' ? view : 'tous');
+    const view = params.get('view');
+    this.view.set(view === 'libres' || view === 'affectes' ? view : 'tous');
     void this.refresh();
     keepViewInQueryParams(() => {
       const courant = this.jourCourant();
@@ -262,7 +262,7 @@ export class RailJourPage {
         // The first day is the default, and a default is the absence of its param.
         jour: courant && premier && courant.jour !== premier.jour ? String(courant.jour) : null,
         q: optionalParam(this.filtre()),
-        vue: this.vue() === 'tous' ? null : this.vue()
+        view: this.view() === 'tous' ? null : this.view()
       };
     });
   }
@@ -314,7 +314,7 @@ export class RailJourPage {
   }
 
   protected reinitialiserVue(): void {
-    this.vue.set('tous');
+    this.view.set('tous');
     this.filtre.set('');
   }
 

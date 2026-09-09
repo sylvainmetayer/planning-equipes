@@ -10,11 +10,11 @@ interface View {
 }
 
 class FakeApi {
-  vue: View = { dateDuJour: null, modifiable: true };
-  get = vi.fn(async (_url: string) => this.vue);
+  view: View = { dateDuJour: null, modifiable: true };
+  get = vi.fn(async (_url: string) => this.view);
   put = vi.fn(async (_url: string, body: { dateDuJour: string | null }) => {
-    this.vue = { ...this.vue, dateDuJour: body.dateDuJour };
-    return this.vue;
+    this.view = { ...this.view, dateDuJour: body.dateDuJour };
+    return this.view;
   });
 }
 
@@ -24,7 +24,7 @@ describe('DateMockService', () => {
 
   function create(view: View): void {
     api = new FakeApi();
-    api.vue = view;
+    api.view = view;
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [

@@ -49,7 +49,7 @@ export class EspacePlanningPage {
    * refuses it too, this only avoids offering the gesture.
    */
   protected readonly confirmationDemandee = computed(() => {
-    const view = this.espace.vue();
+    const view = this.espace.view();
     return !!view?.publieLe && view.postes.length > 0 && view.statutConfirmation !== 'CONFIRME';
   });
 
@@ -85,7 +85,7 @@ export class EspacePlanningPage {
    * tolerable to hand out to a third-party application.
    */
   protected readonly urlAbonnement = computed(() => {
-    const token = this.espace.vue()?.abonnementToken;
+    const token = this.espace.view()?.abonnementToken;
     return token ? `${window.location.origin}/api/abonnements/${token}/planning.ics` : null;
   });
 
@@ -178,7 +178,7 @@ export class EspacePlanningPage {
 
   protected readonly jours = computed<JourPlanning[]>(() => {
     const parJour = new Map<string, PosteAnimateurView[]>();
-    for (const poste of this.espace.vue()?.postes ?? []) {
+    for (const poste of this.espace.view()?.postes ?? []) {
       const date = poste.date ?? '';
       const existants = parJour.get(date);
       if (existants) {
@@ -188,7 +188,7 @@ export class EspacePlanningPage {
       }
     }
     const pausesParJour = new Map<string, PauseAnimateurView[]>();
-    for (const pause of this.espace.vue()?.pauses ?? []) {
+    for (const pause of this.espace.view()?.pauses ?? []) {
       const existantes = pausesParJour.get(pause.date);
       if (existantes) {
         existantes.push(pause);
@@ -205,7 +205,7 @@ export class EspacePlanningPage {
     // Rest days take their chronological place among the worked ones: a day
     // silently missing reads as an oversight, an explicit « Repos » card as a
     // decision. The server sends none for an animateur without any seat.
-    for (const date of this.espace.vue()?.joursRepos ?? []) {
+    for (const date of this.espace.view()?.joursRepos ?? []) {
       jours.push({ date, postes: [], repos: true, pauses: [] });
     }
     return jours.sort((a, b) => a.date.localeCompare(b.date));

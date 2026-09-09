@@ -9,7 +9,7 @@ import {
   basculerJour,
   brouillonInvalide,
   conflitOuvertureFermeture,
-  datesDepuisTexte,
+  datesFromText,
   effectifInvalide,
   indisponibiliteInvalide,
   normaliserHoraire,
@@ -96,17 +96,17 @@ describe('basculerJour', () => {
   });
 });
 
-describe('datesDepuisTexte', () => {
+describe('datesFromText', () => {
   it('keeps the ISO dates and trims the spacing around them', () => {
-    expect(datesDepuisTexte(' 2026-07-10 , 2026-07-11 ')).toEqual(['2026-07-10', '2026-07-11']);
+    expect(datesFromText(' 2026-07-10 , 2026-07-11 ')).toEqual(['2026-07-10', '2026-07-11']);
   });
 
   it('drops anything that is not an ISO date rather than sending it to the backend', () => {
-    expect(datesDepuisTexte('2026-07-10, 10/07/2026, demain, ')).toEqual(['2026-07-10']);
+    expect(datesFromText('2026-07-10, 10/07/2026, demain, ')).toEqual(['2026-07-10']);
   });
 
   it('gives an empty list for an empty field', () => {
-    expect(datesDepuisTexte('')).toEqual([]);
+    expect(datesFromText('')).toEqual([]);
   });
 });
 

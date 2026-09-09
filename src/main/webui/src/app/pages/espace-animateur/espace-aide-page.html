@@ -61,10 +61,10 @@
       }
 
       @if (section.cible; as cible) {
-        @if (lienVers(cible); as lien) {
+        @if (linkTo(cible); as lien) {
           <a matButton="tonal" class="espace-aide-lien" [routerLink]="lien">
             <mat-icon>arrow_forward</mat-icon>
-            <span>{{ libelleCible(cible) }}</span>
+            <span>{{ targetLabel(cible) }}</span>
           </a>
         }
       }

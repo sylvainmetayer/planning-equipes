@@ -195,7 +195,7 @@ describe('CarteJourPage', () => {
     expect(heure()).toBe('15:00');
 
     const reinitialiser = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes('Réinitialiser la vue')
+      each.textContent!.includes('Réinitialiser la view')
     ) as HTMLElement;
     reinitialiser.click();
     await fixture.whenStable();

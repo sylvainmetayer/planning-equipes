@@ -122,6 +122,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Historique complet : le cliquet linguistique compare la branche à sa
+          # base, et le clone superficiel par défaut ne connaît pas `origin/main`.
+          fetch-depth: 0
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -166,6 +170,15 @@ jobs:
       # suffit, et le script signale si elle a pris du retard.
       - name: Check the hand-written models against the OpenAPI contract
         run: npm run api-types-check
+
+      # Un cliquet, pas une barrière : la règle s'applique aux **lignes** que la
+      # branche écrit, pas au dépôt entier. Le solde — 589 noms et 240 blocs de
+      # commentaire, chiffré dans #425 — se paie au fil des passages, sans
+      # qu'aucune revue ait à absorber des centaines de renommages mécaniques.
+      # Les lignes et non les fichiers : une PR qui renomme dans 130 fichiers ne
+      # doit pas devoir traduire au passage ce qu'elle n'a pas écrit.
+      - name: Check the language policy on the lines this branch writes
+        run: npm run language-policy-modifies -- "origin/${{ github.base_ref || 'main' }}"
 
       # The production build was only ever exercised by the `test` job, through
       # Quinoa (`./mvnw verify`): a broken template therefore failed in the

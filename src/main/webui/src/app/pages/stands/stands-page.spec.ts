@@ -317,7 +317,7 @@ describe('StandsPage', () => {
 
       await page.compacterHoraires();
 
-      expect(api.post).toHaveBeenCalledExactlyOnceWith('/api/stands/compactage-horaires?appliquer=false', {});
+      expect(api.post).toHaveBeenCalledExactlyOnceWith('/api/stands/compactage-horaires?apply=false', {});
       expect(confirm.ask).not.toHaveBeenCalled();
       expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'info' }));
     });
@@ -341,7 +341,7 @@ describe('StandsPage', () => {
 
       await page.compacterHoraires();
 
-      expect(api.post).toHaveBeenLastCalledWith('/api/stands/compactage-horaires?appliquer=true', {});
+      expect(api.post).toHaveBeenLastCalledWith('/api/stands/compactage-horaires?apply=true', {});
       expect(crud.reload).toHaveBeenCalledOnce();
       expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
     });

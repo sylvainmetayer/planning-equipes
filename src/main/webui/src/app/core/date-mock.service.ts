@@ -42,17 +42,17 @@ export class DateMockService {
   }
 
   async refresh(): Promise<void> {
-    this.appliquer(await this.api.get<DateJourJView>('/api/debug/date-du-jour'));
+    this.apply(await this.api.get<DateJourJView>('/api/debug/date-du-jour'));
   }
 
   /** An empty string hands the clock back; the server answers 400 outside dev mode. */
   async set(date: string): Promise<void> {
-    this.appliquer(
+    this.apply(
       await this.api.put<DateJourJView>('/api/debug/date-du-jour', { dateDuJour: date || null })
     );
   }
 
-  private appliquer(view: DateJourJView): void {
+  private apply(view: DateJourJView): void {
     this.dateDuJour.set(view.dateDuJour ?? '');
     this.modifiable.set(view.modifiable);
   }

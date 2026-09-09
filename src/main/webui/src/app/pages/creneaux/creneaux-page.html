@@ -168,7 +168,7 @@
         <ul class="ouvertures-anomalies controle-anomalies">
           @for (anomalie of anomaliesGrille(); track $index) {
             <li [class.anomalie-avertissement]="anomalie.severite === 'AVERTISSEMENT'">
-              <mat-icon>{{ iconeAnomalieGrille(anomalie) }}</mat-icon>
+              <mat-icon>{{ gridAnomalyIcon(anomalie) }}</mat-icon>
               @if (anomalie.date) {
                 <span class="anomalie-date">{{ anomalie.date }}</span>
               }

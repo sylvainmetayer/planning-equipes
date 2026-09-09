@@ -21,6 +21,7 @@
     "api-schema": "node scripts/refresh-api-schema.js",
     "e2e": "playwright test",
     "language-policy": "node scripts/check-language-policy.js",
+    "language-policy-modifies": "node scripts/check-language-policy.js --modifies",
     "language-policy-inventaire": "node scripts/check-language-policy.js --inventaire"
   },
   "private": true,

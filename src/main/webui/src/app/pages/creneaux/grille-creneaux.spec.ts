@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { AnomalieGrille, RapportGrille } from '../../core/models';
 import {
   bilanGrille,
-  datesDepuisTexte,
+  datesFromText,
   erreursIntroduites,
   grilleBloquee,
-  iconeAnomalieGrille,
+  gridAnomalyIcon,
   regleDepuis,
   serieVide,
   signatureSerie,
@@ -87,7 +87,7 @@ describe('regleDepuis', () => {
   });
 
   it('lit des dates séparées par des virgules, des points-virgules ou des espaces', () => {
-    expect(datesDepuisTexte('2026-07-14,2026-07-15; 2026-07-16 2026-07-17 x')).toEqual(['2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17']);
+    expect(datesFromText('2026-07-14,2026-07-15; 2026-07-16 2026-07-17 x')).toEqual(['2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17']);
   });
 });
 
@@ -122,7 +122,7 @@ describe('verdict', () => {
       anomaly({ date: null, message: 'a' })
     ]);
     expect(triees.map((each) => each.message)).toEqual(['c', 'a', 'b']);
-    expect(iconeAnomalieGrille(triees[0])).toBe('error');
-    expect(iconeAnomalieGrille(triees[1])).toBe('warning');
+    expect(gridAnomalyIcon(triees[0])).toBe('error');
+    expect(gridAnomalyIcon(triees[1])).toBe('warning');
   });
 });

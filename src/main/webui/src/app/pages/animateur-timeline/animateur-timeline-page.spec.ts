@@ -370,7 +370,7 @@ describe('AnimateurTimelinePage', () => {
 
     // Written straight to the address bar, never through a router navigation:
     // this page had its own copy of that effect until it joined the shared
-    // helper. See docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md.
+    // helper. See docs/decisions/0018-ecrire-l-url-de-view-sans-naviguer.md.
     expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a1');
   });
 

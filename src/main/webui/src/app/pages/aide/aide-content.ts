@@ -72,7 +72,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
             $localize`:@@aide.start.step1:1. Choisir ou créer l'édition : tout le reste lui appartient, et rien ne circule d'une édition à l'autre.`,
             $localize`:@@aide.start.step2:2. Saisir les référentiels : typologies de jeux, emplacements, stands, animateurs, créneaux. Les animateurs entrent aussi d'un seul geste par l'import CSV, si vos bénévoles arrivent déjà dans un tableur ; un scénario YAML ou un dump SQL remplace l'étape entière. Une saisie douteuse mais tenable est enregistrée avec un avertissement à lire, jamais refusée en silence.`,
             $localize`:@@aide.start.step3:3. Ouvrir la collecte des disponibilités, case « prévenir » cochée : elle envoie à chacun le lien de son espace, où il déclare depuis son téléphone ses jours d'absence et les jeux qu'il aimerait animer. Les fiches animateurs doivent donc déjà exister ; et si vous ouvrez la collecte avant d'avoir saisi les créneaux, l'espace n'offre aucun jour à cocher — seuls les souhaits se déclarent.`,
-            $localize`:@@aide.start.step4:4. Appliquer ou refuser les déclarations reçues, puis fermer la collecte : appliquer écrit la proposition entière sur la fiche de l'animateur.`,
+            $localize`:@@aide.start.step4:4. Appliquer ou refuser les déclarations reçues, puis fermer la collecte : apply écrit la proposition entière sur la fiche de l'animateur.`,
             $localize`:@@aide.start.step5:5. Vérifier les ouvertures des stands, puis le besoin en animateurs : ces deux écrans répondent sans qu'aucun calcul ait tourné.`,
             $localize`:@@aide.start.step6:6. Si les journées sont décrites par une simple amplitude d'ouverture, générer le découpage en vacations.`,
             $localize`:@@aide.start.step7:7. Lancer une résolution courte, lire la page Problèmes, corriger — puis relancer sur une durée longue.`,
@@ -642,7 +642,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
       id: 'jour-j',
       icon: 'emergency',
       title: $localize`:@@aide.jourJ.title:Mode jour J`,
-      summary: $localize`:@@aide.jourJ.summary:En cours de développement. Quelqu'un ne s'est pas présenté : le marquer absent, trouver un remplaçant, appliquer — sans relancer de calcul.`,
+      summary: $localize`:@@aide.jourJ.summary:En cours de développement. Quelqu'un ne s'est pas présenté : le marquer absent, trouver un remplaçant, apply — sans relancer de calcul.`,
       blocks: [
         {
           kind: 'paragraph',
@@ -691,7 +691,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
       id: 'consulter',
       icon: 'calendar_month',
       title: $localize`:@@aide.views.title:Consulter le planning`,
-      summary: $localize`:@@aide.views.summary:Chaque vue répond à une question différente ; choisir la bonne fait gagner du temps.`,
+      summary: $localize`:@@aide.views.summary:Chaque view répond à une question différente ; choisir la bonne fait gagner du temps.`,
       blocks: [
         {
           kind: 'definitions',
@@ -710,11 +710,11 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.timeline:Timeline animateur`,
-              text: $localize`:@@aide.views.def.timeline:Le planning d'une personne : stands à couvrir, amplitude journalière, vacations et pauses entre elles. C'est la vue à envoyer à l'intéressé, exportable en PDF ou en ICS.`
+              text: $localize`:@@aide.views.def.timeline:Le planning d'une personne : stands à couvrir, amplitude journalière, vacations et pauses entre elles. C'est la view à envoyer à l'intéressé, exportable en PDF ou en ICS.`
             },
             {
               term: $localize`:@@aide.views.term.railJour:Rail de la journée`,
-              text: $localize`:@@aide.views.def.railJour:La même journée que le calendrier journalier, mais vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » signalent au contraire de ne pas solliciter la personne. Une vacation se glisse vers une autre ligne : la personne la prend, ou échange la sienne si elle travaille déjà à cette heure, aux mêmes conditions que sur le calendrier journalier.`
+              text: $localize`:@@aide.views.def.railJour:La même journée que le calendrier journalier, mais view par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » signalent au contraire de ne pas solliciter la personne. Une vacation se glisse vers une autre ligne : la personne la prend, ou échange la sienne si elle travaille déjà à cette heure, aux mêmes conditions que sur le calendrier journalier.`
             },
             {
               term: $localize`:@@aide.views.term.repos:Jours de repos`,
@@ -726,7 +726,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.graphe:Graphe`,
-              text: $localize`:@@aide.views.def.graphe:La même donnée prise par le terrain : un emplacement, les stands qui s'y trouvent, les créneaux sur lesquels ils sont armés, qui y est affecté. Une colonne par niveau, on clique pour ouvrir la suivante. C'est la vue de qui connaît le plan de l'événement mieux que la liste de ses stands. Les deux dernières colonnes se lisent sur le planning enregistré et restent vides tant qu'aucune résolution n'a tourné ; les emplacements et leurs stands, eux, viennent des données de référence et se parcourent tout de suite.`
+              text: $localize`:@@aide.views.def.graphe:La même donnée prise par le terrain : un emplacement, les stands qui s'y trouvent, les créneaux sur lesquels ils sont armés, qui y est affecté. Une colonne par niveau, on clique pour ouvrir la suivante. C'est la view de qui connaît le plan de l'événement mieux que la liste de ses stands. Les deux dernières colonnes se lisent sur le planning enregistré et restent vides tant qu'aucune résolution n'a tourné ; les emplacements et leurs stands, eux, viennent des données de référence et se parcourent tout de suite.`
             },
             {
               term: $localize`:@@aide.views.term.kpi:Autopsie du planning`,
@@ -738,7 +738,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.banc:Banc de touche`,
-              text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, la règle qui l'empêcherait de prendre la place restée libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La vue est en lecture seule ; pour agir, passez par l'assistant de réparation du calendrier journalier. Elle lit le planning enregistré et ne propose donc que les créneaux qu'il pourvoit : un créneau où aucun stand n'est ouvert n'y figure pas, et tant qu'aucune résolution n'a tourné l'écran le dit au lieu de rester vide. Il est livré à l'essai, sous « En cours de développement » : il pourra être retiré s'il ne s'avère pas utile.`
+              text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, la règle qui l'empêcherait de prendre la place restée libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La view est en lecture seule ; pour agir, passez par l'assistant de réparation du calendrier journalier. Elle lit le planning enregistré et ne propose donc que les créneaux qu'il pourvoit : un créneau où aucun stand n'est ouvert n'y figure pas, et tant qu'aucune résolution n'a tourné l'écran le dit au lieu de rester vide. Il est livré à l'essai, sous « En cours de développement » : il pourra être retiré s'il ne s'avère pas utile.`
             },
             {
               term: $localize`:@@aide.views.term.hours:Heures et besoin en animateurs`,
@@ -746,7 +746,7 @@ export function buildHelpSections(supportEmail = ''): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
-              text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde vue liste les stands tenus par une seule personne compétente pour leurs typologies, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts : ils peuvent dépanner partout, mais un stand qu'ils sont seuls à pouvoir tenir n'a toujours aucun spécialiste. Rien n'est recalculé par le solveur : l'écran lit le planning enregistré. Il est livré à l'essai, sous « En cours de développement » : il pourra être retiré s'il ne s'avère pas utile.`
+              text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde view liste les stands tenus par une seule personne compétente pour leurs typologies, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts : ils peuvent dépanner partout, mais un stand qu'ils sont seuls à pouvoir tenir n'a toujours aucun spécialiste. Rien n'est recalculé par le solveur : l'écran lit le planning enregistré. Il est livré à l'essai, sous « En cours de développement » : il pourra être retiré s'il ne s'avère pas utile.`
             }
             ,{
               term: $localize`:@@aide.views.term.pauses:Pauses`,

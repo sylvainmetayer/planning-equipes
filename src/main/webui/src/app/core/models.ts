@@ -183,7 +183,7 @@ export interface FenetreHoraire {
 /**
  * What `POST /api/stands/compactage-horaires` reports, per stand: dated windows
  * before, rules and exceptions after, plus why a stand was left alone. A call
- * with `appliquer=false` returns the same shape without writing anything.
+ * with `apply=false` returns the same shape without writing anything.
  */
 export interface LigneCompactage {
   standId: string;
@@ -594,7 +594,7 @@ export interface VerrouillagePlanning {
 }
 
 /**
- * Real scale of the problem the next solve will build, from `/api/planning/volumetrie`
+ * Real scale of the problem the next solve will build, from `/api/planning/scale`
  * (mirrors what Timefold's own "Problem scale" log line reports): `posteCount` is one
  * entry per required seat, not per stand, and `contrainteAdHocCount` are the extra
  * ad hoc rules layered on top. `hoursToFill` sums the effective duration of every
@@ -609,12 +609,12 @@ export interface Scale {
   hoursAvailable: number;
 }
 
-/** Une contrainte que l'édition a éteinte, telle que le serveur l'attache au problème. */
+/** A constraint this edition switched off, as the server attaches it to the problem. */
 export interface ConstraintToggle {
   nom?: string;
 }
 
-/** Plafonds de qualité, imposés par la configuration serveur à chaque résolution. */
+/** Quality ceilings, imposed by the server's configuration on every solve. */
 export interface ParametresQualite {
   maxEmplacementsDistinctsParJour?: number;
 }
@@ -624,10 +624,11 @@ export interface HardMediumSoftScore {
   mediumScore: number;
   softScore: number;
   /**
-   * Envoyé par le serveur et jusqu'ici absent d'ici : le front était aveugle à
-   * ce champ (contrat OpenAPI, `docs/schema/openapi.json`). Déclaré optionnel
-   * plutôt que requis parce que le schéma ne porte aucun `required` — affirmer
-   * une garantie que le contrat n'exprime pas serait une invention.
+   * Sent by the server and missing from here until now: the frontend was blind
+   * to this field (OpenAPI contract, `docs/schema/openapi.json`). Declared
+   * optional rather than required because the schema carries no `required` at
+   * all — asserting a guarantee the contract does not express would be an
+   * invention.
    */
   feasible?: boolean;
   zero?: boolean;

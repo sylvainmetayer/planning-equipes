@@ -99,12 +99,12 @@ const ALL_FAMILIES: readonly ReferenceFamily[] = [
 ];
 
 /**
- * What a write to `/api/<resource>` can invalidate, beyond the volumetrie
+ * What a write to `/api/<resource>` can invalidate, beyond the scale
  * (which every write can change and which is therefore always re-read).
  *
  * <p>Reloading all seven collections after every single write meant that
  * renaming ONE typologie re-fetched 150 animateurs and 65 stands on the real
- * dataset, plus a server-side volumetrie computation — a cost that grows with
+ * dataset, plus a server-side scale computation — a cost that grows with
  * the referential and shows up as an unattributable "the app is slow".</p>
  *
  * <p>The lists are deliberately generous rather than minimal: a créneau, an
@@ -131,7 +131,7 @@ export class ReferenceDataStore {
   readonly emplacements = signal<Emplacement[]>([]);
   readonly contraintes = signal<ContrainteAdHoc[]>([]);
   /** Real problem scale for the next solve; see {@link Scale}. */
-  readonly volumetrie = signal<Scale>({
+  readonly scale = signal<Scale>({
     animateurCount: 0,
     posteCount: 0,
     contrainteAdHocCount: 0,
@@ -143,7 +143,7 @@ export class ReferenceDataStore {
 
   /**
    * Re-reads the given families, or all of them when none is named — imports
-   * and dump replays legitimately invalidate everything. The volumetrie is
+   * and dump replays legitimately invalidate everything. The scale is
    * always re-read: any write can change the real problem size.
    */
   async reload(families: readonly ReferenceFamily[] = ALL_FAMILIES): Promise<void> {
@@ -155,7 +155,7 @@ export class ReferenceDataStore {
       this.reloadIf(wanted, 'stands', '/api/stands', this.stands),
       this.reloadIf(wanted, 'emplacements', '/api/emplacements', this.emplacements),
       this.reloadIf(wanted, 'contraintes', '/api/contraintes-ad-hoc', this.contraintes),
-      this.api.get<Scale>('/api/planning/volumetrie').then((scale) => this.volumetrie.set(scale))
+      this.api.get<Scale>('/api/planning/scale').then((scale) => this.scale.set(scale))
     ]);
   }
 

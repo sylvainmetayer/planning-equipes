@@ -54,7 +54,7 @@ function poste(): PosteAnimateurView {
 }
 
 describe('EspacePlanningPage — « Emporter mon planning »', () => {
-  const espaceVue = signal<EspaceAnimateurView | null>(view());
+  const espaceView = signal<EspaceAnimateurView | null>(view());
   const espaceJeton = signal<string | null>('jeton-1');
   const regenererAbonnement = vi.fn(async () => undefined);
   let fixture: ComponentFixture<EspacePlanningPage>;
@@ -78,7 +78,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
         {
           provide: EspaceAnimateurService,
           useValue: {
-            vue: espaceVue,
+            view: espaceView,
             jeton: espaceJeton,
             regenererAbonnement,
             confirmerPlanning: vi.fn(async () => undefined)
@@ -121,7 +121,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
   }
 
   beforeEach(() => {
-    espaceVue.set(view());
+    espaceView.set(view());
     espaceJeton.set('jeton-1');
     regenererAbonnement.mockClear();
   });
@@ -140,7 +140,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
   });
 
   it('puts the band above the day cards, and the subscription first in it', async () => {
-    espaceVue.set(view({ postes: [poste()] }));
+    espaceView.set(view({ postes: [poste()] }));
     await rendre();
 
     const bande = racine().querySelector('.espace-agenda')!;
@@ -203,7 +203,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
   });
 
   it('offers the subscription with nothing published, and the files only with one', async () => {
-    espaceVue.set(view({ publieLe: null, postes: [] }));
+    espaceView.set(view({ publieLe: null, postes: [] }));
     await rendre();
 
     // Subscribing ahead of the publication is the good gesture: the feed fills
@@ -211,14 +211,14 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     expect(racine().querySelector('.espace-agenda-abonnement')).not.toBeNull();
     expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(1);
 
-    espaceVue.set(view({ postes: [poste()] }));
+    espaceView.set(view({ postes: [poste()] }));
     await rendre();
 
     expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(3);
   });
 
   it('hides the whole block while the espace is not loaded yet', async () => {
-    espaceVue.set(null);
+    espaceView.set(null);
     await rendre();
 
     expect(racine().querySelector('.espace-abonnement')).toBeNull();
@@ -269,7 +269,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
   });
 
   it('prints the break of the day under its title, and says when nobody can relay', async () => {
-    espaceVue.set(
+    espaceView.set(
       view({
         postes: [poste()],
         pauses: [
@@ -283,7 +283,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     expect(note.textContent).toContain('Pause de 18:40 à 19:00, sur Stand un');
     expect(note.querySelector('.espace-pause-seul')).toBeNull();
 
-    espaceVue.set(
+    espaceView.set(
       view({
         postes: [poste()],
         pauses: [

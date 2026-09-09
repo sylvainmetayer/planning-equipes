@@ -28,7 +28,7 @@ export function serieVide(): SerieDraft {
 }
 
 /** Comma-separated ISO dates; anything that is not one is dropped. */
-export function datesDepuisTexte(text: string): string[] {
+export function datesFromText(text: string): string[] {
   return text
     .split(/[,;\s]+/)
     .map((date) => date.trim())
@@ -87,7 +87,7 @@ export function regleDepuis(draft: SerieDraft): RegleOuErreur {
     // créneaux of 14 July anyway, and nothing said the input was ignored.
     return { regle: null, erreur: 'DATES_ILLISIBLES', morceau: illisibles.join(', ') };
   }
-  const dates = draft.jours === 'DATES' ? datesDepuisTexte(draft.dates) : [];
+  const dates = draft.jours === 'DATES' ? datesFromText(draft.dates) : [];
   if (draft.jours === 'DATES') {
     if (dates.length === 0) {
       return { regle: null, erreur: 'DATES_REQUISES', morceau: null };
@@ -110,7 +110,7 @@ export function regleDepuis(draft: SerieDraft): RegleOuErreur {
       dateFin: draft.jours === 'DATES' ? null : draft.dateFin,
       joursSemaine: draft.jours === 'JOURS_SEMAINE' ? draft.joursSemaine : [],
       dates,
-      exclusions: datesDepuisTexte(draft.exclusions),
+      exclusions: datesFromText(draft.exclusions),
       fenetres
     },
     erreur: null,
@@ -176,6 +176,6 @@ export function trierAnomalies(anomalies: readonly AnomalieGrille[]): AnomalieGr
 }
 
 /** Icon of a grid anomaly, so the list reads without colour alone. */
-export function iconeAnomalieGrille(anomaly: AnomalieGrille): string {
+export function gridAnomalyIcon(anomaly: AnomalieGrille): string {
   return anomaly.severite === 'ERREUR' ? 'error' : 'warning';
 }

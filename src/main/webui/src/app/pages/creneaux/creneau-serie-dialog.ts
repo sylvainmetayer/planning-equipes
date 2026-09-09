@@ -26,7 +26,7 @@ import {
   bilanGrille,
   erreursIntroduites,
   grilleBloquee,
-  iconeAnomalieGrille,
+  gridAnomalyIcon,
   regleDepuis,
   serieVide,
   signatureSerie,
@@ -120,7 +120,7 @@ export class CreneauSerieDialog {
     () => this.apercuAJour() && !this.bloquee() && !this.creation() && !this.editingLocked()
   );
 
-  protected readonly iconeAnomalieGrille = iconeAnomalieGrille;
+  protected readonly gridAnomalyIcon = gridAnomalyIcon;
 
   protected libelleJourSemaine(jour: JourSemaine): string {
     return libelleJourSemaine(jour);

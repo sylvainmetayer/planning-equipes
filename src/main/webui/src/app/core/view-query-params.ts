@@ -1,7 +1,7 @@
 // View state (sort, quick filter, selected view) held in the URL rather than in
 // browser storage or a per-user server record: a refresh (F5) restores the exact
 // screen, and the same link pasted to a colleague opens the same one. See
-// `docs/decisions/0012-etat-de-vue-dans-l-url.md`.
+// `docs/decisions/0012-etat-de-view-dans-l-url.md`.
 //
 // The month calendar and the animateur timeline seeded their own query params
 // by hand before this file existed; this is that pattern, factored out at the
@@ -79,7 +79,7 @@ export function optionalParam(value: string | null | undefined): string | null {
  * navigation, which parses the address bar the router state was momentarily out
  * of step with — so both usages the URL exists for keep working. A page that
  * ever needs to *observe* its query params has to make this a navigation again,
- * and pay the re-render. See `docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md`.
+ * and pay the re-render. See `docs/decisions/0018-ecrire-l-url-de-view-sans-naviguer.md`.
  */
 export function keepViewInQueryParams(queryParams: () => Params): void {
   const location = inject(Location);

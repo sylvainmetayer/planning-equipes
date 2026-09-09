@@ -105,7 +105,7 @@ export class PausesPage {
     const params = this.route.snapshot.queryParamMap;
     this.jourSelectionne.set(params.get('jour'));
     this.recherche.set(params.get('q') ?? '');
-    this.sansRelaisSeulement.set(params.get('vue') === 'sans-relais');
+    this.sansRelaisSeulement.set(params.get('view') === 'sans-relais');
     void this.recharger();
     keepViewInQueryParams(() => {
       const courant = this.jourCourant();
@@ -114,7 +114,7 @@ export class PausesPage {
         // The first day is the default, and a default is the absence of its param.
         jour: courant && premier && courant.date !== premier.date ? courant.date : null,
         q: optionalParam(this.recherche()),
-        vue: this.sansRelaisSeulement() ? 'sans-relais' : null
+        view: this.sansRelaisSeulement() ? 'sans-relais' : null
       };
     });
   }

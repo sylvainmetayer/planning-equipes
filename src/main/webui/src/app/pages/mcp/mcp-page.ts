@@ -185,7 +185,7 @@ export class McpPage implements OnDestroy {
     this.effacement = setTimeout(() => this.oublierCle(), McpPage.EFFACEMENT_MS);
   }
 
-  protected async copier(text: string): Promise<void> {
+  protected async copy(text: string): Promise<void> {
     await navigator.clipboard.writeText(text);
     if (this.cle()) {
       this.armerEffacement();

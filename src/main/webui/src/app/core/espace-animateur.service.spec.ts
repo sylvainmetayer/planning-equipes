@@ -77,7 +77,7 @@ describe('EspaceAnimateurService', () => {
     service = TestBed.inject(EspaceAnimateurService);
   });
 
-  it('charge la vue et les demandes du jeton, et vide toute erreur passée', async () => {
+  it('charge la view et les demandes du jeton, et vide toute erreur passée', async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('D1')] : view()
     );
@@ -87,13 +87,13 @@ describe('EspaceAnimateurService', () => {
     expect(api.getPreservingHttpError).toHaveBeenCalledWith('/api/espace-animateur/jeton-1');
     expect(api.getPreservingHttpError).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/demandes');
     expect(service.jeton()).toBe('jeton-1');
-    expect(service.vue()?.animateurId).toBe('A1');
+    expect(service.view()?.animateurId).toBe('A1');
     expect(service.demandes().map((d) => d.id)).toEqual(['D1']);
     expect(service.erreur()).toBeNull();
     expect(service.chargement()).toBe(false);
   });
 
-  it('un échec de chargement pose le message et remet la vue à zéro', async () => {
+  it('un échec de chargement pose le message et remet la view à zéro', async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('D1')] : view()
     );
@@ -103,7 +103,7 @@ describe('EspaceAnimateurService', () => {
     await service.charger('jeton-perime');
 
     expect(service.erreur()).toBe('Lien inconnu ou expiré');
-    expect(service.vue()).toBeNull();
+    expect(service.view()).toBeNull();
     expect(service.demandes()).toEqual([]);
     expect(service.chargement()).toBe(false);
   });
@@ -119,7 +119,7 @@ describe('EspaceAnimateurService', () => {
     await service.regenererAbonnement();
 
     expect(api.post).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/abonnement', null);
-    expect(service.vue()?.abonnementToken).toBe('abo-2');
+    expect(service.view()?.abonnementToken).toBe('abo-2');
     // The espace token is a separate credential: nothing else moved, and the
     // page was not reloaded to find out.
     expect(service.jeton()).toBe('jeton-1');
@@ -134,7 +134,7 @@ describe('EspaceAnimateurService', () => {
 
     expect(service.authRequise()).toBe(true);
     expect(service.erreur()).toBeNull();
-    expect(service.vue()).toBeNull();
+    expect(service.view()).toBeNull();
   });
 
   it("valider le code ouvre la session puis recharge l'espace", async () => {
@@ -146,7 +146,7 @@ describe('EspaceAnimateurService', () => {
     await service.validerCode('123456');
 
     expect(api.post).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/session', { code: '123456' });
-    expect(service.vue()?.animateurId).toBe('A1');
+    expect(service.view()?.animateurId).toBe('A1');
     expect(service.authRequise()).toBe(false);
   });
 

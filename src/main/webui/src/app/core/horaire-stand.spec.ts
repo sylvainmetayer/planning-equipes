@@ -8,7 +8,7 @@ import {
   formaterFenetres,
   horaireVide,
   jourSemaineDe,
-  normaliserHeure,
+  normaliseHour,
   parseFenetres,
   resoudreHoraires,
   resoudreJour,
@@ -350,30 +350,30 @@ describe('parseFenetres', () => {
   });
 });
 
-describe('normaliserHeure', () => {
+describe('normaliseHour', () => {
   it('ramène toute écriture usuelle à HH:MM', () => {
-    expect(normaliserHeure('9')).toBe('09:00');
-    expect(normaliserHeure('9h')).toBe('09:00');
-    expect(normaliserHeure('09h05')).toBe('09:05');
-    expect(normaliserHeure('23.59')).toBe('23:59');
-    expect(normaliserHeure('0:00')).toBe('00:00');
+    expect(normaliseHour('9')).toBe('09:00');
+    expect(normaliseHour('9h')).toBe('09:00');
+    expect(normaliseHour('09h05')).toBe('09:05');
+    expect(normaliseHour('23.59')).toBe('23:59');
+    expect(normaliseHour('0:00')).toBe('00:00');
   });
 
   // « 9:5 » se lit 9 h 50 pour l'un et 9 h 05 pour l'autre : deviner réécrirait
   // une heure que l'utilisateur croit avoir saisie.
   it('refuse une minute à un seul chiffre plutôt que de la compléter', () => {
-    expect(normaliserHeure('9:5')).toBeNull();
-    expect(normaliserHeure('9h5')).toBeNull();
-    expect(normaliserHeure('9.5')).toBeNull();
-    expect(normaliserHeure('09:05')).toBe('09:05');
+    expect(normaliseHour('9:5')).toBeNull();
+    expect(normaliseHour('9h5')).toBeNull();
+    expect(normaliseHour('9.5')).toBeNull();
+    expect(normaliseHour('09:05')).toBe('09:05');
   });
 
   it('refuse ce qui n’est pas une heure du jour', () => {
-    expect(normaliserHeure('24:00')).toBeNull();
-    expect(normaliserHeure('12:60')).toBeNull();
-    expect(normaliserHeure('midi')).toBeNull();
-    expect(normaliserHeure('')).toBeNull();
-    expect(normaliserHeure('1:2:3')).toBeNull();
+    expect(normaliseHour('24:00')).toBeNull();
+    expect(normaliseHour('12:60')).toBeNull();
+    expect(normaliseHour('midi')).toBeNull();
+    expect(normaliseHour('')).toBeNull();
+    expect(normaliseHour('1:2:3')).toBeNull();
   });
 });
 

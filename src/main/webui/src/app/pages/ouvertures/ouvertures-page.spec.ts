@@ -74,7 +74,7 @@ function rapport(): RapportOuvertures {
   };
 }
 
-function mount(options: { vue?: string; editingLocked?: boolean; confirme?: boolean; rapport?: RapportOuvertures } = {}) {
+function mount(options: { view?: string; editingLocked?: boolean; confirme?: boolean; rapport?: RapportOuvertures } = {}) {
   const get = vi.fn(async () => options.rapport ?? rapport());
   const put = vi.fn(async () => ({ stands: [{ standId: 'B', regles: 1, exceptions: 0, effectifMin: 3, effectifMax: 3, compacte: true, raison: '' }] }));
   const ask = vi.fn(async () => options.confirme ?? true);
@@ -89,7 +89,7 @@ function mount(options: { vue?: string; editingLocked?: boolean; confirme?: bool
       { provide: ConfirmService, useValue: { ask } },
       { provide: NotificationService, useValue: { notify } },
       { provide: Location, useValue: { path: () => '/ouvertures', replaceState: vi.fn() } },
-      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(options.vue ? { vue: options.vue } : {}) } } }
+      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(options.view ? { view: options.view } : {}) } } }
     ]
   });
   const fixture = TestBed.createComponent(OuverturesPage);
@@ -123,19 +123,19 @@ describe('OuverturesPage — saisie', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('opens on the reading view, and on the entry view from ?vue=saisie', async () => {
+  it('opens on the reading view, and on the entry view from ?view=saisie', async () => {
     const lecture = mount();
     await lecture.fixture.whenStable();
     expect(root(lecture.fixture).querySelector('.grille-saisie')).toBeNull();
     expect(root(lecture.fixture).querySelector('.ouvertures-grille')).not.toBeNull();
 
-    const saisie = mount({ vue: 'saisie' });
+    const saisie = mount({ view: 'saisie' });
     await saisie.fixture.whenStable();
     expect(root(saisie.fixture).querySelector('.grille-saisie')).not.toBeNull();
   });
 
   it('renders one field per stand and créneau, filled from the report, partial cells marked', async () => {
-    const { fixture } = mount({ vue: 'saisie' });
+    const { fixture } = mount({ view: 'saisie' });
     await fixture.whenStable();
 
     expect(root(fixture).querySelectorAll('.grille-saisie input')).toHaveLength(8);
@@ -153,7 +153,7 @@ describe('OuverturesPage — saisie', () => {
     const rapportFamille = rapport();
     rapportFamille.stands[0].jours[0].creneaux[1].horsFamille = true;
     rapportFamille.stands[0].jours[0].creneaux[1].effectif = null;
-    const { fixture, put } = mount({ vue: 'saisie', rapport: rapportFamille });
+    const { fixture, put } = mount({ view: 'saisie', rapport: rapportFamille });
     await fixture.whenStable();
 
     const inerte = champ(fixture, 'A', 2);
@@ -172,7 +172,7 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('marks a typed cell and its row as modified, and counts the stand on the save button', async () => {
-    const { fixture } = mount({ vue: 'saisie' });
+    const { fixture } = mount({ view: 'saisie' });
     await fixture.whenStable();
 
     taper(champ(fixture, 'B', 2), '3');
@@ -186,7 +186,7 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('moves the focus down on Enter, right on the arrow past the caret, and leaves a letter alone', async () => {
-    const { fixture } = mount({ vue: 'saisie' });
+    const { fixture } = mount({ view: 'saisie' });
     await fixture.whenStable();
 
     const depart = champ(fixture, 'A', 1);
@@ -205,7 +205,7 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('lays a pasted block from the focused cell, and lets a single value paste as typed', async () => {
-    const { fixture } = mount({ vue: 'saisie' });
+    const { fixture } = mount({ view: 'saisie' });
     await fixture.whenStable();
 
     const bloc = new Event('paste', { bubbles: true, cancelable: true }) as ClipboardEvent;
@@ -224,7 +224,7 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('copies a day onto the others from its header, and a row from the focused day', async () => {
-    const { fixture } = mount({ vue: 'saisie' });
+    const { fixture } = mount({ view: 'saisie' });
     await fixture.whenStable();
 
     taper(champ(fixture, 'A', 3), '7');
@@ -245,7 +245,7 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('sends only the modified stands, each with all its cells, then reloads and reports', async () => {
-    const { fixture, put, get, notify, ask } = mount({ vue: 'saisie' });
+    const { fixture, put, get, notify, ask } = mount({ view: 'saisie' });
     await fixture.whenStable();
 
     taper(champ(fixture, 'A', 2), '5');
@@ -274,7 +274,7 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('asks before flattening a stand the server reported partial, and writes nothing when refused', async () => {
-    const { fixture, put, ask } = mount({ vue: 'saisie', confirme: false });
+    const { fixture, put, ask } = mount({ view: 'saisie', confirme: false });
     await fixture.whenStable();
 
     taper(champ(fixture, 'B', 2), '3');
@@ -288,7 +288,7 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('discards the changes on demand, and asks before leaving the entry view with some', async () => {
-    const { fixture, ask } = mount({ vue: 'saisie', confirme: false });
+    const { fixture, ask } = mount({ view: 'saisie', confirme: false });
     await fixture.whenStable();
 
     taper(champ(fixture, 'B', 2), '3');
@@ -300,7 +300,7 @@ describe('OuverturesPage — saisie', () => {
 
     taper(champ(fixture, 'B', 2), '3');
     await fixture.whenStable();
-    (fixture.componentInstance as unknown as { changerVue(view: string): Promise<void> }).changerVue('CONSULTER');
+    (fixture.componentInstance as unknown as { changeView(view: string): Promise<void> }).changeView('CONSULTER');
     await fixture.whenStable();
     expect(ask).toHaveBeenCalledOnce();
     // Refused: still on the entry view, cells intact.
@@ -309,7 +309,7 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('locks every field and the save while a solve is running, and says so', async () => {
-    const { fixture } = mount({ vue: 'saisie', editingLocked: true });
+    const { fixture } = mount({ view: 'saisie', editingLocked: true });
     await fixture.whenStable();
 
     expect(root(fixture).querySelector('.locked-hint')).not.toBeNull();

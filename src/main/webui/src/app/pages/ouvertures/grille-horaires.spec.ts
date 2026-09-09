@@ -5,14 +5,14 @@ import {
   cellulesDepuis,
   cellulesInertes,
   cellulesPartielles,
-  compterRecopiees,
+  countCopied,
   collerBloc,
   colonnes,
   deplacement,
   ecrireCellule,
   jourDeReference,
   libelleColonne,
-  lireCellule,
+  readCell,
   recopierJour,
   saisie,
   standsModifies,
@@ -119,19 +119,19 @@ describe('colonnes et cellules', () => {
   });
 });
 
-describe('lireCellule', () => {
+describe('readCell', () => {
   it('lit un effectif, et trois façons d’écrire une case fermée', () => {
-    expect(lireCellule('3')).toBe(3);
-    expect(lireCellule(' 12 ')).toBe(12);
-    expect(lireCellule('')).toBeNull();
-    expect(lireCellule('0')).toBeNull();
-    expect(lireCellule('-')).toBeNull();
+    expect(readCell('3')).toBe(3);
+    expect(readCell(' 12 ')).toBe(12);
+    expect(readCell('')).toBeNull();
+    expect(readCell('0')).toBeNull();
+    expect(readCell('-')).toBeNull();
   });
 
   it('ne lit pas ce qui n’est pas une valeur', () => {
-    expect(lireCellule('a')).toBeUndefined();
-    expect(lireCellule('2.5')).toBeUndefined();
-    expect(lireCellule('-1')).toBeUndefined();
+    expect(readCell('a')).toBeUndefined();
+    expect(readCell('2.5')).toBeUndefined();
+    expect(readCell('-1')).toBeUndefined();
   });
 });
 
@@ -174,8 +174,8 @@ describe('standsModifies et saisie', () => {
     const depart = cellulesDepuis(rapport());
     const after = recopierJour(ecrireCellule(depart, { standId: 'A', creneauId: 4 }, 7), '2026-07-09', ['A'], cols);
 
-    expect(compterRecopiees(depart, after, cols)).toBeGreaterThan(0);
-    expect(compterRecopiees(depart, depart, cols)).toBe(0);
+    expect(countCopied(depart, after, cols)).toBeGreaterThan(0);
+    expect(countCopied(depart, depart, cols)).toBe(0);
   });
 
   it('ne modifie jamais la carte reçue', () => {

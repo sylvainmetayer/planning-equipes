@@ -24,7 +24,7 @@ import { Animateur, Creneau, Stand } from './models';
  * (Ctrl+K, Ctrl+Enter) cannot be confused with typing, and Ctrl+Enter is
  * precisely meant to be pressed from inside a field.</p>
  */
-export function estChampDeSaisie(target: EventTarget | null): boolean {
+export function isInputField(target: EventTarget | null): boolean {
   const element = target as HTMLElement | null;
   if (!element || typeof element.tagName !== 'string') {
     return false;

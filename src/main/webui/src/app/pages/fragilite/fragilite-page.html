@@ -17,7 +17,7 @@
     @if (vueModifiee()) {
       <button matButton type="button" (click)="reinitialiser()">
         <mat-icon>filter_alt_off</mat-icon>
-        <ng-container i18n="@@fragilite.reset">Réinitialiser la vue</ng-container>
+        <ng-container i18n="@@fragilite.reset">Réinitialiser la view</ng-container>
       </button>
     }
   </mat-card-actions>
@@ -50,9 +50,9 @@
       }
 
       <div class="fragilite-controles">
-        <mat-button-toggle-group [value]="vue()" (valueChange)="vue.set($event)" hideSingleSelectionIndicator>
-          <mat-button-toggle value="ANIMATEURS" i18n="@@fragilite.vue.animateurs">Animateurs</mat-button-toggle>
-          <mat-button-toggle value="COMPETENCES" i18n="@@fragilite.vue.competences">Compétences rares</mat-button-toggle>
+        <mat-button-toggle-group [value]="view()" (valueChange)="view.set($event)" hideSingleSelectionIndicator>
+          <mat-button-toggle value="ANIMATEURS" i18n="@@fragilite.view.animateurs">Animateurs</mat-button-toggle>
+          <mat-button-toggle value="COMPETENCES" i18n="@@fragilite.view.competences">Compétences rares</mat-button-toggle>
         </mat-button-toggle-group>
         <mat-button-toggle-group [value]="filtre()" (valueChange)="filtre.set($event)" hideSingleSelectionIndicator>
           <mat-button-toggle value="TOUS" i18n="@@fragilite.filtre.tous">Tous</mat-button-toggle>
@@ -71,7 +71,7 @@
         </p>
       }
 
-      @if (vue() === 'ANIMATEURS') {
+      @if (view() === 'ANIMATEURS') {
         <div class="table-wrapper">
           <table class="fragilite-table">
             <caption class="visually-hidden" i18n="@@fragilite.animateurs.caption">Animateurs classés par criticité : ce que leur désistement laisserait sous l'effectif minimum</caption>

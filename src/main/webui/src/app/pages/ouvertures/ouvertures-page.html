@@ -7,18 +7,18 @@
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
-    <mat-button-toggle-group [value]="vue()" (valueChange)="changerVue($event)" hideSingleSelectionIndicator
-                             i18n-aria-label="@@ouvertures.vue.label" aria-label="Vue">
+    <mat-button-toggle-group [value]="view()" (valueChange)="changeView($event)" hideSingleSelectionIndicator
+                             i18n-aria-label="@@ouvertures.view.label" aria-label="Vue">
       <mat-button-toggle value="CONSULTER">
         <mat-icon>visibility</mat-icon>
-        <ng-container i18n="@@ouvertures.vue.consulter">Consulter</ng-container>
+        <ng-container i18n="@@ouvertures.view.consulter">Consulter</ng-container>
       </mat-button-toggle>
       <mat-button-toggle value="SAISIR">
         <mat-icon>grid_on</mat-icon>
-        <ng-container i18n="@@ouvertures.vue.saisir">Saisir</ng-container>
+        <ng-container i18n="@@ouvertures.view.saisir">Saisir</ng-container>
       </mat-button-toggle>
     </mat-button-toggle-group>
-    @if (vue() === 'SAISIR') {
+    @if (view() === 'SAISIR') {
       <button matButton="filled" type="button" class="saisie-enregistrer"
               [disabled]="editingLocked() || enregistrement() || standsModifies().length === 0" (click)="enregistrer()">
         <mat-icon>save</mat-icon>
@@ -86,7 +86,7 @@
         <span><i class="pastille source-exception"></i><ng-container i18n="@@ouvertures.legende.exception">Décidé par une exception datée</ng-container></span>
       </div>
 
-      @if (vue() === 'SAISIR') {
+      @if (view() === 'SAISIR') {
         <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
           Une case par stand et par créneau : l'effectif à tenir, vide pour fermé. Flèches et Entrée pour circuler,
           collage d'un bloc copié depuis un tableur, et un bouton par jour ou par ligne pour recopier. Rien n'est

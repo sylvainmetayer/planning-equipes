@@ -6,7 +6,7 @@ import {
   buildDestinationsNavigation,
   buildRaccourcisNavigation,
   chercherCommandes,
-  estChampDeSaisie,
+  isInputField,
   routePourTouche
 } from './keyboard-shortcuts';
 import { Animateur, Creneau, Stand } from './models';
@@ -44,25 +44,25 @@ function creneau(id: number, date: string, heureDebut: string, heureFin: string)
   return { id, jour: 1, date, heureDebut, heureFin };
 }
 
-describe('estChampDeSaisie', () => {
+describe('isInputField', () => {
   it('holds back the shortcuts inside every kind of text entry', () => {
-    expect(estChampDeSaisie(element('input'))).toBe(true);
-    expect(estChampDeSaisie(element('textarea'))).toBe(true);
-    expect(estChampDeSaisie(element('select'))).toBe(true);
-    expect(estChampDeSaisie(element('div', { role: 'textbox' }))).toBe(true);
-    expect(estChampDeSaisie(element('div', { role: 'combobox' }))).toBe(true);
+    expect(isInputField(element('input'))).toBe(true);
+    expect(isInputField(element('textarea'))).toBe(true);
+    expect(isInputField(element('select'))).toBe(true);
+    expect(isInputField(element('div', { role: 'textbox' }))).toBe(true);
+    expect(isInputField(element('div', { role: 'combobox' }))).toBe(true);
   });
 
   it('lets them through everywhere else', () => {
-    expect(estChampDeSaisie(element('div'))).toBe(false);
-    expect(estChampDeSaisie(element('button'))).toBe(false);
-    expect(estChampDeSaisie(null)).toBe(false);
+    expect(isInputField(element('div'))).toBe(false);
+    expect(isInputField(element('button'))).toBe(false);
+    expect(isInputField(null)).toBe(false);
   });
 
   it('holds them back inside a contenteditable region', () => {
     const editable = element('div');
     Object.defineProperty(editable, 'isContentEditable', { value: true });
-    expect(estChampDeSaisie(editable)).toBe(true);
+    expect(isInputField(editable)).toBe(true);
   });
 });
 

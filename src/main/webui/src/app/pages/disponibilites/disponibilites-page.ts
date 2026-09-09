@@ -100,7 +100,7 @@ export class DisponibilitesPage {
    * Opens or closes the window. Closing is enforced server-side: the espaces
    * refuse a declaration, they do not merely hide the form.
    */
-  protected async enregistrerFenetre(open: boolean): Promise<void> {
+  protected async saveWindow(open: boolean): Promise<void> {
     this.fenetreEnCours.set(true);
     try {
       const reponse = await this.api.put<ConfigurationCollecte>('/api/disponibilites/configuration', {
@@ -137,7 +137,7 @@ export class DisponibilitesPage {
     }
   }
 
-  protected async appliquer(declaration: DeclarationAdminView): Promise<void> {
+  protected async apply(declaration: DeclarationAdminView): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: $localize`:@@dispo.appliquerTitre:Appliquer la déclaration de ${declaration.animateurNom}:animateur: ?`,
       message: $localize`:@@dispo.appliquerMessage:Sa fiche dira désormais ce qu'il a déclaré : ${declaration.joursIndisponibles.length}:jours: jour(s) d'indisponibilité et ${declaration.souhaitsLabels.length}:souhaits: souhait(s) remplaceront ce qu'elle contient. Le planning enregistré devra être régénéré.`,

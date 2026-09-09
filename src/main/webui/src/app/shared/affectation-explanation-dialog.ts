@@ -140,7 +140,7 @@ export interface AffectationExplanationDialogData {
                       }
                     </ul>
                   }
-                  <button matButton [disabled]="applicationEnCours()" (click)="appliquer(suggestion)">
+                  <button matButton [disabled]="applicationEnCours()" (click)="apply(suggestion)">
                     <mat-icon>check</mat-icon>
                     <ng-container i18n="@@affectationExplanation.repairApply">Appliquer</ng-container>
                   </button>
@@ -267,7 +267,7 @@ export class AffectationExplanationDialog {
    * persisted plan now differs from the one this dialog was opened on, so the
    * page behind has to reload rather than keep showing the pre-repair seat.
    */
-  protected async appliquer(suggestion: SuggestionReparation): Promise<void> {
+  protected async apply(suggestion: SuggestionReparation): Promise<void> {
     this.applicationEnCours.set(true);
     this.suggestionsError.set('');
     try {

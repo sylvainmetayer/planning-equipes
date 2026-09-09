@@ -531,7 +531,7 @@ describe('ReferenceCrudService', () => {
   });
 
   describe('reload', () => {
-    it('rapporte l\'erreur sans la propager à la vue', async () => {
+    it('rapporte l\'erreur sans la propager à la view', async () => {
       store.reload.mockRejectedValueOnce(new Error('indisponible'));
 
       await expect(service.reload()).resolves.toBeUndefined();

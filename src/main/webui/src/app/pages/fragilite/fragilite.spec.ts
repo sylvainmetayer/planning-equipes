@@ -64,7 +64,7 @@ function rapport(partial: Partial<RapportFragilite>): RapportFragilite {
 }
 
 describe('lireVue / lireFiltre', () => {
-  it('tombe sur la vue par défaut pour toute valeur inconnue', () => {
+  it('tombe sur la view par défaut pour toute valeur inconnue', () => {
     expect(lireVue(null)).toBe('ANIMATEURS');
     expect(lireVue('n_importe_quoi')).toBe('ANIMATEURS');
     expect(lireVue('COMPETENCES')).toBe('COMPETENCES');

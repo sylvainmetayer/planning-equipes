@@ -25,7 +25,7 @@ import { NotificationService } from '../core/notification.service';
       <mat-card appearance="outlined" class="output-panel">
         <mat-card-content>
           <div class="output-panel-actions">
-            <button matButton type="button" (click)="copier()">
+            <button matButton type="button" (click)="copy()">
               <mat-icon>content_copy</mat-icon>
               @if (copie()) {
                 <span i18n="@@output.copied">Copié</span>
@@ -49,7 +49,7 @@ export class OutputPanel {
 
   private readonly notifications = inject(NotificationService);
 
-  protected async copier(): Promise<void> {
+  protected async copy(): Promise<void> {
     try {
       await navigator.clipboard.writeText(this.text());
       this.copie.set(true);

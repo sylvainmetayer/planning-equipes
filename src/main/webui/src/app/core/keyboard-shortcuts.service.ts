@@ -18,7 +18,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { CommandPaletteDialog } from '../shared/command-palette-dialog';
 import { KeyboardShortcutsDialog } from '../shared/keyboard-shortcuts-dialog';
-import { CommandePalette, estChampDeSaisie, routePourTouche } from './keyboard-shortcuts';
+import { CommandePalette, isInputField, routePourTouche } from './keyboard-shortcuts';
 
 /**
  * How long the `g` prefix stays armed. Long enough to type two keys without
@@ -83,7 +83,7 @@ export class KeyboardShortcutsService {
     if (this.gererCombinaison(event)) {
       return;
     }
-    if (event.ctrlKey || event.metaKey || event.altKey || estChampDeSaisie(event.target)) {
+    if (event.ctrlKey || event.metaKey || event.altKey || isInputField(event.target)) {
       this.prefixeArmeJusqua = 0;
       return;
     }

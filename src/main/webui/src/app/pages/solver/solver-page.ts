@@ -340,20 +340,20 @@ export class SolverPage {
    * Volumetry of the problem Timefold is about to explore, recomputed live as
    * `referenceData`'s signals change (a CRUD edit, a sample load, a CSV/SQL
    * import...). `animateurTotal`/`posteTotal`/`contrainteAdHocTotal` come from
-   * `/api/planning/volumetrie`, built server-side the exact same way an actual
+   * `/api/planning/scale`, built server-side the exact same way an actual
    * solve is (one poste per required seat, not per stand) so they never drift
    * from what the solver logs report. `créneauTotal` counts the
    * edition's slots — exactly what the solver consumes.
    */
   private readonly referenceData = inject(ReferenceDataStore);
-  protected readonly animateurTotal = computed(() => this.referenceData.volumetrie().animateurCount);
-  protected readonly posteTotal = computed(() => this.referenceData.volumetrie().posteCount);
-  protected readonly contrainteAdHocTotal = computed(() => this.referenceData.volumetrie().contrainteAdHocCount);
+  protected readonly animateurTotal = computed(() => this.referenceData.scale().animateurCount);
+  protected readonly posteTotal = computed(() => this.referenceData.scale().posteCount);
+  protected readonly contrainteAdHocTotal = computed(() => this.referenceData.scale().contrainteAdHocCount);
   protected readonly creneauTotal = computed(() => this.referenceData.creneaux().length);
   /** Hours the seats add up to, stand closures deducted — the same basis as the Heures page. */
-  protected readonly heuresAPourvoir = computed(() => this.referenceData.volumetrie().hoursToFill);
+  protected readonly heuresAPourvoir = computed(() => this.referenceData.scale().hoursToFill);
   /** Legal ceiling of what the animateurs may work over the event, unavailable days deducted. */
-  protected readonly heuresOffertes = computed(() => this.referenceData.volumetrie().hoursAvailable);
+  protected readonly heuresOffertes = computed(() => this.referenceData.scale().hoursAvailable);
   /**
    * Hours to fill over hours available. A ceiling, not a forecast: competences,
    * rest between shifts and the pause rule all take from the denominator, so a

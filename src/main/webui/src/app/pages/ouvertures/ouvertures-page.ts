@@ -40,14 +40,14 @@ import {
   cellulesPartielles,
   key,
   collerBloc,
-  compterRecopiees,
+  countCopied,
   colonnes,
   deplacement,
   ecrireCellule,
   estPartielle,
   jourDeReference,
   libelleColonne,
-  lireCellule,
+  readCell,
   recopierJour,
   saisie,
   standsModifies
@@ -108,8 +108,8 @@ export class OuverturesPage {
   protected readonly chargement = signal(true);
   protected readonly filtre = signal<FiltreOuvertures>('TOUS');
   protected readonly recherche = signal('');
-  protected readonly vue = signal<VueOuvertures>(
-    this.route.snapshot.queryParamMap.get('vue') === 'saisie' ? 'SAISIR' : 'CONSULTER'
+  protected readonly view = signal<VueOuvertures>(
+    this.route.snapshot.queryParamMap.get('view') === 'saisie' ? 'SAISIR' : 'CONSULTER'
   );
 
   /* ------------------------------- entry grid ------------------------------ */
@@ -143,7 +143,7 @@ export class OuverturesPage {
   private readonly anomaliesParStand = computed(() => anomaliesParStand(this.rapport()?.anomalies ?? []));
 
   constructor() {
-    keepViewInQueryParams(() => ({ vue: optionalParam(this.vue() === 'SAISIR' ? 'saisie' : '') }));
+    keepViewInQueryParams(() => ({ view: optionalParam(this.view() === 'SAISIR' ? 'saisie' : '') }));
     void this.recharger();
   }
 
@@ -165,7 +165,7 @@ export class OuverturesPage {
   }
 
   /** Leaving the entry view with unsaved cells asks first: they would silently survive, invisible, until the next reload. */
-  protected async changerVue(view: VueOuvertures): Promise<void> {
+  protected async changeView(view: VueOuvertures): Promise<void> {
     if (view === 'CONSULTER' && this.standsModifies().length > 0) {
       const abandon = await this.confirm.ask({
         title: $localize`:@@ouvertures.saisie.quitterTitle:Abandonner les modifications ?`,
@@ -178,7 +178,7 @@ export class OuverturesPage {
       }
       this.cellules.set(this.reference());
     }
-    this.vue.set(view);
+    this.view.set(view);
   }
 
   protected infobullePartielle(): string {
@@ -220,7 +220,7 @@ export class OuverturesPage {
     if (this.estInerte(standId, creneauId)) {
       return;
     }
-    const lu = lireCellule(text);
+    const lu = readCell(text);
     if (lu !== undefined) {
       this.cellules.update((cellules) => ecrireCellule(cellules, { standId, creneauId }, lu));
     }
@@ -303,7 +303,7 @@ export class OuverturesPage {
   private appliquerRecopie(recopie: (cellules: Cellules) => Cellules): void {
     const before = this.cellules();
     const after = recopie(before);
-    const changees = compterRecopiees(before, after, this.colonnes());
+    const changees = countCopied(before, after, this.colonnes());
     this.cellules.set(after);
     if (changees === 0) {
       this.notifications.notify({

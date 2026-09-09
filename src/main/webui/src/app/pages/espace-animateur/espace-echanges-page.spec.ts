@@ -152,11 +152,11 @@ type PageInternals = {
 };
 
 describe('EspaceEchangesPage', () => {
-  const espaceVue = signal<EspaceAnimateurView | null>(view());
+  const espaceView = signal<EspaceAnimateurView | null>(view());
   const espaceDemandes = signal<DemandeEchangeView[]>([]);
   const espaceRecues = signal<DemandeEchangeView[]>([]);
   const espace = {
-    vue: espaceVue,
+    view: espaceView,
     demandes: espaceDemandes,
     demandesRecues: espaceRecues,
     postesCollegue: vi.fn(),
@@ -169,7 +169,7 @@ describe('EspaceEchangesPage', () => {
   const notifications = { notify: vi.fn() };
 
   beforeEach(() => {
-    espaceVue.set(view());
+    espaceView.set(view());
     espaceDemandes.set([]);
     espaceRecues.set([]);
     for (const stub of [
@@ -433,7 +433,7 @@ describe('EspaceEchangesPage', () => {
     });
 
     it('falls back to the colleague id when the view does not name them', () => {
-      espaceVue.set(view({ collegues: [] }));
+      espaceView.set(view({ collegues: [] }));
       const page = createPage();
       page.posteChoisi.set(poste());
       page.cibleId.set('bob');
@@ -619,10 +619,10 @@ describe('EspaceEchangesPage', () => {
     });
 
     it('treats a closed foire as read-only, and an unloaded espace as open', () => {
-      espaceVue.set(view({ foireOuverte: false }));
+      espaceView.set(view({ foireOuverte: false }));
       expect(createPage().foireOuverte()).toBe(false);
 
-      espaceVue.set(null);
+      espaceView.set(null);
       expect(createPage().foireOuverte()).toBe(true);
     });
   });
@@ -676,7 +676,7 @@ describe('EspaceEchangesPage', () => {
 
 describe('EspaceEchangesPage rendering', () => {
   let fixture: ComponentFixture<EspaceEchangesPage>;
-  const espaceVue = signal<EspaceAnimateurView | null>(view());
+  const espaceView = signal<EspaceAnimateurView | null>(view());
   const espaceDemandes = signal<DemandeEchangeView[]>([]);
   const espaceRecues = signal<DemandeEchangeView[]>([]);
   let espace: {
@@ -701,7 +701,7 @@ describe('EspaceEchangesPage rendering', () => {
         provideZonelessChangeDetection(),
         {
           provide: EspaceAnimateurService,
-          useValue: { vue: espaceVue, demandes: espaceDemandes, demandesRecues: espaceRecues, ...espace }
+          useValue: { view: espaceView, demandes: espaceDemandes, demandesRecues: espaceRecues, ...espace }
         },
         { provide: NotificationService, useValue: { notify: vi.fn() } }
       ]
@@ -723,7 +723,7 @@ describe('EspaceEchangesPage rendering', () => {
   }
 
   beforeEach(() => {
-    espaceVue.set(view());
+    espaceView.set(view());
     espaceDemandes.set([]);
     espaceRecues.set([]);
   });
@@ -744,7 +744,7 @@ describe('EspaceEchangesPage rendering', () => {
   });
 
   it('withdraws every action once the foire is closed, and says so', async () => {
-    espaceVue.set(view({ foireOuverte: false }));
+    espaceView.set(view({ foireOuverte: false }));
     espaceDemandes.set([demande('d1', 'PROPOSEE')]);
     espaceRecues.set([demande('d2', 'EN_ATTENTE_CIBLE', { demandeurId: 'bob', cibleId: 'alice' })]);
     await rendre();

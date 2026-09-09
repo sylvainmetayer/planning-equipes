@@ -67,7 +67,7 @@ export class FragilitePage {
   protected readonly rapport = signal<RapportFragilite | null>(null);
   protected readonly chargement = signal(true);
   protected readonly erreur = signal('');
-  protected readonly vue = signal<VueFragilite>('ANIMATEURS');
+  protected readonly view = signal<VueFragilite>('ANIMATEURS');
   protected readonly filtre = signal<FiltreFragilite>('TOUS');
   protected readonly recherche = signal('');
   /** Animateur whose detailed seats are unfolded; only one at a time. */
@@ -85,17 +85,17 @@ export class FragilitePage {
   );
   /** True as soon as the screen shows something other than its default view. */
   protected readonly vueModifiee = computed(
-    () => this.vue() !== 'ANIMATEURS' || this.filtre() !== 'TOUS' || this.recherche().trim() !== '',
+    () => this.view() !== 'ANIMATEURS' || this.filtre() !== 'TOUS' || this.recherche().trim() !== '',
   );
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
-    this.vue.set(lireVue(params.get('vue')));
+    this.view.set(lireVue(params.get('view')));
     this.filtre.set(lireFiltre(params.get('filtre')));
     this.recherche.set(params.get('q') ?? '');
     void this.recharger();
     keepViewInQueryParams(() => ({
-      vue: this.vue() === 'ANIMATEURS' ? null : this.vue(),
+      view: this.view() === 'ANIMATEURS' ? null : this.view(),
       filtre: this.filtre() === 'TOUS' ? null : this.filtre(),
       q: optionalParam(this.recherche()),
     }));
@@ -114,7 +114,7 @@ export class FragilitePage {
   }
 
   protected reinitialiser(): void {
-    this.vue.set('ANIMATEURS');
+    this.view.set('ANIMATEURS');
     this.filtre.set('TOUS');
     this.recherche.set('');
   }

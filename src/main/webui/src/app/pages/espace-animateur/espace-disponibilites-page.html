@@ -1,12 +1,12 @@
 @if (chargement()) {
   <mat-progress-bar mode="indeterminate" />
-} @else if (vue(); as declaration) {
+} @else if (view(); as declaration) {
   <mat-card class="espace-dispo-intro" appearance="outlined">
     <mat-card-content>
       <p i18n="@@espace.dispo.intro">
         Dites à l'organisation les jours où vous ne pouvez pas venir, et les types de jeux que vous
         aimeriez animer. Ce que vous envoyez est une <strong>proposition</strong> : l'organisation la
-        relit avant de l'appliquer.
+        relit avant de l'apply.
       </p>
       @if (declaration.collecteOuverte) {
         <p class="espace-dispo-fenetre">

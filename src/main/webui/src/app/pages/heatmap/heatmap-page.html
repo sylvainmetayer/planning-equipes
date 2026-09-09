@@ -14,7 +14,7 @@
       @if (vueModifiee()) {
         <button matButton type="button" (click)="reinitialiserVue()">
           <mat-icon>filter_alt_off</mat-icon>
-          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+          <ng-container i18n="@@common.resetView">Réinitialiser la view</ng-container>
         </button>
       }
       <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">

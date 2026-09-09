@@ -161,7 +161,7 @@ export class AnimateursPage {
       });
     } catch {
       this.notifications.notify({
-        title: $localize`:@@animateurs.lienCopieEchec:Impossible de copier le lien`,
+        title: $localize`:@@animateurs.lienCopieEchec:Impossible de copy le lien`,
         message: lien,
         variant: 'warning'
       });

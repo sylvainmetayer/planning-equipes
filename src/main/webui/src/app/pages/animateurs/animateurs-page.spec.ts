@@ -496,7 +496,7 @@ describe('AnimateursPage table', () => {
         nomme,
         `l'en-tête « ${entete.textContent!.trim().slice(0, 30)} » contient un contrôle nommé ` +
           `(« ${controles[0].getAttribute('aria-label')!.slice(0, 40)}… ») et laisse son bouton de ` +
-          `tri se nommer par son contenu : appliquer appSortHeaderName`
+          `tri se nommer par son contenu : apply appSortHeaderName`
       ).toBe(true);
     }
   });

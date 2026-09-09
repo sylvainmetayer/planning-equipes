@@ -105,7 +105,7 @@ export class EchangesPage {
         this.api.get<ConfigurationFoire>('/api/echanges/configuration')
       ]);
       this.demandes.set(demandes);
-      this.appliquer(configuration);
+      this.apply(configuration);
     } catch (error) {
       this.report(error);
     } finally {
@@ -114,7 +114,7 @@ export class EchangesPage {
   }
 
   /** One place to fold the server's answer back into the screen. */
-  private appliquer(configuration: ConfigurationFoire): void {
+  private apply(configuration: ConfigurationFoire): void {
     this.foireOuverte.set(configuration.foireOuverte);
     this.debut.set(configuration.debut);
     this.fin.set(configuration.fin);
@@ -131,7 +131,7 @@ export class EchangesPage {
   }
 
   /** Saves the bounds without touching the switch. */
-  protected async enregistrerFenetre(): Promise<void> {
+  protected async saveWindow(): Promise<void> {
     await this.basculerFoire(this.foireOuverte() === true);
   }
 
@@ -147,7 +147,7 @@ export class EchangesPage {
         debut: this.debut(),
         fin: this.fin()
       });
-      this.appliquer(configuration);
+      this.apply(configuration);
       this.notifications.notify({
         title: configuration.foireOuverte
           ? $localize`:@@echanges.foireOuverteNotif:Foire au planning ouverte : les animateurs peuvent proposer des échanges.`

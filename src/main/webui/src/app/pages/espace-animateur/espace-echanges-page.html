@@ -48,7 +48,7 @@
       <mat-form-field appearance="outline">
         <mat-label i18n="@@espace.echanges.creneau">Créneau concerné</mat-label>
         <mat-select [ngModel]="posteChoisi()" (ngModelChange)="choisirPoste($event)">
-          @for (poste of espace.vue()?.postes ?? []; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
+          @for (poste of espace.view()?.postes ?? []; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
             <mat-option [value]="poste">
               {{ poste.date | date: 'EEE d MMM' }} {{ poste.heureDebut }}–{{ poste.heureFin }} · {{ poste.standNom }}
             </mat-option>
@@ -58,7 +58,7 @@
       <mat-form-field appearance="outline">
         <mat-label i18n="@@espace.echanges.collegue">Échanger avec</mat-label>
         <mat-select [ngModel]="cibleId()" (ngModelChange)="choisirCible($event)">
-          @for (collegue of espace.vue()?.collegues ?? []; track collegue.id) {
+          @for (collegue of espace.view()?.collegues ?? []; track collegue.id) {
             <mat-option [value]="collegue.id">{{ collegue.nomComplet }}</mat-option>
           }
         </mat-select>
