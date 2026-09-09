@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -47,6 +48,20 @@ public class StaffingService {
                 referenceDataService.listTypologies(),
                 parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.getPauseMinimaleEntreVacationsMinutes(),
-                StaffingAnalyzer.referentielsManquants(seats.stands(), seats.creneaux(), animateurs));
+                StaffingAnalyzer.referentielsManquants(seats.stands(), seats.creneaux(), animateurs),
+                fenetresRepas());
+    }
+
+    /**
+     * The meal windows the floor must account for — none when
+     * {@code coupureRepasObligatoire} is switched off for this edition. A rule
+     * the solver is not asked to honour must not raise the number this screen
+     * tells the organiser to recruit.
+     */
+    private List<FenetreRepas> fenetresRepas() {
+        if (referenceDataService.getContraintesDesactivees().contains("coupureRepasObligatoire")) {
+            return List.of();
+        }
+        return FenetreRepas.depuis(referenceDataService.getParametresDecoupage());
     }
 }

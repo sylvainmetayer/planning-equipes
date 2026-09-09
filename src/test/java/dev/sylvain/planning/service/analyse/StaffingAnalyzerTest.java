@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -504,6 +505,85 @@ class StaffingAnalyzerTest {
         assertThat(escape.minimumTotal()).isEqualTo(4);
         assertThat(escape.borneRetenue()).isEqualTo(BorneRetenue.CHARGE_HORAIRE);
         assertThat(escape.manque()).isEqualTo(3);
+    }
+
+    // --- Coupure repas (issue #438) ---------------------------------------
+
+    private static final List<FenetreRepas> MIDI =
+            List.of(new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60));
+
+    /**
+     * A grid that never stops between morning and afternoon cannot be staffed
+     * by its peak: whoever holds both halves owes a meal break neither leaves
+     * room for. The bound is 14 where the peak says 10 — the real minimum is
+     * 20, so it stays a bound, and a much better one.
+     */
+    @Test
+    void aGridWithNoRoomToEatRaisesTheFloorAboveItsPeak() {
+        Creneau matin = creneau(1, LocalTime.of(8, 0), LocalTime.of(13, 0));
+        Creneau apresMidi = creneau(2, LocalTime.of(13, 0), LocalTime.of(20, 0));
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 10), matin, 10));
+        postes.addAll(postes(stand("B", 10), apresMidi, 10));
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0, List.of(), MIDI);
+
+        assertThat(summary.picSimultane()).isEqualTo(10);
+        assertThat(summary.picRepas()).isEqualTo(14);
+        assertThat(summary.minimumTotal()).isEqualTo(14);
+        assertThat(summary.borneRetenue()).isEqualTo(BorneRetenue.COUPURE_REPAS);
+        assertThat(summary.parJour().get(0).picRepas()).isEqualTo(14);
+    }
+
+    /** The same day cut around the window: ten people eat from noon to two, nothing is inflated. */
+    @Test
+    void aGridThatLeavesTheWindowFreeInflatesNothing() {
+        Creneau matin = creneau(1, LocalTime.of(8, 0), LocalTime.of(12, 0));
+        Creneau apresMidi = creneau(2, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 10), matin, 10));
+        postes.addAll(postes(stand("B", 10), apresMidi, 10));
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0, List.of(), MIDI);
+
+        assertThat(summary.picRepas()).isLessThanOrEqualTo(summary.picSimultane());
+        assertThat(summary.minimumTotal()).isEqualTo(10);
+        assertThat(summary.borneRetenue()).isNotEqualTo(BorneRetenue.COUPURE_REPAS);
+    }
+
+    /** A day that never crosses the window owes nothing, and the bound says nothing. */
+    @Test
+    void aDayEntirelyOnOneSideOfTheWindowOwesNothing() {
+        Creneau apresMidi = creneau(1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+
+        StaffingSummary summary = analyzer.analyze(
+                postes(stand("A", 10), apresMidi, 10), List.of(), TYPOLOGIES, 48 * 60, 0, List.of(), MIDI);
+
+        assertThat(summary.minimumTotal()).isEqualTo(10);
+        assertThat(summary.borneRetenue()).isNotEqualTo(BorneRetenue.COUPURE_REPAS);
+    }
+
+    /**
+     * The rule switched off, no window reaches the analyzer, and the floor is
+     * exactly what it was: a rule the solver is not asked to honour must not
+     * raise the number the screen tells the organiser to recruit.
+     */
+    @Test
+    void withoutWindowsTheFloorIsUnchanged() {
+        Creneau matin = creneau(1, LocalTime.of(8, 0), LocalTime.of(13, 0));
+        Creneau apresMidi = creneau(2, LocalTime.of(13, 0), LocalTime.of(20, 0));
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 10), matin, 10));
+        postes.addAll(postes(stand("B", 10), apresMidi, 10));
+
+        StaffingSummary avec = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0, List.of());
+        StaffingSummary sans = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0);
+
+        // 120 person-hours over one day already need 12 people whatever the
+        // shape: that is the floor the windows must not move.
+        assertThat(avec.picRepas()).isZero();
+        assertThat(avec.minimumTotal()).isEqualTo(12);
+        assertThat(sans.minimumTotal()).isEqualTo(12);
     }
 
     private static Stand stand(String id, int effectifMin) {

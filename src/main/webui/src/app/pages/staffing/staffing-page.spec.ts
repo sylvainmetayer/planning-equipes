@@ -38,6 +38,7 @@ function jour(overrides: Partial<JourStaffing> = {}): JourStaffing {
     heures: 200,
     picSimultane: 18,
     picAvecPause: 22,
+    picRepas: 0,
     minimumJour: 22,
     disponibles: 40,
     ...overrides,
@@ -69,6 +70,7 @@ function typologie(overrides: Partial<TypologieStaffing> = {}): TypologieStaffin
     nombreSemaines: 1,
     picSimultane: 4,
     picAvecPause: 6,
+    picRepas: 0,
     chargeTotal: 3,
     rotationTotal: 4,
     minimumTotal: 6,
@@ -100,6 +102,7 @@ function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
     semaineCritique: semaine(),
     picSimultane: 18,
     picAvecPause: 22,
+    picRepas: 0,
     jourCritique: jour(),
     totalDemandeHeures: 1200,
     nombreSemaines: 3,
@@ -390,6 +393,22 @@ describe('StaffingPage', () => {
       page.staffing.reload();
       await vi.waitFor(() => expect(analysesApi.staffing).toHaveBeenCalledTimes(3));
       expect(page.projectionLabel()).toBe('');
+    });
+
+    // Fifth bound (issue #438): a grid with no room to eat needs more people
+    // than its peak, and the screen has to say which of the five explains the
+    // number — otherwise the organiser recruits without knowing why.
+    it('highlights the meal-break bound when the server retained it', async () => {
+      analysesApi.staffing.mockResolvedValue(
+        summary({ borneRetenue: 'COUPURE_REPAS', picRepas: 14, minimumTotal: 14 }),
+      );
+
+      const page = createPage();
+      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+
+      expect(page.estBorneRetenue('COUPURE_REPAS')).toBe(true);
+      expect(page.estBorneRetenue('ROTATION_JOURS')).toBe(false);
+      expect(page.estBorneRetenue('PIC_SIMULTANE')).toBe(false);
     });
 
     it('highlights the bound the server actually retained, and only that one', async () => {

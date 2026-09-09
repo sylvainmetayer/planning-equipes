@@ -10,6 +10,7 @@
 # together with the clients that read it.
 #
 # Generated shape: <package>.<Type> = key, key, key (keys sorted).
+
 api.AdminLoginLimiter$Echecs = dernier, nombre
 api.AnimateurResource$AnimateurToken = token
 api.AuthResource$StatutSession = authentifie, nom
@@ -108,8 +109,8 @@ service.analyse.PlanningKpiService$PlanningKpi = animateursAffectes, creneauxDis
 service.analyse.StaffingAnalyzer$CompetenceStaffing = animateursTotal, manquePolyvalents, manqueTotal, parTypologie, polyvalents, siegesNonAttribues, siegesReservesAuxPolyvalents, typologieNinjaDefinie
 service.analyse.StaffingAnalyzer$JourStaffing = date, disponibles, heures, jour, minimumJour, picAvecPause, picSimultane, sieges, standsOuverts
 service.analyse.StaffingAnalyzer$SemaineStaffing = capaciteHeuresParAnimateur, chargeTotal, debut, heures, jours, joursPersonne, joursTravaillables, rotationTotal, semaine
-service.analyse.StaffingAnalyzer$StaffingSummary = borneRetenue, capaciteHeuresParAnimateur, chargeTotal, dureeHebdomadaireMaxMinutes, dureeQuotidienneMaxMinutes, indisponibilitesDeclarees, jourCritique, joursTravaillesMaxParSemaine, minimumAvecIndisponibilites, minimumMajeurs, minimumMineurs, minimumTotal, nombreSemaines, parCompetence, parJour, parSemaine, pauseMinimaleMinutes, picAvecPause, picSimultane, referentielsManquants, rotationTotal, semaineCritique, totalDemandeHeures
-service.analyse.StaffingAnalyzer$TypologieStaffing = borneRetenue, chargeTotal, heures, label, manque, minimumTotal, ninja, nombreSemaines, picAvecPause, picSimultane, rotationTotal, sieges, specialistes, typologie
+service.analyse.StaffingAnalyzer$StaffingSummary = borneRetenue, capaciteHeuresParAnimateur, chargeTotal, dureeHebdomadaireMaxMinutes, dureeQuotidienneMaxMinutes, indisponibilitesDeclarees, jourCritique, joursTravaillesMaxParSemaine, minimumAvecIndisponibilites, minimumMajeurs, minimumMineurs, minimumTotal, nombreSemaines, parCompetence, parJour, parSemaine, pauseMinimaleMinutes, picAvecPause, picRepas, picSimultane, referentielsManquants, rotationTotal, semaineCritique, totalDemandeHeures
+service.analyse.StaffingAnalyzer$TypologieStaffing = borneRetenue, chargeTotal, heures, label, manque, minimumTotal, ninja, nombreSemaines, picAvecPause, picRepas, picSimultane, rotationTotal, sieges, specialistes, typologie
 service.backup.BackupFile = createdAt, name, sizeBytes
 service.backup.BackupRun = attemptedAt, file, message, succeeded
 service.backup.BackupState = active, configured, cron, directory, directoryError, files, lastRun, nextRun, retention, zone

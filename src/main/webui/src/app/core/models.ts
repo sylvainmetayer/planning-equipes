@@ -1165,6 +1165,8 @@ export interface JourStaffing {
    * vacations — the exact minimum number of distinct animateurs the day needs.
    */
   picAvecPause: number;
+  /** What the meal windows force; 0 when `coupureRepasObligatoire` is switched off. */
+  picRepas: number;
   /**
    * The distinct animateurs the day provably needs: the peak above, or the
    * day's hours over the daily legal ceiling when a long, flat day demands
@@ -1200,7 +1202,7 @@ export interface SemaineStaffing {
 
 /** Which bound `GET /api/staffing` ended up retaining for `minimumTotal`. */
 export type BorneStaffing =
-  'PIC_SIMULTANE' | 'PIC_AVEC_PAUSE' | 'CHARGE_HORAIRE' | 'ROTATION_JOURS';
+  'PIC_SIMULTANE' | 'PIC_AVEC_PAUSE' | 'CHARGE_HORAIRE' | 'ROTATION_JOURS' | 'COUPURE_REPAS';
 
 /**
  * A referential the edition has not filled in yet, as `GET /api/staffing`
@@ -1223,6 +1225,8 @@ export interface TypologieStaffing {
   nombreSemaines: number;
   picSimultane: number;
   picAvecPause: number;
+  /** What the meal windows force; 0 when `coupureRepasObligatoire` is switched off. */
+  picRepas: number;
   chargeTotal: number;
   rotationTotal: number;
   minimumTotal: number;
@@ -1284,6 +1288,8 @@ export interface StaffingSummary {
   semaineCritique: SemaineStaffing | null;
   picSimultane: number;
   picAvecPause: number;
+  /** What the meal windows force; 0 when `coupureRepasObligatoire` is switched off. */
+  picRepas: number;
   jourCritique: JourStaffing | null;
   totalDemandeHeures: number;
   nombreSemaines: number;

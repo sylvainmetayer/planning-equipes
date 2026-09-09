@@ -57,6 +57,11 @@
             {{ semaineCritiqueLabel() }}
           }
         </p>
+        <p [class.staffing-binding]="estBorneRetenue('COUPURE_REPAS')">
+          <mat-icon inline aria-hidden="true">restaurant</mat-icon>
+          <strong i18n="@@staffing.mealBound.label">Coupure repas : {{ resume.picRepas }}</strong>
+          <ng-container i18n="@@staffing.mealBound.description"> — ce qu'impose la coupure repas : qui travaille de part et d'autre d'une fenêtre doit s'en absenter, quelqu'un d'autre tenant le siège. Vaut 0 quand la règle est désactivée.</ng-container>
+        </p>
         <p [class.staffing-binding]="estBorneRetenue('ROTATION_JOURS')">
           <mat-icon inline aria-hidden="true">calendar_month</mat-icon>
           <strong i18n="@@staffing.rotationBound.label">Rotation sur les jours : {{ resume.rotationTotal }}</strong>

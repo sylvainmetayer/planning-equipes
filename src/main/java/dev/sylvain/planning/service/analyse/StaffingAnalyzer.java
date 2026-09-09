@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -55,9 +56,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * to exactly one famille, and already halved the headcount of a meal-pause
  * coverage vacation. Whatever the seats are, they are what has to be staffed.</p>
  *
- * <h2>The four bounds</h2>
+ * <h2>The five bounds</h2>
  *
- * <p>Four bounds are computed and the largest wins. Each one is a
+ * <p>Five bounds are computed and the largest wins. Each one is a
  * <em>proof</em> that no smaller number of people can cover the seats, derived
  * from a rule {@code LegalConstraints} really enforces — so the floor and the
  * solver can never contradict each other:</p>
@@ -76,6 +77,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <li><b>Rotation sur les jours</b> — the person-days of the busiest ISO week,
  * divided by the number of days one animateur may work in it (art. L3132-1:
  * six).</li>
+ * <li><b>Coupure repas</b> — what the meal windows force, see
+ * {@link #picRepas(List, FenetreRepas)} for the proof. A day whose grid leaves
+ * no room to eat cannot be staffed by the people its peak alone suggests:
+ * whoever works either side of the window has to step out of it, and somebody
+ * else holds the seat meanwhile.</li>
  * </ol>
  *
  * <h3>Why the last two are computed week by week</h3>
@@ -110,7 +116,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * ceiling: a day holding 600 person-hours needs at least sixty people whatever
  * its peak looks like.</p>
  *
- * <p>All four stay optimistic: none of them accounts for competences, for the
+ * <p>All five stay optimistic: none of them accounts for competences, for the
  * daily-rest constraint, or for the fact that a real plan spreads work far
  * below the legal ceilings. They are a recruitment floor to exceed, never a
  * target — the exact answer only comes from a real solve.</p>
@@ -185,7 +191,8 @@ public class StaffingAnalyzer {
         PIC_SIMULTANE,
         PIC_AVEC_PAUSE,
         CHARGE_HORAIRE,
-        ROTATION_JOURS
+        ROTATION_JOURS,
+        COUPURE_REPAS
     }
 
     /**
@@ -214,6 +221,7 @@ public class StaffingAnalyzer {
                 "jour",
                 "minimumJour",
                 "picAvecPause",
+                "picRepas",
                 "picSimultane",
                 "sieges",
                 "standsOuverts"
@@ -226,6 +234,7 @@ public class StaffingAnalyzer {
             double heures,
             int picSimultane,
             int picAvecPause,
+            int picRepas,
             int minimumJour,
             int disponibles) {}
 
@@ -284,6 +293,7 @@ public class StaffingAnalyzer {
                 "nombreSemaines",
                 "pauseMinimaleMinutes",
                 "picAvecPause",
+                "picRepas",
                 "picSimultane",
                 "referentielsManquants",
                 "rotationTotal",
@@ -295,6 +305,7 @@ public class StaffingAnalyzer {
             SemaineStaffing semaineCritique,
             int picSimultane,
             int picAvecPause,
+            int picRepas,
             JourStaffing jourCritique,
             double totalDemandeHeures,
             int nombreSemaines,
@@ -330,6 +341,7 @@ public class StaffingAnalyzer {
                 "ninja",
                 "nombreSemaines",
                 "picAvecPause",
+                "picRepas",
                 "picSimultane",
                 "rotationTotal",
                 "sieges",
@@ -344,6 +356,7 @@ public class StaffingAnalyzer {
             int nombreSemaines,
             int picSimultane,
             int picAvecPause,
+            int picRepas,
             int chargeTotal,
             int rotationTotal,
             int minimumTotal,
@@ -402,7 +415,8 @@ public class StaffingAnalyzer {
     private record Siege(LocalDate date, int debut, int fin, Stand stand) {}
 
     /** What one event day demands, before any weekly reasoning. */
-    private record BesoinJour(LocalDate date, double heures, int picSimultane, int picAvecPause, int minimum) {}
+    private record BesoinJour(
+            LocalDate date, double heures, int picSimultane, int picAvecPause, int picRepas, int minimum) {}
 
     /**
      * Which referentials the edition is still missing, from the three lists
@@ -443,7 +457,26 @@ public class StaffingAnalyzer {
                 typologies,
                 dureeHebdomadaireMaxMinutes,
                 pauseMinimaleMinutes,
-                animateurs == null || animateurs.isEmpty() ? List.of(ReferentielManquant.ANIMATEURS) : List.of());
+                animateurs == null || animateurs.isEmpty() ? List.of(ReferentielManquant.ANIMATEURS) : List.of(),
+                List.of());
+    }
+
+    /** The bounds without meal windows: what a caller that has not read them asks for. */
+    public StaffingSummary analyze(
+            List<PosteAffectation> postes,
+            List<Animateur> animateurs,
+            List<TypologieItem> typologies,
+            int dureeHebdomadaireMaxMinutes,
+            int pauseMinimaleMinutes,
+            List<ReferentielManquant> referentielsManquants) {
+        return analyze(
+                postes,
+                animateurs,
+                typologies,
+                dureeHebdomadaireMaxMinutes,
+                pauseMinimaleMinutes,
+                referentielsManquants,
+                List.of());
     }
 
     /**
@@ -460,6 +493,12 @@ public class StaffingAnalyzer {
      * @param referentielsManquants what the edition has not filled in yet,
      *                              carried through so the screen names it
      *                              rather than showing a zero.
+     * @param fenetresRepas         the meal windows the plan must honour, or an
+     *                              empty list when {@code coupureRepasObligatoire}
+     *                              is switched off for this edition. A rule that
+     *                              is not enforced must not raise a floor: the
+     *                              Besoin screen would then announce a number no
+     *                              solve is asked to reach.
      */
     public StaffingSummary analyze(
             List<PosteAffectation> postes,
@@ -467,9 +506,11 @@ public class StaffingAnalyzer {
             List<TypologieItem> typologies,
             int dureeHebdomadaireMaxMinutes,
             int pauseMinimaleMinutes,
-            List<ReferentielManquant> referentielsManquants) {
+            List<ReferentielManquant> referentielsManquants,
+            List<FenetreRepas> fenetresRepas) {
+        List<FenetreRepas> fenetres = fenetresRepas == null ? List.of() : fenetresRepas;
         List<Siege> sieges = sieges(postes);
-        Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, pauseMinimaleMinutes);
+        Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, pauseMinimaleMinutes, fenetres);
         Bornes bornes = bornes(besoins, dureeHebdomadaireMaxMinutes);
 
         Map<LocalDate, Integer> dayByDate = dayByDate(postes);
@@ -495,6 +536,7 @@ public class StaffingAnalyzer {
                     besoin.heures(),
                     besoin.picSimultane(),
                     besoin.picAvecPause(),
+                    besoin.picRepas(),
                     besoin.minimum(),
                     disponibles(connus, besoin.date())));
         }
@@ -513,6 +555,7 @@ public class StaffingAnalyzer {
                 bornes.semaineCritique(),
                 bornes.picSimultane(),
                 bornes.picAvecPause(),
+                bornes.picRepas(),
                 jourCritique,
                 bornes.heures(),
                 bornes.semaines(),
@@ -530,7 +573,8 @@ public class StaffingAnalyzer {
                 dureeHebdomadaireMaxMinutes,
                 PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES,
                 PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE,
-                bottleneckPerCategory(sieges, connus, typologies, dureeHebdomadaireMaxMinutes, pauseMinimaleMinutes),
+                bottleneckPerCategory(
+                        sieges, connus, typologies, dureeHebdomadaireMaxMinutes, pauseMinimaleMinutes, fenetres),
                 referentielsManquants == null ? List.of() : List.copyOf(referentielsManquants));
     }
 
@@ -585,7 +629,8 @@ public class StaffingAnalyzer {
             List<Animateur> animateurs,
             List<TypologieItem> typologies,
             int dureeHebdomadaireMaxMinutes,
-            int pauseMinimaleMinutes) {
+            int pauseMinimaleMinutes,
+            List<FenetreRepas> fenetres) {
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         List<TypologieItem> referentiel = typologies == null ? List.of() : typologies;
 
@@ -637,7 +682,8 @@ public class StaffingAnalyzer {
         List<TypologieStaffing> lignes = new ArrayList<>();
         for (Map.Entry<String, List<Siege>> entree : parTypologie.entrySet()) {
             String id = entree.getKey();
-            Bornes bornes = bornes(besoinsByDate(entree.getValue(), pauseMinimaleMinutes), dureeHebdomadaireMaxMinutes);
+            Bornes bornes = bornes(
+                    besoinsByDate(entree.getValue(), pauseMinimaleMinutes, fenetres), dureeHebdomadaireMaxMinutes);
             int disponibles = specialistes.getOrDefault(id, 0);
             int manque = connus.isEmpty() ? 0 : Math.max(0, bornes.minimumTotal() - disponibles);
             lignes.add(new TypologieStaffing(
@@ -649,6 +695,7 @@ public class StaffingAnalyzer {
                     bornes.semaines(),
                     bornes.picSimultane(),
                     bornes.picAvecPause(),
+                    bornes.picRepas(),
                     bornes.chargeTotal(),
                     bornes.rotationTotal(),
                     bornes.minimumTotal(),
@@ -698,6 +745,7 @@ public class StaffingAnalyzer {
             int semaines,
             int picSimultane,
             int picAvecPause,
+            int picRepas,
             int chargeTotal,
             int rotationTotal,
             int minimumTotal,
@@ -710,7 +758,8 @@ public class StaffingAnalyzer {
      * day because minutes are counted from the start of a day: seats of two
      * different dates never overlap.
      */
-    private static Map<LocalDate, BesoinJour> besoinsByDate(Collection<Siege> sieges, int pauseMinimaleMinutes) {
+    private static Map<LocalDate, BesoinJour> besoinsByDate(
+            Collection<Siege> sieges, int pauseMinimaleMinutes, List<FenetreRepas> fenetres) {
         Map<LocalDate, List<Siege>> byDate = new TreeMap<>();
         for (Siege siege : sieges) {
             byDate.computeIfAbsent(siege.date(), date -> new ArrayList<>()).add(siege);
@@ -726,6 +775,10 @@ public class StaffingAnalyzer {
             // the daily legal ceiling, so 600 person-hours need 60 people
             // whatever the shape of the day.
             int parLesHeures = (int) Math.ceil(heures * 60 / PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES);
+            int picRepas = 0;
+            for (FenetreRepas fenetre : fenetres) {
+                picRepas = Math.max(picRepas, picRepas(entree.getValue(), fenetre));
+            }
             besoins.put(
                     entree.getKey(),
                     new BesoinJour(
@@ -733,7 +786,8 @@ public class StaffingAnalyzer {
                             heures,
                             pic(entree.getValue(), 0),
                             picAvecPause,
-                            Math.max(picAvecPause, parLesHeures)));
+                            picRepas,
+                            Math.max(Math.max(picAvecPause, parLesHeures), picRepas)));
         }
         return besoins;
     }
@@ -747,6 +801,8 @@ public class StaffingAnalyzer {
                 .mapToInt(BesoinJour::picAvecPause)
                 .max()
                 .orElse(0);
+        int picRepas =
+                besoins.values().stream().mapToInt(BesoinJour::picRepas).max().orElse(0);
         double heures =
                 besoins.values().stream().mapToDouble(BesoinJour::heures).sum();
 
@@ -789,7 +845,8 @@ public class StaffingAnalyzer {
                 .mapToInt(SemaineStaffing::rotationTotal)
                 .max()
                 .orElse(0);
-        int minimumTotal = Math.max(Math.max(picSimultane, picAvecPause), Math.max(chargeTotal, rotationTotal));
+        int minimumTotal = Math.max(
+                Math.max(Math.max(picSimultane, picAvecPause), picRepas), Math.max(chargeTotal, rotationTotal));
         SemaineStaffing semaineCritique = parSemaine.stream()
                 .max(Comparator.comparingInt(semaine -> Math.max(semaine.chargeTotal(), semaine.rotationTotal())))
                 .orElse(null);
@@ -798,10 +855,11 @@ public class StaffingAnalyzer {
                 parSemaine.size(),
                 picSimultane,
                 picAvecPause,
+                picRepas,
                 chargeTotal,
                 rotationTotal,
                 minimumTotal,
-                borneRetenue(picSimultane, picAvecPause, chargeTotal, rotationTotal),
+                borneRetenue(picSimultane, picAvecPause, chargeTotal, rotationTotal, picRepas),
                 List.copyOf(parSemaine),
                 semaineCritique);
     }
@@ -818,9 +876,17 @@ public class StaffingAnalyzer {
     /**
      * The bound that set the minimum. Rotation is named only when it is
      * strictly the largest: on a tie any of the others explains the same
-     * number in fewer words, and the peak explains it best of all.
+     * number in fewer words, and the peak explains it best of all — except
+     * against the meal window, which rotation may merely be relaying.
      */
-    private static BorneRetenue borneRetenue(int picSimultane, int picAvecPause, int chargeTotal, int rotationTotal) {
+    private static BorneRetenue borneRetenue(
+            int picSimultane, int picAvecPause, int chargeTotal, int rotationTotal, int picRepas) {
+        // Ties with rotation go to the meal window: the rotation bound counts
+        // person-days built from each day's own minimum, so when the window is
+        // what raised that minimum, rotation only echoes it back.
+        if (picRepas >= rotationTotal && picRepas > chargeTotal && picRepas > picAvecPause && picRepas > picSimultane) {
+            return BorneRetenue.COUPURE_REPAS;
+        }
         if (rotationTotal > chargeTotal && rotationTotal > picAvecPause && rotationTotal > picSimultane) {
             return BorneRetenue.ROTATION_JOURS;
         }
@@ -883,6 +949,101 @@ public class StaffingAnalyzer {
             pic = Math.max(pic, courant);
         }
         return pic;
+    }
+
+    /**
+     * What one meal window forces on a single day, as a floor on the number of
+     * distinct animateurs. The fifth bound of the class javadoc, and like the
+     * others a <em>proof</em> rather than an estimate.
+     *
+     * <h3>Démonstration</h3>
+     *
+     * <p>Let {@code N} be the animateurs staffing the day, the window be
+     * {@code F = [W1, W2)} of length {@code L}, and {@code D} the break it
+     * owes. Put {@code m = ceil(L / D)} and take the instants
+     * {@code g(k) = W1 + k·D} for {@code k < m}, all inside {@code F}.</p>
+     *
+     * <ol>
+     * <li>Any free stretch {@code [t, t + D)} contained in {@code F} contains
+     * some {@code g(k)}: with {@code k = ceil((t − W1) / D)} we get
+     * {@code t ≤ g(k) < t + D}.</li>
+     * <li>Take any instant {@code u < W1} and any instant {@code v ≥ W2}.
+     * Whoever works at both holds a seat starting before {@code W1} and a seat
+     * ending after {@code W2}, so they owe the break — and are therefore idle
+     * at some {@code g(k)}.</li>
+     * <li>They number at least {@code n(u) + n(v) − N}, while the people idle
+     * at one of the {@code g(k)} number at most {@code Σ (N − n(g(k)))}.</li>
+     * <li>Hence {@code n(u) + n(v) − N ≤ m·N − Σ n(g(k))}, that is
+     * {@code N ≥ ceil((n(u) + n(v) + Σ n(g(k))) / (m + 1))}.</li>
+     * </ol>
+     *
+     * <p>{@code n(u)} is taken at the busiest instant before the window and
+     * {@code n(v)} at the busiest from its close on, which is the tightest
+     * choice the inequality allows.</p>
+     *
+     * <p>Worked example: ten seats 08:00-13:00 then ten seats 13:00-20:00, a
+     * 12:00-14:00 window owing 60 minutes. {@code m = 2}, the grid is
+     * {12:00, 13:00}, and {@code (10 + 10 + 10 + 10) / 3} gives 14 where the
+     * plain peak said 10. The real minimum is 20 — nobody can hold both halves
+     * — so the bound stays a bound, and a far better one than the peak. Cut the
+     * same day as 08:00-12:00 and 14:00-20:00 instead and it yields 7, below
+     * the peak: ten people cover it by eating from noon to two, and nothing is
+     * inflated.</p>
+     */
+    private static int picRepas(Collection<Siege> sieges, FenetreRepas fenetre) {
+        int ouverture = fenetre.debutMinutes();
+        int fermeture = fenetre.finMinutes();
+        int requis = fenetre.dureeMinutes();
+        if (requis <= 0 || fermeture <= ouverture || sieges.isEmpty()) {
+            return 0;
+        }
+        int pas = Math.ceilDiv(fermeture - ouverture, requis);
+        int[] grille = new int[pas];
+        for (int k = 0; k < pas; k++) {
+            grille[k] = ouverture + k * requis;
+        }
+
+        List<int[]> evenements = new ArrayList<>(sieges.size() * 2);
+        for (Siege siege : sieges) {
+            evenements.add(new int[] {siege.debut(), 1});
+            evenements.add(new int[] {siege.fin(), -1});
+        }
+        // Same ordering as pic(): a seat ending where another starts is not an
+        // overlap, so the -1 of an instant is applied before its +1.
+        evenements.sort(
+                Comparator.<int[]>comparingInt(evenement -> evenement[0]).thenComparingInt(evenement -> evenement[1]));
+
+        int courant = 0;
+        int avant = 0;
+        int apres = 0;
+        int[] occupation = new int[pas];
+        for (int i = 0; i < evenements.size(); i++) {
+            courant += evenements.get(i)[1];
+            int instant = evenements.get(i)[0];
+            if (i + 1 < evenements.size() && evenements.get(i + 1)[0] == instant) {
+                // Not done with this instant yet: the count is only meaningful
+                // once every event sharing it has been applied.
+                continue;
+            }
+            int prochain = i + 1 < evenements.size() ? evenements.get(i + 1)[0] : Integer.MAX_VALUE;
+            if (instant < ouverture) {
+                avant = Math.max(avant, courant);
+            }
+            if (prochain > fermeture) {
+                apres = Math.max(apres, courant);
+            }
+            for (int k = 0; k < pas; k++) {
+                if (instant <= grille[k] && grille[k] < prochain) {
+                    occupation[k] = courant;
+                }
+            }
+        }
+
+        int total = avant + apres;
+        for (int occupe : occupation) {
+            total += occupe;
+        }
+        return Math.ceilDiv(total, pas + 1);
     }
 
     private static List<Siege> sieges(List<PosteAffectation> postes) {

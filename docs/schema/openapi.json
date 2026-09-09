@@ -4001,7 +4001,7 @@
         "enum" : [ "DEFAUT", "REGLE", "EXCEPTION" ]
       },
       "StaffingSummary" : {
-        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "minimumMajeurs", "minimumMineurs", "minimumTotal", "nombreSemaines", "pauseMinimaleMinutes", "picAvecPause", "picSimultane", "referentielsManquants", "rotationTotal", "totalDemandeHeures" ],
+        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "minimumMajeurs", "minimumMineurs", "minimumTotal", "nombreSemaines", "pauseMinimaleMinutes", "picAvecPause", "picRepas", "picSimultane", "referentielsManquants", "rotationTotal", "totalDemandeHeures" ],
         "type" : "object",
         "properties" : {
           "parJour" : {
