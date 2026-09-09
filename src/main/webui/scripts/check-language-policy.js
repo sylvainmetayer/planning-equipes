@@ -19,13 +19,18 @@
  * français et le resteront — `$localize` s'occupe de l'anglais. Seuls les
  * commentaires et les noms déclarés sont concernés.
  *
+ * Les fichiers TypeScript sont lus par le compilateur, pas par une expression
+ * régulière : un scan textuel prend `type de cible` dans un titre de test
+ * français pour une déclaration nommée « de ». La première version de ce
+ * script le faisait, et sur-comptait.
+ *
  * MODE INVENTAIRE : `--inventaire` liste ce qui reste sans faire échouer.
  * Le chantier de renommage est en cours (voir la description de la PR qui
  * introduit ce script) ; tant qu'il n'est pas fini, faire échouer bloquerait
  * son propre correctif.
  */
 const { readFileSync, readdirSync } = require('node:fs');
-const { join, relative, basename } = require('node:path');
+const { join, relative } = require('node:path');
 
 const RACINE = join(__dirname, '..');
 const DEPOT = join(RACINE, '../../..');
@@ -46,6 +51,8 @@ function vocabulaire(nom) {
   const corps = java.slice(java.indexOf('\n', debut) + 1, java.indexOf('""")', debut));
   return new Set(corps.split(/\s+/).filter(Boolean));
 }
+
+const ts = require(join(RACINE, 'node_modules/typescript/lib/typescript.js'));
 
 const GLOSSAIRE = vocabulaire('GLOSSAIRE');
 const LEXIQUE = vocabulaire('LEXIQUE_FR');
@@ -82,25 +89,64 @@ for (const fichier of fichiers(SOURCES)) {
   const source = readFileSync(fichier, 'utf8');
   const nom = relative(DEPOT, fichier);
 
-  for (const bloc of source.matchAll(/(^[ \t]*\/\/.*(?:\n[ \t]*\/\/.*)*)|(\/\*[\s\S]*?\*\/)/gm)) {
-    const mots = sansAccents(bloc[0]).split(/[^a-z]+/).filter(Boolean);
-    if (mots.filter((mot) => LEXIQUE.has(mot)).length >= SEUIL_PHRASE) {
-      const ligne = source.slice(0, bloc.index).split('\n').length;
-      commentairesFrancais.push(`${nom}:${ligne}`);
-    }
-  }
+  const estFrancais = (texte) => {
+    const mots = sansAccents(texte).split(/[^a-z]+/).filter(Boolean);
+    return mots.filter((mot) => LEXIQUE.has(mot)).length >= SEUIL_PHRASE;
+  };
 
   if (fichier.endsWith('.css')) {
+    for (const bloc of source.matchAll(/\/\*[\s\S]*?\*\//g)) {
+      if (estFrancais(bloc[0])) {
+        commentairesFrancais.push(`${nom}:${source.slice(0, bloc.index).split('\n').length}`);
+      }
+    }
     continue;
   }
-  for (const declaration of source.matchAll(
-    /(?:^|\s)(?:const|let|var|function|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/g
-  )) {
-    const fautifs = motsDuNom(declaration[1]).filter((mot) => LEXIQUE.has(mot) && !GLOSSAIRE.has(mot));
-    if (fautifs.length > 0) {
-      nomsFautifs.push(`${nom} : ${declaration[1]} [${fautifs.join(', ')}]`);
+
+  const fichierTs = ts.createSourceFile(nom, source, ts.ScriptTarget.ES2022, true);
+
+  // Les commentaires sont pris comme trivia du compilateur : un « // » dans une
+  // URL ou dans une chaîne n'en est pas un.
+  const vus = new Set();
+  const relever = (position) => {
+    for (const plage of ts.getLeadingCommentRanges(source, position) ?? []) {
+      if (vus.has(plage.pos)) {
+        continue;
+      }
+      vus.add(plage.pos);
+      const texte = source.slice(plage.pos, plage.end);
+      if (estFrancais(texte)) {
+        commentairesFrancais.push(`${nom}:${source.slice(0, plage.pos).split('\n').length}`);
+      }
     }
-  }
+  };
+  const parcourir = (noeud) => {
+    relever(noeud.getFullStart());
+    ts.forEachChild(noeud, parcourir);
+  };
+  parcourir(fichierTs);
+
+  // Et les noms déclarés comme le compilateur les voit, jamais comme un motif
+  // textuel les devine.
+  const declarations = (noeud) => {
+    const declare =
+      ts.isVariableDeclaration(noeud) ||
+      ts.isFunctionDeclaration(noeud) ||
+      ts.isClassDeclaration(noeud) ||
+      ts.isInterfaceDeclaration(noeud) ||
+      ts.isTypeAliasDeclaration(noeud) ||
+      ts.isEnumDeclaration(noeud) ||
+      ts.isMethodDeclaration(noeud) ||
+      ts.isPropertyDeclaration(noeud);
+    if (declare && noeud.name && ts.isIdentifier(noeud.name)) {
+      const fautifs = motsDuNom(noeud.name.text).filter((mot) => LEXIQUE.has(mot) && !GLOSSAIRE.has(mot));
+      if (fautifs.length > 0) {
+        nomsFautifs.push(`${nom} : ${noeud.name.text} [${fautifs.join(', ')}]`);
+      }
+    }
+    ts.forEachChild(noeud, declarations);
+  };
+  declarations(fichierTs);
 }
 
 const inventaire = process.argv.includes('--inventaire');
