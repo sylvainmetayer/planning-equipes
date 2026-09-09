@@ -130,7 +130,7 @@ export class ReferenceDataStore {
   readonly stands = signal<Stand[]>([]);
   readonly emplacements = signal<Emplacement[]>([]);
   readonly contraintes = signal<ContrainteAdHoc[]>([]);
-  /** Real problem scale for the next solve; see {@link Volumetrie}. */
+  /** Real problem scale for the next solve; see {@link Scale}. */
   readonly volumetrie = signal<Scale>({
     animateurCount: 0,
     posteCount: 0,

@@ -30,7 +30,7 @@ function entree(partial: Partial<EntreeHistorique> = {}): EntreeHistorique {
   };
 }
 
-describe('filtrer', () => {
+describe('filter', () => {
   it('garde tout par défaut', () => {
     const entrees = [entree(), entree({ id: 2, acteur: 'ANIMATEUR' })];
     expect(filter(entrees, 'TOUS', 'TOUS', '', '')).toHaveLength(2);

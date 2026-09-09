@@ -301,9 +301,9 @@ describe('ParametresPage rendering', () => {
 
   /** A `File` jsdom can read: its own implementation has no `text()`. */
   function file(nom: string, contenu: string): File {
-    const file = new File([contenu], nom);
-    Object.defineProperty(file, 'text', { value: async () => contenu });
-    return file;
+    const cree = new File([contenu], nom);
+    Object.defineProperty(cree, 'text', { value: async () => contenu });
+    return cree;
   }
 
   /** The découpage preview sentence, rebuilt on every keystroke. */

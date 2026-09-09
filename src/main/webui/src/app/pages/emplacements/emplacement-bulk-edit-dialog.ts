@@ -70,8 +70,8 @@ export class EmplacementBulkEditDialog {
 
   /** An emptied number field means "pas de valeur", not zero (a valid latitude). */
   protected updateNombre(champ: 'latitude' | 'longitude', valeur: unknown): void {
-    const count = valeur === '' || valeur === null || valeur === undefined ? null : Number(valeur);
-    this.updateCoordonnees({ [champ]: count === null || Number.isNaN(count) ? null : count });
+    const saisi = valeur === '' || valeur === null || valeur === undefined ? null : Number(valeur);
+    this.updateCoordonnees({ [champ]: saisi === null || Number.isNaN(saisi) ? null : saisi });
   }
 
   protected onPositionChange(position: MapPosition): void {
