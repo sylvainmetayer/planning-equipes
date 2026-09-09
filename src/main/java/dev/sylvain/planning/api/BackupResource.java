@@ -41,7 +41,7 @@ public class BackupResource {
         return backupService.setActive(request != null && request.active());
     }
 
-    @Schema(requiredProperties = {"active"})
+    
     public record ActiveRequest(boolean active) {
     }
 }

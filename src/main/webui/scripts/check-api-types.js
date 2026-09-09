@@ -30,12 +30,12 @@
  * donc une constante ajoutée côté serveur passe inaperçue. À traiter avec la
  * génération, quand le schéma portera de quoi la produire.
  *
- * CE QUE CE SCRIPT NE VÉRIFIE PAS, et pourquoi : l'optionalité. Le schéma ne
- * porte aucun `required` — 0 propriété sur 944 —, SmallRye ne le déduisant que
+ * CE QUE CE SCRIPT NE VÉRIFIE PAS, et pourquoi : l'optionalité. Le schéma
+ * n'en portait aucune trace — 0 propriété sur 944 —, SmallRye ne le déduisant que
  * de `@NotNull` ou `@Schema(required = true)`, que les records de l'API ne
- * portent pas. Comparer les optionalités ferait donc échouer les 94 types déjà
- * corrects, et *générer* les types depuis ce schéma les rendrait tous
- * optionnels — strictement plus faible que ce que le front déclare
+ * portaient pas. Les annotations posées depuis en couvrent une part, pas
+ * toutes : comparer les optionalités ferait donc encore échouer des types
+ * corrects, et *générer* rendrait optionnel tout ce qui n'est pas annoté — strictement plus faible que ce que le front déclare
  * aujourd'hui, et en collision avec `strict`. C'est pourquoi on vérifie ici au
  * lieu de générer. Annoter les records côté serveur est le préalable à la
  * génération, et un chantier à part entière.

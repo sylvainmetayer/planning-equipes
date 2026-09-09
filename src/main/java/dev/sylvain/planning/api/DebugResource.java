@@ -89,7 +89,7 @@ public class DebugResource {
      *
      * @param dateDuJour {@code null} when the real clock is in use
      */
-    @Schema(requiredProperties = {"modifiable"})
+    
     public record DateJourJView(String dateDuJour, boolean modifiable) {
     }
 

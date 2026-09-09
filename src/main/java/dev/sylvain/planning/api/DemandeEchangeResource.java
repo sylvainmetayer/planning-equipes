@@ -90,7 +90,7 @@ public class DemandeEchangeResource {
      *                     than showing a switch that reads « on » while nothing
      *                     is accepted
      */
-    @Schema(requiredProperties = {"foireOuverte", "ouverteAujourdhui"})
+    @Schema(requiredProperties = {"foireOuverte"})
     public record ConfigurationFoire(boolean foireOuverte, LocalDate debut, LocalDate fin,
             boolean ouverteAujourdhui) {
     }

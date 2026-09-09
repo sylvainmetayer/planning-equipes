@@ -1,6 +1,5 @@
 package dev.sylvain.planning.mcp;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.time.Instant;
 import java.time.LocalDate;
