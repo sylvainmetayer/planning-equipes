@@ -78,6 +78,67 @@ class ScenarioBinderTest {
                 .hasMessageContaining("mapping attendu");
     }
 
+    /**
+     * A year typed where a date was expected is refused, not read as an epoch.
+     *
+     * <p>Binding through {@code convertValue} used to turn SnakeYAML's date
+     * into a number of milliseconds, which made {@code dateNaissance: 1990}
+     * indistinguishable from a date and bound it to <b>1970-01-01</b> — handing
+     * the legal constraints a 56-year-old where a minor had been declared. The
+     * hand-written reader refused it; the binder does now too.</p>
+     */
+    @Test
+    void unEntierNEstPasUneDate() throws IOException {
+        String scenario = Files.readString(Path.of("src/main/resources/scenarios/scenario.yml"))
+                .replaceFirst("dateNaissance: [0-9-]+", "dateNaissance: 1990");
+
+        assertThatThrownBy(() -> ScenarioBinder.bind(scenario))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("2026-08-17");
+    }
+
+    /**
+     * And the same for an hour, for the reason {@link ScenarioYaml} exists:
+     * {@code 9:30} used to resolve to the number 570 and be read as 00:09:30.
+     */
+    @Test
+    void uneHeureSurDeuxPartiesEstLueCommeElleEstEcrite() throws IOException {
+        String scenario = Files.readString(Path.of("src/main/resources/scenarios/scenario.yml"))
+                .replaceFirst("heureDebut: \"?[0-9:]+\"?", "heureDebut: 9:30");
+
+        assertThat(ScenarioBinder.bind(scenario).creneaux().get(0).heureDebut())
+                .isEqualTo(java.time.LocalTime.of(9, 30));
+    }
+
+    /**
+     * The binder carries its own alias limit, and it is not the reader's: a
+     * test that goes through the reader would leave this one uncovered, and
+     * the two would drift apart on the day one is raised.
+     */
+    @Test
+    void unDocumentAvecPlusDeCinquanteAliasSeLie() throws IOException {
+        String scenario = Files.readString(Path.of("src/main/resources/scenarios/scenario.yml"));
+        StringBuilder added = new StringBuilder();
+        for (int i = 0; i < 60; i++) {
+            added.append("  - id: ALIAS").append(i).append(System.lineSeparator())
+                    .append("    email: alias").append(i).append("@example.test").append(System.lineSeparator())
+                    .append("    prenom: Alias").append(System.lineSeparator())
+                    .append("    nom: Test").append(System.lineSeparator())
+                    .append("    dateNaissance: 2000-01-01").append(System.lineSeparator())
+                    .append("    manager: false").append(System.lineSeparator())
+                    .append("    competences:").append(System.lineSeparator())
+                    .append("      STRATEGIE: AUTONOME").append(System.lineSeparator())
+                    .append("    joursIndisponibles: ").append(i == 0 ? "&jours []" : "*jours")
+                    .append(System.lineSeparator());
+        }
+        // Added at the head of the existing list: what SnakeYAML anchors and
+        // then aliases is one shared list instance, not a count of animateurs.
+        String withAliases = scenario.replace("animateurs:" + System.lineSeparator(),
+                "animateurs:" + System.lineSeparator() + added);
+
+        assertThat(ScenarioBinder.bind(withAliases).animateurs()).hasSize(63);
+    }
+
     private static List<Path> bundledScenarios() throws IOException {
         try (Stream<Path> files = Files.list(Path.of("src/main/resources/scenarios"))) {
             return files.filter(path -> path.toString().matches(".*\\.ya?ml")).sorted().toList();

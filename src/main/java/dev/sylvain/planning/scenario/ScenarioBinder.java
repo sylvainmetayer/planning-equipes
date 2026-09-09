@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -11,12 +12,8 @@ import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * Turns a scenario YAML document into a {@link ScenarioDto} — the single shape
@@ -29,16 +26,12 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  * SnakeYAML resolves aliases while parsing, so binding the map it returns
  * costs nothing and keeps every file the application ever produced readable.
  *
- * <p>The two coercions below exist for the same reason, and both are YAML 1.1
- * resolver behaviour rather than sloppiness in the files:
- * <ul>
- *   <li>an unquoted {@code 2026-08-17} resolves to a {@link Date}, not to a
- *       string a date deserialiser would accept;</li>
- *   <li>an unquoted {@code 8:00} resolves to the <em>sexagesimal number</em>
- *       480 — seconds, in YAML 1.1 — not to a time.</li>
- * </ul>
- * Requiring authors to know the quoting rules of YAML 1.1 is not a contract,
- * it is a trap; the published JSON Schema says {@code string} either way.
+ * <p>What YAML 1.1 does to unquoted scalars is handled once, in
+ * {@link ScenarioYaml}: sexagesimal numbers are switched off so an hour stays
+ * the text its author wrote, and the {@code java.util.Date} built for an
+ * unquoted date is normalised to ISO text before binding. Requiring authors to
+ * know the quoting rules of YAML 1.1 is not a contract, it is a trap; the
+ * published JSON Schema says {@code string} either way.
  *
  * <p><b>An unknown key is refused, by name.</b> The hand-written parser this
  * replaces ignored one silently, so a mistyped {@code parametresSolveur:}
@@ -48,12 +41,15 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  */
 public final class ScenarioBinder {
 
+    /** Hours as authors write them: {@code 8:00}, {@code 09:30}, {@code 12:00:00}. */
+    private static final DateTimeFormatter HEURE = DateTimeFormatter.ofPattern("H:mm[:ss]");
+
     /**
-     * SnakeYAML caps aliases at fifty as a billion-laughs guard. Raised, not
-     * lifted: see {@code ScenarioYamlReader}'s own limit and the test that
-     * pins it.
+     * Built once. An {@code ObjectMapper} caches its deserialisers per
+     * instance, so a fresh one per call re-resolves the whole {@code
+     * ScenarioDto} tree — on a path that binds files of several megabytes.
      */
-    private static final int MAX_ALIASES = 10_000;
+    private static final ObjectMapper MAPPER = mapper();
 
     private ScenarioBinder() {
     }
@@ -66,18 +62,15 @@ public final class ScenarioBinder {
                     "Le fichier de scénario n'est pas un document YAML valide (mapping attendu).");
         }
         try {
-            return mapper().convertValue(document, ScenarioDto.class);
+            return MAPPER.convertValue(ScenarioYaml.normaliseDates(document), ScenarioDto.class);
         } catch (IllegalArgumentException e) {
             throw new ScenarioFormatException(explain(e), e);
         }
     }
 
     private static Object parse(String yamlContent) {
-        LoaderOptions options = new LoaderOptions();
-        options.setCodePointLimit(Integer.MAX_VALUE);
-        options.setMaxAliasesForCollections(MAX_ALIASES);
         try {
-            return new Yaml(new SafeConstructor(options)).load(yamlContent);
+            return ScenarioYaml.parser().load(yamlContent);
         } catch (RuntimeException e) {
             throw new ScenarioFormatException("YAML invalide : " + e.getMessage(), e);
         }
@@ -91,29 +84,41 @@ public final class ScenarioBinder {
     private static String explain(IllegalArgumentException e) {
         if (e.getCause() instanceof UnrecognizedPropertyException unknown) {
             return "Champ inconnu dans le scénario : « " + unknown.getPropertyName() + " » sous "
-                    + chemin(unknown) + ". Vérifiez l'orthographe : un champ qu'on ne connaît pas "
-                    + "n'est pas appliqué.";
+                    + path(unknown.getPath(), true) + ". Vérifiez l'orthographe : un champ qu'on ne "
+                    + "connaît pas n'est pas appliqué.";
         }
-        return e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
+        if (e.getCause() instanceof MismatchedInputException wrongType) {
+            // Without this, Jackson hands back its reference chain, which reads
+            // like a stack trace and names Java classes to somebody writing YAML.
+            return "Valeur inattendue dans le scénario, sous " + path(wrongType.getPath(), false)
+                    + " : " + firstLine(wrongType);
+        }
+        return e.getCause() == null ? e.getMessage() : firstLine(e.getCause());
     }
 
     /**
-     * The path <em>to</em> the offending key, not including it: Jackson's last
-     * reference is the unknown property itself, and repeating it would give
-     * "« prenomm » sous animateurs[0].prenomm".
+     * @param sansLeDernier drop Jackson's last reference — for an unknown key it
+     *                      <em>is</em> the key, and repeating it would give
+     *                      "« prenomm » sous animateurs[0].prenomm"
      */
-    private static String chemin(UnrecognizedPropertyException unknown) {
-        var references = unknown.getPath();
-        StringBuilder chemin = new StringBuilder();
-        for (int i = 0; i < references.size() - 1; i++) {
-            var reference = references.get(i);
+    private static String path(java.util.List<com.fasterxml.jackson.databind.JsonMappingException.Reference> refs,
+            boolean sansLeDernier) {
+        StringBuilder path = new StringBuilder();
+        int upTo = sansLeDernier ? refs.size() - 1 : refs.size();
+        for (int i = 0; i < upTo; i++) {
+            var reference = refs.get(i);
             if (reference.getFieldName() != null) {
-                chemin.append(chemin.isEmpty() ? "" : ".").append(reference.getFieldName());
+                path.append(path.isEmpty() ? "" : ".").append(reference.getFieldName());
             } else if (reference.getIndex() >= 0) {
-                chemin.append('[').append(reference.getIndex()).append(']');
+                path.append('[').append(reference.getIndex()).append(']');
             }
         }
-        return chemin.isEmpty() ? "la racine du fichier" : chemin.toString();
+        return path.isEmpty() ? "la racine du fichier" : path.toString();
+    }
+
+    private static String firstLine(Throwable e) {
+        String message = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+        return message.lines().findFirst().orElse(message).replaceAll("\\s*\\(through reference chain.*", "");
     }
 
     private static ObjectMapper mapper() {
@@ -123,30 +128,43 @@ public final class ScenarioBinder {
         return new ObjectMapper().registerModule(new JavaTimeModule()).registerModule(yamlOneOne);
     }
 
-    /** An unquoted {@code 2026-08-17} reaches us as a {@link Date}. */
+    /**
+     * A date is text by the time it gets here — {@link ScenarioYaml} normalises
+     * the one SnakeYAML built. A bare number is <b>refused</b> rather than read
+     * as an epoch: {@code dateNaissance: 1990} is a year somebody typed, and
+     * binding it to 1970-01-01 would hand the legal constraints a 56-year-old
+     * where a minor was declared.
+     */
     private static final class DateResolvedByYaml extends JsonDeserializer<LocalDate> {
         @Override
         public LocalDate deserialize(JsonParser parser, DeserializationContext context) throws IOException {
             Object value = parser.readValueAs(Object.class);
-            if (value instanceof Date date) {
-                return date.toInstant().atZone(ZoneOffset.UTC).toLocalDate();
+            if (value == null) {
+                return null;
             }
-            if (value instanceof Number millis) {
-                return java.time.Instant.ofEpochMilli(millis.longValue()).atZone(ZoneOffset.UTC).toLocalDate();
+            if (value instanceof Number) {
+                throw new IllegalArgumentException("une date doit s'écrire 2026-08-17, pas « " + value + " »");
             }
-            return value == null ? null : LocalDate.parse(value.toString());
+            return LocalDate.parse(value.toString());
         }
     }
 
-    /** An unquoted {@code 8:00} reaches us as the sexagesimal number 480. */
+    /**
+     * An hour reaches us as text, single-digit hour included: {@link
+     * ScenarioYaml} switches off the sexagesimal resolver that used to turn
+     * {@code 9:30} into the number 570.
+     */
     private static final class TimeResolvedByYaml extends JsonDeserializer<LocalTime> {
         @Override
         public LocalTime deserialize(JsonParser parser, DeserializationContext context) throws IOException {
             Object value = parser.readValueAs(Object.class);
-            if (value instanceof Number seconds) {
-                return LocalTime.ofSecondOfDay(seconds.longValue());
+            if (value == null) {
+                return null;
             }
-            return value == null ? null : LocalTime.parse(value.toString());
+            if (value instanceof Number) {
+                throw new IllegalArgumentException("une heure doit s'écrire 9:30, pas « " + value + " »");
+            }
+            return LocalTime.parse(value.toString(), HEURE);
         }
     }
 }

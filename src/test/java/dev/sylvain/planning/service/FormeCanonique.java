@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,18 +146,22 @@ public final class FormeCanonique {
         vus.put(valeur, chemin);
 
         if (valeur instanceof Map<?, ?> map) {
-            List<String> cles = new ArrayList<>(map.keySet().stream().map(String::valueOf).sorted().toList());
-            for (String cle : cles) {
-                Object v = map.entrySet().stream()
-                        .filter(e -> String.valueOf(e.getKey()).equals(cle))
-                        .map(Map.Entry::getValue).findFirst().orElse(null);
-                write(texte, chemin + "{" + cle + "}", v, vus, profondeur + 1);
-            }
+            // On the entries, not on the keys: two distinct keys whose textual
+            // form coincides — an Integer 1 and a String "1", an enum and its
+            // name — would both render the first one's value, and the
+            // difference would vanish.
+            map.entrySet().stream()
+                    .sorted(Comparator.comparing(entree -> String.valueOf(entree.getKey())))
+                    .forEach(entree -> write(texte, chemin + "{" + entree.getKey() + "}", entree.getValue(),
+                            vus, profondeur + 1));
             return;
         }
         if (valeur instanceof Collection<?> collection) {
+            // The objects sorted on their form, not their forms sorted:
+            // rendering an element as a block of text would emit it with no
+            // path, and two elements producing the same line would merge.
             List<?> elements = collection instanceof Set<?> ensemble
-                    ? ensemble.stream().map(FormeCanonique::of).sorted().toList()
+                    ? ensemble.stream().sorted(Comparator.comparing(FormeCanonique::of)).toList()
                     : new ArrayList<>(collection);
             int index = 0;
             for (Object element : elements) {

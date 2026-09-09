@@ -32,7 +32,6 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -467,22 +466,7 @@ public final class ScenarioYamlReader {
     // YamlSections instead.
     @SuppressWarnings("unchecked")
     private static Map<String, Object> parserYaml(InputStream inputStream) throws IOException {
-        LoaderOptions loaderOptions = new LoaderOptions();
-        loaderOptions.setCodePointLimit(Integer.MAX_VALUE);
-        // SnakeYAML caps aliases at 50 by default, as a billion-laughs guard.
-        // Our own exporter used to emit one anchor and an alias per animateur
-        // sharing the same list — 152 of them on a real edition — so the
-        // application refused to re-import files it had itself produced, with
-        // a message about aliases that says nothing to the operator who reads
-        // it. The exporter no longer emits any (fbe062e6), but the files
-        // people already downloaded are still on their disks.
-        //
-        // Raised rather than lifted: an alias per row leaves headroom for an
-        // edition ten times the size of the real one, and the guard still
-        // stops a file whose aliases nest into an expansion bomb.
-        loaderOptions.setMaxAliasesForCollections(10_000);
-        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(loaderOptions));
-        Object contenu = yaml.load(inputStream);
+        Object contenu = dev.sylvain.planning.scenario.ScenarioYaml.parser().load(inputStream);
         // An empty file loads as null, and anything that is not a mapping (a bare
         // scalar, a list) would only surface much later as a ClassCastException
         // deep in a parseXxx: say what is actually wrong with the file instead.
@@ -866,11 +850,21 @@ public final class ScenarioYamlReader {
         return value == null ? null : value.toString();
     }
 
+    /**
+     * An hour as its author wrote it, single-digit hour included.
+     *
+     * <p>This used to accept a {@code Number} as a second-of-day, because
+     * YAML 1.1 resolved {@code 9:30} to the sexagesimal 570 — and read it back
+     * as <b>00:09:30</b>, nine minutes after midnight, from a file that said
+     * half past nine. {@link dev.sylvain.planning.scenario.ScenarioYaml}
+     * switches that resolver off, so an hour arrives as text and a bare number
+     * is what somebody typed by mistake.</p>
+     */
     private static LocalTime parseLocalTime(Object value) {
-        if (value instanceof Number number) {
-            return LocalTime.ofSecondOfDay(number.longValue());
+        if (value instanceof Number) {
+            throw new BusinessError.Invalid("Une heure doit s'écrire 9:30, pas « " + value + " »");
         }
-        return LocalTime.parse(value.toString());
+        return LocalTime.parse(value.toString(), HEURE);
     }
     /**
      * Reads a window's end hour, {@code null} (absent or explicitly empty)
@@ -945,6 +939,10 @@ public final class ScenarioYamlReader {
         }
         return horaires;
     }
+
+    /** Hours as authors write them: {@code 8:00}, {@code 09:30}, {@code 12:00:00}. */
+    private static final java.time.format.DateTimeFormatter HEURE =
+            java.time.format.DateTimeFormatter.ofPattern("H:mm[:ss]");
 
     private static LocalDate parseLocalDate(Object value, String fieldName) {
         if (value == null) {

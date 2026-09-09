@@ -65,8 +65,10 @@ public final class ScenarioValidator {
         List<String> erreurs;
         try {
             erreurs = validate(yamlContent);
-        } catch (Exception e) {
-            System.err.println("YAML invalide : " + e.getMessage());
+        } catch (ScenarioFormatException e) {
+            // As-is, like the other two callers: the binder's message is already
+            // written for whoever wrote the file.
+            System.err.println(e.getMessage());
             System.exit(1);
             return;
         }
