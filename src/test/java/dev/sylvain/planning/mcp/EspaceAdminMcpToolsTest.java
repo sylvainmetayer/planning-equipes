@@ -10,7 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.mcp.DisponibiliteMcpTools.CollecteView;
-import dev.sylvain.planning.mcp.DisponibiliteMcpTools.DeclarationView;
+import dev.sylvain.planning.mcp.DisponibiliteMcpTools.DeclarationMcpView;
 import dev.sylvain.planning.mcp.EchangeMcpTools.DemandeView;
 import dev.sylvain.planning.mcp.EchangeMcpTools.ViolationHardView;
 import dev.sylvain.planning.service.DeclarationDisponibiliteRepository.FenetreCollecte;
@@ -34,7 +34,7 @@ class EspaceAdminMcpToolsTest {
 
     @Test
     void uneDeclarationSortSansLeNomDeSonAuteur() {
-        DeclarationView vue = DisponibiliteMcpTools.toView(new DeclarationAdminView(
+        DeclarationMcpView vue = DisponibiliteMcpTools.toView(new DeclarationAdminView(
                 "d1", "a1", "Camille Martin", "EN_ATTENTE",
                 List.of(LocalDate.of(2026, 7, 11)), List.of("jeux-ambiance"), List.of("Jeux d'ambiance"),
                 "je travaille le samedi", null, CREE_LE, null,
@@ -45,7 +45,7 @@ class EspaceAdminMcpToolsTest {
         assertThat(vue.joursIndisponibles()).containsExactly(LocalDate.of(2026, 7, 11));
         assertThat(vue.joursActuels()).containsExactly(LocalDate.of(2026, 7, 12));
         assertThat(vue.souhaits()).containsExactly("jeux-ambiance");
-        assertThat(DeclarationView.class.getRecordComponents())
+        assertThat(DeclarationMcpView.class.getRecordComponents())
                 .extracting(composant -> composant.getName().toLowerCase())
                 .doesNotContain("animateurnom", "nom");
     }

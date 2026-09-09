@@ -45,10 +45,11 @@
     "ImportGrilleColonne": "ImportedColumn",
     "ImportGrilleRapport": "StandGrilleImportReport",
     "ImportGrilleDemande": "StandGrilleImportRequest",
-    "ImportCsvDemande": "AnimateurCsvImportRequest"
+    "ImportCsvDemande": "AnimateurCsvImportRequest",
+    "ImportCsvLigne": "ImportedRow",
+    "ImportGrilleLigne": "ImportedGrilleRow"
   },
   "horsContrat": {
-    "ImportGrilleLigne": "Le schéma porte deux records « ImportedRow » et nomme le second « ImportedRow1 ». Ce suffixe dépend de l'ordre de génération : s'y rattacher rendrait la vérification instable. À traiter en renommant l'un des deux records côté serveur.",
     "ConstraintDiagnostic": "ConstraintResource réemballe le diagnostic dans ses propres vues ; ce type-ci est la forme du front, sans schéma équivalent.",
     "PlanningDiagnostic": "Même raison que ConstraintDiagnostic.",
     "AffectationExplanation": "Idem : l'explication est réemballée par la resource.",
@@ -69,7 +70,6 @@
     "CleMcp": "Clé MCP telle que l'écran l'affiche ; le serveur ne renvoie jamais la valeur.",
     "ViolationDure": "Ligne de violation reconstruite depuis le diagnostic.",
     "DeplacementSimulation": "Simulation de déplacement, réemballée par la resource.",
-    "EchangeSimulation": "Idem DeplacementSimulation.",
-    "ImportCsvLigne": "Même instabilité que ImportGrilleLigne, à l'autre bout de la même collision : deux records portent le nom simple « ImportedRow », et lequel garde le nom nu dépend de l'ordre de génération. S'y rattacher rendrait la vérification instable — la collision touche aussi « Decision1 » et « ImportAction1 ». À traiter en renommant l'un des records côté serveur."
+    "EchangeSimulation": "Idem DeplacementSimulation."
   }
 }

@@ -1332,7 +1332,7 @@
           }
         }
       },
-      "Decision1" : {
+      "DecisionEchange" : {
         "type" : "object",
         "properties" : {
           "commentaire" : {
@@ -2151,7 +2151,7 @@
         "type" : "string",
         "enum" : [ "CREATED", "UPDATED", "REJECTED" ]
       },
-      "ImportAction1" : {
+      "ImportGrilleAction" : {
         "type" : "string",
         "enum" : [ "UPDATED", "REJECTED" ]
       },
@@ -2239,6 +2239,50 @@
           }
         }
       },
+      "ImportedGrilleRow" : {
+        "type" : "object",
+        "properties" : {
+          "line" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "action" : {
+            "$ref" : "#/components/schemas/ImportGrilleAction"
+          },
+          "reasons" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "cellulesOuvertes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "regles" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "exceptions" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "effectifMin" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "effectifMax" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "ImportedRow" : {
         "type" : "object",
         "properties" : {
@@ -2274,50 +2318,6 @@
               "format" : "date",
               "examples" : [ "2022-03-10" ]
             }
-          }
-        }
-      },
-      "ImportedRow1" : {
-        "type" : "object",
-        "properties" : {
-          "line" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "label" : {
-            "type" : "string"
-          },
-          "standId" : {
-            "type" : "string"
-          },
-          "action" : {
-            "$ref" : "#/components/schemas/ImportAction1"
-          },
-          "reasons" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "cellulesOuvertes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "regles" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "exceptions" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "effectifMin" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "effectifMax" : {
-            "type" : "integer",
-            "format" : "int32"
           }
         }
       },
@@ -4185,7 +4185,7 @@
           "rows" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/ImportedRow1"
+              "$ref" : "#/components/schemas/ImportedGrilleRow"
             }
           },
           "warnings" : {
@@ -5939,7 +5939,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Decision1"
+                "$ref" : "#/components/schemas/DecisionEchange"
               }
             }
           },
@@ -6000,7 +6000,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Decision1"
+                "$ref" : "#/components/schemas/DecisionEchange"
               }
             }
           },

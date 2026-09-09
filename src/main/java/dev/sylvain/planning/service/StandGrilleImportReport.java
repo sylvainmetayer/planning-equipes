@@ -24,7 +24,7 @@ public record StandGrilleImportReport(
         int total,
         int accepted,
         int rejected,
-        List<ImportedRow> rows,
+        List<ImportedGrilleRow> rows,
         List<String> warnings) {
 
     /**
@@ -39,7 +39,7 @@ public record StandGrilleImportReport(
             Long creneauId, int creneaux, String reason) {
     }
 
-    public enum ImportAction {
+    public enum ImportGrilleAction {
         /** The row names a stand of the edition, whose whole schedule is rewritten from its cells. */
         UPDATED,
         /** The row is refused; nothing of it is written. */
@@ -51,7 +51,7 @@ public record StandGrilleImportReport(
      * @param regles           rules the stand's schedule folds into (0 until the conversion ran)
      * @param exceptions       dated windows left over
      */
-    public record ImportedRow(int line, String label, String standId, ImportAction action, List<String> reasons,
+    public record ImportedGrilleRow(int line, String label, String standId, ImportGrilleAction action, List<String> reasons,
             int cellulesOuvertes, int regles, int exceptions, Integer effectifMin, Integer effectifMax) {
     }
 }

@@ -180,12 +180,12 @@ class ReferentielMcpToolsTest {
                 new dev.sylvain.planning.domain.FenetreHoraire(java.time.LocalTime.of(14, 0), null)))));
         referenceDataService.createStand(stand);
 
-        CreneauMcpTools.RapportDerivation apercu = creneauTools.previsualiser_derivation_creneaux(
+        CreneauMcpTools.RapportDerivationMcp apercu = creneauTools.previsualiser_derivation_creneaux(
                 "2026-07-06", "2026-07-07", "20:00", null, null, null, null);
         assertThat(apercu.nombreGeneres()).isEqualTo(4);
         assertThat(referenceDataService.listCreneaux()).isEmpty();
 
-        CreneauMcpTools.RapportDerivation ecrit = creneauTools.generer_creneaux_depuis_stands(
+        CreneauMcpTools.RapportDerivationMcp ecrit = creneauTools.generer_creneaux_depuis_stands(
                 "2026-07-06", "2026-07-07", "20:00", null, null, null, null);
         assertThat(ecrit.nombreGeneres()).isEqualTo(4);
         assertThat(referenceDataService.listCreneaux()).hasSize(4);

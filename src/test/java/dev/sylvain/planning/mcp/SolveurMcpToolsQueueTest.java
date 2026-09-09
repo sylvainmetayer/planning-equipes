@@ -12,7 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
-import dev.sylvain.planning.mcp.SolveurMcpTools.JobView;
+import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.JobStatus;
@@ -59,9 +59,9 @@ class SolveurMcpToolsQueueTest {
     @Test
     void uneResolutionPeutAttendreSonTourAuLieuDEchouer() throws InterruptedException {
         loadScenario();
-        JobView premier = solveurTools.lancer_solveur(4L, null, null, null);
+        JobMcpView premier = solveurTools.lancer_solveur(4L, null, null, null);
 
-        JobView enFile = solveurTools.lancer_solveur(1L, true, null, null);
+        JobMcpView enFile = solveurTools.lancer_solveur(1L, true, null, null);
 
         assertThat(enFile.status()).isEqualTo(JobStatus.QUEUED.name());
         assertThat(enFile.id()).isNotEqualTo(premier.id());
@@ -71,7 +71,7 @@ class SolveurMcpToolsQueueTest {
     @Test
     void sansMiseEnFileUneResolutionConcurrenteEstRefusee() throws InterruptedException {
         loadScenario();
-        JobView premier = solveurTools.lancer_solveur(4L, null, null, null);
+        JobMcpView premier = solveurTools.lancer_solveur(4L, null, null, null);
 
         assertThatThrownBy(() -> solveurTools.lancer_solveur(1L, false, null, null))
                 .isInstanceOf(BusinessError.Conflict.class)
@@ -93,7 +93,7 @@ class SolveurMcpToolsQueueTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
 
-        JobView incremental = solveurTools.resoudre_incremental(List.of(animateurId), null, null, 1L, null, null);
+        JobMcpView incremental = solveurTools.resoudre_incremental(List.of(animateurId), null, null, 1L, null, null);
 
         assertThat(incremental.type()).isEqualTo("SOLVE_INCREMENTAL");
         assertThat(awaitFinished(incremental.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
@@ -106,7 +106,7 @@ class SolveurMcpToolsQueueTest {
         assertThat(awaitFinished(solveurTools.lancer_solveur(1L, null, null, null).id()).status())
                 .isEqualTo(JobStatus.COMPLETED.name());
 
-        JobView incremental = solveurTools.resoudre_incremental(null, null, null, 1L, null, null);
+        JobMcpView incremental = solveurTools.resoudre_incremental(null, null, null, 1L, null, null);
 
         assertThat(awaitFinished(incremental.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
     }
@@ -125,9 +125,9 @@ class SolveurMcpToolsQueueTest {
         scenarioTools.importer_scenario("scenario.yml", null);
     }
 
-    private JobView awaitFinished(String jobId) throws InterruptedException {
+    private JobMcpView awaitFinished(String jobId) throws InterruptedException {
         for (int essai = 0; essai < MAX_POLLS; essai++) {
-            JobView job = solveurTools.statut_solveur(jobId);
+            JobMcpView job = solveurTools.statut_solveur(jobId);
             if (job != null && ETATS_TERMINAUX.contains(job.status())) {
                 return job;
             }

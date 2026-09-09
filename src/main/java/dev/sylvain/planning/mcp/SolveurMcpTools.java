@@ -71,7 +71,7 @@ public class SolveurMcpTools {
             + "perd la qualité déjà atteinte, demandez-le explicitement (reamorcage=AUCUN).",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
                     idempotentHint = false, openWorldHint = false))
-    JobView lancer_solveur(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes,
+    JobMcpView lancer_solveur(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes,
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false) Boolean enFile,
             @ToolArg(description = "Point de départ : AUTO (défaut, repart du plan enregistré s'il existe), "
                     + "PLAN_COURANT (échoue s'il n'y a pas de plan), AUCUN (calcul de zéro)", required = false) String reamorcage,
@@ -87,7 +87,7 @@ public class SolveurMcpTools {
             + "vaut que pour ce job.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
                     idempotentHint = false, openWorldHint = false))
-    JobView resoudre_incremental(
+    JobMcpView resoudre_incremental(
             @ToolArg(description = "Ids d'animateurs dont tous les postes sont rouverts", required = false) List<String> animateurIds,
             @ToolArg(description = "Jours (AAAA-MM-JJ) dont tous les postes sont rouverts", required = false) List<String> jours,
             @ToolArg(description = "Ids de stands dont tous les postes sont rouverts", required = false) List<String> standIds,
@@ -109,7 +109,7 @@ public class SolveurMcpTools {
      * makes a queued run solve the edition as it stands when its turn comes,
      * and what lets a restart replay it.
      */
-    private JobView submit(Supplier<SolverJob> submission) {
+    private JobMcpView submit(Supplier<SolverJob> submission) {
         try {
             return toView(submission.get());
         } catch (SolverBusyException e) {
@@ -154,7 +154,7 @@ public class SolveurMcpTools {
             + "Sans id, arrête le job actif s'il y en a un.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    JobView arreter_solveur(@ToolArg(description = "Id du job à arrêter", required = false) String jobId) {
+    JobMcpView arreter_solveur(@ToolArg(description = "Id du job à arrêter", required = false) String jobId) {
         String id = jobId != null ? jobId
                 : solverJobService.findActive()
                         .map(SolverJob::getId)
@@ -167,7 +167,7 @@ public class SolveurMcpTools {
     @Tool(description = "Statut du job en cours, ou d'un job donné par son id. Sans id et sans job actif, indique qu'aucun solveur ne tourne.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    JobView statut_solveur(@ToolArg(description = "Id du job à interroger", required = false) String jobId) {
+    JobMcpView statut_solveur(@ToolArg(description = "Id du job à interroger", required = false) String jobId) {
         Optional<SolverJob> job = jobId != null ? solverJobService.find(jobId) : solverJobService.findActive();
         return job.map(SolveurMcpTools::toView).orElse(null);
     }
@@ -175,7 +175,7 @@ public class SolveurMcpTools {
     @Tool(description = "Liste tous les jobs de résolution/analyse (en cours et terminés).",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    List<JobView> lister_jobs() {
+    List<JobMcpView> lister_jobs() {
         return solverJobService.list().stream().map(SolveurMcpTools::toView).toList();
     }
 
@@ -227,8 +227,8 @@ public class SolveurMcpTools {
                 .toList();
     }
 
-    private static JobView toView(SolverJob job) {
-        return new JobView(job.getId(), job.getType().name(), job.getStatus().name(), job.getSecondsLimit(),
+    private static JobMcpView toView(SolverJob job) {
+        return new JobMcpView(job.getId(), job.getType().name(), job.getStatus().name(), job.getSecondsLimit(),
                 job.getSubmittedAt(), job.getStartedAt(), job.getFinishedAt(), job.getElapsedSeconds(), job.getError(),
                 job.getEditionId(), job.getEditionNom());
     }
@@ -249,7 +249,7 @@ public class SolveurMcpTools {
      * while jobs are not: without it, {@code lister_jobs} would show two
      * editions' runs as one undifferentiated history (issue #181).</p>
      */
-    public record JobView(String id, String type, String status, Long secondsLimit, Instant submittedAt,
+    public record JobMcpView(String id, String type, String status, Long secondsLimit, Instant submittedAt,
             Instant startedAt, Instant finishedAt, long elapsedSeconds, String error, String editionId,
             String editionNom) {
     }

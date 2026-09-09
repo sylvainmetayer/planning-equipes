@@ -11,7 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.mcp.SolveurMcpTools.DiagnosticPlanView;
-import dev.sylvain.planning.mcp.SolveurMcpTools.JobView;
+import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
@@ -86,13 +86,13 @@ class DiagnosticPlanMcpToolsTest {
         awaitSolverIdle();
         scenarioTools.reinitialiser_donnees(null);
         scenarioTools.importer_scenario("scenario.yml", null);
-        JobView job = solveurTools.lancer_solveur(1L, null, null, null);
+        JobMcpView job = solveurTools.lancer_solveur(1L, null, null, null);
         assertThat(awaitFinished(job.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
     }
 
-    private JobView awaitFinished(String jobId) throws InterruptedException {
+    private JobMcpView awaitFinished(String jobId) throws InterruptedException {
         for (int essai = 0; essai < MAX_POLLS; essai++) {
-            JobView job = solveurTools.statut_solveur(jobId);
+            JobMcpView job = solveurTools.statut_solveur(jobId);
             if (job != null && ETATS_TERMINAUX.contains(job.status())) {
                 return job;
             }

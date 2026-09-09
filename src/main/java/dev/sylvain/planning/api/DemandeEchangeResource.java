@@ -110,14 +110,14 @@ public class DemandeEchangeResource {
 
     @POST
     @Path("/{id}/acceptation")
-    public Response accept(@PathParam("id") String id, Decision decision) {
+    public Response accept(@PathParam("id") String id, DecisionEchange decision) {
         return Response.ok(view(demandeEchangeService.accept(id,
                 decision == null ? null : decision.commentaire()))).build();
     }
 
     @POST
     @Path("/{id}/refus")
-    public Response refuse(@PathParam("id") String id, Decision decision) {
+    public Response refuse(@PathParam("id") String id, DecisionEchange decision) {
         return Response.ok(view(demandeEchangeService.refuse(id,
                 decision == null ? null : decision.commentaire()))).build();
     }
@@ -127,6 +127,6 @@ public class DemandeEchangeResource {
     }
 
     /** Optional admin comment carried by a decision (the reason of a refusal, typically). */
-    public record Decision(String commentaire) {
+    public record DecisionEchange(String commentaire) {
     }
 }

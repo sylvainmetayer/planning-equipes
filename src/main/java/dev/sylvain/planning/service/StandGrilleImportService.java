@@ -17,9 +17,9 @@ import java.util.TreeMap;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.GrilleHorairesStands.SaisieCellule;
-import dev.sylvain.planning.service.StandGrilleImportReport.ImportAction;
+import dev.sylvain.planning.service.StandGrilleImportReport.ImportGrilleAction;
 import dev.sylvain.planning.service.StandGrilleImportReport.ImportedColumn;
-import dev.sylvain.planning.service.StandGrilleImportReport.ImportedRow;
+import dev.sylvain.planning.service.StandGrilleImportReport.ImportedGrilleRow;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -143,10 +143,10 @@ public class StandGrilleImportService {
     /* --------------------------------- analysis -------------------------------- */
 
     private record Analyse(String separator, List<ImportedColumn> columns, List<String> creneauxAbsents,
-            List<ImportedRow> rows, List<String> warnings, List<Stand> aEcrire) {
+            List<ImportedGrilleRow> rows, List<String> warnings, List<Stand> aEcrire) {
 
         StandGrilleImportReport report(boolean applied) {
-            int accepted = (int) rows.stream().filter(row -> row.action() == ImportAction.UPDATED).count();
+            int accepted = (int) rows.stream().filter(row -> row.action() == ImportGrilleAction.UPDATED).count();
             return new StandGrilleImportReport(applied, separator, columns, creneauxAbsents, rows.size(), accepted,
                     rows.size() - accepted, rows, warnings);
         }
@@ -252,7 +252,7 @@ public class StandGrilleImportService {
         // opening covering only part of a créneau: rewritten from a headcount
         // alone, it comes back covering the whole of it.
         List<String> elargis = new ArrayList<>();
-        List<ImportedRow> rows = new ArrayList<>();
+        List<ImportedGrilleRow> rows = new ArrayList<>();
         List<Stand> aEcrire = new ArrayList<>();
         Map<String, Integer> dejaVus = new HashMap<>();
         for (GrilleCsv.Ligne ligne : matrice.lignes()) {
@@ -265,14 +265,14 @@ public class StandGrilleImportService {
                                 candidats.stream().map(Stand::getId).toList()) + ") : nommez le stand par son identifiant."
                         : "Aucun stand « " + ligne.stand() + " » dans l'édition : créez le stand d'abord, "
                                 + "l'import ne crée pas de stand (typologies et emplacement lui manqueraient).");
-                rows.add(new ImportedRow(ligne.line(), ligne.stand(), null, ImportAction.REJECTED, reasons, 0, 0, 0,
+                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), null, ImportGrilleAction.REJECTED, reasons, 0, 0, 0,
                         null, null));
                 continue;
             }
             if (dejaVus.containsKey(stand.getId())) {
                 reasons.add("Le stand " + stand.getId() + " est déjà décrit ligne " + dejaVus.get(stand.getId())
                         + " : cette ligne est ignorée.");
-                rows.add(new ImportedRow(ligne.line(), ligne.stand(), stand.getId(), ImportAction.REJECTED, reasons,
+                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), stand.getId(), ImportGrilleAction.REJECTED, reasons,
                         0, 0, 0, null, null));
                 continue;
             }
@@ -301,7 +301,7 @@ public class StandGrilleImportService {
                 }
             }
             if (!reasons.isEmpty()) {
-                rows.add(new ImportedRow(ligne.line(), ligne.stand(), stand.getId(), ImportAction.REJECTED, reasons,
+                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), stand.getId(), ImportGrilleAction.REJECTED, reasons,
                         ouvertes, 0, 0, null, null));
                 continue;
             }
@@ -319,10 +319,10 @@ public class StandGrilleImportService {
                 StandValidator.check(stand);
                 dejaVus.put(stand.getId(), ligne.line());
                 aEcrire.add(stand);
-                rows.add(new ImportedRow(ligne.line(), ligne.stand(), stand.getId(), ImportAction.UPDATED, List.of(),
+                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), stand.getId(), ImportGrilleAction.UPDATED, List.of(),
                         ouvertes, grille.regles(), grille.exceptions(), grille.effectifMin(), grille.effectifMax()));
             } catch (BusinessError e) {
-                rows.add(new ImportedRow(ligne.line(), ligne.stand(), stand.getId(), ImportAction.REJECTED,
+                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), stand.getId(), ImportGrilleAction.REJECTED,
                         List.of(e.getMessage()), ouvertes, 0, 0, null, null));
             }
         }

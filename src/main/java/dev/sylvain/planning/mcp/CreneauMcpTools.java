@@ -191,7 +191,7 @@ public class CreneauMcpTools {
             + "heureFermeture (00:00 pour minuit).",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    RapportDerivation previsualiser_derivation_creneaux(
+    RapportDerivationMcp previsualiser_derivation_creneaux(
             @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
             @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
             @ToolArg(description = "Heure de fermeture des fenêtres ouvertes (HH:MM, 00:00 = minuit)") String heureFermeture,
@@ -209,7 +209,7 @@ public class CreneauMcpTools {
             + "comme generer_decoupage.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
                     idempotentHint = false, openWorldHint = false))
-    RapportDerivation generer_creneaux_depuis_stands(
+    RapportDerivationMcp generer_creneaux_depuis_stands(
             @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
             @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
             @ToolArg(description = "Heure de fermeture des fenêtres ouvertes (HH:MM, 00:00 = minuit)") String heureFermeture,
@@ -228,9 +228,9 @@ public class CreneauMcpTools {
                 dureeMinimaleMinutes == null ? GrilleDepuisFenetres.DUREE_MINIMALE_PAR_DEFAUT : dureeMinimaleMinutes);
     }
 
-    private static RapportDerivation toView(ReferenceDataService.DerivationGrille resultat) {
+    private static RapportDerivationMcp toView(ReferenceDataService.DerivationGrille resultat) {
         GrilleDepuisFenetres.Derivation derivation = resultat.derivation();
-        return new RapportDerivation(derivation.creneaux().size(),
+        return new RapportDerivationMcp(derivation.creneaux().size(),
                 derivation.creneaux().stream().map(CreneauMcpTools::toView).toList(), derivation.coupures(),
                 derivation.joursSansFenetre(), resultat.controle());
     }
@@ -353,7 +353,7 @@ public class CreneauMcpTools {
     }
 
     /** The grid the stands' hours imply (or what was just written of it), the cuts behind it, and the verdict. */
-    public record RapportDerivation(int nombreGeneres, List<CreneauView> creneaux,
+    public record RapportDerivationMcp(int nombreGeneres, List<CreneauView> creneaux,
             List<GrilleDepuisFenetres.Coupure> coupures, List<java.time.LocalDate> joursSansFenetre,
             RapportGrille controle) {
     }

@@ -212,10 +212,10 @@ public class DiagnosticMcpTools {
             }
             List<SequencePausesView> sequences = new ArrayList<>();
             for (PauseAnalyzer.SequenceView sequence : journee.sequences()) {
-                List<PauseDueView> dues = sequence.pausesDues().stream()
+                List<PauseDueMcpView> dues = sequence.pausesDues().stream()
                         .filter(pause -> standId == null || standId.equals(pause.standId()))
                         .filter(pause -> !sansRelais || !pause.relaisDisponible())
-                        .map(pause -> new PauseDueView(pause.debut(), pause.fin(), pause.heureLimite(),
+                        .map(pause -> new PauseDueMcpView(pause.debut(), pause.fin(), pause.heureLimite(),
                                 pause.dureeMinutes(), pause.standId(),
                                 pause.relais().stream().map(PauseAnalyzer.RelaisView::animateurId).toList(),
                                 pause.relaisDisponible(), pause.simultanee()))
@@ -250,11 +250,11 @@ public class DiagnosticMcpTools {
      * only, and {@code simultanee} says the windows left no room to keep it
      * apart from another break on the stand.
      */
-    public record PauseDueView(LocalTime debut, LocalTime fin, LocalTime heureLimite, int dureeMinutes,
+    public record PauseDueMcpView(LocalTime debut, LocalTime fin, LocalTime heureLimite, int dureeMinutes,
             String standId, List<String> relaisAnimateurIds, boolean relaisDisponible, boolean simultanee) {
     }
 
-    public record SequencePausesView(LocalTime debut, LocalTime fin, int minutes, List<PauseDueView> pausesDues) {
+    public record SequencePausesView(LocalTime debut, LocalTime fin, int minutes, List<PauseDueMcpView> pausesDues) {
     }
 
     /**

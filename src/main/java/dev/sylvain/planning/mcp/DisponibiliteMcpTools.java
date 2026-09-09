@@ -48,7 +48,7 @@ public class DisponibiliteMcpTools {
             + "REFUSEE. Les animateurs y sont désignés par id seul.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    List<DeclarationView> lister_declarations_disponibilite(
+    List<DeclarationMcpView> lister_declarations_disponibilite(
             @ToolArg(description = "Statut pour filtrer : EN_ATTENTE, APPLIQUEE ou REFUSEE", required = false) String statut,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StatutDeclaration filtre = statut == null
@@ -93,7 +93,7 @@ public class DisponibiliteMcpTools {
             + "Les données de référence sont marquées modifiées : le planning déjà résolu devient périmé.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = false, openWorldHint = false))
-    DeclarationView appliquer_declaration_disponibilite(
+    DeclarationMcpView appliquer_declaration_disponibilite(
             @ToolArg(description = "Id de la déclaration") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return view(declarationService.apply(id));
@@ -104,7 +104,7 @@ public class DisponibiliteMcpTools {
             + "ouverte.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = false, openWorldHint = false))
-    DeclarationView refuser_declaration_disponibilite(
+    DeclarationMcpView refuser_declaration_disponibilite(
             @ToolArg(description = "Id de la déclaration") String id,
             @ToolArg(description = "Commentaire pour l'animateur", required = false) String commentaire,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -113,12 +113,12 @@ public class DisponibiliteMcpTools {
 
     /* -------------------------------- Views -------------------------------- */
 
-    private DeclarationView view(DeclarationDisponibilite declaration) {
+    private DeclarationMcpView view(DeclarationDisponibilite declaration) {
         return toView(espaceAnimateurService.toDeclarationViews(List.of(declaration)).get(0));
     }
 
-    static DeclarationView toView(DeclarationAdminView declaration) {
-        return new DeclarationView(declaration.id(), declaration.animateurId(), declaration.statut(),
+    static DeclarationMcpView toView(DeclarationAdminView declaration) {
+        return new DeclarationMcpView(declaration.id(), declaration.animateurId(), declaration.statut(),
                 declaration.joursIndisponibles(), declaration.souhaits(), declaration.commentaire(),
                 declaration.commentaireAdmin(), declaration.creeLe(), declaration.decideLe(),
                 declaration.joursActuels());
@@ -138,7 +138,7 @@ public class DisponibiliteMcpTools {
      * @param joursActuels  what the fiche says today, to compare with what was
      *                      declared before applying anything
      */
-    public record DeclarationView(String id, String animateurId, String statut,
+    public record DeclarationMcpView(String id, String animateurId, String statut,
             List<LocalDate> joursIndisponibles, List<String> souhaits, String commentaire,
             String commentaireAdmin, Instant creeLe, Instant decideLe, List<LocalDate> joursActuels) {
     }

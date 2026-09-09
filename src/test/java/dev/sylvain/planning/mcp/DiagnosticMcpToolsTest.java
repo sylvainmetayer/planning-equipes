@@ -239,7 +239,7 @@ class DiagnosticMcpToolsTest {
         assertThat(tout.relaisManquants()).isEqualTo(1);
         assertThat(tout.journees()).extracting(DiagnosticMcpTools.JourneePausesView::animateurId)
                 .containsExactly("PAUSE-MCP-A", "PAUSE-MCP-B", "PAUSE-MCP-C");
-        DiagnosticMcpTools.PauseDueView pauseAlice = tout.journees().getFirst().sequences().getFirst()
+        DiagnosticMcpTools.PauseDueMcpView pauseAlice = tout.journees().getFirst().sequences().getFirst()
                 .pausesDues().getFirst();
         assertThat(pauseAlice.heureLimite()).isEqualTo(LocalTime.of(19, 0));
         assertThat(pauseAlice.standId()).isEqualTo("PAUSE-MCP-S1");
