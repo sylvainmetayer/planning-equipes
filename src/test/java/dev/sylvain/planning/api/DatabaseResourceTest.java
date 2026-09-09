@@ -11,6 +11,7 @@ import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -241,43 +242,56 @@ class DatabaseResourceTest {
         // the referential the tests running next expect to find seeded.
         String etatInitial = exportDump();
 
-        given()
-                .when().post("/api/planning/reset")
-                .then()
-                .statusCode(200);
+        // In a finally block: every class running after this one needs the
+        // database this one found. Letting an assertion escape mid-flight
+        // leaves them all resolving to an edition that no longer exists, and
+        // one failure here becomes forty elsewhere.
+        try {
+            given()
+                    .when().post("/api/planning/reset")
+                    .then()
+                    .statusCode(200);
 
-        // A dump whose only edition is "restauree" — DEFAUT is nowhere in it.
-        createEdition("restauree", "Édition restaurée");
-        makeDefaultEdition("restauree");
-        deleteEdition("DEFAUT");
-        String dump = exportDump();
-        assertThat(dump).contains("INSERT INTO edition (").doesNotContain("'DEFAUT'");
+            // A dump whose only edition is "restauree" — DEFAUT is nowhere in it.
+            createEdition("restauree", "Édition restaurée");
+            makeDefaultEdition("restauree");
+            deleteEdition("DEFAUT");
+            String dump = exportDump();
 
-        // Back to a database that only knows DEFAUT, and a request that caches it.
-        createEdition("DEFAUT", "Édition par défaut");
-        makeDefaultEdition("DEFAUT");
-        deleteEdition("restauree");
-        given()
-                .when().get("/api/editions/courant")
-                .then()
-                .statusCode(200)
-                .body("id", equalTo("DEFAUT"));
+            // Read on the edition table alone: kpi_historique also carries an
+            // edition_id, and no foreign key ties the two, so measurements taken
+            // before the deletion outlive it and the dump keeps naming DEFAUT
+            // further down.
+            List<String> editionRows = dump.lines().filter(line -> line.startsWith("INSERT INTO edition (")).toList();
+            assertThat(editionRows).isNotEmpty().noneMatch(line -> line.contains("'DEFAUT'"));
 
-        sqlRequest(dump)
-                .when().post("/api/database/import")
-                .then()
-                .statusCode(200);
+            // Back to a database that only knows DEFAUT, and a request that caches it.
+            createEdition("DEFAUT", "Édition par défaut");
+            makeDefaultEdition("DEFAUT");
+            deleteEdition("restauree");
+            given()
+                    .when().get("/api/editions/courant")
+                    .then()
+                    .statusCode(200)
+                    .body("id", equalTo("DEFAUT"));
 
-        given()
-                .when().get("/api/editions/courant")
-                .then()
-                .statusCode(200)
-                .body("id", equalTo("restauree"));
+            sqlRequest(dump)
+                    .when().post("/api/database/import")
+                    .then()
+                    .statusCode(200);
 
-        sqlRequest(etatInitial)
-                .when().post("/api/database/import")
-                .then()
-                .statusCode(200);
+            given()
+                    .when().get("/api/editions/courant")
+                    .then()
+                    .statusCode(200)
+                    .body("id", equalTo("restauree"));
+        } finally {
+            sqlRequest(etatInitial)
+                    .when().post("/api/database/import")
+                    .then()
+                    .statusCode(200);
+        }
+
         given()
                 .when().get("/api/editions/courant")
                 .then()
@@ -302,5 +316,59 @@ class DatabaseResourceTest {
 
     private static void deleteEdition(String id) {
         given().when().delete("/api/editions/" + id).then().statusCode(204);
+    }
+
+    /**
+     * The KPI history survives an export/import round trip.
+     *
+     * <p>It did not. {@code kpi_historique} was outside {@code TABLES}, so the
+     * dump neither carried it nor deleted it — and its {@code edition_id} has no
+     * foreign key, so the dump's {@code DELETE FROM edition} did not reach it
+     * either. An operator restoring a dump kept whatever history the target
+     * already had and lost the one they were restoring, silently, against a
+     * class javadoc promising that "restoring it restores exactly what was
+     * dumped".</p>
+     *
+     * <p>Written through the SQL import rather than a solve: the history is only
+     * fed by {@code recordAfterSolve}, and this test is about the dump, not
+     * about the solver. That the insert is accepted at all is half the fix —
+     * the import's allow-list derives from the same constant.</p>
+     */
+    @Test
+    void exportedDumpCarriesTheKpiHistoryBackAndForth() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        sqlRequest("INSERT INTO kpi_historique (id, edition_id, edition_nom, kpi, cree_le) VALUES "
+                + "(4242, 'DEFAUT', 'Edition du test', '{\"heuresTotales\": 7}', '2026-07-01T10:00:00Z');")
+                .when().post("/api/database/import")
+                .then()
+                .statusCode(200);
+
+        given().when().get("/api/kpi/historique")
+                .then()
+                .statusCode(200)
+                .body("find { it.id == 4242 }.editionNom", equalTo("Edition du test"));
+
+        String dump = given()
+                .when().get("/api/database/export")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+        assertThat(dump).contains("kpi_historique");
+
+        // The wipe the restore is supposed to undo.
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
+
+        given().when().get("/api/kpi/historique")
+                .then()
+                .statusCode(200)
+                .body("find { it.id == 4242 }.editionNom", equalTo("Edition du test"));
+
+        // Handed back clean: `POST /api/planning/reset` does not empty this
+        // table — nothing does, short of the dump this test just taught to
+        // carry it — so the row would follow every later class around.
+        given().when().delete("/api/kpi/historique/4242").then().statusCode(204);
     }
 }

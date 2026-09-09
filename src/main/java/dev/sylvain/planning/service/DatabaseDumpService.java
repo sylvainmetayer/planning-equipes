@@ -68,7 +68,22 @@ public class DatabaseDumpService {
             "parametres_decoupage",
             "parametres_solveur",
             "constraint_toggle",
-            "ponderation_contrainte");
+            "ponderation_contrainte",
+            // Missing until now, against this class's own promise that
+            // "restoring it restores exactly what was dumped": its edition_id
+            // carries no foreign key, so the dump's DELETE FROM edition never
+            // reached it. An operator restoring a dump kept whatever history
+            // the target already had and lost the one being restored, silently.
+            //
+            // Last in the list because it depends on nothing: deletes are
+            // issued in reverse, so it goes first, and nothing references it.
+            //
+            // horloge_jour_j stays out, deliberately. It describes the
+            // server's clock rather than the dataset — JourJClock says so where
+            // it reads the row — and a restore has no business reaching into
+            // it: replaying any dump would unfreeze a date the operator had
+            // frozen, on an instance they were only importing data into.
+            "kpi_historique");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 
@@ -80,7 +95,11 @@ public class DatabaseDumpService {
      * could collide with one just imported.
      */
     private static final List<String> IDENTITY_TABLES = List.of("creneau", "stand_indisponibilite",
-            "stand_ouverture", "stand_horaire", "stand_horaire_fenetre");
+            "stand_ouverture", "stand_horaire", "stand_horaire_fenetre",
+            // BIGSERIAL since V48: left unsynced, the first measurement
+            // written after an import would collide with an id the dump just
+            // replayed.
+            "kpi_historique");
 
     private static final Pattern STATEMENT_PATTERN = Pattern.compile(
             "^(insert\\s+into|delete\\s+from|truncate\\s+table|truncate)\\s+([a-z_][a-z0-9_]*)");
