@@ -85,6 +85,24 @@ const front = interfacesDuFront();
 const contrat = schemasDuContrat(SCHEMA);
 const { renommes, horsContrat } = JSON.parse(readFileSync(MAPPING, 'utf8'));
 
+// SmallRye nomme les schémas par nom simple : deux types homonymes lui font
+// émettre « Xxx » et « Xxx1 », et lequel hérite du nom nu dépend de l'ordre de
+// génération. Six paires d'homonymes subsistent dans le dépôt ; le jour où
+// l'une est exposée, le contrat se met à bouger tout seul. Rien d'autre ne le
+// verrait : `JsonContractTest` indexe sur les noms Java, et la comparaison
+// ci-dessous ne réagit que si les deux formes diffèrent — deux records de même
+// forme échangeraient le nom nu sans un bruit.
+for (const nom of contrat.keys()) {
+  const jumeau = /^(.*?)\d+$/.exec(nom);
+  if (jumeau && contrat.has(jumeau[1])) {
+    ecarts.push(
+      `${nom} est un nom de collision : le contrat porte déjà « ${jumeau[1]} », et SmallRye a suffixé ` +
+        "le second de deux types homonymes. Renommez-en un côté serveur — le suffixe change de " +
+        "propriétaire d'une génération à l'autre."
+    );
+  }
+}
+
 for (const [nom, proprietesFront] of front) {
   if (Object.hasOwn(horsContrat, nom)) {
     if (contrat.has(nom)) {
