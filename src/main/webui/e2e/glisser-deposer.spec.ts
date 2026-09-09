@@ -94,29 +94,38 @@ async function occupants(): Promise<Record<string, string | null>> {
  * target's centre. `dragTo` skips the intermediate moves the CDK needs.
  */
 async function glisser(page: Page, source: Locator, cible: Locator): Promise<void> {
-  await source.scrollIntoViewIfNeeded();
-  const depart = await source.boundingBox();
-  expect(depart, 'the dragged element should be on screen').not.toBeNull();
-  const x0 = depart!.x + depart!.width / 2;
-  const y0 = depart!.y + depart!.height / 2;
-  await page.mouse.move(x0, y0);
-  await page.mouse.down();
-  await page.mouse.move(x0 + 8, y0 + 8);
-
-  // The target is read *here*, once the drag has started, and not before the
-  // mousedown with the source. Taking the drop point up front is what made
-  // this helper wrong: the CDK inserts a preview and a placeholder when the
-  // threshold is crossed, which moves every row below the source, so the
-  // coordinate captured beforehand no longer covers the intended row when the
-  // pointer arrives — it covers its neighbour, and the drop lands there.
+  // Les deux extrémités sont amenées à l'écran, PUIS mesurées, PUIS seulement
+  // le glissement commence. L'ordre est ce qui compte, et il a demandé deux
+  // essais.
   //
-  // The bug only shows when the target sits far enough below the source for
-  // the shift to cross a row boundary, which depends on how many rows the rail
-  // holds — that is, on the animateurs other specs left in the edition. So it
-  // passed in isolation and failed in the full suite, deterministically.
+  // Le CDK fige le rectangle de chaque liste au démarrage du glissement
+  // (`DropListRef._cacheParentPositions`, dans le gestionnaire du premier
+  // mousemove). Une coordonnée lue *après* ce moment appartient donc à un autre
+  // repère que celui du CDK, et `_canReceive` — qui compare son rectangle figé
+  // à un `elementFromPoint` vivant — refuse le dépôt. Pire, faire défiler
+  // pendant le glissement décale le conteneur sans que le CDK le sache : aucun
+  // élément ne porte `cdkScrollable` ici, donc rien ne compense.
+  //
+  // Ma première correction lisait la cible après le `mouse.down()`. Elle
+  // marchait, mais pas pour la raison que j'avais écrite : je croyais que
+  // l'aperçu du CDK décalait les lignes, ce qu'il ne fait pas — `.rail-bloc`
+  // est en `position: absolute` et l'aperçu en `position: fixed`. Ce qui
+  // corrigeait vraiment, c'est l'attente de stabilité que
+  // `scrollIntoViewIfNeeded` impose : le défaut d'origine était une mise en
+  // page pas encore posée au moment de la mesure, d'amplitude proportionnelle
+  // au rang de la ligne — d'où « plus la cible est basse, plus ça rate ».
+  await source.scrollIntoViewIfNeeded();
   await cible.scrollIntoViewIfNeeded();
+  const depart = await source.boundingBox();
   const arrivee = await cible.boundingBox();
+  expect(depart, 'the dragged element should be on screen').not.toBeNull();
   expect(arrivee, 'the drop target should be on screen').not.toBeNull();
+
+  await page.mouse.move(depart!.x + depart!.width / 2, depart!.y + depart!.height / 2);
+  await page.mouse.down();
+  // Le seuil du CDK, franchi avant de viser : c'est ce mouvement-là qui fige
+  // les rectangles, et il doit partir de la source.
+  await page.mouse.move(depart!.x + depart!.width / 2 + 8, depart!.y + depart!.height / 2 + 8);
   await page.mouse.move(arrivee!.x + arrivee!.width / 2, arrivee!.y + arrivee!.height / 2, { steps: 12 });
   await page.mouse.up();
 }
