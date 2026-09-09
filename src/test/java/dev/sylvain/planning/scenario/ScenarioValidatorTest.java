@@ -113,11 +113,16 @@ class ScenarioValidatorTest {
                 .anySatisfy(erreur -> assertThat(erreur).contains("parametresDecoupage.dureeDecalageMaxMinutes"));
     }
 
-    /** Malformed YAML fails loudly at parsing, it is not reported as a violation. */
+    /**
+     * Malformed YAML fails loudly at parsing, it is not reported as a
+     * violation — a violation says "this field is wrong", and there is no
+     * field yet.
+     */
     @Test
     void unYamlSyntaxiquementInvalideLeveUneErreurDeLecture() {
         assertThatThrownBy(() -> ScenarioValidator.validate("festival: [unclosed"))
-                .isInstanceOf(IOException.class);
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("YAML invalide");
     }
 
     @ParameterizedTest

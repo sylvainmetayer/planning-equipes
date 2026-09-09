@@ -2,11 +2,11 @@ package dev.sylvain.planning.api;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.EditionService;
@@ -201,9 +201,10 @@ public class ReferenceDataResource {
         }
         try {
             return ScenarioValidator.validate(yamlContent);
-        } catch (IOException e) {
-            String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-            return List.of("YAML invalide : " + message);
+        } catch (ScenarioFormatException e) {
+            // Reported as-is: the binder writes its message for the person who
+            // wrote the file, and prefixing it again would only bury it.
+            return List.of(e.getMessage());
         }
     }
 

@@ -1,9 +1,9 @@
 package dev.sylvain.planning.mcp;
 
-import java.io.IOException;
 import java.util.List;
 
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.EditionService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
@@ -91,9 +91,8 @@ public class ScenarioMcpTools {
         try {
             List<String> erreurs = ScenarioValidator.validate(yaml);
             return new ValidationResult(erreurs.isEmpty(), erreurs);
-        } catch (IOException e) {
-            String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-            return new ValidationResult(false, List.of("YAML invalide : " + message));
+        } catch (ScenarioFormatException e) {
+            return new ValidationResult(false, List.of(e.getMessage()));
         }
     }
 

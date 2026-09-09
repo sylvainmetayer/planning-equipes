@@ -1,6 +1,5 @@
 package dev.sylvain.planning.scenario;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -13,13 +12,19 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Standalone structural validator for scenario YAML files (see
- * docs/import-export.md), independent from PlanningService's own
- * hand-written, more permissive parser. It checks the same shape the JSON
- * Schema at docs/schema/scenario-schema.json describes — required sections,
- * field types, non-negative durations — but does not replicate
- * PlanningService's cross-reference checks (e.g. a poste's standId actually
- * matching a declared stand) nor any Timefold constraint.
+ * Structural validator for scenario YAML files (see docs/import-export.md):
+ * the beginning of an import, without the import.
+ *
+ * <p>It reads through {@link ScenarioBinder}, the same door the import walks
+ * in by, which is what makes its verdict worth something: a file this screen
+ * calls valid is, by construction, a file the import accepts. It used to bind
+ * the YAML its own way, so the two could and did disagree.
+ *
+ * <p>It checks the shape the JSON Schema at docs/schema/scenario-schema.json
+ * describes — required sections, field types, non-negative durations — and
+ * stops there: cross-reference checks (a poste's standId actually matching a
+ * declared stand) belong to the mapping into the domain, and no Timefold
+ * constraint is evaluated.
  *
  * <p>Usage: {@code ./mvnw compile exec:java
  * -Dexec.mainClass=dev.sylvain.planning.scenario.ScenarioValidator
@@ -30,10 +35,14 @@ public final class ScenarioValidator {
     private ScenarioValidator() {
     }
 
-    /** Returns the Bean Validation violations for the given YAML content; empty if valid. */
-    public static List<String> validate(String yamlContent) throws IOException {
-        ObjectMapper mapper = ScenarioYamlMapper.create();
-        ScenarioDto scenario = mapper.readValue(yamlContent, ScenarioDto.class);
+    /**
+     * @return the Bean Validation violations for the given YAML content, empty
+     *         if valid
+     * @throws ScenarioFormatException when the document cannot be bound at all
+     *         — a malformed file, or a key the application does not know
+     */
+    public static List<String> validate(String yamlContent) {
+        ScenarioDto scenario = ScenarioBinder.bind(yamlContent);
         try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = factory.getValidator();
             Set<ConstraintViolation<ScenarioDto>> violations = validator.validate(scenario);
