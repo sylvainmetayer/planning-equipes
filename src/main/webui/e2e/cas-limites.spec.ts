@@ -4,6 +4,7 @@
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { SEED, contexteAdmin, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning, ouvrirSelect } from './support';
+import { repartirDeLaReference } from './reference';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
 
@@ -12,6 +13,7 @@ let admin: APIRequestContext;
 test.beforeAll(async ({ playwright }, testInfo) => {
   const baseURL = testInfo.project.use.baseURL as string;
   admin = await contexteAdmin(playwright, baseURL);
+  await repartirDeLaReference(admin);
 });
 
 test.afterAll(async () => {

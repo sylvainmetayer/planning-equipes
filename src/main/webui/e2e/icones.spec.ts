@@ -21,6 +21,7 @@
 import { expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, seedPlanning } from './support';
 import type { APIRequestContext } from '@playwright/test';
+import { repartirDeLaReference } from './reference';
 
 /** Widest an icon may render: 24 px of glyph, plus room for a theme that grew it. */
 const LARGEUR_MAX_GLYPHE = 32;
@@ -29,6 +30,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
   await seedPlanning(admin);
 });
 

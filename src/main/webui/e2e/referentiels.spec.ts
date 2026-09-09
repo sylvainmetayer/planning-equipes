@@ -4,11 +4,13 @@
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, seedPlanning } from './support';
+import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
   await seedPlanning(admin);
   // Idempotence across runs: drop what this spec creates through the UI.
   await admin.delete('/api/animateurs/E2E-UI').catch(() => undefined);

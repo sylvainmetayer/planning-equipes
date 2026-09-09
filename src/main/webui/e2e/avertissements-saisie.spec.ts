@@ -5,6 +5,7 @@
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, seedReferentielSolveur } from './support';
+import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
 
@@ -28,6 +29,7 @@ async function supprimerCreneauxDuJour(): Promise<void> {
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
   // Référentiel connu : les avertissements se lisent contre TOUS les stands et
   // TOUS les créneaux de l'édition, donc une ligne oubliée par une autre suite
   // déplacerait les bornes sous les assertions. Le créneau de référence est ce

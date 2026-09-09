@@ -178,6 +178,17 @@ exception correspond encore à du code réel.
 Ils réamorcent la base par `/api/database/import` : ne jamais les pointer
 ailleurs que sur une pile jetable.
 
+**Chaque spec repart d'un état de référence.** Avant la première, la suite
+photographie la base par `/api/database/export` — un script qui commence par un
+`DELETE FROM` de chaque table, donc une restauration autonome — puis chaque
+spec y revient dans son `beforeAll`. Les specs ne se contaminent donc plus, et
+la suite se relance sans recréer la base : la référence est mise en cache dans
+`node_modules/.cache/` et rejouée au démarrage. Coût : ~40 ms par spec.
+
+La première capture exige une base **vierge de données de test**, sinon elle
+figerait l'état d'une exécution précédente ; la suite le refuse en le disant.
+Supprimez le cache et recréez le conteneur PostgreSQL si le schéma a changé.
+
 ```bash
 docker compose up -d postgres mailpit
 ./mvnw quarkus:dev                       # les défauts suffisent : mail sur :1025, mot de passe « admin »

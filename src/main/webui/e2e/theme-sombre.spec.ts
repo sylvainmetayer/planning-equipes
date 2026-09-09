@@ -12,11 +12,13 @@
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin } from './support';
+import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
 });
 
 test.afterAll(async () => {

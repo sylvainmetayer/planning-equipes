@@ -14,6 +14,7 @@
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { SEED, contexteAdmin, pageAdmin, seedPlanning } from './support';
+import { repartirDeLaReference } from './reference';
 
 const INDISPO = 'E2E-ADHOC-INDISPO';
 const FORCEE = 'E2E-ADHOC-FORCEE';
@@ -23,6 +24,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
   await seedPlanning(admin);
 });
 

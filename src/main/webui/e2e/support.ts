@@ -66,21 +66,18 @@ export async function seedPlanning(
   options: { avecCollegueIndisponible?: boolean; avecCollegueLibre?: boolean } = {}
 ): Promise<void> {
   const script = [
-    // Clean previous runs, children first. Postes of the other test prefixes
-    // are wiped too: a solver spec may have persisted a whole planning over
-    // its SOLV-/FUZZ- referential, and the publication below must see exactly
-    // the two-seat planning seeded here.
+    // Ses propres lignes seulement : la spec est repartie de la base de
+    // référence dans son `beforeAll` (e2e/reference.ts), donc rien d'étranger
+    // ne traîne. Ce nettoyage-ci sert au cas où la même spec réamorce
+    // plusieurs fois.
+    //
+    // Ce bloc supprimait aussi les postes des préfixes SOLV- et FUZZ-, et les
+    // lignes du créneau par identifiant plutôt que par préfixe — un `delete`
+    // ajouté par panne, chacun commenté par l'incident qui l'avait fait
+    // ajouter. C'est ce que la référence remplace.
     `delete from demande_echange where demandeur_id like 'E2E-%' or cible_id like 'E2E-%';`,
     `delete from verrouillage_planning where animateur_id like 'E2E-%';`,
     `delete from poste_affectation where id like 'E2E-%' or stand_id like 'E2E-%' or animateur_id like 'E2E-%';`,
-    `delete from poste_affectation where stand_id like 'SOLV-%' or animateur_id like 'SOLV-%';`,
-    `delete from poste_affectation where stand_id like 'FUZZ-%' or animateur_id like 'FUZZ-%';`,
-    // By créneau too, not only by prefix: a solver spec that really solved and
-    // persisted rewrites the assignments with generated ids ('poste-12'), which
-    // no prefix matches — and those rows then hold the créneau's foreign key,
-    // failing every later seeding. seedPlanningSolver already clears the range;
-    // this one used to leave its own leftovers behind.
-    `delete from verrouillage_planning where creneau_id in (${SEED.creneauId}, ${SEED.creneauAutreJour});`,
     `delete from poste_affectation where creneau_id in (${SEED.creneauId}, ${SEED.creneauAutreJour});`,
     `delete from creneau where id in (${SEED.creneauId}, ${SEED.creneauAutreJour});`,
     `delete from animateur where id like 'E2E-%';`,

@@ -7,6 +7,7 @@
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin } from './support';
+import { repartirDeLaReference } from './reference';
 
 const EDITION_IMPORT = { id: 'E2E-IMPORT-CIBLE', nom: 'Édition import e2e' };
 
@@ -47,6 +48,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
   // Leftover from a crashed previous run; a 404 here is fine.
   await admin.delete(`/api/editions/${EDITION_IMPORT.id}`);
 });

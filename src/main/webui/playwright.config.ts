@@ -41,6 +41,10 @@ const videoDemandee = process.env['E2E_VIDEO']
 
 export default defineConfig({
   testDir: './e2e',
+  // Photographie l'état de la base avant la première spec : chacune y revient
+  // ensuite, au lieu de nettoyer les préfixes d'identifiant de ses voisines.
+  // Voir e2e/reference.ts.
+  globalSetup: './e2e/reference.ts',
   // The specs share one database and one seeded dataset: keep them ordered.
   fullyParallel: false,
   workers: 1,

@@ -10,6 +10,7 @@
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, seedReferentielSolveur } from './support';
+import { repartirDeLaReference } from './reference';
 
 const STAND_ID = 'SOLV-CC1';
 
@@ -17,6 +18,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
 });
 
 test.afterAll(async () => {

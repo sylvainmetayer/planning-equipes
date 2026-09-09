@@ -20,6 +20,7 @@ import {
   publierPlanning,
   seedReferentielSolveur
 } from './support';
+import { repartirDeLaReference } from './reference';
 
 // Problem shape, learnt the hard way:
 // - one créneau per day — the hard `pauseMinimaleEntreVacations` forbids two
@@ -59,6 +60,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
 });
 
 test.afterAll(async () => {

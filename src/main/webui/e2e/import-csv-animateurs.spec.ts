@@ -9,6 +9,7 @@
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, seedPlanning } from './support';
+import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
 
@@ -19,6 +20,7 @@ const JOUR_EVENEMENT = '10/07/2026';
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
   await seedPlanning(admin);
 });
 

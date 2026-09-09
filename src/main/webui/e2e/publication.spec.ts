@@ -9,6 +9,7 @@
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { SEED, contexteAdmin, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning } from './support';
+import { repartirDeLaReference } from './reference';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
 
@@ -44,6 +45,7 @@ test.describe('Publication du planning', () => {
 
   test.beforeEach(async ({ playwright, baseURL }) => {
     admin = await contexteAdmin(playwright, baseURL as string);
+    await repartirDeLaReference(admin);
     // Le seed publie déjà : on part donc d'un plan communiqué, comme après un
     // premier envoi réel.
     await seedPlanning(admin);

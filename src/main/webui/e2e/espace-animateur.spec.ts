@@ -18,6 +18,7 @@ import {
   publierPlanning,
   seedPlanning
 } from './support';
+import { repartirDeLaReference } from './reference';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
 const EMAIL_BRUNO = `${SEED.cible}@example.org`;
@@ -28,6 +29,7 @@ let jeton: string;
 test.beforeAll(async ({ playwright }, testInfo) => {
   const baseURL = testInfo.project.use.baseURL as string;
   admin = await contexteAdmin(playwright, baseURL);
+  await repartirDeLaReference(admin);
   await seedPlanning(admin);
   jeton = await jetonDe(admin, SEED.demandeur);
 });

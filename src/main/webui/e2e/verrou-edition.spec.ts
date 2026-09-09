@@ -15,6 +15,7 @@ import {
   pageAdmin,
   seedReferentielSolveur
 } from './support';
+import { repartirDeLaReference } from './reference';
 
 const EDITION_B = { id: 'E2E-EDITION-B', nom: 'Édition e2e verrou' };
 
@@ -47,6 +48,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
   // Leftover from a crashed previous run; a 404/409 here is fine.
   await admin.delete(`/api/editions/${EDITION_B.id}`);
   const creation = await admin.post('/api/editions', { data: EDITION_B });

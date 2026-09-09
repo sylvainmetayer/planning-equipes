@@ -16,6 +16,7 @@ import {
   planningPersiste,
   seedReferentielSolveur
 } from './support';
+import { repartirDeLaReference } from './reference';
 
 // Same problem shape as solveur.spec.ts, and for the same reasons: one créneau
 // per day (the hard pauseMinimaleEntreVacations forbids two same-day
@@ -55,6 +56,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
 });
 
 test.afterAll(async () => {

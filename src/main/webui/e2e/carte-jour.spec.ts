@@ -10,6 +10,7 @@
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin } from './support';
+import { repartirDeLaReference } from './reference';
 
 const SEED = {
   matin: 'CJ-S-MATIN',
@@ -75,6 +76,7 @@ async function amorcer(): Promise<void> {
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
   await amorcer();
 });
 

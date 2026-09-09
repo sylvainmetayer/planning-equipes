@@ -8,6 +8,7 @@
 
 import { APIRequestContext, Locator, Page, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, planningPersiste } from './support';
+import { repartirDeLaReference } from './reference';
 
 const C1 = 987401;
 const ANIMATEURS = [
@@ -70,6 +71,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
 });
 
 test.afterAll(async () => {

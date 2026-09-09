@@ -28,6 +28,7 @@ import {
   pageAdmin,
   seedReferentielSolveur
 } from './support';
+import { repartirDeLaReference } from './reference';
 
 const C1 = 987301;
 const C2 = 987302;
@@ -54,6 +55,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
 });
 
 test.afterAll(async () => {

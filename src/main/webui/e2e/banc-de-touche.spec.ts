@@ -14,6 +14,7 @@
 
 import { APIRequestContext, expect, Page, test } from '@playwright/test';
 import { contexteAdmin, ouvrirSelect, pageAdmin, SEED, seedPlanning } from './support';
+import { repartirDeLaReference } from './reference';
 
 /** A créneau of the referential that no seat of the saved plan points at. */
 const CRENEAU_SANS_SIEGE = 987003;
@@ -25,6 +26,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
   await semer();
 });
 

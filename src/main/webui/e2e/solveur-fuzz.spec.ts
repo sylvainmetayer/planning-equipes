@@ -16,6 +16,7 @@ import {
   planningPersiste,
   seedReferentielSolveur
 } from './support';
+import { repartirDeLaReference } from './reference';
 
 /** Deterministic PRNG (mulberry32), so a printed seed replays the exact run. */
 function mulberry32(seed: number): () => number {
@@ -171,6 +172,7 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  await repartirDeLaReference(admin);
 });
 
 test.afterAll(async () => {
