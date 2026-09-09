@@ -96,11 +96,11 @@ export class HoursPage {
   protected readonly totaux = computed(() => {
     const rapport = this.rapport();
     const animateurs = rapport?.animateurs ?? [];
-    // `number | undefined` et non `number` : les colonnes du tableau viennent
-    // de `rapport.semaines`, et une colonne pour laquelle personne n'a d'heures
-    // n'a pas d'entrée ici. Sans ce `undefined`, `strictTemplates` déclare le
-    // `?? 0` du gabarit redondant (NG8102) — alors qu'il est ce qui évite
-    // d'afficher « NaN h » en pied de tableau.
+    // `number | undefined` rather than `number`: the table's columns come from
+    // `rapport.semaines`, and a column nobody has hours in has no entry here.
+    // Without that `undefined`, `strictTemplates` calls the template's `?? 0`
+    // redundant (NG8102) — when it is the very thing keeping "NaN h" out of the
+    // footer row.
     const parSemaine: Record<string, number | undefined> = {};
     for (const semaine of rapport?.semaines ?? []) {
       parSemaine[semaine] = animateurs.reduce((sum, row) => sum + (row.heuresParSemaine[semaine] ?? 0), 0);
