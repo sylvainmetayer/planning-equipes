@@ -65,7 +65,9 @@ public class DiagnosticMcpTools {
     @Tool(
             description = "Combien d'animateurs il faut au minimum pour couvrir l'événement, et pourquoi : pic "
                     + "simultané, pic avec pause, charge horaire de la semaine la plus chargée, rotation sur les jours "
-                    + "(nul ne travaille plus de six jours par semaine ISO), jour et semaine critiques, le détail par jour "
+                    + "(nul ne travaille plus de six jours par semaine ISO), coupure repas (une grille qui ne s'arrête "
+                    + "jamais entre le matin et l'après-midi ne se tient pas à son seul pic ; nulle quand la règle est "
+                    + "désactivée), jour et semaine critiques, le détail par jour "
                     + "et par semaine, plus le goulot par typologie : les mêmes bornes sur les sièges d'une seule typologie, "
                     + "face aux animateurs qui la déclarent. Calcul en Java pur, aucune résolution lancée. Le résultat est "
                     + "un plancher optimiste — il ignore compétences et repos quotidien ; minimumAvecIndisponibilites y "
