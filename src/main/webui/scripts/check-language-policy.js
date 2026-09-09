@@ -24,6 +24,11 @@
  * français pour une déclaration nommée « de ». La première version de ce
  * script le faisait, et sur-comptait.
  *
+ * Ce qu'il ne regarde pas encore, et qu'il faudra ajouter avant de le rendre
+ * bloquant : les 68 gabarits `.html`, `material-theme.scss`, `e2e/` et
+ * `scripts/` — dont ce fichier, écrit en français comme ses voisins. Étendre le
+ * périmètre agrandira l'inventaire ; autant le savoir avant de le croire fini.
+ *
  * MODE INVENTAIRE : `--inventaire` liste ce qui reste sans faire échouer.
  * Le chantier de renommage est en cours (voir la description de la PR qui
  * introduit ce script) ; tant qu'il n'est pas fini, faire échouer bloquerait
@@ -56,11 +61,46 @@ const ts = require(join(RACINE, 'node_modules/typescript/lib/typescript.js'));
 
 const GLOSSAIRE = vocabulaire('GLOSSAIRE');
 const LEXIQUE = vocabulaire('LEXIQUE_FR');
+const OUTILS_FR = vocabulaire('OUTILS_FR');
+const OUTILS_EN = vocabulaire('OUTILS_EN');
 
-/** Deux mots du lexique dans un même bloc : une phrase, pas un terme métier isolé. */
-const SEUIL_PHRASE = 2;
+const sansAccents = (texte) => texte.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-const sansAccents = (texte) => texte.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+/**
+ * La prose d'un commentaire : ce que le test Java retire avant de compter —
+ * étoiles de bordure, balises `{@link …}`, `@param`, balises HTML, et les
+ * citations entre guillemets. Un commentaire anglais qui cite un libellé
+ * français (« Légal (…) ») ne doit pas passer pour français.
+ */
+const prose = (brut) =>
+  brut
+    .replace(/^\s*\*/gm, ' ')
+    .replace(/\{@\w+\s+[^}]*\}/g, ' ')
+    .replace(/@\w+/g, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/«[^»]*»/g, ' ');
+
+/**
+ * Français ou anglais, à la majorité des mots-outils — la règle du test Java,
+ * et non le lexique des noms déclarés.
+ *
+ * <p>Compter les mots de `LEXIQUE_FR` était faux dans les deux sens : il
+ * contient `du`, `travail`, `dure`… qui apparaissent dans des citations
+ * légales au milieu d'une phrase anglaise, et il ignore les mots-outils qui
+ * font vraiment une phrase française. Mesuré sur l'arbre : 53 commentaires
+ * anglais signalés à tort, 58 français manqués.</p>
+ */
+function estFrancais(texte) {
+  let fr = 0;
+  let en = 0;
+  for (const brut of prose(texte).toLowerCase().match(/[\p{L}']+/gu) ?? []) {
+    const mot = brut.replace(/'/g, '');
+    if (OUTILS_FR.has(mot)) fr++;
+    if (OUTILS_EN.has(mot)) en++;
+    if (/[\u00e0-\u00ff]/.test(mot)) fr++;
+  }
+  return fr > en;
+}
 
 function fichiers(dossier) {
   const trouves = [];
@@ -75,12 +115,19 @@ function fichiers(dossier) {
   return trouves;
 }
 
-/** Les mots d'un nom déclaré, découpé sur la casse et les séparateurs. */
-const motsDuNom = (nom) =>
-  sansAccents(nom)
-    .split(/(?=[A-Z])|[^a-zA-Z]+/)
-    .map(sansAccents)
-    .filter(Boolean);
+/**
+ * Les mots d'un nom déclaré, découpé sur la casse **puis** mis en minuscules.
+ *
+ * <p>L'inverse — ce que faisait la première version — rend le découpage sur
+ * la casse inopérant, puisqu'il ne reste plus une seule majuscule. Tout nom
+ * composé passait alors entre les mailles : `texteCible`, `CibleImport`,
+ * `jetonAcces` comptaient pour un seul mot, introuvable dans le lexique. Le
+ * chantier paraissait trois fois plus petit qu'il n'est.</p>
+ *
+ * <p>Le motif est celui du test Java (`TOKEN`), pour que les deux moitiés du
+ * dépôt découpent les noms de la même façon.</p>
+ */
+const motsDuNom = (nom) => (nom.match(/[A-Z]?[a-z\u00e0-\u00ff]+|[A-Z]+(?![a-z])|\d+/g) ?? []).map(sansAccents);
 
 const commentairesFrancais = [];
 const nomsFautifs = [];
@@ -89,15 +136,12 @@ for (const fichier of fichiers(SOURCES)) {
   const source = readFileSync(fichier, 'utf8');
   const nom = relative(DEPOT, fichier);
 
-  const estFrancais = (texte) => {
-    const mots = sansAccents(texte).split(/[^a-z]+/).filter(Boolean);
-    return mots.filter((mot) => LEXIQUE.has(mot)).length >= SEUIL_PHRASE;
-  };
+  const ligneDe = (position) => source.slice(0, position).split('\n').length;
 
   if (fichier.endsWith('.css')) {
     for (const bloc of source.matchAll(/\/\*[\s\S]*?\*\//g)) {
       if (estFrancais(bloc[0])) {
-        commentairesFrancais.push(`${nom}:${source.slice(0, bloc.index).split('\n').length}`);
+        commentairesFrancais.push(`${nom}:${ligneDe(bloc.index)}`);
       }
     }
     continue;
@@ -105,26 +149,45 @@ for (const fichier of fichiers(SOURCES)) {
 
   const fichierTs = ts.createSourceFile(nom, source, ts.ScriptTarget.ES2022, true);
 
-  // Les commentaires sont pris comme trivia du compilateur : un « // » dans une
-  // URL ou dans une chaîne n'en est pas un.
-  const vus = new Set();
-  const relever = (position) => {
-    for (const plage of ts.getLeadingCommentRanges(source, position) ?? []) {
-      if (vus.has(plage.pos)) {
-        continue;
-      }
-      vus.add(plage.pos);
-      const texte = source.slice(plage.pos, plage.end);
-      if (estFrancais(texte)) {
-        commentairesFrancais.push(`${nom}:${source.slice(0, plage.pos).split('\n').length}`);
-      }
+  // Les commentaires sont pris comme trivia du compilateur — un « // » dans une
+  // URL n'en est pas un — en relevant aussi bien ceux qui précèdent un nœud que
+  // ceux qui le suivent : les derniers d'un bloc n'en précèdent aucun, et
+  // échappaient entièrement à la première version.
+  const plages = new Map();
+  const relever = (noeud) => {
+    for (const plage of [
+      ...(ts.getLeadingCommentRanges(source, noeud.getFullStart()) ?? []),
+      ...(ts.getTrailingCommentRanges(source, noeud.getEnd()) ?? [])
+    ]) {
+      plages.set(plage.pos, plage);
     }
+    ts.forEachChild(noeud, relever);
   };
-  const parcourir = (noeud) => {
-    relever(noeud.getFullStart());
-    ts.forEachChild(noeud, parcourir);
-  };
-  parcourir(fichierTs);
+  relever(fichierTs);
+
+  // Les lignes `//` qui se suivent forment UN bloc, comme dans le test Java :
+  // les compter séparément gonfle l'inventaire et juge chaque ligne isolément,
+  // là où c'est le paragraphe qui a une langue.
+  const triees = [...plages.values()].sort((a, b) => a.pos - b.pos);
+  const blocs = [];
+  for (const plage of triees) {
+    const precedent = blocs.at(-1);
+    const contigue =
+      precedent &&
+      plage.kind === ts.SyntaxKind.SingleLineCommentTrivia &&
+      precedent.kind === ts.SyntaxKind.SingleLineCommentTrivia &&
+      source.slice(precedent.end, plage.pos).trim() === '';
+    if (contigue) {
+      precedent.end = plage.end;
+    } else {
+      blocs.push({ pos: plage.pos, end: plage.end, kind: plage.kind });
+    }
+  }
+  for (const bloc of blocs) {
+    if (estFrancais(source.slice(bloc.pos, bloc.end))) {
+      commentairesFrancais.push(`${nom}:${ligneDe(bloc.pos)}`);
+    }
+  }
 
   // Et les noms déclarés comme le compilateur les voit, jamais comme un motif
   // textuel les devine.
