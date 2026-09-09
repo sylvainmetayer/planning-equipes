@@ -137,11 +137,13 @@ class DateJourJResourceTest {
 
     /**
      * The guard has to be on the <b>read</b> too, and this is why. The frozen
-     * date lives in an ordinary row, so a dump replayed through
-     * {@code POST /api/database/import} carries it onto whatever instance
-     * restores it. Refusing to <em>set</em> it there would not help: the value
-     * is already in place, and the way back is shut by
-     * {@link #aServerOutsideDevModeRefusesToClearItEither}.
+     * date lives in an ordinary row, which reaches an instance by paths the
+     * application does not police — a {@code pg_dump} restore, a copied volume,
+     * a {@code psql} session. Refusing to <em>set</em> it there would not help:
+     * the value is already in place, and the way back is shut by
+     * {@link #aServerOutsideDevModeRefusesToClearItEither}. This test freezes
+     * through the API rather than through any of those, because what it pins is
+     * the read, not the arrival.
      *
      * <p>So a value present on a server that may not have one is simply ignored
      * — the row is left alone, the clock is the machine's.</p>

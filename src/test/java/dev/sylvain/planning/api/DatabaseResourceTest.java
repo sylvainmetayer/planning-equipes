@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -10,8 +11,10 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
 import io.restassured.http.ContentType;
+import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -242,10 +245,10 @@ class DatabaseResourceTest {
         // the referential the tests running next expect to find seeded.
         String etatInitial = exportDump();
 
-        // In a finally block: every class running after this one needs the
-        // database this one found. Letting an assertion escape mid-flight
-        // leaves them all resolving to an edition that no longer exists, and
-        // one failure here becomes forty elsewhere.
+        // Restored whatever happens below: every class running after this one
+        // needs the database this one found. Letting an assertion escape
+        // mid-flight leaves them all resolving to an edition that no longer
+        // exists, and one failure here becomes forty elsewhere.
         try {
             given()
                     .when().post("/api/planning/reset")
@@ -285,18 +288,28 @@ class DatabaseResourceTest {
                     .then()
                     .statusCode(200)
                     .body("id", equalTo("restauree"));
-        } finally {
-            sqlRequest(etatInitial)
-                    .when().post("/api/database/import")
-                    .then()
-                    .statusCode(200);
+        } catch (Throwable inFlight) {
+            // Not a finally: a restore that fails in turn would replace the
+            // assertion that actually diagnoses the defect. It travels as a
+            // suppressed exception instead.
+            try {
+                restoreDatabase(etatInitial);
+            } catch (Throwable duringRestore) {
+                inFlight.addSuppressed(duringRestore);
+            }
+            throw inFlight;
         }
+        restoreDatabase(etatInitial);
 
         given()
                 .when().get("/api/editions/courant")
                 .then()
                 .statusCode(200)
                 .body("id", equalTo("DEFAUT"));
+    }
+
+    private static void restoreDatabase(String dump) {
+        sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
     }
 
     private static String exportDump() {
@@ -338,37 +351,57 @@ class DatabaseResourceTest {
     void exportedDumpCarriesTheKpiHistoryBackAndForth() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        sqlRequest("INSERT INTO kpi_historique (id, edition_id, edition_nom, kpi, cree_le) VALUES "
-                + "(4242, 'DEFAUT', 'Edition du test', '{\"heuresTotales\": 7}', '2026-07-01T10:00:00Z');")
-                .when().post("/api/database/import")
-                .then()
-                .statusCode(200);
+        try {
+            // An apostrophe on both sides of the row, deliberately: in the label
+            // and inside the jsonb column, as a constraint name. kpi_historique
+            // is the first jsonb column this dump has ever carried, so the
+            // branch of literal() that quotes it had never run in anger — and a
+            // quote reaching the import unescaped cuts the statement in half.
+            sqlRequest("INSERT INTO kpi_historique (id, edition_id, edition_nom, kpi, cree_le) VALUES "
+                    + "(4242, 'DEFAUT', 'Edition d''essai', "
+                    + "'{\"heuresTotal\": 7.5, \"violationsParContrainte\": {\"repos d''une nuit\": 3}}', "
+                    + "'2026-07-01T10:00:00Z');")
+                    .when().post("/api/database/import")
+                    .then()
+                    .statusCode(200);
 
-        given().when().get("/api/kpi/historique")
-                .then()
-                .statusCode(200)
-                .body("find { it.id == 4242 }.editionNom", equalTo("Edition du test"));
+            assertTheMeasurementReadsBack();
 
-        String dump = given()
-                .when().get("/api/database/export")
-                .then()
-                .statusCode(200)
-                .extract().asString();
-        assertThat(dump).contains("kpi_historique");
+            String dump = exportDump();
+            assertThat(dump).contains("INSERT INTO kpi_historique (");
 
-        // The wipe the restore is supposed to undo.
-        given().when().post("/api/planning/reset").then().statusCode(200);
+            // The wipe the restore is supposed to undo.
+            given().when().post("/api/planning/reset").then().statusCode(200);
 
-        sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
+            sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
 
-        given().when().get("/api/kpi/historique")
-                .then()
-                .statusCode(200)
-                .body("find { it.id == 4242 }.editionNom", equalTo("Edition du test"));
+            assertTheMeasurementReadsBack();
+        } finally {
+            // Handed back clean: `POST /api/planning/reset` does not empty this
+            // table — nothing does, short of the dump this test just taught to
+            // carry it — so the row would follow every later class around. A
+            // 404 is accepted so that a failure before the insert reports
+            // itself rather than this cleanup.
+            given().when().delete("/api/kpi/historique/4242")
+                    .then().statusCode(anyOf(equalTo(204), equalTo(404)));
+        }
+    }
 
-        // Handed back clean: `POST /api/planning/reset` does not empty this
-        // table — nothing does, short of the dump this test just taught to
-        // carry it — so the row would follow every later class around.
-        given().when().delete("/api/kpi/historique/4242").then().statusCode(204);
+    /**
+     * Read through the API rather than counted in the dump text: what matters is
+     * that the measurement is still <em>usable</em> after the round trip, values
+     * and escaping included, not that some bytes came back.
+     */
+    private static void assertTheMeasurementReadsBack() {
+        JsonPath historique = given()
+                .when().get("/api/kpi/historique")
+                .then().statusCode(200)
+                .extract().jsonPath();
+        assertThat(historique.getString("find { it.id == 4242 }.editionNom")).isEqualTo("Edition d'essai");
+        assertThat(historique.getDouble("find { it.id == 4242 }.kpi.heuresTotal")).isEqualTo(7.5);
+        // Read as a map rather than through a GPath expression: the key is
+        // chosen for its apostrophe, which is exactly what GPath would choke on.
+        Map<String, Object> violations = historique.getMap("find { it.id == 4242 }.kpi.violationsParContrainte");
+        assertThat(violations).containsEntry("repos d'une nuit", 3);
     }
 }

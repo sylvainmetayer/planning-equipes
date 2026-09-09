@@ -74,13 +74,19 @@ public class JourJClock {
      *
      * <p><b>The guard is on the read too, not only on the write.</b> Refusing to
      * <em>set</em> the value outside dev mode is not enough, because the row is
-     * an ordinary one: a database dump replayed through
-     * {@code POST /api/database/import} carries it over, so a date frozen on a
-     * laptop and restored onto a deployed instance would stick there — and the
-     * way back is deliberately shut, since clearing it is refused there as
-     * well. Ignoring the value where it may not be set closes that door: on a
-     * deployed instance this always answers the machine's date, whatever the
-     * table holds.</p>
+     * an ordinary one and arrives by paths the application does not police: a
+     * {@code pg_dump} restore (ADR 0015), a copied volume, a {@code psql}
+     * session. A date frozen on a laptop would stick on the instance that
+     * received it — and the way back is deliberately shut, since clearing it is
+     * refused there as well. Ignoring the value where it may not be set closes
+     * that door: on a deployed instance this always answers the machine's date,
+     * whatever the table holds.</p>
+     *
+     * <p>The application's own dump is <em>not</em> one of those paths, and
+     * never was: {@code horloge_jour_j} is outside
+     * {@code DatabaseDumpService.TABLES}, so an export skips it and an import
+     * rejects it outright. That exclusion is deliberate — see the comment at
+     * the end of that list.</p>
      */
     public LocalDate today() {
         LocalDate fige = mockedDate();

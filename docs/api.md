@@ -15,7 +15,12 @@ et **rien ne circule de l'une à l'autre** — voir
 [`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md).
 
 Le client la désigne par l'en-tête `X-Edition-Id`, sur **tous** les endpoints
-sauf le dump SQL (`/api/database/*`), qui sauvegarde l'instance entière.
+sauf le dump SQL (`/api/database/*`), qui ignore l'en-tête et emporte toutes les
+éditions. Ce n'est pas pour autant une sauvegarde de la base : quinze tables
+vivantes en sont absentes (déclarations, snapshots publiés, paramètres de
+notification et d'échange, espaces et sessions, journal, jobs, horloge) — la
+sauvegarde complète est le `pg_dump` de nuit ([ADR
+0015](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md)).
 
 Deux propriétés qui expliquent la plupart des surprises :
 
@@ -885,12 +890,20 @@ champ — `modifiable` n'existe que pour que l'IHM masque un contrôle inutilisa
 et l'endpoint refuse quoi que croie l'appelant.
 
 Le garde-fou porte aussi sur **la lecture**, pas seulement sur l'écriture : la
-valeur vit dans une ligne ordinaire, qu'un dump rejoué par
-`POST /api/database/import` emporte avec lui. Une date figée sur un poste de
-développement puis restaurée sur une instance déployée y resterait, et le chemin
+valeur vit dans une ligne ordinaire, qui arrive par des chemins que l'application
+ne contrôle pas — une restauration `pg_dump` ([ADR
+0015](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md)),
+un volume recopié, une session `psql`. Une date figée sur un poste de
+développement puis arrivée sur une instance déployée y resterait, et le chemin
 de retour est fermé puisque l'effacement y est refusé aussi. Hors `quarkus:dev`,
 la valeur est donc **ignorée** — la ligne est laissée telle quelle, mais
 l'horloge lue est celle de la machine.
+
+Le dump de l'application n'est **pas** l'un de ces chemins, et ne l'a jamais
+été : `horloge_jour_j` est hors de la liste des tables que
+`/api/database/export` emporte, donc l'export la saute et l'import la refuse
+(`400`). L'exclusion est délibérée — elle est commentée dans
+`DatabaseDumpService`.
 
 **Ce que le mock remplace, exactement : la date, et seulement pour l'écran
 jour J** — quel jour est regardé, quels créneaux de ce jour sont encore devant,

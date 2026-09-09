@@ -32,9 +32,21 @@ import jakarta.inject.Inject;
  *
  * <p>
  * Unlike everything else that reads reference data, the dump stays
- * <b>instance-wide</b>: it is a backup of the database, every {@code edition}
- * included, and restoring it restores exactly what was dumped. The per-edition
- * export is the scenario YAML, which does follow the current edition.
+ * <b>instance-wide</b>: it ignores {@code X-Edition-Id} and carries every
+ * {@code edition}. The per-edition export is the scenario YAML, which does
+ * follow the current edition.
+ *
+ * <p>
+ * <b>It is not a backup of the database</b>, and reading it as one is the
+ * mistake to avoid. What it restores is exactly {@link #TABLES} — the
+ * referential, the plan, and the settings that shape a solve. Fifteen live
+ * tables are outside it: the availability declarations and wishes, the
+ * published snapshots, the notification and exchange settings, the access
+ * spaces and their sessions, the action journal, the solver jobs, the backup
+ * settings, and the day-J clock. Some are deliberate (a clock, a session, a
+ * journal have no business travelling between instances), others are simply
+ * unexamined. The backup that does cover everything is the nightly
+ * {@code pg_dump} of ADR 0015, restored outside the application.
  */
 @ApplicationScoped
 public class DatabaseDumpService {
@@ -69,20 +81,24 @@ public class DatabaseDumpService {
             "parametres_solveur",
             "constraint_toggle",
             "ponderation_contrainte",
-            // Missing until now, against this class's own promise that
-            // "restoring it restores exactly what was dumped": its edition_id
+            // Missing until now, and worse than merely absent: its edition_id
             // carries no foreign key, so the dump's DELETE FROM edition never
-            // reached it. An operator restoring a dump kept whatever history
-            // the target already had and lost the one being restored, silently.
+            // reached it either. An operator restoring a dump kept whatever
+            // history the target already had and lost the one being restored,
+            // silently — of the fifteen tables still outside this list, this
+            // was the one whose absence actively destroyed something.
             //
             // Last in the list because it depends on nothing: deletes are
             // issued in reverse, so it goes first, and nothing references it.
             //
-            // horloge_jour_j stays out, deliberately. It describes the
-            // server's clock rather than the dataset — JourJClock says so where
-            // it reads the row — and a restore has no business reaching into
-            // it: replaying any dump would unfreeze a date the operator had
-            // frozen, on an instance they were only importing data into.
+            // horloge_jour_j stays out, deliberately, and the reason is not
+            // symmetry with the above. It describes the server's clock rather
+            // than the dataset, and importing a colleague's dump to reproduce a
+            // bug has no business moving the date you had frozen. On a deployed
+            // instance the question does not even arise: JourJClock ignores the
+            // row outside dev mode, so nothing there could be unfrozen. The
+            // damage would be a developer's, on their own machine — which is
+            // reason enough, and the only one.
             "kpi_historique");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
