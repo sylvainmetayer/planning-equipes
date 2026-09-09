@@ -92,7 +92,29 @@ class ConstraintCatalogTest {
                         "maxJoursTravaillesParSemaine",
                         "reposHebdomadaireMinimal",
                         "travailContinuMaxMajeur",
-                        "pauseMinimaleEntreVacations");
+                        "pauseMinimaleEntreVacations",
+                        "coupureRepasObligatoire");
+    }
+
+    /**
+     * Which of the protected rules an article of the Code du travail actually
+     * founds. « Sécurité (mineurs) » and « Organisation (repas) » are the
+     * organiser's own rules: no less binding on them, but the confirmation
+     * asked before switching one off must not claim the plan becomes unlawful.
+     */
+    @Test
+    void seulesLesReglesLegalesSontFondeesEnDroit() {
+        List<String> fondees = ConstraintCatalog.definitions().stream()
+                .filter(ConstraintCatalog.ConstraintDefinition::fondeeEnDroit)
+                .map(ConstraintCatalog.ConstraintDefinition::name)
+                .toList();
+
+        assertThat(fondees)
+                .doesNotContain("mineurNecessiteEncadrementMajeur", "coupureRepasObligatoire")
+                .contains("dureeQuotidienneMaxMajeur", "travailDeNuitInterditPourMineur");
+        assertThat(ConstraintCatalog.definitions())
+                .filteredOn(ConstraintCatalog.ConstraintDefinition::fondeeEnDroit)
+                .allMatch(ConstraintCatalog.ConstraintDefinition::protegee);
     }
 
     /** What is dosed rather than switched off: the MEDIUM rules of « Qualité d'organisation ». */

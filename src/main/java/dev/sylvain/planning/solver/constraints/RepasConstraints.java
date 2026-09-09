@@ -1,0 +1,129 @@
+package dev.sylvain.planning.solver.constraints;
+
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.stream.Constraint;
+import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
+import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
+import dev.sylvain.planning.domain.CoupureRepas;
+import dev.sylvain.planning.domain.FenetreRepas;
+import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PosteAffectation;
+
+/**
+ * The meal break: whoever works either side of a meal window gets one, and
+ * gets it as early as the window allows.
+ *
+ * <p><b>This is not a rule of the Code du travail.</b> The only break the Code
+ * imposes is art. L3121-16 — twenty consecutive minutes once an adult's working
+ * time reaches six hours — and {@code travailContinuMaxMajeur} carries it. The
+ * meal break is the organiser's own rule, the one the staffing workbook's midday
+ * and evening rotations are cut for. It is catalogued under
+ * « Organisation (repas) », protected all the same: the solver can otherwise
+ * return a ten-hour unbroken day scoring zero hard, and nothing in the score
+ * says so.</p>
+ *
+ * <p>Two consequences follow from the two being distinct objects, and both are
+ * the point of issue #438:</p>
+ * <ul>
+ * <li><b>Independent of {@link ParametresLegaux#isPauseSurPoste()}.</b>
+ * Declaring the legal break taken on the post, by relay between colleagues,
+ * says the twenty minutes happen inside the vacation. It says nothing about
+ * lunch. The parameter that neutralises the first must not carry away the
+ * second — which is exactly how a 10:00-20:00 day passed unnoticed.</li>
+ * <li><b>Independent of the {@code ModeGrilleCreneaux}.</b> The meal windows
+ * used to be read only when an AMPLITUDES grid was sliced into vacations; a
+ * grid entered as VACATIONS was never sliced, so nothing ever looked at them.
+ * They now travel as {@link FenetreRepas} facts, whatever the mode.</li>
+ * </ul>
+ *
+ * <p>Grouped per animateur <i>and date</i>, like the daily legal caps, so each
+ * group holds a handful of seats; the window is then joined, which is what
+ * makes a day straddling midday <i>and</i> evening produce one violation per
+ * window rather than one aggregate nobody can act on.</p>
+ *
+ * @see CoupureRepas for what is owed, what satisfies it, and why
+ */
+public final class RepasConstraints {
+
+    public Constraint[] define(ConstraintFactory constraintFactory) {
+        return new Constraint[] {coupureRepasObligatoire(constraintFactory), coupureRepasAuPlusTot(constraintFactory)};
+    }
+
+    /**
+     * A day worked either side of a meal window must leave the break free
+     * inside it.
+     *
+     * <p>Penalised by the <b>minutes missing</b> from the longest free stretch,
+     * not by one point per faulty day: a day fifteen minutes short and a day
+     * that never stops are not the same problem, and a flat penalty would leave
+     * the solver a cliff instead of a slope to walk down.</p>
+     *
+     * <p>On the reported case (issue #438: seats 10-12, 12-13, 13-14 and 14-20,
+     * midday window 12:00-14:00 owing 60 minutes) the day starts before noon,
+     * ends after two, and leaves no hole at all: 60 hard.</p>
+     *
+     * <p><b>A grid can make this unsatisfiable.</b> Where a single créneau
+     * spans the whole window — a 10:00-20:00 vacation in one block — its holder
+     * cannot step away, and {@code posteDoitEtrePourvu} still demands the seat
+     * be filled. No assignment then scores zero hard, and the answer is to
+     * re-cut the grid, or to switch this rule off from the Contraintes screen.
+     * See {@code docs/contraintes.md}.</p>
+     */
+    private Constraint coupureRepasObligatoire(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "coupureRepasObligatoire")
+                .filter(RepasConstraints::exploitable)
+                .groupBy(
+                        PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().getDate(),
+                        ConstraintCollectors.toList())
+                .join(FenetreRepas.class)
+                .filter((animateur, date, postes, fenetre) ->
+                        CoupureRepas.analyser(postes, fenetre).manquante())
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        (animateur, date, postes, fenetre) ->
+                                CoupureRepas.analyser(postes, fenetre).minutesManquantes())
+                .asConstraint("coupureRepasObligatoire");
+    }
+
+    /**
+     * Of the slots a meal window offers, the earlier one is preferred.
+     *
+     * <p>« soit 12-13, soit 13-14, avec une préférence pour 12-13 » — the
+     * organiser's words. Penalised by how many minutes after the window opens
+     * the break starts, so the earlier slot costs nothing and the later one
+     * costs its own offset. Everyone taking the first slot would empty the
+     * stands, but that is not this rule's problem to solve: seat coverage is
+     * hard, this is soft, and the arbitration between them is what spreads the
+     * rotation.</p>
+     *
+     * <p>Silent when no break fits: {@link #coupureRepasObligatoire} is
+     * already carrying that day, and a preference has nothing to say about a
+     * break that does not exist.</p>
+     */
+    private Constraint coupureRepasAuPlusTot(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "coupureRepasAuPlusTot")
+                .filter(RepasConstraints::exploitable)
+                .groupBy(
+                        PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().getDate(),
+                        ConstraintCollectors.toList())
+                .join(FenetreRepas.class)
+                .filter((animateur, date, postes, fenetre) ->
+                        CoupureRepas.analyser(postes, fenetre).retardMinutes() > 0)
+                .penalize(
+                        HardMediumSoftScore.ONE_SOFT,
+                        (animateur, date, postes, fenetre) ->
+                                CoupureRepas.analyser(postes, fenetre).retardMinutes())
+                .asConstraint("coupureRepasAuPlusTot");
+    }
+
+    /** A seat someone holds, on a dated créneau whose hours are known. */
+    private static boolean exploitable(PosteAffectation poste) {
+        return poste.getAnimateur() != null
+                && poste.getCreneau() != null
+                && poste.getCreneau().getDate() != null
+                && poste.heureDebutEffectif() != null;
+    }
+}

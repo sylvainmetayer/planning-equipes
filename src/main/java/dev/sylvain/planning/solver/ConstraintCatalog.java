@@ -20,25 +20,56 @@ public final class ConstraintCatalog {
         SOFT
     }
 
+    /** The one category whose rules are dosed rather than switched off — see {@link ConstraintDefinition#dosable()}. */
+    public static final String CATEGORIE_QUALITE = "Qualité d'organisation";
+
     /**
-     * Categories whose rules found the plan in law (or in the organiser's own
-     * safety policy for young workers). Switching one off lets the solver
-     * return a plan scoring zero hard that nonetheless breaks the Code du
-     * travail, so the UI asks for a confirmation naming the rule and the
-     * article behind it — and the Contraintes screen keeps showing what is
+     * The meal break, and the first « organisation rule » held hard. No article
+     * of the Code du travail requires lunch — L3121-16 covers only the twenty
+     * minutes owed at the sixth hour, which {@code travailContinuMaxMajeur}
+     * already carries. This is the rule of the staffing workbook, kept hard by
+     * choice and protected all the same: without it the solver returns a
+     * ten-hour unbroken day scoring zero hard (issue #438).
+     */
+    public static final String CATEGORIE_ORGANISATION_REPAS = "Organisation (repas)";
+
+    /**
+     * Categories whose rules found the plan in law, in the organiser's own
+     * safety policy for young workers, or in the meal rule the event is built
+     * on. Switching one off lets the solver return a plan scoring zero hard
+     * that nonetheless breaks the Code du travail — or holds a ten-hour day
+     * with no meal break — so the UI asks for a confirmation naming the rule
+     * and what founds it, and the Contraintes screen keeps showing what is
      * off. See {@code docs/contraintes.md}.
      */
     public static final Set<String> CATEGORIES_PROTEGEES =
-            Set.of("Légal (mineurs)", "Légal (temps de travail)", "Sécurité (mineurs)");
+            Set.of("Légal (mineurs)", "Légal (temps de travail)", "Sécurité (mineurs)", CATEGORIE_ORGANISATION_REPAS);
 
-    /** The one category whose rules are dosed rather than switched off — see {@link ConstraintDefinition#dosable()}. */
-    public static final String CATEGORIE_QUALITE = "Qualité d'organisation";
+    /**
+     * The two categories whose rules are founded on an article of the Code du
+     * travail, and only those. The other protected categories —
+     * « Sécurité (mineurs) », « Organisation (repas) » — are rules the
+     * organiser sets: switching one off engages them just as much, but it does
+     * not make the plan unlawful, and the confirmation must not say it does.
+     */
+    public static final Set<String> CATEGORIES_LEGALES = Set.of("Légal (mineurs)", "Légal (temps de travail)");
 
     public record ConstraintDefinition(String name, Niveau niveau, String categorie, String description) {
 
         /** True when disabling this rule needs the confirmation described on {@link #CATEGORIES_PROTEGEES}. */
         public boolean protegee() {
             return CATEGORIES_PROTEGEES.contains(categorie);
+        }
+
+        /**
+         * True when an article of the Code du travail founds this rule — see
+         * {@link #CATEGORIES_LEGALES}. A protected rule that is <i>not</i>
+         * founded in law is no less binding on the organiser; it is simply not
+         * the law, and the confirmation asked before switching it off says so
+         * in its own words.
+         */
+        public boolean fondeeEnDroit() {
+            return CATEGORIES_LEGALES.contains(categorie);
         }
 
         /**
@@ -184,6 +215,28 @@ public final class ConstraintCatalog {
                     "Légal (temps de travail)",
                     "Entre deux vacations d'un même animateur le même jour, l'écart doit être d'au moins la pause "
                             + "minimale paramétrée (30 min par défaut)."),
+            new ConstraintDefinition(
+                    "coupureRepasObligatoire",
+                    Niveau.HARD,
+                    CATEGORIE_ORGANISATION_REPAS,
+                    "Qui travaille de part et d'autre d'une fenêtre repas doit disposer, entièrement dans cette "
+                            + "fenêtre, d'une coupure libre de la durée paramétrée (45 min par défaut, midi "
+                            + "12 h-14 h et soir 19 h-21 h). Commencer sa journée à l'ouverture de la fenêtre, ou "
+                            + "la terminer à sa fermeture, ne doit rien : on a mangé avant, ou on mangera après. "
+                            + "Une journée à cheval sur les deux fenêtres doit deux coupures. Ce n'est pas une "
+                            + "obligation du Code du travail — la seule pause qu'il impose est celle de 20 minutes "
+                            + "à la sixième heure (art. L3121-16), portée par travailContinuMaxMajeur — mais la "
+                            + "règle d'organisation de l'événement, tenue en dur par choix. Elle reste active "
+                            + "quand l'organisateur déclare la pause prise sur le poste : la pause légale par "
+                            + "relais et la coupure repas sont deux choses distinctes."),
+            new ConstraintDefinition(
+                    "coupureRepasAuPlusTot",
+                    Niveau.SOFT,
+                    "Préférences",
+                    "Entre deux coupures repas possibles dans la même fenêtre, préférer la plus tôt : sur une "
+                            + "fenêtre 12 h-14 h taillée en deux, 12 h-13 h plutôt que 13 h-14 h. La couverture "
+                            + "des stands, elle, est dure : c'est son arbitrage avec cette préférence qui répartit "
+                            + "la rotation du midi."),
             new ConstraintDefinition(
                     "indisponibiliteForcee",
                     Niveau.HARD,
