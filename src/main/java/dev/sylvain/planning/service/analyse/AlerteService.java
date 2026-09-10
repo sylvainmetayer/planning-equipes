@@ -10,7 +10,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * The alerts left by the scheduled jobs, resolved for the Notifications screen.

@@ -24,7 +24,7 @@ import jakarta.inject.Inject;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * Aggregate KPI of a plan (issues #89 and #70): score, coverage, hours

@@ -10,7 +10,7 @@ import dev.sylvain.planning.mcp.ContrainteMcpTools.ContrainteView;
 import dev.sylvain.planning.mcp.StandMcpTools.StandsView;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.CompetenceStaffing;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;

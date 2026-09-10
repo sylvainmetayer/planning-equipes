@@ -10,7 +10,7 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * Full-scale regression test: {@code scenario-complet.yaml} (2112 postes, 152

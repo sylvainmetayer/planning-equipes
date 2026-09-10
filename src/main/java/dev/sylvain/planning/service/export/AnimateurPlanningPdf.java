@@ -31,7 +31,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.export.PosteStatistics;
-import dev.sylvain.planning.service.TypologieLibelles;
+import dev.sylvain.planning.service.referentiel.TypologieLibelles;
 
 /**
  * The planning of one animateur, as cards rather than as a table: one card per

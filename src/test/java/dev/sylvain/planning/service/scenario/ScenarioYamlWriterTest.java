@@ -37,8 +37,8 @@ import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
-import dev.sylvain.planning.service.ReferenceData;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * Exercises {@link ScenarioYamlWriter#buildScenarioYaml} directly

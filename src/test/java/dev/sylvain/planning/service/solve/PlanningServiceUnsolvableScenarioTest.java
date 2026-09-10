@@ -24,7 +24,7 @@ import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 
 /**
  * {@code scenarios/scenario-avec-erreur-planning.yaml} is the one shipped scenario

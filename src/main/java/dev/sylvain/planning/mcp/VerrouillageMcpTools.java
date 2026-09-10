@@ -7,7 +7,7 @@ import java.util.List;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;

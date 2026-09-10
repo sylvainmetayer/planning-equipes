@@ -9,7 +9,7 @@ import jakarta.ws.rs.core.MediaType;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * {@code GET /api/pauses}: where the legal breaks of the persisted plan fall

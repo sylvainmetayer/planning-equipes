@@ -18,8 +18,8 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 @QuarkusTest
 class PlanningPersistenceServiceTest {

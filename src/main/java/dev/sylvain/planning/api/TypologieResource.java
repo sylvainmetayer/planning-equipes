@@ -2,8 +2,8 @@ package dev.sylvain.planning.api;
 
 import java.util.List;
 
-import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;

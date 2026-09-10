@@ -33,7 +33,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * The event-day screen ("mode jour J"): somebody did not show up, and the seats

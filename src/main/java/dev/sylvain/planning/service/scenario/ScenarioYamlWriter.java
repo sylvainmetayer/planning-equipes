@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * Writes the YAML text of a scenario file. Pure and static: it takes the data

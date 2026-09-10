@@ -39,7 +39,7 @@ import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.NaturalOrder;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * Everything the application answers <em>about</em> a plan without solving it

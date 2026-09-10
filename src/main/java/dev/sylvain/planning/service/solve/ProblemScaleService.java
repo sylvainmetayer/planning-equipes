@@ -17,7 +17,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.JoursEvenement;
+import dev.sylvain.planning.service.referentiel.JoursEvenement;
 
 /**
  * Real scale of the problem the next solve will build — the figures of the

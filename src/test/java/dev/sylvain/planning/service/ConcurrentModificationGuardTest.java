@@ -18,6 +18,8 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * Concurrent-edit detection (issue #362): a write carrying the {@code modifieLe}

@@ -17,7 +17,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
-import dev.sylvain.planning.service.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
 
 /**

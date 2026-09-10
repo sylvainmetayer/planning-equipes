@@ -33,7 +33,7 @@ import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * Reads a scenario file: locates it on the classpath, binds the YAML to the

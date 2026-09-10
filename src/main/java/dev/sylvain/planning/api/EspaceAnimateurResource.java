@@ -14,7 +14,7 @@ import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.EspaceAnimateurView;
 import dev.sylvain.planning.service.export.PlanningExportService;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;

@@ -56,9 +56,9 @@ import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ReferenceScenari
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ScenarioSections;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * From the file's shape to the domain: a {@link ScenarioDto}, bound by

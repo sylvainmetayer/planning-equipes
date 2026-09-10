@@ -35,7 +35,7 @@ import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * The demande d'échange lifecycle (issue #165): submission with hard-constraint

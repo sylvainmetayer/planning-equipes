@@ -23,8 +23,8 @@ import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
-import dev.sylvain.planning.service.HoraireStandResolver;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 @ApplicationScoped
 public class PlanningService {

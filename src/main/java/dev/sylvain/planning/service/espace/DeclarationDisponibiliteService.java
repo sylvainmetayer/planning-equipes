@@ -23,12 +23,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.publication.MailService;
-import dev.sylvain.planning.service.AnimateurService;
+import dev.sylvain.planning.service.referentiel.AnimateurService;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.JoursEvenement;
+import dev.sylvain.planning.service.referentiel.JoursEvenement;
 import dev.sylvain.planning.service.espace.RateLimitVerdict;
-import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.TypologieService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieService;
 
 /**
  * The self-service declaration lifecycle (issue #291): an animateur proposes,

@@ -15,7 +15,7 @@ import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityRepor
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;

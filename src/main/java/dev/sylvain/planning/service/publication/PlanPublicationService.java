@@ -32,7 +32,7 @@ import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.SolverJobService;
 
 /**

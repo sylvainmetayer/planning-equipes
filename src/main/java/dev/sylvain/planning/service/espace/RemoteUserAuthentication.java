@@ -14,7 +14,7 @@ import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.AnimateurRepository;
+import dev.sylvain.planning.service.referentiel.AnimateurRepository;
 
 /**
  * Opt-in authentication by a header an access proxy injects — Pangolin's

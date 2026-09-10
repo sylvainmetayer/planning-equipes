@@ -13,6 +13,8 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * A referential that holds nothing, for the plain (non-CDI) tests: they build

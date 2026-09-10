@@ -20,7 +20,7 @@ import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticMode;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * How this deployment configures a solve: the {@link SolverFactory} built from

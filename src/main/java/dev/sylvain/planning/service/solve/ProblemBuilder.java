@@ -20,7 +20,7 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.solver.constraints.AdHocConstraints;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * Builds the problem a solve runs on, out of the edition's reference data:

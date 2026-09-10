@@ -12,7 +12,7 @@ import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionRepository;
-import dev.sylvain.planning.service.ParametresService;
+import dev.sylvain.planning.service.referentiel.ParametresService;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.Scheduler;
 import jakarta.enterprise.context.ApplicationScoped;

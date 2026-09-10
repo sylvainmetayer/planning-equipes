@@ -25,7 +25,7 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * A diagnostic of the <em>persisted</em> plan is scored under the same rules a

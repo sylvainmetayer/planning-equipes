@@ -18,8 +18,8 @@ import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.HoraireStandResolver.SourceHoraire;
-import dev.sylvain.planning.service.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver.SourceHoraire;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
 
 /**

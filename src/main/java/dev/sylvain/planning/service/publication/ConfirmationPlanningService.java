@@ -15,7 +15,7 @@ import dev.sylvain.planning.domain.StatutConfirmation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * « J'ai lu et je serai là » (issue #293): the one thing an animateur answers

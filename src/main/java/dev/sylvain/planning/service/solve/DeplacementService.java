@@ -13,7 +13,7 @@ import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * A seat moved by hand on a day view (issue #308): the drag-and-drop of the

@@ -22,7 +22,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * Simulation of a swap request (issue #165) straight on

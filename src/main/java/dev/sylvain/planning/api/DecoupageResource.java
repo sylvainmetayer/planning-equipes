@@ -3,7 +3,7 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;

@@ -1,6 +1,6 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.service.Avertissement;
+import dev.sylvain.planning.service.referentiel.Avertissement;
 import java.util.List;
 
 /**

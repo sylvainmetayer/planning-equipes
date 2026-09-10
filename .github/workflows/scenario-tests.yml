@@ -36,7 +36,7 @@ on:
       # du problème (HoraireStandResolver) ou de sa construction (ProblemBuilder).
       - 'src/main/java/dev/sylvain/planning/service/solve/PlanningService.java'
       - 'src/main/java/dev/sylvain/planning/service/solve/ProblemBuilder.java'
-      - 'src/main/java/dev/sylvain/planning/service/HoraireStandResolver.java'
+      - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
       - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
       - 'src/main/java/dev/sylvain/planning/service/solve/SolveRunner.java'
       - 'src/main/java/dev/sylvain/planning/scenario/**'
@@ -58,7 +58,7 @@ on:
       # du problème (HoraireStandResolver) ou de sa construction (ProblemBuilder).
       - 'src/main/java/dev/sylvain/planning/service/solve/PlanningService.java'
       - 'src/main/java/dev/sylvain/planning/service/solve/ProblemBuilder.java'
-      - 'src/main/java/dev/sylvain/planning/service/HoraireStandResolver.java'
+      - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
       - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
       - 'src/main/java/dev/sylvain/planning/service/solve/SolveRunner.java'
       - 'src/main/java/dev/sylvain/planning/scenario/**'

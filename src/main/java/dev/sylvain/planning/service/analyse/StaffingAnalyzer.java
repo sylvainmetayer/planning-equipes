@@ -24,7 +24,7 @@ import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * How many animateurs the current stands/créneaux need at a minimum, computed

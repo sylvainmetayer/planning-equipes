@@ -21,7 +21,7 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.CompetenceStaffing;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 class StaffingAnalyzerTest {
 

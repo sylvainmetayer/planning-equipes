@@ -13,7 +13,7 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.mcp.VerrouillageMcpTools.VerrouillageView;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * The two things the view and the deletion owe an assistant: only the target

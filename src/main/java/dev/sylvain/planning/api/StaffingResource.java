@@ -5,7 +5,7 @@ import java.util.List;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import jakarta.inject.Inject;

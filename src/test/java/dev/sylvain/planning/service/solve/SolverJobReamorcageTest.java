@@ -32,8 +32,8 @@ import dev.sylvain.planning.service.solve.ProblemBuilder;
 import dev.sylvain.planning.service.solve.Reamorcage;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * The warm start of issue #174 end to end: where a full solve starts from,

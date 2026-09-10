@@ -17,14 +17,14 @@ import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.HoraireStandResolver.SourceHoraire;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver.SourceHoraire;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.Anomaly;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.CelluleJour;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.EtatOuverture;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.LigneStand;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.AnomalyType;
-import dev.sylvain.planning.service.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 
 /**
  * {@link OuvertureStandsAnalyzer}: the stand × jour grid the "Ouvertures des

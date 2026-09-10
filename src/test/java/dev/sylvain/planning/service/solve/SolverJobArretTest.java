@@ -37,8 +37,8 @@ import dev.sylvain.planning.service.solve.Reamorcage;
 import dev.sylvain.planning.service.solve.SolvePipeline;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.TypologieItem;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * A solve the container stops under — a graceful shutdown, a live reload —

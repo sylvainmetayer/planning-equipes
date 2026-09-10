@@ -24,7 +24,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.espace.RateLimitVerdict;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * Passwordless authentication of the espace animateur (issue #165 follow-up):

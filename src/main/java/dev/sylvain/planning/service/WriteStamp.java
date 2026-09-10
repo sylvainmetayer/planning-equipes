@@ -15,13 +15,13 @@ import java.time.OffsetDateTime;
  * that client will be checked against — instead of {@code null} or the stamp
  * it was sent with.
  */
-final class WriteStamp {
+public final class WriteStamp {
 
     private WriteStamp() {
     }
 
     /** Executes the write and returns the single {@code modifie_le} it returned. */
-    static Instant written(PreparedStatement ps) throws SQLException {
+    public static Instant written(PreparedStatement ps) throws SQLException {
         Instant written = writtenOrRefused(ps);
         if (written == null) {
             throw new SQLException("The write returned no row");
@@ -34,7 +34,7 @@ final class WriteStamp {
      * row: the write and its check are one statement (issue #362), so "no row
      * came back" is the refusal, not an error.
      */
-    static Instant writtenOrRefused(PreparedStatement ps) throws SQLException {
+    public static Instant writtenOrRefused(PreparedStatement ps) throws SQLException {
         try (ResultSet rs = ps.executeQuery()) {
             if (!rs.next()) {
                 return null;
@@ -53,7 +53,7 @@ final class WriteStamp {
      * through a {@code Date} does not, and two writes of the same row in the
      * same millisecond are not a case worth a false conflict.
      */
-    static void bindPrecondition(PreparedStatement ps, int index, boolean updateAllowed, Instant expected)
+    public static void bindPrecondition(PreparedStatement ps, int index, boolean updateAllowed, Instant expected)
             throws SQLException {
         ps.setBoolean(index, updateAllowed);
         Timestamp attendu = expected == null ? null : Timestamp.from(expected);

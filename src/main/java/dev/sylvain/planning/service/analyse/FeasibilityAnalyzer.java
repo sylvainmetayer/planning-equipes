@@ -13,9 +13,9 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.ContrainteAdHocContradictions.Contradiction;
+import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import jakarta.enterprise.context.ApplicationScoped;
-import dev.sylvain.planning.service.ContrainteAdHocContradictions;
+import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
 
 /**
  * Plain-Java (no Timefold) capacity check meant for non-technical users: given

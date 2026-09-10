@@ -25,7 +25,7 @@ import dev.sylvain.planning.service.solve.PlanningWhatIf.DeplacementSimulation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SwapSimulation;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ProblemScaleService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;

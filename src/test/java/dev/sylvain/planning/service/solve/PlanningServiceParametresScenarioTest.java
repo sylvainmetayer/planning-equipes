@@ -16,7 +16,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * Exercises the optional {@code parametresLegaux:} / {@code parametresDecoupage:}

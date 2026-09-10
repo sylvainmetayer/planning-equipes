@@ -15,7 +15,7 @@ import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * Runs a solve, and fills the problem with the server-side facts first.

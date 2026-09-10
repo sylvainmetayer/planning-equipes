@@ -51,14 +51,14 @@ public class ConcurrentModificationGuard {
      * rendered by their own browser, and this is the one message whose job is
      * to convince them that somebody really did write after them.</p>
      */
-    void refuseStale(String table, String id) {
+    public void refuseStale(String table, String id) {
         throw new BusinessError.Stale(sujet(table) + " a été modifié" + accord(table)
                 + " par une autre session après son ouverture ici. Rechargez pour voir ce qui a changé, "
                 + "ou enregistrez à nouveau pour écraser cette modification.", scope.lastWriteOf(table, id));
     }
 
     /** Same, for a table whose id is database-generated ({@code creneau}). */
-    void refuseStale(String table, long id) {
+    public void refuseStale(String table, long id) {
         throw new BusinessError.Stale(sujet(table) + " a été modifié" + accord(table)
                 + " par une autre session après son ouverture ici. Rechargez pour voir ce qui a changé, "
                 + "ou enregistrez à nouveau pour écraser cette modification.", scope.lastWriteOf(table, id));
@@ -70,7 +70,7 @@ public class ConcurrentModificationGuard {
      * which the other session commits, and the upsert would then have replaced
      * a row the caller never meant to touch.
      */
-    void refuseDuplicate(String table, String id) {
+    public void refuseDuplicate(String table, String id) {
         throw new BusinessError.Conflict("L'identifiant « " + id + " » est déjà pris dans cette édition. "
                 + "Choisissez-en un autre, ou ouvrez la fiche existante pour la modifier.");
     }

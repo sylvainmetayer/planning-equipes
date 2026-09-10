@@ -23,7 +23,7 @@ import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PublicationDiffService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * What a solve <b>always</b> does, end to end: snapshot the plan it is about

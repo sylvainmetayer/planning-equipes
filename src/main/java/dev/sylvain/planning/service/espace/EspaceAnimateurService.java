@@ -31,8 +31,8 @@ import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf;
-import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.TypologieService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieService;
 
 /**
  * Read views of the espace animateur (issue #165): the animateur's own slice

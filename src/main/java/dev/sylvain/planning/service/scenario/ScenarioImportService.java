@@ -9,7 +9,7 @@ import java.util.concurrent.Callable;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * Importing a scenario into the referential: the order the sections are applied

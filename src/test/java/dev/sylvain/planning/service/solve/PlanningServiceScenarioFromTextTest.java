@@ -25,7 +25,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * {@link PlanningService#buildFromScenarioText}: the "Importer un
