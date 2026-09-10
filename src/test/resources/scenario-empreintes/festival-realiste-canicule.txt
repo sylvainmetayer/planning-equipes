@@ -155,6 +155,8 @@
 .planning.constraintsDesactivees = (vide)
 .planning.contraintesAdHoc = (vide)
 .planning.dateDebutFestival = 2026-09-01
+.planning.fenetresRepas[0]  c42588e8fd4e1c44
+.planning.fenetresRepas[1]  7ddcb9631db68c60
 .planning.parametresLegaux[0]  98e935f9abd6c3c2
 .planning.parametresQualite[0]  33dd46864ff3cece
 .planning.ponderationsContraintes.constraintWeightMap = (vide)

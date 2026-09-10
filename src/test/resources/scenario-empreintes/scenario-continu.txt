@@ -180,7 +180,9 @@
 .planning.constraintsDesactivees = (vide)
 .planning.contraintesAdHoc = (vide)
 .planning.dateDebutFestival = 2026-08-01
-.planning.parametresLegaux[0]  98e935f9abd6c3c2
+.planning.fenetresRepas[0]  c42588e8fd4e1c44
+.planning.fenetresRepas[1]  ab651a6748181af8
+.planning.parametresLegaux[0]  9dfe24cb98abcdc6
 .planning.parametresQualite[0]  33dd46864ff3cece
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 3
@@ -902,7 +904,7 @@
 .sections.edition = null
 .sections.parametresDecoupage.dureeChevauchementMinutes = 30
 .sections.parametresDecoupage.dureeDecalageMaxMinutes = 0
-.sections.parametresDecoupage.dureePauseRepasMinutes = 45
+.sections.parametresDecoupage.dureePauseRepasMinutes = 60
 .sections.parametresDecoupage.dureeVacationCibleMinutes = 180
 .sections.parametresDecoupage.dureeVacationMaxMinutes = 360
 .sections.parametresDecoupage.dureeVacationMinMinutes = 250
@@ -913,6 +915,10 @@
 .sections.parametresDecoupage.modeGrille = AMPLITUDES
 .sections.parametresDecoupage.nombreFamillesDecalage = 1
 .sections.parametresDecoupage.strategieCouverturePendantPause = RELEVE
-.sections.parametresLegaux = null
+.sections.parametresLegaux.dureeHebdomadaireMaxMineurMinutes = 2100
+.sections.parametresLegaux.dureeHebdomadaireMaxMinutes = 2880
+.sections.parametresLegaux.pauseMinimaleEntreVacationsMinutes = 0
+.sections.parametresLegaux.pauseSurPoste = false
+.sections.parametresLegaux.reposQuotidienMinimalMinutes = 660
 .sections.parametresSolveur = null
 .sections.typologies = (vide)

@@ -58,13 +58,14 @@ class VacationGeneratorServiceTest {
         Creneau afterPause = vacations.get(1);
         assertThat(beforePause.getHeureDebut()).isEqualTo(LocalTime.of(10, 0));
         assertThat(beforePause.getHeureFin()).isEqualTo(LocalTime.of(12, 30));
-        assertThat(afterPause.getHeureDebut()).isEqualTo(LocalTime.of(13, 15));
+        assertThat(afterPause.getHeureDebut()).isEqualTo(LocalTime.of(13, 30));
         assertThat(afterPause.getHeureFin()).isEqualTo(LocalTime.of(15, 0));
-        // 45 min of real break between the two, aligned on the default midday
-        // meal window (12:00-14:00).
+        // An hour of real break between the two, aligned on the default midday
+        // meal window (12:00-14:00) — which it now divides into two whole
+        // slots, 12-13 and 13-14.
         assertThat(java.time.Duration.between(beforePause.getHeureFin(), afterPause.getHeureDebut())
                         .toMinutes())
-                .isEqualTo(45);
+                .isEqualTo(60);
     }
 
     @Test
@@ -100,9 +101,9 @@ class VacationGeneratorServiceTest {
         assertThat(avantDejeuner.getHeureDebut()).isEqualTo(LocalTime.of(10, 0));
         assertThat(apresDiner.getHeureFin()).isEqualTo(LocalTime.of(0, 0));
 
-        // A real lunch break (45 min by default) between the first two.
+        // A real lunch break (one hour by default) between the first two.
         assertThat(avantDejeuner.getHeureFin()).isEqualTo(LocalTime.of(12, 0));
-        assertThat(apresDejeuner.getHeureDebut()).isEqualTo(LocalTime.of(12, 45));
+        assertThat(apresDejeuner.getHeureDebut()).isEqualTo(LocalTime.of(13, 0));
 
         // A 30 min handover overlap with the middle segment: during that window
         // two PosteAffectation exist on the same stand, so the coverage is never
@@ -110,11 +111,11 @@ class VacationGeneratorServiceTest {
         assertThat(relaisMilieu.getHeureDebut()).isBefore(apresDejeuner.getHeureFin());
         assertThat(relaisMilieu.getHeureFin()).isEqualTo(LocalTime.of(19, 0));
 
-        // A real dinner break (45 min) on the last segment, which overlaps the
+        // A real dinner break (one hour) on the last segment, which overlaps the
         // middle one and entirely encloses the dinner window (19:00-21:00).
         assertThat(avantDiner.getHeureDebut()).isBefore(relaisMilieu.getHeureFin());
         assertThat(avantDiner.getHeureFin()).isEqualTo(LocalTime.of(21, 0));
-        assertThat(apresDiner.getHeureDebut()).isEqualTo(LocalTime.of(21, 45));
+        assertThat(apresDiner.getHeureDebut()).isEqualTo(LocalTime.of(22, 0));
     }
 
     @Test
@@ -174,7 +175,7 @@ class VacationGeneratorServiceTest {
         Creneau beforePause = vacations.get(0);
         Creneau afterPause = vacations.get(1);
         assertThat(beforePause.getHeureFin()).isEqualTo(LocalTime.of(14, 0));
-        assertThat(afterPause.getHeureDebut()).isEqualTo(LocalTime.of(14, 45));
+        assertThat(afterPause.getHeureDebut()).isEqualTo(LocalTime.of(15, 0));
         for (Creneau vacation : vacations) {
             assertThat(vacation.getDureeMinutes())
                     .isLessThanOrEqualTo(VacationGeneratorService.SEUIL_PAUSE_LEGALE_MINUTES);
@@ -199,7 +200,7 @@ class VacationGeneratorServiceTest {
         Creneau releve = vacations.get(1);
         Creneau afterPause = vacations.get(2);
         assertThat(beforePause.getHeureFin()).isEqualTo(LocalTime.of(14, 0));
-        assertThat(afterPause.getHeureDebut()).isEqualTo(LocalTime.of(14, 45));
+        assertThat(afterPause.getHeureDebut()).isEqualTo(LocalTime.of(15, 0));
         // The relief shift fills the hole exactly: no interruption in the
         // coverage of the stand.
         assertThat(releve.getHeureDebut()).isEqualTo(beforePause.getHeureFin());

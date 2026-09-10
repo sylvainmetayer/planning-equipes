@@ -86,6 +86,40 @@ class PlanningServiceScenarioAllerRetourTest {
     }
 
     /**
+     * A meal-relief slot survives the round trip. The flag halves the seats a
+     * stand opens on that créneau ({@code Creneau#effectifRequis}), so losing
+     * it on the way through a file would silently double the headcount a
+     * midday rotation asks for — and nothing else would say so. The reference
+     * fingerprints cannot catch it: they are regenerated from this same code.
+     */
+    @Test
+    void unCreneauDeReleveDeRepasSurvitAAllerRetour() {
+        Creneau midi = creneau(1L, LocalTime.of(12, 0), LocalTime.of(13, 0));
+        midi.setCouverturePause(true);
+        Creneau apresMidi = creneau(2L, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Stand stand = stand("STAND-A");
+
+        // Explicit seats: a scenario with no `postes` section reads back with
+        // none, and the créneaux are only reachable through them.
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(
+                List.of(animateur("A1")),
+                List.of(stand),
+                List.of(midi, apresMidi),
+                List.of(poste("P1", stand, midi), poste("P2", stand, apresMidi)));
+
+        assertThat(yaml).contains("couverturePause: true");
+
+        PlanningEvenement relu = service().buildFromScenarioText(yaml).planning();
+        Map<Boolean, List<Creneau>> parDrapeau = relu.getPostes().stream()
+                .map(PosteAffectation::getCreneau)
+                .distinct()
+                .collect(java.util.stream.Collectors.partitioningBy(Creneau::isCouverturePause));
+
+        assertThat(parDrapeau.get(true)).extracting(Creneau::getHeureDebut).containsExactly(LocalTime.of(12, 0));
+        assertThat(parDrapeau.get(false)).extracting(Creneau::getHeureDebut).containsExactly(LocalTime.of(14, 0));
+    }
+
+    /**
      * The exact case that used to fail: a créneau whose id is a database
      * {@code Long}, exported and read back.
      */

@@ -110,9 +110,9 @@ final class ScenarioDtoAssembler {
                         creneau.getDate(),
                         creneau.getHeureDebut(),
                         creneau.getHeureFin(),
-                        // Écrit seulement quand il vaut vrai : une clé absente
-                        // de neuf créneaux sur dix serait du bruit dans un
-                        // fichier que des gens relisent.
+                        // Written only when true: a key absent from nine
+                        // créneaux out of ten would be noise in a file people
+                        // read.
                         creneau.isCouverturePause() ? Boolean.TRUE : null))
                 .toList();
     }
