@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -62,10 +63,35 @@ public final class ScenarioBinder {
                     "Le fichier de scénario n'est pas un document YAML valide (mapping attendu).");
         }
         try {
-            return MAPPER.convertValue(ScenarioYaml.normaliseDates(document), ScenarioDto.class);
+            return MAPPER.convertValue(decoupageAutoByPresence(ScenarioYaml.normaliseDates(document)), ScenarioDto.class);
         } catch (IllegalArgumentException e) {
             throw new ScenarioFormatException(explain(e), e);
         }
+    }
+
+    /**
+     * {@code decoupageAuto:} means "slice on import" by its <em>presence</em>:
+     * the canonical {@code decoupageAuto: {}}, a bare {@code decoupageAuto:}
+     * (YAML null) and the historical {@code groupeSourceNom} /
+     * {@code groupeCibleNom} object all mean present; only an explicit
+     * {@code decoupageAuto: false} opts out, and reads as absent. Settled on
+     * the document rather than in a deserialiser, because Jackson hands a
+     * missing record component the deserialiser's null value too — the first
+     * attempt read every scenario as asking to be sliced.
+     */
+    @SuppressWarnings("unchecked")
+    private static Object decoupageAutoByPresence(Object document) {
+        Map<String, Object> racine = new LinkedHashMap<>((Map<String, Object>) document);
+        if (!racine.containsKey("decoupageAuto")) {
+            return racine;
+        }
+        Object valeur = racine.get("decoupageAuto");
+        if (Boolean.FALSE.equals(valeur)) {
+            racine.remove("decoupageAuto");
+        } else if (valeur == null || Boolean.TRUE.equals(valeur)) {
+            racine.put("decoupageAuto", Map.of());
+        }
+        return racine;
     }
 
     private static Object parse(String yamlContent) {

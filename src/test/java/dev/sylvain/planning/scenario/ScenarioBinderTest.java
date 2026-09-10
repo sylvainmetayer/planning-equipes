@@ -139,6 +139,29 @@ class ScenarioBinderTest {
         assertThat(ScenarioBinder.bind(withAliases).animateurs()).hasSize(63);
     }
 
+    /**
+     * {@code decoupageAuto:} means "slice on import" by its presence. Four
+     * spellings, and the one that matters most is the absent key: Jackson
+     * fills a missing record component with the deserialiser's null value
+     * unless told otherwise, and told otherwise it was not, for one run of
+     * the differential test — every scenario read as asking to be sliced.
+     */
+    @Test
+    void decoupageAutoIsReadByPresenceNotByContent() throws IOException {
+        String scenario = Files.readString(Path.of("src/main/resources/scenarios/scenario.yml"));
+        assertThat(scenario).doesNotContain("decoupageAuto");
+
+        assertThat(ScenarioBinder.bind(scenario).decoupageAuto()).as("absent").isNull();
+        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto: false\n").decoupageAuto()).as("false").isNull();
+        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n").decoupageAuto()).as("bare").isNotNull();
+        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto: {}\n").decoupageAuto()).as("empty object").isNotNull();
+        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n  groupeSourceNom: A\n").decoupageAuto()
+                .groupeSourceNom()).as("historical fields").isEqualTo("A");
+        assertThatThrownBy(() -> ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n  grouppe: A\n"))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("grouppe");
+    }
+
     private static List<Path> bundledScenarios() throws IOException {
         try (Stream<Path> files = Files.list(Path.of("src/main/resources/scenarios"))) {
             return files.filter(path -> path.toString().matches(".*\\.ya?ml")).sorted().toList();

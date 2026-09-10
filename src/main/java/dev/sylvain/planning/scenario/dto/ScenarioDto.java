@@ -30,8 +30,8 @@ public record ScenarioDto(
         List<@Valid EmplacementDto> emplacements,
         @NotNull List<@Valid StandDto> stands,
         @NotNull List<@Valid AnimateurDto> animateurs,
-        // Absent: PlanningService.buildPlanningFromData generates the
-        // postes itself from stands x creneaux (mirroring buildFromReferenceData).
+        // Absent: ScenarioDomainMapper generates the postes itself from
+        // stands x creneaux (mirroring buildFromReferenceData).
         List<@Valid PosteDto> postes,
         List<@Valid ContrainteAdHocDto> contraintesAdHoc,
         @Valid DecoupageAutoDto decoupageAuto) {

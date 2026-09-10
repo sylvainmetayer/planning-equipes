@@ -85,8 +85,8 @@ public class PlanningService {
      */
     public PlanningEvenement buildExample(String scenarioName) {
         try {
-            return ScenarioYamlReader.buildPlanningFromData(
-                    ScenarioYamlReader.readScenarioData(ScenarioYamlReader.cheminScenario(scenarioName)),
+            return ScenarioYamlReader.buildPlanning(
+                    ScenarioYamlReader.readScenario(ScenarioYamlReader.cheminScenario(scenarioName)),
                     referenceDataService::getParametresLegaux);
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
@@ -101,8 +101,8 @@ public class PlanningService {
      */
     public PlanningEvenement buildSimpleExample() {
         try {
-            return ScenarioYamlReader.buildPlanningFromData(
-                    ScenarioYamlReader.readScenarioData(ScenarioYamlReader.SCENARIOS_DIR + "/scenario.yml"),
+            return ScenarioYamlReader.buildPlanning(
+                    ScenarioYamlReader.readScenario(ScenarioYamlReader.SCENARIOS_DIR + "/scenario.yml"),
                     referenceDataService::getParametresLegaux);
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
@@ -140,7 +140,7 @@ public class PlanningService {
 
     /**
      * Serializes the current reference data — through {@link ScenarioYamlWriter}
-     * — into the same YAML shape read by {@link ScenarioYamlReader#buildPlanningFromData}, so the
+     * — into the same YAML shape read by {@link ScenarioYamlReader#buildPlanning}, so the
      * result can be dropped into the
      * {@link ScenarioYamlReader#SCENARIOS_DIR} folder and reloaded as-is.
      *

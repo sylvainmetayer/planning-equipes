@@ -49,8 +49,8 @@ class ScenarioYamlReaderTest {
      */
     @Test
     void aFileThatPinsNoLegalParametersFallsBackOnTheEditionsOwn() throws IOException {
-        PlanningEvenement planning = ScenarioYamlReader.buildPlanningFromData(
-                ScenarioYamlReader.readScenarioData(ScenarioYamlReader.cheminScenario(WITHOUT_LEGAL_PARAMETERS)),
+        PlanningEvenement planning = ScenarioYamlReader.buildPlanning(
+                ScenarioYamlReader.readScenario(ScenarioYamlReader.cheminScenario(WITHOUT_LEGAL_PARAMETERS)),
                 ScenarioYamlReaderTest::ofTheEdition);
 
         assertThat(planning.getParametresLegaux())
