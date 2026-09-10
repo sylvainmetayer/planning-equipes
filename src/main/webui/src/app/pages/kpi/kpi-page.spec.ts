@@ -9,7 +9,7 @@
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { KpiHistoriqueEntry, PlanningKpi } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { KpiPage } from './kpi-page';
@@ -77,20 +77,20 @@ type PageInternals = {
 };
 
 describe('KpiPage', () => {
-  const api = { get: vi.fn(), delete: vi.fn() };
+  const analysesApi = { kpiHistory: vi.fn(), deleteKpiEntry: vi.fn() };
   const confirm = { ask: vi.fn() };
 
   beforeEach(() => {
-    api.get.mockReset();
-    api.delete.mockReset();
+    analysesApi.kpiHistory.mockReset();
+    analysesApi.deleteKpiEntry.mockReset();
     confirm.ask.mockReset();
-    api.get.mockResolvedValue([]);
-    api.delete.mockResolvedValue(undefined);
+    analysesApi.kpiHistory.mockResolvedValue([]);
+    analysesApi.deleteKpiEntry.mockResolvedValue(undefined);
     confirm.ask.mockResolvedValue(true);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: ApiService, useValue: api },
+        { provide: AnalysesApi, useValue: analysesApi },
         { provide: ConfirmService, useValue: confirm }
       ]
     });
@@ -103,7 +103,7 @@ describe('KpiPage', () => {
   describe('loading state', () => {
     it('is loading while the history is in flight and idle once it lands', async () => {
       const pending = deferred<KpiHistoriqueEntry[]>();
-      api.get.mockReturnValue(pending.promise);
+      analysesApi.kpiHistory.mockReturnValue(pending.promise);
 
       const page = createPage();
       expect(page.chargement()).toBe(true);
@@ -117,13 +117,13 @@ describe('KpiPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.chargement()).toBe(false));
 
-      expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/kpi/historique');
+      expect(analysesApi.kpiHistory).toHaveBeenCalledOnce();
     });
   });
 
   describe('error state', () => {
     it('shows the failure message and stops loading', async () => {
-      api.get.mockRejectedValue(new Error('Historique indisponible.'));
+      analysesApi.kpiHistory.mockRejectedValue(new Error('Historique indisponible.'));
 
       const page = createPage();
       await vi.waitFor(() => expect(page.chargement()).toBe(false));
@@ -132,11 +132,11 @@ describe('KpiPage', () => {
     });
 
     it('clears the previous message when a new load starts', async () => {
-      api.get.mockRejectedValueOnce(new Error('Historique indisponible.'));
+      analysesApi.kpiHistory.mockRejectedValueOnce(new Error('Historique indisponible.'));
       const page = createPage();
       await vi.waitFor(() => expect(page.error()).not.toBe(''));
 
-      api.get.mockResolvedValue([entry()]);
+      analysesApi.kpiHistory.mockResolvedValue([entry()]);
       await page.recharger();
 
       expect(page.error()).toBe('');
@@ -145,11 +145,11 @@ describe('KpiPage', () => {
     // The rows already fetched stay on screen: a failed refresh must not look
     // like an emptied history.
     it('keeps the rows already loaded when a refresh fails', async () => {
-      api.get.mockResolvedValue([entry()]);
+      analysesApi.kpiHistory.mockResolvedValue([entry()]);
       const page = createPage();
       await vi.waitFor(() => expect(page.entries()).toHaveLength(1));
 
-      api.get.mockRejectedValue(new Error('Historique indisponible.'));
+      analysesApi.kpiHistory.mockRejectedValue(new Error('Historique indisponible.'));
       await page.recharger();
 
       expect(page.entries()).toHaveLength(1);
@@ -169,7 +169,7 @@ describe('KpiPage', () => {
 
   describe('displayed data', () => {
     it('keeps the server order of the history rows', async () => {
-      api.get.mockResolvedValue([entry({ id: 3 }), entry({ id: 1 }), entry({ id: 2 })]);
+      analysesApi.kpiHistory.mockResolvedValue([entry({ id: 3 }), entry({ id: 1 }), entry({ id: 2 })]);
 
       const page = createPage();
       await vi.waitFor(() => expect(page.entries()).toHaveLength(3));
@@ -248,18 +248,18 @@ describe('KpiPage', () => {
       await page.supprimer(entry({ id: 42 }));
 
       expect(confirm.ask).toHaveBeenCalledOnce();
-      expect(api.delete).not.toHaveBeenCalled();
+      expect(analysesApi.deleteKpiEntry).not.toHaveBeenCalled();
     });
 
     it('deletes the confirmed row and reloads the history', async () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.chargement()).toBe(false));
-      api.get.mockClear();
+      analysesApi.kpiHistory.mockClear();
 
       await page.supprimer(entry({ id: 42 }));
 
-      expect(api.delete).toHaveBeenCalledExactlyOnceWith('/api/kpi/historique/42');
-      expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/kpi/historique');
+      expect(analysesApi.deleteKpiEntry).toHaveBeenCalledExactlyOnceWith(42);
+      expect(analysesApi.kpiHistory).toHaveBeenCalledOnce();
     });
 
     it('warns that the deletion is permanent', async () => {
@@ -274,13 +274,13 @@ describe('KpiPage', () => {
     it('shows a failed deletion instead of silently reloading', async () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.chargement()).toBe(false));
-      api.delete.mockRejectedValue(new Error('Ligne déjà supprimée.'));
-      api.get.mockClear();
+      analysesApi.deleteKpiEntry.mockRejectedValue(new Error('Ligne déjà supprimée.'));
+      analysesApi.kpiHistory.mockClear();
 
       await page.supprimer(entry({ id: 42 }));
 
       expect(page.error()).toContain('Ligne déjà supprimée.');
-      expect(api.get).not.toHaveBeenCalled();
+      expect(analysesApi.kpiHistory).not.toHaveBeenCalled();
     });
   });
 });

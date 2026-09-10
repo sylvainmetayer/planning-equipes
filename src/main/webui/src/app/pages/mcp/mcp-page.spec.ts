@@ -1,5 +1,5 @@
 // The prompts shown here are no longer written in the page: they come from
-// `/api/mcp/prompts`, which serves what the MCP server itself announces. The
+// the MCP API, which serves what the MCP server itself announces. The
 // page used to carry its own copies, and one of them named a tool this
 // application has never exposed — so what these tests pin down is that the
 // page displays the server's answer, and shows nothing at all rather than an
@@ -8,7 +8,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { McpApi } from '../../core/api/mcp-api';
 import { NotificationService } from '../../core/notification.service';
 import { PromptMcp } from '../../core/models';
 import { McpPage } from './mcp-page';
@@ -31,24 +31,22 @@ describe('McpPage prompts', () => {
   let write: ReturnType<typeof vi.fn>;
 
   async function rendre(prompts: PromptMcp[] | Error): Promise<void> {
-    const api = {
-      get: vi.fn(async (url: string) => {
-        if (url === '/api/mcp/prompts') {
-          if (prompts instanceof Error) {
-            throw prompts;
-          }
-          return prompts;
+    const mcpApi = {
+      prompts: vi.fn(async () => {
+        if (prompts instanceof Error) {
+          throw prompts;
         }
-        return { configuree: true, header: 'X-MCP-Api-Key' };
+        return prompts;
       }),
-      getResponse: vi.fn(async () => new Response(null, { status: 200 })),
-      post: vi.fn()
+      status: vi.fn(async () => ({ configuree: true, header: 'X-MCP-Api-Key' })),
+      configResponse: vi.fn(async () => new Response(null, { status: 200 })),
+      regenerateKey: vi.fn()
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: ApiService, useValue: api },
+        { provide: McpApi, useValue: mcpApi },
         { provide: NotificationService, useValue: { notify: vi.fn() } }
       ]
     });

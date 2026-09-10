@@ -10,10 +10,11 @@
  * literals in 41 files, 143 endpoints, and `api.service.ts` claiming to be
  * "the only place doing HTTP" while only owning the verbs.
  *
- * A ratchet, like the language policy: the files still carrying literals are
- * listed in api-paths-exceptions.json and may only leave it. A listed file
- * that no longer needs the exception fails too, so the list shrinks and never
- * quietly lets a literal back in.
+ * A ratchet, like the language policy: a file still carrying literals would be
+ * listed in api-paths-exceptions.json and could only leave it. A listed file
+ * that no longer needs the exception fails too, so the list never quietly lets
+ * a literal back in. The list reached zero with the second half of B3 — keep
+ * it there.
  *
  *   node scripts/check-api-paths.js          # check
  *   node scripts/check-api-paths.js --list   # print the current offenders, to refresh the list
@@ -25,8 +26,8 @@ const ROOT = join(__dirname, '..', 'src', 'app');
 const SCANNED = ['pages', 'shell', 'shared'];
 const EXCEPTIONS = join(__dirname, 'api-paths-exceptions.json');
 
-/** A quoted or template string starting with /api/ — a comment mentioning a path is not a call. */
-const LITERAL = /['"`]\/api\//;
+/** A string starting with /api/, quoted or after a `${…}` in a template — a comment mentioning a path is not a call. */
+const LITERAL = /(['"`]|\})\/api\//;
 
 function walk(dir, out) {
   for (const name of readdirSync(dir)) {

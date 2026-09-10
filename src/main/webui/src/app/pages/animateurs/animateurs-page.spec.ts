@@ -13,6 +13,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { AnimateursApi } from '../../core/api/animateurs-api';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -71,6 +72,7 @@ describe('AnimateursPage alert badges', () => {
   let referenceData: ReferenceDataStore;
   let problemes: ProblemesStore;
   const api = { get: vi.fn(async () => report([])) };
+  const animateursApi = { regenerateToken: vi.fn(async () => undefined), confirmations: vi.fn(async () => []) };
 
   beforeEach(() => {
     api.get.mockReset();
@@ -81,6 +83,7 @@ describe('AnimateursPage alert badges', () => {
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
         { provide: ApiService, useValue: api },
+        { provide: AnimateursApi, useValue: animateursApi },
         { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
         { provide: MatDialog, useValue: { open: vi.fn() } }
@@ -150,7 +153,8 @@ describe('AnimateursPage table', () => {
   let dialog: { open: ReturnType<typeof vi.fn> };
   let confirm: { ask: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
-  let api: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn> };
+  let api: { get: ReturnType<typeof vi.fn> };
+  let animateursApi: { regenerateToken: ReturnType<typeof vi.fn>; confirmations: ReturnType<typeof vi.fn> };
   const editingLocked = signal(false);
 
   function personne(id: string, overrides: Partial<Animateur> = {}): Animateur {
@@ -214,15 +218,16 @@ describe('AnimateursPage table', () => {
     notify = vi.fn();
     // The referential endpoints answer a list; only /api/feasibility answers a report.
     api = {
-      get: vi.fn(async (url: string) => (url.includes('feasibility') ? report([]) : [])),
-      post: vi.fn(async () => undefined)
+      get: vi.fn(async (url: string) => (url.includes('feasibility') ? report([]) : []))
     };
+    animateursApi = { regenerateToken: vi.fn(async () => undefined), confirmations: vi.fn(async () => []) };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
         { provide: ApiService, useValue: api },
+        { provide: AnimateursApi, useValue: animateursApi },
         { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined), remove: vi.fn(async () => true), removeMany: vi.fn(async () => 0) } },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
         { provide: MatDialog, useValue: dialog },
@@ -306,20 +311,12 @@ describe('AnimateursPage table', () => {
   });
 
   it('puts what is left to chase on top of the acknowledgement sort', async () => {
-    api.get.mockImplementation(async (url: string) => {
-      if (url.includes('feasibility')) {
-        return report([]);
-      }
-      if (url.includes('confirmations')) {
-        return [
-          { animateurId: 'confirme', statut: 'CONFIRME', affecte: true, confirmeLe: null, relanceLe: null },
-          { animateurId: 'relance', statut: 'RELANCE', affecte: true, confirmeLe: null, relanceLe: null },
-          { animateurId: 'silencieux', statut: 'NON_VU', affecte: true, confirmeLe: null, relanceLe: null },
-          { animateurId: 'sansPoste', statut: 'NON_VU', affecte: false, confirmeLe: null, relanceLe: null }
-        ];
-      }
-      return [];
-    });
+    animateursApi.confirmations.mockResolvedValue([
+      { animateurId: 'confirme', statut: 'CONFIRME', affecte: true, confirmeLe: null, relanceLe: null },
+      { animateurId: 'relance', statut: 'RELANCE', affecte: true, confirmeLe: null, relanceLe: null },
+      { animateurId: 'silencieux', statut: 'NON_VU', affecte: true, confirmeLe: null, relanceLe: null },
+      { animateurId: 'sansPoste', statut: 'NON_VU', affecte: false, confirmeLe: null, relanceLe: null }
+    ]);
     await rendre([personne('confirme'), personne('sansPoste'), personne('relance'), personne('silencieux')]);
     await fixture.whenStable();
 
@@ -443,12 +440,12 @@ describe('AnimateursPage table', () => {
     action(0, 'Régénérer le lien de son espace').click();
     await fixture.whenStable();
     // Refused: the already-printed PDFs must keep working.
-    expect(api.post).not.toHaveBeenCalled();
+    expect(animateursApi.regenerateToken).not.toHaveBeenCalled();
 
     confirm.ask.mockResolvedValue(true);
     action(0, 'Régénérer le lien de son espace').click();
     await fixture.whenStable();
-    expect(api.post).toHaveBeenCalledWith('/api/animateurs/alice/token', null);
+    expect(animateursApi.regenerateToken).toHaveBeenCalledExactlyOnceWith('alice');
     expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
   });
 

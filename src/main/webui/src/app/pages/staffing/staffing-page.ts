@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { CompetenceStaffing, JourStaffing, StaffingSummary, TypologieStaffing } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
 
@@ -145,7 +145,7 @@ export class StaffingPage {
    */
   protected readonly ninjaTooltip = $localize`:@@staffing.competence.ninjaTooltip:Typologie des polyvalents : ses titulaires peuvent tenir n'importe quel stand, mais ne comptent comme spécialistes que dans les compétences qu'ils déclarent — ailleurs, ils sont un renfort.`;
 
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
 
   constructor() {
     void this.load();
@@ -154,7 +154,7 @@ export class StaffingPage {
   private async load(): Promise<void> {
     this.loading.set(true);
     try {
-      this.summary.set(await this.api.get<StaffingSummary>('/api/staffing'));
+      this.summary.set(await this.analysesApi.staffing());
       this.error.set('');
     } catch (error) {
       this.error.set(errorPrefix(error));

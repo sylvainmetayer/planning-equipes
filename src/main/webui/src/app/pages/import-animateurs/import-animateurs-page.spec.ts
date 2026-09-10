@@ -5,7 +5,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { AnimateursApi } from '../../core/api/animateurs-api';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -75,15 +75,20 @@ function rapport(applied: boolean): ImportCsvRapport {
 }
 
 describe('ImportAnimateursPage', () => {
-  const api = { post: vi.fn(), downloadGet: vi.fn(async () => 'Téléchargement démarré.') };
+  const animateursApi = {
+    analyseCsvImport: vi.fn(),
+    applyCsvImport: vi.fn(),
+    downloadCsvExample: vi.fn(async () => 'Téléchargement démarré.')
+  };
   const confirm = { ask: vi.fn(async () => true) };
   const store = { reload: vi.fn(async () => undefined) };
   const notifications = { notify: vi.fn() };
   let page: PageInternals;
 
   beforeEach(() => {
-    api.post.mockReset();
-    api.downloadGet.mockClear();
+    animateursApi.analyseCsvImport.mockReset();
+    animateursApi.applyCsvImport.mockReset();
+    animateursApi.downloadCsvExample.mockClear();
     confirm.ask.mockClear();
     store.reload.mockClear();
     notifications.notify.mockClear();
@@ -91,7 +96,7 @@ describe('ImportAnimateursPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: api },
+        { provide: AnimateursApi, useValue: animateursApi },
         { provide: ConfirmService, useValue: confirm },
         { provide: ReferenceDataStore, useValue: store },
         { provide: NotificationService, useValue: notifications }
@@ -102,7 +107,7 @@ describe('ImportAnimateursPage', () => {
 
   /** Loading a file goes through the analysis endpoint only — the one that writes nothing. */
   async function chargerFichier(): Promise<void> {
-    api.post.mockResolvedValueOnce(rapport(false));
+    animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));
     const instance = page as unknown as { contenu: { set: (v: string) => void } };
     instance.contenu.set('prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n');
     page.nomFichier.set('roster.csv');
@@ -112,19 +117,18 @@ describe('ImportAnimateursPage', () => {
   it('previews through the analysis endpoint and never through the write one', async () => {
     await chargerFichier();
 
-    expect(api.post).toHaveBeenCalledTimes(1);
-    expect(api.post.mock.calls[0][0]).toBe('/api/animateurs/import-csv/analyse');
+    expect(animateursApi.analyseCsvImport).toHaveBeenCalledTimes(1);
+    expect(animateursApi.applyCsvImport).not.toHaveBeenCalled();
     expect(page.rapport()?.applied).toBe(false);
   });
 
   it('sends the file again on import, not the report it was shown', async () => {
     await chargerFichier();
-    api.post.mockResolvedValueOnce(rapport(true));
+    animateursApi.applyCsvImport.mockResolvedValueOnce(rapport(true));
 
     await page.importer();
 
-    const [url, body] = api.post.mock.calls[1];
-    expect(url).toBe('/api/animateurs/import-csv');
+    const [body] = animateursApi.applyCsvImport.mock.calls[0];
     expect((body as { content: string }).content).toContain('Amélie;Durand');
     expect((body as { rows?: unknown }).rows).toBeUndefined();
   });
@@ -135,13 +139,13 @@ describe('ImportAnimateursPage', () => {
 
     await page.importer();
 
-    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(animateursApi.applyCsvImport).not.toHaveBeenCalled();
     expect(page.rapport()?.applied).toBe(false);
   });
 
   it('reloads the referential and reports once the write came back applied', async () => {
     await chargerFichier();
-    api.post.mockResolvedValueOnce(rapport(true));
+    animateursApi.applyCsvImport.mockResolvedValueOnce(rapport(true));
 
     await page.importer();
 
@@ -152,11 +156,11 @@ describe('ImportAnimateursPage', () => {
 
   it('re-previews when an option changes, so the report always matches the options', async () => {
     await chargerFichier();
-    api.post.mockResolvedValueOnce(rapport(false));
+    animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));
 
     await page.changerRemplacerJours(true);
 
-    const [, body] = api.post.mock.calls[1];
+    const [body] = animateursApi.analyseCsvImport.mock.calls[1];
     expect((body as { replaceJoursIndisponibles: boolean }).replaceJoursIndisponibles).toBe(true);
   });
 
@@ -171,13 +175,13 @@ describe('ImportAnimateursPage', () => {
     const mappingA: AnimateurCsvMapping = { ...MAPPING, nom: 1 };
     const mappingB: AnimateurCsvMapping = { ...MAPPING, nom: 2 };
     let repondreA: (rapport: ImportCsvRapport) => void = () => undefined;
-    api.post.mockReturnValueOnce(
+    animateursApi.analyseCsvImport.mockReturnValueOnce(
       new Promise<ImportCsvRapport>((resolve) => {
         repondreA = resolve;
       })
     );
     const analyseA = page.analyser();
-    api.post.mockResolvedValueOnce({ ...rapport(false), mapping: mappingB });
+    animateursApi.analyseCsvImport.mockResolvedValueOnce({ ...rapport(false), mapping: mappingB });
     await page.analyser();
 
     repondreA({ ...rapport(false), mapping: mappingA });
@@ -190,7 +194,7 @@ describe('ImportAnimateursPage', () => {
   it('refuses the import when a full replacement is asked over a rejected row', async () => {
     await chargerFichier();
     expect(page.peutImporter()).toBe(true);
-    api.post.mockResolvedValueOnce(rapport(false));
+    animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));
 
     await page.changerRemplacerAnimateurs(true);
 
@@ -200,19 +204,19 @@ describe('ImportAnimateursPage', () => {
 
   /** A 0-byte CSV: the server has a message for it, so it has to be asked. */
   it('asks the server about an empty file instead of falling silent', async () => {
-    api.post.mockRejectedValueOnce(new Error('Le fichier est vide.'));
+    animateursApi.analyseCsvImport.mockRejectedValueOnce(new Error('Le fichier est vide.'));
     page.nomFichier.set('vide.csv');
 
     await page.analyser();
 
-    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(animateursApi.analyseCsvImport).toHaveBeenCalledTimes(1);
     expect(page.erreur()).toContain('vide');
   });
 
   it('asks nothing while no file has been chosen', async () => {
     await page.analyser();
 
-    expect(api.post).not.toHaveBeenCalled();
+    expect(animateursApi.analyseCsvImport).not.toHaveBeenCalled();
   });
 
   /**
@@ -224,17 +228,13 @@ describe('ImportAnimateursPage', () => {
   it('downloads the example roster from the API rather than from a bundled copy', async () => {
     await page.telechargerExemple();
 
-    expect(api.downloadGet).toHaveBeenCalledWith(
-      '/api/animateurs/import-csv/exemple',
-      'festival-realiste-animateurs.csv',
-      'text/csv'
-    );
-    expect(api.post).not.toHaveBeenCalled();
+    expect(animateursApi.downloadCsvExample).toHaveBeenCalledOnce();
+    expect(animateursApi.analyseCsvImport).not.toHaveBeenCalled();
     expect(page.erreur()).toBe('');
   });
 
   it('shows the refusal and drops the report when the server refuses the file', async () => {
-    api.post.mockRejectedValueOnce(new Error("Ce format n'est pas accepté : seul le CSV est lu."));
+    animateursApi.analyseCsvImport.mockRejectedValueOnce(new Error("Ce format n'est pas accepté : seul le CSV est lu."));
     const instance = page as unknown as { contenu: { set: (v: string) => void } };
     instance.contenu.set('PK');
     page.nomFichier.set('roster.xlsx');

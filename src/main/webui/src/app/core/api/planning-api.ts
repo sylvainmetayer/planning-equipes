@@ -16,7 +16,8 @@ import {
   PlanSnapshot,
   PlanningEvenement,
   RapportPublication,
-  ResetSummary
+  ResetSummary,
+  ScenarioValidationResult
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -100,5 +101,10 @@ export class PlanningApi {
   compareSnapshots(base: string, variante: string): Promise<ComparaisonSnapshots> {
     const params = new URLSearchParams({ base, variante });
     return this.api.get<ComparaisonSnapshots>(`/api/planning/snapshots/compare?${params}`);
+  }
+
+  /** Structural validation of a scenario file, without importing anything. */
+  validateScenarioFile(yaml: string): Promise<ScenarioValidationResult> {
+    return this.api.postRaw<ScenarioValidationResult>('/api/reference-data/valider-scenario-fichier', yaml, 'application/x-yaml');
   }
 }

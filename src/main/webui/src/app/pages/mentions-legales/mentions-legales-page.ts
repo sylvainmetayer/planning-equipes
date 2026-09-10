@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AdminApi } from '../../core/api/admin-api';
 import { MentionsLegales } from '../../core/models';
 import { BrandLogo } from '../../shared/brand-logo';
 import { StatusMessage } from '../../shared/status-message';
@@ -63,7 +63,7 @@ export class MentionsLegalesPage {
    */
   protected readonly peutRevenir = signal(typeof history !== 'undefined' && history.length > 1);
 
-  private readonly api = inject(ApiService);
+  private readonly adminApi = inject(AdminApi);
 
   constructor() {
     void this.charger();
@@ -71,7 +71,7 @@ export class MentionsLegalesPage {
 
   private async charger(): Promise<void> {
     try {
-      this.mentions.set(await this.api.get<MentionsLegales>('/api/mentions-legales'));
+      this.mentions.set(await this.adminApi.legalNotice());
     } catch {
       // Le détail technique n'apprend rien au lecteur de cette page — souvent
       // un animateur sur son téléphone, réseau incertain : lui dire quoi faire

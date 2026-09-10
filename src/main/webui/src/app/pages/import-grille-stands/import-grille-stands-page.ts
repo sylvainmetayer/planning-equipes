@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { StandsApi } from '../../core/api/stands-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -30,7 +30,7 @@ import { ImportGrilleAction, ImportGrilleDemande, ImportGrilleRapport } from '..
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ImportGrilleStandsPage {
-  private readonly api = inject(ApiService);
+  private readonly standsApi = inject(StandsApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly store = inject(ReferenceDataStore);
@@ -68,7 +68,7 @@ export class ImportGrilleStandsPage {
   protected async telechargerExemple(): Promise<void> {
     this.telechargementEnCours.set(true);
     try {
-      await this.api.downloadGet('/api/stands/import-grille/exemple', 'grille-stands.csv', 'text/csv');
+      await this.standsApi.downloadGridExample();
     } catch (error) {
       this.erreur.set(errorMessage(error));
     } finally {
@@ -103,7 +103,7 @@ export class ImportGrilleStandsPage {
     this.analyseEnCours.set(true);
     this.erreur.set('');
     try {
-      const rapport = await this.api.post<ImportGrilleRapport>('/api/stands/import-grille/analyse', this.demande());
+      const rapport = await this.standsApi.analyseGridImport(this.demande());
       if (numero === this.derniereAnalyse) {
         this.rapport.set(rapport);
       }
@@ -134,7 +134,7 @@ export class ImportGrilleStandsPage {
     this.importEnCours.set(true);
     this.erreur.set('');
     try {
-      const applique = await this.api.post<ImportGrilleRapport>('/api/stands/import-grille', this.demande());
+      const applique = await this.standsApi.applyGridImport(this.demande());
       this.rapport.set(applique);
       await this.store.reload();
       const regles = applique.rows.reduce((total, ligne) => total + ligne.regles, 0);

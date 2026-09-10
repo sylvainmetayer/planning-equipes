@@ -7,7 +7,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import { Emplacement, PlanningEvenement } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -60,7 +60,7 @@ export class CarteJourPage {
   protected readonly selection = signal<string | null>(null);
   protected readonly lecture = signal(false);
 
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
   private minuterie?: ReturnType<typeof setInterval>;
@@ -174,7 +174,7 @@ export class CarteJourPage {
         this.planningState.loadForDisplay(),
         // Coordinates and empty places only: a missing referential degrades the
         // map to what the plan itself carries rather than failing the page.
-        this.api.get<Emplacement[]>('/api/emplacements').catch(() => [])
+        this.analysesApi.emplacements().catch(() => [])
       ]);
       this.planning.set(planning);
       this.emplacements.set(emplacements);

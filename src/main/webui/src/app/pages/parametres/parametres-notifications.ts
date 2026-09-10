@@ -6,7 +6,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { ApiService } from '../../core/api.service';
+import { AdminApi } from '../../core/api/admin-api';
+import { ParametresNotifications } from '../../core/models';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 
@@ -18,13 +19,6 @@ import { NotificationService } from '../../core/notification.service';
 const HEURE_RAPPEL_MAX = '23:00';
 
 /** What the nightly jobs are allowed to do on this edition (issues #298, #299, #300). */
-export interface ParametresNotifications {
-  actives: boolean;
-  /** `HH:mm` local time, from which the day-before reminder may go out. */
-  heureRappelVeille: string;
-  delaiRelanceHeures: number;
-  ancienneteEchangeJours: number;
-}
 
 /**
  * Per-edition settings of the scheduled notifications.
@@ -54,7 +48,7 @@ export interface ParametresNotifications {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ParametresNotificationsPanel {
-  private readonly api = inject(ApiService);
+  private readonly adminApi = inject(AdminApi);
   private readonly notifications = inject(NotificationService);
 
   protected readonly parametres = signal<ParametresNotifications | null>(null);
@@ -66,7 +60,7 @@ export class ParametresNotificationsPanel {
 
   private async charger(): Promise<void> {
     try {
-      this.parametres.set(await this.api.get<ParametresNotifications>('/api/parametres-notifications'));
+      this.parametres.set(await this.adminApi.notificationSettings());
     } catch {
       // The rest of the Paramètres page must stay usable; the panel simply
       // does not render until a reload succeeds.
@@ -137,9 +131,7 @@ export class ParametresNotificationsPanel {
     }
     this.enregistrement.set(true);
     try {
-      this.parametres.set(
-        await this.api.put<ParametresNotifications>('/api/parametres-notifications', parametres)
-      );
+      this.parametres.set(await this.adminApi.saveNotificationSettings(parametres));
       this.notifications.notify({
         title: $localize`:@@parametres.notifications.enregistre:Notifications planifiées enregistrées.`,
         variant: 'success',

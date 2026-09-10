@@ -10,7 +10,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import { intlLocale } from '../../core/locale';
 import { EntreeHistorique } from '../../core/models';
@@ -56,7 +56,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HistoriquePage {
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly entrees = signal<EntreeHistorique[]>([]);
@@ -102,7 +102,7 @@ export class HistoriquePage {
     this.chargement.set(true);
     this.erreur.set('');
     try {
-      this.entrees.set(await this.api.get<EntreeHistorique[]>('/api/historique'));
+      this.entrees.set(await this.analysesApi.actionHistory());
     } catch (error) {
       this.erreur.set(errorPrefix(error));
     } finally {

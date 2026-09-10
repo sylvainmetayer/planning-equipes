@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { BancDeTouche, CreneauSiege } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
@@ -51,7 +51,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BancDeTouchePage {
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
   private readonly store = inject(ReferenceDataStore);
   private readonly route = inject(ActivatedRoute);
 
@@ -144,9 +144,7 @@ export class BancDeTouchePage {
       // No créneau yet — a cold open, or a bookmark naming one the plan no
       // longer staffs — is a question for the server: it answers on the first
       // créneau it does staff, and says which.
-      const chemin = creneauId === null ? '/api/banc-de-touche' : `/api/banc-de-touche/${creneauId}`;
-      const query = standId ? `?standId=${encodeURIComponent(standId)}` : '';
-      const banc = await this.api.get<BancDeTouche>(`${chemin}${query}`);
+      const banc = await this.analysesApi.bench(creneauId, standId);
       if (request !== this.requeteCourante) {
         return;
       }

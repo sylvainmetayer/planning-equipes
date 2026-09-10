@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { ApiService } from '../../core/api.service';
+import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { errorMessage } from '../../core/error-message';
 import { ConfigurationCollecte, DeclarationAdminView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -45,7 +45,7 @@ import { PromptDialog } from '../../shared/prompt-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DisponibilitesPage {
-  private readonly api = inject(ApiService);
+  private readonly disponibilitesApi = inject(DisponibilitesApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
@@ -82,8 +82,8 @@ export class DisponibilitesPage {
     this.chargement.set(true);
     try {
       const [declarations, configuration] = await Promise.all([
-        this.api.get<DeclarationAdminView[]>('/api/disponibilites'),
-        this.api.get<ConfigurationCollecte>('/api/disponibilites/configuration')
+        this.disponibilitesApi.declarations(),
+        this.disponibilitesApi.configuration()
       ]);
       this.declarations.set(declarations);
       this.configuration.set(configuration);
@@ -103,7 +103,7 @@ export class DisponibilitesPage {
   protected async saveWindow(open: boolean): Promise<void> {
     this.fenetreEnCours.set(true);
     try {
-      const reponse = await this.api.put<ConfigurationCollecte>('/api/disponibilites/configuration', {
+      const reponse = await this.disponibilitesApi.saveConfiguration({
         collecteOuverte: open,
         debut: this.debut() || null,
         fin: this.fin() || null,
@@ -179,9 +179,7 @@ export class DisponibilitesPage {
   ): Promise<void> {
     this.decisionEnCours.set(declaration.id);
     try {
-      await this.api.post<DeclarationAdminView>(`/api/disponibilites/${declaration.id}/${action}`, {
-        commentaire
-      });
+      await this.disponibilitesApi.decide(declaration.id, action, commentaire);
       this.notifications.notify({ title: confirmation, variant: 'success', timeout: 5000 });
       await this.reload();
     } catch (error) {

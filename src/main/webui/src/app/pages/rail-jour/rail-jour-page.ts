@@ -9,7 +9,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -76,7 +76,7 @@ export class RailJourPage {
   protected readonly filtre = signal('');
   protected readonly view = signal<RailVue>('tous');
 
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -275,8 +275,8 @@ export class RailJourPage {
         this.planningState.loadForDisplay(),
         // Labels only: a missing referential degrades the legend to raw ids
         // rather than failing the rail.
-        this.api.get<TypologieItem[]>('/api/typologies').catch(() => []),
-        this.api.get<RapportPauses>('/api/pauses').catch(() => null)
+        this.analysesApi.typologies().catch(() => []),
+        this.analysesApi.breaks().catch(() => null)
       ]);
       this.planning.set(planning);
       this.typologies.set(typologies);

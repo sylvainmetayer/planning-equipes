@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { StandsApi } from '../../core/api/stands-api';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -18,8 +18,7 @@ import {
   AnomalieOuverture,
   CelluleJourOuverture,
   LigneStandOuverture,
-  RapportOuvertures,
-  RapportSaisieGrille
+  RapportOuvertures
 } from '../../core/models';
 import {
   anomaliesParStand,
@@ -90,7 +89,7 @@ export type VueOuvertures = 'CONSULTER' | 'SAISIR';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OuverturesPage {
-  private readonly api = inject(ApiService);
+  private readonly standsApi = inject(StandsApi);
   private readonly crud = inject(ReferenceCrudService);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
@@ -150,7 +149,7 @@ export class OuverturesPage {
   protected async recharger(): Promise<void> {
     this.chargement.set(true);
     try {
-      const rapport = await this.api.get<RapportOuvertures>('/api/ouvertures-stands');
+      const rapport = await this.standsApi.openings();
       this.rapport.set(rapport);
       const cellules = cellulesDepuis(rapport);
       this.reference.set(cellules);
@@ -343,9 +342,9 @@ export class OuverturesPage {
     }
     this.enregistrement.set(true);
     try {
-      const rapport = await this.api.put<RapportSaisieGrille>('/api/ouvertures-stands/grille', {
-        stands: saisie(this.cellules(), modifies, this.inertes(), this.modifieLeParStand())
-      });
+      const rapport = await this.standsApi.saveOpeningsGrid(
+        saisie(this.cellules(), modifies, this.inertes(), this.modifieLeParStand())
+      );
       const regles = rapport.stands.reduce((total, ligne) => total + ligne.regles, 0);
       const exceptions = rapport.stands.reduce((total, ligne) => total + ligne.exceptions, 0);
       // A stand whose rules would not reproduce its own segments stays fully

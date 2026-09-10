@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { intlLocale } from '../../core/locale';
 import { AlerteView } from '../../core/models';
 import { AppNotification, NotificationService, NotificationSeverity } from '../../core/notification.service';
@@ -29,7 +29,7 @@ const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
 export class NotificationsPage {
   protected readonly notifications = inject(NotificationService);
 
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
 
   /**
    * Alerts raised by the nightly jobs (issues #298, #299, #300), kept apart
@@ -50,7 +50,7 @@ export class NotificationsPage {
   /** A server that cannot answer leaves the local log perfectly usable. */
   private async chargerAlertes(): Promise<void> {
     try {
-      this.alertes.set(await this.api.get<AlerteView[]>('/api/alertes'));
+      this.alertes.set(await this.analysesApi.alerts());
     } catch {
       this.alertes.set([]);
     }

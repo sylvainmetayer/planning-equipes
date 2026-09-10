@@ -16,7 +16,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AdminApi } from '../../core/api/admin-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { TODAY_ANCHOR, DateMockService } from '../../core/date-mock.service';
@@ -74,7 +74,7 @@ export class DebugPage {
   /** The server-side solver lock: emptying the database under a solve would corrupt it. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
-  private readonly api = inject(ApiService);
+  private readonly adminApi = inject(AdminApi);
   private readonly planningApi = inject(PlanningApi);
   private readonly constraintsApi = inject(ConstraintsApi);
   private readonly notifications = inject(NotificationService);
@@ -253,7 +253,7 @@ export class DebugPage {
 
   private async chargerMailConfig(): Promise<void> {
     try {
-      const config = await this.api.get<{ adminEmail: string | null }>('/api/debug/mail-config');
+      const config = await this.adminApi.mailConfig();
       this.mailAdmin.set(config.adminEmail);
     } catch {
       // Endpoint unreachable: leave the state unknown, no warning either way.
@@ -268,7 +268,7 @@ export class DebugPage {
   protected async envoyerMailTest(): Promise<void> {
     this.mailTestBusy.set(true);
     try {
-      const result = await this.api.post<{ adminEmail: string }>('/api/debug/test-mail', {});
+      const result = await this.adminApi.sendTestMail();
       this.notifications.notify({
         title: $localize`:@@debug.mailTest.envoye:Mail de test envoyé à ${result.adminEmail}:adresse:.`,
         variant: 'success',
@@ -292,7 +292,7 @@ export class DebugPage {
    */
   protected async triggerBackException(): Promise<void> {
     try {
-      await this.api.post('/api/debug/test-exception', {});
+      await this.adminApi.triggerTestException();
     } catch {
       // Expected: see the docstring above.
     }

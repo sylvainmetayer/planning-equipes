@@ -15,6 +15,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
+import { StandsApi } from '../../core/api/stands-api';
 import { NotificationService } from '../../core/notification.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -91,7 +92,8 @@ describe('StandsPage', () => {
     removeMany: vi.fn(async () => 0),
     reportError: vi.fn()
   };
-  const api = { get: vi.fn(), post: vi.fn() };
+  const api = { get: vi.fn() };
+  const standsApi = { compactSchedules: vi.fn() };
   const confirm = { ask: vi.fn() };
   const notifications = { notify: vi.fn() };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => ({ subscribe: vi.fn() }) })) };
@@ -101,7 +103,7 @@ describe('StandsPage', () => {
       stub.mockClear();
     }
     api.get.mockReset();
-    api.post.mockReset();
+    standsApi.compactSchedules.mockReset();
     confirm.ask.mockReset();
     notifications.notify.mockReset();
     dialog.open.mockClear();
@@ -112,6 +114,7 @@ describe('StandsPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: ApiService, useValue: api },
+        { provide: StandsApi, useValue: standsApi },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
         { provide: MatDialog, useValue: dialog },
@@ -313,42 +316,42 @@ describe('StandsPage', () => {
   describe('compacting the opening hours', () => {
     it('runs a dry run first and writes nothing when there is nothing to compact', async () => {
       const page = createPage();
-      api.post.mockResolvedValue({ standsCompactes: 0, fenetresAvant: 0, fenetresApres: 0 });
+      standsApi.compactSchedules.mockResolvedValue({ standsCompactes: 0, fenetresAvant: 0, fenetresApres: 0 });
 
       await page.compacterHoraires();
 
-      expect(api.post).toHaveBeenCalledExactlyOnceWith('/api/stands/compactage-horaires?appliquer=false', {});
+      expect(standsApi.compactSchedules).toHaveBeenCalledExactlyOnceWith(false);
       expect(confirm.ask).not.toHaveBeenCalled();
       expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'info' }));
     });
 
     it('shows the trade before writing, and writes nothing when it is refused', async () => {
       const page = createPage();
-      api.post.mockResolvedValue({ standsCompactes: 3, fenetresAvant: 24, fenetresApres: 6 });
+      standsApi.compactSchedules.mockResolvedValue({ standsCompactes: 3, fenetresAvant: 24, fenetresApres: 6 });
       confirm.ask.mockResolvedValue(false);
 
       await page.compacterHoraires();
 
       expect(confirm.ask).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('24') }));
-      expect(api.post).toHaveBeenCalledOnce();
+      expect(standsApi.compactSchedules).toHaveBeenCalledOnce();
       expect(crud.reload).toHaveBeenCalledOnce();
     });
 
     it('applies the compaction once confirmed, then reloads and reports', async () => {
       const page = createPage();
-      api.post.mockResolvedValue({ standsCompactes: 3, fenetresAvant: 24, fenetresApres: 6 });
+      standsApi.compactSchedules.mockResolvedValue({ standsCompactes: 3, fenetresAvant: 24, fenetresApres: 6 });
       crud.reload.mockClear();
 
       await page.compacterHoraires();
 
-      expect(api.post).toHaveBeenLastCalledWith('/api/stands/compactage-horaires?appliquer=true', {});
+      expect(standsApi.compactSchedules).toHaveBeenLastCalledWith(true);
       expect(crud.reload).toHaveBeenCalledOnce();
       expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
     });
 
     it('lowers the in-flight flag whether the round-trip succeeds or fails', async () => {
       const page = createPage();
-      api.post.mockRejectedValue(new Error('Compactage refusé.'));
+      standsApi.compactSchedules.mockRejectedValue(new Error('Compactage refusé.'));
 
       await page.compacterHoraires();
 
@@ -427,7 +430,8 @@ describe('StandsPage table', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: { get: vi.fn(async () => []), post: vi.fn(async () => ({ standsCompactes: 0, fenetresAvant: 0, fenetresApres: 0 })) } },
+        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: StandsApi, useValue: { compactSchedules: vi.fn(async () => ({ standsCompactes: 0, fenetresAvant: 0, fenetresApres: 0 })) } },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
         { provide: MatDialog, useValue: dialog },

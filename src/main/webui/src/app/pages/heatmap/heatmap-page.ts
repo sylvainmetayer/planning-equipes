@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { PlanningEvenement, PosteAffectation, TypologieItem } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
@@ -100,7 +100,7 @@ export class HeatmapPage {
   /** Typologie referential, only used to turn ids into display labels. */
   protected readonly typologies = signal<TypologieItem[]>([]);
 
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
 
@@ -222,7 +222,7 @@ export class HeatmapPage {
         this.planningState.loadForDisplay(),
         // Labels only: a missing referential degrades the badges to raw ids
         // rather than failing the whole heatmap.
-        this.api.get<TypologieItem[]>('/api/typologies').catch(() => [])
+        this.analysesApi.typologies().catch(() => [])
       ]);
       this.planning.set(planning);
       this.typologies.set(typologies);

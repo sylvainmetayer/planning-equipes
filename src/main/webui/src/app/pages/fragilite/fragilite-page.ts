@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import {
   AnimateurFragilite,
@@ -61,7 +61,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FragilitePage {
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly rapport = signal<RapportFragilite | null>(null);
@@ -105,7 +105,7 @@ export class FragilitePage {
     this.chargement.set(true);
     this.erreur.set('');
     try {
-      this.rapport.set(await this.api.get<RapportFragilite>('/api/fragilite'));
+      this.rapport.set(await this.analysesApi.fragility());
     } catch (error) {
       this.erreur.set(errorPrefix(error));
     } finally {

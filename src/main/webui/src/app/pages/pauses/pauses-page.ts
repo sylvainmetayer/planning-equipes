@@ -10,7 +10,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import { RapportPauses } from '../../core/models';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
@@ -57,7 +57,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PausesPage {
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly rapport = signal<RapportPauses | null>(null);
@@ -123,7 +123,7 @@ export class PausesPage {
     this.chargement.set(true);
     this.erreur.set('');
     try {
-      this.rapport.set(await this.api.get<RapportPauses>('/api/pauses'));
+      this.rapport.set(await this.analysesApi.breaks());
     } catch (error) {
       this.rapport.set(null);
       this.erreur.set(errorPrefix(error));

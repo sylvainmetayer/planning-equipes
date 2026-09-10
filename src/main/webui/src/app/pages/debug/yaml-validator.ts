@@ -3,15 +3,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
+import { ScenarioValidationResult } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
 
 /** Body of `POST /api/reference-data/valider-scenario-fichier` — see docs/api.md. */
-interface ScenarioValidationResult {
-  valide: boolean;
-  erreurs: string[];
-}
-
 /**
  * Uploads a scenario YAML file and reports the structural validation errors
  * ScenarioValidator finds (types, required fields, value ranges — see
@@ -34,7 +30,7 @@ export class YamlValidator {
   protected readonly error = signal('');
 
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
-  private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
 
   protected pickFile(): void {
     this.fileInput().nativeElement.click();
@@ -50,11 +46,7 @@ export class YamlValidator {
     this.error.set('');
     this.validating.set(true);
     try {
-      const result = await this.api.postRaw<ScenarioValidationResult>(
-        '/api/reference-data/valider-scenario-fichier',
-        await file.text(),
-        'application/x-yaml'
-      );
+      const result = await this.planningApi.validateScenarioFile(await file.text());
       this.result.set(result);
       this.summary.set(
         result.valide

@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { Animateur, Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { RailJourPage } from './rail-jour-page';
@@ -84,7 +84,7 @@ describe('RailJourPage', () => {
   async function rendre(
     evenement: PlanningEvenement,
     queryParams: Record<string, string> = {},
-    apiGet: (url: string) => unknown = () => []
+    analyses: { breaks?: () => unknown } = {}
   ): Promise<void> {
     loadForDisplay = vi.fn(async () => evenement);
     TestBed.resetTestingModule();
@@ -93,7 +93,10 @@ describe('RailJourPage', () => {
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
-        { provide: ApiService, useValue: { get: vi.fn(async (url: string) => apiGet(url)) } },
+        {
+          provide: AnalysesApi,
+          useValue: { typologies: vi.fn(async () => []), breaks: vi.fn(async () => analyses.breaks?.() ?? null) }
+        },
         { provide: PlanningStateService, useValue: { loadForDisplay } },
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
@@ -291,7 +294,7 @@ describe('RailJourPage', () => {
     };
 
     it('draws each break on its line, the relay-less one in the alert style, and names it in the summary', async () => {
-      await rendre(planningDeuxJours(), {}, (url) => (url === '/api/pauses' ? rapport : []));
+      await rendre(planningDeuxJours(), {}, { breaks: () => rapport });
 
       const segment = racine().querySelector('.rail-pause');
       expect(segment).not.toBeNull();
@@ -302,11 +305,10 @@ describe('RailJourPage', () => {
     });
 
     it('still draws the rail when the breaks cannot be read', async () => {
-      await rendre(planningDeuxJours(), {}, (url) => {
-        if (url === '/api/pauses') {
+      await rendre(planningDeuxJours(), {}, {
+        breaks: () => {
           throw new Error('HTTP 500');
         }
-        return [];
       });
 
       expect(noms()).toHaveLength(3);
@@ -324,7 +326,7 @@ describe('RailJourPage', () => {
           provideZonelessChangeDetection(),
           { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
           { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
-          { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+          { provide: AnalysesApi, useValue: { typologies: vi.fn(async () => []), breaks: vi.fn(async () => null) } },
           { provide: PlanningStateService, useValue: { loadForDisplay } },
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },

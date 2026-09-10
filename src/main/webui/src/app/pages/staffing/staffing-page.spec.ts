@@ -9,7 +9,7 @@
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import {
   BorneStaffing,
   CompetenceStaffing,
@@ -146,13 +146,13 @@ type PageInternals = {
 };
 
 describe('StaffingPage', () => {
-  const api = { get: vi.fn() };
+  const analysesApi = { staffing: vi.fn() };
 
   beforeEach(() => {
-    api.get.mockReset();
-    api.get.mockResolvedValue(summary());
+    analysesApi.staffing.mockReset();
+    analysesApi.staffing.mockResolvedValue(summary());
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: ApiService, useValue: api }]
+      providers: [provideZonelessChangeDetection(), { provide: AnalysesApi, useValue: analysesApi }]
     });
   });
 
@@ -165,7 +165,7 @@ describe('StaffingPage', () => {
     // the initial value of the signal is never observed. The point of the test
     // is that the first paint shows a progress bar and not an empty table.
     it('is loading while the first request is in flight, with nothing to show yet', () => {
-      api.get.mockReturnValue(deferred<StaffingSummary>().promise);
+      analysesApi.staffing.mockReturnValue(deferred<StaffingSummary>().promise);
 
       const page = createPage();
 
@@ -175,7 +175,7 @@ describe('StaffingPage', () => {
 
     it('stops loading once the summary lands', async () => {
       const pending = deferred<StaffingSummary>();
-      api.get.mockReturnValue(pending.promise);
+      analysesApi.staffing.mockReturnValue(pending.promise);
       const page = createPage();
 
       pending.resolve(summary({ minimumTotal: 33 }));
@@ -188,13 +188,13 @@ describe('StaffingPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.loading()).toBe(false));
 
-      expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/staffing');
+      expect(analysesApi.staffing).toHaveBeenCalledOnce();
     });
   });
 
   describe('error state', () => {
     it('shows the failure message and stops loading', async () => {
-      api.get.mockRejectedValue(new Error('Référentiel incomplet.'));
+      analysesApi.staffing.mockRejectedValue(new Error('Référentiel incomplet.'));
 
       const page = createPage();
       await vi.waitFor(() => expect(page.loading()).toBe(false));
@@ -204,11 +204,11 @@ describe('StaffingPage', () => {
     });
 
     it('clears the error once a later load succeeds', async () => {
-      api.get.mockRejectedValueOnce(new Error('Référentiel incomplet.'));
+      analysesApi.staffing.mockRejectedValueOnce(new Error('Référentiel incomplet.'));
       const page = createPage();
       await vi.waitFor(() => expect(page.error()).not.toBe(''));
 
-      api.get.mockResolvedValue(summary());
+      analysesApi.staffing.mockResolvedValue(summary());
       await page.load();
 
       expect(page.error()).toBe('');
@@ -222,7 +222,7 @@ describe('StaffingPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
 
-      api.get.mockRejectedValue(new Error('Référentiel incomplet.'));
+      analysesApi.staffing.mockRejectedValue(new Error('Référentiel incomplet.'));
       await page.load();
 
       expect(page.summary()).not.toBeNull();
@@ -232,7 +232,7 @@ describe('StaffingPage', () => {
 
   describe('empty state', () => {
     it('reports no hours per week and names no week when the edition covers none', async () => {
-      api.get.mockResolvedValue(
+      analysesApi.staffing.mockResolvedValue(
         summary({
           nombreSemaines: 0,
           capaciteHeuresParAnimateur: 0,
@@ -251,7 +251,7 @@ describe('StaffingPage', () => {
     });
 
     it('reports no hours per week and no break while nothing is loaded', () => {
-      api.get.mockReturnValue(deferred<StaffingSummary>().promise);
+      analysesApi.staffing.mockReturnValue(deferred<StaffingSummary>().promise);
 
       const page = createPage();
 
@@ -267,7 +267,7 @@ describe('StaffingPage', () => {
     // divide: a week the event barely touches offers far less than the weekly
     // ceiling, and the former division hid exactly that.
     it('reads the busiest week capacity as the server proved it, without dividing anything', async () => {
-      api.get.mockResolvedValue(
+      analysesApi.staffing.mockResolvedValue(
         summary({
           capaciteHeuresParAnimateur: 20,
           nombreSemaines: 3,
@@ -284,7 +284,7 @@ describe('StaffingPage', () => {
     });
 
     it('highlights the rotation bound like any other when the server retained it', async () => {
-      api.get.mockResolvedValue(summary({ borneRetenue: 'ROTATION_JOURS', rotationTotal: 26 }));
+      analysesApi.staffing.mockResolvedValue(summary({ borneRetenue: 'ROTATION_JOURS', rotationTotal: 26 }));
 
       const page = createPage();
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
@@ -297,20 +297,20 @@ describe('StaffingPage', () => {
     // A projection, not a bound — so it only appears when it says something
     // the bounds do not, and never when nobody declared anything.
     it('shows the availability projection only when declared days off push it above the floor', async () => {
-      api.get.mockResolvedValue(
+      analysesApi.staffing.mockResolvedValue(
         summary({ minimumTotal: 22, minimumAvecIndisponibilites: 31, indisponibilitesDeclarees: true })
       );
       const page = createPage();
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
       expect(page.projectionLabel()).toContain('31');
 
-      api.get.mockResolvedValue(
+      analysesApi.staffing.mockResolvedValue(
         summary({ minimumTotal: 22, minimumAvecIndisponibilites: 22, indisponibilitesDeclarees: true })
       );
       await page.load();
       expect(page.projectionLabel()).toBe('');
 
-      api.get.mockResolvedValue(
+      analysesApi.staffing.mockResolvedValue(
         summary({ minimumTotal: 22, minimumAvecIndisponibilites: 22, indisponibilitesDeclarees: false })
       );
       await page.load();
@@ -318,7 +318,7 @@ describe('StaffingPage', () => {
     });
 
     it('highlights the bound the server actually retained, and only that one', async () => {
-      api.get.mockResolvedValue(summary({ borneRetenue: 'CHARGE_HORAIRE' }));
+      analysesApi.staffing.mockResolvedValue(summary({ borneRetenue: 'CHARGE_HORAIRE' }));
 
       const page = createPage();
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
@@ -329,7 +329,7 @@ describe('StaffingPage', () => {
     });
 
     it('reports the legal break the peak-with-break bound is built on', async () => {
-      api.get.mockResolvedValue(summary({ pauseMinimaleMinutes: 45 }));
+      analysesApi.staffing.mockResolvedValue(summary({ pauseMinimaleMinutes: 45 }));
 
       const page = createPage();
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
@@ -359,7 +359,7 @@ describe('StaffingPage', () => {
   describe('bottleneck per game category', () => {
     /** Loads a page whose summary carries the given breakdown, and waits for it. */
     async function pageWith(overrides: Partial<CompetenceStaffing>): Promise<PageInternals> {
-      api.get.mockResolvedValue(summary({ parCompetence: competence(overrides) }));
+      analysesApi.staffing.mockResolvedValue(summary({ parCompetence: competence(overrides) }));
       const page = createPage();
       await vi.waitFor(() => expect(page.competence()).not.toBeNull());
       return page;
@@ -371,12 +371,12 @@ describe('StaffingPage', () => {
     it('reads the breakdown from the same payload, without a second request', async () => {
       const page = await pageWith({ polyvalents: 7 });
 
-      expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/staffing');
+      expect(analysesApi.staffing).toHaveBeenCalledOnce();
       expect(page.competence()?.polyvalents).toBe(7);
     });
 
     it('has no breakdown to show while nothing is loaded', () => {
-      api.get.mockReturnValue(deferred<StaffingSummary>().promise);
+      analysesApi.staffing.mockReturnValue(deferred<StaffingSummary>().promise);
 
       const page = createPage();
 

@@ -19,6 +19,7 @@ import { NavigationEnd, Router, provideRouter } from '@angular/router';
 import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../core/api.service';
+import { AdminApi } from '../core/api/admin-api';
 import { EditionStore } from '../core/edition.store';
 import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
@@ -65,7 +66,8 @@ describe('AdminShell', () => {
   // something is already open before reacting to a single key press.
   const dialog = { open: vi.fn(), openDialogs: [] as unknown[] };
   const snackBar = { dismiss: vi.fn() };
-  const api = { post: vi.fn(), get: vi.fn() };
+  const api = { get: vi.fn() };
+  const adminApi = { logout: vi.fn() };
   /**
    * Handlers the shell registers, by job type. Keyed rather than collapsed into
    * one: the shell used to subscribe to `SOLVE` alone, and a type-blind double
@@ -109,7 +111,7 @@ describe('AdminShell', () => {
       announcer.announce,
       dialog.open,
       snackBar.dismiss,
-      api.post,
+      adminApi.logout,
       api.get,
       unregisterResult
     ]) {
@@ -120,7 +122,7 @@ describe('AdminShell', () => {
       onResultByType.set(type, handler);
       return unregisterResult;
     });
-    api.post.mockResolvedValue(undefined);
+    adminApi.logout.mockResolvedValue(undefined);
     api.get.mockResolvedValue({});
     TestBed.configureTestingModule({
       providers: [
@@ -132,6 +134,7 @@ describe('AdminShell', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: MatSnackBar, useValue: snackBar },
         { provide: ApiService, useValue: api },
+        { provide: AdminApi, useValue: adminApi },
         // A mascot is configured by default here: the Konami easter egg only
         // exists on a deployment that has one, and most of these tests are
         // about the sequence, not about the brand.
@@ -505,6 +508,7 @@ describe('AdminShell', () => {
           { provide: MatDialog, useValue: dialog },
           { provide: MatSnackBar, useValue: snackBar },
           { provide: ApiService, useValue: api },
+          { provide: AdminApi, useValue: adminApi },
           { provide: BRANDING, useValue: BRANDING_NEUTRE }
         ]
       });
@@ -718,7 +722,7 @@ describe('AdminShell', () => {
 
       await shell.logout();
 
-      expect(api.post).toHaveBeenCalledExactlyOnceWith('/api/auth/logout', null);
+      expect(adminApi.logout).toHaveBeenCalledOnce();
       expect(assign).toHaveBeenCalledExactlyOnceWith('/login');
       vi.restoreAllMocks();
     });
@@ -728,7 +732,7 @@ describe('AdminShell', () => {
     it('leaves even when the server refuses the logout', async () => {
       const assign = vi.fn();
       vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
-      api.post.mockRejectedValue(new Error('Serveur indisponible.'));
+      adminApi.logout.mockRejectedValue(new Error('Serveur indisponible.'));
       const shell = createShell();
 
       await expect(shell.logout()).rejects.toThrow();

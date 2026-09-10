@@ -6,7 +6,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { StandsApi } from '../../core/api/stands-api';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -43,7 +43,7 @@ function rapport(applied: boolean): ImportGrilleRapport {
 }
 
 describe('ImportGrilleStandsPage', () => {
-  const api = { post: vi.fn(), downloadGet: vi.fn(async () => 'ok') };
+  const standsApi = { analyseGridImport: vi.fn(), applyGridImport: vi.fn(), downloadGridExample: vi.fn(async () => 'ok') };
   const confirm = { ask: vi.fn(async () => true) };
   const store = { reload: vi.fn(async () => undefined) };
   const notifications = { notify: vi.fn() };
@@ -51,7 +51,8 @@ describe('ImportGrilleStandsPage', () => {
   let page: PageInternals;
 
   beforeEach(async () => {
-    api.post.mockReset();
+    standsApi.analyseGridImport.mockReset();
+    standsApi.applyGridImport.mockReset();
     confirm.ask.mockReset();
     confirm.ask.mockResolvedValue(true);
     store.reload.mockClear();
@@ -61,7 +62,7 @@ describe('ImportGrilleStandsPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: api },
+        { provide: StandsApi, useValue: standsApi },
         { provide: ConfirmService, useValue: confirm },
         { provide: ReferenceDataStore, useValue: store },
         { provide: NotificationService, useValue: notifications }
@@ -77,7 +78,7 @@ describe('ImportGrilleStandsPage', () => {
   }
 
   async function chargerEtAnalyser(): Promise<void> {
-    api.post.mockResolvedValueOnce(rapport(false));
+    standsApi.analyseGridImport.mockResolvedValueOnce(rapport(false));
     (fixture.componentInstance as unknown as { contenu: { set(v: string): void } }).contenu.set('stand;2026-07-08\n;10:00-12:00\nBOURSE;2\n');
     page.nomFichier.set('grille.csv');
     await page.analyser();
@@ -87,9 +88,9 @@ describe('ImportGrilleStandsPage', () => {
   it('previews through the analysis endpoint and shows columns, rows and warnings', async () => {
     await chargerEtAnalyser();
 
-    expect(api.post).toHaveBeenCalledOnce();
-    expect((api.post.mock.calls[0] as unknown as [string, { fileName: string }])[0]).toBe('/api/stands/import-grille/analyse');
-    expect((api.post.mock.calls[0] as unknown as [string, { fileName: string }])[1].fileName).toBe('grille.csv');
+    expect(standsApi.analyseGridImport).toHaveBeenCalledOnce();
+    expect(standsApi.applyGridImport).not.toHaveBeenCalled();
+    expect((standsApi.analyseGridImport.mock.calls[0] as unknown as [{ fileName: string }])[0].fileName).toBe('grille.csv');
     const text = racine().textContent!.replace(/\s+/g, ' ');
     expect(text).toContain('1 colonne(s) reconnue(s)');
     expect(text).toContain('2026-07-08 montage');
@@ -103,16 +104,15 @@ describe('ImportGrilleStandsPage', () => {
 
   it('imports the same body after a confirmation, reloads the store and reports', async () => {
     await chargerEtAnalyser();
-    api.post.mockResolvedValueOnce(rapport(true));
+    standsApi.applyGridImport.mockResolvedValueOnce(rapport(true));
 
     await page.importer();
     await fixture.whenStable();
 
     expect(confirm.ask).toHaveBeenCalledOnce();
-    expect(api.post).toHaveBeenCalledTimes(2);
-    const [url, corps] = api.post.mock.calls[1] as unknown as [string, unknown];
-    expect(url).toBe('/api/stands/import-grille');
-    expect(corps).toEqual((api.post.mock.calls[0] as unknown as [string, unknown])[1]);
+    expect(standsApi.applyGridImport).toHaveBeenCalledOnce();
+    const [corps] = standsApi.applyGridImport.mock.calls[0] as unknown as [unknown];
+    expect(corps).toEqual((standsApi.analyseGridImport.mock.calls[0] as unknown as [unknown])[0]);
     expect(store.reload).toHaveBeenCalledOnce();
     expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
     expect(page.rapport()?.applied).toBe(true);
@@ -126,12 +126,12 @@ describe('ImportGrilleStandsPage', () => {
 
     await page.importer();
 
-    expect(api.post).toHaveBeenCalledOnce();
+    expect(standsApi.applyGridImport).not.toHaveBeenCalled();
     expect(store.reload).not.toHaveBeenCalled();
   });
 
   it('shows the server refusal in place and keeps the import off', async () => {
-    api.post.mockRejectedValueOnce(new Error("L'édition n'a aucun créneau"));
+    standsApi.analyseGridImport.mockRejectedValueOnce(new Error("L'édition n'a aucun créneau"));
     page.nomFichier.set('grille.csv');
     (fixture.componentInstance as unknown as { contenu: { set(v: string): void } }).contenu.set('x');
     await page.analyser();

@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ApiService } from '../../core/api.service';
+import { EditionsApi } from '../../core/api/editions-api';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
 import { slugify } from '../../core/slug';
@@ -53,7 +53,7 @@ export class EditionsPage {
 
   protected readonly courantId = computed(() => this.store.courant()?.id ?? null);
 
-  private readonly api = inject(ApiService);
+  private readonly editionsApi = inject(EditionsApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
@@ -72,9 +72,8 @@ export class EditionsPage {
       nom
     };
     const source = this.sourceDuplication();
-    const url = source ? `/api/editions/${encodeURIComponent(source)}/dupliquer` : '/api/editions';
     await this.executer(async () => {
-      await this.api.post<Edition>(url, target);
+      await this.editionsApi.create(target, source);
       this.nouveauNom.set('');
       this.sourceDuplication.set(null);
       this.notifications.notify({
@@ -92,11 +91,11 @@ export class EditionsPage {
     if (!nouveau || nouveau === edition.nom) {
       return;
     }
-    await this.executer(() => this.api.put(`/api/editions/${encodeURIComponent(edition.id)}`, { nom: nouveau }));
+    await this.executer(() => this.editionsApi.rename(edition.id, nouveau));
   }
 
   protected async definirParDefaut(edition: Edition): Promise<void> {
-    await this.executer(() => this.api.put(`/api/editions/${encodeURIComponent(edition.id)}/defaut`, {}));
+    await this.executer(() => this.editionsApi.setDefault(edition.id));
   }
 
   protected basculer(edition: Edition): void {
@@ -128,7 +127,7 @@ export class EditionsPage {
       });
       return;
     }
-    await this.executer(() => this.api.delete(`/api/editions/${encodeURIComponent(edition.id)}`));
+    await this.executer(() => this.editionsApi.delete(edition.id));
   }
 
   private async executer(action: () => Promise<unknown>): Promise<void> {

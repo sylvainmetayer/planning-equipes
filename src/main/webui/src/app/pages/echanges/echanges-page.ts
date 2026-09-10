@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { ApiService } from '../../core/api.service';
+import { EchangesApi } from '../../core/api/echanges-api';
 import { statutDemandeClasse, statutDemandeLabel } from '../../core/demande-echange-labels';
 import { ConfigurationFoire, DemandeEchangeView, EchangeSimulation, HardMediumSoftScore } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -47,7 +47,7 @@ interface DemandeRow extends DemandeEchangeView {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EchangesPage {
-  private readonly api = inject(ApiService);
+  private readonly echangesApi = inject(EchangesApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
@@ -101,8 +101,8 @@ export class EchangesPage {
     this.chargement.set(true);
     try {
       const [demandes, configuration] = await Promise.all([
-        this.api.get<DemandeEchangeView[]>('/api/echanges'),
-        this.api.get<ConfigurationFoire>('/api/echanges/configuration')
+        this.echangesApi.list(),
+        this.echangesApi.configuration()
       ]);
       this.demandes.set(demandes);
       this.apply(configuration);
@@ -142,7 +142,7 @@ export class EchangesPage {
   protected async basculerFoire(open: boolean): Promise<void> {
     this.foireEnCours.set(true);
     try {
-      const configuration = await this.api.put<ConfigurationFoire>('/api/echanges/configuration', {
+      const configuration = await this.echangesApi.saveConfiguration({
         foireOuverte: open,
         debut: this.debut(),
         fin: this.fin()
@@ -175,7 +175,7 @@ export class EchangesPage {
   protected async chargerImpact(demande: DemandeRow): Promise<void> {
     this.impactEnCours.set(demande.id);
     try {
-      const impact = await this.api.get<EchangeSimulation>(`/api/echanges/${demande.id}/impact`);
+      const impact = await this.echangesApi.impact(demande.id);
       this.impacts.set({ ...this.impacts(), [demande.id]: impact });
     } catch (error) {
       this.report(error);
@@ -214,7 +214,7 @@ export class EchangesPage {
       confirmation: string): Promise<void> {
     this.decisionEnCours.set(demande.id);
     try {
-      await this.api.post<DemandeEchangeView>(`/api/echanges/${demande.id}/${action}`, { commentaire });
+      await this.echangesApi.decide(demande.id, action, commentaire);
       this.notifications.notify({ title: confirmation, variant: 'success', timeout: 5000 });
       await this.reload();
     } catch (error) {

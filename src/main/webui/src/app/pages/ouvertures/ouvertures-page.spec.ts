@@ -8,7 +8,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { StandsApi } from '../../core/api/stands-api';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -83,7 +83,7 @@ function mount(options: { vue?: string; editingLocked?: boolean; confirme?: bool
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: ApiService, useValue: { get, put } },
+      { provide: StandsApi, useValue: { openings: get, saveOpeningsGrid: put } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
       { provide: ConfirmService, useValue: { ask } },
@@ -167,8 +167,8 @@ describe('OuverturesPage — saisie', () => {
     bouton(fixture, 'Enregistrer').click();
     await fixture.whenStable();
 
-    const [, corps] = put.mock.calls[0] as unknown as [string, { stands: { cellules: { creneauId: number }[] }[] }];
-    expect(corps.stands[0].cellules.map((cellule) => cellule.creneauId)).toEqual([1, 3, 4]);
+    const [stands] = put.mock.calls[0] as unknown as [{ cellules: { creneauId: number }[] }[]];
+    expect(stands[0].cellules.map((cellule) => cellule.creneauId)).toEqual([1, 3, 4]);
   });
 
   it('marks a typed cell and its row as modified, and counts the stand on the save button', async () => {
@@ -255,20 +255,18 @@ describe('OuverturesPage — saisie', () => {
 
     // Stand A has no partial cell: no confirmation asked.
     expect(ask).not.toHaveBeenCalled();
-    expect(put).toHaveBeenCalledWith('/api/ouvertures-stands/grille', {
-      stands: [
-        {
-          standId: 'A',
-          modifieLe: '2026-09-06T10:00:00Z',
-          cellules: [
-            { creneauId: 1, effectif: 2 },
-            { creneauId: 2, effectif: 5 },
-            { creneauId: 3, effectif: 2 },
-            { creneauId: 4, effectif: 4 }
-          ]
-        }
-      ]
-    });
+    expect(put).toHaveBeenCalledWith([
+      {
+        standId: 'A',
+        modifieLe: '2026-09-06T10:00:00Z',
+        cellules: [
+          { creneauId: 1, effectif: 2 },
+          { creneauId: 2, effectif: 5 },
+          { creneauId: 3, effectif: 2 },
+          { creneauId: 4, effectif: 4 }
+        ]
+      }
+    ]);
     expect(get).toHaveBeenCalledTimes(2);
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
   });

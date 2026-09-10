@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { abonnementIcsUrl, espacePlanningIcsUrl, espacePlanningPdfUrl } from '../../core/api/espace-animateur-links';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { errorMessage } from '../../core/error-message';
 import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
@@ -66,12 +67,14 @@ export class EspacePlanningPage {
   }
 
   /** Direct download links — the token in the URL is the whole credential. */
-  protected readonly lienPdf = computed(() =>
-    this.espace.jeton() ? `/api/espace-animateur/${this.espace.jeton()}/planning.pdf` : null
-  );
-  protected readonly lienIcs = computed(() =>
-    this.espace.jeton() ? `/api/espace-animateur/${this.espace.jeton()}/planning.ics` : null
-  );
+  protected readonly lienPdf = computed(() => {
+    const jeton = this.espace.jeton();
+    return jeton ? espacePlanningPdfUrl(jeton) : null;
+  });
+  protected readonly lienIcs = computed(() => {
+    const jeton = this.espace.jeton();
+    return jeton ? espacePlanningIcsUrl(jeton) : null;
+  });
 
   /* ---------- Permanent calendar subscription (issue #324) ---------- */
 
@@ -86,7 +89,7 @@ export class EspacePlanningPage {
    */
   protected readonly urlAbonnement = computed(() => {
     const token = this.espace.view()?.abonnementToken;
-    return token ? `${window.location.origin}/api/abonnements/${token}/planning.ics` : null;
+    return token ? abonnementIcsUrl(window.location.origin, token) : null;
   });
 
   /**

@@ -9,7 +9,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -281,7 +281,7 @@ describe('buildStandsSummary', () => {
 
 describe('AnimateurTimelinePage', () => {
   let fixture: ComponentFixture<AnimateurTimelinePage>;
-  let api: { get: ReturnType<typeof vi.fn> };
+  let analysesApi: { typologies: ReturnType<typeof vi.fn>; breaks: ReturnType<typeof vi.fn> };
   let planningApi: { exportForAnimateur: ReturnType<typeof vi.fn>; sendToAnimateur: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
   let replaceState: ReturnType<typeof vi.fn>;
@@ -302,9 +302,12 @@ describe('AnimateurTimelinePage', () => {
   async function rendre(
     evenement: PlanningEvenement | null,
     options: { animateurEnParametre?: string | null } = {},
-    apiGet: (url: string) => unknown = () => []
+    analyses: { breaks?: () => unknown } = {}
   ): Promise<void> {
-    api = { get: vi.fn(async (url: string) => apiGet(url)) };
+    analysesApi = {
+      typologies: vi.fn(async () => []),
+      breaks: vi.fn(async () => analyses.breaks?.() ?? null)
+    };
     planningApi = {
       exportForAnimateur: vi.fn(async () => 'Téléchargement démarré.'),
       sendToAnimateur: vi.fn(async () => ({ envoyes: 1, echecs: [] }))
@@ -319,7 +322,7 @@ describe('AnimateurTimelinePage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: ApiService, useValue: api },
+        { provide: AnalysesApi, useValue: analysesApi },
         { provide: PlanningApi, useValue: planningApi },
         { provide: NotificationService, useValue: { notify } },
         { provide: PlanningStateService, useValue: planningState },
@@ -503,7 +506,7 @@ describe('AnimateurTimelinePage', () => {
         }
       ]
     };
-    await rendre(evenement, {}, (url: string) => (url === '/api/pauses' ? rapport : []));
+    await rendre(evenement, {}, { breaks: () => rapport });
 
     const segment = racine().querySelector('.timeline-pause');
     expect(segment).not.toBeNull();
@@ -513,18 +516,17 @@ describe('AnimateurTimelinePage', () => {
   });
 
   it('still draws the tracks when the breaks cannot be read, and draws none without a selected animateur', async () => {
-    await rendre(planningDeDeux(), {}, (url: string) => {
-      if (url === '/api/pauses') {
+    await rendre(planningDeDeux(), {}, {
+      breaks: () => {
         throw new Error('HTTP 500');
       }
-      return [];
     });
     expect(racine().querySelectorAll('.timeline-day-card').length).toBeGreaterThan(0);
     expect(racine().querySelector('.timeline-pause')).toBeNull();
 
-    await rendre({ postes: [] } as unknown as PlanningEvenement, {}, (url: string) =>
-      url === '/api/pauses' ? { journees: [], pauseSurPoste: true, journeesAnalysees: 0, pausesDues: 0, relaisManquants: 0, message: '' } : []
-    );
+    await rendre({ postes: [] } as unknown as PlanningEvenement, {}, {
+      breaks: () => ({ journees: [], pauseSurPoste: true, journeesAnalysees: 0, pausesDues: 0, relaisManquants: 0, message: '' })
+    });
     expect(racine().querySelector('.timeline-pause')).toBeNull();
     expect(racine().querySelector('.timeline-day-card')).toBeNull();
   });

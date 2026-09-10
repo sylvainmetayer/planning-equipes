@@ -25,7 +25,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatDialog } from '@angular/material/dialog';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
-import { ApiService } from '../core/api.service';
+import { AdminApi } from '../core/api/admin-api';
 import { EditionStore } from '../core/edition.store';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../core/locale';
 import {
@@ -564,7 +564,7 @@ export class AdminShell {
     }
   }
 
-  private readonly api = inject(ApiService);
+  private readonly adminApi = inject(AdminApi);
 
   /**
    * Drops the admin session cookie, then hard-navigates to /login: a reload
@@ -573,7 +573,7 @@ export class AdminShell {
    */
   protected async logout(): Promise<void> {
     try {
-      await this.api.post('/api/auth/logout', null);
+      await this.adminApi.logout();
     } finally {
       window.location.assign('/login');
     }

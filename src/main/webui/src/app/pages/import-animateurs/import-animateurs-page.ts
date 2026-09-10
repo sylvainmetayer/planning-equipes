@@ -8,7 +8,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AnimateursApi } from '../../core/api/animateurs-api';
 import { errorMessage } from '../../core/error-message';
 import { AnimateurCsvMapping, ImportCsvDemande, ImportCsvRapport } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -56,7 +56,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ImportAnimateursPage {
-  private readonly api = inject(ApiService);
+  private readonly animateursApi = inject(AnimateursApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly store = inject(ReferenceDataStore);
@@ -158,11 +158,7 @@ export class ImportAnimateursPage {
   protected async telechargerExemple(): Promise<void> {
     this.telechargementEnCours.set(true);
     try {
-      await this.api.downloadGet(
-        '/api/animateurs/import-csv/exemple',
-        'festival-realiste-animateurs.csv',
-        'text/csv'
-      );
+      await this.animateursApi.downloadCsvExample();
     } catch (error) {
       this.erreur.set(errorMessage(error));
     } finally {
@@ -213,10 +209,7 @@ export class ImportAnimateursPage {
     this.analyseEnCours.set(true);
     this.erreur.set('');
     try {
-      const rapport = await this.api.post<ImportCsvRapport>(
-        '/api/animateurs/import-csv/analyse',
-        this.demande()
-      );
+      const rapport = await this.animateursApi.analyseCsvImport(this.demande());
       if (numero !== this.derniereAnalyse) {
         return;
       }
@@ -274,10 +267,7 @@ export class ImportAnimateursPage {
     this.importEnCours.set(true);
     this.erreur.set('');
     try {
-      const applique = await this.api.post<ImportCsvRapport>(
-        '/api/animateurs/import-csv',
-        this.demande()
-      );
+      const applique = await this.animateursApi.applyCsvImport(this.demande());
       this.rapport.set(applique);
       await this.store.reload();
       this.notifications.notify({

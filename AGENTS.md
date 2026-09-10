@@ -436,8 +436,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   touching `HttpClient`: the verbs, the error mapping, `downloadFile` returning
   a status string and never touching the DOM; `core/api/` — one service per
   resource, owning the `/api/…` paths and the return types, so a page asks for
-  the thing and never writes an address — `scripts/check-api-paths.js` holds it
-  as a ratchet over the files not yet migrated;
+  the thing and never writes an address — `scripts/check-api-paths.js` fails
+  on any literal outside `core/api/`, and its exception list is empty;
   `models.ts`; `date-utils.ts`, week starts Monday; `planning-state.service.ts`;
   `reference-data.store.ts`; `reference-crud.service.ts` — save/delete, single
   or in bulk, plus snack-bar feedback shared by the five reference pages;

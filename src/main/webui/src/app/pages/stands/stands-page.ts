@@ -7,14 +7,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { StandsApi } from '../../core/api/stands-api';
 import { labelStandsPluriel } from '../../core/entity-labels';
 import { resumerHoraires } from '../../core/horaire-stand';
 import { NotificationService } from '../../core/notification.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ReferenceTablePage } from '../../core/reference-table-page';
-import { RapportCompactage, Stand } from '../../core/models';
+import { Stand } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { TableFilter } from '../../shared/table-filter';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -65,7 +65,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
   /** Holds `causeParStandId`: a memoised map, so each row only does a lookup. */
   protected readonly problemes = inject(ProblemesStore);
 
-  private readonly api = inject(ApiService);
+  private readonly standsApi = inject(StandsApi);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
 
@@ -147,7 +147,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
   }
 
   private async lancerCompactage(): Promise<void> {
-    const apercu = await this.api.post<RapportCompactage>('/api/stands/compactage-horaires?appliquer=false', {});
+    const apercu = await this.standsApi.compactSchedules(false);
     if (apercu.standsCompactes === 0) {
       this.notifications.notify({
         title: $localize`:@@stands.compactage.rienATitle:Aucun horaire à compacter`,
@@ -164,7 +164,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
     if (!confirme) {
       return;
     }
-    const rapport = await this.api.post<RapportCompactage>('/api/stands/compactage-horaires?appliquer=true', {});
+    const rapport = await this.standsApi.compactSchedules(true);
     await this.crud.reload();
     this.notifications.notify({
       title: $localize`:@@stands.compactage.doneTitle:Horaires compactés`,

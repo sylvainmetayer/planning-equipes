@@ -5,8 +5,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ApiService } from '../../core/api.service';
-import { CleMcp, PromptMcp, StatutMcp } from '../../core/models';
+import { McpApi } from '../../core/api/mcp-api';
+import { PromptMcp, StatutMcp } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { StatusMessage } from '../../shared/status-message';
 
@@ -43,7 +43,7 @@ export class McpPage implements OnDestroy {
   /** How long a revealed key stays on screen without being copied. */
   private static readonly EFFACEMENT_MS = 2 * 60 * 1000;
 
-  private readonly api = inject(ApiService);
+  private readonly mcpApi = inject(McpApi);
   private readonly notifications = inject(NotificationService);
 
   /** Where this very app is served: the MCP endpoint lives on the same origin. */
@@ -86,7 +86,7 @@ export class McpPage implements OnDestroy {
   // deployment sits behind Pangolin; /api/config is the cheapest one to ask.
   private async detecterPangolin(): Promise<void> {
     try {
-      const response = await this.api.getResponse<unknown>('/api/config');
+      const response = await this.mcpApi.configResponse();
       this.pangolin.set(response.headers.get('X-Pangolin') === 'true');
     } catch {
       // Unreachable config endpoint: keep the default, undetected state.
@@ -95,7 +95,7 @@ export class McpPage implements OnDestroy {
 
   private async chargerStatut(): Promise<void> {
     try {
-      this.statut.set(await this.api.get<StatutMcp>('/api/mcp/statut'));
+      this.statut.set(await this.mcpApi.status());
     } catch {
       // Leave it null: the page then says nothing about the key rather than
       // claiming it is missing, which would be a worse kind of wrong.
@@ -104,7 +104,7 @@ export class McpPage implements OnDestroy {
 
   private async chargerPrompts(): Promise<void> {
     try {
-      this.prompts.set(await this.api.get<PromptMcp[]>('/api/mcp/prompts'));
+      this.prompts.set(await this.mcpApi.prompts());
     } catch {
       // Same choice as the key status: say nothing rather than show a section
       // that looks like "this server has no prompt".
@@ -155,7 +155,7 @@ export class McpPage implements OnDestroy {
     this.enCours.set(true);
     this.erreur.set('');
     try {
-      const reponse = await this.api.post<CleMcp>('/api/mcp/cle', { motDePasse: this.motDePasse() });
+      const reponse = await this.mcpApi.regenerateKey(this.motDePasse());
       this.cle.set(reponse.cle);
       this.pangolinAccessTokenId.set(reponse.pangolinAccessTokenId ?? '');
       this.pangolinAccessToken.set(reponse.pangolinAccessToken ?? '');

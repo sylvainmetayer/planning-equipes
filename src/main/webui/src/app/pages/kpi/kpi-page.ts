@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { intlLocale } from '../../core/locale';
 import { KpiHistoriqueEntry } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -48,7 +48,7 @@ export class KpiPage {
   protected readonly chargement = signal(false);
   protected readonly error = signal('');
 
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
   private readonly confirm = inject(ConfirmService);
 
   constructor() {
@@ -59,7 +59,7 @@ export class KpiPage {
     this.chargement.set(true);
     this.error.set('');
     try {
-      this.entries.set(await this.api.get<KpiHistoriqueEntry[]>('/api/kpi/historique'));
+      this.entries.set(await this.analysesApi.kpiHistory());
     } catch (error) {
       // The list is kept, unlike the report of /heures which is dropped: this
       // is history the server already holds, and losing the screen to a
@@ -81,7 +81,7 @@ export class KpiPage {
       return;
     }
     try {
-      await this.api.delete(`/api/kpi/historique/${entry.id}`);
+      await this.analysesApi.deleteKpiEntry(entry.id);
       await this.recharger();
     } catch (error) {
       this.error.set(errorMessage(error));

@@ -7,7 +7,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { indexerPauses, pausesDe, SegmentPause, segmentsPause } from '../../core/pauses-index';
 import { uniqueById } from '../../core/date-utils';
@@ -125,7 +125,7 @@ export class AnimateurTimelinePage {
   /** The breaks of the plan, drawn on the tracks; null when the request failed — the timeline still shows. */
   protected readonly pauses = signal<RapportPauses | null>(null);
 
-  private readonly api = inject(ApiService);
+  private readonly analysesApi = inject(AnalysesApi);
   private readonly planningApi = inject(PlanningApi);
   private readonly notifications = inject(NotificationService);
   private readonly planningState = inject(PlanningStateService);
@@ -201,9 +201,9 @@ export class AnimateurTimelinePage {
         this.planningState.loadForDisplay(),
         // Labels only: a missing referential degrades the chips to raw ids
         // rather than failing the whole timeline.
-        this.api.get<TypologieItem[]>('/api/typologies').catch(() => []),
+        this.analysesApi.typologies().catch(() => []),
         // Same spirit: without the breaks the tracks still draw.
-        this.api.get<RapportPauses>('/api/pauses').catch(() => null)
+        this.analysesApi.breaks().catch(() => null)
       ]);
       this.planning.set(planning);
       this.typologies.set(typologies);

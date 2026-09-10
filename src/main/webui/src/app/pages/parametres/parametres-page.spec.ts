@@ -10,6 +10,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
+import { AdminApi } from '../../core/api/admin-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { EditionStore } from '../../core/edition.store';
@@ -54,6 +55,7 @@ describe('ParametresPage ninja picker', () => {
         // The constructor loads the scenario list and the découpage
         // parameters; both answers are irrelevant to the picker under test.
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: AdminApi, useValue: { mailConfig: vi.fn(async () => ({ adminEmail: null })), backups: vi.fn(async () => null) } },
         { provide: PlanningApi, useValue: { scenarioNames: vi.fn(async () => []) } },
         { provide: CreneauxApi, useValue: { slicingParameters: vi.fn(async () => []) } },
         { provide: ReferenceCrudService, useValue: crud },
@@ -149,11 +151,13 @@ describe('ParametresPage ninja picker', () => {
 
 describe('ParametresPage rendering', () => {
   let fixture: ComponentFixture<ParametresPage>;
-  let api: {
-    get: ReturnType<typeof vi.fn>;
-    put: ReturnType<typeof vi.fn>;
-    downloadGet: ReturnType<typeof vi.fn>;
-    postRaw: ReturnType<typeof vi.fn>;
+  let api: { get: ReturnType<typeof vi.fn> };
+  let adminApi: {
+    mailConfig: ReturnType<typeof vi.fn>;
+    backups: ReturnType<typeof vi.fn>;
+    setBackupsActive: ReturnType<typeof vi.fn>;
+    exportDatabase: ReturnType<typeof vi.fn>;
+    importDatabase: ReturnType<typeof vi.fn>;
   };
   let planningApi: { scenarioNames: ReturnType<typeof vi.fn>; exportScenario: ReturnType<typeof vi.fn> };
   let creneauxApi: { slicingParameters: ReturnType<typeof vi.fn>; saveSlicingParameters: ReturnType<typeof vi.fn> };
@@ -216,19 +220,13 @@ describe('ParametresPage rendering', () => {
       slicingParameters: vi.fn(async () => ({ ...PARAMETRES })),
       saveSlicingParameters: vi.fn(async (body: unknown) => body)
     };
-    api = {
-      get: vi.fn(async (url: string) => {
-        if (url.includes('/api/backups')) {
-          return options.sauvegarde ?? SAUVEGARDE;
-        }
-        if (url.includes('mail-config')) {
-          return { adminEmail: options.adminEmail === undefined ? 'admin@exemple.test' : options.adminEmail };
-        }
-        return [];
-      }),
-      put: vi.fn(async (_url: string, body: unknown) => body),
-      downloadGet: vi.fn(async () => 'Téléchargement démarré.'),
-      postRaw: vi.fn(async () => ({ message: 'Base remplacée.' }))
+    api = { get: vi.fn(async () => []) };
+    adminApi = {
+      mailConfig: vi.fn(async () => ({ adminEmail: options.adminEmail === undefined ? 'admin@exemple.test' : options.adminEmail })),
+      backups: vi.fn(async () => options.sauvegarde ?? SAUVEGARDE),
+      setBackupsActive: vi.fn(async (active: boolean) => ({ ...(options.sauvegarde ?? SAUVEGARDE), active })),
+      exportDatabase: vi.fn(async () => 'Téléchargement démarré.'),
+      importDatabase: vi.fn(async () => ({ message: 'Base remplacée.' }))
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -236,6 +234,7 @@ describe('ParametresPage rendering', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: ApiService, useValue: api },
+        { provide: AdminApi, useValue: adminApi },
         { provide: PlanningApi, useValue: planningApi },
         { provide: CreneauxApi, useValue: creneauxApi },
         { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined), save: vi.fn(async () => true), reportError: vi.fn() } },
@@ -415,7 +414,7 @@ describe('ParametresPage rendering', () => {
 
     // Refused — a wrong entry and a cancellation both land here: it replaces
     // the whole database, every edition included.
-    expect(api.postRaw).not.toHaveBeenCalled();
+    expect(adminApi.importDatabase).not.toHaveBeenCalled();
     expect(instantane.proposer).not.toHaveBeenCalled();
 
     recopie.demander.mockResolvedValue(true);
@@ -423,7 +422,7 @@ describe('ParametresPage rendering', () => {
     await fixture.whenStable();
 
     expect(instantane.proposer).toHaveBeenCalledOnce();
-    expect(api.postRaw).toHaveBeenCalledWith('/api/database/import', '-- dump', 'application/sql');
+    expect(adminApi.importDatabase).toHaveBeenCalledExactlyOnceWith('-- dump');
     expect(racine().textContent!).toContain('Base remplacée.');
   });
 
@@ -447,8 +446,8 @@ describe('ParametresPage rendering', () => {
     bouton('Exporter le dump SQL').click();
     await fixture.whenStable();
 
-    const [url, filename] = api.downloadGet.mock.calls[0] as unknown as [string, string];
-    expect(url).toBe('/api/database/export');
+    expect(adminApi.exportDatabase).toHaveBeenCalledOnce();
+    const [filename] = adminApi.exportDatabase.mock.calls[0] as unknown as [string];
     expect(filename.endsWith('.sql')).toBe(true);
   });
 
@@ -503,7 +502,7 @@ describe('ParametresPage rendering', () => {
     bascule.click();
     await fixture.whenStable();
 
-    expect(api.put).toHaveBeenCalledWith('/api/backups/active', { active: false });
+    expect(adminApi.setBackupsActive).toHaveBeenCalledExactlyOnceWith(false);
     expect(notify).toHaveBeenCalled();
   });
 });

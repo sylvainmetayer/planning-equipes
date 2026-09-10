@@ -11,12 +11,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AdminApi } from '../../core/api/admin-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { BRANDING, slugMarque } from '../../core/branding';
 import { EditionStore } from '../../core/edition.store';
-import { EtatSauvegarde, ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
+import { EtatSauvegarde, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -119,7 +119,7 @@ export class ParametresPage {
   protected readonly editions = inject(EditionStore);
   protected readonly store = inject(ReferenceDataStore);
 
-  private readonly api = inject(ApiService);
+  private readonly adminApi = inject(AdminApi);
   private readonly planningApi = inject(PlanningApi);
   private readonly creneauxApi = inject(CreneauxApi);
   private readonly scenarioImport = inject(ScenarioImportService);
@@ -157,8 +157,8 @@ export class ParametresPage {
   private async chargerReglagesNotification(): Promise<void> {
     await Promise.all([
       this.solverSettings.refresh().catch(() => undefined),
-      this.api
-        .get<{ adminEmail: string | null }>('/api/debug/mail-config')
+      this.adminApi
+        .mailConfig()
         .then((config) => this.adminEmail.set(config.adminEmail))
         .catch(() => this.adminEmail.set(null))
     ]);
@@ -415,7 +415,7 @@ export class ParametresPage {
 
   private async chargerSauvegarde(): Promise<void> {
     try {
-      this.sauvegarde.set(await this.api.get<EtatSauvegarde>('/api/backups'));
+      this.sauvegarde.set(await this.adminApi.backups());
     } catch {
       // A settings screen that fails to load as a whole because one card could
       // not be read would be a worse outcome than that card staying absent.
@@ -426,7 +426,7 @@ export class ParametresPage {
   protected async basculerSauvegarde(actif: boolean): Promise<void> {
     this.sauvegardeBusy.set(true);
     try {
-      this.sauvegarde.set(await this.api.put<EtatSauvegarde>('/api/backups/active', { active: actif }));
+      this.sauvegarde.set(await this.adminApi.setBackupsActive(actif));
       this.notifications.notify({
         title: actif
           ? $localize`:@@parametres.sauvegarde.reprise:Sauvegarde automatique réactivée`
@@ -453,7 +453,7 @@ export class ParametresPage {
     this.transferBusy.set(true);
     this.output.set($localize`:@@dataTransfer.buildingSqlDump:Construction du dump SQL...`);
     try {
-      this.output.set(await this.api.downloadGet('/api/database/export', this.nomFichierDump, 'application/sql'));
+      this.output.set(await this.adminApi.exportDatabase(this.nomFichierDump));
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {
@@ -487,11 +487,7 @@ export class ParametresPage {
     this.transferBusy.set(true);
     this.output.set($localize`:@@dataTransfer.importing:Import de ${file.name}:fileName: en cours...`);
     try {
-      const summary = await this.api.postRaw<ImportSummary>(
-        '/api/database/import',
-        await file.text(),
-        'application/sql'
-      );
+      const summary = await this.adminApi.importDatabase(await file.text());
       await this.scenarioImport.rechargerApresImport();
       await this.chargerParametresDecoupage();
       this.output.set(summary.message);

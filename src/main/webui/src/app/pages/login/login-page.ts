@@ -8,8 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
+import { AdminApi } from '../../core/api/admin-api';
 import { BRANDING } from '../../core/branding';
-import { StatutSession } from '../../core/models';
 import { BrandLogo } from '../../shared/brand-logo';
 
 /**
@@ -32,6 +32,7 @@ export class LoginPage {
   protected readonly productName = inject(BRANDING).productName;
 
   private readonly http = inject(HttpClient);
+  private readonly adminApi = inject(AdminApi);
   private readonly router = inject(Router);
 
   protected readonly utilisateur = signal('');
@@ -57,7 +58,7 @@ export class LoginPage {
           responseType: 'text'
         })
       );
-      const statut = await firstValueFrom(this.http.get<StatutSession>('/api/auth/me'));
+      const statut = await this.adminApi.session();
       if (statut.authentifie) {
         await this.router.navigateByUrl('/');
       } else {

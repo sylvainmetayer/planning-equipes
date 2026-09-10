@@ -10,7 +10,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { AnimateursApi } from '../../core/api/animateurs-api';
 import { intlLocale } from '../../core/locale';
 import { Animateur, ConfirmationView, StatutConfirmation } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -141,7 +141,7 @@ export class AnimateursPage {
   private readonly problemes = inject(ProblemesStore);
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);
-  private readonly api = inject(ApiService);
+  private readonly animateursApi = inject(AnimateursApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirmDialog = inject(ConfirmService);
   private readonly route = inject(ActivatedRoute);
@@ -180,7 +180,7 @@ export class AnimateursPage {
       return;
     }
     try {
-      await this.api.post(`/api/animateurs/${animateur.id}/token`, null);
+      await this.animateursApi.regenerateToken(animateur.id);
       await this.store.reload();
       this.notifications.notify({
         title: $localize`:@@animateurs.jetonRegenere:Nouveau lien généré.`,
@@ -232,7 +232,7 @@ export class AnimateursPage {
    */
   private async chargerConfirmations(): Promise<void> {
     try {
-      const confirmations = await this.api.get<ConfirmationView[]>('/api/animateurs/confirmations');
+      const confirmations = await this.animateursApi.confirmations();
       this.confirmations.set(new Map(confirmations.map((confirmation) => [confirmation.animateurId, confirmation])));
     } catch {
       this.confirmations.set(new Map());

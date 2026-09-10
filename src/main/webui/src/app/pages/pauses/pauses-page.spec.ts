@@ -7,7 +7,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Location } from '@angular/common';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { RapportPauses } from '../../core/models';
 import { PausesPage } from './pauses-page';
 
@@ -81,10 +81,10 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
 }
 
 describe('PausesPage', () => {
-  const api = { get: vi.fn() };
+  const analysesApi = { breaks: vi.fn() };
 
   beforeEach(() => {
-    api.get.mockReset();
+    analysesApi.breaks.mockReset();
   });
 
   async function mount(
@@ -96,11 +96,11 @@ describe('PausesPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: api },
+        { provide: AnalysesApi, useValue: analysesApi },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
       ]
     });
-    api.get.mockImplementation(typeof data === 'function' ? data : async () => data);
+    analysesApi.breaks.mockImplementation(typeof data === 'function' ? data : async () => data);
     const fixture = TestBed.createComponent(PausesPage);
     await fixture.whenStable();
     return fixture;
@@ -118,7 +118,7 @@ describe('PausesPage', () => {
   it('shows the first day grouped by stand, with the deadline and the relay', async () => {
     const fixture = await mount(rapport());
 
-    expect(api.get).toHaveBeenCalledWith('/api/pauses');
+    expect(analysesApi.breaks).toHaveBeenCalledOnce();
     expect(titresStands(fixture)[0]).toContain('Village des jeux');
     const contenu = text(fixture);
     expect(contenu).toContain('Alice Martin');

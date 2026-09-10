@@ -2465,3 +2465,18 @@ export interface ImportCsvDemande {
   replaceAnimateurs: boolean;
   replaceJoursIndisponibles: boolean;
 }
+
+/** Per-edition settings of the scheduled notifications (`/api/parametres-notifications`). */
+export interface ParametresNotifications {
+  actives: boolean;
+  /** `HH:mm` local time, from which the day-before reminder may go out. */
+  heureRappelVeille: string;
+  delaiRelanceHeures: number;
+  ancienneteEchangeJours: number;
+}
+
+/** What `/api/reference-data/valider-scenario-fichier` says of an uploaded scenario. */
+export interface ScenarioValidationResult {
+  valide: boolean;
+  erreurs: string[];
+}
