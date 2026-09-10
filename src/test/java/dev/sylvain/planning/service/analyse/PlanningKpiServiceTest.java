@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,8 +7,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import dev.sylvain.planning.service.PlanningKpiService.AffectationKpi;
-import dev.sylvain.planning.service.PlanningKpiService.PlanningKpi;
+import dev.sylvain.planning.service.analyse.PlanningKpiService.AffectationKpi;
+import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
 
 /**
  * KPI aggregation (issues #89/#70), exercised on the static core: no database,

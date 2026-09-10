@@ -12,10 +12,11 @@ import java.util.Set;
 
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.PlanSnapshotService.SnapshotDetail;
-import dev.sylvain.planning.service.PlanningKpiService.PlanningKpi;
+import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.analyse.PlanningKpiService;
 
 /**
  * A/B comparator (issue #70): confronts a baseline with a variant — two plan

@@ -21,6 +21,8 @@ import org.jboss.logging.Logger;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PublicationDiffService;
+import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 
 /**
  * What a solve <b>always</b> does, end to end: snapshot the plan it is about

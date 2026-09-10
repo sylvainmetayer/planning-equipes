@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -15,6 +15,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.ContrainteAdHocContradictions.Contradiction;
 import jakarta.enterprise.context.ApplicationScoped;
+import dev.sylvain.planning.service.ContrainteAdHocContradictions;
 
 /**
  * Plain-Java (no Timefold) capacity check meant for non-technical users: given

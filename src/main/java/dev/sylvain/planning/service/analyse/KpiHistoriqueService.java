@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -16,12 +16,13 @@ import javax.sql.DataSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.service.PlanningKpiService.PlanningKpi;
+import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
 import org.jboss.logging.Logger;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.EditionContext;
 
 /**
  * KPI history (issue #89): one row per completed solve, kept forever so the

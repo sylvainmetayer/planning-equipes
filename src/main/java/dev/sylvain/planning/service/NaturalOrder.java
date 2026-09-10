@@ -18,9 +18,9 @@ import java.util.regex.Pattern;
  * hard-feasible with a natural order vs. not even converging within the full
  * 180s production time budget with the raw SQL order).</p>
  */
-final class NaturalOrder {
+public final class NaturalOrder {
 
-    static final Comparator<String> DES_IDS = NaturalOrder::comparer;
+    public static final Comparator<String> OF_IDS = NaturalOrder::comparer;
 
     private static final Pattern MORCEAU = Pattern.compile("(\\d+)|(\\D+)");
 

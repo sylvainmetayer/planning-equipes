@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -58,7 +58,7 @@ public final class PlanningDiagnosticService {
      */
     private final Consumer<PlanningEvenement> preparation;
 
-    PlanningDiagnosticService(ConstraintDiagnosticService constraintDiagnosticService,
+    public PlanningDiagnosticService(ConstraintDiagnosticService constraintDiagnosticService,
             SolutionManager<PlanningEvenement, ?> solutionManager, FeasibilityAnalyzer feasibilityAnalyzer,
             Supplier<PlanningEvenement> planPersiste, Consumer<PlanningEvenement> preparation) {
         this.constraintDiagnosticService = constraintDiagnosticService;
@@ -182,7 +182,7 @@ public final class PlanningDiagnosticService {
      * {@code posteDoitEtrePourvu} seat. Capped at {@link #MAX_VIOLATIONS_PAR_CONTRAINTE}:
      * this feeds a UI detail popup, not an export.
      */
-    static List<String> formatViolations(List<MatchFacts> matches) {
+    public static List<String> formatViolations(List<MatchFacts> matches) {
         return matches.stream()
                 .limit(MAX_VIOLATIONS_PAR_CONTRAINTE)
                 .map(match -> ViolationFormatter.describe(match.facts()))

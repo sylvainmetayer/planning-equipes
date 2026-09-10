@@ -11,8 +11,9 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.sylvain.planning.service.PlanningKpiService.PlanningKpi;
+import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
 import dev.sylvain.planning.service.SnapshotComparisonService.DiffContrainte;
+import dev.sylvain.planning.service.analyse.PlanningKpiService;
 
 /**
  * Violation diff of the A/B comparator (issue #70), on the static core: no

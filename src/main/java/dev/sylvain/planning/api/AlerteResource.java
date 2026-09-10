@@ -2,8 +2,8 @@ package dev.sylvain.planning.api;
 
 import java.util.List;
 
-import dev.sylvain.planning.service.AlerteService;
-import dev.sylvain.planning.service.AlerteService.AlerteView;
+import dev.sylvain.planning.service.analyse.AlerteService;
+import dev.sylvain.planning.service.analyse.AlerteService.AlerteView;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;

@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -20,6 +20,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
+import dev.sylvain.planning.service.NaturalOrder;
 
 /**
  * Who is a single point of failure in the plan currently persisted, and where
@@ -224,7 +225,7 @@ public class FragiliteAnalyzer {
             .thenComparing(Comparator.comparingInt(AnimateurFragilite::competencesRares).reversed())
             .thenComparing(Comparator.comparingInt(AnimateurFragilite::postesEffondres).reversed())
             .thenComparing(Comparator.comparingInt(AnimateurFragilite::affectations).reversed())
-            .thenComparing(AnimateurFragilite::animateurId, NaturalOrder.DES_IDS);
+            .thenComparing(AnimateurFragilite::animateurId, NaturalOrder.OF_IDS);
 
     /** Seats detailed first: the unreplaceable ones, then the largest holes. */
     private static final Comparator<PosteFragile> ORDRE_POSTES = Comparator

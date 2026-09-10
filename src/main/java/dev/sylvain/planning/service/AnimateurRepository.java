@@ -110,7 +110,7 @@ public class AnimateurRepository {
             throw new IllegalStateException("Failed to list animators", e);
         }
         List<Animateur> animateurs = new ArrayList<>(byId.values());
-        animateurs.sort(Comparator.comparing(Animateur::getId, NaturalOrder.DES_IDS));
+        animateurs.sort(Comparator.comparing(Animateur::getId, NaturalOrder.OF_IDS));
         return animateurs;
     }
 

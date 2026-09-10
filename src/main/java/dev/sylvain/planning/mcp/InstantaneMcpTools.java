@@ -9,7 +9,7 @@ import dev.sylvain.planning.service.PlanSnapshotService.AffectationSnapshot;
 import dev.sylvain.planning.service.PlanSnapshotService.RestaurationResult;
 import dev.sylvain.planning.service.PlanSnapshotService.SnapshotDetail;
 import dev.sylvain.planning.service.PlanSnapshotService.SnapshotMeta;
-import dev.sylvain.planning.service.PlanningKpiService.PlanningKpi;
+import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
 import dev.sylvain.planning.service.SnapshotComparisonService;
 import dev.sylvain.planning.service.SnapshotComparisonService.ComparaisonSnapshots;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;

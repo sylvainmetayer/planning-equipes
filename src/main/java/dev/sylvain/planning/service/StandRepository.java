@@ -142,7 +142,7 @@ public class StandRepository {
             throw new IllegalStateException("Failed to list stands", e);
         }
         List<Stand> stands = new ArrayList<>(byId.values());
-        stands.sort(Comparator.comparing(Stand::getId, NaturalOrder.DES_IDS));
+        stands.sort(Comparator.comparing(Stand::getId, NaturalOrder.OF_IDS));
         return stands;
     }
 

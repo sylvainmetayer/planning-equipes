@@ -6,8 +6,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import dev.sylvain.planning.service.PauseAnalyzer;
-import dev.sylvain.planning.service.PauseAnalyzer.RapportPauses;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
 

@@ -23,6 +23,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 
 /**
  * {@link PlanningService#buildFromScenarioText}: the "Importer un

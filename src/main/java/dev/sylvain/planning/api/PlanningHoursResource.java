@@ -1,8 +1,8 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.PlanningHoursService;
-import dev.sylvain.planning.service.PlanningHoursService.HeuresRapport;
+import dev.sylvain.planning.service.analyse.PlanningHoursService;
+import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresRapport;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;

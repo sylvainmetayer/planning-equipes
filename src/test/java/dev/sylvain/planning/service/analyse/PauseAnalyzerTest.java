@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,10 +16,10 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.PauseAnalyzer.JourneeAnimateurView;
-import dev.sylvain.planning.service.PauseAnalyzer.PauseDueView;
-import dev.sylvain.planning.service.PauseAnalyzer.RapportPauses;
-import dev.sylvain.planning.service.PauseAnalyzer.SequenceView;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer.JourneeAnimateurView;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer.PauseDueView;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer.SequenceView;
 
 /**
  * The read-out is only worth something if its deadlines are the ones the

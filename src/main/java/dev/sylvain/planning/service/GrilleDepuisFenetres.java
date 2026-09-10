@@ -13,6 +13,7 @@ import java.util.TreeSet;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 
 /**
  * The créneaux grid derived from what the stands already say: every hour at

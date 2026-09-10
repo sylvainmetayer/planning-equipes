@@ -18,9 +18,11 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.ScenarioValidator;
-import dev.sylvain.planning.service.OuvertureStandsAnalyzer.AnomalyType;
-import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.AnomalyType;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 
 /**
  * {@code scenarios/scenario-avec-erreur-planning.yaml} is the one shipped scenario

@@ -36,6 +36,7 @@ import dev.sylvain.planning.service.diagnostic.MatchFacts;
 import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 
 /**
  * Everything the application answers <em>about</em> a plan without solving it
@@ -219,7 +220,7 @@ public final class PlanningWhatIf {
         }
         suggestions.sort(Comparator
                 .comparing(SuggestionReparation::delta, Comparator.<HardMediumSoftScore>naturalOrder().reversed())
-                .thenComparing(SuggestionReparation::animateurId, NaturalOrder.DES_IDS));
+                .thenComparing(SuggestionReparation::animateurId, NaturalOrder.OF_IDS));
         return new SuggestionsReparation(posteId, actuel == null ? null : actuel.getId(), scoreAvant,
                 violeesAvant, eligibles.size(), evalues.size(), plafond, List.copyOf(suggestions));
     }
@@ -251,7 +252,7 @@ public final class PlanningWhatIf {
                 .filter(animateur -> EligibleAnimateurMoveFilter.isEligible(poste, animateur,
                         solved.pauseSurPosteActive()))
                 .sorted(Comparator.comparing((Animateur animateur) -> occupes.contains(animateur.getId()))
-                        .thenComparing(Animateur::getId, NaturalOrder.DES_IDS))
+                        .thenComparing(Animateur::getId, NaturalOrder.OF_IDS))
                 .toList();
     }
 
@@ -365,7 +366,7 @@ public final class PlanningWhatIf {
                 .collect(Collectors.toSet());
         List<Animateur> banc = solved.getAnimateurs().stream()
                 .filter(animateur -> !deja.contains(animateur.getId()))
-                .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.DES_IDS))
+                .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.OF_IDS))
                 .toList();
 
         // The occupant is probed alongside the bench, and for one reason: the
@@ -408,7 +409,7 @@ public final class PlanningWhatIf {
         // answer — the refusals are the explanation of why the list is short.
         lignes.sort(Comparator.comparing(AnimateurAvailability::disponible, Comparator.reverseOrder())
                 .thenComparing(AnimateurAvailability::degradeLePlan)
-                .thenComparing(AnimateurAvailability::animateurId, NaturalOrder.DES_IDS));
+                .thenComparing(AnimateurAvailability::animateurId, NaturalOrder.OF_IDS));
         int disponibles = (int) lignes.stream().filter(AnimateurAvailability::disponible).count();
         return new CreneauAvailability(cibleId, SeatStatus.EVALUATED, cible.getId(),
                 cible.getStand() == null ? null : cible.getStand().getId(),
@@ -473,7 +474,7 @@ public final class PlanningWhatIf {
                 : postesDuCreneau.stream()
                         .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId()))
                         .toList();
-        Comparator<PosteAffectation> byId = Comparator.comparing(PosteAffectation::getId, NaturalOrder.DES_IDS);
+        Comparator<PosteAffectation> byId = Comparator.comparing(PosteAffectation::getId, NaturalOrder.OF_IDS);
         return candidats.stream()
                 .filter(poste -> poste.getAnimateur() == null)
                 .min(byId)
@@ -845,7 +846,7 @@ public final class PlanningWhatIf {
         // impact on the plan first and a stable id order to break ties.
         suggestions.sort(Comparator.comparing(SuggestionEchange::nature)
                 .thenComparing(SuggestionEchange::delta, Comparator.<HardMediumSoftScore>naturalOrder().reversed())
-                .thenComparing(SuggestionEchange::animateurId, NaturalOrder.DES_IDS));
+                .thenComparing(SuggestionEchange::animateurId, NaturalOrder.OF_IDS));
         return new SuggestionsEchange(creneauId, standId, scoreAvant,
                 eligibles.size(), evaluees.size(), plafond, List.copyOf(suggestions));
     }
@@ -902,7 +903,7 @@ public final class PlanningWhatIf {
                 .filter(collegue -> !collegue.getId().equals(demandeur.getId()))
                 .filter(collegue -> EligibleAnimateurMoveFilter.isEligible(posteDemandeur, collegue,
                         solved.pauseSurPosteActive()))
-                .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.DES_IDS))
+                .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.OF_IDS))
                 .toList();
         for (Animateur collegue : collegues) {
             List<PosteAffectation> sieges = siegesParAnimateur.getOrDefault(collegue.getId(), List.of());
@@ -921,7 +922,7 @@ public final class PlanningWhatIf {
         }
         liberent.sort(Comparator
                 .comparing((OptionEchange option) -> occupes.contains(option.animateur().getId()))
-                .thenComparing(option -> option.animateur().getId(), NaturalOrder.DES_IDS));
+                .thenComparing(option -> option.animateur().getId(), NaturalOrder.OF_IDS));
         return entrelacer(liberent, croises, diriges);
     }
 
@@ -940,7 +941,7 @@ public final class PlanningWhatIf {
                                 Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(PosteAffectation::heureDebutEffectif,
                                 Comparator.nullsLast(Comparator.naturalOrder()))
-                        .thenComparing(PosteAffectation::getId, NaturalOrder.DES_IDS))
+                        .thenComparing(PosteAffectation::getId, NaturalOrder.OF_IDS))
                 .limit(SIEGES_DIRIGES_PAR_COLLEGUE)
                 .toList();
     }

@@ -582,7 +582,7 @@ public final class ProblemBuilder {
      * receives seats on its own family's créneaux, so a grid showing all of
      * them invites an entry that generates nothing.
      */
-    static Map<String, Integer> standFamilies(List<Stand> stands, List<Creneau> creneaux) {
+    public static Map<String, Integer> standFamilies(List<Stand> stands, List<Creneau> creneaux) {
         int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
         return spreadStandsByFamily(stands, nombreFamilles);
     }

@@ -24,10 +24,12 @@ import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
-import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
-import dev.sylvain.planning.service.OuvertureStandsAnalyzer.Anomaly;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.Anomaly;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 
 /**
  * Builds and checks the edition's <b>grid of créneaux</b>: expanding a

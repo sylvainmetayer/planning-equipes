@@ -27,6 +27,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import dev.sylvain.planning.service.analyse.PlanningKpiService;
 
 /**
  * Plan snapshots (issue #138): captures the persisted plan so a later solve

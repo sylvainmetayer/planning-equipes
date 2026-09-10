@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.ReferenceDataService;
 
 /**
  * The alerts left by the scheduled jobs, resolved for the Notifications screen.

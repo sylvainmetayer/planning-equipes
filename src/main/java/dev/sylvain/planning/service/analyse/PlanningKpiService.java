@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -18,9 +18,13 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.PlanSnapshotService.AffectationSnapshot;
-import dev.sylvain.planning.service.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.ConstraintAnalysisStore;
+import dev.sylvain.planning.service.PlanSnapshotService;
+import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.ReferenceDataService;
 
 /**
  * Aggregate KPI of a plan (issues #89 and #70): score, coverage, hours
@@ -172,7 +176,7 @@ public class PlanningKpiService {
      * The aggregation itself, static and free of any I/O so it can be
      * unit-tested without a database.
      */
-    static PlanningKpi compute(List<AffectationKpi> affectations, String score,
+    public static PlanningKpi compute(List<AffectationKpi> affectations, String score,
             Map<String, Integer> violationsParContrainte, Integer modificationsManuelles,
             Long dureeSolveSecondes) {
         Set<String> stands = new LinkedHashSet<>();

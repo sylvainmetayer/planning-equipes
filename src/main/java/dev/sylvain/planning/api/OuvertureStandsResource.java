@@ -3,8 +3,8 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.service.GrilleHorairesStands;
-import dev.sylvain.planning.service.OuvertureStandsAnalyzer;
-import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.ReferenceDataService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;

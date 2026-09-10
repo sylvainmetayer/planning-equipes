@@ -20,6 +20,12 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
+import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.ReferenceData;
 
 /**
  * A diagnostic of the <em>persisted</em> plan is scored under the same rules a

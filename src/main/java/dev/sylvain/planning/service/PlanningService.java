@@ -21,6 +21,8 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 
 @ApplicationScoped
 public class PlanningService {

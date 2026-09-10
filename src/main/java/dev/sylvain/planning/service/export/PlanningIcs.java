@@ -14,7 +14,7 @@ import dev.sylvain.planning.domain.Stand;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.PauseAnalyzer;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.ProductName;
 
 /**

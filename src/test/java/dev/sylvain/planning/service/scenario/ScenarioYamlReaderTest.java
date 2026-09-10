@@ -13,7 +13,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.PlanningService;
 
 /**

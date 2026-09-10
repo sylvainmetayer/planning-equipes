@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,11 +16,12 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.StaffingAnalyzer.BorneRetenue;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.BorneRetenue;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.service.StaffingAnalyzer.CompetenceStaffing;
-import dev.sylvain.planning.service.StaffingAnalyzer.StaffingSummary;
-import dev.sylvain.planning.service.StaffingAnalyzer.TypologieStaffing;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.CompetenceStaffing;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
+import dev.sylvain.planning.service.TypologieItem;
 
 class StaffingAnalyzerTest {
 

@@ -12,10 +12,10 @@ import java.util.TreeMap;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.service.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
-import dev.sylvain.planning.service.PlanningHoursService;
-import dev.sylvain.planning.service.PlanningHoursService.HeuresAnimateur;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
+import dev.sylvain.planning.service.analyse.PlanningHoursService;
+import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresAnimateur;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningWhatIf.AffectationExplanation;

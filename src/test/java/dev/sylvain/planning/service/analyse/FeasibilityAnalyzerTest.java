@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,10 +17,10 @@ import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.service.FeasibilityAnalyzer.CauseInfaisabilite;
-import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
-import dev.sylvain.planning.service.FeasibilityAnalyzer.SeveriteInfaisabilite;
-import dev.sylvain.planning.service.FeasibilityAnalyzer.TypeCauseInfaisabilite;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.CauseInfaisabilite;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.SeveriteInfaisabilite;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.TypeCauseInfaisabilite;
 
 class FeasibilityAnalyzerTest {
 

@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -19,6 +19,8 @@ import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.HoraireStandResolver.SourceHoraire;
+import dev.sylvain.planning.service.HoraireStandResolver;
+import dev.sylvain.planning.service.ProblemBuilder;
 
 /**
  * Read-only, stand × jour view of when each stand is <b>actually</b> open, for an
@@ -73,7 +75,7 @@ public final class OuvertureStandsAnalyzer {
      * legitimately open for two hours. An anomaly that fires on correct data
      * stops being read.</p>
      */
-    static final int DUREE_MINIMALE_EXPLOITABLE_MINUTES = 15;
+    public static final int DUREE_MINIMALE_EXPLOITABLE_MINUTES = 15;
 
     /**
      * One créneau of a day, as a column of the entry grid: what the organiser
@@ -297,7 +299,7 @@ public final class OuvertureStandsAnalyzer {
      * of a row are read back by position, so both sides must walk the same
      * list.</p>
      */
-    static Map<LocalDate, List<Creneau>> creneauxByDay(List<Creneau> creneaux) {
+    public static Map<LocalDate, List<Creneau>> creneauxByDay(List<Creneau> creneaux) {
         Map<LocalDate, List<Creneau>> creneauxParJour = new TreeMap<>();
         for (Creneau creneau : creneaux) {
             if (creneau.getDate() != null && creneau.getHeureDebut() != null && creneau.getHeureFin() != null) {
@@ -317,7 +319,7 @@ public final class OuvertureStandsAnalyzer {
      * onto such a day is caught too. Shared with {@link CoherenceAnalyzer}, which
      * says it at write time rather than on the review screen.
      */
-    static List<Anomaly> fenetresWithoutEffect(Stand stand, Map<LocalDate, List<Creneau>> creneauxParJour) {
+    public static List<Anomaly> fenetresWithoutEffect(Stand stand, Map<LocalDate, List<Creneau>> creneauxParJour) {
         List<Anomaly> anomalies = new ArrayList<>();
         TreeSet<String> dejaVues = new TreeSet<>();
         for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {

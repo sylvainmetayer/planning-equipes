@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 
 /**
  * Full-scale regression test: {@code scenario-complet.yaml} (2112 postes, 152

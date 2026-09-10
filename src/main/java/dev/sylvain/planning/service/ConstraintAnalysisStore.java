@@ -4,10 +4,11 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import dev.sylvain.planning.service.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 
 /**
  * Keeps the latest score analysis — written by every solve, and re-derivable

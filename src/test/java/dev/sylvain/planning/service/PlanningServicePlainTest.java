@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 
 class PlanningServicePlainTest {
 

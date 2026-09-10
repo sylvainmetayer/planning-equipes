@@ -1,7 +1,7 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.service.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.ReferenceDataService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;

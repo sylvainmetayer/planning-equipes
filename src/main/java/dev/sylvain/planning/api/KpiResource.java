@@ -2,8 +2,8 @@ package dev.sylvain.planning.api;
 
 import java.util.List;
 
-import dev.sylvain.planning.service.KpiHistoriqueService;
-import dev.sylvain.planning.service.KpiHistoriqueService.KpiHistoriqueEntry;
+import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
+import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;

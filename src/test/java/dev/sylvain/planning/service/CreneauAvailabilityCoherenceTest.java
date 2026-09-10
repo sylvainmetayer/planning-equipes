@@ -25,6 +25,7 @@ import dev.sylvain.planning.service.PlanningWhatIf.MotifExclusion;
 import dev.sylvain.planning.service.PlanningWhatIf.SeatStatus;
 import dev.sylvain.planning.service.PlanningWhatIf.SuggestionReparation;
 import dev.sylvain.planning.service.PlanningWhatIf.SuggestionsReparation;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 
 /**
  * The acceptance criterion of issue #303, written down: an animateur the

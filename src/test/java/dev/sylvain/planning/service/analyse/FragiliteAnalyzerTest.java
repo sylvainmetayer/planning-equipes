@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,11 +17,11 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.FragiliteAnalyzer.AnimateurFragilite;
-import dev.sylvain.planning.service.FragiliteAnalyzer.CompetenceRare;
-import dev.sylvain.planning.service.FragiliteAnalyzer.PosteFragile;
-import dev.sylvain.planning.service.FragiliteAnalyzer.RapportFragilite;
-import dev.sylvain.planning.service.FragiliteAnalyzer.SeveriteFragilite;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.AnimateurFragilite;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.CompetenceRare;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.PosteFragile;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.RapportFragilite;
+import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.SeveriteFragilite;
 
 /**
  * Plain-Java test, no Quarkus and no solve — the whole point of the analyzer is

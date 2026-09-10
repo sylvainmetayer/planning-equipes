@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -14,8 +14,8 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.PlanningHoursService.HeuresAnimateur;
-import dev.sylvain.planning.service.PlanningHoursService.HeuresRapport;
+import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresAnimateur;
+import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresRapport;
 
 class PlanningHoursServiceTest {
 

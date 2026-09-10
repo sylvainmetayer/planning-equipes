@@ -20,8 +20,9 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.GrilleHorairesStands.LigneGrille;
 import dev.sylvain.planning.service.GrilleHorairesStands.SaisieCellule;
-import dev.sylvain.planning.service.OuvertureStandsAnalyzer.CelluleCreneau;
-import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.CelluleCreneau;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 
 /**
  * {@link GrilleHorairesStands}: one integer per créneau in, rules and

@@ -24,7 +24,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
-import dev.sylvain.planning.service.PauseAnalyzer;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 
 /**
  * A single door onto the three exports of a planning: the individual PDF, the

@@ -11,10 +11,10 @@ import java.util.stream.Collectors;
 
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
-import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.PlanningDiagnosticService.ConstraintDiagnostic;
-import dev.sylvain.planning.service.PlanningDiagnosticService.ContributionAdHoc;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.solver.ConstraintCatalog;
