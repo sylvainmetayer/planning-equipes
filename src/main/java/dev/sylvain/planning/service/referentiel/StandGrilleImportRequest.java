@@ -8,5 +8,4 @@ package dev.sylvain.planning.service.referentiel;
  * @param fileName the name as picked, used only to recognise a spreadsheet and say so
  * @param content  the file's text, held in memory and never written to disk
  */
-public record StandGrilleImportRequest(String fileName, String content) {
-}
+public record StandGrilleImportRequest(String fileName, String content) {}

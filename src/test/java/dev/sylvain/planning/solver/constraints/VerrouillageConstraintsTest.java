@@ -1,13 +1,12 @@
 package dev.sylvain.planning.solver.constraints;
 
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import org.junit.jupiter.api.Test;
 
 class VerrouillageConstraintsTest extends ConstraintTestBase {
 
@@ -31,7 +30,8 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
     void nouveauPosteDonneAUnAnimateurVerrouilleEstPenalise() {
         Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleFige")
-                .given(a1,
+                .given(
+                        a1,
                         posteVerrouille(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauAprem, a1),
                         verrouAnimateur("V1", a1))
@@ -42,7 +42,8 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
     void postesFigesDUnAnimateurVerrouilleNeSontPasPenalises() {
         Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleFige")
-                .given(a1,
+                .given(
+                        a1,
                         posteVerrouille(standStrat, creneauMatin, a1),
                         posteVerrouille(standStrat, creneauAprem, a1),
                         verrouAnimateur("V1", a1))
@@ -54,7 +55,9 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
         Animateur a1 = referentMajeur("A1");
         Animateur a2 = majeurAutonome("A2");
         verify("animateurVerrouilleFige")
-                .given(a1, a2,
+                .given(
+                        a1,
+                        a2,
                         posteVerrouille(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauAprem, a2),
                         verrouAnimateur("V1", a1))
@@ -72,9 +75,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
     void nouveauPosteSurLeCreneauVerrouilleEstPenalise() {
         Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleCreneauFige")
-                .given(a1,
-                        poste(standStrat, creneauMatin, a1),
-                        verrouAnimateurCreneau("V1", a1, creneauMatin))
+                .given(a1, poste(standStrat, creneauMatin, a1), verrouAnimateurCreneau("V1", a1, creneauMatin))
                 .penalizesBy(1);
     }
 
@@ -82,7 +83,8 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
     void posteFigeParLEchangeValideNEstPasPenalise() {
         Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleCreneauFige")
-                .given(a1,
+                .given(
+                        a1,
                         posteVerrouille(standStrat, creneauMatin, a1),
                         verrouAnimateurCreneau("V1", a1, creneauMatin))
                 .penalizesBy(0);
@@ -92,7 +94,8 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
     void lesAutresCreneauxDeLAnimateurRestentLibres() {
         Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleCreneauFige")
-                .given(a1,
+                .given(
+                        a1,
                         posteVerrouille(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauAprem, a1),
                         verrouAnimateurCreneau("V1", a1, creneauMatin))
@@ -105,7 +108,9 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
         Animateur a1 = referentMajeur("A1");
         Animateur a2 = majeurAutonome("A2");
         verify("animateurVerrouilleCreneauFige")
-                .given(a1, a2,
+                .given(
+                        a1,
+                        a2,
                         posteVerrouille(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauMatin, a2),
                         verrouAnimateurCreneau("V1", a1, creneauMatin))

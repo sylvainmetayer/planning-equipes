@@ -1,5 +1,19 @@
 package dev.sylvain.planning.solver.constraints;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.stream.Constraint;
+import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
+import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
+import ai.timefold.solver.core.api.score.stream.Joiners;
+import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintBuilder;
+import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.JoursFeries;
+import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
+import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
+import dev.sylvain.planning.domain.PosteAffectation;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -8,27 +22,12 @@ import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.function.BiPredicate;
-import java.util.function.ToIntBiFunction;
-import java.util.function.ToIntFunction;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
-import ai.timefold.solver.core.api.score.stream.Constraint;
-import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
-import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
-import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintBuilder;
-import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
-import ai.timefold.solver.core.api.score.stream.Joiners;
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.JoursFeries;
-import dev.sylvain.planning.domain.ParametresLegaux;
-import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
-import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
-import dev.sylvain.planning.domain.PosteAffectation;
+import java.util.function.BiPredicate;
+import java.util.function.ToIntBiFunction;
+import java.util.function.ToIntFunction;
 
 /**
  * Legal / safety hard constraints. None of these may ever be violated in a
@@ -64,21 +63,21 @@ public final class LegalConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-                standReserveAuxMajeurs(constraintFactory),
-                mineurNecessiteEncadrementMajeur(constraintFactory),
-                travailDeNuitInterditPourMineur(constraintFactory),
-                dureeQuotidienneMaxMineur(constraintFactory),
-                dureeHebdomadaireMax(constraintFactory),
-                dureeHebdomadaireMaxMineur(constraintFactory),
-                dureeQuotidienneMaxMajeur(constraintFactory),
-                reposQuotidienMinimal(constraintFactory),
-                travailContinuMaxMajeur(constraintFactory),
-                travailContinuMaxMineur(constraintFactory),
-                maxJoursTravaillesParSemaine(constraintFactory),
-                reposHebdomadaireMinimal(constraintFactory),
-                reposHebdomadaireMineur(constraintFactory),
-                travailInterditJourFerieMineur(constraintFactory),
-                pauseMinimaleEntreVacations(constraintFactory)
+            standReserveAuxMajeurs(constraintFactory),
+            mineurNecessiteEncadrementMajeur(constraintFactory),
+            travailDeNuitInterditPourMineur(constraintFactory),
+            dureeQuotidienneMaxMineur(constraintFactory),
+            dureeHebdomadaireMax(constraintFactory),
+            dureeHebdomadaireMaxMineur(constraintFactory),
+            dureeQuotidienneMaxMajeur(constraintFactory),
+            reposQuotidienMinimal(constraintFactory),
+            travailContinuMaxMajeur(constraintFactory),
+            travailContinuMaxMineur(constraintFactory),
+            maxJoursTravaillesParSemaine(constraintFactory),
+            reposHebdomadaireMinimal(constraintFactory),
+            reposHebdomadaireMineur(constraintFactory),
+            travailInterditJourFerieMineur(constraintFactory),
+            pauseMinimaleEntreVacations(constraintFactory)
         };
     }
 
@@ -93,7 +92,8 @@ public final class LegalConstraints {
      * see docs/contraintes.md.</p>
      */
     private Constraint standReserveAuxMajeurs(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "standReserveAuxMajeurs")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "standReserveAuxMajeurs")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getStand().isReserveMajeurs()
                         && poste.getAnimateur().isMineurOn(poste.getCreneau().getDate()))
@@ -114,15 +114,18 @@ public final class LegalConstraints {
      * nobody disables it believing the whole minors' framework is optional.</p>
      */
     private Constraint mineurNecessiteEncadrementMajeur(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "mineurNecessiteEncadrementMajeur")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "mineurNecessiteEncadrementMajeur")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getAnimateur().isMineurOn(poste.getCreneau().getDate()))
-                .ifNotExists(PosteAffectation.class,
+                .ifNotExists(
+                        PosteAffectation.class,
                         Joiners.equal(PosteAffectation::getStand),
                         Joiners.equal(PosteAffectation::getCreneau),
                         Joiners.filtering((posteMineur, autrePoste) -> autrePoste.getAnimateur() != null
-                                && autrePoste.getAnimateur().isMajeurOn(autrePoste.getCreneau().getDate())))
+                                && autrePoste
+                                        .getAnimateur()
+                                        .isMajeurOn(autrePoste.getCreneau().getDate())))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("mineurNecessiteEncadrementMajeur");
     }
@@ -151,13 +154,14 @@ public final class LegalConstraints {
      * "attributed to start date" simplification.</p>
      */
     private Constraint travailDeNuitInterditPourMineur(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "travailDeNuitInterditPourMineur")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "travailDeNuitInterditPourMineur")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getCreneau() != null
                         && poste.getAnimateur().isMineurOn(poste.getCreneau().getDate())
-                        && poste.getCreneau().chevaucheNuit(
-                                debutNuit(poste.getAnimateur(), poste.getCreneau().getDate())))
+                        && poste.getCreneau()
+                                .chevaucheNuit(debutNuit(
+                                        poste.getAnimateur(), poste.getCreneau().getDate())))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("travailDeNuitInterditPourMineur");
     }
@@ -183,10 +187,12 @@ public final class LegalConstraints {
      * créneau — see {@code docs/domaine.md}.</p>
      */
     private Constraint dureeQuotidienneMaxMineur(ConstraintFactory constraintFactory) {
-        return dailyCap(ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "dureeQuotidienneMaxMineur"),
-                Animateur::isMineurOn, LegalConstraints::effectiveWorkMineurMinutes,
-                LegalConstraints::dailyCapForMineur)
+        return dailyCap(
+                        ConstraintToggleSupport.actif(
+                                constraintFactory.forEach(PosteAffectation.class), "dureeQuotidienneMaxMineur"),
+                        Animateur::isMineurOn,
+                        LegalConstraints::effectiveWorkMineurMinutes,
+                        LegalConstraints::dailyCapForMineur)
                 .asConstraint("dureeQuotidienneMaxMineur");
     }
 
@@ -201,31 +207,32 @@ public final class LegalConstraints {
      * them off the justification to name the seats in default. Folding the
      * measure into the group would halve that work and lose the postes.</p>
      */
-    private static QuadConstraintBuilder<Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux,
-            HardMediumSoftScore> dailyCap(UniConstraintStream<PosteAffectation> postes,
-            BiPredicate<Animateur, LocalDate> bracket,
-            ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure,
-            ToIntBiFunction<Animateur, LocalDate> cap) {
-        return postes
-                .filter(poste -> poste.getAnimateur() != null
+    private static QuadConstraintBuilder<
+                    Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux, HardMediumSoftScore>
+            dailyCap(
+                    UniConstraintStream<PosteAffectation> postes,
+                    BiPredicate<Animateur, LocalDate> bracket,
+                    ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure,
+                    ToIntBiFunction<Animateur, LocalDate> cap) {
+        return postes.filter(poste -> poste.getAnimateur() != null
                         && poste.getCreneau() != null
                         && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
-                .groupBy(PosteAffectation::getAnimateur,
+                .groupBy(
+                        PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
                 .join(ParametresLegaux.class)
-                .filter((animateur, date, jour, parametres) -> measure.applyAsInt(jour, parametres)
-                        > cap.applyAsInt(animateur, date))
-                .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, jour, parametres) -> measure.applyAsInt(jour, parametres)
-                                - cap.applyAsInt(animateur, date));
+                .filter((animateur, date, jour, parametres) ->
+                        measure.applyAsInt(jour, parametres) > cap.applyAsInt(animateur, date))
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        (animateur, date, jour, parametres) ->
+                                measure.applyAsInt(jour, parametres) - cap.applyAsInt(animateur, date));
     }
 
     /** Night window start applicable to this minor on this date (art. L3163-1). */
     private static LocalTime debutNuit(Animateur animateur, LocalDate date) {
-        return animateur.isUnder16On(date)
-                ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS
-                : Creneau.DEBUT_NUIT_16_A_18_ANS;
+        return animateur.isUnder16On(date) ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS : Creneau.DEBUT_NUIT_16_A_18_ANS;
     }
 
     /** Daily working-time cap applicable to this minor on this date (art. L3162-1 / D4153-3). */
@@ -274,16 +281,22 @@ public final class LegalConstraints {
      * this constraint depends on that invariant.</p>
      */
     private Constraint reposQuotidienMinimal(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class)
-                .filter(LegalConstraints::horaireConnu)
-                .join(PosteAffectation.class,
-                        Joiners.equal(PosteAffectation::getAnimateur),
-                        Joiners.equal(veille -> veille.getCreneau().getJour() + 1,
-                                lendemain -> lendemain.getCreneau().getJour())),
-                "reposQuotidienMinimal")
-                .filter((veille, lendemain) -> horaireConnu(lendemain)
-                        && gapMinutes(veille, lendemain) < reposQuotidienMinimal(veille))
-                .penalize(HardMediumSoftScore.ONE_HARD,
+        return ConstraintToggleSupport.actif(
+                        constraintFactory
+                                .forEach(PosteAffectation.class)
+                                .filter(LegalConstraints::horaireConnu)
+                                .join(
+                                        PosteAffectation.class,
+                                        Joiners.equal(PosteAffectation::getAnimateur),
+                                        Joiners.equal(
+                                                veille -> veille.getCreneau().getJour() + 1,
+                                                lendemain ->
+                                                        lendemain.getCreneau().getJour())),
+                        "reposQuotidienMinimal")
+                .filter((veille, lendemain) ->
+                        horaireConnu(lendemain) && gapMinutes(veille, lendemain) < reposQuotidienMinimal(veille))
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
                         (veille, lendemain) -> reposQuotidienMinimal(veille) - gapMinutes(veille, lendemain))
                 .asConstraint("reposQuotidienMinimal");
     }
@@ -303,10 +316,12 @@ public final class LegalConstraints {
      * the three slots of a same day, i.e. 14 hours.</p>
      */
     private Constraint dureeQuotidienneMaxMajeur(ConstraintFactory constraintFactory) {
-        return dailyCap(ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "dureeQuotidienneMaxMajeur"),
-                Animateur::isMajeurOn, LegalConstraints::effectiveWorkMajeurMinutes,
-                (animateur, date) -> PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
+        return dailyCap(
+                        ConstraintToggleSupport.actif(
+                                constraintFactory.forEach(PosteAffectation.class), "dureeQuotidienneMaxMajeur"),
+                        Animateur::isMajeurOn,
+                        LegalConstraints::effectiveWorkMajeurMinutes,
+                        (animateur, date) -> PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
                 .asConstraint("dureeQuotidienneMaxMajeur");
     }
 
@@ -345,10 +360,12 @@ public final class LegalConstraints {
      * between day J and day J+1.</p>
      */
     private Constraint travailContinuMaxMajeur(ConstraintFactory constraintFactory) {
-        return continuousWorkCap(ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "travailContinuMaxMajeur"),
-                Animateur::isMajeurOn, PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
-                PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES)
+        return continuousWorkCap(
+                        ConstraintToggleSupport.actif(
+                                constraintFactory.forEach(PosteAffectation.class), "travailContinuMaxMajeur"),
+                        Animateur::isMajeurOn,
+                        PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
+                        PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .asConstraint("travailContinuMaxMajeur");
     }
 
@@ -374,10 +391,12 @@ public final class LegalConstraints {
      * {@link #travailContinuMaxMajeur}.</p>
      */
     private Constraint travailContinuMaxMineur(ConstraintFactory constraintFactory) {
-        return continuousWorkCap(ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "travailContinuMaxMineur"),
-                Animateur::isMineurOn, PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
-                PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
+        return continuousWorkCap(
+                        ConstraintToggleSupport.actif(
+                                constraintFactory.forEach(PosteAffectation.class), "travailContinuMaxMineur"),
+                        Animateur::isMineurOn,
+                        PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
+                        PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .asConstraint("travailContinuMaxMineur");
     }
 
@@ -389,22 +408,26 @@ public final class LegalConstraints {
      * ({@link ParametresLegaux#isPauseSurPoste()}): the daily cap then
      * deducts it instead.
      */
-    private static QuadConstraintBuilder<Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux,
-            HardMediumSoftScore> continuousWorkCap(UniConstraintStream<PosteAffectation> postes,
-            BiPredicate<Animateur, LocalDate> bracket, int breakMinutes, int capMinutes) {
-        return postes
-                .filter(poste -> poste.getAnimateur() != null
+    private static QuadConstraintBuilder<
+                    Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux, HardMediumSoftScore>
+            continuousWorkCap(
+                    UniConstraintStream<PosteAffectation> postes,
+                    BiPredicate<Animateur, LocalDate> bracket,
+                    int breakMinutes,
+                    int capMinutes) {
+        return postes.filter(poste -> poste.getAnimateur() != null
                         && horaireConnu(poste)
                         && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
-                .groupBy(PosteAffectation::getAnimateur,
+                .groupBy(
+                        PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
                 .join(ParametresLegaux.class)
-                .filter((animateur, date, jour, parametres) -> !parametres.isPauseSurPoste()
-                        && longestSequenceMinutes(jour, breakMinutes) > capMinutes)
-                .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, jour, parametres) -> longestSequenceMinutes(jour, breakMinutes)
-                                - capMinutes);
+                .filter((animateur, date, jour, parametres) ->
+                        !parametres.isPauseSurPoste() && longestSequenceMinutes(jour, breakMinutes) > capMinutes)
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        (animateur, date, jour, parametres) -> longestSequenceMinutes(jour, breakMinutes) - capMinutes);
     }
 
     /**
@@ -419,14 +442,17 @@ public final class LegalConstraints {
      * a 48 h ceiling on seven worked days.</p>
      */
     private Constraint maxJoursTravaillesParSemaine(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "maxJoursTravaillesParSemaine")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "maxJoursTravaillesParSemaine")
                 .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste))
-                .groupBy(PosteAffectation::getAnimateur,
+                .groupBy(
+                        PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),
-                        ConstraintCollectors.countDistinct(poste -> poste.getCreneau().getDate()))
+                        ConstraintCollectors.countDistinct(
+                                poste -> poste.getCreneau().getDate()))
                 .filter((animateur, semaine, jours) -> jours > PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
-                .penalize(HardMediumSoftScore.ONE_HARD,
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
                         (animateur, semaine, jours) -> jours - PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
                 .asConstraint("maxJoursTravaillesParSemaine");
     }
@@ -462,13 +488,12 @@ public final class LegalConstraints {
      * this rule high.</p>
      */
     private Constraint reposHebdomadaireMinimal(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "reposHebdomadaireMinimal")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "reposHebdomadaireMinimal")
                 .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste))
                 .groupBy(PosteAffectation::getAnimateur, ConstraintCollectors.toList())
                 .filter((animateur, postes) -> deficitReposHebdomadaireMinutes(postes) > 0)
-                .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, postes) -> deficitReposHebdomadaireMinutes(postes))
+                .penalize(HardMediumSoftScore.ONE_HARD, (animateur, postes) -> deficitReposHebdomadaireMinutes(postes))
                 .asConstraint("reposHebdomadaireMinimal");
     }
 
@@ -506,18 +531,21 @@ public final class LegalConstraints {
      * that way. See {@code docs/contraintes.md}, « La frontière de semaine ».</p>
      */
     private Constraint reposHebdomadaireMineur(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "reposHebdomadaireMineur")
-                .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste)
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "reposHebdomadaireMineur")
+                .filter(poste -> poste.getAnimateur() != null
+                        && horaireConnu(poste)
                         && poste.getAnimateur().isMineurOn(poste.getCreneau().getDate()))
-                .groupBy(PosteAffectation::getAnimateur,
+                .groupBy(
+                        PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),
                         ConstraintCollectors.toSet(poste -> poste.getCreneau().getDate()))
-                .filter((animateur, semaine, jours) -> longestRunOfFreeDays(jours)
-                        < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE)
-                .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, semaine, jours) -> PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE
-                                - longestRunOfFreeDays(jours))
+                .filter((animateur, semaine, jours) ->
+                        longestRunOfFreeDays(jours) < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE)
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        (animateur, semaine, jours) ->
+                                PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE - longestRunOfFreeDays(jours))
                 .asConstraint("reposHebdomadaireMineur");
     }
 
@@ -540,8 +568,8 @@ public final class LegalConstraints {
      * 2026 and cover 14 July.</p>
      */
     private Constraint travailInterditJourFerieMineur(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "travailInterditJourFerieMineur")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "travailInterditJourFerieMineur")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getCreneau() != null
                         && poste.getCreneau().getDate() != null
@@ -601,7 +629,8 @@ public final class LegalConstraints {
      * Daily rest that the law lets adjoin the 24 h of weekly rest, on either
      * side of the week boundary (35 h − 24 h).
      */
-    private static final int REPOS_QUOTIDIEN_ADJOINT_MINUTES = PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - 24 * 60;
+    private static final int REPOS_QUOTIDIEN_ADJOINT_MINUTES =
+            PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - 24 * 60;
 
     /**
      * Minutes missing, summed over the ISO weeks in which the animateur works,
@@ -652,11 +681,14 @@ public final class LegalConstraints {
             LocalDateTime finSemaine = debutSemaine.plusDays(7);
             long meilleur = creditReposMinutes(null, occupations.get(0)[0], debutSemaine, finSemaine);
             for (int i = 1; i < occupations.size(); i++) {
-                meilleur = Math.max(meilleur, creditReposMinutes(
-                        occupations.get(i - 1)[1], occupations.get(i)[0], debutSemaine, finSemaine));
+                meilleur = Math.max(
+                        meilleur,
+                        creditReposMinutes(
+                                occupations.get(i - 1)[1], occupations.get(i)[0], debutSemaine, finSemaine));
             }
-            meilleur = Math.max(meilleur, creditReposMinutes(
-                    occupations.get(occupations.size() - 1)[1], null, debutSemaine, finSemaine));
+            meilleur = Math.max(
+                    meilleur,
+                    creditReposMinutes(occupations.get(occupations.size() - 1)[1], null, debutSemaine, finSemaine));
             if (meilleur < PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES) {
                 deficit += (int) (PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - meilleur);
             }
@@ -670,12 +702,11 @@ public final class LegalConstraints {
      * adjoining daily rest, capped at its real length. A {@code null} bound
      * means the rest has no known end on that side.
      */
-    private static long creditReposMinutes(LocalDateTime debutRepos, LocalDateTime finRepos,
-            LocalDateTime debutSemaine, LocalDateTime finSemaine) {
-        LocalDateTime debutDansSemaine = debutRepos == null || debutRepos.isBefore(debutSemaine)
-                ? debutSemaine : debutRepos;
-        LocalDateTime finDansSemaine = finRepos == null || finRepos.isAfter(finSemaine)
-                ? finSemaine : finRepos;
+    private static long creditReposMinutes(
+            LocalDateTime debutRepos, LocalDateTime finRepos, LocalDateTime debutSemaine, LocalDateTime finSemaine) {
+        LocalDateTime debutDansSemaine =
+                debutRepos == null || debutRepos.isBefore(debutSemaine) ? debutSemaine : debutRepos;
+        LocalDateTime finDansSemaine = finRepos == null || finRepos.isAfter(finSemaine) ? finSemaine : finRepos;
         if (!finDansSemaine.isAfter(debutDansSemaine)) {
             return 0;
         }
@@ -708,13 +739,19 @@ public final class LegalConstraints {
 
     /** Effective working minutes of an adult's day, see {@link #effectiveWorkMinutes}. */
     private static int effectiveWorkMajeurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
-        return effectiveWorkMinutes(postes, parametres, PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
+        return effectiveWorkMinutes(
+                postes,
+                parametres,
+                PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
                 PlafondsLegauxMajeurs::onPostBreakMinutes);
     }
 
     /** Effective working minutes of a minor's day, see {@link #effectiveWorkMinutes}. */
     private static int effectiveWorkMineurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
-        return effectiveWorkMinutes(postes, parametres, PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
+        return effectiveWorkMinutes(
+                postes,
+                parametres,
+                PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
                 PlafondsLegauxMineurs::onPostBreakMinutes);
     }
 
@@ -734,9 +771,14 @@ public final class LegalConstraints {
      * <p>Without the declaration nothing is deducted: an amplitude is then read
      * as worked in full, the protective reading.</p>
      */
-    private static int effectiveWorkMinutes(List<PosteAffectation> postes, ParametresLegaux parametres,
-            int pauseMinimaleMinutes, java.util.function.IntUnaryOperator onPostBreak) {
-        int total = postes.stream().mapToInt(PosteAffectation::getDureeEffectiveMinutes).sum();
+    private static int effectiveWorkMinutes(
+            List<PosteAffectation> postes,
+            ParametresLegaux parametres,
+            int pauseMinimaleMinutes,
+            java.util.function.IntUnaryOperator onPostBreak) {
+        int total = postes.stream()
+                .mapToInt(PosteAffectation::getDureeEffectiveMinutes)
+                .sum();
         if (!parametres.isPauseSurPoste()) {
             return total;
         }
@@ -817,9 +859,11 @@ public final class LegalConstraints {
      * ISO week of its start date, see {@code Creneau.semaineIso()}.</p>
      */
     private Constraint dureeHebdomadaireMax(ConstraintFactory constraintFactory) {
-        return weeklyCap(ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "dureeHebdomadaireMax"),
-                Animateur::isMajeurOn, ParametresLegaux::getDureeHebdomadaireMaxMinutes)
+        return weeklyCap(
+                        ConstraintToggleSupport.actif(
+                                constraintFactory.forEach(PosteAffectation.class), "dureeHebdomadaireMax"),
+                        Animateur::isMajeurOn,
+                        ParametresLegaux::getDureeHebdomadaireMaxMinutes)
                 .asConstraint("dureeHebdomadaireMax");
     }
 
@@ -838,9 +882,11 @@ public final class LegalConstraints {
      * this application used to allow.</p>
      */
     private Constraint dureeHebdomadaireMaxMineur(ConstraintFactory constraintFactory) {
-        return weeklyCap(ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "dureeHebdomadaireMaxMineur"),
-                Animateur::isMineurOn, ParametresLegaux::getDureeHebdomadaireMaxMineurMinutes)
+        return weeklyCap(
+                        ConstraintToggleSupport.actif(
+                                constraintFactory.forEach(PosteAffectation.class), "dureeHebdomadaireMaxMineur"),
+                        Animateur::isMineurOn,
+                        ParametresLegaux::getDureeHebdomadaireMaxMineurMinutes)
                 .asConstraint("dureeHebdomadaireMaxMineur");
     }
 
@@ -850,20 +896,21 @@ public final class LegalConstraints {
      * the ISO week of its start date, see {@code Creneau.semaineIso()}.
      */
     private static QuadConstraintBuilder<Animateur, String, Long, ParametresLegaux, HardMediumSoftScore> weeklyCap(
-            UniConstraintStream<PosteAffectation> postes, BiPredicate<Animateur, LocalDate> bracket,
+            UniConstraintStream<PosteAffectation> postes,
+            BiPredicate<Animateur, LocalDate> bracket,
             ToIntFunction<ParametresLegaux> cap) {
-        return postes
-                .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null
+        return postes.filter(poste -> poste.getAnimateur() != null
+                        && poste.getCreneau() != null
                         && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
-                .groupBy(PosteAffectation::getAnimateur,
+                .groupBy(
+                        PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),
                         ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes))
                 .join(ParametresLegaux.class)
-                .filter((animateur, semaine, dureeTotale, parametres) ->
-                        dureeTotale > cap.applyAsInt(parametres))
-                .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, semaine, dureeTotale, parametres) ->
-                                dureeTotale - cap.applyAsInt(parametres));
+                .filter((animateur, semaine, dureeTotale, parametres) -> dureeTotale > cap.applyAsInt(parametres))
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        (animateur, semaine, dureeTotale, parametres) -> dureeTotale - cap.applyAsInt(parametres));
     }
 
     /**
@@ -881,15 +928,18 @@ public final class LegalConstraints {
      * {@code scenario-complet.yaml}.</p>
      */
     private Constraint pauseMinimaleEntreVacations(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
-                PosteAffectation.class,
-                Joiners.equal(PosteAffectation::getAnimateur),
-                Joiners.equal(poste -> poste.getCreneau().getDate())), "pauseMinimaleEntreVacations")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEachUniquePair(
+                                PosteAffectation.class,
+                                Joiners.equal(PosteAffectation::getAnimateur),
+                                Joiners.equal(poste -> poste.getCreneau().getDate())),
+                        "pauseMinimaleEntreVacations")
                 .filter((posteA, posteB) -> posteA.getAnimateur() != null)
                 .join(ParametresLegaux.class)
                 .filter((posteA, posteB, parametres) ->
                         symmetricGapMinutes(posteA, posteB) < parametres.getPauseMinimaleEntreVacationsMinutes())
-                .penalize(HardMediumSoftScore.ONE_HARD,
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
                         (posteA, posteB, parametres) -> parametres.getPauseMinimaleEntreVacationsMinutes()
                                 - symmetricGapMinutes(posteA, posteB))
                 .asConstraint("pauseMinimaleEntreVacations");

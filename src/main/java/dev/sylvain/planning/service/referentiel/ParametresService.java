@@ -1,16 +1,15 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.util.Map;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The three admin-configurable parameter sets, the constraint toggles and the

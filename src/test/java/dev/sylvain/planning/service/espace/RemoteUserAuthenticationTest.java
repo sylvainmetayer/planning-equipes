@@ -3,11 +3,9 @@ package dev.sylvain.planning.service.espace;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.sylvain.planning.config.ConfigRemoteUser;
 import java.util.Map;
 import java.util.Optional;
-
-import dev.sylvain.planning.config.ConfigRemoteUser;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -25,8 +23,9 @@ class RemoteUserAuthenticationTest {
         RemoteUserAuthentication remote = configure(false, "secret", "chef@exemple.fr");
 
         assertThat(remote.trustedEmail(headers(Map.of(
-                "Remote-Auth-Secret", "secret",
-                "Remote-Email", "chef@exemple.fr")))).isEmpty();
+                        "Remote-Auth-Secret", "secret",
+                        "Remote-Email", "chef@exemple.fr"))))
+                .isEmpty();
     }
 
     @Test
@@ -34,8 +33,8 @@ class RemoteUserAuthenticationTest {
         RemoteUserAuthentication remote = configure(true, "secret", "chef@exemple.fr");
 
         assertThat(remote.trustedEmail(headers(Map.of(
-                "Remote-Auth-Secret", "secret",
-                "Remote-Email", " Chef@Exemple.FR "))))
+                        "Remote-Auth-Secret", "secret",
+                        "Remote-Email", " Chef@Exemple.FR "))))
                 .contains("chef@exemple.fr");
     }
 
@@ -43,10 +42,12 @@ class RemoteUserAuthenticationTest {
     void unSecretAbsentOuFauxRendLAdresseInexploitable() {
         RemoteUserAuthentication remote = configure(true, "secret", "chef@exemple.fr");
 
-        assertThat(remote.trustedEmail(headers(Map.of("Remote-Email", "chef@exemple.fr")))).isEmpty();
+        assertThat(remote.trustedEmail(headers(Map.of("Remote-Email", "chef@exemple.fr"))))
+                .isEmpty();
         assertThat(remote.trustedEmail(headers(Map.of(
-                "Remote-Auth-Secret", "presque",
-                "Remote-Email", "chef@exemple.fr")))).isEmpty();
+                        "Remote-Auth-Secret", "presque",
+                        "Remote-Email", "chef@exemple.fr"))))
+                .isEmpty();
     }
 
     @Test
@@ -76,8 +77,8 @@ class RemoteUserAuthenticationTest {
 
     private static RemoteUserAuthentication configure(boolean actif, String secret, String emailAdmin) {
         RemoteUserAuthentication remote = new RemoteUserAuthentication();
-        remote.config = new ConfigRemoteUserFixe(actif, "Remote-Email", "Remote-Auth-Secret",
-                Optional.of(secret), Optional.of(emailAdmin));
+        remote.config = new ConfigRemoteUserFixe(
+                actif, "Remote-Email", "Remote-Auth-Secret", Optional.of(secret), Optional.of(emailAdmin));
         return remote;
     }
 
@@ -87,9 +88,9 @@ class RemoteUserAuthenticationTest {
      * {@code @ConfigMapping} interface: a test provides it by implementing it,
      * rather than by writing into five fields.
      */
-    private record ConfigRemoteUserFixe(boolean enabled, String header, String secretHeader,
-            Optional<String> secret, Optional<String> adminEmail) implements ConfigRemoteUser {
-    }
+    private record ConfigRemoteUserFixe(
+            boolean enabled, String header, String secretHeader, Optional<String> secret, Optional<String> adminEmail)
+            implements ConfigRemoteUser {}
 
     private static java.util.function.Function<String, String> headers(Map<String, String> valeurs) {
         return valeurs::get;

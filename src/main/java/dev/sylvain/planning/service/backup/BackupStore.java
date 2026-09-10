@@ -33,6 +33,7 @@ public final class BackupStore {
 
     /** Same shape as the manual command documented in {@code docs/exploitation.md}, to the second. */
     static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
+
     static final String PREFIX = "planning-";
     static final String SUFFIX = ".dump";
     static final String PARTIAL_SUFFIX = ".part";
@@ -42,8 +43,8 @@ public final class BackupStore {
      * chronologically — the rotation never has to trust a modification time,
      * which a copy or a volume restore rewrites.
      */
-    private static final Pattern PATTERN = Pattern.compile(Pattern.quote(PREFIX) + "\\d{8}-\\d{6}"
-            + Pattern.quote(SUFFIX));
+    private static final Pattern PATTERN =
+            Pattern.compile(Pattern.quote(PREFIX) + "\\d{8}-\\d{6}" + Pattern.quote(SUFFIX));
 
     private final Path directory;
 
@@ -89,7 +90,9 @@ public final class BackupStore {
     public List<BackupFile> list() throws IOException {
         List<BackupFile> files = new ArrayList<>();
         for (Path path : entries(PATTERN.asMatchPredicate())) {
-            files.add(new BackupFile(path.getFileName().toString(), Files.size(path),
+            files.add(new BackupFile(
+                    path.getFileName().toString(),
+                    Files.size(path),
                     Files.getLastModifiedTime(path).toInstant()));
         }
         files.sort(Comparator.comparing(BackupFile::name).reversed());

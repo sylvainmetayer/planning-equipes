@@ -1,14 +1,12 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
 import dev.sylvain.planning.service.publication.PlanPublicationService.RapportPublication;
 import dev.sylvain.planning.service.publication.PlanPublieService;
-import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -17,6 +15,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 
 /**
  * Publishing the planning (issue #245): the button that replaced « envoyer à

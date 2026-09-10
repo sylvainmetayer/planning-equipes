@@ -4,14 +4,6 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.mailer.MockMailbox;
@@ -22,6 +14,12 @@ import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Rate limit on the availability declarations (issue #291): the espace's first
@@ -45,8 +43,8 @@ class DeclarationRateLimitTest {
     public static class Profil implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
-            return Map.of("planning.espace.declaration.max-envois", "2",
-                    "planning.espace.declaration.fenetre", "PT10M");
+            return Map.of(
+                    "planning.espace.declaration.max-envois", "2", "planning.espace.declaration.fenetre", "PT10M");
         }
     }
 
@@ -68,9 +66,8 @@ class DeclarationRateLimitTest {
         referenceData.createAnimateur(animateur);
         mailbox.clear();
         String session = EspaceSessions.open(mailbox, token(), EMAIL);
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-                .addCookie("planning-espace", session)
-                .build();
+        RestAssured.requestSpecification =
+                new RequestSpecBuilder().addCookie("planning-espace", session).build();
         window(true);
     }
 
@@ -86,10 +83,7 @@ class DeclarationRateLimitTest {
         declare("premier envoi").then().statusCode(200);
         declare("correction").then().statusCode(200);
 
-        declare("boucle")
-                .then()
-                .statusCode(429)
-                .header("Retry-After", notNullValue());
+        declare("boucle").then().statusCode(429).header("Retry-After", notNullValue());
 
         // Whatever the pace, the animateur never held more than one proposal:
         // that is the domain rule, and it is what bounds the database.
@@ -99,21 +93,27 @@ class DeclarationRateLimitTest {
     private io.restassured.response.Response declare(String commentaire) {
         return given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[],\"souhaits\":[],\"commentaire\":\"" + commentaire + "\"}")
-                .when().post("/api/espace-animateur/" + token() + "/disponibilites");
+                .when()
+                .post("/api/espace-animateur/" + token() + "/disponibilites");
     }
 
     private static void window(boolean ouverte) {
         given().contentType(ContentType.JSON)
                 .body("{\"collecteOuverte\":" + ouverte + "}")
-                .when().put("/api/disponibilites/configuration")
-                .then().statusCode(200);
+                .when()
+                .put("/api/disponibilites/configuration")
+                .then()
+                .statusCode(200);
     }
 
     /** Only this fixture's rows: the suite shares one database with every other class. */
     private static long pendingCount() {
-        List<String> statuts = given().when().get("/api/disponibilites")
-                .then().statusCode(200)
-                .extract().jsonPath()
+        List<String> statuts = given().when()
+                .get("/api/disponibilites")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
                 .getList("findAll { it.animateurId == '" + ANIMATEUR + "' }.statut", String.class);
         return statuts.stream().filter("EN_ATTENTE"::equals).count();
     }

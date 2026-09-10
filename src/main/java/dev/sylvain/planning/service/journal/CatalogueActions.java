@@ -1,10 +1,9 @@
 package dev.sylvain.planning.service.journal;
 
+import dev.sylvain.planning.service.journal.ActionJournalisee.Entite;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-
-import dev.sylvain.planning.service.journal.ActionJournalisee.Entite;
 
 /**
  * Every action the application knows how to write down, and how it reads in
@@ -27,8 +26,7 @@ import dev.sylvain.planning.service.journal.ActionJournalisee.Entite;
  */
 public final class CatalogueActions {
 
-    private CatalogueActions() {
-    }
+    private CatalogueActions() {}
 
     private static final Map<String, ActionJournalisee> ACTIONS = new LinkedHashMap<>();
 

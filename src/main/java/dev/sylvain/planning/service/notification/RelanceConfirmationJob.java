@@ -1,23 +1,21 @@
 package dev.sylvain.planning.service.notification;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.jboss.logging.Logger;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
-import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * « Confirmez-vous votre planning ? » (issue #299): one reminder to the people
@@ -107,7 +105,10 @@ public class RelanceConfirmationJob {
         // people whose planning really moved — may legitimately remind again.
         String cle = fiche.getId() + "|" + publieLe;
         if (fiche.getEmail() == null || fiche.getEmail().isBlank()) {
-            journal.claim(JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE, cle, fiche.getId(),
+            journal.claim(
+                    JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
+                    cle,
+                    fiche.getId(),
                     "Relance de confirmation impossible : aucune adresse e-mail sur la fiche."
                             + " Cette personne n'a pas accusé réception de son planning.",
                     JournalNotificationsRepository.Severite.WARNING);
@@ -123,7 +124,8 @@ public class RelanceConfirmationJob {
         // write to the same person again.
         confirmationService.recordReminder(fiche.getId(), maintenant);
         notifications.fire(new Notification.RelanceConfirmation(
-                fiche.getEmail(), fiche.getPrenom(),
+                fiche.getEmail(),
+                fiche.getPrenom(),
                 liens.espaceAnimateur(fiche.getAccessToken()).orElse(null)));
         return true;
     }

@@ -16,5 +16,4 @@ import jakarta.validation.constraints.NotBlank;
  * one entry of the list should carry it; the referential keeps only the last
  * one applied.</p>
  */
-public record TypologieDto(@NotBlank String id, @NotBlank String label, Boolean ninja) {
-}
+public record TypologieDto(@NotBlank String id, @NotBlank String label, Boolean ninja) {}

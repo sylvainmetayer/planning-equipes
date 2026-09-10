@@ -20,8 +20,7 @@ final class ParametresValidator {
     /** Highest weight an edition may give one constraint — see {@link #checkConstraintWeight}. */
     static final int CONSTRAINT_WEIGHT_MAX = 100;
 
-    private ParametresValidator() {
-    }
+    private ParametresValidator() {}
 
     /**
      * Refuses anything above the ordre public ceilings.
@@ -38,12 +37,14 @@ final class ParametresValidator {
      * <p>A <i>lower</i> value stays free: it is more protective than the law.</p>
      */
     static void checkParametresLegaux(ParametresLegaux parametres) {
-        checkCap(parametres.getDureeHebdomadaireMaxMinutes(),
+        checkCap(
+                parametres.getDureeHebdomadaireMaxMinutes(),
                 ParametresLegaux.DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT,
                 "dureeHebdomadaireMaxMinutes",
                 "la durée hebdomadaire maximale des majeurs ne peut pas dépasser 48 h "
                         + "(Code du travail art. L3121-20, disposition d'ordre public)");
-        checkCap(parametres.getDureeHebdomadaireMaxMineurMinutes(),
+        checkCap(
+                parametres.getDureeHebdomadaireMaxMineurMinutes(),
                 ParametresLegaux.DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT,
                 "dureeHebdomadaireMaxMineurMinutes",
                 "la durée hebdomadaire maximale des mineurs ne peut pas dépasser 35 h "
@@ -57,13 +58,13 @@ final class ParametresValidator {
     }
 
     static void checkDecoupage(ParametresDecoupage parametres) {
-        if (parametres.getDureeVacationMinMinutes() <= 0 || parametres.getDureeVacationMaxMinutes() <= 0
+        if (parametres.getDureeVacationMinMinutes() <= 0
+                || parametres.getDureeVacationMaxMinutes() <= 0
                 || parametres.getDureeVacationCibleMinutes() <= 0) {
             throw new BusinessError.Invalid("vacation durations must be positive");
         }
         if (parametres.getDureeVacationMinMinutes() > parametres.getDureeVacationMaxMinutes()) {
-            throw new BusinessError.Invalid(
-                    "dureeVacationMinMinutes cannot be greater than dureeVacationMaxMinutes");
+            throw new BusinessError.Invalid("dureeVacationMinMinutes cannot be greater than dureeVacationMaxMinutes");
         }
         if (parametres.getDureeChevauchementMinutes() < 0 || parametres.getDureePauseRepasMinutes() < 0) {
             throw new BusinessError.Invalid("overlap and meal-break durations must not be negative");
@@ -96,11 +97,10 @@ final class ParametresValidator {
         // hourly job, so the reminder would never leave at all — and nothing on
         // the screen would say so. See ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX.
         if (parametres.heureRappelVeille().isAfter(ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX)) {
-            throw new BusinessError.Invalid(
-                    "L'heure d'envoi du rappel ne peut pas dépasser "
-                            + ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX
-                            + " : la tâche s'exécute une fois par heure, et un rappel réglé plus tard"
-                            + " ne partirait jamais.");
+            throw new BusinessError.Invalid("L'heure d'envoi du rappel ne peut pas dépasser "
+                    + ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX
+                    + " : la tâche s'exécute une fois par heure, et un rappel réglé plus tard"
+                    + " ne partirait jamais.");
         }
         if (parametres.delaiRelanceHeures() < 1 || parametres.delaiRelanceHeures() > 24 * 30) {
             throw new BusinessError.Invalid("delaiRelanceHeures must be between 1 and 720");

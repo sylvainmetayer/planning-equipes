@@ -1,7 +1,11 @@
 package dev.sylvain.planning.service.publication;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.StatutConfirmation;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,13 +13,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.StatutConfirmation;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * « J'ai lu et je serai là » (issue #293): the one thing an animateur answers
@@ -49,13 +47,16 @@ public class ConfirmationPlanningService {
      *                "sans objet" rather than as silent
      */
     @Schema(requiredProperties = {"affecte"})
-    public record ConfirmationView(String animateurId, String nomAffiche, String statut, boolean affecte,
-            Instant confirmeLe, Instant relanceLe) {
-    }
+    public record ConfirmationView(
+            String animateurId,
+            String nomAffiche,
+            String statut,
+            boolean affecte,
+            Instant confirmeLe,
+            Instant relanceLe) {}
 
     /** What the espace reads back after the click: its own new state, and nothing about anybody else. */
-    public record AccuseReception(String statut, Instant confirmeLe) {
-    }
+    public record AccuseReception(String statut, Instant confirmeLe) {}
 
     /**
      * Records the animateur's own click. Idempotent: clicking twice keeps the
@@ -70,8 +71,7 @@ public class ConfirmationPlanningService {
      */
     public AccuseReception confirmer(String animateurId) {
         if (planPublieService.jamaisPublie()) {
-            throw new BusinessError.Conflict(
-                    "Aucun planning n'a encore été communiqué : il n'y a rien à confirmer.");
+            throw new BusinessError.Conflict("Aucun planning n'a encore été communiqué : il n'y a rien à confirmer.");
         }
         if (!assignedAnimateurs().contains(animateurId)) {
             throw new BusinessError.Conflict(
@@ -79,8 +79,7 @@ public class ConfirmationPlanningService {
         }
         repository.confirmer(animateurId, Instant.now());
         return stored(animateurId)
-                .map(confirmation -> new AccuseReception(confirmation.statut().name(),
-                        confirmation.confirmeLe()))
+                .map(confirmation -> new AccuseReception(confirmation.statut().name(), confirmation.confirmeLe()))
                 .orElseThrow(() -> new BusinessError.NotFound("Animateur inconnu : " + animateurId));
     }
 
@@ -153,6 +152,7 @@ public class ConfirmationPlanningService {
 
     /** Animateur ids holding at least one seat in the published plan. */
     private Collection<String> assignedAnimateurs() {
-        return PublicationDiffService.vacationsByAnimateur(planPublieService.planPublie()).keySet();
+        return PublicationDiffService.vacationsByAnimateur(planPublieService.planPublie())
+                .keySet();
     }
 }

@@ -31,5 +31,4 @@ public record ContrainteAdHocDto(
         List<String> animateurs,
         String creneauId,
         String standId,
-        String raison) {
-}
+        String raison) {}

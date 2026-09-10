@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.fail;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.solve.ProblemBuilder;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,10 +17,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
-import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
-import dev.sylvain.planning.service.solve.ProblemBuilder;
 
 /**
  * What every bundled scenario reads as <b>after being written back out</b>,
@@ -53,16 +51,15 @@ class ScenarioEcritureDifferentielleTest {
         }
 
         if (!comparaison.written().isEmpty()) {
-            fail("Références absentes, elles viennent d'être écrites : %s. Relisez-les, puis commitez-les.",
+            fail(
+                    "Références absentes, elles viennent d'être écrites : %s. Relisez-les, puis commitez-les.",
                     String.join(", ", comparaison.written()));
         }
 
-        assertThat(ecarts)
-                .as("""
+        assertThat(ecarts).as("""
                         Le scénario réécrit ne se relit plus comme sa référence. Les deux formes \
                         complètes sont dans target/scenario-differentiel/. Si l'écart est voulu, \
-                        régénérez la référence — et relisez-la avant de la commiter.""")
-                .isEmpty();
+                        régénérez la référence — et relisez-la avant de la commiter.""").isEmpty();
     }
 
     /**
@@ -79,7 +76,8 @@ class ScenarioEcritureDifferentielleTest {
                 ScenarioYamlReader.loadReferenceScenario(scenario.getFileName().toString());
 
         List<Stand> stands = new ArrayList<>(referentiel.standsById().values());
-        List<dev.sylvain.planning.domain.Creneau> creneaux = new ArrayList<>(referentiel.creneauxParId().values());
+        List<dev.sylvain.planning.domain.Creneau> creneaux =
+                new ArrayList<>(referentiel.creneauxParId().values());
         HoraireStandResolver.apply(stands, creneaux);
 
         String ecrit = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
@@ -92,14 +90,24 @@ class ScenarioEcritureDifferentielleTest {
                 lu.sections().parametresLegaux().orElse(null),
                 lu.sections().parametresDecoupage().orElse(null),
                 lu.sections().parametresSolveur().orElse(null),
-                lu.sections().contraintes().map(ScenarioYamlReader.ContraintesScenario::desactivees).orElse(Set.of()),
-                lu.sections().contraintes().map(ScenarioYamlReader.ContraintesScenario::poids).orElse(Map.of()),
+                lu.sections()
+                        .contraintes()
+                        .map(ScenarioYamlReader.ContraintesScenario::desactivees)
+                        .orElse(Set.of()),
+                lu.sections()
+                        .contraintes()
+                        .map(ScenarioYamlReader.ContraintesScenario::poids)
+                        .orElse(Map.of()),
                 lu.planning().getContraintesAdHoc()));
 
         return ScenarioYamlReader.buildFromScenarioText(ecrit, ParametresLegaux::new);
     }
 
     private static List<Emplacement> emplacements(List<Stand> stands) {
-        return stands.stream().map(Stand::getEmplacement).filter(Objects::nonNull).distinct().toList();
+        return stands.stream()
+                .map(Stand::getEmplacement)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
     }
 }

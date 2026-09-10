@@ -17,7 +17,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -72,18 +71,42 @@ class IsolationEditionStructurelleTest {
      * failure rather than a silent hole.
      */
     private static final List<String> TABLES_METIER = List.of(
-            "stand", "animateur", "creneau", "emplacement", "typologie",
-            "contrainte_ad_hoc", "contrainte_animateur", "constraint_toggle", "ponderation_contrainte",
+            "stand",
+            "animateur",
+            "creneau",
+            "emplacement",
+            "typologie",
+            "contrainte_ad_hoc",
+            "contrainte_animateur",
+            "constraint_toggle",
+            "ponderation_contrainte",
             "verrouillage_planning",
-            "parametres_legaux", "parametres_decoupage", "parametres_solveur",
-            "poste_affectation", "planning_resolution", "stand_typologie",
-            "animateur_competence", "animateur_souhait", "animateur_jour_indispo",
-            "stand_indisponibilite", "stand_ouverture", "stand_horaire", "stand_horaire_fenetre",
+            "parametres_legaux",
+            "parametres_decoupage",
+            "parametres_solveur",
+            "poste_affectation",
+            "planning_resolution",
+            "stand_typologie",
+            "animateur_competence",
+            "animateur_souhait",
+            "animateur_jour_indispo",
+            "stand_indisponibilite",
+            "stand_ouverture",
+            "stand_horaire",
+            "stand_horaire_fenetre",
             "creneau_stand_ouvert",
-            "demande_echange", "parametres_echange", "espace_session", "espace_acces",
-            "plan_snapshot", "publication_destinataire",
-            "declaration_disponibilite", "parametres_collecte", "confirmation_planning",
-            "parametres_notifications", "notification_planifiee", "journal_action");
+            "demande_echange",
+            "parametres_echange",
+            "espace_session",
+            "espace_acces",
+            "plan_snapshot",
+            "publication_destinataire",
+            "declaration_disponibilite",
+            "parametres_collecte",
+            "confirmation_planning",
+            "parametres_notifications",
+            "notification_planifiee",
+            "journal_action");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An
@@ -117,9 +140,8 @@ class IsolationEditionStructurelleTest {
      *       list.</li>
      * </ul>
      */
-    private static final List<String> TABLES_HORS_EDITION = List.of(
-            "edition", "backup_settings", "horloge_jour_j", "kpi_historique", "solver_job",
-            "creneau_remap");
+    private static final List<String> TABLES_HORS_EDITION =
+            List.of("edition", "backup_settings", "horloge_jour_j", "kpi_historique", "solver_job", "creneau_remap");
 
     /**
      * The five deliberately cross-edition statements, and why.
@@ -190,16 +212,13 @@ class IsolationEditionStructurelleTest {
      * one it already follows. Parking a repository here would give back
      * exactly the blind spot this scan was extended to close.</p>
      */
-    private record Indirection(int appels, String motif) {
-    }
+    private record Indirection(int appels, String motif) {}
 
     private static final Map<String, Indirection> INDIRECTIONS_ASSUMEES = Map.of(
             "JdbcEditionScope.java#prepareScoped [sql]",
-            new Indirection(1,
-                    "the generic helper: every caller's SQL is read at its own prepareScoped(…) call site"),
+            new Indirection(1, "the generic helper: every caller's SQL is read at its own prepareScoped(…) call site"),
             "JdbcEditionScope.java#delete [sql]",
-            new Indirection(2,
-                    "the generic helper: every caller's SQL is read at its own scope.delete(…) call site"));
+            new Indirection(2, "the generic helper: every caller's SQL is read at its own scope.delete(…) call site"));
 
     /**
      * Where a statement can be read from, and which argument carries the SQL.
@@ -208,16 +227,14 @@ class IsolationEditionStructurelleTest {
      * {@link JdbcEditionScope#delete(String, String)} takes the statement from
      * its caller: without it, those four DELETEs would be read nowhere.</p>
      */
-    private record Anchor(Pattern pattern, int argIndex) {
-    }
+    private record Anchor(Pattern pattern, int argIndex) {}
 
     private static final List<Anchor> ANCHORS = List.of(
             new Anchor(Pattern.compile("prepareScoped\\("), 1),
             new Anchor(Pattern.compile("prepareStatement\\("), 0),
             new Anchor(Pattern.compile("scope\\.delete\\("), 0));
 
-    private static final Pattern COLONNES_INSERT =
-            Pattern.compile("insert\\s+into\\s+\\w+\\s*\\(([^)]*)\\)");
+    private static final Pattern COLONNES_INSERT = Pattern.compile("insert\\s+into\\s+\\w+\\s*\\(([^)]*)\\)");
     private static final Pattern DECLARATION = Pattern.compile("\\bString\\s+([A-Za-z_$][\\w$]*)\\s*=");
     private static final Pattern METHODE =
             Pattern.compile("([a-zA-Z_$][\\w$]*)\\s*\\(([^()]*)\\)\\s*(?:throws[^{;]*)?\\{");
@@ -233,11 +250,24 @@ class IsolationEditionStructurelleTest {
      * {@code catch} line carries no {@code private}.
      */
     private static final Set<String> MOTS_CLES_BLOC = Set.of(
-            "if", "for", "while", "switch", "catch", "synchronized", "try", "do", "else",
-            "return", "new", "record", "yield", "assert");
+            "if",
+            "for",
+            "while",
+            "switch",
+            "catch",
+            "synchronized",
+            "try",
+            "do",
+            "else",
+            "return",
+            "new",
+            "record",
+            "yield",
+            "assert");
 
     /** Keywords that introduce a <em>type</em> whose name would otherwise pass for a method. */
     private static final Set<String> MOTS_CLES_TYPE = Set.of("record", "new", "enum", "class", "interface");
+
     private static final Pattern PARAMETRE =
             Pattern.compile("(?:final\\s+)?[A-Za-z_$][\\w$<>\\[\\].,\\s]*\\s+[A-Za-z_$][\\w$]*");
     private static final Pattern IDENTIFIANT = Pattern.compile("[A-Za-z_$][\\w$]*");
@@ -314,13 +344,11 @@ class IsolationEditionStructurelleTest {
      * read from above it when it sits at class level (legal Java), and it can
      * never be reassigned between its declaration and its use.
      */
-    private record Declaration(String name, int at, int from, int to, int depth, boolean finale) {
-    }
+    private record Declaration(String name, int at, int from, int to, int depth, boolean finale) {}
 
     /** A method declaration, its parameters and the span of its body. */
-    private record MethodSpan(String name, int at, int paramsFrom, int paramsTo, int bodyFrom, int bodyTo,
-            boolean prive) {
-    }
+    private record MethodSpan(
+            String name, int at, int paramsFrom, int paramsTo, int bodyFrom, int bodyTo, boolean prive) {}
 
     /** One backend source file, pre-chewed: skeleton, brace depths, declarations. */
     private static final class Source {
@@ -347,8 +375,12 @@ class IsolationEditionStructurelleTest {
             while (declaration.find()) {
                 int fin = code.indexOf(';', declaration.end());
                 if (fin > 0) {
-                    declarations.add(new Declaration(declaration.group(1), declaration.start(),
-                            declaration.end(), fin, depth[declaration.start()],
+                    declarations.add(new Declaration(
+                            declaration.group(1),
+                            declaration.start(),
+                            declaration.end(),
+                            fin,
+                            depth[declaration.start()],
                             prefixe(declaration.start()).contains("final")));
                 }
             }
@@ -362,8 +394,14 @@ class IsolationEditionStructurelleTest {
                     continue;
                 }
                 int corps = code.indexOf('{', method.end(2));
-                methods.add(new MethodSpan(method.group(1), method.start(), method.start(2), method.end(2),
-                        corps, closing(corps), prefixe.contains("private")));
+                methods.add(new MethodSpan(
+                        method.group(1),
+                        method.start(),
+                        method.start(2),
+                        method.end(2),
+                        corps,
+                        closing(corps),
+                        prefixe.contains("private")));
             }
         }
 
@@ -434,8 +472,10 @@ class IsolationEditionStructurelleTest {
                 return trouvee;
             }
             for (Declaration declaration : declarations) {
-                if (declaration.at() > position && declaration.name().equals(name)
-                        && declaration.depth() <= 1 && declaration.finale()) {
+                if (declaration.at() > position
+                        && declaration.name().equals(name)
+                        && declaration.depth() <= 1
+                        && declaration.finale()) {
                     return declaration;
                 }
             }
@@ -457,15 +497,16 @@ class IsolationEditionStructurelleTest {
             }
             int from = Math.min(declaration.to(), position);
             int to = Math.max(declaration.to(), position);
-            Matcher affectation =
-                    Pattern.compile("\\b" + Pattern.quote(name) + "\\s*\\+?=[^=]").matcher(code);
+            Matcher affectation = Pattern.compile("\\b" + Pattern.quote(name) + "\\s*\\+?=[^=]")
+                    .matcher(code);
             return affectation.find(from) && affectation.start() < to;
         }
 
         private MethodSpan enclosing(int position) {
             MethodSpan trouvee = null;
             for (MethodSpan method : methods) {
-                if (position > method.bodyFrom() && position < method.bodyTo()
+                if (position > method.bodyFrom()
+                        && position < method.bodyTo()
                         && (trouvee == null || method.bodyFrom() > trouvee.bodyFrom())) {
                     trouvee = method;
                 }
@@ -474,7 +515,11 @@ class IsolationEditionStructurelleTest {
         }
 
         private int line(int position) {
-            return (int) text.substring(0, position).chars().filter(c -> c == '\n').count() + 1;
+            return (int) text.substring(0, position)
+                            .chars()
+                            .filter(c -> c == '\n')
+                            .count()
+                    + 1;
         }
     }
 
@@ -499,8 +544,7 @@ class IsolationEditionStructurelleTest {
     }
 
     /** What an expression resolved to, and the fragments it could not resolve. */
-    private record Resolution(String sql, List<String> irresoluble) {
-    }
+    private record Resolution(String sql, List<String> irresoluble) {}
 
     /**
      * Resolves the expression in {@code [from, to)} into the SQL it produces.
@@ -563,14 +607,18 @@ class IsolationEditionStructurelleTest {
     }
 
     private static String unescape(String literal) {
-        return literal.replace("\\n", "\n").replace("\\t", " ")
-                .replace("\\\"", "\"").replace("\\\\", "\\");
+        return literal.replace("\\n", "\n")
+                .replace("\\t", " ")
+                .replace("\\\"", "\"")
+                .replace("\\\\", "\\");
     }
 
     /** Is {@code [from, to)} a parameter list — {@code Type name, Type name} — rather than arguments? */
     private static boolean isParameterList(Source source, int from, int to) {
         for (int[] span : split(source, from, to, ',')) {
-            if (!PARAMETRE.matcher(source.text.substring(span[0], span[1]).trim()).matches()) {
+            if (!PARAMETRE
+                    .matcher(source.text.substring(span[0], span[1]).trim())
+                    .matches()) {
                 return false;
             }
         }
@@ -596,7 +644,10 @@ class IsolationEditionStructurelleTest {
         List<int[]> parametres = split(source, hote.paramsFrom(), hote.paramsTo(), ',');
         int index = -1;
         for (int i = 0; i < parametres.size(); i++) {
-            if (source.text.substring(parametres.get(i)[0], parametres.get(i)[1]).trim().endsWith(" " + nom)) {
+            if (source.text
+                    .substring(parametres.get(i)[0], parametres.get(i)[1])
+                    .trim()
+                    .endsWith(" " + nom)) {
                 index = i;
             }
         }
@@ -604,24 +655,29 @@ class IsolationEditionStructurelleTest {
             return List.of();
         }
         List<Enonce> enonces = new ArrayList<>();
-        Matcher appel = Pattern.compile("\\b" + Pattern.quote(hote.name()) + "\\s*\\(").matcher(source.code);
+        Matcher appel =
+                Pattern.compile("\\b" + Pattern.quote(hote.name()) + "\\s*\\(").matcher(source.code);
         while (appel.find()) {
             if (appel.start() == hote.at()) {
                 continue;
             }
             int fin = source.closingParenthesis(appel.end());
-            if (source.text.substring(appel.end(), fin).isBlank()
-                    || isParameterList(source, appel.end(), fin)) {
+            if (source.text.substring(appel.end(), fin).isBlank() || isParameterList(source, appel.end(), fin)) {
                 continue;
             }
             List<int[]> arguments = split(source, appel.end(), fin, ',');
             if (arguments.size() <= index) {
                 continue;
             }
-            Resolution argument = resolve(source, arguments.get(index)[0], arguments.get(index)[1], new HashSet<>());
+            Resolution argument =
+                    resolve(source, arguments.get(index)[0], arguments.get(index)[1], new HashSet<>());
             MethodSpan appelant = source.enclosing(appel.start());
-            enonces.add(new Enonce(source.name, source.line(appel.start()),
-                    appelant == null ? hote.name() : appelant.name(), argument.sql(), argument.irresoluble()));
+            enonces.add(new Enonce(
+                    source.name,
+                    source.line(appel.start()),
+                    appelant == null ? hote.name() : appelant.name(),
+                    argument.sql(),
+                    argument.irresoluble()));
         }
         return enonces;
     }
@@ -630,7 +686,8 @@ class IsolationEditionStructurelleTest {
     private static List<Enonce> enonces(Path racine) throws IOException {
         List<Enonce> enonces = new ArrayList<>();
         try (Stream<Path> files = Files.walk(racine)) {
-            for (Path file : files.filter(f -> f.toString().endsWith(".java")).sorted().toList()) {
+            for (Path file :
+                    files.filter(f -> f.toString().endsWith(".java")).sorted().toList()) {
                 enonces.addAll(enonces(new Source(file.getFileName().toString(), Files.readString(file))));
             }
         }
@@ -658,8 +715,12 @@ class IsolationEditionStructurelleTest {
                     continue;
                 }
                 MethodSpan method = source.enclosing(appel.start());
-                enonces.add(new Enonce(source.name, source.line(appel.start()),
-                        method == null ? "?" : method.name(), resolution.sql(), resolution.irresoluble()));
+                enonces.add(new Enonce(
+                        source.name,
+                        source.line(appel.start()),
+                        method == null ? "?" : method.name(),
+                        resolution.sql(),
+                        resolution.irresoluble()));
             }
         }
         return enonces;
@@ -799,8 +860,8 @@ class IsolationEditionStructurelleTest {
      */
     @Test
     void uneIndirectionAssumeeNeCouvrePasUnAutreFragment() {
-        Enonce autreFragment = new Enonce("JdbcEditionScope.java", 155, "delete",
-                "DELETE FROM stand WHERE id = ?", List.of("suffixe"));
+        Enonce autreFragment = new Enonce(
+                "JdbcEditionScope.java", 155, "delete", "DELETE FROM stand WHERE id = ?", List.of("suffixe"));
         Enonce celuiQuiEstAssume = new Enonce("JdbcEditionScope.java", 155, "delete", "", List.of("sql"));
 
         assertThat(grief(autreFragment))
@@ -839,7 +900,8 @@ class IsolationEditionStructurelleTest {
             Matcher table = TABLE.matcher(enonce.sql());
             while (table.find()) {
                 String nom = table.group(1).toLowerCase(Locale.ROOT);
-                if (!MOTS_CLES_SQL.contains(nom) && !TABLES_METIER.contains(nom)
+                if (!MOTS_CLES_SQL.contains(nom)
+                        && !TABLES_METIER.contains(nom)
                         && !TABLES_HORS_EDITION.contains(nom)) {
                     inconnues.add(nom);
                 }
@@ -925,8 +987,7 @@ class IsolationEditionStructurelleTest {
                         scope.prepareScoped(connection, SELECT_SQL + " ORDER BY nom");
                     }
                 }
-                """))
-                .isEmpty();
+                """)).isEmpty();
     }
 
     /**
@@ -971,7 +1032,6 @@ class IsolationEditionStructurelleTest {
                 .as("SQL repris d'une constante d'une autre classe")
                 .isNotEmpty();
     }
-
 
     /**
      * A literal followed by a method call is <b>not</b> a literal.
@@ -1164,14 +1224,14 @@ class IsolationEditionStructurelleTest {
         List<String> autrementNommes = new ArrayList<>();
         int trouves = 0;
         try (Stream<Path> files = Files.walk(SOURCES)) {
-            for (Path file : files.filter(f -> f.toString().endsWith(".java")).sorted().toList()) {
+            for (Path file :
+                    files.filter(f -> f.toString().endsWith(".java")).sorted().toList()) {
                 Source source = new Source(file.getFileName().toString(), Files.readString(file));
                 Matcher champ = injection.matcher(source.code);
                 while (champ.find()) {
                     trouves++;
                     if (!"scope".equals(champ.group(1))) {
-                        autrementNommes.add(source.name + ":" + source.line(champ.start())
-                                + " " + champ.group(1));
+                        autrementNommes.add(source.name + ":" + source.line(champ.start()) + " " + champ.group(1));
                     }
                 }
             }

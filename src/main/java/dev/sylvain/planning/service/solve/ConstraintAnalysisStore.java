@@ -1,15 +1,13 @@
 package dev.sylvain.planning.service.solve;
 
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.edition.EditionRepository;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.edition.EditionRepository;
-import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
-import dev.sylvain.planning.service.EditionContext;
 
 /**
  * Keeps the latest score analysis — written by every solve, and re-derivable
@@ -23,8 +21,7 @@ import dev.sylvain.planning.service.EditionContext;
 @ApplicationScoped
 public class ConstraintAnalysisStore {
 
-    public record StoredAnalysis(Instant analysedAt, PlanningDiagnostic diagnostic) {
-    }
+    public record StoredAnalysis(Instant analysedAt, PlanningDiagnostic diagnostic) {}
 
     @Inject
     EditionContext editionContext;

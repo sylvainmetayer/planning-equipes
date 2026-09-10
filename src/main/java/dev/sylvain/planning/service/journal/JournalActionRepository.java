@@ -1,5 +1,8 @@
 package dev.sylvain.planning.service.journal;
 
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -7,10 +10,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import dev.sylvain.planning.service.JdbcEditionScope;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 /**
  * The {@code journal_action} table: append-only, scoped to its edition, read
@@ -37,8 +36,7 @@ public class JournalActionRepository {
      */
     public void append(EntreeJournal entree) {
         scope.write("Failed to record an action in the history", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO journal_action (edition_id, survenu_le, acteur, acteur_id, action,
                     entite, entite_id, champs, resultat, statut)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""")) {
@@ -64,8 +62,7 @@ public class JournalActionRepository {
     public List<EntreeJournal> list(int limite) {
         int plafond = Math.clamp(limite, 1, LIMITE_MAX);
         return scope.read("Failed to read the history", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
                     champs, resultat, statut
                     FROM journal_action
@@ -105,8 +102,8 @@ public class JournalActionRepository {
      */
     public int purgeBefore(Instant cutoff) {
         return scope.writeAndReturn("Failed to purge the history", connection -> {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "DELETE FROM journal_action WHERE survenu_le < ?")) {
+            try (PreparedStatement ps =
+                    connection.prepareStatement("DELETE FROM journal_action WHERE survenu_le < ?")) {
                 ps.setTimestamp(1, Timestamp.from(cutoff));
                 return ps.executeUpdate();
             }

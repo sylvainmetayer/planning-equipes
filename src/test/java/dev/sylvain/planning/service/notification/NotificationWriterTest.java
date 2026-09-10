@@ -2,17 +2,15 @@ package dev.sylvain.planning.service.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.domain.DemandeEchange;
+import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.MailTemplates;
+import dev.sylvain.planning.service.publication.AdminAddress;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.service.publication.AdminAddress;
-import dev.sylvain.planning.service.espace.ApplicationLinks;
-import dev.sylvain.planning.service.ProductName;
-import dev.sylvain.planning.service.mail.MailTemplates;
 
 /**
  * The writing of the notifications (issue #165), with no {@code Mailer}, no
@@ -61,24 +59,25 @@ class NotificationWriterTest {
 
     @Test
     void sansAdresseAdminAucuneNotificationDeSoumission() {
-        for (String address : new String[] { null, "  " }) {
+        for (String address : new String[] {null, "  "}) {
             redacteur.adminAddress = adminAddress(address);
 
-            assertThat(redacteur.rediger(new Notification.DemandesSoumises(
-                    "Alice Dupont", List.of(demande(true))))).isEmpty();
+            assertThat(redacteur.rediger(new Notification.DemandesSoumises("Alice Dupont", List.of(demande(true)))))
+                    .isEmpty();
         }
     }
 
     @Test
     void unLotVideNEcritRien() {
-        assertThat(redacteur.rediger(new Notification.DemandesSoumises("Alice Dupont", List.of()))).isEmpty();
+        assertThat(redacteur.rediger(new Notification.DemandesSoumises("Alice Dupont", List.of())))
+                .isEmpty();
     }
 
     /** One batch = one single mail, with the count of requests and the admin link. */
     @Test
     void unLotDeDemandesDonneUnSeulCourrierAvecLeLienAdmin() {
-        MailDraft courrier = rediger(new Notification.DemandesSoumises("Alice Dupont",
-                List.of(demande(true), demande(true), demande(false))));
+        MailDraft courrier = rediger(new Notification.DemandesSoumises(
+                "Alice Dupont", List.of(demande(true), demande(true), demande(false))));
 
         assertThat(courrier.destinataire()).isEqualTo("admin@example.org");
         assertThat(courrier.sujet()).contains("3 nouvelles demandes").contains("Alice Dupont");
@@ -109,8 +108,8 @@ class NotificationWriterTest {
     /** An unfilled prevalidation is not a failed prevalidation. */
     @Test
     void unePrevalidationInconnueNAlertePas() {
-        MailDraft courrier = rediger(new Notification.DemandesSoumises(
-                "Alice Dupont", List.of(demande(null), demande(true))));
+        MailDraft courrier =
+                rediger(new Notification.DemandesSoumises("Alice Dupont", List.of(demande(null), demande(true))));
 
         assertThat(courrier.corps()).doesNotContain("Attention");
     }
@@ -119,20 +118,17 @@ class NotificationWriterTest {
 
     @Test
     void leCollegueCibleEstRenvoyeVersSonEspace() {
-        MailDraft courrier = rediger(new Notification.TargetSolicited(
-                "bob@example.org", "Alice Dupont", 2));
+        MailDraft courrier = rediger(new Notification.TargetSolicited("bob@example.org", "Alice Dupont", 2));
 
         assertThat(courrier.destinataire()).isEqualTo("bob@example.org");
         assertThat(courrier.sujet()).contains("Alice Dupont").contains("des échanges de créneaux");
-        assertThat(courrier.corps())
-                .contains("2 échanges de créneaux")
-                .contains("votre accord est nécessaire");
+        assertThat(courrier.corps()).contains("2 échanges de créneaux").contains("votre accord est nécessaire");
     }
 
     @Test
     void unDeclinDitAuDemandeurQuIlPeutProposerAilleurs() {
-        MailDraft courrier = rediger(new Notification.DemandeDeclinee(
-                "alice@example.org", "Bob Martin", "samedi 10h-12h"));
+        MailDraft courrier =
+                rediger(new Notification.DemandeDeclinee("alice@example.org", "Bob Martin", "samedi 10h-12h"));
 
         assertThat(courrier.corps())
                 .contains("Bob Martin a décliné")
@@ -144,8 +140,8 @@ class NotificationWriterTest {
 
     @Test
     void laFinDeResolutionAnnonceLEditionLeScoreEtLaFaisabilite() {
-        MailDraft courrier = rediger(new Notification.ResolutionTerminee(
-                "Année 2026", "0hard/-3medium/-120soft", true));
+        MailDraft courrier =
+                rediger(new Notification.ResolutionTerminee("Année 2026", "0hard/-3medium/-120soft", true));
 
         assertThat(courrier.destinataire()).isEqualTo("admin@example.org");
         // The state fits in the subject: that is what is read on a phone without
@@ -160,8 +156,7 @@ class NotificationWriterTest {
 
     @Test
     void unPlanningInfaisableLeDitDesLObjetDuMessage() {
-        MailDraft courrier = rediger(new Notification.ResolutionTerminee(
-                "Canicule", "-4hard/0medium/0soft", false));
+        MailDraft courrier = rediger(new Notification.ResolutionTerminee("Canicule", "-4hard/0medium/0soft", false));
 
         assertThat(courrier.sujet()).contains("NON faisable");
         assertThat(courrier.corps()).contains("n'est pas utilisable en l'état");
@@ -169,11 +164,12 @@ class NotificationWriterTest {
 
     @Test
     void sansAdresseAdminLaFinDeResolutionNEcritRien() {
-        for (String address : new String[] { null, "   " }) {
+        for (String address : new String[] {null, "   "}) {
             redacteur.adminAddress = adminAddress(address);
 
-            assertThat(redacteur.rediger(new Notification.ResolutionTerminee(
-                    "Année 2026", "0hard/0medium/0soft", true))).isEmpty();
+            assertThat(redacteur.rediger(
+                            new Notification.ResolutionTerminee("Année 2026", "0hard/0medium/0soft", true)))
+                    .isEmpty();
         }
     }
 
@@ -214,6 +210,7 @@ class NotificationWriterTest {
     void sansAdresseAdminAucuneNotificationDeDeclaration() {
         redacteur.adminAddress = adminAddress(null);
 
-        assertThat(redacteur.rediger(new Notification.DeclarationSoumise("Alice Dupont", 1, 0))).isEmpty();
+        assertThat(redacteur.rediger(new Notification.DeclarationSoumise("Alice Dupont", 1, 0)))
+                .isEmpty();
     }
 }

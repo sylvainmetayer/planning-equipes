@@ -27,11 +27,12 @@ class CreneauAvailabilityResourceTest {
     void listeLesAnimateursNonAffectesEtLaRaisonDeLeurAbsence() throws InterruptedException {
         long creneauId = persistedPlan();
 
-        JsonPath banc = given()
-                .when().get("/api/banc-de-touche/" + creneauId)
+        JsonPath banc = given().when()
+                .get("/api/banc-de-touche/" + creneauId)
                 .then()
                 .statusCode(200)
-                .extract().jsonPath();
+                .extract()
+                .jsonPath();
 
         assertThat(banc.getLong("creneauId")).isEqualTo(creneauId);
         assertThat(banc.getString("posteCibleId")).isNotBlank();
@@ -46,16 +47,18 @@ class CreneauAvailabilityResourceTest {
     void chaqueMotifPorteLeNomEtLeLibelleDuneContrainteCataloguee() throws InterruptedException {
         long creneauId = persistedPlan();
 
-        JsonPath banc = given()
-                .when().get("/api/banc-de-touche/" + creneauId)
+        JsonPath banc = given().when()
+                .get("/api/banc-de-touche/" + creneauId)
                 .then()
                 .statusCode(200)
-                .extract().jsonPath();
-        JsonPath catalogue = given()
-                .when().get("/api/constraints")
+                .extract()
+                .jsonPath();
+        JsonPath catalogue = given().when()
+                .get("/api/constraints")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath();
+                .extract()
+                .jsonPath();
 
         for (Object motif : banc.getList("animateurs.motifs.flatten()")) {
             @SuppressWarnings("unchecked")
@@ -70,11 +73,19 @@ class CreneauAvailabilityResourceTest {
     @Test
     void seulUnCreneauInexistantEstUn404() throws InterruptedException {
         long creneauId = persistedPlan();
-        String posteCible = given().when().get("/api/banc-de-touche/" + creneauId)
-                .then().statusCode(200).extract().jsonPath().getString("posteCibleId");
+        String posteCible = given().when()
+                .get("/api/banc-de-touche/" + creneauId)
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getString("posteCibleId");
 
         given().when().get("/api/banc-de-touche/999999").then().statusCode(404);
-        given().when().get("/api/banc-de-touche/999999?posteId=" + posteCible).then().statusCode(404);
+        given().when()
+                .get("/api/banc-de-touche/999999?posteId=" + posteCible)
+                .then()
+                .statusCode(404);
     }
 
     /**
@@ -89,10 +100,12 @@ class CreneauAvailabilityResourceTest {
         long creneauId = persistedPlan();
         long creneauSansSiege = creneauWithoutSeat(creneauId);
 
-        JsonPath banc = given()
-                .when().get("/api/banc-de-touche/" + creneauSansSiege)
-                .then().statusCode(200)
-                .extract().jsonPath();
+        JsonPath banc = given().when()
+                .get("/api/banc-de-touche/" + creneauSansSiege)
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
 
         assertThat(banc.getString("statut")).isEqualTo("NO_SEAT");
         assertThat(banc.getString("posteCibleId")).isNull();
@@ -109,8 +122,10 @@ class CreneauAvailabilityResourceTest {
     void unStandSansSiegeSurLeCreneauRepond200AvecSonStatut() throws InterruptedException {
         long creneauId = persistedPlan();
 
-        given().when().get("/api/banc-de-touche/" + creneauId + "?standId=STAND-INEXISTANT")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/banc-de-touche/" + creneauId + "?standId=STAND-INEXISTANT")
+                .then()
+                .statusCode(200)
                 .body("statut", org.hamcrest.Matchers.equalTo("NO_SEAT"));
     }
 
@@ -122,15 +137,24 @@ class CreneauAvailabilityResourceTest {
     @Test
     void sansAucunPlanEnregistreLEcranRecoitUneReponseExploitable() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
-        Long creneauId = given().when().get("/api/creneaux")
-                .then().statusCode(200)
-                .extract().jsonPath().getLong("[0].id");
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
+        Long creneauId = given().when()
+                .get("/api/creneaux")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getLong("[0].id");
 
-        JsonPath banc = given()
-                .when().get("/api/banc-de-touche/" + creneauId)
-                .then().statusCode(200)
-                .extract().jsonPath();
+        JsonPath banc = given().when()
+                .get("/api/banc-de-touche/" + creneauId)
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
 
         assertThat(banc.getString("statut")).isEqualTo("NO_PLAN");
         assertThat(banc.getList("animateurs")).isEmpty();
@@ -145,10 +169,12 @@ class CreneauAvailabilityResourceTest {
     void sansCreneauLeServeurEnChoisitUnQuiEstPourvu() throws InterruptedException {
         long creneauId = persistedPlan();
 
-        JsonPath banc = given()
-                .when().get("/api/banc-de-touche")
-                .then().statusCode(200)
-                .extract().jsonPath();
+        JsonPath banc = given().when()
+                .get("/api/banc-de-touche")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
 
         assertThat(banc.getString("statut")).isEqualTo("EVALUATED");
         assertThat(banc.getLong("creneauId")).isNotNull();
@@ -163,8 +189,7 @@ class CreneauAvailabilityResourceTest {
      * after the last solve.
      */
     private long creneauWithoutSeat(long creneauExistant) {
-        long ajoute = given()
-                .contentType("application/json")
+        long ajoute = given().contentType("application/json")
                 .body("""
                         {
                           "date":"2030-01-05",
@@ -172,9 +197,13 @@ class CreneauAvailabilityResourceTest {
                           "heureFin":"04:00:00"
                         }
                         """)
-                .when().post("/api/creneaux")
-                .then().statusCode(200)
-                .extract().jsonPath().getLong("creneau.id");
+                .when()
+                .post("/api/creneaux")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getLong("creneau.id");
         assertThat(ajoute).isNotEqualTo(creneauExistant);
         return ajoute;
     }
@@ -199,46 +228,71 @@ class CreneauAvailabilityResourceTest {
     void leBancEstEvalueSousLesContraintesActivesDeLEdition() throws InterruptedException {
         long creneauId = persistedPlan();
         String regle = premierMotifDur(creneauId);
-        assertThat(regle).as("le plan doit produire au moins un motif dur à éteindre").isNotBlank();
+        assertThat(regle)
+                .as("le plan doit produire au moins un motif dur à éteindre")
+                .isNotBlank();
 
         try {
-            given().contentType("application/json").body("{\"actif\":false}")
-                    .when().put("/api/constraints/" + regle)
-                    .then().statusCode(200);
+            given().contentType("application/json")
+                    .body("{\"actif\":false}")
+                    .when()
+                    .put("/api/constraints/" + regle)
+                    .then()
+                    .statusCode(200);
 
             assertThat(motifs(creneauId))
                     .as("une contrainte éteinte ne doit plus motiver une indisponibilité")
                     .doesNotContain(regle);
         } finally {
-            given().contentType("application/json").body("{\"actif\":true}")
-                    .when().put("/api/constraints/" + regle).then().statusCode(200);
+            given().contentType("application/json")
+                    .body("{\"actif\":true}")
+                    .when()
+                    .put("/api/constraints/" + regle)
+                    .then()
+                    .statusCode(200);
         }
     }
 
     /** The constraint names the bench cites for this créneau. */
     private static java.util.List<String> motifs(long creneauId) {
-        return given().when().get("/api/banc-de-touche/" + creneauId)
-                .then().statusCode(200)
-                .extract().jsonPath().getList("animateurs.motifs.flatten().contrainte", String.class);
+        return given().when()
+                .get("/api/banc-de-touche/" + creneauId)
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("animateurs.motifs.flatten().contrainte", String.class);
     }
 
     /** The first reason the bench cites, if it cites any. */
     private static String premierMotifDur(long creneauId) {
-        return motifs(creneauId).stream().filter(nom -> nom != null && !nom.isBlank()).findFirst().orElse("");
+        return motifs(creneauId).stream()
+                .filter(nom -> nom != null && !nom.isBlank())
+                .findFirst()
+                .orElse("");
     }
 
     private long persistedPlan() throws InterruptedException {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
         waitForIdleSolver();
-        String jobId = given()
-                .when().post("/api/solve/async/reference-data?seconds=1")
-                .then().statusCode(202)
-                .extract().path("id");
+        String jobId = given().when()
+                .post("/api/solve/async/reference-data?seconds=1")
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
         assertThat(pollUntilFinished(jobId).getString("status")).isEqualTo("COMPLETED");
-        Long creneauId = given().when().get("/api/creneaux")
-                .then().statusCode(200)
-                .extract().jsonPath().getLong("[0].id");
+        Long creneauId = given().when()
+                .get("/api/creneaux")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getLong("[0].id");
         assertThat(creneauId).isNotNull();
         return creneauId;
     }
@@ -255,9 +309,12 @@ class CreneauAvailabilityResourceTest {
 
     private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
         for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when().get("/api/jobs/" + jobId)
-                    .then().statusCode(200)
-                    .extract().jsonPath();
+            JsonPath job = given().when()
+                    .get("/api/jobs/" + jobId)
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .jsonPath();
             String status = job.getString("status");
             if (!"RUNNING".equals(status) && !"QUEUED".equals(status)) {
                 return job;

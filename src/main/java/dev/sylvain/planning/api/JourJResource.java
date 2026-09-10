@@ -1,11 +1,5 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
-
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.JourJService;
 import dev.sylvain.planning.service.espace.JourJService.AbsenceMarquee;
@@ -21,6 +15,10 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * The event-day screen (issue #297): mark somebody absent, see who can take
@@ -64,11 +62,11 @@ public class JourJResource {
      */
     @POST
     @Path("/absences")
-    public AbsenceMarquee recordAbsence(DemandeAbsence demande,
-            @QueryParam("date") String date, @QueryParam("maintenant") String maintenant) {
+    public AbsenceMarquee recordAbsence(
+            DemandeAbsence demande, @QueryParam("date") String date, @QueryParam("maintenant") String maintenant) {
         String animateurId = demande == null ? null : demande.animateurId();
-        return jourJService.recordAbsence(animateurId, demande == null ? null : demande.raison(),
-                jour(date), moment(maintenant));
+        return jourJService.recordAbsence(
+                animateurId, demande == null ? null : demande.raison(), jour(date), moment(maintenant));
     }
 
     /**
@@ -78,8 +76,10 @@ public class JourJResource {
      */
     @DELETE
     @Path("/absences/{animateurId}")
-    public AnnulationAbsence cancelAbsence(@PathParam("animateurId") String animateurId,
-            @QueryParam("date") String date, @QueryParam("creneauId") Long creneauId) {
+    public AnnulationAbsence cancelAbsence(
+            @PathParam("animateurId") String animateurId,
+            @QueryParam("date") String date,
+            @QueryParam("creneauId") Long creneauId) {
         return new AnnulationAbsence(jourJService.cancelAbsence(animateurId, jour(date), creneauId));
     }
 
@@ -92,8 +92,8 @@ public class JourJResource {
     @POST
     @Path("/postes/{posteId}/suggestions")
     @Consumes(MediaType.WILDCARD)
-    public SuggestionsReparation suggestions(@PathParam("posteId") String posteId,
-            @QueryParam("plafond") Integer plafond) {
+    public SuggestionsReparation suggestions(
+            @PathParam("posteId") String posteId, @QueryParam("plafond") Integer plafond) {
         return jourJService.suggestions(posteId, plafond);
     }
 
@@ -120,17 +120,14 @@ public class JourJResource {
         try {
             return LocalDateTime.parse(maintenant);
         } catch (DateTimeParseException e) {
-            throw new BusinessError.Invalid("Moment illisible : « " + maintenant
-                    + " » (attendu AAAA-MM-JJTHH:MM).");
+            throw new BusinessError.Invalid("Moment illisible : « " + maintenant + " » (attendu AAAA-MM-JJTHH:MM).");
         }
     }
 
     /** Body of « marquer absent ». The reason is optional and lands in the exception's trace. */
-    public record DemandeAbsence(String animateurId, String raison) {
-    }
+    public record DemandeAbsence(String animateurId, String raison) {}
 
     /** How many exceptions a cancellation removed. */
     @Schema(requiredProperties = {"supprimees"})
-    public record AnnulationAbsence(int supprimees) {
-    }
+    public record AnnulationAbsence(int supprimees) {}
 }

@@ -27,11 +27,10 @@ import java.util.regex.Pattern;
 final class AnonymisationViolations {
 
     /** Two or more words (letters, accents, hyphens, apostrophes) directly followed by a parenthesised, space-free id. */
-    private static final Pattern LIBELLE_ANIMATEUR = Pattern.compile(
-            "[\\p{L}][\\p{L}\\p{M}'’\\-]*(?:\\s+[\\p{L}][\\p{L}\\p{M}'’\\-]*)+\\s*\\(([^()\\s]+)\\)");
+    private static final Pattern LIBELLE_ANIMATEUR =
+            Pattern.compile("[\\p{L}][\\p{L}\\p{M}'’\\-]*(?:\\s+[\\p{L}][\\p{L}\\p{M}'’\\-]*)+\\s*\\(([^()\\s]+)\\)");
 
-    private AnonymisationViolations() {
-    }
+    private AnonymisationViolations() {}
 
     static List<String> anonymiser(List<String> violations) {
         if (violations == null) {
@@ -44,7 +43,8 @@ final class AnonymisationViolations {
         if (violation == null) {
             return null;
         }
-        return LIBELLE_ANIMATEUR.matcher(violation)
+        return LIBELLE_ANIMATEUR
+                .matcher(violation)
                 .replaceAll(match -> "animateur " + Matcher.quoteReplacement(match.group(1)));
     }
 }

@@ -1,11 +1,10 @@
 package dev.sylvain.planning.service.diagnostic;
 
+import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
+import ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
-import ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification;
 
 /**
  * The justification facts of one constraint match, in the order the constraint

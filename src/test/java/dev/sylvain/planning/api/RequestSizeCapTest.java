@@ -3,10 +3,6 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -14,6 +10,8 @@ import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * The body size ceiling, checked where it matters: importing an SQL dump is
@@ -34,9 +32,9 @@ class RequestSizeCapTest {
 
     /** Same encoding as {@code DatabaseResourceTest}: the browser sends {@code application/sql}. */
     private static RequestSpecification sqlStatement(String script) {
-        return given()
-                .config(RestAssured.config().encoderConfig(
-                        EncoderConfig.encoderConfig().encodeContentTypeAs("application/sql", ContentType.TEXT)))
+        return given().config(RestAssured.config()
+                        .encoderConfig(
+                                EncoderConfig.encoderConfig().encodeContentTypeAs("application/sql", ContentType.TEXT)))
                 .contentType("application/sql")
                 .body(script);
     }
@@ -44,7 +42,8 @@ class RequestSizeCapTest {
     @Test
     void unCorpsAuDelaDuPlafondEstCoupeAvantDAtteindreLApplication() {
         sqlStatement("-- ".repeat(2_000))
-                .when().post("/api/database/import")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(413);
     }
@@ -57,7 +56,8 @@ class RequestSizeCapTest {
     @Test
     void unCorpsSousLePlafondAtteintLApplication() {
         sqlStatement("-- rien à rejouer")
-                .when().post("/api/database/import")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("does not contain any statement"));

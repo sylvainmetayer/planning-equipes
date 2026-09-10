@@ -3,19 +3,17 @@ package dev.sylvain.planning.service.notification;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
+import dev.sylvain.planning.domain.DemandeEchange;
+import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.MailTemplates;
+import dev.sylvain.planning.service.publication.AdminAddress;
+import io.quarkus.mailer.Mail;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.service.publication.AdminAddress;
-import dev.sylvain.planning.service.espace.ApplicationLinks;
-import dev.sylvain.planning.service.ProductName;
-import dev.sylvain.planning.service.mail.MailTemplates;
-import io.quarkus.mailer.Mail;
 
 /**
  * The delivery policy of the notifications, now written in a single place. It

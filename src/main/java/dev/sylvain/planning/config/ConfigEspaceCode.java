@@ -1,8 +1,7 @@
 package dev.sylvain.planning.config;
 
-import java.time.Duration;
-
 import io.smallrye.config.ConfigMapping;
+import java.time.Duration;
 
 /**
  * Rate limit on the espace animateur's access codes: the codes travel by

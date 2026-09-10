@@ -1,23 +1,21 @@
 package dev.sylvain.planning.service.solve;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.time.LocalDate;
-import java.time.temporal.IsoFields;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.referentiel.JoursEvenement;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.referentiel.JoursEvenement;
+import java.time.LocalDate;
+import java.time.temporal.IsoFields;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Real scale of the problem the next solve will build — the figures of the
@@ -55,9 +53,16 @@ public class ProblemScaleService {
      * @param hoursToFill          sum of the effective duration of every seat
      * @param hoursAvailable       legal ceiling of what the animateurs may work
      */
-    @Schema(requiredProperties = {"animateurCount", "contrainteAdHocCount", "hoursAvailable", "hoursToFill", "posteCount"})
-    public record ProblemScale(int animateurCount, int posteCount, int contrainteAdHocCount,
-            double hoursToFill, double hoursAvailable) {
+    @Schema(
+            requiredProperties = {
+                "animateurCount",
+                "contrainteAdHocCount",
+                "hoursAvailable",
+                "hoursToFill",
+                "posteCount"
+            })
+    public record ProblemScale(
+            int animateurCount, int posteCount, int contrainteAdHocCount, double hoursToFill, double hoursAvailable) {
 
         static final ProblemScale VIDE = new ProblemScale(0, 0, 0, 0, 0);
 
@@ -72,7 +77,9 @@ public class ProblemScaleService {
                     .map(PosteAffectation::getCreneau)
                     .filter(java.util.Objects::nonNull)
                     .toList());
-            return new ProblemScale(evenement.getAnimateurs().size(), evenement.getPostes().size(),
+            return new ProblemScale(
+                    evenement.getAnimateurs().size(),
+                    evenement.getPostes().size(),
                     evenement.getContraintesAdHoc().size(),
                     hoursToFill(evenement.getPostes()),
                     hoursAvailable(evenement.getAnimateurs(), jours, parametresLegaux(evenement)));
@@ -84,7 +91,10 @@ public class ProblemScaleService {
         }
 
         static double hoursToFill(List<PosteAffectation> postes) {
-            return postes.stream().mapToLong(PosteAffectation::getDureeEffectiveMinutes).sum() / 60.0;
+            return postes.stream()
+                            .mapToLong(PosteAffectation::getDureeEffectiveMinutes)
+                            .sum()
+                    / 60.0;
         }
 
         static double hoursAvailable(List<Animateur> animateurs, JoursEvenement jours, ParametresLegaux legaux) {
@@ -104,13 +114,16 @@ public class ProblemScaleService {
             Map<String, List<LocalDate>> parSemaine = new LinkedHashMap<>();
             for (LocalDate jour : jours.jours()) {
                 if (!animateur.isIndisponibleOn(jour)) {
-                    parSemaine.computeIfAbsent(semaineIso(jour), semaine -> new ArrayList<>()).add(jour);
+                    parSemaine
+                            .computeIfAbsent(semaineIso(jour), semaine -> new ArrayList<>())
+                            .add(jour);
                 }
             }
             long minutes = 0;
             for (List<LocalDate> joursSemaine : parSemaine.values()) {
                 long quotidien = 0;
-                int travaillables = Math.min(joursSemaine.size(), PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE);
+                int travaillables =
+                        Math.min(joursSemaine.size(), PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE);
                 for (LocalDate jour : joursSemaine.subList(0, travaillables)) {
                     quotidien += dailyCeilingMinutes(animateur, jour);
                 }

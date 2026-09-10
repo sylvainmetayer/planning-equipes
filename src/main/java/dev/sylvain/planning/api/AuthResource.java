@@ -1,7 +1,5 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -11,6 +9,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Session endpoints of the admin form login (issue #165). The login itself is
@@ -40,7 +39,8 @@ public class AuthResource {
     @Path("/me")
     public StatutSession me() {
         boolean authentifie = !identity.isAnonymous();
-        return new StatutSession(authentifie, authentifie ? identity.getPrincipal().getName() : null);
+        return new StatutSession(
+                authentifie, authentifie ? identity.getPrincipal().getName() : null);
     }
 
     /** Drops the session cookie. Idempotent: logging out twice is fine. */
@@ -57,6 +57,5 @@ public class AuthResource {
     }
 
     @Schema(requiredProperties = {"authentifie"})
-    public record StatutSession(boolean authentifie, String nom) {
-    }
+    public record StatutSession(boolean authentifie, String nom) {}
 }

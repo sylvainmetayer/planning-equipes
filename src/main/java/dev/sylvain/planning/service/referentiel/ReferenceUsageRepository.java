@@ -1,14 +1,13 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * Counts what references a referential entity, across the three tables that
@@ -58,16 +57,13 @@ public class ReferenceUsageRepository {
         Object[] values = ids.toArray();
         return scope.read(FAILURE, connection -> {
             Array bound = connection.createArrayOf("varchar", values);
-            try (PreparedStatement seats = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement seats = scope.prepareScoped(connection, """
                     SELECT COUNT(*) FROM poste_affectation
                     WHERE edition_id = ? AND animateur_id IS NOT NULL AND stand_id = ANY(?)""");
-                    PreparedStatement adHoc = scope.prepareScoped(connection,
-                            """
+                    PreparedStatement adHoc = scope.prepareScoped(connection, """
                             SELECT COUNT(*) FROM contrainte_ad_hoc
                             WHERE edition_id = ? AND stand_id = ANY(?)""");
-                    PreparedStatement locks = scope.prepareScoped(connection,
-                            """
+                    PreparedStatement locks = scope.prepareScoped(connection, """
                             SELECT COUNT(*) FROM verrouillage_planning
                             WHERE edition_id = ? AND stand_id = ANY(?)""")) {
                 return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound));
@@ -90,16 +86,13 @@ public class ReferenceUsageRepository {
         Object[] values = ids.toArray();
         return scope.read(FAILURE, connection -> {
             Array bound = connection.createArrayOf("varchar", values);
-            try (PreparedStatement seats = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement seats = scope.prepareScoped(connection, """
                     SELECT COUNT(*) FROM poste_affectation
                     WHERE edition_id = ? AND animateur_id = ANY(?)""");
-                    PreparedStatement adHoc = scope.prepareScoped(connection,
-                            """
+                    PreparedStatement adHoc = scope.prepareScoped(connection, """
                             SELECT COUNT(DISTINCT contrainte_id) FROM contrainte_animateur
                             WHERE edition_id = ? AND animateur_id = ANY(?)""");
-                    PreparedStatement locks = scope.prepareScoped(connection,
-                            """
+                    PreparedStatement locks = scope.prepareScoped(connection, """
                             SELECT COUNT(*) FROM verrouillage_planning
                             WHERE edition_id = ? AND animateur_id = ANY(?)""")) {
                 return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound));
@@ -117,16 +110,13 @@ public class ReferenceUsageRepository {
         Object[] values = ids.toArray();
         return scope.read(FAILURE, connection -> {
             Array bound = connection.createArrayOf("bigint", values);
-            try (PreparedStatement seats = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement seats = scope.prepareScoped(connection, """
                     SELECT COUNT(*) FROM poste_affectation
                     WHERE edition_id = ? AND animateur_id IS NOT NULL AND creneau_id = ANY(?)""");
-                    PreparedStatement adHoc = scope.prepareScoped(connection,
-                            """
+                    PreparedStatement adHoc = scope.prepareScoped(connection, """
                             SELECT COUNT(*) FROM contrainte_ad_hoc
                             WHERE edition_id = ? AND creneau_id = ANY(?)""");
-                    PreparedStatement locks = scope.prepareScoped(connection,
-                            """
+                    PreparedStatement locks = scope.prepareScoped(connection, """
                             SELECT COUNT(*) FROM verrouillage_planning
                             WHERE edition_id = ? AND creneau_id = ANY(?)""")) {
                 return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound));

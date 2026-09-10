@@ -17,10 +17,11 @@ import java.util.List;
  */
 final class WarningCodes {
 
-    private WarningCodes() {
-    }
+    private WarningCodes() {}
 
     static List<String> of(List<Avertissement> avertissements) {
-        return avertissements.stream().map(avertissement -> avertissement.type().name()).toList();
+        return avertissements.stream()
+                .map(avertissement -> avertissement.type().name())
+                .toList();
     }
 }

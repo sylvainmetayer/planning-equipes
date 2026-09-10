@@ -1,21 +1,19 @@
 package dev.sylvain.planning.service.analyse;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
+import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
-import jakarta.enterprise.context.ApplicationScoped;
-import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Plain-Java (no Timefold) capacity check meant for non-technical users: given
@@ -76,11 +74,11 @@ public class FeasibilityAnalyzer {
      * before ELEVE, then by decreasing shortfall, and finally by créneau id so
      * two runs on the same data return the same order.
      */
-    private static final Comparator<CauseInfaisabilite> ORDRE_CAUSES = Comparator
-            .<CauseInfaisabilite, SeveriteInfaisabilite>comparing(CauseInfaisabilite::severite)
-            .thenComparingInt(FeasibilityAnalyzer::rank)
-            .thenComparing(CauseInfaisabilite::manque, Comparator.reverseOrder())
-            .thenComparingLong(cause -> cause.creneauId() == null ? Long.MIN_VALUE : cause.creneauId());
+    private static final Comparator<CauseInfaisabilite> ORDRE_CAUSES =
+            Comparator.<CauseInfaisabilite, SeveriteInfaisabilite>comparing(CauseInfaisabilite::severite)
+                    .thenComparingInt(FeasibilityAnalyzer::rank)
+                    .thenComparing(CauseInfaisabilite::manque, Comparator.reverseOrder())
+                    .thenComparingLong(cause -> cause.creneauId() == null ? Long.MIN_VALUE : cause.creneauId());
 
     /**
      * Within one severity, a contradiction between two exceptions comes first:
@@ -102,13 +100,17 @@ public class FeasibilityAnalyzer {
         return analyze(animateurs, stands, creneaux, List.of());
     }
 
-    public FeasibilityReport analyze(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
+    public FeasibilityReport analyze(
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
             List<ContrainteAdHoc> contraintesAdHoc) {
         List<Animateur> animateursSurs = animateurs == null ? List.of() : animateurs;
         List<Stand> standsSurs = stands == null ? List.of() : stands;
         List<Creneau> creneauxSurs = creneaux == null ? List.of() : creneaux;
 
-        List<CauseInfaisabilite> causes = new ArrayList<>(creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs));
+        List<CauseInfaisabilite> causes =
+                new ArrayList<>(creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs));
         causes.addAll(contraintesContradictoires(contraintesAdHoc, creneauxSurs));
         causes.sort(ORDRE_CAUSES);
 
@@ -121,20 +123,22 @@ public class FeasibilityAnalyzer {
         boolean feasible = totalCauses == 0;
         List<CauseInfaisabilite> topCauses = List.copyOf(causes.subList(0, Math.min(MAX_CAUSES, totalCauses)));
 
-        return new FeasibilityReport(feasible, manqueAnimateurs, topCauses, totalCauses,
+        return new FeasibilityReport(
+                feasible,
+                manqueAnimateurs,
+                topCauses,
+                totalCauses,
                 buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
     }
 
-    private List<CauseInfaisabilite> creneauxSousEffectif(List<Animateur> animateurs, List<Stand> stands,
-            List<Creneau> creneaux) {
+    private List<CauseInfaisabilite> creneauxSousEffectif(
+            List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
         List<CauseInfaisabilite> causes = new ArrayList<>();
         for (Creneau creneau : creneaux) {
-            List<Stand> standsOuverts = stands.stream()
-                    .filter(stand -> creneau.isStandOpen(stand))
-                    .toList();
-            int demande = standsOuverts.stream()
-                    .mapToInt(creneau::siegesSimultanes)
-                    .sum();
+            List<Stand> standsOuverts =
+                    stands.stream().filter(stand -> creneau.isStandOpen(stand)).toList();
+            int demande =
+                    standsOuverts.stream().mapToInt(creneau::siegesSimultanes).sum();
             long capacite = animateurs.stream()
                     .filter(animateur -> !animateur.isIndisponibleOn(creneau.getDate()))
                     .count();
@@ -147,10 +151,15 @@ public class FeasibilityAnalyzer {
                     manque >= demande ? SeveriteInfaisabilite.CRITIQUE : SeveriteInfaisabilite.ELEVE,
                     "Le " + describeCreneau(creneau) + ", il manque " + manque + " " + motAnimateur(manque)
                             + " pour couvrir " + describeStands(standsOuverts) + ".",
-                    creneau.getId(), creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(),
+                    creneau.getId(),
+                    creneau.getDate(),
+                    creneau.getHeureDebut(),
+                    creneau.getHeureFin(),
                     standsOuverts.stream().map(Stand::getId).toList(),
                     List.of(),
-                    demande, (int) capacite, manque));
+                    demande,
+                    (int) capacite,
+                    manque));
         }
         return causes;
     }
@@ -161,21 +170,28 @@ public class FeasibilityAnalyzer {
      * mitigate — a contradiction guarantees a negative hard score, whatever
      * time budget it is given.
      */
-    private List<CauseInfaisabilite> contraintesContradictoires(List<ContrainteAdHoc> contraintes,
-            List<Creneau> creneaux) {
+    private List<CauseInfaisabilite> contraintesContradictoires(
+            List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
         List<CauseInfaisabilite> causes = new ArrayList<>();
         for (Contradiction contradiction : ContrainteAdHocContradictions.detectAll(contraintes, creneaux)) {
             causes.add(new CauseInfaisabilite(
                     TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES,
                     SeveriteInfaisabilite.CRITIQUE,
                     contradiction.message(),
-                    null, null, null, null, List.of(), contradiction.contrainteIds(), 0, 0, 0));
+                    null,
+                    null,
+                    null,
+                    null,
+                    List.of(),
+                    contradiction.contrainteIds(),
+                    0,
+                    0,
+                    0));
         }
         return causes;
     }
 
-    private String buildMessage(boolean feasible, int manque, int totalCauses,
-            List<CauseInfaisabilite> topCauses) {
+    private String buildMessage(boolean feasible, int manque, int totalCauses, List<CauseInfaisabilite> topCauses) {
         if (feasible) {
             return "Le planning est réalisable : il y a assez d'animateurs disponibles pour couvrir chaque créneau.";
         }
@@ -183,8 +199,8 @@ public class FeasibilityAnalyzer {
                 ? totalCauses + " causes bloquantes ont été détectées"
                 : "1 cause bloquante a été détectée";
         if (manque <= 0) {
-            return "Ce planning n'est pas réalisable avec les données actuelles : " + causesPhrase
-                    + ". Par exemple : " + topCauses.getFirst().message();
+            return "Ce planning n'est pas réalisable avec les données actuelles : " + causesPhrase + ". Par exemple : "
+                    + topCauses.getFirst().message();
         }
         return "Ce planning n'est pas réalisable avec les animateurs actuels : il manque au moins " + manque + " "
                 + motAnimateur(manque) + " sur un créneau, et " + causesPhrase + ".";
@@ -264,8 +280,7 @@ public class FeasibilityAnalyzer {
             List<String> contrainteIds,
             int demande,
             int capacite,
-            int manque) {
-    }
+            int manque) {}
 
     /**
      * @param manqueAnimateurs worst single-créneau shortfall, {@code 0} when no
@@ -276,10 +291,5 @@ public class FeasibilityAnalyzer {
      */
     @Schema(requiredProperties = {"feasible", "manqueAnimateurs", "totalCauses"})
     public record FeasibilityReport(
-            boolean feasible,
-            int manqueAnimateurs,
-            List<CauseInfaisabilite> causes,
-            int totalCauses,
-            String message) {
-    }
+            boolean feasible, int manqueAnimateurs, List<CauseInfaisabilite> causes, int totalCauses, String message) {}
 }

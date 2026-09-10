@@ -1,5 +1,15 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,19 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * The one write that spans every referential at once: replacing the whole
@@ -79,9 +77,8 @@ public class ReferenceDataImportRepository {
             }
         }
         List<Animateur> animateurs = planning.getAnimateurs() != null ? planning.getAnimateurs() : List.of();
-        List<ContrainteAdHoc> contraintes = planning.getContraintesAdHoc() != null
-                ? planning.getContraintesAdHoc()
-                : List.of();
+        List<ContrainteAdHoc> contraintes =
+                planning.getContraintesAdHoc() != null ? planning.getContraintesAdHoc() : List.of();
 
         scope.write("Failed to import reference data from planning", connection -> {
             // verrouillage_planning goes with the assignments it freezes: the
@@ -92,16 +89,19 @@ public class ReferenceDataImportRepository {
             // DIFFED, not wiped: the file's rows are upserted (which keeps
             // an existing animateur's access token, sessions and demandes
             // alive) and only the rows absent from the file are deleted.
-            for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "verrouillage_planning",
-                    "poste_affectation", "planning_resolution")) {
+            for (String table : List.of(
+                    "contrainte_animateur",
+                    "contrainte_ad_hoc",
+                    "verrouillage_planning",
+                    "poste_affectation",
+                    "planning_resolution")) {
                 // Table names come from the literal list above, never from user input.
-                try (PreparedStatement ps = scope.prepareScoped(connection,
-                        "DELETE FROM " + table + " WHERE edition_id = ?")) {
+                try (PreparedStatement ps =
+                        scope.prepareScoped(connection, "DELETE FROM " + table + " WHERE edition_id = ?")) {
                     ps.executeUpdate();
                 }
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM creneau WHERE edition_id = ?")) {
+            try (PreparedStatement ps = scope.prepareScoped(connection, "DELETE FROM creneau WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
             Map<Long, Long> idsRemap = new LinkedHashMap<>();
@@ -134,13 +134,17 @@ public class ReferenceDataImportRepository {
             // an animateur that also drops, by cascade, their demandes
             // d'échange, sessions and access code.
             deleteMissingTx(connection, "stand", standsById.keySet());
-            deleteMissingTx(connection, "animateur", animateurs.stream()
-                    .filter(animateur -> animateur != null && animateur.getId() != null)
-                    .map(Animateur::getId)
-                    .collect(Collectors.toSet()));
+            deleteMissingTx(
+                    connection,
+                    "animateur",
+                    animateurs.stream()
+                            .filter(animateur -> animateur != null && animateur.getId() != null)
+                            .map(Animateur::getId)
+                            .collect(Collectors.toSet()));
             for (ContrainteAdHoc contrainte : contraintes) {
                 if (contrainte != null && contrainte.getId() != null) {
-                    if (contrainte.getCreneau() != null && contrainte.getCreneau().getId() != null) {
+                    if (contrainte.getCreneau() != null
+                            && contrainte.getCreneau().getId() != null) {
                         Long nouvelId = idsRemap.get(contrainte.getCreneau().getId());
                         if (nouvelId != null) {
                             contrainte.getCreneau().setId(nouvelId);
@@ -160,8 +164,7 @@ public class ReferenceDataImportRepository {
             int verrous = count(connection, "verrouillage_planning");
             int demandes = 0;
             int enAttente = 0;
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE statut = 'PROPOSEE') AS en_attente
                     FROM demande_echange
                     WHERE edition_id = ?""");
@@ -172,8 +175,8 @@ public class ReferenceDataImportRepository {
                 }
             }
             boolean resolu = false;
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "SELECT 1 FROM planning_resolution WHERE edition_id = ?");
+            try (PreparedStatement ps =
+                            scope.prepareScoped(connection, "SELECT 1 FROM planning_resolution WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 resolu = rs.next();
             }
@@ -185,8 +188,8 @@ public class ReferenceDataImportRepository {
 
     /** COUNT(*) of one edition-scoped table from the literal list of {@link #countImportImpact}. */
     private int count(Connection connection, String table) throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                "SELECT COUNT(*) FROM " + table + " WHERE edition_id = ?");
+        try (PreparedStatement ps =
+                        scope.prepareScoped(connection, "SELECT COUNT(*) FROM " + table + " WHERE edition_id = ?");
                 // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getInt(1) : 0;
@@ -199,11 +202,10 @@ public class ReferenceDataImportRepository {
      * is not in {@code idsConserves} — the diff half of the import: what the
      * file does not name disappears, what it names was upserted in place.
      */
-    private void deleteMissingTx(Connection connection, String table, Set<String> idsConserves)
-            throws SQLException {
+    private void deleteMissingTx(Connection connection, String table, Set<String> idsConserves) throws SQLException {
         List<String> missing = new ArrayList<>();
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                "SELECT id FROM " + table + " WHERE edition_id = ?");
+        try (PreparedStatement ps =
+                        scope.prepareScoped(connection, "SELECT id FROM " + table + " WHERE edition_id = ?");
                 // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -216,8 +218,8 @@ public class ReferenceDataImportRepository {
         if (missing.isEmpty()) {
             return;
         }
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                "DELETE FROM " + table + " WHERE edition_id = ? AND id = ?")) {
+        try (PreparedStatement ps =
+                scope.prepareScoped(connection, "DELETE FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             for (String id : missing) {
                 ps.setString(2, id);
                 // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string

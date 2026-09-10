@@ -1,9 +1,8 @@
 package dev.sylvain.planning.service.solve;
 
+import dev.sylvain.planning.domain.PosteAffectation;
 import java.time.LocalDate;
 import java.util.Set;
-
-import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
  * What an incremental re-solve (issue #86) deliberately re-opens, <b>on top of</b>

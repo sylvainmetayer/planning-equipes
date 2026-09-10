@@ -3,29 +3,26 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.NiveauEffort;
+import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
-
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
-import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.domain.NiveauEffort;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * {@link PlanningService#buildFromScenarioText}: the "Importer un
@@ -41,12 +38,20 @@ class PlanningServiceScenarioFromTextTest {
 
     private static PlanningService service() {
         ReferenceData referenceDataService = new EmptyReferenceData();
-        return new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(), null, null,
+        return new PlanningService(
+                3L,
+                2L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                referenceDataService,
+                new FeasibilityAnalyzer(),
+                null,
+                null,
                 ConfigProvider.getConfig());
     }
 
     private static String scenarioYamlText(String fileName) {
-        try (InputStream inputStream = PlanningServiceScenarioFromTextTest.class.getClassLoader()
+        try (InputStream inputStream = PlanningServiceScenarioFromTextTest.class
+                .getClassLoader()
                 .getResourceAsStream("scenarios/" + fileName)) {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -75,10 +80,12 @@ class PlanningServiceScenarioFromTextTest {
         ScenarioYamlReader.ScenarioImporte importe = service.buildFromScenarioText(yaml);
 
         assertThat(importe.sections().parametresLegaux()).isPresent();
-        assertThat(importe.sections().parametresLegaux().orElseThrow().getReposQuotidienMinimalMinutes()).isEqualTo(500);
+        assertThat(importe.sections().parametresLegaux().orElseThrow().getReposQuotidienMinimalMinutes())
+                .isEqualTo(500);
         assertThat(importe.sections().parametresDecoupage()).isPresent();
         assertThat(importe.sections().parametresSolveur()).isPresent();
-        assertThat(importe.sections().parametresSolveur().orElseThrow().dureeResolutionSecondes()).isEqualTo(400);
+        assertThat(importe.sections().parametresSolveur().orElseThrow().dureeResolutionSecondes())
+                .isEqualTo(400);
         assertThat(importe.sections().decoupageAuto()).isFalse();
     }
 
@@ -93,11 +100,11 @@ class PlanningServiceScenarioFromTextTest {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-contraintes.yaml");
 
-        ScenarioYamlReader.ScenarioSections sections = service.buildFromScenarioText(yaml).sections();
+        ScenarioYamlReader.ScenarioSections sections =
+                service.buildFromScenarioText(yaml).sections();
 
         assertThat(sections.contraintes()).isPresent();
-        assertThat(sections.contraintes().orElseThrow().desactivees())
-                .containsExactly("eviterRoulementStandsPremium");
+        assertThat(sections.contraintes().orElseThrow().desactivees()).containsExactly("eviterRoulementStandsPremium");
         assertThat(sections.contraintes().orElseThrow().poids())
                 .containsEntry("equilibrerCharge", 7)
                 .containsEntry("maxJoursConsecutifsTravailles", 3);
@@ -136,7 +143,8 @@ class PlanningServiceScenarioFromTextTest {
         ContrainteAdHoc incompatibilite = planning.getContraintesAdHoc().get(0);
         assertThat(incompatibilite.getId()).isEqualTo("INCOMPAT-1");
         assertThat(incompatibilite.getType()).isEqualTo(TypeContrainteAdHoc.INCOMPATIBILITE);
-        assertThat(incompatibilite.getAnimateursConcernes()).extracting(Animateur::getId)
+        assertThat(incompatibilite.getAnimateursConcernes())
+                .extracting(Animateur::getId)
                 .containsExactly("A1", "A2");
         assertThat(incompatibilite.getCreneau()).isNull();
 
@@ -151,7 +159,8 @@ class PlanningServiceScenarioFromTextTest {
     @Test
     void refuseUneContrainteAdHocVisantUnAnimateurAbsent() {
         PlanningService service = service();
-        String yaml = scenarioYamlText("scenario-contraintes.yaml").replace("      - A2\n    raison: Ne", "      - A9\n    raison: Ne");
+        String yaml = scenarioYamlText("scenario-contraintes.yaml")
+                .replace("      - A2\n    raison: Ne", "      - A9\n    raison: Ne");
 
         assertThatThrownBy(() -> service.buildFromScenarioText(yaml))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -259,8 +268,12 @@ class PlanningServiceScenarioFromTextTest {
 
         // 2 timeslots x (STAND-A effectifMin 2 + STAND-B effectifMin 1) = 6.
         assertThat(planning.getPostes()).hasSize(6);
-        assertThat(planning.getPostes()).filteredOn(poste -> "STAND-A".equals(poste.getStand().getId())).hasSize(4);
-        assertThat(planning.getPostes()).filteredOn(poste -> "STAND-B".equals(poste.getStand().getId())).hasSize(2);
+        assertThat(planning.getPostes())
+                .filteredOn(poste -> "STAND-A".equals(poste.getStand().getId()))
+                .hasSize(4);
+        assertThat(planning.getPostes())
+                .filteredOn(poste -> "STAND-B".equals(poste.getStand().getId()))
+                .hasSize(2);
     }
 
     @Test
@@ -270,8 +283,7 @@ class PlanningServiceScenarioFromTextTest {
         assertThatThrownBy(() -> service.buildFromScenarioText(""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("vide");
-        assertThatThrownBy(() -> service.buildFromScenarioText(null))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.buildFromScenarioText(null)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -335,7 +347,8 @@ class PlanningServiceScenarioFromTextTest {
 
     private static java.util.List<String> creneauxOf(PlanningEvenement planning, String standId) {
         return postesOf(planning, standId).stream()
-                .map(poste -> entree(poste.getCreneau().getDate(), poste.getCreneau().getHeureDebut()))
+                .map(poste ->
+                        entree(poste.getCreneau().getDate(), poste.getCreneau().getHeureDebut()))
                 .toList();
     }
 

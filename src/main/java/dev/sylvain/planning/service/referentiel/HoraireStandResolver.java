@@ -1,5 +1,12 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.ModeHoraire;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,14 +16,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.Stand;
 
 /**
  * Expands a stand's recurring {@link HoraireStand} rules into the dated windows
@@ -37,8 +36,7 @@ import dev.sylvain.planning.domain.Stand;
  */
 public final class HoraireStandResolver {
 
-    private HoraireStandResolver() {
-    }
+    private HoraireStandResolver() {}
 
     /**
      * Resolves every stand of {@code stands} against the days {@code creneaux}
@@ -71,7 +69,8 @@ public final class HoraireStandResolver {
                 continue;
             }
             dates.add(date);
-            if (creneau.getHeureDebut() != null && creneau.getHeureFin() != null
+            if (creneau.getHeureDebut() != null
+                    && creneau.getHeureFin() != null
                     && !creneau.getHeureFin().isAfter(creneau.getHeureDebut())) {
                 dates.add(date.plusDays(1));
             }
@@ -89,9 +88,13 @@ public final class HoraireStandResolver {
             return;
         }
         Set<LocalDate> joursAvecException = new LinkedHashSet<>();
-        stand.getIndisponibilites().stream().map(IndisponibiliteStand::getDate).filter(Objects::nonNull)
+        stand.getIndisponibilites().stream()
+                .map(IndisponibiliteStand::getDate)
+                .filter(Objects::nonNull)
                 .forEach(joursAvecException::add);
-        stand.getOuvertures().stream().map(OuvertureStand::getDate).filter(Objects::nonNull)
+        stand.getOuvertures().stream()
+                .map(OuvertureStand::getDate)
+                .filter(Objects::nonNull)
                 .forEach(joursAvecException::add);
 
         List<IndisponibiliteStand> fermetures = new ArrayList<>(stand.getIndisponibilites());
@@ -110,11 +113,16 @@ public final class HoraireStandResolver {
                     // The window's effectif rides along: it is the whole point
                     // of a rule that a stand's staffing profile is stated once
                     // and expanded onto every day it covers.
-                    ouvertures.add(new OuvertureStand(null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(),
-                            resolu.motif(), fenetre.getEffectif()));
+                    ouvertures.add(new OuvertureStand(
+                            null,
+                            date,
+                            fenetre.getHeureDebut(),
+                            fenetre.getHeureFin(),
+                            resolu.motif(),
+                            fenetre.getEffectif()));
                 } else {
-                    fermetures.add(new IndisponibiliteStand(null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(),
-                            resolu.motif()));
+                    fermetures.add(new IndisponibiliteStand(
+                            null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(), resolu.motif()));
                 }
             }
         }
@@ -150,8 +158,7 @@ public final class HoraireStandResolver {
     }
 
     /** What the rules say about one day: one mode, and the windows to apply. */
-    record JourResolu(ModeHoraire mode, List<FenetreHoraire> fenetres, String motif) {
-    }
+    record JourResolu(ModeHoraire mode, List<FenetreHoraire> fenetres, String motif) {}
 
     /**
      * The rules' verdict for {@code date}, or {@code null} when none covers it
@@ -176,7 +183,8 @@ public final class HoraireStandResolver {
         if (couvrantes.isEmpty()) {
             return null;
         }
-        int specificiteMax = couvrantes.stream().mapToInt(HoraireStand::specificite).max().orElseThrow();
+        int specificiteMax =
+                couvrantes.stream().mapToInt(HoraireStand::specificite).max().orElseThrow();
         List<HoraireStand> gagnantes = couvrantes.stream()
                 .filter(horaire -> horaire.specificite() == specificiteMax)
                 .toList();

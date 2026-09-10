@@ -2,15 +2,13 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresDecoupage;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
-
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 
 /**
  * Exercises {@link VacationGeneratorService#generateVacations} directly (plain
@@ -30,10 +28,11 @@ class VacationGeneratorServiceTest {
 
     @Test
     void amplitudeCourteSansFenetreRepasEntiereResteEnUneSeuleVacation() {
-        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(11, 30)); // 1h30, sous le plafond et ne touche aucune fenêtre repas
+        Creneau amplitude = amplitude(
+                LocalTime.of(10, 0), LocalTime.of(11, 30)); // 1h30, sous le plafond et ne touche aucune fenêtre repas
 
-        List<Creneau> vacations = VacationGeneratorService.generateVacations(
-                List.of(amplitude), new ParametresDecoupage());
+        List<Creneau> vacations =
+                VacationGeneratorService.generateVacations(List.of(amplitude), new ParametresDecoupage());
 
         assertThat(vacations).hasSize(1);
         Creneau vacation = vacations.get(0);
@@ -51,8 +50,8 @@ class VacationGeneratorServiceTest {
         // they took a second shift the same day.
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(15, 0)); // 5h, sous le plafond de 6h
 
-        List<Creneau> vacations = VacationGeneratorService.generateVacations(
-                List.of(amplitude), new ParametresDecoupage());
+        List<Creneau> vacations =
+                VacationGeneratorService.generateVacations(List.of(amplitude), new ParametresDecoupage());
 
         assertThat(vacations).hasSize(2);
         Creneau beforePause = vacations.get(0);
@@ -63,7 +62,8 @@ class VacationGeneratorServiceTest {
         assertThat(afterPause.getHeureFin()).isEqualTo(LocalTime.of(15, 0));
         // 45 min of real break between the two, aligned on the default midday
         // meal window (12:00-14:00).
-        assertThat(java.time.Duration.between(beforePause.getHeureFin(), afterPause.getHeureDebut()).toMinutes())
+        assertThat(java.time.Duration.between(beforePause.getHeureFin(), afterPause.getHeureDebut())
+                        .toMinutes())
                 .isEqualTo(45);
     }
 
@@ -190,8 +190,7 @@ class VacationGeneratorServiceTest {
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setDureeVacationMaxMinutes(8 * 60);
         parametres.setDureeVacationCibleMinutes(8 * 60);
-        parametres.setStrategieCouverturePendantPause(
-                ParametresDecoupage.PauseCoverageStrategy.RELEVE);
+        parametres.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy.RELEVE);
 
         List<Creneau> vacations = VacationGeneratorService.generateVacations(List.of(amplitude), parametres);
 
@@ -216,8 +215,7 @@ class VacationGeneratorServiceTest {
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setDureeVacationMaxMinutes(8 * 60);
         parametres.setDureeVacationCibleMinutes(8 * 60);
-        parametres.setStrategieCouverturePendantPause(
-                ParametresDecoupage.PauseCoverageStrategy.EFFECTIF_REDUIT);
+        parametres.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy.EFFECTIF_REDUIT);
 
         List<Creneau> vacations = VacationGeneratorService.generateVacations(List.of(amplitude), parametres);
 
@@ -243,8 +241,7 @@ class VacationGeneratorServiceTest {
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setDureeVacationMaxMinutes(8 * 60);
         parametres.setDureeVacationCibleMinutes(8 * 60);
-        parametres.setStrategieCouverturePendantPause(
-                ParametresDecoupage.PauseCoverageStrategy.RELEVE);
+        parametres.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy.RELEVE);
 
         List<Creneau> vacations = VacationGeneratorService.generateVacations(List.of(amplitude), parametres);
 
@@ -263,13 +260,14 @@ class VacationGeneratorServiceTest {
         parametres.setFenetreRepasSoirDebut(LocalTime.of(20, 0));
         parametres.setFenetreRepasSoirFin(LocalTime.of(21, 0));
         parametres.setDureePauseRepasMinutes(60);
-        parametres.setStrategieCouverturePendantPause(
-                ParametresDecoupage.PauseCoverageStrategy.EFFECTIF_REDUIT);
+        parametres.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy.EFFECTIF_REDUIT);
 
         List<Creneau> vacations = VacationGeneratorService.generateVacations(List.of(amplitude), parametres);
 
         assertThat(vacations).allSatisfy(v -> {
-            assertThat(v.getHeureFin()).as("vacation vide %s", v.getHeureDebut()).isNotEqualTo(v.getHeureDebut());
+            assertThat(v.getHeureFin())
+                    .as("vacation vide %s", v.getHeureDebut())
+                    .isNotEqualTo(v.getHeureDebut());
             assertThat(v.getDureeMinutes()).isPositive().isLessThanOrEqualTo(24 * 60);
         });
         // And none may come near 24 h: the opening span is only 11 h long.
@@ -284,8 +282,8 @@ class VacationGeneratorServiceTest {
         // family => no filtering per stand).
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
 
-        List<Creneau> vacations = VacationGeneratorService.generateVacations(
-                List.of(amplitude), new ParametresDecoupage());
+        List<Creneau> vacations =
+                VacationGeneratorService.generateVacations(List.of(amplitude), new ParametresDecoupage());
 
         assertThat(vacations).allSatisfy(v -> assertThat(v.getFamille()).isZero());
     }
@@ -356,7 +354,9 @@ class VacationGeneratorServiceTest {
                     .orElseThrow()
                     .getHeureFin());
         }
-        assertThat(premieresFins).as("une heure de relais distincte par famille").hasSize(4);
+        assertThat(premieresFins)
+                .as("une heure de relais distincte par famille")
+                .hasSize(4);
     }
 
     /**
@@ -390,11 +390,14 @@ class VacationGeneratorServiceTest {
                     .map(Creneau::getHeureFin)
                     .distinct()
                     .toList();
-            assertThat(finsTriees).as("famille %d doit avoir au moins deux relais", f).hasSizeGreaterThan(1);
+            assertThat(finsTriees)
+                    .as("famille %d doit avoir au moins deux relais", f)
+                    .hasSizeGreaterThan(1);
             secondsRelais.add(finsTriees.get(1));
         }
         assertThat(secondsRelais)
-                .as("le second relais doit tomber à un instant distinct par famille, pas s'écraser sur un bord de fenêtre")
+                .as(
+                        "le second relais doit tomber à un instant distinct par famille, pas s'écraser sur un bord de fenêtre")
                 .hasSize(4);
     }
 
@@ -441,7 +444,8 @@ class VacationGeneratorServiceTest {
         List<Creneau> reference = VacationGeneratorService.generateVacations(List.of(amplitude), sansEtalement);
         List<Creneau> avec = VacationGeneratorService.generateVacations(List.of(amplitude), avecEtalement);
 
-        assertThat(avec).extracting(Creneau::getHeureDebut, Creneau::getHeureFin)
+        assertThat(avec)
+                .extracting(Creneau::getHeureDebut, Creneau::getHeureFin)
                 .containsExactlyElementsOf(reference.stream()
                         .map(v -> org.assertj.core.groups.Tuple.tuple(v.getHeureDebut(), v.getHeureFin()))
                         .toList());

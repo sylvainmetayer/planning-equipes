@@ -1,5 +1,16 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.Ids;
+import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.solve.ProblemBuilder;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -9,18 +20,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.Stand;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.solve.ProblemBuilder;
-import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.Ids;
-import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 
 /** CRUD of the stand referential, plus the two views the rest of the app reads it through. */
 @ApplicationScoped
@@ -185,8 +184,8 @@ public class StandService {
         Map<String, Stand> parId = new LinkedHashMap<>();
         tous.forEach(stand -> parId.put(stand.getId(), stand));
         Map<String, Integer> familles = ProblemBuilder.standFamilies(tous, edition);
-        Set<Long> idsEdition = edition.stream().map(Creneau::getId).filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        Set<Long> idsEdition =
+                edition.stream().map(Creneau::getId).filter(Objects::nonNull).collect(Collectors.toSet());
 
         List<GrilleHorairesStands.LigneGrille> lignes = new ArrayList<>();
         List<Stand> aEcrire = new ArrayList<>();
@@ -200,8 +199,8 @@ public class StandService {
                     saisie.cellules() == null ? List.of() : saisie.cellules();
             for (GrilleHorairesStands.SaisieCellule cellule : cellules) {
                 if (!idsEdition.contains(cellule.creneauId())) {
-                    throw new BusinessError.Invalid("Créneau inconnu dans la grille du stand " + stand.getId()
-                            + " : " + cellule.creneauId());
+                    throw new BusinessError.Invalid(
+                            "Créneau inconnu dans la grille du stand " + stand.getId() + " : " + cellule.creneauId());
                 }
             }
             // A stand only ever receives seats on its own stagger family's
@@ -209,7 +208,9 @@ public class StandService {
             // cells are inert: they are neither read nor written, and writing
             // them would reopen days this stand never staffs.
             int famille = familles.getOrDefault(stand.getId(), 0);
-            List<Creneau> siens = edition.stream().filter(creneau -> creneau.getFamille() == famille).toList();
+            List<Creneau> siens = edition.stream()
+                    .filter(creneau -> creneau.getFamille() == famille)
+                    .toList();
             Set<Long> idsFamille = siens.stream().map(Creneau::getId).collect(Collectors.toSet());
             List<GrilleHorairesStands.SaisieCellule> retenues = cellules.stream()
                     .filter(cellule -> idsFamille.contains(cellule.creneauId()))
@@ -249,7 +250,8 @@ public class StandService {
         if (famille == null) {
             return;
         }
-        int nombreFamilles = creneaux.list().stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
+        int nombreFamilles =
+                creneaux.list().stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
         if (famille >= nombreFamilles) {
             throw new BusinessError.Invalid("La grille de cette édition compte " + nombreFamilles
                     + " famille(s) de relais : « " + famille + " » n'existe pas. La première est 0.");
@@ -277,8 +279,7 @@ public class StandService {
      */
     public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
         List<Stand> stands = list();
-        HoraireCompaction.RapportCompactage rapport =
-                HoraireCompaction.compact(stands, creneaux.list(), apply);
+        HoraireCompaction.RapportCompactage rapport = HoraireCompaction.compact(stands, creneaux.list(), apply);
         if (!apply) {
             return rapport;
         }

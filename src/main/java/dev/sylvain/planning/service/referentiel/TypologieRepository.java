@@ -1,5 +1,12 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.WriteStamp;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,16 +17,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Stand;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.WriteStamp;
 
 /**
  * The typologie referential, and the single {@code ninja} flag it carries.
@@ -44,11 +42,15 @@ public class TypologieRepository {
     public List<TypologieItem> listTypologies() {
         List<TypologieItem> typologies = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(
+                        connection,
                         "SELECT id, label, ninja, modifie_le FROM typologie WHERE edition_id = ? ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                typologies.add(new TypologieItem(rs.getString("id"), rs.getString("label"), rs.getBoolean("ninja"),
+                typologies.add(new TypologieItem(
+                        rs.getString("id"),
+                        rs.getString("label"),
+                        rs.getBoolean("ninja"),
                         rs.getObject("modifie_le", OffsetDateTime.class).toInstant()));
             }
         } catch (SQLException e) {
@@ -60,7 +62,8 @@ public class TypologieRepository {
     /** Id of the single typologie flagged ninja, empty when the referential has none. */
     public Optional<String> findTypologieNinja() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
+                PreparedStatement ps = scope.prepareScoped(
+                        connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? Optional.of(rs.getString("id")) : Optional.empty();
         } catch (SQLException e) {
@@ -86,7 +89,8 @@ public class TypologieRepository {
      *                      not a silent replacement
      */
     public TypologieItem saveTypologie(TypologieItem typologie, boolean failIfPresent) {
-        return scope.writeAndReturn("Failed to save typology " + typologie.id(),
+        return scope.writeAndReturn(
+                "Failed to save typology " + typologie.id(),
                 connection -> saveTypologie(connection, typologie, failIfPresent));
     }
 
@@ -100,8 +104,7 @@ public class TypologieRepository {
         // edition predicate as the index it protects — without it, flagging a
         // ninja here would silently clear the one of every other edition.
         if (typologie.ninja()) {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     UPDATE typologie
                     SET ninja = FALSE, modifie_le = now()
                     WHERE edition_id = ? AND ninja AND id <> ?""")) {
@@ -118,8 +121,7 @@ public class TypologieRepository {
 
     public boolean typologieInUse(String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT 1
                         WHERE EXISTS (SELECT 1 FROM stand_typologie WHERE edition_id = ?
                         AND typologie = ?) OR EXISTS (SELECT 1 FROM animateur_competence WHERE edition_id = ?
@@ -148,8 +150,7 @@ public class TypologieRepository {
 
     private TypologieItem upsertTypologie(Connection connection, TypologieItem typologie, boolean failIfPresent)
             throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                """
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO typologie (edition_id, id, label, ninja)
                 VALUES (?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
@@ -178,8 +179,7 @@ public class TypologieRepository {
      * typologie just because the derived item carries the default {@code false}.
      */
     void upsertTypologieDerivee(Connection connection, TypologieItem typologie) throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                """
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO typologie (edition_id, id, label, ninja)
                 VALUES (?, ?, ?, FALSE)
                 ON CONFLICT (edition_id, id)

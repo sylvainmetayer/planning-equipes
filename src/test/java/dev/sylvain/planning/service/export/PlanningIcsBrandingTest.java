@@ -2,18 +2,16 @@ package dev.sylvain.planning.service.export;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.ProductName;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * What the deployment's name does to an exported calendar.
@@ -62,8 +60,7 @@ class PlanningIcsBrandingTest {
     }
 
     private static String icsFor(String productName) {
-        return new PlanningIcs(new ProductName(productName))
-                .exportAnimateurIcs(planningWithOnePoste(), "A1");
+        return new PlanningIcs(new ProductName(productName)).exportAnimateurIcs(planningWithOnePoste(), "A1");
     }
 
     @Test

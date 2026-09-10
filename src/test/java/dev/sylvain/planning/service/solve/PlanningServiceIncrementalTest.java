@@ -2,15 +2,6 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
@@ -20,6 +11,13 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.solve.ProblemBuilder.StatistiquesIncremental;
 import dev.sylvain.planning.service.solve.ReplanificationDiff.ChangementAffectation;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * The reconciliation of an incremental re-solve (issue #86), exercised on
@@ -57,8 +55,12 @@ class PlanningServiceIncrementalTest {
     void unSiegeEncoreValideEstFigeAvecSonTitulaire() {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ1));
 
-        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
-                Map.of(key("STAND-A", 1L), List.of("A1", "A2")), ReplanificationScope.automatic(), List.of());
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
+                postes,
+                animateurs,
+                Map.of(key("STAND-A", 1L), List.of("A1", "A2")),
+                ReplanificationScope.automatic(),
+                List.of());
 
         assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
         assertThat(postes.get(0).isVerrouille()).isTrue();
@@ -74,9 +76,12 @@ class PlanningServiceIncrementalTest {
         alice.setJoursIndisponibles(Set.of(J1));
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ2));
 
-        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
+                postes,
+                animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A1")),
-                ReplanificationScope.automatic(), List.of());
+                ReplanificationScope.automatic(),
+                List.of());
 
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(postes.get(0).isVerrouille()).isFalse();
@@ -90,8 +95,12 @@ class PlanningServiceIncrementalTest {
     void unTitulaireSupprimeDuReferentielLibereSonSiege() {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1));
 
-        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
-                Map.of(key("STAND-A", 1L), List.of("DISPARU")), ReplanificationScope.automatic(), List.of());
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
+                postes,
+                animateurs,
+                Map.of(key("STAND-A", 1L), List.of("DISPARU")),
+                ReplanificationScope.automatic(),
+                List.of());
 
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(stats.postesLiberes()).isEqualTo(1);
@@ -101,13 +110,15 @@ class PlanningServiceIncrementalTest {
     void unSiegeNouveauOuJamaisPourvuResteLibreSansCompterCommeLibere() {
         // p1 is a seat the previous solve left empty, p2 belongs to a stand
         // added since: neither was ever staffed, so neither was "freed".
-        List<PosteAffectation> postes = List.of(
-                poste("p0", standA, matinJ1),
-                poste("p1", standA, matinJ1),
-                poste("p2", standB, matinJ1));
+        List<PosteAffectation> postes =
+                List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ1), poste("p2", standB, matinJ1));
 
-        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
-                Map.of(key("STAND-A", 1L), List.of("A1")), ReplanificationScope.automatic(), List.of());
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
+                postes,
+                animateurs,
+                Map.of(key("STAND-A", 1L), List.of("A1")),
+                ReplanificationScope.automatic(),
+                List.of());
 
         assertThat(postes.get(1).getAnimateur()).isNull();
         assertThat(postes.get(2).getAnimateur()).isNull();
@@ -119,8 +130,12 @@ class PlanningServiceIncrementalTest {
         List<PosteAffectation> byAnimateur = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ1));
         Map<String, List<String>> persiste = Map.of(key("STAND-A", 1L), List.of("A1", "A2"));
 
-        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(byAnimateur, animateurs, persiste,
-                new ReplanificationScope(Set.of("A1"), Set.of(), Set.of()), List.of());
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
+                byAnimateur,
+                animateurs,
+                persiste,
+                new ReplanificationScope(Set.of("A1"), Set.of(), Set.of()),
+                List.of());
 
         // Alice's seat is re-opened even though nothing invalidated it — that is
         // the operator saying "elle se désiste, refais-le".
@@ -129,16 +144,22 @@ class PlanningServiceIncrementalTest {
         assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 0, 1, 0));
 
         List<PosteAffectation> parJour = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ2));
-        ProblemBuilder.figerPostesIncremental(parJour, animateurs,
+        ProblemBuilder.figerPostesIncremental(
+                parJour,
+                animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A2")),
-                new ReplanificationScope(Set.of(), Set.of(J1), Set.of()), List.of());
+                new ReplanificationScope(Set.of(), Set.of(J1), Set.of()),
+                List.of());
         assertThat(parJour.get(0).getAnimateur()).isNull();
         assertThat(parJour.get(1).getAnimateur()).isEqualTo(bob);
 
         List<PosteAffectation> parStand = List.of(poste("p0", standA, matinJ1), poste("p1", standB, matinJ1));
-        ProblemBuilder.figerPostesIncremental(parStand, animateurs,
+        ProblemBuilder.figerPostesIncremental(
+                parStand,
+                animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-B", 1L), List.of("A2")),
-                new ReplanificationScope(Set.of(), Set.of(), Set.of("STAND-B")), List.of());
+                new ReplanificationScope(Set.of(), Set.of(), Set.of("STAND-B")),
+                List.of());
         assertThat(parStand.get(0).getAnimateur()).isEqualTo(alice);
         assertThat(parStand.get(1).getAnimateur()).isNull();
     }
@@ -153,9 +174,12 @@ class PlanningServiceIncrementalTest {
         indisponibilite.setCreneau(matinJ1);
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ2));
 
-        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(postes, animateurs,
+        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
+                postes,
+                animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A1")),
-                ReplanificationScope.automatic(), List.of(indisponibilite));
+                ReplanificationScope.automatic(),
+                List.of(indisponibilite));
 
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(postes.get(1).getAnimateur()).isEqualTo(alice);
@@ -166,21 +190,19 @@ class PlanningServiceIncrementalTest {
     void unePermutationDeSiegesInterchangeablesNEstPasUnChangement() {
         // Same crew on the same stand × créneau, seats swapped: nobody's
         // planning changed, so nobody must be told it did.
-        PlanningEvenement solved = planningWith(
-                affecte(poste("p0", standA, matinJ1), bob),
-                affecte(poste("p1", standA, matinJ1), alice));
+        PlanningEvenement solved =
+                planningWith(affecte(poste("p0", standA, matinJ1), bob), affecte(poste("p1", standA, matinJ1), alice));
 
-        List<ChangementAffectation> changements = ReplanificationDiff.compute(
-                Map.of(key("STAND-A", 1L), List.of("A1", "A2")), solved);
+        List<ChangementAffectation> changements =
+                ReplanificationDiff.compute(Map.of(key("STAND-A", 1L), List.of("A1", "A2")), solved);
 
         assertThat(changements).isEmpty();
     }
 
     @Test
     void unRemplacementEstRapporteAvecLesDeuxEquipesEnClair() {
-        PlanningEvenement solved = planningWith(
-                affecte(poste("p0", standA, matinJ1), bob),
-                affecte(poste("p1", standA, matinJ2), alice));
+        PlanningEvenement solved =
+                planningWith(affecte(poste("p0", standA, matinJ1), bob), affecte(poste("p1", standA, matinJ2), alice));
 
         List<ChangementAffectation> changements = ReplanificationDiff.compute(
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A1")), solved);
@@ -197,8 +219,8 @@ class PlanningServiceIncrementalTest {
     void unSiegeVideApresCoupEstRapporteCommeUneEquipeVide() {
         PlanningEvenement solved = planningWith(poste("p0", standA, matinJ1));
 
-        List<ChangementAffectation> changements = ReplanificationDiff.compute(
-                Map.of(key("STAND-A", 1L), List.of("A1")), solved);
+        List<ChangementAffectation> changements =
+                ReplanificationDiff.compute(Map.of(key("STAND-A", 1L), List.of("A1")), solved);
 
         assertThat(changements).singleElement().satisfies(changement -> {
             assertThat(changement.avant()).containsExactly("Alice Martin");

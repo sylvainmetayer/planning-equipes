@@ -1,13 +1,12 @@
 package dev.sylvain.planning.service.publication;
 
-import java.time.LocalTime;
-import java.util.List;
-
 import dev.sylvain.planning.domain.PlanningEvenement;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.time.LocalTime;
+import java.util.List;
 
 /**
  * The plan the animateurs were sent (issue #245), as opposed to the plan being
@@ -55,9 +54,8 @@ public class PlanPublieService {
         if (detail == null) {
             return persistenceService.assemblerPlanning(List.of());
         }
-        return persistenceService.assemblerPlanning(detail.affectations().stream()
-                .map(PlanPublieService::siege)
-                .toList());
+        return persistenceService.assemblerPlanning(
+                detail.affectations().stream().map(PlanPublieService::siege).toList());
     }
 
     private static PlanningPersistenceService.Siege siege(PlanSnapshotService.AffectationSnapshot affectation) {

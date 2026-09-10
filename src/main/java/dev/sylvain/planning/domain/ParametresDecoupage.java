@@ -42,6 +42,7 @@ public class ParametresDecoupage {
     public static final int DUREE_VACATION_MIN_MINUTES_PAR_DEFAUT = 3 * 60;
     /** Art. L3121-16: staying strictly under this threshold means no vacation ever needs an internal legal break. */
     public static final int DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT = 6 * 60;
+
     public static final int DUREE_CHEVAUCHEMENT_MINUTES_PAR_DEFAUT = 30;
     public static final int DUREE_PAUSE_REPAS_MINUTES_PAR_DEFAUT = 45;
     public static final LocalTime FENETRE_REPAS_MIDI_DEBUT_PAR_DEFAUT = LocalTime.of(12, 0);
@@ -50,6 +51,7 @@ public class ParametresDecoupage {
     public static final LocalTime FENETRE_REPAS_SOIR_FIN_PAR_DEFAUT = LocalTime.of(21, 0);
     /** No staggering by default: every stand shares the same relay grid, exactly the historical behaviour. */
     public static final int NOMBRE_FAMILLES_DECALAGE_PAR_DEFAUT = 1;
+
     public static final int DUREE_DECALAGE_MAX_MINUTES_PAR_DEFAUT = 0;
     /** What the Créneaux screen presumed silently before the mode was declared. */
     public static final ModeGrilleCreneaux MODE_GRILLE_PAR_DEFAUT = ModeGrilleCreneaux.AMPLITUDES;
@@ -68,8 +70,7 @@ public class ParametresDecoupage {
     private PauseCoverageStrategy strategieCouverturePendantPause = PauseCoverageStrategy.FERMETURE;
     private ModeGrilleCreneaux modeGrille = MODE_GRILLE_PAR_DEFAUT;
 
-    public ParametresDecoupage() {
-    }
+    public ParametresDecoupage() {}
 
     /**
      * How the edition's créneaux are to be read — see {@link ModeGrilleCreneaux}.

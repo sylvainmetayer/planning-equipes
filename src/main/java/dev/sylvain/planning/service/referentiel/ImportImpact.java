@@ -8,7 +8,21 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * operator see the blast radius — replaced referentials, erased resolved
  * planning, demandes and locks that will go with it.
  */
-@Schema(requiredProperties = {"animateurs", "demandesEchange", "demandesEnAttente", "planningResolu", "postes", "stands", "verrous"})
-public record ImportImpact(int animateurs, int stands, int postes, boolean planningResolu,
-        int demandesEchange, int demandesEnAttente, int verrous) {
-}
+@Schema(
+        requiredProperties = {
+            "animateurs",
+            "demandesEchange",
+            "demandesEnAttente",
+            "planningResolu",
+            "postes",
+            "stands",
+            "verrous"
+        })
+public record ImportImpact(
+        int animateurs,
+        int stands,
+        int postes,
+        boolean planningResolu,
+        int demandesEchange,
+        int demandesEnAttente,
+        int verrous) {}

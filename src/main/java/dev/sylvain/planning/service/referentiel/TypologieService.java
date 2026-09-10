@@ -1,5 +1,11 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.Ids;
+import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
@@ -9,13 +15,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.Ids;
-import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 
 /**
  * The {@code typologie} referential — the vocabulary every other referential
@@ -47,21 +46,26 @@ public class TypologieService implements TypologieLibelles {
     @Override
     public Map<String, String> labelsById() {
         return repository.listTypologies().stream()
-                .collect(Collectors.toMap(TypologieItem::id, TypologieItem::label, (premier, doublon) -> premier,
-                        LinkedHashMap::new));
+                .collect(Collectors.toMap(
+                        TypologieItem::id, TypologieItem::label, (premier, doublon) -> premier, LinkedHashMap::new));
     }
 
     public TypologieItem create(TypologieItem typologie) {
-        TypologieItem cree = repository.saveTypologie(new TypologieItem(
-                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null), true);
+        TypologieItem cree = repository.saveTypologie(
+                new TypologieItem(
+                        Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null),
+                true);
         changeTracker.markModified();
         return cree;
     }
 
     /** {@link #create(TypologieItem)} inside a caller's transaction: written with the rest, or not at all. */
     TypologieItem create(Connection connection, TypologieItem typologie) throws SQLException {
-        TypologieItem cree = repository.saveTypologie(connection, new TypologieItem(
-                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null), true);
+        TypologieItem cree = repository.saveTypologie(
+                connection,
+                new TypologieItem(
+                        Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null),
+                true);
         changeTracker.markModified();
         return cree;
     }
@@ -73,8 +77,10 @@ public class TypologieService implements TypologieLibelles {
      * either — a file replaces a referential, it does not edit a fiche.
      */
     public TypologieItem importer(TypologieItem typologie) {
-        TypologieItem ecrite = repository.saveTypologie(new TypologieItem(
-                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null), false);
+        TypologieItem ecrite = repository.saveTypologie(
+                new TypologieItem(
+                        Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null),
+                false);
         changeTracker.markModified();
         return ecrite;
     }

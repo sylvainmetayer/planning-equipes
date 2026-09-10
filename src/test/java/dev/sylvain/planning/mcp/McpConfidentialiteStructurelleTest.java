@@ -2,6 +2,8 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.domain.Animateur;
+import io.quarkiverse.mcp.server.Tool;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
@@ -9,11 +11,7 @@ import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
-
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Animateur;
-import io.quarkiverse.mcp.server.Tool;
 
 /**
  * Structural privacy guard for issue #107, whose follow-up comment kept
@@ -29,8 +27,8 @@ import io.quarkiverse.mcp.server.Tool;
  */
 class McpConfidentialiteStructurelleTest {
 
-    private static final Set<String> COMPOSANTS_INTERDITS = Set.of("prenom", "datenaissance", "nomdefamille",
-            "email", "accesstoken");
+    private static final Set<String> COMPOSANTS_INTERDITS =
+            Set.of("prenom", "datenaissance", "nomdefamille", "email", "accesstoken");
 
     @Test
     void aucunOutilNeRenvoieDeDonneePersonnelleIdentifiante() throws Exception {

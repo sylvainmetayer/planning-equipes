@@ -1,7 +1,10 @@
 package dev.sylvain.planning.service.publication;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,15 +13,8 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.sql.DataSource;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.JdbcEditionScope;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Who was told what, and when (issue #245). One row per person per
@@ -51,9 +47,14 @@ public class PublicationTraceRepository {
      * @param changements the exact sentences that were sent, in order
      */
     @Schema(requiredProperties = {"snapshotId"})
-    public record Destinataire(long snapshotId, String animateurId, String nomAffiche, String email,
-            StatutEnvoi statut, Instant envoyeLe, List<String> changements) {
-    }
+    public record Destinataire(
+            long snapshotId,
+            String animateurId,
+            String nomAffiche,
+            String email,
+            StatutEnvoi statut,
+            Instant envoyeLe,
+            List<String> changements) {}
 
     @Inject
     DataSource dataSource;
@@ -154,8 +155,7 @@ public class PublicationTraceRepository {
             return List.of();
         }
         try {
-            return objectMapper.readValue(json, new TypeReference<List<String>>() {
-            });
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
         } catch (Exception e) {
             return List.of();
         }

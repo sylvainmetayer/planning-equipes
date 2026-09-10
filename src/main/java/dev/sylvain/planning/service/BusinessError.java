@@ -26,7 +26,7 @@ import java.time.Instant;
  * assertion keeps holding, and a plain {@code IllegalArgumentException} — one
  * nobody meant to throw — still falls through to the 500 it deserves.</p>
  */
-public sealed abstract class BusinessError extends IllegalArgumentException {
+public abstract sealed class BusinessError extends IllegalArgumentException {
 
     private BusinessError(String message) {
         super(message);

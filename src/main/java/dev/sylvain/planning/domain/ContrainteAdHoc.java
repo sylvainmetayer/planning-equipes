@@ -40,8 +40,7 @@ public class ContrainteAdHoc {
      */
     private Instant modifieLe;
 
-    public ContrainteAdHoc() {
-    }
+    public ContrainteAdHoc() {}
 
     public ContrainteAdHoc(String id, TypeContrainteAdHoc type) {
         this.id = id;

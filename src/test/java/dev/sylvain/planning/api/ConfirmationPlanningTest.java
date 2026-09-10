@@ -6,20 +6,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import javax.sql.DataSource;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -28,14 +14,25 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * « J'ai lu et je serai là » (issue #293), end to end: the click, what the
@@ -77,9 +74,8 @@ class ConfirmationPlanningTest {
 
         RestAssured.requestSpecification = null;
         String session = EspaceSessions.open(mailbox, tokenOf("CONF-A"), EMAIL_ALICE);
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-                .addCookie("planning-espace", session)
-                .build();
+        RestAssured.requestSpecification =
+                new RequestSpecBuilder().addCookie("planning-espace", session).build();
         mailbox.clear();
     }
 
@@ -93,7 +89,8 @@ class ConfirmationPlanningTest {
     @Test
     void confirmingBeforeAnyPublicationIsRefused() {
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
                 .then()
                 .statusCode(409);
     }
@@ -102,20 +99,23 @@ class ConfirmationPlanningTest {
     void confirmingMovesTheStatusAndStampsIt() {
         publication.publier();
 
-        given().when().get("/api/espace-animateur/" + tokenOf("CONF-A"))
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("CONF-A"))
                 .then()
                 .statusCode(200)
                 .body("statutConfirmation", equalTo("NON_VU"))
                 .body("confirmeLe", nullValue());
 
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
                 .then()
                 .statusCode(200)
                 .body("statut", equalTo("CONFIRME"))
                 .body("confirmeLe", notNullValue());
 
-        given().when().get("/api/espace-animateur/" + tokenOf("CONF-A"))
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("CONF-A"))
                 .then()
                 .statusCode(200)
                 .body("statutConfirmation", equalTo("CONFIRME"));
@@ -125,11 +125,16 @@ class ConfirmationPlanningTest {
     void clickingTwiceKeepsTheFirstDate() {
         publication.publier();
         String premiere = given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
-                .then().statusCode(200).extract().path("confirmeLe");
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("confirmeLe");
 
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
                 .then()
                 .statusCode(200)
                 .body("confirmeLe", equalTo(premiere));
@@ -139,10 +144,13 @@ class ConfirmationPlanningTest {
     void theAdminColumnReadsBackTheAnswerAndWhoHadNothingToConfirm() {
         publication.publier();
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
-                .then().statusCode(200);
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
+                .then()
+                .statusCode(200);
 
-        given().when().get("/api/animateurs/confirmations")
+        given().when()
+                .get("/api/animateurs/confirmations")
                 .then()
                 .statusCode(200)
                 .body("find { it.animateurId == 'CONF-A' }.statut", equalTo("CONFIRME"))
@@ -173,7 +181,8 @@ class ConfirmationPlanningTest {
                 .isInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining("aucun poste");
 
-        given().when().get("/api/animateurs/confirmations")
+        given().when()
+                .get("/api/animateurs/confirmations")
                 .then()
                 .statusCode(200)
                 .body("find { it.animateurId == 'CONF-C' }.statut", equalTo("NON_VU"));
@@ -194,7 +203,8 @@ class ConfirmationPlanningTest {
         persistPlan("CONF-S1", "CONF-S3");
         publication.publier();
 
-        given().when().get("/api/animateurs/confirmations")
+        given().when()
+                .get("/api/animateurs/confirmations")
                 .then()
                 .statusCode(200)
                 .body("find { it.animateurId == 'CONF-A' }.statut", equalTo("CONFIRME"))
@@ -217,8 +227,7 @@ class ConfirmationPlanningTest {
         posteAlice.setAnimateur(alice);
         PosteAffectation posteBruno = new PosteAffectation("CONF-P2", stand(standBruno, un, deux, trois), creneau);
         posteBruno.setAnimateur(bruno);
-        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno, carla),
-                List.of(posteAlice, posteBruno)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno, carla), List.of(posteAlice, posteBruno)));
     }
 
     private static Stand stand(String id, Stand... candidats) {

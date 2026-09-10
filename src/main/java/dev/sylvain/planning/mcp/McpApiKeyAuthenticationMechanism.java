@@ -1,15 +1,6 @@
 package dev.sylvain.planning.mcp;
 
-import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigMcp;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AuthenticationRequest;
@@ -19,6 +10,10 @@ import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.smallrye.mutiny.Uni;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Set;
 
 /**
  * Header-based authentication for the MCP endpoints (issue #107: "permettre
@@ -57,7 +52,8 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
         if (!context.request().path().startsWith("/mcp")) {
             return Uni.createFrom().nullItem();
         }
-        if (config.apiKey().isEmpty() || config.apiKey().get().isBlank()
+        if (config.apiKey().isEmpty()
+                || config.apiKey().get().isBlank()
                 || !keysEqual(config.apiKey().get(), presentedKey(context))) {
             return Uni.createFrom().nullItem();
         }
@@ -87,7 +83,9 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
         }
         return config.requiredHeaders().get().stream().allMatch(paire -> {
             int separateur = paire.indexOf('=');
-            String nom = separateur < 0 ? paire.trim() : paire.substring(0, separateur).trim();
+            String nom = separateur < 0
+                    ? paire.trim()
+                    : paire.substring(0, separateur).trim();
             String valeurAttendue = separateur < 0 ? "" : paire.substring(separateur + 1);
             return keysEqual(valeurAttendue, context.request().getHeader(nom));
         });
@@ -123,7 +121,8 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
         if (presentee == null) {
             return false;
         }
-        return MessageDigest.isEqual(attendue.getBytes(StandardCharsets.UTF_8), presentee.getBytes(StandardCharsets.UTF_8));
+        return MessageDigest.isEqual(
+                attendue.getBytes(StandardCharsets.UTF_8), presentee.getBytes(StandardCharsets.UTF_8));
     }
 
     private String presentedKey(RoutingContext context) {

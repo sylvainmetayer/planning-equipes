@@ -2,16 +2,6 @@ package dev.sylvain.planning.service.referentiel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
@@ -21,6 +11,14 @@ import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link CoherenceAnalyzer}: the warnings a write reports without refusing
@@ -41,9 +39,7 @@ class CoherenceAnalyzerTest {
     /** Three days, 10:00→20:00 each — the shape of the amplitude fixtures. */
     private static List<Creneau> troisJours() {
         return new ArrayList<>(List.of(
-                creneau(1L, JOUR_1, 10, 20),
-                creneau(2L, JOUR_1.plusDays(1), 10, 20),
-                creneau(3L, JOUR_3, 10, 20)));
+                creneau(1L, JOUR_1, 10, 20), creneau(2L, JOUR_1.plusDays(1), 10, 20), creneau(3L, JOUR_3, 10, 20)));
     }
 
     private static Creneau creneau(Long id, LocalDate date, int debut, int fin) {
@@ -79,7 +75,8 @@ class CoherenceAnalyzerTest {
         Animateur camille = animateur(LocalDate.of(2015, 1, 1));
         camille.setJoursIndisponibles(new TreeSet<>(Set.of(LocalDate.of(1999, 1, 1))));
 
-        assertThat(CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(List.of()))).isEmpty();
+        assertThat(CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(List.of())))
+                .isEmpty();
     }
 
     @Test
@@ -109,21 +106,17 @@ class CoherenceAnalyzerTest {
         Animateur camille = animateur(LocalDate.of(1990, 1, 1));
         camille.setJoursIndisponibles(new TreeSet<>(Set.of(JOUR_1.plusDays(3))));
 
-        List<Avertissement> avertissements =
-                CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(ecartes));
+        List<Avertissement> avertissements = CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(ecartes));
 
-        assertThat(types(avertissements))
-                .containsExactly(TypeAvertissement.INDISPONIBILITE_JOUR_SANS_CRENEAU);
-        assertThat(avertissements.get(0).message())
-                .contains("2026-07-11")
-                .contains("déclaration de disponibilités");
+        assertThat(types(avertissements)).containsExactly(TypeAvertissement.INDISPONIBILITE_JOUR_SANS_CRENEAU);
+        assertThat(avertissements.get(0).message()).contains("2026-07-11").contains("déclaration de disponibilités");
     }
 
     /** The span itself still ignores the gap: {@code covers} is unchanged. */
     @Test
     void theSpanStillCoversAGapDayEvenThoughItCarriesNoTimeslot() {
-        JoursEvenement jours = JoursEvenement.of(
-                List.of(creneau(1L, JOUR_1, 10, 20), creneau(2L, JOUR_1.plusDays(7), 10, 20)));
+        JoursEvenement jours =
+                JoursEvenement.of(List.of(creneau(1L, JOUR_1, 10, 20), creneau(2L, JOUR_1.plusDays(7), 10, 20)));
 
         assertThat(jours.covers(JOUR_1.plusDays(3))).isTrue();
         assertThat(jours.hasCreneauOn(JOUR_1.plusDays(3))).isFalse();
@@ -137,8 +130,7 @@ class CoherenceAnalyzerTest {
         Animateur camille = animateur(LocalDate.of(1990, 1, 1));
         camille.setJoursIndisponibles(new TreeSet<>(Set.of(LocalDate.of(2026, 8, 9))));
 
-        List<Avertissement> avertissements =
-                CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(troisJours()));
+        List<Avertissement> avertissements = CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(troisJours()));
 
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.INDISPONIBILITE_HORS_EVENEMENT);
         assertThat(avertissements.get(0).message())
@@ -152,17 +144,17 @@ class CoherenceAnalyzerTest {
         Animateur camille = animateur(LocalDate.of(1990, 1, 1));
         camille.setJoursIndisponibles(new TreeSet<>(Set.of(JOUR_1, JOUR_3)));
 
-        assertThat(CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(troisJours()))).isEmpty();
+        assertThat(CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(troisJours())))
+                .isEmpty();
     }
 
     @Test
     void severalOffDaysOutsideTheSpanAreGatheredInOneWarning() {
         Animateur camille = animateur(LocalDate.of(1990, 1, 1));
-        camille.setJoursIndisponibles(new TreeSet<>(Set.of(
-                LocalDate.of(2025, 7, 8), LocalDate.of(2027, 7, 8), JOUR_1)));
+        camille.setJoursIndisponibles(
+                new TreeSet<>(Set.of(LocalDate.of(2025, 7, 8), LocalDate.of(2027, 7, 8), JOUR_1)));
 
-        List<Avertissement> avertissements =
-                CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(troisJours()));
+        List<Avertissement> avertissements = CoherenceAnalyzer.onAnimateur(camille, JoursEvenement.of(troisJours()));
 
         assertThat(avertissements).hasSize(1);
         assertThat(avertissements.get(0).message()).contains("2025-07-08").contains("2027-07-08");
@@ -174,7 +166,8 @@ class CoherenceAnalyzerTest {
     void anAnimateurWithoutBirthDateIsNeverReportedAsAMinor() {
         Animateur inconnu = animateur(null);
 
-        assertThat(CoherenceAnalyzer.onAnimateur(inconnu, JoursEvenement.of(troisJours()))).isEmpty();
+        assertThat(CoherenceAnalyzer.onAnimateur(inconnu, JoursEvenement.of(troisJours())))
+                .isEmpty();
     }
 
     @Test
@@ -182,15 +175,15 @@ class CoherenceAnalyzerTest {
         // Eighteen well before the event.
         Animateur adulte = animateur(LocalDate.of(2000, 3, 4));
 
-        assertThat(CoherenceAnalyzer.onAnimateur(adulte, JoursEvenement.of(troisJours()))).isEmpty();
+        assertThat(CoherenceAnalyzer.onAnimateur(adulte, JoursEvenement.of(troisJours())))
+                .isEmpty();
     }
 
     @Test
     void aMinorOnEveryDayIsReportedAsSuchWithTheWholeSpan() {
         Animateur jeune = animateur(LocalDate.of(2012, 5, 1));
 
-        List<Avertissement> avertissements =
-                CoherenceAnalyzer.onAnimateur(jeune, JoursEvenement.of(troisJours()));
+        List<Avertissement> avertissements = CoherenceAnalyzer.onAnimateur(jeune, JoursEvenement.of(troisJours()));
 
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.MINEUR_PENDANT_EVENEMENT);
         assertThat(avertissements.get(0).message())
@@ -207,8 +200,7 @@ class CoherenceAnalyzerTest {
     void turningEighteenDuringTheEventNamesTheDayTheRegimeChanges() {
         Animateur bascule = animateur(LocalDate.of(2008, 7, 9));
 
-        List<Avertissement> avertissements =
-                CoherenceAnalyzer.onAnimateur(bascule, JoursEvenement.of(troisJours()));
+        List<Avertissement> avertissements = CoherenceAnalyzer.onAnimateur(bascule, JoursEvenement.of(troisJours()));
 
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.MINEUR_PENDANT_EVENEMENT);
         assertThat(avertissements.get(0).message())
@@ -221,7 +213,8 @@ class CoherenceAnalyzerTest {
     void anEighteenthBirthdayOnTheFirstDayIsSilent() {
         Animateur pilePoil = animateur(JOUR_1.minusYears(18));
 
-        assertThat(CoherenceAnalyzer.onAnimateur(pilePoil, JoursEvenement.of(troisJours()))).isEmpty();
+        assertThat(CoherenceAnalyzer.onAnimateur(pilePoil, JoursEvenement.of(troisJours())))
+                .isEmpty();
     }
 
     /** Eighteen exactly on the last day: minor for two days out of three. */
@@ -229,8 +222,7 @@ class CoherenceAnalyzerTest {
     void anEighteenthBirthdayOnTheLastDayIsReported() {
         Animateur juste = animateur(JOUR_3.minusYears(18));
 
-        List<Avertissement> avertissements =
-                CoherenceAnalyzer.onAnimateur(juste, JoursEvenement.of(troisJours()));
+        List<Avertissement> avertissements = CoherenceAnalyzer.onAnimateur(juste, JoursEvenement.of(troisJours()));
 
         assertThat(avertissements.get(0).message()).contains("devient majeur le 2026-07-10");
     }
@@ -269,7 +261,8 @@ class CoherenceAnalyzerTest {
         Animateur apres = animateur(LocalDate.of(2012, 5, 1));
         apres.setEmail("camille@example.org");
 
-        assertThat(CoherenceAnalyzer.onAnimateur(avant, apres, JoursEvenement.of(troisJours()))).isEmpty();
+        assertThat(CoherenceAnalyzer.onAnimateur(avant, apres, JoursEvenement.of(troisJours())))
+                .isEmpty();
     }
 
     /** Touch the field and the rule speaks again: it is the change that is news. */
@@ -300,7 +293,8 @@ class CoherenceAnalyzerTest {
         Animateur apres = animateur(LocalDate.of(1990, 1, 1));
         apres.setJoursIndisponibles(new TreeSet<>(Set.of(LocalDate.of(2026, 8, 9))));
 
-        assertThat(CoherenceAnalyzer.onAnimateur(avant, apres, JoursEvenement.of(troisJours()))).isEmpty();
+        assertThat(CoherenceAnalyzer.onAnimateur(avant, apres, JoursEvenement.of(troisJours())))
+                .isEmpty();
     }
 
     /** …but a newly added one is, and only that one is cited. */
@@ -332,13 +326,11 @@ class CoherenceAnalyzerTest {
         Animateur jeune = new Animateur("A-12", "Camille", "Durand", LocalDate.of(2012, 5, 1), false);
 
         String message = CoherenceAnalyzer.onAnimateur(jeune, JoursEvenement.of(troisJours()))
-                .get(0).message();
+                .get(0)
+                .message();
 
         assertThat(message).contains("A-12");
-        assertThat(message)
-                .doesNotContain("Camille")
-                .doesNotContain("Durand")
-                .doesNotContain("2012-05-01");
+        assertThat(message).doesNotContain("Camille").doesNotContain("Durand").doesNotContain("2012-05-01");
     }
 
     /** Same guarantee on the message that names the day the regime changes. */
@@ -347,7 +339,8 @@ class CoherenceAnalyzerTest {
         Animateur bascule = new Animateur("A-13", "Alix", "Martin", LocalDate.of(2008, 7, 9), false);
 
         String message = CoherenceAnalyzer.onAnimateur(bascule, JoursEvenement.of(troisJours()))
-                .get(0).message();
+                .get(0)
+                .message();
 
         assertThat(message).contains("A-13").doesNotContain("Alix").doesNotContain("Martin");
     }
@@ -356,7 +349,8 @@ class CoherenceAnalyzerTest {
 
     @Test
     void aTimeslotIsSilentWhenTheEditionHasNoStandToCompareItWith() {
-        assertThat(CoherenceAnalyzer.onCreneau(creneau(1L, JOUR_1, 10, 20), List.of())).isEmpty();
+        assertThat(CoherenceAnalyzer.onCreneau(creneau(1L, JOUR_1, 10, 20), List.of()))
+                .isEmpty();
     }
 
     @Test
@@ -374,21 +368,21 @@ class CoherenceAnalyzerTest {
     @Test
     void aStandOpenedByARecurringRuleIsNotMistakenForAClosedOne() {
         Stand regle = stand("APREM");
-        regle.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(14, 0), null))));
+        regle.setHoraires(
+                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
 
-        assertThat(surCreneau(creneau(1L, JOUR_1, 14, 20), new ArrayList<>(List.of(regle)))).isEmpty();
+        assertThat(surCreneau(creneau(1L, JOUR_1, 14, 20), new ArrayList<>(List.of(regle))))
+                .isEmpty();
     }
 
     /** Same rule, but the timeslot starts four hours before it opens. */
     @Test
     void aTimeslotStartingBeforeEveryStandOpensReportsTheDeadStretch() {
         Stand regle = stand("APREM");
-        regle.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(14, 0), null))));
+        regle.setHoraires(
+                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
 
-        List<Avertissement> avertissements =
-                surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(regle)));
+        List<Avertissement> avertissements = surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(regle)));
 
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.CRENEAU_DEBORDE_OUVERTURE_STANDS);
         assertThat(avertissements.get(0).message()).contains("de 10:00 à 14:00").contains("240 min");
@@ -401,13 +395,17 @@ class CoherenceAnalyzerTest {
     @Test
     void aWeekdayRuleThatDoesNotCoverTheDayLeavesTheStandOpen() {
         Stand weekend = stand("WEEKEND");
-        HoraireStand regle = new HoraireStand(null, ModeHoraire.OUVERTURE, TypeJoursHoraire.JOURS_SEMAINE,
+        HoraireStand regle = new HoraireStand(
+                null,
+                ModeHoraire.OUVERTURE,
+                TypeJoursHoraire.JOURS_SEMAINE,
                 List.of(new FenetreHoraire(LocalTime.of(14, 0), null)));
         regle.setJoursSemaine(Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
         weekend.setHoraires(List.of(regle));
 
         // JOUR_1 is a Wednesday: no rule covers it, so the stand is open all day.
-        assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(weekend)))).isEmpty();
+        assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(weekend))))
+                .isEmpty();
     }
 
     @Test
@@ -415,8 +413,7 @@ class CoherenceAnalyzerTest {
         Stand ferme = stand("FERME");
         ferme.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(0, 0), null, "Montage"));
 
-        List<Avertissement> avertissements =
-                surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(ferme)));
+        List<Avertissement> avertissements = surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(ferme)));
 
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.CRENEAU_HORS_OUVERTURE_STANDS);
         assertThat(avertissements.get(0).message()).contains("2026-07-08 10:00-20:00");
@@ -429,7 +426,8 @@ class CoherenceAnalyzerTest {
         ferme.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(0, 0), null, "Montage"));
         Stand ouvert = stand("OUVERT");
 
-        assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(ferme, ouvert)))).isEmpty();
+        assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(ferme, ouvert))))
+                .isEmpty();
     }
 
     /**
@@ -442,7 +440,8 @@ class CoherenceAnalyzerTest {
         pause.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(12, 0), null));
         pause.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(20, 0), null));
 
-        assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(pause)))).isEmpty();
+        assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(pause))))
+                .isEmpty();
     }
 
     /** Ten minutes of overhang is the clock, not a schedule problem. */
@@ -451,7 +450,8 @@ class CoherenceAnalyzerTest {
         Stand presque = stand("PRESQUE");
         presque.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(10, 10), LocalTime.of(20, 0), null));
 
-        assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(presque)))).isEmpty();
+        assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(presque))))
+                .isEmpty();
     }
 
     /** A night timeslot reads the next day's windows; the wording must stay legible past midnight. */
@@ -461,8 +461,7 @@ class CoherenceAnalyzerTest {
         tard.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(20, 0), LocalTime.of(23, 0), null));
 
         List<Avertissement> avertissements = surCreneau(
-                new Creneau(1L, 0, JOUR_1, LocalTime.of(20, 0), LocalTime.of(0, 0)),
-                new ArrayList<>(List.of(tard)));
+                new Creneau(1L, 0, JOUR_1, LocalTime.of(20, 0), LocalTime.of(0, 0)), new ArrayList<>(List.of(tard)));
 
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.CRENEAU_DEBORDE_OUVERTURE_STANDS);
         assertThat(avertissements.get(0).message()).contains("de 23:00 à 00:00");
@@ -489,24 +488,29 @@ class CoherenceAnalyzerTest {
         List<Avertissement> avertissements = surStand(null, tot, troisJours());
 
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.STAND_FENETRE_SANS_EFFET);
-        assertThat(avertissements.get(0).message()).contains("TOT").contains(JOUR_1.toString()).contains("07:00");
+        assertThat(avertissements.get(0).message())
+                .contains("TOT")
+                .contains(JOUR_1.toString())
+                .contains("07:00");
     }
 
     /** A rule expanding onto every day: the resolved windows are read, not the rule alone. */
     @Test
     void aRuleWhoseWindowsMissEveryTimeslotIsReportedOnceAndAsNeverOpen() {
         Stand nuit = stand("NUIT");
-        nuit.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(21, 0), LocalTime.of(23, 0)))));
+        nuit.setHoraires(List.of(HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(21, 0), LocalTime.of(23, 0)))));
 
         List<Avertissement> avertissements = surStand(null, nuit, troisJours());
 
-        assertThat(types(avertissements)).containsExactly(TypeAvertissement.STAND_FENETRE_SANS_EFFET,
-                TypeAvertissement.STAND_JAMAIS_OUVERT);
+        assertThat(types(avertissements))
+                .containsExactly(TypeAvertissement.STAND_FENETRE_SANS_EFFET, TypeAvertissement.STAND_JAMAIS_OUVERT);
         assertThat(avertissements.get(0).message()).contains("3 fenêtre(s)");
         // The dates once each, and the window spelled out once — not one full
         // sentence per date, which ran to 590 characters on a twelve-day rule.
-        assertThat(avertissements.get(0).message()).contains(JOUR_1.toString()).contains("21:00")
+        assertThat(avertissements.get(0).message())
+                .contains(JOUR_1.toString())
+                .contains("21:00")
                 .hasSizeLessThan(400);
     }
 
@@ -518,11 +522,10 @@ class CoherenceAnalyzerTest {
     @Test
     void uneFenetreDuLendemainDUnCreneauQuiFranchitMinuitNEstPasHorsEvenement() {
         List<Creneau> creneaux = new ArrayList<>(List.of(
-                creneau(1L, JOUR_1, 10, 20),
-                new Creneau(2L, 0, JOUR_3, LocalTime.of(22, 0), LocalTime.of(2, 0))));
+                creneau(1L, JOUR_1, 10, 20), new Creneau(2L, 0, JOUR_3, LocalTime.of(22, 0), LocalTime.of(2, 0))));
         Stand nuit = stand("NUIT");
-        nuit.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_3.plusDays(1), LocalTime.MIDNIGHT,
-                LocalTime.of(2, 0), null));
+        nuit.getIndisponibilites()
+                .add(new IndisponibiliteStand(null, JOUR_3.plusDays(1), LocalTime.MIDNIGHT, LocalTime.of(2, 0), null));
 
         assertThat(types(surStand(null, nuit, creneaux)))
                 .doesNotContain(TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT);
@@ -531,19 +534,22 @@ class CoherenceAnalyzerTest {
     @Test
     void aDatedExceptionOutsideTheEventIsReportedWithBothBounds() {
         Stand glisse = stand("GLISSE");
-        glisse.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1.plusMonths(1), LocalTime.of(10, 0), null, null));
+        glisse.getIndisponibilites()
+                .add(new IndisponibiliteStand(null, JOUR_1.plusMonths(1), LocalTime.of(10, 0), null, null));
 
         List<Avertissement> avertissements = surStand(null, glisse, troisJours());
 
         assertThat(types(avertissements)).containsExactly(TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT);
-        assertThat(avertissements.get(0).message()).contains(JOUR_1 + " → " + JOUR_3).contains(JOUR_1.plusMonths(1).toString());
+        assertThat(avertissements.get(0).message())
+                .contains(JOUR_1 + " → " + JOUR_3)
+                .contains(JOUR_1.plusMonths(1).toString());
     }
 
     @Test
     void aStandClosedEveryDayIsReportedAsNeverOpen() {
         Stand ferme = stand("FERME");
-        ferme.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE,
-                new FenetreHoraire(LocalTime.of(0, 0), null))));
+        ferme.setHoraires(
+                List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(0, 0), null))));
 
         assertThat(types(surStand(null, ferme, troisJours()))).containsExactly(TypeAvertissement.STAND_JAMAIS_OUVERT);
     }

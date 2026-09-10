@@ -3,11 +3,6 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -15,6 +10,10 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.solve.ProblemScaleService.ProblemScale;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -37,7 +36,8 @@ class ProblemScaleServiceTest {
         // A stand closing at 16h narrows the seat: two hours staffed, not four.
         reduit.setHeureFinEffective(LocalTime.of(16, 0));
 
-        ProblemScale volumetrie = ProblemScale.of(planning(List.of(matin, apresMidi), List.of(), List.of(entier, reduit)));
+        ProblemScale volumetrie =
+                ProblemScale.of(planning(List.of(matin, apresMidi), List.of(), List.of(entier, reduit)));
 
         assertThat(volumetrie.posteCount()).isEqualTo(2);
         assertThat(volumetrie.hoursToFill()).isCloseTo(5.0, within(0.001));
@@ -46,8 +46,8 @@ class ProblemScaleServiceTest {
 
     @Test
     void hoursAvailableAreTheDailyCeilingOfEachDayTheAnimateurCanCome() {
-        List<Creneau> troisJours = List.of(creneau(1, LUNDI, 9, 12), creneau(2, LUNDI.plusDays(1), 9, 12),
-                creneau(3, LUNDI.plusDays(2), 9, 12));
+        List<Creneau> troisJours = List.of(
+                creneau(1, LUNDI, 9, 12), creneau(2, LUNDI.plusDays(1), 9, 12), creneau(3, LUNDI.plusDays(2), 9, 12));
         Animateur majeur = animateur("A1", LocalDate.of(1990, 1, 1));
         majeur.setJoursIndisponibles(Set.of(LUNDI.plusDays(1)));
 
@@ -67,8 +67,8 @@ class ProblemScaleServiceTest {
         Animateur mineur = animateur("M1", LUNDI.minusYears(17));
         Animateur majeur = animateur("A1", LUNDI.minusYears(30));
 
-        ProblemScale volumetrie = ProblemScale.of(planning(septJours, List.of(mineur, majeur), List.of(),
-                new ParametresLegaux(48 * 60, 35 * 60)));
+        ProblemScale volumetrie = ProblemScale.of(
+                planning(septJours, List.of(mineur, majeur), List.of(), new ParametresLegaux(48 * 60, 35 * 60)));
 
         // Seven days but six worked at most: 6 × 8 h = 48 h, capped at 35 h
         // for the minor; 6 × 10 h = 60 h, capped at 48 h for the adult.
@@ -79,12 +79,14 @@ class ProblemScaleServiceTest {
     void theWeeklyCeilingAppliesPerIsoWeek() {
         // Saturday and Sunday, then Monday: two ISO weeks, each under the ceiling.
         LocalDate samedi = LUNDI.plusDays(5);
-        List<Creneau> aCheval = List.of(creneau(1, samedi, 9, 12), creneau(2, samedi.plusDays(1), 9, 12),
+        List<Creneau> aCheval = List.of(
+                creneau(1, samedi, 9, 12),
+                creneau(2, samedi.plusDays(1), 9, 12),
                 creneau(3, samedi.plusDays(2), 9, 12));
         Animateur majeur = animateur("A1", LocalDate.of(1990, 1, 1));
 
-        ProblemScale volumetrie = ProblemScale.of(planning(aCheval, List.of(majeur), List.of(),
-                new ParametresLegaux(15 * 60, 35 * 60)));
+        ProblemScale volumetrie =
+                ProblemScale.of(planning(aCheval, List.of(majeur), List.of(), new ParametresLegaux(15 * 60, 35 * 60)));
 
         // 20 h capped at 15 h in the first week, 10 h in the second.
         assertThat(volumetrie.hoursAvailable()).isCloseTo(25.0, within(0.001));
@@ -98,8 +100,8 @@ class ProblemScaleServiceTest {
         return new Animateur(id, "Prenom", "Nom", naissance, false);
     }
 
-    private static PlanningEvenement planning(List<Creneau> creneaux, List<Animateur> animateurs,
-            List<PosteAffectation> postes) {
+    private static PlanningEvenement planning(
+            List<Creneau> creneaux, List<Animateur> animateurs, List<PosteAffectation> postes) {
         return planning(creneaux, animateurs, postes, new ParametresLegaux());
     }
 
@@ -107,8 +109,11 @@ class ProblemScaleServiceTest {
      * A planning carries no timeslot list of its own — the event's days are
      * read off its seats — so every timeslot without a seat gets one here.
      */
-    private static PlanningEvenement planning(List<Creneau> creneaux, List<Animateur> animateurs,
-            List<PosteAffectation> postes, ParametresLegaux legaux) {
+    private static PlanningEvenement planning(
+            List<Creneau> creneaux,
+            List<Animateur> animateurs,
+            List<PosteAffectation> postes,
+            ParametresLegaux legaux) {
         List<PosteAffectation> sieges = new java.util.ArrayList<>(postes);
         for (Creneau creneau : creneaux) {
             if (postes.stream().noneMatch(poste -> poste.getCreneau() == creneau)) {

@@ -1,10 +1,8 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
-import dev.sylvain.planning.service.referentiel.GrilleHorairesStands;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.referentiel.GrilleHorairesStands;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -13,6 +11,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 
 /**
  * Stand × jour view of the opening schedule actually in force, for the
@@ -40,12 +39,10 @@ public class OuvertureStandsResource {
      * second interpretation of the same data.
      */
     /** The grid as submitted: only the stands that were edited, each with all its cells. */
-    public record SaisieGrille(List<GrilleHorairesStands.SaisieStand> stands) {
-    }
+    public record SaisieGrille(List<GrilleHorairesStands.SaisieStand> stands) {}
 
     /** One line per stand written, in the order submitted. */
-    public record RapportSaisieGrille(List<GrilleHorairesStands.LigneGrille> stands) {
-    }
+    public record RapportSaisieGrille(List<GrilleHorairesStands.LigneGrille> stands) {}
 
     /**
      * Writes the schedules typed in the grid. Each stand's schedule is replaced
@@ -64,7 +61,6 @@ public class OuvertureStandsResource {
     @GET
     public RapportOuvertures analyze() {
         return OuvertureStandsAnalyzer.analyze(
-                referenceDataService.listSolvedStands(),
-                referenceDataService.listCreneaux());
+                referenceDataService.listSolvedStands(), referenceDataService.listCreneaux());
     }
 }

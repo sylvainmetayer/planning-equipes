@@ -1,9 +1,5 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
@@ -13,6 +9,9 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Everything {@link PlanningService} needs to read to build a problem — and
@@ -64,6 +63,5 @@ public interface ReferenceData {
      * Persists the relay families a build assigned (issue #390). A harness
      * without a database has nothing to record.
      */
-    default void recordStandFamilies(java.util.List<Stand> stands, java.util.Map<String, Integer> familleParStand) {
-    }
+    default void recordStandFamilies(java.util.List<Stand> stands, java.util.Map<String, Integer> familleParStand) {}
 }

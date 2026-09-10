@@ -2,21 +2,6 @@ package dev.sylvain.planning.service.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Set;
-
-import javax.sql.DataSource;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresNotifications;
@@ -26,11 +11,23 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.AlerteService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Set;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * The three nightly jobs (issues #298, #299, #300), and the one property they
@@ -49,8 +46,7 @@ class NotificationsPlanifieesTest {
     private static final ZoneId ZONE = ZoneId.of("Europe/Paris");
 
     /** The evening before {@link #JOUR}, past any sensible sending time. */
-    private static final ZonedDateTime VEILLE_AU_SOIR =
-            ZonedDateTime.of(JOUR.minusDays(1), LocalTime.of(19, 30), ZONE);
+    private static final ZonedDateTime VEILLE_AU_SOIR = ZonedDateTime.of(JOUR.minusDays(1), LocalTime.of(19, 30), ZONE);
 
     @Inject
     PlanningPersistenceService persistence;
@@ -104,9 +100,7 @@ class NotificationsPlanifieesTest {
 
         List<io.quarkus.mailer.Mail> mails = mailbox.getMailsSentTo(EMAIL_ALICE);
         assertThat(mails).hasSize(1);
-        assertThat(mails.get(0).getText())
-                .contains("Stand planifie un")
-                .contains("10h-12h");
+        assertThat(mails.get(0).getText()).contains("Stand planifie un").contains("10h-12h");
     }
 
     /**
@@ -178,11 +172,17 @@ class NotificationsPlanifieesTest {
     void aNoisyKindOfAlertCannotBuryTheOnesNeedingADecision() {
         // Far more unreachable-reminder alerts than the requested cap.
         for (int jour = 0; jour < 6; jour++) {
-            journal.claim(JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE,
-                    "PLAN-B|bruit-" + jour, "PLAN-B", "Rappel impossible, fiche sans adresse.",
+            journal.claim(
+                    JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE,
+                    "PLAN-B|bruit-" + jour,
+                    "PLAN-B",
+                    "Rappel impossible, fiche sans adresse.",
                     JournalNotificationsRepository.Severite.WARNING);
         }
-        journal.claim(JournalNotificationsRepository.Type.ALERTE_ECHANGE, "demande-qui-dort", null,
+        journal.claim(
+                JournalNotificationsRepository.Type.ALERTE_ECHANGE,
+                "demande-qui-dort",
+                null,
                 "Une demande d'échange attend une décision depuis 9 jours.",
                 JournalNotificationsRepository.Severite.WARNING);
 
@@ -207,7 +207,8 @@ class NotificationsPlanifieesTest {
         assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
 
         // The status moved to RELANCE, which takes Alice out of the selection.
-        assertThat(relanceConfirmation.run(actives(), plusTard.plusSeconds(3600))).isZero();
+        assertThat(relanceConfirmation.run(actives(), plusTard.plusSeconds(3600)))
+                .isZero();
         assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
         assertThat(confirmationService.byAnimateur())
                 .filteredOn(vue -> vue.animateurId().equals("PLAN-A"))
@@ -249,8 +250,7 @@ class NotificationsPlanifieesTest {
         posteAlice.setAnimateur(alice);
         PosteAffectation posteBruno = new PosteAffectation("PLAN-P2", stand, creneau);
         posteBruno.setAnimateur(bruno);
-        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno),
-                List.of(posteAlice, posteBruno)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
     }
 
     private void donnerEmail(String animateurId, String email) {

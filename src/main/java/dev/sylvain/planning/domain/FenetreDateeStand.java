@@ -31,8 +31,7 @@ public abstract class FenetreDateeStand {
     /** Free-text reason, nullable — purely informative, never read by the solver. */
     private String motif;
 
-    protected FenetreDateeStand() {
-    }
+    protected FenetreDateeStand() {}
 
     protected FenetreDateeStand(Long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin, String motif) {
         this.id = id;

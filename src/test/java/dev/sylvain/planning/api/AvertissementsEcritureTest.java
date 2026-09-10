@@ -9,11 +9,10 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import io.quarkus.test.junit.QuarkusTest;
 
 /**
  * The cross-field warnings a write reports, end to end: they travel in the
@@ -40,8 +39,7 @@ class AvertissementsEcritureTest {
     @BeforeEach
     void resetReferentiel() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-STAND",
@@ -55,8 +53,10 @@ class AvertissementsEcritureTest {
                           ]
                         }
                         """)
-                .when().post("/api/stands")
-                .then().statusCode(200);
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200);
     }
 
     /**
@@ -68,12 +68,14 @@ class AvertissementsEcritureTest {
     @AfterEach
     void restoreScenario() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
     }
 
     private static Object postCreneau(String heureDebut, String heureFin, String... attentes) {
-        var reponse = given()
-                .contentType("application/json")
+        var reponse = given().contentType("application/json")
                 .body("""
                         {
                           "date":"%s",
@@ -81,8 +83,10 @@ class AvertissementsEcritureTest {
                           "heureFin":"%s"
                         }
                         """.formatted(JOUR, heureDebut, heureFin))
-                .when().post("/api/creneaux")
-                .then().statusCode(200)
+                .when()
+                .post("/api/creneaux")
+                .then()
+                .statusCode(200)
                 .body("creneau.id", notNullValue());
         if (attentes.length == 0) {
             reponse.body("avertissements", empty());
@@ -102,8 +106,10 @@ class AvertissementsEcritureTest {
         Object id = postCreneau("10:00:00", "18:00:00", "CRENEAU_DEBORDE_OUVERTURE_STANDS");
 
         // Written despite the warning, and readable as typed.
-        given().when().get("/api/creneaux")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/creneaux")
+                .then()
+                .statusCode(200)
                 .body("find { it.id == " + id + " }.heureDebut", containsString("10:00"));
     }
 
@@ -121,8 +127,7 @@ class AvertissementsEcritureTest {
     void unStandDontLaFenetreNeRecoupeAucunCreneauEstEcritEtSignale() {
         postCreneau("14:00:00", "18:00:00");
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-MATIN",
@@ -136,15 +141,19 @@ class AvertissementsEcritureTest {
                           ]
                         }
                         """)
-                .when().post("/api/stands")
-                .then().statusCode(200)
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
                 .body("stand.id", equalTo("AVERT-MATIN"))
                 .body("avertissements.type", contains("STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT"))
                 .body("avertissements[0].message", containsString("08:00"));
 
         // Written despite the warnings, rules included.
-        given().when().get("/api/stands")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
                 .body("find { it.id == 'AVERT-MATIN' }.horaires.size()", equalTo(1));
     }
 
@@ -157,8 +166,7 @@ class AvertissementsEcritureTest {
     @Test
     void renommerUnStandDontLaFenetreEstDejaSansEffetNeRedItRien() {
         postCreneau("14:00:00", "18:00:00");
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-MATIN","nom":"Stand du matin","typologiesProposees":["STRATEGIE"],
@@ -168,12 +176,13 @@ class AvertissementsEcritureTest {
                           ]
                         }
                         """)
-                .when().post("/api/stands")
-                .then().statusCode(200)
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
                 .body("avertissements.type", hasItem("STAND_FENETRE_SANS_EFFET"));
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-MATIN","nom":"Renommé","typologiesProposees":["STRATEGIE"],
@@ -183,8 +192,10 @@ class AvertissementsEcritureTest {
                           ]
                         }
                         """)
-                .when().put("/api/stands/AVERT-MATIN")
-                .then().statusCode(200)
+                .when()
+                .put("/api/stands/AVERT-MATIN")
+                .then()
+                .statusCode(200)
                 .body("stand.nom", equalTo("Renommé"))
                 .body("avertissements", empty());
     }
@@ -193,8 +204,7 @@ class AvertissementsEcritureTest {
     void unStandCoherentNeProduitAucunAvertissementEtRenommerNeRedItRien() {
         postCreneau("14:00:00", "18:00:00");
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-STAND",
@@ -208,8 +218,10 @@ class AvertissementsEcritureTest {
                           ]
                         }
                         """)
-                .when().put("/api/stands/AVERT-STAND")
-                .then().statusCode(200)
+                .when()
+                .put("/api/stands/AVERT-STAND")
+                .then()
+                .statusCode(200)
                 .body("stand.nom", equalTo("Renommé"))
                 .body("avertissements", empty());
     }
@@ -222,8 +234,7 @@ class AvertissementsEcritureTest {
     void unAnimateurMineurEtIndisponibleHorsBornesEstEcritEtSignale() {
         postCreneau("14:00:00", "18:00:00");
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-A1",
@@ -233,16 +244,21 @@ class AvertissementsEcritureTest {
                           "joursIndisponibles":["2027-08-15"]
                         }
                         """)
-                .when().post("/api/animateurs")
-                .then().statusCode(200)
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200)
                 .body("animateur.id", equalTo("AVERT-A1"))
                 .body("avertissements.type", hasItem("MINEUR_PENDANT_EVENEMENT"))
                 .body("avertissements.type", hasItem("INDISPONIBILITE_HORS_EVENEMENT"))
-                .body("avertissements.find { it.type == 'MINEUR_PENDANT_EVENEMENT' }.message",
+                .body(
+                        "avertissements.find { it.type == 'MINEUR_PENDANT_EVENEMENT' }.message",
                         containsString("2027-06-10"));
 
-        given().when().get("/api/animateurs")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
                 .body("find { it.id == 'AVERT-A1' }.joursIndisponibles", contains("2027-08-15"));
     }
 
@@ -250,20 +266,22 @@ class AvertissementsEcritureTest {
     @Test
     void unAnimateurCoherentModifieNeProduitAucunAvertissement() {
         postCreneau("14:00:00", "18:00:00");
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("{\"id\":\"AVERT-A2\",\"prenom\":\"Alix\",\"nom\":\"Martin\","
                         + "\"dateNaissance\":\"1990-01-01\"}")
-                .when().post("/api/animateurs")
-                .then().statusCode(200)
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200)
                 .body("avertissements", empty());
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("{\"id\":\"AVERT-A2\",\"prenom\":\"Alix\",\"nom\":\"Martin\","
                         + "\"dateNaissance\":\"1990-01-01\",\"joursIndisponibles\":[\"" + JOUR + "\"]}")
-                .when().put("/api/animateurs/AVERT-A2")
-                .then().statusCode(200)
+                .when()
+                .put("/api/animateurs/AVERT-A2")
+                .then()
+                .statusCode(200)
                 .body("avertissements", empty());
     }
 
@@ -271,23 +289,27 @@ class AvertissementsEcritureTest {
     @Test
     void laModificationDUnAnimateurSignaleAussi() {
         postCreneau("14:00:00", "18:00:00");
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("{\"id\":\"AVERT-A3\",\"prenom\":\"Sacha\",\"nom\":\"Roux\","
                         + "\"dateNaissance\":\"1990-01-01\"}")
-                .when().post("/api/animateurs")
-                .then().statusCode(200);
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200);
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("{\"id\":\"AVERT-A3\",\"prenom\":\"Sacha\",\"nom\":\"Roux\","
                         + "\"dateNaissance\":\"2012-01-01\"}")
-                .when().put("/api/animateurs/AVERT-A3")
-                .then().statusCode(200)
+                .when()
+                .put("/api/animateurs/AVERT-A3")
+                .then()
+                .statusCode(200)
                 .body("avertissements.type", contains("MINEUR_PENDANT_EVENEMENT"));
 
-        given().when().get("/api/animateurs")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
                 .body("find { it.id == 'AVERT-A3' }.dateNaissance", equalTo("2012-01-01"));
     }
 
@@ -300,22 +322,24 @@ class AvertissementsEcritureTest {
     @Test
     void modifierUnMineurSansToucherSaDateDeNaissanceNeSignaleRien() {
         postCreneau("14:00:00", "18:00:00");
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("{\"id\":\"AVERT-A5\",\"prenom\":\"Noa\",\"nom\":\"Blanc\","
                         + "\"dateNaissance\":\"2012-01-01\"}")
-                .when().post("/api/animateurs")
-                .then().statusCode(200)
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200)
                 .body("avertissements.type", contains("MINEUR_PENDANT_EVENEMENT"));
 
         // The very shape ReferenceDataStore.saveMany sends: the whole fiche,
         // one field of it changed.
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("{\"id\":\"AVERT-A5\",\"prenom\":\"Noa\",\"nom\":\"Blanc\","
                         + "\"dateNaissance\":\"2012-01-01\",\"email\":\"noa@example.org\"}")
-                .when().put("/api/animateurs/AVERT-A5")
-                .then().statusCode(200)
+                .when()
+                .put("/api/animateurs/AVERT-A5")
+                .then()
+                .statusCode(200)
                 .body("avertissements", empty());
     }
 
@@ -328,8 +352,7 @@ class AvertissementsEcritureTest {
     void leMessageDeMinoriteNeNommeNiLIdentiteNiLaDateDeNaissance() {
         postCreneau("14:00:00", "18:00:00");
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-A6",
@@ -338,8 +361,10 @@ class AvertissementsEcritureTest {
                           "dateNaissance":"2010-06-11"
                         }
                         """)
-                .when().post("/api/animateurs")
-                .then().statusCode(200)
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200)
                 .body("avertissements[0].message", containsString("AVERT-A6"))
                 .body("avertissements[0].message", not(containsString("Camille")))
                 .body("avertissements[0].message", not(containsString("Durand")))
@@ -355,8 +380,7 @@ class AvertissementsEcritureTest {
     @Test
     void uneIndisponibiliteSurUnJourSansCreneauEstSignaleeAPart() {
         postCreneau("14:00:00", "18:00:00");
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "date":"2027-06-14",
@@ -364,11 +388,12 @@ class AvertissementsEcritureTest {
                           "heureFin":"18:00:00"
                         }
                         """)
-                .when().post("/api/creneaux")
-                .then().statusCode(200);
+                .when()
+                .post("/api/creneaux")
+                .then()
+                .statusCode(200);
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-A7",
@@ -378,8 +403,10 @@ class AvertissementsEcritureTest {
                           "joursIndisponibles":["2027-06-12"]
                         }
                         """)
-                .when().post("/api/animateurs")
-                .then().statusCode(200)
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200)
                 .body("avertissements.type", contains("INDISPONIBILITE_JOUR_SANS_CRENEAU"));
     }
 
@@ -389,8 +416,7 @@ class AvertissementsEcritureTest {
      */
     @Test
     void sansAucunCreneauAucuneBorneNExisteEtRienNEstSignale() {
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-A4",
@@ -400,8 +426,10 @@ class AvertissementsEcritureTest {
                           "joursIndisponibles":["1999-01-01"]
                         }
                         """)
-                .when().post("/api/animateurs")
-                .then().statusCode(200)
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200)
                 .body("avertissements", empty());
     }
 }

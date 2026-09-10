@@ -2,13 +2,6 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.DisponibiliteMcpTools.CollecteView;
 import dev.sylvain.planning.mcp.DisponibiliteMcpTools.DeclarationMcpView;
 import dev.sylvain.planning.mcp.EchangeMcpTools.DemandeView;
@@ -18,6 +11,11 @@ import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.Invit
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * What the admin side of the espace animateur looks like once it has passed
@@ -35,10 +33,19 @@ class EspaceAdminMcpToolsTest {
     @Test
     void uneDeclarationSortSansLeNomDeSonAuteur() {
         DeclarationMcpView vue = DisponibiliteMcpTools.toView(new DeclarationAdminView(
-                "d1", "a1", "Camille Martin", "EN_ATTENTE",
-                List.of(LocalDate.of(2026, 7, 11)), List.of("jeux-ambiance"), List.of("Jeux d'ambiance"),
-                "je travaille le samedi", null, CREE_LE, null,
-                List.of(LocalDate.of(2026, 7, 12)), List.of("Jeux experts")));
+                "d1",
+                "a1",
+                "Camille Martin",
+                "EN_ATTENTE",
+                List.of(LocalDate.of(2026, 7, 11)),
+                List.of("jeux-ambiance"),
+                List.of("Jeux d'ambiance"),
+                "je travaille le samedi",
+                null,
+                CREE_LE,
+                null,
+                List.of(LocalDate.of(2026, 7, 12)),
+                List.of("Jeux experts")));
 
         assertThat(vue.animateurId()).isEqualTo("a1");
         assertThat(vue.statut()).isEqualTo("EN_ATTENTE");
@@ -70,18 +77,38 @@ class EspaceAdminMcpToolsTest {
 
     @Test
     void uneCollecteSansInvitationNAPasDeRapport() {
-        assertThat(DisponibiliteMcpTools.toView(FenetreCollecte.closed(), null).invitation()).isNull();
+        assertThat(DisponibiliteMcpTools.toView(FenetreCollecte.closed(), null).invitation())
+                .isNull();
     }
 
     @Test
     void uneDemandeDEchangeSortEnIdsEtSesViolationsSontAnonymisees() {
         DemandeView vue = EchangeMcpTools.toView(new DemandeEchangeView(
-                "e1", 42L, LocalDate.of(2026, 7, 11), LocalTime.of(10, 0), LocalTime.of(12, 0),
-                "stand-a", "Stand A", "a1", "Camille Martin", "a2", "Dominique Roy",
-                43L, LocalDate.of(2026, 7, 12), LocalTime.of(14, 0), LocalTime.of(16, 0),
-                "stand-b", "Stand B",
-                "je dépose mes enfants", "PROPOSEE", false,
-                List.of("Camille Martin (a1) dépasse 8 h le 11/07"), null, CREE_LE, CREE_LE, null));
+                "e1",
+                42L,
+                LocalDate.of(2026, 7, 11),
+                LocalTime.of(10, 0),
+                LocalTime.of(12, 0),
+                "stand-a",
+                "Stand A",
+                "a1",
+                "Camille Martin",
+                "a2",
+                "Dominique Roy",
+                43L,
+                LocalDate.of(2026, 7, 12),
+                LocalTime.of(14, 0),
+                LocalTime.of(16, 0),
+                "stand-b",
+                "Stand B",
+                "je dépose mes enfants",
+                "PROPOSEE",
+                false,
+                List.of("Camille Martin (a1) dépasse 8 h le 11/07"),
+                null,
+                CREE_LE,
+                CREE_LE,
+                null));
 
         assertThat(vue.demandeurId()).isEqualTo("a1");
         assertThat(vue.cibleId()).isEqualTo("a2");
@@ -95,8 +122,8 @@ class EspaceAdminMcpToolsTest {
 
     @Test
     void uneViolationDureDImpactEstAnonymiseeAussi() {
-        ViolationHardView vue = EchangeMcpTools.toView(new HardViolation(
-                "reposQuotidienMinimal", "Camille Martin (a1) enchaîne deux vacations", 2));
+        ViolationHardView vue = EchangeMcpTools.toView(
+                new HardViolation("reposQuotidienMinimal", "Camille Martin (a1) enchaîne deux vacations", 2));
 
         assertThat(vue.contrainte()).isEqualTo("reposQuotidienMinimal");
         assertThat(vue.description()).isEqualTo("animateur a1 enchaîne deux vacations");

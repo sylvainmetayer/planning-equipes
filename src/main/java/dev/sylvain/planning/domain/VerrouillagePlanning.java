@@ -36,8 +36,7 @@ public class VerrouillagePlanning {
     private String raison;
     private Instant creeLe;
 
-    public VerrouillagePlanning() {
-    }
+    public VerrouillagePlanning() {}
 
     public VerrouillagePlanning(String id, TypeVerrouillage type) {
         this.id = id;
@@ -73,21 +72,16 @@ public class VerrouillagePlanning {
             return Optional.empty();
         }
         return switch (type) {
-            case ANIMATEUR -> animateurId == null
-                    ? Optional.empty()
-                    : Optional.of(new VerrouillageTarget.OnAnimateur(animateurId));
-            case STAND -> standId == null
-                    ? Optional.empty()
-                    : Optional.of(new VerrouillageTarget.OnStand(standId));
-            case CRENEAU -> creneauId == null
-                    ? Optional.empty()
-                    : Optional.of(new VerrouillageTarget.OnCreneau(creneauId));
-            case JOUR -> jour == null
-                    ? Optional.empty()
-                    : Optional.of(new VerrouillageTarget.OnJour(jour));
-            case ANIMATEUR_CRENEAU -> animateurId == null || creneauId == null
-                    ? Optional.empty()
-                    : Optional.of(new VerrouillageTarget.OnAnimateurAndCreneau(animateurId, creneauId));
+            case ANIMATEUR ->
+                animateurId == null ? Optional.empty() : Optional.of(new VerrouillageTarget.OnAnimateur(animateurId));
+            case STAND -> standId == null ? Optional.empty() : Optional.of(new VerrouillageTarget.OnStand(standId));
+            case CRENEAU ->
+                creneauId == null ? Optional.empty() : Optional.of(new VerrouillageTarget.OnCreneau(creneauId));
+            case JOUR -> jour == null ? Optional.empty() : Optional.of(new VerrouillageTarget.OnJour(jour));
+            case ANIMATEUR_CRENEAU ->
+                animateurId == null || creneauId == null
+                        ? Optional.empty()
+                        : Optional.of(new VerrouillageTarget.OnAnimateurAndCreneau(animateurId, creneauId));
         };
     }
 

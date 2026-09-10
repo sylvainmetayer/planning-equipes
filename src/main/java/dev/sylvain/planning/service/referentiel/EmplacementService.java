@@ -1,16 +1,15 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
-
 import dev.sylvain.planning.domain.Emplacement;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.Ids;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
 
 /** CRUD of the emplacement referential — the physical places stands sit in. */
 @ApplicationScoped

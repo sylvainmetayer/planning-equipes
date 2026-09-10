@@ -2,13 +2,11 @@ package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.service.analyse.PlanningKpiService.AffectationKpi;
 import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * KPI aggregation (issues #89/#70), exercised on the static core: no database,
@@ -30,8 +28,8 @@ class PlanningKpiServiceTest {
                 seat("S2", "1", "A2", 240),
                 seat("S2", "2", null, null));
 
-        PlanningKpi kpi = PlanningKpiService.compute(affectations, "0hard/-3medium/-120soft",
-                Map.of("posteDoitEtrePourvu", 1), 4, 60L);
+        PlanningKpi kpi = PlanningKpiService.compute(
+                affectations, "0hard/-3medium/-120soft", Map.of("posteDoitEtrePourvu", 1), 4, 60L);
 
         assertThat(kpi.postesTotal()).isEqualTo(4);
         assertThat(kpi.postesPourvus()).isEqualTo(3);
@@ -58,9 +56,7 @@ class PlanningKpiServiceTest {
     void uneDureeInconnueLeveLeDrapeauHeuresIncompletesSansCasserLeReste() {
         // A staffed seat whose créneau no longer exists: its hours cannot be
         // counted, which the flag must say instead of silently under-counting.
-        List<AffectationKpi> affectations = List.of(
-                seat("S1", "1", "A1", 120),
-                seat("S1", "99", "A2", null));
+        List<AffectationKpi> affectations = List.of(seat("S1", "1", "A1", 120), seat("S1", "99", "A2", null));
 
         PlanningKpi kpi = PlanningKpiService.compute(affectations, null, Map.of(), null, null);
 
@@ -83,10 +79,8 @@ class PlanningKpiServiceTest {
 
     @Test
     void parseScoreLitLesTroisNiveauxEtTolereLePrefixeInit() {
-        assertThat(PlanningKpiService.parseScore("0hard/-3medium/-120soft"))
-                .containsExactly(0, -3, -120);
-        assertThat(PlanningKpiService.parseScore("-2init/-1hard/0medium/5soft"))
-                .containsExactly(-1, 0, 5);
+        assertThat(PlanningKpiService.parseScore("0hard/-3medium/-120soft")).containsExactly(0, -3, -120);
+        assertThat(PlanningKpiService.parseScore("-2init/-1hard/0medium/5soft")).containsExactly(-1, 0, 5);
         assertThat(PlanningKpiService.parseScore(null)).isNull();
         assertThat(PlanningKpiService.parseScore("pas un score")).isNull();
     }

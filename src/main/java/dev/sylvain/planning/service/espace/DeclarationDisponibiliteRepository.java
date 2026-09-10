@@ -1,5 +1,10 @@
 package dev.sylvain.planning.service.espace;
 
+import dev.sylvain.planning.domain.DeclarationDisponibilite;
+import dev.sylvain.planning.domain.StatutDeclaration;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,12 +13,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import dev.sylvain.planning.domain.DeclarationDisponibilite;
-import dev.sylvain.planning.domain.StatutDeclaration;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * SQL of the self-service declarations (issue #291) and of the collection
@@ -55,31 +54,29 @@ public class DeclarationDisponibiliteRepository {
 
         /** True on {@code jour}: the switch is on and the day is inside the bounds. */
         public boolean openOn(LocalDate jour) {
-            return ouverte
-                    && (debut == null || !jour.isBefore(debut))
-                    && (fin == null || !jour.isAfter(fin));
+            return ouverte && (debut == null || !jour.isBefore(debut)) && (fin == null || !jour.isAfter(fin));
         }
     }
 
     public FenetreCollecte fenetre() {
         return scope.read("Failed to read the collection window", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "SELECT collecte_ouverte, date_debut, date_fin FROM parametres_collecte "
-                            + "WHERE edition_id = ?");
+            try (PreparedStatement ps = scope.prepareScoped(
+                            connection,
+                            "SELECT collecte_ouverte, date_debut, date_fin FROM parametres_collecte "
+                                    + "WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
                     return FenetreCollecte.closed();
                 }
-                return new FenetreCollecte(rs.getBoolean("collecte_ouverte"),
-                        date(rs, "date_debut"), date(rs, "date_fin"));
+                return new FenetreCollecte(
+                        rs.getBoolean("collecte_ouverte"), date(rs, "date_debut"), date(rs, "date_fin"));
             }
         });
     }
 
     public void saveFenetre(FenetreCollecte fenetre) {
         scope.write("Failed to store the collection window", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO parametres_collecte (edition_id, collecte_ouverte, date_debut, date_fin)
                     VALUES (?, ?, ?, ?)
                     ON CONFLICT (edition_id) DO UPDATE SET
@@ -121,15 +118,14 @@ public class DeclarationDisponibiliteRepository {
      * The upsert behind {@link #replacePending}. Only the column list is
      * concatenated, from this class's own constant; every value travels bound.
      */
-    private static final String UPSERT_SQL =
-            "INSERT INTO declaration_disponibilite (edition_id, " + COLONNES + ") "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                    + "ON CONFLICT (edition_id, animateur_id) WHERE statut = 'EN_ATTENTE' "
-                    + "DO UPDATE SET id = EXCLUDED.id, "
-                    + "jours_indisponibles = EXCLUDED.jours_indisponibles, "
-                    + "souhaits = EXCLUDED.souhaits, "
-                    + "commentaire = EXCLUDED.commentaire, "
-                    + "cree_le = EXCLUDED.cree_le";
+    private static final String UPSERT_SQL = "INSERT INTO declaration_disponibilite (edition_id, " + COLONNES + ") "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            + "ON CONFLICT (edition_id, animateur_id) WHERE statut = 'EN_ATTENTE' "
+            + "DO UPDATE SET id = EXCLUDED.id, "
+            + "jours_indisponibles = EXCLUDED.jours_indisponibles, "
+            + "souhaits = EXCLUDED.souhaits, "
+            + "commentaire = EXCLUDED.commentaire, "
+            + "cree_le = EXCLUDED.cree_le";
 
     /**
      * Replaces the animateur's pending declaration with {@code declaration}.
@@ -150,25 +146,25 @@ public class DeclarationDisponibiliteRepository {
      * what the espace shows back.</p>
      */
     public void replacePending(DeclarationDisponibilite declaration) {
-        scope.write("Failed to store the declaration of animateur " + declaration.getAnimateurId(),
-                connection -> {
-                    try (PreparedStatement upsert = scope.prepareScoped(connection, UPSERT_SQL)) {
-                        upsert.setString(2, declaration.getId());
-                        upsert.setString(3, declaration.getAnimateurId());
-                        upsert.setString(4, lines(declaration.getJoursIndisponibles().stream()
+        scope.write("Failed to store the declaration of animateur " + declaration.getAnimateurId(), connection -> {
+            try (PreparedStatement upsert = scope.prepareScoped(connection, UPSERT_SQL)) {
+                upsert.setString(2, declaration.getId());
+                upsert.setString(3, declaration.getAnimateurId());
+                upsert.setString(
+                        4,
+                        lines(declaration.getJoursIndisponibles().stream()
                                 .map(LocalDate::toString)
                                 .toList()));
-                        upsert.setString(5, lines(declaration.getSouhaits()));
-                        upsert.setString(6, declaration.getCommentaire());
-                        upsert.setString(7, declaration.getStatut().name());
-                        upsert.setString(8, declaration.getCommentaireAdmin());
-                        upsert.setTimestamp(9, Timestamp.from(declaration.getCreeLe()));
-                        upsert.setTimestamp(10, declaration.getDecideLe() == null
-                                ? null
-                                : Timestamp.from(declaration.getDecideLe()));
-                        upsert.executeUpdate();
-                    }
-                });
+                upsert.setString(5, lines(declaration.getSouhaits()));
+                upsert.setString(6, declaration.getCommentaire());
+                upsert.setString(7, declaration.getStatut().name());
+                upsert.setString(8, declaration.getCommentaireAdmin());
+                upsert.setTimestamp(9, Timestamp.from(declaration.getCreeLe()));
+                upsert.setTimestamp(
+                        10, declaration.getDecideLe() == null ? null : Timestamp.from(declaration.getDecideLe()));
+                upsert.executeUpdate();
+            }
+        });
     }
 
     /**
@@ -182,8 +178,7 @@ public class DeclarationDisponibiliteRepository {
         return scope.writeAndReturn("Failed to record the decision on declaration " + id, connection -> {
             // Not prepareScoped: the SET clause claims the first placeholders,
             // so the edition_id predicate is bound explicitly.
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
+            try (PreparedStatement ps = connection.prepareStatement("""
                     UPDATE declaration_disponibilite
                     SET statut = ?, commentaire_admin = ?, decide_le = ?
                     WHERE edition_id = ? AND id = ? AND statut = 'EN_ATTENTE'""")) {

@@ -15,5 +15,4 @@ public record CreneauDto(
         Integer jour,
         @NotNull LocalDate date,
         @NotNull LocalTime heureDebut,
-        @NotNull LocalTime heureFin) {
-}
+        @NotNull LocalTime heureFin) {}

@@ -3,13 +3,6 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneDetailView;
 import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneView;
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
@@ -20,6 +13,11 @@ import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * The loop MCP could not run before: solve, capture, freeze what is good,
@@ -37,8 +35,10 @@ class PlanificationMcpToolsTest {
     private static final long POLL_INTERVAL_MS = 250;
 
     /** PENDING and QUEUED are not the only non-terminal states: a job also sits PENDING while it starts. */
-    private static final Set<String> ETATS_TERMINAUX = Stream.of(JobStatus.COMPLETED, JobStatus.FAILED,
-            JobStatus.CANCELLED, JobStatus.INTERROMPU).map(Enum::name).collect(Collectors.toSet());
+    private static final Set<String> ETATS_TERMINAUX = Stream.of(
+                    JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED, JobStatus.INTERROMPU)
+            .map(Enum::name)
+            .collect(Collectors.toSet());
 
     @Inject
     ScenarioMcpTools scenarioTools;
@@ -86,7 +86,8 @@ class PlanificationMcpToolsTest {
         var restauration = instantaneTools.restaurer_instantane(capture.id(), null);
         assertThat(restauration.affectationsRestaurees()).isEqualTo(capture.nombreAffectations());
 
-        assertThat(instantaneTools.supprimer_instantane(capture.id(), null).supprime()).isTrue();
+        assertThat(instantaneTools.supprimer_instantane(capture.id(), null).supprime())
+                .isTrue();
     }
 
     @Test
@@ -97,8 +98,8 @@ class PlanificationMcpToolsTest {
 
         assertThat(detail.affectations()).hasSizeLessThanOrEqualTo(5);
         assertThat(detail.affectationsTotal()).isEqualTo(capture.nombreAffectations());
-        assertThat(detail.affectations()).allSatisfy(affectation ->
-                assertThat(affectation.standId()).isNotBlank());
+        assertThat(detail.affectations())
+                .allSatisfy(affectation -> assertThat(affectation.standId()).isNotBlank());
 
         instantaneTools.supprimer_instantane(capture.id(), null);
     }
@@ -106,14 +107,15 @@ class PlanificationMcpToolsTest {
     @Test
     void verrouillerPuisDeverrouillerUnAnimateurDuPlanning() throws InterruptedException {
         solve();
-        String animateurId = planningTools.lister_affectations(null, null, null, false, null, null).affectations().stream()
-                .map(AffectationView::animateurId)
-                .filter(id -> id != null)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
+        String animateurId =
+                planningTools.lister_affectations(null, null, null, false, null, null).affectations().stream()
+                        .map(AffectationView::animateurId)
+                        .filter(id -> id != null)
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
 
-        VerrouillageView pose = verrouillageTools.verrouiller("ANIMATEUR", animateurId, null, null, null,
-                "vérifié avec l'équipe", null);
+        VerrouillageView pose = verrouillageTools.verrouiller(
+                "ANIMATEUR", animateurId, null, null, null, "vérifié avec l'équipe", null);
 
         assertThat(pose.type()).isEqualTo("ANIMATEUR");
         assertThat(pose.animateurId()).isEqualTo(animateurId);
@@ -130,8 +132,8 @@ class PlanificationMcpToolsTest {
 
     @Test
     void verrouillerUneCibleInconnueEstRefuse() {
-        assertThatThrownBy(() -> verrouillageTools.verrouiller("STAND", null, "STAND-QUI-NEXISTE-PAS", null, null,
-                null, null))
+        assertThatThrownBy(() ->
+                        verrouillageTools.verrouiller("STAND", null, "STAND-QUI-NEXISTE-PAS", null, null, null, null))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("STAND-QUI-NEXISTE-PAS");
     }

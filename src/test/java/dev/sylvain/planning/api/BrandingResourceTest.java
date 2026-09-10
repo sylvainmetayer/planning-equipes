@@ -24,8 +24,8 @@ class BrandingResourceTest {
 
     @Test
     void answersWithoutAuthenticationAndFallsBackToANeutralIdentity() {
-        given()
-                .when().get("/api/branding")
+        given().when()
+                .get("/api/branding")
                 .then()
                 .statusCode(200)
                 .body("productName", equalTo("Planning Équipes"))

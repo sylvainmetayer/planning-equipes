@@ -1,10 +1,5 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.time.LocalDate;
-import java.util.List;
-
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
@@ -20,6 +15,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDate;
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Admin side of the foire au planning (issue #165): review the demandes
@@ -66,17 +64,18 @@ public class DemandeEchangeResource {
     @PUT
     @Path("/configuration")
     public ConfigurationFoire configure(ConfigurationFoire configuration) {
-        demandeEchangeService.openFoire(configuration == null
-                ? DemandeEchangeService.FenetreFoire.unbounded()
-                : new DemandeEchangeService.FenetreFoire(
-                        configuration.foireOuverte(), configuration.debut(), configuration.fin()));
+        demandeEchangeService.openFoire(
+                configuration == null
+                        ? DemandeEchangeService.FenetreFoire.unbounded()
+                        : new DemandeEchangeService.FenetreFoire(
+                                configuration.foireOuverte(), configuration.debut(), configuration.fin()));
         return configurationView();
     }
 
     private ConfigurationFoire configurationView() {
         DemandeEchangeService.FenetreFoire fenetre = demandeEchangeService.fenetre();
-        return new ConfigurationFoire(fenetre.ouverte(), fenetre.debut(), fenetre.fin(),
-                demandeEchangeService.isFoireOpen());
+        return new ConfigurationFoire(
+                fenetre.ouverte(), fenetre.debut(), fenetre.fin(), demandeEchangeService.isFoireOpen());
     }
 
     /**
@@ -91,9 +90,7 @@ public class DemandeEchangeResource {
      *                     is accepted
      */
     @Schema(requiredProperties = {"foireOuverte"})
-    public record ConfigurationFoire(boolean foireOuverte, LocalDate debut, LocalDate fin,
-            boolean ouverteAujourdhui) {
-    }
+    public record ConfigurationFoire(boolean foireOuverte, LocalDate debut, LocalDate fin, boolean ouverteAujourdhui) {}
 
     /**
      * Fresh impact of one demande against the current persisted planning:
@@ -111,15 +108,15 @@ public class DemandeEchangeResource {
     @POST
     @Path("/{id}/acceptation")
     public Response accept(@PathParam("id") String id, DecisionEchange decision) {
-        return Response.ok(view(demandeEchangeService.accept(id,
-                decision == null ? null : decision.commentaire()))).build();
+        return Response.ok(view(demandeEchangeService.accept(id, decision == null ? null : decision.commentaire())))
+                .build();
     }
 
     @POST
     @Path("/{id}/refus")
     public Response refuse(@PathParam("id") String id, DecisionEchange decision) {
-        return Response.ok(view(demandeEchangeService.refuse(id,
-                decision == null ? null : decision.commentaire()))).build();
+        return Response.ok(view(demandeEchangeService.refuse(id, decision == null ? null : decision.commentaire())))
+                .build();
     }
 
     private DemandeEchangeView view(DemandeEchange demande) {
@@ -127,6 +124,5 @@ public class DemandeEchangeResource {
     }
 
     /** Optional admin comment carried by a decision (the reason of a refusal, typically). */
-    public record DecisionEchange(String commentaire) {
-    }
+    public record DecisionEchange(String commentaire) {}
 }

@@ -2,14 +2,6 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -17,6 +9,10 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.solve.ProblemBuilder.ProblemeReamorce;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import dev.sylvain.planning.service.solve.SolverJobService.ResultatSolve;
@@ -25,20 +21,17 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import dev.sylvain.planning.service.edition.EditionService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.solve.ProblemBuilder;
-import dev.sylvain.planning.service.solve.Reamorcage;
-import dev.sylvain.planning.service.solve.SolvePipeline;
-import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * A solve the container stops under — a graceful shutdown, a live reload —
@@ -56,8 +49,7 @@ import dev.sylvain.planning.service.referentiel.TypologieItem;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class SolverJobArretTest {
 
-    public static class Profil implements QuarkusTestProfile {
-    }
+    public static class Profil implements QuarkusTestProfile {}
 
     private static final LocalDate JOUR = LocalDate.of(2030, 9, 3);
     private static final String EDITION = "ARRET-EDITION";
@@ -95,10 +87,12 @@ class SolverJobArretTest {
         try {
             fixture.create();
             attendreSolveurLibre();
-            SolverJob abouti = withinEdition(() -> solverJobs.submitSolveFromReferenceData(2L, false, Reamorcage.AUCUN));
+            SolverJob abouti =
+                    withinEdition(() -> solverJobs.submitSolveFromReferenceData(2L, false, Reamorcage.AUCUN));
             attendreFin(abouti);
             assertThat(abouti.getStatus()).isEqualTo(JobStatus.COMPLETED);
-            String scoreAbouti = ((ResultatSolve) abouti.getResult()).diagnostic().score();
+            String scoreAbouti =
+                    ((ResultatSolve) abouti.getResult()).diagnostic().score();
             Map<String, String> planAbouti = withinEdition(this::affectationsPersistees);
             assertThat(planAbouti).isNotEmpty();
 
@@ -107,15 +101,19 @@ class SolverJobArretTest {
             // to beat it. Timefold resets an early termination asked before
             // solve() starts, hence the delay.
             SolvePipeline.Resolution<ProblemeReamorce> resolution = withinEdition(() -> pipeline.execute(
-                    EDITION, () -> planningService.buildFromReferenceData(Reamorcage.AUCUN),
-                    ProblemeReamorce::planning, 30L, solver -> Thread.ofVirtual().start(() -> {
+                    EDITION,
+                    () -> planningService.buildFromReferenceData(Reamorcage.AUCUN),
+                    ProblemeReamorce::planning,
+                    30L,
+                    solver -> Thread.ofVirtual().start(() -> {
                         try {
                             Thread.sleep(500);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                         }
                         solver.terminateEarly();
-                    }), () -> true));
+                    }),
+                    () -> true));
 
             assertThat(resolution.interruption()).isNotNull();
             assertThat(resolution.interruption().partialPlanKept()).isFalse();
@@ -136,8 +134,7 @@ class SolverJobArretTest {
      */
     @Test
     @Order(2)
-    void aSolveStoppedByTheContainerEndsInterrompuAndKeepsItsPlanWhenNothingWasStored()
-            throws InterruptedException {
+    void aSolveStoppedByTheContainerEndsInterrompuAndKeepsItsPlanWhenNothingWasStored() throws InterruptedException {
         // Two seats, one animateur: infeasible, so the solve runs its whole
         // budget instead of stopping on feasibility before the shutdown.
         Fixture fixture = new Fixture(2, 1);
@@ -168,7 +165,8 @@ class SolverJobArretTest {
     private Map<String, String> affectationsPersistees() {
         return persistence.loadPersistedPlanning().getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null)
-                .collect(Collectors.toMap(PosteAffectation::getId, poste -> poste.getAnimateur().getId()));
+                .collect(Collectors.toMap(
+                        PosteAffectation::getId, poste -> poste.getAnimateur().getId()));
     }
 
     private <T> T withinEdition(java.util.concurrent.Callable<T> travail) {
@@ -179,7 +177,9 @@ class SolverJobArretTest {
         for (int essai = 0; essai < 240 && !job.isFinished(); essai++) {
             Thread.sleep(250);
         }
-        assertThat(job.isFinished()).as("job %s: %s %s", job.getId(), job.getStatus(), job.getError()).isTrue();
+        assertThat(job.isFinished())
+                .as("job %s: %s %s", job.getId(), job.getStatus(), job.getError())
+                .isTrue();
     }
 
     /** Until the job holds a running solver, not just the RUNNING status it takes while building its problem. */
@@ -229,7 +229,9 @@ class SolverJobArretTest {
                 persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
                 referenceData.deleteStand("ARRET-S1");
                 animateurs.forEach(animateur -> referenceData.deleteAnimateur(animateur.getId()));
-                referenceData.deleteCreneaux(referenceData.listCreneaux().stream().map(Creneau::getId).toList());
+                referenceData.deleteCreneaux(referenceData.listCreneaux().stream()
+                        .map(Creneau::getId)
+                        .toList());
             });
         }
     }

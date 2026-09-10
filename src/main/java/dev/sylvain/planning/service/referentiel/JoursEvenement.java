@@ -1,12 +1,11 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Creneau;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-
-import dev.sylvain.planning.domain.Creneau;
 
 /**
  * The days an edition's event spans, and the two bounds around them.

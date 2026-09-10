@@ -38,8 +38,7 @@ public class EspaceTokenFilter implements ContainerRequestFilter {
     /** Shared with {@link SessionEspaceFilter}: {@code null} means the request was aborted with a 404. */
     TokenOwner resoudreOuAborter(ContainerRequestContext contexte) {
         String token = contexte.getUriInfo().getPathParameters().getFirst("jeton");
-        TokenOwner owner =
-                token == null ? null : referenceDataService.resolveAnimateurToken(token);
+        TokenOwner owner = token == null ? null : referenceDataService.resolveAnimateurToken(token);
         if (owner == null) {
             contexte.abortWith(Response.status(Response.Status.NOT_FOUND)
                     .type(MediaType.APPLICATION_JSON)

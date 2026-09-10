@@ -2,18 +2,16 @@ package dev.sylvain.planning.solver.constraints;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * The move filter was covered by no test at all, while it is the one place in
@@ -111,9 +109,11 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
                     continue;
                 }
                 if (!atLeastOneConstraintPenalizes(cas, parametres(pauseSurPoste))) {
-                    rejetsInjustifies.add(cas.getAnimateur().getId() + " sur " + cas.getStand().getId()
+                    rejetsInjustifies.add(cas.getAnimateur().getId() + " sur "
+                            + cas.getStand().getId()
                             + " au créneau " + cas.getCreneau().getHeureDebut() + "–"
-                            + cas.getCreneau().getHeureFin() + " le " + cas.getCreneau().getDate()
+                            + cas.getCreneau().getHeureFin() + " le "
+                            + cas.getCreneau().getDate()
                             + (pauseSurPoste ? " (pause sur poste)" : ""));
                 }
             }
@@ -129,7 +129,8 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
     @Test
     void unPosteNonPourvuResteToujoursProposable() {
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), matin("C", 1, D1), null), null, false)).isTrue();
+                        poste(standWithStrategy("S"), matin("C", 1, D1), null), null, false))
+                .isTrue();
     }
 
     /**
@@ -145,14 +146,19 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
         indisponible.setJoursIndisponibles(java.util.Set.of(D1));
 
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), matin("C1", 1, D1), indisponible), indisponible, false)).isFalse();
+                        poste(standWithStrategy("S"), matin("C1", 1, D1), indisponible), indisponible, false))
+                .isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(stand("S-MAJ", true, "STRATEGIE"), matin("C2", 1, D1), mineur), mineur, false)).isFalse();
+                        poste(stand("S-MAJ", true, "STRATEGIE"), matin("C2", 1, D1), mineur), mineur, false))
+                .isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), nuit("C3", 1, D1), mineur), mineur, false)).isFalse();
+                        poste(standWithStrategy("S"), nuit("C3", 1, D1), mineur), mineur, false))
+                .isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), longDay("C4", 1, D1), mineur), mineur, false)).isFalse();
+                        poste(standWithStrategy("S"), longDay("C4", 1, D1), mineur), mineur, false))
+                .isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                poste(standWithStrategy("S"), matin("C5", 7, FERIE), mineur), mineur, false)).isFalse();
+                        poste(standWithStrategy("S"), matin("C5", 7, FERIE), mineur), mineur, false))
+                .isFalse();
     }
 }

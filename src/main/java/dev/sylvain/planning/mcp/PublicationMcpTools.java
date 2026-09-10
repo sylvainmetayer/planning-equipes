@@ -1,22 +1,21 @@
 package dev.sylvain.planning.mcp;
 
-import java.time.Instant;
-import java.util.List;
-
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
 import dev.sylvain.planning.service.publication.PlanPublicationService.DestinatairePublication;
 import dev.sylvain.planning.service.publication.PlanPublicationService.RapportPublication;
 import dev.sylvain.planning.service.publication.PlanPublieService;
-import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.publication.PlanningDeliveryService;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.util.List;
 
 /**
  * MCP tools over the publication of the planning ({@code PublicationResource},
@@ -61,12 +60,17 @@ public class PublicationMcpTools {
     @Inject
     PlanningDeliveryService deliveryService;
 
-    @Tool(description = "État de la publication du planning : quand la dernière publication est partie, si "
-            + "quelque chose a déjà été publié, et qui serait concerné par la prochaine — avec, pour chaque "
-            + "animateur, ce que son courriel lui annoncerait. N'envoie rien. C'est ici que se lit la date de "
-            + "dernière publication, là où etat_planning donne celle de la dernière résolution.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "État de la publication du planning : quand la dernière publication est partie, si "
+                    + "quelque chose a déjà été publié, et qui serait concerné par la prochaine — avec, pour chaque "
+                    + "animateur, ce que son courriel lui annoncerait. N'envoie rien. C'est ici que se lit la date de "
+                    + "dernière publication, là où etat_planning donne celle de la dernière résolution.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     EtatPublicationView etat_publication(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ApercuPublication apercu = publicationService.apercu();
@@ -79,27 +83,42 @@ public class PublicationMcpTools {
                 apercu.destinataires().stream().map(PublicationMcpTools::toView).toList());
     }
 
-    @Tool(description = "Publie le planning persisté : il est capturé comme instantané publié, puis chaque "
-            + "animateur concerné reçoit son planning par courriel. ENVOIE DES COURRIELS. Refusé si une "
-            + "résolution est en cours, s'il n'y a rien de résolu à publier, ou si personne n'est concerné — "
-            + "consulter etat_publication d'abord. Les personnes sans adresse et les échecs d'envoi sont "
-            + "comptés ici et détaillés par id par lister_destinataires_publication.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = false, openWorldHint = true))
+    @Tool(
+            description = "Publie le planning persisté : il est capturé comme instantané publié, puis chaque "
+                    + "animateur concerné reçoit son planning par courriel. ENVOIE DES COURRIELS. Refusé si une "
+                    + "résolution est en cours, s'il n'y a rien de résolu à publier, ou si personne n'est concerné — "
+                    + "consulter etat_publication d'abord. Les personnes sans adresse et les échecs d'envoi sont "
+                    + "comptés ici et détaillés par id par lister_destinataires_publication.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = true))
     RapportPublicationView publier_planning(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         RapportPublication rapport = publicationService.publier();
-        return new RapportPublicationView(rapport.snapshotId(), rapport.publieLe(), rapport.envoyes(),
-                rapport.sansEmail().size(), rapport.echecs().size());
+        return new RapportPublicationView(
+                rapport.snapshotId(),
+                rapport.publieLe(),
+                rapport.envoyes(),
+                rapport.sansEmail().size(),
+                rapport.echecs().size());
     }
 
-    @Tool(description = "Trace d'une publication : qui a été prévenu, avec quel statut d'envoi et de quoi il a "
-            + "été informé. Par défaut la dernière publication ; une liste vide veut dire que rien n'a jamais "
-            + "été publié. Les animateurs y sont désignés par id seul.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Trace d'une publication : qui a été prévenu, avec quel statut d'envoi et de quoi il a "
+                    + "été informé. Par défaut la dernière publication ; une liste vide veut dire que rien n'a jamais "
+                    + "été publié. Les animateurs y sont désignés par id seul.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     List<DestinataireView> lister_destinataires_publication(
-            @ToolArg(description = "Id de l'instantané publié ; omis, la dernière publication", required = false) Long snapshotId,
+            @ToolArg(description = "Id de l'instantané publié ; omis, la dernière publication", required = false)
+                    Long snapshotId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         if (snapshotId != null) {
             return toViews(traceRepository.bySnapshot(snapshotId));
@@ -108,11 +127,16 @@ public class PublicationMcpTools {
         return derniere == null ? List.of() : toViews(traceRepository.bySnapshot(derniere.id()));
     }
 
-    @Tool(description = "Renvoie à un animateur son planning tel qu'il a été publié — pas le planning de "
-            + "travail en cours. ENVOIE UN COURRIEL. Échoue si rien n'a jamais été publié, si l'id est inconnu "
-            + "ou si la fiche ne porte pas d'adresse.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = false, openWorldHint = true))
+    @Tool(
+            description = "Renvoie à un animateur son planning tel qu'il a été publié — pas le planning de "
+                    + "travail en cours. ENVOIE UN COURRIEL. Échoue si rien n'a jamais été publié, si l'id est inconnu "
+                    + "ou si la fiche ne porte pas d'adresse.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = true))
     EnvoiView envoyer_planning_animateur(
             @ToolArg(description = "Id de l'animateur") String animateurId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -125,30 +149,38 @@ public class PublicationMcpTools {
             // That sentence carries no id, so nothing could anonymise it after
             // the fact — it is replaced, not rewritten. The privacy rule holds
             // on the failure path too.
-            throw new BusinessError.Invalid(planPublieService.jamaisPublie()
-                    ? "Le planning n'a pas encore été publié : il n'y a rien à renvoyer."
-                    : "L'animateur " + animateurId + " n'a pas d'adresse e-mail sur sa fiche.");
+            throw new BusinessError.Invalid(
+                    planPublieService.jamaisPublie()
+                            ? "Le planning n'a pas encore été publié : il n'y a rien à renvoyer."
+                            : "L'animateur " + animateurId + " n'a pas d'adresse e-mail sur sa fiche.");
         }
         // echecs() carries the address it could not reach; the id is what the
         // caller can act on, and the log holds the rest.
-        return new EnvoiView(compteRendu.envoyes() == 1, compteRendu.echecs().isEmpty()
-                ? null
-                : "L'envoi à l'animateur " + animateurId + " a échoué");
+        return new EnvoiView(
+                compteRendu.envoyes() == 1,
+                compteRendu.echecs().isEmpty() ? null : "L'envoi à l'animateur " + animateurId + " a échoué");
     }
 
     /* -------------------------------- Views -------------------------------- */
 
     static List<DestinataireView> toViews(List<Destinataire> trace) {
         return trace.stream()
-                .map(destinataire -> new DestinataireView(destinataire.snapshotId(), destinataire.animateurId(),
-                        destinataire.statut().name(), destinataire.envoyeLe(), destinataire.changements()))
+                .map(destinataire -> new DestinataireView(
+                        destinataire.snapshotId(),
+                        destinataire.animateurId(),
+                        destinataire.statut().name(),
+                        destinataire.envoyeLe(),
+                        destinataire.changements()))
                 .toList();
     }
 
     static DestinatairePublicationView toView(DestinatairePublication destinataire) {
-        return new DestinatairePublicationView(destinataire.animateurId(),
+        return new DestinatairePublicationView(
+                destinataire.animateurId(),
                 destinataire.email() != null && !destinataire.email().isBlank(),
-                destinataire.premiereDiffusion(), destinataire.changements(), destinataire.demandes());
+                destinataire.premiereDiffusion(),
+                destinataire.changements(),
+                destinataire.demandes());
     }
 
     /**
@@ -158,18 +190,24 @@ public class PublicationMcpTools {
      *                              write to — zero meaning the published plan
      *                              is already up to date
      */
-    public record EtatPublicationView(boolean jamaisPublie, boolean planVide, boolean solveEnCours,
-            Instant dernierePublicationLe, int nombreConcernes,
-            List<DestinatairePublicationView> destinataires) {
-    }
+    public record EtatPublicationView(
+            boolean jamaisPublie,
+            boolean planVide,
+            boolean solveEnCours,
+            Instant dernierePublicationLe,
+            int nombreConcernes,
+            List<DestinatairePublicationView> destinataires) {}
 
     /**
      * @param adresseConnue whether the fiche carries an address at all — the
      *                      address itself never leaves over MCP
      */
-    public record DestinatairePublicationView(String animateurId, boolean adresseConnue,
-            boolean premiereDiffusion, List<String> changements, List<String> demandes) {
-    }
+    public record DestinatairePublicationView(
+            String animateurId,
+            boolean adresseConnue,
+            boolean premiereDiffusion,
+            List<String> changements,
+            List<String> demandes) {}
 
     /**
      * One line of a publication's trace.
@@ -179,19 +217,15 @@ public class PublicationMcpTools {
      * @param changements what that person was told, exactly as their mail
      *                    worded it
      */
-    public record DestinataireView(long snapshotId, String animateurId, String statut, Instant envoyeLe,
-            List<String> changements) {
-    }
+    public record DestinataireView(
+            long snapshotId, String animateurId, String statut, Instant envoyeLe, List<String> changements) {}
 
     /**
      * @param sansAdresse how many concerned people have no address on their
      *                    fiche; {@code lister_destinataires_publication} names
      *                    them by id
      */
-    public record RapportPublicationView(long snapshotId, Instant publieLe, int envoyes,
-            int sansAdresse, int echecs) {
-    }
+    public record RapportPublicationView(long snapshotId, Instant publieLe, int envoyes, int sansAdresse, int echecs) {}
 
-    public record EnvoiView(boolean envoye, String echec) {
-    }
+    public record EnvoiView(boolean envoye, String echec) {}
 }

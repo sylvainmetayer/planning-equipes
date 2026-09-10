@@ -1,10 +1,5 @@
 package dev.sylvain.planning.domain;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
 import ai.timefold.solver.core.api.domain.solution.PlanningEntityCollectionProperty;
 import ai.timefold.solver.core.api.domain.solution.PlanningScore;
@@ -13,6 +8,10 @@ import ai.timefold.solver.core.api.domain.solution.ProblemFactCollectionProperty
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @PlanningSolution
 public class PlanningEvenement {
@@ -80,8 +79,7 @@ public class PlanningEvenement {
     @PlanningScore
     private HardMediumSoftScore score;
 
-    public PlanningEvenement() {
-    }
+    public PlanningEvenement() {}
 
     public PlanningEvenement(LocalDate dateDebutFestival, List<Animateur> animateurs, List<PosteAffectation> postes) {
         this.dateDebutFestival = dateDebutFestival;
@@ -89,7 +87,10 @@ public class PlanningEvenement {
         this.postes = postes;
     }
 
-    public PlanningEvenement(LocalDate dateDebutFestival, List<Animateur> animateurs, List<PosteAffectation> postes,
+    public PlanningEvenement(
+            LocalDate dateDebutFestival,
+            List<Animateur> animateurs,
+            List<PosteAffectation> postes,
             List<ContrainteAdHoc> contraintesAdHoc) {
         this.dateDebutFestival = dateDebutFestival;
         this.animateurs = animateurs;
@@ -144,8 +145,10 @@ public class PlanningEvenement {
      * shortcut for the move filter, not a serialised field.
      */
     public boolean pauseSurPosteActive() {
-        return parametresLegaux != null && !parametresLegaux.isEmpty()
-                && parametresLegaux.get(0) != null && parametresLegaux.get(0).isPauseSurPoste();
+        return parametresLegaux != null
+                && !parametresLegaux.isEmpty()
+                && parametresLegaux.get(0) != null
+                && parametresLegaux.get(0).isPauseSurPoste();
     }
 
     public List<ParametresQualite> getParametresQualite() {

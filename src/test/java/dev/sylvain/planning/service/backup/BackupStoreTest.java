@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -36,21 +35,26 @@ class BackupStoreTest {
     void listsTheDumpsMostRecentFirst() throws IOException {
         seed("planning-20260306-040000.dump", "planning-20260308-040000.dump", "planning-20260307-040000.dump");
 
-        assertThat(new BackupStore(directory).list()).extracting(BackupFile::name)
-                .containsExactly("planning-20260308-040000.dump", "planning-20260307-040000.dump",
+        assertThat(new BackupStore(directory).list())
+                .extracting(BackupFile::name)
+                .containsExactly(
+                        "planning-20260308-040000.dump",
+                        "planning-20260307-040000.dump",
                         "planning-20260306-040000.dump");
     }
 
     @Test
     void keepsTheRetentionMostRecentDumpsAndDeletesTheRest() throws IOException {
-        seed("planning-20260301-040000.dump", "planning-20260302-040000.dump", "planning-20260303-040000.dump",
+        seed(
+                "planning-20260301-040000.dump",
+                "planning-20260302-040000.dump",
+                "planning-20260303-040000.dump",
                 "planning-20260304-040000.dump");
 
         List<String> deleted = new BackupStore(directory).rotate(2);
 
         assertThat(deleted).containsExactly("planning-20260302-040000.dump", "planning-20260301-040000.dump");
-        assertThat(names()).containsExactlyInAnyOrder("planning-20260304-040000.dump",
-                "planning-20260303-040000.dump");
+        assertThat(names()).containsExactlyInAnyOrder("planning-20260304-040000.dump", "planning-20260303-040000.dump");
     }
 
     @Test
@@ -67,8 +71,11 @@ class BackupStoreTest {
      */
     @Test
     void neverTouchesAFileItDidNotWrite() throws IOException {
-        seed("planning-20260301-040000.dump", "planning-20260302-040000.dump",
-                "planning-avant-migration.dump", "notes.txt");
+        seed(
+                "planning-20260301-040000.dump",
+                "planning-20260302-040000.dump",
+                "planning-avant-migration.dump",
+                "notes.txt");
 
         new BackupStore(directory).rotate(1);
 
@@ -80,8 +87,8 @@ class BackupStoreTest {
         BackupStore store = new BackupStore(directory);
         store.prepare();
 
-        Path published = store.publish(LocalDateTime.of(2026, 3, 8, 4, 0, 0),
-                target -> Files.writeString(target, "dump"));
+        Path published =
+                store.publish(LocalDateTime.of(2026, 3, 8, 4, 0, 0), target -> Files.writeString(target, "dump"));
 
         assertThat(published).hasFileName("planning-20260308-040000.dump").hasContent("dump");
         assertThat(names()).containsExactly("planning-20260308-040000.dump");
@@ -98,9 +105,10 @@ class BackupStoreTest {
         store.prepare();
 
         assertThatThrownBy(() -> store.publish(LocalDateTime.of(2026, 3, 8, 4, 0, 0), target -> {
-            Files.writeString(target, "half a dump");
-            throw new IOException("pg_dump failed (exit 1)");
-        })).isInstanceOf(IOException.class);
+                    Files.writeString(target, "half a dump");
+                    throw new IOException("pg_dump failed (exit 1)");
+                }))
+                .isInstanceOf(IOException.class);
 
         assertThat(names()).isEmpty();
     }

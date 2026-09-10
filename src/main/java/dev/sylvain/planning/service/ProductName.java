@@ -1,7 +1,6 @@
 package dev.sylvain.planning.service;
 
 import dev.sylvain.planning.config.ConfigBranding;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

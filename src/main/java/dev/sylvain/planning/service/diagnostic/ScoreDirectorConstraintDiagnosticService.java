@@ -1,24 +1,23 @@
 package dev.sylvain.planning.service.diagnostic;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
-import ai.timefold.solver.core.impl.score.constraint.ConstraintMatch;
-import ai.timefold.solver.core.impl.score.constraint.ConstraintMatchTotal;
 import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
 import ai.timefold.solver.core.api.solver.SolverFactory;
+import ai.timefold.solver.core.impl.score.constraint.ConstraintMatch;
 import ai.timefold.solver.core.impl.score.constraint.ConstraintMatchPolicy;
+import ai.timefold.solver.core.impl.score.constraint.ConstraintMatchTotal;
 import ai.timefold.solver.core.impl.score.director.InnerScoreDirector;
 import ai.timefold.solver.core.impl.score.director.ScoreDirectorFactory;
 import ai.timefold.solver.core.impl.solver.DefaultSolverFactory;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Diagnoses through the solver's own score director, which the Community
@@ -99,11 +98,10 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
             // which is how diagnose() reads its hard score back.
             HardMediumSoftScore score = scoreDirector.calculateScore().raw();
             List<ConstraintContribution> contributions = new ArrayList<>();
-            for (ConstraintMatchTotal<HardMediumSoftScore> total : scoreDirector.getConstraintMatchTotalMap().values()) {
-                contributions.add(new ConstraintContribution(
-                        total.getConstraintRef().id(),
-                        total.getScore(),
-                        matchFacts(total)));
+            for (ConstraintMatchTotal<HardMediumSoftScore> total :
+                    scoreDirector.getConstraintMatchTotalMap().values()) {
+                contributions.add(
+                        new ConstraintContribution(total.getConstraintRef().id(), total.getScore(), matchFacts(total)));
             }
             return new PlanningAnalysis(score, contributions);
         }
@@ -145,8 +143,8 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
      * and this method reports names and scores, never facts.</p>
      */
     @Override
-    public List<AffectationHypothesis> hypotheses(PlanningEvenement solution, PosteAffectation cible,
-            List<Animateur> candidats) {
+    public List<AffectationHypothesis> hypotheses(
+            PlanningEvenement solution, PosteAffectation cible, List<Animateur> candidats) {
         Animateur initial = cible.getAnimateur();
         try (InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> scoreDirector = buildProbeScoreDirector()) {
             scoreDirector.setWorkingSolution(solution);
@@ -160,7 +158,10 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
                 for (Animateur candidat : candidats) {
                     assign(scoreDirector, cible, candidat);
                     HardMediumSoftScore apres = scoreDirector.calculateScore().raw();
-                    hypotheses.add(new AffectationHypothesis(candidat.getId(), apres, apres.subtract(avant),
+                    hypotheses.add(new AffectationHypothesis(
+                            candidat.getId(),
+                            apres,
+                            apres.subtract(avant),
                             AffectationHypothesis.worsened(totalsBefore, totals(scoreDirector))));
                 }
             } finally {
@@ -175,8 +176,10 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
     }
 
     /** The one mutation, always through the score director so its match totals stay in step. */
-    private static void assign(InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> scoreDirector,
-            PosteAffectation cible, Animateur animateur) {
+    private static void assign(
+            InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> scoreDirector,
+            PosteAffectation cible,
+            Animateur animateur) {
         scoreDirector.beforeVariableChanged(cible, VARIABLE_ANIMATEUR);
         cible.setAnimateur(animateur);
         scoreDirector.afterVariableChanged(cible, VARIABLE_ANIMATEUR);
@@ -185,7 +188,8 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
     private static Map<String, HardMediumSoftScore> totals(
             InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> scoreDirector) {
         Map<String, HardMediumSoftScore> totals = new HashMap<>();
-        for (ConstraintMatchTotal<HardMediumSoftScore> total : scoreDirector.getConstraintMatchTotalMap().values()) {
+        for (ConstraintMatchTotal<HardMediumSoftScore> total :
+                scoreDirector.getConstraintMatchTotalMap().values()) {
             totals.put(total.getConstraintRef().id(), total.getScore());
         }
         return totals;
@@ -196,7 +200,8 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
      * tracking, which this probe has no reader for.
      */
     private InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> buildProbeScoreDirector() {
-        return scoreDirectorFactory.createScoreDirectorBuilder()
+        return scoreDirectorFactory
+                .createScoreDirectorBuilder()
                 .withLookUpEnabled(false)
                 .withConstraintMatchPolicy(ConstraintMatchPolicy.ENABLED_WITHOUT_JUSTIFICATIONS)
                 .withExpectShadowVariablesInCorrectState(false)
@@ -210,7 +215,8 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
      * instead of in a Timefold changelog.
      */
     private InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> buildScoreDirector() {
-        return scoreDirectorFactory.createScoreDirectorBuilder()
+        return scoreDirectorFactory
+                .createScoreDirectorBuilder()
                 .withLookUpEnabled(false)
                 .withConstraintMatchPolicy(ConstraintMatchPolicy.ENABLED)
                 .withExpectShadowVariablesInCorrectState(false)

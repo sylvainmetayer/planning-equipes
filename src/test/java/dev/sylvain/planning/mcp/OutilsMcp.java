@@ -2,14 +2,13 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkiverse.mcp.server.Tool;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.quarkiverse.mcp.server.Tool;
 
 /**
  * Every {@code @Tool} method of the {@code mcp} package, found by walking the
@@ -22,14 +21,17 @@ import io.quarkiverse.mcp.server.Tool;
  */
 final class OutilsMcp {
 
-    private OutilsMcp() {
-    }
+    private OutilsMcp() {}
 
     static List<Method> all() throws IOException, URISyntaxException {
-        File dossier = new File(OutilsMcp.class.getProtectionDomain()
-                .getCodeSource().getLocation().toURI())
+        File dossier = new File(OutilsMcp.class
+                        .getProtectionDomain()
+                        .getCodeSource()
+                        .getLocation()
+                        .toURI())
                 .getParentFile() // target/test-classes -> target
-                .toPath().resolve("classes")
+                .toPath()
+                .resolve("classes")
                 .resolve(OutilsMcp.class.getPackageName().replace('.', '/'))
                 .toFile();
         assertThat(dossier).as("classes compilées du package mcp").isDirectory();

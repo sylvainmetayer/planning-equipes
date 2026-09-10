@@ -1,10 +1,9 @@
 package dev.sylvain.planning.config;
 
+import io.smallrye.config.ConfigMapping;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-
-import io.smallrye.config.ConfigMapping;
 
 /** Rate limit on the admin login form, per source address. */
 @ConfigMapping(prefix = "planning.auth.connexion")

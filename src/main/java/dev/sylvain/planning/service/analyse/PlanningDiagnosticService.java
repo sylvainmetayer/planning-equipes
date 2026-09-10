@@ -1,17 +1,6 @@
 package dev.sylvain.planning.service.analyse;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import ai.timefold.solver.core.api.solver.SolutionManager;
-
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -22,6 +11,14 @@ import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
 import dev.sylvain.planning.service.diagnostic.MatchFacts;
 import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Turns a solved — or merely persisted — planning into the business-facing
@@ -58,16 +55,18 @@ public final class PlanningDiagnosticService {
      */
     private final Consumer<PlanningEvenement> preparation;
 
-    public PlanningDiagnosticService(ConstraintDiagnosticService constraintDiagnosticService,
-            SolutionManager<PlanningEvenement, ?> solutionManager, FeasibilityAnalyzer feasibilityAnalyzer,
-            Supplier<PlanningEvenement> planPersiste, Consumer<PlanningEvenement> preparation) {
+    public PlanningDiagnosticService(
+            ConstraintDiagnosticService constraintDiagnosticService,
+            SolutionManager<PlanningEvenement, ?> solutionManager,
+            FeasibilityAnalyzer feasibilityAnalyzer,
+            Supplier<PlanningEvenement> planPersiste,
+            Consumer<PlanningEvenement> preparation) {
         this.constraintDiagnosticService = constraintDiagnosticService;
         this.solutionManager = solutionManager;
         this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.planPersiste = planPersiste;
         this.preparation = preparation;
     }
-
 
     /** Caps the per-constraint violation list: a UI detail view, not a full dump. */
     private static final int MAX_VIOLATIONS_PAR_CONTRAINTE = 100;
@@ -112,26 +111,30 @@ public final class PlanningDiagnosticService {
             if (hard) {
                 collectContributionsAdHoc(name, ca.matches(), contributionsAdHoc);
             }
-            constraintDiagnostics.add(new ConstraintDiagnostic(
-                    name,
-                    String.valueOf(ca.score()),
-                    ca.matchCount(),
-                    violations));
+            constraintDiagnostics.add(
+                    new ConstraintDiagnostic(name, String.valueOf(ca.score()), ca.matchCount(), violations));
         }
         constraintDiagnostics.sort((a, b) -> Integer.compare(b.matchCount, a.matchCount));
         int unassigned = (int) solved.getPostes().stream()
                 .filter(p -> p.getAnimateur() == null)
                 .count();
         FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyze(
-                solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved),
-                solved.getContraintesAdHoc());
-        int hardScore = solved.getScore() == null ? 0 : Math.toIntExact(solved.getScore().hardScore());
+                solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved), solved.getContraintesAdHoc());
+        int hardScore = solved.getScore() == null
+                ? 0
+                : Math.toIntExact(solved.getScore().hardScore());
         List<ContributionAdHoc> contraintesAdHocEnCause = contributionsAdHoc.values().stream()
-                .sorted(Comparator.comparingInt(ContributionAdHoc::violations).reversed()
+                .sorted(Comparator.comparingInt(ContributionAdHoc::violations)
+                        .reversed()
                         .thenComparing(ContributionAdHoc::contrainteId))
                 .toList();
-        return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics,
-                faisabilite, hardScore, contraintesAdHocEnCause);
+        return new PlanningDiagnostic(
+                String.valueOf(solved.getScore()),
+                unassigned,
+                constraintDiagnostics,
+                faisabilite,
+                hardScore,
+                contraintesAdHocEnCause);
     }
 
     /**
@@ -149,15 +152,21 @@ public final class PlanningDiagnosticService {
      * {@link #MAX_VIOLATIONS_PAR_CONTRAINTE} is not capped here — this reads
      * the raw matches, not the formatted lines.</p>
      */
-    private static void collectContributionsAdHoc(String constraintName,
-            List<MatchFacts> matches, Map<String, ContributionAdHoc> contributions) {
+    private static void collectContributionsAdHoc(
+            String constraintName, List<MatchFacts> matches, Map<String, ContributionAdHoc> contributions) {
         for (MatchFacts match : matches) {
             for (Object fact : match.facts()) {
                 if (fact instanceof ContrainteAdHoc contrainte && contrainte.getId() != null) {
-                    contributions.merge(contrainte.getId(),
-                            new ContributionAdHoc(contrainte.getId(),
-                                    contrainte.getType() == null ? null : contrainte.getType().name(),
-                                    contrainte.getRaison(), 1, List.of(constraintName)),
+                    contributions.merge(
+                            contrainte.getId(),
+                            new ContributionAdHoc(
+                                    contrainte.getId(),
+                                    contrainte.getType() == null
+                                            ? null
+                                            : contrainte.getType().name(),
+                                    contrainte.getRaison(),
+                                    1,
+                                    List.of(constraintName)),
                             PlanningDiagnosticService::mergeContributions);
                 }
             }
@@ -171,8 +180,12 @@ public final class PlanningDiagnosticService {
                 contraintes.add(name);
             }
         }
-        return new ContributionAdHoc(existing.contrainteId(), existing.type(), existing.raison(),
-                existing.violations() + addition.violations(), List.copyOf(contraintes));
+        return new ContributionAdHoc(
+                existing.contrainteId(),
+                existing.type(),
+                existing.raison(),
+                existing.violations() + addition.violations(),
+                List.copyOf(contraintes));
     }
 
     /**
@@ -213,8 +226,7 @@ public final class PlanningDiagnosticService {
      *                    medium/soft ones, which can run into the thousands
      *                    of matches (see {@link ConstraintCatalog#NOMS_DURS}).
      */
-    public record ConstraintDiagnostic(String name, String score, int matchCount, List<String> violations) {
-    }
+    public record ConstraintDiagnostic(String name, String score, int matchCount, List<String> violations) {}
 
     /**
      * Business-facing result of a solve: score, unfilled seats and
@@ -239,8 +251,7 @@ public final class PlanningDiagnosticService {
             List<ConstraintDiagnostic> contraintes,
             FeasibilityAnalyzer.FeasibilityReport faisabilite,
             int hardScore,
-            List<ContributionAdHoc> contraintesAdHocEnCause) {
-    }
+            List<ContributionAdHoc> contraintesAdHocEnCause) {}
 
     /**
      * One hand-entered exception the last analysis found still violated, most
@@ -254,7 +265,6 @@ public final class PlanningDiagnosticService {
      * @param contraintes  names of the solver rules it broke, usually one
      */
     @Schema(requiredProperties = {"violations"})
-    public record ContributionAdHoc(String contrainteId, String type, String raison, int violations,
-            List<String> contraintes) {
-    }
+    public record ContributionAdHoc(
+            String contrainteId, String type, String raison, int violations, List<String> contraintes) {}
 }

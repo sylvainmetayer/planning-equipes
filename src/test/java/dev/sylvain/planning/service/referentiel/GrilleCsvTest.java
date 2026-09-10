@@ -2,12 +2,10 @@ package dev.sylvain.planning.service.referentiel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.service.referentiel.GrilleCsv.Matrice;
 import java.time.LocalDate;
 import java.time.LocalTime;
-
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.service.referentiel.GrilleCsv.Matrice;
 
 /** {@link GrilleCsv}: the stand matrix as a spreadsheet writes it, read back column by column. */
 class GrilleCsvTest {
@@ -75,6 +73,8 @@ class GrilleCsvTest {
         Matrice matrice = GrilleCsv.parse("stand\t2026-07-08 10:00-12:00\n\nBOURSE\t2\n\n");
 
         assertThat(matrice.separator()).isEqualTo("\t");
-        assertThat(matrice.lignes()).singleElement().satisfies(ligne -> assertThat(ligne.line()).isEqualTo(3));
+        assertThat(matrice.lignes())
+                .singleElement()
+                .satisfies(ligne -> assertThat(ligne.line()).isEqualTo(3));
     }
 }

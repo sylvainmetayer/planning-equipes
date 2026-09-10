@@ -3,23 +3,21 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@code GET /api/pauses} reads the persisted plan under the organiser's
@@ -41,7 +39,8 @@ class PauseResourceTest {
 
     @Test
     void sansPlanPersisteLeRapportEstVideEtLeDitSansErreur() {
-        given().when().get("/api/pauses")
+        given().when()
+                .get("/api/pauses")
                 .then()
                 .statusCode(200)
                 .body("journeesAnalysees", equalTo(0))
@@ -61,7 +60,8 @@ class PauseResourceTest {
         posteBruno.setAnimateur(bruno);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
 
-        given().when().get("/api/pauses")
+        given().when()
+                .get("/api/pauses")
                 .then()
                 .statusCode(200)
                 .body("pauseSurPoste", equalTo(true))
@@ -78,7 +78,8 @@ class PauseResourceTest {
 
         // The declaration withdrawn: the same breaks, flagged as not covered.
         declarerPauseSurPoste(false);
-        given().when().get("/api/pauses")
+        given().when()
+                .get("/api/pauses")
                 .then()
                 .statusCode(200)
                 .body("pauseSurPoste", equalTo(false))
@@ -86,10 +87,18 @@ class PauseResourceTest {
     }
 
     private static void declarerPauseSurPoste(boolean declare) {
-        String courant = given().when().get("/api/parametres-legaux").then().statusCode(200).extract().asString();
+        String courant = given().when()
+                .get("/api/parametres-legaux")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
         String modifie = courant.replaceAll("\"pauseSurPoste\":(true|false)", "\"pauseSurPoste\":" + declare);
-        given().contentType(ContentType.JSON).body(modifie)
-                .when().put("/api/parametres-legaux")
-                .then().statusCode(200);
+        given().contentType(ContentType.JSON)
+                .body(modifie)
+                .when()
+                .put("/api/parametres-legaux")
+                .then()
+                .statusCode(200);
     }
 }

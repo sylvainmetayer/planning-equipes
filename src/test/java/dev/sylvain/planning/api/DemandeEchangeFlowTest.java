@@ -6,26 +6,15 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
-import org.junit.jupiter.api.AfterEach;
-
 import dev.sylvain.planning.service.publication.PlanPublicationService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
@@ -33,6 +22,14 @@ import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * End-to-end foire au planning (issue #165) against the real PostgreSQL
@@ -63,6 +60,7 @@ class DemandeEchangeFlowTest {
 
     /** Espace sessions of the two seeded animateurs (e-mail code flow). */
     private String sessionAlice;
+
     private String sessionBruno;
 
     @AfterEach
@@ -75,41 +73,48 @@ class DemandeEchangeFlowTest {
         persistTwoSeatPlanning();
         String token = tokenOf("ECH-A");
 
-        given().when().get("/api/espace-animateur/" + token)
+        given().when()
+                .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200)
                 .body("animateurId", equalTo("ECH-A"))
                 .body("postes.size()", greaterThanOrEqualTo(1))
                 .body("collegues.find { it.id == 'ECH-B' }.nomComplet", equalTo("Bruno Petit"));
 
-        String demandeId = given()
-                .contentType(ContentType.JSON)
+        String demandeId = given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\","
                         + "\"cibleId\":\"ECH-B\",\"motif\":\"rendez-vous médical\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("[0].statut", equalTo("EN_ATTENTE_CIBLE"))
                 .body("[0].prevalidationOk", notNullValue())
                 .body("[0].cibleNom", equalTo("Bruno Petit"))
-                .extract().path("[0].id");
+                .extract()
+                .path("[0].id");
 
         // The admin cannot accept while the colleague has not agreed.
-        given().contentType(ContentType.JSON).body("{}")
-                .when().post("/api/echanges/" + demandeId + "/acceptation")
+        given().contentType(ContentType.JSON)
+                .body("{}")
+                .when()
+                .post("/api/echanges/" + demandeId + "/acceptation")
                 .then()
                 .statusCode(400);
 
         agreementFromBruno(demandeId);
 
-        given().when().get("/api/echanges/" + demandeId + "/impact")
+        given().when()
+                .get("/api/echanges/" + demandeId + "/impact")
                 .then()
                 .statusCode(200)
                 .body("echangeCroise", equalTo(true))
                 .body("standCibleId", equalTo("ECH-S2"));
 
-        given().contentType(ContentType.JSON).body("{}")
-                .when().post("/api/echanges/" + demandeId + "/acceptation")
+        given().contentType(ContentType.JSON)
+                .body("{}")
+                .when()
+                .post("/api/echanges/" + demandeId + "/acceptation")
                 .then()
                 .statusCode(200)
                 .body("statut", equalTo("ACCEPTEE"));
@@ -122,13 +127,16 @@ class DemandeEchangeFlowTest {
         // Both animateurs are pinned on the créneau by ANIMATEUR_CRENEAU locks.
         assertThat(referenceData.listVerrouillages())
                 .filteredOn(v -> v.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
-                        && v.getCreneauId() != null && v.getCreneauId() == CRENEAU_ID)
+                        && v.getCreneauId() != null
+                        && v.getCreneauId() == CRENEAU_ID)
                 .extracting(v -> v.getAnimateurId())
                 .contains("ECH-A", "ECH-B");
 
         // A decided demande can no longer be refused (or re-accepted).
-        given().contentType(ContentType.JSON).body("{\"commentaire\":\"non\"}")
-                .when().post("/api/echanges/" + demandeId + "/refus")
+        given().contentType(ContentType.JSON)
+                .body("{\"commentaire\":\"non\"}")
+                .when()
+                .post("/api/echanges/" + demandeId + "/refus")
                 .then()
                 .statusCode(400);
     }
@@ -155,7 +163,8 @@ class DemandeEchangeFlowTest {
         String token = tokenOf("ECH-A");
 
         // The picker's data source: Bruno's seats, slots and stands only.
-        given().when().get("/api/espace-animateur/" + token + "/collegues/ECH-B/postes")
+        given().when()
+                .get("/api/espace-animateur/" + token + "/collegues/ECH-B/postes")
                 .then()
                 .statusCode(200)
                 .body("[0].creneauId", equalTo((int) creneauCibleId))
@@ -165,27 +174,31 @@ class DemandeEchangeFlowTest {
         // the caller the id simply has no seat, which is a different fact and
         // one worth probing for. Bare 404, like every other unknown entity here
         // — a body would give the prober something to read.
-        given().when().get("/api/espace-animateur/" + token + "/collegues/ECH-INEXISTANT/postes")
+        given().when()
+                .get("/api/espace-animateur/" + token + "/collegues/ECH-INEXISTANT/postes")
                 .then()
                 .statusCode(404);
 
-        String demandeId = given()
-                .contentType(ContentType.JSON)
+        String demandeId = given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\","
                         + "\"cibleId\":\"ECH-B\",\"motif\":\"je préfère être libre ce jour-là\","
                         + "\"creneauCibleId\":" + creneauCibleId + ",\"standCibleId\":\"ECH-S2\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("[0].statut", equalTo("EN_ATTENTE_CIBLE"))
                 .body("[0].creneauCibleId", equalTo((int) creneauCibleId))
                 .body("[0].standCibleNom", equalTo("Stand deux"))
-                .extract().path("[0].id");
+                .extract()
+                .path("[0].id");
 
         agreementFromBruno(demandeId);
 
-        given().contentType(ContentType.JSON).body("{}")
-                .when().post("/api/echanges/" + demandeId + "/acceptation")
+        given().contentType(ContentType.JSON)
+                .body("{}")
+                .when()
+                .post("/api/echanges/" + demandeId + "/acceptation")
                 .then()
                 .statusCode(200)
                 .body("statut", equalTo("ACCEPTEE"));
@@ -217,16 +230,19 @@ class DemandeEchangeFlowTest {
         persistTwoSeatPlanningWithSpareColleague();
         String token = tokenOf("ECH-A");
 
-        List<Map<String, Object>> suggestions = given()
-                .when().get("/api/espace-animateur/" + token + "/suggestions-echange"
-                        + "?creneauId=" + CRENEAU_ID + "&standId=ECH-S1&plafond=100")
+        List<Map<String, Object>> suggestions = given().when()
+                .get("/api/espace-animateur/" + token + "/suggestions-echange" + "?creneauId=" + CRENEAU_ID
+                        + "&standId=ECH-S1&plafond=100")
                 .then()
                 .statusCode(200)
                 .body("creneauId", equalTo((int) CRENEAU_ID))
                 .body("standId", equalTo("ECH-S1"))
-                .extract().jsonPath().getList("suggestions");
+                .extract()
+                .jsonPath()
+                .getList("suggestions");
 
-        assertThat(suggestions).extracting(suggestion -> suggestion.get("animateurId"))
+        assertThat(suggestions)
+                .extracting(suggestion -> suggestion.get("animateurId"))
                 .doesNotContain("ECH-C", "ECH-A");
 
         // Freed: nothing comes back, the créneau simply leaves Alice's hands.
@@ -248,21 +264,22 @@ class DemandeEchangeFlowTest {
         assertThat(dirige.get("standCibleNom")).isEqualTo("Stand deux");
 
         // Being freed is listed before the trades that keep Alice at work.
-        assertThat(rankOf(suggestions, "ECH-D", "LIBERE"))
-                .isLessThan(rankOf(suggestions, "ECH-B", "CROISE"));
+        assertThat(rankOf(suggestions, "ECH-D", "LIBERE")).isLessThan(rankOf(suggestions, "ECH-B", "CROISE"));
 
         // Each family submits as is through the ordinary form: the plain one
         // as a bare seat, the directed one carrying the seat wanted in return.
         given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-D\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("[0].prevalidationOk", equalTo(true));
         given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-D\","
                         + "\"creneauCibleId\":" + CRENEAU_AUTRE_JOUR + ",\"standCibleId\":\"ECH-S2\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("[0].prevalidationOk", equalTo(true))
@@ -275,20 +292,23 @@ class DemandeEchangeFlowTest {
         persistTwoSeatPlanning();
         String token = tokenOf("ECH-A");
 
-        given().when().get("/api/espace-animateur/" + token + "/suggestions-echange"
-                        + "?creneauId=" + CRENEAU_ID + "&standId=ECH-S2")
+        given().when()
+                .get("/api/espace-animateur/" + token + "/suggestions-echange" + "?creneauId=" + CRENEAU_ID
+                        + "&standId=ECH-S2")
                 .then()
                 .statusCode(400);
 
         // A missing créneau or stand is refused the same way.
-        given().when().get("/api/espace-animateur/" + token + "/suggestions-echange?standId=ECH-S1")
+        given().when()
+                .get("/api/espace-animateur/" + token + "/suggestions-echange?standId=ECH-S1")
                 .then()
                 .statusCode(400);
     }
 
     @Test
     void unJetonInconnuRepondIntrouvable() {
-        given().when().get("/api/espace-animateur/jeton-invente")
+        given().when()
+                .get("/api/espace-animateur/jeton-invente")
                 .then()
                 .statusCode(404)
                 .body("message", notNullValue());
@@ -299,46 +319,57 @@ class DemandeEchangeFlowTest {
         persistTwoSeatPlanning();
         String token = tokenOf("ECH-A");
 
-        String demandeId = given()
-                .contentType(ContentType.JSON)
+        String demandeId = given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
-                .extract().path("[0].id");
+                .extract()
+                .path("[0].id");
 
         // Bruno sees it among his received demandes, and declines.
         given().cookie("planning-espace", sessionBruno)
-                .when().get("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues")
+                .when()
+                .get("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues")
                 .then()
                 .statusCode(200)
                 .body("find { it.id == '" + demandeId + "' }.statut", equalTo("EN_ATTENTE_CIBLE"));
-        given().cookie("planning-espace", sessionBruno).contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/refus")
+        given().cookie("planning-espace", sessionBruno)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/refus")
                 .then()
                 .statusCode(200)
                 .body("statut", equalTo("REFUSEE_CIBLE"));
 
         // Terminal: neither the admin nor a second answer can touch it.
-        given().contentType(ContentType.JSON).body("{}")
-                .when().post("/api/echanges/" + demandeId + "/acceptation")
+        given().contentType(ContentType.JSON)
+                .body("{}")
+                .when()
+                .post("/api/echanges/" + demandeId + "/acceptation")
                 .then()
                 .statusCode(400);
-        given().cookie("planning-espace", sessionBruno).contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
+        given().cookie("planning-espace", sessionBruno)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
                 .then()
                 .statusCode(400);
 
         // And only the targeted colleague may answer: Alice cannot agree in
         // Bruno's stead on a fresh demande.
-        String autreDemande = given()
-                .contentType(ContentType.JSON)
+        String autreDemande = given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
-                .then().statusCode(200)
-                .extract().path("[0].id");
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("[0].id");
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + token + "/demandes-recues/" + autreDemande + "/accord")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes-recues/" + autreDemande + "/accord")
                 .then()
                 .statusCode(400);
     }
@@ -361,7 +392,8 @@ class DemandeEchangeFlowTest {
         given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"},"
                         + "{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-C\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(2));
@@ -388,7 +420,8 @@ class DemandeEchangeFlowTest {
                         + "\"motif\":\"le matin\"},"
                         + "{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\","
                         + "\"motif\":\"ou alors l'après-midi\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(2));
@@ -400,8 +433,10 @@ class DemandeEchangeFlowTest {
 
     /** Bruno (the target) agrees: the demande enters the admin queue. */
     private void agreementFromBruno(String demandeId) {
-        given().cookie("planning-espace", sessionBruno).contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
+        given().cookie("planning-espace", sessionBruno)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
                 .then()
                 .statusCode(200)
                 .body("statut", equalTo("PROPOSEE"));
@@ -412,27 +447,32 @@ class DemandeEchangeFlowTest {
         persistTwoSeatPlanning();
         String token = tokenOf("ECH-A");
 
-        String demandeId = given()
-                .contentType(ContentType.JSON)
+        String demandeId = given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
-                .extract().path("[0].id");
+                .extract()
+                .path("[0].id");
 
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")
                 .then()
                 .statusCode(204);
 
-        given().when().get("/api/espace-animateur/" + token + "/demandes")
+        given().when()
+                .get("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("find { it.id == '" + demandeId + "' }.statut", equalTo("ANNULEE"));
 
         // An already-cancelled demande cannot be decided.
-        given().contentType(ContentType.JSON).body("{}")
-                .when().post("/api/echanges/" + demandeId + "/acceptation")
+        given().contentType(ContentType.JSON)
+                .body("{}")
+                .when()
+                .post("/api/echanges/" + demandeId + "/acceptation")
                 .then()
                 .statusCode(400);
     }
@@ -443,8 +483,10 @@ class DemandeEchangeFlowTest {
         persistTwoSeatPlanning();
         String token = tokenOf("ECH-A");
 
-        given().contentType(ContentType.JSON).body("[]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+        given().contentType(ContentType.JSON)
+                .body("[]")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(0));
@@ -465,7 +507,8 @@ class DemandeEchangeFlowTest {
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\","
                         + "\"cibleId\":\"ECH-B\",\"motif\":\"" + marqueur + "\"},"
                         + "{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-A\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(400)
                 .body("message", equalTo("Impossible d'échanger un créneau avec soi-même"));
@@ -473,19 +516,22 @@ class DemandeEchangeFlowTest {
         // Unknown target.
         given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-FANTOME\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(400);
 
         // The seat on S2 is Bruno's, not Alice's.
         given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S2\",\"cibleId\":\"ECH-B\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(400);
 
         // Not even the valid line of the mixed batch was stored.
-        given().when().get("/api/espace-animateur/" + token + "/demandes")
+        given().when()
+                .get("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("find { it.motif == '" + marqueur + "' }", org.hamcrest.Matchers.nullValue());
@@ -501,19 +547,21 @@ class DemandeEchangeFlowTest {
         persistTwoSeatPlanning();
         String token = tokenOf("ECH-A");
 
-        String demandeId = given()
-                .contentType(ContentType.JSON)
+        String demandeId = given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-C\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("[0].prevalidationOk", equalTo(false))
                 .body("[0].contraintesViolees.size()", greaterThanOrEqualTo(1))
                 .body("[0].contraintesViolees[0]", org.hamcrest.Matchers.containsString("indisponible"))
-                .extract().path("[0].id");
+                .extract()
+                .path("[0].id");
 
         // Chloé holds no seat on the créneau: the impact is a simple takeover.
-        given().when().get("/api/echanges/" + demandeId + "/impact")
+        given().when()
+                .get("/api/echanges/" + demandeId + "/impact")
                 .then()
                 .statusCode(200)
                 .body("echangeCroise", equalTo(false))
@@ -526,27 +574,31 @@ class DemandeEchangeFlowTest {
         persistTwoSeatPlanning();
         String token = tokenOf("ECH-A");
 
-        String demandeId = given()
-                .contentType(ContentType.JSON)
+        String demandeId = given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
-                .extract().path("[0].id");
+                .extract()
+                .path("[0].id");
 
         given().contentType(ContentType.JSON)
                 .body("{\"commentaire\":\"Le repos de Bruno serait cassé\"}")
-                .when().post("/api/echanges/" + demandeId + "/refus")
+                .when()
+                .post("/api/echanges/" + demandeId + "/refus")
                 .then()
                 .statusCode(200)
                 .body("statut", equalTo("REFUSEE"))
                 .body("commentaireAdmin", equalTo("Le repos de Bruno serait cassé"));
 
-        given().when().get("/api/espace-animateur/" + token + "/demandes")
+        given().when()
+                .get("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("find { it.id == '" + demandeId + "' }.statut", equalTo("REFUSEE"))
-                .body("find { it.id == '" + demandeId + "' }.commentaireAdmin",
+                .body(
+                        "find { it.id == '" + demandeId + "' }.commentaireAdmin",
                         equalTo("Le repos de Bruno serait cassé"));
 
         // The planning was not touched by the refusal.
@@ -562,27 +614,30 @@ class DemandeEchangeFlowTest {
         String aliceToken = tokenOf("ECH-A");
         String brunoToken = tokenOf("ECH-B");
 
-        String demandeId = given()
-                .contentType(ContentType.JSON)
+        String demandeId = given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
-                .when().post("/api/espace-animateur/" + aliceToken + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + aliceToken + "/demandes")
                 .then()
                 .statusCode(200)
-                .extract().path("[0].id");
+                .extract()
+                .path("[0].id");
 
         // Bruno acts with his OWN session on his own token: the 400 is the
         // ownership rule, not a session mismatch.
         RestAssured.requestSpecification = null;
         given().contentType(ContentType.JSON)
                 .cookie("planning-espace", sessionBruno)
-                .when().post("/api/espace-animateur/" + brunoToken + "/demandes/" + demandeId + "/annulation")
+                .when()
+                .post("/api/espace-animateur/" + brunoToken + "/demandes/" + demandeId + "/annulation")
                 .then()
                 .statusCode(400);
         RestAssured.requestSpecification = new RequestSpecBuilder()
                 .addCookie("planning-espace", sessionAlice)
                 .build();
 
-        given().when().get("/api/espace-animateur/" + aliceToken + "/demandes")
+        given().when()
+                .get("/api/espace-animateur/" + aliceToken + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("find { it.id == '" + demandeId + "' }.statut", equalTo("EN_ATTENTE_CIBLE"));
@@ -601,30 +656,32 @@ class DemandeEchangeFlowTest {
         given().contentType(ContentType.JSON)
                 .body("{\"id\":\"ECH-A\",\"prenom\":\"Alice\",\"nom\":\"Martin\","
                         + "\"dateNaissance\":\"1990-01-01\",\"email\":\"alice@example.org\"}")
-                .when().put("/api/animateurs/ECH-A")
+                .when()
+                .put("/api/animateurs/ECH-A")
                 .then()
                 .statusCode(200);
         assertThat(tokenOf("ECH-A")).isEqualTo(oldToken);
 
-        String newToken = given()
-                .contentType(ContentType.JSON)
-                .when().post("/api/animateurs/ECH-A/token")
+        String newToken = given().contentType(ContentType.JSON)
+                .when()
+                .post("/api/animateurs/ECH-A/token")
                 .then()
                 .statusCode(200)
-                .extract().path("token");
+                .extract()
+                .path("token");
         assertThat(newToken).isNotBlank().isNotEqualTo(oldToken);
 
-        given().when().get("/api/espace-animateur/" + oldToken)
-                .then()
-                .statusCode(404);
-        given().when().get("/api/espace-animateur/" + newToken)
+        given().when().get("/api/espace-animateur/" + oldToken).then().statusCode(404);
+        given().when()
+                .get("/api/espace-animateur/" + newToken)
                 .then()
                 .statusCode(200)
                 .body("animateurId", equalTo("ECH-A"));
 
         // An unknown animateur cannot get a token.
         given().contentType(ContentType.JSON)
-                .when().post("/api/animateurs/ECH-FANTOME/token")
+                .when()
+                .post("/api/animateurs/ECH-FANTOME/token")
                 .then()
                 .statusCode(404);
     }
@@ -681,8 +738,8 @@ class DemandeEchangeFlowTest {
         List<Animateur> animateurs = new ArrayList<>(planning.getAnimateurs());
         animateurs.removeIf(animateur -> "ECH-D".equals(animateur.getId()));
         animateurs.add(denis);
-        Creneau lendemain = new Creneau(CRENEAU_AUTRE_JOUR, 2, JOUR.plusDays(1),
-                LocalTime.of(14, 0), LocalTime.of(16, 0));
+        Creneau lendemain =
+                new Creneau(CRENEAU_AUTRE_JOUR, 2, JOUR.plusDays(1), LocalTime.of(14, 0), LocalTime.of(16, 0));
         Stand standDeux = new Stand("ECH-S2", "Stand deux", Set.of("STRATEGIE"), 1, 1, false);
         PosteAffectation posteDenis = new PosteAffectation("ECH-P3", standDeux, lendemain);
         posteDenis.setAnimateur(denis);
@@ -693,14 +750,14 @@ class DemandeEchangeFlowTest {
         PlansPublies.publier(publication);
     }
 
-    private static Map<String, Object> suggestionOf(List<Map<String, Object>> suggestions,
-            String animateurId, String nature) {
+    private static Map<String, Object> suggestionOf(
+            List<Map<String, Object>> suggestions, String animateurId, String nature) {
         return suggestions.stream()
-                .filter(suggestion -> animateurId.equals(suggestion.get("animateurId"))
-                        && nature.equals(suggestion.get("nature")))
+                .filter(suggestion ->
+                        animateurId.equals(suggestion.get("animateurId")) && nature.equals(suggestion.get("nature")))
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("No " + nature + " suggestion for " + animateurId
-                        + " in " + suggestions));
+                .orElseThrow(() ->
+                        new AssertionError("No " + nature + " suggestion for " + animateurId + " in " + suggestions));
     }
 
     private static int rankOf(List<Map<String, Object>> suggestions, String animateurId, String nature) {
@@ -726,21 +783,29 @@ class DemandeEchangeFlowTest {
 
     private static String occupantSur(PlanningEvenement planning, String standId, long creneauId) {
         return planning.getPostes().stream()
-                .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
-                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                .filter(poste -> poste.getStand() != null
+                        && standId.equals(poste.getStand().getId())
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getId() != null
                         && poste.getCreneau().getId() == creneauId)
                 .findFirst()
-                .map(poste -> poste.getAnimateur() == null ? null : poste.getAnimateur().getId())
+                .map(poste -> poste.getAnimateur() == null
+                        ? null
+                        : poste.getAnimateur().getId())
                 .orElse(null);
     }
 
     private static String occupant(PlanningEvenement planning, String standId) {
         return planning.getPostes().stream()
-                .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
-                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                .filter(poste -> poste.getStand() != null
+                        && standId.equals(poste.getStand().getId())
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getId() != null
                         && poste.getCreneau().getId() == CRENEAU_ID)
                 .findFirst()
-                .map(poste -> poste.getAnimateur() == null ? null : poste.getAnimateur().getId())
+                .map(poste -> poste.getAnimateur() == null
+                        ? null
+                        : poste.getAnimateur().getId())
                 .orElse(null);
     }
 

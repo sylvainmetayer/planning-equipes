@@ -1,8 +1,7 @@
 package dev.sylvain.planning.domain;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import java.time.LocalTime;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * What the scheduled notifications are allowed to do on one edition (issues
@@ -25,8 +24,8 @@ import java.time.LocalTime;
  *                                decision before the admin is alerted
  */
 @Schema(requiredProperties = {"actives", "ancienneteEchangeJours", "delaiRelanceHeures"})
-public record ParametresNotifications(boolean actives, LocalTime heureRappelVeille,
-        int delaiRelanceHeures, int ancienneteEchangeJours) {
+public record ParametresNotifications(
+        boolean actives, LocalTime heureRappelVeille, int delaiRelanceHeures, int ancienneteEchangeJours) {
 
     /** Late enough that the next day's planning is settled, early enough to be read. */
     public static final LocalTime HEURE_RAPPEL_VEILLE_PAR_DEFAUT = LocalTime.of(18, 0);
@@ -56,7 +55,10 @@ public record ParametresNotifications(boolean actives, LocalTime heureRappelVeil
 
     /** What an edition that has never been configured answers. */
     public ParametresNotifications() {
-        this(false, HEURE_RAPPEL_VEILLE_PAR_DEFAUT, DELAI_RELANCE_HEURES_PAR_DEFAUT,
+        this(
+                false,
+                HEURE_RAPPEL_VEILLE_PAR_DEFAUT,
+                DELAI_RELANCE_HEURES_PAR_DEFAUT,
                 ANCIENNETE_ECHANGE_JOURS_PAR_DEFAUT);
     }
 }

@@ -1,16 +1,15 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.Animateur;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.Ids;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.TokenOwner;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.util.List;
 
 /** CRUD of the animateur referential, plus the espace access token they are reached by. */
 @ApplicationScoped

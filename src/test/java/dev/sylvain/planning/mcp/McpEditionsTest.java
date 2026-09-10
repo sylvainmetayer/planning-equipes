@@ -3,12 +3,10 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.edition.EditionService;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * How the {@code edition} argument of an MCP tool is turned into an edition id
@@ -49,9 +47,8 @@ class McpEditionsTest {
 
     @Test
     void unNomPorteParPlusieursEditionsEstRefuseAuLieuDetreArbitre() {
-        McpEditions homonymes = editions(
-                new Edition("a", "Année 2026", true, null),
-                new Edition("b", "Année 2026", false, null));
+        McpEditions homonymes =
+                editions(new Edition("a", "Année 2026", true, null), new Edition("b", "Année 2026", false, null));
 
         assertThatThrownBy(() -> homonymes.solve("Année 2026"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -62,8 +59,7 @@ class McpEditionsTest {
     @Test
     void unIdPrimeSurUnNomHomonyme() {
         McpEditions ambigu = editions(
-                new Edition("2026", "Plan canicule", false, null),
-                new Edition("canicule", "2026", true, null));
+                new Edition("2026", "Plan canicule", false, null), new Edition("canicule", "2026", true, null));
 
         assertThat(ambigu.solve("2026")).isEqualTo("2026");
     }

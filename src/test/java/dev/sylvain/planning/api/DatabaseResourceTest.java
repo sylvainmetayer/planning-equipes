@@ -26,9 +26,9 @@ class DatabaseResourceTest {
      * to encode that content type as plain text.
      */
     private static RequestSpecification sqlRequest(String script) {
-        return given()
-                .config(RestAssured.config().encoderConfig(
-                        EncoderConfig.encoderConfig().encodeContentTypeAs("application/sql", ContentType.TEXT)))
+        return given().config(RestAssured.config()
+                        .encoderConfig(
+                                EncoderConfig.encoderConfig().encodeContentTypeAs("application/sql", ContentType.TEXT)))
                 .contentType("application/sql")
                 .body(script);
     }
@@ -38,66 +38,63 @@ class DatabaseResourceTest {
         // Reset first for a deterministic baseline (no leftovers from another
         // test), then seed: reset alone empties the database and leaves
         // nothing to export (see PlanningResourceTest.resetEmptiesTheDatabase).
-        given()
-                .when().post("/api/planning/reset")
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
-                .then()
-                .statusCode(200);
-
-        int animateurs = given()
-                .when().get("/api/animateurs")
+        int animateurs = given().when()
+                .get("/api/animateurs")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getList("$").size();
+                .extract()
+                .jsonPath()
+                .getList("$")
+                .size();
         assertThat(animateurs).isPositive();
 
-        String dump = given()
-                .when().get("/api/database/export")
+        String dump = given().when()
+                .get("/api/database/export")
                 .then()
                 .statusCode(200)
                 .header("Content-Disposition", containsString(".sql"))
-                .extract().asString();
+                .extract()
+                .asString();
         assertThat(dump).contains("DELETE FROM animateur;").contains("INSERT INTO animateur (");
 
         // Replaying the dump on a wiped database restores the exact same rows.
         sqlRequest(dump)
-                .when().post("/api/database/import")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(200)
                 .body("statements", greaterThan(0));
 
-        given()
-                .when().get("/api/animateurs")
-                .then()
-                .statusCode(200)
-                .body("size()", equalTo(animateurs));
+        given().when().get("/api/animateurs").then().statusCode(200).body("size()", equalTo(animateurs));
     }
 
     @Test
     void exportedDumpIncludesCreneauxSoForeignKeysReplay() {
-        given()
-                .when().post("/api/planning/reset")
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
-                .then()
-                .statusCode(200);
-
-        String dump = given()
-                .when().get("/api/database/export")
+        String dump = given().when()
+                .get("/api/database/export")
                 .then()
                 .statusCode(200)
-                .extract().asString();
+                .extract()
+                .asString();
         assertThat(dump).contains("INSERT INTO creneau (");
 
         sqlRequest(dump)
-                .when().post("/api/database/import")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(200)
                 .body("statements", greaterThan(0));
@@ -105,63 +102,65 @@ class DatabaseResourceTest {
 
     @Test
     void exportedDumpIncludesParametresAndSurvivesReplay() {
-        given()
-                .when().post("/api/planning/reset")
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
-                .then()
-                .statusCode(200);
-
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"dureeHebdomadaireMaxMinutes\":2760,\"dureeHebdomadaireMaxMineurMinutes\":2100,"
                         + "\"pauseMinimaleEntreVacationsMinutes\":45,\"reposQuotidienMinimalMinutes\":660}")
-                .when().put("/api/parametres-legaux")
+                .when()
+                .put("/api/parametres-legaux")
                 .then()
                 .statusCode(200);
 
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"dureeResolutionSecondes\":42}")
-                .when().put("/api/parametres-solveur")
+                .when()
+                .put("/api/parametres-solveur")
                 .then()
                 .statusCode(200);
 
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"actif\":false}")
-                .when().put("/api/constraints/dureeHebdomadaireMax")
+                .when()
+                .put("/api/constraints/dureeHebdomadaireMax")
                 .then()
                 .statusCode(200);
 
-        String dump = given()
-                .when().get("/api/database/export")
+        String dump = given().when()
+                .get("/api/database/export")
                 .then()
                 .statusCode(200)
-                .extract().asString();
+                .extract()
+                .asString();
         assertThat(dump)
-                .contains("INSERT INTO parametres_legaux (").contains("2760")
+                .contains("INSERT INTO parametres_legaux (")
+                .contains("2760")
                 .contains("INSERT INTO parametres_decoupage (")
-                .contains("INSERT INTO parametres_solveur (").contains("42")
-                .contains("INSERT INTO constraint_toggle (").contains("dureeHebdomadaireMax");
+                .contains("INSERT INTO parametres_solveur (")
+                .contains("42")
+                .contains("INSERT INTO constraint_toggle (")
+                .contains("dureeHebdomadaireMax");
 
         sqlRequest(dump)
-                .when().post("/api/database/import")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(200)
                 .body("statements", greaterThan(0));
 
-        given()
-                .when().get("/api/parametres-legaux")
+        given().when()
+                .get("/api/parametres-legaux")
                 .then()
                 .statusCode(200)
                 .body("dureeHebdomadaireMaxMinutes", equalTo(2760));
 
-        given()
-                .when().get("/api/parametres-solveur")
+        given().when()
+                .get("/api/parametres-solveur")
                 .then()
                 .statusCode(200)
                 .body("dureeResolutionSecondes", equalTo(42));
@@ -169,24 +168,23 @@ class DatabaseResourceTest {
 
     @Test
     void exportedDumpRestoresIdentitySequencesSoNewRowsDoNotCollide() {
-        given()
-                .when().post("/api/planning/reset")
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
-                .then()
-                .statusCode(200);
-
-        String dump = given()
-                .when().get("/api/database/export")
+        String dump = given().when()
+                .get("/api/database/export")
                 .then()
                 .statusCode(200)
-                .extract().asString();
+                .extract()
+                .asString();
 
         sqlRequest(dump)
-                .when().post("/api/database/import")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(200)
                 .body("statements", greaterThan(0));
@@ -194,10 +192,10 @@ class DatabaseResourceTest {
         // A new créneau created after the replay must get a fresh id, not one
         // that collides with a row the dump just re-inserted with an explicit
         // identity value (see resyncIdentitySequences).
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"date\":\"2099-01-01\",\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}")
-                .when().post("/api/creneaux")
+                .when()
+                .post("/api/creneaux")
                 .then()
                 .statusCode(200);
     }
@@ -205,28 +203,28 @@ class DatabaseResourceTest {
     @Test
     void importRejectsStatementsOutsideTheAllowedScope() {
         sqlRequest("DROP TABLE animateur;")
-                .when().post("/api/database/import")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("Only INSERT, DELETE and TRUNCATE"));
 
         sqlRequest("DELETE FROM flyway_schema_history;")
-                .when().post("/api/database/import")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("not allowed"));
 
         // A rejected script must not have touched the database.
-        given()
-                .when().get("/api/animateurs")
-                .then()
-                .statusCode(200);
+        given().when().get("/api/animateurs").then().statusCode(200);
     }
 
     @Test
     void importRejectsAnEmptyScript() {
         sqlRequest("-- nothing to replay\n")
-                .when().post("/api/database/import")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("does not contain any statement"));
@@ -251,10 +249,7 @@ class DatabaseResourceTest {
         // mid-flight leaves them all resolving to an edition that no longer
         // exists, and one failure here becomes forty elsewhere.
         try {
-            given()
-                    .when().post("/api/planning/reset")
-                    .then()
-                    .statusCode(200);
+            given().when().post("/api/planning/reset").then().statusCode(200);
 
             // A dump whose only edition is "restauree" — DEFAUT is nowhere in it.
             createEdition("restauree", "Édition restaurée");
@@ -266,29 +261,20 @@ class DatabaseResourceTest {
             // edition_id, and no foreign key ties the two, so measurements taken
             // before the deletion outlive it and the dump keeps naming DEFAUT
             // further down.
-            List<String> editionRows = dump.lines().filter(line -> line.startsWith("INSERT INTO edition (")).toList();
+            List<String> editionRows = dump.lines()
+                    .filter(line -> line.startsWith("INSERT INTO edition ("))
+                    .toList();
             assertThat(editionRows).isNotEmpty().noneMatch(line -> line.contains("'DEFAUT'"));
 
             // Back to a database that only knows DEFAUT, and a request that caches it.
             createEdition("DEFAUT", "Édition par défaut");
             makeDefaultEdition("DEFAUT");
             deleteEdition("restauree");
-            given()
-                    .when().get("/api/editions/courant")
-                    .then()
-                    .statusCode(200)
-                    .body("id", equalTo("DEFAUT"));
+            given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo("DEFAUT"));
 
-            sqlRequest(dump)
-                    .when().post("/api/database/import")
-                    .then()
-                    .statusCode(200);
+            sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
 
-            given()
-                    .when().get("/api/editions/courant")
-                    .then()
-                    .statusCode(200)
-                    .body("id", equalTo("restauree"));
+            given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo("restauree"));
         } catch (Throwable inFlight) {
             // Not a finally: a restore that fails in turn would replace the
             // assertion that actually diagnoses the defect. It travels as a
@@ -302,11 +288,7 @@ class DatabaseResourceTest {
         }
         restoreDatabase(etatInitial);
 
-        given()
-                .when().get("/api/editions/courant")
-                .then()
-                .statusCode(200)
-                .body("id", equalTo("DEFAUT"));
+        given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo("DEFAUT"));
     }
 
     private static void restoreDatabase(String dump) {
@@ -314,14 +296,21 @@ class DatabaseResourceTest {
     }
 
     private static String exportDump() {
-        return given().when().get("/api/database/export").then().statusCode(200).extract().asString();
+        return given().when()
+                .get("/api/database/export")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
     }
 
     private static void createEdition(String id, String nom) {
         given().contentType(ContentType.JSON)
                 .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
-                .when().post("/api/editions")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200);
     }
 
     private static void makeDefaultEdition(String id) {
@@ -348,43 +337,49 @@ class DatabaseResourceTest {
      */
     @Test
     void thePublishedPlanAndItsRecipientsSurviveARestore() {
-        sqlRequest("INSERT INTO plan_snapshot (edition_id, id, libelle, nombre_affectations, contenu) VALUES "
-                + "(\'DEFAUT\', 777, \'Plan du test\', 3, \'{\"postes\": []}\');\n"
-                + "INSERT INTO publication_destinataire "
-                + "(edition_id, id, snapshot_id, animateur_id, nom_affiche, email, statut) VALUES "
-                + "(\'DEFAUT\', 888, 777, \'ani-test\', \'Camille Essai\', \'camille@example.test\', \'ENVOYE\');")
-                .when().post("/api/database/import")
+        sqlRequest(
+                        "INSERT INTO plan_snapshot (edition_id, id, libelle, nombre_affectations, contenu) VALUES "
+                                + "(\'DEFAUT\', 777, \'Plan du test\', 3, \'{\"postes\": []}\');\n"
+                                + "INSERT INTO publication_destinataire "
+                                + "(edition_id, id, snapshot_id, animateur_id, nom_affiche, email, statut) VALUES "
+                                + "(\'DEFAUT\', 888, 777, \'ani-test\', \'Camille Essai\', \'camille@example.test\', \'ENVOYE\');")
+                .when()
+                .post("/api/database/import")
                 .then()
                 .statusCode(200);
 
         try {
-            given().when().get("/api/planning/snapshots")
-                    .then().statusCode(200)
+            given().when()
+                    .get("/api/planning/snapshots")
+                    .then()
+                    .statusCode(200)
                     .body("find { it.id == 777 }.libelle", equalTo("Plan du test"));
 
             String dump = exportDump();
-            assertThat(dump).contains("INSERT INTO plan_snapshot (")
-                    .contains("INSERT INTO publication_destinataire (");
+            assertThat(dump).contains("INSERT INTO plan_snapshot (").contains("INSERT INTO publication_destinataire (");
 
             // The wipe the restore is supposed to undo: the delete cascades onto
             // the recipient, so both rows go.
             given().when().delete("/api/planning/snapshots/777").then().statusCode(204);
-            given().when().get("/api/planning/snapshots")
-                    .then().statusCode(200)
+            given().when()
+                    .get("/api/planning/snapshots")
+                    .then()
+                    .statusCode(200)
                     .body("find { it.id == 777 }", nullValue());
 
             sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
 
-            given().when().get("/api/planning/snapshots")
-                    .then().statusCode(200)
+            given().when()
+                    .get("/api/planning/snapshots")
+                    .then()
+                    .statusCode(200)
                     .body("find { it.id == 777 }.libelle", equalTo("Plan du test"));
 
             // The recipient has no read endpoint of its own; a second export is
             // the honest way to say the row is back in the database.
             assertThat(exportDump()).contains("camille@example.test");
         } finally {
-            given().when().delete("/api/planning/snapshots/777")
-                    .then().statusCode(anyOf(equalTo(204), equalTo(404)));
+            given().when().delete("/api/planning/snapshots/777").then().statusCode(anyOf(equalTo(204), equalTo(404)));
         }
     }
 
@@ -449,10 +444,11 @@ class DatabaseResourceTest {
             // branch of literal() that quotes it had never run in anger — and a
             // quote reaching the import unescaped cuts the statement in half.
             sqlRequest("INSERT INTO kpi_historique (id, edition_id, edition_nom, kpi, cree_le) VALUES "
-                    + "(4242, 'DEFAUT', 'Edition d''essai', "
-                    + "'{\"heuresTotal\": 7.5, \"violationsParContrainte\": {\"repos d''une nuit\": 3}}', "
-                    + "'2026-07-01T10:00:00Z');")
-                    .when().post("/api/database/import")
+                            + "(4242, 'DEFAUT', 'Edition d''essai', "
+                            + "'{\"heuresTotal\": 7.5, \"violationsParContrainte\": {\"repos d''une nuit\": 3}}', "
+                            + "'2026-07-01T10:00:00Z');")
+                    .when()
+                    .post("/api/database/import")
                     .then()
                     .statusCode(200);
 
@@ -473,8 +469,7 @@ class DatabaseResourceTest {
             // carry it — so the row would follow every later class around. A
             // 404 is accepted so that a failure before the insert reports
             // itself rather than this cleanup.
-            given().when().delete("/api/kpi/historique/4242")
-                    .then().statusCode(anyOf(equalTo(204), equalTo(404)));
+            given().when().delete("/api/kpi/historique/4242").then().statusCode(anyOf(equalTo(204), equalTo(404)));
         }
     }
 
@@ -484,12 +479,15 @@ class DatabaseResourceTest {
      * and escaping included, not that some bytes came back.
      */
     private static void assertTheMeasurementReadsBack() {
-        JsonPath historique = given()
-                .when().get("/api/kpi/historique")
-                .then().statusCode(200)
-                .extract().jsonPath();
+        JsonPath historique = given().when()
+                .get("/api/kpi/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         assertThat(historique.getString("find { it.id == 4242 }.editionNom")).isEqualTo("Edition d'essai");
-        assertThat(historique.getDouble("find { it.id == 4242 }.kpi.heuresTotal")).isEqualTo(7.5);
+        assertThat(historique.getDouble("find { it.id == 4242 }.kpi.heuresTotal"))
+                .isEqualTo(7.5);
         // Read as a map rather than through a GPath expression: the key is
         // chosen for its apostrophe, which is exactly what GPath would choke on.
         Map<String, Object> violations = historique.getMap("find { it.id == 4242 }.kpi.violationsParContrainte");

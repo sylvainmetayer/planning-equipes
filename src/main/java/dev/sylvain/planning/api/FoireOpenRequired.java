@@ -1,11 +1,10 @@
 package dev.sylvain.planning.api;
 
+import jakarta.ws.rs.NameBinding;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import jakarta.ws.rs.NameBinding;
 
 /**
  * Marks a route as only meaningful while the foire au planning is open:
@@ -20,6 +19,5 @@ import jakarta.ws.rs.NameBinding;
  */
 @NameBinding
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE, ElementType.METHOD })
-public @interface FoireOpenRequired {
-}
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface FoireOpenRequired {}

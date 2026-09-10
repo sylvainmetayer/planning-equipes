@@ -1,5 +1,8 @@
 package dev.sylvain.planning.service.journal;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Stand;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -7,10 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Stand;
 
 /**
  * What an edit actually changed, field by field.
@@ -32,8 +31,7 @@ import dev.sylvain.planning.domain.Stand;
  */
 public final class ChampsModifies {
 
-    private ChampsModifies() {
-    }
+    private ChampsModifies() {}
 
     /** The fields of an animateur, in the order the fiche shows them. */
     private static final Map<String, Function<Animateur, Object>> ANIMATEUR = champs(map -> {
@@ -57,7 +55,11 @@ public final class ChampsModifies {
         map.put("premium", Stand::isPremium);
         map.put("famille", Stand::getFamille);
         map.put("niveauEffort", Stand::getNiveauEffort);
-        map.put("emplacement", stand -> stand.getEmplacement() == null ? null : stand.getEmplacement().getId());
+        map.put(
+                "emplacement",
+                stand -> stand.getEmplacement() == null
+                        ? null
+                        : stand.getEmplacement().getId());
         map.put("indisponibilites", Stand::getIndisponibilites);
         map.put("ouvertures", Stand::getOuvertures);
         map.put("horaires", Stand::getHoraires);

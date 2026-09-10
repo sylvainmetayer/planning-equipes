@@ -1,17 +1,14 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigMentionsLegales;
 import dev.sylvain.planning.config.ConfigObservabilite;
-import java.util.Optional;
-
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.util.Optional;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Deployment-specific facts of the legal notice — who publishes the site, who
@@ -110,6 +107,5 @@ public class MentionsLegalesResource {
             String baseLegale,
             String conservation,
             boolean mesureAudience,
-            boolean suiviErreurs) {
-    }
+            boolean suiviErreurs) {}
 }

@@ -1,20 +1,17 @@
 package dev.sylvain.planning.service.espace;
 
 import dev.sylvain.planning.config.ConfigRemoteUser;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.function.Function;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
+import dev.sylvain.planning.service.referentiel.AnimateurRepository;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.referentiel.AnimateurRepository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Opt-in authentication by a header an access proxy injects — Pangolin's
@@ -69,7 +66,9 @@ public class RemoteUserAuthentication {
      *               guard), which share no header API
      */
     public Optional<String> trustedEmail(Function<String, String> header) {
-        if (!config.enabled() || config.secret().isEmpty() || config.secret().get().isBlank()) {
+        if (!config.enabled()
+                || config.secret().isEmpty()
+                || config.secret().get().isBlank()) {
             return Optional.empty();
         }
         if (!secretsEgaux(config.secret().get(), header.apply(config.secretHeader()))) {
@@ -84,7 +83,8 @@ public class RemoteUserAuthentication {
 
     /** True when {@code email} is the single address configured as the administrator's. */
     public boolean isAdmin(String email) {
-        return config.adminEmail().isPresent() && !config.adminEmail().get().isBlank()
+        return config.adminEmail().isPresent()
+                && !config.adminEmail().get().isBlank()
                 && normalize(config.adminEmail().get()).equals(normalize(email));
     }
 
@@ -115,7 +115,8 @@ public class RemoteUserAuthentication {
         }
         try {
             if (repository.emailAnimateurExiste(config.adminEmail().get())) {
-                Log.warn("planning.auth.remote-user.admin-email (" + config.adminEmail().get() + ") est aussi l'adresse "
+                Log.warn("planning.auth.remote-user.admin-email ("
+                        + config.adminEmail().get() + ") est aussi l'adresse "
                         + "d'un animateur : cette personne sera authentifiée comme administratrice et perdra "
                         + "l'accès à son espace animateur. Utiliser une adresse distincte.");
             }
@@ -137,7 +138,7 @@ public class RemoteUserAuthentication {
         if (presente == null) {
             return false;
         }
-        return MessageDigest.isEqual(attendu.getBytes(StandardCharsets.UTF_8),
-                presente.getBytes(StandardCharsets.UTF_8));
+        return MessageDigest.isEqual(
+                attendu.getBytes(StandardCharsets.UTF_8), presente.getBytes(StandardCharsets.UTF_8));
     }
 }

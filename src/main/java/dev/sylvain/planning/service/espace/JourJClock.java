@@ -1,15 +1,14 @@
 package dev.sylvain.planning.service.espace;
 
+import dev.sylvain.planning.config.DevMode;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalTime;
-
-import dev.sylvain.planning.config.DevMode;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * The source of "today" for the mode jour J screen — and for nothing else.
@@ -118,8 +117,8 @@ public class JourJClock {
         // Not prepareScoped: this table carries no edition_id — it describes the
         // server's clock, not an event.
         return scope.read("Failed to read the mocked date", connection -> {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT date_du_jour FROM horloge_jour_j WHERE id = ?")) {
+            try (PreparedStatement ps =
+                    connection.prepareStatement("SELECT date_du_jour FROM horloge_jour_j WHERE id = ?")) {
                 ps.setInt(1, LIGNE_UNIQUE);
                 try (ResultSet rs = ps.executeQuery()) {
                     return rs.next() ? rs.getObject("date_du_jour", LocalDate.class) : null;
@@ -148,8 +147,7 @@ public class JourJClock {
                     + " ne peut pas en lire une autre.");
         }
         scope.write("Failed to save the mocked date", connection -> {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
+            try (PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO horloge_jour_j (id, date_du_jour) VALUES (?, ?)
                     ON CONFLICT (id) DO UPDATE SET date_du_jour = EXCLUDED.date_du_jour""")) {
                 ps.setInt(1, LIGNE_UNIQUE);

@@ -1,15 +1,14 @@
 package dev.sylvain.planning.service.analyse;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Turns the raw justification facts of one constraint match (an
@@ -27,8 +26,7 @@ import dev.sylvain.planning.domain.Stand;
  */
 final class ViolationFormatter {
 
-    private ViolationFormatter() {
-    }
+    private ViolationFormatter() {}
 
     /** Joins every non-null fact of a match into one line, in justification order. */
     static String describe(List<Object> facts) {
@@ -55,9 +53,7 @@ final class ViolationFormatter {
             return contrainteLabel(contrainte);
         }
         if (fact instanceof Collection<?> collection) {
-            return collection.stream()
-                    .map(ViolationFormatter::label)
-                    .collect(Collectors.joining(", ", "[", "]"));
+            return collection.stream().map(ViolationFormatter::label).collect(Collectors.joining(", ", "[", "]"));
         }
         return String.valueOf(fact);
     }
@@ -96,8 +92,8 @@ final class ViolationFormatter {
 
     private static String creneauLabel(Creneau creneau) {
         String date = creneau.getDate() == null ? "" : creneau.getDate().toString();
-        String heures = (creneau.getHeureDebut() == null ? "" : creneau.getHeureDebut())
-                + "-" + (creneau.getHeureFin() == null ? "" : creneau.getHeureFin());
+        String heures = (creneau.getHeureDebut() == null ? "" : creneau.getHeureDebut()) + "-"
+                + (creneau.getHeureFin() == null ? "" : creneau.getHeureFin());
         return (date.isEmpty() ? heures : date + " " + heures).trim();
     }
 }

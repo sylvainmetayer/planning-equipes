@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service.backup;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -8,11 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 /**
  * Runs the real {@code pg_dump} against the configured datasource.
@@ -101,8 +99,8 @@ public class PgDump {
             throw new IOException(binary + " did not finish within " + configuration.timeout());
         }
         if (process.exitValue() != 0) {
-            throw new IOException(binary + " failed (exit " + process.exitValue() + ")"
-                    + (output.isEmpty() ? "" : ": " + output));
+            throw new IOException(
+                    binary + " failed (exit " + process.exitValue() + ")" + (output.isEmpty() ? "" : ": " + output));
         }
     }
 }

@@ -4,13 +4,6 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -18,22 +11,23 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.solve.ProblemBuilder.ProblemeReamorce;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import dev.sylvain.planning.service.solve.SolverJobService.ResultatSolve;
 import dev.sylvain.planning.service.solve.SolverJobService.SolverJob;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
-import dev.sylvain.planning.service.edition.EditionService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.solve.ProblemBuilder;
-import dev.sylvain.planning.service.solve.Reamorcage;
-import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * The warm start of issue #174 end to end: where a full solve starts from,
@@ -99,13 +93,15 @@ class SolverJobReamorcageTest {
         Fixture fixture = new Fixture(1, 1);
         try {
             fixture.create();
-            editionContext.executeIn(EDITION, () -> persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of())));
+            editionContext.executeIn(
+                    EDITION, () -> persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of())));
 
             ProblemeReamorce probleme = withinEdition(() -> planningService.buildFromReferenceData(Reamorcage.AUTO));
             assertThat(probleme.reamorcage()).isEqualTo(Reamorcage.AUCUN);
             assertThat(probleme.postesReamorces()).isZero();
 
-            assertThatThrownBy(() -> withinEdition(() -> planningService.buildFromReferenceData(Reamorcage.PLAN_COURANT)))
+            assertThatThrownBy(
+                            () -> withinEdition(() -> planningService.buildFromReferenceData(Reamorcage.PLAN_COURANT)))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Aucun plan enregistré");
         } finally {
@@ -162,7 +158,8 @@ class SolverJobReamorcageTest {
             // produces, or a tenant who has since been declared unavailable.
             assertThat(resultat.reamorcage().postes()).isBetween(2, affectations);
             assertThat(HardMediumSoftScore.parseScore(resultat.diagnostic().score()))
-                    .isGreaterThanOrEqualTo(HardMediumSoftScore.parseScore(seed.diagnostic().score()));
+                    .isGreaterThanOrEqualTo(
+                            HardMediumSoftScore.parseScore(seed.diagnostic().score()));
         } finally {
             fixture.clean();
         }
@@ -183,13 +180,16 @@ class SolverJobReamorcageTest {
             attendreSolveurLibre();
 
             Instant debut = Instant.now();
-            SolverJob job = withinEdition(() -> solverJobs.submitSolveFromReferenceData(2L, false, Reamorcage.PLAN_COURANT));
+            SolverJob job =
+                    withinEdition(() -> solverJobs.submitSolveFromReferenceData(2L, false, Reamorcage.PLAN_COURANT));
             attendreFin(job);
 
             assertThat(job.getStatus()).isEqualTo(JobStatus.COMPLETED);
             ResultatSolve resultat = (ResultatSolve) job.getResult();
             assertThat(resultat.reamorcage().mode()).isEqualTo(Reamorcage.PLAN_COURANT);
-            assertThat(HardMediumSoftScore.parseScore(resultat.diagnostic().score()).hardScore()).isNegative();
+            assertThat(HardMediumSoftScore.parseScore(resultat.diagnostic().score())
+                            .hardScore())
+                    .isNegative();
             assertThat(Duration.between(debut, Instant.now())).isGreaterThanOrEqualTo(Duration.ofMillis(1500));
         } finally {
             fixture.clean();
@@ -198,8 +198,10 @@ class SolverJobReamorcageTest {
 
     @Test
     void anUnknownReamorcageValueIsA400() {
-        given().when().post("/api/solve/async/reference-data?reamorcage=BIDON")
-                .then().statusCode(400);
+        given().when()
+                .post("/api/solve/async/reference-data?reamorcage=BIDON")
+                .then()
+                .statusCode(400);
     }
 
     private <T> T withinEdition(java.util.concurrent.Callable<T> travail) {
@@ -208,7 +210,8 @@ class SolverJobReamorcageTest {
 
     private void attendreFin(SolverJob job) throws InterruptedException {
         for (int essai = 0; essai < 240; essai++) {
-            if (List.of(JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED).contains(job.getStatus())) {
+            if (List.of(JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED)
+                    .contains(job.getStatus())) {
                 return;
             }
             Thread.sleep(250);
@@ -266,7 +269,8 @@ class SolverJobReamorcageTest {
                 poste.setAnimateur(animateurs.get(i % effectif));
                 postes.add(poste);
             }
-            editionContext.executeIn(EDITION, () -> persistence.persist(new PlanningEvenement(JOUR, animateurs, postes)));
+            editionContext.executeIn(
+                    EDITION, () -> persistence.persist(new PlanningEvenement(JOUR, animateurs, postes)));
         }
 
         /** This fixture's seats only: the edition may hold other tests' créneaux, on which the stand also opens. */
@@ -287,7 +291,9 @@ class SolverJobReamorcageTest {
                 persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
                 referenceData.deleteStand("WARM-S1");
                 animateurs.forEach(animateur -> referenceData.deleteAnimateur(animateur.getId()));
-                referenceData.deleteCreneaux(referenceData.listCreneaux().stream().map(Creneau::getId).toList());
+                referenceData.deleteCreneaux(referenceData.listCreneaux().stream()
+                        .map(Creneau::getId)
+                        .toList());
             });
         }
     }

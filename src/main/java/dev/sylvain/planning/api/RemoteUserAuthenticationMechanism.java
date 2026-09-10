@@ -1,7 +1,5 @@
 package dev.sylvain.planning.api;
 
-import java.util.Set;
-
 import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -13,6 +11,7 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.Set;
 
 /**
  * Grants the admin role to the single address configured as
@@ -50,10 +49,11 @@ public class RemoteUserAuthenticationMechanism implements HttpAuthenticationMech
         if (!remoteUser.actif() || context.request().path().startsWith("/mcp")) {
             return Uni.createFrom().nullItem();
         }
-        return remoteUser.trustedEmail(nom -> context.request().getHeader(nom))
+        return remoteUser
+                .trustedEmail(nom -> context.request().getHeader(nom))
                 .filter(remoteUser::isAdmin)
-                .map(email -> identityProviderManager
-                        .authenticate(new TrustedAuthenticationRequest(RemoteUserAuthentication.PRINCIPAL_ADMIN)))
+                .map(email -> identityProviderManager.authenticate(
+                        new TrustedAuthenticationRequest(RemoteUserAuthentication.PRINCIPAL_ADMIN)))
                 .orElseGet(() -> Uni.createFrom().nullItem());
     }
 

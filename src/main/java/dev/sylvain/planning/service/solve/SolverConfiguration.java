@@ -1,9 +1,5 @@
 package dev.sylvain.planning.service.solve;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolutionManager;
@@ -12,15 +8,17 @@ import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationCompositionStyle;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
-import org.eclipse.microprofile.config.Config;
-
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticMode;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
-import dev.sylvain.planning.service.referentiel.ReferenceData;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.eclipse.microprofile.config.Config;
 
 /**
  * How this deployment configures a solve: the {@link SolverFactory} built from
@@ -61,16 +59,20 @@ final class SolverConfiguration {
     /** Cap fed to {@code limiterEmplacementsParJour} through {@link ParametresQualite}. */
     private final int maxEmplacementsParJour;
 
-    SolverConfiguration(Long secondsLimit, Long unimprovedSecondsLimit, Integer maxEmplacementsParJour,
-            ReferenceData referenceDataService, Config config) {
+    SolverConfiguration(
+            Long secondsLimit,
+            Long unimprovedSecondsLimit,
+            Integer maxEmplacementsParJour,
+            ReferenceData referenceDataService,
+            Config config) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
         applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit);
         this.solverFactory = SolverFactory.create(solverConfig);
         this.solutionManager = SolutionManager.create(this.solverFactory);
-        this.constraintDiagnosticService = ConstraintDiagnosticService.of(
-                readDiagnosticMode(config), this.solverFactory);
+        this.constraintDiagnosticService =
+                ConstraintDiagnosticService.of(readDiagnosticMode(config), this.solverFactory);
         this.referenceDataService = referenceDataService;
         this.defaultSecondsLimit = secondsLimit;
         this.maxEmplacementsParJour = maxEmplacementsParJour;
@@ -113,9 +115,10 @@ final class SolverConfiguration {
     private static Map<String, Integer> readConfiguredWeights(Config config) {
         Map<String, Integer> poids = new HashMap<>();
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-            poids.put(definition.name(), config
-                    .getOptionalValue("planning.constraint-weights." + definition.name(), Integer.class)
-                    .orElse(1));
+            poids.put(
+                    definition.name(),
+                    config.getOptionalValue("planning.constraint-weights." + definition.name(), Integer.class)
+                            .orElse(1));
         }
         return Map.copyOf(poids);
     }
@@ -168,11 +171,13 @@ final class SolverConfiguration {
             if (weight == 1) {
                 continue;
             }
-            overrides.put(definition.name(), switch (definition.niveau()) {
-                case HARD -> HardMediumSoftScore.ofHard(weight);
-                case MEDIUM -> HardMediumSoftScore.ofMedium(weight);
-                case SOFT -> HardMediumSoftScore.ofSoft(weight);
-            });
+            overrides.put(
+                    definition.name(),
+                    switch (definition.niveau()) {
+                        case HARD -> HardMediumSoftScore.ofHard(weight);
+                        case MEDIUM -> HardMediumSoftScore.ofMedium(weight);
+                        case SOFT -> HardMediumSoftScore.ofSoft(weight);
+                    });
         }
         return overrides.isEmpty() ? ConstraintWeightOverrides.none() : ConstraintWeightOverrides.of(overrides);
     }
@@ -214,8 +219,8 @@ final class SolverConfiguration {
             return solverFactory;
         }
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
         // An explicit override means the caller wants exactly that many seconds;
         // the ambient unimproved-time bailout (e.g. the test profile's 2s, far
         // too tight for a large scenario solved with a bigger override) must not

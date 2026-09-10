@@ -1,7 +1,5 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService.RestaurationResult;
 import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotDetail;
@@ -20,6 +18,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * Plan snapshots (issue #138): the only persistence able to hold more than one
@@ -61,8 +60,7 @@ public class PlanSnapshotResource {
      */
     @GET
     @Path("/compare")
-    public ComparaisonSnapshots compare(@QueryParam("base") String base,
-            @QueryParam("variante") String variante) {
+    public ComparaisonSnapshots compare(@QueryParam("base") String base, @QueryParam("variante") String variante) {
         ComparaisonSnapshots comparaison = comparaisonService.comparer(base, variante);
         if (comparaison == null) {
             throw new NotFoundException("Unknown snapshot: " + base + " or " + variante);
@@ -87,7 +85,9 @@ public class PlanSnapshotResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response capture(CaptureRequest request) {
-        String libelle = request == null || request.libelle() == null || request.libelle().isBlank()
+        String libelle = request == null
+                        || request.libelle() == null
+                        || request.libelle().isBlank()
                 ? "Instantané"
                 : request.libelle().trim();
         SnapshotMeta meta = snapshotService.capture(libelle, false);
@@ -132,10 +132,8 @@ public class PlanSnapshotResource {
     }
 
     /** @param libelle free-text name; a blank one falls back to a generic label */
-    public record CaptureRequest(String libelle) {
-    }
+    public record CaptureRequest(String libelle) {}
 
     /** @param groupeDifferent true when the refusal is a groupe mismatch, overridable with {@code ?forcer=true} */
-    public record ErreurRestauration(String message, List<String> referencesManquantes) {
-    }
+    public record ErreurRestauration(String message, List<String> referencesManquantes) {}
 }

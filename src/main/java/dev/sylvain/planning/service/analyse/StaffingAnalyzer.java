@@ -1,7 +1,12 @@
 package dev.sylvain.planning.service.analyse;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -17,14 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import jakarta.enterprise.context.ApplicationScoped;
-import dev.sylvain.planning.service.referentiel.TypologieItem;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * How many animateurs the current stands/créneaux need at a minimum, computed
@@ -197,7 +195,17 @@ public class StaffingAnalyzer {
      * pause-adjusted peak, or its hours over the daily legal ceiling when a
      * flat, long day demands more people than its peak shows.
      */
-    @Schema(requiredProperties = {"disponibles", "heures", "jour", "minimumJour", "picAvecPause", "picSimultane", "sieges", "standsOuverts"})
+    @Schema(
+            requiredProperties = {
+                "disponibles",
+                "heures",
+                "jour",
+                "minimumJour",
+                "picAvecPause",
+                "picSimultane",
+                "sieges",
+                "standsOuverts"
+            })
     public record JourStaffing(
             LocalDate date,
             int jour,
@@ -207,8 +215,7 @@ public class StaffingAnalyzer {
             int picSimultane,
             int picAvecPause,
             int minimumJour,
-            int disponibles) {
-    }
+            int disponibles) {}
 
     /**
      * One ISO week, the window both remaining bounds are proved inside — see
@@ -229,7 +236,16 @@ public class StaffingAnalyzer {
      *                      (animateur, jour travaillé) pairs the week requires
      * @param rotationTotal {@code joursPersonne / joursTravaillables}
      */
-    @Schema(requiredProperties = {"capaciteHeuresParAnimateur", "chargeTotal", "heures", "jours", "joursPersonne", "joursTravaillables", "rotationTotal"})
+    @Schema(
+            requiredProperties = {
+                "capaciteHeuresParAnimateur",
+                "chargeTotal",
+                "heures",
+                "jours",
+                "joursPersonne",
+                "joursTravaillables",
+                "rotationTotal"
+            })
     public record SemaineStaffing(
             String semaine,
             LocalDate debut,
@@ -239,10 +255,27 @@ public class StaffingAnalyzer {
             double capaciteHeuresParAnimateur,
             int chargeTotal,
             int joursPersonne,
-            int rotationTotal) {
-    }
+            int rotationTotal) {}
 
-    @Schema(requiredProperties = {"capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "minimumMajeurs", "minimumMineurs", "minimumTotal", "nombreSemaines", "pauseMinimaleMinutes", "picAvecPause", "picSimultane", "rotationTotal", "totalDemandeHeures"})
+    @Schema(
+            requiredProperties = {
+                "capaciteHeuresParAnimateur",
+                "chargeTotal",
+                "dureeHebdomadaireMaxMinutes",
+                "dureeQuotidienneMaxMinutes",
+                "indisponibilitesDeclarees",
+                "joursTravaillesMaxParSemaine",
+                "minimumAvecIndisponibilites",
+                "minimumMajeurs",
+                "minimumMineurs",
+                "minimumTotal",
+                "nombreSemaines",
+                "pauseMinimaleMinutes",
+                "picAvecPause",
+                "picSimultane",
+                "rotationTotal",
+                "totalDemandeHeures"
+            })
     public record StaffingSummary(
             List<JourStaffing> parJour,
             List<SemaineStaffing> parSemaine,
@@ -265,8 +298,7 @@ public class StaffingAnalyzer {
             int dureeHebdomadaireMaxMinutes,
             int dureeQuotidienneMaxMinutes,
             int joursTravaillesMaxParSemaine,
-            CompetenceStaffing parCompetence) {
-    }
+            CompetenceStaffing parCompetence) {}
 
     /**
      * One game category: the same bounds as {@link StaffingSummary}, computed
@@ -275,7 +307,20 @@ public class StaffingAnalyzer {
      * of: zero when the bound is met, and zero as long as no animateur is
      * known at all, since there is then nothing to compare the bound to.
      */
-    @Schema(requiredProperties = {"chargeTotal", "heures", "manque", "minimumTotal", "ninja", "nombreSemaines", "picAvecPause", "picSimultane", "rotationTotal", "sieges", "specialistes"})
+    @Schema(
+            requiredProperties = {
+                "chargeTotal",
+                "heures",
+                "manque",
+                "minimumTotal",
+                "ninja",
+                "nombreSemaines",
+                "picAvecPause",
+                "picSimultane",
+                "rotationTotal",
+                "sieges",
+                "specialistes"
+            })
     public record TypologieStaffing(
             String typologie,
             String label,
@@ -290,8 +335,7 @@ public class StaffingAnalyzer {
             int minimumTotal,
             BorneRetenue borneRetenue,
             int specialistes,
-            int manque) {
-    }
+            int manque) {}
 
     /**
      * The bottleneck view: one row per game category holding seats, plus what
@@ -320,7 +364,16 @@ public class StaffingAnalyzer {
      *                          reserve of zero must be read as "no such notion
      *                          here" rather than as a shortage of backup
      */
-    @Schema(requiredProperties = {"animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologieNinjaDefinie"})
+    @Schema(
+            requiredProperties = {
+                "animateursTotal",
+                "manquePolyvalents",
+                "manqueTotal",
+                "polyvalents",
+                "siegesNonAttribues",
+                "siegesReservesAuxPolyvalents",
+                "typologieNinjaDefinie"
+            })
     public record CompetenceStaffing(
             List<TypologieStaffing> parTypologie,
             int polyvalents,
@@ -329,16 +382,13 @@ public class StaffingAnalyzer {
             int manqueTotal,
             int manquePolyvalents,
             int animateursTotal,
-            boolean typologieNinjaDefinie) {
-    }
+            boolean typologieNinjaDefinie) {}
 
     /** Half-open interval of one seat, in minutes from the start of its day. */
-    private record Siege(LocalDate date, int debut, int fin, Stand stand) {
-    }
+    private record Siege(LocalDate date, int debut, int fin, Stand stand) {}
 
     /** What one event day demands, before any weekly reasoning. */
-    private record BesoinJour(LocalDate date, double heures, int picSimultane, int picAvecPause, int minimum) {
-    }
+    private record BesoinJour(LocalDate date, double heures, int picSimultane, int picAvecPause, int minimum) {}
 
     /**
      * @param animateurs  the animateurs the referential holds, only ever
@@ -350,8 +400,12 @@ public class StaffingAnalyzer {
      *                    the ninja one apart. Never a hard-coded list: those
      *                    categories are CRUD data.
      */
-    public StaffingSummary analyze(List<PosteAffectation> postes, List<Animateur> animateurs,
-            List<TypologieItem> typologies, int dureeHebdomadaireMaxMinutes, int pauseMinimaleMinutes) {
+    public StaffingSummary analyze(
+            List<PosteAffectation> postes,
+            List<Animateur> animateurs,
+            List<TypologieItem> typologies,
+            int dureeHebdomadaireMaxMinutes,
+            int pauseMinimaleMinutes) {
         List<Siege> sieges = sieges(postes);
         Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, pauseMinimaleMinutes);
         Bornes bornes = bornes(besoins, dureeHebdomadaireMaxMinutes);
@@ -362,7 +416,9 @@ public class StaffingAnalyzer {
         for (Siege siege : sieges) {
             siegesByDate.merge(siege.date(), 1, Integer::sum);
             if (siege.stand() != null) {
-                standsByDate.computeIfAbsent(siege.date(), date -> new HashSet<>()).add(siege.stand().getId());
+                standsByDate
+                        .computeIfAbsent(siege.date(), date -> new HashSet<>())
+                        .add(siege.stand().getId());
             }
         }
 
@@ -385,8 +441,7 @@ public class StaffingAnalyzer {
         // day-level minimum and no longer the raw peak — a long, flat day can
         // out-demand a spiky one.
         JourStaffing jourCritique = parJour.stream()
-                .max(Comparator.comparingInt(JourStaffing::minimumJour)
-                        .thenComparingInt(JourStaffing::picAvecPause))
+                .max(Comparator.comparingInt(JourStaffing::minimumJour).thenComparingInt(JourStaffing::picAvecPause))
                 .orElse(null);
 
         int minimumMajeurs = (int) Math.ceil(bornes.minimumTotal() * partMajeurs(sieges));
@@ -405,15 +460,15 @@ public class StaffingAnalyzer {
                 bornes.minimumTotal(),
                 bornes.borneRetenue(),
                 projectOnIndisponibilites(parJour, connus, bornes.minimumTotal()),
-                connus.stream().anyMatch(animateur -> !indisponibilites(animateur).isEmpty()),
+                connus.stream()
+                        .anyMatch(animateur -> !indisponibilites(animateur).isEmpty()),
                 minimumMajeurs,
                 bornes.minimumTotal() - minimumMajeurs,
                 pauseMinimaleMinutes,
                 dureeHebdomadaireMaxMinutes,
                 PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES,
                 PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE,
-                bottleneckPerCategory(sieges, connus, typologies, dureeHebdomadaireMaxMinutes,
-                        pauseMinimaleMinutes));
+                bottleneckPerCategory(sieges, connus, typologies, dureeHebdomadaireMaxMinutes, pauseMinimaleMinutes));
     }
 
     /**
@@ -431,8 +486,8 @@ public class StaffingAnalyzer {
      * 1 leaves the bound untouched anyway) and when a day has nobody at all,
      * which the referential's own emptiness already says louder.</p>
      */
-    private static int projectOnIndisponibilites(List<JourStaffing> parJour, List<Animateur> animateurs,
-            int minimumTotal) {
+    private static int projectOnIndisponibilites(
+            List<JourStaffing> parJour, List<Animateur> animateurs, int minimumTotal) {
         if (animateurs.isEmpty()) {
             return minimumTotal;
         }
@@ -448,7 +503,9 @@ public class StaffingAnalyzer {
     }
 
     private static int disponibles(List<Animateur> animateurs, LocalDate date) {
-        return (int) animateurs.stream().filter(animateur -> !animateur.isIndisponibleOn(date)).count();
+        return (int) animateurs.stream()
+                .filter(animateur -> !animateur.isIndisponibleOn(date))
+                .count();
     }
 
     private static Set<LocalDate> indisponibilites(Animateur animateur) {
@@ -460,12 +517,19 @@ public class StaffingAnalyzer {
      * them against the animateurs who declare it — see the class javadoc for
      * the two attribution rules this rests on.
      */
-    private static CompetenceStaffing bottleneckPerCategory(List<Siege> sieges, List<Animateur> animateurs,
-            List<TypologieItem> typologies, int dureeHebdomadaireMaxMinutes, int pauseMinimaleMinutes) {
+    private static CompetenceStaffing bottleneckPerCategory(
+            List<Siege> sieges,
+            List<Animateur> animateurs,
+            List<TypologieItem> typologies,
+            int dureeHebdomadaireMaxMinutes,
+            int pauseMinimaleMinutes) {
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         List<TypologieItem> referentiel = typologies == null ? List.of() : typologies;
 
-        String ninja = referentiel.stream().filter(TypologieItem::ninja).map(TypologieItem::id).findFirst()
+        String ninja = referentiel.stream()
+                .filter(TypologieItem::ninja)
+                .map(TypologieItem::id)
+                .findFirst()
                 .orElse(null);
         Map<String, String> labels = new LinkedHashMap<>();
         referentiel.forEach(typologie -> labels.put(typologie.id(), typologie.label()));
@@ -488,7 +552,9 @@ public class StaffingAnalyzer {
                     parTypologie.computeIfAbsent(ninja, id -> new ArrayList<>()).add(siege);
                 }
             } else {
-                parTypologie.computeIfAbsent(offered.iterator().next(), id -> new ArrayList<>()).add(siege);
+                parTypologie
+                        .computeIfAbsent(offered.iterator().next(), id -> new ArrayList<>())
+                        .add(siege);
             }
         }
 
@@ -508,8 +574,7 @@ public class StaffingAnalyzer {
         List<TypologieStaffing> lignes = new ArrayList<>();
         for (Map.Entry<String, List<Siege>> entree : parTypologie.entrySet()) {
             String id = entree.getKey();
-            Bornes bornes = bornes(besoinsByDate(entree.getValue(), pauseMinimaleMinutes),
-                    dureeHebdomadaireMaxMinutes);
+            Bornes bornes = bornes(besoinsByDate(entree.getValue(), pauseMinimaleMinutes), dureeHebdomadaireMaxMinutes);
             int disponibles = specialistes.getOrDefault(id, 0);
             int manque = connus.isEmpty() ? 0 : Math.max(0, bornes.minimumTotal() - disponibles);
             lignes.add(new TypologieStaffing(
@@ -530,8 +595,10 @@ public class StaffingAnalyzer {
         }
         // Tightest bottleneck first, so the row that explains an infeasibility
         // is the one read first.
-        lignes.sort(Comparator.comparingInt(TypologieStaffing::manque).reversed()
-                .thenComparing(Comparator.comparingInt(TypologieStaffing::minimumTotal).reversed())
+        lignes.sort(Comparator.comparingInt(TypologieStaffing::manque)
+                .reversed()
+                .thenComparing(
+                        Comparator.comparingInt(TypologieStaffing::minimumTotal).reversed())
                 .thenComparing(TypologieStaffing::label)
                 .thenComparing(TypologieStaffing::typologie));
 
@@ -541,7 +608,10 @@ public class StaffingAnalyzer {
                 siegesNonAttribues,
                 siegesReservesAuxPolyvalents,
                 lignes.stream().mapToInt(TypologieStaffing::manque).sum(),
-                lignes.stream().filter(TypologieStaffing::ninja).mapToInt(TypologieStaffing::manque).sum(),
+                lignes.stream()
+                        .filter(TypologieStaffing::ninja)
+                        .mapToInt(TypologieStaffing::manque)
+                        .sum(),
                 connus.size(),
                 ninja != null);
     }
@@ -560,10 +630,17 @@ public class StaffingAnalyzer {
     }
 
     /** The four bounds of the class javadoc, over an arbitrary set of seats. */
-    private record Bornes(double heures, int semaines, int picSimultane, int picAvecPause, int chargeTotal,
-            int rotationTotal, int minimumTotal, BorneRetenue borneRetenue, List<SemaineStaffing> parSemaine,
-            SemaineStaffing semaineCritique) {
-    }
+    private record Bornes(
+            double heures,
+            int semaines,
+            int picSimultane,
+            int picAvecPause,
+            int chargeTotal,
+            int rotationTotal,
+            int minimumTotal,
+            BorneRetenue borneRetenue,
+            List<SemaineStaffing> parSemaine,
+            SemaineStaffing semaineCritique) {}
 
     /**
      * Day-level demand, keyed by date and ordered by it. Peaks are computed per
@@ -585,33 +662,50 @@ public class StaffingAnalyzer {
             // A day is also bounded by its sheer volume: nobody works more than
             // the daily legal ceiling, so 600 person-hours need 60 people
             // whatever the shape of the day.
-            int parLesHeures = (int) Math
-                    .ceil(heures * 60 / PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES);
-            besoins.put(entree.getKey(), new BesoinJour(entree.getKey(), heures, pic(entree.getValue(), 0),
-                    picAvecPause, Math.max(picAvecPause, parLesHeures)));
+            int parLesHeures = (int) Math.ceil(heures * 60 / PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES);
+            besoins.put(
+                    entree.getKey(),
+                    new BesoinJour(
+                            entree.getKey(),
+                            heures,
+                            pic(entree.getValue(), 0),
+                            picAvecPause,
+                            Math.max(picAvecPause, parLesHeures)));
         }
         return besoins;
     }
 
     private static Bornes bornes(Map<LocalDate, BesoinJour> besoins, int dureeHebdomadaireMaxMinutes) {
-        int picSimultane = besoins.values().stream().mapToInt(BesoinJour::picSimultane).max().orElse(0);
-        int picAvecPause = besoins.values().stream().mapToInt(BesoinJour::picAvecPause).max().orElse(0);
-        double heures = besoins.values().stream().mapToDouble(BesoinJour::heures).sum();
+        int picSimultane = besoins.values().stream()
+                .mapToInt(BesoinJour::picSimultane)
+                .max()
+                .orElse(0);
+        int picAvecPause = besoins.values().stream()
+                .mapToInt(BesoinJour::picAvecPause)
+                .max()
+                .orElse(0);
+        double heures =
+                besoins.values().stream().mapToDouble(BesoinJour::heures).sum();
 
         Map<String, List<BesoinJour>> parSemaineIso = new LinkedHashMap<>();
         for (BesoinJour besoin : besoins.values()) {
-            parSemaineIso.computeIfAbsent(semaineIso(besoin.date()), semaine -> new ArrayList<>()).add(besoin);
+            parSemaineIso
+                    .computeIfAbsent(semaineIso(besoin.date()), semaine -> new ArrayList<>())
+                    .add(besoin);
         }
 
         List<SemaineStaffing> parSemaine = new ArrayList<>();
         for (Map.Entry<String, List<BesoinJour>> entree : parSemaineIso.entrySet()) {
             List<BesoinJour> jours = entree.getValue();
             int joursTravaillables = Math.min(jours.size(), PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE);
-            double heuresSemaine = jours.stream().mapToDouble(BesoinJour::heures).sum();
+            double heuresSemaine =
+                    jours.stream().mapToDouble(BesoinJour::heures).sum();
             // Two ceilings at once: the weekly one, and the days the event
             // really occupies in that week — six at most, of ten hours at most.
-            double capacite = Math.min(dureeHebdomadaireMaxMinutes,
-                    (long) joursTravaillables * PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES) / 60.0;
+            double capacite = Math.min(
+                            dureeHebdomadaireMaxMinutes,
+                            (long) joursTravaillables * PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
+                    / 60.0;
             int joursPersonne = jours.stream().mapToInt(BesoinJour::minimum).sum();
             parSemaine.add(new SemaineStaffing(
                     entree.getKey(),
@@ -626,21 +720,35 @@ public class StaffingAnalyzer {
         }
         parSemaine.sort(Comparator.comparing(SemaineStaffing::debut));
 
-        int chargeTotal = parSemaine.stream().mapToInt(SemaineStaffing::chargeTotal).max().orElse(0);
-        int rotationTotal = parSemaine.stream().mapToInt(SemaineStaffing::rotationTotal).max().orElse(0);
+        int chargeTotal =
+                parSemaine.stream().mapToInt(SemaineStaffing::chargeTotal).max().orElse(0);
+        int rotationTotal = parSemaine.stream()
+                .mapToInt(SemaineStaffing::rotationTotal)
+                .max()
+                .orElse(0);
         int minimumTotal = Math.max(Math.max(picSimultane, picAvecPause), Math.max(chargeTotal, rotationTotal));
         SemaineStaffing semaineCritique = parSemaine.stream()
-                .max(Comparator.comparingInt(
-                        semaine -> Math.max(semaine.chargeTotal(), semaine.rotationTotal())))
+                .max(Comparator.comparingInt(semaine -> Math.max(semaine.chargeTotal(), semaine.rotationTotal())))
                 .orElse(null);
-        return new Bornes(heures, parSemaine.size(), picSimultane, picAvecPause, chargeTotal, rotationTotal,
-                minimumTotal, borneRetenue(picSimultane, picAvecPause, chargeTotal, rotationTotal),
-                List.copyOf(parSemaine), semaineCritique);
+        return new Bornes(
+                heures,
+                parSemaine.size(),
+                picSimultane,
+                picAvecPause,
+                chargeTotal,
+                rotationTotal,
+                minimumTotal,
+                borneRetenue(picSimultane, picAvecPause, chargeTotal, rotationTotal),
+                List.copyOf(parSemaine),
+                semaineCritique);
     }
 
     /** The weeks {@code Creneau#semaineIso()} names, from a bare date. */
     private static String semaineIso(LocalDate date) {
-        return String.format(Locale.ROOT, "%d-W%02d", date.get(IsoFields.WEEK_BASED_YEAR),
+        return String.format(
+                Locale.ROOT,
+                "%d-W%02d",
+                date.get(IsoFields.WEEK_BASED_YEAR),
                 date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR));
     }
 
@@ -649,8 +757,7 @@ public class StaffingAnalyzer {
      * strictly the largest: on a tie any of the others explains the same
      * number in fewer words, and the peak explains it best of all.
      */
-    private static BorneRetenue borneRetenue(int picSimultane, int picAvecPause, int chargeTotal,
-            int rotationTotal) {
+    private static BorneRetenue borneRetenue(int picSimultane, int picAvecPause, int chargeTotal, int rotationTotal) {
         if (rotationTotal > chargeTotal && rotationTotal > picAvecPause && rotationTotal > picSimultane) {
             return BorneRetenue.ROTATION_JOURS;
         }
@@ -675,9 +782,9 @@ public class StaffingAnalyzer {
         // event's grand total.
         Map<String, int[]> byGroup = new LinkedHashMap<>();
         for (Siege siege : sieges) {
-            String key = (siege.stand() == null ? "?" : siege.stand().getId())
-                    + "@" + siege.date() + "#" + siege.debut() + "-" + siege.fin();
-            int[] compteur = byGroup.computeIfAbsent(key, ignored -> new int[] { 0, 0 });
+            String key = (siege.stand() == null ? "?" : siege.stand().getId()) + "@" + siege.date() + "#"
+                    + siege.debut() + "-" + siege.fin();
+            int[] compteur = byGroup.computeIfAbsent(key, ignored -> new int[] {0, 0});
             compteur[0]++;
             compteur[1] = siege.stand() != null && siege.stand().isReserveMajeurs() ? 1 : 0;
         }
@@ -699,13 +806,13 @@ public class StaffingAnalyzer {
     private static int pic(List<Siege> sieges, int tamponMinutes) {
         List<int[]> evenements = new ArrayList<>(sieges.size() * 2);
         for (Siege siege : sieges) {
-            evenements.add(new int[] { siege.debut(), 1 });
-            evenements.add(new int[] { siege.fin() + tamponMinutes, -1 });
+            evenements.add(new int[] {siege.debut(), 1});
+            evenements.add(new int[] {siege.fin() + tamponMinutes, -1});
         }
         // A seat ending exactly when another starts must not count as an
         // overlap: process the -1 events of an instant before its +1 events.
-        evenements.sort(Comparator.<int[]>comparingInt(evenement -> evenement[0])
-                .thenComparingInt(evenement -> evenement[1]));
+        evenements.sort(
+                Comparator.<int[]>comparingInt(evenement -> evenement[0]).thenComparingInt(evenement -> evenement[1]));
         int courant = 0;
         int pic = 0;
         for (int[] evenement : evenements) {

@@ -1,9 +1,7 @@
 package dev.sylvain.planning.api;
 
-import java.util.Locale;
-
-import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.TokenOwner;
+import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -14,6 +12,7 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
+import java.util.Locale;
 
 /**
  * The authentication guard of the espace animateur, bound declaratively to
@@ -58,12 +57,10 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
             return;
         }
         Cookie cookie = contexte.getCookies().get(EspaceAnimateurResource.COOKIE_SESSION);
-        if (!espaceAccesService.validSession(
-                cookie == null ? null : cookie.getValue(), owner.animateurId())) {
+        if (!espaceAccesService.validSession(cookie == null ? null : cookie.getValue(), owner.animateurId())) {
             contexte.abortWith(Response.status(Response.Status.UNAUTHORIZED)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(new ValidationError(
-                            "Authentification requise : demandez un code d'accès par e-mail."))
+                    .entity(new ValidationError("Authentification requise : demandez un code d'accès par e-mail."))
                     .build());
         }
     }
@@ -74,12 +71,12 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
      * exactly the fiche the code screen already refuses to serve, since the
      * address is the second factor.
      */
-    private boolean proxyAtteste(ContainerRequestContext contexte,
-            TokenOwner owner) {
+    private boolean proxyAtteste(ContainerRequestContext contexte, TokenOwner owner) {
         if (owner.email() == null || owner.email().isBlank()) {
             return false;
         }
-        return remoteUser.trustedEmail(nom -> contexte.getHeaderString(nom))
+        return remoteUser
+                .trustedEmail(nom -> contexte.getHeaderString(nom))
                 .filter(email -> email.equals(owner.email().trim().toLowerCase(Locale.ROOT)))
                 .isPresent();
     }

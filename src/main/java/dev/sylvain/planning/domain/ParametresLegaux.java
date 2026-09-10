@@ -68,8 +68,7 @@ public class ParametresLegaux {
     private int reposQuotidienMinimalMinutes = REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT;
     private boolean pauseSurPoste = PAUSE_SUR_POSTE_PAR_DEFAUT;
 
-    public ParametresLegaux() {
-    }
+    public ParametresLegaux() {}
 
     public ParametresLegaux(int dureeHebdomadaireMaxMinutes) {
         this.dureeHebdomadaireMaxMinutes = dureeHebdomadaireMaxMinutes;
@@ -80,8 +79,8 @@ public class ParametresLegaux {
         this.dureeHebdomadaireMaxMineurMinutes = dureeHebdomadaireMaxMineurMinutes;
     }
 
-    public ParametresLegaux(int dureeHebdomadaireMaxMinutes, int pauseMinimaleEntreVacationsMinutes,
-            int reposQuotidienMinimalMinutes) {
+    public ParametresLegaux(
+            int dureeHebdomadaireMaxMinutes, int pauseMinimaleEntreVacationsMinutes, int reposQuotidienMinimalMinutes) {
         this.dureeHebdomadaireMaxMinutes = dureeHebdomadaireMaxMinutes;
         this.pauseMinimaleEntreVacationsMinutes = pauseMinimaleEntreVacationsMinutes;
         this.reposQuotidienMinimalMinutes = reposQuotidienMinimalMinutes;

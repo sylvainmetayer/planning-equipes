@@ -25,8 +25,7 @@ public class Edition {
     private boolean defaut;
     private Instant creeLe;
 
-    public Edition() {
-    }
+    public Edition() {}
 
     public Edition(String id, String nom, boolean defaut, Instant creeLe) {
         this.id = id;

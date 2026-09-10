@@ -2,6 +2,7 @@ package dev.sylvain.planning.solver.constraints;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.solver.ConstraintCatalog;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,10 +11,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.solver.ConstraintCatalog;
 
 /**
  * The name of a constraint is written three times without any compiler tying
@@ -32,8 +30,7 @@ import dev.sylvain.planning.solver.ConstraintCatalog;
  */
 class ConstraintToggleStructurelleTest {
 
-    private static final Path FAMILLES =
-            Path.of("src/main/java/dev/sylvain/planning/solver/constraints");
+    private static final Path FAMILLES = Path.of("src/main/java/dev/sylvain/planning/solver/constraints");
 
     /** {@code asConstraint("nom")} — where the constraint is declared. */
     private static final Pattern DECLARATION = Pattern.compile("asConstraint\\(\"([A-Za-z0-9_]+)\"\\)");
@@ -46,7 +43,9 @@ class ConstraintToggleStructurelleTest {
 
     private static List<Path> families() throws IOException {
         try (Stream<Path> files = Files.list(FAMILLES)) {
-            return files.filter(f -> f.getFileName().toString().endsWith("Constraints.java")).sorted().toList();
+            return files.filter(f -> f.getFileName().toString().endsWith("Constraints.java"))
+                    .sorted()
+                    .toList();
         }
     }
 
@@ -65,7 +64,8 @@ class ConstraintToggleStructurelleTest {
                     profondeur--;
                 }
             }
-            Matcher nom = DERNIER_LITTERAL.matcher(source.substring(debut.end(), i - 1).stripTrailing());
+            Matcher nom = DERNIER_LITTERAL.matcher(
+                    source.substring(debut.end(), i - 1).stripTrailing());
             if (nom.find()) {
                 noms.add(nom.group(1));
             }
@@ -74,7 +74,12 @@ class ConstraintToggleStructurelleTest {
     }
 
     private static List<String> nomsDeclares(String source) {
-        return DECLARATION.matcher(source).results().map(r -> r.group(1)).sorted().toList();
+        return DECLARATION
+                .matcher(source)
+                .results()
+                .map(r -> r.group(1))
+                .sorted()
+                .toList();
     }
 
     /**

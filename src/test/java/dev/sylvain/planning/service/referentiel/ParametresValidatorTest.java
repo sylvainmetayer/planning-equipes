@@ -3,13 +3,11 @@ package dev.sylvain.planning.service.referentiel;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
-import org.junit.jupiter.api.Test;
-
-import java.time.LocalTime;
-
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import java.time.LocalTime;
+import org.junit.jupiter.api.Test;
 
 /**
  * Finding C1 of the HR compliance audit: `updateParametresLegaux` only checked
@@ -84,15 +82,14 @@ class ParametresValidatorTest {
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> ParametresValidator.checkConstraintWeight(0))
                 .withMessageContaining("désactivez-la");
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> ParametresValidator.checkConstraintWeight(-3));
+        assertThatIllegalArgumentException().isThrownBy(() -> ParametresValidator.checkConstraintWeight(-3));
     }
 
     @Test
     void aConstraintWeightAboveTheCeilingIsRefused() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> ParametresValidator.checkConstraintWeight(
-                        ParametresValidator.CONSTRAINT_WEIGHT_MAX + 1));
+                .isThrownBy(
+                        () -> ParametresValidator.checkConstraintWeight(ParametresValidator.CONSTRAINT_WEIGHT_MAX + 1));
     }
 
     /**
@@ -112,7 +109,7 @@ class ParametresValidatorTest {
     @Test
     void theLatestHonourableSendingTimeIsAccepted() {
         assertThatCode(() -> ParametresValidator.checkParametresNotifications(
-                new ParametresNotifications(true, ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX, 72, 3)))
+                        new ParametresNotifications(true, ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX, 72, 3)))
                 .doesNotThrowAnyException();
         assertThatCode(() -> ParametresValidator.checkParametresNotifications(new ParametresNotifications()))
                 .doesNotThrowAnyException();

@@ -1,9 +1,8 @@
 package dev.sylvain.planning.config;
 
-import java.util.Optional;
-
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
+import java.util.Optional;
 
 /**
  * The opt-in mode where an access proxy asserts an already-authenticated

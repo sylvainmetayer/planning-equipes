@@ -1,22 +1,20 @@
 package dev.sylvain.planning.service.notification;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
-
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ParametresService;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.Scheduler;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 /**
  * The one scheduled entry point of the three nightly notifications (issues
@@ -81,7 +79,9 @@ public class NotificationsPlanifieesService {
     @ConfigProperty(name = "planning.notifications.cron")
     String cron;
 
-    @Scheduled(identity = JOB_IDENTITY, cron = "{planning.notifications.cron}",
+    @Scheduled(
+            identity = JOB_IDENTITY,
+            cron = "{planning.notifications.cron}",
             timeZone = "{planning.notifications.zone}",
             concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
     public void scheduledRun() {
@@ -105,7 +105,9 @@ public class NotificationsPlanifieesService {
             } catch (RuntimeException e) {
                 // Named by id, never by display name: an edition is not
                 // personal data, but the exception below it might quote a row.
-                LOG.errorf(e, "Scheduled notifications failed on edition %s; the other editions carry on",
+                LOG.errorf(
+                        e,
+                        "Scheduled notifications failed on edition %s; the other editions carry on",
                         edition.getId());
             }
         }

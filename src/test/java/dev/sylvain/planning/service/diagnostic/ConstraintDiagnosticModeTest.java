@@ -6,10 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.SolverConfig;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import org.junit.jupiter.api.Test;
 
 /**
  * The switch between the two implementations, which is a configuration choice
@@ -38,7 +37,8 @@ class ConstraintDiagnosticModeTest {
     @Test
     void everyModeIsReachableFromItsConfigurationValue() {
         for (ConstraintDiagnosticMode mode : ConstraintDiagnosticMode.values()) {
-            assertThat(ConstraintDiagnosticMode.fromConfigValue(mode.configValue())).isEqualTo(mode);
+            assertThat(ConstraintDiagnosticMode.fromConfigValue(mode.configValue()))
+                    .isEqualTo(mode);
         }
     }
 
@@ -58,8 +58,8 @@ class ConstraintDiagnosticModeTest {
 
     private static SolverFactory<PlanningEvenement> solverFactory() {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
         return SolverFactory.create(solverConfig);
     }
 }

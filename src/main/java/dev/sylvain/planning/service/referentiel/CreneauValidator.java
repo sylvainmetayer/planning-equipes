@@ -22,14 +22,14 @@ import dev.sylvain.planning.service.BusinessError;
  */
 final class CreneauValidator {
 
-    private CreneauValidator() {
-    }
+    private CreneauValidator() {}
 
     static void check(Creneau creneau) {
-        if (creneau == null || creneau.getDate() == null || creneau.getHeureDebut() == null
+        if (creneau == null
+                || creneau.getDate() == null
+                || creneau.getHeureDebut() == null
                 || creneau.getHeureFin() == null) {
-            throw new BusinessError.Invalid(
-                    "Un créneau requiert une date, une heure de début et une heure de fin");
+            throw new BusinessError.Invalid("Un créneau requiert une date, une heure de début et une heure de fin");
         }
     }
 }

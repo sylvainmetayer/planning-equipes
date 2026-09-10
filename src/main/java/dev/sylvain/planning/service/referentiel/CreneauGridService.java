@@ -1,7 +1,20 @@
 package dev.sylvain.planning.service.referentiel;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
+import dev.sylvain.planning.domain.ParametresDecoupage;
+import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.Anomaly;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,22 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import dev.sylvain.planning.domain.ParametresDecoupage;
-import dev.sylvain.planning.domain.ParametresLegaux;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.Anomaly;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
-import dev.sylvain.planning.service.BusinessError;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Builds and checks the edition's <b>grid of créneaux</b>: expanding a
@@ -160,16 +158,15 @@ public class CreneauGridService {
                 retenues.addAll(dates);
             } else {
                 if (dateDebut == null || dateFin == null) {
-                    throw new BusinessError.Invalid("La portée " + jours
-                            + " exige dateDebut et dateFin (bornes incluses).");
+                    throw new BusinessError.Invalid(
+                            "La portée " + jours + " exige dateDebut et dateFin (bornes incluses).");
                 }
                 if (dateFin.isBefore(dateDebut)) {
                     throw new BusinessError.Invalid(
                             "dateFin (" + dateFin + ") est antérieure à dateDebut (" + dateDebut + ").");
                 }
                 if (jours == TypeJoursHoraire.JOURS_SEMAINE && joursSemaine.isEmpty()) {
-                    throw new BusinessError.Invalid(
-                            "La portée JOURS_SEMAINE exige joursSemaine, ex. MONDAY,TUESDAY.");
+                    throw new BusinessError.Invalid("La portée JOURS_SEMAINE exige joursSemaine, ex. MONDAY,TUESDAY.");
                 }
                 for (LocalDate date = dateDebut; !date.isAfter(dateFin); date = date.plusDays(1)) {
                     if (jours != TypeJoursHoraire.JOURS_SEMAINE || joursSemaine.contains(date.getDayOfWeek())) {
@@ -179,8 +176,7 @@ public class CreneauGridService {
             }
             retenues.removeAll(exclusions);
             if (retenues.isEmpty()) {
-                throw new BusinessError.Invalid(
-                        "La règle ne couvre aucune date : sélecteur et exclusions s'annulent.");
+                throw new BusinessError.Invalid("La règle ne couvre aucune date : sélecteur et exclusions s'annulent.");
             }
             return retenues;
         }
@@ -199,16 +195,23 @@ public class CreneauGridService {
      * time. {@link #diagnose} exists to <em>suggest</em> a mode from the
      * data; deciding stays with the operator.</p>
      */
-    public RapportGrille validate(List<Creneau> creneaux, List<Stand> stands, List<Animateur> animateurs,
-            ModeGrilleCreneaux mode, ParametresDecoupage decoupage, ParametresLegaux legaux) {
+    public RapportGrille validate(
+            List<Creneau> creneaux,
+            List<Stand> stands,
+            List<Animateur> animateurs,
+            ModeGrilleCreneaux mode,
+            ParametresDecoupage decoupage,
+            ParametresLegaux legaux) {
         List<GridAnomaly> anomalies = new ArrayList<>();
-        List<Creneau> dates = creneaux.stream().filter(creneau -> creneau.getDate() != null).toList();
+        List<Creneau> dates =
+                creneaux.stream().filter(creneau -> creneau.getDate() != null).toList();
 
         anomalies.addAll(unitAnomalies(creneaux, mode, decoupage, legaux));
         anomalies.addAll(anomaliesByDay(dates, mode));
         anomalies.addAll(datesIsolees(dates));
 
-        anomalies.sort(Comparator.comparingInt((GridAnomaly anomalie) -> anomalie.severite().ordinal())
+        anomalies.sort(Comparator.comparingInt(
+                        (GridAnomaly anomalie) -> anomalie.severite().ordinal())
                 .thenComparing(anomalie -> anomalie.date() != null ? anomalie.date() : LocalDate.MIN)
                 .thenComparing(GridAnomaly::message));
 
@@ -223,39 +226,52 @@ public class CreneauGridService {
     }
 
     /** Checks that need one créneau at a time: shape, then duration read through the mode. */
-    private static List<GridAnomaly> unitAnomalies(List<Creneau> creneaux, ModeGrilleCreneaux mode,
-            ParametresDecoupage decoupage, ParametresLegaux legaux) {
+    private static List<GridAnomaly> unitAnomalies(
+            List<Creneau> creneaux, ModeGrilleCreneaux mode, ParametresDecoupage decoupage, ParametresLegaux legaux) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         int amplitudeMaximaleLegale = MINUTES_PAR_JOUR - legaux.getReposQuotidienMinimalMinutes();
         for (Creneau creneau : creneaux) {
             if (creneau.getDate() == null || creneau.getHeureDebut() == null || creneau.getHeureFin() == null) {
-                anomalies.add(new GridAnomaly(SeveriteGrille.ERREUR, GridAnomalyType.CRENEAU_INCOMPLET,
-                        creneau.getDate(), "Créneau incomplet : date, heure de début et heure de fin sont requises."));
+                anomalies.add(new GridAnomaly(
+                        SeveriteGrille.ERREUR,
+                        GridAnomalyType.CRENEAU_INCOMPLET,
+                        creneau.getDate(),
+                        "Créneau incomplet : date, heure de début et heure de fin sont requises."));
                 continue;
             }
             int duree = creneau.getDureeMinutes();
             if (duree == 0) {
-                anomalies.add(new GridAnomaly(SeveriteGrille.ERREUR, GridAnomalyType.DUREE_NULLE,
-                        creneau.getDate(), libelle(creneau) + " : durée nulle (début et fin identiques)."));
+                anomalies.add(new GridAnomaly(
+                        SeveriteGrille.ERREUR,
+                        GridAnomalyType.DUREE_NULLE,
+                        creneau.getDate(),
+                        libelle(creneau) + " : durée nulle (début et fin identiques)."));
                 continue;
             }
             if (mode == ModeGrilleCreneaux.AMPLITUDES && duree < decoupage.getDureeVacationMinMinutes()) {
-                anomalies.add(new GridAnomaly(SeveriteGrille.AVERTISSEMENT,
-                        GridAnomalyType.AMPLITUDE_PLUS_COURTE_QUE_LA_VACATION_MINIMALE, creneau.getDate(),
+                anomalies.add(new GridAnomaly(
+                        SeveriteGrille.AVERTISSEMENT,
+                        GridAnomalyType.AMPLITUDE_PLUS_COURTE_QUE_LA_VACATION_MINIMALE,
+                        creneau.getDate(),
                         libelle(creneau) + " : amplitude de " + duree + " min, sous la vacation minimale de "
                                 + decoupage.getDureeVacationMinMinutes()
                                 + " min. Le découpage ne pourra rien produire d'exploitable sur ce jour."));
             }
             if (mode == ModeGrilleCreneaux.VACATIONS && duree > decoupage.getDureeVacationMaxMinutes()) {
-                anomalies.add(new GridAnomaly(SeveriteGrille.AVERTISSEMENT,
-                        GridAnomalyType.VACATION_TROP_LONGUE, creneau.getDate(),
+                anomalies.add(new GridAnomaly(
+                        SeveriteGrille.AVERTISSEMENT,
+                        GridAnomalyType.VACATION_TROP_LONGUE,
+                        creneau.getDate(),
                         libelle(creneau) + " : vacation de " + duree + " min, au-delà du maximum de "
                                 + decoupage.getDureeVacationMaxMinutes()
                                 + " min. Est-ce bien une vacation, ou une amplitude à découper ?"));
             }
             if (mode == ModeGrilleCreneaux.VACATIONS && duree > amplitudeMaximaleLegale) {
-                anomalies.add(new GridAnomaly(SeveriteGrille.ERREUR, GridAnomalyType.REPOS_QUOTIDIEN_IMPOSSIBLE,
-                        creneau.getDate(), libelle(creneau) + " : vacation de " + duree + " min alors que le repos "
+                anomalies.add(new GridAnomaly(
+                        SeveriteGrille.ERREUR,
+                        GridAnomalyType.REPOS_QUOTIDIEN_IMPOSSIBLE,
+                        creneau.getDate(),
+                        libelle(creneau) + " : vacation de " + duree + " min alors que le repos "
                                 + "quotidien minimal de " + legaux.getReposQuotidienMinimalMinutes()
                                 + " min plafonne une journée travaillée à " + amplitudeMaximaleLegale
                                 + " min. Toute affectation sur ce créneau violera une contrainte dure."));
@@ -287,7 +303,10 @@ public class CreneauGridService {
         for (Creneau creneau : duJour) {
             String signature = creneau.getHeureDebut() + "→" + creneau.getHeureFin() + "#" + creneau.getFamille();
             if (!vus.add(signature)) {
-                anomalies.add(new GridAnomaly(SeveriteGrille.ERREUR, GridAnomalyType.DOUBLON, date,
+                anomalies.add(new GridAnomaly(
+                        SeveriteGrille.ERREUR,
+                        GridAnomalyType.DOUBLON,
+                        date,
                         libelle(creneau) + " : créneau en double (mêmes heures, même famille de décalage)."));
             }
         }
@@ -301,8 +320,11 @@ public class CreneauGridService {
                 int[] premier = intervalle(duJour.get(i));
                 int[] second = intervalle(duJour.get(j));
                 if (premier[1] > second[0] && second[1] > premier[0]) {
-                    anomalies.add(new GridAnomaly(SeveriteGrille.AVERTISSEMENT, GridAnomalyType.CHEVAUCHEMENT,
-                            date, libelle(duJour.get(i)) + " chevauche " + libelle(duJour.get(j))
+                    anomalies.add(new GridAnomaly(
+                            SeveriteGrille.AVERTISSEMENT,
+                            GridAnomalyType.CHEVAUCHEMENT,
+                            date,
+                            libelle(duJour.get(i)) + " chevauche " + libelle(duJour.get(j))
                                     + ". Entre deux amplitudes du même jour, c'est une saisie en double plutôt "
                                     + "qu'une intention — le décalage en familles se produit au découpage."));
                 }
@@ -329,16 +351,19 @@ public class CreneauGridService {
                 int[] dernier = fusionnes.get(fusionnes.size() - 1);
                 dernier[1] = Math.max(dernier[1], intervalle[1]);
             } else {
-                fusionnes.add(new int[] { intervalle[0], intervalle[1] });
+                fusionnes.add(new int[] {intervalle[0], intervalle[1]});
             }
         }
         List<GridAnomaly> anomalies = new ArrayList<>();
         for (int i = 1; i < fusionnes.size(); i++) {
             int debutTrou = fusionnes.get(i - 1)[1];
             int finTrou = fusionnes.get(i)[0];
-            anomalies.add(new GridAnomaly(SeveriteGrille.AVERTISSEMENT, GridAnomalyType.TROU_DANS_LA_JOURNEE,
-                    date, date + " : rien entre " + heure(debutTrou) + " et " + heure(finTrou) + " ("
-                            + (finTrou - debutTrou) + " min). Aucun stand ne peut être armé sur cette plage."));
+            anomalies.add(new GridAnomaly(
+                    SeveriteGrille.AVERTISSEMENT,
+                    GridAnomalyType.TROU_DANS_LA_JOURNEE,
+                    date,
+                    date + " : rien entre " + heure(debutTrou) + " et " + heure(finTrou) + " (" + (finTrou - debutTrou)
+                            + " min). Aucun stand ne peut être armé sur cette plage."));
         }
         return anomalies;
     }
@@ -350,19 +375,23 @@ public class CreneauGridService {
      * perfectly valid créneau that no stand and no animateur will ever meet.
      */
     private static List<GridAnomaly> datesIsolees(List<Creneau> creneaux) {
-        List<LocalDate> distinctes = creneaux.stream().map(Creneau::getDate).distinct().sorted().toList();
+        List<LocalDate> distinctes =
+                creneaux.stream().map(Creneau::getDate).distinct().sorted().toList();
         if (distinctes.size() < 2) {
             return List.of();
         }
         List<GridAnomaly> anomalies = new ArrayList<>();
         for (int i = 0; i < distinctes.size(); i++) {
-            long avant = i == 0 ? Long.MAX_VALUE
-                    : ChronoUnit.DAYS.between(distinctes.get(i - 1), distinctes.get(i));
-            long apres = i == distinctes.size() - 1 ? Long.MAX_VALUE
+            long avant = i == 0 ? Long.MAX_VALUE : ChronoUnit.DAYS.between(distinctes.get(i - 1), distinctes.get(i));
+            long apres = i == distinctes.size() - 1
+                    ? Long.MAX_VALUE
                     : ChronoUnit.DAYS.between(distinctes.get(i), distinctes.get(i + 1));
             if (Math.min(avant, apres) > ECART_DATE_ISOLEE_JOURS) {
-                anomalies.add(new GridAnomaly(SeveriteGrille.AVERTISSEMENT, GridAnomalyType.DATE_ISOLEE,
-                        distinctes.get(i), distinctes.get(i) + " est isolée de plus de " + ECART_DATE_ISOLEE_JOURS
+                anomalies.add(new GridAnomaly(
+                        SeveriteGrille.AVERTISSEMENT,
+                        GridAnomalyType.DATE_ISOLEE,
+                        distinctes.get(i),
+                        distinctes.get(i) + " est isolée de plus de " + ECART_DATE_ISOLEE_JOURS
                                 + " jours du reste de la grille — erreur de mois ou d'année ?"));
             }
         }
@@ -382,25 +411,43 @@ public class CreneauGridService {
      */
     public static DiagnosticGrille diagnose(List<Creneau> creneaux, ParametresDecoupage decoupage) {
         if (creneaux.isEmpty()) {
-            return new DiagnosticGrille(0, null, null, 0, false, null, false,
-                    "L'édition n'a aucun créneau : la grille est à créer.");
+            return new DiagnosticGrille(
+                    0, null, null, 0, false, null, false, "L'édition n'a aucun créneau : la grille est à créer.");
         }
-        List<LocalDate> dates = creneaux.stream().map(Creneau::getDate).filter(Objects::nonNull)
-                .distinct().sorted().toList();
-        int families = (int) creneaux.stream().map(Creneau::getFamille).distinct().count();
+        List<LocalDate> dates = creneaux.stream()
+                .map(Creneau::getDate)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+        int families =
+                (int) creneaux.stream().map(Creneau::getFamille).distinct().count();
         boolean pauses = creneaux.stream().anyMatch(Creneau::isCouverturePause);
-        int dureeMediane = mediane(creneaux.stream().map(Creneau::getDureeMinutes).sorted().toList());
+        int dureeMediane =
+                mediane(creneaux.stream().map(Creneau::getDureeMinutes).sorted().toList());
 
         if (families > 1 || pauses) {
-            return new DiagnosticGrille(creneaux.size(), first(dates), last(dates), families, pauses,
-                    ModeGrilleCreneaux.VACATIONS, true,
+            return new DiagnosticGrille(
+                    creneaux.size(),
+                    first(dates),
+                    last(dates),
+                    families,
+                    pauses,
+                    ModeGrilleCreneaux.VACATIONS,
+                    true,
                     "Grille déjà découpée : " + families + " famille(s) de décalage"
                             + (pauses ? " et des créneaux de couverture de pause" : "")
                             + " — ce sont des vacations produites par le découpage.");
         }
         boolean plutotAmplitudes = dureeMediane > decoupage.getDureeVacationMaxMinutes();
-        return new DiagnosticGrille(creneaux.size(), first(dates), last(dates), families, pauses,
-                plutotAmplitudes ? ModeGrilleCreneaux.AMPLITUDES : ModeGrilleCreneaux.VACATIONS, false,
+        return new DiagnosticGrille(
+                creneaux.size(),
+                first(dates),
+                last(dates),
+                families,
+                pauses,
+                plutotAmplitudes ? ModeGrilleCreneaux.AMPLITUDES : ModeGrilleCreneaux.VACATIONS,
+                false,
                 "Durée médiane de " + dureeMediane + " min, "
                         + (plutotAmplitudes ? "au-delà" : "en deçà") + " du maximum de vacation ("
                         + decoupage.getDureeVacationMaxMinutes() + " min) : la grille ressemble à des "
@@ -430,8 +477,7 @@ public class CreneauGridService {
         DATE_ISOLEE
     }
 
-    public record GridAnomaly(SeveriteGrille severite, GridAnomalyType type, LocalDate date, String message) {
-    }
+    public record GridAnomaly(SeveriteGrille severite, GridAnomalyType type, LocalDate date, String message) {}
 
     /**
      * @param anomalies      the grid's own inconsistencies
@@ -440,8 +486,12 @@ public class CreneauGridService {
      *                       there is nothing to judge (no stand, or no créneau)
      */
     @Schema(requiredProperties = {"nombreCreneaux"})
-    public record RapportGrille(ModeGrilleCreneaux mode, int nombreCreneaux, List<GridAnomaly> anomalies,
-            List<Anomaly> ouvertures, FeasibilityReport faisabilite) {
+    public record RapportGrille(
+            ModeGrilleCreneaux mode,
+            int nombreCreneaux,
+            List<GridAnomaly> anomalies,
+            List<Anomaly> ouvertures,
+            FeasibilityReport faisabilite) {
 
         /** True when nothing blocking was found — warnings alone do not make a grid invalid. */
         public boolean hasNoBlockingAnomaly() {
@@ -455,10 +505,15 @@ public class CreneauGridService {
      *                    from durations
      */
     @Schema(requiredProperties = {"contientCouverturePause", "modeCertain", "nombreCreneaux", "nombreFamilles"})
-    public record DiagnosticGrille(int nombreCreneaux, LocalDate premiereDate, LocalDate derniereDate,
-            int nombreFamilles, boolean contientCouverturePause, ModeGrilleCreneaux modeProbable,
-            boolean modeCertain, String explication) {
-    }
+    public record DiagnosticGrille(
+            int nombreCreneaux,
+            LocalDate premiereDate,
+            LocalDate derniereDate,
+            int nombreFamilles,
+            boolean contientCouverturePause,
+            ModeGrilleCreneaux modeProbable,
+            boolean modeCertain,
+            String explication) {}
 
     /* -------------------------------- Outils -------------------------------- */
 
@@ -477,7 +532,7 @@ public class CreneauGridService {
      */
     private static int[] intervalle(Creneau creneau) {
         int debut = creneau.getHeureDebut().toSecondOfDay() / 60;
-        return new int[] { debut, debut + creneau.getDureeMinutes() };
+        return new int[] {debut, debut + creneau.getDureeMinutes()};
     }
 
     private static String heure(int minuteDuJour) {

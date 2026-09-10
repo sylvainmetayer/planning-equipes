@@ -3,6 +3,14 @@ package dev.sylvain.planning.service.export;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.espace.ApplicationLinks;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,21 +21,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.espace.ApplicationLinks;
 
 /**
  * Exercises PDF/ICS export against a small hand-built planning, without a
@@ -54,8 +52,12 @@ class PlanningExportServiceTest {
         }
     };
 
-    private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
-            new AnimateurPlanningPdf(new PdfTheme(), Map::of), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
+    private final PlanningExportService service = new PlanningExportService(
+            new ApplicationLinks(Optional.empty()),
+            new AnimateurPlanningPdf(new PdfTheme(), Map::of),
+            new GlobalPlanningPdf(new PdfTheme()),
+            new PlanningIcs(),
+            PROVENANCE);
     private final AtomicInteger posteSequence = new AtomicInteger();
 
     @Test
@@ -66,7 +68,8 @@ class PlanningExportServiceTest {
         byte[] pdf = service.exportAnimateurPdf(planning, animateurId);
 
         assertThat(pdf).isNotEmpty();
-        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII))
+                .isEqualTo("%PDF");
         writeSample("planning-sample-" + animateurId + ".pdf", pdf);
     }
 
@@ -112,7 +115,8 @@ class PlanningExportServiceTest {
 
         String ics = service.exportAnimateurIcs(planning, "A1");
 
-        assertThat(ics).contains("SUMMARY:Repos")
+        assertThat(ics)
+                .contains("SUMMARY:Repos")
                 .contains("DTSTART;VALUE=DATE:20260815")
                 .contains("DTEND;VALUE=DATE:20260816")
                 .contains("TRANSP:TRANSPARENT");
@@ -168,7 +172,8 @@ class PlanningExportServiceTest {
         byte[] pdf = service.exportGlobalPdf(planning);
 
         assertThat(pdf).isNotEmpty();
-        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII))
+                .isEqualTo("%PDF");
         writeSample("planning-sample-global.pdf", pdf);
     }
 
@@ -182,7 +187,8 @@ class PlanningExportServiceTest {
         byte[] pdf = service.exportGlobalPdf(planning);
 
         assertThat(pdf).isNotEmpty();
-        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII))
+                .isEqualTo("%PDF");
     }
 
     @Test
@@ -202,7 +208,8 @@ class PlanningExportServiceTest {
         byte[] zip = service.exportAllBundleZip(planning);
 
         List<String> entries = new ArrayList<>();
-        try (java.util.zip.ZipInputStream zipIn = new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(zip))) {
+        try (java.util.zip.ZipInputStream zipIn =
+                new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(zip))) {
             java.util.zip.ZipEntry entry;
             while ((entry = zipIn.getNextEntry()) != null) {
                 entries.add(entry.getName());
@@ -295,7 +302,8 @@ class PlanningExportServiceTest {
         byte[] pdf = service.exportAnimateurPdf(planning, animateurId);
 
         assertThat(pdf).isNotEmpty();
-        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII))
+                .isEqualTo("%PDF");
     }
 
     private int countOccurrences(String text, String needle) {
@@ -359,8 +367,8 @@ class PlanningExportServiceTest {
     private Animateur animateur(String id, String prenom, String nom, NiveauCompetence niveau) {
         Animateur animateur = new Animateur(id, prenom, nom, LocalDate.of(1995, 1, 1), false);
         Map<String, NiveauCompetence> competences = new HashMap<>();
-        for (String typologie : List.of("STRATEGIE", "AMBIANCE", "ENFANT", "COOPERATIF", "ADRESSE", "ROLE", "ENIGME",
-                "HOMME_JEU")) {
+        for (String typologie :
+                List.of("STRATEGIE", "AMBIANCE", "ENFANT", "COOPERATIF", "ADRESSE", "ROLE", "ENIGME", "HOMME_JEU")) {
             competences.put(typologie, niveau);
         }
         animateur.setCompetences(competences);
@@ -369,8 +377,12 @@ class PlanningExportServiceTest {
 
     /** The same service, but with a public URL configured: the espace links become printable. */
     private static PlanningExportService exportsWithLinks(String baseUrl) {
-        return new PlanningExportService(new ApplicationLinks(Optional.of(baseUrl)),
-                new AnimateurPlanningPdf(new PdfTheme(), Map::of), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
+        return new PlanningExportService(
+                new ApplicationLinks(Optional.of(baseUrl)),
+                new AnimateurPlanningPdf(new PdfTheme(), Map::of),
+                new GlobalPlanningPdf(new PdfTheme()),
+                new PlanningIcs(),
+                PROVENANCE);
     }
 
     private Set<String> typologies(String... typologies) {

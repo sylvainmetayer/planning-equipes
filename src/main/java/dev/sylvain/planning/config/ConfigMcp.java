@@ -1,10 +1,9 @@
 package dev.sylvain.planning.config;
 
-import java.util.List;
-import java.util.Optional;
-
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * The MCP endpoint's own credentials and guards (see {@code docs/mcp.md}).

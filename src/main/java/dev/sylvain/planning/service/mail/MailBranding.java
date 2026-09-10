@@ -1,12 +1,11 @@
 package dev.sylvain.planning.service.mail;
 
+import dev.sylvain.planning.config.ConfigBranding;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
-
-import dev.sylvain.planning.config.ConfigBranding;
 import org.jboss.logging.Logger;
 
 /**
@@ -20,8 +19,16 @@ import org.jboss.logging.Logger;
  * @param logoContentType MIME type of {@code logo}, derived from its extension
  * @param logoExtension   its file extension, for the attachment name
  */
-public record MailBranding(byte[] logo, String logoContentType, String logoExtension,
-        String headline, String muted, String accent, String highlight, String pill, String organisation) {
+public record MailBranding(
+        byte[] logo,
+        String logoContentType,
+        String logoExtension,
+        String headline,
+        String muted,
+        String accent,
+        String highlight,
+        String pill,
+        String organisation) {
 
     private static final Logger LOG = Logger.getLogger(MailBranding.class);
     private static final String CLASSPATH_PREFIX = "classpath:";
@@ -39,7 +46,11 @@ public record MailBranding(byte[] logo, String logoContentType, String logoExten
      */
     public static MailBranding of(ConfigBranding config) {
         ConfigBranding.Palette palette = config.pdf().palette();
-        String resource = config.pdf().logo().map(String::trim).filter(value -> !value.isEmpty()).orElse(null);
+        String resource = config.pdf()
+                .logo()
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .orElse(null);
         byte[] logo = null;
         String extension = null;
         if (resource != null) {
@@ -50,9 +61,19 @@ public record MailBranding(byte[] logo, String logoContentType, String logoExten
                 LOG.warnf(e, "The mail logo %s could not be read; mails go out without it", resource);
             }
         }
-        return new MailBranding(logo, logo == null ? null : contentType(extension), extension,
-                palette.headline(), palette.muted(), palette.accent(), palette.highlight(), palette.pill(),
-                config.organisation().map(String::trim).filter(value -> !value.isEmpty()).orElse(null));
+        return new MailBranding(
+                logo,
+                logo == null ? null : contentType(extension),
+                extension,
+                palette.headline(),
+                palette.muted(),
+                palette.accent(),
+                palette.highlight(),
+                palette.pill(),
+                config.organisation()
+                        .map(String::trim)
+                        .filter(value -> !value.isEmpty())
+                        .orElse(null));
     }
 
     private static byte[] read(String resource) throws IOException {
@@ -70,7 +91,9 @@ public record MailBranding(byte[] logo, String logoContentType, String logoExten
 
     private static String extension(String resource) {
         int dot = resource.lastIndexOf('.');
-        return dot < 0 || dot == resource.length() - 1 ? "png" : resource.substring(dot + 1).toLowerCase(Locale.ROOT);
+        return dot < 0 || dot == resource.length() - 1
+                ? "png"
+                : resource.substring(dot + 1).toLowerCase(Locale.ROOT);
     }
 
     private static String contentType(String extension) {

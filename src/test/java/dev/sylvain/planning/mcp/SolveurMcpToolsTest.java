@@ -2,14 +2,12 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.SolveurMcpTools.ViolationHardView;
-import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * Covers the "connaître les erreurs exactes d'un run solveur avec des
@@ -24,14 +22,17 @@ class SolveurMcpToolsTest {
         SolveurMcpTools tools = new SolveurMcpTools();
         tools.analysisStore = new ConstraintAnalysisStore();
 
-        ConstraintDiagnostic hardViole = new ConstraintDiagnostic("posteDoitEtrePourvu", "-2hard/0medium/0soft", 2,
+        ConstraintDiagnostic hardViole = new ConstraintDiagnostic(
+                "posteDoitEtrePourvu",
+                "-2hard/0medium/0soft",
+                2,
                 List.of("poste P1 non pourvu", "poste P2 non pourvu"));
-        ConstraintDiagnostic hardRespecte = new ConstraintDiagnostic("animateurDisponible", "0hard/0medium/0soft", 0,
-                List.of());
-        ConstraintDiagnostic mediumViole = new ConstraintDiagnostic("equilibrerCharge", "0hard/-5medium/0soft", 5,
-                List.of());
-        tools.analysisStore.record(new PlanningDiagnostic("-2hard/-5medium/0soft", 2,
-                List.of(hardViole, hardRespecte, mediumViole), null, -2, List.of()));
+        ConstraintDiagnostic hardRespecte =
+                new ConstraintDiagnostic("animateurDisponible", "0hard/0medium/0soft", 0, List.of());
+        ConstraintDiagnostic mediumViole =
+                new ConstraintDiagnostic("equilibrerCharge", "0hard/-5medium/0soft", 5, List.of());
+        tools.analysisStore.record(new PlanningDiagnostic(
+                "-2hard/-5medium/0soft", 2, List.of(hardViole, hardRespecte, mediumViole), null, -2, List.of()));
 
         List<ViolationHardView> violations = tools.expliquer_echec_contraintes_dures(null);
 

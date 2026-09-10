@@ -3,18 +3,16 @@ package dev.sylvain.planning.service.scenario;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.io.IOException;
-import java.util.List;
-
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.solve.PlanningService;
+import java.io.IOException;
+import java.util.List;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.junit.jupiter.api.Test;
 
 /**
  * Reading a scenario file, with no database and no container: the reader is pure
@@ -102,7 +100,6 @@ class ScenarioYamlReaderTest {
                 .isEqualTo(660);
     }
 
-
     /**
      * And the wiring holds end to end: {@link PlanningService} is what supplies the
      * fallback, and it must supply the <b>edition's</b> one.
@@ -113,9 +110,15 @@ class ScenarioYamlReaderTest {
      */
     @Test
     void theServiceHandsTheReaderTheEditionsOwnLegalParameters() {
-        PlanningService planningService = new PlanningService(3L, 2L,
+        PlanningService planningService = new PlanningService(
+                3L,
+                2L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
-                new EditionWithTelltaleParameters(), new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
+                new EditionWithTelltaleParameters(),
+                new FeasibilityAnalyzer(),
+                null,
+                null,
+                ConfigProvider.getConfig());
 
         PlanningEvenement planning = planningService.buildExample(WITHOUT_LEGAL_PARAMETERS);
 
@@ -140,7 +143,8 @@ class ScenarioYamlReaderTest {
      */
     @Test
     void aMissingSupplierIsRefusedAtTheDoor() {
-        assertThatThrownBy(() -> ScenarioYamlReader.buildFromScenarioText("festival:\n  dateDebut: \"2026-07-16\"\n", null))
+        assertThatThrownBy(() ->
+                        ScenarioYamlReader.buildFromScenarioText("festival:\n  dateDebut: \"2026-07-16\"\n", null))
                 .isInstanceOf(NullPointerException.class);
     }
 

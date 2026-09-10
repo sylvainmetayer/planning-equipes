@@ -3,6 +3,9 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import io.restassured.path.json.JsonPath;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,10 +18,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
-import io.restassured.path.json.JsonPath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -107,9 +106,12 @@ class SolverJobStreamResourceTest {
         assertThat(first.next("state").data()).contains("\"active\":null");
         assertThat(second.next("state").data()).contains("\"active\":null");
 
-        String jobId = given().when().post("/api/solve/async/reference-data?seconds=3")
-                .then().statusCode(202)
-                .extract().path("id");
+        String jobId = given().when()
+                .post("/api/solve/async/reference-data?seconds=3")
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
 
         // Both clients, not one: the state is server-wide, and a second tab (or
         // a second person) is entitled to the same push. A single subscription
@@ -137,9 +139,12 @@ class SolverJobStreamResourceTest {
         StreamClient client = connect();
         assertThat(client.next("state").data()).contains("\"active\":null");
 
-        String jobId = given().when().post("/api/solve/async/reference-data?seconds=3")
-                .then().statusCode(202)
-                .extract().path("id");
+        String jobId = given().when()
+                .post("/api/solve/async/reference-data?seconds=3")
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
 
         JsonPath premier = new JsonPath(scoreEventFor(client, jobId));
         assertThat(premier.getInt("depuis")).isZero();
@@ -165,9 +170,12 @@ class SolverJobStreamResourceTest {
         StreamClient client = connect();
         assertThat(client.next("state").data()).contains("\"active\":null");
 
-        String jobId = given().when().post("/api/solve/async/reference-data?seconds=5")
-                .then().statusCode(202)
-                .extract().path("id");
+        String jobId = given().when()
+                .post("/api/solve/async/reference-data?seconds=5")
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
 
         long premiere = new JsonPath(scoreEventFor(client, jobId)).getLong("dureeMs");
         long suivante = new JsonPath(scoreEventFor(client, jobId)).getLong("dureeMs");
@@ -216,20 +224,27 @@ class SolverJobStreamResourceTest {
     }
 
     private StreamClient connect() {
-        StreamClient client = new StreamClient(
-                URI.create("http://localhost:" + RestAssured.port + "/api/jobs/stream"));
+        StreamClient client = new StreamClient(URI.create("http://localhost:" + RestAssured.port + "/api/jobs/stream"));
         clients.add(client);
         return client;
     }
 
     private void planImported() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
     }
 
     private void clearQueue() {
-        List<String> ids = given().when().get("/api/jobs/file")
-                .then().statusCode(200).extract().jsonPath().getList("id");
+        List<String> ids = given().when()
+                .get("/api/jobs/file")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("id");
         for (String id : ids) {
             given().when().delete("/api/jobs/" + id);
         }
@@ -246,8 +261,7 @@ class SolverJobStreamResourceTest {
     }
 
     /** One parsed server-sent event: its name, its data, and its comment lines. */
-    private record SseEvent(String name, String data, List<String> comments) {
-    }
+    private record SseEvent(String name, String data, List<String> comments) {}
 
     /**
      * Minimal SSE reader: consumes the response line by line on its own thread
@@ -256,9 +270,8 @@ class SolverJobStreamResourceTest {
      */
     private static final class StreamClient {
 
-        private final HttpClient http = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .build();
+        private final HttpClient http =
+                HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
         private final BlockingQueue<SseEvent> events = new LinkedBlockingQueue<>();
         private final Thread reader;
         private final Stream<String> lines;
@@ -266,9 +279,12 @@ class SolverJobStreamResourceTest {
         StreamClient(URI uri) {
             HttpResponse<Stream<String>> response;
             try {
-                response = http.send(HttpRequest.newBuilder(uri)
-                        .header("Accept", "text/event-stream")
-                        .GET().build(), HttpResponse.BodyHandlers.ofLines());
+                response = http.send(
+                        HttpRequest.newBuilder(uri)
+                                .header("Accept", "text/event-stream")
+                                .GET()
+                                .build(),
+                        HttpResponse.BodyHandlers.ofLines());
             } catch (IOException e) {
                 throw new IllegalStateException("Could not open " + uri, e);
             } catch (InterruptedException e) {
@@ -278,8 +294,7 @@ class SolverJobStreamResourceTest {
             if (response.statusCode() != 200) {
                 throw new AssertionError("Stream refused with " + response.statusCode());
             }
-            assertThat(response.headers().firstValue("content-type").orElse(""))
-                    .startsWith("text/event-stream");
+            assertThat(response.headers().firstValue("content-type").orElse("")).startsWith("text/event-stream");
             this.lines = response.body();
             this.reader = Thread.ofVirtual().start(this::read);
         }
@@ -331,8 +346,8 @@ class SolverJobStreamResourceTest {
                     return event;
                 }
             }
-            throw new AssertionError("No " + (wanted == null ? "event" : wanted + " event")
-                    + " arrived within " + RECEIVE_TIMEOUT);
+            throw new AssertionError(
+                    "No " + (wanted == null ? "event" : wanted + " event") + " arrived within " + RECEIVE_TIMEOUT);
         }
 
         void close() {

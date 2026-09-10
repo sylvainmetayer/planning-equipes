@@ -1,5 +1,13 @@
 package dev.sylvain.planning.service.export;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer;
+import dev.sylvain.planning.service.espace.ApplicationLinks;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,16 +23,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.espace.ApplicationLinks;
-import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 
 /**
  * A single door onto the three exports of a planning: the individual PDF, the
@@ -45,6 +43,7 @@ public class PlanningExportService {
     private final PlanningIcs ics;
     /** Plain arithmetic on the plan, no CDI needed: the same reading the espace and {@code /api/pauses} give. */
     private final PauseAnalyzer pauses = new PauseAnalyzer();
+
     private final ExportProvenance provenance;
 
     /**
@@ -53,8 +52,12 @@ public class PlanningExportService {
      * {@code liens == null} is written for it in production code any more.
      */
     @Inject
-    public PlanningExportService(ApplicationLinks liens, AnimateurPlanningPdf pdfAnimateur,
-            GlobalPlanningPdf pdfGlobal, PlanningIcs ics, ExportProvenance provenance) {
+    public PlanningExportService(
+            ApplicationLinks liens,
+            AnimateurPlanningPdf pdfAnimateur,
+            GlobalPlanningPdf pdfGlobal,
+            PlanningIcs ics,
+            ExportProvenance provenance) {
         this.liens = liens;
         this.pdfAnimateur = pdfAnimateur;
         this.pdfGlobal = pdfGlobal;
@@ -67,8 +70,8 @@ public class PlanningExportService {
      * administration's own export, dated by the last solve.
      */
     public byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId) {
-        return exportAnimateurPdf(planning, animateurId, provenance.courante(),
-                pauses.pausesAnimateur(planning, animateurId));
+        return exportAnimateurPdf(
+                planning, animateurId, provenance.courante(), pauses.pausesAnimateur(planning, animateurId));
     }
 
     /**
@@ -78,25 +81,32 @@ public class PlanningExportService {
      * (issue #245) — the document has not moved, so its date must not either.
      */
     public byte[] exportAnimateurPdfPublie(PlanningEvenement planning, String animateurId) {
-        return exportAnimateurPdf(planning, animateurId, provenance.publiee(),
-                pauses.pausesAnimateur(planning, animateurId));
+        return exportAnimateurPdf(
+                planning, animateurId, provenance.publiee(), pauses.pausesAnimateur(planning, animateurId));
     }
 
-    private byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId,
-            ExportProvenance.Provenance provenanceDuPlan, List<PauseAnalyzer.PauseAnimateurView> pausesDuJour) {
+    private byte[] exportAnimateurPdf(
+            PlanningEvenement planning,
+            String animateurId,
+            ExportProvenance.Provenance provenanceDuPlan,
+            List<PauseAnalyzer.PauseAnimateurView> pausesDuJour) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
-                .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
+                .filter(poste -> poste.getAnimateur() != null
+                        && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
                 .toList();
-        return pdfAnimateur.construire(resolveAnimateurName(planning, animateurId), animateurPostes,
-                teammatesByPoste(planning, animateurId), daysOff(planning, animateurId),
+        return pdfAnimateur.construire(
+                resolveAnimateurName(planning, animateurId),
+                animateurPostes,
+                teammatesByPoste(planning, animateurId),
+                daysOff(planning, animateurId),
                 pausesDuJour,
-                lienEspaceAnimateur(planning, animateurId), provenanceDuPlan);
+                lienEspaceAnimateur(planning, animateurId),
+                provenanceDuPlan);
     }
 
     /** An event day the animateur is off: its day number and its date. */
-    public record JourRepos(int jour, LocalDate date) {
-    }
+    public record JourRepos(int jour, LocalDate date) {}
 
     /**
      * The event days {@code animateurId} holds no seat on — their rest
@@ -117,7 +127,8 @@ public class PlanningExportService {
                 continue;
             }
             joursEvenement.putIfAbsent(creneau.getDate(), creneau.getJour());
-            if (poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId())) {
+            if (poste.getAnimateur() != null
+                    && animateurId.equals(poste.getAnimateur().getId())) {
                 joursTravailles.add(creneau.getDate());
             }
         }
@@ -174,13 +185,16 @@ public class PlanningExportService {
             if (poste.getAnimateur() == null || poste.getCreneau() == null || poste.getStand() == null) {
                 continue;
             }
-            equipeParLigne.computeIfAbsent(ligneKey(poste), ignored -> new ArrayList<>())
+            equipeParLigne
+                    .computeIfAbsent(ligneKey(poste), ignored -> new ArrayList<>())
                     .add(poste.getAnimateur().nomAffiche());
         }
         Map<String, List<String>> parPoste = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
-            if (poste.getAnimateur() == null || !animateurId.equals(poste.getAnimateur().getId())
-                    || poste.getCreneau() == null || poste.getStand() == null) {
+            if (poste.getAnimateur() == null
+                    || !animateurId.equals(poste.getAnimateur().getId())
+                    || poste.getCreneau() == null
+                    || poste.getStand() == null) {
                 continue;
             }
             List<String> equipe = new ArrayList<>(equipeParLigne.getOrDefault(ligneKey(poste), List.of()));
@@ -214,16 +228,22 @@ public class PlanningExportService {
         // One analysis for the whole roster: per animateur, it would walk every
         // seat of the plan again, once per person in the ZIP.
         Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
-        return buildZip(planning, List.of(new NamedFileBuilder(".pdf",
-                id -> exportAnimateurPdf(planning, id, provenance.courante(),
-                        parAnimateur.getOrDefault(id, List.of())))));
+        return buildZip(
+                planning,
+                List.of(new NamedFileBuilder(
+                        ".pdf",
+                        id -> exportAnimateurPdf(
+                                planning, id, provenance.courante(), parAnimateur.getOrDefault(id, List.of())))));
     }
 
     public byte[] exportAllIcsZip(PlanningEvenement planning) {
         Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
-        return buildZip(planning, List.of(new NamedFileBuilder(".ics",
-                id -> ics.exportAnimateurIcs(planning, id, parAnimateur.getOrDefault(id, List.of()))
-                        .getBytes(StandardCharsets.UTF_8))));
+        return buildZip(
+                planning,
+                List.of(new NamedFileBuilder(
+                        ".ics",
+                        id -> ics.exportAnimateurIcs(planning, id, parAnimateur.getOrDefault(id, List.of()))
+                                .getBytes(StandardCharsets.UTF_8))));
     }
 
     /**
@@ -232,12 +252,17 @@ public class PlanningExportService {
      */
     public byte[] exportAllBundleZip(PlanningEvenement planning) {
         Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
-        return buildZip(planning, List.of(
-                new NamedFileBuilder(".pdf", id -> exportAnimateurPdf(planning, id, provenance.courante(),
-                        parAnimateur.getOrDefault(id, List.of()))),
-                new NamedFileBuilder(".ics",
-                        id -> ics.exportAnimateurIcs(planning, id, parAnimateur.getOrDefault(id, List.of()))
-                                .getBytes(StandardCharsets.UTF_8))));
+        return buildZip(
+                planning,
+                List.of(
+                        new NamedFileBuilder(
+                                ".pdf",
+                                id -> exportAnimateurPdf(
+                                        planning, id, provenance.courante(), parAnimateur.getOrDefault(id, List.of()))),
+                        new NamedFileBuilder(
+                                ".ics",
+                                id -> ics.exportAnimateurIcs(planning, id, parAnimateur.getOrDefault(id, List.of()))
+                                        .getBytes(StandardCharsets.UTF_8))));
     }
 
     /** Bundles one or more files per animateur, named after the animateur, into a ZIP. */
@@ -246,8 +271,8 @@ public class PlanningExportService {
         try (ZipOutputStream zip = new ZipOutputStream(output)) {
             Set<String> usedFilenames = new LinkedHashSet<>();
             for (Animateur animateur : planning.getAnimateurs()) {
-                String baseName = resolveAnimateurName(planning, animateur.getId())
-                        .replaceAll("[\\\\/\\r\\n\\\"]", "_");
+                String baseName =
+                        resolveAnimateurName(planning, animateur.getId()).replaceAll("[\\\\/\\r\\n\\\"]", "_");
                 for (NamedFileBuilder fileBuilder : fileBuilders) {
                     String filename = baseName + fileBuilder.extension();
                     int suffix = 2;
@@ -266,8 +291,7 @@ public class PlanningExportService {
         return output.toByteArray();
     }
 
-    private record NamedFileBuilder(String extension, AnimateurFileBuilder builder) {
-    }
+    private record NamedFileBuilder(String extension, AnimateurFileBuilder builder) {}
 
     @FunctionalInterface
     private interface AnimateurFileBuilder {
@@ -295,8 +319,8 @@ public class PlanningExportService {
 
     /** Chronological, then by stand — the order an animateur reads their day in. */
     static Comparator<PosteAffectation> byCreneauThenStand() {
-        return Comparator
-                .comparing((PosteAffectation poste) -> poste.getCreneau().getDate())
+        return Comparator.comparing(
+                        (PosteAffectation poste) -> poste.getCreneau().getDate())
                 .thenComparing(poste -> poste.getCreneau().getHeureDebut())
                 .thenComparing(poste -> poste.getStand().getNom());
     }

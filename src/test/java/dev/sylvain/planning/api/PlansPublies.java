@@ -13,8 +13,7 @@ import dev.sylvain.planning.service.publication.PlanPublicationService;
  */
 final class PlansPublies {
 
-    private PlansPublies() {
-    }
+    private PlansPublies() {}
 
     /**
      * Publishes what is persisted. A {@link BusinessError.Conflict} means there

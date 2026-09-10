@@ -1,7 +1,5 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.inject.Inject;
@@ -15,6 +13,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * CRUD of the locations — the physical places the stands sit on.
@@ -49,5 +48,4 @@ public class EmplacementResource {
         referenceDataService.deleteEmplacement(id);
         return Response.noContent().build();
     }
-
 }

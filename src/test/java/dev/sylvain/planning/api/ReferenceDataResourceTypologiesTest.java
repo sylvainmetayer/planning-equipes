@@ -4,14 +4,13 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.config.EncoderConfig.encoderConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -31,16 +30,18 @@ class ReferenceDataResourceTypologiesTest {
     void importScenarioAppliqueLesLibellesDeTypologiesDeclares() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
                 .statusCode(200);
 
-        List<Map<String, Object>> typologies = given()
-                .when().get("/api/typologies")
+        List<Map<String, Object>> typologies = given().when()
+                .get("/api/typologies")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getList("$");
+                .extract()
+                .jsonPath()
+                .getList("$");
 
         assertThat(typologies)
                 .filteredOn(t -> "STRATEGIE".equals(t.get("id")))
@@ -56,8 +57,8 @@ class ReferenceDataResourceTypologiesTest {
     void importScenarioAppliqueLaTypologieNinjaDeclaree() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
                 .statusCode(200);
 
@@ -67,18 +68,18 @@ class ReferenceDataResourceTypologiesTest {
     @Test
     void designerUneNouvelleTypologieNinjaRetrogradeLaPrecedente() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
                 .statusCode(200);
         assertThat(typologiesNinja()).containsExactly("STRATEGIE");
 
         // Only one typologie may be ninja at a time: promoting another one must
         // demote the previous holder rather than fail on the unique index.
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body(Map.of("id", "JEUX_VIDEO", "label", "Jeux vidéo", "ninja", true))
-                .when().put("/api/typologies/JEUX_VIDEO")
+                .when()
+                .put("/api/typologies/JEUX_VIDEO")
                 .then()
                 .statusCode(200);
 
@@ -87,11 +88,13 @@ class ReferenceDataResourceTypologiesTest {
 
     /** Ids of the typologies currently flagged ninja — expected to hold at most one. */
     private static List<String> typologiesNinja() {
-        List<Map<String, Object>> typologies = given()
-                .when().get("/api/typologies")
+        List<Map<String, Object>> typologies = given().when()
+                .get("/api/typologies")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getList("$");
+                .extract()
+                .jsonPath()
+                .getList("$");
         return typologies.stream()
                 .filter(t -> Boolean.TRUE.equals(t.get("ninja")))
                 .map(t -> (String) t.get("id"))
@@ -102,25 +105,26 @@ class ReferenceDataResourceTypologiesTest {
     void importScenarioFichierAppliqueLesLibellesDeTypologiesDeclares() throws Exception {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        String yamlContent = Files.readString(
-                Path.of("src/test/resources/scenarios/scenario-typologies.yaml"));
+        String yamlContent = Files.readString(Path.of("src/test/resources/scenarios/scenario-typologies.yaml"));
 
-        given()
-                .config(RestAssured.config()
+        given().config(RestAssured.config()
                         .encoderConfig(encoderConfig()
                                 .encodeContentTypeAs("application/x-yaml", ContentType.TEXT)
                                 .defaultContentCharset("UTF-8")))
                 .contentType("application/x-yaml")
                 .body(yamlContent)
-                .when().post("/api/reference-data/import-scenario-fichier")
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200);
 
-        List<Map<String, Object>> typologies = given()
-                .when().get("/api/typologies")
+        List<Map<String, Object>> typologies = given().when()
+                .get("/api/typologies")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getList("$");
+                .extract()
+                .jsonPath()
+                .getList("$");
 
         assertThat(typologies)
                 .filteredOn(t -> "STRATEGIE".equals(t.get("id")))

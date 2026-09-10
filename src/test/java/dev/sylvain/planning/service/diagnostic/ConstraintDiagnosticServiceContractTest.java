@@ -3,21 +3,10 @@ package dev.sylvain.planning.service.diagnostic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import ai.timefold.solver.core.api.solver.SolverFactory;
-import ai.timefold.solver.core.enterprise.TimefoldSolverEnterpriseService;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.SolverConfig;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
+import ai.timefold.solver.core.enterprise.TimefoldSolverEnterpriseService;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
@@ -26,6 +15,15 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * The canary guarding a diagnostic built on Timefold's internals.
@@ -87,7 +85,8 @@ class ConstraintDiagnosticServiceContractTest {
         if (oracleAvailable == null) {
             oracleAvailable = probeOracle();
         }
-        assumeTrue(oracleAvailable,
+        assumeTrue(
+                oracleAvailable,
                 "SolutionManager.analyze() is Enterprise-gated in this Timefold edition:"
                         + " there is no reference to compare the score director against.");
     }
@@ -105,8 +104,7 @@ class ConstraintDiagnosticServiceContractTest {
      */
     private static boolean probeOracle() {
         try {
-            new SolutionManagerConstraintDiagnosticService(SOLVER_FACTORY)
-                    .analyze(planningWithoutViolations());
+            new SolutionManagerConstraintDiagnosticService(SOLVER_FACTORY).analyze(planningWithoutViolations());
             return true;
         } catch (RuntimeException failure) {
             if (isEnterpriseGate(failure)) {
@@ -205,9 +203,11 @@ class ConstraintDiagnosticServiceContractTest {
         PosteAffectation poste = planning.getPostes().get(0);
 
         assertThat(allFacts(viaSolutionManager.analyze(planning)))
-                .describedAs("via SolutionManager").anyMatch(fact -> fact == poste);
+                .describedAs("via SolutionManager")
+                .anyMatch(fact -> fact == poste);
         assertThat(allFacts(viaScoreDirector.analyze(planning)))
-                .describedAs("via score director").anyMatch(fact -> fact == poste);
+                .describedAs("via score director")
+                .anyMatch(fact -> fact == poste);
     }
 
     private static List<String> namesOf(PlanningAnalysis analysis) {
@@ -250,9 +250,10 @@ class ConstraintDiagnosticServiceContractTest {
     private static String describe(Object fact) {
         return switch (fact) {
             case null -> "null";
-            case Collection<?> collection -> collection.stream()
-                    .map(ConstraintDiagnosticServiceContractTest::describe)
-                    .collect(Collectors.joining(",", "[", "]"));
+            case Collection<?> collection ->
+                collection.stream()
+                        .map(ConstraintDiagnosticServiceContractTest::describe)
+                        .collect(Collectors.joining(",", "[", "]"));
             case Animateur animateur -> "Animateur:" + animateur.getId();
             case PosteAffectation poste -> "Poste:" + poste.getId();
             case Creneau creneau -> "Creneau:" + creneau.getId();
@@ -286,8 +287,8 @@ class ConstraintDiagnosticServiceContractTest {
         forcee.setAnimateursConcernes(List.of(alice));
         forcee.setCreneau(creneau);
         forcee.setRaison("Promesse faite en juin");
-        return new PlanningEvenement(creneau.getDate(), List.of(alice, bob),
-                List.of(staffed, unfilled), List.of(forcee));
+        return new PlanningEvenement(
+                creneau.getDate(), List.of(alice, bob), List.of(staffed, unfilled), List.of(forcee));
     }
 
     private static PlanningEvenement planningWithoutViolations() {
@@ -302,8 +303,8 @@ class ConstraintDiagnosticServiceContractTest {
     /** The solver configuration {@code PlanningService} builds, minus its termination. */
     private static SolverFactory<PlanningEvenement> solverFactory() {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
         return SolverFactory.create(solverConfig);
     }
 }

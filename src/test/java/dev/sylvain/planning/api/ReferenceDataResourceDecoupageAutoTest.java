@@ -4,10 +4,9 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
+import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
 import java.util.Map;
-
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -30,38 +29,42 @@ class ReferenceDataResourceDecoupageAutoTest {
     void importScenarioAvecDecoupageAutoRemplaceLesAmplitudesParLesVacations() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario-decoupage-auto.yaml")
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario-decoupage-auto.yaml")
                 .then()
                 .statusCode(200)
                 .body("decoupageAuto", equalTo(true));
 
         // The edition's créneaux ARE the generated vacations: the 14h
         // amplitude the file carried was consumed by the in-place découpage.
-        List<Map<String, Object>> creneaux = given()
-                .when().get("/api/creneaux")
+        List<Map<String, Object>> creneaux = given().when()
+                .get("/api/creneaux")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getList("$");
+                .extract()
+                .jsonPath()
+                .getList("$");
         assertThat(creneaux).hasSize(5);
-        assertThat(creneaux).noneMatch(c -> "09:00:00".equals(c.get("heureDebut"))
-                && "23:00:00".equals(c.get("heureFin")));
+        assertThat(creneaux)
+                .noneMatch(c -> "09:00:00".equals(c.get("heureDebut")) && "23:00:00".equals(c.get("heureFin")));
     }
 
     @Test
     void importScenarioSansDecoupageAutoImporteLesCreneauxTelsQuels() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        List<Map<String, Object>> creneaux = given()
-                .when().get("/api/creneaux")
+        List<Map<String, Object>> creneaux = given().when()
+                .get("/api/creneaux")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getList("$");
+                .extract()
+                .jsonPath()
+                .getList("$");
         assertThat(creneaux).isNotEmpty();
     }
 }

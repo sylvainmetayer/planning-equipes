@@ -3,14 +3,6 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
 import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
 import dev.sylvain.planning.service.BusinessError;
@@ -18,6 +10,12 @@ import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * What the switch to the replayable submissions buys, seen from outside: a
@@ -35,8 +33,10 @@ class SolveurMcpToolsQueueTest {
     private static final int MAX_POLLS = 160;
     private static final long POLL_INTERVAL_MS = 250;
 
-    private static final Set<String> ETATS_TERMINAUX = Stream.of(JobStatus.COMPLETED, JobStatus.FAILED,
-            JobStatus.CANCELLED, JobStatus.INTERROMPU).map(Enum::name).collect(Collectors.toSet());
+    private static final Set<String> ETATS_TERMINAUX = Stream.of(
+                    JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED, JobStatus.INTERROMPU)
+            .map(Enum::name)
+            .collect(Collectors.toSet());
 
     @Inject
     ScenarioMcpTools scenarioTools;
@@ -84,14 +84,18 @@ class SolveurMcpToolsQueueTest {
     @Test
     void laResolutionIncrementaleRepartDuPlanningPersiste() throws InterruptedException {
         loadScenario();
-        assertThat(awaitFinished(solveurTools.lancer_solveur(1L, null, null, null).id()).status())
+        assertThat(awaitFinished(solveurTools
+                                .lancer_solveur(1L, null, null, null)
+                                .id())
+                        .status())
                 .isEqualTo(JobStatus.COMPLETED.name());
         int affectations = planningTools.etat_planning(null).affectationsPersistees();
-        String animateurId = planningTools.lister_affectations(null, null, null, false, null, null).affectations().stream()
-                .map(AffectationView::animateurId)
-                .filter(id -> id != null)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
+        String animateurId =
+                planningTools.lister_affectations(null, null, null, false, null, null).affectations().stream()
+                        .map(AffectationView::animateurId)
+                        .filter(id -> id != null)
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
 
         JobMcpView incremental = solveurTools.resoudre_incremental(List.of(animateurId), null, null, 1L, null, null);
 
@@ -103,7 +107,10 @@ class SolveurMcpToolsQueueTest {
     @Test
     void unPerimetreSansCibleResoutCeQueLesChangementsOntInvalide() throws InterruptedException {
         loadScenario();
-        assertThat(awaitFinished(solveurTools.lancer_solveur(1L, null, null, null).id()).status())
+        assertThat(awaitFinished(solveurTools
+                                .lancer_solveur(1L, null, null, null)
+                                .id())
+                        .status())
                 .isEqualTo(JobStatus.COMPLETED.name());
 
         JobMcpView incremental = solveurTools.resoudre_incremental(null, null, null, 1L, null, null);

@@ -1,10 +1,5 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.time.LocalDate;
-import java.util.List;
-
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
@@ -21,6 +16,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDate;
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Admin side of the self-service declarations (issue #291): open or close the
@@ -78,9 +76,8 @@ public class DeclarationDisponibiliteResource {
     @PUT
     @Path("/configuration")
     public ConfigurationCollecte configure(ConfigurationCollecte configuration) {
-        ConfigurationCollecte demandee = configuration == null
-                ? new ConfigurationCollecte(false, null, null, false, null)
-                : configuration;
+        ConfigurationCollecte demandee =
+                configuration == null ? new ConfigurationCollecte(false, null, null, false, null) : configuration;
         DeclarationDisponibiliteService.ConfigurationAppliquee appliquee = declarationService.configure(
                 new FenetreCollecte(demandee.collecteOuverte(), demandee.debut(), demandee.fin()),
                 demandee.prevenirAnimateurs());
@@ -99,12 +96,15 @@ public class DeclarationDisponibiliteResource {
      *                           no invitation was asked for
      */
     @Schema(requiredProperties = {"collecteOuverte", "prevenirAnimateurs"})
-    public record ConfigurationCollecte(boolean collecteOuverte, LocalDate debut, LocalDate fin,
-            boolean prevenirAnimateurs, InvitationReport invitation) {
+    public record ConfigurationCollecte(
+            boolean collecteOuverte,
+            LocalDate debut,
+            LocalDate fin,
+            boolean prevenirAnimateurs,
+            InvitationReport invitation) {
 
         static ConfigurationCollecte of(FenetreCollecte fenetre, InvitationReport invitation) {
-            return new ConfigurationCollecte(fenetre.ouverte(), fenetre.debut(), fenetre.fin(),
-                    false, invitation);
+            return new ConfigurationCollecte(fenetre.ouverte(), fenetre.debut(), fenetre.fin(), false, invitation);
         }
     }
 
@@ -124,8 +124,8 @@ public class DeclarationDisponibiliteResource {
     @POST
     @Path("/{id}/refus")
     public Response refuse(@PathParam("id") String id, Decision decision) {
-        return Response.ok(view(declarationService.refuse(id,
-                decision == null ? null : decision.commentaire()))).build();
+        return Response.ok(view(declarationService.refuse(id, decision == null ? null : decision.commentaire())))
+                .build();
     }
 
     private DeclarationAdminView view(DeclarationDisponibilite declaration) {
@@ -133,6 +133,5 @@ public class DeclarationDisponibiliteResource {
     }
 
     /** Optional admin comment carried by a decision — the reason of a refusal, typically. */
-    public record Decision(String commentaire) {
-    }
+    public record Decision(String commentaire) {}
 }

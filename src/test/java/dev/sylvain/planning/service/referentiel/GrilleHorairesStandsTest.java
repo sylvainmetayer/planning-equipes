@@ -3,14 +3,6 @@ package dev.sylvain.planning.service.referentiel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
@@ -18,12 +10,18 @@ import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
-import dev.sylvain.planning.service.referentiel.GrilleHorairesStands.LigneGrille;
-import dev.sylvain.planning.service.referentiel.GrilleHorairesStands.SaisieCellule;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.CelluleCreneau;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
-import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.referentiel.GrilleHorairesStands.LigneGrille;
+import dev.sylvain.planning.service.referentiel.GrilleHorairesStands.SaisieCellule;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link GrilleHorairesStands}: one integer per créneau in, rules and
@@ -84,7 +82,8 @@ class GrilleHorairesStandsTest {
         List<Creneau> creneaux = grille(12);
         Stand stand = stand("BOURSE", 1, 1);
 
-        LigneGrille ligne = GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, 2, null, null, 4, 4));
+        LigneGrille ligne =
+                GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, 2, null, null, 4, 4));
 
         assertThat(ligne.compacte()).isTrue();
         assertThat(ligne.regles()).isEqualTo(1);
@@ -96,9 +95,10 @@ class GrilleHorairesStandsTest {
         assertThat(regle.getMode()).isEqualTo(ModeHoraire.OUVERTURE);
         // 14-20 and 20-00 at the same headcount are one window, open-ended:
         // the minimum is inherited, the afternoon names its four.
-        assertThat(regle.getFenetres()).containsExactly(
-                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), null),
-                new FenetreHoraire(LocalTime.of(14, 0), null, 4));
+        assertThat(regle.getFenetres())
+                .containsExactly(
+                        new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), null),
+                        new FenetreHoraire(LocalTime.of(14, 0), null, 4));
     }
 
     @Test
@@ -126,12 +126,15 @@ class GrilleHorairesStandsTest {
 
         GrilleHorairesStands.apply(stand, creneaux, saisie);
         List<HoraireStand> premiere = List.copyOf(stand.getHoraires());
-        int exceptions = stand.getOuvertures().size() + stand.getIndisponibilites().size();
+        int exceptions =
+                stand.getOuvertures().size() + stand.getIndisponibilites().size();
         GrilleHorairesStands.apply(stand, creneaux, saisie);
 
         assertThat(stand.getHoraires()).hasSameSizeAs(premiere);
-        assertThat(stand.getHoraires().get(0).getFenetres()).isEqualTo(premiere.get(0).getFenetres());
-        assertThat(stand.getOuvertures().size() + stand.getIndisponibilites().size()).isEqualTo(exceptions);
+        assertThat(stand.getHoraires().get(0).getFenetres())
+                .isEqualTo(premiere.get(0).getFenetres());
+        assertThat(stand.getOuvertures().size() + stand.getIndisponibilites().size())
+                .isEqualTo(exceptions);
     }
 
     @Test
@@ -149,9 +152,14 @@ class GrilleHorairesStandsTest {
 
         assertThat(ligne.regles()).isEqualTo(1);
         assertThat(ligne.exceptions()).isEqualTo(1);
-        assertThat(rapport.stands().get(0).jours().get(2).etat()).isEqualTo(OuvertureStandsAnalyzer.EtatOuverture.FERME);
-        assertThat(cellulesLues(rapport, 2)).extracting(CelluleCreneau::effectif).containsOnlyNulls();
-        assertThat(cellulesLues(rapport, 1)).extracting(CelluleCreneau::effectif).containsExactly(1, 1, 1, 1, 1);
+        assertThat(rapport.stands().get(0).jours().get(2).etat())
+                .isEqualTo(OuvertureStandsAnalyzer.EtatOuverture.FERME);
+        assertThat(cellulesLues(rapport, 2))
+                .extracting(CelluleCreneau::effectif)
+                .containsOnlyNulls();
+        assertThat(cellulesLues(rapport, 1))
+                .extracting(CelluleCreneau::effectif)
+                .containsExactly(1, 1, 1, 1, 1);
     }
 
     @Test
@@ -166,8 +174,9 @@ class GrilleHorairesStandsTest {
         assertThat(ligne.effectifMax()).isEqualTo(5);
         // Not "nothing stated" — that would mean open all day.
         assertThat(rapport.stands().get(0).postes()).isZero();
-        assertThat(stand.getHoraires()).singleElement().satisfies(regle ->
-                assertThat(regle.getMode()).isEqualTo(ModeHoraire.FERMETURE));
+        assertThat(stand.getHoraires())
+                .singleElement()
+                .satisfies(regle -> assertThat(regle.getMode()).isEqualTo(ModeHoraire.FERMETURE));
     }
 
     @Test
@@ -201,7 +210,8 @@ class GrilleHorairesStandsTest {
         assertThat(ligne.compacte()).isFalse();
         assertThat(ligne.regles()).isZero();
         assertThat(ligne.exceptions()).isEqualTo(3);
-        assertThat(cellulesLues(relire(stand, creneaux), 2)).extracting(CelluleCreneau::effectif)
+        assertThat(cellulesLues(relire(stand, creneaux), 2))
+                .extracting(CelluleCreneau::effectif)
                 .containsExactly(null, null, null, 3, 3);
     }
 

@@ -35,5 +35,4 @@ public record HoraireStandDto(
         LocalDate dateFin,
         List<LocalDate> dates,
         @NotEmpty List<@Valid FenetreHoraireDto> fenetres,
-        String motif) {
-}
+        String motif) {}

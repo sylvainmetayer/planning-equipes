@@ -19,30 +19,33 @@ import org.junit.jupiter.api.Test;
 class VerrouillageResourceTest {
 
     private static String createDay(String jour) {
-        return given()
-                .contentType(ContentType.JSON)
+        return given().contentType(ContentType.JSON)
                 .body("{\"type\":\"JOUR\",\"jour\":\"" + jour + "\",\"raison\":\"Journée validée\"}")
-                .when().post("/api/verrouillages")
+                .when()
+                .post("/api/verrouillages")
                 .then()
                 .statusCode(200)
                 .body("id", notNullValue())
                 .body("type", equalTo("JOUR"))
                 .body("jour", equalTo(jour))
-                .extract().path("id");
+                .extract()
+                .path("id");
     }
 
     @Test
     void unVerrouillageJourEstCreeListePuisSupprime() {
         String id = createDay("2026-07-12");
         try {
-            given().when().get("/api/verrouillages")
+            given().when()
+                    .get("/api/verrouillages")
                     .then()
                     .statusCode(200)
                     .body("find { it.id == '" + id + "' }.raison", equalTo("Journée validée"));
         } finally {
             given().when().delete("/api/verrouillages/" + id).then().statusCode(204);
         }
-        given().when().get("/api/verrouillages")
+        given().when()
+                .get("/api/verrouillages")
                 .then()
                 .statusCode(200)
                 .body("findAll { it.id == '" + id + "' }.size()", equalTo(0));
@@ -54,7 +57,8 @@ class VerrouillageResourceTest {
         String premier = createDay("2026-07-13");
         String second = createDay("2026-07-13");
         try {
-            given().when().get("/api/verrouillages")
+            given().when()
+                    .get("/api/verrouillages")
                     .then()
                     .statusCode(200)
                     .body("findAll { it.type == 'JOUR' && it.jour == '2026-07-13' }.size()", equalTo(1));
@@ -74,12 +78,12 @@ class VerrouillageResourceTest {
      */
     @Test
     void unPayloadPortantDeuxCiblesNeGardeQueCelleDeSonType() {
-        String id = given()
-                .contentType(ContentType.JSON)
+        String id = given().contentType(ContentType.JSON)
                 .body("{\"type\":\"JOUR\",\"jour\":\"2026-07-14\","
                         + "\"animateurId\":\"INTRUS\",\"standId\":\"INTRUS\",\"creneauId\":42,"
                         + "\"raison\":\"Journée validée\"}")
-                .when().post("/api/verrouillages")
+                .when()
+                .post("/api/verrouillages")
                 .then()
                 .statusCode(200)
                 .body("type", equalTo("JOUR"))
@@ -87,10 +91,12 @@ class VerrouillageResourceTest {
                 .body("animateurId", nullValue())
                 .body("standId", nullValue())
                 .body("creneauId", nullValue())
-                .extract().path("id");
+                .extract()
+                .path("id");
 
         try {
-            given().when().get("/api/verrouillages")
+            given().when()
+                    .get("/api/verrouillages")
                     .then()
                     .statusCode(200)
                     .body("find { it.id == '" + id + "' }.animateurId", nullValue())
@@ -103,10 +109,10 @@ class VerrouillageResourceTest {
 
     @Test
     void unTypeSansCibleCorrespondanteEstRefuse() {
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"type\":\"STAND\"}")
-                .when().post("/api/verrouillages")
+                .when()
+                .post("/api/verrouillages")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("stand id"));
@@ -114,10 +120,10 @@ class VerrouillageResourceTest {
 
     @Test
     void uneCibleInconnueEstRefusee() {
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"type\":\"ANIMATEUR\",\"animateurId\":\"ANIMATEUR-INEXISTANT\"}")
-                .when().post("/api/verrouillages")
+                .when()
+                .post("/api/verrouillages")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("Animateur inconnu"));

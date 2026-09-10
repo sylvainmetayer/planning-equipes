@@ -21,7 +21,9 @@ class DatabaseCoordinatesTest {
 
     @Test
     void defaultsThePortToTheStandardPostgresOne() {
-        assertThat(DatabaseCoordinates.parse("jdbc:postgresql://postgres/festival").port()).isEqualTo(5432);
+        assertThat(DatabaseCoordinates.parse("jdbc:postgresql://postgres/festival")
+                        .port())
+                .isEqualTo(5432);
     }
 
     @Test
@@ -33,8 +35,8 @@ class DatabaseCoordinatesTest {
     /** Dev services hand out a URL with options appended; they are none of pg_dump's business. */
     @Test
     void ignoresTheOptionsAppendedToTheUrl() {
-        DatabaseCoordinates coordinates = DatabaseCoordinates
-                .parse("jdbc:postgresql://localhost:32769/quarkus?loggerLevel=OFF&sslmode=disable");
+        DatabaseCoordinates coordinates =
+                DatabaseCoordinates.parse("jdbc:postgresql://localhost:32769/quarkus?loggerLevel=OFF&sslmode=disable");
 
         assertThat(coordinates).isEqualTo(new DatabaseCoordinates("localhost", 32769, "quarkus"));
     }

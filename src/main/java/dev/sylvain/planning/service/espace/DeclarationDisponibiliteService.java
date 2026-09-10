@@ -1,7 +1,20 @@
 package dev.sylvain.planning.service.espace;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.DeclarationDisponibilite;
+import dev.sylvain.planning.domain.StatutDeclaration;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
+import dev.sylvain.planning.service.notification.Notification;
+import dev.sylvain.planning.service.publication.MailService;
+import dev.sylvain.planning.service.referentiel.AnimateurService;
+import dev.sylvain.planning.service.referentiel.JoursEvenement;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieService;
+import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
+import jakarta.inject.Inject;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -12,23 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.DeclarationDisponibilite;
-import dev.sylvain.planning.domain.StatutDeclaration;
-import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
-import dev.sylvain.planning.service.notification.Notification;
-import io.quarkus.logging.Log;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Event;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.publication.MailService;
-import dev.sylvain.planning.service.referentiel.AnimateurService;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.referentiel.JoursEvenement;
-import dev.sylvain.planning.service.espace.RateLimitVerdict;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.TypologieService;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * The self-service declaration lifecycle (issue #291): an animateur proposes,
@@ -127,9 +124,7 @@ public class DeclarationDisponibiliteService {
     }
 
     /** One declaration as typed in the espace, before any validation. */
-    public record NouvelleDeclaration(List<LocalDate> joursIndisponibles, List<String> souhaits,
-            String commentaire) {
-    }
+    public record NouvelleDeclaration(List<LocalDate> joursIndisponibles, List<String> souhaits, String commentaire) {}
 
     /* --------------------------- Collection window --------------------------- */
 
@@ -147,8 +142,7 @@ public class DeclarationDisponibiliteService {
      * What one configuration call did: the window as it now stands, and the
      * invitation report when one was asked for ({@code null} otherwise).
      */
-    public record ConfigurationAppliquee(FenetreCollecte fenetre, InvitationReport invitation) {
-    }
+    public record ConfigurationAppliquee(FenetreCollecte fenetre, InvitationReport invitation) {}
 
     /**
      * Admin decision: opens or closes the collection window for the current
@@ -170,7 +164,9 @@ public class DeclarationDisponibiliteService {
      */
     public ConfigurationAppliquee configure(FenetreCollecte fenetre, boolean prevenirAnimateurs) {
         FenetreCollecte demandee = fenetre == null ? FenetreCollecte.closed() : fenetre;
-        if (demandee.debut() != null && demandee.fin() != null && demandee.debut().isAfter(demandee.fin())) {
+        if (demandee.debut() != null
+                && demandee.fin() != null
+                && demandee.debut().isAfter(demandee.fin())) {
             throw new BusinessError.Invalid("La fin de la collecte précède son début");
         }
         // Nobody is invited to a window being closed, so the precondition only
@@ -192,8 +188,7 @@ public class DeclarationDisponibiliteService {
      * to be shown to the admin as-is.
      */
     @Schema(requiredProperties = {"envoyes"})
-    public record InvitationReport(int envoyes, List<String> sansEmail, List<String> echecs) {
-    }
+    public record InvitationReport(int envoyes, List<String> sansEmail, List<String> echecs) {}
 
     /**
      * Mails every animateur their own espace link, inviting them to declare.
@@ -229,8 +224,8 @@ public class DeclarationDisponibiliteService {
                 continue;
             }
             try {
-                mailService.sendInvitationDeclaration(animateur.getEmail(), animateur.getPrenom(),
-                        lien.get(), fenetre.debut(), fenetre.fin());
+                mailService.sendInvitationDeclaration(
+                        animateur.getEmail(), animateur.getPrenom(), lien.get(), fenetre.debut(), fenetre.fin());
                 envoyes++;
             } catch (RuntimeException e) {
                 // The address is what the operator needs to act; the name is
@@ -263,9 +258,8 @@ public class DeclarationDisponibiliteService {
         if (!verdict.autorise()) {
             throw new TooManyRequests(verdict.secondsBeforeNextTry());
         }
-        NouvelleDeclaration declaree = nouvelle == null
-                ? new NouvelleDeclaration(List.of(), List.of(), null)
-                : nouvelle;
+        NouvelleDeclaration declaree =
+                nouvelle == null ? new NouvelleDeclaration(List.of(), List.of(), null) : nouvelle;
         List<LocalDate> jours = checkDays(declaree.joursIndisponibles());
         List<String> souhaits = checkWishes(declaree.souhaits());
         String commentaire = checkComment(declaree.commentaire());
@@ -287,8 +281,8 @@ public class DeclarationDisponibiliteService {
         // not treated yet, and telling them five times about one pending item
         // is how a notification stops being read.
         if (!remplacement) {
-            notifications.fire(new Notification.DeclarationSoumise(
-                    nomComplet(animateurId), jours.size(), souhaits.size()));
+            notifications.fire(
+                    new Notification.DeclarationSoumise(nomComplet(animateurId), jours.size(), souhaits.size()));
         }
         return declaration;
     }
@@ -358,8 +352,8 @@ public class DeclarationDisponibiliteService {
         return decider(pendingOrFail(id), StatutDeclaration.REFUSEE, commentaire);
     }
 
-    private DeclarationDisponibilite decider(DeclarationDisponibilite declaration, StatutDeclaration statut,
-            String commentaire) {
+    private DeclarationDisponibilite decider(
+            DeclarationDisponibilite declaration, StatutDeclaration statut, String commentaire) {
         Instant decideLe = Instant.now();
         int lignes = repository.decide(declaration.getId(), statut, commentaire, Timestamp.from(decideLe));
         if (lignes == 0) {
@@ -373,8 +367,8 @@ public class DeclarationDisponibiliteService {
     }
 
     private DeclarationDisponibilite pendingOrFail(String id) {
-        DeclarationDisponibilite declaration = repository.byId(id)
-                .orElseThrow(() -> new BusinessError.NotFound("Déclaration inconnue : " + id));
+        DeclarationDisponibilite declaration =
+                repository.byId(id).orElseThrow(() -> new BusinessError.NotFound("Déclaration inconnue : " + id));
         if (declaration.getStatut() != StatutDeclaration.EN_ATTENTE) {
             throw new BusinessError.Invalid("Cette déclaration a déjà été traitée");
         }

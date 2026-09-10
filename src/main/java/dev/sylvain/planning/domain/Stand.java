@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -7,14 +8,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 public class Stand {
 
     private String id;
     private String nom;
     /** Ids referencing the {@code typologie} referential table (CRUD-managed), not a fixed enum. */
     private Set<String> typologiesProposees = new HashSet<>();
+
     private int effectifMin;
     private int effectifMax;
     private boolean reserveMajeurs;
@@ -69,6 +69,7 @@ public class Stand {
      * rows.</p>
      */
     private List<IndisponibiliteStand> indisponibilitesEffectives;
+
     private List<OuvertureStand> ouverturesEffectives;
 
     /**
@@ -81,16 +82,26 @@ public class Stand {
      */
     private Instant modifieLe;
 
-    public Stand() {
-    }
+    public Stand() {}
 
-    public Stand(String id, String nom, Set<String> typologiesProposees, int effectifMin, int effectifMax,
+    public Stand(
+            String id,
+            String nom,
+            Set<String> typologiesProposees,
+            int effectifMin,
+            int effectifMax,
             boolean reserveMajeurs) {
         this(id, nom, typologiesProposees, effectifMin, effectifMax, reserveMajeurs, false);
     }
 
-    public Stand(String id, String nom, Set<String> typologiesProposees, int effectifMin, int effectifMax,
-            boolean reserveMajeurs, boolean premium) {
+    public Stand(
+            String id,
+            String nom,
+            Set<String> typologiesProposees,
+            int effectifMin,
+            int effectifMax,
+            boolean reserveMajeurs,
+            boolean premium) {
         this.id = id;
         this.nom = nom;
         this.typologiesProposees = typologiesProposees;

@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 
 /**
  * What every bundled scenario reads as, pinned element by element, so that
@@ -41,22 +40,22 @@ class ScenarioLectureDifferentielleTest {
         ReferenceComparison comparaison = new ReferenceComparison("scenario-empreintes");
         List<String> ecarts = new ArrayList<>();
         for (java.nio.file.Path scenario : scenarios) {
-            ecarts.addAll(comparaison.compare(ScenariosLivres.nom(scenario),
+            ecarts.addAll(comparaison.compare(
+                    ScenariosLivres.nom(scenario),
                     ScenarioYamlReader.buildFromScenarioText(Files.readString(scenario), ParametresLegaux::new)));
         }
 
         // All of them at once, not the first one: regenerating one reference at
         // a time would take as many passes as there are scenarios.
         if (!comparaison.written().isEmpty()) {
-            fail("Références absentes, elles viennent d'être écrites : %s. Relisez-les, puis commitez-les.",
+            fail(
+                    "Références absentes, elles viennent d'être écrites : %s. Relisez-les, puis commitez-les.",
                     String.join(", ", comparaison.written()));
         }
 
-        assertThat(ecarts)
-                .as("""
+        assertThat(ecarts).as("""
                         Le scénario ne se lit plus comme sa référence. Les deux formes complètes \
                         sont dans target/scenario-differentiel/. Si l'écart est voulu, régénérez \
-                        la référence — et relisez-la avant de la commiter.""")
-                .isEmpty();
+                        la référence — et relisez-la avant de la commiter.""").isEmpty();
     }
 }

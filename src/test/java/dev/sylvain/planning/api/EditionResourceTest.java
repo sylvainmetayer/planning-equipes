@@ -3,10 +3,9 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
 import java.util.Map;
-
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,14 +36,22 @@ class EditionResourceTest {
     }
 
     private List<Map<String, Object>> listEditions() {
-        return given().when().get("/api/editions").then().statusCode(200).extract().jsonPath().getList("$");
+        return given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("$");
     }
 
     private void createEdition(String id, String nom) {
         given().contentType("application/json")
                 .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
-                .when().post("/api/editions")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200);
     }
 
     /**
@@ -57,39 +64,52 @@ class EditionResourceTest {
         given().header(HEADER, editionId)
                 .contentType("application/json")
                 .body("{\"id\":\"TYPO-" + editionId + "\",\"label\":\"Typologie\"}")
-                .when().post("/api/typologies")
-                .then().statusCode(org.hamcrest.Matchers.anyOf(
+                .when()
+                .post("/api/typologies")
+                .then()
+                .statusCode(org.hamcrest.Matchers.anyOf(
                         org.hamcrest.Matchers.equalTo(200), org.hamcrest.Matchers.equalTo(409)));
         given().header(HEADER, editionId)
                 .contentType("application/json")
                 .body("{\"id\":\"" + standId + "\",\"nom\":\"" + standId + "\",\"typologiesProposees\":[\"TYPO-"
                         + editionId + "\"],\"effectifMin\":1,\"effectifMax\":2}")
-                .when().post("/api/stands")
-                .then().statusCode(200);
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200);
     }
 
     private void createTypologie(String editionId, String typologieId, boolean ninja) {
         given().header(HEADER, editionId)
                 .contentType("application/json")
                 .body("{\"id\":\"" + typologieId + "\",\"label\":\"" + typologieId + "\",\"ninja\":" + ninja + "}")
-                .when().post("/api/typologies")
-                .then().statusCode(200);
+                .when()
+                .post("/api/typologies")
+                .then()
+                .statusCode(200);
     }
 
     private boolean isNinja(String editionId, String typologieId) {
         return given().header(HEADER, editionId)
-                .when().get("/api/typologies")
-                .then().statusCode(200)
-                .extract().jsonPath()
+                .when()
+                .get("/api/typologies")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
                 .getList("findAll { it.id == '" + typologieId + "' }.ninja", Boolean.class)
                 .getFirst();
     }
 
     private List<String> listStandIds(String editionId) {
         return given().header(HEADER, editionId)
-                .when().get("/api/stands")
-                .then().statusCode(200)
-                .extract().jsonPath().getList("id");
+                .when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("id");
     }
 
     @Test
@@ -120,7 +140,11 @@ class EditionResourceTest {
         assertThat(listStandIds(DEFAUT)).contains("TIR-A-LA-CORDE");
         assertThat(listStandIds("ANNEE-2026")).contains("TIR-A-LA-CORDE");
 
-        given().header(HEADER, "ANNEE-2026").when().delete("/api/stands/TIR-A-LA-CORDE").then().statusCode(204);
+        given().header(HEADER, "ANNEE-2026")
+                .when()
+                .delete("/api/stands/TIR-A-LA-CORDE")
+                .then()
+                .statusCode(204);
 
         assertThat(listStandIds("ANNEE-2026")).doesNotContain("TIR-A-LA-CORDE");
         assertThat(listStandIds(DEFAUT)).contains("TIR-A-LA-CORDE");
@@ -134,8 +158,10 @@ class EditionResourceTest {
         assertThat(listStandIds("EDITION-QUI-NEXISTE-PAS")).contains("STAND-REPLI");
 
         given().header(HEADER, "EDITION-QUI-NEXISTE-PAS")
-                .when().get("/api/editions/courant")
-                .then().statusCode(200)
+                .when()
+                .get("/api/editions/courant")
+                .then()
+                .statusCode(200)
                 .body("id", org.hamcrest.Matchers.equalTo(DEFAUT));
     }
 
@@ -145,13 +171,17 @@ class EditionResourceTest {
 
         given().contentType("application/json")
                 .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
-                .when().post("/api/editions/" + DEFAUT + "/dupliquer")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions/" + DEFAUT + "/dupliquer")
+                .then()
+                .statusCode(200);
 
         assertThat(listStandIds("COPIE-2026")).contains("STAND-A-COPIER");
         given().header(HEADER, "COPIE-2026")
-                .when().get("/api/planning/persisted/count")
-                .then().statusCode(200)
+                .when()
+                .get("/api/planning/persisted/count")
+                .then()
+                .statusCode(200)
                 .body("assignments", org.hamcrest.Matchers.equalTo(0));
     }
 
@@ -166,40 +196,58 @@ class EditionResourceTest {
      */
     @Test
     void dupliquerRecopieEmailEtHorairesMaisFrappeUnJetonNeuf() {
-        given().header(HEADER, DEFAUT).contentType("application/json")
+        given().header(HEADER, DEFAUT)
+                .contentType("application/json")
                 .body("{\"id\":\"ANIM-COPIE\",\"prenom\":\"Ada\",\"nom\":\"Lovelace\","
                         + "\"dateNaissance\":\"1990-01-01\",\"email\":\"ada@example.org\"}")
-                .when().post("/api/animateurs")
-                .then().statusCode(200);
-        given().header(HEADER, DEFAUT).contentType("application/json")
-                .body("{\"id\":\"STAND-HORAIRE\",\"nom\":\"Stand à règles\",\"typologiesProposees\":[\"STRATEGIE\"],\"effectifMin\":1,\"effectifMax\":2,"
-                        + "\"horaires\":[{\"mode\":\"FERMETURE\",\"typeJours\":\"TOUS\","
-                        + "\"fenetres\":[{\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}]}]}")
-                .when().post("/api/stands")
-                .then().statusCode(200);
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200);
+        given().header(HEADER, DEFAUT)
+                .contentType("application/json")
+                .body(
+                        "{\"id\":\"STAND-HORAIRE\",\"nom\":\"Stand à règles\",\"typologiesProposees\":[\"STRATEGIE\"],\"effectifMin\":1,\"effectifMax\":2,"
+                                + "\"horaires\":[{\"mode\":\"FERMETURE\",\"typeJours\":\"TOUS\","
+                                + "\"fenetres\":[{\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}]}]}")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200);
         String sourceToken = given().header(HEADER, DEFAUT)
-                .when().get("/api/animateurs")
-                .then().statusCode(200)
-                .extract().jsonPath().getString("find { it.id == 'ANIM-COPIE' }.accessToken");
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getString("find { it.id == 'ANIM-COPIE' }.accessToken");
 
         given().contentType("application/json")
                 .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
-                .when().post("/api/editions/" + DEFAUT + "/dupliquer")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions/" + DEFAUT + "/dupliquer")
+                .then()
+                .statusCode(200);
 
         given().header(HEADER, "COPIE-2026")
-                .when().get("/api/animateurs")
-                .then().statusCode(200)
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
                 .body("find { it.id == 'ANIM-COPIE' }.email", org.hamcrest.Matchers.equalTo("ada@example.org"))
-                .body("find { it.id == 'ANIM-COPIE' }.accessToken",
+                .body(
+                        "find { it.id == 'ANIM-COPIE' }.accessToken",
                         org.hamcrest.Matchers.allOf(
-                                org.hamcrest.Matchers.notNullValue(),
-                                org.hamcrest.Matchers.not(sourceToken)));
+                                org.hamcrest.Matchers.notNullValue(), org.hamcrest.Matchers.not(sourceToken)));
         given().header(HEADER, "COPIE-2026")
-                .when().get("/api/stands")
-                .then().statusCode(200)
+                .when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
                 .body("find { it.id == 'STAND-HORAIRE' }.horaires.size()", org.hamcrest.Matchers.equalTo(1))
-                .body("find { it.id == 'STAND-HORAIRE' }.horaires[0].fenetres[0].heureDebut",
+                .body(
+                        "find { it.id == 'STAND-HORAIRE' }.horaires[0].fenetres[0].heureDebut",
                         org.hamcrest.Matchers.equalTo("09:00:00"));
     }
 
@@ -208,10 +256,16 @@ class EditionResourceTest {
         createStand(DEFAUT, "STAND-PARTAGE");
         given().contentType("application/json")
                 .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
-                .when().post("/api/editions/" + DEFAUT + "/dupliquer")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions/" + DEFAUT + "/dupliquer")
+                .then()
+                .statusCode(200);
 
-        given().header(HEADER, "COPIE-2026").when().delete("/api/stands/STAND-PARTAGE").then().statusCode(204);
+        given().header(HEADER, "COPIE-2026")
+                .when()
+                .delete("/api/stands/STAND-PARTAGE")
+                .then()
+                .statusCode(204);
 
         assertThat(listStandIds("COPIE-2026")).doesNotContain("STAND-PARTAGE");
         assertThat(listStandIds(DEFAUT)).contains("STAND-PARTAGE");
@@ -222,8 +276,10 @@ class EditionResourceTest {
         createEdition("ANNEE-2026", "Année 2026");
 
         given().header(HEADER, "ANNEE-2026")
-                .when().delete("/api/editions/" + DEFAUT)
-                .then().statusCode(400);
+                .when()
+                .delete("/api/editions/" + DEFAUT)
+                .then()
+                .statusCode(400);
     }
 
     @Test
@@ -231,8 +287,10 @@ class EditionResourceTest {
         createEdition("ANNEE-2026", "Année 2026");
 
         given().header(HEADER, "ANNEE-2026")
-                .when().delete("/api/editions/ANNEE-2026")
-                .then().statusCode(400);
+                .when()
+                .delete("/api/editions/ANNEE-2026")
+                .then()
+                .statusCode(400);
     }
 
     @Test
@@ -241,8 +299,10 @@ class EditionResourceTest {
 
         given().contentType("application/json")
                 .body("{\"id\":\"ANNEE-2026\",\"nom\":\"Doublon\"}")
-                .when().post("/api/editions")
-                .then().statusCode(400);
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(400);
     }
 
     /**

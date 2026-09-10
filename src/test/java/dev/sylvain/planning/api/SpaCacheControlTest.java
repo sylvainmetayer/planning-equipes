@@ -5,15 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 
+import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
-
-import io.quarkus.test.junit.QuarkusTest;
 
 /**
  * Cache policy of the frontend ({@link SpaCacheControlFilter}): the files
@@ -37,25 +35,20 @@ class SpaCacheControlTest {
 
     @Test
     void theShellIsRevalidatedOnEveryVisit() {
-        given().when().get("/index.html")
-                .then()
-                .statusCode(200)
-                .header("Cache-Control", equalTo("no-cache"));
+        given().when().get("/index.html").then().statusCode(200).header("Cache-Control", equalTo("no-cache"));
     }
 
     /** Any HTML response, whatever its path: the trigger is the content type. */
     @Test
     void anyHtmlResponseIsCovered() {
-        given().when().get("/q/swagger-ui")
-                .then()
-                .statusCode(200)
-                .header("Cache-Control", equalTo("no-cache"));
+        given().when().get("/q/swagger-ui").then().statusCode(200).header("Cache-Control", equalTo("no-cache"));
     }
 
     /** The i18n catalogs share the stable-name problem: same revalidation. */
     @Test
     void translationCatalogsToo() {
-        given().when().get("/i18n/messages.en.json")
+        given().when()
+                .get("/i18n/messages.en.json")
                 .then()
                 .statusCode(200)
                 .header("Cache-Control", equalTo("no-cache"));
@@ -64,10 +57,7 @@ class SpaCacheControlTest {
     /** API responses are not the frontend: the filter must not touch them. */
     @Test
     void apiResponsesAreLeftAlone() {
-        given().when().get("/api/auth/me")
-                .then()
-                .statusCode(200)
-                .header("Cache-Control", blankOrNullString());
+        given().when().get("/api/auth/me").then().statusCode(200).header("Cache-Control", blankOrNullString());
     }
 
     /**
@@ -84,9 +74,10 @@ class SpaCacheControlTest {
                     .map(file -> "/" + PUBLIC_FOLDER.relativize(file))
                     .toList();
             assertThat(served).isNotEmpty();
-            assertThat(served).allSatisfy(path -> assertThat(SpaCacheControlFilter.hasStableName(path))
-                    .as("%s is served under a stable name yet escapes the no-cache rule", path)
-                    .isTrue());
+            assertThat(served)
+                    .allSatisfy(path -> assertThat(SpaCacheControlFilter.hasStableName(path))
+                            .as("%s is served under a stable name yet escapes the no-cache rule", path)
+                            .isTrue());
         }
     }
 }

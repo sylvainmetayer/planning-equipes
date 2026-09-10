@@ -1,21 +1,19 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
+import dev.sylvain.planning.service.EditionRequestScope;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.NouvelleDeclaration;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService.NouvelleDemande;
-import dev.sylvain.planning.service.EditionRequestScope;
 import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.EspaceAnimateurView;
 import dev.sylvain.planning.service.export.PlanningExportService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -31,6 +29,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import java.util.List;
 
 /**
  * The animateur self-service espace (issue #165), one of the two parts of the
@@ -117,8 +116,7 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/collegues/{collegueId}/postes")
     @EspaceSessionRequired
     @FoireOpenRequired
-    public List<EspaceAnimateurService.PosteAnimateurView> colleaguePostes(
-            @PathParam("collegueId") String collegueId) {
+    public List<EspaceAnimateurService.PosteAnimateurView> colleaguePostes(@PathParam("collegueId") String collegueId) {
         return espaceAnimateurService.colleaguePostes(collegueId);
     }
 
@@ -167,8 +165,10 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/demandes-recues/{demandeId}/accord")
     @EspaceSessionRequired
     public Response grantReceivedDemande(@PathParam("demandeId") String demandeId) {
-        return Response.ok(espaceAnimateurService.toViews(
-                List.of(demandeEchangeService.acceptByTarget(animateurCourant(), demandeId))).get(0)).build();
+        return Response.ok(espaceAnimateurService
+                        .toViews(List.of(demandeEchangeService.acceptByTarget(animateurCourant(), demandeId)))
+                        .get(0))
+                .build();
     }
 
     /** I decline a demande targeting me: terminal, the demandeur is told, the admin never arbitrates. */
@@ -176,8 +176,10 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/demandes-recues/{demandeId}/refus")
     @EspaceSessionRequired
     public Response declineReceivedDemande(@PathParam("demandeId") String demandeId) {
-        return Response.ok(espaceAnimateurService.toViews(
-                List.of(demandeEchangeService.declineByTarget(animateurCourant(), demandeId))).get(0)).build();
+        return Response.ok(espaceAnimateurService
+                        .toViews(List.of(demandeEchangeService.declineByTarget(animateurCourant(), demandeId)))
+                        .get(0))
+                .build();
     }
 
     /**
@@ -190,8 +192,8 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/demandes")
     @EspaceSessionRequired
     public Response submit(List<NouvelleDemande> nouvelles) {
-        return Response.ok(espaceAnimateurService.toViews(
-                demandeEchangeService.submit(animateurCourant(), nouvelles))).build();
+        return Response.ok(espaceAnimateurService.toViews(demandeEchangeService.submit(animateurCourant(), nouvelles)))
+                .build();
     }
 
     /**
@@ -229,7 +231,8 @@ public class EspaceAnimateurResource {
                     .entity(new ValidationError(e.getMessage()))
                     .build();
         }
-        return Response.ok(espaceAnimateurService.buildDeclarationView(animateurCourant())).build();
+        return Response.ok(espaceAnimateurService.buildDeclarationView(animateurCourant()))
+                .build();
     }
 
     /**
@@ -245,8 +248,7 @@ public class EspaceAnimateurResource {
         PlanningEvenement planning = planPublieService.planPublie();
         byte[] contenu = planningExportService.exportAnimateurPdfPublie(planning, animateurCourant());
         return Response.ok(contenu)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + fileName(planning, "pdf") + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName(planning, "pdf") + "\"")
                 .build();
     }
 
@@ -260,8 +262,7 @@ public class EspaceAnimateurResource {
         String contenu = planningExportService.exportAnimateurIcs(planning, animateurCourant());
         return Response.ok(contenu)
                 .type("text/calendar; charset=utf-8")
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + fileName(planning, "ics") + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName(planning, "ics") + "\"")
                 .build();
     }
 
@@ -282,13 +283,11 @@ public class EspaceAnimateurResource {
     @Consumes(MediaType.WILDCARD)
     @EspaceSessionRequired
     public AbonnementToken regenerateAbonnementToken() {
-        return new AbonnementToken(
-                referenceDataService.regenerateAbonnementToken(animateurCourant()));
+        return new AbonnementToken(referenceDataService.regenerateAbonnementToken(animateurCourant()));
     }
 
     /** Body of a subscription rotation: the new token, nothing else. */
-    public record AbonnementToken(String abonnementToken) {
-    }
+    public record AbonnementToken(String abonnementToken) {}
 
     /** Withdraws one of my own, still-pending demandes. */
     @POST
@@ -309,7 +308,8 @@ public class EspaceAnimateurResource {
     @TokenRequired
     public Response requestCode() {
         try {
-            return Response.ok(espaceAccesService.requestCode(animateurCourant())).build();
+            return Response.ok(espaceAccesService.requestCode(animateurCourant()))
+                    .build();
         } catch (EspaceAccesService.TooManyRequests e) {
             return Response.status(429)
                     .header(HttpHeaders.RETRY_AFTER, e.secondsBeforeNextTry())
@@ -320,8 +320,7 @@ public class EspaceAnimateurResource {
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail an espace access code");
             return Response.serverError()
-                    .entity(new ValidationError(
-                            "L'envoi du code a échoué : réessayez dans quelques instants."))
+                    .entity(new ValidationError("L'envoi du code a échoué : réessayez dans quelques instants."))
                     .build();
         }
     }
@@ -343,8 +342,8 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/session")
     @TokenRequired
     public Response openSession(CodeSession codeSession, @Context UriInfo uriInfo) {
-        String session = espaceAccesService.openSession(animateurCourant(),
-                codeSession == null ? null : codeSession.code());
+        String session =
+                espaceAccesService.openSession(animateurCourant(), codeSession == null ? null : codeSession.code());
         NewCookie cookie = new NewCookie.Builder(COOKIE_SESSION)
                 .value(session)
                 .path("/api/espace-animateur")
@@ -362,8 +361,7 @@ public class EspaceAnimateurResource {
     }
 
     /** Body of the session opener: the code received by e-mail. */
-    public record CodeSession(String code) {
-    }
+    public record CodeSession(String code) {}
 
     /** The animateur the guard resolved from the URL token — never {@code null} once a guard ran. */
     private String animateurCourant() {

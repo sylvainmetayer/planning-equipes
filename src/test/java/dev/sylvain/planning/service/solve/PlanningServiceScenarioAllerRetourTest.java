@@ -2,27 +2,25 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.junit.jupiter.api.Test;
 
 /**
  * The joint between the two halves of the scenario format: what the export
@@ -44,8 +42,15 @@ import dev.sylvain.planning.service.EmptyReferenceData;
 class PlanningServiceScenarioAllerRetourTest {
 
     private static PlanningService service() {
-        return new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
-                new EmptyReferenceData(), new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
+        return new PlanningService(
+                3L,
+                2L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                new EmptyReferenceData(),
+                new FeasibilityAnalyzer(),
+                null,
+                null,
+                ConfigProvider.getConfig());
     }
 
     private static Creneau creneau(long id, LocalTime debut, LocalTime fin) {
@@ -151,8 +156,7 @@ class PlanningServiceScenarioAllerRetourTest {
         Stand stand = stand("STAND-A");
 
         String yaml = ScenarioYamlWriter.buildScenarioYaml(
-                List.of(animateur("A1")), List.of(stand), List.of(creneau),
-                List.of(poste("P1", stand, creneau)));
+                List.of(animateur("A1")), List.of(stand), List.of(creneau), List.of(poste("P1", stand, creneau)));
 
         PlanningEvenement relu = service().buildFromScenarioText(yaml).planning();
 
@@ -177,8 +181,7 @@ class PlanningServiceScenarioAllerRetourTest {
         Stand stand = stand("STAND-A");
 
         String yaml = ScenarioYamlWriter.buildScenarioYaml(
-                List.of(animateur("A1")), List.of(stand), List.of(creneau),
-                List.of(poste("P1", stand, creneau)));
+                List.of(animateur("A1")), List.of(stand), List.of(creneau), List.of(poste("P1", stand, creneau)));
 
         assertThat(yaml).contains("id: '1'").doesNotContain("id: 1\n");
         assertThat(yaml).contains("creneauId: '1'");
@@ -196,13 +199,13 @@ class PlanningServiceScenarioAllerRetourTest {
         Stand stand = stand("STAND-A");
 
         String yaml = ScenarioYamlWriter.buildScenarioYaml(
-                List.of(animateur("A1")), List.of(stand), List.of(matin),
-                List.of(poste("P1", stand, matin)));
+                List.of(animateur("A1")), List.of(stand), List.of(matin), List.of(poste("P1", stand, matin)));
 
         PlanningEvenement relu = service().buildFromScenarioText(yaml).planning();
 
         assertThat(relu.getPostes())
-                .extracting(p -> p.getCreneau().getHeureDebut(), p -> p.getCreneau().getHeureFin())
+                .extracting(
+                        p -> p.getCreneau().getHeureDebut(), p -> p.getCreneau().getHeureFin())
                 .containsOnly(org.assertj.core.groups.Tuple.tuple(LocalTime.of(9, 0), LocalTime.of(13, 0)));
     }
 

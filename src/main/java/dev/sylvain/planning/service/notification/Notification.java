@@ -1,9 +1,8 @@
 package dev.sylvain.planning.service.notification;
 
+import dev.sylvain.planning.domain.DemandeEchange;
 import java.time.LocalDate;
 import java.util.List;
-
-import dev.sylvain.planning.domain.DemandeEchange;
 
 /**
  * Something worth telling someone about, as a fact rather than as an order to
@@ -24,17 +23,14 @@ public sealed interface Notification {
      * The colleague a demande targets is waiting for THEIR agreement — the
      * step that spares the admin from asking both sides.
      */
-    record TargetSolicited(String emailCible, String demandeurNomComplet, int nombre) implements Notification {
-    }
+    record TargetSolicited(String emailCible, String demandeurNomComplet, int nombre) implements Notification {}
 
     /** The targeted colleague declined; the admin never had to arbitrate. */
     record DemandeDeclinee(String emailDemandeur, String cibleNomComplet, String libelleCreneau)
-            implements Notification {
-    }
+            implements Notification {}
 
     /** One or more demandes reached the admin's desk — one notification per batch, not per demande. */
-    record DemandesSoumises(String demandeurNomComplet, List<DemandeEchange> demandes) implements Notification {
-    }
+    record DemandesSoumises(String demandeurNomComplet, List<DemandeEchange> demandes) implements Notification {}
 
     /**
      * An animateur declared their unavailable days and wishes from their
@@ -46,8 +42,7 @@ public sealed interface Notification {
      * data pass through, and nothing here needs them to do its job.</p>
      */
     record DeclarationSoumise(String animateurNomComplet, int joursIndisponibles, int souhaits)
-            implements Notification {
-    }
+            implements Notification {}
 
     /**
      * A solve just finished: which edition, what score, and whether the plan is
@@ -58,8 +53,7 @@ public sealed interface Notification {
      *                 plan cannot be used as is, which is why it is said in the
      *                 subject line rather than in the body
      */
-    record ResolutionTerminee(String editionNom, String score, boolean faisable) implements Notification {
-    }
+    record ResolutionTerminee(String editionNom, String score, boolean faisable) implements Notification {}
 
     /**
      * The day-before reminder (issue #298): what this person holds tomorrow,
@@ -70,16 +64,14 @@ public sealed interface Notification {
      * @param lienEspace their espace, {@code null} when no public URL is
      *                   configured or the fiche carries no token
      */
-    record RappelVeille(String email, String prenom, LocalDate date, List<String> postes,
-            String lienEspace) implements Notification {
-    }
+    record RappelVeille(String email, String prenom, LocalDate date, List<String> postes, String lienEspace)
+            implements Notification {}
 
     /**
      * A published planning nobody acknowledged (issue #299). Sent once and
      * once only: the status moves to RELANCE, which is what stops the loop.
      */
-    record RelanceConfirmation(String email, String prenom, String lienEspace) implements Notification {
-    }
+    record RelanceConfirmation(String email, String prenom, String lienEspace) implements Notification {}
 
     /**
      * Swap requests left waiting for a decision (issue #300), counted rather
@@ -89,6 +81,5 @@ public sealed interface Notification {
      * @param nombre    how many crossed the threshold in this run
      * @param joursMax  age of the oldest of them, in days
      */
-    record PendingEchanges(int nombre, long joursMax) implements Notification {
-    }
+    record PendingEchanges(int nombre, long joursMax) implements Notification {}
 }

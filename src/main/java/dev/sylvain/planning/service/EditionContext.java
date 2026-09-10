@@ -1,15 +1,14 @@
 package dev.sylvain.planning.service;
 
+import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.edition.EditionRepository;
+import io.quarkus.arc.Arc;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-
-import dev.sylvain.planning.domain.Edition;
-import io.quarkus.arc.Arc;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.edition.EditionRepository;
 
 /**
  * Answers the one question every reference-data query needs: <b>which edition
@@ -61,6 +60,7 @@ public class EditionContext {
      * enough.
      */
     private volatile Set<String> idsConnus;
+
     private volatile String defaultId;
 
     /**
@@ -169,7 +169,8 @@ public class EditionContext {
     private Set<String> idsConnus() {
         Set<String> cache = idsConnus;
         if (cache == null) {
-            cache = editionRepository.listEditions().stream().map(Edition::getId)
+            cache = editionRepository.listEditions().stream()
+                    .map(Edition::getId)
                     .collect(Collectors.toUnmodifiableSet());
             idsConnus = cache;
         }

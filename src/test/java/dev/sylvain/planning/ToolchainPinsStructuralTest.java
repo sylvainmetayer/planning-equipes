@@ -40,7 +40,8 @@ class ToolchainPinsStructuralTest {
     private static final Path DOCKERFILE = Path.of("Dockerfile");
     private static final Path WRAPPER = Path.of(".mvn/wrapper/maven-wrapper.properties");
     private static final Path WORKFLOWS = Path.of(".github/workflows");
-    private static final List<Path> COMPOSES = List.of(Path.of("docker-compose.yml"), Path.of("docker-compose.prod.yml"));
+    private static final List<Path> COMPOSES =
+            List.of(Path.of("docker-compose.yml"), Path.of("docker-compose.prod.yml"));
 
     @Test
     void everyPinAgreesWithMiseToml() throws IOException {
@@ -52,37 +53,64 @@ class ToolchainPinsStructuralTest {
         List<String> ecarts = new ArrayList<>();
 
         // Java: the compiler, the two image stages, every workflow.
-        expect(ecarts, "pom.xml maven.compiler.release", first(read(POM), "<maven.compiler.release>(\\d+)<", "pom"), java);
+        expect(
+                ecarts,
+                "pom.xml maven.compiler.release",
+                first(read(POM), "<maven.compiler.release>(\\d+)<", "pom"),
+                java);
         String dockerfile = read(DOCKERFILE);
-        expect(ecarts, "Dockerfile build stage", first(dockerfile, "FROM maven:[\\d.]+-eclipse-temurin-(\\d+)", "Dockerfile"), java);
-        expect(ecarts, "Dockerfile runtime stage", first(dockerfile, "FROM eclipse-temurin:(\\d+)-jre", "Dockerfile"), java);
-        forEachWorkflowPin("java-version: *'?(\\d+)", (file, value) -> expect(ecarts, file + " java-version", value, java));
+        expect(
+                ecarts,
+                "Dockerfile build stage",
+                first(dockerfile, "FROM maven:[\\d.]+-eclipse-temurin-(\\d+)", "Dockerfile"),
+                java);
+        expect(
+                ecarts,
+                "Dockerfile runtime stage",
+                first(dockerfile, "FROM eclipse-temurin:(\\d+)-jre", "Dockerfile"),
+                java);
+        forEachWorkflowPin(
+                "java-version: *'?(\\d+)", (file, value) -> expect(ecarts, file + " java-version", value, java));
 
         // Node: the workflows, and the one Quinoa installs to build the shipped bundle.
-        expect(ecarts, "application.properties quinoa node-version",
-                first(read(PROPERTIES), "node-version=(\\d+)\\.", "application.properties"), node);
-        forEachWorkflowPin("node-version: *'?(\\d+)", (file, value) -> expect(ecarts, file + " node-version", value, node));
+        expect(
+                ecarts,
+                "application.properties quinoa node-version",
+                first(read(PROPERTIES), "node-version=(\\d+)\\.", "application.properties"),
+                node);
+        forEachWorkflowPin(
+                "node-version: *'?(\\d+)", (file, value) -> expect(ecarts, file + " node-version", value, node));
 
         // Maven: the wrapper pins the exact version, the build image only a prefix — it must be one of ours.
-        expect(ecarts, "maven wrapper distributionUrl", first(read(WRAPPER), "apache-maven-([\\d.]+)-bin", "wrapper"), maven);
+        expect(
+                ecarts,
+                "maven wrapper distributionUrl",
+                first(read(WRAPPER), "apache-maven-([\\d.]+)-bin", "wrapper"),
+                maven);
         String imageMaven = first(dockerfile, "FROM maven:([\\d.]+)-eclipse-temurin", "Dockerfile");
         if (!maven.startsWith(imageMaven)) {
             ecarts.add("Dockerfile maven image says " + imageMaven + ", mise.toml says " + maven);
         }
 
         // PostgreSQL: the tests, the deployments and the pg_dump client in the image.
-        String postgresTests = first(read(PROPERTIES), "devservices\\.image-name=postgres:(\\d+)", "application.properties");
+        String postgresTests =
+                first(read(PROPERTIES), "devservices\\.image-name=postgres:(\\d+)", "application.properties");
         for (Path compose : COMPOSES) {
-            expect(ecarts, compose + " postgres image", first(read(compose), "image: postgres:(\\d+)", compose.toString()), postgresTests);
+            expect(
+                    ecarts,
+                    compose + " postgres image",
+                    first(read(compose), "image: postgres:(\\d+)", compose.toString()),
+                    postgresTests);
         }
-        expect(ecarts, "Dockerfile postgresql-client", first(dockerfile, "postgresql-client-(\\d+)", "Dockerfile"), postgresTests);
+        expect(
+                ecarts,
+                "Dockerfile postgresql-client",
+                first(dockerfile, "postgresql-client-(\\d+)", "Dockerfile"),
+                postgresTests);
 
-        assertThat(ecarts)
-                .as("""
+        assertThat(ecarts).as("""
                         toolchain pins that disagree with mise.toml (java %s, node %s, maven %s). \
-                        Bump them together — Renovate does not read every one of these files.""",
-                        java, node, maven)
-                .isEmpty();
+                        Bump them together — Renovate does not read every one of these files.""", java, node, maven).isEmpty();
     }
 
     private interface Pin {
@@ -92,7 +120,8 @@ class ToolchainPinsStructuralTest {
     private static void forEachWorkflowPin(String regex, Pin pin) throws IOException {
         Pattern pattern = Pattern.compile(regex);
         try (Stream<Path> files = Files.list(WORKFLOWS)) {
-            for (Path file : files.filter(p -> p.toString().endsWith(".yml")).sorted().toList()) {
+            for (Path file :
+                    files.filter(p -> p.toString().endsWith(".yml")).sorted().toList()) {
                 Matcher matcher = pattern.matcher(read(file));
                 while (matcher.find()) {
                     pin.found(file.getFileName().toString(), matcher.group(1));

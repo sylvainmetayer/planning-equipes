@@ -17,8 +17,7 @@ import java.time.OffsetDateTime;
  */
 public final class WriteStamp {
 
-    private WriteStamp() {
-    }
+    private WriteStamp() {}
 
     /** Executes the write and returns the single {@code modifie_le} it returned. */
     public static Instant written(PreparedStatement ps) throws SQLException {

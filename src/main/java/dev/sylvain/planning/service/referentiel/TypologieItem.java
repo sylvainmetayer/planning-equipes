@@ -1,8 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import java.time.Instant;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * One entry of the typologie referential.

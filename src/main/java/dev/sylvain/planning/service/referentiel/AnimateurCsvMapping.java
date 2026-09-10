@@ -57,15 +57,32 @@ public record AnimateurCsvMapping(
             "id", List.of("id", "identifiant", "matricule", "code"),
             "prenom", List.of("prenom", "firstname", "first name", "given name"),
             "nom", List.of("nom", "nom de famille", "lastname", "last name", "surname", "name"),
-            "dateNaissance", List.of("date de naissance", "datenaissance", "date naissance",
-                    "naissance", "ne le", "nee le", "birthdate", "birth date", "date of birth"),
+            "dateNaissance",
+                    List.of(
+                            "date de naissance",
+                            "datenaissance",
+                            "date naissance",
+                            "naissance",
+                            "ne le",
+                            "nee le",
+                            "birthdate",
+                            "birth date",
+                            "date of birth"),
             "email", List.of("email", "e mail", "mail", "adresse mail", "courriel", "adresse electronique"),
             "manager", List.of("manager", "responsable", "encadrant", "chef"),
             "competences", List.of("competences", "competence", "typologies", "typologie", "skills"),
             "souhaits", List.of("souhaits", "souhait", "voeux", "preferences", "wishes"),
-            "joursIndisponibles", List.of("jours indisponibles", "joursindisponibles", "indisponibilites",
-                    "indisponibilite", "jours indispo", "indispo", "absences", "jours d absence",
-                    "unavailable days"));
+            "joursIndisponibles",
+                    List.of(
+                            "jours indisponibles",
+                            "joursindisponibles",
+                            "indisponibilites",
+                            "indisponibilite",
+                            "jours indispo",
+                            "indispo",
+                            "absences",
+                            "jours d absence",
+                            "unavailable days"));
 
     /**
      * Everything unmapped — what a file whose headers say nothing recognisable
@@ -84,7 +101,8 @@ public record AnimateurCsvMapping(
      * from two places.
      */
     public static AnimateurCsvMapping propose(List<String> columns) {
-        List<String> normalised = columns.stream().map(AnimateurCsvMapping::normalise).toList();
+        List<String> normalised =
+                columns.stream().map(AnimateurCsvMapping::normalise).toList();
         boolean[] taken = new boolean[normalised.size()];
         return new AnimateurCsvMapping(
                 match(normalised, taken, "id"),
@@ -118,9 +136,10 @@ public record AnimateurCsvMapping(
         if (header == null) {
             return "";
         }
-        String withoutAccents = Normalizer.normalize(header, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "");
-        return withoutAccents.toLowerCase(Locale.ROOT)
+        String withoutAccents =
+                Normalizer.normalize(header, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
+        return withoutAccents
+                .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", " ")
                 .trim();
     }

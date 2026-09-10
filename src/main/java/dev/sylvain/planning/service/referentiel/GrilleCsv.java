@@ -26,8 +26,7 @@ import java.util.regex.Pattern;
  */
 public final class GrilleCsv {
 
-    private GrilleCsv() {
-    }
+    private GrilleCsv() {}
 
     /**
      * One column of the matrix: its position, what the header said, and the
@@ -36,8 +35,8 @@ public final class GrilleCsv {
      * way a spreadsheet leaves a merged day cell: worth saying when two columns
      * then claim one créneau, since the file looks like it names two days.
      */
-    public record Colonne(int index, String libelle, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
-            boolean dateHeritee) {
+    public record Colonne(
+            int index, String libelle, LocalDate date, LocalTime heureDebut, LocalTime heureFin, boolean dateHeritee) {
 
         public boolean namesCreneau() {
             return date != null && heureDebut != null && heureFin != null;
@@ -45,11 +44,9 @@ public final class GrilleCsv {
     }
 
     /** One data row: the physical line, the stand as written, and the raw cell under each column. */
-    public record Ligne(int line, String stand, List<String> cellules) {
-    }
+    public record Ligne(int line, String stand, List<String> cellules) {}
 
-    public record Matrice(String separator, List<Colonne> colonnes, List<Ligne> lignes) {
-    }
+    public record Matrice(String separator, List<Colonne> colonnes, List<Ligne> lignes) {}
 
     private static final Pattern BANDE = Pattern.compile(
             "^\\s*(\\d{1,2}(?:[:h.]\\d{0,2})?)\\s*[-\u2013\u2192]\\s*(\\d{1,2}(?:[:h.]\\d{0,2})?)\\s*$");
@@ -76,9 +73,14 @@ public final class GrilleCsv {
                 }
                 String bande = index < bandes.size() ? bandes.get(index).trim() : "";
                 LocalTime[] heures = bande(bande);
-                String libelle = (dateTexte.isEmpty() && courante != null ? courante.toString() : dateTexte) + " " + bande;
-                colonnes.add(new Colonne(index, libelle.trim(), courante,
-                        heures == null ? null : heures[0], heures == null ? null : heures[1],
+                String libelle =
+                        (dateTexte.isEmpty() && courante != null ? courante.toString() : dateTexte) + " " + bande;
+                colonnes.add(new Colonne(
+                        index,
+                        libelle.trim(),
+                        courante,
+                        heures == null ? null : heures[0],
+                        heures == null ? null : heures[1],
                         dateTexte.isEmpty()));
             }
         } else {
@@ -91,8 +93,13 @@ public final class GrilleCsv {
                     date = date(m.group(1));
                     heures = bande(m.group(2));
                 }
-                colonnes.add(new Colonne(index, libelle, date, heures == null ? null : heures[0],
-                        heures == null ? null : heures[1], false));
+                colonnes.add(new Colonne(
+                        index,
+                        libelle,
+                        date,
+                        heures == null ? null : heures[0],
+                        heures == null ? null : heures[1],
+                        false));
             }
         }
         List<Ligne> lignes = new ArrayList<>();
@@ -155,7 +162,8 @@ public final class GrilleCsv {
      * the wrong créneau — the same refusal the compact line makes on entry.</p>
      */
     static LocalTime heure(String texte) {
-        Matcher m = Pattern.compile("^(\\d{1,2})(?:[:h.](\\d{2})?)?$").matcher(texte.trim().toLowerCase(Locale.ROOT));
+        Matcher m = Pattern.compile("^(\\d{1,2})(?:[:h.](\\d{2})?)?$")
+                .matcher(texte.trim().toLowerCase(Locale.ROOT));
         if (!m.matches()) {
             return null;
         }
@@ -187,6 +195,5 @@ public final class GrilleCsv {
     }
 
     /** {@code lisible} false: the text is not a value at all. */
-    public record CelluleLue(Integer effectif, boolean lisible) {
-    }
+    public record CelluleLue(Integer effectif, boolean lisible) {}
 }

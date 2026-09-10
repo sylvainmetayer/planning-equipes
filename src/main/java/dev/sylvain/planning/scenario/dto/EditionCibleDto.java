@@ -9,5 +9,4 @@ import jakarta.validation.constraints.NotBlank;
  * defaulting to the id); an existing one is reused as-is. The import response
  * reports which of the two happened, so the UI can show the mandatory recap.
  */
-public record EditionCibleDto(@NotBlank String id, String nom) {
-}
+public record EditionCibleDto(@NotBlank String id, String nom) {}

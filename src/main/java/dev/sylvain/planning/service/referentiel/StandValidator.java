@@ -1,12 +1,5 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
@@ -14,6 +7,12 @@ import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * What a stand must satisfy before it is written, as pure functions: nothing
@@ -23,8 +22,7 @@ import dev.sylvain.planning.service.BusinessError;
  */
 final class StandValidator {
 
-    private StandValidator() {
-    }
+    private StandValidator() {}
 
     /**
      * The checks a schedule write owes: everything but the typologie rule.
@@ -64,17 +62,18 @@ final class StandValidator {
      * refused at its next save with this message.
      */
     private static void checkTypologies(Stand stand) {
-        if (stand.getTypologiesProposees() == null || stand.getTypologiesProposees().isEmpty()) {
-            throw new BusinessError.Invalid("Le stand « " + stand.getId() + " » ne propose aucune typologie de jeu : "
-                    + "un stand est toujours rattaché à au moins une typologie. Choisissez-en une avant d'enregistrer.");
+        if (stand.getTypologiesProposees() == null
+                || stand.getTypologiesProposees().isEmpty()) {
+            throw new BusinessError.Invalid(
+                    "Le stand « " + stand.getId() + " » ne propose aucune typologie de jeu : "
+                            + "un stand est toujours rattaché à au moins une typologie. Choisissez-en une avant d'enregistrer.");
         }
     }
 
     private static void checkEffectifs(Stand stand) {
         if (stand.getEffectifMin() > stand.getEffectifMax()) {
-            throw new BusinessError.Invalid(
-                    "effectifMin (" + stand.getEffectifMin() + ") cannot be greater than effectifMax ("
-                            + stand.getEffectifMax() + ")");
+            throw new BusinessError.Invalid("effectifMin (" + stand.getEffectifMin()
+                    + ") cannot be greater than effectifMax (" + stand.getEffectifMax() + ")");
         }
     }
 
@@ -93,9 +92,9 @@ final class StandValidator {
                         + "début (l'heure de fin peut être vide : jusqu'à la fermeture)");
             }
             if (indispo.getHeureFin() != null && !indispo.getHeureFin().isAfter(indispo.getHeureDebut())) {
-                throw new BusinessError.Invalid(
-                        "heureFin (" + indispo.getHeureFin() + ") doit être après heureDebut (" + indispo.getHeureDebut()
-                                + ") — une indisponibilité ne peut pas chevaucher minuit, entrez-en deux");
+                throw new BusinessError.Invalid("heureFin (" + indispo.getHeureFin() + ") doit être après heureDebut ("
+                        + indispo.getHeureDebut()
+                        + ") — une indisponibilité ne peut pas chevaucher minuit, entrez-en deux");
             }
         }
     }
@@ -208,8 +207,7 @@ final class StandValidator {
             }
             case PLAGE -> {
                 if (horaire.getDateDebut() == null || horaire.getDateFin() == null) {
-                    throw new BusinessError.Invalid(
-                            "Un horaire de portée PLAGE requiert une dateDebut et une dateFin");
+                    throw new BusinessError.Invalid("Un horaire de portée PLAGE requiert une dateDebut et une dateFin");
                 }
                 if (horaire.getDateFin().isBefore(horaire.getDateDebut())) {
                     throw new BusinessError.Invalid("dateFin (" + horaire.getDateFin() + ") doit être après ou égale "

@@ -1,14 +1,12 @@
 package dev.sylvain.planning.service.backup;
 
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.Optional;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Everything the automatic backup reads from the deployment: where the dumps

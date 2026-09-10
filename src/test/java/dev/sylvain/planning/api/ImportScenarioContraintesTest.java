@@ -3,10 +3,9 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
 import java.util.Map;
-
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,8 +90,10 @@ class ImportScenarioContraintesTest {
     void creerLEditionDAtterrissage() {
         given().contentType("application/json")
                 .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import contraintes\"}")
-                .when().post("/api/editions")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200);
     }
 
     @AfterEach
@@ -104,15 +105,21 @@ class ImportScenarioContraintesTest {
         given().header(HEADER, EDITION)
                 .contentType("text/plain")
                 .body(yaml)
-                .when().post("/api/reference-data/import-scenario-fichier")
-                .then().statusCode(200);
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
+                .then()
+                .statusCode(200);
     }
 
     private List<Map<String, Object>> contraintes() {
         return given().header(HEADER, EDITION)
-                .when().get("/api/constraints")
-                .then().statusCode(200)
-                .extract().jsonPath().getList("contraintes");
+                .when()
+                .get("/api/constraints")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("contraintes");
     }
 
     private Map<String, Object> contrainte(String nom) {
@@ -196,8 +203,10 @@ class ImportScenarioContraintesTest {
         given().header(HEADER, EDITION)
                 .contentType("text/plain")
                 .body(yaml)
-                .when().post("/api/reference-data/import-scenario-fichier")
-                .then().statusCode(400);
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
+                .then()
+                .statusCode(400);
     }
 
     @Test
@@ -215,7 +224,9 @@ class ImportScenarioContraintesTest {
         given().header(HEADER, EDITION)
                 .contentType("text/plain")
                 .body(yaml)
-                .when().post("/api/reference-data/import-scenario-fichier")
-                .then().statusCode(400);
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
+                .then()
+                .statusCode(400);
     }
 }

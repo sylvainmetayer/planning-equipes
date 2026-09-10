@@ -1,11 +1,5 @@
 package dev.sylvain.planning.mcp;
 
-import java.time.Instant;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
@@ -20,6 +14,11 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * MCP tools for the tuning knobs of {@code ReferenceDataResource}: legal
@@ -40,25 +39,42 @@ public class ParametresMcpTools {
 
     /* ----------------------------- Legal parameters ------------------------- */
 
-    @Tool(description = "Consulte les paramètres légaux appliqués par le solveur (durées maximales, pauses, repos).",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Consulte les paramètres légaux appliqués par le solveur (durées maximales, pauses, repos).",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ParametresLegauxView consulter_parametres_legaux(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresLegaux());
     }
 
-    @Tool(description = "Modifie les paramètres légaux. Seuls les champs fournis sont modifiés. Les plafonds "
-            + "d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un mineur) sont refusés au-delà.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Modifie les paramètres légaux. Seuls les champs fournis sont modifiés. Les plafonds "
+                    + "d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un mineur) sont refusés au-delà.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ParametresLegauxView modifier_parametres_legaux(
-            @ToolArg(description = "Durée hebdomadaire maximale d'un majeur, en minutes", required = false) Integer dureeHebdomadaireMaxMinutes,
-            @ToolArg(description = "Durée hebdomadaire maximale d'un mineur, en minutes", required = false) Integer dureeHebdomadaireMaxMineurMinutes,
-            @ToolArg(description = "Pause minimale entre deux vacations, en minutes", required = false) Integer pauseMinimaleEntreVacationsMinutes,
-            @ToolArg(description = "Repos quotidien minimal, en minutes", required = false) Integer reposQuotidienMinimalMinutes,
-            @ToolArg(description = "Pause légale prise sur le poste, par relais entre collègues, plutôt que "
-                    + "comme un trou entre deux vacations (L3121-16 / L3162-3)", required = false) Boolean pauseSurPoste,
+            @ToolArg(description = "Durée hebdomadaire maximale d'un majeur, en minutes", required = false)
+                    Integer dureeHebdomadaireMaxMinutes,
+            @ToolArg(description = "Durée hebdomadaire maximale d'un mineur, en minutes", required = false)
+                    Integer dureeHebdomadaireMaxMineurMinutes,
+            @ToolArg(description = "Pause minimale entre deux vacations, en minutes", required = false)
+                    Integer pauseMinimaleEntreVacationsMinutes,
+            @ToolArg(description = "Repos quotidien minimal, en minutes", required = false)
+                    Integer reposQuotidienMinimalMinutes,
+            @ToolArg(
+                            description = "Pause légale prise sur le poste, par relais entre collègues, plutôt que "
+                                    + "comme un trou entre deux vacations (L3121-16 / L3162-3)",
+                            required = false)
+                    Boolean pauseSurPoste,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
         if (dureeHebdomadaireMaxMinutes != null) {
@@ -81,33 +97,58 @@ public class ParametresMcpTools {
 
     /* --------------------------- Slicing parameters ------------------------- */
 
-    @Tool(description = "Consulte les paramètres de découpage des amplitudes en vacations.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Consulte les paramètres de découpage des amplitudes en vacations.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ParametresDecoupageView consulter_parametres_decoupage(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresDecoupage());
     }
 
-    @Tool(description = "Modifie les paramètres de découpage. Seuls les champs fournis sont modifiés. "
-            + "Prend effet au prochain découpage généré, pas sur les créneaux déjà produits.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Modifie les paramètres de découpage. Seuls les champs fournis sont modifiés. "
+                    + "Prend effet au prochain découpage généré, pas sur les créneaux déjà produits.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ParametresDecoupageView modifier_parametres_decoupage(
-            @ToolArg(description = "Durée cible d'une vacation, en minutes", required = false) Integer dureeVacationCibleMinutes,
-            @ToolArg(description = "Durée minimale d'une vacation, en minutes", required = false) Integer dureeVacationMinMinutes,
-            @ToolArg(description = "Durée maximale d'une vacation, en minutes", required = false) Integer dureeVacationMaxMinutes,
-            @ToolArg(description = "Chevauchement entre deux vacations successives, en minutes", required = false) Integer dureeChevauchementMinutes,
-            @ToolArg(description = "Durée de la pause repas, en minutes", required = false) Integer dureePauseRepasMinutes,
+            @ToolArg(description = "Durée cible d'une vacation, en minutes", required = false)
+                    Integer dureeVacationCibleMinutes,
+            @ToolArg(description = "Durée minimale d'une vacation, en minutes", required = false)
+                    Integer dureeVacationMinMinutes,
+            @ToolArg(description = "Durée maximale d'une vacation, en minutes", required = false)
+                    Integer dureeVacationMaxMinutes,
+            @ToolArg(description = "Chevauchement entre deux vacations successives, en minutes", required = false)
+                    Integer dureeChevauchementMinutes,
+            @ToolArg(description = "Durée de la pause repas, en minutes", required = false)
+                    Integer dureePauseRepasMinutes,
             @ToolArg(description = "Nombre de familles de décalage", required = false) Integer nombreFamillesDecalage,
-            @ToolArg(description = "Décalage maximal entre familles, en minutes", required = false) Integer dureeDecalageMaxMinutes,
-            @ToolArg(description = "Début de la fenêtre repas du midi (HH:MM)", required = false) String fenetreRepasMidiDebut,
-            @ToolArg(description = "Fin de la fenêtre repas du midi (HH:MM)", required = false) String fenetreRepasMidiFin,
-            @ToolArg(description = "Début de la fenêtre repas du soir (HH:MM)", required = false) String fenetreRepasSoirDebut,
-            @ToolArg(description = "Fin de la fenêtre repas du soir (HH:MM)", required = false) String fenetreRepasSoirFin,
-            @ToolArg(description = "Couverture pendant la pause : FERMETURE ou RELEVE", required = false) String strategieCouverturePendantPause,
-            @ToolArg(description = "Nature déclarée de la grille de créneaux : AMPLITUDES (journées à découper) ou "
-                    + "VACATIONS (vacations finales)", required = false) String modeGrille,
+            @ToolArg(description = "Décalage maximal entre familles, en minutes", required = false)
+                    Integer dureeDecalageMaxMinutes,
+            @ToolArg(description = "Début de la fenêtre repas du midi (HH:MM)", required = false)
+                    String fenetreRepasMidiDebut,
+            @ToolArg(description = "Fin de la fenêtre repas du midi (HH:MM)", required = false)
+                    String fenetreRepasMidiFin,
+            @ToolArg(description = "Début de la fenêtre repas du soir (HH:MM)", required = false)
+                    String fenetreRepasSoirDebut,
+            @ToolArg(description = "Fin de la fenêtre repas du soir (HH:MM)", required = false)
+                    String fenetreRepasSoirFin,
+            @ToolArg(description = "Couverture pendant la pause : FERMETURE ou RELEVE", required = false)
+                    String strategieCouverturePendantPause,
+            @ToolArg(
+                            description =
+                                    "Nature déclarée de la grille de créneaux : AMPLITUDES (journées à découper) ou "
+                                            + "VACATIONS (vacations finales)",
+                            required = false)
+                    String modeGrille,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresDecoupage parametres = referenceDataService.getParametresDecoupage();
         if (dureeVacationCibleMinutes != null) {
@@ -144,9 +185,8 @@ public class ParametresMcpTools {
             parametres.setFenetreRepasSoirFin(McpArgs.heure(fenetreRepasSoirFin, "fenetreRepasSoirFin"));
         }
         if (strategieCouverturePendantPause != null) {
-            parametres.setStrategieCouverturePendantPause(
-                    McpArgs.enumeration(PauseCoverageStrategy.class, strategieCouverturePendantPause,
-                            "strategieCouverturePendantPause"));
+            parametres.setStrategieCouverturePendantPause(McpArgs.enumeration(
+                    PauseCoverageStrategy.class, strategieCouverturePendantPause, "strategieCouverturePendantPause"));
         }
         ParametresDecoupage ecrits = referenceDataService.updateParametresDecoupage(parametres);
         if (modeGrille != null) {
@@ -159,17 +199,28 @@ public class ParametresMcpTools {
 
     /* ---------------------------- Solver parameters ------------------------- */
 
-    @Tool(description = "Consulte la durée de résolution par défaut du solveur, en secondes.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Consulte la durée de résolution par défaut du solveur, en secondes.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ParametresSolveurView consulter_parametres_solveur(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresSolveur());
     }
 
-    @Tool(description = "Modifie la durée de résolution par défaut du solveur, en secondes (valeur strictement positive).",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description =
+                    "Modifie la durée de résolution par défaut du solveur, en secondes (valeur strictement positive).",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ParametresSolveurView modifier_parametres_solveur(
             @ToolArg(description = "Durée de résolution par défaut, en secondes") int dureeResolutionSecondes,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -181,29 +232,44 @@ public class ParametresMcpTools {
 
     /* ------------------------- Notification parameters ---------------------- */
 
-    @Tool(description = "Consulte ce que les notifications planifiées ont le droit de faire sur l'édition : "
-            + "l'interrupteur, l'heure du rappel de la veille, le délai avant relance des animateurs qui n'ont "
-            + "pas confirmé, et l'ancienneté à partir de laquelle une demande d'échange sans réponse est "
-            + "signalée. Une édition que personne n'a armée répond les valeurs par défaut, actives à faux.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Consulte ce que les notifications planifiées ont le droit de faire sur l'édition : "
+                    + "l'interrupteur, l'heure du rappel de la veille, le délai avant relance des animateurs qui n'ont "
+                    + "pas confirmé, et l'ancienneté à partir de laquelle une demande d'échange sans réponse est "
+                    + "signalée. Une édition que personne n'a armée répond les valeurs par défaut, actives à faux.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ParametresNotifications consulter_parametres_notifications(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.getParametresNotifications();
     }
 
-    @Tool(description = "Modifie les paramètres des notifications planifiées. Seuls les champs fournis sont "
-            + "modifiés. actives=true ARME DES ENVOIS DE COURRIELS automatiques nocturnes (rappel de la veille, "
-            + "relance des non-confirmés, alerte sur les échanges sans réponse) : cet outil n'envoie rien "
-            + "lui-même, il autorise le planificateur à le faire. L'heure du rappel ne peut pas dépasser "
-            + "23:00 — plus tard, la tâche horaire passerait par-dessus et le rappel ne partirait jamais.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Modifie les paramètres des notifications planifiées. Seuls les champs fournis sont "
+                    + "modifiés. actives=true ARME DES ENVOIS DE COURRIELS automatiques nocturnes (rappel de la veille, "
+                    + "relance des non-confirmés, alerte sur les échanges sans réponse) : cet outil n'envoie rien "
+                    + "lui-même, il autorise le planificateur à le faire. L'heure du rappel ne peut pas dépasser "
+                    + "23:00 — plus tard, la tâche horaire passerait par-dessus et le rappel ne partirait jamais.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ParametresNotifications modifier_parametres_notifications(
             @ToolArg(description = "Notifications planifiées actives ou non", required = false) Boolean actives,
-            @ToolArg(description = "Heure du rappel de la veille (HH:MM), au plus tard 23:00", required = false) String heureRappelVeille,
-            @ToolArg(description = "Délai avant relance des non-confirmés, en heures", required = false) Integer delaiRelanceHeures,
-            @ToolArg(description = "Ancienneté d'une demande d'échange sans réponse avant alerte, en jours", required = false) Integer ancienneteEchangeJours,
+            @ToolArg(description = "Heure du rappel de la veille (HH:MM), au plus tard 23:00", required = false)
+                    String heureRappelVeille,
+            @ToolArg(description = "Délai avant relance des non-confirmés, en heures", required = false)
+                    Integer delaiRelanceHeures,
+            @ToolArg(
+                            description = "Ancienneté d'une demande d'échange sans réponse avant alerte, en jours",
+                            required = false)
+                    Integer ancienneteEchangeJours,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresNotifications actuels = referenceDataService.getParametresNotifications();
         return referenceDataService.updateParametresNotifications(new ParametresNotifications(
@@ -217,40 +283,54 @@ public class ParametresMcpTools {
 
     /* -------------------------- Contraintes ad hoc -------------------------- */
 
-    @Tool(description = "Liste les contraintes ad hoc saisies au cas par cas (indisponibilité forcée, "
-            + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs) : des règles posées "
-            + "avant le calcul pour placer ou écarter quelqu'un, à distinguer des verrouillages qui figent après coup. "
-            + "Les animateurs y sont désignés par id seul.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Liste les contraintes ad hoc saisies au cas par cas (indisponibilité forcée, "
+                    + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs) : des règles posées "
+                    + "avant le calcul pour placer ou écarter quelqu'un, à distinguer des verrouillages qui figent après coup. "
+                    + "Les animateurs y sont désignés par id seul.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     List<ContrainteAdHocView> lister_contraintes_ad_hoc(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return referenceDataService.listContraintesAdHoc().stream().map(ParametresMcpTools::toView).toList();
+        return referenceDataService.listContraintesAdHoc().stream()
+                .map(ParametresMcpTools::toView)
+                .toList();
     }
 
-    @Tool(description = "Crée une contrainte ad hoc. INDISPONIBILITE_FORCEE, INCOMPATIBILITE et "
-            + "AFFECTATION_FORCEE sont évaluées par le solveur au même niveau HARD que les contraintes légales ; "
-            + "AFFINITE est une récompense SOFT. INDISPONIBILITE_FORCEE : l'animateur ne peut pas être affecté "
-            + "sur ce créneau. INCOMPATIBILITE : les animateurs listés ne peuvent pas être affectés au même stand "
-            + "sur le même créneau. AFFECTATION_FORCEE : l'animateur doit être affecté à ce stand sur ce créneau. "
-            + "AFFINITE : privilégier, sans l'imposer, les créneaux où les deux animateurs listés tiennent le "
-            + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement).",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = false, openWorldHint = false))
+    @Tool(
+            description = "Crée une contrainte ad hoc. INDISPONIBILITE_FORCEE, INCOMPATIBILITE et "
+                    + "AFFECTATION_FORCEE sont évaluées par le solveur au même niveau HARD que les contraintes légales ; "
+                    + "AFFINITE est une récompense SOFT. INDISPONIBILITE_FORCEE : l'animateur ne peut pas être affecté "
+                    + "sur ce créneau. INCOMPATIBILITE : les animateurs listés ne peuvent pas être affectés au même stand "
+                    + "sur le même créneau. AFFECTATION_FORCEE : l'animateur doit être affecté à ce stand sur ce créneau. "
+                    + "AFFINITE : privilégier, sans l'imposer, les créneaux où les deux animateurs listés tiennent le "
+                    + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement).",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = false))
     ContrainteAdHocView creer_contrainte_ad_hoc(
             @ToolArg(description = "Id de la contrainte (unique)") String id,
-            @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE ou AFFINITE") String type,
+            @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE ou AFFINITE")
+                    String type,
             @ToolArg(description = "Ids des animateurs concernés") List<String> animateurIds,
             @ToolArg(description = "Id du créneau concerné", required = false) Long creneauId,
             @ToolArg(description = "Id du stand concerné", required = false) String standId,
             @ToolArg(description = "Raison, purement informative", required = false) String raison,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        ContrainteAdHoc contrainte = new ContrainteAdHoc(id,
-                McpArgs.enumeration(TypeContrainteAdHoc.class, type, "type"));
+        ContrainteAdHoc contrainte =
+                new ContrainteAdHoc(id, McpArgs.enumeration(TypeContrainteAdHoc.class, type, "type"));
         contrainte.setAnimateursConcernes(animateurs(animateurIds));
         if (creneauId != null) {
             contrainte.setCreneau(referenceDataService.listCreneaux().stream()
-                    .filter(creneau -> creneau.getId() != null && creneau.getId().equals(creneauId))
+                    .filter(creneau ->
+                            creneau.getId() != null && creneau.getId().equals(creneauId))
                     .findFirst()
                     .orElseThrow(() -> new NoSuchElementException("Créneau introuvable : " + creneauId)));
         }
@@ -265,10 +345,16 @@ public class ParametresMcpTools {
         return toView(referenceDataService.createContrainteAdHoc(contrainte));
     }
 
-    @Tool(description = "Supprime une contrainte ad hoc.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
-                    idempotentHint = false, openWorldHint = false))
-    SuppressionResult supprimer_contrainte_ad_hoc(@ToolArg(description = "Id de la contrainte") String id,
+    @Tool(
+            description = "Supprime une contrainte ad hoc.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    SuppressionResult supprimer_contrainte_ad_hoc(
+            @ToolArg(description = "Id de la contrainte") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteContrainteAdHoc(id);
         return new SuppressionResult(id, true);
@@ -290,7 +376,8 @@ public class ParametresMcpTools {
     }
 
     static ParametresLegauxView toView(ParametresLegaux parametres) {
-        return new ParametresLegauxView(parametres.getDureeHebdomadaireMaxMinutes(),
+        return new ParametresLegauxView(
+                parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.getDureeHebdomadaireMaxMineurMinutes(),
                 parametres.getPauseMinimaleEntreVacationsMinutes(),
                 parametres.getReposQuotidienMinimalMinutes(),
@@ -298,13 +385,20 @@ public class ParametresMcpTools {
     }
 
     static ParametresDecoupageView toView(ParametresDecoupage parametres) {
-        return new ParametresDecoupageView(parametres.getDureeVacationCibleMinutes(),
-                parametres.getDureeVacationMinMinutes(), parametres.getDureeVacationMaxMinutes(),
-                parametres.getDureeChevauchementMinutes(), parametres.getDureePauseRepasMinutes(),
-                parametres.getNombreFamillesDecalage(), parametres.getDureeDecalageMaxMinutes(),
-                parametres.getFenetreRepasMidiDebut(), parametres.getFenetreRepasMidiFin(),
-                parametres.getFenetreRepasSoirDebut(), parametres.getFenetreRepasSoirFin(),
-                parametres.getStrategieCouverturePendantPause(), parametres.getModeGrille());
+        return new ParametresDecoupageView(
+                parametres.getDureeVacationCibleMinutes(),
+                parametres.getDureeVacationMinMinutes(),
+                parametres.getDureeVacationMaxMinutes(),
+                parametres.getDureeChevauchementMinutes(),
+                parametres.getDureePauseRepasMinutes(),
+                parametres.getNombreFamillesDecalage(),
+                parametres.getDureeDecalageMaxMinutes(),
+                parametres.getFenetreRepasMidiDebut(),
+                parametres.getFenetreRepasMidiFin(),
+                parametres.getFenetreRepasSoirDebut(),
+                parametres.getFenetreRepasSoirFin(),
+                parametres.getStrategieCouverturePendantPause(),
+                parametres.getModeGrille());
     }
 
     static ParametresSolveurView toView(ParametresSolveur parametres) {
@@ -312,28 +406,50 @@ public class ParametresMcpTools {
     }
 
     static ContrainteAdHocView toView(ContrainteAdHoc contrainte) {
-        return new ContrainteAdHocView(contrainte.getId(), contrainte.getType(),
-                contrainte.getAnimateursConcernes().stream().map(Animateur::getId).toList(),
+        return new ContrainteAdHocView(
+                contrainte.getId(),
+                contrainte.getType(),
+                contrainte.getAnimateursConcernes().stream()
+                        .map(Animateur::getId)
+                        .toList(),
                 contrainte.getCreneau() == null ? null : contrainte.getCreneau().getId(),
                 contrainte.getStand() == null ? null : contrainte.getStand().getId(),
-                contrainte.getRaison(), contrainte.getCreeParUtilisateurId(), contrainte.getCreeLe());
+                contrainte.getRaison(),
+                contrainte.getCreeParUtilisateurId(),
+                contrainte.getCreeLe());
     }
 
-    public record ParametresLegauxView(int dureeHebdomadaireMaxMinutes, int dureeHebdomadaireMaxMineurMinutes,
-            int pauseMinimaleEntreVacationsMinutes, int reposQuotidienMinimalMinutes, boolean pauseSurPoste) {
-    }
+    public record ParametresLegauxView(
+            int dureeHebdomadaireMaxMinutes,
+            int dureeHebdomadaireMaxMineurMinutes,
+            int pauseMinimaleEntreVacationsMinutes,
+            int reposQuotidienMinimalMinutes,
+            boolean pauseSurPoste) {}
 
-    public record ParametresDecoupageView(int dureeVacationCibleMinutes, int dureeVacationMinMinutes,
-            int dureeVacationMaxMinutes, int dureeChevauchementMinutes, int dureePauseRepasMinutes,
-            int nombreFamillesDecalage, int dureeDecalageMaxMinutes, LocalTime fenetreRepasMidiDebut,
-            LocalTime fenetreRepasMidiFin, LocalTime fenetreRepasSoirDebut, LocalTime fenetreRepasSoirFin,
-            PauseCoverageStrategy strategieCouverturePendantPause, ModeGrilleCreneaux modeGrille) {
-    }
+    public record ParametresDecoupageView(
+            int dureeVacationCibleMinutes,
+            int dureeVacationMinMinutes,
+            int dureeVacationMaxMinutes,
+            int dureeChevauchementMinutes,
+            int dureePauseRepasMinutes,
+            int nombreFamillesDecalage,
+            int dureeDecalageMaxMinutes,
+            LocalTime fenetreRepasMidiDebut,
+            LocalTime fenetreRepasMidiFin,
+            LocalTime fenetreRepasSoirDebut,
+            LocalTime fenetreRepasSoirFin,
+            PauseCoverageStrategy strategieCouverturePendantPause,
+            ModeGrilleCreneaux modeGrille) {}
 
-    public record ParametresSolveurView(int dureeResolutionSecondes) {
-    }
+    public record ParametresSolveurView(int dureeResolutionSecondes) {}
 
-    public record ContrainteAdHocView(String id, TypeContrainteAdHoc type, List<String> animateurIds,
-            Long creneauId, String standId, String raison, String creeParUtilisateurId, Instant creeLe) {
-    }
+    public record ContrainteAdHocView(
+            String id,
+            TypeContrainteAdHoc type,
+            List<String> animateurIds,
+            Long creneauId,
+            String standId,
+            String raison,
+            String creeParUtilisateurId,
+            Instant creeLe) {}
 }

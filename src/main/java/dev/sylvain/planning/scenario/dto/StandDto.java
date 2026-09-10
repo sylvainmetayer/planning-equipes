@@ -4,7 +4,6 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 
@@ -12,7 +11,10 @@ public record StandDto(
         @NotBlank String id,
         @NotBlank String nom,
         String emplacementId,
-        @NotEmpty(message = "un stand est toujours rattaché à au moins une typologie de jeu") List<String> typologiesProposees,
+
+        @NotEmpty(message = "un stand est toujours rattaché à au moins une typologie de jeu")
+        List<String> typologiesProposees,
+
         @PositiveOrZero int effectifMin,
         @PositiveOrZero int effectifMax,
         Boolean reserveMajeurs,
@@ -32,5 +34,4 @@ public record StandDto(
          * instead of one dated entry per event day in the two lists above,
          * which stay for the per-date exceptions that override them.
          */
-        List<@Valid HoraireStandDto> horaires) {
-}
+        List<@Valid HoraireStandDto> horaires) {}

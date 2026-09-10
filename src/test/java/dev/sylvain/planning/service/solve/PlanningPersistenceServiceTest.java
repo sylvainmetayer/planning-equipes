@@ -2,24 +2,23 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 class PlanningPersistenceServiceTest {

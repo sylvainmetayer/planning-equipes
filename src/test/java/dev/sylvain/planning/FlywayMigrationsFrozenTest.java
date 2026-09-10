@@ -51,7 +51,8 @@ class FlywayMigrationsFrozenTest {
 
         Map<String, String> actuelles = new TreeMap<>();
         try (Stream<Path> files = Files.list(MIGRATIONS)) {
-            for (Path file : files.filter(p -> p.getFileName().toString().matches("V\\d+__.*\\.sql")).toList()) {
+            for (Path file : files.filter(p -> p.getFileName().toString().matches("V\\d+__.*\\.sql"))
+                    .toList()) {
                 actuelles.put(file.getFileName().toString(), sha256(file));
             }
         }

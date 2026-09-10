@@ -1,15 +1,5 @@
 package dev.sylvain.planning.service.notification;
 
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.jboss.logging.Logger;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -21,6 +11,14 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * « Vous êtes attendu·e demain » (issue #298).
@@ -126,7 +124,10 @@ public class RappelVeilleJob {
             // Not a failure to retry: a fiche without an address stays without
             // one until somebody edits it, so the claim also stops this alert
             // from reappearing every hour.
-            journal.claim(JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE, cle, fiche.getId(),
+            journal.claim(
+                    JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE,
+                    cle,
+                    fiche.getId(),
                     "Rappel de la veille impossible : aucune adresse e-mail sur la fiche."
                             + " Cette personne est affectée le " + NotificationWriter.JOUR.format(demain)
                             + " et doit être prévenue à la main.",
@@ -137,7 +138,10 @@ public class RappelVeilleJob {
             return false;
         }
         notifications.fire(new Notification.RappelVeille(
-                fiche.getEmail(), fiche.getPrenom(), demain, lines(postes),
+                fiche.getEmail(),
+                fiche.getPrenom(),
+                demain,
+                lines(postes),
                 liens.espaceAnimateur(fiche.getAccessToken()).orElse(null)));
         return true;
     }
@@ -147,8 +151,11 @@ public class RappelVeilleJob {
         List<String> lines = new ArrayList<>();
         for (PosteAffectation poste : postes) {
             lines.add(diffService.libelleCreneauSeul(new PublicationDiffService.Vacation(
-                    poste.getCreneau().getDate(), poste.heureDebutEffectif(), poste.heureFinEffectif(),
-                    poste.getStand().getId(), poste.getStand().getNom())));
+                    poste.getCreneau().getDate(),
+                    poste.heureDebutEffectif(),
+                    poste.heureFinEffectif(),
+                    poste.getStand().getId(),
+                    poste.getStand().getNom())));
         }
         return List.copyOf(lines);
     }
@@ -165,15 +172,19 @@ public class RappelVeilleJob {
         PlanningEvenement publie = planPublieService.planPublie();
         Map<String, List<PosteAffectation>> parAnimateur = new LinkedHashMap<>();
         for (PosteAffectation poste : publie.getPostes()) {
-            if (poste.getAnimateur() == null || poste.getStand() == null || poste.getCreneau() == null
+            if (poste.getAnimateur() == null
+                    || poste.getStand() == null
+                    || poste.getCreneau() == null
                     || !jour.equals(poste.getCreneau().getDate())) {
                 continue;
             }
-            parAnimateur.computeIfAbsent(poste.getAnimateur().getId(), unused -> new ArrayList<>()).add(poste);
+            parAnimateur
+                    .computeIfAbsent(poste.getAnimateur().getId(), unused -> new ArrayList<>())
+                    .add(poste);
         }
         for (List<PosteAffectation> postes : parAnimateur.values()) {
-            postes.sort(Comparator.comparing(PosteAffectation::heureDebutEffectif,
-                    Comparator.nullsLast(Comparator.naturalOrder())));
+            postes.sort(Comparator.comparing(
+                    PosteAffectation::heureDebutEffectif, Comparator.nullsLast(Comparator.naturalOrder())));
         }
         return parAnimateur;
     }

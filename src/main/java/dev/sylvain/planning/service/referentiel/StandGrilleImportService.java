@@ -1,5 +1,17 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
+import dev.sylvain.planning.service.referentiel.GrilleHorairesStands.SaisieCellule;
+import dev.sylvain.planning.service.referentiel.StandGrilleImportReport.ImportGrilleAction;
+import dev.sylvain.planning.service.referentiel.StandGrilleImportReport.ImportedColumn;
+import dev.sylvain.planning.service.referentiel.StandGrilleImportReport.ImportedGrilleRow;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -13,19 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.referentiel.GrilleHorairesStands.SaisieCellule;
-import dev.sylvain.planning.service.referentiel.StandGrilleImportReport.ImportGrilleAction;
-import dev.sylvain.planning.service.referentiel.StandGrilleImportReport.ImportedColumn;
-import dev.sylvain.planning.service.referentiel.StandGrilleImportReport.ImportedGrilleRow;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
-import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 
 /**
  * Turns the organiser's stand matrix — one row per stand, one column per
@@ -68,6 +67,7 @@ public class StandGrilleImportService {
      * row per stand, where a roster holds one per person.
      */
     static final int MAX_CHARACTERS = 1_000_000;
+
     static final int MAX_ROWS = 2_000;
 
     public static final String EXEMPLE_FICHIER = "grille-stands.csv";
@@ -146,13 +146,28 @@ public class StandGrilleImportService {
 
     /* --------------------------------- analysis -------------------------------- */
 
-    private record Analyse(String separator, List<ImportedColumn> columns, List<String> creneauxAbsents,
-            List<ImportedGrilleRow> rows, List<String> warnings, List<Stand> aEcrire) {
+    private record Analyse(
+            String separator,
+            List<ImportedColumn> columns,
+            List<String> creneauxAbsents,
+            List<ImportedGrilleRow> rows,
+            List<String> warnings,
+            List<Stand> aEcrire) {
 
         StandGrilleImportReport report(boolean applied) {
-            int accepted = (int) rows.stream().filter(row -> row.action() == ImportGrilleAction.UPDATED).count();
-            return new StandGrilleImportReport(applied, separator, columns, creneauxAbsents, rows.size(), accepted,
-                    rows.size() - accepted, rows, warnings);
+            int accepted = (int) rows.stream()
+                    .filter(row -> row.action() == ImportGrilleAction.UPDATED)
+                    .count();
+            return new StandGrilleImportReport(
+                    applied,
+                    separator,
+                    columns,
+                    creneauxAbsents,
+                    rows.size(),
+                    accepted,
+                    rows.size() - accepted,
+                    rows,
+                    warnings);
         }
     }
 
@@ -166,8 +181,8 @@ public class StandGrilleImportService {
             throw new BusinessError.Invalid("Le fichier est vide.");
         }
         if (content.length() > MAX_CHARACTERS) {
-            throw new BusinessError.Invalid("Fichier trop volumineux : " + grouped(MAX_CHARACTERS)
-                    + " caractères au maximum.");
+            throw new BusinessError.Invalid(
+                    "Fichier trop volumineux : " + grouped(MAX_CHARACTERS) + " caractères au maximum.");
         }
         List<Creneau> edition = creneaux.list();
         if (edition.isEmpty()) {
@@ -187,8 +202,14 @@ public class StandGrilleImportService {
         Set<Long> dejaPris = new HashSet<>();
         for (GrilleCsv.Colonne colonne : matrice.colonnes()) {
             if (!colonne.namesCreneau()) {
-                columns.add(new ImportedColumn(colonne.index(), colonne.libelle(), colonne.date(),
-                        colonne.heureDebut(), colonne.heureFin(), null, 0,
+                columns.add(new ImportedColumn(
+                        colonne.index(),
+                        colonne.libelle(),
+                        colonne.date(),
+                        colonne.heureDebut(),
+                        colonne.heureFin(),
+                        null,
+                        0,
                         "En-tête illisible : attendu une date et une bande « 10:00-12:00 » ou « 10h00-12h00 ». "
                                 + "Une bande devenue une date, « 30/11/1999 13:16:00 », est le signe d'un tableur qui "
                                 + "l'a convertie : repartez du modèle téléchargé, dont les bandes sont écrites avec "
@@ -205,14 +226,26 @@ public class StandGrilleImportService {
                             && Objects.equals(colonne.heureFin(), creneau.getHeureFin()))
                     .toList();
             if (cibles.isEmpty()) {
-                columns.add(new ImportedColumn(colonne.index(), colonne.libelle(), colonne.date(),
-                        colonne.heureDebut(), colonne.heureFin(), null, cibles.size(),
+                columns.add(new ImportedColumn(
+                        colonne.index(),
+                        colonne.libelle(),
+                        colonne.date(),
+                        colonne.heureDebut(),
+                        colonne.heureFin(),
+                        null,
+                        cibles.size(),
                         "Aucun créneau de l'édition à cette date et ces heures : colonne ignorée."));
                 continue;
             }
             if (cibles.stream().anyMatch(creneau -> dejaPris.contains(creneau.getId()))) {
-                columns.add(new ImportedColumn(colonne.index(), colonne.libelle(), colonne.date(),
-                        colonne.heureDebut(), colonne.heureFin(), null, cibles.size(),
+                columns.add(new ImportedColumn(
+                        colonne.index(),
+                        colonne.libelle(),
+                        colonne.date(),
+                        colonne.heureDebut(),
+                        colonne.heureFin(),
+                        null,
+                        cibles.size(),
                         colonne.dateHeritee()
                                 ? "Cette colonne n'a pas de date à elle et reprend le " + colonne.date()
                                         + " de la colonne précédente, qui nomme déjà ce créneau : elle est ignorée. "
@@ -223,8 +256,15 @@ public class StandGrilleImportService {
             List<Long> ids = cibles.stream().map(Creneau::getId).toList();
             dejaPris.addAll(ids);
             creneauParColonne.put(colonne.index(), ids);
-            columns.add(new ImportedColumn(colonne.index(), colonne.libelle(), colonne.date(),
-                    colonne.heureDebut(), colonne.heureFin(), ids.get(0), ids.size(), null));
+            columns.add(new ImportedColumn(
+                    colonne.index(),
+                    colonne.libelle(),
+                    colonne.date(),
+                    colonne.heureDebut(),
+                    colonne.heureFin(),
+                    ids.get(0),
+                    ids.size(),
+                    null));
         }
         if (creneauParColonne.isEmpty()) {
             throw new BusinessError.Invalid("Aucune colonne du fichier ne correspond à un créneau de l'édition. "
@@ -234,8 +274,8 @@ public class StandGrilleImportService {
         List<String> creneauxAbsents = new ArrayList<>();
         for (Creneau creneau : edition) {
             if (!dejaPris.contains(creneau.getId())) {
-                creneauxAbsents.add(creneau.getDate() + " " + court(creneau.getHeureDebut()) + "-"
-                        + court(creneau.getHeureFin()));
+                creneauxAbsents.add(
+                        creneau.getDate() + " " + court(creneau.getHeureDebut()) + "-" + court(creneau.getHeureFin()));
             }
         }
         if (!creneauxAbsents.isEmpty()) {
@@ -249,7 +289,8 @@ public class StandGrilleImportService {
         Map<String, List<Stand>> parNom = new HashMap<>();
         for (Stand stand : tous) {
             parId.put(stand.getId(), stand);
-            parNom.computeIfAbsent(normalise(stand.getNom()), key -> new ArrayList<>()).add(stand);
+            parNom.computeIfAbsent(normalise(stand.getNom()), key -> new ArrayList<>())
+                    .add(stand);
         }
         Map<String, Map<Long, CelluleActuelle>> actuelles = cellulesActuelles(edition);
         // Stands whose kept cells — those the file has no column for — hold an
@@ -264,20 +305,34 @@ public class StandGrilleImportService {
             List<String> reasons = new ArrayList<>();
             if (stand == null) {
                 List<Stand> candidats = parNom.getOrDefault(normalise(ligne.stand()), List.of());
-                reasons.add(candidats.size() > 1
-                        ? "Ce nom désigne " + candidats.size() + " stands (" + String.join(", ",
-                                candidats.stream().map(Stand::getId).toList()) + ") : nommez le stand par son identifiant."
-                        : "Aucun stand « " + ligne.stand() + " » dans l'édition : créez le stand d'abord, "
-                                + "l'import ne crée pas de stand (typologies et emplacement lui manqueraient).");
-                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), null, ImportGrilleAction.REJECTED, reasons, 0, 0, 0,
-                        null, null));
+                reasons.add(
+                        candidats.size() > 1
+                                ? "Ce nom désigne " + candidats.size() + " stands ("
+                                        + String.join(
+                                                ", ",
+                                                candidats.stream()
+                                                        .map(Stand::getId)
+                                                        .toList()) + ") : nommez le stand par son identifiant."
+                                : "Aucun stand « " + ligne.stand() + " » dans l'édition : créez le stand d'abord, "
+                                        + "l'import ne crée pas de stand (typologies et emplacement lui manqueraient).");
+                rows.add(new ImportedGrilleRow(
+                        ligne.line(), ligne.stand(), null, ImportGrilleAction.REJECTED, reasons, 0, 0, 0, null, null));
                 continue;
             }
             if (dejaVus.containsKey(stand.getId())) {
                 reasons.add("Le stand " + stand.getId() + " est déjà décrit ligne " + dejaVus.get(stand.getId())
                         + " : cette ligne est ignorée.");
-                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), stand.getId(), ImportGrilleAction.REJECTED, reasons,
-                        0, 0, 0, null, null));
+                rows.add(new ImportedGrilleRow(
+                        ligne.line(),
+                        ligne.stand(),
+                        stand.getId(),
+                        ImportGrilleAction.REJECTED,
+                        reasons,
+                        0,
+                        0,
+                        0,
+                        null,
+                        null));
                 continue;
             }
             Map<Long, CelluleActuelle> avant = actuelles.getOrDefault(stand.getId(), Map.of());
@@ -305,15 +360,26 @@ public class StandGrilleImportService {
                 }
             }
             if (!reasons.isEmpty()) {
-                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), stand.getId(), ImportGrilleAction.REJECTED, reasons,
-                        ouvertes, 0, 0, null, null));
+                rows.add(new ImportedGrilleRow(
+                        ligne.line(),
+                        ligne.stand(),
+                        stand.getId(),
+                        ImportGrilleAction.REJECTED,
+                        reasons,
+                        ouvertes,
+                        0,
+                        0,
+                        null,
+                        null));
                 continue;
             }
             List<SaisieCellule> saisie = new ArrayList<>();
             for (Creneau creneau : edition) {
                 saisie.add(new SaisieCellule(creneau.getId(), cellules.get(creneau.getId())));
                 CelluleActuelle actuelle = avant.get(creneau.getId());
-                if (!dejaPris.contains(creneau.getId()) && actuelle != null && actuelle.partiel()
+                if (!dejaPris.contains(creneau.getId())
+                        && actuelle != null
+                        && actuelle.partiel()
                         && !elargis.contains(stand.getId())) {
                     elargis.add(stand.getId());
                 }
@@ -323,11 +389,29 @@ public class StandGrilleImportService {
                 StandValidator.check(stand);
                 dejaVus.put(stand.getId(), ligne.line());
                 aEcrire.add(stand);
-                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), stand.getId(), ImportGrilleAction.UPDATED, List.of(),
-                        ouvertes, grille.regles(), grille.exceptions(), grille.effectifMin(), grille.effectifMax()));
+                rows.add(new ImportedGrilleRow(
+                        ligne.line(),
+                        ligne.stand(),
+                        stand.getId(),
+                        ImportGrilleAction.UPDATED,
+                        List.of(),
+                        ouvertes,
+                        grille.regles(),
+                        grille.exceptions(),
+                        grille.effectifMin(),
+                        grille.effectifMax()));
             } catch (BusinessError e) {
-                rows.add(new ImportedGrilleRow(ligne.line(), ligne.stand(), stand.getId(), ImportGrilleAction.REJECTED,
-                        List.of(e.getMessage()), ouvertes, 0, 0, null, null));
+                rows.add(new ImportedGrilleRow(
+                        ligne.line(),
+                        ligne.stand(),
+                        stand.getId(),
+                        ImportGrilleAction.REJECTED,
+                        List.of(e.getMessage()),
+                        ouvertes,
+                        0,
+                        0,
+                        null,
+                        null));
             }
         }
         if (!elargis.isEmpty()) {
@@ -346,7 +430,8 @@ public class StandGrilleImportService {
      */
     private Map<String, Map<Long, CelluleActuelle>> cellulesActuelles(List<Creneau> edition) {
         Map<String, Map<Long, CelluleActuelle>> cellules = new HashMap<>();
-        OuvertureStandsAnalyzer.RapportOuvertures rapport = OuvertureStandsAnalyzer.analyze(stands.listSolved(), edition);
+        OuvertureStandsAnalyzer.RapportOuvertures rapport =
+                OuvertureStandsAnalyzer.analyze(stands.listSolved(), edition);
         for (OuvertureStandsAnalyzer.LigneStand ligne : rapport.stands()) {
             Map<Long, CelluleActuelle> parCreneau = new HashMap<>();
             for (OuvertureStandsAnalyzer.CelluleJour jour : ligne.jours()) {
@@ -360,8 +445,7 @@ public class StandGrilleImportService {
     }
 
     /** A stand's current cell on one créneau: its headcount, and whether it only covers part of it. */
-    private record CelluleActuelle(Integer effectif, boolean partiel) {
-    }
+    private record CelluleActuelle(Integer effectif, boolean partiel) {}
 
     private static Stand resolve(String texte, Map<String, Stand> parId, Map<String, List<Stand>> parNom) {
         Stand parIdentifiant = parId.get(texte.trim());
@@ -391,7 +475,8 @@ public class StandGrilleImportService {
      * text it is.</p>
      */
     private static String bandeCsv(Creneau creneau) {
-        return court(creneau.getHeureDebut()).replace(':', 'h') + '-'
+        return court(creneau.getHeureDebut()).replace(':', 'h')
+                + '-'
                 + court(creneau.getHeureFin()).replace(':', 'h');
     }
 
@@ -423,7 +508,10 @@ public class StandGrilleImportService {
     private static void refuseSpreadsheet(String fileName, String content) {
         String name = fileName == null ? "" : fileName.toLowerCase(Locale.ROOT);
         String text = content == null ? "" : content;
-        if (name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".ods") || text.startsWith(ZIP_SIGNATURE)
+        if (name.endsWith(".xlsx")
+                || name.endsWith(".xls")
+                || name.endsWith(".ods")
+                || text.startsWith(ZIP_SIGNATURE)
                 || text.indexOf('\0') >= 0) {
             throw new BusinessError.Invalid("Ce format n'est pas accepté : seul le CSV est lu. Dans votre tableur, "
                     + "choisissez « Enregistrer sous » puis « CSV (séparateur : point-virgule) », et déposez ce "

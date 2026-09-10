@@ -16,8 +16,7 @@ import java.time.LocalTime;
  */
 public class IndisponibiliteStand extends FenetreDateeStand {
 
-    public IndisponibiliteStand() {
-    }
+    public IndisponibiliteStand() {}
 
     public IndisponibiliteStand(Long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin, String motif) {
         super(id, date, heureDebut, heureFin, motif);

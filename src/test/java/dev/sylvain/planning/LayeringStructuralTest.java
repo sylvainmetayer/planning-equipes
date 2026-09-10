@@ -43,9 +43,8 @@ class LayeringStructuralTest {
      * in {@code observability/} because its job is the Sentry report, not
      * the response.
      */
-    private static final Set<String> IMPORTS_JAX_RS_ADMIS = Set.of(
-            "service/espace/ApplicationLinks.java",
-            "observability/GlobalExceptionMapper.java");
+    private static final Set<String> IMPORTS_JAX_RS_ADMIS =
+            Set.of("service/espace/ApplicationLinks.java", "observability/GlobalExceptionMapper.java");
 
     /**
      * Any mention of the REST package in code, not just a plain {@code import}
@@ -69,19 +68,18 @@ class LayeringStructuralTest {
                     // forbids talking about the thing it forbids is a nuisance.
                     String nu = content.strip();
                     boolean commentaire = nu.startsWith("//") || nu.startsWith("*") || nu.startsWith("/*");
-                    if (!commentaire && MENTION_DE_LA_COUCHE_REST.matcher(content).find()) {
+                    if (!commentaire
+                            && MENTION_DE_LA_COUCHE_REST.matcher(content).find()) {
                         offenders.add(MCP.relativize(file) + ":" + line + " — " + content.trim());
                     }
                 }
             }
         }
 
-        assertThat(offenders)
-                .as("""
+        assertThat(offenders).as("""
                         MCP tools importing the REST layer. Both are callers of the same rules: \
                         move what is shared into service/ and let the two call it, rather than \
-                        making one of them go through the other's transport types.""")
-                .isEmpty();
+                        making one of them go through the other's transport types.""").isEmpty();
     }
 
     /**
@@ -112,12 +110,10 @@ class LayeringStructuralTest {
             }
         }
 
-        assertThat(offenders)
-                .as("""
+        assertThat(offenders).as("""
                         JAX-RS imported outside api/. A refusal is a BusinessError (Invalid, NotFound, \
                         Conflict, Stale) and BusinessErrorMapper decides its status once for every \
-                        caller, HTTP or MCP; a transport type in a service answers only one of them.""")
-                .isEmpty();
+                        caller, HTTP or MCP; a transport type in a service answers only one of them.""").isEmpty();
     }
 
     /**
@@ -147,11 +143,9 @@ class LayeringStructuralTest {
             }
         }
 
-        assertThat(offenders)
-                .as("""
+        assertThat(offenders).as("""
                         bare create*/update* on the referential façade. Call write* instead: it \
                         is the one path that records which fields moved and returns the warnings, \
-                        whichever door the write came through.""")
-                .isEmpty();
+                        whichever door the write came through.""").isEmpty();
     }
 }

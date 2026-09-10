@@ -3,17 +3,14 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.sylvain.planning.service.analyse.PlanningKpiService;
+import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
+import dev.sylvain.planning.service.solve.SnapshotComparisonService.DiffContrainte;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
-import dev.sylvain.planning.service.solve.SnapshotComparisonService.DiffContrainte;
-import dev.sylvain.planning.service.analyse.PlanningKpiService;
 
 /**
  * Violation diff of the A/B comparator (issue #70), on the static core: no
@@ -39,8 +36,8 @@ class SnapshotComparisonServiceTest {
         variante.put("posteDoitEtrePourvu", 0);
         variante.put("eviterRoulementStandsPremium", 7);
 
-        List<DiffContrainte> diff = SnapshotComparisonService.diffViolations(
-                kpiWithViolations(base), kpiWithViolations(variante));
+        List<DiffContrainte> diff =
+                SnapshotComparisonService.diffViolations(kpiWithViolations(base), kpiWithViolations(variante));
 
         assertThat(diff)
                 .extracting(DiffContrainte::contrainte, DiffContrainte::base, DiffContrainte::variante)
@@ -53,10 +50,10 @@ class SnapshotComparisonServiceTest {
     @Test
     void uneContrainteNonMesureeDUnCoteResteNulleJamaisZero() {
         List<DiffContrainte> diff = SnapshotComparisonService.diffViolations(
-                kpiWithViolations(Map.of()),
-                kpiWithViolations(Map.of("reposQuotidien", 2)));
+                kpiWithViolations(Map.of()), kpiWithViolations(Map.of("reposQuotidien", 2)));
 
-        assertThat(diff).singleElement()
+        assertThat(diff)
+                .singleElement()
                 .extracting(DiffContrainte::contrainte, DiffContrainte::base, DiffContrainte::variante)
                 .containsExactly("reposQuotidien", null, 2);
     }
@@ -69,9 +66,10 @@ class SnapshotComparisonServiceTest {
         PlanningKpi sansCarte = new ObjectMapper().readValue("{\"postesTotal\":0}", PlanningKpi.class);
         assertThat(sansCarte.violationsParContrainte()).isNull();
 
-        assertThat(SnapshotComparisonService.diffViolations(sansCarte, sansCarte)).isEmpty();
+        assertThat(SnapshotComparisonService.diffViolations(sansCarte, sansCarte))
+                .isEmpty();
         assertThat(SnapshotComparisonService.diffViolations(
-                sansCarte, kpiWithViolations(Map.of("posteDoitEtrePourvu", 1))))
+                        sansCarte, kpiWithViolations(Map.of("posteDoitEtrePourvu", 1))))
                 .singleElement()
                 .extracting(DiffContrainte::base, DiffContrainte::variante)
                 .containsExactly(null, 1);

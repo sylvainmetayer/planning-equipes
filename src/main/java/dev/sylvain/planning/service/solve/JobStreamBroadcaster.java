@@ -1,10 +1,9 @@
 package dev.sylvain.planning.service.solve;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Announces "the solver state just changed" to every open

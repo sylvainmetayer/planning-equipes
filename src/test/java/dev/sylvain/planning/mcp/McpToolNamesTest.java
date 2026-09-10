@@ -2,6 +2,8 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkiverse.mcp.server.Prompt;
+import io.quarkiverse.mcp.server.Tool;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,11 +14,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
-
-import io.quarkiverse.mcp.server.Prompt;
-import io.quarkiverse.mcp.server.Tool;
 
 /**
  * An MCP tool name cited outside the Java code — in the ready-to-copy prompt of
@@ -38,8 +36,7 @@ import io.quarkiverse.mcp.server.Tool;
  */
 class McpToolNamesTest {
 
-    private static final Path SOURCES_MCP =
-            Path.of("src/main/java/dev/sylvain/planning/mcp");
+    private static final Path SOURCES_MCP = Path.of("src/main/java/dev/sylvain/planning/mcp");
 
     /**
      * Every file that quotes tool names at the user rather than calling them.
@@ -50,6 +47,7 @@ class McpToolNamesTest {
      * prompt of the MCP page once did.</p>
      */
     private static final Path PROMPTS = Path.of("src/main/java/dev/sylvain/planning/mcp/McpPrompts.java");
+
     private static final Path DOC_MCP = Path.of("docs/mcp.md");
 
     private static final List<Path> DOCUMENTS = List.of(
@@ -92,9 +90,10 @@ class McpToolNamesTest {
                 Class<?> type;
                 try {
                     // Loaded without initialising: this test only reads annotations.
-                    type = Class.forName(SOURCES_MCP.toString().replace('/', '.')
-                            .replace("src.main.java.", "") + "." + simpleName,
-                            false, McpToolNamesTest.class.getClassLoader());
+                    type = Class.forName(
+                            SOURCES_MCP.toString().replace('/', '.').replace("src.main.java.", "") + "." + simpleName,
+                            false,
+                            McpToolNamesTest.class.getClassLoader());
                 } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
                     continue;
                 }
@@ -166,9 +165,7 @@ class McpToolNamesTest {
      */
     @Test
     void theScanReadsRealToolsAndRealCitations() throws IOException {
-        assertThat(exposedTools())
-                .as("tools found by reflection on @Tool")
-                .hasSizeGreaterThan(60);
+        assertThat(exposedTools()).as("tools found by reflection on @Tool").hasSizeGreaterThan(60);
 
         for (Path document : DOCUMENTS) {
             assertThat(document).exists();

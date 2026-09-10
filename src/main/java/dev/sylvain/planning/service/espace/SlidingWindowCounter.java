@@ -25,8 +25,7 @@ class SlidingWindowCounter {
     private final Map<String, Window> byKey = new ConcurrentHashMap<>();
 
     /** Uses counted, and the start of the window counting them. */
-    private record Window(int uses, Instant debut) {
-    }
+    private record Window(int uses, Instant debut) {}
 
     /**
      * Consumes one token for {@code key}. A negative verdict carries the delay

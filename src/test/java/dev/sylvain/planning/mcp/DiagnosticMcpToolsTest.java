@@ -3,30 +3,29 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.mcp.ContrainteMcpTools.ContrainteView;
-import dev.sylvain.planning.mcp.StandMcpTools.StandsView;
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
-import dev.sylvain.planning.service.analyse.StaffingAnalyzer.CompetenceStaffing;
-import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
-import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
-import io.quarkus.test.junit.QuarkusTest;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.mcp.ContrainteMcpTools.ContrainteView;
 import dev.sylvain.planning.mcp.DiagnosticMcpTools.PausesView;
+import dev.sylvain.planning.mcp.StandMcpTools.StandsView;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.CompetenceStaffing;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * The read-only diagnostics, and the constraint weight — everything the
@@ -93,10 +92,11 @@ class DiagnosticMcpToolsTest {
         CompetenceStaffing competence = diagnosticTools.analyser_effectifs(null).parCompetence();
 
         assertThat(competence.animateursTotal()).isPositive();
-        assertThat(competence.parTypologie()).extracting(TypologieStaffing::typologie)
+        assertThat(competence.parTypologie())
+                .extracting(TypologieStaffing::typologie)
                 .containsExactlyInAnyOrder("STRATEGIE", "HOMME_JEU");
-        assertThat(competence.parTypologie()).allSatisfy(
-                ligne -> assertThat(ligne.minimumTotal()).isPositive());
+        assertThat(competence.parTypologie())
+                .allSatisfy(ligne -> assertThat(ligne.minimumTotal()).isPositive());
         assertThat(competence.siegesNonAttribues()).isZero();
     }
 
@@ -107,7 +107,8 @@ class DiagnosticMcpToolsTest {
         // there is no seat to break down — and it is animateursTotal, not an
         // empty category list, that says why.
         loadScenario();
-        referenceDataService.listAnimateurs().stream().map(Animateur::getId)
+        referenceDataService.listAnimateurs().stream()
+                .map(Animateur::getId)
                 .forEach(referenceDataService::deleteAnimateur);
 
         StaffingSummary effectifs = diagnosticTools.analyser_effectifs(null);
@@ -138,7 +139,8 @@ class DiagnosticMcpToolsTest {
 
         RapportOuvertures filtre = diagnosticTools.analyser_ouvertures_stands(standId, null);
 
-        assertThat(filtre.stands()).singleElement()
+        assertThat(filtre.stands())
+                .singleElement()
                 .satisfies(ligne -> assertThat(ligne.standId()).isEqualTo(standId));
         assertThat(filtre.postesTotal()).isEqualTo(complet.postesTotal());
         assertThat(filtre.jours()).isEqualTo(complet.jours());
@@ -148,7 +150,10 @@ class DiagnosticMcpToolsTest {
     void unStandInconnuNeRenvoieAucuneLigneSansEchouer() {
         loadScenario();
 
-        assertThat(diagnosticTools.analyser_ouvertures_stands("STAND-INCONNU", null).stands()).isEmpty();
+        assertThat(diagnosticTools
+                        .analyser_ouvertures_stands("STAND-INCONNU", null)
+                        .stands())
+                .isEmpty();
     }
 
     @Test
@@ -171,7 +176,10 @@ class DiagnosticMcpToolsTest {
     void lePoidsDuneContrainteSeRegleEtSeRetablit() {
         loadScenario();
 
-        assertThat(contrainteTools.modifier_poids_contrainte(CONTRAINTE, 4, null).poids()).isEqualTo(4);
+        assertThat(contrainteTools
+                        .modifier_poids_contrainte(CONTRAINTE, 4, null)
+                        .poids())
+                .isEqualTo(4);
         assertThat(contrainteTools.lister_contraintes(null))
                 .filteredOn(vue -> vue.nom().equals(CONTRAINTE))
                 .singleElement()
@@ -236,10 +244,11 @@ class DiagnosticMcpToolsTest {
         assertThat(tout.journeesAnalysees()).isEqualTo(3);
         assertThat(tout.pausesDues()).isEqualTo(3);
         assertThat(tout.relaisManquants()).isEqualTo(1);
-        assertThat(tout.journees()).extracting(DiagnosticMcpTools.JourneePausesView::animateurId)
+        assertThat(tout.journees())
+                .extracting(DiagnosticMcpTools.JourneePausesView::animateurId)
                 .containsExactly("PAUSE-MCP-A", "PAUSE-MCP-B", "PAUSE-MCP-C");
-        DiagnosticMcpTools.PauseDueMcpView pauseAlice = tout.journees().getFirst().sequences().getFirst()
-                .pausesDues().getFirst();
+        DiagnosticMcpTools.PauseDueMcpView pauseAlice =
+                tout.journees().getFirst().sequences().getFirst().pausesDues().getFirst();
         assertThat(pauseAlice.heureLimite()).isEqualTo(LocalTime.of(19, 0));
         assertThat(pauseAlice.standId()).isEqualTo("PAUSE-MCP-S1");
         assertThat(pauseAlice.relaisAnimateurIds()).containsExactly("PAUSE-MCP-B");
@@ -247,15 +256,20 @@ class DiagnosticMcpToolsTest {
         assertThat(tout.toString()).doesNotContain("Martin").doesNotContain("Alice");
 
         PausesView sansRelais = diagnosticTools.analyser_pauses(null, null, true, null);
-        assertThat(sansRelais.journees()).extracting(DiagnosticMcpTools.JourneePausesView::animateurId)
+        assertThat(sansRelais.journees())
+                .extracting(DiagnosticMcpTools.JourneePausesView::animateurId)
                 .containsExactly("PAUSE-MCP-C");
         assertThat(sansRelais.pausesDues()).isEqualTo(1);
 
         PausesView surLeDuo = diagnosticTools.analyser_pauses("2026-07-11", "PAUSE-MCP-S1", null, null);
         assertThat(surLeDuo.journees()).hasSize(2);
-        assertThat(diagnosticTools.analyser_pauses("2026-07-12", null, null, null).journees()).isEmpty();
+        assertThat(diagnosticTools
+                        .analyser_pauses("2026-07-12", null, null, null)
+                        .journees())
+                .isEmpty();
 
         parametresTools.modifier_parametres_legaux(null, null, null, null, false, null);
-        assertThat(diagnosticTools.analyser_pauses(null, null, null, null).pauseSurPoste()).isFalse();
+        assertThat(diagnosticTools.analyser_pauses(null, null, null, null).pauseSurPoste())
+                .isFalse();
     }
 }

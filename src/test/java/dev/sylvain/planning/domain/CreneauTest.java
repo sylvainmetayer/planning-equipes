@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -44,8 +43,7 @@ class CreneauTest {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
         Stand stand = fermer(LocalTime.of(11, 0), LocalTime.of(13, 0));
 
-        assertThat(creneau.segmentsOuvertsMinutes(stand))
-                .containsExactly(new int[] {0, 120}, new int[] {240, 300});
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 120}, new int[] {240, 300});
         assertThat(creneau.isStandOpen(stand)).isTrue();
         assertThat(creneau.isStandFullyClosed(stand)).isFalse();
     }
@@ -100,8 +98,8 @@ class CreneauTest {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
         // heureFin before heureDebut: must never close the timeslot.
-        stand.setIndisponibilites(List.of(
-                new IndisponibiliteStand(null, JOUR, LocalTime.of(13, 0), LocalTime.of(11, 0), null)));
+        stand.setIndisponibilites(
+                List.of(new IndisponibiliteStand(null, JOUR, LocalTime.of(13, 0), LocalTime.of(11, 0), null)));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
     }
@@ -164,8 +162,8 @@ class CreneauTest {
     void ouvertureSurUneAutreDateEstIgnoree() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
-        stand.setOuvertures(List.of(
-                new OuvertureStand(null, JOUR.plusDays(5), LocalTime.of(9, 0), LocalTime.of(14, 0), null)));
+        stand.setOuvertures(
+                List.of(new OuvertureStand(null, JOUR.plusDays(5), LocalTime.of(9, 0), LocalTime.of(14, 0), null)));
 
         // No opening that day (and no closing either): open by default.
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
@@ -175,8 +173,8 @@ class CreneauTest {
     void ouvertureApresMinuitDansUnCreneauQuiTraverseMinuit() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(20, 0), LocalTime.of(2, 0));
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
-        stand.setOuvertures(List.of(
-                new OuvertureStand(null, JOUR.plusDays(1), LocalTime.of(0, 30), LocalTime.of(1, 30), null)));
+        stand.setOuvertures(
+                List.of(new OuvertureStand(null, JOUR.plusDays(1), LocalTime.of(0, 30), LocalTime.of(1, 30), null)));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {270, 330});
     }
@@ -187,8 +185,7 @@ class CreneauTest {
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
         // heureFin before heureDebut: must never open the timeslot — a stand
         // with no valid opening that day stays open by default.
-        stand.setOuvertures(List.of(
-                new OuvertureStand(null, JOUR, LocalTime.of(13, 0), LocalTime.of(11, 0), null)));
+        stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, LocalTime.of(13, 0), LocalTime.of(11, 0), null)));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
     }
@@ -250,7 +247,8 @@ class CreneauTest {
     void ouvertureSansHeureFinCommencantApresLeCreneauNeLOuvrePas() {
         Creneau matin = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
 
-        assertThat(matin.segmentsOuvertsMinutes(open(LocalTime.of(14, 0), null))).isEmpty();
+        assertThat(matin.segmentsOuvertsMinutes(open(LocalTime.of(14, 0), null)))
+                .isEmpty();
     }
 
     /* ------------------- Dated window of the next day ------------------- */
@@ -268,13 +266,12 @@ class CreneauTest {
     void ouvertureDuLendemainNAffectePasUnCreneauQuiNeTraversePasMinuit() {
         Creneau journee = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0));
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
-        stand.setIndisponibilites(List.of(
-                new IndisponibiliteStand(null, JOUR, LocalTime.of(14, 0), LocalTime.of(16, 0), null)));
-        stand.setOuvertures(List.of(
-                new OuvertureStand(null, JOUR.plusDays(1), LocalTime.of(10, 0), LocalTime.of(20, 0), null)));
+        stand.setIndisponibilites(
+                List.of(new IndisponibiliteStand(null, JOUR, LocalTime.of(14, 0), LocalTime.of(16, 0), null)));
+        stand.setOuvertures(
+                List.of(new OuvertureStand(null, JOUR.plusDays(1), LocalTime.of(10, 0), LocalTime.of(20, 0), null)));
 
-        assertThat(journee.segmentsOuvertsMinutes(stand))
-                .containsExactly(new int[] {0, 240}, new int[] {360, 600});
+        assertThat(journee.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 240}, new int[] {360, 600});
     }
 
     /* --------------------- Effective windows ----------------------- */
@@ -297,8 +294,8 @@ class CreneauTest {
     void unSegmentSuitLesFenetresEffectivesQuandEllesSontRenseignees() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0));
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
-        stand.setFenetresEffectives(List.of(), List.of(
-                new OuvertureStand(null, JOUR, LocalTime.of(14, 0), null, null)));
+        stand.setFenetresEffectives(
+                List.of(), List.of(new OuvertureStand(null, JOUR, LocalTime.of(14, 0), null, null)));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {240, 600});
         // The persisted lists stayed empty: a save could not freeze the expansion.

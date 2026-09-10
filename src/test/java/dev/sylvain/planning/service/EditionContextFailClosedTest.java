@@ -3,14 +3,12 @@ package dev.sylvain.planning.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import java.sql.PreparedStatement;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
 import org.junit.jupiter.api.Test;
-
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 
 /**
  * A thread that left its request behind must not be told an edition it never
@@ -80,14 +78,14 @@ class EditionContextFailClosedTest {
      */
     @Test
     void offRequestAWriteIsRefusedRatherThanAppliedToTheDefaultEdition() {
-        assertThatThrownBy(() -> onAnotherThread(() ->
-                editionScope.writeAndReturn("suppression de test", connection -> {
-                    try (PreparedStatement ps = editionScope.prepareScoped(connection,
-                            "DELETE FROM stand WHERE edition_id = ? AND id = ?")) {
-                        ps.setString(2, "ce-stand-n-existe-pas");
-                        return ps.executeUpdate();
-                    }
-                })))
+        assertThatThrownBy(() ->
+                        onAnotherThread(() -> editionScope.writeAndReturn("suppression de test", connection -> {
+                            try (PreparedStatement ps = editionScope.prepareScoped(
+                                    connection, "DELETE FROM stand WHERE edition_id = ? AND id = ?")) {
+                                ps.setString(2, "ce-stand-n-existe-pas");
+                                return ps.executeUpdate();
+                            }
+                        })))
                 .cause()
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("executeIn");

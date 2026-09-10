@@ -1,5 +1,8 @@
 package dev.sylvain.planning.service.publication;
 
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -13,10 +16,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Who has to be told, and what to tell them (issue #245): compares an
@@ -80,8 +79,7 @@ public class PublicationDiffService {
      *                   animateur — the same one, so nothing is announced that
      *                   was not reviewed
      */
-    public record ChangementVacation(TypeChangement type, Vacation vacation, Vacation precedente, String libelle) {
-    }
+    public record ChangementVacation(TypeChangement type, Vacation vacation, Vacation precedente, String libelle) {}
 
     /**
      * Everything one person has to be told.
@@ -91,9 +89,12 @@ public class PublicationDiffService {
      *                          new to them, so it is announced as a planning
      *                          rather than as a list of corrections
      */
-    public record ChangementAnimateur(String animateurId, String nomAffiche, String email,
-            boolean premiereDiffusion, List<ChangementVacation> changements) {
-    }
+    public record ChangementAnimateur(
+            String animateurId,
+            String nomAffiche,
+            String email,
+            boolean premiereDiffusion,
+            List<ChangementVacation> changements) {}
 
     /**
      * The people whose schedule differs between the two plans, named, sorted
@@ -111,7 +112,8 @@ public class PublicationDiffService {
      *                           all, which makes every recipient a first
      *                           delivery
      */
-    public List<ChangementAnimateur> comparer(Map<String, List<Vacation>> publie,
+    public List<ChangementAnimateur> comparer(
+            Map<String, List<Vacation>> publie,
             Map<String, List<Vacation>> courant,
             Map<String, Identite> identites,
             boolean jamaisPublie) {
@@ -126,21 +128,23 @@ public class PublicationDiffService {
                 continue;
             }
             List<ChangementVacation> changements = changements(
-                    publie.getOrDefault(animateurId, List.of()),
-                    courant.getOrDefault(animateurId, List.of()));
+                    publie.getOrDefault(animateurId, List.of()), courant.getOrDefault(animateurId, List.of()));
             if (changements.isEmpty()) {
                 continue;
             }
-            resultat.add(new ChangementAnimateur(animateurId, identite.nomAffiche(), identite.email(),
-                    jamaisPublie || !publie.containsKey(animateurId), changements));
+            resultat.add(new ChangementAnimateur(
+                    animateurId,
+                    identite.nomAffiche(),
+                    identite.email(),
+                    jamaisPublie || !publie.containsKey(animateurId),
+                    changements));
         }
         resultat.sort(Comparator.comparing(ChangementAnimateur::nomAffiche, String.CASE_INSENSITIVE_ORDER));
         return List.copyOf(resultat);
     }
 
     /** Display name and address of one animateur — all the diff needs of a fiche. */
-    public record Identite(String nomAffiche, String email) {
-    }
+    public record Identite(String nomAffiche, String email) {}
 
     /**
      * An animateur's schedule as this diff defines it: their seats, keyed by
@@ -162,9 +166,14 @@ public class PublicationDiffService {
             if (poste.getAnimateur() == null || poste.getStand() == null || poste.getCreneau() == null) {
                 continue;
             }
-            byAnimateur.computeIfAbsent(poste.getAnimateur().getId(), unused -> new ArrayList<>())
-                    .add(new Vacation(poste.getCreneau().getDate(), poste.heureDebutEffectif(),
-                            poste.heureFinEffectif(), poste.getStand().getId(), poste.getStand().getNom()));
+            byAnimateur
+                    .computeIfAbsent(poste.getAnimateur().getId(), unused -> new ArrayList<>())
+                    .add(new Vacation(
+                            poste.getCreneau().getDate(),
+                            poste.heureDebutEffectif(),
+                            poste.heureFinEffectif(),
+                            poste.getStand().getId(),
+                            poste.getStand().getNom()));
         }
         return byAnimateur;
     }
@@ -213,18 +222,22 @@ public class PublicationDiffService {
         for (Vacation retrait : retraits.values()) {
             changements.add(new ChangementVacation(TypeChangement.RETRAIT, retrait, null, libelleRetrait(retrait)));
         }
-        changements.sort(Comparator
-                .comparing((ChangementVacation changement) -> changement.vacation().date())
-                .thenComparing(changement -> changement.vacation().debut(),
-                        Comparator.nullsLast(Comparator.naturalOrder())));
+        changements.sort(Comparator.comparing(
+                        (ChangementVacation changement) -> changement.vacation().date())
+                .thenComparing(
+                        changement -> changement.vacation().debut(), Comparator.nullsLast(Comparator.naturalOrder())));
         return List.copyOf(changements);
     }
 
     /** Same day, same hours, another stand: the swap case, and the most frequent one. */
-    private void apparierMemesHeures(Map<String, Vacation> retraits, Map<String, Vacation> ajouts,
-            List<ChangementVacation> changements) {
-        apparier(retraits, ajouts, changements,
-                vacation -> vacation.date() + "|" + vacation.debut() + "|" + vacation.fin(), false);
+    private void apparierMemesHeures(
+            Map<String, Vacation> retraits, Map<String, Vacation> ajouts, List<ChangementVacation> changements) {
+        apparier(
+                retraits,
+                ajouts,
+                changements,
+                vacation -> vacation.date() + "|" + vacation.debut() + "|" + vacation.fin(),
+                false);
     }
 
     /**
@@ -233,14 +246,16 @@ public class PublicationDiffService {
      * two seats on the same stand the same day (morning and evening) are two
      * distinct vacations, and pairing them would invent a move nobody made.
      */
-    private void apparierMemeStand(Map<String, Vacation> retraits, Map<String, Vacation> ajouts,
-            List<ChangementVacation> changements) {
-        apparier(retraits, ajouts, changements,
-                vacation -> vacation.date() + "|" + vacation.standId(), true);
+    private void apparierMemeStand(
+            Map<String, Vacation> retraits, Map<String, Vacation> ajouts, List<ChangementVacation> changements) {
+        apparier(retraits, ajouts, changements, vacation -> vacation.date() + "|" + vacation.standId(), true);
     }
 
-    private void apparier(Map<String, Vacation> retraits, Map<String, Vacation> ajouts,
-            List<ChangementVacation> changements, Function<Vacation, String> cle,
+    private void apparier(
+            Map<String, Vacation> retraits,
+            Map<String, Vacation> ajouts,
+            List<ChangementVacation> changements,
+            Function<Vacation, String> cle,
             boolean exigerUnicite) {
         Map<String, List<Vacation>> retraitsParCle = grouper(retraits.values(), cle);
         Map<String, List<Vacation>> ajoutsParCle = grouper(ajouts.values(), cle);
@@ -259,17 +274,17 @@ public class PublicationDiffService {
                 Vacation retrait = candidatsRetraits.get(i);
                 ajouts.remove(ajout.cle());
                 retraits.remove(retrait.cle());
-                changements.add(new ChangementVacation(TypeChangement.DEPLACEMENT, ajout, retrait,
-                        libelleDeplacement(ajout, retrait)));
+                changements.add(new ChangementVacation(
+                        TypeChangement.DEPLACEMENT, ajout, retrait, libelleDeplacement(ajout, retrait)));
             }
         }
     }
 
-    private Map<String, List<Vacation>> grouper(Collection<Vacation> vacations,
-            Function<Vacation, String> cle) {
+    private Map<String, List<Vacation>> grouper(Collection<Vacation> vacations, Function<Vacation, String> cle) {
         Map<String, List<Vacation>> groupes = new LinkedHashMap<>();
         for (Vacation vacation : vacations) {
-            groupes.computeIfAbsent(cle.apply(vacation), unused -> new ArrayList<>()).add(vacation);
+            groupes.computeIfAbsent(cle.apply(vacation), unused -> new ArrayList<>())
+                    .add(vacation);
         }
         return groupes;
     }
@@ -301,9 +316,8 @@ public class PublicationDiffService {
     }
 
     private static String creneau(Vacation vacation) {
-        String nom = vacation.standNom() == null || vacation.standNom().isBlank()
-                ? vacation.standId()
-                : vacation.standNom();
+        String nom =
+                vacation.standNom() == null || vacation.standNom().isBlank() ? vacation.standId() : vacation.standNom();
         return nom + " " + heure(vacation.debut()) + "-" + heure(vacation.fin());
     }
 

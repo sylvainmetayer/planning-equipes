@@ -1,15 +1,13 @@
 package dev.sylvain.planning.service.backup;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-
 import javax.sql.DataSource;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 /**
  * The single row of {@code backup_settings}: the suspend switch and the report
@@ -29,8 +27,8 @@ public class BackupRepository {
 
     public boolean isActive() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(
-                        "SELECT actif FROM backup_settings WHERE id = TRUE");
+                PreparedStatement statement =
+                        connection.prepareStatement("SELECT actif FROM backup_settings WHERE id = TRUE");
                 ResultSet rows = statement.executeQuery()) {
             return rows.next() && rows.getBoolean("actif");
         } catch (SQLException e) {
@@ -63,8 +61,11 @@ public class BackupRepository {
             if (attemptedAt == null) {
                 return BackupRun.never();
             }
-            return new BackupRun(attemptedAt.toInstant(), rows.getBoolean("dernier_succes"),
-                    rows.getString("dernier_fichier"), rows.getString("dernier_message"));
+            return new BackupRun(
+                    attemptedAt.toInstant(),
+                    rows.getBoolean("dernier_succes"),
+                    rows.getString("dernier_fichier"),
+                    rows.getString("dernier_message"));
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the last automatic backup", e);
         }

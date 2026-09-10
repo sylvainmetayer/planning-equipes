@@ -3,7 +3,6 @@ package dev.sylvain.planning.service.referentiel;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -16,8 +15,7 @@ class AnimateurCsvMappingTest {
     @Test
     void recognisesTheUsualFrenchHeaders() {
         AnimateurCsvMapping mapping = AnimateurCsvMapping.propose(
-                List.of("Prénom", "Nom", "Date de naissance", "E-mail", "Compétences",
-                        "Jours indisponibles"));
+                List.of("Prénom", "Nom", "Date de naissance", "E-mail", "Compétences", "Jours indisponibles"));
 
         assertThat(mapping.prenom()).isZero();
         assertThat(mapping.nom()).isEqualTo(1);
@@ -29,8 +27,7 @@ class AnimateurCsvMappingTest {
 
     @Test
     void recognisesEnglishHeadersToo() {
-        AnimateurCsvMapping mapping =
-                AnimateurCsvMapping.propose(List.of("First name", "Last name", "Birth date"));
+        AnimateurCsvMapping mapping = AnimateurCsvMapping.propose(List.of("First name", "Last name", "Birth date"));
 
         assertThat(mapping.prenom()).isZero();
         assertThat(mapping.nom()).isEqualTo(1);

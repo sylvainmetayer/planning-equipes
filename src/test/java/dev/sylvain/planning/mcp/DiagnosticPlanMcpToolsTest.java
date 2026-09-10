@@ -3,19 +3,17 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.SolveurMcpTools.DiagnosticPlanView;
 import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@code diagnostiquer_plan} replaces a tool that launched a full solve and
@@ -31,8 +29,10 @@ class DiagnosticPlanMcpToolsTest {
     private static final int MAX_POLLS = 160;
     private static final long POLL_INTERVAL_MS = 250;
 
-    private static final Set<String> ETATS_TERMINAUX = Stream.of(JobStatus.COMPLETED, JobStatus.FAILED,
-            JobStatus.CANCELLED, JobStatus.INTERROMPU).map(Enum::name).collect(Collectors.toSet());
+    private static final Set<String> ETATS_TERMINAUX = Stream.of(
+                    JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED, JobStatus.INTERROMPU)
+            .map(Enum::name)
+            .collect(Collectors.toSet());
 
     @Inject
     ScenarioMcpTools scenarioTools;
@@ -57,13 +57,11 @@ class DiagnosticPlanMcpToolsTest {
 
         assertThat(vue.score()).isNotBlank();
         assertThat(vue.postesNonPourvus()).isGreaterThanOrEqualTo(0);
-        assertThat(vue.contraintes())
-                .isNotEmpty()
-                .allSatisfy(contrainte -> {
-                    assertThat(contrainte.name()).isNotBlank();
-                    assertThat(contrainte.score()).isNotBlank();
-                    assertThat(contrainte.nombreCorrespondances()).isGreaterThanOrEqualTo(0);
-                });
+        assertThat(vue.contraintes()).isNotEmpty().allSatisfy(contrainte -> {
+            assertThat(contrainte.name()).isNotBlank();
+            assertThat(contrainte.score()).isNotBlank();
+            assertThat(contrainte.nombreCorrespondances()).isGreaterThanOrEqualTo(0);
+        });
         assertThat(solverJobService.findActive())
                 .as("un diagnostic ne lance aucune résolution")
                 .isEmpty();

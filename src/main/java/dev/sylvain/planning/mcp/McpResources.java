@@ -1,12 +1,11 @@
 package dev.sylvain.planning.mcp;
 
-import java.util.stream.Collectors;
-
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import io.quarkiverse.mcp.server.Resource;
 import io.quarkiverse.mcp.server.TextResourceContents;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.util.stream.Collectors;
 
 /**
  * The two pieces of context an assistant cannot deduce from the tools: what
@@ -28,7 +27,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class McpResources {
 
-    @Resource(uri = "planning://contraintes", name = "catalogue-contraintes",
+    @Resource(
+            uri = "planning://contraintes",
+            name = "catalogue-contraintes",
             description = "Le catalogue des contraintes du solveur : niveau, catégorie et ce que chacune "
                     + "cherche à obtenir. Généré depuis le code du solveur, donc toujours à jour.",
             mimeType = "text/markdown")
@@ -55,7 +56,9 @@ public class McpResources {
                 """.formatted(tableau));
     }
 
-    @Resource(uri = "planning://vocabulaire", name = "vocabulaire-planning",
+    @Resource(
+            uri = "planning://vocabulaire",
+            name = "vocabulaire-planning",
             description = "Le vocabulaire métier de l'application : stand, créneau, poste, vacation, "
                     + "amplitude, typologie, découpage, édition. À lire avant de manipuler les outils.",
             mimeType = "text/markdown")
@@ -105,7 +108,7 @@ public class McpResources {
     }
 
     private static String ligne(ConstraintDefinition definition) {
-        return "| `" + definition.name() + "` | " + definition.niveau().name() + " | "
-                + definition.categorie() + " | " + definition.description() + " |";
+        return "| `" + definition.name() + "` | " + definition.niveau().name() + " | " + definition.categorie() + " | "
+                + definition.description() + " |";
     }
 }

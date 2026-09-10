@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -60,7 +59,9 @@ class ScenarioValidatorTest {
 
         List<String> erreurs = ScenarioValidator.validate(sansTypologie);
 
-        assertThat(erreurs).singleElement().asString()
+        assertThat(erreurs)
+                .singleElement()
+                .asString()
                 .startsWith("stands[0].typologiesProposees:")
                 .contains("au moins une typologie");
     }
@@ -88,7 +89,8 @@ class ScenarioValidatorTest {
      */
     @Test
     void unEffectifNegatifEstSignaleMaisPasUnEffectifNul() throws IOException {
-        assertThat(ScenarioValidator.validate(MINIMAL.replace("effectifMin: 1", "effectifMin: 0"))).isEmpty();
+        assertThat(ScenarioValidator.validate(MINIMAL.replace("effectifMin: 1", "effectifMin: 0")))
+                .isEmpty();
 
         assertThat(ScenarioValidator.validate(MINIMAL.replace("effectifMin: 1", "effectifMin: -1")))
                 .anySatisfy(erreur -> assertThat(erreur).contains("stands[0].effectifMin"));

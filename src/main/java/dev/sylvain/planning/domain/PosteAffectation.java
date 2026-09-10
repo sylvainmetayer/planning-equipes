@@ -1,18 +1,18 @@
 package dev.sylvain.planning.domain;
 
-import java.time.LocalTime;
-
 import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.entity.PlanningPin;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import dev.sylvain.planning.solver.PosteAffectationDifficultyComparatorFactory;
+import java.time.LocalTime;
 
 @PlanningEntity(comparatorFactoryClass = PosteAffectationDifficultyComparatorFactory.class)
 public class PosteAffectation {
 
     @PlanningId
     private String id;
+
     private Stand stand;
     private Creneau creneau;
     /**
@@ -25,6 +25,7 @@ public class PosteAffectation {
      * pre-existing créneau, so it lives here instead.
      */
     private LocalTime heureDebutEffective;
+
     private LocalTime heureFinEffective;
 
     /**
@@ -49,8 +50,7 @@ public class PosteAffectation {
     @PlanningPin
     private boolean verrouille;
 
-    public PosteAffectation() {
-    }
+    public PosteAffectation() {}
 
     public PosteAffectation(String id, Stand stand, Creneau creneau) {
         this.id = id;
@@ -137,7 +137,8 @@ public class PosteAffectation {
         }
         int debutSecondes = debut.toSecondOfDay();
         int finSecondes = fin.toSecondOfDay();
-        int secondes = finSecondes > debutSecondes ? finSecondes - debutSecondes : (24 * 3600 - debutSecondes) + finSecondes;
+        int secondes =
+                finSecondes > debutSecondes ? finSecondes - debutSecondes : (24 * 3600 - debutSecondes) + finSecondes;
         return secondes / 60;
     }
 }

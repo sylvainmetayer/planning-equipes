@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
@@ -54,17 +54,16 @@ public final class ScenarioYaml {
      * SnakeYAML's own integer pattern, minus its last alternative
      * {@code [-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+} — the sexagesimal one.
      */
-    private static final Pattern INT_WITHOUT_SEXAGESIMAL = Pattern.compile(
-            "^(?:[-+]?0b_*[0-1_]+|[-+]?0_*[0-7_]+|[-+]?(?:0|[1-9][0-9_]*)|[-+]?0x_*[0-9a-fA-F_]+)$");
+    private static final Pattern INT_WITHOUT_SEXAGESIMAL =
+            Pattern.compile("^(?:[-+]?0b_*[0-1_]+|[-+]?0_*[0-7_]+|[-+]?(?:0|[1-9][0-9_]*)|[-+]?0x_*[0-9a-fA-F_]+)$");
 
     /** Same idea for floats: {@code [-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*} is dropped. */
-    private static final Pattern FLOAT_WITHOUT_SEXAGESIMAL = Pattern.compile(
-            "^(?:[-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?"
+    private static final Pattern FLOAT_WITHOUT_SEXAGESIMAL =
+            Pattern.compile("^(?:[-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?"
                     + "|\\.[0-9_]+(?:[eE][-+][0-9]+)?"
                     + "|[-+]?\\.(?:inf|Inf|INF)|\\.(?:nan|NaN|NAN))$");
 
-    private ScenarioYaml() {
-    }
+    private ScenarioYaml() {}
 
     /**
      * How a {@link dev.sylvain.planning.scenario.dto.ScenarioDto} becomes the
@@ -107,8 +106,11 @@ public final class ScenarioYaml {
         LoaderOptions options = new LoaderOptions();
         options.setCodePointLimit(Integer.MAX_VALUE);
         options.setMaxAliasesForCollections(MAX_ALIASES);
-        return new Yaml(new SafeConstructor(options), new org.yaml.snakeyaml.representer.Representer(
-                new org.yaml.snakeyaml.DumperOptions()), new org.yaml.snakeyaml.DumperOptions(), options,
+        return new Yaml(
+                new SafeConstructor(options),
+                new org.yaml.snakeyaml.representer.Representer(new org.yaml.snakeyaml.DumperOptions()),
+                new org.yaml.snakeyaml.DumperOptions(),
+                options,
                 new NoSexagesimalResolver());
     }
 

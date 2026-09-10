@@ -2,16 +2,14 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.ContrainteMcpTools.ContrainteView;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 class ContrainteMcpToolsTest {
 
@@ -36,8 +34,8 @@ class ContrainteMcpToolsTest {
 
     @Test
     void fusionneLeDiagnosticDeLaDerniereAnalyse() {
-        ConstraintDiagnostic diagnostic = new ConstraintDiagnostic("posteDoitEtrePourvu", "-3hard/0medium/0soft", 3,
-                List.of("poste P1 non pourvu"));
+        ConstraintDiagnostic diagnostic = new ConstraintDiagnostic(
+                "posteDoitEtrePourvu", "-3hard/0medium/0soft", 3, List.of("poste P1 non pourvu"));
 
         ContrainteView view = ContrainteMcpTools.toView(DEFINITION, diagnostic, Set.of(), Map.of());
 
@@ -47,8 +45,7 @@ class ContrainteMcpToolsTest {
 
     @Test
     void remonteLePoidsEffectifDeLaContrainte() {
-        ContrainteView regle = ContrainteMcpTools.toView(DEFINITION, null, Set.of(),
-                Map.of("posteDoitEtrePourvu", 5));
+        ContrainteView regle = ContrainteMcpTools.toView(DEFINITION, null, Set.of(), Map.of("posteDoitEtrePourvu", 5));
 
         assertThat(regle.poids()).isEqualTo(5);
     }

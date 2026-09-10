@@ -2,11 +2,10 @@ package dev.sylvain.planning.observability;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-
 import io.sentry.SentryEvent;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryException;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**

@@ -6,12 +6,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * The diagnostic must be available on the setup screen <em>before</em> any
@@ -24,14 +22,15 @@ class FeasibilityResourceTest {
     void diagnostiqueLesDonneesDeReferenceSansAucuneResolution() {
         seedScenario();
 
-        JsonPath report = given()
-                .when().get("/api/feasibility")
+        JsonPath report = given().when()
+                .get("/api/feasibility")
                 .then()
                 .statusCode(200)
                 .body("feasible", notNullValue())
                 .body("message", notNullValue())
                 .body("causes.size()", lessThanOrEqualTo(10))
-                .extract().jsonPath();
+                .extract()
+                .jsonPath();
 
         List<Object> causes = report.getList("causes");
         int totalCauses = report.getInt("totalCauses");
@@ -57,8 +56,7 @@ class FeasibilityResourceTest {
     void creneauSansAucunAnimateurRemonteEnCauseCritique() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "id":"STAND-FEASIBILITY",
@@ -69,12 +67,12 @@ class FeasibilityResourceTest {
                           "reserveMajeurs":false
                         }
                         """)
-                .when().post("/api/stands")
+                .when()
+                .post("/api/stands")
                 .then()
                 .statusCode(200);
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "jour":1,
@@ -83,12 +81,13 @@ class FeasibilityResourceTest {
                           "heureFin":"12:00:00"
                         }
                         """)
-                .when().post("/api/creneaux")
+                .when()
+                .post("/api/creneaux")
                 .then()
                 .statusCode(200);
 
-        given()
-                .when().get("/api/feasibility")
+        given().when()
+                .get("/api/feasibility")
                 .then()
                 .statusCode(200)
                 .body("feasible", equalTo(false))
@@ -107,8 +106,8 @@ class FeasibilityResourceTest {
 
     private static void seedScenario() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
     }

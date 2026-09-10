@@ -1,5 +1,9 @@
 package dev.sylvain.planning.service.edition;
 
+import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,13 +12,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Edition;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * Direct JDBC access to the {@code edition} table — the editions the whole
@@ -48,33 +46,34 @@ public class EditionRepository {
             // espace link and a calendar subscription each keep designating
             // exactly one edition.
             new TableToCopy("animateur", "id, prenom, nom, date_naissance, manager, email"),
-            new TableToCopy("stand",
+            new TableToCopy(
+                    "stand",
                     "id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, niveau_effort, famille"),
             new TableToCopy("animateur_competence", "animateur_id, typologie, niveau"),
             new TableToCopy("animateur_jour_indispo", "animateur_id, jour"),
             new TableToCopy("animateur_souhait", "animateur_id, typologie"),
             new TableToCopy("stand_typologie", "stand_id, typologie"),
-            new TableToCopy("stand_indisponibilite",
-                    "stand_id, date_indisponibilite, heure_debut, heure_fin, motif"),
-            new TableToCopy("stand_ouverture",
-                    "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif"),
+            new TableToCopy("stand_indisponibilite", "stand_id, date_indisponibilite, heure_debut, heure_fin, motif"),
+            new TableToCopy("stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif"),
             // The recurring opening rules (V37) predated by this list: without
             // them a duplicated edition silently fell back to « open on every
             // slot ». Their BIGSERIAL ids are kept as-is — the PKs are
             // composite (edition_id, id), the child FK follows the new
             // edition_id, and the shared sequence has already consumed those
             // values, so future inserts cannot collide.
-            new TableToCopy("stand_horaire",
+            new TableToCopy(
+                    "stand_horaire",
                     "id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif"),
-            new TableToCopy("stand_horaire_fenetre",
-                    "id, horaire_id, position, heure_debut, heure_fin, effectif"),
+            new TableToCopy("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin, effectif"),
             new TableToCopy("constraint_toggle", "nom"),
             new TableToCopy("ponderation_contrainte", "nom, poids"),
-            new TableToCopy("parametres_legaux",
+            new TableToCopy(
+                    "parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
                             + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes, "
                             + "pause_sur_poste"),
-            new TableToCopy("parametres_decoupage",
+            new TableToCopy(
+                    "parametres_decoupage",
                     "duree_vacation_cible_minutes, duree_vacation_min_minutes, duree_vacation_max_minutes, "
                             + "duree_chevauchement_minutes, duree_pause_repas_minutes, fenetre_repas_midi_debut, "
                             + "fenetre_repas_midi_fin, fenetre_repas_soir_debut, fenetre_repas_soir_fin, "
@@ -82,8 +81,7 @@ public class EditionRepository {
                             + "duree_decalage_max_minutes, mode_grille"),
             new TableToCopy("parametres_solveur", "duree_resolution_secondes"));
 
-    private record TableToCopy(String nom, String colonnes) {
-    }
+    private record TableToCopy(String nom, String colonnes) {}
 
     @Inject
     DataSource dataSource;
@@ -99,7 +97,10 @@ public class EditionRepository {
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Timestamp creeLe = rs.getTimestamp("cree_le");
-                editions.add(new Edition(rs.getString("id"), rs.getString("nom"), rs.getBoolean("defaut"),
+                editions.add(new Edition(
+                        rs.getString("id"),
+                        rs.getString("nom"),
+                        rs.getBoolean("defaut"),
                         creeLe != null ? creeLe.toInstant() : null));
             }
         } catch (SQLException e) {
@@ -142,8 +143,7 @@ public class EditionRepository {
     /** Creates the edition, or renames it if it already exists — {@code defaut} is never touched here. */
     public void save(Edition edition) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(
-                        """
+                PreparedStatement ps = connection.prepareStatement("""
                         INSERT INTO edition (id, nom, defaut)
                         VALUES (?, ?, FALSE)
                         ON CONFLICT (id)
@@ -167,8 +167,7 @@ public class EditionRepository {
             try (PreparedStatement ps = connection.prepareStatement("UPDATE edition SET defaut = FALSE")) {
                 ps.executeUpdate();
             }
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "UPDATE edition SET defaut = TRUE WHERE id = ?")) {
+            try (PreparedStatement ps = connection.prepareStatement("UPDATE edition SET defaut = TRUE WHERE id = ?")) {
                 ps.setString(1, id);
                 ps.executeUpdate();
             }
@@ -212,8 +211,8 @@ public class EditionRepository {
     private void copyTable(Connection connection, TableToCopy table, String sourceId, String cibleId)
             throws SQLException {
         // Column lists come from the constant above, never from user input.
-        try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO " + table.nom() + " (edition_id, " + table.colonnes() + ") "
+        try (PreparedStatement ps =
+                connection.prepareStatement("INSERT INTO " + table.nom() + " (edition_id, " + table.colonnes() + ") "
                         + "SELECT ?, " + table.colonnes() + " FROM " + table.nom() + " WHERE edition_id = ?")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
@@ -233,8 +232,7 @@ public class EditionRepository {
             statement.execute("CREATE TEMPORARY TABLE creneau_remap ("
                     + "ancien_id BIGINT PRIMARY KEY, nouvel_id BIGINT NOT NULL) ON COMMIT DROP");
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
+        try (PreparedStatement ps = connection.prepareStatement("""
                 INSERT INTO creneau_remap (ancien_id, nouvel_id)
                 SELECT id, nextval(pg_get_serial_sequence('creneau', 'id'))
                 FROM creneau
@@ -242,8 +240,7 @@ public class EditionRepository {
             ps.setString(1, sourceId);
             ps.executeUpdate();
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
+        try (PreparedStatement ps = connection.prepareStatement("""
                 INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, famille, couverture_pause)
                 SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause
                 FROM creneau c
@@ -253,8 +250,7 @@ public class EditionRepository {
             ps.setString(2, sourceId);
             ps.executeUpdate();
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
+        try (PreparedStatement ps = connection.prepareStatement("""
                 INSERT INTO creneau_stand_ouvert (edition_id, creneau_id, stand_id)
                 SELECT ?, r.nouvel_id, cso.stand_id
                 FROM creneau_stand_ouvert cso
@@ -268,8 +264,7 @@ public class EditionRepository {
 
     /** Ad hoc constraints last: they reference both a stand and a (remapped) créneau. */
     private void copyContraintesAdHoc(Connection connection, String sourceId, String cibleId) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
+        try (PreparedStatement ps = connection.prepareStatement("""
                 INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le)
                 SELECT ?, c.id, c.type, r.nouvel_id, c.stand_id, c.raison, c.cree_par, c.cree_le
                 FROM contrainte_ad_hoc c
@@ -279,8 +274,7 @@ public class EditionRepository {
             ps.setString(2, sourceId);
             ps.executeUpdate();
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
+        try (PreparedStatement ps = connection.prepareStatement("""
                 INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position)
                 SELECT ?, contrainte_id, animateur_id, position
                 FROM contrainte_animateur
@@ -290,5 +284,4 @@ public class EditionRepository {
             ps.executeUpdate();
         }
     }
-
 }

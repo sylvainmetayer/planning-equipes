@@ -4,12 +4,11 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-import java.util.List;
-import java.util.Map;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,8 +32,13 @@ class ComparateurSnapshotsResourceTest {
     /** Editions created by a test are dropped, so the shared database is left as found. */
     @AfterEach
     void supprimerLesEditionsCreees() {
-        List<Map<String, Object>> editions =
-                given().when().get("/api/editions").then().statusCode(200).extract().jsonPath().getList("$");
+        List<Map<String, Object>> editions = given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("$");
         for (Map<String, Object> edition : editions) {
             String id = (String) edition.get("id");
             if (!DEFAUT.equals(id)) {
@@ -104,62 +108,88 @@ class ComparateurSnapshotsResourceTest {
 
         // And both are offered as sides, whichever edition the browser sits on.
         List<Object> ids = given().header(HEADER, DEFAUT)
-                .when().get("/api/planning/snapshots/comparables")
-                .then().statusCode(200)
-                .extract().jsonPath().getList("id");
+                .when()
+                .get("/api/planning/snapshots/comparables")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("id");
         assertThat(ids).contains((int) base, (int) variante);
     }
 
     @Test
     void unInstantaneInconnuRepond404() {
         given().header(HEADER, DEFAUT)
-                .when().get("/api/planning/snapshots/compare?base=999999999&variante=courant")
-                .then().statusCode(404);
+                .when()
+                .get("/api/planning/snapshots/compare?base=999999999&variante=courant")
+                .then()
+                .statusCode(404);
         given().header(HEADER, DEFAUT)
-                .when().get("/api/planning/snapshots/compare?base=courant")
-                .then().statusCode(404);
+                .when()
+                .get("/api/planning/snapshots/compare?base=courant")
+                .then()
+                .statusCode(404);
     }
 
     /* ------------------------------- Helpers ------------------------------- */
 
     private JsonPath comparer(String editionId, String base, String variante) {
         return given().header(HEADER, editionId)
-                .when().get("/api/planning/snapshots/compare?base=" + base + "&variante=" + variante)
-                .then().statusCode(200)
-                .extract().jsonPath();
+                .when()
+                .get("/api/planning/snapshots/compare?base=" + base + "&variante=" + variante)
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
     }
 
     private void createEdition(String id, String nom) {
         given().contentType(ContentType.JSON)
                 .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
-                .when().post("/api/editions")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200);
     }
 
     private long capture(String editionId, String libelle) {
         return given().header(HEADER, editionId)
                 .contentType(ContentType.JSON)
                 .body("{\"libelle\":\"" + libelle + "\"}")
-                .when().post("/api/planning/snapshots")
-                .then().statusCode(201)
+                .when()
+                .post("/api/planning/snapshots")
+                .then()
+                .statusCode(201)
                 .body("libelle", equalTo(libelle))
-                .extract().jsonPath().getLong("id");
+                .extract()
+                .jsonPath()
+                .getLong("id");
     }
 
     private void persistedPlan(String editionId) throws InterruptedException {
-        given().header(HEADER, editionId).when().post("/api/planning/reset").then().statusCode(200);
         given().header(HEADER, editionId)
-                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
-                .then().statusCode(200);
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header(HEADER, editionId)
+                .when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
         solve(editionId);
     }
 
     private void solve(String editionId) throws InterruptedException {
         attendreSolveurLibre();
         String jobId = given().header(HEADER, editionId)
-                .when().post("/api/solve/async/reference-data?seconds=1")
-                .then().statusCode(202)
-                .extract().path("id");
+                .when()
+                .post("/api/solve/async/reference-data?seconds=1")
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
         assertThat(pollUntilFinished(jobId).getString("status")).isEqualTo("COMPLETED");
     }
 
@@ -175,10 +205,12 @@ class ComparateurSnapshotsResourceTest {
 
     private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
         for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given()
-                    .when().get("/api/jobs/" + jobId)
-                    .then().statusCode(200)
-                    .extract().jsonPath();
+            JsonPath job = given().when()
+                    .get("/api/jobs/" + jobId)
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .jsonPath();
             if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
                 return job;
             }

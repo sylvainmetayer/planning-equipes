@@ -3,12 +3,6 @@ package dev.sylvain.planning.service.analyse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -16,6 +10,10 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresAnimateur;
 import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresRapport;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 class PlanningHoursServiceTest {
 
@@ -40,8 +38,8 @@ class PlanningHoursServiceTest {
         poste3.setAnimateur(ada);
         PosteAffectation posteNonAssigne = new PosteAffectation("P4", stand, creneauJ1);
 
-        PlanningEvenement planning = new PlanningEvenement(creneauJ1.getDate(), List.of(ada),
-                List.of(poste1, poste2, poste3, posteNonAssigne));
+        PlanningEvenement planning = new PlanningEvenement(
+                creneauJ1.getDate(), List.of(ada), List.of(poste1, poste2, poste3, posteNonAssigne));
 
         HeuresRapport rapport = service.compute(planning);
 

@@ -2,6 +2,9 @@ package dev.sylvain.planning.service.mail;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
+import io.quarkus.mailer.Mail;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,10 +14,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
-import dev.sylvain.planning.service.ProductName;
-import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
-import io.quarkus.mailer.Mail;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -25,14 +24,24 @@ import org.junit.jupiter.api.Test;
  */
 class MailTemplatesTest {
 
-    private static final MailBranding BRANDED = new MailBranding(new byte[] { 1, 2, 3 }, "image/png", "png",
-            "#111111", "#666666", "#aa0000", "#eeeeee", "#f5f5f5", "Les Bénévoles du Jeu");
+    private static final MailBranding BRANDED = new MailBranding(
+            new byte[] {1, 2, 3},
+            "image/png",
+            "png",
+            "#111111",
+            "#666666",
+            "#aa0000",
+            "#eeeeee",
+            "#f5f5f5",
+            "Les Bénévoles du Jeu");
 
     @Test
     void bothPartsSayTheSameThingAndTheHtmlOneWearsTheLayout() {
         MailTemplates templates = MailTemplates.standalone(new ProductName("Planning Équipes"), BRANDED);
 
-        MailContent content = templates.render("mail/code-acces", "Planning Équipes — votre code d'accès",
+        MailContent content = templates.render(
+                "mail/code-acces",
+                "Planning Équipes — votre code d'accès",
                 MailTemplates.values("prenom", "Alice", "code", "123456"));
 
         assertThat(content.text())
@@ -53,7 +62,9 @@ class MailTemplatesTest {
     void aNameTypedWithMarkupStaysTextInTheHtmlPart() {
         MailTemplates templates = MailTemplates.standalone(ProductName.neutral());
 
-        MailContent content = templates.render("mail/echange-propose", "sujet",
+        MailContent content = templates.render(
+                "mail/echange-propose",
+                "sujet",
                 MailTemplates.values("demandeur", "<script>alert(1)</script> Dupont", "nombre", 2));
 
         assertThat(content.html()).doesNotContain("<script>").contains("&lt;script&gt;");
@@ -75,8 +86,10 @@ class MailTemplatesTest {
         Mail neutral = MailTemplates.standalone(ProductName.neutral()).toMail("a@example.org", content);
         assertThat(neutral.getHtml()).isEqualTo("<p>html</p>");
         assertThat(neutral.getAttachments()).isEmpty();
-        assertThat(MailTemplates.standalone(ProductName.neutral()).render("mail/test", "s",
-                MailTemplates.values("horodatage", "x")).html()).doesNotContain("cid:");
+        assertThat(MailTemplates.standalone(ProductName.neutral())
+                        .render("mail/test", "s", MailTemplates.values("horodatage", "x"))
+                        .html())
+                .doesNotContain("cid:");
     }
 
     /**
@@ -104,8 +117,12 @@ class MailTemplatesTest {
 
         Path folder = Path.of("src/main/resources/templates/mail");
         for (String name : names) {
-            assertThat(folder.resolve(name + ".txt")).as("text part of %s", name).exists();
-            assertThat(folder.resolve(name + ".html")).as("HTML part of %s", name).exists();
+            assertThat(folder.resolve(name + ".txt"))
+                    .as("text part of %s", name)
+                    .exists();
+            assertThat(folder.resolve(name + ".html"))
+                    .as("HTML part of %s", name)
+                    .exists();
         }
         try (Stream<Path> files = Files.list(folder)) {
             for (Path file : files.toList()) {
@@ -125,16 +142,25 @@ class MailTemplatesTest {
     void listsAndConditionsRenderTheSameInBothParts() {
         MailTemplates templates = MailTemplates.standalone(ProductName.neutral());
 
-        MailContent content = templates.render("mail/planning-publie", "sujet", MailTemplates.values(
-                "prenom", null,
-                "lienEspace", null,
-                "premiereDiffusion", false,
-                "changements", List.of("samedi : A remplace B", "dimanche : libre"),
-                "demandes", List.of()));
+        MailContent content = templates.render(
+                "mail/planning-publie",
+                "sujet",
+                MailTemplates.values(
+                        "prenom",
+                        null,
+                        "lienEspace",
+                        null,
+                        "premiereDiffusion",
+                        false,
+                        "changements",
+                        List.of("samedi : A remplace B", "dimanche : libre"),
+                        "demandes",
+                        List.of()));
 
         assertThat(content.text())
-                .startsWith("Bonjour,\n\nVotre planning a changé depuis le dernier envoi. Voici ce qui vous concerne :\n\n"
-                        + "- samedi : A remplace B\n- dimanche : libre\n\nLe planning à jour est en pièce jointe.\n")
+                .startsWith(
+                        "Bonjour,\n\nVotre planning a changé depuis le dernier envoi. Voici ce qui vous concerne :\n\n"
+                                + "- samedi : A remplace B\n- dimanche : libre\n\nLe planning à jour est en pièce jointe.\n")
                 .doesNotContain("Vos demandes d'échange")
                 .doesNotContain("Votre espace en ligne")
                 .endsWith("\nÀ bientôt,\nL'équipe d'organisation\n");

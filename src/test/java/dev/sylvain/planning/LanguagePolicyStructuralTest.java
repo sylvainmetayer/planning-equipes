@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -48,9 +47,8 @@ import org.junit.jupiter.api.Test;
  */
 class LanguagePolicyStructuralTest {
 
-    private static final List<Path> SOURCES = List.of(
-            Path.of("src/main/java/dev/sylvain/planning"),
-            Path.of("src/test/java/dev/sylvain/planning"));
+    private static final List<Path> SOURCES =
+            List.of(Path.of("src/main/java/dev/sylvain/planning"), Path.of("src/test/java/dev/sylvain/planning"));
 
     /**
      * The business glossary, mirrored from {@code AGENTS.md}. A French word
@@ -170,26 +168,37 @@ class LanguagePolicyStructuralTest {
      * a lot of its own — the name of the tool <em>is</em> the name of the
      * method, and what a French speaking assistant picks depends on it.</p>
      */
-    private static final Set<String> EXCEPTIONS_ASSUMEES = Set.of(
-            "EditionCibleDto",
-            "PlanningServiceScenarioContinuTest",
-            "assertScenarioContinuSplitWithoutHard");
+    private static final Set<String> EXCEPTIONS_ASSUMEES =
+            Set.of("EditionCibleDto", "PlanningServiceScenarioContinuTest", "assertScenarioContinuSplitWithoutHard");
 
     private static final Pattern BLOC = Pattern.compile("/\\*\\*.*?\\*/|/\\*(?!\\*).*?\\*/", Pattern.DOTALL);
     private static final Pattern LIGNE = Pattern.compile("^\\s*//(.*)$");
     private static final Pattern MOT = Pattern.compile("[\\p{L}']+");
     private static final Pattern ACCENT = Pattern.compile("[àâäéèêëîïôöùûüÿç]");
     private static final Pattern TOKEN = Pattern.compile("[A-Z]?[a-z]+|[A-Z]+(?![a-z])|\\d+");
-    private static final Pattern TYPE =
-            Pattern.compile("\\b(?:class|interface|enum|record|@interface)\\s+([A-Z]\\w*)");
-    private static final Pattern METHODE = Pattern.compile(
-            "^\\s*(?:@\\w+(?:\\([^)]*\\))?\\s+)*"
-                    + "(?:(?:public|private|protected|static|final|abstract|synchronized|default|native|strictfp)\\s+)+"
-                    + "(?:<[^>]{0,120}>\\s*)?[\\w$][\\w$<>,\\[\\].?\\s]*?\\s+([a-z][\\w$]*)\\s*\\(");
+    private static final Pattern TYPE = Pattern.compile("\\b(?:class|interface|enum|record|@interface)\\s+([A-Z]\\w*)");
+    private static final Pattern METHODE = Pattern.compile("^\\s*(?:@\\w+(?:\\([^)]*\\))?\\s+)*"
+            + "(?:(?:public|private|protected|static|final|abstract|synchronized|default|native|strictfp)\\s+)+"
+            + "(?:<[^>]{0,120}>\\s*)?[\\w$][\\w$<>,\\[\\].?\\s]*?\\s+([a-z][\\w$]*)\\s*\\(");
     private static final Pattern CONTRAINTE = Pattern.compile("asConstraint\\(\"([A-Za-z0-9_]+)\"\\)");
     private static final Set<String> MOTS_CLES = Set.of(
-            "if", "for", "while", "switch", "catch", "try", "return", "new", "super", "this",
-            "synchronized", "do", "else", "case", "record", "yield", "instanceof");
+            "if",
+            "for",
+            "while",
+            "switch",
+            "catch",
+            "try",
+            "return",
+            "new",
+            "super",
+            "this",
+            "synchronized",
+            "do",
+            "else",
+            "case",
+            "record",
+            "yield",
+            "instanceof");
 
     private static Set<String> mots(String bloc) {
         return Set.copyOf(List.of(bloc.trim().split("\\s+")));
@@ -199,15 +208,16 @@ class LanguagePolicyStructuralTest {
         List<Path> files = new ArrayList<>();
         for (Path racine : SOURCES) {
             try (Stream<Path> flux = Files.walk(racine)) {
-                files.addAll(flux.filter(f -> f.toString().endsWith(".java")).sorted().toList());
+                files.addAll(flux.filter(f -> f.toString().endsWith(".java"))
+                        .sorted()
+                        .toList());
             }
         }
         return files;
     }
 
     /** A block of prose: its first line, and its text stripped of javadoc syntax. */
-    private record Bloc(int ligne, String text) {
-    }
+    private record Bloc(int ligne, String text) {}
 
     private static List<Bloc> blocs(String source) {
         List<Bloc> blocs = new ArrayList<>();
@@ -285,12 +295,15 @@ class LanguagePolicyStructuralTest {
     }
 
     private static int ligne(String source, int position) {
-        return (int) source.substring(0, position).chars().filter(c -> c == '\n').count() + 1;
+        return (int) source.substring(0, position)
+                        .chars()
+                        .filter(c -> c == '\n')
+                        .count()
+                + 1;
     }
 
     /** A declared name and where it was read. */
-    private record Nom(String file, String valeur) {
-    }
+    private record Nom(String file, String valeur) {}
 
     private static List<Nom> nomsDeclares(Path file, String source) {
         List<Nom> noms = new ArrayList<>();
@@ -340,8 +353,7 @@ class LanguagePolicyStructuralTest {
     }
 
     private static String withoutLiterals(String source) {
-        return source.replaceAll("\"\"\"(?s).*?\"\"\"", "\"\"")
-                .replaceAll("\"(?:[^\"\\\\\n]|\\\\.)*\"", "\"\"");
+        return source.replaceAll("\"\"\"(?s).*?\"\"\"", "\"\"").replaceAll("\"(?:[^\"\\\\\n]|\\\\.)*\"", "\"\"");
     }
 
     private static List<String> motsFrancais(String nom) {
@@ -419,7 +431,8 @@ class LanguagePolicyStructuralTest {
         assertThat(files).as("java files scanned").isGreaterThan(300);
         assertThat(blocs).as("comment blocks read").isGreaterThan(1500);
         assertThat(noms).as("declared types and methods read").isGreaterThan(1200);
-        assertThat(contraintes).as("constraint names read, which drive the exemption")
+        assertThat(contraintes)
+                .as("constraint names read, which drive the exemption")
                 .isGreaterThan(35);
     }
 

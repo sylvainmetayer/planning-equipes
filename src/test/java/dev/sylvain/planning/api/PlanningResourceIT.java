@@ -2,12 +2,11 @@ package dev.sylvain.planning.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Same tests as {@link PlanningResourceTest}, but against the packaged
@@ -43,11 +42,16 @@ class PlanningResourceIT extends PlanningResourceTest {
                     .contentType("application/x-www-form-urlencoded")
                     .formParam("j_username", "admin")
                     .formParam("j_password", MOT_DE_PASSE_ADMIN)
-                    .redirects().follow(false)
-                    .when().post("/j_security_check")
+                    .redirects()
+                    .follow(false)
+                    .when()
+                    .post("/j_security_check")
                     .then()
-                    .extract().cookie("planning-session");
-            assertThat(cookieSession).as("form login should issue the session cookie").isNotBlank();
+                    .extract()
+                    .cookie("planning-session");
+            assertThat(cookieSession)
+                    .as("form login should issue the session cookie")
+                    .isNotBlank();
         }
         RestAssured.requestSpecification = new RequestSpecBuilder()
                 .addCookie("planning-session", cookieSession)

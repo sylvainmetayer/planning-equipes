@@ -1,5 +1,23 @@
 package dev.sylvain.planning.service.espace;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.DemandeEchange;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.StatutDemandeEchange;
+import dev.sylvain.planning.domain.TypeVerrouillage;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.notification.Notification;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -14,28 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.StatutDemandeEchange;
-import dev.sylvain.planning.domain.TypeVerrouillage;
-import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
-import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
-import dev.sylvain.planning.service.notification.Notification;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Event;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.solve.PlanningWhatIf;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * The demande d'échange lifecycle (issue #165): submission with hard-constraint
@@ -83,9 +80,8 @@ public class DemandeEchangeService {
      * exchange DIRECTED — the demandeur names the colleague's seat they want
      * in return ("I give you my Monday, I take your Tuesday").
      */
-    public record NouvelleDemande(Long creneauId, String standId, String cibleId, String motif,
-            Long creneauCibleId, String standCibleId) {
-    }
+    public record NouvelleDemande(
+            Long creneauId, String standId, String cibleId, String motif, Long creneauCibleId, String standCibleId) {}
 
     /**
      * The single wording of a closed-foire refusal, shared with
@@ -139,9 +135,14 @@ public class DemandeEchangeService {
         return demandes;
     }
 
-    private DemandeEchange buildDemande(String demandeurId, NouvelleDemande nouvelle,
-            PlanningEvenement planning, PlanningPersistenceService.PlanningResolution resolution) {
-        if (nouvelle.creneauId() == null || nouvelle.standId() == null || nouvelle.standId().isBlank()) {
+    private DemandeEchange buildDemande(
+            String demandeurId,
+            NouvelleDemande nouvelle,
+            PlanningEvenement planning,
+            PlanningPersistenceService.PlanningResolution resolution) {
+        if (nouvelle.creneauId() == null
+                || nouvelle.standId() == null
+                || nouvelle.standId().isBlank()) {
             throw new BusinessError.Invalid("Créneau ou stand manquant sur une demande");
         }
         if (nouvelle.cibleId() == null || nouvelle.cibleId().isBlank()) {
@@ -157,8 +158,14 @@ public class DemandeEchangeService {
         // Throws on an unknown seat/target — the UI only offers the animateur's
         // own seats (and the colleague's real ones for a directed exchange),
         // so this only rejects stale or hand-crafted payloads.
-        EchangeSimulation simulation = simulate(planning, demandeurId, nouvelle.cibleId(),
-                nouvelle.creneauId(), nouvelle.standId(), nouvelle.creneauCibleId(), nouvelle.standCibleId());
+        EchangeSimulation simulation = simulate(
+                planning,
+                demandeurId,
+                nouvelle.cibleId(),
+                nouvelle.creneauId(),
+                nouvelle.standId(),
+                nouvelle.creneauCibleId(),
+                nouvelle.standCibleId());
 
         DemandeEchange demande = new DemandeEchange();
         demande.setId(UUID.randomUUID().toString());
@@ -184,8 +191,7 @@ public class DemandeEchangeService {
         // Not prepareScoped: the SET clause claims placeholder 1, so the
         // edition_id predicate is bound explicitly.
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(
-                        """
+                PreparedStatement ps = connection.prepareStatement("""
                         UPDATE demande_echange
                         SET statut = 'ANNULEE', decide_le = ?
                         WHERE edition_id = ?
@@ -221,8 +227,7 @@ public class DemandeEchangeService {
     public DemandeEchange acceptByTarget(String cibleId, String demandeId) {
         checkFoireOpen();
         DemandeEchange demande = decidedByTarget(cibleId, demandeId, StatutDemandeEchange.PROPOSEE);
-        notifications.fire(new Notification.DemandesSoumises(
-                nomComplet(demande.getDemandeurId()), List.of(demande)));
+        notifications.fire(new Notification.DemandesSoumises(nomComplet(demande.getDemandeurId()), List.of(demande)));
         return demande;
     }
 
@@ -230,8 +235,8 @@ public class DemandeEchangeService {
     public DemandeEchange declineByTarget(String cibleId, String demandeId) {
         checkFoireOpen();
         DemandeEchange demande = decidedByTarget(cibleId, demandeId, StatutDemandeEchange.REFUSEE_CIBLE);
-        notifications.fire(new Notification.DemandeDeclinee(emailOf(demande.getDemandeurId()),
-                nomComplet(cibleId), libelleCreneau(demande)));
+        notifications.fire(new Notification.DemandeDeclinee(
+                emailOf(demande.getDemandeurId()), nomComplet(cibleId), libelleCreneau(demande)));
         return demande;
     }
 
@@ -241,8 +246,7 @@ public class DemandeEchangeService {
         // edition_id predicate is bound explicitly. The cible_id predicate is
         // the authorisation: nobody answers a demande that does not target them.
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(
-                        """
+                PreparedStatement ps = connection.prepareStatement("""
                         UPDATE demande_echange
                         SET statut = ?, cible_decide_le = ?
                         WHERE edition_id = ? AND id = ? AND cible_id = ? AND statut = 'EN_ATTENTE_CIBLE'""")) {
@@ -252,8 +256,7 @@ public class DemandeEchangeService {
             ps.setString(4, demandeId);
             ps.setString(5, cibleId);
             if (ps.executeUpdate() == 0) {
-                throw new BusinessError.Invalid(
-                        "Demande introuvable, déjà traitée, ou ne vous concernant pas");
+                throw new BusinessError.Invalid("Demande introuvable, déjà traitée, ou ne vous concernant pas");
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to answer demande " + demandeId, e);
@@ -294,9 +297,7 @@ public class DemandeEchangeService {
 
         /** True on {@code jour}: the switch is on and the day is inside the bounds. */
         public boolean openOn(LocalDate jour) {
-            return ouverte
-                    && (debut == null || !jour.isBefore(debut))
-                    && (fin == null || !jour.isAfter(fin));
+            return ouverte && (debut == null || !jour.isBefore(debut)) && (fin == null || !jour.isAfter(fin));
         }
 
         /**
@@ -318,15 +319,15 @@ public class DemandeEchangeService {
     /** The window as the admin configured it, open and unbounded while nobody has. */
     public FenetreFoire fenetre() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(
+                        connection,
                         "SELECT foire_ouverte, date_debut, date_fin FROM parametres_echange "
                                 + "WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             if (!rs.next()) {
                 return FenetreFoire.unbounded();
             }
-            return new FenetreFoire(rs.getBoolean("foire_ouverte"),
-                    date(rs, "date_debut"), date(rs, "date_fin"));
+            return new FenetreFoire(rs.getBoolean("foire_ouverte"), date(rs, "date_debut"), date(rs, "date_fin"));
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the foire state", e);
         }
@@ -363,8 +364,7 @@ public class DemandeEchangeService {
             throw new BusinessError.Invalid("La fin de la foire précède son début");
         }
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_echange (edition_id, foire_ouverte, date_debut, date_fin)
                         VALUES (?, ?, ?, ?)
                         ON CONFLICT (edition_id)
@@ -400,19 +400,30 @@ public class DemandeEchangeService {
     public EchangeSimulation impact(String demandeId) {
         DemandeEchange demande = requiredDemande(demandeId);
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
-        return simulate(planning, demande.getDemandeurId(), demande.getCibleId(),
-                demande.getCreneauId(), demande.getStandId(),
-                demande.getCreneauCibleId(), demande.getStandCibleId());
+        return simulate(
+                planning,
+                demande.getDemandeurId(),
+                demande.getCibleId(),
+                demande.getCreneauId(),
+                demande.getStandId(),
+                demande.getCreneauCibleId(),
+                demande.getStandCibleId());
     }
 
     /** Dispatches to the plain or the directed simulation, depending on the demande's shape. */
-    private EchangeSimulation simulate(PlanningEvenement planning, String demandeurId, String cibleId,
-            Long creneauId, String standId, Long creneauCibleId, String standCibleId) {
+    private EchangeSimulation simulate(
+            PlanningEvenement planning,
+            String demandeurId,
+            String cibleId,
+            Long creneauId,
+            String standId,
+            Long creneauCibleId,
+            String standCibleId) {
         if (creneauCibleId == null) {
             return planningService.simulateEchange(planning, demandeurId, cibleId, creneauId, standId);
         }
-        return planningService.simulateDirectedEchange(planning, demandeurId, cibleId,
-                creneauId, standId, creneauCibleId, standCibleId);
+        return planningService.simulateDirectedEchange(
+                planning, demandeurId, cibleId, creneauId, standId, creneauCibleId, standCibleId);
     }
 
     /**
@@ -432,16 +443,29 @@ public class DemandeEchangeService {
         DemandeEchange demande = requiredDemande(demandeId);
         requirePending(demande);
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
-        EchangeSimulation simulation = simulate(planning, demande.getDemandeurId(), demande.getCibleId(),
-                demande.getCreneauId(), demande.getStandId(),
-                demande.getCreneauCibleId(), demande.getStandCibleId());
+        EchangeSimulation simulation = simulate(
+                planning,
+                demande.getDemandeurId(),
+                demande.getCibleId(),
+                demande.getCreneauId(),
+                demande.getStandId(),
+                demande.getCreneauCibleId(),
+                demande.getStandCibleId());
         if (demande.getCreneauCibleId() != null) {
-            persistenceService.applyDirectedEchange(demande.getCreneauId(), demande.getStandId(),
-                    demande.getDemandeurId(), demande.getCibleId(),
-                    demande.getCreneauCibleId(), demande.getStandCibleId());
+            persistenceService.applyDirectedEchange(
+                    demande.getCreneauId(),
+                    demande.getStandId(),
+                    demande.getDemandeurId(),
+                    demande.getCibleId(),
+                    demande.getCreneauCibleId(),
+                    demande.getStandCibleId());
         } else {
-            persistenceService.applyEchange(demande.getCreneauId(), demande.getStandId(),
-                    demande.getDemandeurId(), demande.getCibleId(), simulation.standCibleId());
+            persistenceService.applyEchange(
+                    demande.getCreneauId(),
+                    demande.getStandId(),
+                    demande.getDemandeurId(),
+                    demande.getCibleId(),
+                    simulation.standCibleId());
         }
         poserVerrouillages(demande);
         recordDecision(demande, StatutDemandeEchange.ACCEPTEE, commentaire);
@@ -466,8 +490,7 @@ public class DemandeEchangeService {
                     "Le collègue concerné n'a pas encore donné son accord — l'acceptation attend le sien");
         }
         if (demande.getStatut() != StatutDemandeEchange.PROPOSEE) {
-            throw new BusinessError.Invalid("La demande n'est plus en attente (statut "
-                    + demande.getStatut() + ")");
+            throw new BusinessError.Invalid("La demande n'est plus en attente (statut " + demande.getStatut() + ")");
         }
     }
 
@@ -475,8 +498,7 @@ public class DemandeEchangeService {
     private static void requireRefusable(DemandeEchange demande) {
         if (demande.getStatut() != StatutDemandeEchange.PROPOSEE
                 && demande.getStatut() != StatutDemandeEchange.EN_ATTENTE_CIBLE) {
-            throw new BusinessError.Invalid("La demande n'est plus en attente (statut "
-                    + demande.getStatut() + ")");
+            throw new BusinessError.Invalid("La demande n'est plus en attente (statut " + demande.getStatut() + ")");
         }
     }
 
@@ -489,12 +511,13 @@ public class DemandeEchangeService {
         // hold a seat on (the target took the demandeur's créneau and vice
         // versa). Plain exchange: both end up on the demandeur's créneau.
         boolean dirige = demande.getCreneauCibleId() != null;
-        record Verrou(String animateurId, Long creneauId) {
-        }
+        record Verrou(String animateurId, Long creneauId) {}
         List<Verrou> verrous = dirige
-                ? List.of(new Verrou(demande.getCibleId(), demande.getCreneauId()),
+                ? List.of(
+                        new Verrou(demande.getCibleId(), demande.getCreneauId()),
                         new Verrou(demande.getDemandeurId(), demande.getCreneauCibleId()))
-                : List.of(new Verrou(demande.getDemandeurId(), demande.getCreneauId()),
+                : List.of(
+                        new Verrou(demande.getDemandeurId(), demande.getCreneauId()),
                         new Verrou(demande.getCibleId(), demande.getCreneauId()));
         for (Verrou verrou : verrous) {
             VerrouillagePlanning verrouillage = new VerrouillagePlanning(null, TypeVerrouillage.ANIMATEUR_CRENEAU);
@@ -509,8 +532,7 @@ public class DemandeEchangeService {
         Instant decideLe = Instant.now();
         // Not prepareScoped for the same reason as cancel: SET comes first.
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(
-                        """
+                PreparedStatement ps = connection.prepareStatement("""
                         UPDATE demande_echange
                         SET statut = ?, commentaire_admin = ?, decide_le = ?
                         WHERE edition_id = ? AND id = ? AND statut IN ('PROPOSEE', 'EN_ATTENTE_CIBLE')""")) {
@@ -604,7 +626,8 @@ public class DemandeEchangeService {
 
     private void inserer(DemandeEchange demande) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(
+                        connection,
                         "INSERT INTO demande_echange (edition_id, " + COLONNES + ") "
                                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setString(2, demande.getId());
@@ -617,9 +640,11 @@ public class DemandeEchangeService {
             ps.setString(9, demande.getMotif());
             ps.setString(10, demande.getStatut().name());
             ps.setObject(11, demande.getPrevalidationOk());
-            ps.setString(12, demande.getContraintesViolees().isEmpty()
-                    ? null
-                    : String.join("\n", demande.getContraintesViolees()));
+            ps.setString(
+                    12,
+                    demande.getContraintesViolees().isEmpty()
+                            ? null
+                            : String.join("\n", demande.getContraintesViolees()));
             ps.setString(13, demande.getCommentaireAdmin());
             ps.setTimestamp(14, Timestamp.from(demande.getCreeLe()));
             ps.setTimestamp(15, demande.getCibleDecideLe() == null ? null : Timestamp.from(demande.getCibleDecideLe()));
@@ -643,8 +668,8 @@ public class DemandeEchangeService {
         // Only the column list and the extra predicate are concatenated, and both
         // are literals from this class's own call sites; the value that varies
         // travels as a bound parameter below.
-        String sql = "SELECT " + COLONNES + " FROM demande_echange WHERE edition_id = ?"
-                + predicatSupplementaire + " ORDER BY cree_le DESC, id";
+        String sql = "SELECT " + COLONNES + " FROM demande_echange WHERE edition_id = ?" + predicatSupplementaire
+                + " ORDER BY cree_le DESC, id";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             if (parametre != null) {
@@ -675,9 +700,8 @@ public class DemandeEchangeService {
         demande.setStatut(StatutDemandeEchange.valueOf(rs.getString("statut")));
         demande.setPrevalidationOk(rs.getObject("prevalidation_ok", Boolean.class));
         String violations = rs.getString("contraintes_violees");
-        demande.setContraintesViolees(violations == null || violations.isBlank()
-                ? List.of()
-                : List.of(violations.split("\n")));
+        demande.setContraintesViolees(
+                violations == null || violations.isBlank() ? List.of() : List.of(violations.split("\n")));
         demande.setCommentaireAdmin(rs.getString("commentaire_admin"));
         Timestamp creeLe = rs.getTimestamp("cree_le");
         demande.setCreeLe(creeLe == null ? null : creeLe.toInstant());

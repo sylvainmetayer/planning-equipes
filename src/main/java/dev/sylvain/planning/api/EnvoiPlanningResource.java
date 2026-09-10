@@ -44,6 +44,8 @@ public class EnvoiPlanningResource {
         DeliveryReport compteRendu = envoiPlanningService.sendToOneAnimateur(animateurId);
         return compteRendu.echecs().isEmpty()
                 ? Response.ok(compteRendu).build()
-                : Response.serverError().entity(new ValidationError(compteRendu.echecs().get(0))).build();
+                : Response.serverError()
+                        .entity(new ValidationError(compteRendu.echecs().get(0)))
+                        .build();
     }
 }

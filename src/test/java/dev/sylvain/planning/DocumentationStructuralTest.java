@@ -2,6 +2,7 @@ package dev.sylvain.planning;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.solver.ConstraintCatalog;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -15,8 +16,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.solver.ConstraintCatalog;
 
 /**
  * What the documentation enumerates, checked against what the code declares.
@@ -114,7 +113,8 @@ class DocumentationStructuralTest {
     private static String normalise(String path) {
         String normalised = path.replaceAll("\\{[^}]*\\}", "{}").replaceAll("/+", "/");
         return normalised.length() > 1 && normalised.endsWith("/")
-                ? normalised.substring(0, normalised.length() - 1) : normalised;
+                ? normalised.substring(0, normalised.length() - 1)
+                : normalised;
     }
 
     /* ------------------------------ AGENTS.md ----------------------------- */
@@ -127,7 +127,8 @@ class DocumentationStructuralTest {
     @Test
     void everyFrontendRouteIsListedInAgentsMd() throws IOException {
         String agents = Files.readString(AGENTS_MD, StandardCharsets.UTF_8);
-        Matcher matcher = Pattern.compile("path: '([^']*)'").matcher(Files.readString(ROUTES_TS, StandardCharsets.UTF_8));
+        Matcher matcher =
+                Pattern.compile("path: '([^']*)'").matcher(Files.readString(ROUTES_TS, StandardCharsets.UTF_8));
         List<String> absentes = new ArrayList<>();
         while (matcher.find()) {
             String path = matcher.group(1);
@@ -171,8 +172,9 @@ class DocumentationStructuralTest {
 
     private static String tableau() {
         String lignes = ConstraintCatalog.definitions().stream()
-                .map(definition -> "| `" + definition.name() + "` | " + definition.niveau() + " | "
-                        + definition.categorie() + " | " + definition.description().replace("|", "\\|") + " |")
+                .map(definition ->
+                        "| `" + definition.name() + "` | " + definition.niveau() + " | " + definition.categorie()
+                                + " | " + definition.description().replace("|", "\\|") + " |")
                 .collect(Collectors.joining("\n"));
         return "| Contrainte | Niveau | Catégorie | Ce qu'elle dit |\n|---|---|---|---|\n" + lignes;
     }

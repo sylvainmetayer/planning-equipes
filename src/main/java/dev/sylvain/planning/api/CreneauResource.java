@@ -1,14 +1,5 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.util.List;
-
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
@@ -31,6 +22,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * CRUD of the timeslot grid, plus the grid read as a whole: a recurrence
@@ -57,13 +54,18 @@ public class CreneauResource {
      * compact line). A créneau is the day's amplitude itself, so every window
      * needs its end.
      */
-    public record RecurrenceRequest(TypeJoursHoraire jours, LocalDate dateDebut, LocalDate dateFin,
-            Set<DayOfWeek> joursSemaine, Set<LocalDate> dates, Set<LocalDate> exclusions,
+    public record RecurrenceRequest(
+            TypeJoursHoraire jours,
+            LocalDate dateDebut,
+            LocalDate dateFin,
+            Set<DayOfWeek> joursSemaine,
+            Set<LocalDate> dates,
+            Set<LocalDate> exclusions,
             List<FenetreHoraire> fenetres) {
 
         CreneauGridService.RegleRecurrence regle() {
-            return new CreneauGridService.RegleRecurrence(jours, dateDebut, dateFin, joursSemaine, dates,
-                    exclusions, fenetres);
+            return new CreneauGridService.RegleRecurrence(
+                    jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres);
         }
     }
 
@@ -84,7 +86,8 @@ public class CreneauResource {
     @POST
     @Path("/recurrence/apercu")
     public RapportRecurrence previewRecurrence(RecurrenceRequest requete, @QueryParam("mode") String mode) {
-        return RapportRecurrence.of(referenceDataService.previewRecurrence(requete.regle(), ReferenceDataService.modeGrille(mode, "mode")));
+        return RapportRecurrence.of(
+                referenceDataService.previewRecurrence(requete.regle(), ReferenceDataService.modeGrille(mode, "mode")));
     }
 
     /**
@@ -95,7 +98,8 @@ public class CreneauResource {
     @POST
     @Path("/recurrence")
     public RapportRecurrence createRecurrence(RecurrenceRequest requete, @QueryParam("mode") String mode) {
-        return RapportRecurrence.of(referenceDataService.createRecurrence(requete.regle(), ReferenceDataService.modeGrille(mode, "mode")));
+        return RapportRecurrence.of(
+                referenceDataService.createRecurrence(requete.regle(), ReferenceDataService.modeGrille(mode, "mode")));
     }
 
     /**
@@ -106,24 +110,40 @@ public class CreneauResource {
      * replaces — the whole grid rather than adding to it.
      */
     @Schema(requiredProperties = {"remplacer"})
-    public record DerivationRequest(LocalDate dateDebut, LocalDate dateFin, LocalTime heureFermeture,
-            Integer dureeMinimaleMinutes, boolean remplacer) {
+    public record DerivationRequest(
+            LocalDate dateDebut,
+            LocalDate dateFin,
+            LocalTime heureFermeture,
+            Integer dureeMinimaleMinutes,
+            boolean remplacer) {
 
         GrilleDepuisFenetres.Parametres parametres() {
-            return new GrilleDepuisFenetres.Parametres(dateDebut, dateFin, heureFermeture,
-                    dureeMinimaleMinutes == null ? GrilleDepuisFenetres.DUREE_MINIMALE_PAR_DEFAUT
+            return new GrilleDepuisFenetres.Parametres(
+                    dateDebut,
+                    dateFin,
+                    heureFermeture,
+                    dureeMinimaleMinutes == null
+                            ? GrilleDepuisFenetres.DUREE_MINIMALE_PAR_DEFAUT
                             : dureeMinimaleMinutes);
         }
     }
 
     /** The derived créneaux, the cuts that produced them, the days nothing said anything about, and the verdict. */
-    public record RapportDerivation(int nombreGeneres, List<Creneau> creneaux,
-            List<GrilleDepuisFenetres.Coupure> coupures, List<LocalDate> joursSansFenetre, RapportGrille controle) {
+    public record RapportDerivation(
+            int nombreGeneres,
+            List<Creneau> creneaux,
+            List<GrilleDepuisFenetres.Coupure> coupures,
+            List<LocalDate> joursSansFenetre,
+            RapportGrille controle) {
 
         static RapportDerivation of(ReferenceDataService.DerivationGrille resultat) {
             GrilleDepuisFenetres.Derivation derivation = resultat.derivation();
-            return new RapportDerivation(derivation.creneaux().size(), derivation.creneaux(), derivation.coupures(),
-                    derivation.joursSansFenetre(), resultat.controle());
+            return new RapportDerivation(
+                    derivation.creneaux().size(),
+                    derivation.creneaux(),
+                    derivation.coupures(),
+                    derivation.joursSansFenetre(),
+                    resultat.controle());
         }
     }
 
@@ -131,8 +151,8 @@ public class CreneauResource {
     @POST
     @Path("/derivation/apercu")
     public RapportDerivation previewDerivation(DerivationRequest requete, @QueryParam("mode") String mode) {
-        return RapportDerivation.of(referenceDataService.previewDerivation(requete.parametres(), requete.remplacer(),
-                ReferenceDataService.modeGrille(mode, "mode")));
+        return RapportDerivation.of(referenceDataService.previewDerivation(
+                requete.parametres(), requete.remplacer(), ReferenceDataService.modeGrille(mode, "mode")));
     }
 
     /**
@@ -144,8 +164,8 @@ public class CreneauResource {
     @POST
     @Path("/derivation")
     public RapportDerivation applyDerivation(DerivationRequest requete, @QueryParam("mode") String mode) {
-        return RapportDerivation.of(referenceDataService.applyDerivation(requete.parametres(), requete.remplacer(),
-                ReferenceDataService.modeGrille(mode, "mode")));
+        return RapportDerivation.of(referenceDataService.applyDerivation(
+                requete.parametres(), requete.remplacer(), ReferenceDataService.modeGrille(mode, "mode")));
     }
 
     /** The grid's verdict — its own anomalies, the stand openings, the staffing — read in {@code mode}. */
@@ -203,5 +223,4 @@ public class CreneauResource {
     public ReferenceUsage countCreneauUsages(@QueryParam("id") List<String> ids) {
         return referenceDataService.countCreneauUsages(ids);
     }
-
 }

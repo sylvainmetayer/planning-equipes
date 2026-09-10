@@ -11,5 +11,4 @@ package dev.sylvain.planning.service.notification;
  * server or a Quarkus context: every wording assertion runs against this
  * record.</p>
  */
-public record MailDraft(String destinataire, String sujet, String corps, String html) {
-}
+public record MailDraft(String destinataire, String sujet, String corps, String html) {}

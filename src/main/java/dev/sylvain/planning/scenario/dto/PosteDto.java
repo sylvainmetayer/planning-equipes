@@ -10,5 +10,4 @@ public record PosteDto(
         @NotBlank String id,
         @NotBlank String standId,
         @NotBlank String creneauId,
-        String animateurId) {
-}
+        String animateurId) {}

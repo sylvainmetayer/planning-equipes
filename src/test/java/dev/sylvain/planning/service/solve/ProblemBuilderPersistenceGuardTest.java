@@ -3,13 +3,6 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -17,6 +10,11 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.EmptyReferenceData;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * Building a problem when there is no persistence to read the locks from.
@@ -76,7 +74,8 @@ class ProblemBuilderPersistenceGuardTest {
 
         PlanningEvenement probleme = builder.buildFromReferenceData();
         assertThat(probleme.getPostes()).isNotEmpty();
-        assertThat(probleme.getPostes()).allSatisfy(poste -> assertThat(poste.getAnimateur()).isNull());
+        assertThat(probleme.getPostes())
+                .allSatisfy(poste -> assertThat(poste.getAnimateur()).isNull());
         // The locks still travel with the problem — they are simply not applied
         // to the seats, since there is no persisted plan to read them from.
         assertThat(probleme.getVerrouillages()).hasSize(1);

@@ -1,16 +1,14 @@
 package dev.sylvain.planning.service;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-
 import javax.sql.DataSource;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 /**
  * The one place that opens a connection, binds the current edition and turns a
@@ -207,8 +205,8 @@ public class JdbcEditionScope {
 
     private Instant lastWriteOf(String table, Binding binding, String what) {
         return read("Failed to read the last write of " + what, connection -> {
-            try (PreparedStatement ps = prepareScoped(connection,
-                    "SELECT modifie_le FROM " + table + " WHERE edition_id = ? AND id = ?")) {
+            try (PreparedStatement ps =
+                    prepareScoped(connection, "SELECT modifie_le FROM " + table + " WHERE edition_id = ? AND id = ?")) {
                 binding.lier(ps);
                 // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 try (ResultSet rs = ps.executeQuery()) {
@@ -227,8 +225,8 @@ public class JdbcEditionScope {
     }
 
     private boolean exists(Connection connection, String table, Binding binding) throws SQLException {
-        try (PreparedStatement ps = prepareScoped(connection,
-                "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
+        try (PreparedStatement ps =
+                prepareScoped(connection, "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             binding.lier(ps);
             // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
             try (ResultSet rs = ps.executeQuery()) {

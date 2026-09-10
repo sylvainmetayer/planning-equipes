@@ -2,15 +2,13 @@ package dev.sylvain.planning.solver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.test.ConstraintVerifier;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * Guards the invariant stated in AGENTS.md: every constraint defined by
@@ -31,17 +29,18 @@ class ConstraintCatalogTest {
      * it.</p>
      */
     private static List<String> declaredConstraintNames() {
-        ConstraintVerifier<PlanningConstraintProvider, PlanningEvenement> check =
-                ConstraintVerifier.build(new PlanningConstraintProvider(), PlanningEvenement.class,
-                        PosteAffectation.class);
+        ConstraintVerifier<PlanningConstraintProvider, PlanningEvenement> check = ConstraintVerifier.build(
+                new PlanningConstraintProvider(), PlanningEvenement.class, PosteAffectation.class);
         List<String> noms = new ArrayList<>();
         check.verifyThat((provider, factory) -> {
-            Constraint[] constraints = provider.defineConstraints(factory);
-            for (Constraint constraint : constraints) {
-                noms.add(constraint.getConstraintRef().id());
-            }
-            return constraints[0];
-        }).given().penalizesBy(0);
+                    Constraint[] constraints = provider.defineConstraints(factory);
+                    for (Constraint constraint : constraints) {
+                        noms.add(constraint.getConstraintRef().id());
+                    }
+                    return constraints[0];
+                })
+                .given()
+                .penalizesBy(0);
         assertThat(noms).as("the provider's constraints were never built").isNotEmpty();
         return noms;
     }
@@ -77,13 +76,23 @@ class ConstraintCatalogTest {
                 .map(ConstraintCatalog.ConstraintDefinition::name)
                 .toList();
 
-        assertThat(protegees).containsExactlyInAnyOrder(
-                "standReserveAuxMajeurs", "travailDeNuitInterditPourMineur", "dureeQuotidienneMaxMineur",
-                "travailInterditJourFerieMineur", "reposHebdomadaireMineur", "travailContinuMaxMineur",
-                "dureeHebdomadaireMaxMineur", "mineurNecessiteEncadrementMajeur",
-                "dureeHebdomadaireMax", "dureeQuotidienneMaxMajeur", "reposQuotidienMinimal",
-                "maxJoursTravaillesParSemaine", "reposHebdomadaireMinimal", "travailContinuMaxMajeur",
-                "pauseMinimaleEntreVacations");
+        assertThat(protegees)
+                .containsExactlyInAnyOrder(
+                        "standReserveAuxMajeurs",
+                        "travailDeNuitInterditPourMineur",
+                        "dureeQuotidienneMaxMineur",
+                        "travailInterditJourFerieMineur",
+                        "reposHebdomadaireMineur",
+                        "travailContinuMaxMineur",
+                        "dureeHebdomadaireMaxMineur",
+                        "mineurNecessiteEncadrementMajeur",
+                        "dureeHebdomadaireMax",
+                        "dureeQuotidienneMaxMajeur",
+                        "reposQuotidienMinimal",
+                        "maxJoursTravaillesParSemaine",
+                        "reposHebdomadaireMinimal",
+                        "travailContinuMaxMajeur",
+                        "pauseMinimaleEntreVacations");
     }
 
     /** What is dosed rather than switched off: the MEDIUM rules of « Qualité d'organisation ». */

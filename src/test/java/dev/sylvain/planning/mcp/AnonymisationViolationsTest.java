@@ -3,7 +3,6 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -16,8 +15,7 @@ class AnonymisationViolationsTest {
 
     @Test
     void remplaceLeNomDeLAnimateurParSonId() {
-        assertThat(AnonymisationViolations.anonymiser("Sarah Rousseau (A45)"))
-                .isEqualTo("animateur A45");
+        assertThat(AnonymisationViolations.anonymiser("Sarah Rousseau (A45)")).isEqualTo("animateur A45");
     }
 
     @Test
@@ -31,9 +29,8 @@ class AnonymisationViolationsTest {
 
     @Test
     void anonymiseChaqueAnimateurDUneListeDeFaits() {
-        assertThat(AnonymisationViolations.anonymiser(List.of(
-                "Ada Lovelace (A1) — Alan Turing (A2)",
-                "poste P1 non pourvu")))
+        assertThat(AnonymisationViolations.anonymiser(
+                        List.of("Ada Lovelace (A1) — Alan Turing (A2)", "poste P1 non pourvu")))
                 .containsExactly("animateur A1 — animateur A2", "poste P1 non pourvu");
     }
 

@@ -1,5 +1,9 @@
 package dev.sylvain.planning.service.publication;
 
+import dev.sylvain.planning.domain.StatutConfirmation;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -8,11 +12,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-
-import dev.sylvain.planning.domain.StatutConfirmation;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * The {@code confirmation_planning} rows: who answered the published plan, and
@@ -31,26 +30,25 @@ public class ConfirmationPlanningRepository {
     JdbcEditionScope scope;
 
     /** One stored answer. {@code confirmeLe} and {@code relanceLe} coexist: a reminder can be answered. */
-    public record Confirmation(String animateurId, StatutConfirmation statut, Instant confirmeLe,
-            Instant relanceLe) {
-    }
+    public record Confirmation(String animateurId, StatutConfirmation statut, Instant confirmeLe, Instant relanceLe) {}
 
     /** Every stored answer of this edition, by animateur id. Absent means NON_VU. */
     public Map<String, Confirmation> byAnimateur() {
         return scope.read("Failed to load the planning confirmations", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT animateur_id, statut, confirme_le, relance_le
                     FROM confirmation_planning
                     WHERE edition_id = ?""");
                     ResultSet rs = ps.executeQuery()) {
                 Map<String, Confirmation> confirmations = new LinkedHashMap<>();
                 while (rs.next()) {
-                    confirmations.put(rs.getString("animateur_id"), new Confirmation(
+                    confirmations.put(
                             rs.getString("animateur_id"),
-                            StatutConfirmation.valueOf(rs.getString("statut")),
-                            instant(rs.getTimestamp("confirme_le")),
-                            instant(rs.getTimestamp("relance_le"))));
+                            new Confirmation(
+                                    rs.getString("animateur_id"),
+                                    StatutConfirmation.valueOf(rs.getString("statut")),
+                                    instant(rs.getTimestamp("confirme_le")),
+                                    instant(rs.getTimestamp("relance_le"))));
                 }
                 return confirmations;
             }
@@ -64,8 +62,7 @@ public class ConfirmationPlanningRepository {
      */
     public Optional<Confirmation> byId(String animateurId) {
         return scope.read("Failed to load a planning confirmation", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT animateur_id, statut, confirme_le, relance_le
                     FROM confirmation_planning
                     WHERE edition_id = ? AND animateur_id = ?""")) {
@@ -94,8 +91,7 @@ public class ConfirmationPlanningRepository {
      */
     public void confirmer(String animateurId, Instant confirmeLe) {
         scope.write("Failed to record the planning confirmation of an animateur", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO confirmation_planning (edition_id, animateur_id, statut, confirme_le)
                     VALUES (?, ?, 'CONFIRME', ?)
                     ON CONFLICT (edition_id, animateur_id)
@@ -115,8 +111,7 @@ public class ConfirmationPlanningRepository {
      */
     public void recordReminder(String animateurId, Instant relanceLe) {
         scope.write("Failed to record a confirmation reminder", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO confirmation_planning (edition_id, animateur_id, statut, relance_le)
                     VALUES (?, ?, 'RELANCE', ?)
                     ON CONFLICT (edition_id, animateur_id)
@@ -138,8 +133,8 @@ public class ConfirmationPlanningRepository {
             return;
         }
         scope.write("Failed to reset the planning confirmations", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM confirmation_planning WHERE edition_id = ? AND animateur_id = ?")) {
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection, "DELETE FROM confirmation_planning WHERE edition_id = ? AND animateur_id = ?")) {
                 for (String animateurId : animateurIds) {
                     ps.setString(2, animateurId);
                     ps.addBatch();

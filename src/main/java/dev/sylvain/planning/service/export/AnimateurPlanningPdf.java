@@ -1,5 +1,13 @@
 package dev.sylvain.planning.service.export;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer;
+import dev.sylvain.planning.service.referentiel.TypologieLibelles;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -8,7 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
 import org.openpdf.text.Chunk;
 import org.openpdf.text.Document;
 import org.openpdf.text.Element;
@@ -21,17 +28,6 @@ import org.openpdf.text.pdf.BaseFont;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.analyse.PauseAnalyzer;
-import dev.sylvain.planning.service.export.PosteStatistics;
-import dev.sylvain.planning.service.referentiel.TypologieLibelles;
 
 /**
  * The planning of one animateur, as cards rather than as a table: one card per
@@ -54,9 +50,13 @@ public class AnimateurPlanningPdf {
         this.typologies = typologies;
     }
 
-    byte[] construire(String animateurName, List<PosteAffectation> postes,
-            Map<String, List<String>> teammatesByPoste, List<PlanningExportService.JourRepos> joursRepos,
-            List<PauseAnalyzer.PauseAnimateurView> pauses, String lienEspaceAnimateur,
+    byte[] construire(
+            String animateurName,
+            List<PosteAffectation> postes,
+            Map<String, List<String>> teammatesByPoste,
+            List<PlanningExportService.JourRepos> joursRepos,
+            List<PauseAnalyzer.PauseAnimateurView> pauses,
+            String lienEspaceAnimateur,
             ExportProvenance.Provenance provenance) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
@@ -76,8 +76,11 @@ public class AnimateurPlanningPdf {
             Iterator<PlanningExportService.JourRepos> repos = joursRepos.iterator();
             PlanningExportService.JourRepos prochainRepos = repos.hasNext() ? repos.next() : null;
             for (PosteAffectation poste : postes) {
-                LocalDate datePoste = poste.getCreneau() == null ? null : poste.getCreneau().getDate();
-                while (prochainRepos != null && datePoste != null && prochainRepos.date().isBefore(datePoste)) {
+                LocalDate datePoste =
+                        poste.getCreneau() == null ? null : poste.getCreneau().getDate();
+                while (prochainRepos != null
+                        && datePoste != null
+                        && prochainRepos.date().isBefore(datePoste)) {
                     document.add(reposCard(prochainRepos));
                     prochainRepos = repos.hasNext() ? repos.next() : null;
                 }
@@ -113,8 +116,7 @@ public class AnimateurPlanningPdf {
         Paragraph callout = new Paragraph();
         callout.setSpacingBefore(18f);
         callout.add(new Chunk("VOTRE ESPACE EN LIGNE\n", theme.calloutTitleFont()));
-        Chunk action = new Chunk(
-                "Consulter mon planning et proposer un échange de créneau", theme.calloutTextFont());
+        Chunk action = new Chunk("Consulter mon planning et proposer un échange de créneau", theme.calloutTextFont());
         action.setAnchor(lien);
         callout.add(action);
         Chunk url = new Chunk("\n" + lien, theme.footerFont());
@@ -131,8 +133,8 @@ public class AnimateurPlanningPdf {
         if (strip != null) {
             float stripWidth = 210f;
             strip.scaleToFit(stripWidth, stripWidth * strip.getHeight() / strip.getWidth());
-            strip.setAbsolutePosition(pageWidth - 22f - strip.getScaledWidth(),
-                    pageHeight - 20f - strip.getScaledHeight());
+            strip.setAbsolutePosition(
+                    pageWidth - 22f - strip.getScaledWidth(), pageHeight - 20f - strip.getScaledHeight());
             document.add(strip);
         }
 
@@ -144,14 +146,16 @@ public class AnimateurPlanningPdf {
     }
 
     private PdfPTable statBlock(List<PosteAffectation> postes) {
-        PdfPTable table = new PdfPTable(new float[] { 10f, 0.6f, 10f, 0.6f, 10f });
+        PdfPTable table = new PdfPTable(new float[] {10f, 0.6f, 10f, 0.6f, 10f});
         table.setWidthPercentage(100);
         table.addCell(PosteStatistics.statCell(theme, PosteStatistics.distinctCreneauCount(postes), "CRÉNEAUX", null));
         table.addCell(PosteStatistics.gapCell());
         table.addCell(PosteStatistics.statCell(theme, PosteStatistics.distinctStandCount(postes), "STANDS", null));
         table.addCell(PosteStatistics.gapCell());
-        String heuresSubLabel = String.format(Locale.FRENCH, "TOTAL %.1f H TRAVAILLÉES", PosteStatistics.totalHeures(postes));
-        table.addCell(PosteStatistics.statCell(theme, PosteStatistics.distinctDayCount(postes), "JOURS", heuresSubLabel));
+        String heuresSubLabel =
+                String.format(Locale.FRENCH, "TOTAL %.1f H TRAVAILLÉES", PosteStatistics.totalHeures(postes));
+        table.addCell(
+                PosteStatistics.statCell(theme, PosteStatistics.distinctDayCount(postes), "JOURS", heuresSubLabel));
         return table;
     }
 
@@ -218,7 +222,7 @@ public class AnimateurPlanningPdf {
     private PdfPTable buildAssignmentCard(PosteAffectation poste, List<String> coequipiers) {
         Creneau creneau = poste.getCreneau();
 
-        PdfPTable card = new PdfPTable(new float[] { 2.4f, 1.8f, 2.5f, 2.3f });
+        PdfPTable card = new PdfPTable(new float[] {2.4f, 1.8f, 2.5f, 2.3f});
         card.setWidthPercentage(100);
         card.setSpacingAfter(9f);
         card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
@@ -256,7 +260,7 @@ public class AnimateurPlanningPdf {
      * so a day off reads as planned, not as a hole in the document.
      */
     private PdfPTable reposCard(PlanningExportService.JourRepos jourRepos) {
-        PdfPTable card = new PdfPTable(new float[] { 2.4f, 6.6f });
+        PdfPTable card = new PdfPTable(new float[] {2.4f, 6.6f});
         card.setWidthPercentage(100);
         card.setSpacingAfter(9f);
         card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
@@ -290,7 +294,8 @@ public class AnimateurPlanningPdf {
         cell.setPaddingLeft(14f);
         String texte = "Pause de " + pause.debut().format(PdfTheme.TIME_FORMAT) + " à "
                 + pause.fin().format(PdfTheme.TIME_FORMAT) + " (" + pause.dureeMinutes() + " min)"
-                + (pause.relaisDisponible() ? ", en relais avec l'équipe du stand"
+                + (pause.relaisDisponible()
+                        ? ", en relais avec l'équipe du stand"
                         : " — personne d'autre sur le stand : demandez le relais à l'organisation");
         cell.addElement(new Paragraph(texte, theme.calloutTitleFont()));
         card.addCell(cell);
@@ -301,7 +306,8 @@ public class AnimateurPlanningPdf {
         String text = "JOUR" + jour;
         float characterSpacing = 0.6f;
         BaseFont baseFont = theme.badgeFont().getCalculatedBaseFont(false);
-        float textWidth = baseFont.getWidthPoint(text, theme.badgeFont().getCalculatedSize()) + characterSpacing * text.length();
+        float textWidth =
+                baseFont.getWidthPoint(text, theme.badgeFont().getCalculatedSize()) + characterSpacing * text.length();
         float pillHeight = 15f;
         float pillWidth = textWidth + 18f;
 
@@ -337,8 +343,8 @@ public class AnimateurPlanningPdf {
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setPadding(14f);
-        cell.setCellEvent(new PdfTheme.TimePillEvent(text, theme.timeFont(), theme.pill(), theme.muted(), pillWidth,
-                pillHeight, iconDiameter, iconGap));
+        cell.setCellEvent(new PdfTheme.TimePillEvent(
+                text, theme.timeFont(), theme.pill(), theme.muted(), pillWidth, pillHeight, iconDiameter, iconGap));
         return cell;
     }
 
@@ -350,9 +356,9 @@ public class AnimateurPlanningPdf {
         cell.setPadding(14f);
         cell.addElement(new Paragraph("Stand " + stand.getNom(), theme.standFont()));
 
-        Paragraph equipe = new Paragraph(coequipiers.isEmpty()
-                ? "Seul(e) sur ce stand"
-                : "Avec " + String.join(", ", coequipiers), theme.teamFont());
+        Paragraph equipe = new Paragraph(
+                coequipiers.isEmpty() ? "Seul(e) sur ce stand" : "Avec " + String.join(", ", coequipiers),
+                theme.teamFont());
         equipe.setSpacingBefore(3f);
         cell.addElement(equipe);
         return cell;
@@ -367,11 +373,14 @@ public class AnimateurPlanningPdf {
         cell.setPadding(14f);
 
         Emplacement emplacement = stand.getEmplacement();
-        if (emplacement != null && emplacement.getNom() != null && !emplacement.getNom().isBlank()) {
+        if (emplacement != null
+                && emplacement.getNom() != null
+                && !emplacement.getNom().isBlank()) {
             String url = emplacement.getLatitude() != null && emplacement.getLongitude() != null
                     ? osmUrl(emplacement)
                     : null;
-            cell.setCellEvent(new PdfTheme.LocationPinEvent(emplacement.getNom(), theme.locationFont(), theme.muted(), 7f, 4f, url));
+            cell.setCellEvent(new PdfTheme.LocationPinEvent(
+                    emplacement.getNom(), theme.locationFont(), theme.muted(), 7f, 4f, url));
         }
         return cell;
     }

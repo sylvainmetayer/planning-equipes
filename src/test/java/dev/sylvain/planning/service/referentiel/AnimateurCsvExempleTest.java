@@ -3,25 +3,10 @@ package dev.sylvain.planning.service.referentiel;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
@@ -30,15 +15,21 @@ import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.CreneauDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
-import dev.sylvain.planning.service.edition.EditionService;
-import dev.sylvain.planning.service.referentiel.AnimateurCsvImportReport;
-import dev.sylvain.planning.service.referentiel.AnimateurCsvImportRequest;
-import dev.sylvain.planning.service.referentiel.AnimateurCsvImportService;
-import dev.sylvain.planning.service.referentiel.AnimateurCsvMapping;
-import dev.sylvain.planning.service.referentiel.CsvParser;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionService;
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * The example CSV shipped in {@code src/main/resources/scenarios} is re-read
@@ -74,8 +65,16 @@ class AnimateurCsvExempleTest {
     private static final String EXEMPLE = "scenarios/festival-realiste-animateurs.csv";
 
     /** The nine columns the example is expected to hand to the import, in file order. */
-    private static final List<String> ENTETE = List.of("identifiant", "prénom", "nom",
-            "date de naissance", "email", "manager", "compétences", "souhaits", "jours indisponibles");
+    private static final List<String> ENTETE = List.of(
+            "identifiant",
+            "prénom",
+            "nom",
+            "date de naissance",
+            "email",
+            "manager",
+            "compétences",
+            "souhaits",
+            "jours indisponibles");
 
     @Inject
     AnimateurCsvImportService csvImport;
@@ -97,12 +96,12 @@ class AnimateurCsvExempleTest {
         editions.create(new Edition(EDITION, "Exemple CSV", false, null));
         editionContext.executeIn(EDITION, () -> {
             for (TypologieDto typologie : scenario.typologies()) {
-                referenceData.createTypologie(new TypologieItem(typologie.id(), typologie.label(),
-                        Boolean.TRUE.equals(typologie.ninja())));
+                referenceData.createTypologie(
+                        new TypologieItem(typologie.id(), typologie.label(), Boolean.TRUE.equals(typologie.ninja())));
             }
             for (CreneauDto creneau : scenario.creneaux()) {
-                referenceData.createCreneau(new Creneau(null, creneau.jour(), creneau.date(),
-                        creneau.heureDebut(), creneau.heureFin()));
+                referenceData.createCreneau(
+                        new Creneau(null, creneau.jour(), creneau.date(), creneau.heureDebut(), creneau.heureFin()));
             }
             return null;
         });
@@ -125,12 +124,14 @@ class AnimateurCsvExempleTest {
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.apply(demandeExemple()));
 
         assertThat(rapport.rejected()).isZero();
-        assertThat(rapport.rows()).allSatisfy(ligne -> assertThat(ligne.reasons()).isEmpty());
+        assertThat(rapport.rows())
+                .allSatisfy(ligne -> assertThat(ligne.reasons()).isEmpty());
         assertThat(rapport.total()).isEqualTo(scenario.animateurs().size());
         assertThat(rapport.accepted()).isEqualTo(scenario.animateurs().size());
         assertThat(rapport.created()).isEqualTo(scenario.animateurs().size());
         assertThat(rapport.deleted()).isZero();
-        assertThat(inEdition(() -> referenceData.listAnimateurs())).hasSize(scenario.animateurs().size());
+        assertThat(inEdition(() -> referenceData.listAnimateurs()))
+                .hasSize(scenario.animateurs().size());
     }
 
     /**
@@ -145,9 +146,16 @@ class AnimateurCsvExempleTest {
         assertThat(table.separator()).isEqualTo(';');
         assertThat(table.columns()).isEqualTo(ENTETE);
         AnimateurCsvMapping mapping = AnimateurCsvMapping.propose(table.columns());
-        assertThat(List.of(mapping.id(), mapping.prenom(), mapping.nom(), mapping.dateNaissance(),
-                mapping.email(), mapping.manager(), mapping.competences(), mapping.souhaits(),
-                mapping.joursIndisponibles()))
+        assertThat(List.of(
+                        mapping.id(),
+                        mapping.prenom(),
+                        mapping.nom(),
+                        mapping.dateNaissance(),
+                        mapping.email(),
+                        mapping.manager(),
+                        mapping.competences(),
+                        mapping.souhaits(),
+                        mapping.joursIndisponibles()))
                 .containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8);
     }
 
@@ -190,10 +198,10 @@ class AnimateurCsvExempleTest {
      */
     @Test
     void lesTypologiesEtLesJoursDeLExempleAppartiennentAuScenario() {
-        Set<String> typologies = scenario.typologies().stream()
-                .map(TypologieDto::id).collect(Collectors.toSet());
-        Set<LocalDate> joursEvenement = scenario.creneaux().stream()
-                .map(CreneauDto::date).collect(Collectors.toSet());
+        Set<String> typologies =
+                scenario.typologies().stream().map(TypologieDto::id).collect(Collectors.toSet());
+        Set<LocalDate> joursEvenement =
+                scenario.creneaux().stream().map(CreneauDto::date).collect(Collectors.toSet());
 
         inEdition(() -> csvImport.apply(demandeExemple()));
         List<Animateur> importes = inEdition(() -> referenceData.listAnimateurs());
@@ -203,11 +211,15 @@ class AnimateurCsvExempleTest {
             assertThat(typologies).containsAll(animateur.getSouhaits());
             assertThat(joursEvenement).containsAll(animateur.getJoursIndisponibles());
         });
-        assertThat(importes).anySatisfy(animateur -> assertThat(animateur.getCompetences())
-                .hasSizeGreaterThan(1).containsValue(NiveauCompetence.REFERENT));
-        assertThat(importes).anySatisfy(animateur -> assertThat(animateur.getSouhaits()).hasSizeGreaterThan(1));
-        assertThat(importes).anySatisfy(animateur ->
-                assertThat(animateur.getJoursIndisponibles()).hasSizeGreaterThan(1));
+        assertThat(importes)
+                .anySatisfy(animateur -> assertThat(animateur.getCompetences())
+                        .hasSizeGreaterThan(1)
+                        .containsValue(NiveauCompetence.REFERENT));
+        assertThat(importes)
+                .anySatisfy(animateur -> assertThat(animateur.getSouhaits()).hasSizeGreaterThan(1));
+        assertThat(importes)
+                .anySatisfy(animateur ->
+                        assertThat(animateur.getJoursIndisponibles()).hasSizeGreaterThan(1));
     }
 
     /**
@@ -236,10 +248,13 @@ class AnimateurCsvExempleTest {
      */
     @Test
     void lEndpointDeTelechargementSertLaMemeRessource() {
-        String servi = given().when().get("/api/animateurs/import-csv/exemple")
-                .then().statusCode(200)
+        String servi = given().when()
+                .get("/api/animateurs/import-csv/exemple")
+                .then()
+                .statusCode(200)
                 .header("Content-Disposition", "attachment; filename=\"festival-realiste-animateurs.csv\"")
-                .extract().asString();
+                .extract()
+                .asString();
 
         assertThat(servi).isEqualTo("\uFEFF" + exemple());
     }
@@ -247,8 +262,12 @@ class AnimateurCsvExempleTest {
     /** Downloaded and sent straight back, untouched: still not one rejected row. */
     @Test
     void leFichierServiSeReimporteAvecSaMarque() {
-        String servi = given().when().get("/api/animateurs/import-csv/exemple")
-                .then().statusCode(200).extract().asString();
+        String servi = given().when()
+                .get("/api/animateurs/import-csv/exemple")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(
                 new AnimateurCsvImportRequest("festival-realiste-animateurs.csv", servi, null, false, false)));
@@ -281,8 +300,7 @@ class AnimateurCsvExempleTest {
     }
 
     private static String read(String ressource) {
-        try (InputStream flux = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(ressource)) {
+        try (InputStream flux = Thread.currentThread().getContextClassLoader().getResourceAsStream(ressource)) {
             if (flux == null) {
                 throw new IllegalStateException("Ressource absente du classpath : " + ressource);
             }

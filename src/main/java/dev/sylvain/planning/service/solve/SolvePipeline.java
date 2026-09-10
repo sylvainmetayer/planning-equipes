@@ -1,5 +1,18 @@
 package dev.sylvain.planning.service.solve;
 
+import ai.timefold.solver.core.api.solver.Solver;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
+import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.notification.Notification;
+import dev.sylvain.planning.service.publication.PlanPublieService;
+import dev.sylvain.planning.service.publication.PublicationDiffService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
+import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -8,22 +21,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import ai.timefold.solver.core.api.solver.Solver;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.notification.Notification;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Event;
-import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
-import dev.sylvain.planning.service.edition.EditionService;
-import dev.sylvain.planning.service.publication.PlanPublieService;
-import dev.sylvain.planning.service.publication.PublicationDiffService;
-import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
-import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * What a solve <b>always</b> does, end to end: snapshot the plan it is about
@@ -93,10 +91,13 @@ public class SolvePipeline {
      *                     down; {@code null} for a solve that reached its own
      *                     end — its budget, feasibility, or a cancel
      */
-    public record Resolution<P>(P probleme, PlanningEvenement planning,
-            PlanningDiagnosticService.PlanningDiagnostic diagnostic, PreviousPlan previousPlan,
-            ImpactPublication impactPublication, Interruption interruption) {
-    }
+    public record Resolution<P>(
+            P probleme,
+            PlanningEvenement planning,
+            PlanningDiagnosticService.PlanningDiagnostic diagnostic,
+            PreviousPlan previousPlan,
+            ImpactPublication impactPublication,
+            Interruption interruption) {}
 
     /**
      * A solve the server stopped under — a graceful shutdown, or the CDI
@@ -116,8 +117,7 @@ public class SolvePipeline {
      *                        {@code null} when there was none or it could not
      *                        be established
      */
-    public record Interruption(boolean partialPlanKept, String partialScore, String persistedScore) {
-    }
+    public record Interruption(boolean partialPlanKept, String partialScore, String persistedScore) {}
 
     /**
      * How many people would have to be told (issue « stabilité ») if this plan
@@ -133,8 +133,7 @@ public class SolvePipeline {
      *
      * @param publieLe when the plan compared against was published
      */
-    public record ImpactPublication(int personnes, Instant publieLe) {
-    }
+    public record ImpactPublication(int personnes, Instant publieLe) {}
 
     /**
      * The common case: the problem is already there, and the edition is the one
@@ -142,16 +141,24 @@ public class SolvePipeline {
      * calls.
      */
     public Resolution<PlanningEvenement> execute(PlanningEvenement probleme, Long secondsLimit) {
-        return execute(editionService.editionCourante().getNom(), () -> probleme,
-                Function.identity(), secondsLimit, null, () -> false);
+        return execute(
+                editionService.editionCourante().getNom(),
+                () -> probleme,
+                Function.identity(),
+                secondsLimit,
+                null,
+                () -> false);
     }
 
     /** The same, for a background job that must be able to stop its solver. */
-    public Resolution<PlanningEvenement> execute(String editionNom, PlanningEvenement probleme,
-            Long secondsLimit, Consumer<Solver<PlanningEvenement>> attacheSolveur,
+    public Resolution<PlanningEvenement> execute(
+            String editionNom,
+            PlanningEvenement probleme,
+            Long secondsLimit,
+            Consumer<Solver<PlanningEvenement>> attacheSolveur,
             BooleanSupplier shutdownRequested) {
-        return execute(editionNom, () -> probleme, Function.identity(), secondsLimit, attacheSolveur,
-                shutdownRequested);
+        return execute(
+                editionNom, () -> probleme, Function.identity(), secondsLimit, attacheSolveur, shutdownRequested);
     }
 
     /**
@@ -168,9 +175,13 @@ public class SolvePipeline {
      *                           the solver has returned, to tell a run it cut
      *                           short from one that reached its own end
      */
-    public <P> Resolution<P> execute(String editionNom, Supplier<P> buildProblem,
-            Function<P, PlanningEvenement> planningOf, Long secondsLimit,
-            Consumer<Solver<PlanningEvenement>> attacheSolveur, BooleanSupplier shutdownRequested) {
+    public <P> Resolution<P> execute(
+            String editionNom,
+            Supplier<P> buildProblem,
+            Function<P, PlanningEvenement> planningOf,
+            Long secondsLimit,
+            Consumer<Solver<PlanningEvenement>> attacheSolveur,
+            BooleanSupplier shutdownRequested) {
         // The net of issue #138: the plan about to be overwritten is
         // snapshotted first, so a solve no longer destroys the previous result.
         PlanSnapshotService.SnapshotMeta replaced = snapshotService.captureBeforeSolve();
@@ -194,9 +205,13 @@ public class SolvePipeline {
         // has just recorded — and never in a position to fail the solve.
         kpiHistoriqueService.recordAfterSolve(dureeSolveSecondes);
         announce(editionNom, diagnostic);
-        return new Resolution<>(probleme, resolu, diagnostic,
+        return new Resolution<>(
+                probleme,
+                resolu,
+                diagnostic,
                 PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
-                impactPublication(resolu), null);
+                impactPublication(resolu),
+                null);
     }
 
     /**
@@ -205,8 +220,12 @@ public class SolvePipeline {
      * to lose — and nothing else a finished solve does (KPI row, end-of-solve
      * mail, publication impact) is done for a run that did not finish.
      */
-    private <P> Resolution<P> interrupted(P probleme, PlanningEvenement resolu,
-            PlanSnapshotService.SnapshotMeta replaced, String scoreBefore, long dureeSolveSecondes) {
+    private <P> Resolution<P> interrupted(
+            P probleme,
+            PlanningEvenement resolu,
+            PlanSnapshotService.SnapshotMeta replaced,
+            String scoreBefore,
+            long dureeSolveSecondes) {
         // Cleared before touching the database: a connection pool refuses an
         // interrupted thread, and a plan worth keeping must be writable.
         Thread.interrupted();
@@ -216,15 +235,21 @@ public class SolvePipeline {
             persistenceService.persist(resolu);
             analysisStore.record(diagnostic);
             kpiHistoriqueService.recordAfterSolve(dureeSolveSecondes);
-            LOG.infof("Solve stopped by the server after %d s: its plan (%s) replaces the persisted one (%s)",
+            LOG.infof(
+                    "Solve stopped by the server after %d s: its plan (%s) replaces the persisted one (%s)",
                     dureeSolveSecondes, diagnostic.score(), scoreBefore);
         } else {
-            LOG.infof("Solve stopped by the server after %d s: its plan (%s) is discarded, the persisted one (%s) stands",
+            LOG.infof(
+                    "Solve stopped by the server after %d s: its plan (%s) is discarded, the persisted one (%s) stands",
                     dureeSolveSecondes, diagnostic.score(), scoreBefore);
         }
-        return new Resolution<>(probleme, resolu, diagnostic,
+        return new Resolution<>(
+                probleme,
+                resolu,
+                diagnostic,
                 PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
-                null, new Interruption(kept, diagnostic.score(), scoreBefore));
+                null,
+                new Interruption(kept, diagnostic.score(), scoreBefore));
     }
 
     /**
@@ -275,13 +300,17 @@ public class SolvePipeline {
             }
             Map<String, PublicationDiffService.Identite> identites = new HashMap<>();
             for (Animateur animateur : resolu.getAnimateurs()) {
-                identites.put(animateur.getId(),
+                identites.put(
+                        animateur.getId(),
                         new PublicationDiffService.Identite(animateur.nomAffiche(), animateur.getEmail()));
             }
-            int personnes = diffService.comparer(
-                    PublicationDiffService.vacationsByAnimateur(planPublieService.planPublie()),
-                    PublicationDiffService.vacationsByAnimateur(resolu),
-                    identites, false).size();
+            int personnes = diffService
+                    .comparer(
+                            PublicationDiffService.vacationsByAnimateur(planPublieService.planPublie()),
+                            PublicationDiffService.vacationsByAnimateur(resolu),
+                            identites,
+                            false)
+                    .size();
             return new ImpactPublication(personnes, publication.publieLe());
         } catch (RuntimeException e) {
             LOG.warn("The publication impact of the solve could not be computed", e);
@@ -337,7 +366,7 @@ public class SolvePipeline {
             return;
         }
         // Feasible in the Timefold sense: no hard constraint violated any more.
-        notifications.fire(new Notification.ResolutionTerminee(
-                editionNom, diagnostic.score(), diagnostic.hardScore() >= 0));
+        notifications.fire(
+                new Notification.ResolutionTerminee(editionNom, diagnostic.score(), diagnostic.hardScore() >= 0));
     }
 }

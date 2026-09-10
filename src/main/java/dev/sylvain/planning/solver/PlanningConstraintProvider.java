@@ -1,7 +1,5 @@
 package dev.sylvain.planning.solver;
 
-import java.util.stream.Stream;
-
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
@@ -11,6 +9,7 @@ import dev.sylvain.planning.solver.constraints.LegalConstraints;
 import dev.sylvain.planning.solver.constraints.PreferenceConstraints;
 import dev.sylvain.planning.solver.constraints.QualiteConstraints;
 import dev.sylvain.planning.solver.constraints.VerrouillageConstraints;
+import java.util.stream.Stream;
 
 /**
  * Aggregates every constraint definition. The actual rules live in dedicated
@@ -29,12 +28,12 @@ public class PlanningConstraintProvider implements ConstraintProvider {
     @Override
     public Constraint[] defineConstraints(ConstraintFactory constraintFactory) {
         return Stream.of(
-                new AffectationConstraints().define(constraintFactory),
-                new LegalConstraints().define(constraintFactory),
-                new AdHocConstraints().define(constraintFactory),
-                new VerrouillageConstraints().define(constraintFactory),
-                new QualiteConstraints().define(constraintFactory),
-                new PreferenceConstraints().define(constraintFactory))
+                        new AffectationConstraints().define(constraintFactory),
+                        new LegalConstraints().define(constraintFactory),
+                        new AdHocConstraints().define(constraintFactory),
+                        new VerrouillageConstraints().define(constraintFactory),
+                        new QualiteConstraints().define(constraintFactory),
+                        new PreferenceConstraints().define(constraintFactory))
                 .flatMap(Stream::of)
                 .toArray(Constraint[]::new);
     }

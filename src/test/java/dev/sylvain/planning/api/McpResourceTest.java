@@ -5,13 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
 
 /**
  * The MCP page's two server-side needs: knowing whether a key exists, and
@@ -33,8 +32,8 @@ class McpResourceTest {
     @Test
     @Order(1)
     void leStatutDitQuUneCleEstConfigureeSansJamaisLaDonner() {
-        given()
-                .when().get("/api/mcp/statut")
+        given().when()
+                .get("/api/mcp/statut")
                 .then()
                 .statusCode(200)
                 .body("configuree", is(true))
@@ -51,14 +50,20 @@ class McpResourceTest {
     @Test
     @Order(1)
     void lesPromptsDuServeurSontServisAuComplet() {
-        given()
-                .when().get("/api/mcp/prompts")
+        given().when()
+                .get("/api/mcp/prompts")
                 .then()
                 .statusCode(200)
                 .body("size()", org.hamcrest.Matchers.greaterThan(0))
-                .body("nom", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
-                .body("description", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
-                .body("texte", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
+                .body(
+                        "nom",
+                        org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
+                .body(
+                        "description",
+                        org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
+                .body(
+                        "texte",
+                        org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
                 // First of the catalogue, so first of the event: the stands' hours,
                 // which the créneau grid can then be derived from.
                 .body("[0].nom", equalTo("saisir_les_horaires_des_stands"));
@@ -67,10 +72,10 @@ class McpResourceTest {
     @Test
     @Order(2)
     void leBonMotDePasseRevelaLaCle() {
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"motDePasse\":\"admin\"}")
-                .when().post("/api/mcp/cle")
+                .when()
+                .post("/api/mcp/cle")
                 .then()
                 .statusCode(200)
                 .body("cle", equalTo("test-mcp-key"))
@@ -81,10 +86,10 @@ class McpResourceTest {
     @Test
     @Order(3)
     void unMauvaisMotDePasseNeRevelaRien() {
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"motDePasse\":\"pas-le-bon\"}")
-                .when().post("/api/mcp/cle")
+                .when()
+                .post("/api/mcp/cle")
                 .then()
                 .statusCode(401);
     }
@@ -92,10 +97,10 @@ class McpResourceTest {
     @Test
     @Order(4)
     void unMotDePasseAbsentEstTraiteCommeUnMauvaisMotDePasse() {
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{}")
-                .when().post("/api/mcp/cle")
+                .when()
+                .post("/api/mcp/cle")
                 .then()
                 .statusCode(401);
     }
@@ -109,20 +114,22 @@ class McpResourceTest {
         // the 429 to be a 401.
         int statut = 401;
         for (int essai = 0; essai < McpResource.MAX_ESSAIS + 1 && statut == 401; essai++) {
-            statut = given()
-                    .contentType(ContentType.JSON)
+            statut = given().contentType(ContentType.JSON)
                     .body("{\"motDePasse\":\"toujours-faux\"}")
-                    .when().post("/api/mcp/cle")
-                    .then().extract().statusCode();
+                    .when()
+                    .post("/api/mcp/cle")
+                    .then()
+                    .extract()
+                    .statusCode();
         }
         assertThat(statut).isEqualTo(429);
 
         // The right password does not lift the lockout: otherwise guessing it
         // once would be enough to cancel the whole limit.
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"motDePasse\":\"admin\"}")
-                .when().post("/api/mcp/cle")
+                .when()
+                .post("/api/mcp/cle")
                 .then()
                 .statusCode(429);
     }

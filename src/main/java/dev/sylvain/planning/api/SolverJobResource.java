@@ -1,28 +1,21 @@
 package dev.sylvain.planning.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
 import dev.sylvain.planning.config.ConfigJobStream;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.JobStreamBroadcaster;
-import dev.sylvain.planning.service.solve.ReplanificationScope;
 import dev.sylvain.planning.service.solve.Reamorcage;
+import dev.sylvain.planning.service.solve.ReplanificationScope;
 import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.solve.SolverJobService.SolverBusyException;
 import dev.sylvain.planning.service.solve.SolverJobService.SolverJob;
 import dev.sylvain.planning.service.solve.SolverScoreTrace;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -34,6 +27,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Non-blocking counterpart of {@link PlanningResource}: submits a solve or an
@@ -106,11 +102,12 @@ public class SolverJobResource {
     @POST
     @Path("/solve/async/reference-data")
     @Consumes(MediaType.WILDCARD)
-    public Response solveFromReferenceData(@QueryParam("seconds") Long secondsLimit,
+    public Response solveFromReferenceData(
+            @QueryParam("seconds") Long secondsLimit,
             @QueryParam("enFile") @DefaultValue("false") boolean enFile,
             @QueryParam("reamorcage") String reamorcage) {
-        SolverJob job = solverJobService.submitSolveFromReferenceData(secondsLimit, enFile,
-                Reamorcage.parse(reamorcage));
+        SolverJob job =
+                solverJobService.submitSolveFromReferenceData(secondsLimit, enFile, Reamorcage.parse(reamorcage));
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 
@@ -128,7 +125,9 @@ public class SolverJobResource {
      */
     @POST
     @Path("/solve/incremental/async")
-    public Response solveIncremental(ReplanificationScope scope, @QueryParam("seconds") Long secondsLimit,
+    public Response solveIncremental(
+            ReplanificationScope scope,
+            @QueryParam("seconds") Long secondsLimit,
             @QueryParam("enFile") @DefaultValue("false") boolean enFile) {
         SolverJob job = solverJobService.submitSolveIncremental(secondsLimit, scope, enFile);
         return Response.accepted(JobView.withoutResult(job)).build();
@@ -149,7 +148,9 @@ public class SolverJobResource {
     @GET
     @Path("/jobs/file")
     public List<JobView> fileAttente() {
-        return solverJobService.fileAttente().stream().map(JobView::withoutResult).toList();
+        return solverJobService.fileAttente().stream()
+                .map(JobView::withoutResult)
+                .toList();
     }
 
     /**
@@ -160,7 +161,8 @@ public class SolverJobResource {
     @GET
     @Path("/jobs/active")
     public Response activeJob() {
-        return solverJobService.findActive()
+        return solverJobService
+                .findActive()
                 .map(job -> Response.ok(JobView.withoutResult(job)).build())
                 .orElseGet(() -> Response.noContent().build());
     }
@@ -209,7 +211,8 @@ public class SolverJobResource {
         // so no transition can slip through between the initial state and the
         // subscription to the broadcaster. The item(0) is what makes the first
         // event the current state.
-        Multi<OutboundSseEvent> states = Multi.createBy().merging()
+        Multi<OutboundSseEvent> states = Multi.createBy()
+                .merging()
                 .streams(Multi.createFrom().item(0L), jobStream.changes())
                 // The state is read and serialised off the publishing thread,
                 // which holds the solver service monitor while it announces a
@@ -217,24 +220,30 @@ public class SolverJobResource {
                 .emitOn(Infrastructure.getDefaultWorkerPool())
                 // A client too slow to keep up gets the latest state, never a
                 // backlog of stale ones: each event is a full snapshot.
-                .onOverflow().dropPreviousItems()
+                .onOverflow()
+                .dropPreviousItems()
                 .map(version -> stateEvent());
         Multi<OutboundSseEvent> heartbeats = Multi.createFrom()
-                .ticks().every(configJobStream.heartbeat())
-                .onOverflow().drop()
+                .ticks()
+                .every(configJobStream.heartbeat())
+                .onOverflow()
+                .drop()
                 .map(tick -> heartbeatEvent());
         // The score curve beats on its own clock rather than on the job
         // transitions: a running solve improves constantly and transitions
         // almost never, so there is nothing to hang these events on. A tick
         // that has nothing new to say emits nothing at all.
         Multi<OutboundSseEvent> scores = Multi.createFrom()
-                .ticks().every(configJobStream.score())
-                .onOverflow().drop()
+                .ticks()
+                .every(configJobStream.score())
+                .onOverflow()
+                .drop()
                 .emitOn(Infrastructure.getDefaultWorkerPool())
                 // Zero or one event per tick, expressed as a list rather than a
                 // nullable mapping: Mutiny rejects a mapper returning null, and
                 // a downstream filter would already be too late.
-                .onItem().transformToIterable(tick -> scoreEvents(scoreCursor));
+                .onItem()
+                .transformToIterable(tick -> scoreEvents(scoreCursor));
         return Multi.createBy().merging().streams(states, heartbeats, scores);
     }
 
@@ -281,7 +290,8 @@ public class SolverJobResource {
             cursor.amorce = false;
         }
         int depuis = Math.min(cursor.envoyes, trace.points().size());
-        List<SolverScoreTrace.Point> nouveaux = trace.points().subList(depuis, trace.points().size());
+        List<SolverScoreTrace.Point> nouveaux =
+                trace.points().subList(depuis, trace.points().size());
         // A running solve beats every tick even with nothing new to add: its
         // dureeMs is what draws the plateau, and a plateau is precisely the
         // state that produces no new point at all. A finished curve goes quiet.
@@ -292,8 +302,15 @@ public class SolverJobResource {
         cursor.envoyes = trace.points().size();
         cursor.amorce = true;
         cursor.termine = trace.termine();
-        return List.of(scoreEvent(new ScoreDelta(trace.jobId(), trace.editionId(), trace.generation(),
-                depuis, trace.intervalleMs(), trace.dureeMs(), trace.termine(), List.copyOf(nouveaux))));
+        return List.of(scoreEvent(new ScoreDelta(
+                trace.jobId(),
+                trace.editionId(),
+                trace.generation(),
+                depuis,
+                trace.intervalleMs(),
+                trace.dureeMs(),
+                trace.termine(),
+                List.copyOf(nouveaux))));
     }
 
     /**
@@ -352,7 +369,9 @@ public class SolverJobResource {
     private OutboundSseEvent stateEvent() {
         JobsState state = new JobsState(
                 solverJobService.findActive().map(JobView::withoutResult).orElse(null),
-                solverJobService.fileAttente().stream().map(JobView::withoutResult).toList());
+                solverJobService.fileAttente().stream()
+                        .map(JobView::withoutResult)
+                        .toList());
         return sse.newEventBuilder()
                 .name(EVENT_STATE)
                 .mediaType(MediaType.APPLICATION_JSON_TYPE)
@@ -376,7 +395,8 @@ public class SolverJobResource {
     @GET
     @Path("/jobs/{id}")
     public Response getJob(@PathParam("id") String id) {
-        return solverJobService.find(id)
+        return solverJobService
+                .find(id)
                 .map(job -> Response.ok(JobView.withResult(job)).build())
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
@@ -398,7 +418,8 @@ public class SolverJobResource {
     @Path("/jobs/{id}/cancel")
     @Consumes(MediaType.WILDCARD)
     public Response cancelJob(@PathParam("id") String id) {
-        return solverJobService.cancel(id)
+        return solverJobService
+                .cancel(id)
                 .map(job -> Response.ok(JobView.withoutResult(job)).build())
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
@@ -408,12 +429,10 @@ public class SolverJobResource {
      * what waits behind it. The two used to be two requests; joining them is
      * what removes the second one.
      */
-    public record JobsState(JobView active, List<JobView> file) {
-    }
+    public record JobsState(JobView active, List<JobView> file) {}
 
     /** Payload of a heartbeat: a timestamp, so the event is never empty. */
-    public record Heartbeat(Instant at) {
-    }
+    public record Heartbeat(Instant at) {}
 
     /**
      * One {@code score} event: the points of the curve this connection had not
@@ -431,9 +450,15 @@ public class SolverJobResource {
      *                     Timefold only announces strict improvements
      * @param termine      whether the run is over and the curve final
      */
-    public record ScoreDelta(String jobId, String editionId, int generation, int depuis,
-            long intervalleMs, long dureeMs, boolean termine, List<SolverScoreTrace.Point> points) {
-    }
+    public record ScoreDelta(
+            String jobId,
+            String editionId,
+            int generation,
+            int depuis,
+            long intervalleMs,
+            long dureeMs,
+            boolean termine,
+            List<SolverScoreTrace.Point> points) {}
 
     public record JobView(
             /**

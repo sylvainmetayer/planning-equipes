@@ -1,24 +1,9 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import javax.sql.DataSource;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -26,14 +11,25 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * The promise of issue #245, seen from the espace animateur: what you see is
@@ -73,9 +69,8 @@ class EspacePlanPublieTest {
         // The espace session (e-mail code flow) rides on every request.
         RestAssured.requestSpecification = null;
         String session = EspaceSessions.open(mailbox, tokenOf("PUBESP-A"), EMAIL_ALICE);
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-                .addCookie("planning-espace", session)
-                .build();
+        RestAssured.requestSpecification =
+                new RequestSpecBuilder().addCookie("planning-espace", session).build();
         mailbox.clear();
     }
 
@@ -87,7 +82,8 @@ class EspacePlanPublieTest {
 
     @Test
     void tantQueRienNEstPublieLEspaceNeMontreAucunPlanning() {
-        given().when().get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
                 .body("publieLe", nullValue())
@@ -98,7 +94,8 @@ class EspacePlanPublieTest {
     void aPresPublicationLEspaceMontreLePlanningEtSaDate() {
         publication.publier();
 
-        given().when().get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
                 .body("publieLe", containsString("20"))
@@ -114,7 +111,8 @@ class EspacePlanPublieTest {
         // incremental solve: the espace must not follow on its own.
         persistPlan("PUBESP-B");
 
-        given().when().get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
                 .body("postes.size()", equalTo(1))
@@ -122,7 +120,8 @@ class EspacePlanPublieTest {
 
         publication.publier();
 
-        given().when().get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
                 .body("postes.size()", equalTo(0));
@@ -131,7 +130,8 @@ class EspacePlanPublieTest {
     @Test
     void leRenvoiIndividuelRefuseTantQueRienNAEtePublie() {
         given().contentType(ContentType.JSON)
-                .when().post("/api/planning/envoi/animateur/PUBESP-A")
+                .when()
+                .post("/api/planning/envoi/animateur/PUBESP-A")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("pas encore été publié"));
@@ -152,7 +152,8 @@ class EspacePlanPublieTest {
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
         publication.publier();
 
-        given().when().get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
                 .body("postes.size()", equalTo(1))

@@ -1,7 +1,13 @@
 package dev.sylvain.planning.service.analyse;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver.SourceHoraire;
+import dev.sylvain.planning.service.solve.ProblemBuilder;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,15 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver.SourceHoraire;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
-import dev.sylvain.planning.service.solve.ProblemBuilder;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Read-only, stand × jour view of when each stand is <b>actually</b> open, for an
@@ -41,8 +39,7 @@ import dev.sylvain.planning.service.solve.ProblemBuilder;
  */
 public final class OuvertureStandsAnalyzer {
 
-    private OuvertureStandsAnalyzer() {
-    }
+    private OuvertureStandsAnalyzer() {}
 
     /** How much of a day's amplitude a stand covers. */
     public enum EtatOuverture {
@@ -85,15 +82,19 @@ public final class OuvertureStandsAnalyzer {
      * validates a grid holding the rows a rule <em>would</em> add.
      */
     @Schema(requiredProperties = {"couverturePause", "famille"})
-    public record ColonneCreneau(Long id, LocalTime heureDebut, LocalTime heureFin, int famille,
-            boolean couverturePause) {
-    }
+    public record ColonneCreneau(
+            Long id, LocalTime heureDebut, LocalTime heureFin, int famille, boolean couverturePause) {}
 
     /** One event day, the amplitude the cells of that column are measured against, and its créneaux. */
     @Schema(requiredProperties = {"jour", "minutes", "nombreCreneaux"})
-    public record JourAmplitude(LocalDate date, int jour, LocalTime heureDebut, LocalTime heureFin, int minutes,
-            int nombreCreneaux, List<ColonneCreneau> creneaux) {
-    }
+    public record JourAmplitude(
+            LocalDate date,
+            int jour,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            int minutes,
+            int nombreCreneaux,
+            List<ColonneCreneau> creneaux) {}
 
     /**
      * What one stand does on one créneau, as the entry grid shows it: the
@@ -109,35 +110,45 @@ public final class OuvertureStandsAnalyzer {
      *                    the cell is shown inert rather than editable
      */
     @Schema(requiredProperties = {"horsFamille", "partiel"})
-    public record CelluleCreneau(Long creneauId, Integer effectif, boolean partiel, boolean horsFamille) {
-    }
+    public record CelluleCreneau(Long creneauId, Integer effectif, boolean partiel, boolean horsFamille) {}
 
     /** An open stretch, in wall-clock hours, after clamping to the créneaux. */
-    public record FenetreEffective(LocalTime heureDebut, LocalTime heureFin) {
-    }
+    public record FenetreEffective(LocalTime heureDebut, LocalTime heureFin) {}
 
     @Schema(requiredProperties = {"minutesAmplitude", "minutesOuvertes", "postes"})
-    public record CelluleJour(LocalDate date, EtatOuverture etat, SourceHoraire source,
-            List<FenetreEffective> fenetres, int minutesOuvertes, int minutesAmplitude, int postes,
-            List<CelluleCreneau> creneaux) {
-    }
+    public record CelluleJour(
+            LocalDate date,
+            EtatOuverture etat,
+            SourceHoraire source,
+            List<FenetreEffective> fenetres,
+            int minutesOuvertes,
+            int minutesAmplitude,
+            int postes,
+            List<CelluleCreneau> creneaux) {}
 
     /**
      * @param modifieLe the stand's stamp as this grid read it, echoed back by
      *                  the save as its precondition (issue #362)
      */
     @Schema(requiredProperties = {"effectifMin", "minutesOuvertes", "postes"})
-    public record LigneStand(String standId, String nom, int effectifMin, List<CelluleJour> jours, int minutesOuvertes,
-            int postes, Instant modifieLe) {
-    }
+    public record LigneStand(
+            String standId,
+            String nom,
+            int effectifMin,
+            List<CelluleJour> jours,
+            int minutesOuvertes,
+            int postes,
+            Instant modifieLe) {}
 
-    public record Anomaly(AnomalyType type, String standId, String standNom, LocalDate date, String message) {
-    }
+    public record Anomaly(AnomalyType type, String standId, String standNom, LocalDate date, String message) {}
 
     @Schema(requiredProperties = {"postesTotal", "standsJamaisOuverts"})
-    public record RapportOuvertures(List<JourAmplitude> jours, List<LigneStand> stands, int standsJamaisOuverts,
-            int postesTotal, List<Anomaly> anomalies) {
-    }
+    public record RapportOuvertures(
+            List<JourAmplitude> jours,
+            List<LigneStand> stands,
+            int standsJamaisOuverts,
+            int postesTotal,
+            List<Anomaly> anomalies) {}
 
     /**
      * Builds the report. {@code stands} must already be resolved
@@ -150,28 +161,40 @@ public final class OuvertureStandsAnalyzer {
         List<JourAmplitude> jours = new ArrayList<>();
         Map<LocalDate, Integer> amplitudeParJour = new LinkedHashMap<>();
         creneauxParJour.forEach((date, duJour) -> {
-            List<int[]> couverture = merge(duJour.stream()
-                    .map(OuvertureStandsAnalyzer::intervalle)
-                    .toList());
-            int minutes = couverture.stream().mapToInt(borne -> borne[1] - borne[0]).sum();
+            List<int[]> couverture = merge(
+                    duJour.stream().map(OuvertureStandsAnalyzer::intervalle).toList());
+            int minutes =
+                    couverture.stream().mapToInt(borne -> borne[1] - borne[0]).sum();
             amplitudeParJour.put(date, minutes);
             int debut = couverture.get(0)[0];
             int fin = couverture.get(couverture.size() - 1)[1];
             // Same order as the day's list, which creneauxByDay sorted: the
             // cells of a row are read back by position.
             List<ColonneCreneau> colonnes = duJour.stream()
-                    .map(creneau -> new ColonneCreneau(creneau.getId(), creneau.getHeureDebut(),
-                            creneau.getHeureFin(), creneau.getFamille(), creneau.isCouverturePause()))
+                    .map(creneau -> new ColonneCreneau(
+                            creneau.getId(),
+                            creneau.getHeureDebut(),
+                            creneau.getHeureFin(),
+                            creneau.getFamille(),
+                            creneau.isCouverturePause()))
                     .toList();
-            jours.add(new JourAmplitude(date, duJour.get(0).getJour(), minuteToTime(debut), minuteToTime(fin),
-                    minutes, duJour.size(), colonnes));
+            jours.add(new JourAmplitude(
+                    date,
+                    duJour.get(0).getJour(),
+                    minuteToTime(debut),
+                    minuteToTime(fin),
+                    minutes,
+                    duJour.size(),
+                    colonnes));
         });
 
         // The seats the solver would receive, grouped by stand then by day:
         // this is the single source of truth of that screen.
         Map<String, Map<LocalDate, List<PosteAffectation>>> postesParStandEtJour = new LinkedHashMap<>();
         for (PosteAffectation poste : ProblemBuilder.buildPostes(stands, creneaux)) {
-            if (poste.getStand() == null || poste.getCreneau() == null || poste.getCreneau().getDate() == null) {
+            if (poste.getStand() == null
+                    || poste.getCreneau() == null
+                    || poste.getCreneau().getDate() == null) {
                 continue;
             }
             postesParStandEtJour
@@ -185,15 +208,19 @@ public final class OuvertureStandsAnalyzer {
         int postesTotal = 0;
         int jamaisOuverts = 0;
         for (Stand stand : stands) {
-            Map<LocalDate, List<PosteAffectation>> parJour =
-                    postesParStandEtJour.getOrDefault(stand.getId(), Map.of());
+            Map<LocalDate, List<PosteAffectation>> parJour = postesParStandEtJour.getOrDefault(stand.getId(), Map.of());
             List<CelluleJour> cellules = new ArrayList<>();
             int minutesStand = 0;
             int postesStand = 0;
             for (JourAmplitude jour : jours) {
                 List<PosteAffectation> postes = parJour.getOrDefault(jour.date(), List.of());
-                CelluleJour cellule = cellule(stand, jour, postes, amplitudeParJour.get(jour.date()),
-                        creneauxParJour.get(jour.date()), familles.getOrDefault(stand.getId(), 0));
+                CelluleJour cellule = cellule(
+                        stand,
+                        jour,
+                        postes,
+                        amplitudeParJour.get(jour.date()),
+                        creneauxParJour.get(jour.date()),
+                        familles.getOrDefault(stand.getId(), 0));
                 cellules.add(cellule);
                 minutesStand += cellule.minutesOuvertes();
                 postesStand += cellule.postes();
@@ -201,17 +228,29 @@ public final class OuvertureStandsAnalyzer {
             }
             if (postesStand == 0) {
                 jamaisOuverts++;
-                anomalies.add(new Anomaly(AnomalyType.STAND_JAMAIS_OUVERT, stand.getId(), stand.getNom(), null,
-                        "Le stand n'est ouvert aucun jour du groupe de créneaux actif : aucun poste ne sera à pourvoir."));
+                anomalies.add(
+                        new Anomaly(
+                                AnomalyType.STAND_JAMAIS_OUVERT,
+                                stand.getId(),
+                                stand.getNom(),
+                                null,
+                                "Le stand n'est ouvert aucun jour du groupe de créneaux actif : aucun poste ne sera à pourvoir."));
             }
             anomalies.addAll(fenetresWithoutEffect(stand, creneauxParJour));
             postesTotal += postesStand;
-            lignes.add(new LigneStand(stand.getId(), stand.getNom(), stand.getEffectifMin(), cellules, minutesStand,
-                    postesStand, stand.getModifieLe()));
+            lignes.add(new LigneStand(
+                    stand.getId(),
+                    stand.getNom(),
+                    stand.getEffectifMin(),
+                    cellules,
+                    minutesStand,
+                    postesStand,
+                    stand.getModifieLe()));
         }
-        anomalies.sort(Comparator.comparing((Anomaly anomalie) -> anomalie.type().ordinal())
-                .thenComparing(Anomaly::standId)
-                .thenComparing(anomalie -> anomalie.date() != null ? anomalie.date() : LocalDate.MIN));
+        anomalies.sort(
+                Comparator.comparing((Anomaly anomalie) -> anomalie.type().ordinal())
+                        .thenComparing(Anomaly::standId)
+                        .thenComparing(anomalie -> anomalie.date() != null ? anomalie.date() : LocalDate.MIN));
         return new RapportOuvertures(jours, lignes, jamaisOuverts, postesTotal, anomalies);
     }
 
@@ -220,28 +259,35 @@ public final class OuvertureStandsAnalyzer {
      * sliced into overlapping vacations must show one continuous stretch, not one
      * band per vacation), and the poste count as it stands.
      */
-    private static CelluleJour cellule(Stand stand, JourAmplitude jour, List<PosteAffectation> postes,
-            int minutesAmplitude, List<Creneau> duJour, int familleStand) {
+    private static CelluleJour cellule(
+            Stand stand,
+            JourAmplitude jour,
+            List<PosteAffectation> postes,
+            int minutesAmplitude,
+            List<Creneau> duJour,
+            int familleStand) {
         SourceHoraire source = HoraireStandResolver.sourceOfDay(stand, jour.date());
         List<CelluleCreneau> parCreneau = new ArrayList<>();
         for (int index = 0; index < jour.creneaux().size(); index++) {
-            parCreneau.add(celluleCreneau(stand, duJour.get(index), jour.creneaux().get(index), familleStand));
+            parCreneau.add(
+                    celluleCreneau(stand, duJour.get(index), jour.creneaux().get(index), familleStand));
         }
         if (postes.isEmpty()) {
-            return new CelluleJour(jour.date(), EtatOuverture.FERME, source, List.of(), 0, minutesAmplitude, 0,
-                    parCreneau);
+            return new CelluleJour(
+                    jour.date(), EtatOuverture.FERME, source, List.of(), 0, minutesAmplitude, 0, parCreneau);
         }
         List<int[]> fenetres = merge(postes.stream()
                 .map(poste -> intervalle(poste.heureDebutEffectif(), poste.heureFinEffectif()))
                 .toList());
-        int minutesOuvertes = fenetres.stream().mapToInt(borne -> borne[1] - borne[0]).sum();
-        EtatOuverture etat = minutesOuvertes >= minutesAmplitude ? EtatOuverture.OUVERT_TOTAL
-                : EtatOuverture.OUVERT_PARTIEL;
+        int minutesOuvertes =
+                fenetres.stream().mapToInt(borne -> borne[1] - borne[0]).sum();
+        EtatOuverture etat =
+                minutesOuvertes >= minutesAmplitude ? EtatOuverture.OUVERT_TOTAL : EtatOuverture.OUVERT_PARTIEL;
         List<FenetreEffective> effectives = fenetres.stream()
                 .map(borne -> new FenetreEffective(minuteToTime(borne[0]), minuteToTime(borne[1])))
                 .toList();
-        return new CelluleJour(jour.date(), etat, source, effectives, minutesOuvertes, minutesAmplitude,
-                postes.size(), parCreneau);
+        return new CelluleJour(
+                jour.date(), etat, source, effectives, minutesOuvertes, minutesAmplitude, postes.size(), parCreneau);
     }
 
     /**
@@ -250,8 +296,8 @@ public final class OuvertureStandsAnalyzer {
      * headcount, not the seats — a break-covering créneau halves the seats,
      * and the organiser types what the stand needs, not what the solver gets.
      */
-    private static CelluleCreneau celluleCreneau(Stand stand, Creneau creneau, ColonneCreneau colonne,
-            int familleStand) {
+    private static CelluleCreneau celluleCreneau(
+            Stand stand, Creneau creneau, ColonneCreneau colonne, int familleStand) {
         if (creneau.getFamille() != familleStand) {
             // Another family's créneau: ProblemBuilder#buildPostes never pairs
             // it with this stand, so it holds no seat to read and none to type.
@@ -261,8 +307,12 @@ public final class OuvertureStandsAnalyzer {
         if (segments.isEmpty()) {
             return new CelluleCreneau(colonne.id(), null, false, false);
         }
-        int effectif = segments.stream().mapToInt(Creneau.SegmentOuvert::effectif).max().orElse(0);
-        boolean entier = segments.size() == 1 && segments.get(0).debutMinutes() == 0
+        int effectif = segments.stream()
+                .mapToInt(Creneau.SegmentOuvert::effectif)
+                .max()
+                .orElse(0);
+        boolean entier = segments.size() == 1
+                && segments.get(0).debutMinutes() == 0
                 && segments.get(0).finMinutes() == creneau.getDureeMinutes();
         return new CelluleCreneau(colonne.id(), effectif, !entier, false);
     }
@@ -281,8 +331,12 @@ public final class OuvertureStandsAnalyzer {
             int minutes = intervalle(fenetre.heureDebut(), fenetre.heureFin())[1]
                     - intervalle(fenetre.heureDebut(), fenetre.heureFin())[0];
             if (minutes < DUREE_MINIMALE_EXPLOITABLE_MINUTES) {
-                anomalies.add(new Anomaly(AnomalyType.SEGMENT_TROP_COURT, stand.getId(), stand.getNom(),
-                        cellule.date(), "Ouvert seulement " + minutes + " min (" + fenetre.heureDebut() + "–"
+                anomalies.add(new Anomaly(
+                        AnomalyType.SEGMENT_TROP_COURT,
+                        stand.getId(),
+                        stand.getNom(),
+                        cellule.date(),
+                        "Ouvert seulement " + minutes + " min (" + fenetre.heureDebut() + "–"
                                 + fenetre.heureFin() + ") : trop court pour être un vrai créneau de travail, "
                                 + "la saisie de ce jour est probablement à revoir."));
             }
@@ -303,7 +357,9 @@ public final class OuvertureStandsAnalyzer {
         Map<LocalDate, List<Creneau>> creneauxParJour = new TreeMap<>();
         for (Creneau creneau : creneaux) {
             if (creneau.getDate() != null && creneau.getHeureDebut() != null && creneau.getHeureFin() != null) {
-                creneauxParJour.computeIfAbsent(creneau.getDate(), key -> new ArrayList<>()).add(creneau);
+                creneauxParJour
+                        .computeIfAbsent(creneau.getDate(), key -> new ArrayList<>())
+                        .add(creneau);
             }
         }
         Comparator<Creneau> ordreDuJour = Comparator.comparing(Creneau::getHeureDebut)
@@ -323,19 +379,39 @@ public final class OuvertureStandsAnalyzer {
         List<Anomaly> anomalies = new ArrayList<>();
         TreeSet<String> dejaVues = new TreeSet<>();
         for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
-            reportIfWithoutEffect(stand, creneauxParJour, anomalies, dejaVues, ouverture.getDate(),
-                    ouverture.getHeureDebut(), ouverture.getHeureFin(), "L'ouverture");
+            reportIfWithoutEffect(
+                    stand,
+                    creneauxParJour,
+                    anomalies,
+                    dejaVues,
+                    ouverture.getDate(),
+                    ouverture.getHeureDebut(),
+                    ouverture.getHeureFin(),
+                    "L'ouverture");
         }
         for (IndisponibiliteStand fermeture : stand.getIndisponibilitesEffectives()) {
-            reportIfWithoutEffect(stand, creneauxParJour, anomalies, dejaVues, fermeture.getDate(),
-                    fermeture.getHeureDebut(), fermeture.getHeureFin(), "La fermeture");
+            reportIfWithoutEffect(
+                    stand,
+                    creneauxParJour,
+                    anomalies,
+                    dejaVues,
+                    fermeture.getDate(),
+                    fermeture.getHeureDebut(),
+                    fermeture.getHeureFin(),
+                    "La fermeture");
         }
         return anomalies;
     }
 
-    private static void reportIfWithoutEffect(Stand stand, Map<LocalDate, List<Creneau>> creneauxParJour,
-            List<Anomaly> anomalies, TreeSet<String> dejaVues, LocalDate date, LocalTime heureDebut,
-            LocalTime heureFin, String libelle) {
+    private static void reportIfWithoutEffect(
+            Stand stand,
+            Map<LocalDate, List<Creneau>> creneauxParJour,
+            List<Anomaly> anomalies,
+            TreeSet<String> dejaVues,
+            LocalDate date,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            String libelle) {
         if (date == null || heureDebut == null) {
             return;
         }
@@ -361,7 +437,11 @@ public final class OuvertureStandsAnalyzer {
         if (!dejaVues.add(key)) {
             return;
         }
-        anomalies.add(new Anomaly(AnomalyType.FENETRE_SANS_EFFET, stand.getId(), stand.getNom(), date,
+        anomalies.add(new Anomaly(
+                AnomalyType.FENETRE_SANS_EFFET,
+                stand.getId(),
+                stand.getNom(),
+                date,
                 libelle + " de " + heureDebut + " à "
                         + (heureFin != null ? heureFin.toString() : "la fermeture")
                         + " ne recoupe aucun créneau de ce jour : elle ne change rien."));

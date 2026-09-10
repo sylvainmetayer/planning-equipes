@@ -18,9 +18,9 @@ class ReferenceDataResourceTest {
 
     /** The browser uploads scenario YAML as {@code application/x-yaml}: encode it as plain text. */
     private static RequestSpecification yamlRequest(String yamlContent) {
-        return given()
-                .config(RestAssured.config().encoderConfig(
-                        EncoderConfig.encoderConfig().encodeContentTypeAs("application/x-yaml", ContentType.TEXT)))
+        return given().config(RestAssured.config()
+                        .encoderConfig(EncoderConfig.encoderConfig()
+                                .encodeContentTypeAs("application/x-yaml", ContentType.TEXT)))
                 .contentType("application/x-yaml")
                 .body(yamlContent);
     }
@@ -29,7 +29,8 @@ class ReferenceDataResourceTest {
     void validANamedScenarioFileReportsNoErrors() {
         String yaml = new String(readAll("/scenarios/scenario.yml"), java.nio.charset.StandardCharsets.UTF_8);
         yamlRequest(yaml)
-                .when().post("/api/reference-data/valider-scenario-fichier")
+                .when()
+                .post("/api/reference-data/valider-scenario-fichier")
                 .then()
                 .statusCode(200)
                 .body("valide", equalTo(true))
@@ -67,7 +68,8 @@ class ReferenceDataResourceTest {
                     creneauId: J1-MATIN
                 """;
         yamlRequest(yaml)
-                .when().post("/api/reference-data/valider-scenario-fichier")
+                .when()
+                .post("/api/reference-data/valider-scenario-fichier")
                 .then()
                 .statusCode(200)
                 .body("valide", equalTo(false))
@@ -79,7 +81,8 @@ class ReferenceDataResourceTest {
     @Test
     void malformedYamlReportsAParsingError() {
         yamlRequest("festival: [this is not: valid: yaml")
-                .when().post("/api/reference-data/valider-scenario-fichier")
+                .when()
+                .post("/api/reference-data/valider-scenario-fichier")
                 .then()
                 .statusCode(200)
                 .body("valide", equalTo(false))
@@ -89,7 +92,8 @@ class ReferenceDataResourceTest {
     @Test
     void emptyFileReportsAsInvalid() {
         yamlRequest("")
-                .when().post("/api/reference-data/valider-scenario-fichier")
+                .when()
+                .post("/api/reference-data/valider-scenario-fichier")
                 .then()
                 .statusCode(200)
                 .body("valide", equalTo(false))

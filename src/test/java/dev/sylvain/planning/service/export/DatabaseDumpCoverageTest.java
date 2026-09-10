@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
-import dev.sylvain.planning.service.export.DatabaseDumpService;
 
 /**
  * Every table this database holds is either dumped or deliberately not.
@@ -48,13 +47,11 @@ class DatabaseDumpCoverageTest {
             }
         }
 
-        assertThat(unclassified)
-                .as("""
+        assertThat(unclassified).as("""
                         tables that exist but are neither dumped nor listed as deliberately \
                         excluded. Put each one in DatabaseDumpService.TABLES if restoring a \
                         dump should bring it back, or in DELIBERATELY_NOT_DUMPED with the \
-                        reason it must not travel between instances.""")
-                .isEmpty();
+                        reason it must not travel between instances.""").isEmpty();
     }
 
     /**
@@ -86,10 +83,9 @@ class DatabaseDumpCoverageTest {
         List<String> tables = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement();
-                ResultSet rs = statement.executeQuery(
-                        "SELECT table_name FROM information_schema.tables"
-                                + " WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
-                                + " ORDER BY table_name")) {
+                ResultSet rs = statement.executeQuery("SELECT table_name FROM information_schema.tables"
+                        + " WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+                        + " ORDER BY table_name")) {
             while (rs.next()) {
                 String name = rs.getString(1);
                 if (!FLYWAY_HISTORY.equals(name)) {

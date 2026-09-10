@@ -2,18 +2,16 @@ package dev.sylvain.planning.solver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter.Motif;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * The filter now answers two questions with one computation: « may this
@@ -41,16 +39,15 @@ class EligibleAnimateurMotifsTest {
                 .map(ConstraintCatalog.ConstraintDefinition::name)
                 .toList();
 
-        assertThat(Motif.values())
-                .extracting(Motif::contrainte)
-                .isSubsetOf(catalogueesEnDur);
+        assertThat(Motif.values()).extracting(Motif::contrainte).isSubsetOf(catalogueesEnDur);
     }
 
     @Test
     void anAvailableAdultIsEligibleAndHasNoReasonAgainstThem() {
         PosteAffectation poste = poste(openStand(), creneauJournee());
 
-        assertThat(EligibleAnimateurMoveFilter.isEligible(poste, majeur(), false)).isTrue();
+        assertThat(EligibleAnimateurMoveFilter.isEligible(poste, majeur(), false))
+                .isTrue();
         assertThat(EligibleAnimateurMoveFilter.motifs(poste, majeur(), false)).isEmpty();
     }
 
@@ -73,7 +70,8 @@ class EligibleAnimateurMotifsTest {
         Animateur indisponible = majeur();
         indisponible.setJoursIndisponibles(Set.of(JOUR));
 
-        assertThat(EligibleAnimateurMoveFilter.isEligible(poste, indisponible, false)).isFalse();
+        assertThat(EligibleAnimateurMoveFilter.isEligible(poste, indisponible, false))
+                .isFalse();
         assertThat(EligibleAnimateurMoveFilter.motifs(poste, indisponible, false))
                 .containsExactly(Motif.INDISPONIBLE);
     }
@@ -91,8 +89,13 @@ class EligibleAnimateurMotifsTest {
         mineur.setJoursIndisponibles(Set.of(JOUR_FERIE));
 
         assertThat(EligibleAnimateurMoveFilter.motifs(poste, mineur, false))
-                .containsExactly(Motif.INDISPONIBLE, Motif.STAND_RESERVE_AUX_MAJEURS, Motif.JOUR_FERIE_MINEUR,
-                        Motif.TRAVAIL_DE_NUIT_MINEUR, Motif.DUREE_QUOTIDIENNE_MINEUR, Motif.TRAVAIL_CONTINU_MINEUR);
+                .containsExactly(
+                        Motif.INDISPONIBLE,
+                        Motif.STAND_RESERVE_AUX_MAJEURS,
+                        Motif.JOUR_FERIE_MINEUR,
+                        Motif.TRAVAIL_DE_NUIT_MINEUR,
+                        Motif.DUREE_QUOTIDIENNE_MINEUR,
+                        Motif.TRAVAIL_CONTINU_MINEUR);
     }
 
     /**
@@ -116,7 +119,8 @@ class EligibleAnimateurMotifsTest {
 
         assertThat(EligibleAnimateurMoveFilter.motifs(poste(openStand(), sixHeures), mineur, false))
                 .containsExactly(Motif.TRAVAIL_CONTINU_MINEUR);
-        assertThat(EligibleAnimateurMoveFilter.motifs(poste(openStand(), sixHeures), mineur, true)).isEmpty();
+        assertThat(EligibleAnimateurMoveFilter.motifs(poste(openStand(), sixHeures), mineur, true))
+                .isEmpty();
         assertThat(EligibleAnimateurMoveFilter.motifs(poste(openStand(), neufHeures), mineur, true))
                 .containsExactly(Motif.DUREE_QUOTIDIENNE_MINEUR);
     }
@@ -150,7 +154,8 @@ class EligibleAnimateurMotifsTest {
                 for (Animateur animateur : animateurs) {
                     assertThat(EligibleAnimateurMoveFilter.isEligible(poste, animateur, false))
                             .describedAs("%s sur %s / %s", animateur.getId(), stand.getId(), creneau.getId())
-                            .isEqualTo(EligibleAnimateurMoveFilter.motifs(poste, animateur, false).isEmpty());
+                            .isEqualTo(EligibleAnimateurMoveFilter.motifs(poste, animateur, false)
+                                    .isEmpty());
                 }
             }
         }

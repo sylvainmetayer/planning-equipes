@@ -24,5 +24,4 @@ package dev.sylvain.planning.service.referentiel;
  *                keeps a log, and an identity has no business ending up there
  *                (see {@code docs/rgpd.md} §7)
  */
-public record Avertissement(TypeAvertissement type, String message) {
-}
+public record Avertissement(TypeAvertissement type, String message) {}

@@ -1,19 +1,18 @@
 package dev.sylvain.planning.service.solve;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.DeplacementSimulation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A seat moved by hand on a day view (issue #308): the drag-and-drop of the
@@ -68,17 +67,18 @@ public class DeplacementService {
      *                               naming the rules it would break, or when
      *                               one of the seats is locked
      */
-    public DeplacementSimulation apply(String posteSourceId, String posteCibleId, String animateurCibleId,
-            String occupantAttendu) {
+    public DeplacementSimulation apply(
+            String posteSourceId, String posteCibleId, String animateurCibleId, String occupantAttendu) {
         // A solve landing later would overwrite the move without a word: same
         // refusal as every referential write (issue #328).
         solverJobs.refuseIfSolving();
         PlanningEvenement persiste = persistedPlan();
         refuseIfMoved(persiste, posteSourceId, occupantAttendu);
-        DeplacementSimulation simulation = planningService.simulateDeplacement(persiste, posteSourceId,
-                posteCibleId, animateurCibleId);
+        DeplacementSimulation simulation =
+                planningService.simulateDeplacement(persiste, posteSourceId, posteCibleId, animateurCibleId);
         if (simulation.casseContrainteDure()) {
-            throw new BusinessError.Invalid("Déplacement refusé : il casserait " + describe(simulation.nouvellesViolationsDures()));
+            throw new BusinessError.Invalid(
+                    "Déplacement refusé : il casserait " + describe(simulation.nouvellesViolationsDures()));
         }
         refuseIfLocked(persiste, simulation);
         Map<String, String> ecritures = new LinkedHashMap<>();
@@ -99,7 +99,9 @@ public class DeplacementService {
 
     private PlanningEvenement persistedPlan() {
         PlanningEvenement planning = persistence.loadPersistedPlanning();
-        if (planning == null || planning.getPostes() == null || planning.getPostes().isEmpty()) {
+        if (planning == null
+                || planning.getPostes() == null
+                || planning.getPostes().isEmpty()) {
             throw new BusinessError.Conflict("Aucun planning enregistré : lancez d'abord une résolution.");
         }
         // The rules of this edition, not the defaults: without this the verdict
@@ -128,7 +130,9 @@ public class DeplacementService {
         String occupant = persiste.getPostes().stream()
                 .filter(poste -> poste.getId().equals(posteSourceId))
                 .findFirst()
-                .map(poste -> poste.getAnimateur() == null ? null : poste.getAnimateur().getId())
+                .map(poste -> poste.getAnimateur() == null
+                        ? null
+                        : poste.getAnimateur().getId())
                 .orElse(null);
         if (!occupantAttendu.equals(occupant)) {
             throw new BusinessError.Conflict("Ce siège n'est plus tenu par la personne affichée : le planning a "
@@ -163,17 +167,20 @@ public class DeplacementService {
      * ANIMATEUR_CRENEAU lock is what an accepted échange posts to keep the
      * freed person free on that créneau.
      */
-    private static void refuseIfReceiverLocked(List<VerrouillagePlanning> verrouillages,
-            DeplacementSimulation simulation, PosteAffectation source) {
+    private static void refuseIfReceiverLocked(
+            List<VerrouillagePlanning> verrouillages, DeplacementSimulation simulation, PosteAffectation source) {
         String receveur = simulation.animateurCibleId();
         if (receveur == null) {
             return;
         }
-        Long creneauId = source.getCreneau() == null ? null : source.getCreneau().getId();
+        Long creneauId =
+                source.getCreneau() == null ? null : source.getCreneau().getId();
         boolean verrouille = verrouillages.stream().anyMatch(verrouillage -> switch (verrouillage.getType()) {
             case ANIMATEUR -> receveur.equals(verrouillage.getAnimateurId());
-            case ANIMATEUR_CRENEAU -> receveur.equals(verrouillage.getAnimateurId())
-                    && creneauId != null && creneauId.equals(verrouillage.getCreneauId());
+            case ANIMATEUR_CRENEAU ->
+                receveur.equals(verrouillage.getAnimateurId())
+                        && creneauId != null
+                        && creneauId.equals(verrouillage.getCreneauId());
             default -> false;
         });
         if (verrouille) {
@@ -187,7 +194,8 @@ public class DeplacementService {
             return "une règle dure du planning.";
         }
         return violations.stream()
-                .map(violation -> violation.description() + " (" + violation.matchesSupplementaires() + ")")
-                .collect(Collectors.joining(" ; ")) + ".";
+                        .map(violation -> violation.description() + " (" + violation.matchesSupplementaires() + ")")
+                        .collect(Collectors.joining(" ; "))
+                + ".";
     }
 }

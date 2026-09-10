@@ -2,15 +2,13 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.util.Map;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.mcp.AnimateurMcpTools.AnimateurView;
+import java.time.LocalDate;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * Privacy regression test (issue #107): {@link AnimateurView} must never
@@ -53,7 +51,14 @@ class AnimateurMcpToolsTest {
         // any regression adding one would fail this list of components.
         assertThat(AnimateurView.class.getRecordComponents())
                 .extracting(component -> component.getName().toLowerCase())
-                .containsExactlyInAnyOrder("id", "statut", "moinsde16ans", "manager", "competences", "souhaits",
-                        "joursindisponibles", "modifiele");
+                .containsExactlyInAnyOrder(
+                        "id",
+                        "statut",
+                        "moinsde16ans",
+                        "manager",
+                        "competences",
+                        "souhaits",
+                        "joursindisponibles",
+                        "modifiele");
     }
 }

@@ -1,5 +1,13 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
+import dev.sylvain.planning.domain.ParametresDecoupage;
+import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresNotifications;
+import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,17 +17,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import dev.sylvain.planning.domain.ParametresDecoupage;
-import dev.sylvain.planning.domain.ParametresLegaux;
-import dev.sylvain.planning.domain.ParametresNotifications;
-import dev.sylvain.planning.domain.ParametresSolveur;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * The three single-row parameter tables (legal, découpage, solver), the
@@ -40,8 +38,7 @@ public class ParametresRepository {
 
     public ParametresLegaux getParametresLegaux() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes,
                         pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes,
                         pause_sur_poste
@@ -49,10 +46,10 @@ public class ParametresRepository {
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
-                ParametresLegaux parametres = new ParametresLegaux(rs.getInt("duree_hebdomadaire_max_minutes"),
+                ParametresLegaux parametres = new ParametresLegaux(
+                        rs.getInt("duree_hebdomadaire_max_minutes"),
                         rs.getInt("duree_hebdomadaire_max_mineur_minutes"));
-                parametres.setPauseMinimaleEntreVacationsMinutes(
-                        rs.getInt("pause_minimale_entre_vacations_minutes"));
+                parametres.setPauseMinimaleEntreVacationsMinutes(rs.getInt("pause_minimale_entre_vacations_minutes"));
                 parametres.setReposQuotidienMinimalMinutes(rs.getInt("repos_quotidien_minimal_minutes"));
                 parametres.setPauseSurPoste(rs.getBoolean("pause_sur_poste"));
                 return parametres;
@@ -65,8 +62,7 @@ public class ParametresRepository {
 
     public void saveParametresLegaux(ParametresLegaux parametres) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_legaux (edition_id, duree_hebdomadaire_max_minutes,
                         duree_hebdomadaire_max_mineur_minutes, pause_minimale_entre_vacations_minutes,
                         repos_quotidien_minimal_minutes, pause_sur_poste)
@@ -92,8 +88,7 @@ public class ParametresRepository {
 
     public ParametresDecoupage getParametresDecoupage() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT duree_vacation_cible_minutes, duree_vacation_min_minutes,
                         duree_vacation_max_minutes, duree_chevauchement_minutes,
                         duree_pause_repas_minutes, fenetre_repas_midi_debut, fenetre_repas_midi_fin,
@@ -113,9 +108,8 @@ public class ParametresRepository {
                 parametres.setFenetreRepasMidiFin(rs.getObject("fenetre_repas_midi_fin", LocalTime.class));
                 parametres.setFenetreRepasSoirDebut(rs.getObject("fenetre_repas_soir_debut", LocalTime.class));
                 parametres.setFenetreRepasSoirFin(rs.getObject("fenetre_repas_soir_fin", LocalTime.class));
-                parametres.setStrategieCouverturePendantPause(
-                        ParametresDecoupage.PauseCoverageStrategy
-                                .valueOf(rs.getString("strategie_couverture_pendant_pause")));
+                parametres.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy.valueOf(
+                        rs.getString("strategie_couverture_pendant_pause")));
                 parametres.setNombreFamillesDecalage(rs.getInt("nombre_familles_decalage"));
                 parametres.setDureeDecalageMaxMinutes(rs.getInt("duree_decalage_max_minutes"));
                 parametres.setModeGrille(ModeGrilleCreneaux.valueOf(rs.getString("mode_grille")));
@@ -129,8 +123,7 @@ public class ParametresRepository {
 
     public void saveParametresDecoupage(ParametresDecoupage parametres) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_decoupage (edition_id, duree_vacation_cible_minutes,
                         duree_vacation_min_minutes, duree_vacation_max_minutes, duree_chevauchement_minutes,
                         duree_pause_repas_minutes, fenetre_repas_midi_debut, fenetre_repas_midi_fin,
@@ -174,15 +167,14 @@ public class ParametresRepository {
 
     public ParametresSolveur getParametresSolveur() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT duree_resolution_secondes, mail_fin_resolution
                         FROM parametres_solveur
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
-                return new ParametresSolveur(rs.getInt("duree_resolution_secondes"),
-                        rs.getBoolean("mail_fin_resolution"));
+                return new ParametresSolveur(
+                        rs.getInt("duree_resolution_secondes"), rs.getBoolean("mail_fin_resolution"));
             }
             return new ParametresSolveur();
         } catch (SQLException e) {
@@ -192,8 +184,7 @@ public class ParametresRepository {
 
     public void saveParametresSolveur(ParametresSolveur parametres) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_solveur (edition_id, duree_resolution_secondes, mail_fin_resolution)
                         VALUES (?, ?, ?)
                         ON CONFLICT (edition_id)
@@ -211,8 +202,7 @@ public class ParametresRepository {
 
     public ParametresNotifications getParametresNotifications() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT actives, heure_rappel_veille, delai_relance_heures, anciennete_echange_jours
                         FROM parametres_notifications
                         WHERE edition_id = ?""");
@@ -232,8 +222,7 @@ public class ParametresRepository {
 
     public void saveParametresNotifications(ParametresNotifications parametres) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_notifications (edition_id, actives, heure_rappel_veille,
                         delai_relance_heures, anciennete_echange_jours)
                         VALUES (?, ?, ?, ?, ?)
@@ -256,8 +245,8 @@ public class ParametresRepository {
 
     public Set<String> getContraintesDesactivees() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        "SELECT nom FROM constraint_toggle WHERE edition_id = ?");
+                PreparedStatement ps =
+                        scope.prepareScoped(connection, "SELECT nom FROM constraint_toggle WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             Set<String> desactivees = new HashSet<>();
             while (rs.next()) {
@@ -279,8 +268,8 @@ public class ParametresRepository {
      */
     public Map<String, Integer> getConstraintWeights() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        "SELECT nom, poids FROM ponderation_contrainte WHERE edition_id = ?");
+                PreparedStatement ps = scope.prepareScoped(
+                        connection, "SELECT nom, poids FROM ponderation_contrainte WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             Map<String, Integer> ponderations = new LinkedHashMap<>();
             while (rs.next()) {
@@ -300,14 +289,13 @@ public class ParametresRepository {
     public void setConstraintWeight(String nom, Integer poids) {
         try (Connection connection = dataSource.getConnection()) {
             if (poids == null) {
-                try (PreparedStatement ps = scope.prepareScoped(connection,
-                        "DELETE FROM ponderation_contrainte WHERE edition_id = ? AND nom = ?")) {
+                try (PreparedStatement ps = scope.prepareScoped(
+                        connection, "DELETE FROM ponderation_contrainte WHERE edition_id = ? AND nom = ?")) {
                     ps.setString(2, nom);
                     ps.executeUpdate();
                 }
             } else {
-                try (PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                try (PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO ponderation_contrainte (edition_id, nom, poids)
                         VALUES (?, ?, ?)
                         ON CONFLICT (edition_id, nom)
@@ -330,14 +318,13 @@ public class ParametresRepository {
     public void setContrainteActive(String nom, boolean actif) {
         try (Connection connection = dataSource.getConnection()) {
             if (actif) {
-                try (PreparedStatement ps = scope.prepareScoped(connection,
-                        "DELETE FROM constraint_toggle WHERE edition_id = ? AND nom = ?")) {
+                try (PreparedStatement ps = scope.prepareScoped(
+                        connection, "DELETE FROM constraint_toggle WHERE edition_id = ? AND nom = ?")) {
                     ps.setString(2, nom);
                     ps.executeUpdate();
                 }
             } else {
-                try (PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                try (PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO constraint_toggle (edition_id, nom)
                         VALUES (?, ?)
                         ON CONFLICT (edition_id, nom) DO NOTHING""")) {

@@ -19,5 +19,4 @@ public record ParametresDecoupageDto(
         PauseCoverageStrategy strategieCouverturePendantPause,
         @Positive Integer nombreFamillesDecalage,
         @PositiveOrZero Integer dureeDecalageMaxMinutes,
-        ModeGrilleCreneaux modeGrille) {
-}
+        ModeGrilleCreneaux modeGrille) {}

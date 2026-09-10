@@ -1,15 +1,14 @@
 package dev.sylvain.planning.service.publication;
 
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.List;
-
+import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ProductName;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.List;
 
 /**
  * The mails an administrator <b>asks for</b>, and only those: sending an
@@ -61,9 +60,10 @@ public class MailService {
      * Sends one animateur their individual planning: the PDF attached, the
      * espace link in the body.
      */
-    public void sendIndividualPlanning(String emailAnimateur, String prenom, String lienEspace,
-            byte[] pdf, String fileName) {
-        MailContent content = templates.render("mail/planning-individuel",
+    public void sendIndividualPlanning(
+            String emailAnimateur, String prenom, String lienEspace, byte[] pdf, String fileName) {
+        MailContent content = templates.render(
+                "mail/planning-individuel",
                 productName.subject("votre planning individuel"),
                 MailTemplates.values("prenom", blankToNull(prenom), "lienEspace", blankToNull(lienEspace)));
         mailer.send(templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
@@ -85,23 +85,37 @@ public class MailService {
      * @param changements       one sentence per moved vacation, in reading order
      * @param demandes          where their échange requests stand, if any
      */
-    public void sendPlanningPublie(String emailAnimateur, String prenom, String lienEspace,
-            byte[] pdf, String fileName, boolean premiereDiffusion,
-            List<String> changements, List<String> demandes) {
-        MailContent content = templates.render("mail/planning-publie",
+    public void sendPlanningPublie(
+            String emailAnimateur,
+            String prenom,
+            String lienEspace,
+            byte[] pdf,
+            String fileName,
+            boolean premiereDiffusion,
+            List<String> changements,
+            List<String> demandes) {
+        MailContent content = templates.render(
+                "mail/planning-publie",
                 productName.subject(premiereDiffusion ? "votre planning individuel" : "votre planning a changé"),
                 MailTemplates.values(
-                        "prenom", blankToNull(prenom),
-                        "lienEspace", blankToNull(lienEspace),
-                        "premiereDiffusion", premiereDiffusion,
-                        "changements", changements == null ? List.of() : changements,
-                        "demandes", demandes == null ? List.of() : demandes));
+                        "prenom",
+                        blankToNull(prenom),
+                        "lienEspace",
+                        blankToNull(lienEspace),
+                        "premiereDiffusion",
+                        premiereDiffusion,
+                        "changements",
+                        changements == null ? List.of() : changements,
+                        "demandes",
+                        demandes == null ? List.of() : demandes));
         mailer.send(templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
     }
 
     /** Sends the espace access code — the second factor of the espace animateur. */
     public void sendAccessCode(String emailAnimateur, String prenom, String code) {
-        MailContent content = templates.render("mail/code-acces", productName.subject("votre code d'accès"),
+        MailContent content = templates.render(
+                "mail/code-acces",
+                productName.subject("votre code d'accès"),
                 MailTemplates.values("prenom", blankToNull(prenom), "code", code));
         mailer.send(templates.toMail(emailAnimateur, content));
     }
@@ -121,9 +135,10 @@ public class MailService {
      *                        admin set no bound
      * @param fin             last day of the window, {@code null} likewise
      */
-    public void sendInvitationDeclaration(String emailAnimateur, String prenom, String lienDeclaration,
-            LocalDate debut, LocalDate fin) {
-        MailContent content = templates.render("mail/invitation-declaration",
+    public void sendInvitationDeclaration(
+            String emailAnimateur, String prenom, String lienDeclaration, LocalDate debut, LocalDate fin) {
+        MailContent content = templates.render(
+                "mail/invitation-declaration",
                 productName.subject("vos disponibilités sont attendues"),
                 MailTemplates.values(
                         "prenom", blankToNull(prenom),
@@ -152,10 +167,13 @@ public class MailService {
      * two above.
      */
     public String sendTestMail() {
-        String destinataire = adminAddress.resolue()
-                .orElseThrow(() -> new IllegalStateException(
-                        "Aucune adresse e-mail administrateur configurée (MAIL_ADMIN)."));
-        MailContent content = templates.render("mail/test", productName.subject("mail de test"),
+        String destinataire = adminAddress
+                .resolue()
+                .orElseThrow(() ->
+                        new IllegalStateException("Aucune adresse e-mail administrateur configurée (MAIL_ADMIN)."));
+        MailContent content = templates.render(
+                "mail/test",
+                productName.subject("mail de test"),
                 MailTemplates.values("horodatage", ZonedDateTime.now().toString()));
         mailer.send(templates.toMail(destinataire, content));
         return destinataire;

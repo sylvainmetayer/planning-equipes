@@ -9,8 +9,4 @@ import java.time.LocalTime;
  * closing time" — see {@code fr...domain.IndisponibiliteStand}.
  */
 public record IndisponibiliteStandDto(
-        @NotNull LocalDate date,
-        @NotNull LocalTime heureDebut,
-        LocalTime heureFin,
-        String motif) {
-}
+        @NotNull LocalDate date, @NotNull LocalTime heureDebut, LocalTime heureFin, String motif) {}

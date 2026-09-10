@@ -1,12 +1,11 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.List;
 
 /**
  * Feeds {@link CoherenceAnalyzer} the referential it needs, and nothing else:

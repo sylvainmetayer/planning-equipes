@@ -1,9 +1,5 @@
 package dev.sylvain.planning.mcp;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
@@ -15,6 +11,9 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 
 /**
  * MCP tools over the collection of availabilities
@@ -42,45 +41,61 @@ public class DisponibiliteMcpTools {
     @Inject
     EspaceAnimateurService espaceAnimateurService;
 
-    @Tool(description = "Liste les déclarations de disponibilité envoyées par les animateurs depuis leur "
-            + "espace, de la plus récente à la plus ancienne. Chaque déclaration porte ce qui a été déclaré et, "
-            + "en regard, ce que la fiche dit aujourd'hui. Filtrable par statut : EN_ATTENTE, APPLIQUEE, "
-            + "REFUSEE. Les animateurs y sont désignés par id seul.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Liste les déclarations de disponibilité envoyées par les animateurs depuis leur "
+                    + "espace, de la plus récente à la plus ancienne. Chaque déclaration porte ce qui a été déclaré et, "
+                    + "en regard, ce que la fiche dit aujourd'hui. Filtrable par statut : EN_ATTENTE, APPLIQUEE, "
+                    + "REFUSEE. Les animateurs y sont désignés par id seul.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     List<DeclarationMcpView> lister_declarations_disponibilite(
-            @ToolArg(description = "Statut pour filtrer : EN_ATTENTE, APPLIQUEE ou REFUSEE", required = false) String statut,
+            @ToolArg(description = "Statut pour filtrer : EN_ATTENTE, APPLIQUEE ou REFUSEE", required = false)
+                    String statut,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        StatutDeclaration filtre = statut == null
-                ? null
-                : McpArgs.enumeration(StatutDeclaration.class, statut, "statut");
+        StatutDeclaration filtre =
+                statut == null ? null : McpArgs.enumeration(StatutDeclaration.class, statut, "statut");
         return espaceAnimateurService.toDeclarationViews(declarationService.list()).stream()
                 .filter(declaration -> filtre == null || filtre.name().equals(declaration.statut()))
                 .map(DisponibiliteMcpTools::toView)
                 .toList();
     }
 
-    @Tool(description = "Consulte la fenêtre de collecte des disponibilités : ouverte ou non, et ses dates si "
-            + "elle en porte. Fermée tant que personne ne l'a ouverte — un formulaire ouvert sur Internet ne "
-            + "s'ouvre pas par omission.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Consulte la fenêtre de collecte des disponibilités : ouverte ou non, et ses dates si "
+                    + "elle en porte. Fermée tant que personne ne l'a ouverte — un formulaire ouvert sur Internet ne "
+                    + "s'ouvre pas par omission.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     CollecteView consulter_collecte_disponibilites(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(declarationService.fenetre(), null);
     }
 
-    @Tool(description = "Ouvre ou ferme la collecte des disponibilités, et la borne éventuellement par des "
-            + "dates. prevenirAnimateurs ENVOIE UN COURRIEL à chaque animateur avec le lien de son espace : "
-            + "c'est une décision par ouverture, pas un réglage, et personne n'est invité à une collecte qu'on "
-            + "ferme. L'invitation est comptée, jamais nominative.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = true))
+    @Tool(
+            description = "Ouvre ou ferme la collecte des disponibilités, et la borne éventuellement par des "
+                    + "dates. prevenirAnimateurs ENVOIE UN COURRIEL à chaque animateur avec le lien de son espace : "
+                    + "c'est une décision par ouverture, pas un réglage, et personne n'est invité à une collecte qu'on "
+                    + "ferme. L'invitation est comptée, jamais nominative.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = true))
     CollecteView configurer_collecte_disponibilites(
             @ToolArg(description = "Collecte ouverte ou fermée") boolean ouverte,
             @ToolArg(description = "Début de la collecte (AAAA-MM-JJ)", required = false) String debut,
             @ToolArg(description = "Fin de la collecte (AAAA-MM-JJ)", required = false) String fin,
-            @ToolArg(description = "Envoyer maintenant l'invitation à déclarer (courriels)", required = false) Boolean prevenirAnimateurs,
+            @ToolArg(description = "Envoyer maintenant l'invitation à déclarer (courriels)", required = false)
+                    Boolean prevenirAnimateurs,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ConfigurationAppliquee appliquee = declarationService.configure(
                 new FenetreCollecte(ouverte, McpArgs.date(debut, "debut"), McpArgs.date(fin, "fin")),
@@ -88,22 +103,32 @@ public class DisponibiliteMcpTools {
         return toView(appliquee.fenetre(), appliquee.invitation());
     }
 
-    @Tool(description = "Applique une déclaration en attente sur la fiche de l'animateur : jours indisponibles "
-            + "et souhaits déclarés y remplacent ceux qui s'y trouvaient. Tout ou rien, comme dans l'interface. "
-            + "Les données de référence sont marquées modifiées : le planning déjà résolu devient périmé.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = false, openWorldHint = false))
+    @Tool(
+            description = "Applique une déclaration en attente sur la fiche de l'animateur : jours indisponibles "
+                    + "et souhaits déclarés y remplacent ceux qui s'y trouvaient. Tout ou rien, comme dans l'interface. "
+                    + "Les données de référence sont marquées modifiées : le planning déjà résolu devient périmé.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = false))
     DeclarationMcpView appliquer_declaration_disponibilite(
             @ToolArg(description = "Id de la déclaration") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return view(declarationService.apply(id));
     }
 
-    @Tool(description = "Refuse une déclaration en attente : le référentiel n'est pas touché. Le commentaire "
-            + "est ce que l'animateur lira, et il peut renvoyer une version corrigée tant que la collecte est "
-            + "ouverte.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = false, openWorldHint = false))
+    @Tool(
+            description = "Refuse une déclaration en attente : le référentiel n'est pas touché. Le commentaire "
+                    + "est ce que l'animateur lira, et il peut renvoyer une version corrigée tant que la collecte est "
+                    + "ouverte.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = false))
     DeclarationMcpView refuser_declaration_disponibilite(
             @ToolArg(description = "Id de la déclaration") String id,
             @ToolArg(description = "Commentaire pour l'animateur", required = false) String commentaire,
@@ -114,21 +139,35 @@ public class DisponibiliteMcpTools {
     /* -------------------------------- Views -------------------------------- */
 
     private DeclarationMcpView view(DeclarationDisponibilite declaration) {
-        return toView(espaceAnimateurService.toDeclarationViews(List.of(declaration)).get(0));
+        return toView(
+                espaceAnimateurService.toDeclarationViews(List.of(declaration)).get(0));
     }
 
     static DeclarationMcpView toView(DeclarationAdminView declaration) {
-        return new DeclarationMcpView(declaration.id(), declaration.animateurId(), declaration.statut(),
-                declaration.joursIndisponibles(), declaration.souhaits(), declaration.commentaire(),
-                declaration.commentaireAdmin(), declaration.creeLe(), declaration.decideLe(),
+        return new DeclarationMcpView(
+                declaration.id(),
+                declaration.animateurId(),
+                declaration.statut(),
+                declaration.joursIndisponibles(),
+                declaration.souhaits(),
+                declaration.commentaire(),
+                declaration.commentaireAdmin(),
+                declaration.creeLe(),
+                declaration.decideLe(),
                 declaration.joursActuels());
     }
 
-    static CollecteView toView(FenetreCollecte fenetre,
-            DeclarationDisponibiliteService.InvitationReport invitation) {
-        return new CollecteView(fenetre.ouverte(), fenetre.debut(), fenetre.fin(),
-                invitation == null ? null : new InvitationView(invitation.envoyes(),
-                        invitation.sansEmail().size(), invitation.echecs().size()));
+    static CollecteView toView(FenetreCollecte fenetre, DeclarationDisponibiliteService.InvitationReport invitation) {
+        return new CollecteView(
+                fenetre.ouverte(),
+                fenetre.debut(),
+                fenetre.fin(),
+                invitation == null
+                        ? null
+                        : new InvitationView(
+                                invitation.envoyes(),
+                                invitation.sansEmail().size(),
+                                invitation.echecs().size()));
     }
 
     /**
@@ -138,22 +177,27 @@ public class DisponibiliteMcpTools {
      * @param joursActuels  what the fiche says today, to compare with what was
      *                      declared before applying anything
      */
-    public record DeclarationMcpView(String id, String animateurId, String statut,
-            List<LocalDate> joursIndisponibles, List<String> souhaits, String commentaire,
-            String commentaireAdmin, Instant creeLe, Instant decideLe, List<LocalDate> joursActuels) {
-    }
+    public record DeclarationMcpView(
+            String id,
+            String animateurId,
+            String statut,
+            List<LocalDate> joursIndisponibles,
+            List<String> souhaits,
+            String commentaire,
+            String commentaireAdmin,
+            Instant creeLe,
+            Instant decideLe,
+            List<LocalDate> joursActuels) {}
 
     /**
      * @param invitation what the invitation mails did, when this call sent
      *                   them; {@code null} otherwise
      */
-    public record CollecteView(boolean ouverte, LocalDate debut, LocalDate fin, InvitationView invitation) {
-    }
+    public record CollecteView(boolean ouverte, LocalDate debut, LocalDate fin, InvitationView invitation) {}
 
     /**
      * @param sansAdresse how many animateurs have no address on their fiche —
      *                    counted, never named
      */
-    public record InvitationView(int envoyes, int sansAdresse, int echecs) {
-    }
+    public record InvitationView(int envoyes, int sansAdresse, int echecs) {}
 }

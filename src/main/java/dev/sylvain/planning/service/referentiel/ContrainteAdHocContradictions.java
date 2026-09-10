@@ -1,5 +1,9 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,11 +13,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 
 /**
  * Pairs (and triples) of hand-entered exceptions that <b>cannot all hold at
@@ -62,8 +61,7 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
  */
 public final class ContrainteAdHocContradictions {
 
-    private ContrainteAdHocContradictions() {
-    }
+    private ContrainteAdHocContradictions() {}
 
     /** Kind of contradiction, in the order they are described above. */
     public enum TypeContradiction {
@@ -82,8 +80,7 @@ public final class ContrainteAdHocContradictions {
      * @param message       French sentence naming each of them, shown as-is to
      *                      the user
      */
-    public record Contradiction(TypeContradiction type, List<String> contrainteIds, String message) {
-    }
+    public record Contradiction(TypeContradiction type, List<String> contrainteIds, String message) {}
 
     /**
      * Contradictions the whole set holds, each reported once. Used to refuse a
@@ -107,8 +104,8 @@ public final class ContrainteAdHocContradictions {
      * the id of the candidate is dropped from {@code others}: the saved
      * version replaces the conflicting one instead of coexisting with it.</p>
      */
-    public static List<Contradiction> detect(ContrainteAdHoc candidate, List<ContrainteAdHoc> others,
-            List<Creneau> creneaux) {
+    public static List<Contradiction> detect(
+            ContrainteAdHoc candidate, List<ContrainteAdHoc> others, List<Creneau> creneaux) {
         if (candidate == null || candidate.getId() == null || candidate.getType() == null) {
             return List.of();
         }
@@ -119,8 +116,8 @@ public final class ContrainteAdHocContradictions {
     }
 
     /** Every contradiction between {@code candidate} and the exceptions already recorded. */
-    private static List<Contradiction> against(ContrainteAdHoc candidate, List<ContrainteAdHoc> others,
-            Map<Long, Creneau> creneaux) {
+    private static List<Contradiction> against(
+            ContrainteAdHoc candidate, List<ContrainteAdHoc> others, Map<Long, Creneau> creneaux) {
         List<Contradiction> contradictions = new ArrayList<>();
         for (ContrainteAdHoc other : others) {
             contradictoryPairDeclaration(candidate, other).ifPresent(contradictions::add);
@@ -141,19 +138,20 @@ public final class ContrainteAdHocContradictions {
      * pair is the unordered couple of the first two animateur ids — exactly
      * what {@code AdHocConstraints} evaluates.
      */
-    private static Optional<Contradiction> contradictoryPairDeclaration(ContrainteAdHoc candidate,
-            ContrainteAdHoc other) {
-        TypeContrainteAdHoc opposite = switch (candidate.getType()) {
-            case AFFINITE -> TypeContrainteAdHoc.INCOMPATIBILITE;
-            case INCOMPATIBILITE -> TypeContrainteAdHoc.AFFINITE;
-            default -> null;
-        };
+    private static Optional<Contradiction> contradictoryPairDeclaration(
+            ContrainteAdHoc candidate, ContrainteAdHoc other) {
+        TypeContrainteAdHoc opposite =
+                switch (candidate.getType()) {
+                    case AFFINITE -> TypeContrainteAdHoc.INCOMPATIBILITE;
+                    case INCOMPATIBILITE -> TypeContrainteAdHoc.AFFINITE;
+                    default -> null;
+                };
         Set<String> pair = animateurPair(candidate);
-        if (opposite == null || pair == null || other.getType() != opposite
-                || !pair.equals(animateurPair(other))) {
+        if (opposite == null || pair == null || other.getType() != opposite || !pair.equals(animateurPair(other))) {
             return Optional.empty();
         }
-        return Optional.of(new Contradiction(TypeContradiction.PAIRE_INCOMPATIBLE_ET_AFFINE,
+        return Optional.of(new Contradiction(
+                TypeContradiction.PAIRE_INCOMPATIBLE_ET_AFFINE,
                 List.of(other.getId(), candidate.getId()),
                 "La paire d'animateurs " + String.join(" / ", new TreeSet<>(pair))
                         + " est déjà visée par la contrainte " + other.getId()
@@ -173,24 +171,26 @@ public final class ContrainteAdHocContradictions {
      * incompatible exactly when the unavailability covers the whole scope of
      * the forced assignment <em>and</em> every animateur that could satisfy it.
      */
-    private static Optional<Contradiction> forcedSeatOnUnavailability(ContrainteAdHoc candidate,
-            ContrainteAdHoc other, Map<Long, Creneau> creneaux) {
+    private static Optional<Contradiction> forcedSeatOnUnavailability(
+            ContrainteAdHoc candidate, ContrainteAdHoc other, Map<Long, Creneau> creneaux) {
         Optional<Contradiction> direct = forcedSeatAgainstUnavailability(candidate, other, creneaux);
         return direct.isPresent() ? direct : forcedSeatAgainstUnavailability(other, candidate, creneaux);
     }
 
-    private static Optional<Contradiction> forcedSeatAgainstUnavailability(ContrainteAdHoc forced,
-            ContrainteAdHoc unavailability, Map<Long, Creneau> creneaux) {
+    private static Optional<Contradiction> forcedSeatAgainstUnavailability(
+            ContrainteAdHoc forced, ContrainteAdHoc unavailability, Map<Long, Creneau> creneaux) {
         if (forced.getType() != TypeContrainteAdHoc.AFFECTATION_FORCEE
                 || unavailability.getType() != TypeContrainteAdHoc.INDISPONIBILITE_FORCEE) {
             return Optional.empty();
         }
         List<String> targets = animateurIds(forced);
-        if (targets.isEmpty() || !animateurIds(unavailability).containsAll(targets)
+        if (targets.isEmpty()
+                || !animateurIds(unavailability).containsAll(targets)
                 || !covers(unavailability, forced)) {
             return Optional.empty();
         }
-        return Optional.of(new Contradiction(TypeContradiction.AFFECTATION_FORCEE_SUR_INDISPONIBILITE,
+        return Optional.of(new Contradiction(
+                TypeContradiction.AFFECTATION_FORCEE_SUR_INDISPONIBILITE,
                 List.of(unavailability.getId(), forced.getId()),
                 "La contrainte " + forced.getId() + " force " + describeAnimateurs(targets) + " sur "
                         + describeScope(forced, creneaux) + ", alors que la contrainte "
@@ -213,8 +213,8 @@ public final class ContrainteAdHocContradictions {
      * forced assignment listing two of them is satisfied by either, so the
      * pair could be spread over the two créneaux.</p>
      */
-    private static Optional<Contradiction> simultaneousForcedSeats(ContrainteAdHoc candidate,
-            ContrainteAdHoc other, Map<Long, Creneau> creneaux) {
+    private static Optional<Contradiction> simultaneousForcedSeats(
+            ContrainteAdHoc candidate, ContrainteAdHoc other, Map<Long, Creneau> creneaux) {
         if (candidate.getType() != TypeContrainteAdHoc.AFFECTATION_FORCEE
                 || other.getType() != TypeContrainteAdHoc.AFFECTATION_FORCEE) {
             return Optional.empty();
@@ -237,7 +237,8 @@ public final class ContrainteAdHocContradictions {
         } else if (!overlap(creneaux.get(candidateCreneau), creneaux.get(otherCreneau))) {
             return Optional.empty();
         }
-        return Optional.of(new Contradiction(TypeContradiction.AFFECTATIONS_FORCEES_SIMULTANEES,
+        return Optional.of(new Contradiction(
+                TypeContradiction.AFFECTATIONS_FORCEES_SIMULTANEES,
                 List.of(other.getId(), candidate.getId()),
                 "Les contraintes " + other.getId() + " et " + candidate.getId() + " forcent " + animateur
                         + " sur deux postes simultanés (" + describeScope(other, creneaux) + " et "
@@ -259,8 +260,8 @@ public final class ContrainteAdHocContradictions {
      * involved can be entered in any order — whichever comes last is the one
      * refused.</p>
      */
-    private static List<Contradiction> forcedSeatsOfAnIncompatiblePair(ContrainteAdHoc candidate,
-            List<ContrainteAdHoc> others, Map<Long, Creneau> creneaux) {
+    private static List<Contradiction> forcedSeatsOfAnIncompatiblePair(
+            ContrainteAdHoc candidate, List<ContrainteAdHoc> others, Map<Long, Creneau> creneaux) {
         List<ContrainteAdHoc> forcedSeats = ofType(others, TypeContrainteAdHoc.AFFECTATION_FORCEE);
         List<Contradiction> contradictions = new ArrayList<>();
         if (candidate.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE) {
@@ -282,21 +283,30 @@ public final class ContrainteAdHocContradictions {
         return contradictions;
     }
 
-    private static Optional<Contradiction> forbiddenTogether(ContrainteAdHoc first, ContrainteAdHoc second,
-            ContrainteAdHoc incompatibility, Map<Long, Creneau> creneaux) {
+    private static Optional<Contradiction> forbiddenTogether(
+            ContrainteAdHoc first,
+            ContrainteAdHoc second,
+            ContrainteAdHoc incompatibility,
+            Map<Long, Creneau> creneaux) {
         String firstAnimateur = soleAnimateur(first);
         String secondAnimateur = soleAnimateur(second);
         Long creneau = creneauId(first);
-        if (firstAnimateur == null || secondAnimateur == null || firstAnimateur.equals(secondAnimateur)
-                || creneau == null || !creneau.equals(creneauId(second))) {
+        if (firstAnimateur == null
+                || secondAnimateur == null
+                || firstAnimateur.equals(secondAnimateur)
+                || creneau == null
+                || !creneau.equals(creneauId(second))) {
             return Optional.empty();
         }
         Set<String> pair = animateurPair(incompatibility);
-        if (pair == null || !pair.equals(Set.of(firstAnimateur, secondAnimateur))
-                || !covers(incompatibility, first) || !covers(incompatibility, second)) {
+        if (pair == null
+                || !pair.equals(Set.of(firstAnimateur, secondAnimateur))
+                || !covers(incompatibility, first)
+                || !covers(incompatibility, second)) {
             return Optional.empty();
         }
-        return Optional.of(new Contradiction(TypeContradiction.AFFECTATIONS_FORCEES_INCOMPATIBLES,
+        return Optional.of(new Contradiction(
+                TypeContradiction.AFFECTATIONS_FORCEES_INCOMPATIBLES,
                 List.of(first.getId(), second.getId(), incompatibility.getId()),
                 "Les contraintes " + first.getId() + " et " + second.getId() + " forcent " + firstAnimateur
                         + " et " + secondAnimateur + " sur " + describeScope(first, creneaux)
@@ -321,7 +331,9 @@ public final class ContrainteAdHocContradictions {
 
     /** True unless both constraints name a stand and those stands differ. */
     private static boolean standsMatch(ContrainteAdHoc first, ContrainteAdHoc second) {
-        return standId(first) == null || standId(second) == null || standId(first).equals(standId(second));
+        return standId(first) == null
+                || standId(second) == null
+                || standId(first).equals(standId(second));
     }
 
     /**
@@ -340,13 +352,15 @@ public final class ContrainteAdHocContradictions {
     }
 
     private static LocalDateTime[] window(Creneau creneau) {
-        if (creneau == null || creneau.getDate() == null
-                || creneau.getHeureDebut() == null || creneau.getHeureFin() == null) {
+        if (creneau == null
+                || creneau.getDate() == null
+                || creneau.getHeureDebut() == null
+                || creneau.getHeureFin() == null) {
             return null;
         }
         LocalDateTime debut = creneau.getDate().atTime(creneau.getHeureDebut());
         LocalDateTime fin = creneau.getDate().atTime(creneau.getHeureFin());
-        return new LocalDateTime[] { debut, fin.isAfter(debut) ? fin : fin.plusDays(1) };
+        return new LocalDateTime[] {debut, fin.isAfter(debut) ? fin : fin.plusDays(1)};
     }
 
     private static List<ContrainteAdHoc> identified(List<ContrainteAdHoc> contraintes) {
@@ -360,7 +374,9 @@ public final class ContrainteAdHocContradictions {
     }
 
     private static List<ContrainteAdHoc> ofType(List<ContrainteAdHoc> contraintes, TypeContrainteAdHoc type) {
-        return contraintes.stream().filter(contrainte -> contrainte.getType() == type).toList();
+        return contraintes.stream()
+                .filter(contrainte -> contrainte.getType() == type)
+                .toList();
     }
 
     private static Map<Long, Creneau> indexCreneaux(List<Creneau> creneaux) {
@@ -407,8 +423,7 @@ public final class ContrainteAdHocContradictions {
     /** The unordered pair of the first two animateur ids, or null when the constraint doesn't name a genuine pair. */
     private static Set<String> animateurPair(ContrainteAdHoc contrainte) {
         List<Animateur> animateurs = contrainte.getAnimateursConcernes();
-        if (animateurs == null || animateurs.size() < 2
-                || animateurs.get(0) == null || animateurs.get(1) == null) {
+        if (animateurs == null || animateurs.size() < 2 || animateurs.get(0) == null || animateurs.get(1) == null) {
             return null;
         }
         String premier = animateurs.get(0).getId();
@@ -438,8 +453,10 @@ public final class ContrainteAdHocContradictions {
     }
 
     private static String describeCreneau(Long id, Creneau creneau) {
-        if (creneau == null || creneau.getDate() == null
-                || creneau.getHeureDebut() == null || creneau.getHeureFin() == null) {
+        if (creneau == null
+                || creneau.getDate() == null
+                || creneau.getHeureDebut() == null
+                || creneau.getHeureFin() == null) {
             return String.valueOf(id);
         }
         return creneau.getDate() + " " + creneau.getHeureDebut() + "-" + creneau.getHeureFin();

@@ -6,12 +6,10 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
+import io.quarkus.test.junit.QuarkusTest;
 import java.nio.charset.StandardCharsets;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import io.quarkus.test.junit.QuarkusTest;
 
 /**
  * The optional {@code edition:} scenario section routes the whole import into
@@ -69,7 +67,8 @@ class ImportScenarioTargetEditionTest {
         // Bytes, not String: RestAssured has no encoder for x-yaml text.
         given().contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
-                .when().post("/api/reference-data/import-scenario-fichier")
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200)
                 .body("editionId", equalTo(EDITION_CIBLE));
@@ -79,27 +78,26 @@ class ImportScenarioTargetEditionTest {
     void lImportCreeLEditionCibleEtYEcritSansToucherALEditionCourante() {
         given().contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
-                .when().post("/api/reference-data/import-scenario-fichier")
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200)
                 .body("editionId", equalTo(EDITION_CIBLE))
                 .body("editionNom", equalTo("Édition cible de test"))
                 .body("editionCreee", equalTo(true));
 
-        given().when().get("/api/editions")
-                .then().statusCode(200)
-                .body("id", hasItem(EDITION_CIBLE));
+        given().when().get("/api/editions").then().statusCode(200).body("id", hasItem(EDITION_CIBLE));
 
         // The data landed in the target edition…
         given().header("X-Edition-Id", EDITION_CIBLE)
-                .when().get("/api/stands")
-                .then().statusCode(200)
+                .when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
                 .body("id", hasItem("EDC-S1"));
 
         // …and nowhere near the caller's current edition.
-        given().when().get("/api/stands")
-                .then().statusCode(200)
-                .body("id", not(hasItem("EDC-S1")));
+        given().when().get("/api/stands").then().statusCode(200).body("id", not(hasItem("EDC-S1")));
     }
 
     @Test
@@ -109,12 +107,15 @@ class ImportScenarioTargetEditionTest {
         // The edition exists now: renamed by hand, then re-imported into.
         given().contentType("application/json")
                 .body("{\"nom\": \"Nom choisi à la main\"}")
-                .when().put("/api/editions/" + EDITION_CIBLE)
-                .then().statusCode(200);
+                .when()
+                .put("/api/editions/" + EDITION_CIBLE)
+                .then()
+                .statusCode(200);
 
         given().contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
-                .when().post("/api/reference-data/import-scenario-fichier")
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200)
                 .body("editionCreee", equalTo(false))
@@ -126,7 +127,8 @@ class ImportScenarioTargetEditionTest {
         String withoutEdition = SCENARIO.replaceFirst("(?s)edition:.*?\\n\\n", "");
         given().contentType("application/x-yaml")
                 .body(withoutEdition.getBytes(StandardCharsets.UTF_8))
-                .when().post("/api/reference-data/import-scenario-fichier")
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200)
                 .body("editionId", nullValue())

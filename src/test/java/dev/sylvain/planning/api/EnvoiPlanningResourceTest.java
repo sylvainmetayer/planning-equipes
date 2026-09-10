@@ -5,27 +5,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Resending one animateur their planning ({@code /api/planning/envoi}),
@@ -82,7 +80,8 @@ class EnvoiPlanningResourceTest {
     @Test
     void lEnvoiIndividuelJointLePdfEtLeLienEspace() {
         given().contentType(ContentType.JSON)
-                .when().post("/api/planning/envoi/animateur/MAIL-A")
+                .when()
+                .post("/api/planning/envoi/animateur/MAIL-A")
                 .then()
                 .statusCode(200)
                 .body("envoyes", equalTo(1));
@@ -91,9 +90,7 @@ class EnvoiPlanningResourceTest {
         assertThat(mails).hasSize(1);
         Mail mail = mails.get(0);
         assertThat(mail.getSubject()).contains("votre planning individuel");
-        assertThat(mail.getText())
-                .contains("Bonjour Alice")
-                .contains("/animateur/" + tokenOf("MAIL-A"));
+        assertThat(mail.getText()).contains("Bonjour Alice").contains("/animateur/" + tokenOf("MAIL-A"));
         assertThat(mail.getAttachments()).hasSize(1);
         assertThat(mail.getAttachments().get(0).getName()).isEqualTo("planning-Alice-Martin.pdf");
         assertThat(mail.getAttachments().get(0).getContentType()).isEqualTo("application/pdf");
@@ -102,7 +99,8 @@ class EnvoiPlanningResourceTest {
     @Test
     void unAnimateurSansEmailRepondUneErreurExplicite() {
         given().contentType(ContentType.JSON)
-                .when().post("/api/planning/envoi/animateur/MAIL-B")
+                .when()
+                .post("/api/planning/envoi/animateur/MAIL-B")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("n'a pas d'adresse e-mail"));
@@ -112,7 +110,8 @@ class EnvoiPlanningResourceTest {
     @Test
     void unAnimateurInconnuRepondIntrouvable() {
         given().contentType(ContentType.JSON)
-                .when().post("/api/planning/envoi/animateur/MAIL-FANTOME")
+                .when()
+                .post("/api/planning/envoi/animateur/MAIL-FANTOME")
                 .then()
                 .statusCode(404);
     }

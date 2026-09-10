@@ -3,20 +3,18 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalTime;
-
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
+import java.time.LocalTime;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.junit.jupiter.api.Test;
 
 /**
  * Exercises the optional {@code parametresLegaux:} / {@code parametresDecoupage:}
@@ -30,7 +28,14 @@ class PlanningServiceParametresScenarioTest {
 
     private static PlanningService service() {
         ReferenceData referenceDataService = new EmptyReferenceData();
-        return new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(), null, null,
+        return new PlanningService(
+                3L,
+                2L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                referenceDataService,
+                new FeasibilityAnalyzer(),
+                null,
+                null,
                 ConfigProvider.getConfig());
     }
 
@@ -38,9 +43,12 @@ class PlanningServiceParametresScenarioTest {
     void scenarioSansSectionNeDefinitAucunParametre() {
         PlanningService service = service();
 
-        assertThat(service.loadScenarioSections("scenario.yml").parametresLegaux()).isEmpty();
-        assertThat(service.loadScenarioSections("scenario.yml").parametresDecoupage()).isEmpty();
-        assertThat(service.loadScenarioSections("scenario.yml").parametresSolveur()).isEmpty();
+        assertThat(service.loadScenarioSections("scenario.yml").parametresLegaux())
+                .isEmpty();
+        assertThat(service.loadScenarioSections("scenario.yml").parametresDecoupage())
+                .isEmpty();
+        assertThat(service.loadScenarioSections("scenario.yml").parametresSolveur())
+                .isEmpty();
         assertThat(service.loadScenarioSections("scenario.yml").decoupageAuto()).isFalse();
     }
 
@@ -48,7 +56,8 @@ class PlanningServiceParametresScenarioTest {
     void scenarioAvecSectionPartielleNeSurchargeQueLesChampsNommes() {
         PlanningService service = service();
 
-        ParametresLegaux legaux = service.loadScenarioSections("scenario-parametres-optionnels.yaml").parametresLegaux()
+        ParametresLegaux legaux = service.loadScenarioSections("scenario-parametres-optionnels.yaml")
+                .parametresLegaux()
                 .orElseThrow();
         assertThat(legaux.getReposQuotidienMinimalMinutes()).isEqualTo(500);
         // Fields the YAML does not mention: the defaults of the class, not those
@@ -58,8 +67,9 @@ class PlanningServiceParametresScenarioTest {
         assertThat(legaux.getPauseMinimaleEntreVacationsMinutes())
                 .isEqualTo(ParametresLegaux.PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT);
 
-        ParametresDecoupage decoupage = service
-                .loadScenarioSections("scenario-parametres-optionnels.yaml").parametresDecoupage().orElseThrow();
+        ParametresDecoupage decoupage = service.loadScenarioSections("scenario-parametres-optionnels.yaml")
+                .parametresDecoupage()
+                .orElseThrow();
         assertThat(decoupage.getDureeVacationMinMinutes()).isEqualTo(250);
         assertThat(decoupage.getStrategieCouverturePendantPause())
                 .isEqualTo(ParametresDecoupage.PauseCoverageStrategy.RELEVE);
@@ -70,12 +80,14 @@ class PlanningServiceParametresScenarioTest {
         // (String) cast throws ClassCastException instead of parsing it.
         assertThat(decoupage.getFenetreRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
         // Slicing into offset families: the setting that makes a dense scenario
-        // feasible (see the coverage-deficit investigation (kept out of the public repository: it is based on a real event dataset)) must be pinnable in the
+        // feasible (see the coverage-deficit investigation (kept out of the public repository: it is based on a real
+        // event dataset)) must be pinnable in the
         // scenario itself, not only tuned by hand after the import.
         assertThat(decoupage.getNombreFamillesDecalage()).isEqualTo(3);
         assertThat(decoupage.getDureeDecalageMaxMinutes()).isEqualTo(75);
 
-        ParametresSolveur solveur = service.loadScenarioSections("scenario-parametres-optionnels.yaml").parametresSolveur()
+        ParametresSolveur solveur = service.loadScenarioSections("scenario-parametres-optionnels.yaml")
+                .parametresSolveur()
                 .orElseThrow();
         assertThat(solveur.dureeResolutionSecondes()).isEqualTo(400);
     }
@@ -87,7 +99,8 @@ class PlanningServiceParametresScenarioTest {
         PlanningEvenement evenement = service.buildExample("scenario-parametres-optionnels.yaml");
 
         assertThat(evenement.getParametresLegaux()).hasSize(1);
-        assertThat(evenement.getParametresLegaux().get(0).getReposQuotidienMinimalMinutes()).isEqualTo(500);
+        assertThat(evenement.getParametresLegaux().get(0).getReposQuotidienMinimalMinutes())
+                .isEqualTo(500);
     }
 
     @Test
@@ -96,7 +109,8 @@ class PlanningServiceParametresScenarioTest {
 
         // The old groupeSourceNom/groupeCibleNom fields of the file are accepted
         // and ignored (issue #172): only the presence of the section counts.
-        assertThat(service.loadScenarioSections("scenario-decoupage-auto.yaml").decoupageAuto()).isTrue();
+        assertThat(service.loadScenarioSections("scenario-decoupage-auto.yaml").decoupageAuto())
+                .isTrue();
     }
 
     /**
@@ -110,15 +124,19 @@ class PlanningServiceParametresScenarioTest {
     void nomDeScenarioAbsentOuVideRetombeSurLeScenarioParDefaut() {
         PlanningService service = service();
 
-        for (String nom : new String[] { null, "", "   " }) {
+        for (String nom : new String[] {null, "", "   "}) {
             assertThat(service.loadScenarioSections(nom).parametresLegaux().isPresent())
-                    .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO).parametresLegaux().isPresent());
+                    .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO)
+                            .parametresLegaux()
+                            .isPresent());
             assertThat(service.loadScenarioSections(nom).parametresDecoupage()).isNotNull();
             assertThat(service.loadScenarioSections(nom).parametresSolveur()).isNotNull();
-            assertThat(service.loadScenarioSections(nom).decoupageAuto()).isEqualTo(
-                    service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO).decoupageAuto());
+            assertThat(service.loadScenarioSections(nom).decoupageAuto())
+                    .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO)
+                            .decoupageAuto());
             assertThat(service.loadScenarioSections(nom).typologies())
-                    .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO).typologies());
+                    .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO)
+                            .typologies());
         }
     }
 

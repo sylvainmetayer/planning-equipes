@@ -1,8 +1,7 @@
 package dev.sylvain.planning.config;
 
-import java.time.Duration;
-
 import io.smallrye.config.ConfigMapping;
+import java.time.Duration;
 
 /**
  * The server-sent events stream that follows solver jobs.

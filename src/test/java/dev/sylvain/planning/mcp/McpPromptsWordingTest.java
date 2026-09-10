@@ -2,13 +2,11 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.lang.reflect.Method;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.McpPrompts.PromptExpose;
 import io.quarkiverse.mcp.server.Tool;
+import java.lang.reflect.Method;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * What the prompts <b>say</b>, checked without a server.
@@ -50,8 +48,10 @@ class McpPromptsWordingTest {
             for (String outil : sortants) {
                 if (expose.texte().contains(outil)) {
                     assertThat(expose.texte())
-                            .as("le prompt %s nomme %s, qui envoie des courriels : il doit exiger un"
-                                    + " accord explicite avant l'appel", expose.nom(), outil)
+                            .as(
+                                    "le prompt %s nomme %s, qui envoie des courriels : il doit exiger un"
+                                            + " accord explicite avant l'appel",
+                                    expose.nom(), outil)
                             .containsAnyOf("mon accord", "sans mon accord", "demande-moi");
                 }
             }
@@ -93,30 +93,41 @@ class McpPromptsWordingTest {
     /** Written by hand, in the order of a real event — from the empty grid to the swaps. */
     @Test
     void leCatalogueSuitLeCycleDeVieDUnEvenement() {
-        assertThat(prompts.catalogue()).extracting(PromptExpose::nom).containsExactly(
-                "saisir_les_horaires_des_stands",
-                "construire_la_grille_de_creneaux",
-                "traiter_les_declarations_de_disponibilite",
-                "savoir_ou_recruter_ou_former",
-                "verifier_avant_resolution",
-                "resoudre_sans_perdre_le_planning",
-                "diagnostiquer_contraintes_dures",
-                "verrouiller_ce_qui_tient",
-                "preparer_une_variante_de_repli",
-                "auditer_avant_diffusion",
-                "publier_le_planning",
-                "traiter_les_demandes_dechange",
-                "reprendre_apres_un_changement_tardif",
-                "tenir_le_jour_j");
+        assertThat(prompts.catalogue())
+                .extracting(PromptExpose::nom)
+                .containsExactly(
+                        "saisir_les_horaires_des_stands",
+                        "construire_la_grille_de_creneaux",
+                        "traiter_les_declarations_de_disponibilite",
+                        "savoir_ou_recruter_ou_former",
+                        "verifier_avant_resolution",
+                        "resoudre_sans_perdre_le_planning",
+                        "diagnostiquer_contraintes_dures",
+                        "verrouiller_ce_qui_tient",
+                        "preparer_une_variante_de_repli",
+                        "auditer_avant_diffusion",
+                        "publier_le_planning",
+                        "traiter_les_demandes_dechange",
+                        "reprendre_apres_un_changement_tardif",
+                        "tenir_le_jour_j");
     }
 
     @Test
     void chaqueNouveauPromptPorteLEditionQuOnLuiDonne() {
         assertThat(prompts.traiter_les_declarations_de_disponibilite("Canicule 2026")
-                .content().asText().text()).contains("Canicule 2026");
-        assertThat(prompts.publier_le_planning("Canicule 2026").content().asText().text())
+                        .content()
+                        .asText()
+                        .text())
                 .contains("Canicule 2026");
-        assertThat(prompts.traiter_les_demandes_dechange("Canicule 2026").content().asText().text())
+        assertThat(prompts.publier_le_planning("Canicule 2026")
+                        .content()
+                        .asText()
+                        .text())
+                .contains("Canicule 2026");
+        assertThat(prompts.traiter_les_demandes_dechange("Canicule 2026")
+                        .content()
+                        .asText()
+                        .text())
                 .contains("Canicule 2026");
     }
 
@@ -127,8 +138,11 @@ class McpPromptsWordingTest {
      */
     @Test
     void lesPromptsQuiParlentDesAnimateursRappellentQuIlsNontQuUnId() {
-        for (String nom : List.of("traiter_les_declarations_de_disponibilite", "publier_le_planning",
-                "traiter_les_demandes_dechange", "diagnostiquer_contraintes_dures")) {
+        for (String nom : List.of(
+                "traiter_les_declarations_de_disponibilite",
+                "publier_le_planning",
+                "traiter_les_demandes_dechange",
+                "diagnostiquer_contraintes_dures")) {
             PromptExpose expose = prompts.catalogue().stream()
                     .filter(candidat -> candidat.nom().equals(nom))
                     .findFirst()

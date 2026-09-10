@@ -1,18 +1,17 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 
 /**
  * Minimum staffing need computed on the current reference data, with no solve
@@ -58,8 +57,11 @@ public class StaffingResource {
         } catch (IllegalStateException e) {
             postes = List.of();
         }
-        return staffingAnalyzer.analyze(postes, referenceDataService.listAnimateurs(),
-                referenceDataService.listTypologies(), parametres.getDureeHebdomadaireMaxMinutes(),
+        return staffingAnalyzer.analyze(
+                postes,
+                referenceDataService.listAnimateurs(),
+                referenceDataService.listTypologies(),
+                parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.getPauseMinimaleEntreVacationsMinutes());
     }
 }

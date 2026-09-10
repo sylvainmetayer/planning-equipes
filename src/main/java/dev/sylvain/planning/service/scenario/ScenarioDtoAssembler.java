@@ -30,6 +30,7 @@ import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -40,7 +41,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * The domain, as the one shape a scenario has.
@@ -58,8 +58,7 @@ import dev.sylvain.planning.service.referentiel.TypologieItem;
  */
 final class ScenarioDtoAssembler {
 
-    private ScenarioDtoAssembler() {
-    }
+    private ScenarioDtoAssembler() {}
 
     static ScenarioDto assemble(ScenarioYamlWriter.ScenarioExport export) {
         List<Creneau> creneaux = export.creneaux();
@@ -105,8 +104,12 @@ final class ScenarioDtoAssembler {
 
     private static List<CreneauDto> creneaux(List<Creneau> creneaux) {
         return creneaux.stream()
-                .map(creneau -> new CreneauDto(asString(creneau.getId()), creneau.getJour(), creneau.getDate(),
-                        creneau.getHeureDebut(), creneau.getHeureFin()))
+                .map(creneau -> new CreneauDto(
+                        asString(creneau.getId()),
+                        creneau.getJour(),
+                        creneau.getDate(),
+                        creneau.getHeureDebut(),
+                        creneau.getHeureFin()))
                 .toList();
     }
 
@@ -115,7 +118,9 @@ final class ScenarioDtoAssembler {
                 .map(stand -> new StandDto(
                         stand.getId(),
                         stand.getNom(),
-                        stand.getEmplacement() == null ? null : stand.getEmplacement().getId(),
+                        stand.getEmplacement() == null
+                                ? null
+                                : stand.getEmplacement().getId(),
                         new ArrayList<>(stand.getTypologiesProposees()),
                         stand.getEffectifMin(),
                         stand.getEffectifMax(),
@@ -140,34 +145,42 @@ final class ScenarioDtoAssembler {
                         // Contact only — the espace-animateur access token never
                         // travels through a scenario file (regenerated from the
                         // database instead).
-                        animateur.getEmail() == null || animateur.getEmail().isBlank()
-                                ? null : animateur.getEmail(),
-                        animateur.getCompetences() == null ? Map.of()
-                                : new LinkedHashMap<>(animateur.getCompetences()),
-                        animateur.getJoursIndisponibles() == null ? List.of()
-                                : animateur.getJoursIndisponibles().stream().sorted().toList(),
+                        animateur.getEmail() == null || animateur.getEmail().isBlank() ? null : animateur.getEmail(),
+                        animateur.getCompetences() == null ? Map.of() : new LinkedHashMap<>(animateur.getCompetences()),
+                        animateur.getJoursIndisponibles() == null
+                                ? List.of()
+                                : animateur.getJoursIndisponibles().stream()
+                                        .sorted()
+                                        .toList(),
                         animateur.getSouhaits() == null ? List.of() : new ArrayList<>(animateur.getSouhaits())))
                 .toList();
     }
 
     private static List<PosteDto> postes(List<PosteAffectation> postes) {
         return postes.stream()
-                .map(poste -> new PosteDto(poste.getId(), poste.getStand().getId(),
-                        asString(poste.getCreneau().getId()), null))
+                .map(poste -> new PosteDto(
+                        poste.getId(),
+                        poste.getStand().getId(),
+                        asString(poste.getCreneau().getId()),
+                        null))
                 .toList();
     }
 
     private static List<IndisponibiliteStandDto> indisponibilites(List<IndisponibiliteStand> indisponibilites) {
         return indisponibilites.stream()
-                .map(indispo -> new IndisponibiliteStandDto(indispo.getDate(), indispo.getHeureDebut(),
-                        indispo.getHeureFin(), indispo.getMotif()))
+                .map(indispo -> new IndisponibiliteStandDto(
+                        indispo.getDate(), indispo.getHeureDebut(), indispo.getHeureFin(), indispo.getMotif()))
                 .toList();
     }
 
     private static List<OuvertureStandDto> ouvertures(List<OuvertureStand> ouvertures) {
         return ouvertures.stream()
-                .map(ouverture -> new OuvertureStandDto(ouverture.getDate(), ouverture.getHeureDebut(),
-                        ouverture.getHeureFin(), ouverture.getMotif(), ouverture.getEffectif()))
+                .map(ouverture -> new OuvertureStandDto(
+                        ouverture.getDate(),
+                        ouverture.getHeureDebut(),
+                        ouverture.getHeureFin(),
+                        ouverture.getMotif(),
+                        ouverture.getEffectif()))
                 .toList();
     }
 
@@ -182,13 +195,17 @@ final class ScenarioDtoAssembler {
                         horaire.getMode(),
                         horaire.getJours(),
                         horaire.getJours() == dev.sylvain.planning.domain.TypeJoursHoraire.JOURS_SEMAINE
-                                ? List.copyOf(horaire.getJoursSemaine()) : null,
+                                ? List.copyOf(horaire.getJoursSemaine())
+                                : null,
                         horaire.getJours() == dev.sylvain.planning.domain.TypeJoursHoraire.PLAGE
-                                ? horaire.getDateDebut() : null,
+                                ? horaire.getDateDebut()
+                                : null,
                         horaire.getJours() == dev.sylvain.planning.domain.TypeJoursHoraire.PLAGE
-                                ? horaire.getDateFin() : null,
+                                ? horaire.getDateFin()
+                                : null,
                         horaire.getJours() == dev.sylvain.planning.domain.TypeJoursHoraire.DATES
-                                ? List.copyOf(horaire.getDates()) : null,
+                                ? List.copyOf(horaire.getDates())
+                                : null,
                         fenetres(horaire.getFenetres()),
                         horaire.getMotif()))
                 .toList();
@@ -200,15 +217,18 @@ final class ScenarioDtoAssembler {
                 // better as a missing end. Same for effectif: absent means
                 // "inherit effectifMin", and writing it out would freeze
                 // today's value into the file as if it had been chosen.
-                .map(fenetre -> new FenetreHoraireDto(fenetre.getHeureDebut(), fenetre.getHeureFin(),
-                        fenetre.getEffectif()))
+                .map(fenetre ->
+                        new FenetreHoraireDto(fenetre.getHeureDebut(), fenetre.getHeureFin(), fenetre.getEffectif()))
                 .toList();
     }
 
     private static List<EmplacementDto> emplacements(List<Emplacement> emplacements) {
         return emplacements.stream()
-                .map(emplacement -> new EmplacementDto(emplacement.getId(), emplacement.getNom(),
-                        emplacement.getLatitude(), emplacement.getLongitude()))
+                .map(emplacement -> new EmplacementDto(
+                        emplacement.getId(),
+                        emplacement.getNom(),
+                        emplacement.getLatitude(),
+                        emplacement.getLongitude()))
                 .toList();
     }
 
@@ -245,8 +265,8 @@ final class ScenarioDtoAssembler {
      * then covers the whole event — the safe side for every prescriptive
      * type.</p>
      */
-    private static List<ContrainteAdHocDto> contraintesAdHoc(List<ContrainteAdHoc> contraintes,
-            List<Creneau> creneaux) {
+    private static List<ContrainteAdHocDto> contraintesAdHoc(
+            List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
         if (contraintes == null) {
             return null;
         }
@@ -256,10 +276,17 @@ final class ScenarioDtoAssembler {
                         contrainte.getId(),
                         contrainte.getType(),
                         contrainte.getAnimateursConcernes().stream()
-                                .filter(Objects::nonNull).map(Animateur::getId).toList(),
-                        contrainte.getCreneau() != null && creneauxConnus.contains(contrainte.getCreneau().getId())
-                                ? asString(contrainte.getCreneau().getId()) : null,
-                        contrainte.getStand() == null ? null : contrainte.getStand().getId(),
+                                .filter(Objects::nonNull)
+                                .map(Animateur::getId)
+                                .toList(),
+                        contrainte.getCreneau() != null
+                                        && creneauxConnus.contains(
+                                                contrainte.getCreneau().getId())
+                                ? asString(contrainte.getCreneau().getId())
+                                : null,
+                        contrainte.getStand() == null
+                                ? null
+                                : contrainte.getStand().getId(),
                         contrainte.getRaison()))
                 .toList();
     }
@@ -270,27 +297,31 @@ final class ScenarioDtoAssembler {
 
     /** Only the four fields a scenario file is read back with. */
     private static ParametresLegauxDto parametresLegaux(ParametresLegaux parametres) {
-        return parametres == null ? null : new ParametresLegauxDto(
-                parametres.getDureeHebdomadaireMaxMinutes(),
-                parametres.getPauseMinimaleEntreVacationsMinutes(),
-                parametres.getReposQuotidienMinimalMinutes(),
-                parametres.isPauseSurPoste());
+        return parametres == null
+                ? null
+                : new ParametresLegauxDto(
+                        parametres.getDureeHebdomadaireMaxMinutes(),
+                        parametres.getPauseMinimaleEntreVacationsMinutes(),
+                        parametres.getReposQuotidienMinimalMinutes(),
+                        parametres.isPauseSurPoste());
     }
 
     private static ParametresDecoupageDto parametresDecoupage(ParametresDecoupage parametres) {
-        return parametres == null ? null : new ParametresDecoupageDto(
-                parametres.getDureeVacationCibleMinutes(),
-                parametres.getDureeVacationMinMinutes(),
-                parametres.getDureeVacationMaxMinutes(),
-                parametres.getDureeChevauchementMinutes(),
-                parametres.getDureePauseRepasMinutes(),
-                parametres.getFenetreRepasMidiDebut(),
-                parametres.getFenetreRepasMidiFin(),
-                parametres.getFenetreRepasSoirDebut(),
-                parametres.getFenetreRepasSoirFin(),
-                parametres.getStrategieCouverturePendantPause(),
-                parametres.getNombreFamillesDecalage(),
-                parametres.getDureeDecalageMaxMinutes(),
-                parametres.getModeGrille());
+        return parametres == null
+                ? null
+                : new ParametresDecoupageDto(
+                        parametres.getDureeVacationCibleMinutes(),
+                        parametres.getDureeVacationMinMinutes(),
+                        parametres.getDureeVacationMaxMinutes(),
+                        parametres.getDureeChevauchementMinutes(),
+                        parametres.getDureePauseRepasMinutes(),
+                        parametres.getFenetreRepasMidiDebut(),
+                        parametres.getFenetreRepasMidiFin(),
+                        parametres.getFenetreRepasSoirDebut(),
+                        parametres.getFenetreRepasSoirFin(),
+                        parametres.getStrategieCouverturePendantPause(),
+                        parametres.getNombreFamillesDecalage(),
+                        parametres.getDureeDecalageMaxMinutes(),
+                        parametres.getModeGrille());
     }
 }

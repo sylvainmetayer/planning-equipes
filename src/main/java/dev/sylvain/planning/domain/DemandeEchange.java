@@ -22,11 +22,13 @@ public class DemandeEchange {
     private String id;
     /** Groupe de créneaux of the persisted planning at submission time, for context; may be null. */
     private String demandeurId;
+
     private String cibleId;
     private Long creneauId;
     private String standId;
     /** Directed exchange only: the colleague's seat the demandeur wants in return. Null = same-créneau semantics. */
     private Long creneauCibleId;
+
     private String standCibleId;
     private String motif;
     private StatutDemandeEchange statut = StatutDemandeEchange.EN_ATTENTE_CIBLE;
@@ -36,12 +38,12 @@ public class DemandeEchange {
     private Boolean prevalidationOk;
     /** Business descriptions of the hard constraints the échange would break, one per entry. */
     private List<String> contraintesViolees = new ArrayList<>();
+
     private String commentaireAdmin;
     private Instant creeLe;
     private Instant decideLe;
 
-    public DemandeEchange() {
-    }
+    public DemandeEchange() {}
 
     public String getId() {
         return id;

@@ -24,8 +24,12 @@ class ScenarioBinderTest {
 
         for (Path scenario : scenarios) {
             ScenarioDto dto = ScenarioBinder.bind(Files.readString(scenario));
-            assertThat(dto.festival()).as(scenario.getFileName() + " : section festival").isNotNull();
-            assertThat(dto.animateurs()).as(scenario.getFileName() + " : animateurs").isNotEmpty();
+            assertThat(dto.festival())
+                    .as(scenario.getFileName() + " : section festival")
+                    .isNotNull();
+            assertThat(dto.animateurs())
+                    .as(scenario.getFileName() + " : animateurs")
+                    .isNotEmpty();
             assertThat(dto.stands()).as(scenario.getFileName() + " : stands").isNotEmpty();
         }
     }
@@ -37,8 +41,7 @@ class ScenarioBinderTest {
      */
     @Test
     void yamlOneOneScalarsAreAccepted() throws IOException {
-        ScenarioDto dto = ScenarioBinder.bind(
-                Files.readString(Path.of("src/main/resources/scenarios/scenario.yml")));
+        ScenarioDto dto = ScenarioBinder.bind(Files.readString(Path.of("src/main/resources/scenarios/scenario.yml")));
 
         assertThat(dto.festival().dateDebut()).isNotNull();
         assertThat(dto.creneaux().get(0).heureDebut()).isNotNull();
@@ -120,21 +123,33 @@ class ScenarioBinderTest {
         String scenario = Files.readString(Path.of("src/main/resources/scenarios/scenario.yml"));
         StringBuilder added = new StringBuilder();
         for (int i = 0; i < 60; i++) {
-            added.append("  - id: ALIAS").append(i).append(System.lineSeparator())
-                    .append("    email: alias").append(i).append("@example.test").append(System.lineSeparator())
-                    .append("    prenom: Alias").append(System.lineSeparator())
-                    .append("    nom: Test").append(System.lineSeparator())
-                    .append("    dateNaissance: 2000-01-01").append(System.lineSeparator())
-                    .append("    manager: false").append(System.lineSeparator())
-                    .append("    competences:").append(System.lineSeparator())
-                    .append("      STRATEGIE: AUTONOME").append(System.lineSeparator())
-                    .append("    joursIndisponibles: ").append(i == 0 ? "&jours []" : "*jours")
+            added.append("  - id: ALIAS")
+                    .append(i)
+                    .append(System.lineSeparator())
+                    .append("    email: alias")
+                    .append(i)
+                    .append("@example.test")
+                    .append(System.lineSeparator())
+                    .append("    prenom: Alias")
+                    .append(System.lineSeparator())
+                    .append("    nom: Test")
+                    .append(System.lineSeparator())
+                    .append("    dateNaissance: 2000-01-01")
+                    .append(System.lineSeparator())
+                    .append("    manager: false")
+                    .append(System.lineSeparator())
+                    .append("    competences:")
+                    .append(System.lineSeparator())
+                    .append("      STRATEGIE: AUTONOME")
+                    .append(System.lineSeparator())
+                    .append("    joursIndisponibles: ")
+                    .append(i == 0 ? "&jours []" : "*jours")
                     .append(System.lineSeparator());
         }
         // Added at the head of the existing list: what SnakeYAML anchors and
         // then aliases is one shared list instance, not a count of animateurs.
-        String withAliases = scenario.replace("animateurs:" + System.lineSeparator(),
-                "animateurs:" + System.lineSeparator() + added);
+        String withAliases = scenario.replace(
+                "animateurs:" + System.lineSeparator(), "animateurs:" + System.lineSeparator() + added);
 
         assertThat(ScenarioBinder.bind(withAliases).animateurs()).hasSize(63);
     }
@@ -152,11 +167,20 @@ class ScenarioBinderTest {
         assertThat(scenario).doesNotContain("decoupageAuto");
 
         assertThat(ScenarioBinder.bind(scenario).decoupageAuto()).as("absent").isNull();
-        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto: false\n").decoupageAuto()).as("false").isNull();
-        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n").decoupageAuto()).as("bare").isNotNull();
-        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto: {}\n").decoupageAuto()).as("empty object").isNotNull();
-        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n  groupeSourceNom: A\n").decoupageAuto()
-                .groupeSourceNom()).as("historical fields").isEqualTo("A");
+        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto: false\n").decoupageAuto())
+                .as("false")
+                .isNull();
+        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n").decoupageAuto())
+                .as("bare")
+                .isNotNull();
+        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto: {}\n").decoupageAuto())
+                .as("empty object")
+                .isNotNull();
+        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n  groupeSourceNom: A\n")
+                        .decoupageAuto()
+                        .groupeSourceNom())
+                .as("historical fields")
+                .isEqualTo("A");
         assertThatThrownBy(() -> ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n  grouppe: A\n"))
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("grouppe");
@@ -164,7 +188,9 @@ class ScenarioBinderTest {
 
     private static List<Path> bundledScenarios() throws IOException {
         try (Stream<Path> files = Files.list(Path.of("src/main/resources/scenarios"))) {
-            return files.filter(path -> path.toString().matches(".*\\.ya?ml")).sorted().toList();
+            return files.filter(path -> path.toString().matches(".*\\.ya?ml"))
+                    .sorted()
+                    .toList();
         }
     }
 }

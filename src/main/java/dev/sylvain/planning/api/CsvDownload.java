@@ -24,8 +24,7 @@ final class CsvDownload {
     /** Written as an escape on purpose: an invisible character in the source is a character that gets lost. */
     private static final String BOM = "\uFEFF";
 
-    private CsvDownload() {
-    }
+    private CsvDownload() {}
 
     /** The response that makes a browser save {@code fileName}, mark included. */
     static Response attachment(String csv, String fileName) {

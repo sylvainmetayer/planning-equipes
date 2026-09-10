@@ -1,14 +1,13 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Forces revalidation of everything the frontend serves under a stable name,
@@ -65,8 +64,7 @@ public class SpaCacheControlFilter {
      * rather than guessed from the extension, and kept in step with the folder
      * by {@code SpaCacheControlTest}.
      */
-    static final Set<String> UNHASHED_FILES =
-            Set.of("/favicon.ico", "/robots.txt");
+    static final Set<String> UNHASHED_FILES = Set.of("/favicon.ico", "/robots.txt");
 
     public void register(@Observes Filters filters) {
         filters.register(this::apply, PRIORITE);

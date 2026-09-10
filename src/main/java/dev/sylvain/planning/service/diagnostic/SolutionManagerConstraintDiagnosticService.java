@@ -1,8 +1,5 @@
 package dev.sylvain.planning.service.diagnostic;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.analysis.ConstraintAnalysis;
 import ai.timefold.solver.core.api.score.analysis.MatchAnalysis;
@@ -10,6 +7,8 @@ import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Diagnoses through Timefold's {@code SolutionManager.analyze()} — what every

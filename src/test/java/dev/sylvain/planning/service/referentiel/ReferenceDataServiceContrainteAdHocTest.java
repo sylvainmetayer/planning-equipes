@@ -4,20 +4,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link ReferenceDataService#createContrainteAdHoc} refusing an exception
@@ -74,7 +72,7 @@ class ReferenceDataServiceContrainteAdHocTest {
                 contrainte(PREFIXE + "C1", TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
 
         assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                contrainte(PREFIXE + "C2", TypeContrainteAdHoc.AFFINITE, premier, second)))
+                        contrainte(PREFIXE + "C2", TypeContrainteAdHoc.AFFINITE, premier, second)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(PREFIXE + "C1")
                 .hasMessageContaining("incompatible");
@@ -87,7 +85,7 @@ class ReferenceDataServiceContrainteAdHocTest {
 
         // The same pair, declared the other way round: the contradiction must be seen.
         assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                contrainte(PREFIXE + "C2", TypeContrainteAdHoc.INCOMPATIBILITE, second, premier)))
+                        contrainte(PREFIXE + "C2", TypeContrainteAdHoc.INCOMPATIBILITE, second, premier)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(PREFIXE + "C1");
     }
@@ -98,7 +96,7 @@ class ReferenceDataServiceContrainteAdHocTest {
                 contrainte(PREFIXE + "C1", TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
 
         assertThatCode(() -> referenceDataService.createContrainteAdHoc(
-                contrainte(PREFIXE + "C2", TypeContrainteAdHoc.AFFINITE, premier, troisieme)))
+                        contrainte(PREFIXE + "C2", TypeContrainteAdHoc.AFFINITE, premier, troisieme)))
                 .doesNotThrowAnyException();
 
         assertThat(referenceDataService.listContraintesAdHoc())
@@ -113,7 +111,7 @@ class ReferenceDataServiceContrainteAdHocTest {
 
         // Saving replaces the previous version: no coexistence, no conflict.
         assertThatCode(() -> referenceDataService.createContrainteAdHoc(
-                contrainte(PREFIXE + "C1", TypeContrainteAdHoc.AFFINITE, premier, second)))
+                        contrainte(PREFIXE + "C1", TypeContrainteAdHoc.AFFINITE, premier, second)))
                 .doesNotThrowAnyException();
     }
 
@@ -123,7 +121,7 @@ class ReferenceDataServiceContrainteAdHocTest {
                 onCreneau(PREFIXE + "C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, matin, premier));
 
         assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier)))
+                        onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(PREFIXE + "C1")
                 .hasMessageContaining("indisponible");
@@ -137,7 +135,7 @@ class ReferenceDataServiceContrainteAdHocTest {
                 onCreneau(PREFIXE + "C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
 
         assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, chevauchant, premier)))
+                        onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, chevauchant, premier)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(PREFIXE + "C1")
                 .hasMessageContaining("chevauchent");
@@ -151,7 +149,7 @@ class ReferenceDataServiceContrainteAdHocTest {
                 onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
 
         assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                onCreneau(PREFIXE + "C3", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, second)))
+                        onCreneau(PREFIXE + "C3", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, second)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(PREFIXE + "C1")
                 .hasMessageContaining(PREFIXE + "C2")
@@ -166,14 +164,14 @@ class ReferenceDataServiceContrainteAdHocTest {
                 onCreneau(PREFIXE + "C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
 
         assertThatCode(() -> referenceDataService.createContrainteAdHoc(
-                onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, soir, premier)))
+                        onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, soir, premier)))
                 .doesNotThrowAnyException();
 
         referenceDataService.deleteCreneau(soir.getId());
     }
 
-    private static ContrainteAdHoc onCreneau(String id, TypeContrainteAdHoc type, Creneau creneau,
-            Animateur... animateurs) {
+    private static ContrainteAdHoc onCreneau(
+            String id, TypeContrainteAdHoc type, Creneau creneau, Animateur... animateurs) {
         ContrainteAdHoc contrainte = contrainte(id, type, animateurs);
         contrainte.setCreneau(creneau);
         return contrainte;

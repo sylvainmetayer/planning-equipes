@@ -1,23 +1,22 @@
 package dev.sylvain.planning.mcp;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * MCP tools mirroring {@code ConstraintResource}: the business catalogue of
@@ -38,18 +37,24 @@ public class ContrainteMcpTools {
     @Inject
     PlanningService planningService;
 
-    @Tool(description = "Liste le catalogue métier des contraintes du solveur : niveau (HARD/MEDIUM/SOFT), "
-            + "description, si elle est active, et son score/nombre de correspondances lors de la dernière analyse.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description =
+                    "Liste le catalogue métier des contraintes du solveur : niveau (HARD/MEDIUM/SOFT), "
+                            + "description, si elle est active, et son score/nombre de correspondances lors de la dernière analyse.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     List<ContrainteView> lister_contraintes(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StoredAnalysis analysis = analysisStore.latest();
         Map<String, ConstraintDiagnostic> byName = analysis == null
                 ? Map.of()
                 : analysis.diagnostic().contraintes().stream()
-                        .collect(Collectors.toMap(ConstraintDiagnostic::name, Function.identity(),
-                                (first, second) -> first));
+                        .collect(Collectors.toMap(
+                                ConstraintDiagnostic::name, Function.identity(), (first, second) -> first));
         Set<String> desactivees = referenceDataService.getContraintesDesactivees();
         Map<String, Integer> poids = planningService.effectiveConstraintWeights();
 
@@ -58,18 +63,31 @@ public class ContrainteMcpTools {
                 .toList();
     }
 
-    @Tool(description = "Active une contrainte pour le prochain solve (annule une désactivation précédente).",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
-    ToggleResult activer_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
+    @Tool(
+            description = "Active une contrainte pour le prochain solve (annule une désactivation précédente).",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ToggleResult activer_contrainte(
+            @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return setActive(nom, true);
     }
 
-    @Tool(description = "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
-    ToggleResult desactiver_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
+    @Tool(
+            description =
+                    "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ToggleResult desactiver_contrainte(
+            @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return setActive(nom, false);
     }
@@ -84,23 +102,28 @@ public class ContrainteMcpTools {
      * never touched them, which is what makes the dosage a per-event decision
      * rather than a per-deployment one.</p>
      */
-    @Tool(description = "Change le poids d'une contrainte pour la prochaine résolution, dans cette édition "
-            + "seulement : à niveau égal, une contrainte de poids 3 pèse trois fois une contrainte de poids 1. "
-            + "Sans poids, l'édition revient au poids configuré par défaut. Ne touche pas au niveau "
-            + "HARD/MEDIUM/SOFT, qui n'est pas réglable.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Change le poids d'une contrainte pour la prochaine résolution, dans cette édition "
+                    + "seulement : à niveau égal, une contrainte de poids 3 pèse trois fois une contrainte de poids 1. "
+                    + "Sans poids, l'édition revient au poids configuré par défaut. Ne touche pas au niveau "
+                    + "HARD/MEDIUM/SOFT, qui n'est pas réglable.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     PoidsResult modifier_poids_contrainte(
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
-            @ToolArg(description = "Poids strictement positif ; omis, rétablit le poids par défaut", required = false) Integer poids,
+            @ToolArg(description = "Poids strictement positif ; omis, rétablit le poids par défaut", required = false)
+                    Integer poids,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         requireConnue(nom);
         if (poids != null && poids <= 0) {
             throw new BusinessError.Invalid("poids : attendu un entier strictement positif, reçu " + poids);
         }
         referenceDataService.setConstraintWeight(nom, poids);
-        return new PoidsResult(nom, planningService.effectiveConstraintWeights().getOrDefault(nom, 1),
-                poids == null);
+        return new PoidsResult(nom, planningService.effectiveConstraintWeights().getOrDefault(nom, 1), poids == null);
     }
 
     private ToggleResult setActive(String nom, boolean actif) {
@@ -118,15 +141,16 @@ public class ContrainteMcpTools {
         }
     }
 
-    public record ToggleResult(String nom, boolean actif) {
-    }
+    public record ToggleResult(String nom, boolean actif) {}
 
     /** @param parDefaut true when the edition carries no override any more */
-    public record PoidsResult(String nom, int poids, boolean parDefaut) {
-    }
+    public record PoidsResult(String nom, int poids, boolean parDefaut) {}
 
-    static ContrainteView toView(ConstraintDefinition definition, ConstraintDiagnostic diagnostic,
-            Set<String> desactivees, Map<String, Integer> poids) {
+    static ContrainteView toView(
+            ConstraintDefinition definition,
+            ConstraintDiagnostic diagnostic,
+            Set<String> desactivees,
+            Map<String, Integer> poids) {
         return new ContrainteView(
                 definition.name(),
                 definition.niveau().name(),
@@ -139,7 +163,13 @@ public class ContrainteMcpTools {
     }
 
     /** @param poids what one match of this constraint is worth on the next solve */
-    public record ContrainteView(String nom, String niveau, String categorie, String description, boolean actif,
-            int poids, String score, Integer nombreCorrespondances) {
-    }
+    public record ContrainteView(
+            String nom,
+            String niveau,
+            String categorie,
+            String description,
+            boolean actif,
+            int poids,
+            String score,
+            Integer nombreCorrespondances) {}
 }

@@ -3,14 +3,6 @@ package dev.sylvain.planning.service.referentiel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
@@ -19,17 +11,23 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningWhatIf;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.AnimateurAvailability;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.CreneauAvailability;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.MotifExclusion;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SeatStatus;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionReparation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.solve.PlanningWhatIf;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.EmptyReferenceData;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.junit.jupiter.api.Test;
 
 /**
  * The acceptance criterion of issue #303, written down: an animateur the
@@ -60,9 +58,15 @@ class CreneauAvailabilityCoherenceTest {
     private static final LocalDate JOUR = LocalDate.of(2026, 7, 16);
     private static final long CRENEAU_CIBLE = 1L;
 
-    private final PlanningService planningService = new PlanningService(3L, 2L,
+    private final PlanningService planningService = new PlanningService(
+            3L,
+            2L,
             ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
-            new EmptyReferenceData(), new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
+            new EmptyReferenceData(),
+            new FeasibilityAnalyzer(),
+            null,
+            null,
+            ConfigProvider.getConfig());
 
     /**
      * The criterion: anyone this screen shows as available is a candidate the
@@ -75,8 +79,8 @@ class CreneauAvailabilityCoherenceTest {
         PlanningEvenement planning = planning();
 
         CreneauAvailability banc = planningService.creneauAvailability(planning, CRENEAU_CIBLE, null, null);
-        SuggestionsReparation reparations = planningService.suggererReparations(planning, banc.posteCibleId(),
-                PlanningService.SUGGESTIONS_PLAFOND_MAX);
+        SuggestionsReparation reparations = planningService.suggererReparations(
+                planning, banc.posteCibleId(), PlanningService.SUGGESTIONS_PLAFOND_MAX);
 
         Set<String> proposes = reparations.suggestions().stream()
                 .map(SuggestionReparation::animateurId)
@@ -161,12 +165,14 @@ class CreneauAvailabilityCoherenceTest {
 
         assertThat(banc.posteCibleId()).isEqualTo("P-LIBRE");
         assertThat(banc.animateurCibleId()).isNull();
-        assertThat(banc.animateurs()).extracting(AnimateurAvailability::animateurId)
+        assertThat(banc.animateurs())
+                .extracting(AnimateurAvailability::animateurId)
                 .doesNotContain("A-TITULAIRE")
                 .contains("A-DISPO", "A-INDISPONIBLE", "A-CHEVAUCHE", "A-PLAFOND", "A-CUMUL");
         assertThat(banc.total()).isEqualTo(banc.animateurs().size());
-        assertThat(banc.disponibles()).isEqualTo(
-                (int) banc.animateurs().stream().filter(AnimateurAvailability::disponible).count());
+        assertThat(banc.disponibles()).isEqualTo((int) banc.animateurs().stream()
+                .filter(AnimateurAvailability::disponible)
+                .count());
     }
 
     /**
@@ -185,12 +191,11 @@ class CreneauAvailabilityCoherenceTest {
         assertThat(row(banc, "A-DISPO").disponible()).isTrue();
         assertThat(row(banc, "A-DISPO").motifs()).noneMatch(motif -> "HARD".equals(motif.niveau()));
 
-        assertThat(row(banc, "A-INDISPONIBLE").motifs())
-                .allSatisfy(motif -> {
-                    assertThat(motif.niveau()).isNotNull();
-                    assertThat(motif.categorie()).isNotNull();
-                    assertThat(motif.description()).isNotBlank();
-                });
+        assertThat(row(banc, "A-INDISPONIBLE").motifs()).allSatisfy(motif -> {
+            assertThat(motif.niveau()).isNotNull();
+            assertThat(motif.categorie()).isNotNull();
+            assertThat(motif.description()).isNotBlank();
+        });
     }
 
     /**
@@ -212,7 +217,9 @@ class CreneauAvailabilityCoherenceTest {
     void theProbedSeatCanBeNarrowedToOneStand() {
         PlanningEvenement planning = planning();
 
-        assertThat(planningService.creneauAvailability(planning, CRENEAU_CIBLE, "S-VOISIN", null).posteCibleId())
+        assertThat(planningService
+                        .creneauAvailability(planning, CRENEAU_CIBLE, "S-VOISIN", null)
+                        .posteCibleId())
                 .isEqualTo("P-VOISIN");
         assertThatThrownBy(() -> planningService.creneauAvailability(planning, CRENEAU_CIBLE, null, "P-AILLEURS"))
                 .isInstanceOf(BusinessError.Invalid.class);
@@ -274,7 +281,8 @@ class CreneauAvailabilityCoherenceTest {
         CreneauAvailability banc = planningService.creneauAvailability(planning(), CRENEAU_CIBLE, null, null);
 
         assertThat(banc.statut()).isEqualTo(SeatStatus.EVALUATED);
-        assertThat(banc.creneauxAvecSieges()).extracting(PlanningWhatIf.CreneauSiege::id)
+        assertThat(banc.creneauxAvecSieges())
+                .extracting(PlanningWhatIf.CreneauSiege::id)
                 .containsExactly(1L, 2L, 3L, 4L);
         // Described, not merely named: the selector is built from this alone,
         // so the screen never reads the créneau referential.
@@ -331,7 +339,9 @@ class CreneauAvailabilityCoherenceTest {
     private static List<String> occupants(PlanningEvenement planning) {
         return planning.getPostes().stream()
                 .map(poste -> poste.getId() + "="
-                        + (poste.getAnimateur() == null ? "-" : poste.getAnimateur().getId()))
+                        + (poste.getAnimateur() == null
+                                ? "-"
+                                : poste.getAnimateur().getId()))
                 .toList();
     }
 
@@ -340,7 +350,9 @@ class CreneauAvailabilityCoherenceTest {
     }
 
     private static List<String> constraintNames(CreneauAvailability banc, String animateurId) {
-        return row(banc, animateurId).motifs().stream().map(MotifExclusion::contrainte).toList();
+        return row(banc, animateurId).motifs().stream()
+                .map(MotifExclusion::contrainte)
+                .toList();
     }
 
     private static AnimateurAvailability row(CreneauAvailability banc, String animateurId) {
@@ -392,8 +404,8 @@ class CreneauAvailabilityCoherenceTest {
         PosteAffectation autreDuDoublon = new PosteAffectation("P-AUTRE-2", ailleurs, chevauchant);
         autreDuDoublon.setAnimateur(doublon);
 
-        return new PlanningEvenement(JOUR, List.of(titulaire, doublon),
-                List.of(siege, autreDuTitulaire, autreDuDoublon));
+        return new PlanningEvenement(
+                JOUR, List.of(titulaire, doublon), List.of(siege, autreDuTitulaire, autreDuDoublon));
     }
 
     /**
@@ -414,8 +426,7 @@ class CreneauAvailabilityCoherenceTest {
 
         Animateur titulaire = new Animateur("A-TITULAIRE", "Théo", "Roux", LocalDate.of(1990, 1, 1), false);
         Animateur dispo = new Animateur("A-DISPO", "Dina", "Martin", LocalDate.of(1990, 1, 1), false);
-        Animateur indisponible = new Animateur("A-INDISPONIBLE", "Inès", "Durand",
-                LocalDate.of(1990, 1, 1), false);
+        Animateur indisponible = new Animateur("A-INDISPONIBLE", "Inès", "Durand", LocalDate.of(1990, 1, 1), false);
         indisponible.setJoursIndisponibles(Set.of(JOUR));
         Animateur chevauche = new Animateur("A-CHEVAUCHE", "Chloé", "Bernard", LocalDate.of(1990, 1, 1), false);
         Animateur plafond = new Animateur("A-PLAFOND", "Paul", "Petit", LocalDate.of(1990, 1, 1), false);
@@ -439,7 +450,8 @@ class CreneauAvailabilityCoherenceTest {
         PosteAffectation soir = new PosteAffectation("P-SOIR", ailleurs, soiree);
         soir.setAnimateur(plafond);
 
-        return new PlanningEvenement(JOUR,
+        return new PlanningEvenement(
+                JOUR,
                 List.of(titulaire, dispo, indisponible, chevauche, plafond, cumul),
                 List.of(libre, tenu, libreVoisin, surChevauchant, surChevauchantBis, apres, soir));
     }

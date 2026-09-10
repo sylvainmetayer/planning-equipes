@@ -5,23 +5,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Importing a scenario is a DIFF, not a blind replacement: the animateurs of
@@ -98,7 +96,8 @@ class ImportScenarioPreservationTest {
 
     @Test
     void lImpactChiffreLeReferentielEtLePlanningAvantImport() {
-        given().when().get("/api/reference-data/impact-import")
+        given().when()
+                .get("/api/reference-data/impact-import")
                 .then()
                 .statusCode(200)
                 .body("animateurs", greaterThanOrEqualTo(2))
@@ -114,7 +113,8 @@ class ImportScenarioPreservationTest {
         // Bytes, not String: RestAssured has no encoder for x-yaml text.
         given().contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(java.nio.charset.StandardCharsets.UTF_8))
-                .when().post("/api/reference-data/import-scenario-fichier")
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200);
 

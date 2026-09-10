@@ -1,5 +1,15 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.WriteStamp;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,19 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.WriteStamp;
 
 /** The hand-entered constraints and the animateurs each one targets. */
 @ApplicationScoped
@@ -41,16 +39,15 @@ public class ContrainteAdHocRepository {
     public List<ContrainteAdHoc> listContraintes() {
         Map<String, ContrainteAdHoc> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT id, type, creneau_id, stand_id, raison, cree_par, cree_le, modifie_le
                     FROM contrainte_ad_hoc
                     WHERE edition_id = ?
                     ORDER BY id""");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    ContrainteAdHoc contrainte = new ContrainteAdHoc(
-                            rs.getString("id"), TypeContrainteAdHoc.valueOf(rs.getString("type")));
+                    ContrainteAdHoc contrainte =
+                            new ContrainteAdHoc(rs.getString("id"), TypeContrainteAdHoc.valueOf(rs.getString("type")));
                     long creneauId = rs.getLong("creneau_id");
                     if (!rs.wasNull()) {
                         Creneau creneau = new Creneau();
@@ -67,12 +64,12 @@ public class ContrainteAdHocRepository {
                     contrainte.setCreeParUtilisateurId(rs.getString("cree_par"));
                     Timestamp creeLe = rs.getTimestamp("cree_le");
                     contrainte.setCreeLe(creeLe != null ? creeLe.toInstant() : null);
-                    contrainte.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
+                    contrainte.setModifieLe(
+                            rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                     byId.put(contrainte.getId(), contrainte);
                 }
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT contrainte_id, animateur_id
                     FROM contrainte_animateur
                     WHERE edition_id = ?
@@ -124,8 +121,7 @@ public class ContrainteAdHocRepository {
 
     void upsertContrainte(Connection connection, ContrainteAdHoc contrainte, boolean failIfPresent)
             throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                """
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
@@ -139,8 +135,10 @@ public class ContrainteAdHocRepository {
                 RETURNING modifie_le""")) {
             ps.setString(2, contrainte.getId());
             ps.setString(3, contrainte.getType() != null ? contrainte.getType().name() : null);
-            ps.setObject(4, contrainte.getCreneau() != null ? contrainte.getCreneau().getId() : null);
-            ps.setString(5, contrainte.getStand() != null ? contrainte.getStand().getId() : null);
+            ps.setObject(
+                    4, contrainte.getCreneau() != null ? contrainte.getCreneau().getId() : null);
+            ps.setString(
+                    5, contrainte.getStand() != null ? contrainte.getStand().getId() : null);
             ps.setString(6, contrainte.getRaison());
             ps.setString(7, contrainte.getCreeParUtilisateurId());
             Instant creeLe = contrainte.getCreeLe() != null ? contrainte.getCreeLe() : Instant.now();
@@ -152,15 +150,14 @@ public class ContrainteAdHocRepository {
             }
             contrainte.setModifieLe(ecrit);
         }
-        try (PreparedStatement del = scope.prepareScoped(connection,
-                "DELETE FROM contrainte_animateur WHERE edition_id = ? AND contrainte_id = ?")) {
+        try (PreparedStatement del = scope.prepareScoped(
+                connection, "DELETE FROM contrainte_animateur WHERE edition_id = ? AND contrainte_id = ?")) {
             del.setString(2, contrainte.getId());
             del.executeUpdate();
         }
         List<Animateur> cibles = contrainte.getAnimateursConcernes();
         if (cibles != null && !cibles.isEmpty()) {
-            try (PreparedStatement ins = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position)
                     VALUES (?, ?, ?, ?)""")) {
                 int position = 0;

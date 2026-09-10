@@ -10,5 +10,4 @@ package dev.sylvain.planning.service;
  *                    was collected — carried here so the espace guard can
  *                    match a proxy-asserted identity without a second query
  */
-public record TokenOwner(String editionId, String animateurId, String email) {
-}
+public record TokenOwner(String editionId, String animateurId, String email) {}

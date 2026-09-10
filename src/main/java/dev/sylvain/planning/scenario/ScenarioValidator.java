@@ -32,8 +32,7 @@ import java.util.Set;
  */
 public final class ScenarioValidator {
 
-    private ScenarioValidator() {
-    }
+    private ScenarioValidator() {}
 
     /**
      * @return the Bean Validation violations for the given YAML content, empty

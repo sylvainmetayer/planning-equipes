@@ -6,14 +6,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -21,6 +13,13 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -114,7 +113,8 @@ class BackupServiceTest {
 
         assertThat(names()).hasSize(RETENTION);
         // The one just written, and the most recent of the seeded ones.
-        assertThat(names()).contains("planning-20260303-040000.dump")
+        assertThat(names())
+                .contains("planning-20260303-040000.dump")
                 .doesNotContain("planning-20260301-040000.dump", "planning-20260302-040000.dump");
     }
 
@@ -155,8 +155,8 @@ class BackupServiceTest {
     void theEndpointReportsWhatTheDeploymentConfiguredAndWhatIsOnDisk() {
         backupService.run();
 
-        given()
-                .when().get("/api/backups")
+        given().when()
+                .get("/api/backups")
                 .then()
                 .statusCode(200)
                 .body("configured", is(true))
@@ -170,15 +170,23 @@ class BackupServiceTest {
 
     @Test
     void theEndpointSuspendsAndResumesTheBackup() {
-        given().contentType("application/json").body(Map.of("active", false))
-                .when().put("/api/backups/active")
-                .then().statusCode(200).body("active", is(false));
+        given().contentType("application/json")
+                .body(Map.of("active", false))
+                .when()
+                .put("/api/backups/active")
+                .then()
+                .statusCode(200)
+                .body("active", is(false));
 
         assertThat(repository.isActive()).isFalse();
 
-        given().contentType("application/json").body(Map.of("active", true))
-                .when().put("/api/backups/active")
-                .then().statusCode(200).body("active", is(true));
+        given().contentType("application/json")
+                .body(Map.of("active", true))
+                .when()
+                .put("/api/backups/active")
+                .then()
+                .statusCode(200)
+                .body("active", is(true));
     }
 
     private void seed(String... names) throws IOException {
@@ -188,7 +196,10 @@ class BackupServiceTest {
     }
 
     private List<String> names() throws IOException {
-        return entries().stream().map(path -> path.getFileName().toString()).sorted().toList();
+        return entries().stream()
+                .map(path -> path.getFileName().toString())
+                .sorted()
+                .toList();
     }
 
     private List<Path> entries() throws IOException {

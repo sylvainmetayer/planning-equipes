@@ -3,8 +3,6 @@ package dev.sylvain.planning.service.espace;
 import dev.sylvain.planning.config.ConfigEspaceDeclaration;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.espace.RateLimitVerdict;
-import dev.sylvain.planning.service.espace.SlidingWindowCounter;
 
 /**
  * Rate limit on the availability declarations (issue #291), the first route

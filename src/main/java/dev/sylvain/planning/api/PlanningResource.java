@@ -1,18 +1,11 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.ReferenceDataChangeTracker;
-import dev.sylvain.planning.service.solve.SolvePipeline;
 import dev.sylvain.planning.service.solve.ProblemScaleService;
+import dev.sylvain.planning.service.solve.SolvePipeline;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -23,6 +16,11 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -86,8 +84,7 @@ public class PlanningResource {
 
     @POST
     @Path("/solve")
-    public PlanningEvenement solve(PlanningEvenement planningEvenement,
-            @QueryParam("seconds") Long secondsLimit) {
+    public PlanningEvenement solve(PlanningEvenement planningEvenement, @QueryParam("seconds") Long secondsLimit) {
         // Exactly the same path as the asynchronous solves — snapshot of the
         // previous plan, solve, persistence, diagnosis, Contraintes screen,
         // KPIs, announcement. This is where the incomplete copy used to live.
@@ -109,8 +106,7 @@ public class PlanningResource {
     }
 
     @Schema(requiredProperties = {"animateurs", "creneaux", "postes", "stands"})
-    public record ResetSummary(int animateurs, int stands, int creneaux, int postes) {
-    }
+    public record ResetSummary(int animateurs, int stands, int creneaux, int postes) {}
 
     /**
      * Read-only view of the last solved planning stored in the database.
@@ -134,8 +130,7 @@ public class PlanningResource {
     }
 
     @Schema(requiredProperties = {"assignments"})
-    public record PersistenceStatus(int assignments) {
-    }
+    public record PersistenceStatus(int assignments) {}
 
     /**
      * Which groupe de créneaux the last persisted solve was computed for, and
@@ -157,7 +152,5 @@ public class PlanningResource {
     }
 
     @Schema(requiredProperties = {"solved"})
-    public record PlanningResolutionView(boolean solved, Instant resoluLe, Instant derniereModificationDonnees) {
-    }
-
+    public record PlanningResolutionView(boolean solved, Instant resoluLe, Instant derniereModificationDonnees) {}
 }

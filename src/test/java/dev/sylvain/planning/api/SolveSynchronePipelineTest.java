@@ -3,12 +3,11 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
 
 /**
  * The synchronous solve (`POST /api/solve`) must follow exactly the same path
@@ -39,16 +38,17 @@ class SolveSynchronePipelineTest {
         analysisStore.clear();
         int kpiBefore = kpiHistorique.list().size();
 
-        String probleme = given()
-                .when().get("/api/planning/sample?name=scenario.yml")
+        String probleme = given().when()
+                .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
-                .extract().asString();
+                .extract()
+                .asString();
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body(probleme)
-                .when().post("/api/solve?seconds=1")
+                .when()
+                .post("/api/solve?seconds=1")
                 .then()
                 .statusCode(200);
 

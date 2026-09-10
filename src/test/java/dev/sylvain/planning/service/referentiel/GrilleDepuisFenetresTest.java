@@ -3,14 +3,6 @@ package dev.sylvain.planning.service.referentiel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
@@ -18,9 +10,15 @@ import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.GrilleDepuisFenetres.Derivation;
 import dev.sylvain.planning.service.referentiel.GrilleDepuisFenetres.Parametres;
-import dev.sylvain.planning.service.BusinessError;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link GrilleDepuisFenetres}: the grid the stands' hours imply — a cut at
@@ -52,7 +50,9 @@ class GrilleDepuisFenetresTest {
     }
 
     private static List<String> heures(List<Creneau> creneaux) {
-        return creneaux.stream().map(creneau -> creneau.getHeureDebut() + "-" + creneau.getHeureFin()).toList();
+        return creneaux.stream()
+                .map(creneau -> creneau.getHeureDebut() + "-" + creneau.getHeureFin())
+                .toList();
     }
 
     @Test
@@ -65,10 +65,11 @@ class GrilleDepuisFenetresTest {
         Derivation derivation = GrilleDepuisFenetres.deriver(stands, oneDay(LocalTime.of(20, 0)));
 
         // 13-14: nobody — no créneau there.
-        assertThat(heures(derivation.creneaux())).containsExactly("10:00-12:00", "12:00-13:00", "14:00-18:00",
-                "18:00-20:00");
+        assertThat(heures(derivation.creneaux()))
+                .containsExactly("10:00-12:00", "12:00-13:00", "14:00-18:00", "18:00-20:00");
         assertThat(derivation.joursSansFenetre()).isEmpty();
-        assertThat(derivation.coupures()).extracting(coupure -> coupure.heure().toString())
+        assertThat(derivation.coupures())
+                .extracting(coupure -> coupure.heure().toString())
                 .containsExactly("10:00", "12:00", "13:00", "14:00", "18:00", "20:00");
         assertThat(derivation.coupures().get(0).standIds()).containsExactly("A", "B");
     }
@@ -76,8 +77,8 @@ class GrilleDepuisFenetresTest {
     /** Midnight as the closing hour: the last créneau ends 00:00, the way the domain writes a nocturne. */
     @Test
     void uneFermetureAMinuitDonneUnDernierCreneauQuiFranchitMinuit() {
-        Derivation derivation = GrilleDepuisFenetres.deriver(List.of(stand("A", fenetre(20, null))),
-                oneDay(LocalTime.MIDNIGHT));
+        Derivation derivation =
+                GrilleDepuisFenetres.deriver(List.of(stand("A", fenetre(20, null))), oneDay(LocalTime.MIDNIGHT));
 
         assertThat(heures(derivation.creneaux())).containsExactly("20:00-00:00");
         assertThat(derivation.creneaux().get(0).getDureeMinutes()).isEqualTo(240);
@@ -88,8 +89,8 @@ class GrilleDepuisFenetresTest {
         List<Stand> stands = List.of(stand("A", fenetre(10, 12)), stand("B", fenetre(10, 12), fenetre(12, null)));
         // A second stand opening 12:05: a five-minute stretch 12:00-12:05 is an artefact.
         Stand tard = stand("C");
-        tard.getHoraires().add(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(12, 5), null)));
+        tard.getHoraires()
+                .add(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(12, 5), null)));
         List<Stand> tous = new ArrayList<>(stands);
         tous.add(tard);
 
@@ -104,8 +105,9 @@ class GrilleDepuisFenetresTest {
     void uneDerniereTrancheTropCourteRejointLaPrecedente() {
         Stand a = stand("A", fenetre(10, 18));
         Stand b = stand("B");
-        b.getHoraires().add(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 5))));
+        b.getHoraires()
+                .add(HoraireStand.everyDay(
+                        ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 5))));
 
         Derivation derivation = GrilleDepuisFenetres.deriver(List.of(a, b), oneDay(LocalTime.of(20, 0)));
 
@@ -130,14 +132,16 @@ class GrilleDepuisFenetresTest {
     void unTrouTropCourtEstRefermeAuLieuDeCouperEnDeux() {
         Stand a = stand("A", fenetre(10, 12));
         Stand b = stand("B");
-        b.getHoraires().add(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(12, 5), LocalTime.of(18, 0))));
+        b.getHoraires()
+                .add(HoraireStand.everyDay(
+                        ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(12, 5), LocalTime.of(18, 0))));
 
         Derivation derivation = GrilleDepuisFenetres.deriver(List.of(a, b), oneDay(LocalTime.of(20, 0)));
 
         assertThat(heures(derivation.creneaux())).containsExactly("10:00-18:00");
         // And the 12:05 cut, merged away, is no longer given as a reason.
-        assertThat(derivation.coupures()).extracting(coupure -> coupure.heure().toString())
+        assertThat(derivation.coupures())
+                .extracting(coupure -> coupure.heure().toString())
                 .containsExactly("10:00", "18:00");
     }
 
@@ -145,7 +149,8 @@ class GrilleDepuisFenetresTest {
     void unJourOuAucunStandNeDitRienEstSignaleEtSansCreneau() {
         Stand libre = stand("LIBRE");
         Stand ferme = stand("FERME");
-        ferme.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(12, 0), LocalTime.of(14, 0), null));
+        ferme.getIndisponibilites()
+                .add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(12, 0), LocalTime.of(14, 0), null));
 
         Derivation derivation = GrilleDepuisFenetres.deriver(List.of(libre, ferme), oneDay(LocalTime.of(20, 0)));
 
@@ -157,10 +162,11 @@ class GrilleDepuisFenetresTest {
     @Test
     void uneExceptionDateeDeplaceLaCoupureDuSeulJourQuElleNomme() {
         Stand stand = stand("A", fenetre(10, 20));
-        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1.plusDays(1), LocalTime.of(14, 0), LocalTime.of(20, 0), null));
+        stand.getOuvertures()
+                .add(new OuvertureStand(null, JOUR_1.plusDays(1), LocalTime.of(14, 0), LocalTime.of(20, 0), null));
 
-        Derivation derivation = GrilleDepuisFenetres.deriver(List.of(stand),
-                new Parametres(JOUR_1, JOUR_1.plusDays(1), LocalTime.of(20, 0), 15));
+        Derivation derivation = GrilleDepuisFenetres.deriver(
+                List.of(stand), new Parametres(JOUR_1, JOUR_1.plusDays(1), LocalTime.of(20, 0), 15));
 
         assertThat(heures(derivation.creneaux())).containsExactly("10:00-20:00", "14:00-20:00");
         assertThat(derivation.creneaux().get(1).getDate()).isEqualTo(JOUR_1.plusDays(1));

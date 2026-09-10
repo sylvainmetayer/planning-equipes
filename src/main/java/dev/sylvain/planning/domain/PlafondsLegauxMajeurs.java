@@ -42,8 +42,10 @@ public final class PlafondsLegauxMajeurs {
         if (stretchMinutes <= TRAVAIL_CONTINU_MAX_MINUTES) {
             return 0;
         }
-        return PAUSE_MINIMALE_MINUTES * Math.ceilDiv(stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES,
-                TRAVAIL_CONTINU_MAX_MINUTES + PAUSE_MINIMALE_MINUTES);
+        return PAUSE_MINIMALE_MINUTES
+                * Math.ceilDiv(
+                        stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES,
+                        TRAVAIL_CONTINU_MAX_MINUTES + PAUSE_MINIMALE_MINUTES);
     }
 
     /** Art. L3131-1: 11 consecutive hours of daily rest for an adult. */
@@ -58,6 +60,5 @@ public final class PlafondsLegauxMajeurs {
     /** Art. L3132-1: no more than six worked days in the same week. */
     public static final int JOURS_TRAVAILLES_MAX_PAR_SEMAINE = 6;
 
-    private PlafondsLegauxMajeurs() {
-    }
+    private PlafondsLegauxMajeurs() {}
 }

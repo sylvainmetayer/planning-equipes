@@ -5,6 +5,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.MockMailbox;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import io.restassured.path.json.JsonPath;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -12,26 +25,10 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
-
 import javax.sql.DataSource;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import io.quarkus.mailer.Mail;
-import io.quarkus.mailer.MockMailbox;
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
-import io.restassured.path.json.JsonPath;
-import jakarta.inject.Inject;
 
 /**
  * Publishing (issue #245) against the real database and the mock mailbox: the
@@ -103,8 +100,7 @@ class PublicationResourceTest {
         assertThat(apercu.getBoolean("jamaisPublie")).isTrue();
         assertThat(apercu.getObject("dernierePublicationLe", Object.class)).isNull();
         assertThat(apercu.getInt("nombreConcernes")).isEqualTo(2);
-        assertThat(apercu.getList("destinataires.nomAffiche"))
-                .containsExactly("Alice Martin", "Bruno Petit");
+        assertThat(apercu.getList("destinataires.nomAffiche")).containsExactly("Alice Martin", "Bruno Petit");
         assertThat(apercu.getList("destinataires.premiereDiffusion")).containsOnly(true);
     }
 
@@ -137,8 +133,7 @@ class PublicationResourceTest {
 
         JsonPath apercu = apercu();
         assertThat(apercu.getInt("nombreConcernes")).isEqualTo(2);
-        assertThat(apercu.getList("destinataires.nomAffiche"))
-                .containsExactly("Bruno Petit", "Chloé Durand");
+        assertThat(apercu.getList("destinataires.nomAffiche")).containsExactly("Bruno Petit", "Chloé Durand");
 
         JsonPath rapport = publier();
         assertThat(rapport.getInt("envoyes")).isEqualTo(1);
@@ -167,20 +162,24 @@ class PublicationResourceTest {
 
         Mail versAlice = mailbox.getMailsSentTo(EMAIL_ALICE).get(0);
         assertThat(versAlice.getSubject()).contains("votre planning a changé");
-        assertThat(versAlice.getText())
-                .contains("samedi 11/07 : Stand pub deux 14h-16h remplace Stand pub un 14h-16h");
+        assertThat(versAlice.getText()).contains("samedi 11/07 : Stand pub deux 14h-16h remplace Stand pub un 14h-16h");
     }
 
     @Test
     void laTraceDitQuiAEtePrevenuDeQuoiEtQuand() {
         publier();
 
-        JsonPath trace = given().when().get("/api/planning/publication/destinataires")
-                .then().statusCode(200).extract().jsonPath();
+        JsonPath trace = given().when()
+                .get("/api/planning/publication/destinataires")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
 
         assertThat(trace.getList("nomAffiche")).containsExactly("Alice Martin", "Bruno Petit");
         assertThat(trace.getList("statut")).containsExactly("ENVOYE", "SANS_EMAIL");
-        assertThat(trace.getList("envoyeLe", String.class)).allSatisfy(date -> assertThat(date).isNotBlank());
+        assertThat(trace.getList("envoyeLe", String.class))
+                .allSatisfy(date -> assertThat(date).isNotBlank());
         assertThat(trace.getList("changements[0]", String.class))
                 .contains("samedi 11/07 : Stand pub un 14h-16h (nouveau)");
     }
@@ -193,7 +192,8 @@ class PublicationResourceTest {
         mailbox.clear();
 
         assertThat(apercu().getInt("nombreConcernes")).isZero();
-        given().when().post("/api/planning/publication")
+        given().when()
+                .post("/api/planning/publication")
                 .then()
                 .statusCode(409)
                 .body("message", containsString("Personne n'est concerné"));
@@ -217,7 +217,8 @@ class PublicationResourceTest {
         persistence.clearDatabase();
 
         assertThat(apercu().getBoolean("planVide")).isTrue();
-        given().when().post("/api/planning/publication")
+        given().when()
+                .post("/api/planning/publication")
                 .then()
                 .statusCode(409)
                 .body("message", containsString("Aucun planning résolu"));
@@ -227,7 +228,8 @@ class PublicationResourceTest {
     void lInstantanePublieNePeutPasEtreSupprime() {
         long snapshotId = publier().getLong("snapshotId");
 
-        given().when().delete("/api/planning/snapshots/" + snapshotId)
+        given().when()
+                .delete("/api/planning/snapshots/" + snapshotId)
                 .then()
                 .statusCode(409)
                 .body("message", containsString("plan publié"));
@@ -235,7 +237,8 @@ class PublicationResourceTest {
 
     @Test
     void laTraceEstVideTantQueRienNAEtePublie() {
-        given().when().get("/api/planning/publication/destinataires")
+        given().when()
+                .get("/api/planning/publication/destinataires")
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(0));
@@ -255,14 +258,22 @@ class PublicationResourceTest {
     /* -------------------------------- Helpers ------------------------------ */
 
     private JsonPath apercu() {
-        return given().when().get("/api/planning/publication")
-                .then().statusCode(200).extract().jsonPath();
+        return given().when()
+                .get("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
     }
 
     private JsonPath publier() {
         return given().contentType(ContentType.JSON)
-                .when().post("/api/planning/publication")
-                .then().statusCode(200).extract().jsonPath();
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
     }
 
     /** Persists the two seats, {@code standUn} first, held by the given animateurs. */
@@ -277,14 +288,17 @@ class PublicationResourceTest {
         posteUn.setAnimateur("MAIL-A".equals(surStandUn) ? alice : bruno);
         PosteAffectation posteDeux = new PosteAffectation("PUB-P2", standDeux, creneau);
         posteDeux.setAnimateur("MAIL-A".equals(surStandDeux) ? alice : bruno);
-        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno, chloe),
-                List.of(posteUn, posteDeux)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno, chloe), List.of(posteUn, posteDeux)));
     }
 
     /** The sentences the last publication recorded for one animateur. */
     private List<String> lignesTracees(String animateurId) {
-        JsonPath trace = given().when().get("/api/planning/publication/destinataires")
-                .then().statusCode(200).extract().jsonPath();
+        JsonPath trace = given().when()
+                .get("/api/planning/publication/destinataires")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         List<String> ids = trace.getList("animateurId", String.class);
         int index = ids.indexOf(animateurId);
         assertThat(index).as("animateur %s absent de la trace", animateurId).isNotNegative();

@@ -1,19 +1,14 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.util.List;
-import java.util.Optional;
-
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.ImportImpact;
-import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.scenario.ScenarioImportService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -23,6 +18,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
+import java.util.Optional;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Import a whole set of reference data — from a bundled scenario, from an
@@ -77,9 +75,8 @@ public class ReferenceDataResource {
      * to the caller's current edition.
      */
     @Schema(requiredProperties = {"existe"})
-    public record ImportTargetView(String editionId, String editionNomFichier, boolean existe,
-            String editionNomExistant) {
-    }
+    public record ImportTargetView(
+            String editionId, String editionNomFichier, boolean existe, String editionNomExistant) {}
 
     private ImportTargetView toTargetView(Optional<EditionCibleDto> target) {
         if (target.isEmpty()) {
@@ -103,7 +100,8 @@ public class ReferenceDataResource {
     @Path("/cible-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
     public Response fileScenarioTarget(String yamlContent) {
-        return Response.ok(toTargetView(planningService.loadEditionScenarioText(yamlContent))).build();
+        return Response.ok(toTargetView(planningService.loadEditionScenarioText(yamlContent)))
+                .build();
     }
 
     /**
@@ -161,8 +159,9 @@ public class ReferenceDataResource {
      * rule.
      */
     private static Response toResponse(ScenarioImportService.ScenarioImportOutcome outcome) {
-        return Response.ok(new ImportScenarioResult(outcome.decoupageAuto(), outcome.editionId(),
-                outcome.editionNom(), outcome.editionCreee())).build();
+        return Response.ok(new ImportScenarioResult(
+                        outcome.decoupageAuto(), outcome.editionId(), outcome.editionNom(), outcome.editionCreee()))
+                .build();
     }
 
     /**
@@ -171,9 +170,8 @@ public class ReferenceDataResource {
      * frontend can notify the operator that the imported amplitudes were
      * auto-sliced into the vacations the edition now holds.
      */
-    public record ImportScenarioResult(boolean decoupageAuto, String editionId, String editionNom,
-            Boolean editionCreee) {
-    }
+    public record ImportScenarioResult(
+            boolean decoupageAuto, String editionId, String editionNom, Boolean editionCreee) {}
 
     /**
      * Validates a scenario YAML file's structure (types, required fields,
@@ -209,6 +207,5 @@ public class ReferenceDataResource {
     }
 
     @Schema(requiredProperties = {"valide"})
-    public record ScenarioValidationResult(boolean valide, List<String> erreurs) {
-    }
+    public record ScenarioValidationResult(boolean valide, List<String> erreurs) {}
 }

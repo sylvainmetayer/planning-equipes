@@ -4,26 +4,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.EditionContext;
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * Deleting a stand or an animateur a persisted plan still references — the twin
@@ -74,9 +72,10 @@ class ReferenceDataServiceSuppressionTest {
         Stand voisin = stand("SUP-S2");
         Animateur animateur = animateur("SUP-A1");
         try {
-            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur),
-                    List.of(poste("SUP-P1", cible, creneau, animateur),
-                            poste("SUP-P2", voisin, creneau, animateur))));
+            persistence.persist(new PlanningEvenement(
+                    JOUR,
+                    List.of(animateur),
+                    List.of(poste("SUP-P1", cible, creneau, animateur), poste("SUP-P2", voisin, creneau, animateur))));
             assertThat(postesForStand("SUP-S1")).isNotEmpty();
 
             referenceData.deleteStand("SUP-S1");
@@ -101,9 +100,10 @@ class ReferenceDataServiceSuppressionTest {
         Animateur cible = animateur("SUP-A2");
         Animateur voisin = animateur("SUP-A3");
         try {
-            persistence.persist(new PlanningEvenement(JOUR, List.of(cible, voisin),
-                    List.of(poste("SUP-P3", stand, creneau, cible),
-                            poste("SUP-P4", stand, creneau, voisin))));
+            persistence.persist(new PlanningEvenement(
+                    JOUR,
+                    List.of(cible, voisin),
+                    List.of(poste("SUP-P3", stand, creneau, cible), poste("SUP-P4", stand, creneau, voisin))));
             assertThat(postesForAnimateur("SUP-A2")).isNotEmpty();
             assertThat(persistence.countPersistedAssignments()).isEqualTo(2);
 
@@ -124,7 +124,8 @@ class ReferenceDataServiceSuppressionTest {
 
             // And the hole is what the diagnostic reads: had the row been deleted
             // instead, coverage would have come back greener than reality.
-            assertThat(planningService.diagnosePersistedPlan().postesNonPourvus()).isEqualTo(1);
+            assertThat(planningService.diagnosePersistedPlan().postesNonPourvus())
+                    .isEqualTo(1);
         } finally {
             nettoyer();
         }
@@ -144,8 +145,11 @@ class ReferenceDataServiceSuppressionTest {
         List<Stand> stands = List.of(stand("SUP-S4"), stand("SUP-S5"), stand("SUP-S6"));
         List<Animateur> animateurs = List.of(animateur("SUP-A4"), animateur("SUP-A5"), animateur("SUP-A6"));
         try {
-            persistence.persist(new PlanningEvenement(JOUR, animateurs,
-                    List.of(poste("SUP-P5", stands.get(0), creneau, animateurs.get(0)),
+            persistence.persist(new PlanningEvenement(
+                    JOUR,
+                    animateurs,
+                    List.of(
+                            poste("SUP-P5", stands.get(0), creneau, animateurs.get(0)),
                             poste("SUP-P6", stands.get(1), creneau, animateurs.get(1)),
                             poste("SUP-P7", stands.get(2), creneau, animateurs.get(2)))));
             assertThat(persistence.countPersistedAssignments()).isEqualTo(3);
@@ -170,7 +174,6 @@ class ReferenceDataServiceSuppressionTest {
         }
     }
 
-
     /**
      * The race the fix above made reachable, and that this guard closes.
      *
@@ -191,8 +194,8 @@ class ReferenceDataServiceSuppressionTest {
         Creneau creneau = creneau(9504L);
         Stand stand = stand("SUP-S7");
         Animateur animateur = animateur("SUP-A7");
-        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
-                List.of(poste("SUP-P8", stand, creneau, animateur)));
+        PlanningEvenement probleme =
+                new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("SUP-P8", stand, creneau, animateur)));
         String jobId = null;
         try {
             persistence.persist(probleme);
@@ -224,7 +227,6 @@ class ReferenceDataServiceSuppressionTest {
         }
     }
 
-
     /**
      * The guard must not refuse beyond the danger: a solve on edition A cannot
      * resurrect anything in edition B.
@@ -244,8 +246,8 @@ class ReferenceDataServiceSuppressionTest {
         Creneau creneau = creneau(9506L);
         Stand stand = stand("SUP-S9");
         Animateur animateur = animateur("SUP-A9");
-        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
-                List.of(poste("SUP-P10", stand, creneau, animateur)));
+        PlanningEvenement probleme =
+                new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("SUP-P10", stand, creneau, animateur)));
         String jobId = null;
         editions.create(new Edition(EDITION_VOISINE, "Édition voisine", false, null));
         try {
@@ -303,8 +305,8 @@ class ReferenceDataServiceSuppressionTest {
         Stand stand = stand("SUP-S8");
         Animateur animateur = animateur("SUP-A8");
         try {
-            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur),
-                    List.of(poste("SUP-P9", stand, creneau, animateur))));
+            persistence.persist(new PlanningEvenement(
+                    JOUR, List.of(animateur), List.of(poste("SUP-P9", stand, creneau, animateur))));
             attendreSolveurLibre();
             assertThat(solverJobs.findActive()).isEmpty();
 
@@ -318,7 +320,6 @@ class ReferenceDataServiceSuppressionTest {
         }
     }
 
-
     /**
      * Modifying is refused for the same reason deleting is: the landing persist
      * rewrites nom, effectifs and reserveMajeurs — and prenom, nom, naissance,
@@ -331,8 +332,8 @@ class ReferenceDataServiceSuppressionTest {
         Creneau creneau = creneau(9507L);
         Stand stand = stand("SUP-S11");
         Animateur animateur = animateur("SUP-A11");
-        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
-                List.of(poste("SUP-P11", stand, creneau, animateur)));
+        PlanningEvenement probleme =
+                new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("SUP-P11", stand, creneau, animateur)));
         String jobId = null;
         try {
             persistence.persist(probleme);
@@ -372,8 +373,8 @@ class ReferenceDataServiceSuppressionTest {
         Creneau creneau = creneau(9508L);
         Stand stand = stand("SUP-S12");
         Animateur animateur = animateur("SUP-A12");
-        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
-                List.of(poste("SUP-P12", stand, creneau, animateur)));
+        PlanningEvenement probleme =
+                new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("SUP-P12", stand, creneau, animateur)));
         String jobId = null;
         editions.create(new Edition(EDITION_VOISINE, "Édition voisine", false, null));
         try {
@@ -397,8 +398,7 @@ class ReferenceDataServiceSuppressionTest {
                 assertThat(referenceData.listStands())
                         .filteredOn(st -> "SUP-S13".equals(st.getId()))
                         .singleElement()
-                        .satisfies(st -> assertThat(st.getNom())
-                                .isEqualTo("Renomme pendant le solve d'a cote"));
+                        .satisfies(st -> assertThat(st.getNom()).isEqualTo("Renomme pendant le solve d'a cote"));
             });
 
             // …while the solve's own edition stays protected.
@@ -427,8 +427,8 @@ class ReferenceDataServiceSuppressionTest {
         Stand stand = stand("SUP-S14");
         Animateur animateur = animateur("SUP-A14");
         try {
-            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur),
-                    List.of(poste("SUP-P13", stand, creneau, animateur))));
+            persistence.persist(new PlanningEvenement(
+                    JOUR, List.of(animateur), List.of(poste("SUP-P13", stand, creneau, animateur))));
             attendreSolveurLibre();
             assertThat(solverJobs.findActive()).isEmpty();
 
@@ -447,13 +447,15 @@ class ReferenceDataServiceSuppressionTest {
 
     private List<PosteAffectation> postesForStand(String standId) {
         return persistence.loadPersistedPlanning().getPostes().stream()
-                .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId()))
+                .filter(poste -> poste.getStand() != null
+                        && standId.equals(poste.getStand().getId()))
                 .toList();
     }
 
     private List<PosteAffectation> postesForAnimateur(String animateurId) {
         return persistence.loadPersistedPlanning().getPostes().stream()
-                .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
+                .filter(poste -> poste.getAnimateur() != null
+                        && animateurId.equals(poste.getAnimateur().getId()))
                 .toList();
     }
 
@@ -466,12 +468,14 @@ class ReferenceDataServiceSuppressionTest {
     private void nettoyer() {
         attendreSolveurLibre();
         persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
-        for (String id : List.of("SUP-S1", "SUP-S2", "SUP-S3", "SUP-S4", "SUP-S5", "SUP-S6", "SUP-S7", "SUP-S8",
-                "SUP-S9", "SUP-S11", "SUP-S12", "SUP-S14")) {
+        for (String id : List.of(
+                "SUP-S1", "SUP-S2", "SUP-S3", "SUP-S4", "SUP-S5", "SUP-S6", "SUP-S7", "SUP-S8", "SUP-S9", "SUP-S11",
+                "SUP-S12", "SUP-S14")) {
             referenceData.deleteStand(id);
         }
-        for (String id : List.of("SUP-A1", "SUP-A2", "SUP-A3", "SUP-A4", "SUP-A5", "SUP-A6", "SUP-A7", "SUP-A8",
-                "SUP-A9", "SUP-A11", "SUP-A12", "SUP-A14")) {
+        for (String id : List.of(
+                "SUP-A1", "SUP-A2", "SUP-A3", "SUP-A4", "SUP-A5", "SUP-A6", "SUP-A7", "SUP-A8", "SUP-A9", "SUP-A11",
+                "SUP-A12", "SUP-A14")) {
             referenceData.deleteAnimateur(id);
         }
         referenceData.deleteCreneaux(List.of(9501L, 9502L, 9503L, 9504L, 9505L, 9506L, 9507L, 9508L, 9509L));

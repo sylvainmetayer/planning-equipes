@@ -2,12 +2,10 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkiverse.mcp.server.Tool;
 import java.lang.reflect.Method;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
-
-import io.quarkiverse.mcp.server.Tool;
 
 /**
  * Every tool must say what it does to the data, and say it consistently with
@@ -45,9 +43,23 @@ class McpAnnotationsStructurelleTest {
      * the tool just read, and no business data changes.
      */
     private static final List<String> LECTURE = List.of(
-            "lister_", "consulter_", "previsualiser_", "diagnostiquer_", "valider_", "expliquer_",
-            "analyser_", "comparer_", "simuler_", "statut_", "resultats_", "heures_", "etat_",
-            "synthese_", "suggerer_", "volumes", "edition_courante");
+            "lister_",
+            "consulter_",
+            "previsualiser_",
+            "diagnostiquer_",
+            "valider_",
+            "expliquer_",
+            "analyser_",
+            "comparer_",
+            "simuler_",
+            "statut_",
+            "resultats_",
+            "heures_",
+            "etat_",
+            "synthese_",
+            "suggerer_",
+            "volumes",
+            "edition_courante");
 
     /**
      * Tools that overwrite or drop something the user cannot get back by
@@ -55,15 +67,38 @@ class McpAnnotationsStructurelleTest {
      * persisted plan, which is the very risk snapshots exist for.
      */
     private static final List<String> DESTRUCTION = List.of(
-            "supprimer_", "effacer_", "reinitialiser_", "importer_", "restaurer_",
-            "deverrouiller", "generer_decoupage", "generer_creneaux_depuis_stands", "lancer_solveur",
+            "supprimer_",
+            "effacer_",
+            "reinitialiser_",
+            "importer_",
+            "restaurer_",
+            "deverrouiller",
+            "generer_decoupage",
+            "generer_creneaux_depuis_stands",
+            "lancer_solveur",
             "resoudre_incremental");
 
     /** Tools that write without destroying: creations, edits, toggles, locks. */
     private static final List<String> ECRITURE = List.of(
-            "creer_", "modifier_", "ajouter_", "activer_", "desactiver_", "dupliquer_",
-            "renommer_", "definir_", "verrouiller", "capturer_", "arreter_", "affecter_", "deplacer_",
-            "configurer_", "appliquer_", "accepter_", "refuser_", "publier_", "envoyer_",
+            "creer_",
+            "modifier_",
+            "ajouter_",
+            "activer_",
+            "desactiver_",
+            "dupliquer_",
+            "renommer_",
+            "definir_",
+            "verrouiller",
+            "capturer_",
+            "arreter_",
+            "affecter_",
+            "deplacer_",
+            "configurer_",
+            "appliquer_",
+            "accepter_",
+            "refuser_",
+            "publier_",
+            "envoyer_",
             "compacter_");
 
     /**
@@ -78,8 +113,8 @@ class McpAnnotationsStructurelleTest {
      * carries {@code destructiveHint}, which its name is checked against
      * above.</p>
      */
-    private static final List<String> SORTIE_EXTERIEURE = List.of(
-            "publier_planning", "envoyer_planning_animateur", "configurer_collecte_disponibilites");
+    private static final List<String> SORTIE_EXTERIEURE =
+            List.of("publier_planning", "envoyer_planning_animateur", "configurer_collecte_disponibilites");
 
     @Test
     void chaqueOutilDeclareSesAnnotations() throws Exception {
@@ -88,8 +123,10 @@ class McpAnnotationsStructurelleTest {
                 continue;
             }
             assertThat(annotations(outil).openWorldHint())
-                    .as("l'outil %s doit déclarer @Tool.Annotations : sans le bloc, il est annoncé destructif"
-                            + " et ouvert sur le monde extérieur", outil.getName())
+                    .as(
+                            "l'outil %s doit déclarer @Tool.Annotations : sans le bloc, il est annoncé destructif"
+                                    + " et ouvert sur le monde extérieur",
+                            outil.getName())
                     .isFalse();
         }
     }
@@ -103,8 +140,10 @@ class McpAnnotationsStructurelleTest {
     void seulsLesOutilsQuiEnvoientDuCourrielSortentDeLApplication() throws Exception {
         for (Method outil : OutilsMcp.all()) {
             assertThat(annotations(outil).openWorldHint())
-                    .as("openWorldHint de %s : vrai pour les seuls outils qui envoient du courriel"
-                            + " (voir SORTIE_EXTERIEURE)", outil.getName())
+                    .as(
+                            "openWorldHint de %s : vrai pour les seuls outils qui envoient du courriel"
+                                    + " (voir SORTIE_EXTERIEURE)",
+                            outil.getName())
                     .isEqualTo(correspond(outil.getName(), SORTIE_EXTERIEURE));
         }
     }
@@ -122,12 +161,16 @@ class McpAnnotationsStructurelleTest {
                         .as("%s est en lecture seule : destructiveHint attendu faux", nom)
                         .isFalse();
             } else if (correspond(nom, DESTRUCTION)) {
-                assertThat(declarees.readOnlyHint()).as("%s écrit : readOnlyHint attendu faux", nom).isFalse();
+                assertThat(declarees.readOnlyHint())
+                        .as("%s écrit : readOnlyHint attendu faux", nom)
+                        .isFalse();
                 assertThat(declarees.destructiveHint())
                         .as("%s écrase ou supprime : destructiveHint attendu vrai", nom)
                         .isTrue();
             } else if (correspond(nom, ECRITURE)) {
-                assertThat(declarees.readOnlyHint()).as("%s écrit : readOnlyHint attendu faux", nom).isFalse();
+                assertThat(declarees.readOnlyHint())
+                        .as("%s écrit : readOnlyHint attendu faux", nom)
+                        .isFalse();
                 assertThat(declarees.destructiveHint())
                         .as("%s écrit sans rien détruire : destructiveHint attendu faux", nom)
                         .isFalse();
@@ -149,7 +192,8 @@ class McpAnnotationsStructurelleTest {
         for (Method outil : OutilsMcp.all()) {
             if (annotations(outil).readOnlyHint()) {
                 assertThat(correspond(outil.getName(), LECTURE))
-                        .as("%s se déclare en lecture seule sans être reconnu comme un outil de lecture",
+                        .as(
+                                "%s se déclare en lecture seule sans être reconnu comme un outil de lecture",
                                 outil.getName())
                         .isTrue();
             }

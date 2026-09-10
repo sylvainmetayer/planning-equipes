@@ -42,9 +42,10 @@ public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthen
     }
 
     @Override
-    public Uni<SecurityIdentity> authenticate(TrustedAuthenticationRequest request, AuthenticationRequestContext context) {
-        QuarkusSecurityIdentity.Builder identite = QuarkusSecurityIdentity.builder()
-                .setPrincipal(new QuarkusPrincipal(request.getPrincipal()));
+    public Uni<SecurityIdentity> authenticate(
+            TrustedAuthenticationRequest request, AuthenticationRequestContext context) {
+        QuarkusSecurityIdentity.Builder identite =
+                QuarkusSecurityIdentity.builder().setPrincipal(new QuarkusPrincipal(request.getPrincipal()));
         if (RemoteUserAuthentication.PRINCIPAL_ADMIN.equals(request.getPrincipal())) {
             identite.addRole(ROLE_ADMIN);
         }

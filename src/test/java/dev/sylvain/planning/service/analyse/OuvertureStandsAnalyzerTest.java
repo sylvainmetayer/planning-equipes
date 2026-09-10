@@ -2,14 +2,6 @@ package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
@@ -17,14 +9,20 @@ import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver.SourceHoraire;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.Anomaly;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.AnomalyType;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.CelluleJour;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.EtatOuverture;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.LigneStand;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.AnomalyType;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver.SourceHoraire;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link OuvertureStandsAnalyzer}: the stand × jour grid the "Ouvertures des
@@ -83,8 +81,8 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneRegleDonneUneCellulePartielleAttribueeALaRegle() {
         Stand stand = stand("APREM");
-        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(14, 0), null))));
+        stand.setHoraires(
+                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
 
         RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
@@ -102,8 +100,8 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneExceptionDateeEstAttribueeALException() {
         Stand stand = stand("EXCEPTION");
-        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(14, 0), null))));
+        stand.setHoraires(
+                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
         stand.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(10, 0), null, "Férié"));
 
         RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
@@ -127,18 +125,22 @@ class OuvertureStandsAnalyzerTest {
         Stand stand = stand("PROFIL");
         stand.setEffectifMin(2);
         stand.setEffectifMax(4);
-        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(20, 0), null),
                 new FenetreHoraire(LocalTime.of(21, 0), null, 4))));
 
         RapportOuvertures rapport = analyze(List.of(stand), creneaux);
 
-        assertThat(rapport.jours().get(0).creneaux()).extracting(colonne -> colonne.heureDebut())
+        assertThat(rapport.jours().get(0).creneaux())
+                .extracting(colonne -> colonne.heureDebut())
                 .containsExactly(LocalTime.of(10, 0), LocalTime.of(20, 0));
-        List<OuvertureStandsAnalyzer.CelluleCreneau> cellules = rapport.stands().get(0).jours().get(0).creneaux();
-        assertThat(cellules).containsExactly(
-                new OuvertureStandsAnalyzer.CelluleCreneau(1L, 2, false, false),
-                new OuvertureStandsAnalyzer.CelluleCreneau(3L, 4, true, false));
+        List<OuvertureStandsAnalyzer.CelluleCreneau> cellules =
+                rapport.stands().get(0).jours().get(0).creneaux();
+        assertThat(cellules)
+                .containsExactly(
+                        new OuvertureStandsAnalyzer.CelluleCreneau(1L, 2, false, false),
+                        new OuvertureStandsAnalyzer.CelluleCreneau(3L, 4, true, false));
         assertThat(rapport.stands().get(0).jours().get(1).creneaux())
                 .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 2, false, false));
     }
@@ -151,9 +153,12 @@ class OuvertureStandsAnalyzerTest {
 
         RapportOuvertures rapport = analyze(List.of(stand("LIBRE")), creneaux);
 
-        assertThat(rapport.jours().get(0).creneaux()).extracting(colonne -> colonne.id()).containsExactly(1L, null);
+        assertThat(rapport.jours().get(0).creneaux())
+                .extracting(colonne -> colonne.id())
+                .containsExactly(1L, null);
         assertThat(rapport.stands().get(0).jours().get(0).creneaux())
-                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(1L, 1, false, false),
+                .containsExactly(
+                        new OuvertureStandsAnalyzer.CelluleCreneau(1L, 1, false, false),
                         new OuvertureStandsAnalyzer.CelluleCreneau(null, 1, false, false));
     }
 
@@ -174,7 +179,8 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneCoupureMeridienneDonneDeuxFenetres() {
         Stand stand = stand("BOURSE");
-        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
                 new FenetreHoraire(LocalTime.of(14, 0), null))));
 
@@ -214,16 +220,14 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void unStandFermePartoutEstSignale() {
         Stand stand = stand("ABSENT");
-        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE,
-                new FenetreHoraire(LocalTime.of(0, 0), null))));
+        stand.setHoraires(
+                List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(0, 0), null))));
 
         RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
         assertThat(rapport.standsJamaisOuverts()).isEqualTo(1);
         assertThat(rapport.postesTotal()).isZero();
-        assertThat(rapport.anomalies())
-                .extracting(Anomaly::type)
-                .contains(AnomalyType.STAND_JAMAIS_OUVERT);
+        assertThat(rapport.anomalies()).extracting(Anomaly::type).contains(AnomalyType.STAND_JAMAIS_OUVERT);
     }
 
     /**
@@ -234,8 +238,8 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void unSegmentTropCourtPourEtreUnCreneauEstSignale() {
         Stand stand = stand("UNE-MINUTE");
-        List<Creneau> jusquaMinuit = new ArrayList<>(List.of(
-                new Creneau(1L, 1, JOUR_1, LocalTime.of(10, 0), LocalTime.MIDNIGHT)));
+        List<Creneau> jusquaMinuit =
+                new ArrayList<>(List.of(new Creneau(1L, 1, JOUR_1, LocalTime.of(10, 0), LocalTime.MIDNIGHT)));
         stand.getIndisponibilites()
                 .add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(23, 59), null));
 
@@ -260,8 +264,8 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneOuvertureCourteMaisVoulueNEstPasSignalee() {
         Stand stand = stand("DEUX-HEURES");
-        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(16, 0)))));
+        stand.setHoraires(List.of(HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(16, 0)))));
 
         RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
@@ -275,8 +279,7 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneFenetreHorsAmplitudeEstSignaleeSansEffet() {
         Stand stand = stand("HORS-AMPLITUDE");
-        stand.getOuvertures()
-                .add(new OuvertureStand(null, JOUR_1, LocalTime.of(21, 0), LocalTime.of(23, 0), null));
+        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(21, 0), LocalTime.of(23, 0), null));
 
         RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
@@ -291,8 +294,7 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneFenetreDansLAmplitudeNEstPasSignalee() {
         Stand stand = stand("DANS-AMPLITUDE");
-        stand.getOuvertures()
-                .add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(16, 0), null));
+        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(16, 0), null));
 
         assertThat(analyze(List.of(stand), deuxJours()).anomalies())
                 .filteredOn(anomalie -> anomalie.type() == AnomalyType.FENETRE_SANS_EFFET)
@@ -324,11 +326,15 @@ class OuvertureStandsAnalyzerTest {
 
         // The two stands land on the two families, so each sees one live cell
         // and one inert — and every stand's inert cell is the other's live one.
-        List<OuvertureStandsAnalyzer.CelluleCreneau> premier = rapport.stands().get(0).jours().get(0).creneaux();
-        List<OuvertureStandsAnalyzer.CelluleCreneau> second = rapport.stands().get(1).jours().get(0).creneaux();
-        assertThat(premier).extracting(OuvertureStandsAnalyzer.CelluleCreneau::horsFamille)
+        List<OuvertureStandsAnalyzer.CelluleCreneau> premier =
+                rapport.stands().get(0).jours().get(0).creneaux();
+        List<OuvertureStandsAnalyzer.CelluleCreneau> second =
+                rapport.stands().get(1).jours().get(0).creneaux();
+        assertThat(premier)
+                .extracting(OuvertureStandsAnalyzer.CelluleCreneau::horsFamille)
                 .containsExactly(false, true);
-        assertThat(second).extracting(OuvertureStandsAnalyzer.CelluleCreneau::horsFamille)
+        assertThat(second)
+                .extracting(OuvertureStandsAnalyzer.CelluleCreneau::horsFamille)
                 .containsExactly(true, false);
         assertThat(premier.get(1).effectif()).isNull();
     }
@@ -342,9 +348,11 @@ class OuvertureStandsAnalyzerTest {
 
         RapportOuvertures rapport = analyze(List.of(stand("LIBRE")), creneaux);
 
-        assertThat(rapport.jours().get(0).creneaux()).extracting(colonne -> colonne.heureDebut().toString())
+        assertThat(rapport.jours().get(0).creneaux())
+                .extracting(colonne -> colonne.heureDebut().toString())
                 .containsExactly("10:00", "14:00");
         assertThat(rapport.stands().get(0).jours().get(0).creneaux())
-                .extracting(OuvertureStandsAnalyzer.CelluleCreneau::creneauId).containsExactly(2L, 9L);
+                .extracting(OuvertureStandsAnalyzer.CelluleCreneau::creneauId)
+                .containsExactly(2L, 9L);
     }
 }

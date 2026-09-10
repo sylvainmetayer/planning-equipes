@@ -3,28 +3,26 @@ package dev.sylvain.planning.service.referentiel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService;
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.service.edition.EditionService;
-import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
-import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
-import dev.sylvain.planning.service.espace.EspaceAnimateurService;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.EditionContext;
 
 /**
  * The tabular import, end to end and in its own edition.
@@ -119,7 +117,10 @@ class AnimateurCsvImportServiceTest {
         assertThat(rapport.rejected()).isZero();
         List<Animateur> ecrits = inEdition(() -> referenceData.listAnimateurs());
         assertThat(ecrits).hasSize(rapport.accepted());
-        Animateur amelie = ecrits.stream().filter(a -> "Amélie".equals(a.getPrenom())).findFirst().orElseThrow();
+        Animateur amelie = ecrits.stream()
+                .filter(a -> "Amélie".equals(a.getPrenom()))
+                .findFirst()
+                .orElseThrow();
         assertThat(amelie.getDateNaissance()).isEqualTo(LocalDate.of(1990, 3, 12));
         assertThat(amelie.getCompetences())
                 .containsEntry("jeux", NiveauCompetence.REFERENT)
@@ -145,8 +146,7 @@ class AnimateurCsvImportServiceTest {
             assertThat(ligne.joursIndisponibles()).containsExactly(JOUR1, JOUR2);
         });
         String id = rapport.rows().get(0).animateurId();
-        EspaceAnimateurService.DeclarationEspaceView vue =
-                inEdition(() -> espace.buildDeclarationView(id));
+        EspaceAnimateurService.DeclarationEspaceView vue = inEdition(() -> espace.buildDeclarationView(id));
         assertThat(vue.joursActuels()).containsExactly(JOUR1, JOUR2);
         assertThat(vue.joursEvenement()).contains(JOUR1, JOUR2);
     }
@@ -178,15 +178,16 @@ class AnimateurCsvImportServiceTest {
             return null;
         });
 
-        assertThatThrownBy(() -> inEdition(() -> csvImport.preview(demande("prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n"))))
+        assertThatThrownBy(() -> inEdition(
+                        () -> csvImport.preview(demande("prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n"))))
                 .isInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining("Aucun créneau");
     }
 
     @Test
     void unFichierTableurEstRefuseAvecUnMessageExplicite() {
-        AnimateurCsvImportRequest xlsx =
-                new AnimateurCsvImportRequest("roster.xlsx", "prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n", null, false, false);
+        AnimateurCsvImportRequest xlsx = new AnimateurCsvImportRequest(
+                "roster.xlsx", "prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n", null, false, false);
 
         assertThatThrownBy(() -> inEdition(() -> csvImport.preview(xlsx)))
                 .isInstanceOf(BusinessError.Invalid.class)
@@ -256,7 +257,9 @@ class AnimateurCsvImportServiceTest {
                 inEdition(() -> csvImport.preview(demande("prenom;nom;date de naissance\nJean;Martin;01/01/1990\n")));
 
         assertThat(rapport.rejected()).isEqualTo(1);
-        assertThat(motif(rapport, 2)).contains("Plusieurs animateurs se nomment").contains("H1, H2");
+        assertThat(motif(rapport, 2))
+                .contains("Plusieurs animateurs se nomment")
+                .contains("H1, H2");
     }
 
     private static Animateur homonyme(String id) {
@@ -281,8 +284,8 @@ class AnimateurCsvImportServiceTest {
         existant.setJoursIndisponibles(Set.of(JOUR1));
         inEdition(() -> referenceData.createAnimateur(existant));
 
-        AnimateurCsvImportReport rapport = inEdition(() ->
-                csvImport.apply(demande("prenom;nom;jours indisponibles\nAmélie;Durand;19/07/2030\n")));
+        AnimateurCsvImportReport rapport =
+                inEdition(() -> csvImport.apply(demande("prenom;nom;jours indisponibles\nAmélie;Durand;19/07/2030\n")));
 
         assertThat(rapport.updated()).isEqualTo(1);
         assertThat(rapport.rows().get(0).joursIndisponibles()).containsExactly(JOUR1, JOUR2);
@@ -295,8 +298,8 @@ class AnimateurCsvImportServiceTest {
         Animateur existant = new Animateur("A-REMPL", "Amélie", "Durand", LocalDate.of(1990, 3, 12), false);
         existant.setJoursIndisponibles(Set.of(JOUR1));
         inEdition(() -> referenceData.createAnimateur(existant));
-        AnimateurCsvImportRequest remplacement = new AnimateurCsvImportRequest("a.csv",
-                "prenom;nom;jours indisponibles\nAmélie;Durand;19/07/2030\n", null, false, true);
+        AnimateurCsvImportRequest remplacement = new AnimateurCsvImportRequest(
+                "a.csv", "prenom;nom;jours indisponibles\nAmélie;Durand;19/07/2030\n", null, false, true);
 
         inEdition(() -> csvImport.apply(remplacement));
 
@@ -312,8 +315,8 @@ class AnimateurCsvImportServiceTest {
         existant.setEmail("amelie@example.org");
         existant.setCompetences(Map.of("jeux", NiveauCompetence.REFERENT));
         inEdition(() -> referenceData.createAnimateur(existant));
-        AnimateurCsvImportRequest sansColonneJours = new AnimateurCsvImportRequest("a.csv",
-                "prenom;nom\nAmélie;Durand\n", null, false, true);
+        AnimateurCsvImportRequest sansColonneJours =
+                new AnimateurCsvImportRequest("a.csv", "prenom;nom\nAmélie;Durand\n", null, false, true);
 
         inEdition(() -> csvImport.apply(sansColonneJours));
 
@@ -330,12 +333,13 @@ class AnimateurCsvImportServiceTest {
         inEdition(() -> {
             declarationService.configure(
                     new DeclarationDisponibiliteRepository.FenetreCollecte(true, null, null), false);
-            return declarationService.submit("A-ATTENTE",
+            return declarationService.submit(
+                    "A-ATTENTE",
                     new DeclarationDisponibiliteService.NouvelleDeclaration(List.of(JOUR1), List.of(), null));
         });
 
-        AnimateurCsvImportReport rapport = inEdition(() ->
-                csvImport.preview(demande("prenom;nom;jours indisponibles\nAmélie;Durand;19/07/2030\n")));
+        AnimateurCsvImportReport rapport = inEdition(
+                () -> csvImport.preview(demande("prenom;nom;jours indisponibles\nAmélie;Durand;19/07/2030\n")));
 
         assertThat(rapport.rows().get(0).warnings())
                 .anySatisfy(avis -> assertThat(avis).contains("déclaration de disponibilités en attente"));
@@ -347,14 +351,15 @@ class AnimateurCsvImportServiceTest {
     void leRemplacementCompletSupprimeLesAbsentsDuFichier() {
         inEdition(() -> referenceData.createAnimateur(
                 new Animateur("A-PARTANT", "Zoé", "Absente", LocalDate.of(1990, 1, 1), false)));
-        AnimateurCsvImportRequest remplacement = new AnimateurCsvImportRequest("a.csv",
-                "prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n", null, true, false);
+        AnimateurCsvImportRequest remplacement = new AnimateurCsvImportRequest(
+                "a.csv", "prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n", null, true, false);
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.apply(remplacement));
 
         assertThat(rapport.deleted()).isEqualTo(1);
         assertThat(inEdition(() -> referenceData.listAnimateurs()))
-                .extracting(Animateur::getPrenom).containsExactly("Amélie");
+                .extracting(Animateur::getPrenom)
+                .containsExactly("Amélie");
     }
 
     /**
@@ -365,8 +370,12 @@ class AnimateurCsvImportServiceTest {
     void leRemplacementCompletEstRefuseTantQuUneLigneEstRejetee() {
         inEdition(() -> referenceData.createAnimateur(
                 new Animateur("A-GARDE", "Zoé", "Absente", LocalDate.of(1990, 1, 1), false)));
-        AnimateurCsvImportRequest remplacement = new AnimateurCsvImportRequest("a.csv",
-                "prenom;nom;date de naissance;jours indisponibles\nAmélie;Durand;12/03/1990;01/01/2031\n", null, true, false);
+        AnimateurCsvImportRequest remplacement = new AnimateurCsvImportRequest(
+                "a.csv",
+                "prenom;nom;date de naissance;jours indisponibles\nAmélie;Durand;12/03/1990;01/01/2031\n",
+                null,
+                true,
+                false);
 
         assertThatThrownBy(() -> inEdition(() -> csvImport.apply(remplacement)))
                 .isInstanceOf(BusinessError.Invalid.class)
@@ -394,8 +403,7 @@ class AnimateurCsvImportServiceTest {
     void unMappingManuelPrimeSurLesEnTetes() {
         String csv = "colonne A;colonne B;colonne C\nDurand;Amélie;12/03/1990\n";
         AnimateurCsvMapping mapping = new AnimateurCsvMapping(null, 1, 0, 2, null, null, null, null, null);
-        AnimateurCsvImportRequest demande =
-                new AnimateurCsvImportRequest("a.csv", csv, mapping, false, false);
+        AnimateurCsvImportRequest demande = new AnimateurCsvImportRequest("a.csv", csv, mapping, false, false);
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.apply(demande));
 
@@ -412,10 +420,9 @@ class AnimateurCsvImportServiceTest {
      */
     @Test
     void unMappingQuiNeNommePersonneRendUnRapportEtRefuseALEcriture() {
-        AnimateurCsvMapping sansIdentite =
-                new AnimateurCsvMapping(null, null, null, 0, null, null, null, null, null);
-        AnimateurCsvImportRequest demande = new AnimateurCsvImportRequest("a.csv",
-                "date de naissance\n01/01/1990\n", sansIdentite, false, false);
+        AnimateurCsvMapping sansIdentite = new AnimateurCsvMapping(null, null, null, 0, null, null, null, null, null);
+        AnimateurCsvImportRequest demande =
+                new AnimateurCsvImportRequest("a.csv", "date de naissance\n01/01/1990\n", sansIdentite, false, false);
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande));
 
@@ -492,16 +499,16 @@ class AnimateurCsvImportServiceTest {
         assertThat(rapport.accepted()).isZero();
         assertThat(motif(rapport, 2)).contains("Prénom trop long");
 
-        String csvCourt = "prenom;nom;date de naissance\n"
-                + "Marie".repeat(12) + ";" + "Durand".repeat(10) + ";12/03/1990\n";
+        String csvCourt =
+                "prenom;nom;date de naissance\n" + "Marie".repeat(12) + ";" + "Durand".repeat(10) + ";12/03/1990\n";
 
         AnimateurCsvImportReport ecrit = inEdition(() -> csvImport.apply(demande(csvCourt)));
 
         assertThat(ecrit.accepted()).isEqualTo(1);
         assertThat(inEdition(() -> referenceData.listAnimateurs()))
                 .singleElement()
-                .satisfies(anime -> assertThat(anime.getId().length())
-                        .isLessThanOrEqualTo(AnimateurCsvImportService.MAX_ID));
+                .satisfies(anime ->
+                        assertThat(anime.getId().length()).isLessThanOrEqualTo(AnimateurCsvImportService.MAX_ID));
     }
 
     /* ------------------------------- Encoding ------------------------------ */
@@ -527,7 +534,7 @@ class AnimateurCsvImportServiceTest {
         String binaire = "\uFFFD\0\uFFFD\uFFFD\0".repeat(50);
 
         assertThatThrownBy(() -> inEdition(() ->
-                csvImport.preview(new AnimateurCsvImportRequest("roster.dat", binaire, null, false, false))))
+                        csvImport.preview(new AnimateurCsvImportRequest("roster.dat", binaire, null, false, false))))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("seul le CSV est lu");
     }
@@ -552,8 +559,7 @@ class AnimateurCsvImportServiceTest {
 
         assertThat(rapport.accepted()).isEqualTo(1);
         assertThat(motif(rapport, 2)).contains("Date de naissance illisible").doesNotContain("Doublon");
-        assertThat(rapport.rows().get(1).action())
-                .isEqualTo(AnimateurCsvImportReport.ImportAction.CREATED);
+        assertThat(rapport.rows().get(1).action()).isEqualTo(AnimateurCsvImportReport.ImportAction.CREATED);
         assertThat(motif(rapport, 4)).contains("Doublon dans le fichier").contains("ligne 3");
     }
 
@@ -566,17 +572,18 @@ class AnimateurCsvImportServiceTest {
     void lAvertissementDuRemplacementNommeCeQueLaSuppressionEmporte() {
         inEdition(() -> referenceData.createAnimateur(
                 new Animateur("A-PARTANT", "Zoé", "Absente", LocalDate.of(1990, 1, 1), false)));
-        AnimateurCsvImportRequest remplacement = new AnimateurCsvImportRequest("a.csv",
-                "prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n", null, true, false);
+        AnimateurCsvImportRequest remplacement = new AnimateurCsvImportRequest(
+                "a.csv", "prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n", null, true, false);
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(remplacement));
 
-        assertThat(rapport.warnings()).anySatisfy(avis -> assertThat(avis)
-                .contains("Remplacement complet")
-                .contains("place(s) du planning persisté")
-                .contains("déclaration de disponibilités")
-                .contains("accusé de réception")
-                .contains("code d'accès à l'espace animateur"));
+        assertThat(rapport.warnings())
+                .anySatisfy(avis -> assertThat(avis)
+                        .contains("Remplacement complet")
+                        .contains("place(s) du planning persisté")
+                        .contains("déclaration de disponibilités")
+                        .contains("accusé de réception")
+                        .contains("code d'accès à l'espace animateur"));
     }
 
     /* -------------------------------- Mapping ------------------------------- */
@@ -588,9 +595,12 @@ class AnimateurCsvImportServiceTest {
      */
     @Test
     void unMappingVideFourniNEstPasRempliParLaProposition() {
-        AnimateurCsvImportRequest demande = new AnimateurCsvImportRequest("a.csv",
+        AnimateurCsvImportRequest demande = new AnimateurCsvImportRequest(
+                "a.csv",
                 "prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n",
-                AnimateurCsvMapping.empty(), false, false);
+                AnimateurCsvMapping.empty(),
+                false,
+                false);
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande));
 

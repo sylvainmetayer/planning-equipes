@@ -2,17 +2,6 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
@@ -20,12 +9,19 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
-import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.junit.jupiter.api.Test;
 
 /**
  * A diagnostic of the <em>persisted</em> plan is scored under the same rules a
@@ -96,9 +92,10 @@ class PlanningDiagnosticPreparationTest {
      * is stubbed: the diagnostic runs the real score director.
      */
     private static PlanningService serviceUnderTest(ReferenceData edition) {
-        Config config = ConfigProviderResolver.instance().getBuilder()
-                .withSources(mapConfigSource(Map.of(
-                        "planning.constraint-weights." + CONTRAINTE, String.valueOf(TELLTALE_WEIGHT))))
+        Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(mapConfigSource(
+                        Map.of("planning.constraint-weights." + CONTRAINTE, String.valueOf(TELLTALE_WEIGHT))))
                 .build();
         PlanningPersistenceService persistence = new PlanningPersistenceService() {
             @Override
@@ -106,9 +103,15 @@ class PlanningDiagnosticPreparationTest {
                 return planWithOneViolation();
             }
         };
-        return new PlanningService(2L, 1L,
-                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, edition,
-                new FeasibilityAnalyzer(), persistence, null, config);
+        return new PlanningService(
+                2L,
+                1L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                edition,
+                new FeasibilityAnalyzer(),
+                persistence,
+                null,
+                config);
     }
 
     /**

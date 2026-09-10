@@ -5,5 +5,4 @@ package dev.sylvain.planning.mcp;
  * 204 with an empty body, which an MCP client would render as "null" — saying
  * what was deleted instead gives the assistant something to report back.
  */
-public record SuppressionResult(String id, boolean supprime) {
-}
+public record SuppressionResult(String id, boolean supprime) {}

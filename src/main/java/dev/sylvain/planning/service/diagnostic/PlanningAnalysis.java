@@ -1,8 +1,7 @@
 package dev.sylvain.planning.service.diagnostic;
 
-import java.util.List;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import java.util.List;
 
 /**
  * One planning's score broken down per constraint — everything the diagnostic

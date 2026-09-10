@@ -1,7 +1,10 @@
 package dev.sylvain.planning.service.referentiel;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -9,12 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
-import dev.sylvain.planning.service.BusinessError;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * The créneaux grid derived from what the stands already say: every hour at
@@ -46,23 +44,23 @@ public final class GrilleDepuisFenetres {
 
     private static final int MINUTES_PAR_JOUR = 24 * 60;
 
-    private GrilleDepuisFenetres() {
-    }
+    private GrilleDepuisFenetres() {}
 
     /**
      * @param heureFermeture      the end of a window left open-ended; {@code 00:00} reads as midnight
      * @param dureeMinimaleMinutes a stretch shorter than this joins the one next to it, and a hole
      *                             shorter than this is closed rather than splitting a créneau in two
      */
-    public record Parametres(LocalDate dateDebut, LocalDate dateFin, LocalTime heureFermeture,
-            int dureeMinimaleMinutes) {
+    public record Parametres(
+            LocalDate dateDebut, LocalDate dateFin, LocalTime heureFermeture, int dureeMinimaleMinutes) {
 
         public Parametres {
             if (dateDebut == null || dateFin == null) {
                 throw new BusinessError.Invalid("dateDebut et dateFin sont requis (AAAA-MM-JJ), bornes incluses");
             }
             if (dateFin.isBefore(dateDebut)) {
-                throw new BusinessError.Invalid("dateFin (" + dateFin + ") est antérieure à dateDebut (" + dateDebut + ")");
+                throw new BusinessError.Invalid(
+                        "dateFin (" + dateFin + ") est antérieure à dateDebut (" + dateDebut + ")");
             }
             if (heureFermeture == null) {
                 throw new BusinessError.Invalid("heureFermeture est requise : la fin des fenêtres « jusqu'à la "
@@ -76,12 +74,10 @@ public final class GrilleDepuisFenetres {
 
     /** One cut of one day, and the stands whose windows start or end there — the first few, by id. */
     @Schema(requiredProperties = {"nombreStands"})
-    public record Coupure(LocalDate date, LocalTime heure, List<String> standIds, int nombreStands) {
-    }
+    public record Coupure(LocalDate date, LocalTime heure, List<String> standIds, int nombreStands) {}
 
     /** What the derivation produced: the créneaux, why each cut is there, and the days nothing said anything about. */
-    public record Derivation(List<Creneau> creneaux, List<Coupure> coupures, List<LocalDate> joursSansFenetre) {
-    }
+    public record Derivation(List<Creneau> creneaux, List<Coupure> coupures, List<LocalDate> joursSansFenetre) {}
 
     private static final int STANDS_CITES = 3;
 
@@ -118,10 +114,13 @@ public final class GrilleDepuisFenetres {
                     // but « until closing » may: an event closing at 02:00, or a
                     // window opening after the closing hour given, means the next
                     // day. Read as a same-day end it was silently dropped.
-                    int fin = ouverture.getHeureFin() != null ? ouverture.getHeureFin().toSecondOfDay() / 60
+                    int fin = ouverture.getHeureFin() != null
+                            ? ouverture.getHeureFin().toSecondOfDay() / 60
                             : fermeture > debut ? fermeture : fermeture + MINUTES_PAR_JOUR;
                     fenetres.add(new int[] {debut, fin});
-                    standsParBorne.computeIfAbsent(debut, key -> new TreeSet<>()).add(stand.getId());
+                    standsParBorne
+                            .computeIfAbsent(debut, key -> new TreeSet<>())
+                            .add(stand.getId());
                     standsParBorne.computeIfAbsent(fin, key -> new TreeSet<>()).add(stand.getId());
                 }
             }
@@ -152,8 +151,11 @@ public final class GrilleDepuisFenetres {
             // reasons for a grid that no longer holds them explains nothing.
             for (int borne : retainedBounds(tranches)) {
                 TreeSet<String> ids = standsParBorne.get(borne);
-                coupures.add(new Coupure(date, minuteToTime(borne),
-                        ids.stream().limit(STANDS_CITES).toList(), ids.size()));
+                coupures.add(new Coupure(
+                        date,
+                        minuteToTime(borne),
+                        ids.stream().limit(STANDS_CITES).toList(),
+                        ids.size()));
             }
         }
         return new Derivation(creneaux, coupures, joursSansFenetre);

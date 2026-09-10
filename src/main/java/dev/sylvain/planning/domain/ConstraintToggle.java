@@ -11,8 +11,7 @@ public class ConstraintToggle {
 
     private String nom;
 
-    public ConstraintToggle() {
-    }
+    public ConstraintToggle() {}
 
     public ConstraintToggle(String nom) {
         this.nom = nom;

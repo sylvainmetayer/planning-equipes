@@ -1,18 +1,17 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.solve.VacationGeneratorService;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.VacationGeneratorService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * CRUD of the créneau grid, and the découpage that turns the edition's

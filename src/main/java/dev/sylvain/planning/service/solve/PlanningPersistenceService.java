@@ -1,10 +1,22 @@
 package dev.sylvain.planning.service.solve;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,22 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
-import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * Persists a solved {@link PlanningEvenement} into PostgreSQL using plain JDBC
@@ -102,17 +99,29 @@ public class PlanningPersistenceService {
     }
 
     /** Child-first order, so no {@code ON DELETE} cascade has to be relied on. */
-    private static final List<String> TABLES_A_VIDER = List.of("poste_affectation", "demande_echange",
+    private static final List<String> TABLES_A_VIDER = List.of(
+            "poste_affectation",
+            "demande_echange",
             "planning_resolution",
-            "contrainte_animateur", "contrainte_ad_hoc", "verrouillage_planning", "stand_typologie",
-            "animateur_competence", "animateur_jour_indispo", "animateur_souhait", "stand_indisponibilite",
-            "stand_ouverture", "creneau_stand_ouvert", "stand", "creneau", "animateur");
+            "contrainte_animateur",
+            "contrainte_ad_hoc",
+            "verrouillage_planning",
+            "stand_typologie",
+            "animateur_competence",
+            "animateur_jour_indispo",
+            "animateur_souhait",
+            "stand_indisponibilite",
+            "stand_ouverture",
+            "creneau_stand_ouvert",
+            "stand",
+            "creneau",
+            "animateur");
 
     private void clearPlanningTables(Connection connection) throws SQLException {
         for (String table : TABLES_A_VIDER) {
             // Table names come from the literal list above, never from user input.
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM " + table + " WHERE edition_id = ?")) {
+            try (PreparedStatement ps =
+                    scope.prepareScoped(connection, "DELETE FROM " + table + " WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
         }
@@ -175,9 +184,7 @@ public class PlanningPersistenceService {
  DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, date_naissance = EXCLUDED.date_naissance,
  manager = EXCLUDED.manager""";
         try (PreparedStatement ps = scope.prepareScoped(connection, upsertAnimateur)) {
-            List<Animateur> animateurs = planning.getAnimateurs() != null
-                    ? planning.getAnimateurs()
-                    : List.of();
+            List<Animateur> animateurs = planning.getAnimateurs() != null ? planning.getAnimateurs() : List.of();
             List<Animateur> distinctAnimateurs = dedupById(animateurs, Animateur::getId);
             for (Animateur animateur : distinctAnimateurs) {
                 ps.setString(2, animateur.getId());
@@ -193,10 +200,10 @@ public class PlanningPersistenceService {
     }
 
     private void rewriteStandTypologies(Connection connection, List<Stand> stands) throws SQLException {
-        try (PreparedStatement delete = scope.prepareScoped(connection,
-                        "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?");
-                PreparedStatement insert = scope.prepareScoped(connection,
-                        "INSERT INTO stand_typologie (edition_id, stand_id, typologie) VALUES (?, ?, ?)")) {
+        try (PreparedStatement delete = scope.prepareScoped(
+                        connection, "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?");
+                PreparedStatement insert = scope.prepareScoped(
+                        connection, "INSERT INTO stand_typologie (edition_id, stand_id, typologie) VALUES (?, ?, ?)")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
@@ -214,10 +221,9 @@ public class PlanningPersistenceService {
     }
 
     private void rewriteStandIndisponibilites(Connection connection, List<Stand> stands) throws SQLException {
-        try (PreparedStatement delete = scope.prepareScoped(connection,
-                        "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?");
-                PreparedStatement insert = scope.prepareScoped(connection,
-                        """
+        try (PreparedStatement delete = scope.prepareScoped(
+                        connection, "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?");
+                PreparedStatement insert = scope.prepareScoped(connection, """
                         INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
                         heure_debut, heure_fin, motif)
                         VALUES (?, ?, ?, ?, ?, ?)""")) {
@@ -241,10 +247,9 @@ public class PlanningPersistenceService {
     }
 
     private void rewriteStandOuvertures(Connection connection, List<Stand> stands) throws SQLException {
-        try (PreparedStatement delete = scope.prepareScoped(connection,
-                        "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?");
-                PreparedStatement insert = scope.prepareScoped(connection,
-                        """
+        try (PreparedStatement delete = scope.prepareScoped(
+                        connection, "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?");
+                PreparedStatement insert = scope.prepareScoped(connection, """
                         INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture,
                         heure_debut, heure_fin, motif, effectif)
                         VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
@@ -269,15 +274,15 @@ public class PlanningPersistenceService {
     }
 
     private void rewriteAnimateurDetails(Connection connection, List<Animateur> animateurs) throws SQLException {
-        try (PreparedStatement deleteComp = scope.prepareScoped(connection,
-                        "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?");
-                PreparedStatement insertComp = scope.prepareScoped(connection,
-                        """
+        try (PreparedStatement deleteComp = scope.prepareScoped(
+                        connection, "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?");
+                PreparedStatement insertComp = scope.prepareScoped(connection, """
                         INSERT INTO animateur_competence (edition_id, animateur_id, typologie, niveau)
                         VALUES (?, ?, ?, ?)""");
-                PreparedStatement deleteJour = scope.prepareScoped(connection,
-                        "DELETE FROM animateur_jour_indispo WHERE edition_id = ? AND animateur_id = ?");
-                PreparedStatement insertJour = scope.prepareScoped(connection,
+                PreparedStatement deleteJour = scope.prepareScoped(
+                        connection, "DELETE FROM animateur_jour_indispo WHERE edition_id = ? AND animateur_id = ?");
+                PreparedStatement insertJour = scope.prepareScoped(
+                        connection,
                         "INSERT INTO animateur_jour_indispo (edition_id, animateur_id, jour) VALUES (?, ?, ?)")) {
             for (Animateur animateur : animateurs) {
                 deleteComp.setString(2, animateur.getId());
@@ -285,7 +290,8 @@ public class PlanningPersistenceService {
                 deleteJour.setString(2, animateur.getId());
                 deleteJour.addBatch();
                 if (animateur.getCompetences() != null) {
-                    for (Map.Entry<String, NiveauCompetence> entry : animateur.getCompetences().entrySet()) {
+                    for (Map.Entry<String, NiveauCompetence> entry :
+                            animateur.getCompetences().entrySet()) {
                         insertComp.setString(2, animateur.getId());
                         insertComp.setString(3, entry.getKey());
                         insertComp.setString(4, entry.getValue().name());
@@ -308,8 +314,8 @@ public class PlanningPersistenceService {
     }
 
     private int rewriteAssignments(Connection connection, List<PosteAffectation> postes) throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                "DELETE FROM poste_affectation WHERE edition_id = ?")) {
+        try (PreparedStatement ps =
+                scope.prepareScoped(connection, "DELETE FROM poste_affectation WHERE edition_id = ?")) {
             ps.executeUpdate();
         }
 
@@ -326,7 +332,8 @@ public class PlanningPersistenceService {
                 ps.setString(2, poste.getId());
                 ps.setString(3, poste.getStand().getId());
                 ps.setLong(4, poste.getCreneau().getId());
-                ps.setString(5, poste.getAnimateur() != null ? poste.getAnimateur().getId() : null);
+                ps.setString(
+                        5, poste.getAnimateur() != null ? poste.getAnimateur().getId() : null);
                 ps.setObject(6, poste.getHeureDebutEffective());
                 ps.setObject(7, poste.getHeureFinEffective());
                 ps.addBatch();
@@ -349,8 +356,8 @@ public class PlanningPersistenceService {
      * @param standCibleId {@code null} for a simple takeover (the target was
      *                     free on the créneau)
      */
-    public void applyEchange(long creneauId, String standDemandeurId, String demandeurId,
-            String cibleId, String standCibleId) {
+    public void applyEchange(
+            long creneauId, String standDemandeurId, String demandeurId, String cibleId, String standCibleId) {
         scope.writeAndReturn("Failed to apply the échange to the persisted planning", connection -> {
             int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
             if (updated == 0) {
@@ -371,8 +378,13 @@ public class PlanningPersistenceService {
      * sit on two different créneaux — the demandeur's goes to the target, the
      * target's goes to the demandeur. Same one-transaction surgical updates.
      */
-    public void applyDirectedEchange(long creneauId, String standDemandeurId, String demandeurId,
-            String cibleId, long creneauCibleId, String standCibleId) {
+    public void applyDirectedEchange(
+            long creneauId,
+            String standDemandeurId,
+            String demandeurId,
+            String cibleId,
+            long creneauCibleId,
+            String standCibleId) {
         scope.writeAndReturn("Failed to apply the échange dirigé to the persisted planning", connection -> {
             int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
             if (updated == 0) {
@@ -402,16 +414,17 @@ public class PlanningPersistenceService {
      */
     public boolean reaffecterPoste(String posteId, String animateurId) {
         return scope.writeAndReturn("Failed to reassign the poste", connection -> {
-            // Not prepareScoped: the SET clause claims placeholder 1, so the
-            // edition_id predicate is bound explicitly here.
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?")) {
-                ps.setString(1, animateurId);
-                ps.setString(2, editionId());
-                ps.setString(3, posteId);
-                return ps.executeUpdate();
-            }
-        }) > 0;
+                    // Not prepareScoped: the SET clause claims placeholder 1, so the
+                    // edition_id predicate is bound explicitly here.
+                    try (PreparedStatement ps = connection.prepareStatement(
+                            "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?")) {
+                        ps.setString(1, animateurId);
+                        ps.setString(2, editionId());
+                        ps.setString(3, posteId);
+                        return ps.executeUpdate();
+                    }
+                })
+                > 0;
     }
 
     /**
@@ -436,12 +449,12 @@ public class PlanningPersistenceService {
         });
     }
 
-    private int reaffecterSiege(Connection connection, long creneauId, String standId,
-            String occupantActuelId, String nouvelOccupantId) throws SQLException {
+    private int reaffecterSiege(
+            Connection connection, long creneauId, String standId, String occupantActuelId, String nouvelOccupantId)
+            throws SQLException {
         // Not prepareScoped: the SET clause claims placeholder 1, so the
         // edition_id predicate is bound explicitly here.
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
+        try (PreparedStatement ps = connection.prepareStatement("""
                 UPDATE poste_affectation
                 SET animateur_id = ?
                 WHERE edition_id = ? AND creneau_id = ? AND stand_id = ? AND animateur_id = ?""")) {
@@ -486,8 +499,7 @@ public class PlanningPersistenceService {
         }
     }
 
-    public record PlanningResolution(Instant resoluLe) {
-    }
+    public record PlanningResolution(Instant resoluLe) {}
 
     /**
      * Number of assignment rows currently stored, used to confirm persistence.
@@ -527,7 +539,8 @@ public class PlanningPersistenceService {
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 parStandCreneau
-                        .computeIfAbsent(standCreneauKey(rs.getString("stand_id"), rs.getLong("creneau_id")),
+                        .computeIfAbsent(
+                                standCreneauKey(rs.getString("stand_id"), rs.getLong("creneau_id")),
                                 key -> new ArrayList<>())
                         .add(rs.getString("animateur_id"));
             }
@@ -556,9 +569,13 @@ public class PlanningPersistenceService {
      * One seat, referential ids only — what both the {@code poste_affectation}
      * table and a snapshot's denormalised content carry.
      */
-    public record Siege(String posteId, String standId, long creneauId, String animateurId,
-            LocalTime heureDebutEffective, LocalTime heureFinEffective) {
-    }
+    public record Siege(
+            String posteId,
+            String standId,
+            long creneauId,
+            String animateurId,
+            LocalTime heureDebutEffective,
+            LocalTime heureFinEffective) {}
 
     /**
      * Resolves seats against today's referential and returns a planning ready
@@ -601,8 +618,8 @@ public class PlanningPersistenceService {
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
-        PlanningEvenement evenement = new PlanningEvenement(dateDebut, animateurs, postes,
-                referenceDataService.snapshotContraintes());
+        PlanningEvenement evenement =
+                new PlanningEvenement(dateDebut, animateurs, postes, referenceDataService.snapshotContraintes());
         // The plan carries the legal parameters it was made under, so every
         // read-out downstream (breaks, exports, the animateur's espace) reads
         // the organiser's declarations from the plan itself.

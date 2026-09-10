@@ -59,8 +59,10 @@ public final class PlafondsLegauxMineurs {
         if (stretchMinutes <= TRAVAIL_CONTINU_MAX_MINUTES) {
             return 0;
         }
-        return PAUSE_MINIMALE_MINUTES * Math.ceilDiv(stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES,
-                TRAVAIL_CONTINU_MAX_MINUTES + PAUSE_MINIMALE_MINUTES);
+        return PAUSE_MINIMALE_MINUTES
+                * Math.ceilDiv(
+                        stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES,
+                        TRAVAIL_CONTINU_MAX_MINUTES + PAUSE_MINIMALE_MINUTES);
     }
 
     /**
@@ -71,6 +73,5 @@ public final class PlafondsLegauxMineurs {
         return moinsDe16Ans ? DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS_MINUTES : DUREE_QUOTIDIENNE_MAX_MINUTES;
     }
 
-    private PlafondsLegauxMineurs() {
-    }
+    private PlafondsLegauxMineurs() {}
 }

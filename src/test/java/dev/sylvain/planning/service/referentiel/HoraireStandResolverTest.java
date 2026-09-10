@@ -2,14 +2,6 @@ package dev.sylvain.planning.service.referentiel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
@@ -18,6 +10,12 @@ import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link HoraireStandResolver}: the layering of dated exceptions over recurring
@@ -30,9 +28,8 @@ import dev.sylvain.planning.domain.TypeJoursHoraire;
 class HoraireStandResolverTest {
 
     private static final LocalDate MERCREDI = LocalDate.of(2026, 7, 8);
-    private static final List<LocalDate> DOUZE_JOURS = java.util.stream.IntStream.range(0, 12)
-            .mapToObj(MERCREDI::plusDays)
-            .toList();
+    private static final List<LocalDate> DOUZE_JOURS =
+            java.util.stream.IntStream.range(0, 12).mapToObj(MERCREDI::plusDays).toList();
 
     /**
      * The AUTRES-BOURSE case, the one this whole mechanism exists for: 24 dated
@@ -42,7 +39,8 @@ class HoraireStandResolverTest {
     @Test
     void uneRegleQuotidienneCouvreChaqueJourDeLEvenement() {
         Stand bourse = stand("AUTRES-BOURSE");
-        bourse.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
+        bourse.setHoraires(List.of(HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
                 new FenetreHoraire(LocalTime.of(14, 0), null))));
 
@@ -60,8 +58,8 @@ class HoraireStandResolverTest {
     @Test
     void unStandSansRegleNEstPasTouche() {
         Stand stand = stand("SANS-REGLE");
-        stand.setIndisponibilites(new java.util.ArrayList<>(List.of(
-                new IndisponibiliteStand(null, MERCREDI, LocalTime.of(14, 0), LocalTime.of(16, 0), null))));
+        stand.setIndisponibilites(new java.util.ArrayList<>(
+                List.of(new IndisponibiliteStand(null, MERCREDI, LocalTime.of(14, 0), LocalTime.of(16, 0), null))));
 
         HoraireStandResolver.apply(stand, DOUZE_JOURS);
 
@@ -71,9 +69,12 @@ class HoraireStandResolverTest {
     @Test
     void laRegleLaPlusSpecifiqueGagne() {
         Stand stand = stand("GIGAMIC");
-        HoraireStand semaine = HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(14, 0), null));
-        HoraireStand weekend = new HoraireStand(null, ModeHoraire.OUVERTURE, TypeJoursHoraire.JOURS_SEMAINE,
+        HoraireStand semaine =
+                HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null));
+        HoraireStand weekend = new HoraireStand(
+                null,
+                ModeHoraire.OUVERTURE,
+                TypeJoursHoraire.JOURS_SEMAINE,
                 List.of(new FenetreHoraire(LocalTime.of(10, 0), null)));
         weekend.setJoursSemaine(Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
         stand.setHoraires(List.of(semaine, weekend));
@@ -87,11 +88,11 @@ class HoraireStandResolverTest {
     @Test
     void uneExceptionDateePrimeSurLesReglesEtLesRemplaceCeJourLa() {
         Stand stand = stand("AVEC-EXCEPTION");
-        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(14, 0), null))));
+        stand.setHoraires(
+                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
         LocalDate ferie = MERCREDI.plusDays(2);
-        stand.setIndisponibilites(new java.util.ArrayList<>(List.of(
-                new IndisponibiliteStand(null, ferie, LocalTime.of(10, 0), null, "Férié"))));
+        stand.setIndisponibilites(new java.util.ArrayList<>(
+                List.of(new IndisponibiliteStand(null, ferie, LocalTime.of(10, 0), null, "Férié"))));
 
         HoraireStandResolver.apply(stand, DOUZE_JOURS);
 
@@ -105,7 +106,10 @@ class HoraireStandResolverTest {
     @Test
     void unJourNonCouvertResteOuvertParDefaut() {
         Stand stand = stand("SEULEMENT-LE-14");
-        HoraireStand leQuatorze = new HoraireStand(null, ModeHoraire.OUVERTURE, TypeJoursHoraire.DATES,
+        HoraireStand leQuatorze = new HoraireStand(
+                null,
+                ModeHoraire.OUVERTURE,
+                TypeJoursHoraire.DATES,
                 List.of(new FenetreHoraire(LocalTime.of(14, 0), null)));
         leQuatorze.setDates(Set.of(LocalDate.of(2026, 7, 14)));
         stand.setHoraires(List.of(leQuatorze));
@@ -126,10 +130,10 @@ class HoraireStandResolverTest {
     void aSpecificiteEgaleLOuvertureLEmporte() {
         Stand stand = stand("AMBIGU");
         stand.setHoraires(List.of(
-                HoraireStand.everyDay(ModeHoraire.FERMETURE,
-                        new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(16, 0))),
-                HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                        new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)))));
+                HoraireStand.everyDay(
+                        ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(16, 0))),
+                HoraireStand.everyDay(
+                        ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)))));
 
         HoraireStandResolver.apply(stand, DOUZE_JOURS);
 
@@ -140,8 +144,8 @@ class HoraireStandResolverTest {
     @Test
     void resoudreDeuxFoisDonneLeMemeResultat() {
         Stand stand = stand("IDEMPOTENT");
-        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(14, 0), null))));
+        stand.setHoraires(
+                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
 
         HoraireStandResolver.apply(stand, DOUZE_JOURS);
         int premierPassage = stand.getOuverturesEffectives().size();
@@ -160,8 +164,7 @@ class HoraireStandResolverTest {
         Creneau journee = new Creneau(1L, 1, MERCREDI, LocalTime.of(10, 0), LocalTime.of(20, 0));
         Creneau nuit = new Creneau(2L, 2, MERCREDI.plusDays(1), LocalTime.of(20, 0), LocalTime.of(2, 0));
 
-        assertThat(HoraireStandResolver.datesConcernees(List.of(journee)))
-                .containsExactly(MERCREDI);
+        assertThat(HoraireStandResolver.datesConcernees(List.of(journee))).containsExactly(MERCREDI);
         assertThat(HoraireStandResolver.datesConcernees(List.of(journee, nuit)))
                 .containsExactly(MERCREDI, MERCREDI.plusDays(1), MERCREDI.plusDays(2));
     }

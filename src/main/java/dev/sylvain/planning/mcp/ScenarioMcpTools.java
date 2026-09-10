@@ -1,18 +1,17 @@
 package dev.sylvain.planning.mcp;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.List;
 
 /**
  * MCP tools for the scenario lifecycle of {@code PlanningResource} /
@@ -54,36 +53,58 @@ public class ScenarioMcpTools {
     @Inject
     EditionService editionService;
 
-    @Tool(description = "Liste les scénarios livrés avec l'application, importables par leur nom.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Liste les scénarios livrés avec l'application, importables par leur nom.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     List<String> lister_scenarios() {
         return planningService.listScenarios();
     }
 
-    @Tool(description = "Importe un scénario livré dans les données de référence : remplace stands, créneaux, "
-            + "animateurs et postes existants. Applique aussi les paramètres légaux/découpage/solveur et le "
-            + "découpage automatique que le scénario épingle éventuellement. Opération destructive.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
-                    idempotentHint = true, openWorldHint = false))
-    ImportResult importer_scenario(@ToolArg(description = "Nom du scénario (voir lister_scenarios)") String nom,
+    @Tool(
+            description = "Importe un scénario livré dans les données de référence : remplace stands, créneaux, "
+                    + "animateurs et postes existants. Applique aussi les paramètres légaux/découpage/solveur et le "
+                    + "découpage automatique que le scénario épingle éventuellement. Opération destructive.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ImportResult importer_scenario(
+            @ToolArg(description = "Nom du scénario (voir lister_scenarios)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toImportResult(scenarioImportService.importBundled(nom));
     }
 
-    @Tool(description = "Importe un scénario fourni sous forme de contenu YAML (même format que l'export). "
-            + "Opération destructive : remplace les données de référence existantes.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
-                    idempotentHint = true, openWorldHint = false))
-    ImportResult importer_scenario_yaml(@ToolArg(description = "Contenu YAML du scénario") String yaml,
+    @Tool(
+            description = "Importe un scénario fourni sous forme de contenu YAML (même format que l'export). "
+                    + "Opération destructive : remplace les données de référence existantes.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ImportResult importer_scenario_yaml(
+            @ToolArg(description = "Contenu YAML du scénario") String yaml,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toImportResult(scenarioImportService.importYaml(yaml));
     }
 
-    @Tool(description = "Valide la structure d'un scénario YAML sans rien importer. Renvoie la liste des erreurs "
-            + "trouvées, vide si le fichier est valide.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Valide la structure d'un scénario YAML sans rien importer. Renvoie la liste des erreurs "
+                    + "trouvées, vide si le fichier est valide.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ValidationResult valider_scenario_yaml(@ToolArg(description = "Contenu YAML du scénario") String yaml) {
         if (yaml == null || yaml.isBlank()) {
             return new ValidationResult(false, List.of("Le fichier est vide."));
@@ -96,17 +117,24 @@ public class ScenarioMcpTools {
         }
     }
 
-    @Tool(description = "Vide entièrement UNE ÉDITION : stands, créneaux, animateurs, affectations et "
-            + "contraintes ad hoc de l'édition ciblée, les autres éditions n'y touchent pas. Opération "
-            + "destructive et irréversible, à ne lancer que sur demande explicite.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Vide entièrement UNE ÉDITION : stands, créneaux, animateurs, affectations et "
+                    + "contraintes ad hoc de l'édition ciblée, les autres éditions n'y touchent pas. Opération "
+                    + "destructive et irréversible, à ne lancer que sur demande explicite.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = true,
+                            openWorldHint = false))
     ResetResult reinitialiser_donnees(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         persistenceService.clearDatabase();
         Edition videe = editionService.editionCourante();
-        return new ResetResult(true, "Édition " + videe.getId() + " (" + videe.getNom() + ") vidée : stands, "
-                + "créneaux, animateurs, affectations et contraintes ad hoc.");
+        return new ResetResult(
+                true,
+                "Édition " + videe.getId() + " (" + videe.getNom() + ") vidée : stands, "
+                        + "créneaux, animateurs, affectations et contraintes ad hoc.");
     }
 
     private ImportResult toImportResult(ScenarioImportService.ScenarioImportOutcome outcome) {
@@ -115,7 +143,11 @@ public class ScenarioMcpTools {
             // `edition` argument, and may even have created the edition it
             // names: an import that says nothing about where it landed is
             // exactly the silence issue #181 closes.
-            return new ImportResult(true, outcome.decoupageAuto(), outcome.editionId(), outcome.editionNom(),
+            return new ImportResult(
+                    true,
+                    outcome.decoupageAuto(),
+                    outcome.editionId(),
+                    outcome.editionNom(),
                     Boolean.TRUE.equals(outcome.editionCreee()));
         }
         // The scenario named no edition, so the data landed wherever the call
@@ -131,13 +163,10 @@ public class ScenarioMcpTools {
      *                       otherwise the one of the call
      * @param editionCreee   the edition did not exist and has just been created by this import
      */
-    public record ImportResult(boolean importe, boolean decoupageAuto, String editionId, String editionNom,
-            boolean editionCreee) {
-    }
+    public record ImportResult(
+            boolean importe, boolean decoupageAuto, String editionId, String editionNom, boolean editionCreee) {}
 
-    public record ValidationResult(boolean valide, List<String> erreurs) {
-    }
+    public record ValidationResult(boolean valide, List<String> erreurs) {}
 
-    public record ResetResult(boolean reinitialise, String message) {
-    }
+    public record ResetResult(boolean reinitialise, String message) {}
 }

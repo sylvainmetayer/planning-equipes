@@ -3,13 +3,6 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
 import dev.sylvain.planning.mcp.PlanningMcpTools.SuggestionsView;
 import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
@@ -19,6 +12,11 @@ import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Repairing one seat without re-solving: find the candidates, apply one, and
@@ -34,8 +32,10 @@ class ReparationMcpToolsTest {
     private static final int MAX_POLLS = 160;
     private static final long POLL_INTERVAL_MS = 250;
 
-    private static final Set<String> ETATS_TERMINAUX = Stream.of(JobStatus.COMPLETED, JobStatus.FAILED,
-            JobStatus.CANCELLED, JobStatus.INTERROMPU).map(Enum::name).collect(Collectors.toSet());
+    private static final Set<String> ETATS_TERMINAUX = Stream.of(
+                    JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED, JobStatus.INTERROMPU)
+            .map(Enum::name)
+            .collect(Collectors.toSet());
 
     @Inject
     ScenarioMcpTools scenarioTools;
@@ -79,7 +79,9 @@ class ReparationMcpToolsTest {
 
         assertThat(reaffectation.animateurPrecedentId()).isEqualTo(poste.animateurId());
         assertThat(reaffectation.animateurId()).isNull();
-        assertThat(planningTools.lister_affectations(null, null, null, null, null, null).affectations())
+        assertThat(planningTools
+                        .lister_affectations(null, null, null, null, null, null)
+                        .affectations())
                 .filteredOn(vue -> vue.posteId().equals(poste.posteId()))
                 .singleElement()
                 .satisfies(vue -> assertThat(vue.animateurId()).isNull());
@@ -89,8 +91,8 @@ class ReparationMcpToolsTest {
     @Test
     void affecterUnPosteVerrouilleEstRefuse() throws InterruptedException {
         AffectationView poste = premierPostePourvu();
-        VerrouillageView verrou = verrouillageTools.verrouiller("ANIMATEUR", poste.animateurId(), null, null, null,
-                null, null);
+        VerrouillageView verrou =
+                verrouillageTools.verrouiller("ANIMATEUR", poste.animateurId(), null, null, null, null, null);
 
         assertThatThrownBy(() -> planningTools.affecter_poste(poste.posteId(), null, null))
                 .isInstanceOf(BusinessError.Invalid.class)

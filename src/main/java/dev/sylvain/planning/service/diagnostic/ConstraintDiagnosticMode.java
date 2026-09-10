@@ -60,7 +60,8 @@ public enum ConstraintDiagnosticMode {
                 .filter(mode -> mode.configValue.equalsIgnoreCase(value))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(CONFIG_PROPERTY + " = \"" + value
-                        + "\" is not one of " + Arrays.stream(values())
+                        + "\" is not one of "
+                        + Arrays.stream(values())
                                 .map(ConstraintDiagnosticMode::configValue)
                                 .collect(Collectors.joining(", "))));
     }

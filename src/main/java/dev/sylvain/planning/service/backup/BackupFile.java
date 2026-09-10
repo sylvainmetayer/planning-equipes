@@ -1,8 +1,7 @@
 package dev.sylvain.planning.service.backup;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import java.time.Instant;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * One dump sitting in the backup directory, as the Paramètres screen lists it.
@@ -13,5 +12,4 @@ import java.time.Instant;
  * @param createdAt last modification time of the file
  */
 @Schema(requiredProperties = {"sizeBytes"})
-public record BackupFile(String name, long sizeBytes, Instant createdAt) {
-}
+public record BackupFile(String name, long sizeBytes, Instant createdAt) {}

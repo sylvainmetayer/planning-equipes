@@ -43,7 +43,8 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-legaux")
     public Response updateParametresLegaux(ParametresLegaux parametres) {
-        return Response.ok(referenceDataService.updateParametresLegaux(parametres)).build();
+        return Response.ok(referenceDataService.updateParametresLegaux(parametres))
+                .build();
     }
 
     @GET
@@ -64,8 +65,7 @@ public class ParametresResource {
     }
 
     /** What the edition's créneaux are: {@code {"modeGrille": "AMPLITUDES"}} or {@code "VACATIONS"}. */
-    public record ModeGrilleRequest(String modeGrille) {
-    }
+    public record ModeGrilleRequest(String modeGrille) {}
 
     @PUT
     @Path("/parametres-decoupage/mode-grille")
@@ -83,7 +83,8 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-solveur")
     public Response updateParametresSolveur(ParametresSolveur parametres) {
-        return Response.ok(referenceDataService.updateParametresSolveur(parametres)).build();
+        return Response.ok(referenceDataService.updateParametresSolveur(parametres))
+                .build();
     }
 
     /**
@@ -101,6 +102,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-notifications")
     public Response updateParametresNotifications(ParametresNotifications parametres) {
-        return Response.ok(referenceDataService.updateParametresNotifications(parametres)).build();
+        return Response.ok(referenceDataService.updateParametresNotifications(parametres))
+                .build();
     }
 }

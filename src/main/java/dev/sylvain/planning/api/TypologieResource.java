@@ -1,7 +1,5 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import jakarta.inject.Inject;
@@ -15,6 +13,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * CRUD of the typologie reference data — the game categories stands and
@@ -51,5 +50,4 @@ public class TypologieResource {
         referenceDataService.deleteTypologie(id);
         return Response.noContent().build();
     }
-
 }

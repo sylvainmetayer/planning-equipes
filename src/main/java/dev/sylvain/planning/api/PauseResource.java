@@ -1,15 +1,14 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.analyse.PauseAnalyzer;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-
-import dev.sylvain.planning.service.analyse.PauseAnalyzer;
-import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * {@code GET /api/pauses}: where the legal breaks of the persisted plan fall
@@ -36,7 +35,7 @@ public class PauseResource {
 
     @GET
     public RapportPauses analyze() {
-        return pauseAnalyzer.analyze(persistenceService.loadPersistedPlanning(),
-                referenceDataService.getParametresLegaux());
+        return pauseAnalyzer.analyze(
+                persistenceService.loadPersistedPlanning(), referenceDataService.getParametresLegaux());
     }
 }

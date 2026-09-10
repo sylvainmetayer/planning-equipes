@@ -1,12 +1,11 @@
 package dev.sylvain.planning.service.edition;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.Edition;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.util.List;
 
 /**
  * CRUD over the editions themselves — create "Année 2026", duplicate "Année
@@ -14,7 +13,6 @@ import dev.sylvain.planning.service.EditionContext;
  */
 @ApplicationScoped
 public class EditionService {
-
 
     @Inject
     EditionRepository repository;
@@ -97,8 +95,7 @@ public class EditionService {
                     "Impossible de supprimer l'édition par défaut — désignez-en une autre d'abord");
         }
         if (id.equals(editionContext.editionIdCourant())) {
-            throw new BusinessError.Invalid(
-                    "Impossible de supprimer l'édition courante — basculez ailleurs d'abord");
+            throw new BusinessError.Invalid("Impossible de supprimer l'édition courante — basculez ailleurs d'abord");
         }
         repository.delete(id);
         editionContext.invaliderCache();
@@ -135,15 +132,14 @@ public class EditionService {
                                         + " points, tirets et tirets bas uniquement (64 caractères max).");
                     }
                     return new ImportTarget(
-                            create(new Edition(idCible, nom == null || nom.isBlank() ? idCible : nom.trim(),
-                                    false, null)),
+                            create(new Edition(
+                                    idCible, nom == null || nom.isBlank() ? idCible : nom.trim(), false, null)),
                             true);
                 });
     }
 
     /** Result of {@link #resolveForImport}: the edition to import into, and whether it was just created. */
-    public record ImportTarget(Edition edition, boolean creee) {
-    }
+    public record ImportTarget(Edition edition, boolean creee) {}
 
     private void requireExisting(String id) {
         if (!repository.exists(id)) {

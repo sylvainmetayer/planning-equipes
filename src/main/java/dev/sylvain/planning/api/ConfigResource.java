@@ -1,17 +1,13 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigObservabilite;
-import java.util.Optional;
-
 import dev.sylvain.planning.config.DevMode;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Runtime configuration the frontend needs before it can call anything else:
@@ -58,9 +54,5 @@ public class ConfigResource {
      */
     @Schema(requiredProperties = {"devMode"})
     public record ConfigView(
-            String sentryDsn,
-            String sentryEnvironment,
-            String cloudflareWebAnalyticsToken,
-            boolean devMode) {
-    }
+            String sentryDsn, String sentryEnvironment, String cloudflareWebAnalyticsToken, boolean devMode) {}
 }

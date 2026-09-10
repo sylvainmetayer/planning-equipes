@@ -1,9 +1,5 @@
 package dev.sylvain.planning.mcp;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
@@ -12,6 +8,9 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 
 /**
  * MCP tools mirroring {@code VerrouillageResource}: what the operator has
@@ -33,12 +32,17 @@ public class VerrouillageMcpTools {
     @Inject
     ReferenceDataService referenceDataService;
 
-    @Tool(description = "Liste les verrouillages du planning : ce que le solveur n'a plus le droit de déplacer. Un "
-            + "verrouillage conserve ce que la dernière résolution a produit ; pour imposer ou interdire une "
-            + "affectation avant le calcul, c'est une contrainte ad hoc (creer_contrainte_ad_hoc). "
-            + "Les animateurs y sont désignés par id seul.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Liste les verrouillages du planning : ce que le solveur n'a plus le droit de déplacer. Un "
+                    + "verrouillage conserve ce que la dernière résolution a produit ; pour imposer ou interdire une "
+                    + "affectation avant le calcul, c'est une contrainte ad hoc (creer_contrainte_ad_hoc). "
+                    + "Les animateurs y sont désignés par id seul.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     List<VerrouillageView> lister_verrouillages(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listVerrouillages().stream()
@@ -54,17 +58,24 @@ public class VerrouillageMcpTools {
      * mapping, and {@code VerrouillageService} refuses a mismatch with a
      * readable message.
      */
-    @Tool(description = "Fige une partie du planning pour les prochaines résolutions. Le type détermine la cible "
-            + "attendue : ANIMATEUR (animateurId), STAND (standId), CRENEAU (creneauId), JOUR (jour), "
-            + "ANIMATEUR_CRENEAU (animateurId + creneauId). Verrouiller une cible déjà verrouillée ne crée pas "
-            + "de doublon.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "Fige une partie du planning pour les prochaines résolutions. Le type détermine la cible "
+                    + "attendue : ANIMATEUR (animateurId), STAND (standId), CRENEAU (creneauId), JOUR (jour), "
+                    + "ANIMATEUR_CRENEAU (animateurId + creneauId). Verrouiller une cible déjà verrouillée ne crée pas "
+                    + "de doublon.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     VerrouillageView verrouiller(
             @ToolArg(description = "ANIMATEUR | STAND | CRENEAU | JOUR | ANIMATEUR_CRENEAU") String type,
-            @ToolArg(description = "Id de l'animateur (types ANIMATEUR et ANIMATEUR_CRENEAU)", required = false) String animateurId,
+            @ToolArg(description = "Id de l'animateur (types ANIMATEUR et ANIMATEUR_CRENEAU)", required = false)
+                    String animateurId,
             @ToolArg(description = "Id du stand (type STAND)", required = false) String standId,
-            @ToolArg(description = "Id du créneau (types CRENEAU et ANIMATEUR_CRENEAU)", required = false) Long creneauId,
+            @ToolArg(description = "Id du créneau (types CRENEAU et ANIMATEUR_CRENEAU)", required = false)
+                    Long creneauId,
             @ToolArg(description = "Jour à figer (AAAA-MM-JJ, type JOUR)", required = false) String jour,
             @ToolArg(description = "Raison du verrouillage, libre", required = false) String raison,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -85,13 +96,20 @@ public class VerrouillageMcpTools {
      * from ids it may have invented, and "supprimé" on a lock that never
      * existed would let it believe the planning is free to move.
      */
-    @Tool(description = "Retire un verrouillage : la partie du planning qu'il figeait redevient déplaçable.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
-                    idempotentHint = false, openWorldHint = false))
-    SuppressionResult deverrouiller(@ToolArg(description = "Id du verrouillage") String id,
+    @Tool(
+            description = "Retire un verrouillage : la partie du planning qu'il figeait redevient déplaçable.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = false,
+                            openWorldHint = false))
+    SuppressionResult deverrouiller(
+            @ToolArg(description = "Id du verrouillage") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         boolean connu = referenceDataService.listVerrouillages().stream()
-                .anyMatch(verrouillage -> verrouillage.getId() != null && verrouillage.getId().equals(id));
+                .anyMatch(verrouillage ->
+                        verrouillage.getId() != null && verrouillage.getId().equals(id));
         if (!connu) {
             throw new BusinessError.NotFound("Verrouillage introuvable : " + id);
         }
@@ -100,14 +118,25 @@ public class VerrouillageMcpTools {
     }
 
     static VerrouillageView toView(VerrouillagePlanning verrouillage) {
-        return new VerrouillageView(verrouillage.getId(),
+        return new VerrouillageView(
+                verrouillage.getId(),
                 verrouillage.getType() == null ? null : verrouillage.getType().name(),
-                verrouillage.getAnimateurId(), verrouillage.getStandId(), verrouillage.getCreneauId(),
-                verrouillage.getJour(), verrouillage.getRaison(), verrouillage.getCreeLe());
+                verrouillage.getAnimateurId(),
+                verrouillage.getStandId(),
+                verrouillage.getCreneauId(),
+                verrouillage.getJour(),
+                verrouillage.getRaison(),
+                verrouillage.getCreeLe());
     }
 
     /** A lock, with only the target column its type actually uses filled in. */
-    public record VerrouillageView(String id, String type, String animateurId, String standId, Long creneauId,
-            LocalDate jour, String raison, Instant creeLe) {
-    }
+    public record VerrouillageView(
+            String id,
+            String type,
+            String animateurId,
+            String standId,
+            Long creneauId,
+            LocalDate jour,
+            String raison,
+            Instant creeLe) {}
 }

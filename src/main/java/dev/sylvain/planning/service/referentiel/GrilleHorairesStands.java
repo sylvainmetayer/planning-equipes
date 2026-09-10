@@ -1,7 +1,10 @@
 package dev.sylvain.planning.service.referentiel;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.BusinessError;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -11,12 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.BusinessError;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * The opening schedule of a stand written the way the organiser's own
@@ -42,8 +40,7 @@ import dev.sylvain.planning.service.BusinessError;
  */
 public final class GrilleHorairesStands {
 
-    private GrilleHorairesStands() {
-    }
+    private GrilleHorairesStands() {}
 
     /** One stand of a submitted grid: its cells, one per créneau of the edition. */
     /**
@@ -53,19 +50,22 @@ public final class GrilleHorairesStands {
      *                  gesture that overwrites the most — it is checked like a
      *                  fiche, and {@code null} means "no precondition" here too.
      */
-    public record SaisieStand(String standId, Instant modifieLe, List<SaisieCellule> cellules) {
-    }
+    public record SaisieStand(String standId, Instant modifieLe, List<SaisieCellule> cellules) {}
 
     /** The headcount typed under one créneau; {@code null} or absent means closed. */
     @Schema(requiredProperties = {"creneauId"})
-    public record SaisieCellule(long creneauId, Integer effectif) {
-    }
+    public record SaisieCellule(long creneauId, Integer effectif) {}
 
     /** What the conversion did to one stand — the compaction's own line, plus the bounds it derived. */
     @Schema(requiredProperties = {"compacte", "effectifMax", "effectifMin", "exceptions", "regles"})
-    public record LigneGrille(String standId, int regles, int exceptions, int effectifMin, int effectifMax,
-            boolean compacte, String raison) {
-    }
+    public record LigneGrille(
+            String standId,
+            int regles,
+            int exceptions,
+            int effectifMin,
+            int effectifMax,
+            boolean compacte,
+            String raison) {}
 
     /**
      * Rewrites {@code stand}'s schedule from {@code cellules}, in place.
@@ -76,15 +76,17 @@ public final class GrilleHorairesStands {
         Map<Long, Integer> parCreneau = new HashMap<>();
         Map<Long, Creneau> connus = new HashMap<>();
         for (Creneau creneau : creneaux) {
-            if (creneau.getId() != null && creneau.getDate() != null && creneau.getHeureDebut() != null
+            if (creneau.getId() != null
+                    && creneau.getDate() != null
+                    && creneau.getHeureDebut() != null
                     && creneau.getHeureFin() != null) {
                 connus.put(creneau.getId(), creneau);
             }
         }
         for (SaisieCellule cellule : cellules) {
             if (!connus.containsKey(cellule.creneauId())) {
-                throw new BusinessError.Invalid("Créneau inconnu dans la grille du stand " + stand.getId() + " : "
-                        + cellule.creneauId());
+                throw new BusinessError.Invalid(
+                        "Créneau inconnu dans la grille du stand " + stand.getId() + " : " + cellule.creneauId());
             }
             if (cellule.effectif() != null && cellule.effectif() < 1) {
                 throw new BusinessError.Invalid("Effectif " + cellule.effectif() + " sur le stand " + stand.getId()
@@ -95,14 +97,17 @@ public final class GrilleHorairesStands {
             }
         }
 
-        int effectifMin = parCreneau.values().stream().mapToInt(Integer::intValue).min().orElse(stand.getEffectifMin());
-        int effectifMax = parCreneau.values().stream().mapToInt(Integer::intValue).max().orElse(stand.getEffectifMax());
+        int effectifMin =
+                parCreneau.values().stream().mapToInt(Integer::intValue).min().orElse(stand.getEffectifMin());
+        int effectifMax =
+                parCreneau.values().stream().mapToInt(Integer::intValue).max().orElse(stand.getEffectifMax());
         stand.setEffectifMin(effectifMin);
         stand.setEffectifMax(effectifMax);
 
         Map<LocalDate, List<Creneau>> parJour = new TreeMap<>();
-        connus.values().forEach(creneau -> parJour.computeIfAbsent(creneau.getDate(), key -> new ArrayList<>())
-                .add(creneau));
+        connus.values()
+                .forEach(creneau -> parJour.computeIfAbsent(creneau.getDate(), key -> new ArrayList<>())
+                        .add(creneau));
         List<OuvertureStand> ouvertures = new ArrayList<>();
         List<IndisponibiliteStand> fermetures = new ArrayList<>();
         parJour.forEach((date, duJour) -> {
@@ -124,15 +129,20 @@ public final class GrilleHorairesStands {
         stand.setFenetresEffectives(null, null);
 
         HoraireCompaction.LigneCompactage compactage = HoraireCompaction.compact(List.of(stand), creneaux, true)
-                .stands().get(0);
-        return new LigneGrille(stand.getId(), stand.getHoraires().size(),
-                stand.getOuvertures().size() + stand.getIndisponibilites().size(), effectifMin, effectifMax,
-                compactage.compacte(), compactage.raison());
+                .stands()
+                .get(0);
+        return new LigneGrille(
+                stand.getId(),
+                stand.getHoraires().size(),
+                stand.getOuvertures().size() + stand.getIndisponibilites().size(),
+                effectifMin,
+                effectifMax,
+                compactage.compacte(),
+                compactage.raison());
     }
 
     /** A run of créneaux open at one headcount; {@code fin} is {@code null} for "until closing". */
-    private record Fenetre(LocalTime debut, LocalTime fin, int effectif) {
-    }
+    private record Fenetre(LocalTime debut, LocalTime fin, int effectif) {}
 
     /**
      * The open windows of one day: consecutive créneaux at the same headcount
@@ -144,7 +154,8 @@ public final class GrilleHorairesStands {
     private static List<Fenetre> dayWindows(List<Creneau> duJour, Map<Long, Integer> parCreneau) {
         List<Creneau> tries = new ArrayList<>(duJour);
         tries.sort(Comparator.comparing(Creneau::getHeureDebut).thenComparing(Creneau::getId));
-        int finJournee = tries.stream().mapToInt(GrilleHorairesStands::finMinutes).max().orElse(0);
+        int finJournee =
+                tries.stream().mapToInt(GrilleHorairesStands::finMinutes).max().orElse(0);
         List<int[]> courses = new ArrayList<>();
         for (Creneau creneau : tries) {
             Integer effectif = parCreneau.get(creneau.getId());
@@ -163,8 +174,8 @@ public final class GrilleHorairesStands {
         List<Fenetre> fenetres = new ArrayList<>();
         for (int[] course : courses) {
             LocalTime debut = LocalTime.ofSecondOfDay(course[0] * 60L);
-            LocalTime fin = course[1] >= finJournee || course[1] >= 24 * 60 ? null
-                    : LocalTime.ofSecondOfDay(course[1] * 60L);
+            LocalTime fin =
+                    course[1] >= finJournee || course[1] >= 24 * 60 ? null : LocalTime.ofSecondOfDay(course[1] * 60L);
             fenetres.add(new Fenetre(debut, fin, course[2]));
         }
         return fenetres;

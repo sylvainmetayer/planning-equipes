@@ -1,12 +1,10 @@
 package dev.sylvain.planning.service.espace;
 
-import java.util.Optional;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriBuilder;
+import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Every link this application prints outside itself — in a notification mail,
@@ -61,9 +59,8 @@ public class ApplicationLinks {
      */
     @Inject
     public ApplicationLinks(@ConfigProperty(name = "planning.public-url") Optional<String> baseUrl) {
-        this.base = baseUrl == null
-                ? Optional.empty()
-                : baseUrl.map(String::trim).filter(url -> !url.isBlank());
+        this.base =
+                baseUrl == null ? Optional.empty() : baseUrl.map(String::trim).filter(url -> !url.isBlank());
     }
 
     /** Whether links can be printed at all — false when no base URL is configured. */
@@ -72,15 +69,18 @@ public class ApplicationLinks {
     }
 
     public Optional<String> echangesScreen() {
-        return base.map(url -> UriBuilder.fromUri(url).path(ECRAN_ECHANGES).build().toString());
+        return base.map(
+                url -> UriBuilder.fromUri(url).path(ECRAN_ECHANGES).build().toString());
     }
 
     public Optional<String> problemesScreen() {
-        return base.map(url -> UriBuilder.fromUri(url).path(ECRAN_PROBLEMES).build().toString());
+        return base.map(
+                url -> UriBuilder.fromUri(url).path(ECRAN_PROBLEMES).build().toString());
     }
 
     public Optional<String> disponibilitesScreen() {
-        return base.map(url -> UriBuilder.fromUri(url).path(ECRAN_DISPONIBILITES).build().toString());
+        return base.map(url ->
+                UriBuilder.fromUri(url).path(ECRAN_DISPONIBILITES).build().toString());
     }
 
     /**
@@ -93,8 +93,10 @@ public class ApplicationLinks {
             return Optional.empty();
         }
         return base.map(url -> UriBuilder.fromUri(url)
-                .path(ESPACE_ANIMATEUR).path("{jeton}")
-                .build(token).toString());
+                .path(ESPACE_ANIMATEUR)
+                .path("{jeton}")
+                .build(token)
+                .toString());
     }
 
     /**
@@ -107,7 +109,10 @@ public class ApplicationLinks {
             return Optional.empty();
         }
         return base.map(url -> UriBuilder.fromUri(url)
-                .path(ESPACE_ANIMATEUR).path("{jeton}").path(ESPACE_DISPONIBILITES)
-                .build(token).toString());
+                .path(ESPACE_ANIMATEUR)
+                .path("{jeton}")
+                .path(ESPACE_DISPONIBILITES)
+                .build(token)
+                .toString());
     }
 }

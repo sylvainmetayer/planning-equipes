@@ -1,15 +1,11 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import dev.sylvain.planning.service.EditionRequestScope;
 import dev.sylvain.planning.service.TokenOwner;
-import dev.sylvain.planning.service.journal.CurrentAction;
-import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.Acteur;
+import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -19,6 +15,9 @@ import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.Provider;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Writes one line of the history for every REST action that has one
@@ -66,13 +65,18 @@ public class JournalActionFilter implements ContainerResponseFilter {
             return;
         }
         // A route whose method serves several actions says which one it was.
-        Optional<ActionJournalisee> action = CatalogueActions.forCode(currentAction.action()).or(() -> catalogue);
+        Optional<ActionJournalisee> action =
+                CatalogueActions.forCode(currentAction.action()).or(() -> catalogue);
         TokenOwner proprietaire = requestScope.getTokenOwner();
         String animateurId = proprietaire == null ? null : proprietaire.animateurId();
         Acteur acteur = acteur(animateurId);
-        journal.record(action.get(), acteur,
+        journal.record(
+                action.get(),
+                acteur,
                 acteur == Acteur.ANIMATEUR ? animateurId : journal.nomAdmin(),
-                entiteId(requete, reponse, animateurId), currentAction.champs(), reponse.getStatus());
+                entiteId(requete, reponse, animateurId),
+                currentAction.champs(),
+                reponse.getStatus());
     }
 
     /**
@@ -106,11 +110,13 @@ public class JournalActionFilter implements ContainerResponseFilter {
 
     /** {@code SimpleClassName#methodName}, or {@code null} when no resource matched (a 404). */
     private String key() {
-        if (resourceInfo == null || resourceInfo.getResourceClass() == null
+        if (resourceInfo == null
+                || resourceInfo.getResourceClass() == null
                 || resourceInfo.getResourceMethod() == null) {
             return null;
         }
-        return resourceInfo.getResourceClass().getSimpleName() + "#" + resourceInfo.getResourceMethod().getName();
+        return resourceInfo.getResourceClass().getSimpleName() + "#"
+                + resourceInfo.getResourceMethod().getName();
     }
 
     /**

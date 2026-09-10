@@ -1,5 +1,11 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.WriteStamp;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,15 +14,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Emplacement;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.WriteStamp;
 
 /** The emplacement rows stands are pinned to — a flat referential, and the only one with coordinates. */
 @ApplicationScoped
@@ -34,13 +32,16 @@ public class EmplacementRepository {
     public List<Emplacement> listEmplacements() {
         List<Emplacement> emplacements = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(
+                        connection,
                         "SELECT id, nom, latitude, longitude, modifie_le FROM emplacement WHERE edition_id = ? ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                Emplacement emplacement = new Emplacement(rs.getString("id"), rs.getString("nom"),
-                        (Double) rs.getObject("latitude"), (Double) rs.getObject("longitude"));
-                emplacement.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
+                Emplacement emplacement = new Emplacement(
+                        rs.getString("id"), rs.getString("nom"), (Double) rs.getObject("latitude"), (Double)
+                                rs.getObject("longitude"));
+                emplacement.setModifieLe(
+                        rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                 emplacements.add(emplacement);
             }
         } catch (SQLException e) {
@@ -91,8 +92,7 @@ public class EmplacementRepository {
 
     void upsertEmplacementTx(Connection connection, Emplacement emplacement, boolean failIfPresent)
             throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                """
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO emplacement (edition_id, id, nom, latitude, longitude)
                 VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)

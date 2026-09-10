@@ -1,13 +1,11 @@
 package dev.sylvain.planning.solver.constraints;
 
-import java.time.LocalTime;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
+import java.time.LocalTime;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 class AffectationConstraintsTest extends ConstraintTestBase {
 
@@ -49,15 +47,15 @@ class AffectationConstraintsTest extends ConstraintTestBase {
     void doubleAffectationSurMemeCreneauEstPenalisee() {
         Animateur a1 = referentMajeur("A1");
         verify("pasDeChevauchementHoraire")
-                .given(poste(standStrat, creneauMatin, a1),
-                        poste(standWithStrategy("STAND-2"), creneauMatin, a1))
+                .given(poste(standStrat, creneauMatin, a1), poste(standWithStrategy("STAND-2"), creneauMatin, a1))
                 .penalizesBy(1);
     }
 
     @Test
     void deuxAnimateursSurMemeCreneauNeSontPasPenalises() {
         verify("pasDeChevauchementHoraire")
-                .given(poste(standStrat, creneauMatin, referentMajeur("A1")),
+                .given(
+                        poste(standStrat, creneauMatin, referentMajeur("A1")),
                         poste(standStrat, creneauMatin, referentMajeur("A2")))
                 .penalizesBy(0);
     }
@@ -66,8 +64,7 @@ class AffectationConstraintsTest extends ConstraintTestBase {
     void memeAnimateurSurCreneauxDifferentsNEstPasPenalise() {
         Animateur a1 = referentMajeur("A1");
         verify("pasDeChevauchementHoraire")
-                .given(poste(standStrat, creneauMatin, a1),
-                        poste(standStrat, creneauAprem, a1))
+                .given(poste(standStrat, creneauMatin, a1), poste(standStrat, creneauAprem, a1))
                 .penalizesBy(0);
     }
 
@@ -81,8 +78,7 @@ class AffectationConstraintsTest extends ConstraintTestBase {
         Creneau matinee = creneau("J1-10-14", 1, D1, LocalTime.of(10, 0), LocalTime.of(14, 0));
         Creneau midi = creneau("J1-12-16", 1, D1, LocalTime.of(12, 0), LocalTime.of(16, 0));
         verify("pasDeChevauchementHoraire")
-                .given(poste(standStrat, matinee, a1),
-                        poste(standWithStrategy("STAND-2"), midi, a1))
+                .given(poste(standStrat, matinee, a1), poste(standWithStrategy("STAND-2"), midi, a1))
                 .penalizesBy(1);
     }
 
@@ -94,8 +90,7 @@ class AffectationConstraintsTest extends ConstraintTestBase {
         Creneau avant = creneau("J1-10-14", 1, D1, LocalTime.of(10, 0), LocalTime.of(14, 0));
         Creneau apres = creneau("J1-14-18", 1, D1, LocalTime.of(14, 0), LocalTime.of(18, 0));
         verify("pasDeChevauchementHoraire")
-                .given(poste(standStrat, avant, a1),
-                        poste(standWithStrategy("STAND-2"), apres, a1))
+                .given(poste(standStrat, avant, a1), poste(standWithStrategy("STAND-2"), apres, a1))
                 .penalizesBy(0);
     }
 
@@ -107,8 +102,7 @@ class AffectationConstraintsTest extends ConstraintTestBase {
         Creneau nuitJ1 = creneau("J1-NUIT-CH", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
         Creneau tardJ1 = creneau("J1-TARD-CH", 1, D1, LocalTime.of(23, 0), LocalTime.of(1, 0));
         verify("pasDeChevauchementHoraire")
-                .given(poste(standStrat, nuitJ1, a1),
-                        poste(standWithStrategy("STAND-2"), tardJ1, a1))
+                .given(poste(standStrat, nuitJ1, a1), poste(standWithStrategy("STAND-2"), tardJ1, a1))
                 .penalizesBy(1);
     }
 
@@ -129,7 +123,8 @@ class AffectationConstraintsTest extends ConstraintTestBase {
         // 9h-14h créneau closed 11h-13h for STAND-STRAT: two open segments, 9-11 and 13-14.
         Creneau creneau = creneau("J1-9-14", 1, D1, LocalTime.of(9, 0), LocalTime.of(14, 0));
         verify("pasDeChevauchementHoraire")
-                .given(posteWithEffectiveFenetre(standStrat, creneau, a1, LocalTime.of(9, 0), LocalTime.of(11, 0)),
+                .given(
+                        posteWithEffectiveFenetre(standStrat, creneau, a1, LocalTime.of(9, 0), LocalTime.of(11, 0)),
                         posteWithEffectiveFenetre(standStrat, creneau, a1, LocalTime.of(13, 0), LocalTime.of(14, 0)))
                 .penalizesBy(0);
     }

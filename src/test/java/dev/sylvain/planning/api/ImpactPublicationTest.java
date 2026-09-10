@@ -3,12 +3,11 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-import java.util.Map;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,8 @@ class ImpactPublicationTest {
     void createEdition() {
         given().contentType("application/json")
                 .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Édition de l'impact\"}")
-                .when().post("/api/editions");
+                .when()
+                .post("/api/editions");
         edition().when().post("/api/planning/reset").then().statusCode(200);
     }
 
@@ -48,10 +48,16 @@ class ImpactPublicationTest {
 
     @Test
     void theImpactIsAbsentBeforeAnyPublicationAndCountedAfter() throws InterruptedException {
-        edition().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        edition()
+                .when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
 
         JsonPath premier = solve();
-        assertThat((Object) premier.get("result.impactPublication")).as("nothing published yet").isNull();
+        assertThat((Object) premier.get("result.impactPublication"))
+                .as("nothing published yet")
+                .isNull();
 
         edition().when().post("/api/planning/publication").then().statusCode(200);
 
@@ -60,8 +66,15 @@ class ImpactPublicationTest {
         assertThat(second.getInt("result.impactPublication.personnes")).isZero();
         assertThat(second.getString("result.impactPublication.publieLe")).isNotNull();
         // The stability rule is now in the analysis, at zero: nothing to keep in place moved.
-        assertThat(edition().when().get("/api/constraints").then().statusCode(200)
-                .extract().jsonPath().<String>getList("contraintes.name")).contains("stabiliteDuPlanPublie");
+        assertThat(edition()
+                        .when()
+                        .get("/api/constraints")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .jsonPath()
+                        .<String>getList("contraintes.name"))
+                .contains("stabiliteDuPlanPublie");
     }
 
     /**
@@ -71,25 +84,52 @@ class ImpactPublicationTest {
      */
     @Test
     void theRuleSeesThePublishedSeatsOfTheEdition() throws InterruptedException {
-        edition().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        edition()
+                .when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
         solve();
         edition().when().post("/api/planning/publication").then().statusCode(200);
 
-        List<Map<String, Object>> postes = edition().when().get("/api/planning/persisted").then().statusCode(200)
-                .extract().jsonPath().getList("postes.findAll { it.animateur != null }");
+        List<Map<String, Object>> postes = edition()
+                .when()
+                .get("/api/planning/persisted")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("postes.findAll { it.animateur != null }");
         Map<String, Object> premier = postes.get(0);
         Map<String, Object> second = postes.stream()
                 .filter(poste -> !standId(poste).equals(standId(premier)))
-                .findFirst().orElseThrow();
-        String sql = String.join("\n",
-                deleteSeat(premier), deleteSeat(second),
-                insertSeat(premier, animateurId(second)), insertSeat(second, animateurId(premier)));
-        edition().contentType("text/plain").body(sql).when().post("/api/database/import").then().statusCode(200);
+                .findFirst()
+                .orElseThrow();
+        String sql = String.join(
+                "\n",
+                deleteSeat(premier),
+                deleteSeat(second),
+                insertSeat(premier, animateurId(second)),
+                insertSeat(second, animateurId(premier)));
+        edition()
+                .contentType("text/plain")
+                .body(sql)
+                .when()
+                .post("/api/database/import")
+                .then()
+                .statusCode(200);
 
         edition().when().post("/api/constraints/diagnostic").then().statusCode(200);
-        assertThat(edition().when().get("/api/constraints").then().statusCode(200)
-                .extract().jsonPath().getInt("contraintes.find { it.name == 'stabiliteDuPlanPublie' }.matchCount"))
-                .as("two seats no longer held by the people the publication named").isEqualTo(2);
+        assertThat(edition()
+                        .when()
+                        .get("/api/constraints")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .jsonPath()
+                        .getInt("contraintes.find { it.name == 'stabiliteDuPlanPublie' }.matchCount"))
+                .as("two seats no longer held by the people the publication named")
+                .isEqualTo(2);
     }
 
     @SuppressWarnings("unchecked")
@@ -127,22 +167,36 @@ class ImpactPublicationTest {
      */
     @Test
     void twoPublishedSeatsOfOneLineHeldByTheSamePersonDoNotBreakTheNextSolve() throws InterruptedException {
-        edition().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        edition()
+                .when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
         solve();
 
-        List<Map<String, Object>> postes = edition().when().get("/api/planning/persisted").then().statusCode(200)
-                .extract().jsonPath().getList("postes.findAll { it.animateur != null }");
+        List<Map<String, Object>> postes = edition()
+                .when()
+                .get("/api/planning/persisted")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("postes.findAll { it.animateur != null }");
         Map<String, Object> premier = postes.get(0);
         String standId = standId(premier);
         Object creneauId = creneauId(premier);
         String tenant = animateurId(premier);
         // A second seat on the very same line, same person, other half of the
         // slot: what a segmented créneau produces.
-        edition().contentType("text/plain")
+        edition()
+                .contentType("text/plain")
                 .body("INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id, "
                         + "heure_debut_effective, heure_fin_effective) VALUES ('" + EDITION + "', 'DOUBLON', '"
                         + standId + "', " + creneauId + ", '" + tenant + "', '14:00', '16:00');")
-                .when().post("/api/database/import").then().statusCode(200);
+                .when()
+                .post("/api/database/import")
+                .then()
+                .statusCode(200);
 
         edition().when().post("/api/planning/publication").then().statusCode(200);
 
@@ -153,10 +207,21 @@ class ImpactPublicationTest {
 
     private JsonPath solve() throws InterruptedException {
         attendreSolveurLibre();
-        String jobId = edition().when().post("/api/solve/async/reference-data?seconds=2")
-                .then().statusCode(202).extract().path("id");
+        String jobId = edition()
+                .when()
+                .post("/api/solve/async/reference-data?seconds=2")
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
         for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = edition().when().get("/api/jobs/" + jobId).then().statusCode(200).extract().jsonPath();
+            JsonPath job = edition()
+                    .when()
+                    .get("/api/jobs/" + jobId)
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .jsonPath();
             if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
                 assertThat(job.getString("status")).isEqualTo("COMPLETED");
                 return job;

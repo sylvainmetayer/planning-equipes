@@ -17,5 +17,4 @@ public record AnimateurDto(
         @Email String email,
         @NotNull Map<String, NiveauCompetence> competences,
         List<LocalDate> joursIndisponibles,
-        List<String> souhaits) {
-}
+        List<String> souhaits) {}

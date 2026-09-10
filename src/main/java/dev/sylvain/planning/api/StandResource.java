@@ -1,14 +1,12 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.HoraireCompaction;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferenceUsage;
 import dev.sylvain.planning.service.referentiel.StandGrilleImportReport;
 import dev.sylvain.planning.service.referentiel.StandGrilleImportRequest;
 import dev.sylvain.planning.service.referentiel.StandGrilleImportService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.ReferenceUsage;
 import dev.sylvain.planning.service.referentiel.WrittenStand;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -23,6 +21,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * CRUD of the stands, plus the compaction of their opening hours.
@@ -94,7 +93,6 @@ public class StandResource {
             @QueryParam("appliquer") @DefaultValue("false") boolean apply) {
         return referenceDataService.compactHoraires(apply);
     }
-
 
     /* ----------------------------- Matrix import ----------------------------- */
 

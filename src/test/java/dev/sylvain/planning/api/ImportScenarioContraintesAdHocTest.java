@@ -3,10 +3,9 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
 import java.util.Map;
-
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -132,8 +131,10 @@ class ImportScenarioContraintesAdHocTest {
     void createTheLandingEdition() {
         given().contentType("application/json")
                 .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import contraintes ad hoc\"}")
-                .when().post("/api/editions")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200);
     }
 
     @AfterEach
@@ -154,7 +155,8 @@ class ImportScenarioContraintesAdHocTest {
         importer(CONTRADICTOIRE, 400);
 
         // Refused before the first write: the landing edition holds nothing.
-        assertThat(contraintesAdHoc()).extracting(contrainte -> contrainte.get("id"))
+        assertThat(contraintesAdHoc())
+                .extracting(contrainte -> contrainte.get("id"))
                 .doesNotContain("INDISPO-1", "FORCE-1");
     }
 
@@ -168,8 +170,15 @@ class ImportScenarioContraintesAdHocTest {
 
         importer(VERS_AUTRE_EDITION, 200);
 
-        assertThat(given().header(HEADER, EDITION_CIBLE).when().get("/api/contraintes-ad-hoc")
-                .then().statusCode(200).extract().jsonPath().getList("id")).isEmpty();
+        assertThat(given().header(HEADER, EDITION_CIBLE)
+                        .when()
+                        .get("/api/contraintes-ad-hoc")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .jsonPath()
+                        .getList("id"))
+                .isEmpty();
         // …and the edition that owns them keeps them.
         assertThat(contraintesAdHoc()).hasSize(2);
     }
@@ -178,7 +187,8 @@ class ImportScenarioContraintesAdHocTest {
     void aConsistentScenarioGoesThrough() {
         importer(COHERENT, 200);
 
-        assertThat(contraintesAdHoc()).extracting(contrainte -> contrainte.get("id"))
+        assertThat(contraintesAdHoc())
+                .extracting(contrainte -> contrainte.get("id"))
                 .containsExactlyInAnyOrder("INDISPO-1", "FORCE-1");
     }
 
@@ -186,14 +196,20 @@ class ImportScenarioContraintesAdHocTest {
         return given().header(HEADER, EDITION)
                 .contentType("text/plain")
                 .body(yaml)
-                .when().post("/api/reference-data/import-scenario-fichier")
-                .then().statusCode(statut);
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
+                .then()
+                .statusCode(statut);
     }
 
     private static List<Map<String, Object>> contraintesAdHoc() {
         return given().header(HEADER, EDITION)
-                .when().get("/api/contraintes-ad-hoc")
-                .then().statusCode(200)
-                .extract().jsonPath().getList("$");
+                .when()
+                .get("/api/contraintes-ad-hoc")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("$");
     }
 }

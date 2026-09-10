@@ -1,21 +1,18 @@
 package dev.sylvain.planning.service.export;
 
+import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.text.Normalizer;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-
-import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.analyse.PauseAnalyzer;
-import dev.sylvain.planning.service.ProductName;
 
 /**
  * The planning of one animateur as an iCalendar calendar, so they can add it
@@ -37,8 +34,9 @@ public class PlanningIcs {
     private static final String FUSEAU = "Europe/Paris";
     /** Fallback slug when the product name holds no letter or digit at all. */
     private static final String DEFAULT_SLUG = "planning";
-    private static final DateTimeFormatter HORODATAGE_UTC = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
-            .withZone(ZoneOffset.UTC);
+
+    private static final DateTimeFormatter HORODATAGE_UTC =
+            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter DATE_HEURE_LOCALE = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
     private static final DateTimeFormatter DATE_SEULE = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -80,17 +78,20 @@ public class PlanningIcs {
     }
 
     /** Same feed, with the breaks already read — what a roster-wide export passes in. */
-    public String exportAnimateurIcs(PlanningEvenement planning, String animateurId,
-            List<PauseAnalyzer.PauseAnimateurView> pauses) {
+    public String exportAnimateurIcs(
+            PlanningEvenement planning, String animateurId, List<PauseAnalyzer.PauseAnimateurView> pauses) {
         List<PosteAffectation> postes = planning.getPostes().stream()
-                .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
+                .filter(poste -> poste.getAnimateur() != null
+                        && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(PlanningExportService.byCreneauThenStand())
                 .toList();
 
         StringBuilder builder = new StringBuilder();
         builder.append("BEGIN:VCALENDAR\r\n")
                 .append("VERSION:2.0\r\n")
-                .append("PRODID:").append(prodId).append("\r\n")
+                .append("PRODID:")
+                .append(prodId)
+                .append("\r\n")
                 .append("X-WR-CALDESC:Généré le ")
                 .append(PdfTheme.GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault())))
                 .append("\r\n")
@@ -99,27 +100,48 @@ public class PlanningIcs {
         for (PosteAffectation poste : postes) {
             String uid = poste.getId() + "@" + uidDomain;
             builder.append("BEGIN:VEVENT\r\n")
-                    .append("UID:").append(uid).append("\r\n")
-                    .append("DTSTAMP:").append(HORODATAGE_UTC.format(Instant.now())).append("\r\n")
-                    .append("DTSTART;TZID=").append(FUSEAU).append(":")
-                    .append(poste.getCreneau().getDate().atTime(poste.heureDebutEffectif())
+                    .append("UID:")
+                    .append(uid)
+                    .append("\r\n")
+                    .append("DTSTAMP:")
+                    .append(HORODATAGE_UTC.format(Instant.now()))
+                    .append("\r\n")
+                    .append("DTSTART;TZID=")
+                    .append(FUSEAU)
+                    .append(":")
+                    .append(poste.getCreneau()
+                            .getDate()
+                            .atTime(poste.heureDebutEffectif())
                             .format(DATE_HEURE_LOCALE))
                     .append("\r\n")
-                    .append("DTEND;TZID=").append(FUSEAU).append(":")
-                    .append(poste.getCreneau().getDate().atTime(poste.heureFinEffectif())
+                    .append("DTEND;TZID=")
+                    .append(FUSEAU)
+                    .append(":")
+                    .append(poste.getCreneau()
+                            .getDate()
+                            .atTime(poste.heureFinEffectif())
                             .format(DATE_HEURE_LOCALE))
                     .append("\r\n")
-                    .append("SUMMARY:").append(escapeIcs(poste.getStand().getNom())).append("\r\n")
+                    .append("SUMMARY:")
+                    .append(escapeIcs(poste.getStand().getNom()))
+                    .append("\r\n")
                     .append("DESCRIPTION:")
-                    .append(escapeIcs("Stand " + poste.getStand().getNom() + " - slot " + poste.getCreneau().getId()
-                            + descriptionPauses(pauses, poste)))
+                    .append(escapeIcs("Stand " + poste.getStand().getNom() + " - slot "
+                            + poste.getCreneau().getId() + descriptionPauses(pauses, poste)))
                     .append("\r\n");
             Emplacement emplacement = poste.getStand().getEmplacement();
-            if (emplacement != null && emplacement.getNom() != null && !emplacement.getNom().isBlank()) {
-                builder.append("LOCATION:").append(escapeIcs(emplacement.getNom())).append("\r\n");
+            if (emplacement != null
+                    && emplacement.getNom() != null
+                    && !emplacement.getNom().isBlank()) {
+                builder.append("LOCATION:")
+                        .append(escapeIcs(emplacement.getNom()))
+                        .append("\r\n");
             }
             if (emplacement != null && emplacement.getLatitude() != null && emplacement.getLongitude() != null) {
-                builder.append("GEO:").append(emplacement.getLatitude()).append(";").append(emplacement.getLongitude())
+                builder.append("GEO:")
+                        .append(emplacement.getLatitude())
+                        .append(";")
+                        .append(emplacement.getLongitude())
                         .append("\r\n");
             }
             builder.append("END:VEVENT\r\n");
@@ -131,11 +153,21 @@ public class PlanningIcs {
         // planned one.
         for (PlanningExportService.JourRepos jourRepos : PlanningExportService.daysOff(planning, animateurId)) {
             builder.append("BEGIN:VEVENT\r\n")
-                    .append("UID:repos-").append(jourRepos.date()).append("-").append(animateurId)
-                    .append("@").append(uidDomain).append("\r\n")
-                    .append("DTSTAMP:").append(HORODATAGE_UTC.format(Instant.now())).append("\r\n")
-                    .append("DTSTART;VALUE=DATE:").append(DATE_SEULE.format(jourRepos.date())).append("\r\n")
-                    .append("DTEND;VALUE=DATE:").append(DATE_SEULE.format(jourRepos.date().plusDays(1)))
+                    .append("UID:repos-")
+                    .append(jourRepos.date())
+                    .append("-")
+                    .append(animateurId)
+                    .append("@")
+                    .append(uidDomain)
+                    .append("\r\n")
+                    .append("DTSTAMP:")
+                    .append(HORODATAGE_UTC.format(Instant.now()))
+                    .append("\r\n")
+                    .append("DTSTART;VALUE=DATE:")
+                    .append(DATE_SEULE.format(jourRepos.date()))
+                    .append("\r\n")
+                    .append("DTEND;VALUE=DATE:")
+                    .append(DATE_SEULE.format(jourRepos.date().plusDays(1)))
                     .append("\r\n")
                     .append("SUMMARY:Repos\r\n")
                     .append("TRANSP:TRANSPARENT\r\n")
@@ -161,11 +193,15 @@ public class PlanningIcs {
         StringBuilder texte = new StringBuilder();
         for (PauseAnalyzer.PauseAnimateurView pause : pauses) {
             if (pause.fallsInside(poste)) {
-                texte.append(" - Pause de ").append(pause.debut()).append(" à ").append(pause.fin())
-                        .append(" (").append(pause.dureeMinutes()).append(" min)");
+                texte.append(" - Pause de ")
+                        .append(pause.debut())
+                        .append(" à ")
+                        .append(pause.fin())
+                        .append(" (")
+                        .append(pause.dureeMinutes())
+                        .append(" min)");
             }
         }
         return texte.toString();
     }
-
 }

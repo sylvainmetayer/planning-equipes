@@ -1,11 +1,10 @@
 package dev.sylvain.planning.service.journal;
 
+import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
-import jakarta.enterprise.context.RequestScoped;
 
 /**
  * What the request learned about the action being carried out, handed to

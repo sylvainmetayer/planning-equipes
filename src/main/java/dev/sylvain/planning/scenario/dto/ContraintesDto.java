@@ -23,7 +23,4 @@ import java.util.Map;
  *                    edition. What the file does not name keeps the
  *                    deployment default from {@code application.properties}
  */
-public record ContraintesDto(
-        List<String> desactivees,
-        Map<String, @Min(1) @Max(100) Integer> poids) {
-}
+public record ContraintesDto(List<String> desactivees, Map<String, @Min(1) @Max(100) Integer> poids) {}

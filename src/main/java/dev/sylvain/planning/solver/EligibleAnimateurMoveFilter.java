@@ -1,9 +1,5 @@
 package dev.sylvain.planning.solver;
 
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-
 import ai.timefold.solver.core.impl.heuristic.selector.common.decorator.SelectionFilter;
 import ai.timefold.solver.core.impl.heuristic.selector.move.generic.SelectorBasedChangeMove;
 import ai.timefold.solver.core.impl.heuristic.selector.move.generic.SelectorBasedSwapMove;
@@ -14,6 +10,9 @@ import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The {@code animateurRange} value range spans every animateur (~150), because
@@ -28,8 +27,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
  */
 public final class EligibleAnimateurMoveFilter {
 
-    private EligibleAnimateurMoveFilter() {
-    }
+    private EligibleAnimateurMoveFilter() {}
 
     /**
      * One reason a (poste, animateur) pair is refused before the score ever
@@ -103,9 +101,7 @@ public final class EligibleAnimateurMoveFilter {
             return mask;
         }
         boolean moinsDe16Ans = animateur.isUnder16On(creneau.getDate());
-        LocalTime debutNuit = moinsDe16Ans
-                ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS
-                : Creneau.DEBUT_NUIT_16_A_18_ANS;
+        LocalTime debutNuit = moinsDe16Ans ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS : Creneau.DEBUT_NUIT_16_A_18_ANS;
         int dailyCap = PlafondsLegauxMineurs.dureeQuotidienneMaxMinutes(moinsDe16Ans);
         if (poste.getStand().isReserveMajeurs()) {
             mask |= Motif.STAND_RESERVE_AUX_MAJEURS.bit();
@@ -188,18 +184,23 @@ public final class EligibleAnimateurMoveFilter {
         return motifsMask(poste, animateur, pauseSurPoste) == 0;
     }
 
-    public static final class ChangeMoveFilter implements SelectionFilter<PlanningEvenement, SelectorBasedChangeMove<PlanningEvenement>> {
+    public static final class ChangeMoveFilter
+            implements SelectionFilter<PlanningEvenement, SelectorBasedChangeMove<PlanningEvenement>> {
         @Override
-        public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, SelectorBasedChangeMove<PlanningEvenement> move) {
+        public boolean accept(
+                ScoreDirector<PlanningEvenement> scoreDirector, SelectorBasedChangeMove<PlanningEvenement> move) {
             PosteAffectation poste = (PosteAffectation) move.getEntity();
             Animateur animateur = (Animateur) move.getToPlanningValue();
-            return isEligible(poste, animateur, scoreDirector.getWorkingSolution().pauseSurPosteActive());
+            return isEligible(
+                    poste, animateur, scoreDirector.getWorkingSolution().pauseSurPosteActive());
         }
     }
 
-    public static final class SwapMoveFilter implements SelectionFilter<PlanningEvenement, SelectorBasedSwapMove<PlanningEvenement>> {
+    public static final class SwapMoveFilter
+            implements SelectionFilter<PlanningEvenement, SelectorBasedSwapMove<PlanningEvenement>> {
         @Override
-        public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, SelectorBasedSwapMove<PlanningEvenement> move) {
+        public boolean accept(
+                ScoreDirector<PlanningEvenement> scoreDirector, SelectorBasedSwapMove<PlanningEvenement> move) {
             PosteAffectation left = (PosteAffectation) move.getLeftEntity();
             PosteAffectation right = (PosteAffectation) move.getRightEntity();
             boolean pauseSurPoste = scoreDirector.getWorkingSolution().pauseSurPosteActive();

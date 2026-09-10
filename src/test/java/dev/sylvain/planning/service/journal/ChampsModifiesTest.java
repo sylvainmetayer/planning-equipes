@@ -2,13 +2,12 @@ package dev.sylvain.planning.service.journal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /** What an edit changed, compared field by field. Pure: no container, no database. */
@@ -52,8 +51,10 @@ class ChampsModifiesTest {
     /** A creation has no before-image: its own action already says what happened. */
     @Test
     void aCreationNamesNoFieldAtAll() {
-        assertThat(ChampsModifies.surAnimateur(null, animateur("A1", "Alice", "Martin"))).isEmpty();
-        assertThat(ChampsModifies.surStand(null, new Stand("S1", "Stand", Set.of(), 1, 2, false))).isEmpty();
+        assertThat(ChampsModifies.surAnimateur(null, animateur("A1", "Alice", "Martin")))
+                .isEmpty();
+        assertThat(ChampsModifies.surStand(null, new Stand("S1", "Stand", Set.of(), 1, 2, false)))
+                .isEmpty();
     }
 
     @Test
@@ -81,8 +82,7 @@ class ChampsModifiesTest {
 
         assertThat(ChampsModifies.surAnimateur(avant, apres))
                 .containsExactly("prenom", "nom", "dateNaissance")
-                .allSatisfy(champ -> assertThat(champ)
-                        .doesNotContain("Alice", "Bérénice", "Martin", "Durand", "2010"));
+                .allSatisfy(champ -> assertThat(champ).doesNotContain("Alice", "Bérénice", "Martin", "Durand", "2010"));
     }
 
     private static Animateur animateur(String id, String prenom, String nom) {

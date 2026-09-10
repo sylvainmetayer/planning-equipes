@@ -2,6 +2,9 @@ package dev.sylvain.planning.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -17,12 +20,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
-
-import com.fasterxml.jackson.databind.BeanDescription;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * The JSON keys this application puts on the wire, frozen.
@@ -59,28 +57,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 class JsonContractTest {
 
-    private static final Path SOURCES_API =
-            Path.of("src/main/java/dev/sylvain/planning/api");
+    private static final Path SOURCES_API = Path.of("src/main/java/dev/sylvain/planning/api");
 
     private static final Path CONTRACT = Path.of("src/test/resources/json-contract.txt");
 
     /** Only this application's own types are walked into; the rest are leaves. */
     private static final String OWN_PACKAGE = "dev.sylvain.planning";
 
-    private static final List<String> HTTP_METHODS =
-            List.of("jakarta.ws.rs.GET", "jakarta.ws.rs.POST", "jakarta.ws.rs.PUT",
-                    "jakarta.ws.rs.DELETE", "jakarta.ws.rs.PATCH");
+    private static final List<String> HTTP_METHODS = List.of(
+            "jakarta.ws.rs.GET",
+            "jakarta.ws.rs.POST",
+            "jakarta.ws.rs.PUT",
+            "jakarta.ws.rs.DELETE",
+            "jakarta.ws.rs.PATCH");
 
     /**
      * Parameters carrying an annotation from this list are not the body: they
      * come from the URL, the headers or the container, and never appear as a
      * JSON key.
      */
-    private static final List<String> NOT_A_BODY =
-            List.of("jakarta.ws.rs.PathParam", "jakarta.ws.rs.QueryParam",
-                    "jakarta.ws.rs.HeaderParam", "jakarta.ws.rs.CookieParam",
-                    "jakarta.ws.rs.FormParam", "jakarta.ws.rs.MatrixParam",
-                    "jakarta.ws.rs.core.Context", "jakarta.ws.rs.BeanParam");
+    private static final List<String> NOT_A_BODY = List.of(
+            "jakarta.ws.rs.PathParam", "jakarta.ws.rs.QueryParam",
+            "jakarta.ws.rs.HeaderParam", "jakarta.ws.rs.CookieParam",
+            "jakarta.ws.rs.FormParam", "jakarta.ws.rs.MatrixParam",
+            "jakarta.ws.rs.core.Context", "jakarta.ws.rs.BeanParam");
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -88,13 +88,13 @@ class JsonContractTest {
     private static List<Class<?>> apiClasses() throws IOException {
         List<Class<?>> classes = new ArrayList<>();
         try (Stream<Path> files = Files.list(SOURCES_API)) {
-            for (Path file : files.filter(f -> f.toString().endsWith(".java")).sorted().toList()) {
+            for (Path file :
+                    files.filter(f -> f.toString().endsWith(".java")).sorted().toList()) {
                 String simpleName = file.getFileName().toString().replace(".java", "");
                 try {
                     // Loaded without initialising: this test only reads shapes.
                     Class<?> type = Class.forName(
-                            "dev.sylvain.planning.api." + simpleName,
-                            false, JsonContractTest.class.getClassLoader());
+                            "dev.sylvain.planning.api." + simpleName, false, JsonContractTest.class.getClassLoader());
                     classes.add(type);
                     classes.addAll(List.of(type.getDeclaredClasses()));
                 } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
@@ -107,7 +107,8 @@ class JsonContractTest {
 
     private static boolean hasAnnotation(Method method, List<String> names) {
         return Stream.of(method.getAnnotations())
-                .anyMatch(annotation -> names.contains(annotation.annotationType().getName()));
+                .anyMatch(
+                        annotation -> names.contains(annotation.annotationType().getName()));
     }
 
     /** The types a resource method reads from, or writes to, the wire. */
@@ -119,7 +120,8 @@ class JsonContractTest {
             roots.add(MAPPER.getTypeFactory().constructType(method.getGenericReturnType()));
             for (var parameter : method.getParameters()) {
                 boolean fromUrl = Stream.of(parameter.getAnnotations())
-                        .anyMatch(annotation -> NOT_A_BODY.contains(annotation.annotationType().getName()));
+                        .anyMatch(annotation ->
+                                NOT_A_BODY.contains(annotation.annotationType().getName()));
                 if (!fromUrl) {
                     roots.add(MAPPER.getTypeFactory().constructType(parameter.getParameterizedType()));
                 }
@@ -214,14 +216,11 @@ class JsonContractTest {
     void theWalkReachesTheTypesTheApiReallyExposes() throws IOException {
         SortedMap<String, SortedSet<String>> contract = exposedKeys();
 
-        assertThat(contract)
-                .as("types reachable from the REST layer")
-                .hasSizeGreaterThan(40);
+        assertThat(contract).as("types reachable from the REST layer").hasSizeGreaterThan(40);
         assertThat(contract.keySet())
                 .as("the walk must reach a domain type returned bare, a nested response record, "
                         + "and a type only ever reached through another one's property")
-                .contains("domain.Animateur", "api.AnimateurResource$AnimateurToken",
-                        "domain.FenetreHoraire");
+                .contains("domain.Animateur", "api.AnimateurResource$AnimateurToken", "domain.FenetreHoraire");
         assertThat(contract.get("domain.Animateur"))
                 .as("the animateur carries the espace access token on the wire")
                 .isNotEmpty();

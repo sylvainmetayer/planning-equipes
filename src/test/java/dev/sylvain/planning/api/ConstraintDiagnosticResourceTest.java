@@ -6,15 +6,13 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.path.json.JsonPath;
 import java.util.List;
 import java.util.Set;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.path.json.JsonPath;
 
 /**
  * Refreshing the Contraintes screen is a diagnostic of the persisted plan, not
@@ -39,8 +37,10 @@ class ConstraintDiagnosticResourceTest {
     void createTargetEdition() {
         given().contentType("application/json")
                 .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Diagnostic du plan\"}")
-                .when().post("/api/editions")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200);
     }
 
     @AfterEach
@@ -54,13 +54,15 @@ class ConstraintDiagnosticResourceTest {
         solve();
 
         JsonPath diagnostic = given().header(HEADER, EDITION)
-                .when().post("/api/constraints/diagnostic")
+                .when()
+                .post("/api/constraints/diagnostic")
                 .then()
                 .statusCode(200)
                 .body("analysedAt", notNullValue())
                 .body("scoreGlobal", notNullValue())
                 .body("postesNonPourvus", notNullValue())
-                .extract().jsonPath();
+                .extract()
+                .jsonPath();
 
         // The catalogue ids must match the solver constraint ids, otherwise the
         // screen would silently show rules without any result.
@@ -70,9 +72,12 @@ class ConstraintDiagnosticResourceTest {
 
         // Same plan, same analysis: nothing was solved, so nothing moved.
         JsonPath again = given().header(HEADER, EDITION)
-                .when().post("/api/constraints/diagnostic")
-                .then().statusCode(200)
-                .extract().jsonPath();
+                .when()
+                .post("/api/constraints/diagnostic")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         assertThat(again.getString("scoreGlobal")).isEqualTo(diagnostic.getString("scoreGlobal"));
     }
 
@@ -84,7 +89,8 @@ class ConstraintDiagnosticResourceTest {
     @Test
     void diagnosticWithoutAPersistedPlanReturnsTheEmptyView() {
         given().header(HEADER, EDITION)
-                .when().post("/api/constraints/diagnostic")
+                .when()
+                .post("/api/constraints/diagnostic")
                 .then()
                 .statusCode(200)
                 .body("analysedAt", nullValue())
@@ -94,20 +100,28 @@ class ConstraintDiagnosticResourceTest {
 
     private void importScenario() {
         given().header(HEADER, EDITION)
-                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
-                .then().statusCode(200);
+                .when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
     }
 
     private void solve() throws InterruptedException {
         awaitIdleSolver();
         String jobId = given().header(HEADER, EDITION)
-                .when().post("/api/solve/async/reference-data?seconds=1")
-                .then().statusCode(202)
-                .extract().path("id");
+                .when()
+                .post("/api/solve/async/reference-data?seconds=1")
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
         for (int poll = 0; poll < MAX_POLLS; poll++) {
-            String status = given().when().get("/api/jobs/" + jobId)
-                    .then().statusCode(200)
-                    .extract().path("status");
+            String status = given().when()
+                    .get("/api/jobs/" + jobId)
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .path("status");
             if ("COMPLETED".equals(status)) {
                 return;
             }

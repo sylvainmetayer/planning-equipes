@@ -1,12 +1,10 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportReport;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportRequest;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportService;
-import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
 import dev.sylvain.planning.service.referentiel.WrittenAnimateur;
@@ -22,6 +20,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * CRUD of the animateurs, plus the rotation of their espace access token, the
@@ -110,7 +109,8 @@ public class AnimateurResource {
     @POST
     @Path("/{id}/token")
     public Response regenerateAnimateurToken(@PathParam("id") String id) {
-        return Response.ok(new AnimateurToken(referenceDataService.regenerateAnimateurToken(id))).build();
+        return Response.ok(new AnimateurToken(referenceDataService.regenerateAnimateurToken(id)))
+                .build();
     }
 
     /**
@@ -169,7 +169,5 @@ public class AnimateurResource {
      * this body at all — it reloads the fiche after rotating — so the only
      * reader to keep in mind is a direct API caller.</p>
      */
-    public record AnimateurToken(String token) {
-    }
-
+    public record AnimateurToken(String token) {}
 }

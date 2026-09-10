@@ -2,27 +2,25 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * Confirms a {@code planning.constraint-weights.<name>} property reaches the
@@ -38,12 +36,19 @@ class PlanningServiceConstraintWeightOverridesTest {
     void overriddenConstraintWeightChangesTheScore() {
         ReferenceData referenceDataService = new EmptyReferenceData();
 
-        Config config = ConfigProviderResolver.instance().getBuilder()
-                .withSources(mapConfigSource(Map.of(
-                        "planning.constraint-weights.standComplexeAvecReferent", "5")))
+        Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(mapConfigSource(Map.of("planning.constraint-weights.standComplexeAvecReferent", "5")))
                 .build();
-        PlanningService planningService = new PlanningService(2L, 1L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
-                new FeasibilityAnalyzer(), null, null, config);
+        PlanningService planningService = new PlanningService(
+                2L,
+                1L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                referenceDataService,
+                new FeasibilityAnalyzer(),
+                null,
+                null,
+                config);
 
         Stand stand = new Stand("S1", "S1", Set.of("STRATEGIE"), 1, 1, false);
         Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 7, 8), LocalTime.of(9, 0), LocalTime.of(13, 0));
@@ -82,13 +87,19 @@ class PlanningServiceConstraintWeightOverridesTest {
             }
         };
 
-        Config config = ConfigProviderResolver.instance().getBuilder()
-                .withSources(mapConfigSource(Map.of(
-                        "planning.constraint-weights.standComplexeAvecReferent", "5")))
+        Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(mapConfigSource(Map.of("planning.constraint-weights.standComplexeAvecReferent", "5")))
                 .build();
-        PlanningService planningService = new PlanningService(2L, 1L,
-                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
-                new FeasibilityAnalyzer(), null, null, config);
+        PlanningService planningService = new PlanningService(
+                2L,
+                1L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                referenceDataService,
+                new FeasibilityAnalyzer(),
+                null,
+                null,
+                config);
 
         assertThat(planningService.effectiveConstraintWeights())
                 .containsEntry("standComplexeAvecReferent", 7)
@@ -120,13 +131,19 @@ class PlanningServiceConstraintWeightOverridesTest {
             }
         };
 
-        Config config = ConfigProviderResolver.instance().getBuilder()
-                .withSources(mapConfigSource(Map.of(
-                        "planning.constraint-weights.standComplexeAvecReferent", "5")))
+        Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(mapConfigSource(Map.of("planning.constraint-weights.standComplexeAvecReferent", "5")))
                 .build();
-        PlanningService planningService = new PlanningService(2L, 1L,
-                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
-                new FeasibilityAnalyzer(), null, null, config);
+        PlanningService planningService = new PlanningService(
+                2L,
+                1L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                referenceDataService,
+                new FeasibilityAnalyzer(),
+                null,
+                null,
+                config);
 
         PlanningEvenement evenement = problemWithoutReferent();
         evenement.setPonderationsScenario(Map.of("standComplexeAvecReferent", 9));
@@ -153,13 +170,19 @@ class PlanningServiceConstraintWeightOverridesTest {
             }
         };
 
-        Config config = ConfigProviderResolver.instance().getBuilder()
-                .withSources(mapConfigSource(Map.of(
-                        "planning.constraint-weights.standComplexeAvecReferent", "5")))
+        Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(mapConfigSource(Map.of("planning.constraint-weights.standComplexeAvecReferent", "5")))
                 .build();
-        PlanningService planningService = new PlanningService(2L, 1L,
-                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
-                new FeasibilityAnalyzer(), null, null, config);
+        PlanningService planningService = new PlanningService(
+                2L,
+                1L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                referenceDataService,
+                new FeasibilityAnalyzer(),
+                null,
+                null,
+                config);
 
         PlanningEvenement evenement = problemWithoutReferent();
         evenement.setPonderationsScenario(Map.of("equilibrerCharge", 3));

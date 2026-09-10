@@ -1,7 +1,12 @@
 package dev.sylvain.planning.service.analyse;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
+import dev.sylvain.planning.service.edition.EditionRepository;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,19 +15,9 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.sql.DataSource;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.edition.EditionRepository;
-import dev.sylvain.planning.service.EditionContext;
 
 /**
  * KPI history (issue #89): one row per completed solve, kept forever so the
@@ -71,13 +66,7 @@ public class KpiHistoriqueService {
 
     /** One history row: where it came from (labels survive deletions) and the KPI. */
     @Schema(requiredProperties = {"id"})
-    public record KpiHistoriqueEntry(
-            long id,
-            String editionId,
-            String editionNom,
-            PlanningKpi kpi,
-            Instant creeLe) {
-    }
+    public record KpiHistoriqueEntry(long id, String editionId, String editionNom, PlanningKpi kpi, Instant creeLe) {}
 
     /**
      * Records the KPI of the plan just persisted by a solve. Never fails the

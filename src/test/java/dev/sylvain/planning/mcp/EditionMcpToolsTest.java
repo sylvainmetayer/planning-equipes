@@ -3,14 +3,6 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.lang.reflect.Method;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.CreneauMcpTools.CreneauView;
 import dev.sylvain.planning.mcp.EditionMcpTools.EditionView;
 import dev.sylvain.planning.service.edition.EditionService;
@@ -19,6 +11,12 @@ import io.quarkiverse.mcp.server.ToolManager.ToolArgument;
 import io.quarkiverse.mcp.server.ToolManager.ToolInfo;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.lang.reflect.Method;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Issue #181: the edition an MCP call works in must be nameable, and naming it
@@ -52,7 +50,8 @@ class EditionMcpToolsTest {
     @AfterEach
     void nettoyer() {
         for (String id : List.of(EDITION_COPIE, EDITION_TEST)) {
-            if (editionService.listEditions().stream().anyMatch(edition -> edition.getId().equals(id))) {
+            if (editionService.listEditions().stream()
+                    .anyMatch(edition -> edition.getId().equals(id))) {
                 editionService.delete(id);
             }
         }
@@ -62,7 +61,9 @@ class EditionMcpToolsTest {
     void ecrireDansLEditionDesigneeNeTouchePasLesAutres() {
         editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
 
-        CreneauView cree = creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", EDITION_TEST).creneau();
+        CreneauView cree = creneauTools
+                .creer_creneau("2027-01-04", "09:00", "12:00", EDITION_TEST)
+                .creneau();
 
         assertThat(creneauTools.lister_creneaux(EDITION_TEST))
                 .extracting(CreneauView::id)
@@ -107,7 +108,8 @@ class EditionMcpToolsTest {
         assertThat(test.courante()).isFalse();
         assertThat(test.defaut()).isFalse();
 
-        assertThat(editions).filteredOn(EditionView::courante)
+        assertThat(editions)
+                .filteredOn(EditionView::courante)
                 .as("exactement une édition est celle où travaillent les outils sans argument edition")
                 .hasSize(1)
                 .first()
@@ -139,8 +141,9 @@ class EditionMcpToolsTest {
         int verifies = 0;
         for (ToolInfo outil : toolManager) {
             Method methode = outil.method().orElse(null);
-            if (methode == null || Arrays.stream(methode.getParameters())
-                    .noneMatch(parametre -> parametre.isAnnotationPresent(EditionArg.class))) {
+            if (methode == null
+                    || Arrays.stream(methode.getParameters())
+                            .noneMatch(parametre -> parametre.isAnnotationPresent(EditionArg.class))) {
                 continue;
             }
             ToolArgument edition = outil.arguments().stream()
@@ -169,7 +172,6 @@ class EditionMcpToolsTest {
     void supprimerLEditionCouranteEstRefuse() {
         String courante = editionTools.edition_courante().id();
 
-        assertThatThrownBy(() -> editionTools.supprimer_edition(courante))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> editionTools.supprimer_edition(courante)).isInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -1,13 +1,12 @@
 package dev.sylvain.planning.solver.constraints;
 
-import java.time.LocalDateTime;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PosteAffectation;
+import java.time.LocalDateTime;
 
 /**
  * Core assignment hard constraints: every mandatory seat must be filled by an
@@ -24,9 +23,9 @@ public final class AffectationConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-                posteDoitEtrePourvu(constraintFactory),
-                animateurDisponible(constraintFactory),
-                pasDeChevauchementHoraire(constraintFactory)
+            posteDoitEtrePourvu(constraintFactory),
+            animateurDisponible(constraintFactory),
+            pasDeChevauchementHoraire(constraintFactory)
         };
     }
 
@@ -35,7 +34,7 @@ public final class AffectationConstraints {
         // constraint (which specifically targets unassigned postes) must use
         // forEachIncludingUnassigned() to actually see them.
         return ConstraintToggleSupport.actif(
-                constraintFactory.forEachIncludingUnassigned(PosteAffectation.class), "posteDoitEtrePourvu")
+                        constraintFactory.forEachIncludingUnassigned(PosteAffectation.class), "posteDoitEtrePourvu")
                 .filter(poste -> poste.getAnimateur() == null)
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("posteDoitEtrePourvu");
@@ -80,10 +79,11 @@ public final class AffectationConstraints {
      * interval-indexed, not a pairwise scan with a Java predicate.</p>
      */
     private Constraint pasDeChevauchementHoraire(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "pasDeChevauchementHoraire")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "pasDeChevauchementHoraire")
                 .filter(AffectationConstraints::creneauHoraireConnu)
-                .join(PosteAffectation.class,
+                .join(
+                        PosteAffectation.class,
                         Joiners.equal(PosteAffectation::getAnimateur),
                         Joiners.lessThan(PosteAffectation::getId),
                         Joiners.overlapping(AffectationConstraints::debutCreneau, AffectationConstraints::finCreneau))

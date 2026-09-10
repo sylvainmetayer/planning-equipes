@@ -5,6 +5,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.MockMailbox;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.time.LocalDate;
@@ -13,24 +25,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.sql.DataSource;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import io.quarkus.mailer.Mail;
-import io.quarkus.mailer.MockMailbox;
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
-import jakarta.inject.Inject;
 
 /**
  * Passwordless authentication of the espace animateur: the link is no longer
@@ -75,18 +72,25 @@ class EspaceAccesTest {
     @Test
     void sansSessionToutLEspaceRepond401() {
         String token = tokenOf("ACCES-A");
-        given().when().get("/api/espace-animateur/" + token)
-                .then().statusCode(401)
+        given().when()
+                .get("/api/espace-animateur/" + token)
+                .then()
+                .statusCode(401)
                 .body("message", containsString("code d'accès"));
-        given().when().get("/api/espace-animateur/" + token + "/demandes")
-                .then().statusCode(401);
-        given().when().get("/api/espace-animateur/" + token + "/planning.pdf")
-                .then().statusCode(401);
-        given().when().get("/api/espace-animateur/" + token + "/planning.ics")
-                .then().statusCode(401);
+        given().when()
+                .get("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(401);
+        given().when()
+                .get("/api/espace-animateur/" + token + "/planning.pdf")
+                .then()
+                .statusCode(401);
+        given().when()
+                .get("/api/espace-animateur/" + token + "/planning.ics")
+                .then()
+                .statusCode(401);
         // An unknown token stays a plain 404: nothing must help guessing one.
-        given().when().get("/api/espace-animateur/jeton-invente")
-                .then().statusCode(404);
+        given().when().get("/api/espace-animateur/jeton-invente").then().statusCode(404);
     }
 
     @Test
@@ -95,12 +99,16 @@ class EspaceAccesTest {
         String session = EspaceSessions.open(mailbox, token, EMAIL_ALICE);
 
         given().cookie("planning-espace", session)
-                .when().get("/api/espace-animateur/" + token)
-                .then().statusCode(200)
+                .when()
+                .get("/api/espace-animateur/" + token)
+                .then()
+                .statusCode(200)
                 .body("animateurId", equalTo("ACCES-A"));
         given().cookie("planning-espace", session)
-                .when().get("/api/espace-animateur/" + token + "/planning.pdf")
-                .then().statusCode(200);
+                .when()
+                .get("/api/espace-animateur/" + token + "/planning.pdf")
+                .then()
+                .statusCode(200);
     }
 
     /** The session is bound to ONE animateur: it does not open a colleague's espace. */
@@ -108,8 +116,10 @@ class EspaceAccesTest {
     void laSessionDUnAnimateurNOuvrePasLEspaceDUnAutre() {
         String session = EspaceSessions.open(mailbox, tokenOf("ACCES-A"), EMAIL_ALICE);
         given().cookie("planning-espace", session)
-                .when().get("/api/espace-animateur/" + tokenOf("ACCES-B"))
-                .then().statusCode(401);
+                .when()
+                .get("/api/espace-animateur/" + tokenOf("ACCES-B"))
+                .then()
+                .statusCode(401);
     }
 
     /**
@@ -125,13 +135,13 @@ class EspaceAccesTest {
         String setCookie = given().contentType(ContentType.JSON)
                 .header("X-Forwarded-Proto", "https")
                 .body("{\"code\":\"" + codeEnvoye(token) + "\"}")
-                .when().post("/api/espace-animateur/" + token + "/session")
-                .then().statusCode(204)
-                .extract().header("Set-Cookie");
-        assertThat(setCookie)
-                .contains("HttpOnly")
-                .contains("SameSite=Strict")
-                .contains("Secure");
+                .when()
+                .post("/api/espace-animateur/" + token + "/session")
+                .then()
+                .statusCode(204)
+                .extract()
+                .header("Set-Cookie");
+        assertThat(setCookie).contains("HttpOnly").contains("SameSite=Strict").contains("Secure");
     }
 
     /** On the local http stack the flag is absent — otherwise the browser would drop the cookie. */
@@ -140,17 +150,22 @@ class EspaceAccesTest {
         String token = tokenOf("ACCES-A");
         String setCookie = given().contentType(ContentType.JSON)
                 .body("{\"code\":\"" + codeEnvoye(token) + "\"}")
-                .when().post("/api/espace-animateur/" + token + "/session")
-                .then().statusCode(204)
-                .extract().header("Set-Cookie");
+                .when()
+                .post("/api/espace-animateur/" + token + "/session")
+                .then()
+                .statusCode(204)
+                .extract()
+                .header("Set-Cookie");
         assertThat(setCookie).doesNotContain("Secure");
     }
 
     @Test
     void sansAdresseEmailAucunCodeNEstPossible() {
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + tokenOf("ACCES-B") + "/code")
-                .then().statusCode(400)
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("ACCES-B") + "/code")
+                .then()
+                .statusCode(400)
                 .body("message", containsString("Aucune adresse e-mail"));
     }
 
@@ -158,19 +173,27 @@ class EspaceAccesTest {
     void unMauvaisCodeEpuiseSesTentativesPuisExigeUnNouveauCode() {
         String token = tokenOf("ACCES-A");
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + token + "/code")
-                .then().statusCode(200)
+                .when()
+                .post("/api/espace-animateur/" + token + "/code")
+                .then()
+                .statusCode(200)
                 .body("emailMasque", equalTo("a•••@example.org"));
 
         for (int tentative = 0; tentative < 5; tentative++) {
-            given().contentType(ContentType.JSON).body("{\"code\":\"000000\"}")
-                    .when().post("/api/espace-animateur/" + token + "/session")
-                    .then().statusCode(400)
+            given().contentType(ContentType.JSON)
+                    .body("{\"code\":\"000000\"}")
+                    .when()
+                    .post("/api/espace-animateur/" + token + "/session")
+                    .then()
+                    .statusCode(400)
                     .body("message", containsString("Code incorrect"));
         }
-        given().contentType(ContentType.JSON).body("{\"code\":\"000000\"}")
-                .when().post("/api/espace-animateur/" + token + "/session")
-                .then().statusCode(400)
+        given().contentType(ContentType.JSON)
+                .body("{\"code\":\"000000\"}")
+                .when()
+                .post("/api/espace-animateur/" + token + "/session")
+                .then()
+                .statusCode(400)
                 .body("message", containsString("nouveau code"));
     }
 
@@ -178,29 +201,37 @@ class EspaceAccesTest {
     void unCodeExpireEstRefuse() throws Exception {
         String token = tokenOf("ACCES-A");
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + token + "/code")
-                .then().statusCode(200);
+                .when()
+                .post("/api/espace-animateur/" + token + "/code")
+                .then()
+                .statusCode(200);
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(
-                        "UPDATE espace_acces SET expire_le = now() - interval '1 minute' "
+                PreparedStatement ps =
+                        connection.prepareStatement("UPDATE espace_acces SET expire_le = now() - interval '1 minute' "
                                 + "WHERE animateur_id = 'ACCES-A'")) {
             ps.executeUpdate();
         }
         // Whatever the code was, an expired one must be refused unread.
-        given().contentType(ContentType.JSON).body("{\"code\":\"123456\"}")
-                .when().post("/api/espace-animateur/" + token + "/session")
-                .then().statusCode(400)
+        given().contentType(ContentType.JSON)
+                .body("{\"code\":\"123456\"}")
+                .when()
+                .post("/api/espace-animateur/" + token + "/session")
+                .then()
+                .statusCode(400)
                 .body("message", containsString("nouveau code"));
     }
 
     /** Asks for a code and reads it back from the mock mailbox, as the animateur would. */
     private String codeEnvoye(String token) {
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + token + "/code")
-                .then().statusCode(200);
+                .when()
+                .post("/api/espace-animateur/" + token + "/code")
+                .then()
+                .statusCode(200);
         List<Mail> mails = mailbox.getMailsSentTo(EMAIL_ALICE);
         assertThat(mails).isNotEmpty();
-        Matcher matcher = Pattern.compile("\\b(\\d{6})\\b").matcher(mails.get(mails.size() - 1).getText());
+        Matcher matcher = Pattern.compile("\\b(\\d{6})\\b")
+                .matcher(mails.get(mails.size() - 1).getText());
         assertThat(matcher.find()).isTrue();
         return matcher.group(1);
     }

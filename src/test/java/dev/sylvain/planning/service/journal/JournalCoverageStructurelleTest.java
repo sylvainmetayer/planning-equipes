@@ -13,7 +13,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -38,6 +37,7 @@ class JournalCoverageStructurelleTest {
 
     /** A JAX-RS verb that changes something, and the method declaration under it. */
     private static final Pattern VERBE = Pattern.compile("@(POST|PUT|DELETE|PATCH)\\b");
+
     private static final Pattern DECLARATION =
             Pattern.compile("^\\s*(?:public\\s+|private\\s+|protected\\s+)?[\\w.<>,\\[\\]\\s]+?\\s+(\\w+)\\s*\\(");
 
@@ -84,7 +84,8 @@ class JournalCoverageStructurelleTest {
         assertThat(CatalogueActions.routes().keySet())
                 .as("routes du catalogue qui n'existent plus")
                 .allSatisfy(cle -> assertThat(routes.contains(cle) || lecturesJournalisees.contains(cle))
-                        .as("%s", cle).isTrue());
+                        .as("%s", cle)
+                        .isTrue());
 
         var outils = writingTools();
         assertThat(CatalogueActions.outils().keySet())
@@ -96,10 +97,12 @@ class JournalCoverageStructurelleTest {
     @Test
     void everyEntryPointPointsAtADescribedAction() {
         Map<String, ActionJournalisee> actions = CatalogueActions.actions();
-        assertThat(CatalogueActions.routes().values()).allSatisfy(code ->
-                assertThat(actions).as("action inconnue : %s", code).containsKey(code));
-        assertThat(CatalogueActions.outils().values()).allSatisfy(code ->
-                assertThat(actions).as("action inconnue : %s", code).containsKey(code));
+        assertThat(CatalogueActions.routes().values())
+                .allSatisfy(code ->
+                        assertThat(actions).as("action inconnue : %s", code).containsKey(code));
+        assertThat(CatalogueActions.outils().values())
+                .allSatisfy(code ->
+                        assertThat(actions).as("action inconnue : %s", code).containsKey(code));
         assertThat(actions.values()).allSatisfy(action -> {
             assertThat(action.libelle()).as("libellé de %s", action.code()).isNotBlank();
             // Written for an organiser: a sentence, not a constant.
@@ -120,7 +123,9 @@ class JournalCoverageStructurelleTest {
     void everyClassHoldingAJournalledToolCarriesTheBinding() throws IOException {
         List<String> sansBinding = new ArrayList<>();
         try (Stream<Path> fichiers = Files.list(OUTILS)) {
-            for (Path fichier : fichiers.filter(f -> f.toString().endsWith("McpTools.java")).sorted().toList()) {
+            for (Path fichier : fichiers.filter(f -> f.toString().endsWith("McpTools.java"))
+                    .sorted()
+                    .toList()) {
                 String source = Files.readString(fichier);
                 boolean journalise = CatalogueActions.outils().keySet().stream()
                         .anyMatch(outil -> source.contains(" " + outil + "("));
@@ -141,7 +146,8 @@ class JournalCoverageStructurelleTest {
      */
     @Test
     void everyActionOfTheInventoryIsReachable() throws IOException {
-        Set<String> atteignables = new java.util.HashSet<>(CatalogueActions.routes().values());
+        Set<String> atteignables =
+                new java.util.HashSet<>(CatalogueActions.routes().values());
         atteignables.addAll(CatalogueActions.outils().values());
         atteignables.addAll(codesQuotedBySources());
 
@@ -159,7 +165,8 @@ class JournalCoverageStructurelleTest {
         Pattern cite = Pattern.compile("(?:recordSystemAction|currentAction\\.action)\\(\\s*[^)]*?\"([A-Z_]+)\"");
         Set<String> codes = new TreeSet<>();
         try (Stream<Path> fichiers = Files.walk(Path.of("src/main/java/dev/sylvain/planning"))) {
-            for (Path fichier : fichiers.filter(f -> f.toString().endsWith(".java")).toList()) {
+            for (Path fichier :
+                    fichiers.filter(f -> f.toString().endsWith(".java")).toList()) {
                 Matcher matcher = cite.matcher(Files.readString(fichier));
                 while (matcher.find()) {
                     codes.add(matcher.group(1));
@@ -177,8 +184,10 @@ class JournalCoverageStructurelleTest {
     @Test
     void everyExclusionCarriesARealReason() {
         assertThat(CatalogueActions.actions()).isNotEmpty();
-        for (String cle : List.of("AffectationExplanationResource#explain",
-                "CreneauResource#previewRecurrence", "StandResource#analyseGrille")) {
+        for (String cle : List.of(
+                "AffectationExplanationResource#explain",
+                "CreneauResource#previewRecurrence",
+                "StandResource#analyseGrille")) {
             assertThat(CatalogueActions.untrackedReason(cle))
                     .as("motif de %s", cle)
                     .isPresent()
@@ -190,7 +199,9 @@ class JournalCoverageStructurelleTest {
     private static Map<String, String> writingRoutes() throws IOException {
         Map<String, String> routes = new java.util.LinkedHashMap<>();
         try (Stream<Path> fichiers = Files.list(RESOURCES)) {
-            for (Path fichier : fichiers.filter(f -> f.toString().endsWith("Resource.java")).sorted().toList()) {
+            for (Path fichier : fichiers.filter(f -> f.toString().endsWith("Resource.java"))
+                    .sorted()
+                    .toList()) {
                 String classe = fichier.getFileName().toString().replace(".java", "");
                 List<String> lignes = Files.readAllLines(fichier);
                 for (int i = 0; i < lignes.size(); i++) {
@@ -212,7 +223,9 @@ class JournalCoverageStructurelleTest {
     private static java.util.Set<String> writingTools() throws IOException {
         java.util.Set<String> outils = new TreeSet<>();
         try (Stream<Path> fichiers = Files.list(OUTILS)) {
-            for (Path fichier : fichiers.filter(f -> f.toString().endsWith(".java")).sorted().toList()) {
+            for (Path fichier : fichiers.filter(f -> f.toString().endsWith(".java"))
+                    .sorted()
+                    .toList()) {
                 List<String> lignes = Files.readAllLines(fichier);
                 for (int i = 0; i < lignes.size(); i++) {
                     if (!lignes.get(i).contains("@Tool(")) {
@@ -234,8 +247,11 @@ class JournalCoverageStructurelleTest {
     private static String methodAfter(List<String> lignes, int depuis) {
         for (int j = depuis + 1; j < Math.min(depuis + 25, lignes.size()); j++) {
             String ligne = lignes.get(j);
-            if (ligne.isBlank() || ligne.strip().startsWith("@") || ligne.strip().startsWith("//")
-                    || ligne.strip().startsWith("*") || ligne.strip().startsWith("/*")) {
+            if (ligne.isBlank()
+                    || ligne.strip().startsWith("@")
+                    || ligne.strip().startsWith("//")
+                    || ligne.strip().startsWith("*")
+                    || ligne.strip().startsWith("/*")) {
                 continue;
             }
             Matcher declaration = DECLARATION.matcher(ligne);

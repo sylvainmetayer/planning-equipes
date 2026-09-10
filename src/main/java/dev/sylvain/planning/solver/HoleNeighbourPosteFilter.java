@@ -1,17 +1,16 @@
 package dev.sylvain.planning.solver;
 
+import ai.timefold.solver.core.impl.heuristic.selector.common.decorator.SelectionFilter;
+import ai.timefold.solver.core.impl.score.director.ScoreDirector;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import ai.timefold.solver.core.impl.heuristic.selector.common.decorator.SelectionFilter;
-import ai.timefold.solver.core.impl.score.director.ScoreDirector;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
  * Seats worth ruining together with an unfilled one: the unfilled seats
@@ -46,6 +45,7 @@ public final class HoleNeighbourPosteFilter implements SelectionFilter<PlanningE
 
     /** Hole hours by day, and the solution they were read from. */
     private PlanningEvenement solutionMemoisee;
+
     private Map<LocalDate, List<long[]>> trousParJour = Map.of();
     private int appelsDepuisLeScan;
     private int intervalleDeScan = 1;
@@ -103,7 +103,9 @@ public final class HoleNeighbourPosteFilter implements SelectionFilter<PlanningE
     private static Map<LocalDate, List<long[]>> scanner(List<PosteAffectation> postes) {
         Map<LocalDate, List<long[]>> parJour = new HashMap<>();
         for (PosteAffectation poste : postes) {
-            if (poste.getAnimateur() != null || poste.getCreneau() == null || poste.getCreneau().getDate() == null) {
+            if (poste.getAnimateur() != null
+                    || poste.getCreneau() == null
+                    || poste.getCreneau().getDate() == null) {
                 continue;
             }
             parJour.computeIfAbsent(poste.getCreneau().getDate(), jour -> new ArrayList<>())

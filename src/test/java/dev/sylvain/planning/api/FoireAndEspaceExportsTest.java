@@ -6,29 +6,27 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Opening and closing the foire au planning, and the espace downloads
@@ -74,9 +72,8 @@ class FoireAndEspaceExportsTest {
         mailbox.clear();
         RestAssured.requestSpecification = null;
         String session = EspaceSessions.open(mailbox, tokenOf("FOIRE-A"), "foire-alice@example.org");
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-                .addCookie("planning-espace", session)
-                .build();
+        RestAssured.requestSpecification =
+                new RequestSpecBuilder().addCookie("planning-espace", session).build();
     }
 
     private void donnerEmail(String animateurId, String email) {
@@ -100,27 +97,30 @@ class FoireAndEspaceExportsTest {
         String token = tokenOf("FOIRE-A");
 
         // Open by default, and a demande goes through.
-        given().when().get("/api/echanges/configuration")
-                .then().statusCode(200).body("foireOuverte", equalTo(true));
+        given().when().get("/api/echanges/configuration").then().statusCode(200).body("foireOuverte", equalTo(true));
         String demandeId = given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"FOIRE-S1\",\"cibleId\":\"FOIRE-B\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
-                .then().statusCode(200)
-                .extract().path("[0].id");
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("[0].id");
 
         // Closing is immediate and enforced server-side.
         configure(false);
-        given().when().get("/api/echanges/configuration")
-                .then().statusCode(200).body("foireOuverte", equalTo(false));
+        given().when().get("/api/echanges/configuration").then().statusCode(200).body("foireOuverte", equalTo(false));
 
         given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"FOIRE-S1\",\"cibleId\":\"FOIRE-B\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("fermée"));
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("fermée"));
@@ -129,21 +129,24 @@ class FoireAndEspaceExportsTest {
         // only to build a demande, and the interface hides it once the foire is
         // closed. Left open, it would keep serving every colleague's schedule
         // the rest of the year for no functional reason.
-        given().when().get("/api/espace-animateur/" + token + "/collegues/FOIRE-B/postes")
+        given().when()
+                .get("/api/espace-animateur/" + token + "/collegues/FOIRE-B/postes")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("fermée"));
 
         // Same for « qui peut me remplacer ? » — searching partners for an
         // échange nobody may propose any more would only mislead.
-        given().when().get("/api/espace-animateur/" + token + "/suggestions-echange"
-                        + "?creneauId=" + CRENEAU_ID + "&standId=FOIRE-S1")
+        given().when()
+                .get("/api/espace-animateur/" + token + "/suggestions-echange" + "?creneauId=" + CRENEAU_ID
+                        + "&standId=FOIRE-S1")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("fermée"));
 
         // The espace stays consultable and says the foire is closed.
-        given().when().get("/api/espace-animateur/" + token)
+        given().when()
+                .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200)
                 .body("foireOuverte", equalTo(false))
@@ -151,14 +154,20 @@ class FoireAndEspaceExportsTest {
 
         // Reopening restores the whole flow, cancellation and picker included.
         configure(true);
-        given().when().get("/api/espace-animateur/" + token + "/collegues/FOIRE-B/postes")
-                .then().statusCode(200);
-        given().when().get("/api/espace-animateur/" + token + "/suggestions-echange"
-                        + "?creneauId=" + CRENEAU_ID + "&standId=FOIRE-S1")
-                .then().statusCode(200);
+        given().when()
+                .get("/api/espace-animateur/" + token + "/collegues/FOIRE-B/postes")
+                .then()
+                .statusCode(200);
+        given().when()
+                .get("/api/espace-animateur/" + token + "/suggestions-echange" + "?creneauId=" + CRENEAU_ID
+                        + "&standId=FOIRE-S1")
+                .then()
+                .statusCode(200);
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")
-                .then().statusCode(204);
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")
+                .then()
+                .statusCode(204);
     }
 
     @Test
@@ -166,36 +175,45 @@ class FoireAndEspaceExportsTest {
         String token = tokenOf("FOIRE-A");
         configure(false);
 
-        byte[] pdf = given().when().get("/api/espace-animateur/" + token + "/planning.pdf")
+        byte[] pdf = given().when()
+                .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
                 .statusCode(200)
                 .contentType("application/pdf")
                 .header("Content-Disposition", containsString("planning-Alice-Martin.pdf"))
-                .extract().asByteArray();
+                .extract()
+                .asByteArray();
         assertThat(pdf).isNotEmpty();
         assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
 
-        String ics = given().when().get("/api/espace-animateur/" + token + "/planning.ics")
+        String ics = given().when()
+                .get("/api/espace-animateur/" + token + "/planning.ics")
                 .then()
                 .statusCode(200)
                 .contentType(containsString("text/calendar"))
                 .header("Content-Disposition", containsString("planning-Alice-Martin.ics"))
-                .extract().asString();
+                .extract()
+                .asString();
         assertThat(ics).startsWith("BEGIN:VCALENDAR").contains("Stand foire un");
     }
 
     @Test
     void unJetonInconnuNeTelechargeRien() {
-        given().when().get("/api/espace-animateur/jeton-invente/planning.pdf")
-                .then().statusCode(404);
-        given().when().get("/api/espace-animateur/jeton-invente/planning.ics")
-                .then().statusCode(404);
+        given().when()
+                .get("/api/espace-animateur/jeton-invente/planning.pdf")
+                .then()
+                .statusCode(404);
+        given().when()
+                .get("/api/espace-animateur/jeton-invente/planning.ics")
+                .then()
+                .statusCode(404);
     }
 
     private static void configure(boolean ouverte) {
         given().contentType(ContentType.JSON)
                 .body("{\"foireOuverte\":" + ouverte + "}")
-                .when().put("/api/echanges/configuration")
+                .when()
+                .put("/api/echanges/configuration")
                 .then()
                 .statusCode(200)
                 .body("foireOuverte", equalTo(ouverte));
@@ -205,7 +223,8 @@ class FoireAndEspaceExportsTest {
     private static void configureFenetre(LocalDate debut, LocalDate fin) {
         given().contentType(ContentType.JSON)
                 .body("{\"foireOuverte\":true,\"debut\":" + json(debut) + ",\"fin\":" + json(fin) + "}")
-                .when().put("/api/echanges/configuration")
+                .when()
+                .put("/api/echanges/configuration")
                 .then()
                 .statusCode(200);
     }
@@ -226,14 +245,17 @@ class FoireAndEspaceExportsTest {
         // The switch says open, the dates say « pas encore ».
         configureFenetre(demain, demain.plusDays(7));
 
-        given().when().get("/api/echanges/configuration")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/echanges/configuration")
+                .then()
+                .statusCode(200)
                 .body("foireOuverte", equalTo(true))
                 .body("ouverteAujourdhui", equalTo(false));
 
         given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"FOIRE-S1\",\"cibleId\":\"FOIRE-B\"}]")
-                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("fermée"));
@@ -248,7 +270,8 @@ class FoireAndEspaceExportsTest {
         LocalDate debut = LocalDate.now().plusDays(3);
         configureFenetre(debut, null);
 
-        given().when().get("/api/espace-animateur/" + tokenOf("FOIRE-A"))
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("FOIRE-A"))
                 .then()
                 .statusCode(200)
                 .body("foireOuverte", equalTo(false))
@@ -257,7 +280,8 @@ class FoireAndEspaceExportsTest {
         // Once the window is over there is nothing to come back for: the espace
         // must NOT be given a date, or it would announce a reopening.
         configureFenetre(LocalDate.now().minusDays(10), LocalDate.now().minusDays(3));
-        given().when().get("/api/espace-animateur/" + tokenOf("FOIRE-A"))
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("FOIRE-A"))
                 .then()
                 .statusCode(200)
                 .body("foireOuverte", equalTo(false))
@@ -269,13 +293,16 @@ class FoireAndEspaceExportsTest {
     void anEndBeforeTheStartIsRefused() {
         given().contentType(ContentType.JSON)
                 .body("{\"foireOuverte\":true,\"debut\":\"2026-07-20\",\"fin\":\"2026-07-10\"}")
-                .when().put("/api/echanges/configuration")
+                .when()
+                .put("/api/echanges/configuration")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("précède"));
 
-        given().when().get("/api/echanges/configuration")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/echanges/configuration")
+                .then()
+                .statusCode(200)
                 .body("debut", nullValue())
                 .body("fin", nullValue());
     }

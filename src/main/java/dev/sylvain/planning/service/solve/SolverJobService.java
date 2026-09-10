@@ -1,9 +1,21 @@
 package dev.sylvain.planning.service.solve;
 
+import ai.timefold.solver.core.api.solver.Solver;
+import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
+import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.solve.SolverJobRepository.LigneJob;
+import io.quarkus.runtime.StartupEvent;
+import io.sentry.Sentry;
+import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
@@ -16,25 +28,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-
-import ai.timefold.solver.core.api.solver.Solver;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
-import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.notification.Notification;
-import dev.sylvain.planning.service.solve.SolverJobRepository.LigneJob;
-import io.quarkus.runtime.StartupEvent;
-import jakarta.annotation.PreDestroy;
-import io.sentry.Sentry;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Event;
-import jakarta.enterprise.event.Observes;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.edition.EditionRepository;
-import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
-import dev.sylvain.planning.service.EditionContext;
 
 /**
  * Runs long solver calls (solve / analyze) outside of the HTTP request thread.
@@ -156,6 +151,7 @@ public class SolverJobService {
     private final Map<String, SolverJob> jobs = new ConcurrentHashMap<>();
     /** FIFO of jobs waiting for the solver. Guarded by this service's monitor. */
     private final Deque<QueuedTask> file = new ArrayDeque<>();
+
     private final ExecutorService executor = Executors.newFixedThreadPool(2, new SolverThreadFactory());
     /**
      * Raised by {@link #shutdown()} and never lowered: from then on a run that
@@ -165,8 +161,7 @@ public class SolverJobService {
     private volatile boolean shutdownRequested;
 
     /** A queued job and the work it will run once the solver frees up. */
-    private record QueuedTask(SolverJob job, SolverJobTasks.JobTask task) {
-    }
+    private record QueuedTask(SolverJob job, SolverJobTasks.JobTask task) {}
 
     /**
      * Solves, then always analyzes the result in the same job — the two are
@@ -181,7 +176,12 @@ public class SolverJobService {
         // Not replayable: the problem came in the request body, which is not
         // stored. Never queued either, so a restart can only ever find it in a
         // terminal state or interrupted.
-        return submit(JobType.SOLVE, secondsLimit, false, null, false,
+        return submit(
+                JobType.SOLVE,
+                secondsLimit,
+                false,
+                null,
+                false,
                 tasks.solve(problem, secondsLimit, this::isShutdownRequested));
     }
 
@@ -200,8 +200,7 @@ public class SolverJobService {
             PreviousPlan previousPlan,
             ReamorcageEffectue reamorcage,
             SolvePipeline.ImpactPublication impactPublication,
-            SolvePipeline.Interruption interruption) {
-    }
+            SolvePipeline.Interruption interruption) {}
 
     /**
      * Where a full solve actually started from (issue #174), for the
@@ -211,8 +210,7 @@ public class SolverJobService {
      * @param postesLiberes seats the persisted plan staffed but that had to
      *                      start empty (animateur gone, or since unavailable)
      */
-    public record ReamorcageEffectue(Reamorcage mode, int postes, int postesLiberes) {
-    }
+    public record ReamorcageEffectue(Reamorcage mode, int postes, int postesLiberes) {}
 
     /**
      * Full solve whose problem is built <b>inside the job</b>, from the
@@ -236,8 +234,8 @@ public class SolverJobService {
      * was asked to.
      */
     public SolverJob submitSolveFromReferenceData(Long secondsLimit, boolean enFile, Reamorcage reamorcage) {
-        return submitReplayable(JobType.SOLVE, secondsLimit, null,
-                reamorcage == null ? Reamorcage.AUTO : reamorcage, enFile);
+        return submitReplayable(
+                JobType.SOLVE, secondsLimit, null, reamorcage == null ? Reamorcage.AUTO : reamorcage, enFile);
     }
 
     /**
@@ -252,8 +250,7 @@ public class SolverJobService {
             List<ReplanificationDiff.ChangementAffectation> changements,
             PreviousPlan previousPlan,
             SolvePipeline.ImpactPublication impactPublication,
-            SolvePipeline.Interruption interruption) {
-    }
+            SolvePipeline.Interruption interruption) {}
 
     /**
      * Incremental re-solve (issue #86): starts from the persisted plan, pins
@@ -267,8 +264,7 @@ public class SolverJobService {
      * because it reads the persisted plan: building it on the request thread
      * would race with the previous job's persistence.</p>
      */
-    public SolverJob submitSolveIncremental(Long secondsLimitDemande, ReplanificationScope scope,
-            boolean enFile) {
+    public SolverJob submitSolveIncremental(Long secondsLimitDemande, ReplanificationScope scope, boolean enFile) {
         Long secondsLimit = secondsLimitDemande != null ? secondsLimitDemande : DUREE_INCREMENTALE_DEFAUT_SECONDES;
         return submitReplayable(JobType.SOLVE_INCREMENTAL, secondsLimit, scope, null, enFile);
     }
@@ -285,9 +281,15 @@ public class SolverJobService {
      * originally queued it, instead of a second implementation free to
      * drift.</p>
      */
-    private SolverJob submitReplayable(JobType type, Long secondsLimit, ReplanificationScope scope,
-            Reamorcage reamorcage, boolean enFile) {
-        return submit(type, secondsLimit, enFile, scope, reamorcage, true,
+    private SolverJob submitReplayable(
+            JobType type, Long secondsLimit, ReplanificationScope scope, Reamorcage reamorcage, boolean enFile) {
+        return submit(
+                type,
+                secondsLimit,
+                enFile,
+                scope,
+                reamorcage,
+                true,
                 tasks.replayable(type, secondsLimit, scope, reamorcage, this::isShutdownRequested));
     }
 
@@ -298,13 +300,24 @@ public class SolverJobService {
      * while it promotes the next queued job, so there is no window in which
      * the solver looks free while a hand-over is under way.
      */
-    private synchronized SolverJob submit(JobType type, Long secondsLimit, boolean enFile,
-            ReplanificationScope scope, boolean rejouable, SolverJobTasks.JobTask task) {
+    private synchronized SolverJob submit(
+            JobType type,
+            Long secondsLimit,
+            boolean enFile,
+            ReplanificationScope scope,
+            boolean rejouable,
+            SolverJobTasks.JobTask task) {
         return submit(type, secondsLimit, enFile, scope, null, rejouable, task);
     }
 
-    private synchronized SolverJob submit(JobType type, Long secondsLimit, boolean enFile,
-            ReplanificationScope scope, Reamorcage reamorcage, boolean rejouable, SolverJobTasks.JobTask task) {
+    private synchronized SolverJob submit(
+            JobType type,
+            Long secondsLimit,
+            boolean enFile,
+            ReplanificationScope scope,
+            Reamorcage reamorcage,
+            boolean rejouable,
+            SolverJobTasks.JobTask task) {
         purgeExpiredJobs();
         Optional<SolverJob> actif = findActive();
         if (actif.isPresent() && !enFile) {
@@ -318,8 +331,15 @@ public class SolverJobService {
         if (actif.isPresent()) {
             refuseDuplicate(type, editionId);
         }
-        SolverJob job = new SolverJob(UUID.randomUUID().toString(), type, secondsLimit,
-                editionId, nomEdition(editionId), scope, reamorcage, rejouable);
+        SolverJob job = new SolverJob(
+                UUID.randomUUID().toString(),
+                type,
+                secondsLimit,
+                editionId,
+                nomEdition(editionId),
+                scope,
+                reamorcage,
+                rejouable);
         jobs.put(job.getId(), job);
         if (actif.isPresent()) {
             job.markQueued();
@@ -447,8 +467,7 @@ public class SolverJobService {
                 // Died while the server was going down — a pool already
                 // closed, a bean already gone. Not a bug to report: the run
                 // is lost, the persisted plan stands.
-                LOG.warnf(failure, "Solver job %s was stopped by the server shutdown and its run is lost",
-                        job.getId());
+                LOG.warnf(failure, "Solver job %s was stopped by the server shutdown and its run is lost", job.getId());
                 job.markInterrompu(SHUTDOWN_RUN_LOST, null);
             } else {
                 job.markFailed(failure);
@@ -591,11 +610,9 @@ public class SolverJobService {
         // hold per call — 200 of them behind a 200-row bulk delete, serialising
         // the referential screen against job submission for nothing.
         String editionId = editionContext.editionIdCourant();
-        findActive()
-                .filter(job -> job.getEditionId().equals(editionId))
-                .ifPresent(job -> {
-                    throw new SolverBusyException(job);
-                });
+        findActive().filter(job -> job.getEditionId().equals(editionId)).ifPresent(job -> {
+            throw new SolverBusyException(job);
+        });
     }
 
     /** Newest job first, so the UI can show a readable history. */
@@ -660,9 +677,10 @@ public class SolverJobService {
 
     private void purgeExpiredJobs() {
         Instant cutoff = Instant.now().minus(COMPLETED_JOB_RETENTION);
-        jobs.values().removeIf(job -> job.isFinished()
-                && job.getFinishedAt() != null
-                && job.getFinishedAt().isBefore(cutoff));
+        jobs.values()
+                .removeIf(job -> job.isFinished()
+                        && job.getFinishedAt() != null
+                        && job.getFinishedAt().isBefore(cutoff));
         persistence.purgeFinishedBefore(cutoff);
     }
 
@@ -704,7 +722,8 @@ public class SolverJobService {
             }
             SolverJob job = new SolverJob(ligne);
             jobs.put(job.getId(), job);
-            SolverJobTasks.JobTask task = ligne.statut() == JobStatus.QUEUED && ligne.rejouable() ? taskOrNothing(ligne) : null;
+            SolverJobTasks.JobTask task =
+                    ligne.statut() == JobStatus.QUEUED && ligne.rejouable() ? taskOrNothing(ligne) : null;
             if (task != null) {
                 file.addLast(new QueuedTask(job, task));
                 rejoues++;
@@ -731,8 +750,8 @@ public class SolverJobService {
      */
     private SolverJobTasks.JobTask taskOrNothing(LigneJob ligne) {
         try {
-            return tasks.replayable(ligne.type(), ligne.secondsLimit(), ligne.scope(), ligne.reamorcage(),
-                    this::isShutdownRequested);
+            return tasks.replayable(
+                    ligne.type(), ligne.secondsLimit(), ligne.scope(), ligne.reamorcage(), this::isShutdownRequested);
         } catch (RuntimeException e) {
             LOG.warnf(e, "Solver job %s cannot be replayed; it comes back interrupted", ligne.id());
             return null;
@@ -819,6 +838,7 @@ public class SolverJobService {
         private final Reamorcage reamorcage;
         /** Whether this job can rebuild its own problem — see {@link SolverJobTasks#replayable}. */
         private final boolean rejouable;
+
         private final Instant submittedAt;
         private volatile JobStatus status = JobStatus.PENDING;
         private volatile Instant startedAt;
@@ -828,10 +848,18 @@ public class SolverJobService {
         private volatile boolean cancelRequested;
         /** A cancel or a shutdown asked the solver to stop; honoured by {@link #attachSolver} if it is not built yet. */
         private volatile boolean stopRequested;
+
         private volatile Solver<PlanningEvenement> solver;
 
-        private SolverJob(String id, JobType type, Long secondsLimit, String editionId, String editionNom,
-                ReplanificationScope scope, Reamorcage reamorcage, boolean rejouable) {
+        private SolverJob(
+                String id,
+                JobType type,
+                Long secondsLimit,
+                String editionId,
+                String editionNom,
+                ReplanificationScope scope,
+                Reamorcage reamorcage,
+                boolean rejouable) {
             this.id = id;
             this.type = type;
             this.secondsLimit = secondsLimit;
@@ -963,8 +991,10 @@ public class SolverJobService {
         }
 
         public boolean isFinished() {
-            return status == JobStatus.COMPLETED || status == JobStatus.FAILED
-                    || status == JobStatus.CANCELLED || status == JobStatus.INTERROMPU;
+            return status == JobStatus.COMPLETED
+                    || status == JobStatus.FAILED
+                    || status == JobStatus.CANCELLED
+                    || status == JobStatus.INTERROMPU;
         }
 
         /**

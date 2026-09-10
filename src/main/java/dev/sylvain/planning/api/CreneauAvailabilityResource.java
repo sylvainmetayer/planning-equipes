@@ -45,8 +45,10 @@ public class CreneauAvailabilityResource {
      */
     @GET
     @Path("/{creneauId}")
-    public CreneauAvailability creneauAvailability(@PathParam("creneauId") long creneauId,
-            @QueryParam("standId") String standId, @QueryParam("posteId") String posteId) {
+    public CreneauAvailability creneauAvailability(
+            @PathParam("creneauId") long creneauId,
+            @QueryParam("standId") String standId,
+            @QueryParam("posteId") String posteId) {
         return planningService.persistedCreneauAvailability(creneauId, standId, posteId);
     }
 
@@ -61,8 +63,8 @@ public class CreneauAvailabilityResource {
      * créneau with nothing to show.</p>
      */
     @GET
-    public CreneauAvailability premierCreneau(@QueryParam("standId") String standId,
-            @QueryParam("posteId") String posteId) {
+    public CreneauAvailability premierCreneau(
+            @QueryParam("standId") String standId, @QueryParam("posteId") String posteId) {
         return planningService.persistedCreneauAvailability(null, standId, posteId);
     }
 }

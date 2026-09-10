@@ -52,11 +52,14 @@ public class NotificationDispatcher {
      */
     void surNotification(@Observes Notification notification) {
         try {
-            redacteur.rediger(notification)
+            redacteur
+                    .rediger(notification)
                     .ifPresent(courrier -> mailer.send(templates.toMail(
                             courrier.destinataire(), courrier.sujet(), courrier.corps(), courrier.html())));
         } catch (RuntimeException e) {
-            Log.errorf(e, "Notification %s could not be delivered; the operation it describes stands",
+            Log.errorf(
+                    e,
+                    "Notification %s could not be delivered; the operation it describes stands",
                     notification.getClass().getSimpleName());
         }
     }

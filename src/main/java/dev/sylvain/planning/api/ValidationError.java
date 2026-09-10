@@ -10,5 +10,4 @@ package dev.sylvain.planning.api;
  * resource just to format an error — and re-declared identically in two more.
  * One record, three declarations, nothing tying them together.</p>
  */
-public record ValidationError(String message) {
-}
+public record ValidationError(String message) {}

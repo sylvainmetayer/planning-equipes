@@ -14,5 +14,4 @@ public record ParametresLegauxDto(
         @Positive Integer dureeHebdomadaireMaxMinutes,
         @PositiveOrZero Integer pauseMinimaleEntreVacationsMinutes,
         @PositiveOrZero Integer reposQuotidienMinimalMinutes,
-        Boolean pauseSurPoste) {
-}
+        Boolean pauseSurPoste) {}

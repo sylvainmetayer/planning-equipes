@@ -1,7 +1,20 @@
 package dev.sylvain.planning.service.espace;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
+import io.quarkus.security.identity.SecurityIdentity;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,23 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
-import io.quarkus.security.identity.SecurityIdentity;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.solve.PlanningWhatIf;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * The event-day screen ("mode jour J"): somebody did not show up, and the seats
@@ -110,11 +107,12 @@ public class JourJService {
         List<Creneau> restants = creneauxDuJour.stream()
                 .filter(creneau -> isStillAhead(creneau, maintenant))
                 .toList();
-        Set<Long> idsRestants = restants.stream().map(Creneau::getId)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<Long> idsRestants =
+                restants.stream().map(Creneau::getId).collect(Collectors.toCollection(LinkedHashSet::new));
 
         List<PosteAffectation> postesRestants = plan.getPostes().stream()
-                .filter(poste -> poste.getCreneau() != null && idsRestants.contains(poste.getCreneau().getId()))
+                .filter(poste -> poste.getCreneau() != null
+                        && idsRestants.contains(poste.getCreneau().getId()))
                 .toList();
 
         Map<String, Identite> identites = identites();
@@ -125,13 +123,18 @@ public class JourJService {
         // screen has to let them be marked absent for the rest of the day —
         // which is the one gesture it exists for.
         Set<String> absentIds = absences.stream()
-                .filter(absence -> absence.entrees().stream()
-                        .anyMatch(entree -> idsRestants.contains(entree.creneauId())))
+                .filter(absence ->
+                        absence.entrees().stream().anyMatch(entree -> idsRestants.contains(entree.creneauId())))
                 .map(AbsenceJourJ::animateurId)
                 .collect(Collectors.toSet());
 
-        return new EtatJourJ(jour, maintenant, creneauxDuJour.size(),
-                restants.stream().map(creneau -> creneauJourJ(creneau, maintenant)).toList(),
+        return new EtatJourJ(
+                jour,
+                maintenant,
+                creneauxDuJour.size(),
+                restants.stream()
+                        .map(creneau -> creneauJourJ(creneau, maintenant))
+                        .toList(),
                 animateursAffectes(postesRestants, identites, absentIds),
                 postesAPourvoir(postesRestants),
                 absences,
@@ -167,8 +170,8 @@ public class JourJService {
      * the next solve is exactly the failure mode
      * {@link ContrainteAdHocContradictions} exists to replace.</p>
      */
-    public AbsenceMarquee recordAbsence(String animateurId, String raison, LocalDate date,
-            LocalDateTime maintenantDemande) {
+    public AbsenceMarquee recordAbsence(
+            String animateurId, String raison, LocalDate date, LocalDateTime maintenantDemande) {
         List<Creneau> tousLesCreneaux = referenceDataService.listCreneaux();
         Journee journee = journee(tousLesCreneaux, date, maintenantDemande);
         LocalDate jour = journee.jour();
@@ -177,8 +180,8 @@ public class JourJService {
 
         List<Creneau> duJour = creneauxOf(tousLesCreneaux, jour);
         if (duJour.isEmpty()) {
-            throw new BusinessError.Invalid("Aucun créneau n'est programmé le " + jour
-                    + " : il n'y a pas de journée à couvrir.");
+            throw new BusinessError.Invalid(
+                    "Aucun créneau n'est programmé le " + jour + " : il n'y a pas de journée à couvrir.");
         }
         List<Creneau> restants = duJour.stream()
                 .filter(creneau -> isStillAhead(creneau, maintenant))
@@ -189,11 +192,13 @@ public class JourJService {
         }
 
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
-        Set<Long> idsRestants = restants.stream().map(Creneau::getId)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<Long> idsRestants =
+                restants.stream().map(Creneau::getId).collect(Collectors.toCollection(LinkedHashSet::new));
         List<PosteAffectation> aLiberer = plan.getPostes().stream()
-                .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
-                .filter(poste -> poste.getCreneau() != null && idsRestants.contains(poste.getCreneau().getId()))
+                .filter(poste -> poste.getAnimateur() != null
+                        && animateurId.equals(poste.getAnimateur().getId()))
+                .filter(poste -> poste.getCreneau() != null
+                        && idsRestants.contains(poste.getCreneau().getId()))
                 .sorted(Comparator.comparing(PosteAffectation::getId))
                 .toList();
         refuseLockedSeats(aLiberer);
@@ -212,11 +217,16 @@ public class JourJService {
         // reloads all of it on every call, and somebody holding five remaining
         // timeslots would pay five full loads of an 1 800-seat plan — on the one
         // screen whose reason to exist is answering fast on a phone.
-        planningService.applyReparations(plan, aLiberer.stream().map(PosteAffectation::getId).toList(), null);
+        planningService.applyReparations(
+                plan, aLiberer.stream().map(PosteAffectation::getId).toList(), null);
 
         Map<Long, Creneau> byId = creneauxById(restants);
-        return new AbsenceMarquee(animateurId, nomAffiche(identites().get(animateurId), animateurId),
-                exceptions.stream().map(exception -> entree(exception, byId, true)).toList(),
+        return new AbsenceMarquee(
+                animateurId,
+                nomAffiche(identites().get(animateurId), animateurId),
+                exceptions.stream()
+                        .map(exception -> entree(exception, byId, true))
+                        .toList(),
                 aLiberer.stream().map(JourJService::vacantSeat).toList());
     }
 
@@ -254,7 +264,8 @@ public class JourJService {
                 .filter(contrainte -> targetsOnly(contrainte, animateurId))
                 .filter(contrainte -> contrainte.getCreneau() != null
                         && creneaux.containsKey(contrainte.getCreneau().getId()))
-                .filter(contrainte -> creneauId == null || creneauId.equals(contrainte.getCreneau().getId()))
+                .filter(contrainte -> creneauId == null
+                        || creneauId.equals(contrainte.getCreneau().getId()))
                 .toList();
         if (aSupprimer.isEmpty()) {
             throw new BusinessError.NotFound("Aucune absence enregistrée pour " + animateurId + " le " + jour
@@ -300,8 +311,7 @@ public class JourJService {
     }
 
     /** The journée being looked at, and the moment it is read from. */
-    private record Journee(LocalDate jour, LocalDateTime maintenant) {
-    }
+    private record Journee(LocalDate jour, LocalDateTime maintenant) {}
 
     /**
      * The journée under way at {@code maintenant}, or the calendar date when
@@ -311,7 +321,8 @@ public class JourJService {
         return creneaux.stream()
                 .filter(JourJService::horaireConnu)
                 .collect(Collectors.groupingBy(Creneau::getDate))
-                .entrySet().stream()
+                .entrySet()
+                .stream()
                 .filter(journee -> isUnderWay(journee.getValue(), maintenant))
                 .map(Map.Entry::getKey)
                 .max(Comparator.naturalOrder())
@@ -320,16 +331,22 @@ public class JourJService {
 
     /** Whether that day's first timeslot has started and its last one has not ended. */
     private static boolean isUnderWay(List<Creneau> duJour, LocalDateTime maintenant) {
-        LocalDateTime debut = duJour.stream().map(creneau -> window(creneau)[0])
-                .min(Comparator.naturalOrder()).orElseThrow();
-        LocalDateTime fin = duJour.stream().map(creneau -> window(creneau)[1])
-                .max(Comparator.naturalOrder()).orElseThrow();
+        LocalDateTime debut = duJour.stream()
+                .map(creneau -> window(creneau)[0])
+                .min(Comparator.naturalOrder())
+                .orElseThrow();
+        LocalDateTime fin = duJour.stream()
+                .map(creneau -> window(creneau)[1])
+                .max(Comparator.naturalOrder())
+                .orElseThrow();
         return !debut.isAfter(maintenant) && fin.isAfter(maintenant);
     }
 
     private static boolean horaireConnu(Creneau creneau) {
-        return creneau.getId() != null && creneau.getDate() != null
-                && creneau.getHeureDebut() != null && creneau.getHeureFin() != null;
+        return creneau.getId() != null
+                && creneau.getDate() != null
+                && creneau.getHeureDebut() != null
+                && creneau.getHeureFin() != null;
     }
 
     /**
@@ -341,7 +358,7 @@ public class JourJService {
     private static LocalDateTime[] window(Creneau creneau) {
         LocalDateTime debut = creneau.getDate().atTime(creneau.getHeureDebut());
         LocalDateTime fin = creneau.getDate().atTime(creneau.getHeureFin());
-        return new LocalDateTime[] { debut, fin.isAfter(debut) ? fin : fin.plusDays(1) };
+        return new LocalDateTime[] {debut, fin.isAfter(debut) ? fin : fin.plusDays(1)};
     }
 
     /** Whether the timeslot has not ended yet at {@code reference}. */
@@ -388,7 +405,8 @@ public class JourJService {
      */
     private Animateur findAnimateur(String animateurId, boolean fromBody) {
         return referenceDataService.listAnimateurs().stream()
-                .filter(animateur -> animateur.getId() != null && animateur.getId().equals(animateurId))
+                .filter(animateur ->
+                        animateur.getId() != null && animateur.getId().equals(animateurId))
                 .findFirst()
                 .orElseThrow(() -> fromBody
                         ? new BusinessError.Invalid("Animateur inconnu : " + animateurId)
@@ -405,7 +423,8 @@ public class JourJService {
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
         List<String> bloques = postes.stream()
                 .filter(poste -> verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste)))
-                .map(poste -> poste.getStand().getId() + " (" + poste.getCreneau().getHeureDebut() + ")")
+                .map(poste ->
+                        poste.getStand().getId() + " (" + poste.getCreneau().getHeureDebut() + ")")
                 .toList();
         if (!bloques.isEmpty()) {
             throw new BusinessError.Invalid("Ces postes sont verrouillés et ne peuvent pas être libérés : "
@@ -418,11 +437,10 @@ public class JourJService {
         return raison == null || raison.isBlank() ? base : base + " — " + raison.trim();
     }
 
-    private static ContrainteAdHoc exception(Animateur animateur, Creneau creneau, String motif,
-            String author, Instant maintenant) {
+    private static ContrainteAdHoc exception(
+            Animateur animateur, Creneau creneau, String motif, String author, Instant maintenant) {
         ContrainteAdHoc contrainte = new ContrainteAdHoc(
-                idAbsence(animateur.getId(), creneau.getId()),
-                TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+                idAbsence(animateur.getId(), creneau.getId()), TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
         Animateur cible = new Animateur();
         cible.setId(animateur.getId());
         contrainte.setAnimateursConcernes(new ArrayList<>(List.of(cible)));
@@ -452,9 +470,12 @@ public class JourJService {
      * without a column of its own.
      */
     private static boolean isWrittenHere(ContrainteAdHoc contrainte, String animateurId) {
-        return contrainte.getCreneau() != null && contrainte.getCreneau().getId() != null
+        return contrainte.getCreneau() != null
+                && contrainte.getCreneau().getId() != null
                 && contrainte.getId() != null
-                && contrainte.getId().equals(idAbsence(animateurId, contrainte.getCreneau().getId()));
+                && contrainte
+                        .getId()
+                        .equals(idAbsence(animateurId, contrainte.getCreneau().getId()));
     }
 
     private static String idAbsence(String animateurId, long creneauId) {
@@ -471,8 +492,12 @@ public class JourJService {
         if (cibles == null) {
             return List.of();
         }
-        return cibles.stream().filter(Objects::nonNull).map(Animateur::getId)
-                .filter(Objects::nonNull).distinct().toList();
+        return cibles.stream()
+                .filter(Objects::nonNull)
+                .map(Animateur::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
     }
 
     /**
@@ -493,38 +518,47 @@ public class JourJService {
             }
             List<String> cibles = animateurIds(contrainte);
             for (String cible : cibles) {
-                parAnimateur.computeIfAbsent(cible, id -> new ArrayList<>())
+                parAnimateur
+                        .computeIfAbsent(cible, id -> new ArrayList<>())
                         .add(entree(contrainte, byId, cibles.size() == 1));
             }
         }
         return parAnimateur.entrySet().stream()
-                .map(absence -> new AbsenceJourJ(absence.getKey(),
+                .map(absence -> new AbsenceJourJ(
+                        absence.getKey(),
                         nomAffiche(identites.get(absence.getKey()), absence.getKey()),
                         absence.getValue().stream()
-                                .sorted(Comparator.comparing(EntreeAbsence::heureDebut,
-                                        Comparator.nullsLast(Comparator.naturalOrder())))
+                                .sorted(Comparator.comparing(
+                                        EntreeAbsence::heureDebut, Comparator.nullsLast(Comparator.naturalOrder())))
                                 .toList()))
                 .sorted(Comparator.comparing(AbsenceJourJ::nomAffiche))
                 .toList();
     }
 
-    private static EntreeAbsence entree(ContrainteAdHoc contrainte, Map<Long, Creneau> creneaux,
-            boolean annulable) {
+    private static EntreeAbsence entree(ContrainteAdHoc contrainte, Map<Long, Creneau> creneaux, boolean annulable) {
         Creneau creneau = creneaux.get(contrainte.getCreneau().getId());
-        return new EntreeAbsence(contrainte.getId(), contrainte.getCreneau().getId(),
+        return new EntreeAbsence(
+                contrainte.getId(),
+                contrainte.getCreneau().getId(),
                 creneau == null ? null : creneau.getHeureDebut(),
                 creneau == null ? null : creneau.getHeureFin(),
-                contrainte.getRaison(), contrainte.getCreeParUtilisateurId(), contrainte.getCreeLe(),
+                contrainte.getRaison(),
+                contrainte.getCreeParUtilisateurId(),
+                contrainte.getCreeLe(),
                 annulable);
     }
 
     private static CreneauJourJ creneauJourJ(Creneau creneau, LocalDateTime maintenant) {
-        return new CreneauJourJ(creneau.getId(), creneau.getDate(), creneau.getHeureDebut(),
-                creneau.getHeureFin(), isUnderWay(creneau, maintenant));
+        return new CreneauJourJ(
+                creneau.getId(),
+                creneau.getDate(),
+                creneau.getHeureDebut(),
+                creneau.getHeureFin(),
+                isUnderWay(creneau, maintenant));
     }
 
-    private static List<AnimateurAffecte> animateursAffectes(List<PosteAffectation> postesRestants,
-            Map<String, Identite> identites, Set<String> absents) {
+    private static List<AnimateurAffecte> animateursAffectes(
+            List<PosteAffectation> postesRestants, Map<String, Identite> identites, Set<String> absents) {
         Map<String, Integer> comptes = new LinkedHashMap<>();
         for (PosteAffectation poste : postesRestants) {
             if (poste.getAnimateur() != null) {
@@ -533,8 +567,8 @@ public class JourJService {
         }
         Set<String> vus = new HashSet<>(comptes.keySet());
         return vus.stream()
-                .map(id -> new AnimateurAffecte(id, nomAffiche(identites.get(id), id),
-                        comptes.getOrDefault(id, 0), absents.contains(id)))
+                .map(id -> new AnimateurAffecte(
+                        id, nomAffiche(identites.get(id), id), comptes.getOrDefault(id, 0), absents.contains(id)))
                 .sorted(Comparator.comparing(AnimateurAffecte::nomAffiche))
                 .toList();
     }
@@ -543,19 +577,30 @@ public class JourJService {
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
         return postesRestants.stream()
                 .filter(poste -> poste.getAnimateur() == null)
-                .sorted(Comparator.comparing((PosteAffectation poste) -> poste.getCreneau().getHeureDebut())
+                .sorted(Comparator.comparing(
+                                (PosteAffectation poste) -> poste.getCreneau().getHeureDebut())
                         .thenComparing(PosteAffectation::getId))
-                .map(poste -> new PosteAPourvoir(poste.getId(), poste.getStand().getId(),
-                        poste.getStand().getNom(), poste.getCreneau().getId(),
-                        poste.heureDebutEffectif(), poste.heureFinEffectif(),
+                .map(poste -> new PosteAPourvoir(
+                        poste.getId(),
+                        poste.getStand().getId(),
+                        poste.getStand().getNom(),
+                        poste.getCreneau().getId(),
+                        poste.heureDebutEffectif(),
+                        poste.heureFinEffectif(),
                         verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))))
                 .toList();
     }
 
     /** A seat this very call has just emptied: it was reachable, so it is not locked. */
     private static PosteAPourvoir vacantSeat(PosteAffectation poste) {
-        return new PosteAPourvoir(poste.getId(), poste.getStand().getId(), poste.getStand().getNom(),
-                poste.getCreneau().getId(), poste.heureDebutEffectif(), poste.heureFinEffectif(), false);
+        return new PosteAPourvoir(
+                poste.getId(),
+                poste.getStand().getId(),
+                poste.getStand().getNom(),
+                poste.getCreneau().getId(),
+                poste.heureDebutEffectif(),
+                poste.heureFinEffectif(),
+                false);
     }
 
     /**
@@ -569,8 +614,7 @@ public class JourJService {
      */
     private static List<AnimateurNomme> nommes(Map<String, Identite> identites) {
         return identites.entrySet().stream()
-                .map(entree -> new AnimateurNomme(entree.getKey(),
-                        nomAffiche(entree.getValue(), entree.getKey())))
+                .map(entree -> new AnimateurNomme(entree.getKey(), nomAffiche(entree.getValue(), entree.getKey())))
                 .sorted(Comparator.comparing(AnimateurNomme::nomAffiche))
                 .toList();
     }
@@ -588,12 +632,12 @@ public class JourJService {
             return fallback;
         }
         String complet = ((identite.prenom() == null ? "" : identite.prenom() + " ")
-                + (identite.nom() == null ? "" : identite.nom())).trim();
+                        + (identite.nom() == null ? "" : identite.nom()))
+                .trim();
         return complet.isBlank() ? fallback : complet;
     }
 
-    private record Identite(String prenom, String nom) {
-    }
+    private record Identite(String prenom, String nom) {}
 
     /* -------------------------------- Payloads ----------------------------- */
 
@@ -616,30 +660,29 @@ public class JourJService {
      *                        be named on the button that hands them a seat
      */
     @Schema(requiredProperties = {"creneauxDuJour"})
-    public record EtatJourJ(LocalDate date, LocalDateTime maintenant, int creneauxDuJour,
-            List<CreneauJourJ> creneauxRestants, List<AnimateurAffecte> animateursDeService,
-            List<PosteAPourvoir> postesAPourvoir, List<AbsenceJourJ> absences,
-            List<AnimateurNomme> animateurs) {
-    }
+    public record EtatJourJ(
+            LocalDate date,
+            LocalDateTime maintenant,
+            int creneauxDuJour,
+            List<CreneauJourJ> creneauxRestants,
+            List<AnimateurAffecte> animateursDeService,
+            List<PosteAPourvoir> postesAPourvoir,
+            List<AbsenceJourJ> absences,
+            List<AnimateurNomme> animateurs) {}
 
     /** An animateur of the edition, named. */
-    public record AnimateurNomme(String animateurId, String nomAffiche) {
-    }
+    public record AnimateurNomme(String animateurId, String nomAffiche) {}
 
     /** One timeslot still ahead. */
     @Schema(requiredProperties = {"enCours", "id"})
-    public record CreneauJourJ(long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
-            boolean enCours) {
-    }
+    public record CreneauJourJ(long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin, boolean enCours) {}
 
     /**
      * Somebody holding at least one seat over the remaining timeslots — the
      * list the operator picks the missing person from.
      */
     @Schema(requiredProperties = {"absent", "postesRestants"})
-    public record AnimateurAffecte(String animateurId, String nomAffiche, int postesRestants,
-            boolean absent) {
-    }
+    public record AnimateurAffecte(String animateurId, String nomAffiche, int postesRestants, boolean absent) {}
 
     /**
      * An unstaffed seat on a remaining timeslot.
@@ -649,13 +692,17 @@ public class JourJService {
      *                   so instead of offering a button that cannot work
      */
     @Schema(requiredProperties = {"creneauId", "verrouille"})
-    public record PosteAPourvoir(String posteId, String standId, String standNom, long creneauId,
-            LocalTime heureDebut, LocalTime heureFin, boolean verrouille) {
-    }
+    public record PosteAPourvoir(
+            String posteId,
+            String standId,
+            String standNom,
+            long creneauId,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            boolean verrouille) {}
 
     /** Somebody missing today, and over which timeslots. */
-    public record AbsenceJourJ(String animateurId, String nomAffiche, List<EntreeAbsence> entrees) {
-    }
+    public record AbsenceJourJ(String animateurId, String nomAffiche, List<EntreeAbsence> entrees) {}
 
     /**
      * One timeslot of an absence, with the trace the exception carries.
@@ -665,13 +712,17 @@ public class JourJService {
      *                  people nobody asked about
      */
     @Schema(requiredProperties = {"annulable", "creneauId"})
-    public record EntreeAbsence(String contrainteId, long creneauId, LocalTime heureDebut,
-            LocalTime heureFin, String raison, String creeParUtilisateurId, Instant creeLe,
-            boolean annulable) {
-    }
+    public record EntreeAbsence(
+            String contrainteId,
+            long creneauId,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            String raison,
+            String creeParUtilisateurId,
+            Instant creeLe,
+            boolean annulable) {}
 
     /** What one "marquer absent" wrote, so the screen can go straight to the holes it opened. */
-    public record AbsenceMarquee(String animateurId, String nomAffiche, List<EntreeAbsence> entrees,
-            List<PosteAPourvoir> postesLiberes) {
-    }
+    public record AbsenceMarquee(
+            String animateurId, String nomAffiche, List<EntreeAbsence> entrees, List<PosteAPourvoir> postesLiberes) {}
 }

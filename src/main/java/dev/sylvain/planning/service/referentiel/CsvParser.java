@@ -1,8 +1,8 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.service.BusinessError;
 import java.util.ArrayList;
 import java.util.List;
-import dev.sylvain.planning.service.BusinessError;
 
 /**
  * A hand-written RFC 4180 reader, and deliberately nothing more.
@@ -33,8 +33,7 @@ public final class CsvParser {
 
     private static final char DEFAULT_SEPARATOR = ',';
 
-    private CsvParser() {
-    }
+    private CsvParser() {}
 
     /** One record of the file: where it starts, and its cells in column order. */
     public record Row(int line, List<String> values) {
@@ -51,8 +50,7 @@ public final class CsvParser {
     }
 
     /** The header row, the data rows, and which separator was recognised. */
-    public record Table(char separator, List<String> columns, List<Row> rows) {
-    }
+    public record Table(char separator, List<String> columns, List<Row> rows) {}
 
     /**
      * Reads the whole text.

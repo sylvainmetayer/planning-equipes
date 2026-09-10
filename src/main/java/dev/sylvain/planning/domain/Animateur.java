@@ -29,6 +29,7 @@ public class Animateur {
     private Map<String, NiveauCompetence> competences = new HashMap<>();
     /** Ids referencing the {@code typologie} referential table — stand typologies the animateur wishes to be assigned to. */
     private Set<String> souhaits = new HashSet<>();
+
     private Set<LocalDate> joursIndisponibles = new HashSet<>();
     /**
      * Derived, never stored on the animateur: true when {@link #competences}
@@ -50,8 +51,7 @@ public class Animateur {
      */
     private Instant modifieLe;
 
-    public Animateur() {
-    }
+    public Animateur() {}
 
     public Animateur(String id, String prenom, String nom, LocalDate dateNaissance, boolean manager) {
         this.id = id;
@@ -67,9 +67,7 @@ public class Animateur {
      * except the ones listed in {@link #joursIndisponibles}.
      */
     public boolean isIndisponibleOn(LocalDate dateReference) {
-        return dateReference != null
-                && joursIndisponibles != null
-                && joursIndisponibles.contains(dateReference);
+        return dateReference != null && joursIndisponibles != null && joursIndisponibles.contains(dateReference);
     }
 
     /**
@@ -109,9 +107,7 @@ public class Animateur {
     }
 
     public boolean isMajeurOn(LocalDate dateReference) {
-        return dateReference != null
-                && dateNaissance != null
-                && !isMineurOn(dateReference);
+        return dateReference != null && dateNaissance != null && !isMineurOn(dateReference);
     }
 
     /**

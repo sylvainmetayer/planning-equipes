@@ -1,16 +1,15 @@
 package dev.sylvain.planning.service.analyse;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * The alerts left by the scheduled jobs, resolved for the Notifications screen.
@@ -48,9 +47,14 @@ public class AlerteService {
      *                   referential; {@code null} when the alert is about no
      *                   one in particular, or when the fiche is gone
      */
-    public record AlerteView(String type, String cle, Instant declencheLe, String libelle, String severite,
-            String animateurId, String nomAffiche) {
-    }
+    public record AlerteView(
+            String type,
+            String cle,
+            Instant declencheLe,
+            String libelle,
+            String severite,
+            String animateurId,
+            String nomAffiche) {}
 
     /**
      * @param limite how many alerts to bring back <b>of each type</b>; clamped,
@@ -69,8 +73,13 @@ public class AlerteService {
         }
         List<AlerteView> vues = new ArrayList<>();
         for (JournalNotificationsRepository.Alerte alerte : alertes) {
-            vues.add(new AlerteView(alerte.type(), alerte.cle(), alerte.declencheLe(), alerte.libelle(),
-                    alerte.severite(), alerte.animateurId(),
+            vues.add(new AlerteView(
+                    alerte.type(),
+                    alerte.cle(),
+                    alerte.declencheLe(),
+                    alerte.libelle(),
+                    alerte.severite(),
+                    alerte.animateurId(),
                     alerte.animateurId() == null ? null : noms.get(alerte.animateurId())));
         }
         return List.copyOf(vues);

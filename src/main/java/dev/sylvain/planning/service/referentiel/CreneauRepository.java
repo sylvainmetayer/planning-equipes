@@ -1,5 +1,11 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.WriteStamp;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,15 +20,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Creneau;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.WriteStamp;
 
 /**
  * The créneau grid. Its id is a database identity rather than a business
@@ -41,8 +39,7 @@ public class CreneauRepository {
     @Inject
     JdbcEditionScope scope;
 
-    private static final String SELECT_CRENEAU_SQL =
-            """
+    private static final String SELECT_CRENEAU_SQL = """
             SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause, c.modifie_le
             FROM creneau c
             WHERE c.edition_id = ?""";
@@ -62,8 +59,7 @@ public class CreneauRepository {
      */
     public Creneau findCreneau(Long id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause,
                         c.modifie_le
                         FROM creneau c
@@ -85,19 +81,18 @@ public class CreneauRepository {
      */
     public void replaceCreneaux(List<Creneau> creneaux) {
         scope.write("Failed to replace timeslots", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM poste_affectation WHERE edition_id = ?")) {
+            try (PreparedStatement ps =
+                    scope.prepareScoped(connection, "DELETE FROM poste_affectation WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM creneau WHERE edition_id = ?")) {
+            try (PreparedStatement ps = scope.prepareScoped(connection, "DELETE FROM creneau WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
             // A new grid may not have the same families as the old one: the
             // stands' assignments go with the plan (issue #390), and the next
             // build spreads them again.
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "UPDATE stand SET famille = NULL WHERE edition_id = ?")) {
+            try (PreparedStatement ps =
+                    scope.prepareScoped(connection, "UPDATE stand SET famille = NULL WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
             for (Creneau creneau : creneaux) {
@@ -194,13 +189,13 @@ public class CreneauRepository {
      */
     public void deleteCreneau(Long id) {
         scope.write("Failed to delete timeslot " + id, connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM poste_affectation WHERE edition_id = ? AND creneau_id = ?")) {
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection, "DELETE FROM poste_affectation WHERE edition_id = ? AND creneau_id = ?")) {
                 ps.setLong(2, id);
                 ps.executeUpdate();
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM creneau WHERE edition_id = ? AND id = ?")) {
+            try (PreparedStatement ps =
+                    scope.prepareScoped(connection, "DELETE FROM creneau WHERE edition_id = ? AND id = ?")) {
                 ps.setLong(2, id);
                 ps.executeUpdate();
             }
@@ -209,8 +204,7 @@ public class CreneauRepository {
 
     /** Inserts a new timeslot row; the generated id is set back onto {@code creneau} and returned. */
     Long insertCreneauTx(Connection connection, Creneau creneau) throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                """
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, famille, couverture_pause)
                 VALUES (?, ?, ?, ?, ?, ?)
                 RETURNING id, modifie_le""")) {
@@ -223,7 +217,8 @@ public class CreneauRepository {
                 rs.next();
                 long id = rs.getLong("id");
                 creneau.setId(id);
-                creneau.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
+                creneau.setModifieLe(
+                        rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
             }
         }
         return creneau.getId();
@@ -232,8 +227,7 @@ public class CreneauRepository {
     private void updateCreneauTx(Connection connection, Creneau creneau) throws SQLException {
         // Not prepareScoped: an UPDATE's first placeholder belongs to its SET
         // clause, so the edition predicate can't be the statement's first one.
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
+        try (PreparedStatement ps = connection.prepareStatement("""
                 UPDATE creneau
                 SET date_creneau = ?, heure_debut = ?, heure_fin = ?, famille = ?, couverture_pause = ?,
                 modifie_le = now()

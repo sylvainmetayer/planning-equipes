@@ -1,14 +1,13 @@
 package dev.sylvain.planning.service.diagnostic;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * What the constraints say about handing one seat to one animateur, without
@@ -38,8 +37,11 @@ import dev.sylvain.planning.domain.PosteAffectation;
  *                             the reasons, each one a key of
  *                             {@code ConstraintCatalog}
  */
-public record AffectationHypothesis(String animateurId, HardMediumSoftScore scoreApres,
-        HardMediumSoftScore delta, List<String> contraintesAggravees) {
+public record AffectationHypothesis(
+        String animateurId,
+        HardMediumSoftScore scoreApres,
+        HardMediumSoftScore delta,
+        List<String> contraintesAggravees) {
 
     public AffectationHypothesis {
         contraintesAggravees = List.copyOf(contraintesAggravees);
@@ -63,8 +65,11 @@ public record AffectationHypothesis(String animateurId, HardMediumSoftScore scor
      * unlike the Enterprise-gated oracle of
      * {@code ConstraintDiagnosticServiceContractTest}.</p>
      */
-    static List<AffectationHypothesis> byFullAnalysis(ConstraintDiagnosticService diagnostic,
-            PlanningEvenement solution, PosteAffectation cible, List<Animateur> candidats) {
+    static List<AffectationHypothesis> byFullAnalysis(
+            ConstraintDiagnosticService diagnostic,
+            PlanningEvenement solution,
+            PosteAffectation cible,
+            List<Animateur> candidats) {
         Animateur initial = cible.getAnimateur();
         List<AffectationHypothesis> hypotheses = new ArrayList<>(candidats.size());
         try {
@@ -74,7 +79,9 @@ public record AffectationHypothesis(String animateurId, HardMediumSoftScore scor
             for (Animateur candidat : candidats) {
                 cible.setAnimateur(candidat);
                 PlanningAnalysis apres = diagnostic.analyze(solution);
-                hypotheses.add(new AffectationHypothesis(candidat.getId(), apres.score(),
+                hypotheses.add(new AffectationHypothesis(
+                        candidat.getId(),
+                        apres.score(),
                         apres.score().subtract(avant.score()),
                         worsened(totalsBefore, totals(apres))));
             }

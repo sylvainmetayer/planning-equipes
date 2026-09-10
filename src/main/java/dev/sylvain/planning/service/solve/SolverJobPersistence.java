@@ -1,13 +1,12 @@
 package dev.sylvain.planning.service.solve;
 
-import java.time.Instant;
-import java.util.List;
-
-import org.jboss.logging.Logger;
 import dev.sylvain.planning.service.solve.SolverJobRepository.LigneJob;
 import dev.sylvain.planning.service.solve.SolverJobService.SolverJob;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * The {@code solver_job} row behind a {@link SolverJob}: written on every

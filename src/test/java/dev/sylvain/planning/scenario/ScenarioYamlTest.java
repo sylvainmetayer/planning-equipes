@@ -19,7 +19,9 @@ class ScenarioYamlTest {
         assertThat(read("h: 9:30")).isEqualTo("9:30");
         assertThat(read("h: 8:00")).isEqualTo("8:00");
         assertThat(read("h: 12:00:00")).isEqualTo("12:00:00");
-        assertThat(read("h: 08:00")).as("déjà du texte avant, par accident du zéro initial").isEqualTo("08:00");
+        assertThat(read("h: 08:00"))
+                .as("déjà du texte avant, par accident du zéro initial")
+                .isEqualTo("08:00");
     }
 
     @Test

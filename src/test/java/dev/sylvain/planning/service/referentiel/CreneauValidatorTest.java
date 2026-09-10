@@ -3,13 +3,11 @@ package dev.sylvain.planning.service.referentiel;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.service.BusinessError;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import org.junit.jupiter.api.Test;
 
 /**
  * The rule is a pure function: an accepted timeslot is a call that returns.

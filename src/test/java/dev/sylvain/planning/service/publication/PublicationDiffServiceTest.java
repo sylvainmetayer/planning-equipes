@@ -4,16 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.groups.Tuple.tuple;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
-
 import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementAnimateur;
 import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementVacation;
 import dev.sylvain.planning.service.publication.PublicationDiffService.Identite;
 import dev.sylvain.planning.service.publication.PublicationDiffService.TypeChangement;
 import dev.sylvain.planning.service.publication.PublicationDiffService.Vacation;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -52,8 +51,7 @@ class PublicationDiffServiceTest {
 
         List<ChangementAnimateur> changements = diff.comparer(publie, courant, IDENTITES, false);
 
-        assertThat(changements).extracting(ChangementAnimateur::animateurId)
-                .containsExactly("camille", "dominique");
+        assertThat(changements).extracting(ChangementAnimateur::animateurId).containsExactly("camille", "dominique");
     }
 
     @Test
@@ -61,20 +59,18 @@ class PublicationDiffServiceTest {
         List<ChangementAnimateur> changements = diff.comparer(
                 Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),
                 Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "ninja", "Ninja"))),
-                IDENTITES, false);
+                IDENTITES,
+                false);
 
-        assertThat(changements).singleElement()
-                .satisfies(changement -> {
-                    assertThat(changement.nomAffiche()).isEqualTo("Camille Durand");
-                    assertThat(changement.premiereDiffusion()).isFalse();
-                    assertThat(changement.changements()).singleElement()
-                            .satisfies(vacation -> {
-                                assertThat(vacation.type()).isEqualTo(TypeChangement.DEPLACEMENT);
-                                assertThat(vacation.libelle())
-                                        .isEqualTo("samedi 11/07 : Ninja 14h-18h remplace Cirque 14h-18h");
-                                assertThat(vacation.precedente().standId()).isEqualTo("cirque");
-                            });
-                });
+        assertThat(changements).singleElement().satisfies(changement -> {
+            assertThat(changement.nomAffiche()).isEqualTo("Camille Durand");
+            assertThat(changement.premiereDiffusion()).isFalse();
+            assertThat(changement.changements()).singleElement().satisfies(vacation -> {
+                assertThat(vacation.type()).isEqualTo(TypeChangement.DEPLACEMENT);
+                assertThat(vacation.libelle()).isEqualTo("samedi 11/07 : Ninja 14h-18h remplace Cirque 14h-18h");
+                assertThat(vacation.precedente().standId()).isEqualTo("cirque");
+            });
+        });
     }
 
     @Test
@@ -82,29 +78,31 @@ class PublicationDiffServiceTest {
         List<ChangementAnimateur> changements = diff.comparer(
                 Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),
                 Map.of("camille", List.of(vacation(DIMANCHE, 10, 12, "jeux", "Jeux"))),
-                IDENTITES, false);
+                IDENTITES,
+                false);
 
-        assertThat(changements).singleElement()
+        assertThat(changements)
+                .singleElement()
                 .extracting(ChangementAnimateur::changements)
                 .asInstanceOf(list(ChangementVacation.class))
-                .extracting(ChangementVacation::type,
-                        ChangementVacation::libelle)
+                .extracting(ChangementVacation::type, ChangementVacation::libelle)
                 .containsExactly(
-                        tuple(TypeChangement.RETRAIT,
-                                "samedi 11/07 : Cirque 14h-18h (retiré)"),
-                        tuple(TypeChangement.AJOUT,
-                                "dimanche 12/07 : Jeux 10h-12h (nouveau)"));
+                        tuple(TypeChangement.RETRAIT, "samedi 11/07 : Cirque 14h-18h (retiré)"),
+                        tuple(TypeChangement.AJOUT, "dimanche 12/07 : Jeux 10h-12h (nouveau)"));
     }
 
     @Test
     void unChangementDHoraireSurLeMemeStandEstUnDeplacement() {
         List<ChangementAnimateur> changements = diff.comparer(
                 Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "ninja", "Ninja"))),
-                Map.of("camille", List.of(new Vacation(SAMEDI, LocalTime.of(14, 30), LocalTime.of(18, 0),
-                        "ninja", "Ninja"))),
-                IDENTITES, false);
+                Map.of(
+                        "camille",
+                        List.of(new Vacation(SAMEDI, LocalTime.of(14, 30), LocalTime.of(18, 0), "ninja", "Ninja"))),
+                IDENTITES,
+                false);
 
-        assertThat(changements).singleElement()
+        assertThat(changements)
+                .singleElement()
                 .extracting(ChangementAnimateur::changements)
                 .asInstanceOf(list(ChangementVacation.class))
                 .singleElement()
@@ -119,7 +117,8 @@ class PublicationDiffServiceTest {
         List<ChangementAnimateur> changements = diff.comparer(
                 Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),
                 Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "cirque", "Chapiteau"))),
-                IDENTITES, false);
+                IDENTITES,
+                false);
 
         assertThat(changements).isEmpty();
     }
@@ -138,13 +137,15 @@ class PublicationDiffServiceTest {
         // Morning and evening on the same stand: removing the evening one is a
         // retrait, not a move of the morning one into the evening.
         List<ChangementAnimateur> changements = diff.comparer(
-                Map.of("camille", List.of(
-                        vacation(SAMEDI, 9, 12, "ninja", "Ninja"),
-                        vacation(SAMEDI, 18, 21, "ninja", "Ninja"))),
+                Map.of(
+                        "camille",
+                        List.of(vacation(SAMEDI, 9, 12, "ninja", "Ninja"), vacation(SAMEDI, 18, 21, "ninja", "Ninja"))),
                 Map.of("camille", List.of(vacation(SAMEDI, 9, 12, "ninja", "Ninja"))),
-                IDENTITES, false);
+                IDENTITES,
+                false);
 
-        assertThat(changements).singleElement()
+        assertThat(changements)
+                .singleElement()
                 .extracting(ChangementAnimateur::changements)
                 .asInstanceOf(list(ChangementVacation.class))
                 .singleElement()
@@ -156,42 +157,46 @@ class PublicationDiffServiceTest {
     void unePremiereDiffusionAnnonceLePlanningEntier() {
         List<ChangementAnimateur> changements = diff.comparer(
                 Map.of(),
-                Map.of("camille", List.of(
-                        vacation(SAMEDI, 14, 18, "cirque", "Cirque"),
-                        vacation(DIMANCHE, 10, 12, "jeux", "Jeux"))),
-                IDENTITES, true);
+                Map.of(
+                        "camille",
+                        List.of(
+                                vacation(SAMEDI, 14, 18, "cirque", "Cirque"),
+                                vacation(DIMANCHE, 10, 12, "jeux", "Jeux"))),
+                IDENTITES,
+                true);
 
-        assertThat(changements).singleElement()
-                .satisfies(changement -> {
-                    assertThat(changement.premiereDiffusion()).isTrue();
-                    assertThat(changement.changements()).hasSize(2)
-                            .allSatisfy(vacation -> assertThat(vacation.type()).isEqualTo(TypeChangement.AJOUT));
-                });
+        assertThat(changements).singleElement().satisfies(changement -> {
+            assertThat(changement.premiereDiffusion()).isTrue();
+            assertThat(changement.changements())
+                    .hasSize(2)
+                    .allSatisfy(vacation -> assertThat(vacation.type()).isEqualTo(TypeChangement.AJOUT));
+        });
     }
 
     @Test
     void quelquUnDeNouveauDansUnPlanDejaPublieEstUnePremiereDiffusionPourLuiSeul() {
         List<ChangementAnimateur> changements = diff.comparer(
                 Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),
-                Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "ninja", "Ninja")),
-                        "dominique", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),
-                IDENTITES, false);
+                Map.of(
+                        "camille",
+                        List.of(vacation(SAMEDI, 14, 18, "ninja", "Ninja")),
+                        "dominique",
+                        List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),
+                IDENTITES,
+                false);
 
-        assertThat(changements).extracting(ChangementAnimateur::animateurId,
-                ChangementAnimateur::premiereDiffusion)
-                .containsExactly(
-                        tuple("camille", false),
-                        tuple("dominique", true));
+        assertThat(changements)
+                .extracting(ChangementAnimateur::animateurId, ChangementAnimateur::premiereDiffusion)
+                .containsExactly(tuple("camille", false), tuple("dominique", true));
     }
 
     @Test
     void quelquUnQuiPerdTousSesCreneauxEstPrevenuQuandMeme() {
         List<ChangementAnimateur> changements = diff.comparer(
-                Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),
-                Map.of(),
-                IDENTITES, false);
+                Map.of("camille", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))), Map.of(), IDENTITES, false);
 
-        assertThat(changements).singleElement()
+        assertThat(changements)
+                .singleElement()
                 .extracting(ChangementAnimateur::changements)
                 .asInstanceOf(list(ChangementVacation.class))
                 .singleElement()
@@ -202,9 +207,7 @@ class PublicationDiffServiceTest {
     @Test
     void unAnimateurDisparuDuReferentielNEstPasUnDestinataire() {
         List<ChangementAnimateur> changements = diff.comparer(
-                Map.of("parti", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),
-                Map.of(),
-                IDENTITES, false);
+                Map.of("parti", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))), Map.of(), IDENTITES, false);
 
         assertThat(changements).isEmpty();
     }
@@ -214,11 +217,10 @@ class PublicationDiffServiceTest {
         // With no address they will receive nothing, but the admin has to see
         // them: this is the only moment they learn to reach them another way.
         List<ChangementAnimateur> changements = diff.comparer(
-                Map.of(),
-                Map.of("sasha", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),
-                IDENTITES, true);
+                Map.of(), Map.of("sasha", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))), IDENTITES, true);
 
-        assertThat(changements).singleElement()
+        assertThat(changements)
+                .singleElement()
                 .extracting(ChangementAnimateur::nomAffiche, ChangementAnimateur::email)
                 .containsExactly("Sasha Roy", null);
     }
@@ -228,9 +230,11 @@ class PublicationDiffServiceTest {
         List<ChangementAnimateur> changements = diff.comparer(
                 Map.of(),
                 Map.of("camille", List.of(new Vacation(SAMEDI, null, null, "cirque", "Cirque"))),
-                IDENTITES, true);
+                IDENTITES,
+                true);
 
-        assertThat(changements).singleElement()
+        assertThat(changements)
+                .singleElement()
                 .extracting(ChangementAnimateur::changements)
                 .asInstanceOf(list(ChangementVacation.class))
                 .singleElement()

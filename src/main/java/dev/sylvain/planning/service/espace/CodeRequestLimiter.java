@@ -1,11 +1,8 @@
 package dev.sylvain.planning.service.espace;
 
-import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigEspaceCode;
-
 import jakarta.enterprise.context.ApplicationScoped;
-import dev.sylvain.planning.service.espace.RateLimitVerdict;
-import dev.sylvain.planning.service.espace.SlidingWindowCounter;
+import jakarta.inject.Inject;
 
 /**
  * Rate limit on the espace animateur access-code requests.

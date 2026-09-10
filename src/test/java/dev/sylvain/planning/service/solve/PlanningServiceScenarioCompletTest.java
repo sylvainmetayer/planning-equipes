@@ -2,15 +2,14 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 /**
  * Full-scale regression test: {@code scenario-complet.yaml} (2112 postes, 152
@@ -50,7 +49,14 @@ class PlanningServiceScenarioCompletTest {
     @Test
     void scenarioCompletNeViolateAucuneContrainteHard() {
         ReferenceData referenceDataService = new EmptyReferenceData();
-        PlanningService planningService = new PlanningService(420L, 0L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(), null, null,
+        PlanningService planningService = new PlanningService(
+                420L,
+                0L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                referenceDataService,
+                new FeasibilityAnalyzer(),
+                null,
+                null,
                 ConfigProvider.getConfig());
 
         PlanningEvenement problem = planningService.buildExample();

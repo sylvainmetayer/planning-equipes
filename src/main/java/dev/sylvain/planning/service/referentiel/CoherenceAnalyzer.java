@@ -1,5 +1,13 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -9,15 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 
 /**
  * The cross-field checks a write runs on top of {@link CreneauValidator} and
@@ -54,8 +53,7 @@ public final class CoherenceAnalyzer {
 
     private static final int MINUTES_PAR_JOUR = 24 * 60;
 
-    private CoherenceAnalyzer() {
-    }
+    private CoherenceAnalyzer() {}
 
     /* ------------------------------ Animateur ------------------------------ */
 
@@ -109,28 +107,31 @@ public final class CoherenceAnalyzer {
      * news of this write, and repeating them on every unrelated edit is the
      * cry-wolf this class refuses.</p>
      */
-    private static void indisponibilites(Animateur avant, Animateur apres, JoursEvenement jours,
-            List<Avertissement> avertissements) {
+    private static void indisponibilites(
+            Animateur avant, Animateur apres, JoursEvenement jours, List<Avertissement> avertissements) {
         Collection<LocalDate> declares = apres.getJoursIndisponibles();
         if (declares == null || declares.isEmpty()) {
             return;
         }
-        Collection<LocalDate> deja = avant == null || avant.getJoursIndisponibles() == null
-                ? Set.of()
-                : avant.getJoursIndisponibles();
+        Collection<LocalDate> deja =
+                avant == null || avant.getJoursIndisponibles() == null ? Set.of() : avant.getJoursIndisponibles();
         List<LocalDate> nouveaux = declares.stream()
                 .filter(Objects::nonNull)
                 .filter(jour -> !deja.contains(jour))
                 .sorted(Comparator.naturalOrder())
                 .toList();
-        List<LocalDate> hors = nouveaux.stream().filter(jour -> !jours.covers(jour)).toList();
+        List<LocalDate> hors =
+                nouveaux.stream().filter(jour -> !jours.covers(jour)).toList();
         if (!hors.isEmpty()) {
-            avertissements.add(new Avertissement(TypeAvertissement.INDISPONIBILITE_HORS_EVENEMENT,
-                    (hors.size() == 1 ? "Indisponibilité hors de l'événement : "
-                            : "Indisponibilités hors de l'événement : ")
+            avertissements.add(new Avertissement(
+                    TypeAvertissement.INDISPONIBILITE_HORS_EVENEMENT,
+                    (hors.size() == 1
+                                    ? "Indisponibilité hors de l'événement : "
+                                    : "Indisponibilités hors de l'événement : ")
                             + citer(hors) + ". L'événement court du " + jours.first() + " au " + jours.last()
                             + " (dates des créneaux de l'édition) : "
-                            + (hors.size() == 1 ? "ce jour ne recouvre aucun créneau"
+                            + (hors.size() == 1
+                                    ? "ce jour ne recouvre aucun créneau"
                                     : "ces jours ne recouvrent aucun créneau")
                             + " et ne changera rien au planning. La saisie est enregistrée."));
         }
@@ -139,11 +140,14 @@ public final class CoherenceAnalyzer {
                 .filter(jour -> !jours.hasCreneauOn(jour))
                 .toList();
         if (!creux.isEmpty()) {
-            avertissements.add(new Avertissement(TypeAvertissement.INDISPONIBILITE_JOUR_SANS_CRENEAU,
-                    (creux.size() == 1 ? "Indisponibilité sur un jour sans créneau : "
-                            : "Indisponibilités sur des jours sans créneau : ")
+            avertissements.add(new Avertissement(
+                    TypeAvertissement.INDISPONIBILITE_JOUR_SANS_CRENEAU,
+                    (creux.size() == 1
+                                    ? "Indisponibilité sur un jour sans créneau : "
+                                    : "Indisponibilités sur des jours sans créneau : ")
                             + citer(creux) + ". "
-                            + (creux.size() == 1 ? "Ce jour est dans l'événement mais ne porte aucun créneau"
+                            + (creux.size() == 1
+                                    ? "Ce jour est dans l'événement mais ne porte aucun créneau"
                                     : "Ces jours sont dans l'événement mais ne portent aucun créneau")
                             + " : l'espace animateur ne "
                             + (creux.size() == 1 ? "l'affichera pas" : "les affichera pas")
@@ -176,8 +180,8 @@ public final class CoherenceAnalyzer {
      * that keeps the warning actionable in a bulk edit, where the screen no
      * longer says which row it is about.</p>
      */
-    private static Optional<Avertissement> minoriteSurLEvenement(Animateur avant, Animateur apres,
-            JoursEvenement jours) {
+    private static Optional<Avertissement> minoriteSurLEvenement(
+            Animateur avant, Animateur apres, JoursEvenement jours) {
         if (apres.getDateNaissance() == null
                 || (avant != null && Objects.equals(avant.getDateNaissance(), apres.getDateNaissance()))) {
             return Optional.empty();
@@ -198,12 +202,14 @@ public final class CoherenceAnalyzer {
         }
         String qui = "L'animateur " + apres.getId();
         if (majorite == null) {
-            return Optional.of(new Avertissement(TypeAvertissement.MINEUR_PENDANT_EVENEMENT,
+            return Optional.of(new Avertissement(
+                    TypeAvertissement.MINEUR_PENDANT_EVENEMENT,
                     qui + " est mineur pendant tout l'événement (du " + debut + " au " + fin
                             + ") : les règles des jeunes travailleurs s'appliqueront à toutes ses affectations. "
                             + "Si la date de naissance est une erreur de saisie, corrigez-la."));
         }
-        return Optional.of(new Avertissement(TypeAvertissement.MINEUR_PENDANT_EVENEMENT,
+        return Optional.of(new Avertissement(
+                TypeAvertissement.MINEUR_PENDANT_EVENEMENT,
                 qui + " est mineur du " + debut + " au " + majorite.minusDays(1) + " et devient majeur le "
                         + majorite + " : les règles des jeunes travailleurs ne s'appliqueront qu'aux créneaux "
                         + "antérieurs à cette date."));
@@ -222,8 +228,12 @@ public final class CoherenceAnalyzer {
      *               opening span to be outside of.
      */
     public static List<Avertissement> onCreneau(Creneau creneau, List<Stand> stands) {
-        if (creneau == null || creneau.getDate() == null || creneau.getHeureDebut() == null
-                || creneau.getHeureFin() == null || stands == null || stands.isEmpty()) {
+        if (creneau == null
+                || creneau.getDate() == null
+                || creneau.getHeureDebut() == null
+                || creneau.getHeureFin() == null
+                || stands == null
+                || stands.isEmpty()) {
             return List.of();
         }
         int duree = creneau.getDureeMinutes();
@@ -235,7 +245,8 @@ public final class CoherenceAnalyzer {
                 .flatMap(List::stream)
                 .toList());
         if (ouverts.isEmpty()) {
-            return List.of(new Avertissement(TypeAvertissement.CRENEAU_HORS_OUVERTURE_STANDS,
+            return List.of(new Avertissement(
+                    TypeAvertissement.CRENEAU_HORS_OUVERTURE_STANDS,
                     "Aucun des " + stands.size() + " stands de l'édition n'est ouvert pendant le créneau "
                             + libelle(creneau) + " : il n'ouvrira aucun poste et le solveur n'y placera personne. "
                             + "Vérifiez les horaires d'ouverture des stands sur cette date. Le créneau est "
@@ -248,13 +259,14 @@ public final class CoherenceAnalyzer {
             debordements.add("de " + heure(creneau, 0) + " à " + heure(creneau, avant) + " (" + avant + " min)");
         }
         if (apres >= DEBORDEMENT_MINIMAL_MINUTES) {
-            debordements.add("de " + heure(creneau, duree - apres) + " à " + heure(creneau, duree)
-                    + " (" + apres + " min)");
+            debordements.add(
+                    "de " + heure(creneau, duree - apres) + " à " + heure(creneau, duree) + " (" + apres + " min)");
         }
         if (debordements.isEmpty()) {
             return List.of();
         }
-        return List.of(new Avertissement(TypeAvertissement.CRENEAU_DEBORDE_OUVERTURE_STANDS,
+        return List.of(new Avertissement(
+                TypeAvertissement.CRENEAU_DEBORDE_OUVERTURE_STANDS,
                 "Le créneau " + libelle(creneau) + " déborde l'amplitude d'ouverture de tous les stands : aucun "
                         + "n'est ouvert " + String.join(" ni ", debordements)
                         + ". Personne ne pourra être placé sur ces minutes. Le créneau est enregistré."));
@@ -298,31 +310,43 @@ public final class CoherenceAnalyzer {
         // Warning about it would be crying wolf on a window the solver honours.
         Set<LocalDate> lues = HoraireStandResolver.datesConcernees(creneaux);
         List<LocalDate> horsEvenement = new ArrayList<>();
-        apres.getIndisponibilites().stream().map(IndisponibiliteStand::getDate).filter(Objects::nonNull)
-                .filter(date -> !jours.covers(date) && !lues.contains(date)).forEach(horsEvenement::add);
-        apres.getOuvertures().stream().map(OuvertureStand::getDate).filter(Objects::nonNull)
-                .filter(date -> !jours.covers(date) && !lues.contains(date)).forEach(horsEvenement::add);
+        apres.getIndisponibilites().stream()
+                .map(IndisponibiliteStand::getDate)
+                .filter(Objects::nonNull)
+                .filter(date -> !jours.covers(date) && !lues.contains(date))
+                .forEach(horsEvenement::add);
+        apres.getOuvertures().stream()
+                .map(OuvertureStand::getDate)
+                .filter(Objects::nonNull)
+                .filter(date -> !jours.covers(date) && !lues.contains(date))
+                .forEach(horsEvenement::add);
         if (!horsEvenement.isEmpty()) {
             List<LocalDate> triees = horsEvenement.stream().distinct().sorted().toList();
-            avertissements.add(new Avertissement(TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT,
+            avertissements.add(new Avertissement(
+                    TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT,
                     "Le stand " + apres.getId() + " porte " + horsEvenement.size() + " exception(s) datée(s) hors "
                             + "des jours de l'événement (" + jours.first() + " → " + jours.last() + "), sur "
                             + triees.size() + " date(s) : " + citer(triees)
                             + ". Aucun créneau ne les lira. Le stand est enregistré."));
         }
 
-        List<OuvertureStandsAnalyzer.Anomaly> sansEffet = OuvertureStandsAnalyzer.fenetresWithoutEffect(apres,
-                OuvertureStandsAnalyzer.creneauxByDay(creneaux));
+        List<OuvertureStandsAnalyzer.Anomaly> sansEffet =
+                OuvertureStandsAnalyzer.fenetresWithoutEffect(apres, OuvertureStandsAnalyzer.creneauxByDay(creneaux));
         if (!sansEffet.isEmpty()) {
             // The dates, not one full sentence per date: a rule expanding onto
             // twelve days repeated the same phrase five times over 590
             // characters, in a snack bar that stays until it is dismissed.
-            List<LocalDate> joursConcernes = sansEffet.stream().map(OuvertureStandsAnalyzer.Anomaly::date)
-                    .filter(Objects::nonNull).distinct().sorted().toList();
+            List<LocalDate> joursConcernes = sansEffet.stream()
+                    .map(OuvertureStandsAnalyzer.Anomaly::date)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .sorted()
+                    .toList();
             OuvertureStandsAnalyzer.Anomaly premiere = sansEffet.stream()
                     .min(Comparator.comparing(anomalie -> anomalie.date() != null ? anomalie.date() : LocalDate.MIN))
                     .orElse(sansEffet.get(0));
-            avertissements.add(new Avertissement(TypeAvertissement.STAND_FENETRE_SANS_EFFET,
+            avertissements.add(new Avertissement(
+                    TypeAvertissement.STAND_FENETRE_SANS_EFFET,
                     "Le stand " + apres.getId() + " a " + sansEffet.size() + " fenêtre(s) qui ne recoupent aucun "
                             + "créneau de leur jour : " + citer(joursConcernes) + ". Par exemple le "
                             + premiere.date() + ", " + premiere.message()
@@ -332,7 +356,8 @@ public final class CoherenceAnalyzer {
         boolean ouvertQuelquePart = creneaux.stream()
                 .anyMatch(creneau -> !creneau.segmentsOuvertsMinutes(apres).isEmpty());
         if (!ouvertQuelquePart) {
-            avertissements.add(new Avertissement(TypeAvertissement.STAND_JAMAIS_OUVERT,
+            avertissements.add(new Avertissement(
+                    TypeAvertissement.STAND_JAMAIS_OUVERT,
                     "Le stand " + apres.getId() + " n'est ouvert sur aucun des " + creneaux.size()
                             + " créneaux de l'édition : il n'ouvrira aucun poste et le solveur n'y placera personne. "
                             + "Le stand est enregistré."));
@@ -349,24 +374,51 @@ public final class CoherenceAnalyzer {
     private static String scheduleSignature(Stand stand) {
         StringBuilder signature = new StringBuilder();
         for (HoraireStand horaire : stand.getHoraires()) {
-            signature.append(horaire.getMode()).append('|').append(horaire.getJours()).append('|')
-                    .append(horaire.getJoursSemaine()).append('|').append(horaire.getDateDebut()).append('|')
-                    .append(horaire.getDateFin()).append('|').append(horaire.getDates()).append('|');
+            signature
+                    .append(horaire.getMode())
+                    .append('|')
+                    .append(horaire.getJours())
+                    .append('|')
+                    .append(horaire.getJoursSemaine())
+                    .append('|')
+                    .append(horaire.getDateDebut())
+                    .append('|')
+                    .append(horaire.getDateFin())
+                    .append('|')
+                    .append(horaire.getDates())
+                    .append('|');
             for (FenetreHoraire fenetre : horaire.getFenetres()) {
-                signature.append(fenetre.getHeureDebut()).append('-').append(fenetre.getHeureFin()).append('@')
-                        .append(fenetre.getEffectif()).append(',');
+                signature
+                        .append(fenetre.getHeureDebut())
+                        .append('-')
+                        .append(fenetre.getHeureFin())
+                        .append('@')
+                        .append(fenetre.getEffectif())
+                        .append(',');
             }
             signature.append(';');
         }
         signature.append('#');
         for (IndisponibiliteStand fermeture : stand.getIndisponibilites()) {
-            signature.append(fermeture.getDate()).append(' ').append(fermeture.getHeureDebut()).append('-')
-                    .append(fermeture.getHeureFin()).append(';');
+            signature
+                    .append(fermeture.getDate())
+                    .append(' ')
+                    .append(fermeture.getHeureDebut())
+                    .append('-')
+                    .append(fermeture.getHeureFin())
+                    .append(';');
         }
         signature.append('#');
         for (OuvertureStand ouverture : stand.getOuvertures()) {
-            signature.append(ouverture.getDate()).append(' ').append(ouverture.getHeureDebut()).append('-')
-                    .append(ouverture.getHeureFin()).append('@').append(ouverture.getEffectif()).append(';');
+            signature
+                    .append(ouverture.getDate())
+                    .append(' ')
+                    .append(ouverture.getHeureDebut())
+                    .append('-')
+                    .append(ouverture.getHeureFin())
+                    .append('@')
+                    .append(ouverture.getEffectif())
+                    .append(';');
         }
         return signature.toString();
     }
@@ -404,10 +456,15 @@ public final class CoherenceAnalyzer {
 
     private static String citer(List<LocalDate> dates) {
         if (dates.size() <= DATES_CITEES) {
-            return dates.stream().map(LocalDate::toString).reduce((a, b) -> a + ", " + b).orElse("");
+            return dates.stream()
+                    .map(LocalDate::toString)
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("");
         }
-        return dates.subList(0, DATES_CITEES).stream().map(LocalDate::toString)
-                .reduce((a, b) -> a + ", " + b).orElse("")
+        return dates.subList(0, DATES_CITEES).stream()
+                        .map(LocalDate::toString)
+                        .reduce((a, b) -> a + ", " + b)
+                        .orElse("")
                 + " et " + (dates.size() - DATES_CITEES) + " autre(s)";
     }
 }

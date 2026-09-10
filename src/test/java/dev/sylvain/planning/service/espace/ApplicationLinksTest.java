@@ -3,7 +3,6 @@ package dev.sylvain.planning.service.espace;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -41,7 +40,7 @@ class ApplicationLinksTest {
     /** A deployment with no public URL prints no link, it does not invent one. */
     @Test
     void sansUrlPubliqueAucunLienNEstConstruit() {
-        for (String base : new String[] { null, "", "   " }) {
+        for (String base : new String[] {null, "", "   "}) {
             ApplicationLinks liens = linksTo(base);
 
             assertThat(liens.disponible()).isFalse();

@@ -1,14 +1,29 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.ModeHoraire;
+import dev.sylvain.planning.domain.NiveauEffort;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.NaturalOrder;
+import dev.sylvain.planning.service.WriteStamp;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -19,24 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.NiveauEffort;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.NaturalOrder;
-import dev.sylvain.planning.service.WriteStamp;
 
 /**
  * Stand rows and everything hanging off one: proposed typologies, dated
@@ -62,8 +60,7 @@ public class StandRepository {
     public List<Stand> listStands() {
         Map<String, Stand> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT s.id, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs,
                     s.premium, s.niveau_effort, s.famille, s.modifie_le, e.id AS emplacement_id, e.nom AS emplacement_nom,
                     e.latitude AS emplacement_latitude, e.longitude AS emplacement_longitude
@@ -82,18 +79,21 @@ public class StandRepository {
                     stand.setPremium(rs.getBoolean("premium"));
                     stand.setNiveauEffort(NiveauEffort.valueOf(rs.getString("niveau_effort")));
                     stand.setFamille((Integer) rs.getObject("famille"));
-                    stand.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
+                    stand.setModifieLe(
+                            rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                     String emplacementId = rs.getString("emplacement_id");
                     if (emplacementId != null) {
-                        stand.setEmplacement(new Emplacement(emplacementId, rs.getString("emplacement_nom"),
+                        stand.setEmplacement(new Emplacement(
+                                emplacementId,
+                                rs.getString("emplacement_nom"),
                                 (Double) rs.getObject("emplacement_latitude"),
                                 (Double) rs.getObject("emplacement_longitude")));
                     }
                     byId.put(stand.getId(), stand);
                 }
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "SELECT stand_id, typologie FROM stand_typologie WHERE edition_id = ?");
+            try (PreparedStatement ps = scope.prepareScoped(
+                            connection, "SELECT stand_id, typologie FROM stand_typologie WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Stand stand = byId.get(rs.getString("stand_id"));
@@ -102,8 +102,7 @@ public class StandRepository {
                     }
                 }
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif
                     FROM stand_indisponibilite
                     WHERE edition_id = ?
@@ -112,17 +111,17 @@ public class StandRepository {
                 while (rs.next()) {
                     Stand stand = byId.get(rs.getString("stand_id"));
                     if (stand != null) {
-                        stand.getIndisponibilites().add(new IndisponibiliteStand(
-                                rs.getLong("id"),
-                                rs.getObject("date_indisponibilite", LocalDate.class),
-                                rs.getObject("heure_debut", LocalTime.class),
-                                rs.getObject("heure_fin", LocalTime.class),
-                                rs.getString("motif")));
+                        stand.getIndisponibilites()
+                                .add(new IndisponibiliteStand(
+                                        rs.getLong("id"),
+                                        rs.getObject("date_indisponibilite", LocalDate.class),
+                                        rs.getObject("heure_debut", LocalTime.class),
+                                        rs.getObject("heure_fin", LocalTime.class),
+                                        rs.getString("motif")));
                     }
                 }
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif
                     FROM stand_ouverture
                     WHERE edition_id = ?
@@ -131,13 +130,14 @@ public class StandRepository {
                 while (rs.next()) {
                     Stand stand = byId.get(rs.getString("stand_id"));
                     if (stand != null) {
-                        stand.getOuvertures().add(new OuvertureStand(
-                                rs.getLong("id"),
-                                rs.getObject("date_ouverture", LocalDate.class),
-                                rs.getObject("heure_debut", LocalTime.class),
-                                rs.getObject("heure_fin", LocalTime.class),
-                                rs.getString("motif"),
-                                rs.getObject("effectif", Integer.class)));
+                        stand.getOuvertures()
+                                .add(new OuvertureStand(
+                                        rs.getLong("id"),
+                                        rs.getObject("date_ouverture", LocalDate.class),
+                                        rs.getObject("heure_debut", LocalTime.class),
+                                        rs.getObject("heure_fin", LocalTime.class),
+                                        rs.getString("motif"),
+                                        rs.getObject("effectif", Integer.class)));
                     }
                 }
             }
@@ -158,8 +158,7 @@ public class StandRepository {
      */
     private void loadHoraires(Connection connection, Map<String, Stand> standsById) throws SQLException {
         Map<Long, HoraireStand> horairesById = new LinkedHashMap<>();
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                """
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                 SELECT id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif
                 FROM stand_horaire
                 WHERE edition_id = ?
@@ -186,8 +185,7 @@ public class StandRepository {
         if (horairesById.isEmpty()) {
             return;
         }
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                """
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                 SELECT horaire_id, heure_debut, heure_fin, effectif
                 FROM stand_horaire_fenetre
                 WHERE edition_id = ?
@@ -196,10 +194,11 @@ public class StandRepository {
             while (rs.next()) {
                 HoraireStand horaire = horairesById.get(rs.getLong("horaire_id"));
                 if (horaire != null) {
-                    horaire.getFenetres().add(new FenetreHoraire(
-                            rs.getObject("heure_debut", LocalTime.class),
-                            rs.getObject("heure_fin", LocalTime.class),
-                            rs.getObject("effectif", Integer.class)));
+                    horaire.getFenetres()
+                            .add(new FenetreHoraire(
+                                    rs.getObject("heure_debut", LocalTime.class),
+                                    rs.getObject("heure_fin", LocalTime.class),
+                                    rs.getObject("effectif", Integer.class)));
                 }
             }
         }
@@ -230,7 +229,10 @@ public class StandRepository {
 
     /** One stand, or {@code null} — what a write needs to compare against, instead of the whole referential. */
     public Stand findStand(String id) {
-        return listStands().stream().filter(stand -> id.equals(stand.getId())).findFirst().orElse(null);
+        return listStands().stream()
+                .filter(stand -> id.equals(stand.getId()))
+                .findFirst()
+                .orElse(null);
     }
 
     public boolean standExists(String id) {
@@ -297,16 +299,15 @@ public class StandRepository {
      * it can be read and tested in the code, which is the decision issue #281
      * took for créneaux.</p>
      */
-
     public void deleteStand(String id) {
         scope.write("Failed to delete stand " + id, connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM poste_affectation WHERE edition_id = ? AND stand_id = ?")) {
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection, "DELETE FROM poste_affectation WHERE edition_id = ? AND stand_id = ?")) {
                 ps.setString(2, id);
                 ps.executeUpdate();
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM stand WHERE edition_id = ? AND id = ?")) {
+            try (PreparedStatement ps =
+                    scope.prepareScoped(connection, "DELETE FROM stand WHERE edition_id = ? AND id = ?")) {
                 ps.setString(2, id);
                 ps.executeUpdate();
             }
@@ -324,8 +325,8 @@ public class StandRepository {
             return;
         }
         scope.write("Failed to record the stands' relay families", connection -> {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "UPDATE stand SET famille = ? WHERE edition_id = ? AND id = ?")) {
+            try (PreparedStatement ps =
+                    connection.prepareStatement("UPDATE stand SET famille = ? WHERE edition_id = ? AND id = ?")) {
                 for (Map.Entry<String, Integer> entry : familleParStand.entrySet()) {
                     ps.setInt(1, entry.getValue());
                     ps.setString(2, scope.editionId());
@@ -342,8 +343,7 @@ public class StandRepository {
     }
 
     void upsertStand(Connection connection, Stand stand, boolean failIfPresent) throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                """
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max,
                 reserve_majeurs, premium, emplacement_id, niveau_effort, famille)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -364,7 +364,8 @@ public class StandRepository {
             ps.setInt(5, stand.getEffectifMax());
             ps.setBoolean(6, stand.isReserveMajeurs());
             ps.setBoolean(7, stand.isPremium());
-            ps.setString(8, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
+            ps.setString(
+                    8, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
             ps.setString(9, stand.getNiveauEffort().name());
             ps.setObject(10, stand.getFamille());
             WriteStamp.bindPrecondition(ps, 11, !failIfPresent, stand.getModifieLe());
@@ -374,14 +375,15 @@ public class StandRepository {
             }
             stand.setModifieLe(ecrit);
         }
-        try (PreparedStatement del = scope.prepareScoped(connection,
-                "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?")) {
+        try (PreparedStatement del =
+                scope.prepareScoped(connection, "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
-        if (stand.getTypologiesProposees() != null && !stand.getTypologiesProposees().isEmpty()) {
-            try (PreparedStatement ins = scope.prepareScoped(connection,
-                    "INSERT INTO stand_typologie (edition_id, stand_id, typologie) VALUES (?, ?, ?)")) {
+        if (stand.getTypologiesProposees() != null
+                && !stand.getTypologiesProposees().isEmpty()) {
+            try (PreparedStatement ins = scope.prepareScoped(
+                    connection, "INSERT INTO stand_typologie (edition_id, stand_id, typologie) VALUES (?, ?, ?)")) {
                 for (String typologie : stand.getTypologiesProposees()) {
                     ins.setString(2, stand.getId());
                     ins.setString(3, typologie);
@@ -390,14 +392,13 @@ public class StandRepository {
                 ins.executeBatch();
             }
         }
-        try (PreparedStatement del = scope.prepareScoped(connection,
-                "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?")) {
+        try (PreparedStatement del = scope.prepareScoped(
+                connection, "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
         if (stand.getIndisponibilites() != null && !stand.getIndisponibilites().isEmpty()) {
-            try (PreparedStatement ins = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
                     heure_debut, heure_fin, motif)
                     VALUES (?, ?, ?, ?, ?, ?)""")) {
@@ -412,14 +413,13 @@ public class StandRepository {
                 ins.executeBatch();
             }
         }
-        try (PreparedStatement del = scope.prepareScoped(connection,
-                "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?")) {
+        try (PreparedStatement del =
+                scope.prepareScoped(connection, "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
         if (stand.getOuvertures() != null && !stand.getOuvertures().isEmpty()) {
-            try (PreparedStatement ins = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_ouverture
                         (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif)
                     VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
@@ -447,8 +447,8 @@ public class StandRepository {
      * expansion into a few hundred dated rows.
      */
     private void upsertHoraires(Connection connection, Stand stand) throws SQLException {
-        try (PreparedStatement del = scope.prepareScoped(connection,
-                "DELETE FROM stand_horaire WHERE edition_id = ? AND stand_id = ?")) {
+        try (PreparedStatement del =
+                scope.prepareScoped(connection, "DELETE FROM stand_horaire WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
@@ -457,8 +457,7 @@ public class StandRepository {
         }
         for (HoraireStand horaire : stand.getHoraires()) {
             long horaireId;
-            try (PreparedStatement ins = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_horaire (edition_id, stand_id, mode, type_jours,
                     jours_semaine, date_debut, date_fin, dates, motif)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -480,8 +479,7 @@ public class StandRepository {
             if (horaire.getFenetres().isEmpty()) {
                 continue;
             }
-            try (PreparedStatement ins = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_horaire_fenetre
                         (edition_id, horaire_id, position, heure_debut, heure_fin, effectif)
                     VALUES (?, ?, ?, ?, ?, ?)""")) {

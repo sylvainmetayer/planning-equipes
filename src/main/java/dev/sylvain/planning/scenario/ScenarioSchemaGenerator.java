@@ -36,8 +36,7 @@ public final class ScenarioSchemaGenerator {
 
     static final Path SCHEMA_PATH = Path.of("docs", "schema", "scenario-schema.json");
 
-    private ScenarioSchemaGenerator() {
-    }
+    private ScenarioSchemaGenerator() {}
 
     public static void main(String[] args) throws IOException {
         JsonNode schema = generate();
@@ -54,7 +53,7 @@ public final class ScenarioSchemaGenerator {
                 JakartaValidationOption.INCLUDE_PATTERN_EXPRESSIONS);
 
         SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
-                SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
+                        SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
                 .with(Option.EXTRA_OPEN_API_FORMAT_VALUES)
                 .with(Option.DEFINITIONS_FOR_ALL_OBJECTS)
                 .with(Option.MAP_VALUES_AS_ADDITIONAL_PROPERTIES)
@@ -67,13 +66,15 @@ public final class ScenarioSchemaGenerator {
         // "09:00" or "09:00:00", never as a nested {year, month, day} object).
         configBuilder.forTypesInGeneral().withCustomDefinitionProvider((javaType, context) -> {
             if (javaType.getErasedType() == LocalDate.class) {
-                ObjectNode node = context.getGeneratorConfig().createObjectNode()
+                ObjectNode node = context.getGeneratorConfig()
+                        .createObjectNode()
                         .put("type", "string")
                         .put("format", "date");
                 return new CustomDefinition(node);
             }
             if (javaType.getErasedType() == LocalTime.class) {
-                ObjectNode node = context.getGeneratorConfig().createObjectNode()
+                ObjectNode node = context.getGeneratorConfig()
+                        .createObjectNode()
                         .put("type", "string")
                         .put("pattern", "^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$");
                 return new CustomDefinition(node);

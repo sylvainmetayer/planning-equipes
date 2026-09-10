@@ -1,8 +1,7 @@
 package dev.sylvain.planning.config;
 
-import java.util.Optional;
-
 import io.smallrye.config.ConfigMapping;
+import java.util.Optional;
 
 /**
  * Everything the legal notices page states about who runs this instance.

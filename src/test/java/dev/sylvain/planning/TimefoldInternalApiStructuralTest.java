@@ -72,13 +72,11 @@ class TimefoldInternalApiStructuralTest {
 
         Set<String> nonDocumentes = new java.util.TreeSet<>(dependants.keySet());
         nonDocumentes.removeAll(DEPENDANTS_DOCUMENTES.keySet());
-        assertThat(nonDocumentes)
-                .as("""
+        assertThat(nonDocumentes).as("""
                         files importing ai.timefold.solver.core.impl without an entry in this test. \
                         core.impl is outside semver: name the net that will catch the next break \
                         (a compile error on the types used, an oracle test, the scenario suite) \
-                        and add the file to DEPENDANTS_DOCUMENTES.""")
-                .isEmpty();
+                        and add the file to DEPENDANTS_DOCUMENTES.""").isEmpty();
 
         // The mirror: an entry that no file justifies any more is a stale
         // justification, and the list must stay the inventory it claims to be.

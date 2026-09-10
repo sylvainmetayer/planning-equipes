@@ -1,7 +1,12 @@
 package dev.sylvain.planning.service.analyse;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.NaturalOrder;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -13,14 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import jakarta.enterprise.context.ApplicationScoped;
-import dev.sylvain.planning.service.NaturalOrder;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Who is a single point of failure in the plan currently persisted, and where
@@ -119,7 +117,18 @@ public class FragiliteAnalyzer {
      * @param remplacants      animateurs who could take one of them over
      * @param irremplacable    true when {@code remplacants} is zero
      */
-    @Schema(requiredProperties = {"couverturePause", "creneauId", "effectifMin", "irremplacable", "jour", "remplacants", "siegesLiberes", "siegesPourvus", "siegesRequis"})
+    @Schema(
+            requiredProperties = {
+                "couverturePause",
+                "creneauId",
+                "effectifMin",
+                "irremplacable",
+                "jour",
+                "remplacants",
+                "siegesLiberes",
+                "siegesPourvus",
+                "siegesRequis"
+            })
     public record PosteFragile(
             String standId,
             String standNom,
@@ -134,14 +143,21 @@ public class FragiliteAnalyzer {
             int siegesPourvus,
             int siegesLiberes,
             int remplacants,
-            boolean irremplacable) {
-    }
+            boolean irremplacable) {}
 
     /**
      * One animateur of the persisted plan, and what leaves with them. Animateurs
      * holding no seat are not listed: they cannot be a point of failure.
      */
-    @Schema(requiredProperties = {"affectations", "competencesRares", "ninja", "postesEffondres", "postesIrremplacables", "postesNonDetailles"})
+    @Schema(
+            requiredProperties = {
+                "affectations",
+                "competencesRares",
+                "ninja",
+                "postesEffondres",
+                "postesIrremplacables",
+                "postesNonDetailles"
+            })
     public record AnimateurFragilite(
             String animateurId,
             String nom,
@@ -152,8 +168,7 @@ public class FragiliteAnalyzer {
             int competencesRares,
             SeveriteFragilite severite,
             List<PosteFragile> postes,
-            int postesNonDetailles) {
-    }
+            int postesNonDetailles) {}
 
     /**
      * One stand × timeslot at most one specialist can hold.
@@ -179,8 +194,7 @@ public class FragiliteAnalyzer {
             String nom,
             int renforts,
             boolean pourvu,
-            SeveriteFragilite severite) {
-    }
+            SeveriteFragilite severite) {}
 
     /**
      * @param groupesSansSpecialiste how many of {@code competencesRares} have
@@ -190,7 +204,15 @@ public class FragiliteAnalyzer {
      *                               can hold, open on forty timeslots, weighs
      *                               forty here.
      */
-    @Schema(requiredProperties = {"animateursIrremplacables", "groupesAnalyses", "groupesDejaSousEffectif", "groupesSansSpecialiste", "ninjaConfigure", "totalCompetencesRares"})
+    @Schema(
+            requiredProperties = {
+                "animateursIrremplacables",
+                "groupesAnalyses",
+                "groupesDejaSousEffectif",
+                "groupesSansSpecialiste",
+                "ninjaConfigure",
+                "totalCompetencesRares"
+            })
     public record RapportFragilite(
             List<AnimateurFragilite> animateurs,
             List<CompetenceRare> competencesRares,
@@ -200,8 +222,7 @@ public class FragiliteAnalyzer {
             int groupesDejaSousEffectif,
             int animateursIrremplacables,
             boolean ninjaConfigure,
-            String message) {
-    }
+            String message) {}
 
     /**
      * Scarcity rows worst first: a group nobody is competent for, then one
@@ -209,8 +230,7 @@ public class FragiliteAnalyzer {
      * the groups the plan already staffs, since those are the ones a withdrawal
      * would empty tomorrow.
      */
-    private static final Comparator<CompetenceRare> ORDRE_RARES = Comparator
-            .comparing(CompetenceRare::severite)
+    private static final Comparator<CompetenceRare> ORDRE_RARES = Comparator.comparing(CompetenceRare::severite)
             .thenComparing(CompetenceRare::pourvu, Comparator.reverseOrder())
             .thenComparing(CompetenceRare::standId)
             .thenComparingLong(CompetenceRare::creneauId);
@@ -220,24 +240,27 @@ public class FragiliteAnalyzer {
      * blast radius. Ties settle on the id so two runs on the same plan return
      * the same order.
      */
-    private static final Comparator<AnimateurFragilite> ORDRE_ANIMATEURS = Comparator
-            .comparingInt(AnimateurFragilite::postesIrremplacables).reversed()
-            .thenComparing(Comparator.comparingInt(AnimateurFragilite::competencesRares).reversed())
-            .thenComparing(Comparator.comparingInt(AnimateurFragilite::postesEffondres).reversed())
-            .thenComparing(Comparator.comparingInt(AnimateurFragilite::affectations).reversed())
+    private static final Comparator<AnimateurFragilite> ORDRE_ANIMATEURS = Comparator.comparingInt(
+                    AnimateurFragilite::postesIrremplacables)
+            .reversed()
+            .thenComparing(Comparator.comparingInt(AnimateurFragilite::competencesRares)
+                    .reversed())
+            .thenComparing(
+                    Comparator.comparingInt(AnimateurFragilite::postesEffondres).reversed())
+            .thenComparing(
+                    Comparator.comparingInt(AnimateurFragilite::affectations).reversed())
             .thenComparing(AnimateurFragilite::animateurId, NaturalOrder.OF_IDS);
 
     /** Seats detailed first: the unreplaceable ones, then the largest holes. */
-    private static final Comparator<PosteFragile> ORDRE_POSTES = Comparator
-            .comparing(PosteFragile::irremplacable, Comparator.reverseOrder())
+    private static final Comparator<PosteFragile> ORDRE_POSTES = Comparator.comparing(
+                    PosteFragile::irremplacable, Comparator.reverseOrder())
             .thenComparing(Comparator.comparingInt(PosteFragile::siegesLiberes).reversed())
             .thenComparing(poste -> poste.date() == null ? LocalDate.MIN : poste.date())
             .thenComparingLong(PosteFragile::creneauId)
             .thenComparing(PosteFragile::standId);
 
     /** Identity of a seat group: one stand, one timeslot, one window inside it. */
-    private record SeatGroupKey(String standId, long creneauId, LocalTime debut, LocalTime fin) {
-    }
+    private record SeatGroupKey(String standId, long creneauId, LocalTime debut, LocalTime fin) {}
 
     /** The seats of one group, and what the plan currently does with them. */
     private static final class SeatGroup {
@@ -272,12 +295,10 @@ public class FragiliteAnalyzer {
     }
 
     public RapportFragilite analyze(PlanningEvenement planning) {
-        List<Animateur> animateurs = planning == null || planning.getAnimateurs() == null
-                ? List.of()
-                : planning.getAnimateurs();
-        List<PosteAffectation> postes = planning == null || planning.getPostes() == null
-                ? List.of()
-                : planning.getPostes();
+        List<Animateur> animateurs =
+                planning == null || planning.getAnimateurs() == null ? List.of() : planning.getAnimateurs();
+        List<PosteAffectation> postes =
+                planning == null || planning.getPostes() == null ? List.of() : planning.getPostes();
 
         Map<SeatGroupKey, SeatGroup> groupes = groupSeats(postes);
         Map<String, List<Interval>> busy = busyIntervals(postes);
@@ -321,7 +342,8 @@ public class FragiliteAnalyzer {
         }
 
         rares.sort(ORDRE_RARES);
-        int groupesSansSpecialiste = (int) rares.stream().filter(rare -> rare.specialistes() == 0).count();
+        int groupesSansSpecialiste =
+                (int) rares.stream().filter(rare -> rare.specialistes() == 0).count();
 
         List<AnimateurFragilite> lignes = animateurLines(animateurs, groupes, remplacantsParGroupe, raresParAnimateur);
         int animateursIrremplacables = (int) lignes.stream()
@@ -340,8 +362,11 @@ public class FragiliteAnalyzer {
                 buildMessage(groupes.size(), lignes, animateursIrremplacables, rares.size(), groupesSansSpecialiste));
     }
 
-    private List<AnimateurFragilite> animateurLines(List<Animateur> animateurs, Map<SeatGroupKey, SeatGroup> groupes,
-            Map<SeatGroupKey, Integer> remplacantsParGroupe, Map<String, Integer> raresParAnimateur) {
+    private List<AnimateurFragilite> animateurLines(
+            List<Animateur> animateurs,
+            Map<SeatGroupKey, SeatGroup> groupes,
+            Map<SeatGroupKey, Integer> remplacantsParGroupe,
+            Map<String, Integer> raresParAnimateur) {
         Map<String, List<PosteFragile>> parAnimateur = new LinkedHashMap<>();
         Map<String, Integer> affectations = new HashMap<>();
         for (Map.Entry<SeatGroupKey, SeatGroup> entree : groupes.entrySet()) {
@@ -356,7 +381,8 @@ public class FragiliteAnalyzer {
                 if (groupe.pourvus < groupe.sieges || restants >= groupe.sieges) {
                     continue;
                 }
-                parAnimateur.computeIfAbsent(occupant.getKey(), id -> new ArrayList<>())
+                parAnimateur
+                        .computeIfAbsent(occupant.getKey(), id -> new ArrayList<>())
                         .add(new PosteFragile(
                                 groupe.stand.getId(),
                                 groupe.stand.getNom(),
@@ -381,10 +407,10 @@ public class FragiliteAnalyzer {
             if (total == 0) {
                 continue;
             }
-            List<PosteFragile> fragiles = new ArrayList<>(
-                    parAnimateur.getOrDefault(animateur.getId(), List.of()));
+            List<PosteFragile> fragiles = new ArrayList<>(parAnimateur.getOrDefault(animateur.getId(), List.of()));
             fragiles.sort(ORDRE_POSTES);
-            int irremplacables = (int) fragiles.stream().filter(PosteFragile::irremplacable).count();
+            int irremplacables =
+                    (int) fragiles.stream().filter(PosteFragile::irremplacable).count();
             int rares = raresParAnimateur.getOrDefault(animateur.getId(), 0);
             lignes.add(new AnimateurFragilite(
                     animateur.getId(),
@@ -431,8 +457,8 @@ public class FragiliteAnalyzer {
     }
 
     /** Ninjas free that day who are not already counted as specialists. */
-    private static List<Animateur> reinforcements(List<Animateur> animateurs, SeatGroup groupe,
-            List<Animateur> specialistes) {
+    private static List<Animateur> reinforcements(
+            List<Animateur> animateurs, SeatGroup groupe, List<Animateur> specialistes) {
         Set<String> deja = new HashSet<>();
         for (Animateur specialiste : specialistes) {
             deja.add(specialiste.getId());
@@ -457,7 +483,10 @@ public class FragiliteAnalyzer {
      * since either can hold the seat — are neither already in the group nor
      * busy elsewhere at that very moment.
      */
-    private static int countSubstitutes(List<Animateur> specialistes, List<Animateur> renforts, SeatGroup groupe,
+    private static int countSubstitutes(
+            List<Animateur> specialistes,
+            List<Animateur> renforts,
+            SeatGroup groupe,
             Map<String, List<Interval>> busy) {
         Interval plage = window(groupe.creneau.getDate(), groupe.debut, groupe.fin);
         if (plage == null) {
@@ -490,7 +519,8 @@ public class FragiliteAnalyzer {
             LocalTime fin = groupe.creneau.getHeureDebut().plusMinutes(segment.finMinutes());
             boolean memeDebut = groupe.debut == null ? segment.debutMinutes() == 0 : groupe.debut.equals(debut);
             boolean memeFin = groupe.fin == null
-                    ? segment.finMinutes() == groupe.creneau.getDureeMinutes() : groupe.fin.equals(fin);
+                    ? segment.finMinutes() == groupe.creneau.getDureeMinutes()
+                    : groupe.fin.equals(fin);
             if (memeDebut && memeFin) {
                 return segment.effectif();
             }
@@ -503,8 +533,7 @@ public class FragiliteAnalyzer {
     }
 
     private static Map<SeatGroupKey, SeatGroup> groupSeats(List<PosteAffectation> postes) {
-        Map<SeatGroupKey, SeatGroup> groupes = new TreeMap<>(Comparator
-                .comparing(SeatGroupKey::standId)
+        Map<SeatGroupKey, SeatGroup> groupes = new TreeMap<>(Comparator.comparing(SeatGroupKey::standId)
                 .thenComparingLong(SeatGroupKey::creneauId)
                 .thenComparing(SeatGroupKey::debut, Comparator.nullsFirst(Comparator.naturalOrder()))
                 .thenComparing(SeatGroupKey::fin, Comparator.nullsFirst(Comparator.naturalOrder())));
@@ -545,7 +574,8 @@ public class FragiliteAnalyzer {
             if (plage == null) {
                 continue;
             }
-            plages.computeIfAbsent(animateur.getId(), ignored -> new ArrayList<>()).add(plage);
+            plages.computeIfAbsent(animateur.getId(), ignored -> new ArrayList<>())
+                    .add(plage);
         }
         return plages;
     }
@@ -572,8 +602,12 @@ public class FragiliteAnalyzer {
         return stand.getTypologiesProposees().stream().sorted().toList();
     }
 
-    private String buildMessage(int groupes, List<AnimateurFragilite> lignes, int animateursIrremplacables,
-            int rares, int sansSpecialiste) {
+    private String buildMessage(
+            int groupes,
+            List<AnimateurFragilite> lignes,
+            int animateursIrremplacables,
+            int rares,
+            int sansSpecialiste) {
         if (groupes == 0) {
             return "Aucun planning persisté : lancez une résolution pour mesurer la fragilité du planning.";
         }
@@ -583,21 +617,24 @@ public class FragiliteAnalyzer {
                     + "pourrait être repris par quelqu'un d'autre.");
         } else {
             AnimateurFragilite premier = lignes.getFirst();
-            message.append(animateursIrremplacables > 1
-                    ? animateursIrremplacables + " animateurs laisseraient au moins un poste que personne "
-                            + "d'autre ne peut reprendre"
-                    : "1 animateur laisserait au moins un poste que personne d'autre ne peut reprendre");
-            message.append(", à commencer par ").append(premier.nom()).append(" (")
+            message.append(
+                    animateursIrremplacables > 1
+                            ? animateursIrremplacables + " animateurs laisseraient au moins un poste que personne "
+                                    + "d'autre ne peut reprendre"
+                            : "1 animateur laisserait au moins un poste que personne d'autre ne peut reprendre");
+            message.append(", à commencer par ")
+                    .append(premier.nom())
+                    .append(" (")
                     .append(premier.postesIrremplacables())
                     .append(premier.postesIrremplacables() > 1 ? " postes)." : " poste).");
         }
         if (rares > 0) {
-            message.append(' ').append(rares > 1
-                    ? rares + " couples stand × créneau reposent sur une seule personne compétente"
-                    : "1 couple stand × créneau repose sur une seule personne compétente");
-            message.append(sansSpecialiste > 0
-                    ? ", dont " + sansSpecialiste + " sans aucun spécialiste."
-                    : ".");
+            message.append(' ')
+                    .append(
+                            rares > 1
+                                    ? rares + " couples stand × créneau reposent sur une seule personne compétente"
+                                    : "1 couple stand × créneau repose sur une seule personne compétente");
+            message.append(sansSpecialiste > 0 ? ", dont " + sansSpecialiste + " sans aucun spécialiste." : ".");
         }
         return message.toString();
     }

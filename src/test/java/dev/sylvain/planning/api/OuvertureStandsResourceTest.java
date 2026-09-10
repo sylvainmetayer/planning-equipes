@@ -5,13 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
 
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@code GET /api/ouvertures-stands}: the grid behind the "Ouvertures des
@@ -25,14 +23,15 @@ class OuvertureStandsResourceTest {
     void rendUneGrilleStandParJourAvecSesPostes() {
         seedScenario();
 
-        JsonPath rapport = given()
-                .when().get("/api/ouvertures-stands")
+        JsonPath rapport = given().when()
+                .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
                 .body("jours.size()", greaterThan(0))
                 .body("stands.size()", greaterThan(0))
                 .body("postesTotal", notNullValue())
-                .extract().jsonPath();
+                .extract()
+                .jsonPath();
 
         int nombreJours = rapport.getList("jours").size();
         // Every row carries exactly one cell per day: that is what makes the
@@ -56,17 +55,19 @@ class OuvertureStandsResourceTest {
     void chaqueCelluleExposeUnEtatEtUneSourceConnus() {
         seedScenario();
 
-        JsonPath rapport = given()
-                .when().get("/api/ouvertures-stands")
-                .then().statusCode(200)
-                .extract().jsonPath();
+        JsonPath rapport = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
 
         List<String> etats = rapport.getList("stands.jours.etat.flatten()");
         List<String> sources = rapport.getList("stands.jours.source.flatten()");
-        assertThat(etats).isNotEmpty().allSatisfy(etat ->
-                assertThat(etat).isIn("OUVERT_TOTAL", "OUVERT_PARTIEL", "FERME"));
-        assertThat(sources).isNotEmpty().allSatisfy(source ->
-                assertThat(source).isIn("DEFAUT", "REGLE", "EXCEPTION"));
+        assertThat(etats)
+                .isNotEmpty()
+                .allSatisfy(etat -> assertThat(etat).isIn("OUVERT_TOTAL", "OUVERT_PARTIEL", "FERME"));
+        assertThat(sources).isNotEmpty().allSatisfy(source -> assertThat(source).isIn("DEFAUT", "REGLE", "EXCEPTION"));
     }
 
     /**
@@ -77,10 +78,12 @@ class OuvertureStandsResourceTest {
     void leTotalDUneLigneEstLaSommeDeSesCellules() {
         seedScenario();
 
-        JsonPath rapport = given()
-                .when().get("/api/ouvertures-stands")
-                .then().statusCode(200)
-                .extract().jsonPath();
+        JsonPath rapport = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
 
         int nombreStands = rapport.getList("stands").size();
         for (int index = 0; index < nombreStands; index++) {
@@ -103,7 +106,12 @@ class OuvertureStandsResourceTest {
     @Test
     void laGrilleSaisieEstRelueTelleQuelle() {
         seedScenario();
-        JsonPath avant = given().when().get("/api/ouvertures-stands").then().statusCode(200).extract().jsonPath();
+        JsonPath avant = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         String standId = avant.getString("stands[0].standId");
         List<Integer> creneauIds = avant.getList("jours.creneaux.id.flatten()", Integer.class);
         assertThat(creneauIds).hasSizeGreaterThan(1);
@@ -116,21 +124,27 @@ class OuvertureStandsResourceTest {
             cellule.put("effectif", index == 0 ? null : 3);
             cellules.add(cellule);
         }
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body(Map.of("stands", List.of(Map.of("standId", standId, "cellules", cellules))))
-                .when().put("/api/ouvertures-stands/grille")
+                .when()
+                .put("/api/ouvertures-stands/grille")
                 .then()
                 .statusCode(200)
                 .body("stands[0].standId", org.hamcrest.Matchers.equalTo(standId))
                 .body("stands[0].effectifMin", org.hamcrest.Matchers.equalTo(3))
                 .body("stands[0].effectifMax", org.hamcrest.Matchers.equalTo(3));
 
-        JsonPath apres = given().when().get("/api/ouvertures-stands").then().statusCode(200).extract().jsonPath();
+        JsonPath apres = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         List<Integer> effectifs = apres.getList("stands[0].jours.creneaux.effectif.flatten()", Integer.class);
         assertThat(effectifs.get(0)).isNull();
         assertThat(effectifs.subList(1, effectifs.size())).containsOnly(3);
-        assertThat(apres.getList("stands[0].jours.creneaux.partiel.flatten()", Boolean.class)).containsOnly(false);
+        assertThat(apres.getList("stands[0].jours.creneaux.partiel.flatten()", Boolean.class))
+                .containsOnly(false);
         assertThat(apres.getInt("stands[0].effectifMin")).isEqualTo(3);
     }
 
@@ -142,55 +156,99 @@ class OuvertureStandsResourceTest {
     @Test
     void unStandModifieDepuisLaLectureDeLaGrilleEstRefuse() {
         seedScenario();
-        JsonPath grille = given().when().get("/api/ouvertures-stands").then().statusCode(200).extract().jsonPath();
+        JsonPath grille = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         String standId = grille.getString("stands[0].standId");
         String luParLaGrille = grille.getString("stands[0].modifieLe");
-        assertThat(luParLaGrille).as("the grid reads the stamp it will send back").isNotNull();
-        int creneauId = given().when().get("/api/ouvertures-stands").then().extract().jsonPath()
-                .getList("jours.creneaux.id.flatten()", Integer.class).get(0);
+        assertThat(luParLaGrille)
+                .as("the grid reads the stamp it will send back")
+                .isNotNull();
+        int creneauId = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .extract()
+                .jsonPath()
+                .getList("jours.creneaux.id.flatten()", Integer.class)
+                .get(0);
 
         // Another session renames the stand: the grid's stamp is now out of date.
-        Map<String, Object> stand = given().when().get("/api/stands").then().statusCode(200)
-                .extract().jsonPath().getList("findAll { it.id == '" + standId + "' }", Map.class).get(0);
+        Map<String, Object> stand = given().when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("findAll { it.id == '" + standId + "' }", Map.class)
+                .get(0);
         stand.put("nom", "Renommé ailleurs");
-        given().contentType("application/json").body(stand)
-                .when().put("/api/stands/" + standId).then().statusCode(200);
+        given().contentType("application/json")
+                .body(stand)
+                .when()
+                .put("/api/stands/" + standId)
+                .then()
+                .statusCode(200);
 
         given().contentType("application/json")
-                .body(Map.of("stands", List.of(Map.of("standId", standId, "modifieLe", luParLaGrille,
-                        "cellules", List.of(Map.of("creneauId", creneauId, "effectif", 2))))))
-                .when().put("/api/ouvertures-stands/grille")
+                .body(Map.of(
+                        "stands",
+                        List.of(Map.of(
+                                "standId",
+                                standId,
+                                "modifieLe",
+                                luParLaGrille,
+                                "cellules",
+                                List.of(Map.of("creneauId", creneauId, "effectif", 2))))))
+                .when()
+                .put("/api/ouvertures-stands/grille")
                 .then()
                 .statusCode(409)
                 .body("code", org.hamcrest.Matchers.equalTo("MODIFICATION_CONCURRENTE"));
 
         // Without a precondition the same save goes through, as an import does.
         given().contentType("application/json")
-                .body(Map.of("stands", List.of(Map.of("standId", standId,
-                        "cellules", List.of(Map.of("creneauId", creneauId, "effectif", 2))))))
-                .when().put("/api/ouvertures-stands/grille")
-                .then().statusCode(200);
+                .body(Map.of(
+                        "stands",
+                        List.of(Map.of(
+                                "standId",
+                                standId,
+                                "cellules",
+                                List.of(Map.of("creneauId", creneauId, "effectif", 2))))))
+                .when()
+                .put("/api/ouvertures-stands/grille")
+                .then()
+                .statusCode(200);
     }
 
     @Test
     void uneCelluleSurUnCreneauInconnuEstRefusee() {
         seedScenario();
-        String standId = given().when().get("/api/ouvertures-stands").then().statusCode(200)
-                .extract().jsonPath().getString("stands[0].standId");
+        String standId = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getString("stands[0].standId");
 
-        given()
-                .contentType("application/json")
-                .body(Map.of("stands", List.of(Map.of("standId", standId,
-                        "cellules", List.of(Map.of("creneauId", 999999, "effectif", 1))))))
-                .when().put("/api/ouvertures-stands/grille")
+        given().contentType("application/json")
+                .body(Map.of(
+                        "stands",
+                        List.of(Map.of(
+                                "standId", standId, "cellules", List.of(Map.of("creneauId", 999999, "effectif", 1))))))
+                .when()
+                .put("/api/ouvertures-stands/grille")
                 .then()
                 .statusCode(400);
     }
 
     private static void seedScenario() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
     }

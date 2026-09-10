@@ -1,22 +1,5 @@
 package dev.sylvain.planning.service.scenario;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.function.Supplier;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
@@ -51,14 +34,30 @@ import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ContraintesScenario;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ReferenceScenario;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ScenarioSections;
-import dev.sylvain.planning.solver.ConstraintCatalog;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
-import dev.sylvain.planning.service.referentiel.TypologieItem;
+import dev.sylvain.planning.solver.ConstraintCatalog;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.function.Supplier;
 
 /**
  * From the file's shape to the domain: a {@link ScenarioDto}, bound by
@@ -83,8 +82,7 @@ import dev.sylvain.planning.service.referentiel.TypologieItem;
  */
 final class ScenarioDomainMapper {
 
-    private ScenarioDomainMapper() {
-    }
+    private ScenarioDomainMapper() {}
 
     /* ------------------------------ planning ------------------------------ */
 
@@ -99,10 +97,12 @@ final class ScenarioDomainMapper {
         // openings: a file may describe the opening hours of a stand as rules
         // rather than as dated windows, and they must be resolved on the days of
         // its own timeslots. With no rule, the call changes nothing.
-        HoraireStandResolver.apply(reference.standsById().values(), reference.creneauxParId().values());
+        HoraireStandResolver.apply(
+                reference.standsById().values(), reference.creneauxParId().values());
 
         List<PosteAffectation> postes = scenario.postes() == null
-                ? ProblemBuilder.buildPostes(new ArrayList<>(reference.standsById().values()),
+                ? ProblemBuilder.buildPostes(
+                        new ArrayList<>(reference.standsById().values()),
                         new ArrayList<>(reference.creneauxParId().values()))
                 : postes(scenario.postes(), reference);
 
@@ -114,10 +114,10 @@ final class ScenarioDomainMapper {
         List<ContrainteAdHoc> contraintesAdHoc = scenario.contraintesAdHoc() == null
                 ? new ArrayList<>()
                 : contraintesAdHoc(scenario.contraintesAdHoc(), reference);
-        PlanningEvenement evenement = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes,
-                contraintesAdHoc);
-        evenement.setParametresLegaux(List.of(
-                parametresLegaux(scenario.parametresLegaux()).orElseGet(parametresLegauxParDefaut)));
+        PlanningEvenement evenement =
+                new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes, contraintesAdHoc);
+        evenement.setParametresLegaux(
+                List.of(parametresLegaux(scenario.parametresLegaux()).orElseGet(parametresLegauxParDefaut)));
         // Same reasoning as the ad hoc constraints above, for the dosage: a file
         // that pins its weights describes the problem it was verified against,
         // and solving it must apply them whether or not it was ever imported.
@@ -162,7 +162,9 @@ final class ScenarioDomainMapper {
         Map<String, Creneau> creneauxParId = new HashMap<>();
         long compteurCreneauId = 1;
         for (CreneauDto creneauDto : required(scenario.creneaux(), "creneaux")) {
-            Creneau creneau = new Creneau(compteurCreneauId++, 0,
+            Creneau creneau = new Creneau(
+                    compteurCreneauId++,
+                    0,
                     required(creneauDto.date(), "creneaux.date"),
                     required(creneauDto.heureDebut(), "creneaux.heureDebut"),
                     required(creneauDto.heureFin(), "creneaux.heureFin"));
@@ -208,9 +210,14 @@ final class ScenarioDomainMapper {
             throw new BusinessError.Invalid("stands[" + index + "] (id " + dto.id()
                     + ") : aucune typologie proposée, un stand est toujours rattaché à au moins une typologie");
         }
-        Stand stand = new Stand(dto.id(), dto.nom(), new HashSet<>(dto.typologiesProposees()),
-                dto.effectifMin(), dto.effectifMax(),
-                Boolean.TRUE.equals(dto.reserveMajeurs()), Boolean.TRUE.equals(dto.premium()));
+        Stand stand = new Stand(
+                dto.id(),
+                dto.nom(),
+                new HashSet<>(dto.typologiesProposees()),
+                dto.effectifMin(),
+                dto.effectifMax(),
+                Boolean.TRUE.equals(dto.reserveMajeurs()),
+                Boolean.TRUE.equals(dto.premium()));
         stand.setNiveauEffort(dto.niveauEffort() == null ? NiveauEffort.NORMAL : dto.niveauEffort());
         stand.setFamille(dto.famille());
         if (dto.emplacementId() != null) {
@@ -219,20 +226,25 @@ final class ScenarioDomainMapper {
         if (dto.indisponibilites() != null) {
             List<IndisponibiliteStand> indisponibilites = new ArrayList<>();
             for (IndisponibiliteStandDto indispo : dto.indisponibilites()) {
-                indisponibilites.add(new IndisponibiliteStand(null,
+                indisponibilites.add(new IndisponibiliteStand(
+                        null,
                         required(indispo.date(), "stands.indisponibilites.date"),
                         required(indispo.heureDebut(), "stands.indisponibilites.heureDebut"),
-                        indispo.heureFin(), indispo.motif()));
+                        indispo.heureFin(),
+                        indispo.motif()));
             }
             stand.setIndisponibilites(indisponibilites);
         }
         if (dto.ouvertures() != null) {
             List<OuvertureStand> ouvertures = new ArrayList<>();
             for (OuvertureStandDto ouverture : dto.ouvertures()) {
-                ouvertures.add(new OuvertureStand(null,
+                ouvertures.add(new OuvertureStand(
+                        null,
                         required(ouverture.date(), "stands.ouvertures.date"),
                         required(ouverture.heureDebut(), "stands.ouvertures.heureDebut"),
-                        ouverture.heureFin(), ouverture.motif(), ouverture.effectif()));
+                        ouverture.heureFin(),
+                        ouverture.motif(),
+                        ouverture.effectif()));
             }
             stand.setOuvertures(ouvertures);
         }
@@ -284,8 +296,12 @@ final class ScenarioDomainMapper {
     }
 
     private static Animateur animateur(AnimateurDto dto) {
-        Animateur animateur = new Animateur(dto.id(), dto.prenom(), dto.nom(),
-                required(dto.dateNaissance(), "animateurs.dateNaissance"), Boolean.TRUE.equals(dto.manager()));
+        Animateur animateur = new Animateur(
+                dto.id(),
+                dto.prenom(),
+                dto.nom(),
+                required(dto.dateNaissance(), "animateurs.dateNaissance"),
+                Boolean.TRUE.equals(dto.manager()));
         animateur.setEmail(dto.email());
         Map<String, NiveauCompetence> competences = new HashMap<>();
         if (dto.competences() != null) {
@@ -293,8 +309,8 @@ final class ScenarioDomainMapper {
         }
         animateur.setCompetences(competences);
         // Days off are an opt-out: available unless listed.
-        animateur.setJoursIndisponibles(dto.joursIndisponibles() == null
-                ? new HashSet<>() : new HashSet<>(dto.joursIndisponibles()));
+        animateur.setJoursIndisponibles(
+                dto.joursIndisponibles() == null ? new HashSet<>() : new HashSet<>(dto.joursIndisponibles()));
         animateur.setSouhaits(dto.souhaits() == null ? new HashSet<>() : new HashSet<>(dto.souhaits()));
         return animateur;
     }
@@ -319,26 +335,28 @@ final class ScenarioDomainMapper {
             ContrainteAdHoc contrainte = new ContrainteAdHoc(id, dto.type());
             if (dto.animateurs() != null) {
                 for (String animateurId : dto.animateurs()) {
-                    contrainte.getAnimateursConcernes().add(reference.animateurs().stream()
-                            .filter(animateur -> animateur.getId().equals(animateurId))
-                            .findFirst()
-                            .orElseThrow(() -> new BusinessError.Invalid("La contrainte ad hoc " + id
-                                    + " vise l'animateur " + animateurId + ", absent du scénario.")));
+                    contrainte
+                            .getAnimateursConcernes()
+                            .add(reference.animateurs().stream()
+                                    .filter(animateur -> animateur.getId().equals(animateurId))
+                                    .findFirst()
+                                    .orElseThrow(() -> new BusinessError.Invalid("La contrainte ad hoc " + id
+                                            + " vise l'animateur " + animateurId + ", absent du scénario.")));
                 }
             }
             if (dto.creneauId() != null) {
                 Creneau creneau = reference.creneauxParId().get(dto.creneauId());
                 if (creneau == null) {
-                    throw new BusinessError.Invalid("La contrainte ad hoc " + id + " vise le créneau "
-                            + dto.creneauId() + ", absent du scénario.");
+                    throw new BusinessError.Invalid("La contrainte ad hoc " + id + " vise le créneau " + dto.creneauId()
+                            + ", absent du scénario.");
                 }
                 contrainte.setCreneau(creneau);
             }
             if (dto.standId() != null) {
                 Stand stand = reference.standsById().get(dto.standId());
                 if (stand == null) {
-                    throw new BusinessError.Invalid("La contrainte ad hoc " + id + " vise le stand "
-                            + dto.standId() + ", absent du scénario.");
+                    throw new BusinessError.Invalid(
+                            "La contrainte ad hoc " + id + " vise le stand " + dto.standId() + ", absent du scénario.");
                 }
                 contrainte.setStand(stand);
             }

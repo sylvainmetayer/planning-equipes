@@ -1,15 +1,30 @@
 package dev.sylvain.planning.service.solve;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.NaturalOrder;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
+import dev.sylvain.planning.service.diagnostic.AffectationHypothesis;
+import dev.sylvain.planning.service.diagnostic.ConstraintContribution;
+import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
+import dev.sylvain.planning.service.diagnostic.MatchFacts;
+import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.solver.ConstraintCatalog;
+import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -20,25 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.diagnostic.AffectationHypothesis;
-import dev.sylvain.planning.service.diagnostic.ConstraintContribution;
-import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
-import dev.sylvain.planning.service.diagnostic.MatchFacts;
-import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
-import dev.sylvain.planning.solver.ConstraintCatalog;
-import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
-import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.NaturalOrder;
-import dev.sylvain.planning.service.referentiel.ReferenceData;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Everything the application answers <em>about</em> a plan without solving it
@@ -72,8 +69,11 @@ public final class PlanningWhatIf {
      */
     private final Consumer<PlanningEvenement> preparation;
 
-    PlanningWhatIf(ConstraintDiagnosticService constraintDiagnosticService, ReferenceData referenceDataService,
-            PlanningPersistenceService persistence, Consumer<PlanningEvenement> preparation) {
+    PlanningWhatIf(
+            ConstraintDiagnosticService constraintDiagnosticService,
+            ReferenceData referenceDataService,
+            PlanningPersistenceService persistence,
+            Consumer<PlanningEvenement> preparation) {
         this.constraintDiagnosticService = constraintDiagnosticService;
         this.referenceDataService = referenceDataService;
         this.persistence = persistence;
@@ -91,9 +91,14 @@ public final class PlanningWhatIf {
     public AffectationExplanation explainAffectation(PlanningEvenement solved, String posteId) {
         PosteAffectation poste = findPoste(solved, posteId);
         PlanningAnalysis analysis = constraintDiagnosticService.analyze(solved);
-        String animateurId = poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
-        return new AffectationExplanation(posteId, animateurId, analysis.score(),
-                impactsFor(analysis, poste, true), impactsFor(analysis, poste, false));
+        String animateurId =
+                poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
+        return new AffectationExplanation(
+                posteId,
+                animateurId,
+                analysis.score(),
+                impactsFor(analysis, poste, true),
+                impactsFor(analysis, poste, false));
     }
 
     /**
@@ -125,10 +130,16 @@ public final class PlanningWhatIf {
 
         HardMediumSoftScore scoreAvant = avant.score();
         HardMediumSoftScore scoreApres = apres.score();
-        return new SwapSimulation(posteId, actuel == null ? null : actuel.getId(), animateurCandidatId,
-                scoreAvant, scoreApres, scoreApres.subtract(scoreAvant), violeesAvant, violeesApres);
+        return new SwapSimulation(
+                posteId,
+                actuel == null ? null : actuel.getId(),
+                animateurCandidatId,
+                scoreAvant,
+                scoreApres,
+                scoreApres.subtract(scoreAvant),
+                violeesAvant,
+                violeesApres);
     }
-
 
     /**
      * How many candidates {@link #suggererReparations} simulates when the
@@ -163,8 +174,7 @@ public final class PlanningWhatIf {
      * @param plafondDemande {@code null} or non-positive falls back to the
      *                       default, anything above {@link #SUGGESTIONS_PLAFOND_MAX} is clamped
      */
-    public SuggestionsReparation suggererReparations(PlanningEvenement solved, String posteId,
-            Integer plafondDemande) {
+    public SuggestionsReparation suggererReparations(PlanningEvenement solved, String posteId, Integer plafondDemande) {
         PosteAffectation poste = findPoste(solved, posteId);
         Animateur actuel = poste.getAnimateur();
         int plafond = effectiveCandidateCap(plafondDemande);
@@ -172,7 +182,8 @@ public final class PlanningWhatIf {
         PlanningAnalysis avant = constraintDiagnosticService.analyze(solved);
         HardMediumSoftScore scoreAvant = avant.score();
         List<ContrainteImpact> violeesAvant = impactsFor(avant, poste, true);
-        Set<String> nomsAvant = violeesAvant.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
+        Set<String> nomsAvant =
+                violeesAvant.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
 
         List<Animateur> eligibles = candidatsEligibles(solved, poste);
         List<Animateur> evalues = eligibles.size() > plafond ? eligibles.subList(0, plafond) : eligibles;
@@ -197,9 +208,11 @@ public final class PlanningWhatIf {
                 continue;
             }
             List<ContrainteImpact> violeesApres = impactsFor(apres, poste, true);
-            Set<String> nomsApres = violeesApres.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
-            List<ContrainteImpact> introduites =
-                    violeesApres.stream().filter(impact -> !nomsAvant.contains(impact.name())).toList();
+            Set<String> nomsApres =
+                    violeesApres.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
+            List<ContrainteImpact> introduites = violeesApres.stream()
+                    .filter(impact -> !nomsAvant.contains(impact.name()))
+                    .toList();
             // The planning-wide test above is not enough on an empty seat: filling
             // it settles one hard point (posteDoitEtrePourvu) and can spend it on
             // another, leaving the global hard score flat while the candidate
@@ -211,16 +224,28 @@ public final class PlanningWhatIf {
             if (introduites.stream().anyMatch(impact -> DUR.equals(impact.niveau()))) {
                 continue;
             }
-            suggestions.add(new SuggestionReparation(candidat.getId(), scoreApres,
+            suggestions.add(new SuggestionReparation(
+                    candidat.getId(),
+                    scoreApres,
                     scoreApres.subtract(scoreAvant),
-                    violeesAvant.stream().filter(impact -> !nomsApres.contains(impact.name())).toList(),
+                    violeesAvant.stream()
+                            .filter(impact -> !nomsApres.contains(impact.name()))
+                            .toList(),
                     introduites));
         }
-        suggestions.sort(Comparator
-                .comparing(SuggestionReparation::delta, Comparator.<HardMediumSoftScore>naturalOrder().reversed())
+        suggestions.sort(Comparator.comparing(
+                        SuggestionReparation::delta,
+                        Comparator.<HardMediumSoftScore>naturalOrder().reversed())
                 .thenComparing(SuggestionReparation::animateurId, NaturalOrder.OF_IDS));
-        return new SuggestionsReparation(posteId, actuel == null ? null : actuel.getId(), scoreAvant,
-                violeesAvant, eligibles.size(), evalues.size(), plafond, List.copyOf(suggestions));
+        return new SuggestionsReparation(
+                posteId,
+                actuel == null ? null : actuel.getId(),
+                scoreAvant,
+                violeesAvant,
+                eligibles.size(),
+                evalues.size(),
+                plafond,
+                List.copyOf(suggestions));
     }
 
     private static int effectiveCandidateCap(Integer demande) {
@@ -243,12 +268,13 @@ public final class PlanningWhatIf {
      * so the same call twice returns the same list.</p>
      */
     private static List<Animateur> candidatsEligibles(PlanningEvenement solved, PosteAffectation poste) {
-        String actuelId = poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
+        String actuelId =
+                poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
         Set<String> occupes = animateursOccupesPendant(solved, poste);
         return solved.getAnimateurs().stream()
                 .filter(animateur -> !animateur.getId().equals(actuelId))
-                .filter(animateur -> EligibleAnimateurMoveFilter.isEligible(poste, animateur,
-                        solved.pauseSurPosteActive()))
+                .filter(animateur ->
+                        EligibleAnimateurMoveFilter.isEligible(poste, animateur, solved.pauseSurPosteActive()))
                 .sorted(Comparator.comparing((Animateur animateur) -> occupes.contains(animateur.getId()))
                         .thenComparing(Animateur::getId, NaturalOrder.OF_IDS))
                 .toList();
@@ -276,7 +302,8 @@ public final class PlanningWhatIf {
                 continue;
             }
             LocalDateTime autreDebut = debutEffectif(autre);
-            if (autreDebut.isBefore(fin) && autreDebut.plusMinutes(autre.getDureeEffectiveMinutes()).isAfter(debut)) {
+            if (autreDebut.isBefore(fin)
+                    && autreDebut.plusMinutes(autre.getDureeEffectiveMinutes()).isAfter(debut)) {
                 occupes.add(autre.getAnimateur().getId());
             }
         }
@@ -284,7 +311,8 @@ public final class PlanningWhatIf {
     }
 
     private static boolean horaireConnu(PosteAffectation poste) {
-        return poste.getCreneau() != null && poste.getCreneau().getDate() != null
+        return poste.getCreneau() != null
+                && poste.getCreneau().getDate() != null
                 && poste.getCreneau().getHeureDebut() != null;
     }
 
@@ -333,18 +361,19 @@ public final class PlanningWhatIf {
      * @param standId optional — narrows which seat of the créneau is probed
      * @param posteId optional — names that seat outright; wins over {@code standId}
      */
-    public CreneauAvailability creneauAvailability(PlanningEvenement solved, Long creneauId, String standId,
-            String posteId) {
+    public CreneauAvailability creneauAvailability(
+            PlanningEvenement solved, Long creneauId, String standId, String posteId) {
         List<CreneauSiege> creneauxAvecSieges = staffedCreneaux(solved);
         // No créneau asked for: answer on the first one that has something to
         // show, rather than making the screen guess an id it cannot know before
         // its first call. A screen that only ever offers staffed créneaux has
         // no way to pick a valid default on its own.
-        Long cibleId = creneauId != null ? creneauId
+        Long cibleId = creneauId != null
+                ? creneauId
                 : creneauxAvecSieges.stream().map(CreneauSiege::id).findFirst().orElse(null);
         if (cibleId == null) {
-            return new CreneauAvailability(null, SeatStatus.NO_PLAN, null, null, null, 0, 0,
-                    creneauxAvecSieges, List.of());
+            return new CreneauAvailability(
+                    null, SeatStatus.NO_PLAN, null, null, null, 0, 0, creneauxAvecSieges, List.of());
         }
         List<PosteAffectation> postesDuCreneau = solved.getPostes().stream()
                 .filter(poste -> poste.getCreneau() != null
@@ -352,9 +381,16 @@ public final class PlanningWhatIf {
                 .toList();
         PosteAffectation cible = targetSeat(solved, postesDuCreneau, cibleId, standId, posteId);
         if (cible == null) {
-            return new CreneauAvailability(cibleId,
+            return new CreneauAvailability(
+                    cibleId,
                     solved.getPostes().isEmpty() ? SeatStatus.NO_PLAN : SeatStatus.NO_SEAT,
-                    null, null, null, 0, 0, creneauxAvecSieges, List.of());
+                    null,
+                    null,
+                    null,
+                    0,
+                    0,
+                    creneauxAvecSieges,
+                    List.of());
         }
 
         Set<String> deja = postesDuCreneau.stream()
@@ -378,9 +414,9 @@ public final class PlanningWhatIf {
         List<Animateur> sondes = titulaire == null
                 ? banc
                 : Stream.concat(Stream.of(titulaire), banc.stream()).toList();
-        Map<String, AffectationHypothesis> hypotheses = constraintDiagnosticService
-                .hypotheses(solved, cible, sondes).stream()
-                .collect(Collectors.toMap(AffectationHypothesis::animateurId, Function.identity()));
+        Map<String, AffectationHypothesis> hypotheses =
+                constraintDiagnosticService.hypotheses(solved, cible, sondes).stream()
+                        .collect(Collectors.toMap(AffectationHypothesis::animateurId, Function.identity()));
         HardMediumSoftScore reference = titulaire == null || hypotheses.get(titulaire.getId()) == null
                 ? HardMediumSoftScore.ZERO
                 : hypotheses.get(titulaire.getId()).delta();
@@ -389,16 +425,18 @@ public final class PlanningWhatIf {
         for (Animateur animateur : banc) {
             AffectationHypothesis hypothese = hypotheses.get(animateur.getId());
             Set<String> contraintes = new LinkedHashSet<>();
-            for (EligibleAnimateurMoveFilter.Motif motif : EligibleAnimateurMoveFilter.motifs(cible, animateur,
-                    solved.pauseSurPosteActive())) {
+            for (EligibleAnimateurMoveFilter.Motif motif :
+                    EligibleAnimateurMoveFilter.motifs(cible, animateur, solved.pauseSurPosteActive())) {
                 contraintes.add(motif.contrainte());
             }
             if (hypothese != null) {
                 contraintes.addAll(hypothese.contraintesAggravees());
             }
-            List<MotifExclusion> motifs = contraintes.stream().map(PlanningWhatIf::motifExclusion).toList();
+            List<MotifExclusion> motifs =
+                    contraintes.stream().map(PlanningWhatIf::motifExclusion).toList();
             boolean disponible = motifs.stream().noneMatch(PlanningWhatIf::isHardRule);
-            HardMediumSoftScore delta = hypothese == null ? null : hypothese.delta().subtract(reference);
+            HardMediumSoftScore delta =
+                    hypothese == null ? null : hypothese.delta().subtract(reference);
             boolean degradeLePlan = delta != null && delta.hardScore() < 0;
             lignes.add(new AnimateurAvailability(animateur.getId(), disponible, degradeLePlan, delta, motifs));
         }
@@ -408,11 +446,18 @@ public final class PlanningWhatIf {
         lignes.sort(Comparator.comparing(AnimateurAvailability::disponible, Comparator.reverseOrder())
                 .thenComparing(AnimateurAvailability::degradeLePlan)
                 .thenComparing(AnimateurAvailability::animateurId, NaturalOrder.OF_IDS));
-        int disponibles = (int) lignes.stream().filter(AnimateurAvailability::disponible).count();
-        return new CreneauAvailability(cibleId, SeatStatus.EVALUATED, cible.getId(),
+        int disponibles =
+                (int) lignes.stream().filter(AnimateurAvailability::disponible).count();
+        return new CreneauAvailability(
+                cibleId,
+                SeatStatus.EVALUATED,
+                cible.getId(),
                 cible.getStand() == null ? null : cible.getStand().getId(),
                 cible.getAnimateur() == null ? null : cible.getAnimateur().getId(),
-                lignes.size(), disponibles, creneauxAvecSieges, List.copyOf(lignes));
+                lignes.size(),
+                disponibles,
+                creneauxAvecSieges,
+                List.copyOf(lignes));
     }
 
     /**
@@ -432,8 +477,9 @@ public final class PlanningWhatIf {
      *         at all — the one case that really is a bad request
      */
     public CreneauAvailability persistedCreneauAvailability(Long creneauId, String standId, String posteId) {
-        if (creneauId != null && referenceDataService.listCreneaux().stream()
-                .noneMatch(creneau -> Objects.equals(creneau.getId(), creneauId))) {
+        if (creneauId != null
+                && referenceDataService.listCreneaux().stream()
+                        .noneMatch(creneau -> Objects.equals(creneau.getId(), creneauId))) {
             throw new BusinessError.NotFound("Créneau inconnu: " + creneauId);
         }
         PlanningEvenement persiste = persistence.loadPersistedPlanning();
@@ -457,8 +503,12 @@ public final class PlanningWhatIf {
      *
      * <p>Ordered by id so the same request twice probes the same seat.</p>
      */
-    private static PosteAffectation targetSeat(PlanningEvenement solved, List<PosteAffectation> postesDuCreneau,
-            long creneauId, String standId, String posteId) {
+    private static PosteAffectation targetSeat(
+            PlanningEvenement solved,
+            List<PosteAffectation> postesDuCreneau,
+            long creneauId,
+            String standId,
+            String posteId) {
         if (posteId != null && !posteId.isBlank()) {
             PosteAffectation poste = findPoste(solved, posteId);
             if (poste.getCreneau() == null || !Objects.equals(poste.getCreneau().getId(), creneauId)) {
@@ -470,7 +520,8 @@ public final class PlanningWhatIf {
         List<PosteAffectation> candidats = standId == null || standId.isBlank()
                 ? postesDuCreneau
                 : postesDuCreneau.stream()
-                        .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId()))
+                        .filter(poste -> poste.getStand() != null
+                                && standId.equals(poste.getStand().getId()))
                         .toList();
         Comparator<PosteAffectation> byId = Comparator.comparing(PosteAffectation::getId, NaturalOrder.OF_IDS);
         return candidats.stream()
@@ -506,8 +557,13 @@ public final class PlanningWhatIf {
                 .sorted(Comparator.comparing(Creneau::getDate, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(Creneau::getHeureDebut, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(Creneau::getId))
-                .map(creneau -> new CreneauSiege(creneau.getId(), creneau.getJour(), creneau.getDate(),
-                        creneau.getHeureDebut(), creneau.getHeureFin(), creneau.getFamille()))
+                .map(creneau -> new CreneauSiege(
+                        creneau.getId(),
+                        creneau.getJour(),
+                        creneau.getDate(),
+                        creneau.getHeureDebut(),
+                        creneau.getHeureFin(),
+                        creneau.getFamille()))
                 .toList();
     }
 
@@ -519,7 +575,8 @@ public final class PlanningWhatIf {
     /** A constraint name dressed with the business wording {@link ConstraintCatalog} already holds for it. */
     private static MotifExclusion motifExclusion(String contrainte) {
         ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(contrainte);
-        return new MotifExclusion(contrainte,
+        return new MotifExclusion(
+                contrainte,
                 definition == null ? null : definition.niveau().name(),
                 definition == null ? null : definition.categorie(),
                 definition == null ? null : definition.description());
@@ -559,7 +616,8 @@ public final class PlanningWhatIf {
      * @param animateurId {@code null} empties the seats
      */
     public void applyReparations(PlanningEvenement persiste, List<String> posteIds, String animateurId) {
-        List<PosteAffectation> postes = posteIds.stream().map(id -> findPoste(persiste, id)).toList();
+        List<PosteAffectation> postes =
+                posteIds.stream().map(id -> findPoste(persiste, id)).toList();
         if (animateurId != null) {
             findAnimateur(persiste, animateurId);
         }
@@ -588,13 +646,16 @@ public final class PlanningWhatIf {
      * global hard score and the extra hard matches, not on the two seats
      * alone.</p>
      */
-    public EchangeSimulation simulateEchange(PlanningEvenement solved, String demandeurId, String cibleId,
-            long creneauId, String standId) {
+    public EchangeSimulation simulateEchange(
+            PlanningEvenement solved, String demandeurId, String cibleId, long creneauId, String standId) {
         PosteAffectation posteDemandeur = solved.getPostes().stream()
-                .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
-                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                .filter(poste -> poste.getStand() != null
+                        && standId.equals(poste.getStand().getId())
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getId() != null
                         && poste.getCreneau().getId() == creneauId
-                        && poste.getAnimateur() != null && demandeurId.equals(poste.getAnimateur().getId()))
+                        && poste.getAnimateur() != null
+                        && demandeurId.equals(poste.getAnimateur().getId()))
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.Invalid(
                         "Aucun poste de l'animateur " + demandeurId + " sur ce créneau et ce stand"));
@@ -611,9 +672,11 @@ public final class PlanningWhatIf {
                 .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu: " + cibleId));
         PosteAffectation posteCible = solved.getPostes().stream()
                 .filter(poste -> poste != posteDemandeur
-                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getId() != null
                         && poste.getCreneau().getId() == creneauId
-                        && poste.getAnimateur() != null && cibleId.equals(poste.getAnimateur().getId()))
+                        && poste.getAnimateur() != null
+                        && cibleId.equals(poste.getAnimateur().getId()))
                 .findFirst()
                 .orElse(null);
 
@@ -639,7 +702,9 @@ public final class PlanningWhatIf {
                 posteCible == null ? null : posteCible.getId(),
                 posteCible != null,
                 posteCible == null ? null : posteCible.getStand().getId(),
-                scoreAvant, scoreApres, scoreApres.subtract(scoreAvant),
+                scoreAvant,
+                scoreApres,
+                scoreApres.subtract(scoreAvant),
                 scoreApres.hardScore() < scoreAvant.hardScore(),
                 extraHardViolations(avant, apres));
     }
@@ -673,8 +738,8 @@ public final class PlanningWhatIf {
         return premier != null && second != null && Objects.equals(premier.getId(), second.getId());
     }
 
-    public DeplacementSimulation simulateDeplacement(PlanningEvenement solved, String posteSourceId,
-            String posteCibleId, String animateurCibleId) {
+    public DeplacementSimulation simulateDeplacement(
+            PlanningEvenement solved, String posteSourceId, String posteCibleId, String animateurCibleId) {
         PosteAffectation source = findPoste(solved, posteSourceId);
         Animateur animateurSource = source.getAnimateur();
         if (animateurSource == null) {
@@ -703,9 +768,13 @@ public final class PlanningWhatIf {
             // The receiver's own seat on that créneau, if any: two people
             // trading créneaux is a swap, not one of them in two places at once.
             cible = solved.getPostes().stream()
-                    .filter(poste -> poste != source && memePersonne(poste.getAnimateur(), animateurCible)
-                            && poste.getCreneau() != null && source.getCreneau() != null
-                            && Objects.equals(poste.getCreneau().getId(), source.getCreneau().getId()))
+                    .filter(poste -> poste != source
+                            && memePersonne(poste.getAnimateur(), animateurCible)
+                            && poste.getCreneau() != null
+                            && source.getCreneau() != null
+                            && Objects.equals(
+                                    poste.getCreneau().getId(),
+                                    source.getCreneau().getId()))
                     .findFirst()
                     .orElse(null);
         }
@@ -726,10 +795,16 @@ public final class PlanningWhatIf {
         }
         HardMediumSoftScore scoreAvant = avant.score();
         HardMediumSoftScore scoreApres = apres.score();
-        return new DeplacementSimulation(posteSourceId, cible == null ? null : cible.getId(),
-                animateurSource.getId(), animateurCible == null ? null : animateurCible.getId(),
-                scoreAvant, scoreApres, scoreApres.subtract(scoreAvant),
-                scoreApres.hardScore() < scoreAvant.hardScore(), extraHardViolations(avant, apres));
+        return new DeplacementSimulation(
+                posteSourceId,
+                cible == null ? null : cible.getId(),
+                animateurSource.getId(),
+                animateurCible == null ? null : animateurCible.getId(),
+                scoreAvant,
+                scoreApres,
+                scoreApres.subtract(scoreAvant),
+                scoreApres.hardScore() < scoreAvant.hardScore(),
+                extraHardViolations(avant, apres));
     }
 
     /**
@@ -739,8 +814,14 @@ public final class PlanningWhatIf {
      * créneaux, "I give you my Monday, I take your Tuesday". Both seats must
      * exist; feasibility is judged planning-wide like the plain variant.
      */
-    public EchangeSimulation simulateDirectedEchange(PlanningEvenement solved, String demandeurId, String cibleId,
-            long creneauId, String standId, long creneauCibleId, String standCibleId) {
+    public EchangeSimulation simulateDirectedEchange(
+            PlanningEvenement solved,
+            String demandeurId,
+            String cibleId,
+            long creneauId,
+            String standId,
+            long creneauCibleId,
+            String standCibleId) {
         PosteAffectation posteDemandeur = posteOf(solved, demandeurId, creneauId, standId);
         PosteAffectation posteCible = posteOf(solved, cibleId, creneauCibleId, standCibleId);
         Animateur demandeur = posteDemandeur.getAnimateur();
@@ -764,7 +845,9 @@ public final class PlanningWhatIf {
                 posteCible.getId(),
                 true,
                 posteCible.getStand().getId(),
-                scoreAvant, scoreApres, scoreApres.subtract(scoreAvant),
+                scoreAvant,
+                scoreApres,
+                scoreApres.subtract(scoreAvant),
                 scoreApres.hardScore() < scoreAvant.hardScore(),
                 extraHardViolations(avant, apres));
     }
@@ -801,8 +884,8 @@ public final class PlanningWhatIf {
      * prometteuses sur 400 » instead of passing a truncated list off as the
      * whole truth.</p>
      */
-    public SuggestionsEchange suggererEchanges(PlanningEvenement solved, String demandeurId,
-            long creneauId, String standId, Integer plafondDemande) {
+    public SuggestionsEchange suggererEchanges(
+            PlanningEvenement solved, String demandeurId, long creneauId, String standId, Integer plafondDemande) {
         PosteAffectation posteDemandeur = posteOf(solved, demandeurId, creneauId, standId);
         Animateur demandeur = posteDemandeur.getAnimateur();
         int plafond = effectiveCandidateCap(plafondDemande);
@@ -835,18 +918,23 @@ public final class PlanningWhatIf {
             if (scoreApres.hardScore() < scoreAvant.hardScore()) {
                 continue;
             }
-            suggestions.add(new SuggestionEchange(option.animateur().getId(), option.nature(),
+            suggestions.add(new SuggestionEchange(
+                    option.animateur().getId(),
+                    option.nature(),
                     option.nature() == NatureEchange.DIRIGE ? siege.getCreneau().getId() : null,
                     siege == null ? null : siege.getStand().getId(),
-                    scoreApres, scoreApres.subtract(scoreAvant)));
+                    scoreApres,
+                    scoreApres.subtract(scoreAvant)));
         }
         // Grouped by family, which is how the espace lists them, then best
         // impact on the plan first and a stable id order to break ties.
         suggestions.sort(Comparator.comparing(SuggestionEchange::nature)
-                .thenComparing(SuggestionEchange::delta, Comparator.<HardMediumSoftScore>naturalOrder().reversed())
+                .thenComparing(
+                        SuggestionEchange::delta,
+                        Comparator.<HardMediumSoftScore>naturalOrder().reversed())
                 .thenComparing(SuggestionEchange::animateurId, NaturalOrder.OF_IDS));
-        return new SuggestionsEchange(creneauId, standId, scoreAvant,
-                eligibles.size(), evaluees.size(), plafond, List.copyOf(suggestions));
+        return new SuggestionsEchange(
+                creneauId, standId, scoreAvant, eligibles.size(), evaluees.size(), plafond, List.copyOf(suggestions));
     }
 
     /**
@@ -858,8 +946,7 @@ public final class PlanningWhatIf {
      *              {@link NatureEchange#CROISE}; one of their seats elsewhere
      *              for {@link NatureEchange#DIRIGE}
      */
-    private record OptionEchange(Animateur animateur, PosteAffectation siege, NatureEchange nature) {
-    }
+    private record OptionEchange(Animateur animateur, PosteAffectation siege, NatureEchange nature) {}
 
     /**
      * How many seats of a single colleague are offered as a trade in return.
@@ -882,16 +969,17 @@ public final class PlanningWhatIf {
      * <p>Within LIBERE, colleagues free at that hour come first — the only
      * ones who cannot create an overlap by taking the seat.</p>
      */
-    private static List<OptionEchange> optionsEchange(PlanningEvenement solved,
-            PosteAffectation posteDemandeur) {
+    private static List<OptionEchange> optionsEchange(PlanningEvenement solved, PosteAffectation posteDemandeur) {
         Animateur demandeur = posteDemandeur.getAnimateur();
         long creneauId = posteDemandeur.getCreneau().getId();
         Set<String> occupes = animateursOccupesPendant(solved, posteDemandeur);
         // Indexed once: the alternative rescans the whole poste list per
         // colleague, twice, on a planning that holds a couple of thousand.
         Map<String, List<PosteAffectation>> siegesParAnimateur = solved.getPostes().stream()
-                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null
-                        && poste.getCreneau() != null && poste.getCreneau().getId() != null)
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getStand() != null
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getId() != null)
                 .collect(Collectors.groupingBy(poste -> poste.getAnimateur().getId()));
 
         List<OptionEchange> liberent = new ArrayList<>();
@@ -899,14 +987,15 @@ public final class PlanningWhatIf {
         List<OptionEchange> diriges = new ArrayList<>();
         List<Animateur> collegues = solved.getAnimateurs().stream()
                 .filter(collegue -> !collegue.getId().equals(demandeur.getId()))
-                .filter(collegue -> EligibleAnimateurMoveFilter.isEligible(posteDemandeur, collegue,
-                        solved.pauseSurPosteActive()))
+                .filter(collegue ->
+                        EligibleAnimateurMoveFilter.isEligible(posteDemandeur, collegue, solved.pauseSurPosteActive()))
                 .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.OF_IDS))
                 .toList();
         for (Animateur collegue : collegues) {
             List<PosteAffectation> sieges = siegesParAnimateur.getOrDefault(collegue.getId(), List.of());
             PosteAffectation memeCreneau = sieges.stream()
-                    .filter(poste -> poste != posteDemandeur && poste.getCreneau().getId() == creneauId)
+                    .filter(poste ->
+                            poste != posteDemandeur && poste.getCreneau().getId() == creneauId)
                     .findFirst()
                     .orElse(null);
             if (memeCreneau == null) {
@@ -914,12 +1003,13 @@ public final class PlanningWhatIf {
             } else if (EligibleAnimateurMoveFilter.isEligible(memeCreneau, demandeur, solved.pauseSurPosteActive())) {
                 croises.add(new OptionEchange(collegue, memeCreneau, NatureEchange.CROISE));
             }
-            for (PosteAffectation ailleurs : siegesAilleurs(sieges, creneauId, demandeur, solved.pauseSurPosteActive())) {
+            for (PosteAffectation ailleurs :
+                    siegesAilleurs(sieges, creneauId, demandeur, solved.pauseSurPosteActive())) {
                 diriges.add(new OptionEchange(collegue, ailleurs, NatureEchange.DIRIGE));
             }
         }
-        liberent.sort(Comparator
-                .comparing((OptionEchange option) -> occupes.contains(option.animateur().getId()))
+        liberent.sort(Comparator.comparing((OptionEchange option) ->
+                        occupes.contains(option.animateur().getId()))
                 .thenComparing(option -> option.animateur().getId(), NaturalOrder.OF_IDS));
         return entrelacer(liberent, croises, diriges);
     }
@@ -929,16 +1019,16 @@ public final class PlanningWhatIf {
      * take in return, earliest first and capped per colleague — the « je te
      * laisse mon lundi, je prends ton mardi » family.
      */
-    private static List<PosteAffectation> siegesAilleurs(List<PosteAffectation> sieges, long creneauId,
-            Animateur demandeur, boolean pauseSurPoste) {
+    private static List<PosteAffectation> siegesAilleurs(
+            List<PosteAffectation> sieges, long creneauId, Animateur demandeur, boolean pauseSurPoste) {
         return sieges.stream()
                 .filter(poste -> poste.getCreneau().getId() != creneauId)
                 .filter(poste -> EligibleAnimateurMoveFilter.isEligible(poste, demandeur, pauseSurPoste))
-                .sorted(Comparator
-                        .comparing((PosteAffectation poste) -> poste.getCreneau().getDate(),
+                .sorted(Comparator.comparing(
+                                (PosteAffectation poste) -> poste.getCreneau().getDate(),
                                 Comparator.nullsLast(Comparator.naturalOrder()))
-                        .thenComparing(PosteAffectation::heureDebutEffectif,
-                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(
+                                PosteAffectation::heureDebutEffectif, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(PosteAffectation::getId, NaturalOrder.OF_IDS))
                 .limit(SIEGES_DIRIGES_PAR_COLLEGUE)
                 .toList();
@@ -960,13 +1050,16 @@ public final class PlanningWhatIf {
     }
 
     /** The seat {@code animateurId} holds on (créneau, stand), or throws in business words. */
-    private static PosteAffectation posteOf(PlanningEvenement solved, String animateurId, long creneauId,
-            String standId) {
+    private static PosteAffectation posteOf(
+            PlanningEvenement solved, String animateurId, long creneauId, String standId) {
         return solved.getPostes().stream()
-                .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
-                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                .filter(poste -> poste.getStand() != null
+                        && standId.equals(poste.getStand().getId())
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getId() != null
                         && poste.getCreneau().getId() == creneauId
-                        && poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
+                        && poste.getAnimateur() != null
+                        && animateurId.equals(poste.getAnimateur().getId()))
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.Invalid(
                         "Aucun poste de l'animateur " + animateurId + " sur ce créneau et ce stand"));
@@ -978,8 +1071,7 @@ public final class PlanningWhatIf {
      * {@link ConstraintCatalog} — what the animateur (and the admin) reads,
      * rather than a technical constraint dump.
      */
-    private static List<HardViolation> extraHardViolations(PlanningAnalysis avant,
-            PlanningAnalysis apres) {
+    private static List<HardViolation> extraHardViolations(PlanningAnalysis avant, PlanningAnalysis apres) {
         Map<String, Integer> matchesAvant = new HashMap<>();
         for (ConstraintContribution ca : avant.contributions()) {
             matchesAvant.put(ca.constraintName(), ca.matchCount());
@@ -995,14 +1087,14 @@ public final class PlanningWhatIf {
                 continue;
             }
             ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(name);
-            violations.add(new HardViolation(name,
-                    definition == null ? name : definition.description(), supplement));
+            violations.add(new HardViolation(name, definition == null ? name : definition.description(), supplement));
         }
         return violations;
     }
 
     /** @return one {@link ContrainteImpact} per constraint that matches (violées) or does not (respectées) for {@code poste}. */
-    private static List<ContrainteImpact> impactsFor(PlanningAnalysis analysis, PosteAffectation poste, boolean violees) {
+    private static List<ContrainteImpact> impactsFor(
+            PlanningAnalysis analysis, PosteAffectation poste, boolean violees) {
         List<ContrainteImpact> impacts = new ArrayList<>();
         for (ConstraintContribution ca : analysis.contributions()) {
             List<MatchFacts> matches = ca.matches().stream()
@@ -1011,8 +1103,7 @@ public final class PlanningWhatIf {
             if (matches.isEmpty() == violees) {
                 continue;
             }
-            ConstraintCatalog.ConstraintDefinition definition =
-                    ConstraintCatalog.PAR_NOM.get(ca.constraintName());
+            ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(ca.constraintName());
             impacts.add(new ContrainteImpact(
                     ca.constraintName(),
                     definition == null ? null : definition.niveau().name(),
@@ -1058,24 +1149,31 @@ public final class PlanningWhatIf {
      * @param details one human-readable line per match (see {@link ViolationFormatter}), empty when not violated
      */
     @Schema(requiredProperties = {"matchCount"})
-    public record ContrainteImpact(String name, String niveau, String categorie, String description,
-            int matchCount, List<String> details) {
-    }
+    public record ContrainteImpact(
+            String name, String niveau, String categorie, String description, int matchCount, List<String> details) {}
 
     /** @param animateurId the poste's current occupant, {@code null} when unassigned */
-    public record AffectationExplanation(String posteId, String animateurId, HardMediumSoftScore score,
-            List<ContrainteImpact> contraintesViolees, List<ContrainteImpact> contraintesRespectees) {
-    }
+    public record AffectationExplanation(
+            String posteId,
+            String animateurId,
+            HardMediumSoftScore score,
+            List<ContrainteImpact> contraintesViolees,
+            List<ContrainteImpact> contraintesRespectees) {}
 
     /**
      * @param animateurActuelId    the poste's occupant before the simulation, {@code null} when unassigned
      * @param animateurCandidatId  the animateur substituted in for the simulation
      * @param delta                {@code scoreApres - scoreAvant}: positive/less-negative means the swap improves the score
      */
-    public record SwapSimulation(String posteId, String animateurActuelId, String animateurCandidatId,
-            HardMediumSoftScore scoreAvant, HardMediumSoftScore scoreApres, HardMediumSoftScore delta,
-            List<ContrainteImpact> contraintesVioleesAvant, List<ContrainteImpact> contraintesVioleesApres) {
-    }
+    public record SwapSimulation(
+            String posteId,
+            String animateurActuelId,
+            String animateurCandidatId,
+            HardMediumSoftScore scoreAvant,
+            HardMediumSoftScore scoreApres,
+            HardMediumSoftScore delta,
+            List<ContrainteImpact> contraintesVioleesAvant,
+            List<ContrainteImpact> contraintesVioleesApres) {}
 
     /**
      * One viable replacement for a poste (issue #71): who, what the whole plan
@@ -1087,10 +1185,12 @@ public final class PlanningWhatIf {
      * @param violationsResolues    violated for the current occupant, not for this candidate
      * @param violationsIntroduites the mirror image
      */
-    public record SuggestionReparation(String animateurId, HardMediumSoftScore scoreApres,
-            HardMediumSoftScore delta, List<ContrainteImpact> violationsResolues,
-            List<ContrainteImpact> violationsIntroduites) {
-    }
+    public record SuggestionReparation(
+            String animateurId,
+            HardMediumSoftScore scoreApres,
+            HardMediumSoftScore delta,
+            List<ContrainteImpact> violationsResolues,
+            List<ContrainteImpact> violationsIntroduites) {}
 
     /**
      * Result of {@link #suggererReparations}, carrying the cost it actually
@@ -1102,11 +1202,15 @@ public final class PlanningWhatIf {
      * @param animateurActuelId the poste's occupant before any repair, {@code null} when the seat is empty
      */
     @Schema(requiredProperties = {"candidatsEligibles", "candidatsEvalues", "plafond"})
-    public record SuggestionsReparation(String posteId, String animateurActuelId,
-            HardMediumSoftScore scoreAvant, List<ContrainteImpact> contraintesVioleesAvant,
-            int candidatsEligibles, int candidatsEvalues, int plafond,
-            List<SuggestionReparation> suggestions) {
-    }
+    public record SuggestionsReparation(
+            String posteId,
+            String animateurActuelId,
+            HardMediumSoftScore scoreAvant,
+            List<ContrainteImpact> contraintesVioleesAvant,
+            int candidatsEligibles,
+            int candidatsEvalues,
+            int plafond,
+            List<SuggestionReparation> suggestions) {}
 
     /**
      * One reason an animateur is not on this seat, named by the constraint
@@ -1117,8 +1221,7 @@ public final class PlanningWhatIf {
      * one round trip instead of two. A reason with no catalogue entry keeps
      * its name and nulls the rest rather than inventing wording.</p>
      */
-    public record MotifExclusion(String contrainte, String niveau, String categorie, String description) {
-    }
+    public record MotifExclusion(String contrainte, String niveau, String categorie, String description) {}
 
     /**
      * One line of the banc de touche, with <b>two</b> verdicts, because there
@@ -1153,9 +1256,12 @@ public final class PlanningWhatIf {
      *               suffirait » apart from « il en resterait trois »
      */
     @Schema(requiredProperties = {"degradeLePlan", "disponible"})
-    public record AnimateurAvailability(String animateurId, boolean disponible, boolean degradeLePlan,
-            HardMediumSoftScore delta, List<MotifExclusion> motifs) {
-    }
+    public record AnimateurAvailability(
+            String animateurId,
+            boolean disponible,
+            boolean degradeLePlan,
+            HardMediumSoftScore delta,
+            List<MotifExclusion> motifs) {}
 
     /**
      * Why the banc de touche has, or has not, anything to say about a créneau.
@@ -1204,10 +1310,16 @@ public final class PlanningWhatIf {
      *                           exactly {@link SeatStatus#NO_PLAN}
      */
     @Schema(requiredProperties = {"disponibles", "total"})
-    public record CreneauAvailability(Long creneauId, SeatStatus statut, String posteCibleId, String standCibleId,
-            String animateurCibleId, int total, int disponibles, List<CreneauSiege> creneauxAvecSieges,
-            List<AnimateurAvailability> animateurs) {
-    }
+    public record CreneauAvailability(
+            Long creneauId,
+            SeatStatus statut,
+            String posteCibleId,
+            String standCibleId,
+            String animateurCibleId,
+            int total,
+            int disponibles,
+            List<CreneauSiege> creneauxAvecSieges,
+            List<AnimateurAvailability> animateurs) {}
 
     /**
      * One créneau of the saved plan, with what it takes to label it in a
@@ -1217,9 +1329,8 @@ public final class PlanningWhatIf {
      *                découpage has produced several variants of the same hours
      */
     @Schema(requiredProperties = {"famille", "jour"})
-    public record CreneauSiege(Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
-            int famille) {
-    }
+    public record CreneauSiege(
+            Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin, int famille) {}
 
     /**
      * What an échange actually does for the animateur who asked — the three
@@ -1250,9 +1361,13 @@ public final class PlanningWhatIf {
      *                       when the échange frees them
      * @param delta          {@code scoreApres - scoreAvant}: the greater, the better for the plan
      */
-    public record SuggestionEchange(String animateurId, NatureEchange nature, Long creneauCibleId,
-            String standCibleId, HardMediumSoftScore scoreApres, HardMediumSoftScore delta) {
-    }
+    public record SuggestionEchange(
+            String animateurId,
+            NatureEchange nature,
+            Long creneauCibleId,
+            String standCibleId,
+            HardMediumSoftScore scoreApres,
+            HardMediumSoftScore delta) {}
 
     /**
      * Result of {@link #suggererEchanges}, carrying the cost it actually paid,
@@ -1264,10 +1379,14 @@ public final class PlanningWhatIf {
      * <p>Options, not colleagues: one colleague can hold several — take my
      * seat, or trade me your Tuesday, or your Thursday.</p>
      */
-    public record SuggestionsEchange(long creneauId, String standId, HardMediumSoftScore scoreAvant,
-            int optionsEligibles, int optionsEvaluees, int plafond,
-            List<SuggestionEchange> suggestions) {
-    }
+    public record SuggestionsEchange(
+            long creneauId,
+            String standId,
+            HardMediumSoftScore scoreAvant,
+            int optionsEligibles,
+            int optionsEvaluees,
+            int plafond,
+            List<SuggestionEchange> suggestions) {}
 
     /**
      * Result of {@link #simulateEchange}: what a demande d'échange would do to
@@ -1280,15 +1399,19 @@ public final class PlanningWhatIf {
      * @param casseContrainteDure true when the swap makes the global hard score
      *                      worse — the prevalidation verdict shown to the animateur
      */
-    public record EchangeSimulation(String posteDemandeurId, String posteCibleId, boolean echangeCroise,
-            String standCibleId, HardMediumSoftScore scoreAvant, HardMediumSoftScore scoreApres,
-            HardMediumSoftScore delta, boolean casseContrainteDure,
-            List<HardViolation> nouvellesViolationsDures) {
-    }
+    public record EchangeSimulation(
+            String posteDemandeurId,
+            String posteCibleId,
+            boolean echangeCroise,
+            String standCibleId,
+            HardMediumSoftScore scoreAvant,
+            HardMediumSoftScore scoreApres,
+            HardMediumSoftScore delta,
+            boolean casseContrainteDure,
+            List<HardViolation> nouvellesViolationsDures) {}
 
     /** One hard constraint the simulated échange would newly violate, in business words. */
-    public record HardViolation(String name, String description, int matchesSupplementaires) {
-    }
+    public record HardViolation(String name, String description, int matchesSupplementaires) {}
 
     /**
      * What a seat movement (issue #308) would do, and whether it may. After it,
@@ -1302,8 +1425,14 @@ public final class PlanningWhatIf {
      * @param casseContrainteDure true when the plan's hard score gets worse — the
      *                           gesture is then refused, never applied
      */
-    public record DeplacementSimulation(String posteSourceId, String posteCibleId, String animateurSourceId,
-            String animateurCibleId, HardMediumSoftScore scoreAvant, HardMediumSoftScore scoreApres,
-            HardMediumSoftScore delta, boolean casseContrainteDure, List<HardViolation> nouvellesViolationsDures) {
-    }
+    public record DeplacementSimulation(
+            String posteSourceId,
+            String posteCibleId,
+            String animateurSourceId,
+            String animateurCibleId,
+            HardMediumSoftScore scoreAvant,
+            HardMediumSoftScore scoreApres,
+            HardMediumSoftScore delta,
+            boolean casseContrainteDure,
+            List<HardViolation> nouvellesViolationsDures) {}
 }

@@ -1,13 +1,11 @@
 package dev.sylvain.planning.config;
 
-import java.util.Optional;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Refuses to boot a production deployment still running on the passwords
@@ -65,9 +63,15 @@ public class DefaultSecrets {
      * production boot, like {@code BackupConfiguration.checkRetention}.
      */
     static void check(String adminPassword, String databasePassword) {
-        refuse("ADMIN_PASSWORD", adminPassword, SHIPPED_ADMIN_PASSWORD,
+        refuse(
+                "ADMIN_PASSWORD",
+                adminPassword,
+                SHIPPED_ADMIN_PASSWORD,
                 "le compte admin démarrerait avec le mot de passe d'exemple");
-        refuse("DB_PASSWORD", databasePassword, SHIPPED_DATABASE_PASSWORD,
+        refuse(
+                "DB_PASSWORD",
+                databasePassword,
+                SHIPPED_DATABASE_PASSWORD,
                 "la base démarrerait avec le mot de passe d'exemple");
     }
 
@@ -85,8 +89,8 @@ public class DefaultSecrets {
             return;
         }
         if (valeur.isBlank()) {
-            throw new IllegalStateException(variable + " est vide : " + consequence
-                    + ". Donnez-lui une valeur avant de déployer.");
+            throw new IllegalStateException(
+                    variable + " est vide : " + consequence + ". Donnez-lui une valeur avant de déployer.");
         }
         if (exemple.equals(valeur)) {
             throw new IllegalStateException(variable + " vaut encore la valeur d'exemple livrée avec les sources : "

@@ -2,22 +2,20 @@ package dev.sylvain.planning.solver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.AffectationPubliee;
-import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.solve.PlanningService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 class PlanningHardConstraintsTest {
@@ -47,8 +45,8 @@ class PlanningHardConstraintsTest {
         // créneau at once — an impossible plan to keep.
         PosteAffectation premier = problem.getPostes().get(0);
         problem.setAffectationsPubliees(problem.getAnimateurs().stream()
-                .map(animateur -> new AffectationPubliee(premier.getStand().getId(),
-                        premier.getCreneau().getId(), animateur.getId()))
+                .map(animateur -> new AffectationPubliee(
+                        premier.getStand().getId(), premier.getCreneau().getId(), animateur.getId()))
                 .toList());
 
         PlanningEvenement solved = planningService.solve(problem);

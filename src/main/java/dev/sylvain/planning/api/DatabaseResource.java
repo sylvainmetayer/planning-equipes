@@ -1,8 +1,5 @@
 package dev.sylvain.planning.api;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-
 import dev.sylvain.planning.service.export.DatabaseDumpService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -13,6 +10,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Download and replay the whole dataset as a SQL script, so a problematic
@@ -42,7 +41,8 @@ public class DatabaseResource {
     public Response importDump(String script) {
         try {
             int statements = databaseDumpService.importDump(script);
-            return Response.ok(new ImportSummary(statements, "Import terminé : " + statements + " instructions rejouées."))
+            return Response.ok(
+                            new ImportSummary(statements, "Import terminé : " + statements + " instructions rejouées."))
                     .build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -51,6 +51,5 @@ public class DatabaseResource {
         }
     }
 
-    public record ImportSummary(int statements, String message) {
-    }
+    public record ImportSummary(int statements, String message) {}
 }

@@ -2,6 +2,14 @@ package dev.sylvain.planning.service.export;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.referentiel.TypologieLibelles;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,25 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
 import org.junit.jupiter.api.Test;
 import org.openpdf.text.pdf.PdfReader;
 import org.openpdf.text.pdf.parser.PdfTextExtractor;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.export.AnimateurPlanningPdf;
-import dev.sylvain.planning.service.export.ExportProvenance;
-import dev.sylvain.planning.service.export.GlobalPlanningPdf;
-import dev.sylvain.planning.service.export.PdfTheme;
-import dev.sylvain.planning.service.export.PlanningExportService;
-import dev.sylvain.planning.service.export.PlanningIcs;
-import dev.sylvain.planning.service.espace.ApplicationLinks;
-import dev.sylvain.planning.service.referentiel.TypologieLibelles;
 
 /**
  * What the PDFs <b>say</b>, and not merely that they start with {@code %PDF}.
@@ -71,8 +63,12 @@ class PlanningPdfContenuTest {
             "STRATEGIE", "Jeux de stratégie",
             "AMBIANCE", "Jeux d'ambiance");
 
-    private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
-            new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
+    private final PlanningExportService service = new PlanningExportService(
+            new ApplicationLinks(Optional.empty()),
+            new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES),
+            new GlobalPlanningPdf(new PdfTheme()),
+            new PlanningIcs(),
+            PROVENANCE);
 
     @Test
     void lePdfIndividuelNommeLAnimateurSesStandsEtSesRepos() throws IOException {
@@ -103,8 +99,8 @@ class PlanningPdfContenuTest {
         Animateur alan = new Animateur("A-ALAN", "Alan", "Turing", LocalDate.of(1992, 2, 2), false);
         List<PosteAffectation> postes = new ArrayList<>(List.of(
                 poste("p1", stand, releve, ada), poste("p2", stand, aprem, ada), poste("p3", stand, aprem, alan)));
-        PlanningEvenement planning = new PlanningEvenement(LocalDate.of(2026, 8, 14),
-                new ArrayList<>(List.of(ada, alan)), postes);
+        PlanningEvenement planning =
+                new PlanningEvenement(LocalDate.of(2026, 8, 14), new ArrayList<>(List.of(ada, alan)), postes);
 
         String text = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
         assertThat(text).contains("Pause de 19:00 à 19:20 (20 min)").contains("en relais avec l'équipe du stand");
@@ -126,9 +122,12 @@ class PlanningPdfContenuTest {
         String text = textOf(service.exportAnimateurPdf(planning(), "A-ADA"));
 
         assertThat(text.lines().map(String::strip).toList())
-                .containsSubsequence("VOS STANDS AFFECTÉS",
-                        "Stratèges Associés", "Jeux de stratégie",
-                        "Éditeur Vedette", "Jeux d'ambiance");
+                .containsSubsequence(
+                        "VOS STANDS AFFECTÉS",
+                        "Stratèges Associés",
+                        "Jeux de stratégie",
+                        "Éditeur Vedette",
+                        "Jeux d'ambiance");
     }
 
     /** The team-mates on the same row are named, the animateur themselves is not. */
@@ -168,8 +167,10 @@ class PlanningPdfContenuTest {
         PlanningEvenement planning = planning();
         Animateur anonyme = new Animateur("A-VIDE", null, null, LocalDate.of(1990, 1, 1), false);
         planning.getAnimateurs().add(anonyme);
-        PosteAffectation poste = new PosteAffectation("p-vide",
-                planning.getPostes().get(0).getStand(), planning.getPostes().get(0).getCreneau());
+        PosteAffectation poste = new PosteAffectation(
+                "p-vide",
+                planning.getPostes().get(0).getStand(),
+                planning.getPostes().get(0).getCreneau());
         poste.setAnimateur(anonyme);
         planning.getPostes().add(poste);
 
@@ -185,8 +186,7 @@ class PlanningPdfContenuTest {
     void lesDeuxPdfDatentLEditionEtSaResolution() throws IOException {
         PlanningEvenement planning = planning();
 
-        for (byte[] pdf : List.of(service.exportAnimateurPdf(planning, "A-ADA"),
-                service.exportGlobalPdf(planning))) {
+        for (byte[] pdf : List.of(service.exportAnimateurPdf(planning, "A-ADA"), service.exportGlobalPdf(planning))) {
             assertThat(textOf(pdf))
                     .contains("généré le")
                     .contains("à partir des données de l'édition « Édition de test »")
@@ -231,8 +231,11 @@ class PlanningPdfContenuTest {
 
     /** A provenance carrying no date at all, whichever plan is asked for. */
     private static PlanningExportService withoutDate() {
-        return new PlanningExportService(new ApplicationLinks(Optional.empty()),
-                new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(),
+        return new PlanningExportService(
+                new ApplicationLinks(Optional.empty()),
+                new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES),
+                new GlobalPlanningPdf(new PdfTheme()),
+                new PlanningIcs(),
                 new ExportProvenance() {
                     @Override
                     public Provenance courante() {
@@ -285,8 +288,8 @@ class PlanningPdfContenuTest {
         postes.add(poste("p4", strategie, matinJ2, alan));
         postes.add(poste("p5", vedette, matinJ2, null));
 
-        return new PlanningEvenement(LocalDate.of(2026, 8, 14),
-                new ArrayList<>(List.of(ada, alan)), new ArrayList<>(postes));
+        return new PlanningEvenement(
+                LocalDate.of(2026, 8, 14), new ArrayList<>(List.of(ada, alan)), new ArrayList<>(postes));
     }
 
     private static PosteAffectation poste(String id, Stand stand, Creneau creneau, Animateur animateur) {

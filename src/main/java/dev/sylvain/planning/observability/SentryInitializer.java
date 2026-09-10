@@ -1,16 +1,14 @@
 package dev.sylvain.planning.observability;
 
 import dev.sylvain.planning.config.ConfigObservabilite;
-import java.util.Optional;
-import java.util.regex.Pattern;
-
 import io.quarkus.runtime.StartupEvent;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.protocol.SentryException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Initializes the Sentry Java SDK at startup. No Quarkus extension exists for
@@ -49,8 +47,7 @@ public class SentryInitializer {
      * Mirrors {@code maskEspaceToken} on the frontend — the same promise is
      * made to the reader of the privacy policy on both sides.
      */
-    private static final Pattern ESPACE_TOKEN =
-            Pattern.compile("/(api/espace-animateur|animateur)/[^/?#\\s\"']+");
+    private static final Pattern ESPACE_TOKEN = Pattern.compile("/(api/espace-animateur|animateur)/[^/?#\\s\"']+");
 
     static String maskToken(String valeur) {
         return valeur == null ? null : ESPACE_TOKEN.matcher(valeur).replaceAll("/$1/<jeton>");

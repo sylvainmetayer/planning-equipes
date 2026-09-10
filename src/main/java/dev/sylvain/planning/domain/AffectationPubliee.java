@@ -11,5 +11,4 @@ package dev.sylvain.planning.domain;
  * reading it ({@code stabiliteDuPlanPublie}) is then silent: before the first
  * publication the solver stays free to reshuffle.</p>
  */
-public record AffectationPubliee(String standId, Long creneauId, String animateurId) {
-}
+public record AffectationPubliee(String standId, Long creneauId, String animateurId) {}

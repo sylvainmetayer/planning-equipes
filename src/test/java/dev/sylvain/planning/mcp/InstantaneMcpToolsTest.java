@@ -3,18 +3,16 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.IntStream;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneDetailView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapshot;
 import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotDetail;
 import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotMeta;
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.IntStream;
+import org.junit.jupiter.api.Test;
 
 /**
  * Reading a snapshot's content is the one tool here that could hand back
@@ -23,8 +21,17 @@ import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotMeta;
  */
 class InstantaneMcpToolsTest {
 
-    private static final SnapshotMeta META = new SnapshotMeta(7, "Avant retouche", false,
-            "-2hard/0medium/-40soft", 3, Instant.parse("2026-08-15T10:00:00Z"), "DEFAUT", "Édition 2026", null, null);
+    private static final SnapshotMeta META = new SnapshotMeta(
+            7,
+            "Avant retouche",
+            false,
+            "-2hard/0medium/-40soft",
+            3,
+            Instant.parse("2026-08-15T10:00:00Z"),
+            "DEFAUT",
+            "Édition 2026",
+            null,
+            null);
 
     private static InstantaneMcpTools tools(SnapshotDetail detail) {
         InstantaneMcpTools tools = new InstantaneMcpTools();
@@ -47,16 +54,16 @@ class InstantaneMcpToolsTest {
 
     @Test
     void filtreParStandEtParAnimateur() {
-        InstantaneMcpTools tools = tools(detail(List.of(
-                affectation("P1", "S1", "A1"),
-                affectation("P2", "S2", "A1"),
-                affectation("P3", "S1", "A2"))));
+        InstantaneMcpTools tools = tools(detail(
+                List.of(affectation("P1", "S1", "A1"), affectation("P2", "S2", "A1"), affectation("P3", "S1", "A2"))));
 
         InstantaneDetailView parStand = tools.consulter_instantane(7, "S1", null, null, null);
         assertThat(parStand.affectations()).extracting(view -> view.posteId()).containsExactly("P1", "P3");
 
         InstantaneDetailView parAnimateur = tools.consulter_instantane(7, null, "A1", null, null);
-        assertThat(parAnimateur.affectations()).extracting(view -> view.posteId()).containsExactly("P1", "P2");
+        assertThat(parAnimateur.affectations())
+                .extracting(view -> view.posteId())
+                .containsExactly("P1", "P2");
 
         InstantaneDetailView croise = tools.consulter_instantane(7, "S1", "A2", null, null);
         assertThat(croise.affectations()).extracting(view -> view.posteId()).containsExactly("P3");
@@ -76,12 +83,11 @@ class InstantaneMcpToolsTest {
 
     @Test
     void uneLimiteExpliciteEstRespectee() {
-        InstantaneMcpTools tools = tools(detail(List.of(
-                affectation("P1", "S1", "A1"),
-                affectation("P2", "S1", "A2"),
-                affectation("P3", "S1", "A3"))));
+        InstantaneMcpTools tools = tools(detail(
+                List.of(affectation("P1", "S1", "A1"), affectation("P2", "S1", "A2"), affectation("P3", "S1", "A3"))));
 
-        assertThat(tools.consulter_instantane(7, null, null, 2, null).affectations()).hasSize(2);
+        assertThat(tools.consulter_instantane(7, null, null, 2, null).affectations())
+                .hasSize(2);
     }
 
     @Test
@@ -108,7 +114,8 @@ class InstantaneMcpToolsTest {
 
         InstantaneDetailView vue = tools.consulter_instantane(7, null, null, null, null);
 
-        assertThat(vue.affectations()).singleElement()
+        assertThat(vue.affectations())
+                .singleElement()
                 .satisfies(affectation -> assertThat(affectation.animateurId()).isNull());
         assertThat(vue.instantane().libelle()).isEqualTo("Avant retouche");
     }

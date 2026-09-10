@@ -22,8 +22,7 @@ public final class VerrouillageConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-                animateurVerrouilleFige(constraintFactory),
-                animateurVerrouilleCreneauFige(constraintFactory)
+            animateurVerrouilleFige(constraintFactory), animateurVerrouilleCreneauFige(constraintFactory)
         };
     }
 
@@ -38,12 +37,14 @@ public final class VerrouillageConstraints {
      * hard violation in every plan.</p>
      */
     private Constraint animateurVerrouilleFige(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport
-                .actif(constraintFactory.forEach(VerrouillagePlanning.class), "animateurVerrouilleFige")
-                .filter(verrouillage -> verrouillage.getType() == TypeVerrouillage.ANIMATEUR
-                        && verrouillage.getAnimateurId() != null)
-                .join(PosteAffectation.class,
-                        Joiners.equal(VerrouillagePlanning::getAnimateurId,
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(VerrouillagePlanning.class), "animateurVerrouilleFige")
+                .filter(verrouillage ->
+                        verrouillage.getType() == TypeVerrouillage.ANIMATEUR && verrouillage.getAnimateurId() != null)
+                .join(
+                        PosteAffectation.class,
+                        Joiners.equal(
+                                VerrouillagePlanning::getAnimateurId,
                                 poste -> poste.getAnimateur().getId()))
                 .filter((verrouillage, poste) -> !poste.isVerrouille())
                 .penalize(HardMediumSoftScore.ONE_HARD)
@@ -60,15 +61,18 @@ public final class VerrouillageConstraints {
      * on the créneau, so any new seat there is a violation.
      */
     private Constraint animateurVerrouilleCreneauFige(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport
-                .actif(constraintFactory.forEach(VerrouillagePlanning.class), "animateurVerrouilleCreneauFige")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(VerrouillagePlanning.class), "animateurVerrouilleCreneauFige")
                 .filter(verrouillage -> verrouillage.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
                         && verrouillage.getAnimateurId() != null
                         && verrouillage.getCreneauId() != null)
-                .join(PosteAffectation.class,
-                        Joiners.equal(VerrouillagePlanning::getAnimateurId,
+                .join(
+                        PosteAffectation.class,
+                        Joiners.equal(
+                                VerrouillagePlanning::getAnimateurId,
                                 poste -> poste.getAnimateur().getId()),
-                        Joiners.equal(VerrouillagePlanning::getCreneauId,
+                        Joiners.equal(
+                                VerrouillagePlanning::getCreneauId,
                                 poste -> poste.getCreneau().getId()))
                 .filter((verrouillage, poste) -> !poste.isVerrouille())
                 .penalize(HardMediumSoftScore.ONE_HARD)

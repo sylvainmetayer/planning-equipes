@@ -1,7 +1,15 @@
 package dev.sylvain.planning.service.analyse;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
+import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapshot;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,18 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapshot;
-import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
-import dev.sylvain.planning.service.solve.PlanSnapshotService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Aggregate KPI of a plan (issues #89 and #70): score, coverage, hours
@@ -40,8 +37,7 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 @ApplicationScoped
 public class PlanningKpiService {
 
-    private static final Pattern SCORE_PATTERN =
-            Pattern.compile("(-?\\d+)hard/(-?\\d+)medium/(-?\\d+)soft");
+    private static final Pattern SCORE_PATTERN = Pattern.compile("(-?\\d+)hard/(-?\\d+)medium/(-?\\d+)soft");
 
     @Inject
     PlanningPersistenceService persistenceService;
@@ -62,7 +58,15 @@ public class PlanningKpiService {
      *                          créneau the referential no longer holds, so the
      *                          hour metrics under-count them
      */
-    @Schema(requiredProperties = {"animateursAffectes", "creneauxDistincts", "heuresIncompletes", "postesPourvus", "postesTotal", "standsDistincts"})
+    @Schema(
+            requiredProperties = {
+                "animateursAffectes",
+                "creneauxDistincts",
+                "heuresIncompletes",
+                "postesPourvus",
+                "postesTotal",
+                "standsDistincts"
+            })
     public record PlanningKpi(
             String score,
             Integer scoreHard,
@@ -82,12 +86,10 @@ public class PlanningKpiService {
             Integer modificationsManuelles,
             Double tauxModificationsManuelles,
             Long dureeSolveSecondes,
-            Map<String, Integer> violationsParContrainte) {
-    }
+            Map<String, Integer> violationsParContrainte) {}
 
     /** One staffed-or-empty seat reduced to what the KPI need: who, for how long. */
-    record AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes) {
-    }
+    record AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes) {}
 
     /**
      * KPI of the currently persisted plan. Score and violations come from the
@@ -111,7 +113,8 @@ public class PlanningKpiService {
         PlanningDiagnostic diagnostic = analysis == null ? null : analysis.diagnostic();
         int modifications = referenceDataService.listContraintesAdHoc().size()
                 + referenceDataService.listVerrouillages().size();
-        return compute(affectations,
+        return compute(
+                affectations,
                 diagnostic == null ? null : diagnostic.score(),
                 violationsByContrainte(diagnostic),
                 modifications,
@@ -176,8 +179,11 @@ public class PlanningKpiService {
      * The aggregation itself, static and free of any I/O so it can be
      * unit-tested without a database.
      */
-    public static PlanningKpi compute(List<AffectationKpi> affectations, String score,
-            Map<String, Integer> violationsParContrainte, Integer modificationsManuelles,
+    public static PlanningKpi compute(
+            List<AffectationKpi> affectations,
+            String score,
+            Map<String, Integer> violationsParContrainte,
+            Integer modificationsManuelles,
             Long dureeSolveSecondes) {
         Set<String> stands = new LinkedHashSet<>();
         Set<String> creneaux = new LinkedHashSet<>();
@@ -200,9 +206,7 @@ public class PlanningKpiService {
         Dispersion dispersion = dispersion(heuresParAnimateur.values());
         int[] niveaux = parseScore(score);
         int total = affectations.size();
-        Double taux = modificationsManuelles == null || total == 0
-                ? null
-                : modificationsManuelles / (double) total;
+        Double taux = modificationsManuelles == null || total == 0 ? null : modificationsManuelles / (double) total;
         return new PlanningKpi(
                 score,
                 niveaux == null ? null : niveaux[0],
@@ -225,8 +229,7 @@ public class PlanningKpiService {
                 violationsParContrainte == null ? Map.of() : violationsParContrainte);
     }
 
-    private record Dispersion(double total, double moyenne, double ecartType, double min, double max) {
-    }
+    private record Dispersion(double total, double moyenne, double ecartType, double min, double max) {}
 
     private static Dispersion dispersion(Collection<Double> valeurs) {
         if (valeurs.isEmpty()) {
@@ -263,9 +266,7 @@ public class PlanningKpiService {
             return null;
         }
         return new int[] {
-                Integer.parseInt(matcher.group(1)),
-                Integer.parseInt(matcher.group(2)),
-                Integer.parseInt(matcher.group(3))
+            Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)), Integer.parseInt(matcher.group(3))
         };
     }
 }

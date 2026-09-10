@@ -1,7 +1,5 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.inject.Inject;
@@ -14,6 +12,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * CRUD over the parts of the planning frozen by the user (issue #87). Follows
@@ -41,7 +40,8 @@ public class VerrouillageResource {
      */
     @POST
     public Response create(VerrouillagePlanning verrouillage) {
-        return Response.ok(referenceDataService.createVerrouillage(verrouillage)).build();
+        return Response.ok(referenceDataService.createVerrouillage(verrouillage))
+                .build();
     }
 
     @DELETE

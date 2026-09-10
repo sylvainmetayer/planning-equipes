@@ -1,17 +1,13 @@
 package dev.sylvain.planning.api;
 
-import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigSecurite;
-import java.util.Locale;
-import java.util.Optional;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import java.util.Locale;
 
 /**
  * Browser-side hardening headers, added to every response before the

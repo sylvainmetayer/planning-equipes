@@ -3,8 +3,7 @@ package dev.sylvain.planning.service;
 /** The one rule every referential shares: a business id is client-supplied and must not be blank. */
 public final class Ids {
 
-    private Ids() {
-    }
+    private Ids() {}
 
     public static String required(String id, String nomDuChamp) {
         if (id == null || id.isBlank()) {

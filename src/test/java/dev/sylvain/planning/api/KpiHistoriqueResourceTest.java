@@ -3,12 +3,10 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * KPI history (issue #89) end to end: a completed solve leaves exactly one
@@ -29,13 +27,23 @@ class KpiHistoriqueResourceTest {
 
     @Test
     void chaqueSolveEcritUneLigneDHistoriqueKpi() throws InterruptedException {
-        int avant = given().when().get("/api/kpi/historique")
-                .then().statusCode(200).extract().jsonPath().getList("$").size();
+        int avant = given().when()
+                .get("/api/kpi/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("$")
+                .size();
 
         persistedPlan();
 
-        JsonPath historique = given().when().get("/api/kpi/historique")
-                .then().statusCode(200).extract().jsonPath();
+        JsonPath historique = given().when()
+                .get("/api/kpi/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         assertThat(historique.getList("$").size()).isGreaterThan(avant);
         // Newest first: the row of the solve just run.
         assertThat(historique.getInt("[0].kpi.postesTotal")).isPositive();
@@ -47,8 +55,13 @@ class KpiHistoriqueResourceTest {
     @Test
     void uneLigneSupprimeeDisparaitEtUnIdInconnuRepond404() throws InterruptedException {
         persistedPlan();
-        long id = given().when().get("/api/kpi/historique")
-                .then().statusCode(200).extract().jsonPath().getLong("[0].id");
+        long id = given().when()
+                .get("/api/kpi/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getLong("[0].id");
 
         given().when().delete("/api/kpi/historique/" + id).then().statusCode(204);
         given().when().delete("/api/kpi/historique/" + id).then().statusCode(404);
@@ -56,13 +69,17 @@ class KpiHistoriqueResourceTest {
 
     private void persistedPlan() throws InterruptedException {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
         attendreSolveurLibre();
-        String jobId = given()
-                .when().post("/api/solve/async/reference-data?seconds=1")
+        String jobId = given().when()
+                .post("/api/solve/async/reference-data?seconds=1")
                 .then()
                 .statusCode(202)
-                .extract().path("id");
+                .extract()
+                .path("id");
         assertThat(pollUntilFinished(jobId).getString("status")).isEqualTo("COMPLETED");
     }
 
@@ -78,11 +95,12 @@ class KpiHistoriqueResourceTest {
 
     private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
         for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given()
-                    .when().get("/api/jobs/" + jobId)
+            JsonPath job = given().when()
+                    .get("/api/jobs/" + jobId)
                     .then()
                     .statusCode(200)
-                    .extract().jsonPath();
+                    .extract()
+                    .jsonPath();
             if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
                 return job;
             }

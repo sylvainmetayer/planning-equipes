@@ -1,8 +1,5 @@
 package dev.sylvain.planning.solver.constraints;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
@@ -11,6 +8,8 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * Soft preferences: tie-breakers that shape an otherwise valid plan — spread
@@ -39,18 +38,20 @@ public final class PreferenceConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-                favoriserMixiteDesNiveaux(constraintFactory),
-                equilibrerCreneauxPenibles(constraintFactory),
-                preserverBufferPolyvalents(constraintFactory)
+            favoriserMixiteDesNiveaux(constraintFactory),
+            equilibrerCreneauxPenibles(constraintFactory),
+            preserverBufferPolyvalents(constraintFactory)
         };
     }
 
     private Constraint favoriserMixiteDesNiveaux(ConstraintFactory constraintFactory) {
         // On a slot that already has a referent, having no beginner is a missed
         // training opportunity (soft, so it never blocks a valid plan).
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "favoriserMixiteDesNiveaux")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "favoriserMixiteDesNiveaux")
                 .filter(poste -> poste.getAnimateur() != null)
-                .groupBy(PosteAffectation::getStand,
+                .groupBy(
+                        PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
                         ConstraintCollectors.sum(poste -> poste.getAnimateur().isReferentFor(poste.getStand()) ? 1 : 0),
                         ConstraintCollectors.sum(poste -> poste.getAnimateur().isDebutantFor(poste.getStand()) ? 1 : 0))
@@ -66,12 +67,14 @@ public final class PreferenceConstraints {
      * scoped to the subset of postes that are actually pénibles.
      */
     private Constraint equilibrerCreneauxPenibles(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "equilibrerCreneauxPenibles")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "equilibrerCreneauxPenibles")
                 .filter(poste -> poste.getAnimateur() != null && isDemanding(poste.getStand()))
                 .groupBy(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur))
-                .penalize(HardMediumSoftScore.ONE_SOFT,
-                        loadBalance -> loadBalance.unfairness()
+                .penalize(
+                        HardMediumSoftScore.ONE_SOFT,
+                        loadBalance -> loadBalance
+                                .unfairness()
                                 .multiply(UNFAIRNESS_SCALE)
                                 .setScale(0, RoundingMode.HALF_UP)
                                 .intValue())
@@ -96,18 +99,20 @@ public final class PreferenceConstraints {
      * is equal — see {@code docs/contraintes.md}.</p>
      */
     private Constraint preserverBufferPolyvalents(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "preserverBufferPolyvalents")
-                .filter(poste -> poste.getAnimateur() != null
-                        && poste.getAnimateur().isNinja()
-                        && poste.getCreneau() != null)
-                .groupBy(PosteAffectation::getCreneau,
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "preserverBufferPolyvalents")
+                .filter(poste ->
+                        poste.getAnimateur() != null && poste.getAnimateur().isNinja() && poste.getCreneau() != null)
+                .groupBy(
+                        PosteAffectation::getCreneau,
                         ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
-                .join(constraintFactory.forEach(Animateur.class)
+                .join(constraintFactory
+                        .forEach(Animateur.class)
                         .filter(Animateur::isNinja)
                         .groupBy(ConstraintCollectors.count()))
                 .filter((creneau, occupes, total) -> total - occupes < POLYVALENTS_LIBRES_MIN)
-                .penalize(HardMediumSoftScore.ONE_SOFT,
+                .penalize(
+                        HardMediumSoftScore.ONE_SOFT,
                         (creneau, occupes, total) -> POLYVALENTS_LIBRES_MIN - (total - occupes))
                 .asConstraint("preserverBufferPolyvalents");
     }

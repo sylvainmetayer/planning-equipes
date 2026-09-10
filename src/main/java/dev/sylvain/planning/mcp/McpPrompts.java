@@ -1,12 +1,11 @@
 package dev.sylvain.planning.mcp;
 
-import java.lang.reflect.Method;
-import java.util.List;
-
 import io.quarkiverse.mcp.server.Prompt;
 import io.quarkiverse.mcp.server.PromptArg;
 import io.quarkiverse.mcp.server.PromptMessage;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * The conversations this server is actually for, served as MCP prompts
@@ -63,10 +62,10 @@ public class McpPrompts {
             "reprendre_apres_un_changement_tardif",
             "tenir_le_jour_j");
 
-    @Prompt(description = "Diagnostiquer les contraintes dures encore violées après une résolution, et dire "
-            + "quoi corriger dans les données de référence.")
-    PromptMessage diagnostiquer_contraintes_dures(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Diagnostiquer les contraintes dures encore violées après une résolution, et dire "
+                    + "quoi corriger dans les données de référence.")
+    PromptMessage diagnostiquer_contraintes_dures(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Le dernier planning résolu%s contient des violations de contraintes dures.
 
@@ -85,10 +84,10 @@ public class McpPrompts {
                 N'expose aucune donnée nominative : les animateurs se désignent par leur id.""".formatted(suffixe(edition)));
     }
 
-    @Prompt(description = "Vérifier qu'une édition est prête à être résolue : grille de créneaux, ouvertures "
-            + "de stands, effectifs, avant de lancer quoi que ce soit.")
-    PromptMessage verifier_avant_resolution(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Vérifier qu'une édition est prête à être résolue : grille de créneaux, ouvertures "
+                    + "de stands, effectifs, avant de lancer quoi que ce soit.")
+    PromptMessage verifier_avant_resolution(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Vérifie que %s est prête à être résolue, sans rien lancer ni rien modifier.
 
@@ -113,10 +112,10 @@ public class McpPrompts {
                 résolution.""".formatted(designation(edition)));
     }
 
-    @Prompt(description = "Relancer une résolution sans risquer de perdre le planning en place : capturer, "
-            + "résoudre, comparer, restaurer si c'est pire.")
-    PromptMessage resoudre_sans_perdre_le_planning(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Relancer une résolution sans risquer de perdre le planning en place : capturer, "
+                    + "résoudre, comparer, restaurer si c'est pire.")
+    PromptMessage resoudre_sans_perdre_le_planning(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Relance une résolution%s en gardant la possibilité de revenir en arrière.
 
@@ -137,10 +136,10 @@ public class McpPrompts {
                 Ne relance pas une deuxième résolution de ta propre initiative.""".formatted(suffixe(edition)));
     }
 
-    @Prompt(description = "Poser une grille de créneaux récurrents sans les saisir un par un, et faire "
-            + "contrôler la grille obtenue avant de la garder.")
-    PromptMessage construire_la_grille_de_creneaux(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Poser une grille de créneaux récurrents sans les saisir un par un, et faire "
+                    + "contrôler la grille obtenue avant de la garder.")
+    PromptMessage construire_la_grille_de_creneaux(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Construis la grille de créneaux%s.
 
@@ -160,8 +159,9 @@ public class McpPrompts {
                 disant pour chacune si c'est une vraie erreur ou un choix légitime de ma part.""".formatted(suffixe(edition)));
     }
 
-    @Prompt(description = "Traiter les déclarations de disponibilité envoyées par les animateurs : les "
-            + "lire, les appliquer ou les refuser, avant de résoudre.")
+    @Prompt(
+            description = "Traiter les déclarations de disponibilité envoyées par les animateurs : les "
+                    + "lire, les appliquer ou les refuser, avant de résoudre.")
     PromptMessage traiter_les_declarations_de_disponibilite(
             @PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
@@ -184,10 +184,10 @@ public class McpPrompts {
                 pas.""".formatted(suffixe(edition)));
     }
 
-    @Prompt(description = "Publier le planning aux animateurs : vérifier qui est concerné et ce qu'ils "
-            + "liront, publier, puis contrôler qui a bien été prévenu.")
-    PromptMessage publier_le_planning(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Publier le planning aux animateurs : vérifier qui est concerné et ce qu'ils "
+                    + "liront, publier, puis contrôler qui a bien été prévenu.")
+    PromptMessage publier_le_planning(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Prépare la publication du planning%s. **Publier envoie des courriels** : ne le fais \
                 pas sans mon accord explicite.
@@ -209,10 +209,10 @@ public class McpPrompts {
                 Les destinataires se désignent par leur id : ni nom ni adresse ne sortent d'ici.""".formatted(suffixe(edition)));
     }
 
-    @Prompt(description = "Trancher les demandes d'échange des animateurs : chiffrer l'impact de chacune sur "
-            + "le planning d'aujourd'hui, puis accepter ou refuser.")
-    PromptMessage traiter_les_demandes_dechange(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Trancher les demandes d'échange des animateurs : chiffrer l'impact de chacune sur "
+                    + "le planning d'aujourd'hui, puis accepter ou refuser.")
+    PromptMessage traiter_les_demandes_dechange(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Aide-moi à trancher les demandes d'échange en attente%s.
 
@@ -232,11 +232,10 @@ public class McpPrompts {
                 Demandeur et cible se désignent par leur id.""".formatted(suffixe(edition)));
     }
 
-
-    @Prompt(description = "Poser les horaires d'ouverture des stands à partir du classeur de l'organisateur, "
-            + "et vérifier ce que le solveur en lira vraiment.")
-    PromptMessage saisir_les_horaires_des_stands(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Poser les horaires d'ouverture des stands à partir du classeur de l'organisateur, "
+                    + "et vérifier ce que le solveur en lira vraiment.")
+    PromptMessage saisir_les_horaires_des_stands(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Aide-moi à poser les horaires d'ouverture des stands%s.
 
@@ -262,10 +261,10 @@ public class McpPrompts {
                 stands » ira plus vite que trente appels.""".formatted(suffixe(edition)));
     }
 
-    @Prompt(description = "Dire où recruter ou former : sur quelle typologie le vivier est trop mince, "
-            + "et quels stands ne tiennent qu'à une personne.")
-    PromptMessage savoir_ou_recruter_ou_former(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Dire où recruter ou former : sur quelle typologie le vivier est trop mince, "
+                    + "et quels stands ne tiennent qu'à une personne.")
+    PromptMessage savoir_ou_recruter_ou_former(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Dis-moi où %s manque de monde, et de quel monde exactement.
 
@@ -289,10 +288,10 @@ public class McpPrompts {
                 désignent par leur id.""".formatted(designation(edition)));
     }
 
-    @Prompt(description = "Figer ce qui est déjà bon avant de relancer une résolution, et dire ce que le "
-            + "verrou coûte.")
-    PromptMessage verrouiller_ce_qui_tient(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description =
+                    "Figer ce qui est déjà bon avant de relancer une résolution, et dire ce que le " + "verrou coûte.")
+    PromptMessage verrouiller_ce_qui_tient(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Aide-moi à figer ce qui tient déjà dans le planning%s avant de relancer.
 
@@ -312,10 +311,10 @@ public class McpPrompts {
                 existe : un verrou est une décision, pas un fait acquis.""".formatted(suffixe(edition)));
     }
 
-    @Prompt(description = "Préparer une variante de repli — canicule, pluie, désistement massif — la résoudre "
-            + "à l'avance et savoir laquelle basculer.")
-    PromptMessage preparer_une_variante_de_repli(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Préparer une variante de repli — canicule, pluie, désistement massif — la résoudre "
+                    + "à l'avance et savoir laquelle basculer.")
+    PromptMessage preparer_une_variante_de_repli(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Prépare une variante de repli à partir de %s, sans toucher au plan nominal.
 
@@ -337,10 +336,10 @@ public class McpPrompts {
                 Ne supprime aucune édition, et ne publie rien depuis ce prompt.""".formatted(designation(edition)));
     }
 
-    @Prompt(description = "Contrôler avant de diffuser : ce qui part aux animateurs, et ce que le planning "
-            + "dit du cadre légal.")
-    PromptMessage auditer_avant_diffusion(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Contrôler avant de diffuser : ce qui part aux animateurs, et ce que le planning "
+                    + "dit du cadre légal.")
+    PromptMessage auditer_avant_diffusion(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Contrôle %s avant qu'elle ne parte aux animateurs. Ne publie rien.
 
@@ -389,10 +388,10 @@ public class McpPrompts {
                 résolution complète est parfois le bon choix, mais c'est une décision.""".formatted(suffixe(edition)));
     }
 
-    @Prompt(description = "Le jour même : trouver qui peut reprendre les postes d'un absent, et n'appliquer "
-            + "que ce qui est décidé.")
-    PromptMessage tenir_le_jour_j(
-            @PromptArg(description = EDITION, required = false) String edition) {
+    @Prompt(
+            description = "Le jour même : trouver qui peut reprendre les postes d'un absent, et n'appliquer "
+                    + "que ce qui est décidé.")
+    PromptMessage tenir_le_jour_j(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Quelqu'un ne s'est pas présenté aujourd'hui%s. Aide-moi à recouvrir ses postes.
 
@@ -430,7 +429,9 @@ public class McpPrompts {
         try {
             Method methode = McpPrompts.class.getDeclaredMethod(nom, String.class);
             PromptMessage message = (PromptMessage) methode.invoke(this, (String) null);
-            return new PromptExpose(nom, methode.getAnnotation(Prompt.class).description(),
+            return new PromptExpose(
+                    nom,
+                    methode.getAnnotation(Prompt.class).description(),
                     message.content().asText().text());
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Prompt " + nom + " introuvable ou non appelable", e);
@@ -438,8 +439,7 @@ public class McpPrompts {
     }
 
     /** One prompt, as the interface displays it. */
-    public record PromptExpose(String nom, String description, String texte) {
-    }
+    public record PromptExpose(String nom, String description, String texte) {}
 
     /** Names the edition inside the sentence, or says nothing when the default one is meant. */
     private static String suffixe(String edition) {
@@ -448,8 +448,6 @@ public class McpPrompts {
 
     /** The edition as the subject of a sentence, where saying nothing would leave a hole. */
     private static String designation(String edition) {
-        return edition == null || edition.isBlank()
-                ? "l'édition par défaut"
-                : "l'édition « " + edition.trim() + " »";
+        return edition == null || edition.isBlank() ? "l'édition par défaut" : "l'édition « " + edition.trim() + " »";
     }
 }

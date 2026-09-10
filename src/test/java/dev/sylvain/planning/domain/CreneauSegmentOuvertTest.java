@@ -3,14 +3,12 @@ package dev.sylvain.planning.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
+import dev.sylvain.planning.domain.Creneau.SegmentOuvert;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
-
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Creneau.SegmentOuvert;
 
 /**
  * {@link Creneau#segmentsOuverts(Stand)} is what lets a stand whose
@@ -35,24 +33,21 @@ class CreneauSegmentOuvertTest {
     void sansOuvertureLeSegmentPorteLEffectifMinDuStand() {
         Stand stand = stand(3);
 
-        assertThat(apresMidi.segmentsOuverts(stand))
-                .containsExactly(new SegmentOuvert(0, 360, 3));
+        assertThat(apresMidi.segmentsOuverts(stand)).containsExactly(new SegmentOuvert(0, 360, 3));
     }
 
     @Test
     void fenetreSansEffectifHeriteDeLEffectifMinDuStand() {
         Stand stand = standOuvert(3, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), null));
 
-        assertThat(apresMidi.segmentsOuverts(stand))
-                .containsExactly(new SegmentOuvert(0, 360, 3));
+        assertThat(apresMidi.segmentsOuverts(stand)).containsExactly(new SegmentOuvert(0, 360, 3));
     }
 
     @Test
     void fenetreAvecEffectifImposeLeSienPlutotQueCeluiDuStand() {
         Stand stand = standOuvert(1, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 4));
 
-        assertThat(apresMidi.segmentsOuverts(stand))
-                .containsExactly(new SegmentOuvert(0, 360, 4));
+        assertThat(apresMidi.segmentsOuverts(stand)).containsExactly(new SegmentOuvert(0, 360, 4));
     }
 
     /**
@@ -61,7 +56,8 @@ class CreneauSegmentOuvertTest {
      */
     @Test
     void deuxFenetresContiguesDEffectifsDifferentsDonnentDeuxSegments() {
-        Stand stand = standOuvert(1,
+        Stand stand = standOuvert(
+                1,
                 ouverture(LocalTime.of(14, 0), LocalTime.of(19, 0), 4),
                 ouverture(LocalTime.of(19, 0), LocalTime.of(20, 0), 2));
 
@@ -71,18 +67,19 @@ class CreneauSegmentOuvertTest {
 
     @Test
     void deuxFenetresContiguesDeMemeEffectifSontFusionnees() {
-        Stand stand = standOuvert(1,
+        Stand stand = standOuvert(
+                1,
                 ouverture(LocalTime.of(14, 0), LocalTime.of(19, 0), 4),
                 ouverture(LocalTime.of(19, 0), LocalTime.of(20, 0), 4));
 
-        assertThat(apresMidi.segmentsOuverts(stand))
-                .containsExactly(new SegmentOuvert(0, 360, 4));
+        assertThat(apresMidi.segmentsOuverts(stand)).containsExactly(new SegmentOuvert(0, 360, 4));
     }
 
     /** Overlapping windows are two statements of a need: the larger satisfies both. */
     @Test
     void surLeRecouvrementDeDeuxFenetresLEffectifLePlusHautLEmporte() {
-        Stand stand = standOuvert(1,
+        Stand stand = standOuvert(
+                1,
                 ouverture(LocalTime.of(14, 0), LocalTime.of(18, 0), 2),
                 ouverture(LocalTime.of(16, 0), LocalTime.of(20, 0), 5));
 
@@ -92,7 +89,8 @@ class CreneauSegmentOuvertTest {
 
     @Test
     void unTrouEntreDeuxFenetresResteFerme() {
-        Stand stand = standOuvert(1,
+        Stand stand = standOuvert(
+                1,
                 ouverture(LocalTime.of(14, 0), LocalTime.of(16, 0), 2),
                 ouverture(LocalTime.of(18, 0), LocalTime.of(20, 0), 3));
 
@@ -107,7 +105,8 @@ class CreneauSegmentOuvertTest {
      */
     @Test
     void laProjectionEnMinutesRefusionneLesSegmentsQueSeulLEffectifSepare() {
-        Stand stand = standOuvert(1,
+        Stand stand = standOuvert(
+                1,
                 ouverture(LocalTime.of(14, 0), LocalTime.of(19, 0), 4),
                 ouverture(LocalTime.of(19, 0), LocalTime.of(20, 0), 2));
 
@@ -118,12 +117,12 @@ class CreneauSegmentOuvertTest {
 
     @Test
     void laProjectionGardeUnTrouReelSepare() {
-        Stand stand = standOuvert(1,
+        Stand stand = standOuvert(
+                1,
                 ouverture(LocalTime.of(14, 0), LocalTime.of(16, 0), 2),
                 ouverture(LocalTime.of(18, 0), LocalTime.of(20, 0), 3));
 
-        assertThat(apresMidi.segmentsOuvertsMinutes(stand))
-                .containsExactly(new int[] {0, 120}, new int[] {240, 360});
+        assertThat(apresMidi.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 120}, new int[] {240, 360});
     }
 
     /** A window is clamped to the slot, and its effectif rides along with the clamped part. */
@@ -131,8 +130,7 @@ class CreneauSegmentOuvertTest {
     void uneFenetreDebordantLeCreneauEstRogneeEnGardantSonEffectif() {
         Stand stand = standOuvert(1, ouverture(LocalTime.of(10, 0), LocalTime.of(17, 0), 6));
 
-        assertThat(apresMidi.segmentsOuverts(stand))
-                .containsExactly(new SegmentOuvert(0, 180, 6));
+        assertThat(apresMidi.segmentsOuverts(stand)).containsExactly(new SegmentOuvert(0, 180, 6));
     }
 
     /** An open end means "until closing", so it takes the slot's own end — effectif included. */
@@ -140,16 +138,15 @@ class CreneauSegmentOuvertTest {
     void uneFenetreSansHeureDeFinCourtJusquALaFinDuCreneau() {
         Stand stand = standOuvert(1, ouverture(LocalTime.of(16, 0), null, 3));
 
-        assertThat(apresMidi.segmentsOuverts(stand))
-                .containsExactly(new SegmentOuvert(120, 360, 3));
+        assertThat(apresMidi.segmentsOuverts(stand)).containsExactly(new SegmentOuvert(120, 360, 3));
     }
 
     /** Closure mode has no windows to carry a headcount: every segment falls back to the stand. */
     @Test
     void enModeFermetureLesSegmentsPortentLEffectifMinDuStand() {
         Stand stand = stand(2);
-        stand.setIndisponibilites(List.of(
-                new IndisponibiliteStand(null, JOUR, LocalTime.of(16, 0), LocalTime.of(17, 0), null)));
+        stand.setIndisponibilites(
+                List.of(new IndisponibiliteStand(null, JOUR, LocalTime.of(16, 0), LocalTime.of(17, 0), null)));
 
         assertThat(apresMidi.segmentsOuverts(stand))
                 .extracting(SegmentOuvert::debutMinutes, SegmentOuvert::finMinutes, SegmentOuvert::effectif)
@@ -187,16 +184,17 @@ class CreneauSegmentOuvertTest {
 
     @Test
     void lesSiegesSimultanesSuiventLEffectifDeLaFenetre() {
-        assertThat(apresMidi.siegesSimultanes(
-                standOuvert(1, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 4)))).isEqualTo(4);
+        assertThat(apresMidi.siegesSimultanes(standOuvert(1, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 4))))
+                .isEqualTo(4);
         // A window may also ask for less than the stand's minimum.
-        assertThat(apresMidi.siegesSimultanes(
-                standOuvert(3, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 1)))).isEqualTo(1);
+        assertThat(apresMidi.siegesSimultanes(standOuvert(3, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 1))))
+                .isEqualTo(1);
     }
 
     @Test
     void deuxSegmentsSuccessifsDonnentLePlusChargeDesDeuxPasLeurSomme() {
-        Stand stand = standOuvert(1,
+        Stand stand = standOuvert(
+                1,
                 ouverture(LocalTime.of(14, 0), LocalTime.of(17, 0), 2),
                 ouverture(LocalTime.of(17, 0), LocalTime.of(20, 0), 5));
 
@@ -206,8 +204,8 @@ class CreneauSegmentOuvertTest {
     @Test
     void unStandFermeSurLeCreneauNAAucunSiegeSimultane() {
         Stand stand = stand(3);
-        stand.setIndisponibilites(List.of(
-                new IndisponibiliteStand(null, JOUR, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
+        stand.setIndisponibilites(
+                List.of(new IndisponibiliteStand(null, JOUR, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
 
         assertThat(apresMidi.siegesSimultanes(stand)).isZero();
     }
@@ -217,8 +215,8 @@ class CreneauSegmentOuvertTest {
         Creneau pause = new Creneau(2L, 1, JOUR, LocalTime.of(14, 0), LocalTime.of(20, 0));
         pause.setCouverturePause(true);
 
-        assertThat(pause.siegesSimultanes(
-                standOuvert(1, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 5)))).isEqualTo(3);
+        assertThat(pause.siegesSimultanes(standOuvert(1, ouverture(LocalTime.of(14, 0), LocalTime.of(20, 0), 5))))
+                .isEqualTo(3);
     }
 
     private static Stand stand(int effectifMin) {

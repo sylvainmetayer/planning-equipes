@@ -32,8 +32,7 @@ public class FenetreHoraire {
     /** Seats to fill on this window; {@code null} = inherit {@link Stand#getEffectifMin()}. */
     private Integer effectif;
 
-    public FenetreHoraire() {
-    }
+    public FenetreHoraire() {}
 
     public FenetreHoraire(LocalTime heureDebut, LocalTime heureFin) {
         this(heureDebut, heureFin, null);
@@ -83,7 +82,8 @@ public class FenetreHoraire {
         if (!(o instanceof FenetreHoraire that)) {
             return false;
         }
-        return Objects.equals(heureDebut, that.heureDebut) && Objects.equals(heureFin, that.heureFin)
+        return Objects.equals(heureDebut, that.heureDebut)
+                && Objects.equals(heureFin, that.heureFin)
                 && Objects.equals(effectif, that.effectif);
     }
 

@@ -39,9 +39,8 @@ public class SolverOccupeMapper implements ExceptionMapper<SolverBusyException> 
     /** French, like every user-facing message this API returns: the frontend shows it as-is. */
     private static String message(SolverBusyException occupe) {
         var job = occupe.getActiveJob();
-        String edition = job.getEditionNom() == null || job.getEditionNom().isBlank()
-                ? job.getEditionId()
-                : job.getEditionNom();
+        String edition =
+                job.getEditionNom() == null || job.getEditionNom().isBlank() ? job.getEditionId() : job.getEditionNom();
         return "Une résolution est en cours sur l'édition « " + edition
                 + " » : attendez qu'elle se termine, ou arrêtez-la depuis l'écran Solveur.";
     }

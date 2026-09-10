@@ -2,23 +2,21 @@ package dev.sylvain.planning.service.diagnostic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.SolverConfig;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * The other canary of this package, and the one issue #303 rests on.
@@ -75,12 +73,13 @@ class AffectationHypothesisTest {
     void theFixtureSeparatesCandidatesRatherThanReportingTheSameThingForAll() {
         Fixture fixture = new Fixture();
 
-        List<AffectationHypothesis> hypotheses = rapide.hypotheses(fixture.planning, fixture.siegeLibre,
-                fixture.candidats);
+        List<AffectationHypothesis> hypotheses =
+                rapide.hypotheses(fixture.planning, fixture.siegeLibre, fixture.candidats);
 
         assertThat(hypotheses).anyMatch(AffectationHypothesis::degradesHardScore);
         assertThat(hypotheses).anyMatch(hypothese -> !hypothese.degradesHardScore());
-        assertThat(hypotheses).anyMatch(hypothese -> !hypothese.contraintesAggravees().isEmpty());
+        assertThat(hypotheses)
+                .anyMatch(hypothese -> !hypothese.contraintesAggravees().isEmpty());
     }
 
     /** The reasons are constraint names, taken from the rules — never invented here. */
@@ -88,13 +87,12 @@ class AffectationHypothesisTest {
     void theReasonsNameTheConstraintThatRefuses() {
         Fixture fixture = new Fixture();
 
-        List<AffectationHypothesis> hypotheses = rapide.hypotheses(fixture.planning, fixture.siegeLibre,
-                fixture.candidats);
+        List<AffectationHypothesis> hypotheses =
+                rapide.hypotheses(fixture.planning, fixture.siegeLibre, fixture.candidats);
 
         assertThat(hypothese(hypotheses, "A-INDISPONIBLE").contraintesAggravees())
                 .contains("animateurDisponible");
-        assertThat(hypothese(hypotheses, "A-OCCUPE").contraintesAggravees())
-                .contains("pasDeChevauchementHoraire");
+        assertThat(hypothese(hypotheses, "A-OCCUPE").contraintesAggravees()).contains("pasDeChevauchementHoraire");
         assertThat(hypothese(hypotheses, "A-LIBRE").contraintesAggravees())
                 .doesNotContain("animateurDisponible", "pasDeChevauchementHoraire");
         assertThat(hypothese(hypotheses, "A-LIBRE").degradesHardScore()).isFalse();
@@ -130,12 +128,15 @@ class AffectationHypothesisTest {
     void bothImplementationsLeaveAFreshScoreOnTheSolution() {
         for (ConstraintDiagnosticService implementation : List.of(rapide, naif)) {
             Fixture fixture = new Fixture();
-            HardMediumSoftScore attendu = implementation.analyze(fixture.planning).score();
+            HardMediumSoftScore attendu =
+                    implementation.analyze(fixture.planning).score();
 
             implementation.hypotheses(fixture.planning, fixture.siegeLibre, fixture.candidats);
 
             assertThat(fixture.planning.getScore())
-                    .describedAs("score left on the solution by %s", implementation.getClass().getSimpleName())
+                    .describedAs(
+                            "score left on the solution by %s",
+                            implementation.getClass().getSimpleName())
                     .isEqualTo(attendu);
         }
     }
@@ -158,8 +159,10 @@ class AffectationHypothesisTest {
 
         // posteDoitEtrePourvu is settled by putting them back: that is a gain,
         // so the baseline really was the empty seat and not the plan as given.
-        assertThat(hypotheses).singleElement()
-                .satisfies(hypothese -> assertThat(hypothese.delta().hardScore()).isPositive());
+        assertThat(hypotheses)
+                .singleElement()
+                .satisfies(
+                        hypothese -> assertThat(hypothese.delta().hardScore()).isPositive());
     }
 
     /**
@@ -206,8 +209,7 @@ class AffectationHypothesisTest {
             Creneau chevauchant = new Creneau(2L, 1, jour, LocalTime.of(12, 0), LocalTime.of(15, 0));
 
             Animateur libre = new Animateur("A-LIBRE", "Léa", "Martin", LocalDate.of(1990, 1, 1), false);
-            Animateur indisponible = new Animateur("A-INDISPONIBLE", "Ana", "Durand",
-                    LocalDate.of(1990, 1, 1), false);
+            Animateur indisponible = new Animateur("A-INDISPONIBLE", "Ana", "Durand", LocalDate.of(1990, 1, 1), false);
             indisponible.setJoursIndisponibles(Set.of(jour));
             Animateur occupe = new Animateur("A-OCCUPE", "Omar", "Bernard", LocalDate.of(1990, 1, 1), false);
             Animateur mineur = new Animateur("A-MINEUR", "Manon", "Petit", jour.minusYears(15), false);
@@ -220,7 +222,9 @@ class AffectationHypothesisTest {
             ailleurs.setAnimateur(occupe);
 
             candidats = List.of(indisponible, mineur, occupe, libre);
-            planning = new PlanningEvenement(jour, List.of(libre, indisponible, occupe, mineur, titulaire),
+            planning = new PlanningEvenement(
+                    jour,
+                    List.of(libre, indisponible, occupe, mineur, titulaire),
                     List.of(siegeLibre, siegeOccupe, ailleurs));
         }
     }
@@ -228,8 +232,8 @@ class AffectationHypothesisTest {
     /** The solver configuration {@code PlanningService} builds, minus its termination. */
     private static SolverFactory<PlanningEvenement> solverFactory() {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
         return SolverFactory.create(solverConfig);
     }
 }

@@ -3,12 +3,6 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
@@ -18,11 +12,16 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.response.ValidatableResponse;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,8 +69,7 @@ class ReferenceUsageResourceTest {
         PosteAffectation autreStand = new PosteAffectation("USAGE-P3", standLibre, creneau);
         autreStand.setAnimateur(animateur);
 
-        persistence.persist(new PlanningEvenement(JOUR, List.of(animateur),
-                List.of(pourvu, vacant, autreStand)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(animateur), List.of(pourvu, vacant, autreStand)));
 
         ContrainteAdHoc contrainte = new ContrainteAdHoc("USAGE-C1", TypeContrainteAdHoc.AFFECTATION_FORCEE);
         contrainte.setStand(stand);
@@ -99,21 +97,24 @@ class ReferenceUsageResourceTest {
 
     @Test
     void unStandRapporteSesPostesPourvusSesContraintesEtSesVerrous() {
-        usages("/api/stands", STAND).body("affectations", equalTo(1))
+        usages("/api/stands", STAND)
+                .body("affectations", equalTo(1))
                 .body("contraintesAdHoc", equalTo(1))
                 .body("verrouillages", equalTo(1));
     }
 
     @Test
     void unAnimateurRapporteSesPostesSesContraintesEtSesVerrous() {
-        usages("/api/animateurs", ANIMATEUR).body("affectations", equalTo(2))
+        usages("/api/animateurs", ANIMATEUR)
+                .body("affectations", equalTo(2))
                 .body("contraintesAdHoc", equalTo(1))
                 .body("verrouillages", equalTo(1));
     }
 
     @Test
     void unCreneauRapporteSesPostesSesContraintesEtSesVerrous() {
-        usages("/api/creneaux", String.valueOf(CRENEAU)).body("affectations", equalTo(2))
+        usages("/api/creneaux", String.valueOf(CRENEAU))
+                .body("affectations", equalTo(2))
                 .body("contraintesAdHoc", equalTo(1))
                 .body("verrouillages", equalTo(1));
     }
@@ -121,7 +122,8 @@ class ReferenceUsageResourceTest {
     /** Zero is an answer, not an absence: the confirmation still has something to say. */
     @Test
     void unStandSansContrainteNiVerrouRapporteZeroSurCesDeuxCompteurs() {
-        usages("/api/stands", STAND_LIBRE).body("affectations", equalTo(1))
+        usages("/api/stands", STAND_LIBRE)
+                .body("affectations", equalTo(1))
                 .body("contraintesAdHoc", equalTo(0))
                 .body("verrouillages", equalTo(0));
     }
@@ -133,7 +135,8 @@ class ReferenceUsageResourceTest {
     @Test
     void uneSelectionEstTotaliseeEnUnSeulAppel() {
         given().queryParam("id", STAND, STAND_LIBRE)
-                .when().get("/api/stands/usages")
+                .when()
+                .get("/api/stands/usages")
                 .then()
                 .statusCode(200)
                 .body("affectations", equalTo(2))
@@ -148,7 +151,8 @@ class ReferenceUsageResourceTest {
      */
     @Test
     void unIdentifiantInconnuNeCompteRienEtNeLevePas() {
-        usages("/api/stands", "USAGE-INEXISTANT").body("affectations", equalTo(0))
+        usages("/api/stands", "USAGE-INEXISTANT")
+                .body("affectations", equalTo(0))
                 .body("contraintesAdHoc", equalTo(0))
                 .body("verrouillages", equalTo(0));
     }
@@ -169,13 +173,18 @@ class ReferenceUsageResourceTest {
     @Test
     void unIdentifiantDeCreneauNonNumeriqueEstRefuseEnQuatreCents() {
         given().queryParam("id", "abc")
-                .when().get("/api/creneaux/usages")
+                .when()
+                .get("/api/creneaux/usages")
                 .then()
                 .statusCode(400);
     }
 
     private static ValidatableResponse usages(String resource, String id) {
-        return given().queryParam("id", id).when().get(resource + "/usages").then().statusCode(200);
+        return given().queryParam("id", id)
+                .when()
+                .get(resource + "/usages")
+                .then()
+                .statusCode(200);
     }
 
     private void lock(String id, TypeVerrouillage type, Consumer<VerrouillagePlanning> cible) {

@@ -1,11 +1,10 @@
 package dev.sylvain.planning.api;
 
+import jakarta.ws.rs.NameBinding;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import jakarta.ws.rs.NameBinding;
 
 /**
  * Marks a route whose only credential is the ICS subscription token carried by
@@ -19,6 +18,5 @@ import jakarta.ws.rs.NameBinding;
  */
 @NameBinding
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE, ElementType.METHOD })
-public @interface AbonnementTokenRequired {
-}
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface AbonnementTokenRequired {}

@@ -2,16 +2,14 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Instant;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.PublicationMcpTools.DestinatairePublicationView;
 import dev.sylvain.planning.mcp.PublicationMcpTools.DestinataireView;
 import dev.sylvain.planning.service.publication.PlanPublicationService.DestinatairePublication;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
+import java.time.Instant;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * The publication views are where the privacy rule is easiest to lose: the
@@ -25,8 +23,12 @@ class PublicationMcpToolsTest {
     @Test
     void unDestinataireSeReduitAUnIdEtAUnBooleenDAdresse() {
         DestinatairePublicationView vue = PublicationMcpTools.toView(new DestinatairePublication(
-                "a1", "Camille Martin", "camille@example.org", true,
-                List.of("samedi 10:00-12:00 — Stand A"), List.of()));
+                "a1",
+                "Camille Martin",
+                "camille@example.org",
+                true,
+                List.of("samedi 10:00-12:00 — Stand A"),
+                List.of()));
 
         assertThat(vue.animateurId()).isEqualTo("a1");
         assertThat(vue.adresseConnue()).isTrue();
@@ -40,19 +42,28 @@ class PublicationMcpToolsTest {
      */
     @Test
     void uneFicheSansAdresseSeVoitSansQueLAdresseSorte() {
-        assertThat(PublicationMcpTools.toView(new DestinatairePublication(
-                "a2", "Dominique Roy", null, false, List.of(), List.of())).adresseConnue()).isFalse();
-        assertThat(PublicationMcpTools.toView(new DestinatairePublication(
-                "a3", "Dominique Roy", "   ", false, List.of(), List.of())).adresseConnue()).isFalse();
+        assertThat(PublicationMcpTools.toView(
+                                new DestinatairePublication("a2", "Dominique Roy", null, false, List.of(), List.of()))
+                        .adresseConnue())
+                .isFalse();
+        assertThat(PublicationMcpTools.toView(
+                                new DestinatairePublication("a3", "Dominique Roy", "   ", false, List.of(), List.of()))
+                        .adresseConnue())
+                .isFalse();
     }
 
     @Test
     void laTraceDitQuiAEteToucheParIdEtAvecQuelStatut() {
         List<DestinataireView> vues = PublicationMcpTools.toViews(List.of(
-                new Destinataire(7L, "a1", "Camille Martin", "camille@example.org",
-                        StatutEnvoi.ENVOYE, ENVOYE_LE, List.of("samedi 10:00-12:00 — Stand A")),
-                new Destinataire(7L, "a2", "Dominique Roy", null,
-                        StatutEnvoi.SANS_EMAIL, ENVOYE_LE, List.of())));
+                new Destinataire(
+                        7L,
+                        "a1",
+                        "Camille Martin",
+                        "camille@example.org",
+                        StatutEnvoi.ENVOYE,
+                        ENVOYE_LE,
+                        List.of("samedi 10:00-12:00 — Stand A")),
+                new Destinataire(7L, "a2", "Dominique Roy", null, StatutEnvoi.SANS_EMAIL, ENVOYE_LE, List.of())));
 
         assertThat(vues).extracting(DestinataireView::animateurId).containsExactly("a1", "a2");
         assertThat(vues).extracting(DestinataireView::statut).containsExactly("ENVOYE", "SANS_EMAIL");

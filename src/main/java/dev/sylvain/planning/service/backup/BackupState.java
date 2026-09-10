@@ -1,9 +1,8 @@
 package dev.sylvain.planning.service.backup;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import java.time.Instant;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * What the Paramètres screen shows about the automatic backup.
@@ -34,5 +33,4 @@ public record BackupState(
         Instant nextRun,
         BackupRun lastRun,
         List<BackupFile> files,
-        String directoryError) {
-}
+        String directoryError) {}

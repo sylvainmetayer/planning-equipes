@@ -58,8 +58,10 @@ public class AffectationExplanationResource {
      */
     @POST
     @Path("/{posteId}/simulation-swap")
-    public Response simulateSwap(@PathParam("posteId") String posteId,
-            @QueryParam("animateurId") String animateurId, PlanningEvenement planning) {
+    public Response simulateSwap(
+            @PathParam("posteId") String posteId,
+            @QueryParam("animateurId") String animateurId,
+            PlanningEvenement planning) {
         SwapSimulation simulation = planningService.simulateSwap(planning, posteId, animateurId);
         return Response.ok(simulation).build();
     }
@@ -73,8 +75,8 @@ public class AffectationExplanationResource {
      */
     @POST
     @Path("/{posteId}/suggestions-reparation")
-    public Response suggererReparations(@PathParam("posteId") String posteId,
-            @QueryParam("plafond") Integer plafond, PlanningEvenement planning) {
+    public Response suggererReparations(
+            @PathParam("posteId") String posteId, @QueryParam("plafond") Integer plafond, PlanningEvenement planning) {
         SuggestionsReparation suggestions = planningService.suggererReparations(planning, posteId, plafond);
         return Response.ok(suggestions).build();
     }
@@ -96,9 +98,12 @@ public class AffectationExplanationResource {
     @POST
     @Path("/{posteId}/deplacement/simulation")
     @Consumes(MediaType.WILDCARD)
-    public Response simulateDeplacement(@PathParam("posteId") String posteId,
-            @QueryParam("cible") String posteCibleId, @QueryParam("animateur") String animateurCibleId) {
-        return Response.ok(deplacementService.simulate(posteId, posteCibleId, animateurCibleId)).build();
+    public Response simulateDeplacement(
+            @PathParam("posteId") String posteId,
+            @QueryParam("cible") String posteCibleId,
+            @QueryParam("animateur") String animateurCibleId) {
+        return Response.ok(deplacementService.simulate(posteId, posteCibleId, animateurCibleId))
+                .build();
     }
 
     /**
@@ -116,10 +121,13 @@ public class AffectationExplanationResource {
     @POST
     @Path("/{posteId}/deplacement")
     @Consumes(MediaType.WILDCARD)
-    public Response applyDeplacement(@PathParam("posteId") String posteId,
-            @QueryParam("cible") String posteCibleId, @QueryParam("animateur") String animateurCibleId,
+    public Response applyDeplacement(
+            @PathParam("posteId") String posteId,
+            @QueryParam("cible") String posteCibleId,
+            @QueryParam("animateur") String animateurCibleId,
             @QueryParam("occupant") String occupant) {
-        return Response.ok(deplacementService.apply(posteId, posteCibleId, animateurCibleId, occupant)).build();
+        return Response.ok(deplacementService.apply(posteId, posteCibleId, animateurCibleId, occupant))
+                .build();
     }
 
     /**
@@ -132,10 +140,9 @@ public class AffectationExplanationResource {
     @POST
     @Path("/{posteId}/affectation")
     @Consumes(MediaType.WILDCARD)
-    public Response applyReparation(@PathParam("posteId") String posteId,
-            @QueryParam("animateurId") String animateurId) {
+    public Response applyReparation(
+            @PathParam("posteId") String posteId, @QueryParam("animateurId") String animateurId) {
         planningService.applyReparation(posteId, animateurId);
         return Response.noContent().build();
     }
-
 }

@@ -48,15 +48,16 @@ public class HoraireStand {
     private Set<DayOfWeek> joursSemaine = new TreeSet<>();
     /** Only meaningful for {@link TypeJoursHoraire#PLAGE}; bounds included. */
     private LocalDate dateDebut;
+
     private LocalDate dateFin;
     /** Only meaningful for {@link TypeJoursHoraire#DATES}. */
     private Set<LocalDate> dates = new TreeSet<>();
+
     private List<FenetreHoraire> fenetres = new ArrayList<>();
     /** Free-text reason, nullable — purely informative, never read by the solver. */
     private String motif;
 
-    public HoraireStand() {
-    }
+    public HoraireStand() {}
 
     public HoraireStand(Long id, ModeHoraire mode, TypeJoursHoraire jours, List<FenetreHoraire> fenetres) {
         this.id = id;
@@ -156,8 +157,8 @@ public class HoraireStand {
         return switch (jours) {
             case TOUS -> true;
             case JOURS_SEMAINE -> joursSemaine.contains(date.getDayOfWeek());
-            case PLAGE -> (dateDebut == null || !date.isBefore(dateDebut))
-                    && (dateFin == null || !date.isAfter(dateFin));
+            case PLAGE ->
+                (dateDebut == null || !date.isBefore(dateDebut)) && (dateFin == null || !date.isAfter(dateFin));
             case DATES -> dates.contains(date);
         };
     }
@@ -177,8 +178,9 @@ public class HoraireStand {
         return switch (jours) {
             case TOUS -> true;
             case JOURS_SEMAINE -> joursSemaine.stream().anyMatch(autre.joursSemaine::contains);
-            case PLAGE -> (dateDebut == null || autre.dateFin == null || !autre.dateFin.isBefore(dateDebut))
-                    && (autre.dateDebut == null || dateFin == null || !dateFin.isBefore(autre.dateDebut));
+            case PLAGE ->
+                (dateDebut == null || autre.dateFin == null || !autre.dateFin.isBefore(dateDebut))
+                        && (autre.dateDebut == null || dateFin == null || !dateFin.isBefore(autre.dateDebut));
             case DATES -> dates.stream().anyMatch(autre.dates::contains);
         };
     }

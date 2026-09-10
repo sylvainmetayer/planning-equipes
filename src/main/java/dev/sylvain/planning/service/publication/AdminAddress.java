@@ -1,11 +1,9 @@
 package dev.sylvain.planning.service.publication;
 
-import java.util.Optional;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * The address the organisation is reached at, and the single reader of

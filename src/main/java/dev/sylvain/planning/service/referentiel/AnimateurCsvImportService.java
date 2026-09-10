@@ -1,5 +1,15 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.StatutDeclaration;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -20,17 +30,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.StatutDeclaration;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
-import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
-import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 
 /**
  * Turns a spreadsheet export into animateur fiches — in two calls, and only
@@ -139,11 +138,9 @@ public class AnimateurCsvImportService {
     /** {@code 12/09/26} and the like: a spreadsheet shortened the year, and the date is no longer readable. */
     private static final Pattern ANNEE_COURTE = Pattern.compile("^\\s*\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2}\\s*$");
 
-    private static final Set<String> TRUE_CELLS =
-            Set.of("1", "x", "o", "oui", "vrai", "true", "y", "yes");
+    private static final Set<String> TRUE_CELLS = Set.of("1", "x", "o", "oui", "vrai", "true", "y", "yes");
 
-    private static final Set<String> FALSE_CELLS =
-            Set.of("0", "n", "non", "faux", "false", "no");
+    private static final Set<String> FALSE_CELLS = Set.of("0", "n", "non", "faux", "false", "no");
 
     @Inject
     AnimateurRepository animateurs;
@@ -167,8 +164,7 @@ public class AnimateurCsvImportService {
     ReferenceUsageService usages;
 
     /** The report, plus what applying it would write — never leaves this class. */
-    private record Analysis(AnimateurCsvImportReport report, List<Animateur> toWrite, List<String> toDelete) {
-    }
+    private record Analysis(AnimateurCsvImportReport report, List<Animateur> toWrite, List<String> toDelete) {}
 
     /**
      * The example CSV, read from the classpath — the columns this import
@@ -176,8 +172,7 @@ public class AnimateurCsvImportService {
      * festival-realiste} scenario.
      */
     public String exemple() {
-        try (InputStream flux = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(EXEMPLE_RESSOURCE)) {
+        try (InputStream flux = Thread.currentThread().getContextClassLoader().getResourceAsStream(EXEMPLE_RESSOURCE)) {
             if (flux == null) {
                 throw new IllegalStateException("Ressource absente du classpath : " + EXEMPLE_RESSOURCE);
             }
@@ -214,16 +209,25 @@ public class AnimateurCsvImportService {
                     + "l'identifiant, le prénom et le nom : sans elles, une ligne ne nomme personne.");
         }
         if (request.replaceAnimateurs() && report.rejected() > 0) {
-            throw new BusinessError.Invalid(
-                    "Remplacement complet demandé mais " + report.rejected()
-                            + " ligne(s) sont rejetées : corrigez le fichier ou choisissez l'ajout, "
-                            + "sinon les animateurs que ces lignes désignent seraient supprimés.");
+            throw new BusinessError.Invalid("Remplacement complet demandé mais " + report.rejected()
+                    + " ligne(s) sont rejetées : corrigez le fichier ou choisissez l'ajout, "
+                    + "sinon les animateurs que ces lignes désignent seraient supprimés.");
         }
         animateurs.importAnimateurs(analysis.toWrite(), analysis.toDelete());
         changeTracker.markModified();
-        return new AnimateurCsvImportReport(true, report.columns(), report.mapping(), report.separator(),
-                report.total(), report.accepted(), report.rejected(), report.created(), report.updated(),
-                report.deleted(), report.rows(), report.warnings());
+        return new AnimateurCsvImportReport(
+                true,
+                report.columns(),
+                report.mapping(),
+                report.separator(),
+                report.total(),
+                report.accepted(),
+                report.rejected(),
+                report.created(),
+                report.updated(),
+                report.deleted(),
+                report.rows(),
+                report.warnings());
     }
 
     /* ------------------------------- Analysis ------------------------------- */
@@ -232,8 +236,8 @@ public class AnimateurCsvImportService {
         String content = request == null ? null : request.content();
         refuseSpreadsheet(request == null ? null : request.fileName(), content);
         if (content != null && content.length() > MAX_CHARACTERS) {
-            throw new BusinessError.Invalid("Fichier trop volumineux : "
-                    + grouped(MAX_CHARACTERS) + " caractères au maximum.");
+            throw new BusinessError.Invalid(
+                    "Fichier trop volumineux : " + grouped(MAX_CHARACTERS) + " caractères au maximum.");
         }
         // After the cap, and not before: this one reads the whole body.
         refuseBrokenEncoding(content);
@@ -260,9 +264,8 @@ public class AnimateurCsvImportService {
         // one asks for a proposal. Re-proposing over an emptied mapping would
         // redraw the correspondence the operator had just cleared field by
         // field, leaving no way at all to reach "nothing is mapped".
-        AnimateurCsvMapping mapping = request.mapping() == null
-                ? AnimateurCsvMapping.propose(table.columns())
-                : request.mapping();
+        AnimateurCsvMapping mapping =
+                request.mapping() == null ? AnimateurCsvMapping.propose(table.columns()) : request.mapping();
         return build(request, table, mapping, Set.copyOf(joursEvenement));
     }
 
@@ -283,8 +286,11 @@ public class AnimateurCsvImportService {
     private void refuseSpreadsheet(String fileName, String content) {
         String name = fileName == null ? "" : fileName.toLowerCase(Locale.ROOT);
         String text = content == null ? "" : content;
-        if (name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".ods")
-                || text.startsWith(ZIP_SIGNATURE) || mostlyUndecodable(text)) {
+        if (name.endsWith(".xlsx")
+                || name.endsWith(".xls")
+                || name.endsWith(".ods")
+                || text.startsWith(ZIP_SIGNATURE)
+                || mostlyUndecodable(text)) {
             throw new BusinessError.Invalid("Ce format n'est pas accepté : seul le CSV est lu. "
                     + "Dans votre tableur, choisissez « Enregistrer sous » puis "
                     + "« CSV (séparateur : point-virgule) », et déposez ce fichier-là.");
@@ -347,8 +353,11 @@ public class AnimateurCsvImportService {
         return String.valueOf(value).replaceAll("(?<=\\d)(?=(\\d{3})+$)", " ");
     }
 
-    private Analysis build(AnimateurCsvImportRequest request, CsvParser.Table table,
-            AnimateurCsvMapping mapping, Set<LocalDate> joursEvenement) {
+    private Analysis build(
+            AnimateurCsvImportRequest request,
+            CsvParser.Table table,
+            AnimateurCsvMapping mapping,
+            Set<LocalDate> joursEvenement) {
         List<Animateur> existants = animateurs.listAnimateurs();
         Index index = new Index(existants, pendingDeclarations());
 
@@ -376,16 +385,31 @@ public class AnimateurCsvImportService {
         }
 
         List<String> toDelete = request.replaceAnimateurs()
-                ? existants.stream().map(Animateur::getId).filter(id -> !idsTouches.contains(id)).toList()
+                ? existants.stream()
+                        .map(Animateur::getId)
+                        .filter(id -> !idsTouches.contains(id))
+                        .toList()
                 : List.of();
         List<String> warnings = warnings(request, existants, toDelete);
         if (!nameableMapping(mapping)) {
-            warnings.add(0, "Aucune colonne n'est associée à l'identifiant, au prénom ni au nom : "
-                    + "associez-les ci-dessus, sinon aucune ligne ne nomme personne.");
+            warnings.add(
+                    0,
+                    "Aucune colonne n'est associée à l'identifiant, au prénom ni au nom : "
+                            + "associez-les ci-dessus, sinon aucune ligne ne nomme personne.");
         }
-        AnimateurCsvImportReport report = new AnimateurCsvImportReport(false, table.columns(), mapping,
-                String.valueOf(table.separator()), table.rows().size(), accepted,
-                table.rows().size() - accepted, created, updated, toDelete.size(), rows, warnings);
+        AnimateurCsvImportReport report = new AnimateurCsvImportReport(
+                false,
+                table.columns(),
+                mapping,
+                String.valueOf(table.separator()),
+                table.rows().size(),
+                accepted,
+                table.rows().size() - accepted,
+                created,
+                updated,
+                toDelete.size(),
+                rows,
+                warnings);
         return new Analysis(report, toWrite, toDelete);
     }
 
@@ -401,14 +425,14 @@ public class AnimateurCsvImportService {
         return mapping.id() != null || mapping.prenom() != null || mapping.nom() != null;
     }
 
-    private List<String> warnings(AnimateurCsvImportRequest request, List<Animateur> existants,
-            List<String> toDelete) {
+    private List<String> warnings(AnimateurCsvImportRequest request, List<Animateur> existants, List<String> toDelete) {
         List<String> warnings = new ArrayList<>();
-        warnings.add(request.replaceJoursIndisponibles()
-                ? "Jours d'indisponibilité : remplacement. Ceux déjà enregistrés sur une fiche "
-                        + "présente dans le fichier sont écrasés."
-                : "Jours d'indisponibilité : ajout. Ceux déjà enregistrés sont conservés et "
-                        + "complétés par ceux du fichier.");
+        warnings.add(
+                request.replaceJoursIndisponibles()
+                        ? "Jours d'indisponibilité : remplacement. Ceux déjà enregistrés sur une fiche "
+                                + "présente dans le fichier sont écrasés."
+                        : "Jours d'indisponibilité : ajout. Ceux déjà enregistrés sont conservés et "
+                                + "complétés par ceux du fichier.");
         if (request.replaceAnimateurs()) {
             warnings.add(replacementWarning(toDelete));
         } else if (!existants.isEmpty()) {
@@ -459,21 +483,26 @@ public class AnimateurCsvImportService {
                 parId.put(animateur.getId(), animateur);
                 idsPris.add(animateur.getId());
                 if (animateur.getEmail() != null && !animateur.getEmail().isBlank()) {
-                    parEmail.computeIfAbsent(animateur.getEmail().trim().toLowerCase(Locale.ROOT),
-                            key -> new ArrayList<>()).add(animateur);
+                    parEmail.computeIfAbsent(
+                                    animateur.getEmail().trim().toLowerCase(Locale.ROOT), key -> new ArrayList<>())
+                            .add(animateur);
                 }
-                parNom.computeIfAbsent(nameKey(animateur.getPrenom(), animateur.getNom()),
-                        key -> new ArrayList<>()).add(animateur);
+                parNom.computeIfAbsent(nameKey(animateur.getPrenom(), animateur.getNom()), key -> new ArrayList<>())
+                        .add(animateur);
             }
         }
     }
 
     /** One analysed row: what the report shows, and the fiche to write (null when refused). */
-    private record RowOutcome(AnimateurCsvImportReport.ImportedRow reported, Animateur animateur) {
-    }
+    private record RowOutcome(AnimateurCsvImportReport.ImportedRow reported, Animateur animateur) {}
 
-    private RowOutcome analyseRow(CsvParser.Row row, CsvParser.Table table, AnimateurCsvMapping mapping,
-            AnimateurCsvImportRequest request, Index index, Set<LocalDate> joursEvenement,
+    private RowOutcome analyseRow(
+            CsvParser.Row row,
+            CsvParser.Table table,
+            AnimateurCsvMapping mapping,
+            AnimateurCsvImportRequest request,
+            Index index,
+            Set<LocalDate> joursEvenement,
             Map<String, Integer> seen) {
         List<String> reasons = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
@@ -493,8 +522,7 @@ public class AnimateurCsvImportService {
         Animateur existant = resolution.existant();
         Integer precedente = resolution.identity() == null ? null : seen.get(resolution.identity());
         if (precedente != null) {
-            reasons.add("Doublon dans le fichier : la même personne est déjà décrite ligne "
-                    + precedente + ".");
+            reasons.add("Doublon dans le fichier : la même personne est déjà décrite ligne " + precedente + ".");
         }
         if (prenom.isEmpty() && nom.isEmpty() && idCell.isEmpty()) {
             // Checked on the cells rather than on the label, which falls back to
@@ -506,8 +534,8 @@ public class AnimateurCsvImportService {
         int motifsAvantDate = reasons.size();
         LocalDate dateNaissance = readBirthDate(row, mapping, existant, reasons);
         if (dateNaissance == null && reasons.size() == motifsAvantDate) {
-            reasons.add("Date de naissance absente : elle est obligatoire, tout le régime "
-                    + "mineur / majeur en dépend.");
+            reasons.add(
+                    "Date de naissance absente : elle est obligatoire, tout le régime " + "mineur / majeur en dépend.");
         }
         if (!email.isEmpty() && (!email.contains("@") || email.contains(" "))) {
             reasons.add("Adresse e-mail invalide : « " + email + " ».");
@@ -515,9 +543,7 @@ public class AnimateurCsvImportService {
         boolean manager = readManager(row, mapping, existant, reasons);
 
         Map<String, NiveauCompetence> competences = readCompetences(row, mapping, existant, reasons);
-        Set<String> souhaits = existant != null
-                ? new LinkedHashSet<>(existant.getSouhaits())
-                : new LinkedHashSet<>();
+        Set<String> souhaits = existant != null ? new LinkedHashSet<>(existant.getSouhaits()) : new LinkedHashSet<>();
         souhaits.addAll(values(cell(row, mapping.souhaits())));
         checkTypologies(competences, souhaits, reasons);
 
@@ -528,10 +554,16 @@ public class AnimateurCsvImportService {
         }
 
         if (!reasons.isEmpty()) {
-            return new RowOutcome(new AnimateurCsvImportReport.ImportedRow(row.line(), label,
-                    existant != null ? existant.getId() : null,
-                    AnimateurCsvImportReport.ImportAction.REJECTED, List.copyOf(reasons),
-                    List.of(), List.of()), null);
+            return new RowOutcome(
+                    new AnimateurCsvImportReport.ImportedRow(
+                            row.line(),
+                            label,
+                            existant != null ? existant.getId() : null,
+                            AnimateurCsvImportReport.ImportAction.REJECTED,
+                            List.copyOf(reasons),
+                            List.of(),
+                            List.of()),
+                    null);
         }
 
         // Only a row that is going in is remembered as an identity: a duplicate
@@ -552,11 +584,18 @@ public class AnimateurCsvImportService {
         animateur.setCompetences(competences);
         animateur.setSouhaits(souhaits);
         animateur.setJoursIndisponibles(jours);
-        return new RowOutcome(new AnimateurCsvImportReport.ImportedRow(row.line(), label,
-                animateur.getId(),
-                existant != null ? AnimateurCsvImportReport.ImportAction.UPDATED
-                        : AnimateurCsvImportReport.ImportAction.CREATED,
-                List.of(), List.copyOf(warnings), List.copyOf(jours)), animateur);
+        return new RowOutcome(
+                new AnimateurCsvImportReport.ImportedRow(
+                        row.line(),
+                        label,
+                        animateur.getId(),
+                        existant != null
+                                ? AnimateurCsvImportReport.ImportAction.UPDATED
+                                : AnimateurCsvImportReport.ImportAction.CREATED,
+                        List.of(),
+                        List.copyOf(warnings),
+                        List.copyOf(jours)),
+                animateur);
     }
 
     /* ---------------------------- Row-level reads ---------------------------- */
@@ -569,8 +608,9 @@ public class AnimateurCsvImportService {
      */
     private static void checkWidth(CsvParser.Row row, CsvParser.Table table, List<String> reasons) {
         int extra = row.values().size() - table.columns().size();
-        if (extra > 0 && row.values().subList(table.columns().size(), row.values().size()).stream()
-                .anyMatch(value -> !value.isBlank())) {
+        if (extra > 0
+                && row.values().subList(table.columns().size(), row.values().size()).stream()
+                        .anyMatch(value -> !value.isBlank())) {
             reasons.add("La ligne porte " + extra + " valeur(s) de plus que l'en-tête : les colonnes "
                     + "sont probablement décalées.");
         }
@@ -598,11 +638,10 @@ public class AnimateurCsvImportService {
     }
 
     /** Which fiche the row lands on, and the key that makes it a duplicate of another row. */
-    private record Resolution(Animateur existant, String identity) {
-    }
+    private record Resolution(Animateur existant, String identity) {}
 
-    private static Resolution resolve(String idCell, String email, String prenom, String nom, String label,
-            Index index, List<String> reasons) {
+    private static Resolution resolve(
+            String idCell, String email, String prenom, String nom, String label, Index index, List<String> reasons) {
         if (!idCell.isEmpty()) {
             return new Resolution(index.parId.get(idCell), idCell);
         }
@@ -641,8 +680,8 @@ public class AnimateurCsvImportService {
      * adult by the legal constraints. A row that cannot supply one — and whose
      * fiche does not already carry one — is refused.
      */
-    private static LocalDate readBirthDate(CsvParser.Row row, AnimateurCsvMapping mapping,
-            Animateur existant, List<String> reasons) {
+    private static LocalDate readBirthDate(
+            CsvParser.Row row, AnimateurCsvMapping mapping, Animateur existant, List<String> reasons) {
         String dateCell = cell(row, mapping.dateNaissance());
         if (dateCell.isEmpty()) {
             return existant != null ? existant.getDateNaissance() : null;
@@ -661,8 +700,8 @@ public class AnimateurCsvImportService {
         return parsed;
     }
 
-    private static boolean readManager(CsvParser.Row row, AnimateurCsvMapping mapping, Animateur existant,
-            List<String> reasons) {
+    private static boolean readManager(
+            CsvParser.Row row, AnimateurCsvMapping mapping, Animateur existant, List<String> reasons) {
         boolean manager = existant != null && existant.isManager();
         String managerCell = cell(row, mapping.manager());
         if (managerCell.isEmpty()) {
@@ -685,11 +724,10 @@ public class AnimateurCsvImportService {
      * roster, not a decision to unlearn two. Removing one stays a gesture of
      * the referential screen.
      */
-    private static Map<String, NiveauCompetence> readCompetences(CsvParser.Row row,
-            AnimateurCsvMapping mapping, Animateur existant, List<String> reasons) {
-        Map<String, NiveauCompetence> competences = existant != null
-                ? new LinkedHashMap<>(existant.getCompetences())
-                : new LinkedHashMap<>();
+    private static Map<String, NiveauCompetence> readCompetences(
+            CsvParser.Row row, AnimateurCsvMapping mapping, Animateur existant, List<String> reasons) {
+        Map<String, NiveauCompetence> competences =
+                existant != null ? new LinkedHashMap<>(existant.getCompetences()) : new LinkedHashMap<>();
         for (String valeur : values(cell(row, mapping.competences()))) {
             String[] parts = valeur.split(":", 2);
             NiveauCompetence niveau = NiveauCompetence.AUTONOME;
@@ -711,8 +749,8 @@ public class AnimateurCsvImportService {
      * The same referential check the fiche form and the scenario import run —
      * called per row so one unknown game category costs one row, not the file.
      */
-    private void checkTypologies(Map<String, NiveauCompetence> competences, Set<String> souhaits,
-            List<String> reasons) {
+    private void checkTypologies(
+            Map<String, NiveauCompetence> competences, Set<String> souhaits, List<String> reasons) {
         Set<String> ids = new TreeSet<>(competences.keySet());
         ids.addAll(souhaits);
         try {
@@ -727,16 +765,18 @@ public class AnimateurCsvImportService {
      * cell said. Unmapped column: the fiche keeps what it had, whatever the
      * replacement option says; there is nothing to replace it with.
      */
-    private static Set<LocalDate> readJours(CsvParser.Row row, AnimateurCsvMapping mapping,
-            AnimateurCsvImportRequest request, Animateur existant, Set<LocalDate> joursEvenement,
+    private static Set<LocalDate> readJours(
+            CsvParser.Row row,
+            AnimateurCsvMapping mapping,
+            AnimateurCsvImportRequest request,
+            Animateur existant,
+            Set<LocalDate> joursEvenement,
             List<String> reasons) {
         Set<LocalDate> connus = existant != null ? existant.getJoursIndisponibles() : Set.of();
         if (mapping.joursIndisponibles() == null) {
             return new TreeSet<>(connus);
         }
-        Set<LocalDate> jours = request.replaceJoursIndisponibles()
-                ? new TreeSet<>()
-                : new TreeSet<>(connus);
+        Set<LocalDate> jours = request.replaceJoursIndisponibles() ? new TreeSet<>() : new TreeSet<>(connus);
         for (String valeur : values(cell(row, mapping.joursIndisponibles()))) {
             LocalDate jour = parseDate(valeur);
             if (jour == null) {

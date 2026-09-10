@@ -38,8 +38,7 @@ public final class JoursFeries {
 
     private static final Map<Integer, Set<LocalDate>> CACHE = new ConcurrentHashMap<>();
 
-    private JoursFeries() {
-    }
+    private JoursFeries() {}
 
     /**
      * True when the date is one of the eleven public holidays of art. L3133-1
@@ -58,18 +57,18 @@ public final class JoursFeries {
         LocalDate paques = paques(annee);
         Set<LocalDate> feries = new HashSet<>();
         // Fixed dates (art. L3133-1).
-        feries.add(LocalDate.of(annee, 1, 1));    // Jour de l'an
-        feries.add(LocalDate.of(annee, 5, 1));    // Fête du Travail
-        feries.add(LocalDate.of(annee, 5, 8));    // Victoire 1945
-        feries.add(LocalDate.of(annee, 7, 14));   // Fête nationale
-        feries.add(LocalDate.of(annee, 8, 15));   // Assomption
-        feries.add(LocalDate.of(annee, 11, 1));   // Toussaint
-        feries.add(LocalDate.of(annee, 11, 11));  // Armistice 1918
-        feries.add(LocalDate.of(annee, 12, 25));  // Noël
+        feries.add(LocalDate.of(annee, 1, 1)); // Jour de l'an
+        feries.add(LocalDate.of(annee, 5, 1)); // Fête du Travail
+        feries.add(LocalDate.of(annee, 5, 8)); // Victoire 1945
+        feries.add(LocalDate.of(annee, 7, 14)); // Fête nationale
+        feries.add(LocalDate.of(annee, 8, 15)); // Assomption
+        feries.add(LocalDate.of(annee, 11, 1)); // Toussaint
+        feries.add(LocalDate.of(annee, 11, 11)); // Armistice 1918
+        feries.add(LocalDate.of(annee, 12, 25)); // Noël
         // Movable feasts, derived from Easter (art. L3133-1 too).
-        feries.add(paques.plusDays(1));           // Lundi de Pâques
-        feries.add(paques.plusDays(39));          // Jeudi de l'Ascension
-        feries.add(paques.plusDays(50));          // Lundi de Pentecôte
+        feries.add(paques.plusDays(1)); // Lundi de Pâques
+        feries.add(paques.plusDays(39)); // Jeudi de l'Ascension
+        feries.add(paques.plusDays(50)); // Lundi de Pentecôte
         return Set.copyOf(feries);
     }
 

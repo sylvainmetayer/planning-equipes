@@ -1,17 +1,15 @@
 package dev.sylvain.planning.service.solve;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.api.solver.Solver;
+import ai.timefold.solver.core.api.solver.event.BestSolutionChangedEvent;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
-import ai.timefold.solver.core.api.solver.Solver;
-import ai.timefold.solver.core.api.solver.event.BestSolutionChangedEvent;
-
-import dev.sylvain.planning.domain.PlanningEvenement;
-import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * The score of the solve currently running, over time (issue #304): what
@@ -84,8 +82,7 @@ public class SolverScoreTrace {
     static final int MAX_POINTS = 400;
 
     /** One sample: milliseconds spent solving, and the best score at that time. */
-    public record Point(long tempsMs, long hard, long medium, long soft) {
-    }
+    public record Point(long tempsMs, long hard, long medium, long soft) {}
 
     /**
      * The whole series as a reader sees it.
@@ -101,9 +98,14 @@ public class SolverScoreTrace {
      *                    once the run is over
      * @param termine     whether the run is over: the curve stops here
      */
-    public record Trace(String jobId, String editionId, int generation, long intervalleMs,
-            long dureeMs, boolean termine, List<Point> points) {
-    }
+    public record Trace(
+            String jobId,
+            String editionId,
+            int generation,
+            long intervalleMs,
+            long dureeMs,
+            boolean termine,
+            List<Point> points) {}
 
     private final List<Point> points = new ArrayList<>();
     private String jobId;
@@ -117,6 +119,7 @@ public class SolverScoreTrace {
     private long dureeFinaleMs;
     /** Latest best announced, recorded or not: what {@link #finish} flushes. */
     private Point dernier;
+
     private long dernierAjoutMs;
 
     /**
@@ -151,12 +154,10 @@ public class SolverScoreTrace {
         if (!Objects.equals(this.jobId, jobId) || termine) {
             return;
         }
-        if (!event.isNewBestSolutionInitialized()
-                || !(event.getNewBestScore() instanceof HardMediumSoftScore score)) {
+        if (!event.isNewBestSolutionInitialized() || !(event.getNewBestScore() instanceof HardMediumSoftScore score)) {
             return;
         }
-        Point point = new Point(event.getTimeMillisSpent(),
-                score.hardScore(), score.mediumScore(), score.softScore());
+        Point point = new Point(event.getTimeMillisSpent(), score.hardScore(), score.mediumScore(), score.softScore());
         dernier = point;
         if (points.isEmpty() || point.tempsMs() - dernierAjoutMs >= intervalleMs) {
             append(point);
@@ -187,8 +188,7 @@ public class SolverScoreTrace {
         if (jobId == null) {
             return null;
         }
-        return new Trace(jobId, editionId, generation, intervalleMs, dureeMs(), termine,
-                List.copyOf(points));
+        return new Trace(jobId, editionId, generation, intervalleMs, dureeMs(), termine, List.copyOf(points));
     }
 
     /**
@@ -203,11 +203,15 @@ public class SolverScoreTrace {
      */
     private long dureeMs() {
         long ecoule = termine ? dureeFinaleMs : elapsedMs();
-        return points.isEmpty() ? ecoule : Math.max(ecoule, points.get(points.size() - 1).tempsMs());
+        return points.isEmpty()
+                ? ecoule
+                : Math.max(ecoule, points.get(points.size() - 1).tempsMs());
     }
 
     private long elapsedMs() {
-        return debut == null ? 0 : Math.max(0, Duration.between(debut, Instant.now()).toMillis());
+        return debut == null
+                ? 0
+                : Math.max(0, Duration.between(debut, Instant.now()).toMillis());
     }
 
     synchronized int generation() {

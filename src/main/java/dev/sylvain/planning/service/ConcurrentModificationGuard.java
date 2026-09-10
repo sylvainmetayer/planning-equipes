@@ -1,10 +1,8 @@
 package dev.sylvain.planning.service;
 
-import java.time.Instant;
-import java.util.Map;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.Map;
 
 /**
  * Words the two refusals a referential write can meet (issue #362), and reads
@@ -52,16 +50,20 @@ public class ConcurrentModificationGuard {
      * to convince them that somebody really did write after them.</p>
      */
     public void refuseStale(String table, String id) {
-        throw new BusinessError.Stale(sujet(table) + " a été modifié" + accord(table)
-                + " par une autre session après son ouverture ici. Rechargez pour voir ce qui a changé, "
-                + "ou enregistrez à nouveau pour écraser cette modification.", scope.lastWriteOf(table, id));
+        throw new BusinessError.Stale(
+                sujet(table) + " a été modifié" + accord(table)
+                        + " par une autre session après son ouverture ici. Rechargez pour voir ce qui a changé, "
+                        + "ou enregistrez à nouveau pour écraser cette modification.",
+                scope.lastWriteOf(table, id));
     }
 
     /** Same, for a table whose id is database-generated ({@code creneau}). */
     public void refuseStale(String table, long id) {
-        throw new BusinessError.Stale(sujet(table) + " a été modifié" + accord(table)
-                + " par une autre session après son ouverture ici. Rechargez pour voir ce qui a changé, "
-                + "ou enregistrez à nouveau pour écraser cette modification.", scope.lastWriteOf(table, id));
+        throw new BusinessError.Stale(
+                sujet(table) + " a été modifié" + accord(table)
+                        + " par une autre session après son ouverture ici. Rechargez pour voir ce qui a changé, "
+                        + "ou enregistrez à nouveau pour écraser cette modification.",
+                scope.lastWriteOf(table, id));
     }
 
     /**

@@ -1,8 +1,7 @@
 package dev.sylvain.planning.service.backup;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import java.time.Instant;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Outcome of the last backup attempt, successful or not.

@@ -1,13 +1,12 @@
 package dev.sylvain.planning.mcp;
 
-import java.lang.reflect.Parameter;
-
 import dev.sylvain.planning.service.EditionContext;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
+import java.lang.reflect.Parameter;
 
 /**
  * Runs an MCP tool call in the edition its {@link EditionArg} argument names

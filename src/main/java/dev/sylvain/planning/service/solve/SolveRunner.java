@@ -1,20 +1,18 @@
 package dev.sylvain.planning.service.solve;
 
-import java.util.List;
-import java.util.function.Consumer;
-
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
-
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.solver.PlanningConstraintProvider;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Runs a solve, and fills the problem with the server-side facts first.
@@ -37,8 +35,7 @@ final class SolveRunner {
     /** The published plan; {@code null} in the plain-Java harnesses that build {@link PlanningService} with {@code new}. */
     private final PlanSnapshotService snapshots;
 
-    SolveRunner(SolverConfiguration configuration, ReferenceData referenceDataService,
-            PlanSnapshotService snapshots) {
+    SolveRunner(SolverConfiguration configuration, ReferenceData referenceDataService, PlanSnapshotService snapshots) {
         this.configuration = configuration;
         this.referenceDataService = referenceDataService;
         this.snapshots = snapshots;
@@ -59,10 +56,11 @@ final class SolveRunner {
      * thread (see {@code SolverJobService}) can later call
      * {@link Solver#terminateEarly()} to stop a solve started by mistake.
      */
-    public PlanningEvenement solve(PlanningEvenement problem, Long secondsLimitOverride,
-            Consumer<Solver<PlanningEvenement>> onSolverReady) {
+    public PlanningEvenement solve(
+            PlanningEvenement problem, Long secondsLimitOverride, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         prepareProblem(problem);
-        Solver<PlanningEvenement> solver = configuration.resolveSolverFactory(secondsLimitOverride).buildSolver();
+        Solver<PlanningEvenement> solver =
+                configuration.resolveSolverFactory(secondsLimitOverride).buildSolver();
         if (onSolverReady != null) {
             onSolverReady.accept(solver);
         }
@@ -81,13 +79,14 @@ final class SolveRunner {
     public PlanningEvenement solveUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
         prepareProblem(problem);
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
         TerminationConfig termination = new TerminationConfig();
         termination.setSecondsSpentLimit(secondsLimitSecurite);
         termination.setBestScoreFeasible(true);
         solverConfig.setTerminationConfig(termination);
-        Solver<PlanningEvenement> solver = SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
+        Solver<PlanningEvenement> solver =
+                SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
         return solver.solve(problem);
     }
 
@@ -102,13 +101,16 @@ final class SolveRunner {
     }
 
     void prepareProblem(PlanningEvenement problem) {
-        if (problem.getContraintesAdHoc() == null || problem.getContraintesAdHoc().isEmpty()) {
+        if (problem.getContraintesAdHoc() == null
+                || problem.getContraintesAdHoc().isEmpty()) {
             problem.setContraintesAdHoc(referenceDataService.snapshotContraintes());
         }
-        if (problem.getParametresLegaux() == null || problem.getParametresLegaux().isEmpty()) {
+        if (problem.getParametresLegaux() == null
+                || problem.getParametresLegaux().isEmpty()) {
             problem.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
         }
-        if (problem.getConstraintsDesactivees() == null || problem.getConstraintsDesactivees().isEmpty()) {
+        if (problem.getConstraintsDesactivees() == null
+                || problem.getConstraintsDesactivees().isEmpty()) {
             problem.setConstraintsDesactivees(referenceDataService.getContraintesDesactivees().stream()
                     .map(ConstraintToggle::new)
                     .toList());
@@ -121,8 +123,7 @@ final class SolveRunner {
         problem.setParametresQualite(List.of(new ParametresQualite(configuration.maxEmplacementsParJour())));
         // Never sent by a caller (the field is @JsonIgnore-d on PlanningEvenement),
         // so this always overwrites the ConstraintWeightOverrides.none() default.
-        problem.setPonderationsContraintes(
-                configuration.constraintWeightOverrides(problem.getPonderationsScenario()));
+        problem.setPonderationsContraintes(configuration.constraintWeightOverrides(problem.getPonderationsScenario()));
     }
 
     /**
@@ -159,10 +160,11 @@ final class SolveRunner {
      */
     static List<AffectationPubliee> factsPublies(List<PlanSnapshotService.AffectationSnapshot> affectations) {
         return affectations.stream()
-                .filter(affectation -> affectation.animateurId() != null && affectation.standId() != null
+                .filter(affectation -> affectation.animateurId() != null
+                        && affectation.standId() != null
                         && affectation.creneauId() != null)
-                .map(affectation -> new AffectationPubliee(affectation.standId(),
-                        Long.parseLong(affectation.creneauId()), affectation.animateurId()))
+                .map(affectation -> new AffectationPubliee(
+                        affectation.standId(), Long.parseLong(affectation.creneauId()), affectation.animateurId()))
                 .distinct()
                 .toList();
     }

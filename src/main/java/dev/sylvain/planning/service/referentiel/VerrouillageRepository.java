@@ -1,5 +1,10 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.TypeVerrouillage;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,14 +14,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.TypeVerrouillage;
-import dev.sylvain.planning.domain.VerrouillagePlanning;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.JdbcEditionScope;
 
 /** The locks a solve must honour, one nullable target column per {@code TypeVerrouillage}. */
 @ApplicationScoped
@@ -28,8 +26,7 @@ public class VerrouillageRepository {
     @Inject
     JdbcEditionScope scope;
 
-    private static final String SELECT_VERROUILLAGE_SQL =
-            """
+    private static final String SELECT_VERROUILLAGE_SQL = """
             SELECT id, type, animateur_id, stand_id, creneau_id, jour, raison, cree_le
             FROM verrouillage_planning
             WHERE edition_id = ?""";
@@ -38,8 +35,8 @@ public class VerrouillageRepository {
     public List<VerrouillagePlanning> listVerrouillages() {
         List<VerrouillagePlanning> verrouillages = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        SELECT_VERROUILLAGE_SQL + " ORDER BY cree_le DESC, id")) {
+                PreparedStatement ps =
+                        scope.prepareScoped(connection, SELECT_VERROUILLAGE_SQL + " ORDER BY cree_le DESC, id")) {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     verrouillages.add(readVerrouillage(rs));
@@ -52,8 +49,8 @@ public class VerrouillageRepository {
     }
 
     private static VerrouillagePlanning readVerrouillage(ResultSet rs) throws SQLException {
-        VerrouillagePlanning verrouillage = new VerrouillagePlanning(
-                rs.getString("id"), TypeVerrouillage.valueOf(rs.getString("type")));
+        VerrouillagePlanning verrouillage =
+                new VerrouillagePlanning(rs.getString("id"), TypeVerrouillage.valueOf(rs.getString("type")));
         verrouillage.setAnimateurId(rs.getString("animateur_id"));
         verrouillage.setStandId(rs.getString("stand_id"));
         long creneauId = rs.getLong("creneau_id");
@@ -80,7 +77,8 @@ public class VerrouillageRepository {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, verrouillage.getId());
-            ps.setString(3, verrouillage.getType() != null ? verrouillage.getType().name() : null);
+            ps.setString(
+                    3, verrouillage.getType() != null ? verrouillage.getType().name() : null);
             ps.setString(4, verrouillage.getAnimateurId());
             ps.setString(5, verrouillage.getStandId());
             ps.setObject(6, verrouillage.getCreneauId());

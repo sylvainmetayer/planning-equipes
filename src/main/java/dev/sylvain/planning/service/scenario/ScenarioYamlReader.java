@@ -1,5 +1,18 @@
 package dev.sylvain.planning.service.scenario;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresDecoupage;
+import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.scenario.ScenarioBinder;
+import dev.sylvain.planning.scenario.ScenarioFormatException;
+import dev.sylvain.planning.scenario.dto.EditionCibleDto;
+import dev.sylvain.planning.scenario.dto.ScenarioDto;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -21,20 +34,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.ParametresDecoupage;
-import dev.sylvain.planning.domain.ParametresLegaux;
-import dev.sylvain.planning.domain.ParametresSolveur;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.scenario.ScenarioBinder;
-import dev.sylvain.planning.scenario.ScenarioFormatException;
-import dev.sylvain.planning.scenario.dto.EditionCibleDto;
-import dev.sylvain.planning.scenario.dto.ScenarioDto;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.referentiel.TypologieItem;
-
 /**
  * Reads a scenario file: locates it on the classpath, binds the YAML to the
  * {@link ScenarioDto} every path of the application shares, and hands it to
@@ -53,8 +52,7 @@ import dev.sylvain.planning.service.referentiel.TypologieItem;
  */
 public final class ScenarioYamlReader {
 
-    private ScenarioYamlReader() {
-    }
+    private ScenarioYamlReader() {}
 
     /** Classpath folder holding every selectable scenario file. */
     public static final String SCENARIOS_DIR = "scenarios";
@@ -161,7 +159,8 @@ public final class ScenarioYamlReader {
     }
 
     /** The whole problem a scenario describes — see {@link ScenarioDomainMapper#planning}. */
-    public static PlanningEvenement buildPlanning(ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
+    public static PlanningEvenement buildPlanning(
+            ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         Objects.requireNonNull(parametresLegauxParDefaut, "parametresLegauxParDefaut");
         return ScenarioDomainMapper.planning(scenario, parametresLegauxParDefaut);
     }
@@ -178,8 +177,8 @@ public final class ScenarioYamlReader {
      * reported as an {@link IllegalArgumentException} carrying a message
      * meant to be shown to the user as-is.</p>
      */
-    public static ScenarioImporte buildFromScenarioText(String yamlContent,
-            Supplier<ParametresLegaux> parametresLegauxParDefaut) {
+    public static ScenarioImporte buildFromScenarioText(
+            String yamlContent, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         Objects.requireNonNull(parametresLegauxParDefaut, "parametresLegauxParDefaut");
         ScenarioDto scenario = bind(yamlContent);
         PlanningEvenement planning;
@@ -201,8 +200,7 @@ public final class ScenarioYamlReader {
      * {@code POST /reference-data/import-scenario} applies for a named
      * built-in scenario.
      */
-    public record ScenarioImporte(PlanningEvenement planning, ScenarioSections sections) {
-    }
+    public record ScenarioImporte(PlanningEvenement planning, ScenarioSections sections) {}
 
     /**
      * Loads a scenario's raw stands/animateurs/creneaux, ignoring any
@@ -217,9 +215,11 @@ public final class ScenarioYamlReader {
     }
 
     /** {@code creneaux}/{@code stands}/{@code animateurs} sections of a scenario file, parsed and cross-linked. */
-    public record ReferenceScenario(LocalDate dateDebut, Map<String, Creneau> creneauxParId, Map<String, Stand> standsById,
-            List<Animateur> animateurs) {
-    }
+    public record ReferenceScenario(
+            LocalDate dateDebut,
+            Map<String, Creneau> creneauxParId,
+            Map<String, Stand> standsById,
+            List<Animateur> animateurs) {}
 
     /**
      * Every optional top-level section a scenario file may pin, read in
@@ -273,8 +273,7 @@ public final class ScenarioYamlReader {
             boolean decoupageAuto,
             List<TypologieItem> typologies,
             Optional<EditionCibleDto> edition,
-            Optional<ContraintesScenario> contraintes) {
-    }
+            Optional<ContraintesScenario> contraintes) {}
 
     /**
      * The {@code contraintes:} section of a scenario, parsed.
@@ -283,8 +282,7 @@ public final class ScenarioYamlReader {
      * @param poids       weight per constraint name; what is absent keeps the
      *                    deployment default
      */
-    public record ContraintesScenario(Set<String> desactivees, Map<String, Integer> poids) {
-    }
+    public record ContraintesScenario(Set<String> desactivees, Map<String, Integer> poids) {}
 
     /**
      * The optional sections of a bundled scenario, <b>without</b> building its
@@ -305,12 +303,13 @@ public final class ScenarioYamlReader {
      * {@link #buildFromScenarioText}, so the two import paths differ
      * only in where the bytes come from.
      */
-    public static ScenarioImporte loadScenario(String scenarioName,
-            Supplier<ParametresLegaux> parametresLegauxParDefaut) {
+    public static ScenarioImporte loadScenario(
+            String scenarioName, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         Objects.requireNonNull(parametresLegauxParDefaut, "parametresLegauxParDefaut");
         try {
             ScenarioDto scenario = readScenario(scenarioPath(scenarioName));
-            return new ScenarioImporte(ScenarioDomainMapper.planning(scenario, parametresLegauxParDefaut),
+            return new ScenarioImporte(
+                    ScenarioDomainMapper.planning(scenario, parametresLegauxParDefaut),
                     ScenarioDomainMapper.sections(scenario));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);

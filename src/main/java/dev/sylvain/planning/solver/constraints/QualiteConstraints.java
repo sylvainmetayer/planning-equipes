@@ -1,25 +1,23 @@
 package dev.sylvain.planning.solver.constraints;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
+import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Medium constraints: strongly penalised but non-blocking organisational
@@ -38,19 +36,19 @@ public final class QualiteConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-                standComplexeAvecReferent(constraintFactory),
-                equilibrerCharge(constraintFactory),
-                repartitionMineursParCreneau(constraintFactory),
-                experienceRequisePourStandsPremium(constraintFactory),
-                eviterRoulementStandsPremium(constraintFactory),
-                eviterChangementEmplacementEloigne(constraintFactory),
-                limiterEmplacementsParJour(constraintFactory),
-                eviterEnchainementStandsEpuisants(constraintFactory),
-                appreciationIncompatible(constraintFactory),
-                souhaitsIncompatibles(constraintFactory),
-                limiterTypologiesDistinctesParAnimateur(constraintFactory),
-                maxJoursConsecutifsTravailles(constraintFactory),
-                stabiliteDuPlanPublie(constraintFactory)
+            standComplexeAvecReferent(constraintFactory),
+            equilibrerCharge(constraintFactory),
+            repartitionMineursParCreneau(constraintFactory),
+            experienceRequisePourStandsPremium(constraintFactory),
+            eviterRoulementStandsPremium(constraintFactory),
+            eviterChangementEmplacementEloigne(constraintFactory),
+            limiterEmplacementsParJour(constraintFactory),
+            eviterEnchainementStandsEpuisants(constraintFactory),
+            appreciationIncompatible(constraintFactory),
+            souhaitsIncompatibles(constraintFactory),
+            limiterTypologiesDistinctesParAnimateur(constraintFactory),
+            maxJoursConsecutifsTravailles(constraintFactory),
+            stabiliteDuPlanPublie(constraintFactory)
         };
     }
 
@@ -76,14 +74,17 @@ public final class QualiteConstraints {
      * {@code ifExists} never matches.</p>
      */
     private Constraint stabiliteDuPlanPublie(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEachIncludingUnassigned(PosteAffectation.class),
-                "stabiliteDuPlanPublie")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEachIncludingUnassigned(PosteAffectation.class), "stabiliteDuPlanPublie")
                 .filter(poste -> poste.getStand() != null
-                        && poste.getCreneau() != null && poste.getCreneau().getId() != null)
-                .ifExists(AffectationPubliee.class,
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getId() != null)
+                .ifExists(
+                        AffectationPubliee.class,
                         Joiners.equal(poste -> poste.getStand().getId(), AffectationPubliee::standId),
                         Joiners.equal(poste -> poste.getCreneau().getId(), AffectationPubliee::creneauId))
-                .ifNotExists(AffectationPubliee.class,
+                .ifNotExists(
+                        AffectationPubliee.class,
                         Joiners.equal(poste -> poste.getStand().getId(), AffectationPubliee::standId),
                         Joiners.equal(poste -> poste.getCreneau().getId(), AffectationPubliee::creneauId),
                         Joiners.equal(QualiteConstraints::holderIdOrNobody, AffectationPubliee::animateurId))
@@ -97,12 +98,15 @@ public final class QualiteConstraints {
     }
 
     private Constraint standComplexeAvecReferent(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "standComplexeAvecReferent")
-                .groupBy(PosteAffectation::getStand,
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "standComplexeAvecReferent")
+                .groupBy(
+                        PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
                         ConstraintCollectors.sum(poste -> poste.getAnimateur() != null
-                                && poste.getAnimateur().isReferentFor(poste.getStand()) ? 1 : 0))
+                                        && poste.getAnimateur().isReferentFor(poste.getStand())
+                                ? 1
+                                : 0))
                 .filter((stand, creneau, nombreReferents) -> nombreReferents == 0)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("standComplexeAvecReferent");
@@ -127,8 +131,10 @@ public final class QualiteConstraints {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "equilibrerCharge")
                 .filter(poste -> poste.getAnimateur() != null)
                 .groupBy(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur))
-                .penalize(HardMediumSoftScore.ONE_MEDIUM,
-                        loadBalance -> loadBalance.unfairness()
+                .penalize(
+                        HardMediumSoftScore.ONE_MEDIUM,
+                        loadBalance -> loadBalance
+                                .unfairness()
                                 .multiply(UNFAIRNESS_SCALE)
                                 .setScale(0, RoundingMode.HALF_UP)
                                 .intValue())
@@ -136,24 +142,28 @@ public final class QualiteConstraints {
     }
 
     private Constraint repartitionMineursParCreneau(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "repartitionMineursParCreneau")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "repartitionMineursParCreneau")
                 .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
-                .groupBy(PosteAffectation::getStand,
+                .groupBy(
+                        PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
                         ConstraintCollectors.sum(poste -> poste.getAnimateur()
-                                .isMineurOn(poste.getCreneau().getDate()) ? 1 : 0),
+                                        .isMineurOn(poste.getCreneau().getDate())
+                                ? 1
+                                : 0),
                         ConstraintCollectors.sum(poste -> poste.getAnimateur()
-                                .isMajeurOn(poste.getCreneau().getDate()) ? 1 : 0))
+                                        .isMajeurOn(poste.getCreneau().getDate())
+                                ? 1
+                                : 0))
                 .filter((stand, creneau, mineurs, majeurs) -> mineurs > majeurs)
-                .penalize(HardMediumSoftScore.ONE_MEDIUM,
-                        (stand, creneau, mineurs, majeurs) -> mineurs - majeurs)
+                .penalize(HardMediumSoftScore.ONE_MEDIUM, (stand, creneau, mineurs, majeurs) -> mineurs - majeurs)
                 .asConstraint("repartitionMineursParCreneau");
     }
 
     private Constraint experienceRequisePourStandsPremium(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "experienceRequisePourStandsPremium")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "experienceRequisePourStandsPremium")
                 .filter(poste -> poste.getStand().isPremium()
                         && poste.getAnimateur() != null
                         && poste.getAnimateur().isDebutantFor(poste.getStand()))
@@ -193,14 +203,14 @@ public final class QualiteConstraints {
      * move.</p>
      */
     private Constraint eviterRoulementStandsPremium(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "eviterRoulementStandsPremium")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "eviterRoulementStandsPremium")
                 .filter(poste -> poste.getStand().isPremium())
-                .groupBy(PosteAffectation::getStand,
-                        ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
+                .groupBy(PosteAffectation::getStand, ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
                 .join(crewByStand(constraintFactory), Joiners.equal((stand, têtes) -> stand, Equipage::stand))
                 .filter((stand, animateursDistincts, equipage) -> animateursDistincts > equipage.sieges())
-                .penalize(HardMediumSoftScore.ONE_MEDIUM,
+                .penalize(
+                        HardMediumSoftScore.ONE_MEDIUM,
                         (stand, animateursDistincts, equipage) -> animateursDistincts - equipage.sieges())
                 .asConstraint("eviterRoulementStandsPremium");
     }
@@ -212,18 +222,17 @@ public final class QualiteConstraints {
      * same answer as reading the windows, without walking them at every move.
      */
     private static UniConstraintStream<Equipage> crewByStand(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return constraintFactory
+                .forEach(PosteAffectation.class)
                 .filter(poste -> poste.getStand().isPremium())
-                .groupBy(PosteAffectation::getStand, poste -> poste.getCreneau().getId(),
-                        ConstraintCollectors.count())
+                .groupBy(PosteAffectation::getStand, poste -> poste.getCreneau().getId(), ConstraintCollectors.count())
                 .map((stand, creneauId, sieges) -> new Equipage(stand, sieges.intValue()))
                 .groupBy(Equipage::stand, ConstraintCollectors.max(Equipage::sieges))
                 .map((stand, sieges) -> new Equipage(stand, sieges));
     }
 
     /** A premium stand and the seats of its busiest créneau. */
-    private record Equipage(Stand stand, int sieges) {
-    }
+    private record Equipage(Stand stand, int sieges) {}
 
     /**
      * Same animateur, two back-to-back slots (same day, one ending exactly when
@@ -240,16 +249,18 @@ public final class QualiteConstraints {
      * generated in the (previous, next) order only.</p>
      */
     private Constraint eviterChangementEmplacementEloigne(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "eviterChangementEmplacementEloigne")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "eviterChangementEmplacementEloigne")
                 .filter(poste -> poste.getStand() != null
                         && poste.getStand().getEmplacement() != null
                         && poste.getCreneau() != null
                         && poste.getCreneau().getHeureFin() != null)
-                .join(PosteAffectation.class,
+                .join(
+                        PosteAffectation.class,
                         Joiners.equal(PosteAffectation::getAnimateur),
                         Joiners.equal(poste -> poste.getCreneau().getJour()),
-                        Joiners.equal(poste -> poste.getCreneau().getHeureFin(),
+                        Joiners.equal(
+                                poste -> poste.getCreneau().getHeureFin(),
                                 poste -> poste.getCreneau().getHeureDebut()))
                 .filter((precedent, suivant) -> !precedent.getStand().equals(suivant.getStand())
                         && emplacementsEloignes(precedent.getStand(), suivant.getStand()))
@@ -281,21 +292,23 @@ public final class QualiteConstraints {
      * counted at all rather than everything counting as one big zone.</p>
      */
     private Constraint limiterEmplacementsParJour(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "limiterEmplacementsParJour")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "limiterEmplacementsParJour")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getStand() != null
                         && poste.getStand().getEmplacement() != null
                         && poste.getCreneau() != null)
-                .groupBy(PosteAffectation::getAnimateur,
+                .groupBy(
+                        PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getJour(),
                         ConstraintCollectors.toSet(poste -> poste.getStand().getEmplacement()))
                 .join(ParametresQualite.class)
-                .filter((animateur, jour, emplacements, parametres) -> emplacements
-                        .size() > parametres.maxEmplacementsDistinctsParJour())
-                .penalize(HardMediumSoftScore.ONE_MEDIUM,
-                        (animateur, jour, emplacements, parametres) -> emplacements.size()
-                                - parametres.maxEmplacementsDistinctsParJour())
+                .filter((animateur, jour, emplacements, parametres) ->
+                        emplacements.size() > parametres.maxEmplacementsDistinctsParJour())
+                .penalize(
+                        HardMediumSoftScore.ONE_MEDIUM,
+                        (animateur, jour, emplacements, parametres) ->
+                                emplacements.size() - parametres.maxEmplacementsDistinctsParJour())
                 .asConstraint("limiterEmplacementsParJour");
     }
 
@@ -307,19 +320,21 @@ public final class QualiteConstraints {
      * {@link #eviterChangementEmplacementEloigne}'s join shape.
      */
     private Constraint eviterEnchainementStandsEpuisants(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "eviterEnchainementStandsEpuisants")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "eviterEnchainementStandsEpuisants")
                 .filter(poste -> poste.getStand() != null
                         && poste.getStand().getNiveauEffort() == NiveauEffort.EPUISANT
                         && poste.getCreneau() != null
                         && poste.getCreneau().getHeureFin() != null)
-                .join(PosteAffectation.class,
+                .join(
+                        PosteAffectation.class,
                         Joiners.equal(PosteAffectation::getAnimateur),
                         Joiners.equal(poste -> poste.getCreneau().getJour()),
-                        Joiners.equal(poste -> poste.getCreneau().getHeureFin(),
+                        Joiners.equal(
+                                poste -> poste.getCreneau().getHeureFin(),
                                 poste -> poste.getCreneau().getHeureDebut()))
-                .filter((precedent, suivant) -> suivant.getStand() != null
-                        && suivant.getStand().getNiveauEffort() == NiveauEffort.EPUISANT)
+                .filter((precedent, suivant) ->
+                        suivant.getStand() != null && suivant.getStand().getNiveauEffort() == NiveauEffort.EPUISANT)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterEnchainementStandsEpuisants");
     }
@@ -333,10 +348,10 @@ public final class QualiteConstraints {
      * appreciationIncompatible}), not in this literal.
      */
     private Constraint appreciationIncompatible(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "appreciationIncompatible")
-                .filter(poste -> poste.getAnimateur() != null
-                        && !poste.getAnimateur().hasCompetenceFor(poste.getStand()))
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "appreciationIncompatible")
+                .filter(poste ->
+                        poste.getAnimateur() != null && !poste.getAnimateur().hasCompetenceFor(poste.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("appreciationIncompatible");
     }
@@ -348,10 +363,9 @@ public final class QualiteConstraints {
      * the solver privileges the real appreciation when the two disagree.
      */
     private Constraint souhaitsIncompatibles(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "souhaitsIncompatibles")
-                .filter(poste -> poste.getAnimateur() != null
-                        && !poste.getAnimateur().hasSouhaitFor(poste.getStand()))
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "souhaitsIncompatibles")
+                .filter(poste ->
+                        poste.getAnimateur() != null && !poste.getAnimateur().hasSouhaitFor(poste.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("souhaitsIncompatibles");
     }
@@ -378,17 +392,20 @@ public final class QualiteConstraints {
      * threshold they are — the same gradient logic as {@link #equilibrerCharge}.
      */
     private Constraint limiterTypologiesDistinctesParAnimateur(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "limiterTypologiesDistinctesParAnimateur")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "limiterTypologiesDistinctesParAnimateur")
                 // A ninja is versatile by definition: spreading them across many
                 // typologies is what they are there for, so the cap doesn't apply.
-                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getStand() != null
                         && !poste.getAnimateur().isNinja())
                 .flatten(QualiteConstraints::likedTypologiesOfPoste)
-                .groupBy((poste, typologie) -> poste.getAnimateur(),
+                .groupBy(
+                        (poste, typologie) -> poste.getAnimateur(),
                         ConstraintCollectors.toSet((poste, typologie) -> typologie))
                 .filter((animateur, typologies) -> typologies.size() > TYPOLOGIES_DISTINCTES_SANS_PENALITE)
-                .penalize(HardMediumSoftScore.ONE_MEDIUM,
+                .penalize(
+                        HardMediumSoftScore.ONE_MEDIUM,
                         (animateur, typologies) -> typologies.size() - TYPOLOGIES_DISTINCTES_SANS_PENALITE)
                 .asConstraint("limiterTypologiesDistinctesParAnimateur");
     }
@@ -417,16 +434,16 @@ public final class QualiteConstraints {
      * consecutive calendar days, without any date arithmetic.</p>
      */
     private Constraint maxJoursConsecutifsTravailles(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "maxJoursConsecutifsTravailles")
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "maxJoursConsecutifsTravailles")
                 .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
-                .groupBy(PosteAffectation::getAnimateur,
+                .groupBy(
+                        PosteAffectation::getAnimateur,
                         ConstraintCollectors.toSet(poste -> poste.getCreneau().getJour()))
-                .filter((animateur, jours) -> longestConsecutiveSequence(jours)
-                        > JOURS_CONSECUTIFS_TRAVAILLES_MAX)
-                .penalize(HardMediumSoftScore.ONE_MEDIUM,
-                        (animateur, jours) -> longestConsecutiveSequence(jours)
-                                - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                .filter((animateur, jours) -> longestConsecutiveSequence(jours) > JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                .penalize(
+                        HardMediumSoftScore.ONE_MEDIUM,
+                        (animateur, jours) -> longestConsecutiveSequence(jours) - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
                 .asConstraint("maxJoursConsecutifsTravailles");
     }
 

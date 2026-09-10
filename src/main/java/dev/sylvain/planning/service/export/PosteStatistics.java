@@ -1,19 +1,16 @@
 package dev.sylvain.planning.service.export;
 
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.openpdf.text.Chunk;
 import org.openpdf.text.Element;
 import org.openpdf.text.Paragraph;
 import org.openpdf.text.Rectangle;
 import org.openpdf.text.pdf.PdfPCell;
-
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.export.PdfTheme;
 
 /**
  * What a set of seats amounts to — how many days, stands, timeslots, hours —
@@ -26,8 +23,7 @@ import dev.sylvain.planning.service.export.PdfTheme;
  */
 final class PosteStatistics {
 
-    private PosteStatistics() {
-    }
+    private PosteStatistics() {}
 
     static PdfPCell gapCell() {
         PdfPCell cell = new PdfPCell();

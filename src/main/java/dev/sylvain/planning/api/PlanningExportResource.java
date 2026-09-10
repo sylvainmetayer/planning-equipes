@@ -1,8 +1,5 @@
 package dev.sylvain.planning.api;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
@@ -16,6 +13,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Path("/planning/export")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -59,11 +58,14 @@ public class PlanningExportResource {
     @POST
     @Path("/pdf/animateur/{animateurId}")
     @Produces("application/pdf")
-    public Response exportAnimateurPdf(@PathParam("animateurId") String animateurId, PlanningEvenement planningEvenement) {
+    public Response exportAnimateurPdf(
+            @PathParam("animateurId") String animateurId, PlanningEvenement planningEvenement) {
         byte[] content = planningExportService.exportAnimateurPdf(planningEvenement, animateurId);
         String safeAnimateurId = (animateurId == null ? "unknown" : animateurId).replaceAll("[\\\\/\\r\\n\\\"]", "_");
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning-" + safeAnimateurId + ".pdf\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"planning-" + safeAnimateurId + ".pdf\"")
                 .build();
     }
 
@@ -90,7 +92,8 @@ public class PlanningExportResource {
     @POST
     @Path("/ics/animateur/{animateurId}")
     @Produces("text/calendar")
-    public Response exportAnimateurIcs(@PathParam("animateurId") String animateurId, PlanningEvenement planningEvenement) {
+    public Response exportAnimateurIcs(
+            @PathParam("animateurId") String animateurId, PlanningEvenement planningEvenement) {
         String content = planningExportService.exportAnimateurIcs(planningEvenement, animateurId);
         String displayName = planningExportService.resolveAnimateurName(planningEvenement, animateurId);
         String safeFilename = (displayName == null ? "planning" : displayName).replaceAll("[\\\\/\\r\\n\\\"]", "_");

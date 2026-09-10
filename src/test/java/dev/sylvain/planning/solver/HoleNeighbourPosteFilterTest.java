@@ -2,19 +2,17 @@ package dev.sylvain.planning.solver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import ai.timefold.solver.core.impl.score.director.ScoreDirector;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /** The neighbourhood a hole is filled from: the créneaux that share its hour, midnight included. */
 class HoleNeighbourPosteFilterTest {
@@ -23,20 +21,25 @@ class HoleNeighbourPosteFilterTest {
 
     @Test
     void twoSlotsOfTheSameDaySharingMinutesOverlap() {
-        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 13, 45, 16, 45), slot(JOUR, 14, 15, 20, 0))).isTrue();
-        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 10, 0, 12, 0), slot(JOUR, 10, 0, 12, 15))).isTrue();
+        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 13, 45, 16, 45), slot(JOUR, 14, 15, 20, 0)))
+                .isTrue();
+        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 10, 0, 12, 0), slot(JOUR, 10, 0, 12, 15)))
+                .isTrue();
     }
 
     @Test
     void touchingOrDistinctSlotsDoNot() {
         // 12:00 ends where the other starts: nobody is on both.
-        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 10, 0, 12, 0), slot(JOUR, 12, 0, 13, 0))).isFalse();
-        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 9, 0, 12, 0), slot(JOUR.plusDays(1), 9, 0, 12, 0))).isFalse();
+        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 10, 0, 12, 0), slot(JOUR, 12, 0, 13, 0)))
+                .isFalse();
+        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 9, 0, 12, 0), slot(JOUR.plusDays(1), 9, 0, 12, 0)))
+                .isFalse();
     }
 
     @Test
     void aSlotCrossingMidnightStillOverlapsTheEvening() {
-        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 20, 0, 0, 0), slot(JOUR, 22, 0, 23, 0))).isTrue();
+        assertThat(HoleNeighbourPosteFilter.overlap(slot(JOUR, 20, 0, 0, 0), slot(JOUR, 22, 0, 23, 0)))
+                .isTrue();
     }
 
     /** The one a same-day comparison could not see: 22:00→02:00 runs into the next day. */
@@ -68,9 +71,15 @@ class HoleNeighbourPosteFilterTest {
         assertThat(filtre.accept(directeur(sansTrou), tenuApresMidi)).isFalse();
 
         PlanningEvenement avecTrou = plan(List.of(tenuMatin, tenuApresMidi, trouDuMatin));
-        assertThat(filtre.accept(directeur(avecTrou), trouDuMatin)).as("the hole itself").isTrue();
-        assertThat(filtre.accept(directeur(avecTrou), tenuMatin)).as("same hour as the hole").isTrue();
-        assertThat(filtre.accept(directeur(avecTrou), tenuApresMidi)).as("another hour").isFalse();
+        assertThat(filtre.accept(directeur(avecTrou), trouDuMatin))
+                .as("the hole itself")
+                .isTrue();
+        assertThat(filtre.accept(directeur(avecTrou), tenuMatin))
+                .as("same hour as the hole")
+                .isTrue();
+        assertThat(filtre.accept(directeur(avecTrou), tenuApresMidi))
+                .as("another hour")
+                .isFalse();
     }
 
     private static PlanningEvenement plan(List<PosteAffectation> postes) {

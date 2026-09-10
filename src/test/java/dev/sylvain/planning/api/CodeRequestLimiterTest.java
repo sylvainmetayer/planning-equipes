@@ -5,24 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
@@ -31,6 +20,15 @@ import io.quarkus.test.junit.TestProfile;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Rate limit on the access-code requests: the link alone must not be enough to
@@ -48,8 +46,7 @@ class CodeRequestLimiterTest {
     public static class Profil implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
-            return Map.of("planning.espace.code.max-demandes", "2",
-                    "planning.espace.code.fenetre", "PT10M");
+            return Map.of("planning.espace.code.max-demandes", "2", "planning.espace.code.fenetre", "PT10M");
         }
     }
 
@@ -90,7 +87,8 @@ class CodeRequestLimiterTest {
         requestCode(token).then().statusCode(200);
         requestCode(token).then().statusCode(200);
 
-        requestCode(token).then()
+        requestCode(token)
+                .then()
                 .statusCode(429)
                 .header("Retry-After", notNullValue())
                 .body("message", containsString("Trop de codes"));
@@ -112,21 +110,23 @@ class CodeRequestLimiterTest {
 
         given().contentType(ContentType.JSON)
                 .body("{\"code\":\"" + dernierCode(EMAIL_CREDIT) + "\"}")
-                .when().post("/api/espace-animateur/" + token + "/session")
-                .then().statusCode(204);
+                .when()
+                .post("/api/espace-animateur/" + token + "/session")
+                .then()
+                .statusCode(204);
 
         requestCode(token).then().statusCode(200);
     }
 
     private static Response requestCode(String token) {
-        return given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + token + "/code");
+        return given().contentType(ContentType.JSON).when().post("/api/espace-animateur/" + token + "/code");
     }
 
     private String dernierCode(String email) {
         List<Mail> mails = mailbox.getMailsSentTo(email);
         assertThat(mails).isNotEmpty();
-        Matcher matcher = Pattern.compile("\\b(\\d{6})\\b").matcher(mails.get(mails.size() - 1).getText());
+        Matcher matcher = Pattern.compile("\\b(\\d{6})\\b")
+                .matcher(mails.get(mails.size() - 1).getText());
         assertThat(matcher.find()).isTrue();
         return matcher.group(1);
     }

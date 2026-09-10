@@ -1,16 +1,5 @@
 package dev.sylvain.planning.service.mail;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UncheckedIOException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import dev.sylvain.planning.config.ConfigBranding;
 import dev.sylvain.planning.service.ProductName;
 import io.quarkus.mailer.Mail;
@@ -23,6 +12,16 @@ import io.quarkus.qute.Variant;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Where every mail body comes from: a pair of Qute templates under
@@ -60,8 +59,7 @@ public class MailTemplates {
 
     private MailBranding branding;
 
-    MailTemplates() {
-    }
+    MailTemplates() {}
 
     private MailTemplates(Engine engine, ProductName productName, MailBranding branding) {
         this.engine = engine;
@@ -86,8 +84,7 @@ public class MailTemplates {
     /**
      * A subject, and the text and HTML bodies of one mail.
      */
-    public record MailContent(String subject, String text, String html) {
-    }
+    public record MailContent(String subject, String text, String html) {}
 
     /**
      * Renders both parts of {@code template} ({@code mail/xxx}, without a
@@ -136,8 +133,11 @@ public class MailTemplates {
         if (html != null && !html.isBlank()) {
             mail.setHtml(html);
             if (branding.logo() != null) {
-                mail.addInlineAttachment("logo." + branding.logoExtension(), branding.logo(),
-                        branding.logoContentType(), "<" + LOGO_CID + ">");
+                mail.addInlineAttachment(
+                        "logo." + branding.logoExtension(),
+                        branding.logo(),
+                        branding.logoContentType(),
+                        "<" + LOGO_CID + ">");
             }
         }
         return mail;

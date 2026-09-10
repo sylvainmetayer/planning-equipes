@@ -2,25 +2,23 @@ package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.CauseInfaisabilite;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.SeveriteInfaisabilite;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.TypeCauseInfaisabilite;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 class FeasibilityAnalyzerTest {
 
@@ -85,8 +83,8 @@ class FeasibilityAnalyzerTest {
         // for 3 seats (1 missing). Both timeslots must show up, the most
         // critical one first.
 
-        FeasibilityReport report = analyzer.analyze(List.of(a1, a2), List.of(stand),
-                List.of(creneauDimanche, creneauSamedi));
+        FeasibilityReport report =
+                analyzer.analyze(List.of(a1, a2), List.of(stand), List.of(creneauDimanche, creneauSamedi));
 
         assertThat(report.feasible()).isFalse();
         assertThat(report.manqueAnimateurs()).isEqualTo(2);
@@ -107,12 +105,13 @@ class FeasibilityAnalyzerTest {
         Animateur a1 = animateur("a1", "STRATEGIE");
         a1.setJoursIndisponibles(Set.of(samedi));
 
-        FeasibilityReport report = analyzer.analyze(List.of(a1), List.of(stand),
-                List.of(creneauSamedi, creneauDimanche));
+        FeasibilityReport report =
+                analyzer.analyze(List.of(a1), List.of(stand), List.of(creneauSamedi, creneauDimanche));
 
         // Saturday: nobody, so missing (2) >= demand (2) -> CRITIQUE, and at the
         // top of the list. Sunday: one animateur for two seats -> ELEVE.
-        assertThat(report.causes()).extracting(CauseInfaisabilite::severite)
+        assertThat(report.causes())
+                .extracting(CauseInfaisabilite::severite)
                 .containsExactly(SeveriteInfaisabilite.CRITIQUE, SeveriteInfaisabilite.ELEVE);
         assertThat(report.causes().getFirst().date()).isEqualTo(samedi);
         assertThat(report.causes().getFirst().capacite()).isZero();
@@ -179,11 +178,11 @@ class FeasibilityAnalyzerTest {
         // ProblemBuilder.buildPostes).
         Stand stand = stand("stand-1", 3, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        stand.setIndisponibilites(List.of(
-                new IndisponibiliteStand(null, creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(), null)));
+        stand.setIndisponibilites(List.of(new IndisponibiliteStand(
+                null, creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(), null)));
 
-        FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")),
-                List.of(stand), List.of(creneau));
+        FeasibilityReport report =
+                analyzer.analyze(List.of(animateur("a1", "STRATEGIE")), List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
@@ -196,12 +195,11 @@ class FeasibilityAnalyzerTest {
         // 4: seat generation creates 4 seats, so 2 animateurs leave 2 missing.
         Stand stand = stand("stand-1", 1, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        stand.setOuvertures(List.of(new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0),
-                LocalTime.of(12, 0), null, 4)));
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 4)));
 
         FeasibilityReport report = analyzer.analyze(
-                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")),
-                List.of(stand), List.of(creneau));
+                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")), List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isFalse();
         CauseInfaisabilite cause = report.causes().getFirst();
@@ -216,11 +214,11 @@ class FeasibilityAnalyzerTest {
         // animateur is enough, where counting effectifMin would announce 2 missing.
         Stand stand = stand("stand-1", 3, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        stand.setOuvertures(List.of(new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0),
-                LocalTime.of(12, 0), null, 1)));
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 1)));
 
-        FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")),
-                List.of(stand), List.of(creneau));
+        FeasibilityReport report =
+                analyzer.analyze(List.of(animateur("a1", "STRATEGIE")), List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.causes()).isEmpty();
@@ -235,10 +233,14 @@ class FeasibilityAnalyzerTest {
         stand.setOuvertures(List.of(
                 new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(11, 0), null, 2),
                 new OuvertureStand(null, creneau.getDate(), LocalTime.of(11, 0), LocalTime.of(12, 0), null, 4)));
-        List<Animateur> quatre = List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE"),
-                animateur("a3", "STRATEGIE"), animateur("a4", "STRATEGIE"));
+        List<Animateur> quatre = List.of(
+                animateur("a1", "STRATEGIE"),
+                animateur("a2", "STRATEGIE"),
+                animateur("a3", "STRATEGIE"),
+                animateur("a4", "STRATEGIE"));
 
-        assertThat(analyzer.analyze(quatre, List.of(stand), List.of(creneau)).feasible()).isTrue();
+        assertThat(analyzer.analyze(quatre, List.of(stand), List.of(creneau)).feasible())
+                .isTrue();
 
         FeasibilityReport troisSeulement = analyzer.analyze(quatre.subList(0, 3), List.of(stand), List.of(creneau));
         assertThat(troisSeulement.feasible()).isFalse();
@@ -253,12 +255,11 @@ class FeasibilityAnalyzerTest {
         Stand stand = stand("stand-1", 1, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         creneau.setCouverturePause(true);
-        stand.setOuvertures(List.of(new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0),
-                LocalTime.of(12, 0), null, 4)));
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 4)));
 
         FeasibilityReport report = analyzer.analyze(
-                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")),
-                List.of(stand), List.of(creneau));
+                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")), List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
     }
@@ -271,8 +272,7 @@ class FeasibilityAnalyzerTest {
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
 
         FeasibilityReport report = analyzer.analyze(
-                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")),
-                List.of(stand), List.of(creneau));
+                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")), List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
@@ -296,13 +296,18 @@ class FeasibilityAnalyzerTest {
         ContrainteAdHoc indisponibilite = contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneau);
         ContrainteAdHoc forcee = contrainte("C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneau);
 
-        FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")),
-                List.of(stand("stand-1", 1, "STRATEGIE")), List.of(creneau),
+        FeasibilityReport report = analyzer.analyze(
+                List.of(animateur("a1", "STRATEGIE")),
+                List.of(stand("stand-1", 1, "STRATEGIE")),
+                List.of(creneau),
                 List.of(indisponibilite, forcee));
 
         assertThat(report.feasible()).isFalse();
         assertThat(report.manqueAnimateurs()).isZero();
-        assertThat(report.message()).contains("1 cause bloquante").contains("C1").contains("C2");
+        assertThat(report.message())
+                .contains("1 cause bloquante")
+                .contains("C1")
+                .contains("C2");
 
         CauseInfaisabilite cause = report.causes().getFirst();
         assertThat(cause.type()).isEqualTo(TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES);
@@ -316,13 +321,18 @@ class FeasibilityAnalyzerTest {
         // Both are CRITIQUE, but one is fixed by deleting a line the user typed
         // and the other one takes recruiting.
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        FeasibilityReport report = analyzer.analyze(List.of(), List.of(stand("stand-1", 3, "STRATEGIE")),
+        FeasibilityReport report = analyzer.analyze(
+                List.of(),
+                List.of(stand("stand-1", 3, "STRATEGIE")),
                 List.of(creneau),
-                List.of(contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneau),
+                List.of(
+                        contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneau),
                         contrainte("C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneau)));
 
-        assertThat(report.causes()).extracting(CauseInfaisabilite::type)
-                .containsExactly(TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES,
+        assertThat(report.causes())
+                .extracting(CauseInfaisabilite::type)
+                .containsExactly(
+                        TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES,
                         TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF);
     }
 
@@ -330,8 +340,10 @@ class FeasibilityAnalyzerTest {
     void consistentAdHocConstraintsChangeNothing() {
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
 
-        FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")),
-                List.of(stand("stand-1", 1, "STRATEGIE")), List.of(creneau),
+        FeasibilityReport report = analyzer.analyze(
+                List.of(animateur("a1", "STRATEGIE")),
+                List.of(stand("stand-1", 1, "STRATEGIE")),
+                List.of(creneau),
                 List.of(contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneau)));
 
         assertThat(report.feasible()).isTrue();

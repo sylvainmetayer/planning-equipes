@@ -1,8 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.Creneau;
+import java.util.List;
 
 /**
  * Body of a successful write on the créneau grid: the timeslot exactly as it

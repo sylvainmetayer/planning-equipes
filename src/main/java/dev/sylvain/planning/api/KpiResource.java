@@ -1,7 +1,5 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
 import jakarta.inject.Inject;
@@ -13,6 +11,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * KPI history (issue #89). Unlike every other resource, the listing spans

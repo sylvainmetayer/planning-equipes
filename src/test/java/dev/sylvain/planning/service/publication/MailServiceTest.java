@@ -3,16 +3,14 @@ package dev.sylvain.planning.service.publication;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.mail.MailTemplates;
+import io.quarkus.mailer.Mail;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.service.mail.MailTemplates;
-import io.quarkus.mailer.Mail;
-import dev.sylvain.planning.service.ProductName;
 
 /**
  * The mails an administrator <b>asks for</b>, over a {@code MailService} built
@@ -41,10 +39,14 @@ class MailServiceTest {
 
     @Test
     void lEnvoiDuPlanningJointLePdfEtLeLienEspace() {
-        byte[] pdf = new byte[] { 1, 2, 3 };
+        byte[] pdf = new byte[] {1, 2, 3};
 
-        service.sendIndividualPlanning("alice@example.org", "Alice",
-                "https://planning.example.org/animateur/jeton-1", pdf, "planning-Alice-Martin.pdf");
+        service.sendIndividualPlanning(
+                "alice@example.org",
+                "Alice",
+                "https://planning.example.org/animateur/jeton-1",
+                pdf,
+                "planning-Alice-Martin.pdf");
 
         assertThat(envoyes).hasSize(1);
         Mail mail = envoyes.get(0);
@@ -62,13 +64,10 @@ class MailServiceTest {
     /** With no public URL (no espace link), the mail leaves without the link. */
     @Test
     void lEnvoiDuPlanningSansLienEspaceResteComplet() {
-        service.sendIndividualPlanning("alice@example.org", null, null,
-                new byte[] { 1 }, "planning.pdf");
+        service.sendIndividualPlanning("alice@example.org", null, null, new byte[] {1}, "planning.pdf");
 
         assertThat(envoyes).hasSize(1);
-        assertThat(envoyes.get(0).getText())
-                .contains("Bonjour,")
-                .doesNotContain("espace en ligne");
+        assertThat(envoyes.get(0).getText()).contains("Bonjour,").doesNotContain("espace en ligne");
     }
 
     /** The access code leaves in clear in the body, with how long it is valid. */
@@ -105,8 +104,8 @@ class MailServiceTest {
             throw new IllegalStateException("SMTP down");
         };
 
-        assertThatThrownBy(() -> service
-                .sendIndividualPlanning("alice@example.org", "Alice", null, new byte[] { 1 }, "planning.pdf"))
+        assertThatThrownBy(() -> service.sendIndividualPlanning(
+                        "alice@example.org", "Alice", null, new byte[] {1}, "planning.pdf"))
                 .isInstanceOf(IllegalStateException.class);
     }
 

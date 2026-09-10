@@ -6,11 +6,10 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 
-import java.util.List;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -28,40 +27,48 @@ class PlanSnapshotResourceTest {
     /** Loads the sample scenario and solves it once, so a plan is persisted. */
     private void persistedPlan() throws InterruptedException {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
         solve();
         assertThat(affectationCount()).isPositive();
     }
 
     private void solve() throws InterruptedException {
         attendreSolveurLibre();
-        String jobId = given()
-                .when().post("/api/solve/async/reference-data?seconds=1")
+        String jobId = given().when()
+                .post("/api/solve/async/reference-data?seconds=1")
                 .then()
                 .statusCode(202)
-                .extract().path("id");
+                .extract()
+                .path("id");
         JsonPath job = pollUntilFinished(jobId);
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
     }
 
     private int affectationCount() {
-        return given()
-                .when().get("/api/planning/persisted/count")
+        return given().when()
+                .get("/api/planning/persisted/count")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getInt("assignments");
+                .extract()
+                .jsonPath()
+                .getInt("assignments");
     }
 
     private long capture(String libelle) {
-        return given()
-                .contentType(ContentType.JSON)
+        return given().contentType(ContentType.JSON)
                 .body("{\"libelle\":\"" + libelle + "\"}")
-                .when().post("/api/planning/snapshots")
+                .when()
+                .post("/api/planning/snapshots")
                 .then()
                 .statusCode(201)
                 .body("libelle", equalTo(libelle))
                 .body("automatique", equalTo(false))
-                .extract().jsonPath().getLong("id");
+                .extract()
+                .jsonPath()
+                .getLong("id");
     }
 
     @Test
@@ -72,8 +79,8 @@ class PlanSnapshotResourceTest {
 
         solve();
 
-        given()
-                .when().post("/api/planning/snapshots/" + id + "/restore")
+        given().when()
+                .post("/api/planning/snapshots/" + id + "/restore")
                 .then()
                 .statusCode(200)
                 .body("restaure", equalTo(true))
@@ -84,19 +91,24 @@ class PlanSnapshotResourceTest {
     @Test
     void chaqueSolveCaptureAutomatiquementLePlanPrecedent() throws InterruptedException {
         persistedPlan();
-        int avant = given()
-                .when().get("/api/planning/snapshots")
+        int avant = given().when()
+                .get("/api/planning/snapshots")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getList("$").size();
+                .extract()
+                .jsonPath()
+                .getList("$")
+                .size();
 
         solve();
 
-        List<Boolean> automatiques = given()
-                .when().get("/api/planning/snapshots")
+        List<Boolean> automatiques = given().when()
+                .get("/api/planning/snapshots")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getList("automatique", Boolean.class);
+                .extract()
+                .jsonPath()
+                .getList("automatique", Boolean.class);
         assertThat(automatiques).hasSizeGreaterThan(avant).contains(true);
     }
 
@@ -109,8 +121,8 @@ class PlanSnapshotResourceTest {
         // gone, so restoring would produce a plan nobody ever computed.
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        given()
-                .when().post("/api/planning/snapshots/" + id + "/restore")
+        given().when()
+                .post("/api/planning/snapshots/" + id + "/restore")
                 .then()
                 .statusCode(409)
                 .body("referencesManquantes.size()", greaterThan(0));
@@ -129,8 +141,8 @@ class PlanSnapshotResourceTest {
         given().when().post("/api/planning/reset").then().statusCode(200);
         assertThat(affectationCount()).isZero();
 
-        given()
-                .when().get("/api/planning/snapshots/" + id)
+        given().when()
+                .get("/api/planning/snapshots/" + id)
                 .then()
                 .statusCode(200)
                 .body("meta.libelle", equalTo("Grille bientôt abandonnée"))
@@ -150,18 +162,24 @@ class PlanSnapshotResourceTest {
         persistedPlan();
         long id = capture("Plan à analyser");
         solve();
-        String avant = given()
-                .when().get("/api/constraints")
-                .then().statusCode(200)
-                .extract().jsonPath().getString("analysedAt");
+        String avant = given().when()
+                .get("/api/constraints")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getString("analysedAt");
         assertThat(avant).isNotNull();
 
         given().when().post("/api/planning/snapshots/" + id + "/restore").then().statusCode(200);
 
-        String apres = given()
-                .when().get("/api/constraints")
-                .then().statusCode(200)
-                .extract().jsonPath().getString("analysedAt");
+        String apres = given().when()
+                .get("/api/constraints")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getString("analysedAt");
         assertThat(apres).isNotNull();
         assertThat(java.time.Instant.parse(apres)).isAfter(java.time.Instant.parse(avant));
     }
@@ -178,14 +196,15 @@ class PlanSnapshotResourceTest {
         int avant = affectationCount();
 
         attendreSolveurLibre();
-        String jobId = given()
-                .when().post("/api/solve/async/reference-data?seconds=30")
+        String jobId = given().when()
+                .post("/api/solve/async/reference-data?seconds=30")
                 .then()
                 .statusCode(202)
-                .extract().path("id");
+                .extract()
+                .path("id");
         try {
-            given()
-                    .when().post("/api/planning/snapshots/" + id + "/restore")
+            given().when()
+                    .post("/api/planning/snapshots/" + id + "/restore")
                     .then()
                     .statusCode(409)
                     .body("id", equalTo(jobId))
@@ -209,11 +228,12 @@ class PlanSnapshotResourceTest {
 
     private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
         for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given()
-                    .when().get("/api/jobs/" + jobId)
+            JsonPath job = given().when()
+                    .get("/api/jobs/" + jobId)
                     .then()
                     .statusCode(200)
-                    .extract().jsonPath();
+                    .extract()
+                    .jsonPath();
             if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
                 return job;
             }

@@ -1,8 +1,7 @@
 package dev.sylvain.planning.config;
 
-import java.util.Optional;
-
 import io.smallrye.config.ConfigMapping;
+import java.util.Optional;
 
 /**
  * The two browser security headers whose value depends on the deployment.

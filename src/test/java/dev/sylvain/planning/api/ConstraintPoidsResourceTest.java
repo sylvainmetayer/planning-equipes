@@ -4,10 +4,9 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
+import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
 import java.util.Map;
-
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -58,14 +57,22 @@ class ConstraintPoidsResourceTest {
     }
 
     private List<Map<String, Object>> listEditions() {
-        return given().when().get("/api/editions").then().statusCode(200).extract().jsonPath().getList("$");
+        return given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("$");
     }
 
     private void createEdition(String id, String nom) {
         given().contentType("application/json")
                 .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
-                .when().post("/api/editions")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200);
     }
 
     /** @param poids {@code null} sends a JSON {@code null}, which drops the override. */
@@ -73,23 +80,30 @@ class ConstraintPoidsResourceTest {
         given().header(HEADER, editionId)
                 .contentType("application/json")
                 .body("{\"poids\":" + (poids == null ? "null" : poids) + "}")
-                .when().put("/api/constraints/" + nom + "/poids")
-                .then().statusCode(expectedStatus);
+                .when()
+                .put("/api/constraints/" + nom + "/poids")
+                .then()
+                .statusCode(expectedStatus);
     }
 
     private int readPoids(String editionId, String nom) {
         return given().header(HEADER, editionId)
-                .when().get("/api/constraints")
-                .then().statusCode(200)
-                .extract().jsonPath()
+                .when()
+                .get("/api/constraints")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
                 .getInt("contraintes.find { it.name == '" + nom + "' }.poids");
     }
 
     @Test
     void leCatalogueExposeLePoidsEtCeQueChaqueRegleAutorise() {
         given().header(HEADER, DEFAUT)
-                .when().get("/api/constraints")
-                .then().statusCode(200)
+                .when()
+                .get("/api/constraints")
+                .then()
+                .statusCode(200)
                 // A deployment that tuned nothing weighs everything at 1.
                 .body("contraintes.find { it.name == '" + DOSABLE + "' }.poids", equalTo(1))
                 .body("contraintes.find { it.name == '" + DOSABLE + "' }.dosable", equalTo(true))
@@ -189,8 +203,10 @@ class ConstraintPoidsResourceTest {
 
         given().contentType("application/json")
                 .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
-                .when().post("/api/editions/" + DEFAUT + "/dupliquer")
-                .then().statusCode(200);
+                .when()
+                .post("/api/editions/" + DEFAUT + "/dupliquer")
+                .then()
+                .statusCode(200);
 
         // Duplicating is how an event starts from last year's setup: a
         // patiently tuned dosage that failed to follow would be a silent

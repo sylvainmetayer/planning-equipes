@@ -2,16 +2,14 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.Score;
 import ai.timefold.solver.core.api.solver.event.BestSolutionChangedEvent;
 import ai.timefold.solver.core.api.solver.event.EventProducerId;
-
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.solve.SolverScoreTrace.Point;
 import dev.sylvain.planning.service.solve.SolverScoreTrace.Trace;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -46,9 +44,7 @@ class SolverScoreTraceTest {
         // Two points, and the middle one is gone — but the value kept for the
         // first second is the LATEST of the window, never the first: the score
         // only improves, so the newest one is the truthful one.
-        assertThat(points()).containsExactly(
-                new Point(0, -40, -10, -1000),
-                new Point(1000, -20, -6, -800));
+        assertThat(points()).containsExactly(new Point(0, -40, -10, -1000), new Point(1000, -20, -6, -800));
     }
 
     @Test
@@ -83,8 +79,7 @@ class SolverScoreTraceTest {
         // The last announced score is a few windows ahead of the last recorded
         // one — which is exactly what the flush at the end of the run repairs.
         trace.finish("job-1");
-        assertThat(trace.snapshot().points().getLast().hard())
-                .isEqualTo(-(3L * SolverScoreTrace.MAX_POINTS - 1));
+        assertThat(trace.snapshot().points().getLast().hard()).isEqualTo(-(3L * SolverScoreTrace.MAX_POINTS - 1));
     }
 
     @Test
@@ -209,13 +204,12 @@ class SolverScoreTraceTest {
         return trace.snapshot().points();
     }
 
-    private static BestSolutionChangedEvent<PlanningEvenement> event(long tempsMs, long hard, long medium,
-            long soft) {
+    private static BestSolutionChangedEvent<PlanningEvenement> event(long tempsMs, long hard, long medium, long soft) {
         return new FakeEvent(tempsMs, HardMediumSoftScore.of(hard, medium, soft), true);
     }
 
-    private static BestSolutionChangedEvent<PlanningEvenement> uninitialized(long tempsMs, long hard, long medium,
-            long soft) {
+    private static BestSolutionChangedEvent<PlanningEvenement> uninitialized(
+            long tempsMs, long hard, long medium, long soft) {
         return new FakeEvent(tempsMs, HardMediumSoftScore.of(hard, medium, soft), false);
     }
 

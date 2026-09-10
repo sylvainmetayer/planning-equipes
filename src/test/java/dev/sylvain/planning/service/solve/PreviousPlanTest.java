@@ -32,7 +32,8 @@ class PreviousPlanTest {
     /** Soft only breaks the tie once hard and medium are equal, as Timefold orders them. */
     @Test
     void ranksSoftLastAndHardFirst() {
-        assertThat(PreviousPlan.isDegraded("0hard/-100medium/-10soft", "0hard/-100medium/-11soft")).isTrue();
+        assertThat(PreviousPlan.isDegraded("0hard/-100medium/-10soft", "0hard/-100medium/-11soft"))
+                .isTrue();
         assertThat(PreviousPlan.isDegraded("-1hard/-100medium/-10soft", "0hard/-9999medium/-9999soft"))
                 .isFalse();
     }
@@ -52,13 +53,15 @@ class PreviousPlanTest {
         assertThat(PreviousPlan.isDegraded(null, "0hard/-1medium/0soft")).isFalse();
         assertThat(PreviousPlan.isDegraded("0hard/-1medium/0soft", null)).isFalse();
         assertThat(PreviousPlan.isDegraded("", "0hard/-1medium/0soft")).isFalse();
-        assertThat(PreviousPlan.isDegraded("pas un score", "0hard/-1medium/0soft")).isFalse();
+        assertThat(PreviousPlan.isDegraded("pas un score", "0hard/-1medium/0soft"))
+                .isFalse();
     }
 
     /** First solve of an edition: nothing was captured, so there is nothing to compare. */
     @Test
     void offersNoComparisonWithoutASnapshot() {
-        assertThat(PreviousPlan.of(null, "0hard/0medium/0soft", "0hard/0medium/0soft")).isNull();
+        assertThat(PreviousPlan.of(null, "0hard/0medium/0soft", "0hard/0medium/0soft"))
+                .isNull();
     }
 
     /**

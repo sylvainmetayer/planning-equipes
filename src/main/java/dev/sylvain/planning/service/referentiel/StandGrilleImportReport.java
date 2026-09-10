@@ -1,10 +1,9 @@
 package dev.sylvain.planning.service.referentiel;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * What the matrix would do, stand by stand — and, once applied, what it did.
@@ -35,9 +34,15 @@ public record StandGrilleImportReport(
      *                  into families, the column then carrying the same cell to each of them
      */
     @Schema(requiredProperties = {"creneaux", "index"})
-    public record ImportedColumn(int index, String label, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
-            Long creneauId, int creneaux, String reason) {
-    }
+    public record ImportedColumn(
+            int index,
+            String label,
+            LocalDate date,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            Long creneauId,
+            int creneaux,
+            String reason) {}
 
     public enum ImportGrilleAction {
         /** The row names a stand of the edition, whose whole schedule is rewritten from its cells. */
@@ -51,7 +56,15 @@ public record StandGrilleImportReport(
      * @param regles           rules the stand's schedule folds into (0 until the conversion ran)
      * @param exceptions       dated windows left over
      */
-    public record ImportedGrilleRow(int line, String label, String standId, ImportGrilleAction action, List<String> reasons,
-            int cellulesOuvertes, int regles, int exceptions, Integer effectifMin, Integer effectifMax) {
-    }
+    public record ImportedGrilleRow(
+            int line,
+            String label,
+            String standId,
+            ImportGrilleAction action,
+            List<String> reasons,
+            int cellulesOuvertes,
+            int regles,
+            int exceptions,
+            Integer effectifMin,
+            Integer effectifMax) {}
 }

@@ -7,7 +7,4 @@ package dev.sylvain.planning.scenario.dto;
  * an empty object ({@code decoupageAuto: {}}); the two historical fields are
  * still accepted so pre-#172 files import unchanged, but they are ignored.
  */
-public record DecoupageAutoDto(
-        String groupeSourceNom,
-        String groupeCibleNom) {
-}
+public record DecoupageAutoDto(String groupeSourceNom, String groupeCibleNom) {}

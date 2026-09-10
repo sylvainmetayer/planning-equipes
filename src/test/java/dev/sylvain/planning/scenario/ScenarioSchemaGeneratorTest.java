@@ -2,15 +2,13 @@ package dev.sylvain.planning.scenario;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Guards {@code docs/schema/scenario-schema.json} against drifting from the
@@ -47,12 +45,15 @@ class ScenarioSchemaGeneratorTest {
                 .as("le schéma publié doit exister")
                 .exists();
 
-        String attendu = new ObjectMapper().writerWithDefaultPrettyPrinter()
-                .writeValueAsString(ScenarioSchemaGenerator.generate()) + System.lineSeparator();
+        String attendu = new ObjectMapper()
+                        .writerWithDefaultPrettyPrinter()
+                        .writeValueAsString(ScenarioSchemaGenerator.generate())
+                + System.lineSeparator();
 
         assertThat(Files.readString(ScenarioSchemaGenerator.SCHEMA_PATH))
-                .as("%s est désynchronisé des DTO de scénario. "
-                        + "Régénérez-le avec ./mvnw process-classes -Pgenerate-schema puis committez-le.",
+                .as(
+                        "%s est désynchronisé des DTO de scénario. "
+                                + "Régénérez-le avec ./mvnw process-classes -Pgenerate-schema puis committez-le.",
                         ScenarioSchemaGenerator.SCHEMA_PATH)
                 .isEqualTo(attendu);
     }
@@ -65,11 +66,16 @@ class ScenarioSchemaGeneratorTest {
     @Test
     void leSchemaExposeLesChampsDeDecoupageParFamilles() {
         JsonNode decoupage = ScenarioSchemaGenerator.generate()
-                .path("$defs").path("ParametresDecoupageDto").path("properties");
+                .path("$defs")
+                .path("ParametresDecoupageDto")
+                .path("properties");
 
         assertThat(champs(decoupage))
-                .contains("nombreFamillesDecalage", "dureeDecalageMaxMinutes",
-                        "dureeChevauchementMinutes", "strategieCouverturePendantPause");
+                .contains(
+                        "nombreFamillesDecalage",
+                        "dureeDecalageMaxMinutes",
+                        "dureeChevauchementMinutes",
+                        "strategieCouverturePendantPause");
     }
 
     private static List<String> champs(JsonNode properties) {

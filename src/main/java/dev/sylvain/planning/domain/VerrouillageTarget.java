@@ -42,7 +42,8 @@ public sealed interface VerrouillageTarget {
 
         @Override
         public boolean couvre(PosteAffectation poste) {
-            return poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId());
+            return poste.getAnimateur() != null
+                    && animateurId.equals(poste.getAnimateur().getId());
         }
     }
 
@@ -70,7 +71,8 @@ public sealed interface VerrouillageTarget {
 
         @Override
         public boolean couvre(PosteAffectation poste) {
-            return poste.getCreneau() != null && Long.valueOf(creneauId).equals(poste.getCreneau().getId());
+            return poste.getCreneau() != null
+                    && Long.valueOf(creneauId).equals(poste.getCreneau().getId());
         }
     }
 
@@ -98,7 +100,8 @@ public sealed interface VerrouillageTarget {
 
         @Override
         public boolean couvre(PosteAffectation poste) {
-            return poste.getAnimateur() != null && poste.getCreneau() != null
+            return poste.getAnimateur() != null
+                    && poste.getCreneau() != null
                     && animateurId.equals(poste.getAnimateur().getId())
                     && Long.valueOf(creneauId).equals(poste.getCreneau().getId());
         }

@@ -2,15 +2,6 @@ package dev.sylvain.planning.service.referentiel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
@@ -19,6 +10,13 @@ import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link HoraireCompaction}: turning repeated dated windows back into the rules
@@ -37,8 +35,8 @@ class HoraireCompactionTest {
     private static List<Creneau> amplitudes(LocalTime heureFin) {
         List<Creneau> creneaux = new ArrayList<>();
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
-            creneaux.add(new Creneau((long) jour, jour + 1, PREMIER_JOUR.plusDays(jour), LocalTime.of(10, 0),
-                    heureFin));
+            creneaux.add(
+                    new Creneau((long) jour, jour + 1, PREMIER_JOUR.plusDays(jour), LocalTime.of(10, 0), heureFin));
         }
         return creneaux;
     }
@@ -65,10 +63,11 @@ class HoraireCompactionTest {
         HoraireStand regle = bourse.getHoraires().get(0);
         assertThat(regle.getMode()).isEqualTo(ModeHoraire.OUVERTURE);
         assertThat(regle.getJours()).isEqualTo(TypeJoursHoraire.TOUS);
-        assertThat(regle.getFenetres()).containsExactly(
-                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
-                // 20:00 is the day's closing time, so the end becomes open-ended.
-                new FenetreHoraire(LocalTime.of(14, 0), null));
+        assertThat(regle.getFenetres())
+                .containsExactly(
+                        new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
+                        // 20:00 is the day's closing time, so the end becomes open-ended.
+                        new FenetreHoraire(LocalTime.of(14, 0), null));
         assertThat(bourse.getOuvertures()).isEmpty();
     }
 
@@ -81,8 +80,9 @@ class HoraireCompactionTest {
     void leContournement2359DevientLaFermetureReelleEtEstSignale() {
         Stand stand = stand("SOIR");
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
-            stand.getOuvertures().add(new OuvertureStand(null, PREMIER_JOUR.plusDays(jour), LocalTime.of(14, 0),
-                    LocalTime.of(23, 59), null));
+            stand.getOuvertures()
+                    .add(new OuvertureStand(
+                            null, PREMIER_JOUR.plusDays(jour), LocalTime.of(14, 0), LocalTime.of(23, 59), null));
         }
 
         HoraireCompaction.RapportCompactage rapport =
@@ -110,8 +110,13 @@ class HoraireCompactionTest {
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
             LocalDate date = PREMIER_JOUR.plusDays(jour);
             boolean weekend = date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY;
-            stand.getOuvertures().add(new OuvertureStand(null, date,
-                    weekend ? LocalTime.of(10, 0) : LocalTime.of(14, 0), LocalTime.of(20, 0), null));
+            stand.getOuvertures()
+                    .add(new OuvertureStand(
+                            null,
+                            date,
+                            weekend ? LocalTime.of(10, 0) : LocalTime.of(14, 0),
+                            LocalTime.of(20, 0),
+                            null));
         }
 
         HoraireCompaction.compact(List.of(stand), amplitudes(LocalTime.of(20, 0)), true);
@@ -134,8 +139,9 @@ class HoraireCompactionTest {
     void sansCouvrirTousLesJoursAucuneRegleNeDevientTousLesJours() {
         Stand stand = stand("PARTIEL");
         for (int jour = 0; jour < 6; jour++) {
-            stand.getOuvertures().add(new OuvertureStand(null, PREMIER_JOUR.plusDays(jour), LocalTime.of(10, 0),
-                    LocalTime.of(12, 0), null));
+            stand.getOuvertures()
+                    .add(new OuvertureStand(
+                            null, PREMIER_JOUR.plusDays(jour), LocalTime.of(10, 0), LocalTime.of(12, 0), null));
         }
 
         HoraireCompaction.compact(List.of(stand), amplitudes(LocalTime.of(20, 0)), true);
@@ -158,13 +164,15 @@ class HoraireCompactionTest {
     void unMotifIsoleResteUneExceptionDatee() {
         Stand stand = stand("STAND-ARGENT");
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
-            stand.getIndisponibilites().add(new IndisponibiliteStand(null, PREMIER_JOUR.plusDays(jour),
-                    LocalTime.of(10, 0), LocalTime.of(20, 0), null));
+            stand.getIndisponibilites()
+                    .add(new IndisponibiliteStand(
+                            null, PREMIER_JOUR.plusDays(jour), LocalTime.of(10, 0), LocalTime.of(20, 0), null));
         }
         // One day open instead, unlike every other.
         stand.getIndisponibilites().removeIf(fermeture -> fermeture.getDate().equals(PREMIER_JOUR.plusDays(3)));
-        stand.getOuvertures().add(new OuvertureStand(null, PREMIER_JOUR.plusDays(3), LocalTime.of(14, 0),
-                LocalTime.of(18, 0), null));
+        stand.getOuvertures()
+                .add(new OuvertureStand(
+                        null, PREMIER_JOUR.plusDays(3), LocalTime.of(14, 0), LocalTime.of(18, 0), null));
 
         HoraireCompaction.compact(List.of(stand), amplitudes(LocalTime.of(20, 0)), true);
 
@@ -176,8 +184,8 @@ class HoraireCompactionTest {
     @Test
     void unStandSansMotifRepeteEstLaisseIntact() {
         Stand stand = stand("UNIQUE");
-        stand.getIndisponibilites().add(new IndisponibiliteStand(null, PREMIER_JOUR, LocalTime.of(14, 0),
-                LocalTime.of(16, 0), null));
+        stand.getIndisponibilites()
+                .add(new IndisponibiliteStand(null, PREMIER_JOUR, LocalTime.of(14, 0), LocalTime.of(16, 0), null));
 
         HoraireCompaction.RapportCompactage rapport =
                 HoraireCompaction.compact(List.of(stand), amplitudes(LocalTime.of(20, 0)), true);
@@ -190,11 +198,12 @@ class HoraireCompactionTest {
     @Test
     void unStandAyantDejaDesReglesEstIgnore() {
         Stand stand = stand("DEJA-REGLE");
-        stand.setHoraires(new ArrayList<>(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(14, 0), null)))));
+        stand.setHoraires(new ArrayList<>(
+                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null)))));
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
-            stand.getOuvertures().add(new OuvertureStand(null, PREMIER_JOUR.plusDays(jour), LocalTime.of(10, 0),
-                    LocalTime.of(12, 0), null));
+            stand.getOuvertures()
+                    .add(new OuvertureStand(
+                            null, PREMIER_JOUR.plusDays(jour), LocalTime.of(10, 0), LocalTime.of(12, 0), null));
         }
 
         HoraireCompaction.RapportCompactage rapport =
@@ -209,8 +218,9 @@ class HoraireCompactionTest {
     void unDryRunNeModifieRien() {
         Stand stand = stand("DRY-RUN");
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
-            stand.getOuvertures().add(new OuvertureStand(null, PREMIER_JOUR.plusDays(jour), LocalTime.of(14, 0),
-                    LocalTime.of(20, 0), null));
+            stand.getOuvertures()
+                    .add(new OuvertureStand(
+                            null, PREMIER_JOUR.plusDays(jour), LocalTime.of(14, 0), LocalTime.of(20, 0), null));
         }
 
         HoraireCompaction.RapportCompactage rapport =
@@ -229,21 +239,22 @@ class HoraireCompactionTest {
     @Test
     void lEcartEstNulEntreUnStandEtLuiMeme() {
         Stand stand = stand("MEME");
-        stand.getOuvertures().add(new OuvertureStand(null, PREMIER_JOUR, LocalTime.of(14, 0), LocalTime.of(18, 0),
-                null));
+        stand.getOuvertures()
+                .add(new OuvertureStand(null, PREMIER_JOUR, LocalTime.of(14, 0), LocalTime.of(18, 0), null));
 
-        assertThat(HoraireCompaction.maxGapMinutes(stand, stand, amplitudes(LocalTime.of(20, 0)))).isZero();
+        assertThat(HoraireCompaction.maxGapMinutes(stand, stand, amplitudes(LocalTime.of(20, 0))))
+                .isZero();
     }
 
     @Test
     void lEcartCompteLesMinutesDeDesaccord() {
         Stand ouvertToutLeTemps = stand("A");
         Stand ferme2h = stand("B");
-        ferme2h.getIndisponibilites().add(new IndisponibiliteStand(null, PREMIER_JOUR, LocalTime.of(14, 0),
-                LocalTime.of(16, 0), null));
+        ferme2h.getIndisponibilites()
+                .add(new IndisponibiliteStand(null, PREMIER_JOUR, LocalTime.of(14, 0), LocalTime.of(16, 0), null));
 
-        assertThat(HoraireCompaction.maxGapMinutes(ouvertToutLeTemps, ferme2h,
-                amplitudes(LocalTime.of(20, 0)))).isEqualTo(120);
+        assertThat(HoraireCompaction.maxGapMinutes(ouvertToutLeTemps, ferme2h, amplitudes(LocalTime.of(20, 0))))
+                .isEqualTo(120);
     }
 
     /**
@@ -258,16 +269,16 @@ class HoraireCompactionTest {
     void unPosteDUneMinuteHeriteDu2359NEmpechePasLeCompactage() {
         Stand stand = stand("ABSENT");
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
-            stand.getIndisponibilites().add(new IndisponibiliteStand(null, PREMIER_JOUR.plusDays(jour),
-                    LocalTime.of(10, 0), LocalTime.of(23, 59), null));
+            stand.getIndisponibilites()
+                    .add(new IndisponibiliteStand(
+                            null, PREMIER_JOUR.plusDays(jour), LocalTime.of(10, 0), LocalTime.of(23, 59), null));
         }
         List<Creneau> creneaux = amplitudes(LocalTime.MIDNIGHT);
 
         // Before: one open minute a day, at 23:59.
         assertThat(creneaux.get(0).segmentsOuvertsMinutes(stand)).containsExactly(new int[] {839, 840});
 
-        HoraireCompaction.RapportCompactage rapport =
-                HoraireCompaction.compact(List.of(stand), creneaux, true);
+        HoraireCompaction.RapportCompactage rapport = HoraireCompaction.compact(List.of(stand), creneaux, true);
 
         assertThat(rapport.standsCompactes()).isEqualTo(1);
         assertThat(rapport.stands().get(0).ecartMinutes()).isEqualTo(1);
@@ -298,8 +309,8 @@ class HoraireCompactionTest {
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
             LocalDate date = PREMIER_JOUR.plusDays(jour);
             Integer effectif = jour == 3 ? 6 : null;
-            stand.getOuvertures().add(new OuvertureStand(null, date, LocalTime.of(10, 0), LocalTime.of(20, 0),
-                    null, effectif));
+            stand.getOuvertures()
+                    .add(new OuvertureStand(null, date, LocalTime.of(10, 0), LocalTime.of(20, 0), null, effectif));
         }
 
         HoraireCompaction.RapportCompactage rapport =

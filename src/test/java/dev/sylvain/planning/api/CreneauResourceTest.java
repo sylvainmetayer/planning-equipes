@@ -7,21 +7,20 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.Map;
-import java.util.List;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -38,7 +37,12 @@ class CreneauResourceTest {
     PlanningPersistenceService persistence;
 
     private static int countCreneaux() {
-        return given().when().get("/api/creneaux").then().statusCode(200).extract().path("size()");
+        return given().when()
+                .get("/api/creneaux")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("size()");
     }
 
     /**
@@ -49,15 +53,15 @@ class CreneauResourceTest {
     void unCreneauSansHeureDeFinEstRefuseSansRienEcrire() {
         int avant = countCreneaux();
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "date":"2030-01-03",
                           "heureDebut":"18:00:00"
                         }
                         """)
-                .when().post("/api/creneaux")
+                .when()
+                .post("/api/creneaux")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("heure de fin"));
@@ -67,15 +71,15 @@ class CreneauResourceTest {
 
     @Test
     void unCreneauSansDateEstRefuse() {
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {
                           "heureDebut":"18:00:00",
                           "heureFin":"22:00:00"
                         }
                         """)
-                .when().post("/api/creneaux")
+                .when()
+                .post("/api/creneaux")
                 .then()
                 .statusCode(400);
     }
@@ -84,15 +88,15 @@ class CreneauResourceTest {
     void viderUnCreneauExistantParUnePutEstRefuse() {
         Object id = createCreneauNuit();
         try {
-            given()
-                    .contentType("application/json")
+            given().contentType("application/json")
                     .body("""
                             {
                               "heureDebut":"20:00:00",
                               "heureFin":"00:00:00"
                             }
                             """)
-                    .when().put("/api/creneaux/" + id)
+                    .when()
+                    .put("/api/creneaux/" + id)
                     .then()
                     .statusCode(400);
         } finally {
@@ -109,8 +113,8 @@ class CreneauResourceTest {
     void unCreneauDeNuitEstAccepteEtReluTelQuel() {
         Object id = createCreneauNuit();
         try {
-            given()
-                    .when().get("/api/creneaux")
+            given().when()
+                    .get("/api/creneaux")
                     .then()
                     .statusCode(200)
                     .body("find { it.id == " + id + " }.heureDebut", startsWith("20:00"))
@@ -135,8 +139,7 @@ class CreneauResourceTest {
     @Test
     void supprimerUnCreneauEmporteLesPostesQuiLOccupaient() {
         long creneauId = 9401L;
-        Creneau creneau = new Creneau(creneauId, 1, LocalDate.of(2030, 6, 1),
-                LocalTime.of(9, 0), LocalTime.of(12, 0));
+        Creneau creneau = new Creneau(creneauId, 1, LocalDate.of(2030, 6, 1), LocalTime.of(9, 0), LocalTime.of(12, 0));
         Stand stand = new Stand("CRN-S1", "Stand du test", Set.of(), 1, 1, false);
         Animateur animateur = new Animateur("CRN-A1", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         PosteAffectation poste = new PosteAffectation("CRN-P1", stand, creneau);
@@ -165,8 +168,7 @@ class CreneauResourceTest {
     }
 
     private static Object createCreneauNuit() {
-        return given()
-                .contentType("application/json")
+        return given().contentType("application/json")
                 .body("""
                         {
                           "date":"2030-01-04",
@@ -174,12 +176,14 @@ class CreneauResourceTest {
                           "heureFin":"00:00:00"
                         }
                         """)
-                .when().post("/api/creneaux")
+                .when()
+                .post("/api/creneaux")
                 .then()
                 .statusCode(200)
                 .body("creneau.id", notNullValue())
                 .body("avertissements", notNullValue())
-                .extract().path("creneau.id");
+                .extract()
+                .path("creneau.id");
     }
 
     /* ------------------------ The grid as a whole ------------------------ */
@@ -199,10 +203,10 @@ class CreneauResourceTest {
     void lApercuDUneRecurrenceNEcritRien() {
         int avant = countCreneaux();
 
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body(REGLE_SEMAINE)
-                .when().post("/api/creneaux/recurrence/apercu?mode=AMPLITUDES")
+                .when()
+                .post("/api/creneaux/recurrence/apercu?mode=AMPLITUDES")
                 .then()
                 .statusCode(200)
                 .body("nombreGeneres", equalTo(10))
@@ -217,22 +221,32 @@ class CreneauResourceTest {
     void uneRecurrenceAjouteSesCreneauxEtUneRepetitionEstSignaleeEnDoublon() {
         int avant = countCreneaux();
 
-        given().contentType("application/json").body(REGLE_SEMAINE)
-                .when().post("/api/creneaux/recurrence?mode=AMPLITUDES")
-                .then().statusCode(200)
+        given().contentType("application/json")
+                .body(REGLE_SEMAINE)
+                .when()
+                .post("/api/creneaux/recurrence?mode=AMPLITUDES")
+                .then()
+                .statusCode(200)
                 .body("nombreGeneres", equalTo(10))
                 .body("creneaux[0].id", notNullValue());
         assertThat(countCreneaux()).isEqualTo(avant + 10);
 
         // Added, never replaced: the same rule again doubles the rows, and the verdict says so.
-        given().contentType("application/json").body(REGLE_SEMAINE)
-                .when().post("/api/creneaux/recurrence?mode=AMPLITUDES")
-                .then().statusCode(200)
+        given().contentType("application/json")
+                .body(REGLE_SEMAINE)
+                .when()
+                .post("/api/creneaux/recurrence?mode=AMPLITUDES")
+                .then()
+                .statusCode(200)
                 .body("controle.anomalies.find { it.type == 'DOUBLON' }.severite", equalTo("ERREUR"));
 
         // Cleaned up so the other tests of the class keep their counts.
-        List<Integer> ids = given().when().get("/api/creneaux").then().extract()
-                .jsonPath().getList("findAll { it.date.startsWith('2031-03') }.id", Integer.class);
+        List<Integer> ids = given().when()
+                .get("/api/creneaux")
+                .then()
+                .extract()
+                .jsonPath()
+                .getList("findAll { it.date.startsWith('2031-03') }.id", Integer.class);
         for (Integer id : ids) {
             given().when().delete("/api/creneaux/" + id).then().statusCode(204);
         }
@@ -240,12 +254,12 @@ class CreneauResourceTest {
 
     @Test
     void uneRecurrenceMalFormeeEstRefusee() {
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body("""
                         {"jours":"DATES","dates":[],"fenetres":[{"heureDebut":"09:00:00","heureFin":"12:00:00"}]}
                         """)
-                .when().post("/api/creneaux/recurrence/apercu")
+                .when()
+                .post("/api/creneaux/recurrence/apercu")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("DATES"));
@@ -255,28 +269,44 @@ class CreneauResourceTest {
     @Test
     void leControleLitLeModeDeclareDeLEditionQuandLAppelNEnNommePas() {
         try {
-            io.restassured.path.json.JsonPath parametres = given().when().get("/api/parametres-decoupage")
-                    .then().statusCode(200).extract().jsonPath();
+            io.restassured.path.json.JsonPath parametres = given().when()
+                    .get("/api/parametres-decoupage")
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .jsonPath();
             assertThat(parametres.getString("modeGrille")).isNotBlank();
             // Its own write: the mode is not a field of the slicing payload.
-            given().contentType("application/json").body(Map.of("modeGrille", "VACATIONS"))
-                    .when().put("/api/parametres-decoupage/mode-grille")
-                    .then().statusCode(200).body("modeGrille", equalTo("VACATIONS"));
+            given().contentType("application/json")
+                    .body(Map.of("modeGrille", "VACATIONS"))
+                    .when()
+                    .put("/api/parametres-decoupage/mode-grille")
+                    .then()
+                    .statusCode(200)
+                    .body("modeGrille", equalTo("VACATIONS"));
 
-            given().when().get("/api/creneaux/controle")
-                    .then().statusCode(200)
+            given().when()
+                    .get("/api/creneaux/controle")
+                    .then()
+                    .statusCode(200)
                     .body("mode", equalTo("VACATIONS"))
                     .body("nombreCreneaux", notNullValue());
-            given().when().get("/api/creneaux/controle?mode=AMPLITUDES")
-                    .then().statusCode(200)
+            given().when()
+                    .get("/api/creneaux/controle?mode=AMPLITUDES")
+                    .then()
+                    .statusCode(200)
                     .body("mode", equalTo("AMPLITUDES"));
             // A mistyped mode is a bad request, not a missing page.
             given().when().get("/api/creneaux/controle?mode=VACATION").then().statusCode(400);
         } finally {
             // Restored whatever the assertions did: the edition is shared with
             // every other test of the class.
-            given().contentType("application/json").body(Map.of("modeGrille", "AMPLITUDES"))
-                    .when().put("/api/parametres-decoupage/mode-grille").then().statusCode(200);
+            given().contentType("application/json")
+                    .body(Map.of("modeGrille", "AMPLITUDES"))
+                    .when()
+                    .put("/api/parametres-decoupage/mode-grille")
+                    .then()
+                    .statusCode(200);
         }
     }
 
@@ -284,26 +314,45 @@ class CreneauResourceTest {
     @Test
     void enregistrerLesParametresDeDecoupageNeTouchePasAuModeDeclare() {
         try {
-            given().contentType("application/json").body(Map.of("modeGrille", "VACATIONS"))
-                    .when().put("/api/parametres-decoupage/mode-grille").then().statusCode(200);
-            Map<String, Object> anciens = given().when().get("/api/parametres-decoupage")
-                    .then().statusCode(200).extract().jsonPath().getMap("$");
+            given().contentType("application/json")
+                    .body(Map.of("modeGrille", "VACATIONS"))
+                    .when()
+                    .put("/api/parametres-decoupage/mode-grille")
+                    .then()
+                    .statusCode(200);
+            Map<String, Object> anciens = given().when()
+                    .get("/api/parametres-decoupage")
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .jsonPath()
+                    .getMap("$");
             Map<String, Object> perimes = new java.util.LinkedHashMap<>(anciens);
             perimes.put("modeGrille", "AMPLITUDES");
 
-            given().contentType("application/json").body(perimes)
-                    .when().put("/api/parametres-decoupage")
-                    .then().statusCode(200).body("modeGrille", equalTo("VACATIONS"));
+            given().contentType("application/json")
+                    .body(perimes)
+                    .when()
+                    .put("/api/parametres-decoupage")
+                    .then()
+                    .statusCode(200)
+                    .body("modeGrille", equalTo("VACATIONS"));
         } finally {
-            given().contentType("application/json").body(Map.of("modeGrille", "AMPLITUDES"))
-                    .when().put("/api/parametres-decoupage/mode-grille").then().statusCode(200);
+            given().contentType("application/json")
+                    .body(Map.of("modeGrille", "AMPLITUDES"))
+                    .when()
+                    .put("/api/parametres-decoupage/mode-grille")
+                    .then()
+                    .statusCode(200);
         }
     }
 
     @Test
     void leDiagnosticDecritLaGrilleSansTrancher() {
-        given().when().get("/api/creneaux/diagnostic")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/creneaux/diagnostic")
+                .then()
+                .statusCode(200)
                 .body("nombreCreneaux", notNullValue())
                 .body("explication", notNullValue());
     }
@@ -321,17 +370,24 @@ class CreneauResourceTest {
                          "reserveMajeurs":false,
                          "horaires":[{"mode":"OUVERTURE","jours":"TOUS","fenetres":[%s]}]}
                         """.formatted(id, id, fenetres))
-                .when().post("/api/stands").then().statusCode(200);
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200);
     }
 
     @Test
     void lApercuDeLaDerivationNEcritRienEtNommeLesCoupures() {
-        standOuvertSur("DERIV-A", "{\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"},{\"heureDebut\":\"14:00:00\"}");
+        standOuvertSur(
+                "DERIV-A", "{\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"},{\"heureDebut\":\"14:00:00\"}");
         int avant = countCreneaux();
 
-        given().contentType("application/json").body(DERIVATION)
-                .when().post("/api/creneaux/derivation/apercu")
-                .then().statusCode(200)
+        given().contentType("application/json")
+                .body(DERIVATION)
+                .when()
+                .post("/api/creneaux/derivation/apercu")
+                .then()
+                .statusCode(200)
                 .body("nombreGeneres", equalTo(4))
                 .body("creneaux[0].heureDebut", startsWith("10:00"))
                 .body("creneaux[1].heureFin", startsWith("20:00"))
@@ -348,30 +404,39 @@ class CreneauResourceTest {
         standOuvertSur("DERIV-B", "{\"heureDebut\":\"10:00:00\"}");
         int avant = countCreneaux();
 
-        given().contentType("application/json").body(DERIVATION)
-                .when().post("/api/creneaux/derivation")
-                .then().statusCode(200)
+        given().contentType("application/json")
+                .body(DERIVATION)
+                .when()
+                .post("/api/creneaux/derivation")
+                .then()
+                .statusCode(200)
                 .body("nombreGeneres", equalTo(2));
         assertThat(countCreneaux()).isEqualTo(avant + 2);
 
         given().contentType("application/json")
                 .body(DERIVATION.replace("\"remplacer\":false", "\"remplacer\":true"))
-                .when().post("/api/creneaux/derivation")
-                .then().statusCode(200);
+                .when()
+                .post("/api/creneaux/derivation")
+                .then()
+                .statusCode(200);
         // The whole grid is now the derived one: two days, one créneau each.
         assertThat(countCreneaux()).isEqualTo(2);
 
         given().when().delete("/api/stands/DERIV-B").then().statusCode(204);
-        for (Integer id : given().when().get("/api/creneaux").then().extract().jsonPath().getList("id", Integer.class)) {
+        for (Integer id :
+                given().when().get("/api/creneaux").then().extract().jsonPath().getList("id", Integer.class)) {
             given().when().delete("/api/creneaux/" + id).then().statusCode(204);
         }
     }
 
     @Test
     void sansAucuneFenetreLaDerivationEstRefusee() {
-        given().contentType("application/json").body(DERIVATION)
-                .when().post("/api/creneaux/derivation")
-                .then().statusCode(400)
+        given().contentType("application/json")
+                .body(DERIVATION)
+                .when()
+                .post("/api/creneaux/derivation")
+                .then()
+                .statusCode(400)
                 .body("message", containsString("rien à dériver"));
     }
 }

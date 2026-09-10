@@ -8,19 +8,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
@@ -33,6 +20,17 @@ import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * End-to-end self-service declaration (issue #291) against the real PostgreSQL
@@ -70,10 +68,12 @@ class DeclarationDisponibiliteFlowTest {
         removeFixture();
         referenceData.createTypologie(new TypologieItem("DEC-T1", "Jeux de plateau"));
         referenceData.createTypologie(new TypologieItem("DEC-T2", "Jeux d'ambiance"));
-        creneauxCrees.add(referenceData.createCreneau(
-                new Creneau(null, 1, JOUR_UN, LocalTime.of(10, 0), LocalTime.of(12, 0))).getId());
-        creneauxCrees.add(referenceData.createCreneau(
-                new Creneau(null, 2, JOUR_DEUX, LocalTime.of(10, 0), LocalTime.of(12, 0))).getId());
+        creneauxCrees.add(referenceData
+                .createCreneau(new Creneau(null, 1, JOUR_UN, LocalTime.of(10, 0), LocalTime.of(12, 0)))
+                .getId());
+        creneauxCrees.add(referenceData
+                .createCreneau(new Creneau(null, 2, JOUR_DEUX, LocalTime.of(10, 0), LocalTime.of(12, 0)))
+                .getId());
 
         Animateur alice = new Animateur("DEC-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         alice.setEmail("dec-alice@example.org");
@@ -81,9 +81,8 @@ class DeclarationDisponibiliteFlowTest {
 
         mailbox.clear();
         session = EspaceSessions.open(mailbox, tokenOf("DEC-A"), "dec-alice@example.org");
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-                .addCookie("planning-espace", session)
-                .build();
+        RestAssured.requestSpecification =
+                new RequestSpecBuilder().addCookie("planning-espace", session).build();
         closeWindow();
     }
 
@@ -98,7 +97,8 @@ class DeclarationDisponibiliteFlowTest {
     void horsFenetreLaDeclarationEstRefuseeEtRienNEstEnregistre() {
         // Nobody ever opened the window: it is closed, unlike the foire au
         // planning, which is open until somebody closes it.
-        given().when().get("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
                 .then()
                 .statusCode(200)
                 .body("collecteOuverte", is(false))
@@ -108,7 +108,8 @@ class DeclarationDisponibiliteFlowTest {
 
         given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[\"2026-07-10\"],\"souhaits\":[\"DEC-T1\"]}")
-                .when().post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
                 .then()
                 .statusCode(400);
 
@@ -123,7 +124,8 @@ class DeclarationDisponibiliteFlowTest {
 
         given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[],\"souhaits\":[]}")
-                .when().post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
                 .then()
                 .statusCode(400);
     }
@@ -135,7 +137,8 @@ class DeclarationDisponibiliteFlowTest {
         given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[\"2026-07-10\"],\"souhaits\":[\"DEC-T1\"],"
                         + "\"commentaire\":\"je pars dimanche midi\"}")
-                .when().post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
                 .then()
                 .statusCode(200)
                 .body("enAttente.statut", equalTo("EN_ATTENTE"))
@@ -163,7 +166,8 @@ class DeclarationDisponibiliteFlowTest {
         // One row, not two: the admin never arbitrates two contradictory
         // versions of the same person.
         assertThat(storedDeclarations()).hasSize(1);
-        given().when().get("/api/disponibilites")
+        given().when()
+                .get("/api/disponibilites")
                 .then()
                 .statusCode(200)
                 .body("find { it.animateurId == 'DEC-A' }.id", equalTo(secondeId))
@@ -181,7 +185,8 @@ class DeclarationDisponibiliteFlowTest {
         Instant avantApplication = changeTracker.lastModifiedAt();
 
         given().contentType(ContentType.JSON)
-                .when().post("/api/disponibilites/" + id + "/application")
+                .when()
+                .post("/api/disponibilites/" + id + "/application")
                 .then()
                 .statusCode(200)
                 .body("statut", equalTo("APPLIQUEE"));
@@ -195,8 +200,10 @@ class DeclarationDisponibiliteFlowTest {
         assertThat(changeTracker.lastModifiedAt()).isAfter(avantApplication);
 
         // A decided declaration cannot be decided twice.
-        given().contentType(ContentType.JSON).body("{}")
-                .when().post("/api/disponibilites/" + id + "/refus")
+        given().contentType(ContentType.JSON)
+                .body("{}")
+                .when()
+                .post("/api/disponibilites/" + id + "/refus")
                 .then()
                 .statusCode(400);
     }
@@ -208,7 +215,8 @@ class DeclarationDisponibiliteFlowTest {
 
         given().contentType(ContentType.JSON)
                 .body("{\"commentaire\":\"le 10 est le jour du montage\"}")
-                .when().post("/api/disponibilites/" + id + "/refus")
+                .when()
+                .post("/api/disponibilites/" + id + "/refus")
                 .then()
                 .statusCode(200)
                 .body("statut", equalTo("REFUSEE"))
@@ -220,7 +228,8 @@ class DeclarationDisponibiliteFlowTest {
         // through: the refused one moved to the history.
         String corrigee = declarer("[\"2026-07-11\"]", "[]");
         assertThat(corrigee).isNotEqualTo(id);
-        given().when().get("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
                 .then()
                 .statusCode(200)
                 .body("enAttente.id", equalTo(corrigee))
@@ -233,13 +242,15 @@ class DeclarationDisponibiliteFlowTest {
 
         given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[\"2030-01-01\"],\"souhaits\":[]}")
-                .when().post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
                 .then()
                 .statusCode(400);
 
         given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[],\"souhaits\":[\"DEC-INCONNUE\"]}")
-                .when().post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
                 .then()
                 .statusCode(400);
 
@@ -253,7 +264,8 @@ class DeclarationDisponibiliteFlowTest {
 
         given().contentType(ContentType.JSON)
                 .body("{\"collecteOuverte\":true,\"prevenirAnimateurs\":true}")
-                .when().put("/api/disponibilites/configuration")
+                .when()
+                .put("/api/disponibilites/configuration")
                 .then()
                 .statusCode(200)
                 .body("collecteOuverte", is(true))
@@ -262,8 +274,8 @@ class DeclarationDisponibiliteFlowTest {
                 .body("invitation.envoyes", greaterThanOrEqualTo(1));
 
         assertThat(mailsTo("dec-alice@example.org"))
-                .anySatisfy(mail -> assertThat(mail.getText()).contains("/animateur/")
-                        .contains("/disponibilites"));
+                .anySatisfy(mail ->
+                        assertThat(mail.getText()).contains("/animateur/").contains("/disponibilites"));
     }
 
     @Test
@@ -271,16 +283,21 @@ class DeclarationDisponibiliteFlowTest {
         openWindow(null, null, false);
         String id = declarer("[\"2026-07-10\"]", "[\"DEC-T1\"]");
 
-        given().contentType(ContentType.JSON).body("{\"commentaire\":\"pas ce jour-là\"}")
-                .when().post("/api/disponibilites/" + id + "/refus")
-                .then().statusCode(200);
+        given().contentType(ContentType.JSON)
+                .body("{\"commentaire\":\"pas ce jour-là\"}")
+                .when()
+                .post("/api/disponibilites/" + id + "/refus")
+                .then()
+                .statusCode(200);
 
         // An admin applying the very declaration another just refused: the
         // decision is claimed before the fiche is written, so this is a plain
         // refusal — not a write followed by « déjà traitée ».
         given().contentType(ContentType.JSON)
-                .when().post("/api/disponibilites/" + id + "/application")
-                .then().statusCode(400);
+                .when()
+                .post("/api/disponibilites/" + id + "/application")
+                .then()
+                .statusCode(400);
 
         assertThat(animateur("DEC-A").getJoursIndisponibles())
                 .as("a refused declaration must never have touched the fiche")
@@ -301,10 +318,20 @@ class DeclarationDisponibiliteFlowTest {
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try {
             List<Future<Integer>> envois = pool.invokeAll(List.of(
-                    () -> given().contentType(ContentType.JSON).body(corps)
-                            .when().post(url).then().extract().statusCode(),
-                    () -> given().contentType(ContentType.JSON).body(corps)
-                            .when().post(url).then().extract().statusCode()));
+                    () -> given().contentType(ContentType.JSON)
+                            .body(corps)
+                            .when()
+                            .post(url)
+                            .then()
+                            .extract()
+                            .statusCode(),
+                    () -> given().contentType(ContentType.JSON)
+                            .body(corps)
+                            .when()
+                            .post(url)
+                            .then()
+                            .extract()
+                            .statusCode()));
             for (Future<Integer> envoi : envois) {
                 assertThat(envoi.get()).as("neither submission may fail").isEqualTo(200);
             }
@@ -320,10 +347,12 @@ class DeclarationDisponibiliteFlowTest {
     private String declarer(String jours, String souhaits) {
         return given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":" + jours + ",\"souhaits\":" + souhaits + "}")
-                .when().post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
                 .then()
                 .statusCode(200)
-                .extract().path("enAttente.id");
+                .extract()
+                .path("enAttente.id");
     }
 
     private void openWindow(LocalDate debut, LocalDate fin, boolean prevenir) {
@@ -332,7 +361,8 @@ class DeclarationDisponibiliteFlowTest {
                         + (debut == null ? "" : ",\"debut\":\"" + debut + "\"")
                         + (fin == null ? "" : ",\"fin\":\"" + fin + "\"")
                         + ",\"prevenirAnimateurs\":" + prevenir + "}")
-                .when().put("/api/disponibilites/configuration")
+                .when()
+                .put("/api/disponibilites/configuration")
                 .then()
                 .statusCode(200);
         mailbox.clear();
@@ -341,16 +371,20 @@ class DeclarationDisponibiliteFlowTest {
     private static void closeWindow() {
         given().contentType(ContentType.JSON)
                 .body("{\"collecteOuverte\":false}")
-                .when().put("/api/disponibilites/configuration")
+                .when()
+                .put("/api/disponibilites/configuration")
                 .then()
                 .statusCode(200);
     }
 
     /** Only Alice's rows: the suite shares one database with every other class. */
     private List<String> storedDeclarations() {
-        return given().when().get("/api/disponibilites")
-                .then().statusCode(200)
-                .extract().jsonPath()
+        return given().when()
+                .get("/api/disponibilites")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
                 .getList("findAll { it.animateurId == 'DEC-A' }.id", String.class);
     }
 

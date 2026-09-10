@@ -44,15 +44,14 @@ public class OuvertureStand extends FenetreDateeStand {
     /** Seats to fill on this window; {@code null} = inherit {@link Stand#getEffectifMin()}. */
     private Integer effectif;
 
-    public OuvertureStand() {
-    }
+    public OuvertureStand() {}
 
     public OuvertureStand(Long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin, String motif) {
         this(id, date, heureDebut, heureFin, motif, null);
     }
 
-    public OuvertureStand(Long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin, String motif,
-            Integer effectif) {
+    public OuvertureStand(
+            Long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin, String motif, Integer effectif) {
         super(id, date, heureDebut, heureFin, motif);
         this.effectif = effectif;
     }

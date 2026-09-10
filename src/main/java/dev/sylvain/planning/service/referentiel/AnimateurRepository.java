@@ -1,5 +1,14 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.NaturalOrder;
+import dev.sylvain.planning.service.TokenOwner;
+import dev.sylvain.planning.service.WriteStamp;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,18 +21,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.NiveauCompetence;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.NaturalOrder;
-import dev.sylvain.planning.service.TokenOwner;
-import dev.sylvain.planning.service.WriteStamp;
 
 /**
  * Animateur rows, their competences, their off-days and their wishes — plus
@@ -46,8 +44,7 @@ public class AnimateurRepository {
     public List<Animateur> listAnimateurs() {
         Map<String, Animateur> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT id, prenom, nom, date_naissance, manager, email, access_token, modifie_le
                     FROM animateur
                     WHERE edition_id = ?
@@ -62,24 +59,26 @@ public class AnimateurRepository {
                             rs.getBoolean("manager"));
                     animateur.setEmail(rs.getString("email"));
                     animateur.setAccessToken(rs.getString("access_token"));
-                    animateur.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
+                    animateur.setModifieLe(
+                            rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                     byId.put(animateur.getId(), animateur);
                 }
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "SELECT animateur_id, typologie, niveau FROM animateur_competence WHERE edition_id = ?");
+            try (PreparedStatement ps = scope.prepareScoped(
+                            connection,
+                            "SELECT animateur_id, typologie, niveau FROM animateur_competence WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Animateur animateur = byId.get(rs.getString("animateur_id"));
                     if (animateur != null) {
-                        animateur.getCompetences().put(
-                                rs.getString("typologie"),
-                                NiveauCompetence.valueOf(rs.getString("niveau")));
+                        animateur
+                                .getCompetences()
+                                .put(rs.getString("typologie"), NiveauCompetence.valueOf(rs.getString("niveau")));
                     }
                 }
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "SELECT animateur_id, jour FROM animateur_jour_indispo WHERE edition_id = ?");
+            try (PreparedStatement ps = scope.prepareScoped(
+                            connection, "SELECT animateur_id, jour FROM animateur_jour_indispo WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Animateur animateur = byId.get(rs.getString("animateur_id"));
@@ -88,8 +87,8 @@ public class AnimateurRepository {
                     }
                 }
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "SELECT animateur_id, typologie FROM animateur_souhait WHERE edition_id = ?");
+            try (PreparedStatement ps = scope.prepareScoped(
+                            connection, "SELECT animateur_id, typologie FROM animateur_souhait WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Animateur animateur = byId.get(rs.getString("animateur_id"));
@@ -102,7 +101,8 @@ public class AnimateurRepository {
             // holding the ninja typologie is what makes an animateur dispatchable
             // on any stand, so the flag is derived here once competences are known.
             String typologieNinja = null;
-            try (PreparedStatement ps = scope.prepareScoped(connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
+            try (PreparedStatement ps = scope.prepareScoped(
+                            connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
                     ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     typologieNinja = rs.getString("id");
@@ -171,13 +171,14 @@ public class AnimateurRepository {
 
     /** The same delete, on a caller's connection — see {@link #importAnimateurs}. */
     private void deleteAnimateurTx(Connection connection, String id) throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(
+                connection,
                 "UPDATE poste_affectation SET animateur_id = NULL WHERE edition_id = ? AND animateur_id = ?")) {
             ps.setString(2, id);
             ps.executeUpdate();
         }
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                "DELETE FROM animateur WHERE edition_id = ? AND id = ?")) {
+        try (PreparedStatement ps =
+                scope.prepareScoped(connection, "DELETE FROM animateur WHERE edition_id = ? AND id = ?")) {
             ps.setString(2, id);
             ps.executeUpdate();
         }
@@ -218,8 +219,7 @@ public class AnimateurRepository {
      */
     public String regenerateAnimateurToken(String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         UPDATE animateur
                         SET access_token = gen_random_uuid()::text
                         WHERE edition_id = ? AND id = ?
@@ -243,8 +243,7 @@ public class AnimateurRepository {
      */
     public String regenerateAbonnementToken(String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         UPDATE animateur
                         SET abonnement_token = gen_random_uuid()::text
                         WHERE edition_id = ? AND id = ?
@@ -261,8 +260,8 @@ public class AnimateurRepository {
     /** The animateur's current ICS subscription token, {@code null} when unknown. */
     public String abonnementToken(String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        "SELECT abonnement_token FROM animateur WHERE edition_id = ? AND id = ?")) {
+                PreparedStatement ps = scope.prepareScoped(
+                        connection, "SELECT abonnement_token FROM animateur WHERE edition_id = ? AND id = ?")) {
             ps.setString(2, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getString(1) : null;
@@ -284,8 +283,8 @@ public class AnimateurRepository {
             return false;
         }
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(
-                        "SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1")) {
+                PreparedStatement ps =
+                        connection.prepareStatement("SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1")) {
             ps.setString(1, email.trim());
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -315,8 +314,7 @@ public class AnimateurRepository {
             ps.setString(1, token);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next()
-                        ? new TokenOwner(rs.getString("edition_id"), rs.getString("id"),
-                                rs.getString("email"))
+                        ? new TokenOwner(rs.getString("edition_id"), rs.getString("id"), rs.getString("email"))
                         : null;
             }
         } catch (SQLException e) {
@@ -344,9 +342,7 @@ public class AnimateurRepository {
                         "SELECT edition_id, id FROM animateur WHERE abonnement_token = ?")) {
             ps.setString(1, token);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next()
-                        ? new TokenOwner(rs.getString("edition_id"), rs.getString("id"), null)
-                        : null;
+                return rs.next() ? new TokenOwner(rs.getString("edition_id"), rs.getString("id"), null) : null;
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to resolve a subscription token", e);
@@ -377,22 +373,20 @@ public class AnimateurRepository {
         upsertAnimateur(connection, animateur, conserverEmailSiAbsent, false);
     }
 
-    void upsertAnimateur(Connection connection, Animateur animateur, boolean conserverEmailSiAbsent,
-            boolean failIfPresent) throws SQLException {
+    void upsertAnimateur(
+            Connection connection, Animateur animateur, boolean conserverEmailSiAbsent, boolean failIfPresent)
+            throws SQLException {
         // Neither token is listed: a fresh row gets the database default, an
         // existing row keeps both. Rotation only happens through
         // regenerateAnimateurToken and regenerateAbonnementToken.
-        String miseAJourEmail = conserverEmailSiAbsent
-                ? "email = COALESCE(EXCLUDED.email, animateur.email)"
-                : "email = EXCLUDED.email";
-        try (PreparedStatement ps = scope.prepareScoped(connection,
-                """
+        String miseAJourEmail =
+                conserverEmailSiAbsent ? "email = COALESCE(EXCLUDED.email, animateur.email)" : "email = EXCLUDED.email";
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager, email)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
                 DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, date_naissance = EXCLUDED.date_naissance,
-                manager = EXCLUDED.manager, modifie_le = now(), """
-                        + miseAJourEmail + "\n" + """
+                manager = EXCLUDED.manager, modifie_le = now(), """ + miseAJourEmail + "\n" + """
                 WHERE CAST(? AS boolean)
                 AND (CAST(? AS timestamptz) IS NULL
                      OR date_trunc('milliseconds', animateur.modifie_le)
@@ -411,17 +405,17 @@ public class AnimateurRepository {
             }
             animateur.setModifieLe(ecrit);
         }
-        try (PreparedStatement del = scope.prepareScoped(connection,
-                "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?")) {
+        try (PreparedStatement del = scope.prepareScoped(
+                connection, "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?")) {
             del.setString(2, animateur.getId());
             del.executeUpdate();
         }
         if (animateur.getCompetences() != null && !animateur.getCompetences().isEmpty()) {
-            try (PreparedStatement ins = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO animateur_competence (edition_id, animateur_id, typologie, niveau)
                     VALUES (?, ?, ?, ?)""")) {
-                for (Map.Entry<String, NiveauCompetence> entry : animateur.getCompetences().entrySet()) {
+                for (Map.Entry<String, NiveauCompetence> entry :
+                        animateur.getCompetences().entrySet()) {
                     ins.setString(2, animateur.getId());
                     ins.setString(3, entry.getKey());
                     ins.setString(4, entry.getValue().name());
@@ -430,13 +424,15 @@ public class AnimateurRepository {
                 ins.executeBatch();
             }
         }
-        try (PreparedStatement del = scope.prepareScoped(connection,
-                "DELETE FROM animateur_jour_indispo WHERE edition_id = ? AND animateur_id = ?")) {
+        try (PreparedStatement del = scope.prepareScoped(
+                connection, "DELETE FROM animateur_jour_indispo WHERE edition_id = ? AND animateur_id = ?")) {
             del.setString(2, animateur.getId());
             del.executeUpdate();
         }
-        if (animateur.getJoursIndisponibles() != null && !animateur.getJoursIndisponibles().isEmpty()) {
-            try (PreparedStatement ins = scope.prepareScoped(connection,
+        if (animateur.getJoursIndisponibles() != null
+                && !animateur.getJoursIndisponibles().isEmpty()) {
+            try (PreparedStatement ins = scope.prepareScoped(
+                    connection,
                     "INSERT INTO animateur_jour_indispo (edition_id, animateur_id, jour) VALUES (?, ?, ?)")) {
                 for (LocalDate jour : animateur.getJoursIndisponibles()) {
                     ins.setString(2, animateur.getId());
@@ -446,13 +442,14 @@ public class AnimateurRepository {
                 ins.executeBatch();
             }
         }
-        try (PreparedStatement del = scope.prepareScoped(connection,
-                "DELETE FROM animateur_souhait WHERE edition_id = ? AND animateur_id = ?")) {
+        try (PreparedStatement del = scope.prepareScoped(
+                connection, "DELETE FROM animateur_souhait WHERE edition_id = ? AND animateur_id = ?")) {
             del.setString(2, animateur.getId());
             del.executeUpdate();
         }
         if (animateur.getSouhaits() != null && !animateur.getSouhaits().isEmpty()) {
-            try (PreparedStatement ins = scope.prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(
+                    connection,
                     "INSERT INTO animateur_souhait (edition_id, animateur_id, typologie) VALUES (?, ?, ?)")) {
                 for (String typologie : animateur.getSouhaits()) {
                     ins.setString(2, animateur.getId());

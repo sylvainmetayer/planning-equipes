@@ -8,18 +8,16 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.config.DevMode;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Freezing the server's notion of today (issue #297), and the rule that keeps
@@ -52,8 +50,12 @@ class DateJourJResourceTest {
     @AfterEach
     void handTheClockBack() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType("application/json").body("{\"dateDuJour\":null}")
-                .when().put("/api/debug/date-du-jour").then().statusCode(200);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":null}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200);
         given().when().post("/api/planning/reset").then().statusCode(200);
     }
 
@@ -66,13 +68,18 @@ class DateJourJResourceTest {
      */
     @Test
     void aServerOutsideDevModeRefusesToFreezeTheDate() {
-        given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
-                .when().put("/api/debug/date-du-jour")
-                .then().statusCode(400)
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(400)
                 .body("message", containsString("développement"));
 
-        given().when().get("/api/debug/date-du-jour")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200)
                 .body("dateDuJour", nullValue())
                 .body("modifiable", equalTo(false));
     }
@@ -84,17 +91,19 @@ class DateJourJResourceTest {
      */
     @Test
     void aServerOutsideDevModeRefusesToClearItEither() {
-        given().contentType("application/json").body("{\"dateDuJour\":null}")
-                .when().put("/api/debug/date-du-jour")
-                .then().statusCode(400);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":null}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(400);
     }
 
     @Test
     void devModeAdvertisesThatTheFieldMayBeUsed() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
 
-        given().when().get("/api/debug/date-du-jour")
-                .then().statusCode(200).body("modifiable", equalTo(true));
+        given().when().get("/api/debug/date-du-jour").then().statusCode(200).body("modifiable", equalTo(true));
     }
 
     /* ------------------------------ The setting ---------------------------- */
@@ -103,36 +112,50 @@ class DateJourJResourceTest {
     void theFrozenDateIsStoredAndReadBack() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
 
-        given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
-                .when().put("/api/debug/date-du-jour")
-                .then().statusCode(200).body("dateDuJour", equalTo(JOUR));
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200)
+                .body("dateDuJour", equalTo(JOUR));
 
-        given().when().get("/api/debug/date-du-jour")
-                .then().statusCode(200).body("dateDuJour", equalTo(JOUR));
+        given().when().get("/api/debug/date-du-jour").then().statusCode(200).body("dateDuJour", equalTo(JOUR));
     }
 
     /** The empty field is how the clock is handed back, so it cannot be an error. */
     @Test
     void anEmptyValueHandsTheRealClockBack() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
-                .when().put("/api/debug/date-du-jour").then().statusCode(200);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200);
 
-        given().contentType("application/json").body("{\"dateDuJour\":\"\"}")
-                .when().put("/api/debug/date-du-jour")
-                .then().statusCode(200).body("dateDuJour", nullValue());
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200)
+                .body("dateDuJour", nullValue());
 
-        given().when().get("/api/debug/date-du-jour")
-                .then().statusCode(200).body("dateDuJour", nullValue());
+        given().when().get("/api/debug/date-du-jour").then().statusCode(200).body("dateDuJour", nullValue());
     }
 
     @Test
     void anUnreadableDateIsA400() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
 
-        given().contentType("application/json").body("{\"dateDuJour\":\"le 8 juillet\"}")
-                .when().put("/api/debug/date-du-jour")
-                .then().statusCode(400).body("message", notNullValue());
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"le 8 juillet\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(400)
+                .body("message", notNullValue());
     }
 
     /**
@@ -153,21 +176,30 @@ class DateJourJResourceTest {
         solveScenario();
         // Frozen the way a developer would, on a machine allowed to.
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
-                .when().put("/api/debug/date-du-jour").then().statusCode(200);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200);
 
         // Same database, server that is not in development mode.
         QuarkusMock.installMockForType(new DevMode(), DevMode.class);
 
-        given().when().get("/api/debug/date-du-jour")
-                .then().statusCode(200)
+        given().when()
+                .get("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200)
                 .body("dateDuJour", nullValue())
                 .body("modifiable", equalTo(false));
-        LocalDate lue = LocalDate.parse(
-                given().when().get("/api/jour-j").then().statusCode(200)
-                        .extract().jsonPath().getString("date"));
-        assertThat(lue).as("the machine's date, not the one the dump carried")
-                .isNotEqualTo(LocalDate.parse(JOUR));
+        LocalDate lue = LocalDate.parse(given().when()
+                .get("/api/jour-j")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getString("date"));
+        assertThat(lue).as("the machine's date, not the one the dump carried").isNotEqualTo(LocalDate.parse(JOUR));
         assertThat(lue).isBetween(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1));
     }
 
@@ -182,11 +214,19 @@ class DateJourJResourceTest {
     void theFrozenDateIsWhatTheEventDayScreenReads() {
         solveScenario();
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
-                .when().put("/api/debug/date-du-jour").then().statusCode(200);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200);
 
-        JsonPath etat = given().when().get("/api/jour-j")
-                .then().statusCode(200).extract().jsonPath();
+        JsonPath etat = given().when()
+                .get("/api/jour-j")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
 
         assertThat(etat.getString("date")).isEqualTo(JOUR);
         assertThat(etat.getInt("creneauxDuJour")).isEqualTo(2);
@@ -201,27 +241,42 @@ class DateJourJResourceTest {
     void theFrozenDateDrivesWhichTimeslotsCountAsRemaining() {
         solveScenario();
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
-                .when().put("/api/debug/date-du-jour").then().statusCode(200);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200);
 
         // The scenario's only two timeslots are on that day: on it, at least one
         // is still ahead unless the wall clock is past 18:00 — so the assertion
         // is made on the day itself, where the mock is what put us.
-        JsonPath etat = given().when().get("/api/jour-j?maintenant=2026-07-08T13:30")
-                .then().statusCode(200).extract().jsonPath();
+        JsonPath etat = given().when()
+                .get("/api/jour-j?maintenant=2026-07-08T13:30")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         List<String> restants = etat.getList("creneauxRestants.heureDebut", String.class);
         assertThat(restants).singleElement().asString().startsWith("14:00");
 
-        String absent = etat.getList("animateursDeService.animateurId", String.class).getFirst();
+        String absent =
+                etat.getList("animateursDeService.animateurId", String.class).getFirst();
         JsonPath marquee = given().contentType("application/json")
                 .body("{\"animateurId\":\"" + absent + "\"}")
-                .when().post("/api/jour-j/absences?maintenant=2026-07-08T13:30")
-                .then().statusCode(200).extract().jsonPath();
+                .when()
+                .post("/api/jour-j/absences?maintenant=2026-07-08T13:30")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
 
         // One unavailability, on the afternoon timeslot of the frozen day.
         assertThat(marquee.getList("entrees.creneauId", Integer.class)).hasSize(1);
         assertThat(marquee.getList("entrees.heureDebut", String.class))
-                .singleElement().asString().startsWith("14:00");
+                .singleElement()
+                .asString()
+                .startsWith("14:00");
     }
 
     /**
@@ -232,12 +287,25 @@ class DateJourJResourceTest {
     void clearingTheFieldReturnsToTheRealDate() {
         solveScenario();
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
-                .when().put("/api/debug/date-du-jour").then().statusCode(200);
-        given().contentType("application/json").body("{\"dateDuJour\":null}")
-                .when().put("/api/debug/date-du-jour").then().statusCode(200);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":null}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200);
 
-        JsonPath etat = given().when().get("/api/jour-j").then().statusCode(200).extract().jsonPath();
+        JsonPath etat = given().when()
+                .get("/api/jour-j")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
 
         // Not "equals today": this suite may straddle midnight, and a test that
         // fails once a night is a test nobody believes.
@@ -255,27 +323,54 @@ class DateJourJResourceTest {
     void theTraceOfAnAbsenceKeepsTheRealTimestamp() {
         solveScenario();
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
-                .when().put("/api/debug/date-du-jour").then().statusCode(200);
-        String absent = given().when().get("/api/jour-j?maintenant=2026-07-08T13:30").then().statusCode(200)
-                .extract().jsonPath().getList("animateursDeService.animateurId", String.class).getFirst();
-        given().contentType("application/json").body("{\"animateurId\":\"" + absent + "\"}")
-                .when().post("/api/jour-j/absences?maintenant=2026-07-08T13:30").then().statusCode(200);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200);
+        String absent = given().when()
+                .get("/api/jour-j?maintenant=2026-07-08T13:30")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("animateursDeService.animateurId", String.class)
+                .getFirst();
+        given().contentType("application/json")
+                .body("{\"animateurId\":\"" + absent + "\"}")
+                .when()
+                .post("/api/jour-j/absences?maintenant=2026-07-08T13:30")
+                .then()
+                .statusCode(200);
 
-        String creeLe = given().when().get("/api/contraintes-ad-hoc").then().statusCode(200)
-                .extract().jsonPath()
+        String creeLe = given().when()
+                .get("/api/contraintes-ad-hoc")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
                 .getString("find { it.type == 'INDISPONIBILITE_FORCEE' }.creeLe");
 
         // Compared as an instant, not as a date prefix: creeLe is UTC and the
         // server's day may already have turned over locally.
-        assertThat(Instant.parse(creeLe)).as("written now, not on the frozen day")
+        assertThat(Instant.parse(creeLe))
+                .as("written now, not on the frozen day")
                 .isCloseTo(Instant.now(), within(10, ChronoUnit.MINUTES));
     }
 
     private static void solveScenario() {
-        String sample = given().when().get("/api/planning/sample?name=scenario.yml")
-                .then().statusCode(200).extract().asString();
-        given().contentType("application/json").body(sample)
-                .when().post("/api/solve?seconds=3").then().statusCode(200);
+        String sample = given().when()
+                .get("/api/planning/sample?name=scenario.yml")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
+        given().contentType("application/json")
+                .body(sample)
+                .when()
+                .post("/api/solve?seconds=3")
+                .then()
+                .statusCode(200);
     }
 }

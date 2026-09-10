@@ -1,5 +1,11 @@
 package dev.sylvain.planning.service.solve;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
+import dev.sylvain.planning.service.solve.SolverJobService.JobType;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,16 +15,7 @@ import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.sql.DataSource;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
-import dev.sylvain.planning.service.solve.SolverJobService.JobType;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 /**
  * Persistence of the solver queue and job journal (see {@code V51__solver_job.sql}).
@@ -65,8 +62,7 @@ public class SolverJobRepository {
             String erreur,
             Instant soumisLe,
             Instant demarreLe,
-            Instant termineLe) {
-    }
+            Instant termineLe) {}
 
     /**
      * Writes the job's current state, insert or update. Called on every status
@@ -92,7 +88,8 @@ public class SolverJobRepository {
             ps.setString(5, ligne.statut().name());
             setLong(ps, 6, ligne.secondsLimit());
             ps.setString(7, writeScope(ligne.scope()));
-            ps.setString(8, ligne.reamorcage() == null ? null : ligne.reamorcage().name());
+            ps.setString(
+                    8, ligne.reamorcage() == null ? null : ligne.reamorcage().name());
             ps.setBoolean(9, ligne.rejouable());
             ps.setString(10, ligne.erreur());
             ps.setTimestamp(11, horodatage(ligne.soumisLe()));
@@ -128,14 +125,15 @@ public class SolverJobRepository {
     }
 
     public void delete(String id) {
-        execute("DELETE FROM solver_job WHERE id = ?", ps -> ps.setString(1, id),
-                "Failed to delete solver job " + id);
+        execute("DELETE FROM solver_job WHERE id = ?", ps -> ps.setString(1, id), "Failed to delete solver job " + id);
     }
 
     /** Drops the finished jobs older than {@code cutoff}, mirroring the in-memory retention. */
     public void purgeFinishedBefore(Instant cutoff) {
-        execute("DELETE FROM solver_job WHERE termine_le IS NOT NULL AND termine_le < ?",
-                ps -> ps.setTimestamp(1, horodatage(cutoff)), "Failed to purge solver jobs");
+        execute(
+                "DELETE FROM solver_job WHERE termine_le IS NOT NULL AND termine_le < ?",
+                ps -> ps.setTimestamp(1, horodatage(cutoff)),
+                "Failed to purge solver jobs");
     }
 
     private LigneJob read(ResultSet rs) throws SQLException {

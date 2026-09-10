@@ -1,19 +1,8 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import dev.sylvain.planning.config.ConfigMcp;
 import dev.sylvain.planning.mcp.McpPrompts;
 import dev.sylvain.planning.mcp.McpPrompts.PromptExpose;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.security.MessageDigest;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Optional;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -23,6 +12,14 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * What the MCP page of the interface needs and the MCP transport itself
@@ -63,6 +60,7 @@ public class McpResource {
      * first.
      */
     static final int MAX_ESSAIS = 5;
+
     static final Duration DUREE_BLOCAGE = Duration.ofMinutes(5);
 
     @Inject
@@ -77,7 +75,6 @@ public class McpResource {
      * a client needs configuring. Both empty by default: nothing to reveal
      * unless the deployment actually sits behind Pangolin.
      */
-
 
     /**
      * The admin password, read from the very property the embedded security
@@ -140,28 +137,27 @@ public class McpResource {
             // string, so the page can tell "clé absente" from "clé hasNoChange".
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return Response.ok(new McpKey(mcp.apiKey().get(),
-                mcp.pangolin().accessTokenId().filter(v -> !v.isBlank()).orElse(null),
-                mcp.pangolin().accessToken().filter(v -> !v.isBlank()).orElse(null))).build();
+        return Response.ok(new McpKey(
+                        mcp.apiKey().get(),
+                        mcp.pangolin().accessTokenId().filter(v -> !v.isBlank()).orElse(null),
+                        mcp.pangolin().accessToken().filter(v -> !v.isBlank()).orElse(null)))
+                .build();
     }
 
     /** Constant-time comparison: a wrong password must not leak its correct prefix through timing. */
     private static boolean equal(String attendu, String presente) {
-        return MessageDigest.isEqual(attendu.getBytes(StandardCharsets.UTF_8),
-                presente.getBytes(StandardCharsets.UTF_8));
+        return MessageDigest.isEqual(
+                attendu.getBytes(StandardCharsets.UTF_8), presente.getBytes(StandardCharsets.UTF_8));
     }
 
     @Schema(requiredProperties = {"configuree"})
-    public record StatutMcp(boolean configuree, String header) {
-    }
+    public record StatutMcp(boolean configuree, String header) {}
 
-    public record DemandeRevelation(String motDePasse) {
-    }
+    public record DemandeRevelation(String motDePasse) {}
 
     /**
      * @param pangolinAccessTokenId {@code null} unless {@code planning.mcp.pangolin.access-token-id} is set
      * @param pangolinAccessToken   {@code null} unless {@code planning.mcp.pangolin.access-token} is set
      */
-    public record McpKey(String cle, String pangolinAccessTokenId, String pangolinAccessToken) {
-    }
+    public record McpKey(String cle, String pangolinAccessTokenId, String pangolinAccessToken) {}
 }

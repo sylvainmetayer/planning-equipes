@@ -67,8 +67,11 @@ public final class TrustedProxies {
      */
     public static TrustedProxies of(List<String> declared) {
         Objects.requireNonNull(declared, "declared");
-        return new TrustedProxies(declared.stream().map(String::trim).filter(entry -> !entry.isEmpty())
-                .map(TrustedProxies::parse).toList());
+        return new TrustedProxies(declared.stream()
+                .map(String::trim)
+                .filter(entry -> !entry.isEmpty())
+                .map(TrustedProxies::parse)
+                .toList());
     }
 
     private static Entry parse(String declared) {
@@ -104,8 +107,10 @@ public final class TrustedProxies {
         try {
             return InetAddress.ofLiteral(texte.trim()).getAddress();
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Proxy fiable invalide : « " + declared
-                    + " » — attendu une adresse IP littérale, éventuellement suivie de /préfixe.", e);
+            throw new IllegalArgumentException(
+                    "Proxy fiable invalide : « " + declared
+                            + " » — attendu une adresse IP littérale, éventuellement suivie de /préfixe.",
+                    e);
         }
     }
 

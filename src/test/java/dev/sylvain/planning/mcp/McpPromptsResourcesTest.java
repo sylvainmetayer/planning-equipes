@@ -2,12 +2,6 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.mcp.McpPrompts.PromptExpose;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import io.quarkiverse.mcp.server.Prompt;
@@ -17,6 +11,10 @@ import io.quarkiverse.mcp.server.ResourceManager;
 import io.quarkiverse.mcp.server.TextResourceContents;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * Prompts and resources are text an assistant acts on, so what has to hold is
@@ -58,15 +56,18 @@ class McpPromptsResourcesTest {
                 .map(Method::getName)
                 .toList();
 
-        assertThat(prompts.catalogue()).extracting(PromptExpose::nom)
-                .containsExactlyInAnyOrderElementsOf(declares);
+        assertThat(prompts.catalogue()).extracting(PromptExpose::nom).containsExactlyInAnyOrderElementsOf(declares);
     }
 
     @Test
     void chaqueEntreeDuCatalogueEstUtilisableTelleQuelle() {
         for (PromptExpose expose : prompts.catalogue()) {
-            assertThat(expose.description()).as("description de %s", expose.nom()).isNotBlank();
-            assertThat(expose.texte()).as("texte de %s", expose.nom()).isNotBlank()
+            assertThat(expose.description())
+                    .as("description de %s", expose.nom())
+                    .isNotBlank();
+            assertThat(expose.texte())
+                    .as("texte de %s", expose.nom())
+                    .isNotBlank()
                     .doesNotContain("%s")
                     .doesNotContain("null");
         }
@@ -74,11 +75,20 @@ class McpPromptsResourcesTest {
 
     @Test
     void chaquePromptPorteLEditionQuOnLuiDonne() {
-        assertThat(prompts.diagnostiquer_contraintes_dures("Canicule 2026").content().asText().text())
+        assertThat(prompts.diagnostiquer_contraintes_dures("Canicule 2026")
+                        .content()
+                        .asText()
+                        .text())
                 .contains("Canicule 2026");
-        assertThat(prompts.verifier_avant_resolution("Canicule 2026").content().asText().text())
+        assertThat(prompts.verifier_avant_resolution("Canicule 2026")
+                        .content()
+                        .asText()
+                        .text())
                 .contains("Canicule 2026");
-        assertThat(prompts.resoudre_sans_perdre_le_planning("Canicule 2026").content().asText().text())
+        assertThat(prompts.resoudre_sans_perdre_le_planning("Canicule 2026")
+                        .content()
+                        .asText()
+                        .text())
                 .contains("Canicule 2026");
     }
 
@@ -89,16 +99,27 @@ class McpPromptsResourcesTest {
      */
     @Test
     void sansEditionLePromptResteUnePhraseComplete() {
-        String texte = prompts.verifier_avant_resolution(null).content().asText().text();
+        String texte =
+                prompts.verifier_avant_resolution(null).content().asText().text();
 
-        assertThat(texte).contains("l'édition par défaut").doesNotContain("«  »").doesNotContain("null");
-        assertThat(prompts.diagnostiquer_contraintes_dures("  ").content().asText().text())
-                .doesNotContain("«  »").doesNotContain("null");
+        assertThat(texte)
+                .contains("l'édition par défaut")
+                .doesNotContain("«  »")
+                .doesNotContain("null");
+        assertThat(prompts.diagnostiquer_contraintes_dures("  ")
+                        .content()
+                        .asText()
+                        .text())
+                .doesNotContain("«  »")
+                .doesNotContain("null");
     }
 
     @Test
     void lePromptDeDiagnosticRappelleQueLesAnimateursRestentAnonymes() {
-        assertThat(prompts.diagnostiquer_contraintes_dures(null).content().asText().text())
+        assertThat(prompts.diagnostiquer_contraintes_dures(null)
+                        .content()
+                        .asText()
+                        .text())
                 .contains("id")
                 .contains("nominative");
     }

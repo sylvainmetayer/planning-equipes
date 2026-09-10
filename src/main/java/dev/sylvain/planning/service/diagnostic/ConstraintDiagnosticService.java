@@ -1,11 +1,10 @@
 package dev.sylvain.planning.service.diagnostic;
 
-import java.util.List;
-
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import java.util.List;
 
 /**
  * Breaks a planning's score down per constraint, with the facts justifying
@@ -85,8 +84,8 @@ public interface ConstraintDiagnosticService {
      * @param candidats evaluated in order; an animateur already on {@code cible}
      *                  is not filtered out, the caller decides who is worth asking about
      */
-    default List<AffectationHypothesis> hypotheses(PlanningEvenement solution, PosteAffectation cible,
-            List<Animateur> candidats) {
+    default List<AffectationHypothesis> hypotheses(
+            PlanningEvenement solution, PosteAffectation cible, List<Animateur> candidats) {
         return AffectationHypothesis.byFullAnalysis(this, solution, cible, candidats);
     }
 
@@ -94,8 +93,8 @@ public interface ConstraintDiagnosticService {
      * The single, explicit switch point between implementations — the one place
      * in the codebase that knows there is more than one.
      */
-    static ConstraintDiagnosticService of(ConstraintDiagnosticMode mode,
-            SolverFactory<PlanningEvenement> solverFactory) {
+    static ConstraintDiagnosticService of(
+            ConstraintDiagnosticMode mode, SolverFactory<PlanningEvenement> solverFactory) {
         return switch (mode) {
             case SCORE_DIRECTOR -> new ScoreDirectorConstraintDiagnosticService(solverFactory);
             case SOLUTION_MANAGER -> new SolutionManagerConstraintDiagnosticService(solverFactory);

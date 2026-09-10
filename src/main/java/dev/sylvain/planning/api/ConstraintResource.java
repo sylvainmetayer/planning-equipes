@@ -1,22 +1,13 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
-import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
-import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.journal.CurrentAction;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
+import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import jakarta.inject.Inject;
@@ -29,6 +20,13 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Business view of the active constraints: what each rule means, at which
@@ -79,8 +77,8 @@ public class ConstraintResource {
         Map<String, ConstraintDiagnostic> byName = analysis == null
                 ? Map.of()
                 : analysis.diagnostic().contraintes().stream()
-                        .collect(Collectors.toMap(ConstraintDiagnostic::name, Function.identity(),
-                                (first, second) -> first));
+                        .collect(Collectors.toMap(
+                                ConstraintDiagnostic::name, Function.identity(), (first, second) -> first));
         Set<String> desactivees = referenceDataService.getContraintesDesactivees();
         Map<String, Integer> poids = planningService.effectiveConstraintWeights();
 
@@ -131,7 +129,8 @@ public class ConstraintResource {
     public ConstraintPoidsUpdate setPoids(@PathParam("name") String name, ConstraintPoidsUpdate update) {
         requireKnown(name);
         referenceDataService.setConstraintWeight(name, update.poids());
-        return new ConstraintPoidsUpdate(planningService.effectiveConstraintWeights().getOrDefault(name, 1));
+        return new ConstraintPoidsUpdate(
+                planningService.effectiveConstraintWeights().getOrDefault(name, 1));
     }
 
     /** 404 rather than a silently stored row when the name matches no constraint of the catalogue. */
@@ -143,8 +142,11 @@ public class ConstraintResource {
         }
     }
 
-    private ConstraintView toView(ConstraintDefinition definition, ConstraintDiagnostic diagnostic,
-            Set<String> desactivees, Map<String, Integer> poids) {
+    private ConstraintView toView(
+            ConstraintDefinition definition,
+            ConstraintDiagnostic diagnostic,
+            Set<String> desactivees,
+            Map<String, Integer> poids) {
         return new ConstraintView(
                 definition.name(),
                 definition.niveau().name(),
@@ -192,23 +194,20 @@ public class ConstraintResource {
             int poids,
             String score,
             Integer matchCount,
-            List<String> violations) {
-    }
+            List<String> violations) {}
 
     /**
      * @param actif whether the constraint is applied on the next solve
      */
     @Schema(requiredProperties = {"actif"})
-    public record ConstraintToggleUpdate(boolean actif) {
-    }
+    public record ConstraintToggleUpdate(boolean actif) {}
 
     /**
      * @param poids the weight one match of the constraint is worth on the next
      *              solve, or {@code null} to drop this edition's override and
      *              fall back to the configured default
      */
-    public record ConstraintPoidsUpdate(Integer poids) {
-    }
+    public record ConstraintPoidsUpdate(Integer poids) {}
 
     /**
      * @param hardScore the hard score actually reached by the last analysed
@@ -234,6 +233,5 @@ public class ConstraintResource {
             FeasibilityReport faisabilite,
             Integer hardScore,
             List<ConstraintView> contraintes,
-            List<ContributionAdHoc> contraintesAdHocEnCause) {
-    }
+            List<ContributionAdHoc> contraintesAdHocEnCause) {}
 }

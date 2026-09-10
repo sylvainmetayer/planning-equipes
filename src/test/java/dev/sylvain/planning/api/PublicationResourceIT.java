@@ -4,15 +4,14 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Publishing against the <b>packaged</b> application, which runs the real
@@ -53,11 +52,16 @@ class PublicationResourceIT {
                     .contentType("application/x-www-form-urlencoded")
                     .formParam("j_username", "admin")
                     .formParam("j_password", MOT_DE_PASSE_ADMIN)
-                    .redirects().follow(false)
-                    .when().post("/j_security_check")
+                    .redirects()
+                    .follow(false)
+                    .when()
+                    .post("/j_security_check")
                     .then()
-                    .extract().cookie("planning-session");
-            assertThat(cookieSession).as("form login should issue the session cookie").isNotBlank();
+                    .extract()
+                    .cookie("planning-session");
+            assertThat(cookieSession)
+                    .as("form login should issue the session cookie")
+                    .isNotBlank();
         }
         RestAssured.requestSpecification = new RequestSpecBuilder()
                 .addCookie("planning-session", cookieSession)
@@ -76,12 +80,15 @@ class PublicationResourceIT {
 
         JsonPath avant = apercu();
         assertThat(avant.getInt("nombreConcernes")).isEqualTo(2);
-        assertThat(avant.getList("destinataires.nomAffiche"))
-                .contains("Alice Compte", "Bruno Compte");
+        assertThat(avant.getList("destinataires.nomAffiche")).contains("Alice Compte", "Bruno Compte");
 
         JsonPath rapport = given().contentType(ContentType.JSON)
-                .when().post("/api/planning/publication")
-                .then().statusCode(200).extract().jsonPath();
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         assertThat(rapport.getString("publieLe")).isNotBlank();
 
         JsonPath apres = apercu();
@@ -91,7 +98,8 @@ class PublicationResourceIT {
 
         // Nothing new to announce: that is the point, not an error to work around.
         given().contentType(ContentType.JSON)
-                .when().post("/api/planning/publication")
+                .when()
+                .post("/api/planning/publication")
                 .then()
                 .statusCode(409)
                 .body("message", containsString("Personne n'est concerné"));
@@ -102,13 +110,20 @@ class PublicationResourceIT {
         semer("ITPB", 9502, "Trace");
 
         given().contentType(ContentType.JSON)
-                .when().post("/api/planning/publication")
-                .then().statusCode(200);
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200);
 
-        JsonPath trace = given().when().get("/api/planning/publication/destinataires")
-                .then().statusCode(200).extract().jsonPath();
+        JsonPath trace = given().when()
+                .get("/api/planning/publication/destinataires")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
         assertThat(trace.getList("animateurId")).contains("ITPB-A", "ITPB-B");
-        assertThat(trace.getList("envoyeLe", String.class)).allSatisfy(quand -> assertThat(quand).isNotBlank());
+        assertThat(trace.getList("envoyeLe", String.class))
+                .allSatisfy(quand -> assertThat(quand).isNotBlank());
         // Bruno has no address: he stays in the trace, otherwise "told" and
         // "to be told" would read the same at the next preview.
         assertThat(trace.getList("statut", String.class)).contains("SANS_EMAIL");
@@ -120,7 +135,8 @@ class PublicationResourceIT {
      * tell apart.
      */
     private void semer(String prefixe, int creneauId, String nom) {
-        String script = String.join("\n",
+        String script = String.join(
+                "\n",
                 "delete from poste_affectation where id like '" + prefixe + "-%';",
                 "delete from poste_affectation where creneau_id = " + creneauId + ";",
                 "delete from creneau where id = " + creneauId + ";",
@@ -133,10 +149,10 @@ class PublicationResourceIT {
                 "insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email)"
                         + " values ('DEFAUT', '" + prefixe + "-A', 'Alice', '" + nom + "', '1990-01-01', false,"
                         + " '" + prefixe.toLowerCase() + "-alice@example.org');",
-                "insert into animateur (edition_id, id, prenom, nom, date_naissance, manager)"
-                        + " values ('DEFAUT', '" + prefixe + "-B', 'Bruno', '" + nom + "', '1992-02-02', false);",
-                "insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin)"
-                        + " values ('DEFAUT', " + creneauId + ", '2026-07-11', '10:00', '12:00');",
+                "insert into animateur (edition_id, id, prenom, nom, date_naissance, manager)" + " values ('DEFAUT', '"
+                        + prefixe + "-B', 'Bruno', '" + nom + "', '1992-02-02', false);",
+                "insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin)" + " values ('DEFAUT', "
+                        + creneauId + ", '2026-07-11', '10:00', '12:00');",
                 "insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id)"
                         + " values ('DEFAUT', '" + prefixe + "-P1', '" + prefixe + "-S1', " + creneauId
                         + ", '" + prefixe + "-A');",
@@ -145,12 +161,18 @@ class PublicationResourceIT {
                         + ", '" + prefixe + "-B');");
         given().contentType(ContentType.TEXT)
                 .body(script)
-                .when().post("/api/database/import")
-                .then().statusCode(200);
+                .when()
+                .post("/api/database/import")
+                .then()
+                .statusCode(200);
     }
 
     private JsonPath apercu() {
-        return given().when().get("/api/planning/publication")
-                .then().statusCode(200).extract().jsonPath();
+        return given().when()
+                .get("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
     }
 }

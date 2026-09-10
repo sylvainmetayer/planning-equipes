@@ -1,19 +1,9 @@
 package dev.sylvain.planning.solver.constraints;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
-
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.test.ConstraintVerifier;
 import ai.timefold.solver.core.api.score.stream.test.SingleConstraintVerification;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -23,6 +13,14 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 /**
  * Shared plumbing for the per-constraint unit tests. Each constraint is
@@ -111,8 +109,7 @@ abstract class ConstraintTestBase {
     // --- Stand factories ---------------------------------------------------
 
     protected static Stand stand(String id, boolean reserveMajeurs, String... typologies) {
-        return new Stand(id, id, new java.util.HashSet<>(java.util.List.of(typologies)),
-                1, 3, reserveMajeurs);
+        return new Stand(id, id, new java.util.HashSet<>(java.util.List.of(typologies)), 1, 3, reserveMajeurs);
     }
 
     protected static Stand standWithStrategy(String id) {
@@ -149,8 +146,8 @@ abstract class ConstraintTestBase {
         return a;
     }
 
-    protected static Animateur animateurWithSouhaits(String id, LocalDate naissance,
-            Map<String, NiveauCompetence> comp, String... souhaits) {
+    protected static Animateur animateurWithSouhaits(
+            String id, LocalDate naissance, Map<String, NiveauCompetence> comp, String... souhaits) {
         Animateur a = animateur(id, naissance, comp);
         a.setSouhaits(new java.util.HashSet<>(java.util.List.of(souhaits)));
         return a;
@@ -203,8 +200,8 @@ abstract class ConstraintTestBase {
      * persisted créneau, but {@link PosteAffectation#getHeureDebutEffective()}
      * narrows the time this specific poste actually spans.
      */
-    protected PosteAffectation posteWithEffectiveFenetre(Stand stand, Creneau creneau, Animateur animateur,
-            LocalTime debutEffectif, LocalTime finEffective) {
+    protected PosteAffectation posteWithEffectiveFenetre(
+            Stand stand, Creneau creneau, Animateur animateur, LocalTime debutEffectif, LocalTime finEffective) {
         PosteAffectation p = poste(stand, creneau, animateur);
         p.setHeureDebutEffective(debutEffectif);
         p.setHeureFinEffective(finEffective);

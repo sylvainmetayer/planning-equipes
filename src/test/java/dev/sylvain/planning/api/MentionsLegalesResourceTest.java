@@ -21,8 +21,8 @@ class MentionsLegalesResourceTest {
 
     @Test
     void repondSansAuthentificationEtRendDesChampsVidesQuandRienNEstConfigure() {
-        given()
-                .when().get("/api/mentions-legales")
+        given().when()
+                .get("/api/mentions-legales")
                 .then()
                 .statusCode(200)
                 // The test profile configures none of them: blank, never a placeholder
@@ -37,8 +37,8 @@ class MentionsLegalesResourceTest {
 
     @Test
     void reportsWhichThirdPartyToolsRunSoThePageAnnouncesOnlyThose() {
-        given()
-                .when().get("/api/mentions-legales")
+        given().when()
+                .get("/api/mentions-legales")
                 .then()
                 .statusCode(200)
                 // Neither runs here: the Cloudflare token is blank outside %prod,

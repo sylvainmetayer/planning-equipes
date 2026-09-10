@@ -1,17 +1,14 @@
 package dev.sylvain.planning.api;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.http.ContentType;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.nullValue;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * When {@code planning.mcp.pangolin.access-token-id}/{@code -access-token} are
@@ -34,10 +31,10 @@ class McpResourcePangolinTokenTest {
 
     @Test
     void reveleLeJetonPangolinAvecLaCle() {
-        given()
-                .contentType(ContentType.JSON)
+        given().contentType(ContentType.JSON)
                 .body("{\"motDePasse\":\"admin\"}")
-                .when().post("/api/mcp/cle")
+                .when()
+                .post("/api/mcp/cle")
                 .then()
                 .statusCode(200)
                 .body("cle", equalTo("test-mcp-key"))

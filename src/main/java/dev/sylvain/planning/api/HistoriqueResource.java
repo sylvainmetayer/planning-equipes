@@ -1,25 +1,23 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * The history of what was done in the edition (issue #406).
@@ -57,7 +55,9 @@ public class HistoriqueResource {
     @Path("/actions")
     public List<ActionView> actions() {
         return CatalogueActions.actions().values().stream()
-                .map(action -> new ActionView(action.code(), action.libelle(),
+                .map(action -> new ActionView(
+                        action.code(),
+                        action.libelle(),
                         action.entite() == null ? null : action.entite().name()))
                 .sorted((a, b) -> a.libelle().compareToIgnoreCase(b.libelle()))
                 .toList();
@@ -105,10 +105,8 @@ public class HistoriqueResource {
             String entiteNom,
             List<String> champs,
             String resultat,
-            Integer statut) {
-    }
+            Integer statut) {}
 
     /** One entry of the action inventory, for the screen's filter. */
-    public record ActionView(String code, String libelle, String entite) {
-    }
+    public record ActionView(String code, String libelle, String entite) {}
 }

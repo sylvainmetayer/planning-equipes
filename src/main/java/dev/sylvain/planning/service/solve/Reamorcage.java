@@ -38,8 +38,8 @@ public enum Reamorcage {
         try {
             return valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new BusinessError.Invalid("reamorcage : valeur inconnue « " + value
-                    + " », attendu AUTO, PLAN_COURANT ou AUCUN");
+            throw new BusinessError.Invalid(
+                    "reamorcage : valeur inconnue « " + value + " », attendu AUTO, PLAN_COURANT ou AUCUN");
         }
     }
 }

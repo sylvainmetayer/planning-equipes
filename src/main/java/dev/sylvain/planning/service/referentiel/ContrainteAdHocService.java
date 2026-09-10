@@ -1,19 +1,18 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.Ids;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /** The hand-entered constraints (affinités, incompatibilités, …) the solver reads as problem facts. */
 @ApplicationScoped
@@ -111,8 +110,7 @@ public class ContrainteAdHocService {
      * would be a poor way to spend an afternoon.</p>
      */
     public void checkNoContradiction(List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
-        List<Contradiction> contradictions =
-                ContrainteAdHocContradictions.detectAll(contraintes, creneaux);
+        List<Contradiction> contradictions = ContrainteAdHocContradictions.detectAll(contraintes, creneaux);
         if (contradictions.isEmpty()) {
             return;
         }

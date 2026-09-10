@@ -1,18 +1,7 @@
 package dev.sylvain.planning.api;
 
-import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigAdminLogin;
 import dev.sylvain.planning.config.TrustedProxies;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import io.quarkus.security.spi.runtime.AuthenticationFailureEvent;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.core.http.HttpHeaders;
@@ -21,6 +10,15 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Locks the admin form login out after a run of failures.
@@ -95,8 +93,7 @@ public class AdminLoginLimiter {
     private static final int ADRESSES_MAX = 1_000;
 
     /** Consecutive failures of one address, and the instant of the last one. */
-    private record Echecs(int nombre, Instant dernier) {
-    }
+    private record Echecs(int nombre, Instant dernier) {}
 
     /**
      * The declared proxies, parsed once. Built here rather than lazily so a
@@ -139,8 +136,7 @@ public class AdminLoginLimiter {
         Object contexte = evenement.getEventProperties().get(RoutingContext.class.getName());
         // The other mechanisms (MCP key, remote-user header, session already
         // open) raise the same event and have nothing to do with this lock.
-        if (!(contexte instanceof RoutingContext routage)
-                || !CHEMIN_CONNEXION.equals(routage.normalizedPath())) {
+        if (!(contexte instanceof RoutingContext routage) || !CHEMIN_CONNEXION.equals(routage.normalizedPath())) {
             return;
         }
         Instant maintenant = Instant.now();
@@ -181,8 +177,10 @@ public class AdminLoginLimiter {
      * that is not enough, the oldest ones.
      */
     private void evictDown(Instant maintenant) {
-        parAdresse.entrySet().removeIf(
-                entree -> entree.getValue().dernier().plus(config.dureeBlocage()).isBefore(maintenant));
+        parAdresse
+                .entrySet()
+                .removeIf(entree ->
+                        entree.getValue().dernier().plus(config.dureeBlocage()).isBefore(maintenant));
         if (parAdresse.size() < ADRESSES_MAX) {
             return;
         }
@@ -200,7 +198,8 @@ public class AdminLoginLimiter {
         if (echecs == null || echecs.nombre() < config.maxEchecs()) {
             return 0;
         }
-        long restant = Duration.between(Instant.now(), echecs.dernier().plus(config.dureeBlocage())).toSeconds();
+        long restant = Duration.between(Instant.now(), echecs.dernier().plus(config.dureeBlocage()))
+                .toSeconds();
         if (restant <= 0) {
             parAdresse.remove(address);
             return 0;

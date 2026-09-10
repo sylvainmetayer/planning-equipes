@@ -1,15 +1,14 @@
 package dev.sylvain.planning.service.journal;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-
 import dev.sylvain.planning.service.journal.EntreeJournal.Resultat;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -67,33 +66,54 @@ public class JournalActionService {
      */
     void verifierRetention(@Observes StartupEvent demarrage) {
         if (retention.compareTo(RETENTION_MINIMALE) < 0 || retention.compareTo(RETENTION_MAXIMALE) > 0) {
-            throw new IllegalStateException("planning.journal.retention must be between "
-                    + RETENTION_MINIMALE + " and " + RETENTION_MAXIMALE + ", but is " + retention);
+            throw new IllegalStateException("planning.journal.retention must be between " + RETENTION_MINIMALE + " and "
+                    + RETENTION_MAXIMALE + ", but is " + retention);
         }
     }
 
     /** Records an action carried out through a request, with the status it ended on. */
-    public void record(ActionJournalisee action, Acteur acteur, String acteurId,
-            String entiteId, List<String> champs, int statut) {
-        append(new EntreeJournal(0, Instant.now(), acteur, acteurId, action.code(),
-                action.entite() == null ? null : action.entite().name(), entiteId, champs,
-                statut >= 400 ? Resultat.REFUS : Resultat.SUCCES, statut));
+    public void record(
+            ActionJournalisee action,
+            Acteur acteur,
+            String acteurId,
+            String entiteId,
+            List<String> champs,
+            int statut) {
+        append(new EntreeJournal(
+                0,
+                Instant.now(),
+                acteur,
+                acteurId,
+                action.code(),
+                action.entite() == null ? null : action.entite().name(),
+                entiteId,
+                champs,
+                statut >= 400 ? Resultat.REFUS : Resultat.SUCCES,
+                statut));
     }
 
     /** Records something the application did on its own, off any request. */
     public void recordSystemAction(String code, String entiteId) {
         ActionJournalisee action = CatalogueActions.systeme(code);
-        append(new EntreeJournal(0, Instant.now(), Acteur.SYSTEME, null, action.code(),
-                action.entite() == null ? null : action.entite().name(), entiteId, List.of(),
-                Resultat.SUCCES, null));
+        append(new EntreeJournal(
+                0,
+                Instant.now(),
+                Acteur.SYSTEME,
+                null,
+                action.code(),
+                action.entite() == null ? null : action.entite().name(),
+                entiteId,
+                List.of(),
+                Resultat.SUCCES,
+                null));
     }
 
     private void append(EntreeJournal entree) {
         try {
             repository.append(entree);
         } catch (RuntimeException e) {
-            LOG.errorf(e, "The action %s could not be recorded in the history; it happened all the same",
-                    entree.action());
+            LOG.errorf(
+                    e, "The action %s could not be recorded in the history; it happened all the same", entree.action());
         }
     }
 
@@ -126,5 +146,4 @@ public class JournalActionService {
             return null;
         }
     }
-
 }

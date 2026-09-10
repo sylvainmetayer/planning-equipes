@@ -2,8 +2,8 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EditionRequestScope;
-import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.publication.PlanPublieService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -71,9 +71,12 @@ public class AbonnementIcsResource {
         return Response.ok(contenu)
                 .type("text/calendar; charset=utf-8")
                 .header(HttpHeaders.CACHE_CONTROL, "private, no-cache")
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + PlanningExportService.planningFileName(
-                                planningExportService.resolveAnimateurName(planning, animateurId), "ics") + "\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\""
+                                + PlanningExportService.planningFileName(
+                                        planningExportService.resolveAnimateurName(planning, animateurId), "ics")
+                                + "\"")
                 .build();
     }
 }

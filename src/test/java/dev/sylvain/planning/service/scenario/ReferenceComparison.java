@@ -1,11 +1,11 @@
 package dev.sylvain.planning.service.scenario;
 
+import dev.sylvain.planning.service.FormeCanonique;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import dev.sylvain.planning.service.FormeCanonique;
 
 /**
  * Comparing what something reads as against a reference committed next to it.

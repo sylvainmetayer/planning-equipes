@@ -51,8 +51,7 @@ public class Creneau {
      */
     private Instant modifieLe;
 
-    public Creneau() {
-    }
+    public Creneau() {}
 
     public Creneau(Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin) {
         this.id = id;
@@ -207,8 +206,7 @@ public class Creneau {
      * single place that decides a stand open with nobody declared still gets
      * one seat.</p>
      */
-    public record SegmentOuvert(int debutMinutes, int finMinutes, int effectif) {
-    }
+    public record SegmentOuvert(int debutMinutes, int finMinutes, int effectif) {}
 
     /**
      * Seats generated on one open segment of this slot for the given resolved
@@ -241,7 +239,6 @@ public class Creneau {
         }
         return sieges;
     }
-
 
     /**
      * Same open sub-intervals as {@link #segmentsOuvertsMinutes(Stand)}, each

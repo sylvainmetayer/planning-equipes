@@ -34,5 +34,4 @@ public record ScenarioDto(
         // stands x creneaux (mirroring buildFromReferenceData).
         List<@Valid PosteDto> postes,
         List<@Valid ContrainteAdHocDto> contraintesAdHoc,
-        @Valid DecoupageAutoDto decoupageAuto) {
-}
+        @Valid DecoupageAutoDto decoupageAuto) {}

@@ -3,16 +3,14 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * The opt-in remote-user mode: an access proxy authenticates the visitor and
@@ -35,10 +33,14 @@ class AuthentificationRemoteUserTest {
         @Override
         public Map<String, String> getConfigOverrides() {
             return Map.of(
-                    "quarkus.http.auth.permission.admin-api.policy", "authenticated",
-                    "planning.auth.remote-user.enabled", "true",
-                    "planning.auth.remote-user.secret", SECRET,
-                    "planning.auth.remote-user.admin-email", EMAIL_ADMIN);
+                    "quarkus.http.auth.permission.admin-api.policy",
+                    "authenticated",
+                    "planning.auth.remote-user.enabled",
+                    "true",
+                    "planning.auth.remote-user.secret",
+                    SECRET,
+                    "planning.auth.remote-user.admin-email",
+                    EMAIL_ADMIN);
         }
     }
 
@@ -47,10 +49,10 @@ class AuthentificationRemoteUserTest {
 
     @Test
     void lAdresseAdminAttesteeParLeProxyOuvreLApi() {
-        given()
-                .header("Remote-Auth-Secret", SECRET)
+        given().header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ADMIN)
-                .when().get("/api/auth/me")
+                .when()
+                .get("/api/auth/me")
                 .then()
                 .statusCode(200)
                 .body("authentifie", equalTo(true))
@@ -59,55 +61,59 @@ class AuthentificationRemoteUserTest {
 
     @Test
     void laCasseEtLesEspacesDeLAdresseNeChangentRien() {
-        given()
-                .header("Remote-Auth-Secret", SECRET)
+        given().header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", "  " + EMAIL_ADMIN.toUpperCase() + " ")
-                .when().get("/api/constraints")
+                .when()
+                .get("/api/constraints")
                 .then()
                 .statusCode(200);
     }
 
     @Test
     void sansLeSecretLEnTeteNEstQuUneAffirmation() {
-        given()
-                .header("Remote-Email", EMAIL_ADMIN)
-                .when().get("/api/constraints")
+        given().header("Remote-Email", EMAIL_ADMIN)
+                .when()
+                .get("/api/constraints")
                 .then()
                 .statusCode(401);
     }
 
     @Test
     void unMauvaisSecretEstRefuse() {
-        given()
-                .header("Remote-Auth-Secret", "pas-le-bon")
+        given().header("Remote-Auth-Secret", "pas-le-bon")
                 .header("Remote-Email", EMAIL_ADMIN)
-                .when().get("/api/constraints")
+                .when()
+                .get("/api/constraints")
                 .then()
                 .statusCode(401);
     }
 
     @Test
     void uneAdresseInconnueNObtientPasLeRoleAdmin() {
-        given()
-                .header("Remote-Auth-Secret", SECRET)
+        given().header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", "quelquun@exemple.fr")
-                .when().get("/api/constraints")
+                .when()
+                .get("/api/constraints")
                 .then()
                 .statusCode(401);
     }
 
     @Test
     void leFormLoginContinueDeFonctionnerEnParallele() {
-        String cookie = given()
-                .contentType("application/x-www-form-urlencoded")
+        String cookie = given().contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
                 .formParam("j_password", "admin")
-                .redirects().follow(false)
-                .when().post("/j_security_check")
-                .then().extract().cookie("planning-session");
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check")
+                .then()
+                .extract()
+                .cookie("planning-session");
 
         given().cookie("planning-session", cookie)
-                .when().get("/api/auth/me")
+                .when()
+                .get("/api/auth/me")
                 .then()
                 .statusCode(200)
                 .body("authentifie", equalTo(true));
@@ -122,10 +128,10 @@ class AuthentificationRemoteUserTest {
         // With no assertion, the token alone is not enough: the e-mail is the second factor.
         given().when().get("/api/espace-animateur/" + token).then().statusCode(401);
 
-        given()
-                .header("Remote-Auth-Secret", SECRET)
+        given().header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ANIMATEUR)
-                .when().get("/api/espace-animateur/" + token)
+                .when()
+                .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200);
     }
@@ -136,10 +142,10 @@ class AuthentificationRemoteUserTest {
 
         // A colleague's link, picked up from a PDF, plus one's own assertion:
         // the address does not match the record the token names.
-        given()
-                .header("Remote-Auth-Secret", SECRET)
+        given().header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ANIMATEUR)
-                .when().get("/api/espace-animateur/" + colleagueToken)
+                .when()
+                .get("/api/espace-animateur/" + colleagueToken)
                 .then()
                 .statusCode(401);
     }
@@ -148,10 +154,10 @@ class AuthentificationRemoteUserTest {
     void lAdresseAdminNOuvrePasLEspaceDUnAnimateur() {
         String token = createAnimateur("A-REMOTE-3", "encore@exemple.fr");
 
-        given()
-                .header("Remote-Auth-Secret", SECRET)
+        given().header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ADMIN)
-                .when().get("/api/espace-animateur/" + token)
+                .when()
+                .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(401);
     }

@@ -3,17 +3,7 @@ package dev.sylvain.planning.service.solve;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.sql.DataSource;
-
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.SolverJobRepository.LigneJob;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import dev.sylvain.planning.service.solve.SolverJobService.JobType;
@@ -22,14 +12,18 @@ import io.quarkus.runtime.StartupEvent;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import dev.sylvain.planning.service.solve.Reamorcage;
-import dev.sylvain.planning.service.solve.ReplanificationScope;
-import dev.sylvain.planning.service.solve.SolverJobRepository;
-import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.EditionContext;
 
 /**
  * The solver queue surviving a restart.
@@ -126,8 +120,8 @@ class SolverJobRepriseTest {
 
     @Test
     void lePerimetreDuneReplanificationSurvitAuRedemarrage() {
-        ReplanificationScope scope = new ReplanificationScope(
-                Set.of("ANIM-1"), Set.of(LocalDate.of(2026, 8, 21)), Set.of("STAND-1"));
+        ReplanificationScope scope =
+                new ReplanificationScope(Set.of("ANIM-1"), Set.of(LocalDate.of(2026, 8, 21)), Set.of("STAND-1"));
         String id = writeRow(JobType.SOLVE_INCREMENTAL, JobStatus.QUEUED, true, scope);
 
         LigneJob relue = jobRepository.list().stream()
@@ -158,9 +152,12 @@ class SolverJobRepriseTest {
     @Test
     void unJobOublieDisparaitAussiDeLaBase() throws InterruptedException {
         planImporte();
-        String id = given().when().post("/api/solve/async/reference-data?seconds=1")
-                .then().statusCode(202)
-                .extract().path("id");
+        String id = given().when()
+                .post("/api/solve/async/reference-data?seconds=1")
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
         assertThat(pollUntilFinished(id).getString("status")).isEqualTo("COMPLETED");
         // Written by the real code path, not by this test's helper.
         assertThat(statut(id)).isEqualTo(JobStatus.COMPLETED);
@@ -180,8 +177,20 @@ class SolverJobRepriseTest {
     void leReamorcageDemandeSurvitAuRedemarrage() {
         for (Reamorcage demande : new Reamorcage[] {Reamorcage.AUCUN, Reamorcage.PLAN_COURANT, null}) {
             String id = UUID.randomUUID().toString();
-            jobRepository.record(new LigneJob(id, editionContext.editionIdCourant(), "Édition de test",
-                    JobType.SOLVE, JobStatus.PENDING, 1L, null, demande, true, null, Instant.now(), null, null));
+            jobRepository.record(new LigneJob(
+                    id,
+                    editionContext.editionIdCourant(),
+                    "Édition de test",
+                    JobType.SOLVE,
+                    JobStatus.PENDING,
+                    1L,
+                    null,
+                    demande,
+                    true,
+                    null,
+                    Instant.now(),
+                    null,
+                    null));
             assertThat(jobRepository.list().stream().filter(ligne -> ligne.id().equals(id)))
                     .as("reamorcage %s read back from the database", demande)
                     .singleElement()
@@ -194,13 +203,23 @@ class SolverJobRepriseTest {
     /* ------------------------------- Helpers ------------------------------- */
 
     /** Writes the row a server stopped in that state would have left behind. */
-    private String writeRow(JobType type, JobStatus statut, boolean rejouable,
-            ReplanificationScope scope) {
+    private String writeRow(JobType type, JobStatus statut, boolean rejouable, ReplanificationScope scope) {
         String id = UUID.randomUUID().toString();
         Instant maintenant = Instant.now();
-        jobRepository.record(new LigneJob(id, editionContext.editionIdCourant(), "Édition de test",
-                type, statut, 1L, scope, null, rejouable, null, maintenant,
-                statut == JobStatus.RUNNING ? maintenant : null, null));
+        jobRepository.record(new LigneJob(
+                id,
+                editionContext.editionIdCourant(),
+                "Édition de test",
+                type,
+                statut,
+                1L,
+                scope,
+                null,
+                rejouable,
+                null,
+                maintenant,
+                statut == JobStatus.RUNNING ? maintenant : null,
+                null));
         return id;
     }
 
@@ -223,13 +242,20 @@ class SolverJobRepriseTest {
 
     private void planImporte() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
     }
 
     private void clearQueue() {
-        List<String> ids = given().when().get("/api/jobs/file")
-                .then().statusCode(200)
-                .extract().jsonPath().getList("id");
+        List<String> ids = given().when()
+                .get("/api/jobs/file")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("id");
         for (String id : ids) {
             given().when().delete("/api/jobs/" + id);
         }
@@ -247,10 +273,12 @@ class SolverJobRepriseTest {
 
     private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
         for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given()
-                    .when().get("/api/jobs/" + jobId)
-                    .then().statusCode(200)
-                    .extract().jsonPath();
+            JsonPath job = given().when()
+                    .get("/api/jobs/" + jobId)
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .jsonPath();
             if (List.of("COMPLETED", "FAILED", "CANCELLED", "INTERROMPU").contains(job.getString("status"))) {
                 return job;
             }

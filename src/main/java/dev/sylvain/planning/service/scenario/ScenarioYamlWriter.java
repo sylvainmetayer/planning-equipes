@@ -10,12 +10,12 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.ScenarioYaml;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-import dev.sylvain.planning.service.referentiel.TypologieItem;
 
 /**
  * Writes the YAML text of a scenario file. Pure and static: it takes the data
@@ -35,8 +35,7 @@ import dev.sylvain.planning.service.referentiel.TypologieItem;
  */
 public final class ScenarioYamlWriter {
 
-    private ScenarioYamlWriter() {
-    }
+    private ScenarioYamlWriter() {}
 
     /**
      * Everything one exported scenario file holds. A record rather than ten
@@ -58,8 +57,7 @@ public final class ScenarioYamlWriter {
             ParametresSolveur parametresSolveur,
             Set<String> contraintesDesactivees,
             Map<String, Integer> poidsContraintes,
-            List<ContrainteAdHoc> contraintesAdHoc) {
-    }
+            List<ContrainteAdHoc> contraintesAdHoc) {}
 
     /**
      * <b>Visible for testing only</b> — no production caller, and none should
@@ -75,10 +73,21 @@ public final class ScenarioYamlWriter {
      * <p>Package-private and static, like {@link ProblemBuilder#buildPostes}, so
      * the tests need no database.</p>
      */
-    public static String buildScenarioYaml(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
-            List<PosteAffectation> postes) {
-        return buildScenarioYaml(new ScenarioExport(animateurs, stands, creneaux, postes, List.of(), List.of(),
-                null, null, null, Set.of(), Map.of(), List.of()));
+    public static String buildScenarioYaml(
+            List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux, List<PosteAffectation> postes) {
+        return buildScenarioYaml(new ScenarioExport(
+                animateurs,
+                stands,
+                creneaux,
+                postes,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null,
+                Set.of(),
+                Map.of(),
+                List.of()));
     }
 
     /** Full-fidelity variant: writes every optional section {@link ScenarioExport} carries. */

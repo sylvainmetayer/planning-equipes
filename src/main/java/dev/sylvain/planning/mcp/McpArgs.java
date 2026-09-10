@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.service.BusinessError;
 import java.time.DayOfWeek;
 import java.time.Instant;
@@ -16,8 +17,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import dev.sylvain.planning.domain.FenetreHoraire;
-
 /**
  * Parsing of the scalar tool arguments an MCP client sends as plain strings.
  *
@@ -28,8 +27,7 @@ import dev.sylvain.planning.domain.FenetreHoraire;
  */
 final class McpArgs {
 
-    private McpArgs() {
-    }
+    private McpArgs() {}
 
     static LocalDate date(String value, String champ) {
         if (value == null || value.isBlank()) {
@@ -139,8 +137,10 @@ final class McpArgs {
                         + "obligatoire ici. La forme ouverte « HH:MM- » n'existe que pour les horaires de stand, "
                         + "qui se lisent au regard d'un créneau ; un créneau est lui-même l'amplitude du jour.");
             }
-            result.add(new FenetreHoraire(heure(debut, "fenetres.heureDebut"),
-                    fin.isEmpty() ? null : heure(fin, "fenetres.heureFin"), effectif));
+            result.add(new FenetreHoraire(
+                    heure(debut, "fenetres.heureDebut"),
+                    fin.isEmpty() ? null : heure(fin, "fenetres.heureFin"),
+                    effectif));
         }
         if (result.isEmpty()) {
             throw new BusinessError.Invalid("fenetres ne contient aucune fenêtre exploitable");

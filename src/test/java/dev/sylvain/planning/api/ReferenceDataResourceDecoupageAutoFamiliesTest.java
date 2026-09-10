@@ -4,12 +4,11 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
+import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -51,9 +50,12 @@ class ReferenceDataResourceDecoupageAutoFamiliesTest {
 
     @AfterEach
     void restaurerLesParametresParDefaut() {
-        given().contentType("application/json").body(PARAMETRES_PAR_DEFAUT)
-                .when().put("/api/parametres-decoupage")
-                .then().statusCode(200);
+        given().contentType("application/json")
+                .body(PARAMETRES_PAR_DEFAUT)
+                .when()
+                .put("/api/parametres-decoupage")
+                .then()
+                .statusCode(200);
     }
 
     @Test
@@ -63,35 +65,39 @@ class ReferenceDataResourceDecoupageAutoFamiliesTest {
         // A starting state deliberately at odds with the scenario: a single
         // family. If the import applied the slicing before the parameters, every
         // shift would be born in family 0 and the test would fail.
-        given().contentType("application/json").body(PARAMETRES_PAR_DEFAUT)
-                .when().put("/api/parametres-decoupage")
-                .then().statusCode(200);
+        given().contentType("application/json")
+                .body(PARAMETRES_PAR_DEFAUT)
+                .when()
+                .put("/api/parametres-decoupage")
+                .then()
+                .statusCode(200);
 
-        given()
-                .when().post("/api/reference-data/import-scenario?name=scenario-decoupage-auto-familles.yaml")
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario-decoupage-auto-familles.yaml")
                 .then()
                 .statusCode(200)
                 .body("decoupageAuto", equalTo(true));
 
-        given()
-                .when().get("/api/parametres-decoupage")
+        given().when()
+                .get("/api/parametres-decoupage")
                 .then()
                 .statusCode(200)
                 .body("nombreFamillesDecalage", equalTo(3))
                 .body("dureeDecalageMaxMinutes", equalTo(60))
                 .body("dureeChevauchementMinutes", equalTo(15));
 
-        List<Map<String, Object>> creneaux = given()
-                .when().get("/api/creneaux")
+        List<Map<String, Object>> creneaux = given().when()
+                .get("/api/creneaux")
                 .then()
                 .statusCode(200)
-                .extract().jsonPath().getList("$");
+                .extract()
+                .jsonPath()
+                .getList("$");
 
         assertThat(creneaux).as("l'édition doit porter les vacations générées").isNotEmpty();
 
-        Set<Object> families = creneaux.stream()
-                .map(vacation -> vacation.get("famille"))
-                .collect(Collectors.toSet());
+        Set<Object> families =
+                creneaux.stream().map(vacation -> vacation.get("famille")).collect(Collectors.toSet());
 
         assertThat(families)
                 .as("les vacations doivent couvrir les 3 familles du scénario, "

@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.scenario;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.service.solve.PlanningService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.nio.file.Files;
@@ -12,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
-import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
-import dev.sylvain.planning.service.solve.PlanningService;
 
 /**
  * A scenario carrying more than fifty YAML aliases is read.
@@ -43,7 +42,10 @@ class ScenarioAliasYamlTest {
     void unScenarioAvecPlusDeCinquanteAliasEstLu() throws Exception {
         String yamlAvecAlias = scenarioSharingOneListInstance();
 
-        long alias = yamlAvecAlias.lines().filter(line -> line.matches(".*\\*id\\d+.*")).count();
+        long alias = yamlAvecAlias
+                .lines()
+                .filter(line -> line.matches(".*\\*id\\d+.*"))
+                .count();
         assertThat(alias)
                 .as("le dump doit bien porter des alias, sinon le test ne prouve rien")
                 .isGreaterThan(50);
@@ -61,8 +63,8 @@ class ScenarioAliasYamlTest {
      */
     @SuppressWarnings("unchecked")
     private static String scenarioSharingOneListInstance() throws Exception {
-        Map<String, Object> data = new Yaml()
-                .load(Files.readString(Path.of("src/main/resources/scenarios/scenario.yml")));
+        Map<String, Object> data =
+                new Yaml().load(Files.readString(Path.of("src/main/resources/scenarios/scenario.yml")));
 
         List<Map<String, Object>> animateurs = (List<Map<String, Object>>) data.get("animateurs");
         Map<String, Object> modele = animateurs.get(0);

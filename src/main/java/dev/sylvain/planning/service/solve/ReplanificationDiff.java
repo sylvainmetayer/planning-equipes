@@ -1,14 +1,13 @@
 package dev.sylvain.planning.service.solve;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
  * What an incremental re-solve actually changed (issue #86). Replanning
@@ -23,8 +22,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
  */
 public final class ReplanificationDiff {
 
-    private ReplanificationDiff() {
-    }
+    private ReplanificationDiff() {}
 
     /**
      * One stand × créneau whose crew changed, both crews spelled out as display
@@ -38,8 +36,7 @@ public final class ReplanificationDiff {
             String heureDebut,
             String heureFin,
             List<String> avant,
-            List<String> apres) {
-    }
+            List<String> apres) {}
 
     /**
      * The stand × créneau cells whose crew differs between the persisted plan
@@ -60,8 +57,10 @@ public final class ReplanificationDiff {
                 continue;
             }
             parCle.computeIfAbsent(
-                    PlanningPersistenceService.standCreneauKey(poste.getStand().getId(), poste.getCreneau().getId()),
-                    key -> new ArrayList<>()).add(poste);
+                            PlanningPersistenceService.standCreneauKey(
+                                    poste.getStand().getId(), poste.getCreneau().getId()),
+                            key -> new ArrayList<>())
+                    .add(poste);
         }
         List<ChangementAffectation> changements = new ArrayList<>();
         for (Map.Entry<String, List<PosteAffectation>> entry : parCle.entrySet()) {
@@ -71,7 +70,9 @@ public final class ReplanificationDiff {
                     idsAfter.add(poste.getAnimateur().getId());
                 }
             }
-            List<String> sortedBefore = avant.getOrDefault(entry.getKey(), List.of()).stream().sorted().toList();
+            List<String> sortedBefore = avant.getOrDefault(entry.getKey(), List.of()).stream()
+                    .sorted()
+                    .toList();
             List<String> sortedAfter = idsAfter.stream().sorted().toList();
             if (sortedBefore.equals(sortedAfter)) {
                 continue;
@@ -87,8 +88,8 @@ public final class ReplanificationDiff {
                     noms(sortedBefore, animateursById),
                     noms(sortedAfter, animateursById)));
         }
-        changements.sort(Comparator
-                .comparing((ChangementAffectation changement) -> changement.date() == null ? "" : changement.date())
+        changements.sort(Comparator.comparing(
+                        (ChangementAffectation changement) -> changement.date() == null ? "" : changement.date())
                 .thenComparing(changement -> changement.heureDebut() == null ? "" : changement.heureDebut())
                 .thenComparing(ChangementAffectation::standNom, Comparator.nullsFirst(Comparator.naturalOrder())));
         return changements;
@@ -104,7 +105,8 @@ public final class ReplanificationDiff {
                 continue;
             }
             String nom = ((animateur.getPrenom() == null ? "" : animateur.getPrenom()) + " "
-                    + (animateur.getNom() == null ? "" : animateur.getNom())).trim();
+                            + (animateur.getNom() == null ? "" : animateur.getNom()))
+                    .trim();
             noms.add(nom.isEmpty() ? id : nom);
         }
         return noms;

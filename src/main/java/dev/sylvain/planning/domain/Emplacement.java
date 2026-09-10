@@ -26,8 +26,7 @@ public class Emplacement {
      */
     private Instant modifieLe;
 
-    public Emplacement() {
-    }
+    public Emplacement() {}
 
     public Emplacement(String id, String nom, Double latitude, Double longitude) {
         this.id = id;
@@ -83,8 +82,11 @@ public class Emplacement {
      * distance" instead of silently treating a missing GPS fix as co-located.
      */
     public Double distanceMetresTo(Emplacement autre) {
-        if (autre == null || latitude == null || longitude == null
-                || autre.latitude == null || autre.longitude == null) {
+        if (autre == null
+                || latitude == null
+                || longitude == null
+                || autre.latitude == null
+                || autre.longitude == null) {
             return null;
         }
         double rayonTerreMetres = 6_371_000.0;

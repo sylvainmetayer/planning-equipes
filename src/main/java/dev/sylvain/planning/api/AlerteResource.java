@@ -1,7 +1,5 @@
 package dev.sylvain.planning.api;
 
-import java.util.List;
-
 import dev.sylvain.planning.service.analyse.AlerteService;
 import dev.sylvain.planning.service.analyse.AlerteService.AlerteView;
 import jakarta.inject.Inject;
@@ -10,6 +8,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 
 /**
  * What the scheduled jobs left on the organiser's desk (issues #298, #299,

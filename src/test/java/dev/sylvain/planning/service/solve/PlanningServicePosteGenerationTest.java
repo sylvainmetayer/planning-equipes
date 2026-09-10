@@ -3,6 +3,11 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -10,14 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
 
 /**
  * Exercises {@link ProblemBuilder#buildPostes} directly (package-private,
@@ -31,23 +29,26 @@ class PlanningServicePosteGenerationTest {
 
     private final Stand standA = new Stand("STAND-A", "A", Set.of(), 1, 1, false);
     private final Stand standB = new Stand("STAND-B", "B", Set.of(), 1, 1, false);
-    private final Creneau creneauOuvert = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+    private final Creneau creneauOuvert =
+            new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
 
     @Test
     void creneauSansRestrictionResteOuvertATousLesStands() {
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(standA, standB), List.of(creneauOuvert));
 
         assertThat(postes).hasSize(2);
-        assertThat(postes).extracting(poste -> poste.getStand().getId())
+        assertThat(postes)
+                .extracting(poste -> poste.getStand().getId())
                 .containsExactlyInAnyOrder("STAND-A", "STAND-B");
-        assertThat(postes).allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
+        assertThat(postes)
+                .allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
     }
 
     @Test
     void standFermeIntegralementNeGenereAucunPoste() {
         Stand standFerme = new Stand("STAND-B", "B", Set.of(), 1, 1, false);
-        standFerme.setIndisponibilites(List.of(
-                new IndisponibiliteStand(null, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0), null)));
+        standFerme.setIndisponibilites(List.of(new IndisponibiliteStand(
+                null, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0), null)));
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(standA, standFerme), List.of(creneauOuvert));
 
@@ -60,13 +61,14 @@ class PlanningServicePosteGenerationTest {
     void fermeturePartielleGenereUnPostePourChaqueSegmentOuvert() {
         Creneau creneau = new Creneau(3L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(14, 0));
         Stand standPartiel = new Stand("STAND-A", "A", Set.of(), 1, 1, false);
-        standPartiel.setIndisponibilites(List.of(
-                new IndisponibiliteStand(null, LocalDate.of(2026, 8, 14), LocalTime.of(11, 0), LocalTime.of(13, 0), "Pause")));
+        standPartiel.setIndisponibilites(List.of(new IndisponibiliteStand(
+                null, LocalDate.of(2026, 8, 14), LocalTime.of(11, 0), LocalTime.of(13, 0), "Pause")));
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(standPartiel), List.of(creneau));
 
         assertThat(postes).hasSize(2);
-        assertThat(postes).extracting(PosteAffectation::getHeureDebutEffective, PosteAffectation::getHeureFinEffective)
+        assertThat(postes)
+                .extracting(PosteAffectation::getHeureDebutEffective, PosteAffectation::getHeureFinEffective)
                 .containsExactlyInAnyOrder(
                         org.assertj.core.groups.Tuple.tuple(LocalTime.of(9, 0), LocalTime.of(11, 0)),
                         org.assertj.core.groups.Tuple.tuple(LocalTime.of(13, 0), LocalTime.of(14, 0)));
@@ -107,7 +109,8 @@ class PlanningServicePosteGenerationTest {
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(apresMidi));
 
         assertThat(postes).hasSize(6);
-        assertThat(postes).extracting(PosteAffectation::getHeureDebutEffective, PosteAffectation::getHeureFinEffective)
+        assertThat(postes)
+                .extracting(PosteAffectation::getHeureDebutEffective, PosteAffectation::getHeureFinEffective)
                 .containsExactly(
                         tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
                         tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
@@ -127,13 +130,13 @@ class PlanningServicePosteGenerationTest {
         LocalDate jour = LocalDate.of(2026, 8, 14);
         Creneau apresMidi = new Creneau(5L, 1, jour, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Stand stand = new Stand("STAND-E", "E", Set.of(), 3, 6, false);
-        stand.setOuvertures(List.of(
-                new OuvertureStand(null, jour, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
+        stand.setOuvertures(List.of(new OuvertureStand(null, jour, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(apresMidi));
 
         assertThat(postes).hasSize(3);
-        assertThat(postes).allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
+        assertThat(postes)
+                .allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
     }
 
     /**
@@ -147,8 +150,7 @@ class PlanningServicePosteGenerationTest {
         Creneau releve = new Creneau(6L, 1, jour, LocalTime.of(12, 0), LocalTime.of(13, 0));
         releve.setCouverturePause(true);
         Stand stand = new Stand("STAND-F", "F", Set.of(), 1, 6, false);
-        stand.setOuvertures(List.of(
-                new OuvertureStand(null, jour, LocalTime.of(12, 0), LocalTime.of(13, 0), null, 5)));
+        stand.setOuvertures(List.of(new OuvertureStand(null, jour, LocalTime.of(12, 0), LocalTime.of(13, 0), null, 5)));
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(releve));
 
@@ -165,18 +167,21 @@ class PlanningServicePosteGenerationTest {
      */
     @Test
     void standNestPaireQuAvecLaFamilleDeCreneauxQuiLuiEstAssignee() {
-        Creneau creneauFamille0 = new Creneau(10L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        Creneau creneauFamille1 = new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau creneauFamille0 =
+                new Creneau(10L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau creneauFamille1 =
+                new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
         creneauFamille1.setFamille(1);
 
-        List<PosteAffectation> postes = ProblemBuilder.buildPostes(
-                List.of(standA, standB), List.of(creneauFamille0, creneauFamille1));
+        List<PosteAffectation> postes =
+                ProblemBuilder.buildPostes(List.of(standA, standB), List.of(creneauFamille0, creneauFamille1));
 
         // Every stand shows up on ONE of the two families only, never on both
         // (otherwise there would be 4 seats, not 2: the full cartesian product
         // of the days before the offset was introduced).
         assertThat(postes).hasSize(2);
-        assertThat(postes).extracting(p -> p.getStand().getId() + "->" + p.getCreneau().getFamille())
+        assertThat(postes)
+                .extracting(p -> p.getStand().getId() + "->" + p.getCreneau().getFamille())
                 .containsExactlyInAnyOrder("STAND-A->0", "STAND-B->1");
     }
 
@@ -195,8 +200,8 @@ class PlanningServicePosteGenerationTest {
         }
         List<Creneau> creneaux = new ArrayList<>();
         for (int famille = 0; famille < 4; famille++) {
-            Creneau creneau = new Creneau(100L + famille, 1, LocalDate.of(2026, 8, 14),
-                    LocalTime.of(9, 0), LocalTime.of(13, 0));
+            Creneau creneau =
+                    new Creneau(100L + famille, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
             creneau.setFamille(famille);
             creneaux.add(creneau);
         }
@@ -207,7 +212,9 @@ class PlanningServicePosteGenerationTest {
         assertThat(parFamille).hasSize(4);
         long min = parFamille.values().stream().mapToLong(Long::longValue).min().orElseThrow();
         long max = parFamille.values().stream().mapToLong(Long::longValue).max().orElseThrow();
-        assertThat(max - min).as("écart entre la plus grosse et la plus petite famille").isLessThanOrEqualTo(1);
+        assertThat(max - min)
+                .as("écart entre la plus grosse et la plus petite famille")
+                .isLessThanOrEqualTo(1);
     }
 
     /**
@@ -227,10 +234,13 @@ class PlanningServicePosteGenerationTest {
         // and pushed A, B and C one family further.
         Stand ajoute = new Stand("AJOUTE", "Ajouté", Set.of(), 1, 1, false);
 
-        Map<String, Integer> familles = ProblemBuilder.standFamilies(
-                List.of(existantA, existantB, existantC, ajoute), creneaux);
+        Map<String, Integer> familles =
+                ProblemBuilder.standFamilies(List.of(existantA, existantB, existantC, ajoute), creneaux);
 
-        assertThat(familles).containsEntry("STAND-A", 1).containsEntry("STAND-B", 1).containsEntry("STAND-C", 0);
+        assertThat(familles)
+                .containsEntry("STAND-A", 1)
+                .containsEntry("STAND-B", 1)
+                .containsEntry("STAND-C", 0);
         assertThat(familles.get("AJOUTE")).as("la famille la moins peuplée").isEqualTo(0);
     }
 
@@ -262,9 +272,11 @@ class PlanningServicePosteGenerationTest {
         List<Creneau> creneaux = List.of(famille0, famille1);
 
         Map<String, Integer> ordreDirect = ProblemBuilder.buildPostes(List.of(standA, standB), creneaux).stream()
-                .collect(Collectors.toMap(p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
+                .collect(Collectors.toMap(
+                        p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
         Map<String, Integer> ordreInverse = ProblemBuilder.buildPostes(List.of(standB, standA), creneaux).stream()
-                .collect(Collectors.toMap(p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
+                .collect(Collectors.toMap(
+                        p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
 
         assertThat(ordreInverse).isEqualTo(ordreDirect);
     }
@@ -283,8 +295,8 @@ class PlanningServicePosteGenerationTest {
         Map<String, Long> parStand = ProblemBuilder.buildPostes(List.of(quatre, trois), List.of(pause)).stream()
                 .collect(Collectors.groupingBy(p -> p.getStand().getId(), Collectors.counting()));
 
-        assertThat(parStand).containsEntry("STAND-4", 2L);   // 4 / 2
-        assertThat(parStand).containsEntry("STAND-3", 2L);   // ceil(3 / 2)
+        assertThat(parStand).containsEntry("STAND-4", 2L); // 4 / 2
+        assertThat(parStand).containsEntry("STAND-3", 2L); // ceil(3 / 2)
     }
 
     /**

@@ -1,19 +1,10 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
@@ -22,15 +13,23 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.journal.CurrentAction;
-import dev.sylvain.planning.service.journal.ChampsModifies;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.TokenOwner;
+import dev.sylvain.planning.service.journal.ChampsModifies;
+import dev.sylvain.planning.service.journal.CurrentAction;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * One door onto the whole reference model, for callers that legitimately need
@@ -223,8 +222,8 @@ public class ReferenceDataService implements ReferenceData {
      * are visible.
      */
     public WrittenStand writeStand(Stand stand, List<TypologieItem> typologiesACreer, Emplacement emplacementACreer) {
-        Stand ecrit = scope.writeAndReturn("Failed to create stand " + stand.getId() + " with its dependencies",
-                connection -> {
+        Stand ecrit = scope.writeAndReturn(
+                "Failed to create stand " + stand.getId() + " with its dependencies", connection -> {
                     for (TypologieItem typologie : typologiesACreer) {
                         typologies.create(connection, typologie);
                     }
@@ -277,8 +276,8 @@ public class ReferenceDataService implements ReferenceData {
         try {
             return ModeGrilleCreneaux.valueOf(valeur.trim().toUpperCase(java.util.Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            throw new BusinessError.Invalid(champ + " : valeur inconnue « " + valeur
-                    + " », attendu AMPLITUDES ou VACATIONS");
+            throw new BusinessError.Invalid(
+                    champ + " : valeur inconnue « " + valeur + " », attendu AMPLITUDES ou VACATIONS");
         }
     }
 
@@ -286,8 +285,7 @@ public class ReferenceDataService implements ReferenceData {
         return stands.compactHoraires(apply);
     }
 
-    public List<GrilleHorairesStands.LigneGrille> saisirGrilleHoraires(
-            List<GrilleHorairesStands.SaisieStand> saisies) {
+    public List<GrilleHorairesStands.LigneGrille> saisirGrilleHoraires(List<GrilleHorairesStands.SaisieStand> saisies) {
         return stands.saisirGrille(saisies);
     }
 
@@ -395,8 +393,7 @@ public class ReferenceDataService implements ReferenceData {
      * What a recurrence rule would add, and the verdict on the grid that would
      * result — nothing written.
      */
-    public RecurrenceGrille previewRecurrence(CreneauGridService.RegleRecurrence regle,
-            ModeGrilleCreneaux mode) {
+    public RecurrenceGrille previewRecurrence(CreneauGridService.RegleRecurrence regle, ModeGrilleCreneaux mode) {
         List<Creneau> generes = CreneauGridService.generateRecurrence(regle);
         List<Creneau> resultante = new ArrayList<>(listCreneaux());
         resultante.addAll(generes);
@@ -410,16 +407,15 @@ public class ReferenceDataService implements ReferenceData {
     }
 
     /** The créneaux a rule produced (or would produce), and the resulting grid's verdict. */
-    public record RecurrenceGrille(List<Creneau> creneaux, CreneauGridService.RapportGrille controle) {
-    }
+    public record RecurrenceGrille(List<Creneau> creneaux, CreneauGridService.RapportGrille controle) {}
 
     /**
      * The grid the stands' own hours imply, and the verdict on it — nothing
      * written. {@code remplacer} says which grid is judged: the derived one
      * alone, or the current grid plus the derived créneaux.
      */
-    public DerivationGrille previewDerivation(GrilleDepuisFenetres.Parametres parametres, boolean remplacer,
-            ModeGrilleCreneaux mode) {
+    public DerivationGrille previewDerivation(
+            GrilleDepuisFenetres.Parametres parametres, boolean remplacer, ModeGrilleCreneaux mode) {
         GrilleDepuisFenetres.Derivation derivation = GrilleDepuisFenetres.deriver(listStands(), parametres);
         List<Creneau> resultante = remplacer ? new ArrayList<>() : new ArrayList<>(listCreneaux());
         resultante.addAll(derivation.creneaux());
@@ -427,23 +423,22 @@ public class ReferenceDataService implements ReferenceData {
     }
 
     /** Writes the derived grid: added to the current one, or in its place (the persisted plan goes with it). */
-    public DerivationGrille applyDerivation(GrilleDepuisFenetres.Parametres parametres, boolean remplacer,
-            ModeGrilleCreneaux mode) {
+    public DerivationGrille applyDerivation(
+            GrilleDepuisFenetres.Parametres parametres, boolean remplacer, ModeGrilleCreneaux mode) {
         GrilleDepuisFenetres.Derivation derivation = GrilleDepuisFenetres.deriver(listStands(), parametres);
         if (derivation.creneaux().isEmpty()) {
             throw new BusinessError.Invalid("Aucun stand n'a de fenêtre d'ouverture sur ces dates : rien à dériver");
         }
-        List<Creneau> ecrits = remplacer ? creneaux.replace(derivation.creneaux())
-                : createCreneaux(derivation.creneaux());
-        GrilleDepuisFenetres.Derivation persistee = new GrilleDepuisFenetres.Derivation(
-                ecrits, derivation.coupures(), derivation.joursSansFenetre());
+        List<Creneau> ecrits =
+                remplacer ? creneaux.replace(derivation.creneaux()) : createCreneaux(derivation.creneaux());
+        GrilleDepuisFenetres.Derivation persistee =
+                new GrilleDepuisFenetres.Derivation(ecrits, derivation.coupures(), derivation.joursSansFenetre());
         return new DerivationGrille(persistee, controlerGrille(mode));
     }
 
     /** What the derivation produced (or would), and the verdict on the resulting grid. */
-    public record DerivationGrille(GrilleDepuisFenetres.Derivation derivation,
-            CreneauGridService.RapportGrille controle) {
-    }
+    public record DerivationGrille(
+            GrilleDepuisFenetres.Derivation derivation, CreneauGridService.RapportGrille controle) {}
 
     /* ------------------------------- Slicing -------------------------------- */
 

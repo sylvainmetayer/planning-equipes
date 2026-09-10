@@ -1,15 +1,14 @@
 package dev.sylvain.planning.service.notification;
 
+import dev.sylvain.planning.service.JdbcEditionScope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
-import dev.sylvain.planning.service.JdbcEditionScope;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 /**
  * What the scheduled jobs have already sent, and the only thing standing
@@ -53,13 +52,14 @@ public class JournalNotificationsRepository {
 
     /** Severity of an alert, matching what the Notifications screen already displays. */
     public enum Severite {
-        INFO, WARNING, ALERTE
+        INFO,
+        WARNING,
+        ALERTE
     }
 
     /** One alert of the Notifications screen, newest first. */
-    public record Alerte(String type, String cle, Instant declencheLe, String libelle, String severite,
-            String animateurId) {
-    }
+    public record Alerte(
+            String type, String cle, Instant declencheLe, String libelle, String severite, String animateurId) {}
 
     @Inject
     JdbcEditionScope scope;
@@ -84,8 +84,7 @@ public class JournalNotificationsRepository {
      */
     public boolean claim(Type type, String cle, String animateurId, String libelle, Severite severite) {
         return scope.writeAndReturn("Failed to record a scheduled notification", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO notification_planifiee (edition_id, type, cle, declenche_le, libelle,
                     severite, animateur_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -115,8 +114,7 @@ public class JournalNotificationsRepository {
      */
     public List<Alerte> alertes(int limite) {
         return scope.read("Failed to load the scheduled notification alerts", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    """
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT type, cle, declenche_le, libelle, severite, animateur_id
                     FROM (
                         SELECT type, cle, declenche_le, libelle, severite, animateur_id,

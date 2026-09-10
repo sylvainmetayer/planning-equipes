@@ -1,16 +1,5 @@
 package dev.sylvain.planning.service.espace;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
@@ -20,19 +9,28 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.domain.StatutDeclaration;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningRepository;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.analyse.PauseAnalyzer;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.TypologieService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Read views of the espace animateur (issue #165): the animateur's own slice
@@ -83,13 +81,17 @@ public class EspaceAnimateurService {
     PauseAnalyzer pauseAnalyzer;
 
     /** One of the animateur's seats in the persisted planning. */
-    public record PosteAnimateurView(Long creneauId, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
-            String standId, String standNom, List<String> coequipiers) {
-    }
+    public record PosteAnimateurView(
+            Long creneauId,
+            LocalDate date,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            String standId,
+            String standNom,
+            List<String> coequipiers) {}
 
     /** A colleague an échange can target. First name + name: what a PDF already prints. */
-    public record ColleagueView(String id, String nomComplet) {
-    }
+    public record ColleagueView(String id, String nomComplet) {}
 
     /**
      * The espace's home payload: who I am, my planning, who I can swap with —
@@ -132,28 +134,53 @@ public class EspaceAnimateurService {
      *                 the shifts it sits under (see {@link PauseAnalyzer})
      */
     @Schema(requiredProperties = {"foireOuverte"})
-    public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant publieLe,
-            boolean foireOuverte, List<PosteAnimateurView> postes,
-            List<LocalDate> joursRepos, List<ColleagueView> collegues,
-            String statutConfirmation, Instant confirmeLe,
-            LocalDate foireOuvreLe, LocalDate foireFermeLe,
-            String abonnementToken, List<PauseAnalyzer.PauseAnimateurView> pauses) {
-    }
+    public record EspaceAnimateurView(
+            String animateurId,
+            String prenom,
+            String nom,
+            Instant publieLe,
+            boolean foireOuverte,
+            List<PosteAnimateurView> postes,
+            List<LocalDate> joursRepos,
+            List<ColleagueView> collegues,
+            String statutConfirmation,
+            Instant confirmeLe,
+            LocalDate foireOuvreLe,
+            LocalDate foireFermeLe,
+            String abonnementToken,
+            List<PauseAnalyzer.PauseAnimateurView> pauses) {}
 
     /**
      * One demande with every label resolved, shared by the espace and the
      * admin screen.
      */
-    public record DemandeEchangeView(String id, Long creneauId, LocalDate date, LocalTime heureDebut,
-            LocalTime heureFin, String standId, String standNom, String demandeurId, String demandeurNom,
-            String cibleId, String cibleNom,
+    public record DemandeEchangeView(
+            String id,
+            Long creneauId,
+            LocalDate date,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            String standId,
+            String standNom,
+            String demandeurId,
+            String demandeurNom,
+            String cibleId,
+            String cibleNom,
             // Directed exchange only — the colleague's seat wanted in return; null otherwise.
-            Long creneauCibleId, LocalDate dateCible, LocalTime heureDebutCible, LocalTime heureFinCible,
-            String standCibleId, String standCibleNom,
-            String motif, String statut, Boolean prevalidationOk,
-            List<String> contraintesViolees, String commentaireAdmin, Instant creeLe,
-            Instant cibleDecideLe, Instant decideLe) {
-    }
+            Long creneauCibleId,
+            LocalDate dateCible,
+            LocalTime heureDebutCible,
+            LocalTime heureFinCible,
+            String standCibleId,
+            String standCibleNom,
+            String motif,
+            String statut,
+            Boolean prevalidationOk,
+            List<String> contraintesViolees,
+            String commentaireAdmin,
+            Instant creeLe,
+            Instant cibleDecideLe,
+            Instant decideLe) {}
 
     public EspaceAnimateurView buildView(String animateurId) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
@@ -180,26 +207,35 @@ public class EspaceAnimateurService {
         ConfirmationPlanningRepository.Confirmation confirmation =
                 confirmationService.stored(animateurId).orElse(null);
         DemandeEchangeService.FenetreFoire foire = demandeEchangeService.fenetre();
-        return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
+        return new EspaceAnimateurView(
+                animateur.getId(),
+                animateur.getPrenom(),
+                animateur.getNom(),
                 publication == null ? null : publication.publieLe(),
-                foire.openOn(LocalDate.now()), postes, joursRepos, collegues,
+                foire.openOn(LocalDate.now()),
+                postes,
+                joursRepos,
+                collegues,
                 (confirmation == null ? StatutConfirmation.NON_VU : confirmation.statut()).name(),
                 confirmation == null ? null : confirmation.confirmeLe(),
-                foire.ouvertureAVenir(LocalDate.now()), foire.fin(),
+                foire.ouvertureAVenir(LocalDate.now()),
+                foire.fin(),
                 referenceDataService.abonnementToken(animateurId),
                 pauseAnalyzer.pausesAnimateur(planning, animateurId));
     }
 
-    private static List<PosteAnimateurView> postesOf(PlanningEvenement planning, String animateurId,
-            Map<String, List<String>> coequipiers) {
+    private static List<PosteAnimateurView> postesOf(
+            PlanningEvenement planning, String animateurId, Map<String, List<String>> coequipiers) {
         return planning.getPostes().stream()
-                .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId())
-                        && poste.getCreneau() != null && poste.getStand() != null)
-                .sorted(Comparator
-                        .comparing((PosteAffectation poste) -> poste.getCreneau().getDate(),
+                .filter(poste -> poste.getAnimateur() != null
+                        && animateurId.equals(poste.getAnimateur().getId())
+                        && poste.getCreneau() != null
+                        && poste.getStand() != null)
+                .sorted(Comparator.comparing(
+                                (PosteAffectation poste) -> poste.getCreneau().getDate(),
                                 Comparator.nullsLast(Comparator.naturalOrder()))
-                        .thenComparing(poste -> poste.heureDebutEffectif(),
-                                Comparator.nullsLast(Comparator.naturalOrder())))
+                        .thenComparing(
+                                poste -> poste.heureDebutEffectif(), Comparator.nullsLast(Comparator.naturalOrder())))
                 .map(poste -> new PosteAnimateurView(
                         poste.getCreneau().getId(),
                         poste.getCreneau().getDate(),
@@ -251,10 +287,16 @@ public class EspaceAnimateurService {
      *
      * @param nature LIBERE / CROISE / DIRIGE — see {@link PlanningWhatIf.NatureEchange}
      */
-    public record SuggestionEchangeView(String animateurId, String nomComplet, String nature,
-            Long creneauCibleId, LocalDate dateCible, LocalTime heureDebutCible, LocalTime heureFinCible,
-            String standCibleId, String standCibleNom) {
-    }
+    public record SuggestionEchangeView(
+            String animateurId,
+            String nomComplet,
+            String nature,
+            Long creneauCibleId,
+            LocalDate dateCible,
+            LocalTime heureDebutCible,
+            LocalTime heureFinCible,
+            String standCibleId,
+            String standCibleNom) {}
 
     /**
      * Answer of « qui peut me remplacer ? ».
@@ -264,9 +306,13 @@ public class EspaceAnimateurService {
      *                      rather than let « personne d'autre » be read into it
      */
     @Schema(requiredProperties = {"listeTronquee", "optionsEligibles", "optionsEvaluees"})
-    public record SuggestionsEchangeView(Long creneauId, String standId, int optionsEligibles,
-            int optionsEvaluees, boolean listeTronquee, List<SuggestionEchangeView> suggestions) {
-    }
+    public record SuggestionsEchangeView(
+            Long creneauId,
+            String standId,
+            int optionsEligibles,
+            int optionsEvaluees,
+            boolean listeTronquee,
+            List<SuggestionEchangeView> suggestions) {}
 
     /**
      * Every viable way this animateur could get rid of one of their créneaux:
@@ -285,8 +331,8 @@ public class EspaceAnimateurService {
      * the animateur still picks one, submits a demande, and the colleague still
      * has to agree.</p>
      */
-    public SuggestionsEchangeView suggestionsEchange(String animateurId, Long creneauId, String standId,
-            Integer plafond) {
+    public SuggestionsEchangeView suggestionsEchange(
+            String animateurId, Long creneauId, String standId, Integer plafond) {
         if (creneauId == null || standId == null || standId.isBlank()) {
             throw new BusinessError.Invalid("Créneau ou stand manquant");
         }
@@ -298,24 +344,30 @@ public class EspaceAnimateurService {
                 planPublieService.planPublie(), animateurId, creneauId, standId, plafond);
         Map<String, Animateur> animateurs = referenceDataService.listAnimateurs().stream()
                 .collect(Collectors.toMap(Animateur::getId, Function.identity()));
-        Map<String, Stand> stands = referenceDataService.listStands().stream()
-                .collect(Collectors.toMap(Stand::getId, Function.identity()));
+        Map<String, Stand> stands =
+                referenceDataService.listStands().stream().collect(Collectors.toMap(Stand::getId, Function.identity()));
         Map<Long, Creneau> creneaux = referenceDataService.listCreneaux().stream()
                 .filter(creneau -> creneau.getId() != null)
                 .collect(Collectors.toMap(Creneau::getId, Function.identity()));
         List<SuggestionEchangeView> vues = suggestions.suggestions().stream()
                 .map(suggestion -> toView(suggestion, animateurs, stands, creneaux))
                 .toList();
-        return new SuggestionsEchangeView(creneauId, standId,
-                suggestions.optionsEligibles(), suggestions.optionsEvaluees(),
-                suggestions.optionsEvaluees() < suggestions.optionsEligibles(), vues);
+        return new SuggestionsEchangeView(
+                creneauId,
+                standId,
+                suggestions.optionsEligibles(),
+                suggestions.optionsEvaluees(),
+                suggestions.optionsEvaluees() < suggestions.optionsEligibles(),
+                vues);
     }
 
-    private static SuggestionEchangeView toView(PlanningWhatIf.SuggestionEchange suggestion,
-            Map<String, Animateur> animateurs, Map<String, Stand> stands, Map<Long, Creneau> creneaux) {
+    private static SuggestionEchangeView toView(
+            PlanningWhatIf.SuggestionEchange suggestion,
+            Map<String, Animateur> animateurs,
+            Map<String, Stand> stands,
+            Map<Long, Creneau> creneaux) {
         Stand standCible = suggestion.standCibleId() == null ? null : stands.get(suggestion.standCibleId());
-        Creneau creneauCible = suggestion.creneauCibleId() == null ? null
-                : creneaux.get(suggestion.creneauCibleId());
+        Creneau creneauCible = suggestion.creneauCibleId() == null ? null : creneaux.get(suggestion.creneauCibleId());
         return new SuggestionEchangeView(
                 suggestion.animateurId(),
                 nomComplet(animateurs.get(suggestion.animateurId()), suggestion.animateurId()),
@@ -339,19 +391,21 @@ public class EspaceAnimateurService {
         Map<Long, Creneau> creneaux = referenceDataService.listCreneaux().stream()
                 .filter(creneau -> creneau.getId() != null)
                 .collect(Collectors.toMap(Creneau::getId, Function.identity()));
-        Map<String, Stand> stands = referenceDataService.listStands().stream()
-                .collect(Collectors.toMap(Stand::getId, Function.identity()));
+        Map<String, Stand> stands =
+                referenceDataService.listStands().stream().collect(Collectors.toMap(Stand::getId, Function.identity()));
         return demandes.stream()
                 .map(demande -> toView(demande, animateurs, creneaux, stands))
                 .toList();
     }
 
-    private static DemandeEchangeView toView(DemandeEchange demande, Map<String, Animateur> animateurs,
-            Map<Long, Creneau> creneaux, Map<String, Stand> stands) {
+    private static DemandeEchangeView toView(
+            DemandeEchange demande,
+            Map<String, Animateur> animateurs,
+            Map<Long, Creneau> creneaux,
+            Map<String, Stand> stands) {
         Creneau creneau = creneaux.get(demande.getCreneauId());
         Stand stand = stands.get(demande.getStandId());
-        Creneau creneauCible = demande.getCreneauCibleId() == null ? null
-                : creneaux.get(demande.getCreneauCibleId());
+        Creneau creneauCible = demande.getCreneauCibleId() == null ? null : creneaux.get(demande.getCreneauCibleId());
         Stand standCible = demande.getStandCibleId() == null ? null : stands.get(demande.getStandCibleId());
         return new DemandeEchangeView(
                 demande.getId(),
@@ -389,14 +443,19 @@ public class EspaceAnimateurService {
     /* ---------------- Declaration of availability (issue #291) ---------------- */
 
     /** One game category, as the espace offers it: an id and the word for it. */
-    public record TypologieChoixView(String id, String label) {
-    }
+    public record TypologieChoixView(String id, String label) {}
 
     /** One of my declarations, with the game categories named rather than referenced. */
-    public record DeclarationView(String id, String statut, List<LocalDate> joursIndisponibles,
-            List<String> souhaits, List<String> souhaitsLabels, String commentaire,
-            String commentaireAdmin, Instant creeLe, Instant decideLe) {
-    }
+    public record DeclarationView(
+            String id,
+            String statut,
+            List<LocalDate> joursIndisponibles,
+            List<String> souhaits,
+            List<String> souhaitsLabels,
+            String commentaire,
+            String commentaireAdmin,
+            Instant creeLe,
+            Instant decideLe) {}
 
     /**
      * Everything the declaration tab needs in one read: whether the window is
@@ -413,11 +472,16 @@ public class EspaceAnimateurService {
      *                        have none: submitting again replaces it
      */
     @Schema(requiredProperties = {"collecteOuverte"})
-    public record DeclarationEspaceView(boolean collecteOuverte, LocalDate collecteDebut, LocalDate collecteFin,
-            List<LocalDate> joursEvenement, List<TypologieChoixView> typologies,
-            List<LocalDate> joursActuels, List<String> souhaitsActuels,
-            DeclarationView enAttente, List<DeclarationView> historique) {
-    }
+    public record DeclarationEspaceView(
+            boolean collecteOuverte,
+            LocalDate collecteDebut,
+            LocalDate collecteFin,
+            List<LocalDate> joursEvenement,
+            List<TypologieChoixView> typologies,
+            List<LocalDate> joursActuels,
+            List<String> souhaitsActuels,
+            DeclarationView enAttente,
+            List<DeclarationView> historique) {}
 
     public DeclarationEspaceView buildDeclarationView(String animateurId) {
         Animateur animateur = referenceDataService.listAnimateurs().stream()
@@ -434,11 +498,15 @@ public class EspaceAnimateurService {
                 .toList();
         DeclarationDisponibiliteRepository.FenetreCollecte fenetre = declarationService.fenetre();
         return new DeclarationEspaceView(
-                declarationService.isCollecteOuverte(), fenetre.debut(), fenetre.fin(),
+                declarationService.isCollecteOuverte(),
+                fenetre.debut(),
+                fenetre.fin(),
                 declarationService.joursEvenement(),
                 typologies,
                 animateur.getJoursIndisponibles().stream().sorted().toList(),
-                animateur.getSouhaits().stream().sorted(String.CASE_INSENSITIVE_ORDER).toList(),
+                animateur.getSouhaits().stream()
+                        .sorted(String.CASE_INSENSITIVE_ORDER)
+                        .toList(),
                 mesDeclarations.stream()
                         .filter(vue -> StatutDeclaration.EN_ATTENTE.name().equals(vue.statut()))
                         .findFirst()
@@ -456,11 +524,20 @@ public class EspaceAnimateurService {
      *                     what applying would change rather than only what was
      *                     asked for
      */
-    public record DeclarationAdminView(String id, String animateurId, String animateurNom, String statut,
-            List<LocalDate> joursIndisponibles, List<String> souhaits, List<String> souhaitsLabels,
-            String commentaire, String commentaireAdmin, Instant creeLe, Instant decideLe,
-            List<LocalDate> joursActuels, List<String> souhaitsActuelsLabels) {
-    }
+    public record DeclarationAdminView(
+            String id,
+            String animateurId,
+            String animateurNom,
+            String statut,
+            List<LocalDate> joursIndisponibles,
+            List<String> souhaits,
+            List<String> souhaitsLabels,
+            String commentaire,
+            String commentaireAdmin,
+            Instant creeLe,
+            Instant decideLe,
+            List<LocalDate> joursActuels,
+            List<String> souhaitsActuelsLabels) {}
 
     /** Resolves labels for a batch of declarations, in their given order. */
     public List<DeclarationAdminView> toDeclarationViews(List<DeclarationDisponibilite> declarations) {
@@ -482,10 +559,18 @@ public class EspaceAnimateurService {
                             declaration.getCommentaireAdmin(),
                             declaration.getCreeLe(),
                             declaration.getDecideLe(),
-                            animateur == null ? List.of()
-                                    : animateur.getJoursIndisponibles().stream().sorted().toList(),
-                            animateur == null ? List.of()
-                                    : labelsOf(animateur.getSouhaits().stream().sorted().toList(), labels));
+                            animateur == null
+                                    ? List.of()
+                                    : animateur.getJoursIndisponibles().stream()
+                                            .sorted()
+                                            .toList(),
+                            animateur == null
+                                    ? List.of()
+                                    : labelsOf(
+                                            animateur.getSouhaits().stream()
+                                                    .sorted()
+                                                    .toList(),
+                                            labels));
                 })
                 .toList();
     }

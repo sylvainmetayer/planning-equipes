@@ -24,8 +24,7 @@ public final class NaturalOrder {
 
     private static final Pattern MORCEAU = Pattern.compile("(\\d+)|(\\D+)");
 
-    private NaturalOrder() {
-    }
+    private NaturalOrder() {}
 
     private static int comparer(String a, String b) {
         Matcher ma = MORCEAU.matcher(a);

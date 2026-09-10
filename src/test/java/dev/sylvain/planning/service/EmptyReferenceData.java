@@ -1,9 +1,5 @@
 package dev.sylvain.planning.service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
@@ -15,6 +11,9 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A referential that holds nothing, for the plain (non-CDI) tests: they build

@@ -1,9 +1,8 @@
 package dev.sylvain.planning.service.referentiel;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import java.time.LocalDate;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * What the file would do, row by row — and, once applied, what it did.
@@ -75,6 +74,5 @@ public record AnimateurCsvImportReport(
             ImportAction action,
             List<String> reasons,
             List<String> warnings,
-            List<LocalDate> joursIndisponibles) {
-    }
+            List<LocalDate> joursIndisponibles) {}
 }

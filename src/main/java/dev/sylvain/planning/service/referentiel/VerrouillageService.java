@@ -1,16 +1,15 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
-import dev.sylvain.planning.domain.VerrouillageTarget;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import dev.sylvain.planning.domain.VerrouillageTarget;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.Ids;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 /** The locks a solve must honour: what the operator has decided not to let the solver move. */
 @ApplicationScoped
@@ -73,21 +72,18 @@ public class VerrouillageService {
      */
     private VerrouillageTarget validatedTarget(VerrouillagePlanning verrouillage) {
         return switch (verrouillage.getType()) {
-            case ANIMATEUR -> new VerrouillageTarget.OnAnimateur(
-                    animateurExistant(verrouillage.getAnimateurId()));
-            case STAND -> new VerrouillageTarget.OnStand(
-                    standExistant(verrouillage.getStandId()));
-            case CRENEAU -> new VerrouillageTarget.OnCreneau(
-                    creneauExistant(verrouillage.getCreneauId()));
+            case ANIMATEUR -> new VerrouillageTarget.OnAnimateur(animateurExistant(verrouillage.getAnimateurId()));
+            case STAND -> new VerrouillageTarget.OnStand(standExistant(verrouillage.getStandId()));
+            case CRENEAU -> new VerrouillageTarget.OnCreneau(creneauExistant(verrouillage.getCreneauId()));
             case JOUR -> {
                 if (verrouillage.getJour() == null) {
                     throw new BusinessError.Invalid("Missing jour");
                 }
                 yield new VerrouillageTarget.OnJour(verrouillage.getJour());
             }
-            case ANIMATEUR_CRENEAU -> new VerrouillageTarget.OnAnimateurAndCreneau(
-                    animateurExistant(verrouillage.getAnimateurId()),
-                    creneauExistant(verrouillage.getCreneauId()));
+            case ANIMATEUR_CRENEAU ->
+                new VerrouillageTarget.OnAnimateurAndCreneau(
+                        animateurExistant(verrouillage.getAnimateurId()), creneauExistant(verrouillage.getCreneauId()));
         };
     }
 

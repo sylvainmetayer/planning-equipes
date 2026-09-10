@@ -3,15 +3,6 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
@@ -19,10 +10,17 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.junit.jupiter.api.Test;
 
 /**
  * Simulation of a swap request (issue #165) straight on
@@ -35,11 +33,18 @@ class PlanningServiceEchangeTest {
     private static final LocalDate J1 = LocalDate.of(2026, 7, 8);
 
     private static final PlanningService planningService;
+
     static {
         ReferenceData referenceDataService = new EmptyReferenceData();
-        planningService = new PlanningService(3L, 2L,
+        planningService = new PlanningService(
+                3L,
+                2L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
-                referenceDataService, new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
+                referenceDataService,
+                new FeasibilityAnalyzer(),
+                null,
+                null,
+                ConfigProvider.getConfig());
     }
 
     private final Stand standS1 = new Stand("S1", "Stand 1", Set.of("STRATEGIE"), 1, 1, false);
@@ -111,13 +116,13 @@ class PlanningServiceEchangeTest {
         EchangeSimulation simulation = planningService.simulateEchange(solved, "A1", "A2", 1L, "S1");
 
         assertThat(simulation.casseContrainteDure()).isTrue();
-        assertThat(simulation.scoreApres().hardScore()).isLessThan(simulation.scoreAvant().hardScore());
-        assertThat(simulation.nouvellesViolationsDures())
-                .anySatisfy(violation -> {
-                    assertThat(violation.name()).isEqualTo("animateurDisponible");
-                    assertThat(violation.description()).contains("indisponible");
-                    assertThat(violation.matchesSupplementaires()).isEqualTo(1);
-                });
+        assertThat(simulation.scoreApres().hardScore())
+                .isLessThan(simulation.scoreAvant().hardScore());
+        assertThat(simulation.nouvellesViolationsDures()).anySatisfy(violation -> {
+            assertThat(violation.name()).isEqualTo("animateurDisponible");
+            assertThat(violation.description()).contains("indisponible");
+            assertThat(violation.matchesSupplementaires()).isEqualTo(1);
+        });
     }
 
     /**

@@ -6,13 +6,11 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * Admin authentication (issue #165). The default %test profile opens the API
@@ -82,10 +80,18 @@ class AuthentificationAdminTest {
      */
     @Test
     void lImportTabulaireDesAnimateursExigeUneSession() {
-        given().contentType("application/json").body("{}")
-                .when().post("/api/animateurs/import-csv/analyse").then().statusCode(401);
-        given().contentType("application/json").body("{}")
-                .when().post("/api/animateurs/import-csv").then().statusCode(401);
+        given().contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/api/animateurs/import-csv/analyse")
+                .then()
+                .statusCode(401);
+        given().contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/api/animateurs/import-csv")
+                .then()
+                .statusCode(401);
         // The example roster carries no real person, but it lives under the
         // admin prefix and stays there: the exemptions are enumerated, never
         // widened by accident.
@@ -125,10 +131,7 @@ class AuthentificationAdminTest {
 
     @Test
     void leStatutDeSessionEstPublicEtAnonymeParDefaut() {
-        given().when().get("/api/auth/me")
-                .then()
-                .statusCode(200)
-                .body("authentifie", equalTo(false));
+        given().when().get("/api/auth/me").then().statusCode(200).body("authentifie", equalTo(false));
     }
 
     /**
@@ -139,15 +142,17 @@ class AuthentificationAdminTest {
      */
     @Test
     void unMauvaisMotDePasseEstRefuse() {
-        String cookie = given()
-                .contentType("application/x-www-form-urlencoded")
+        String cookie = given().contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
                 .formParam("j_password", "mauvais")
-                .redirects().follow(false)
-                .when().post("/j_security_check")
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check")
                 .then()
                 .statusCode(anyOf(is(401), is(302)))
-                .extract().cookie("planning-session");
+                .extract()
+                .cookie("planning-session");
         assertThat(cookie).isNullOrEmpty();
     }
 
@@ -155,24 +160,28 @@ class AuthentificationAdminTest {
     void laConnexionOuvreUneSessionUtilisable() {
         // A successful login answers a redirect to the session probe
         // (landing-page=/api/auth/me), carrying the encrypted session cookie.
-        String cookie = given()
-                .contentType("application/x-www-form-urlencoded")
+        String cookie = given().contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
                 .formParam("j_password", MOT_DE_PASSE_DEV)
-                .redirects().follow(false)
-                .when().post("/j_security_check")
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check")
                 .then()
                 .statusCode(anyOf(is(302), is(200)))
-                .extract().cookie("planning-session");
+                .extract()
+                .cookie("planning-session");
         assertThat(cookie).isNotBlank();
 
         given().cookie("planning-session", cookie)
-                .when().get("/api/constraints")
+                .when()
+                .get("/api/constraints")
                 .then()
                 .statusCode(200);
 
         given().cookie("planning-session", cookie)
-                .when().get("/api/auth/me")
+                .when()
+                .get("/api/auth/me")
                 .then()
                 .statusCode(200)
                 .body("authentifie", equalTo(true))
@@ -189,23 +198,23 @@ class AuthentificationAdminTest {
      */
     @Test
     void laRedirectionDeConnexionSuitLeSchemaAnnonceParLeProxy() {
-        String location = given()
-                .contentType("application/x-www-form-urlencoded")
+        String location = given().contentType("application/x-www-form-urlencoded")
                 .header("X-Forwarded-Proto", "https")
                 .formParam("j_username", "admin")
                 .formParam("j_password", MOT_DE_PASSE_DEV)
-                .redirects().follow(false)
-                .when().post("/j_security_check")
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check")
                 .then()
                 .statusCode(302)
-                .extract().header("Location");
+                .extract()
+                .header("Location");
         assertThat(location).startsWith("https://").endsWith("/api/auth/me");
     }
 
     @Test
     void laDeconnexionEffaceLeCookie() {
-        given().when().post("/api/auth/logout")
-                .then()
-                .statusCode(204);
+        given().when().post("/api/auth/logout").then().statusCode(204);
     }
 }

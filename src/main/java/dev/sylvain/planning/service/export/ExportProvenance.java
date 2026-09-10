@@ -50,6 +50,5 @@ public interface ExportProvenance {
      *                   {@code null} when it never did
      * @param nature     which plan that is, and therefore how the date is said
      */
-    record Provenance(String editionNom, Instant date, Nature nature) {
-    }
+    record Provenance(String editionNom, Instant date, Nature nature) {}
 }

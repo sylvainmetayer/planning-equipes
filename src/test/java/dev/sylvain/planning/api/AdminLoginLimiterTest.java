@@ -7,14 +7,12 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.response.Response;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * Lockout of the admin form login ({@link AdminLoginLimiter}). The
@@ -33,14 +31,18 @@ class AdminLoginLimiterTest {
     public static class Profil implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
-            return Map.of("planning.auth.connexion.max-echecs", "2",
-                    "planning.auth.connexion.duree-blocage", "PT15M",
+            return Map.of(
+                    "planning.auth.connexion.max-echecs",
+                    "2",
+                    "planning.auth.connexion.duree-blocage",
+                    "PT15M",
                     // The test client connects from the loopback: declaring it
                     // as the proxy is what makes the announced address worth
                     // trusting, exactly as a deployment declares its own. Without
                     // this line the header is ignored — and that is the right
                     // default, see AdminLoginLimiterProxyNonFiableTest.
-                    "planning.auth.connexion.proxys-fiables", "127.0.0.1");
+                    "planning.auth.connexion.proxys-fiables",
+                    "127.0.0.1");
         }
     }
 
@@ -55,15 +57,18 @@ class AdminLoginLimiterTest {
 
         // The lock holds even against the right password: that is what stops an
         // online attack from simply waiting for its turn.
-        login(address, MOT_DE_PASSE_DEV).then()
+        login(address, MOT_DE_PASSE_DEV)
+                .then()
                 .statusCode(429)
                 .header("Retry-After", notNullValue())
                 .body("message", containsString("Trop de tentatives"));
 
         // And it does not spill over onto the other visitors.
-        String cookie = login("203.0.113.11", MOT_DE_PASSE_DEV).then()
+        String cookie = login("203.0.113.11", MOT_DE_PASSE_DEV)
+                .then()
                 .statusCode(anyOf(is(302), is(200)))
-                .extract().cookie("planning-session");
+                .extract()
+                .cookie("planning-session");
         assertThat(cookie).isNotBlank();
     }
 
@@ -80,19 +85,22 @@ class AdminLoginLimiterTest {
         login(address, "mauvais").then().statusCode(anyOf(is(401), is(302)));
         // Without that clearing, this second failure would be the second of a
         // run and the next attempt would answer 429.
-        String cookie = login(address, MOT_DE_PASSE_DEV).then()
+        String cookie = login(address, MOT_DE_PASSE_DEV)
+                .then()
                 .statusCode(anyOf(is(302), is(200)))
-                .extract().cookie("planning-session");
+                .extract()
+                .cookie("planning-session");
         assertThat(cookie).isNotBlank();
     }
 
     private static Response login(String address, String password) {
-        return given()
-                .contentType("application/x-www-form-urlencoded")
+        return given().contentType("application/x-www-form-urlencoded")
                 .header("X-Forwarded-For", address)
                 .formParam("j_username", "admin")
                 .formParam("j_password", password)
-                .redirects().follow(false)
-                .when().post("/j_security_check");
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check");
     }
 }

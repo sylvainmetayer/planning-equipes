@@ -1,13 +1,8 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
-
-import dev.sylvain.planning.service.publication.AdminAddress;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.JourJClock;
+import dev.sylvain.planning.service.publication.AdminAddress;
 import dev.sylvain.planning.service.publication.MailService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -18,6 +13,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 /**
  * Endpoints backing the Débogage tab's plumbing checks — none of them is a
@@ -58,9 +55,7 @@ public class DebugResource {
     }
 
     /** {@code adminEmail} is {@code null} when MAIL_ADMIN is not set: mail notifications are disabled. */
-    public record MailConfigView(String adminEmail) {
-    }
-
+    public record MailConfigView(String adminEmail) {}
 
     @GET
     @Path("/mail-config")
@@ -89,9 +84,7 @@ public class DebugResource {
      *
      * @param dateDuJour {@code null} when the real clock is in use
      */
-    
-    public record DateJourJView(String dateDuJour, boolean modifiable) {
-    }
+    public record DateJourJView(String dateDuJour, boolean modifiable) {}
 
     @GET
     @Path("/date-du-jour")

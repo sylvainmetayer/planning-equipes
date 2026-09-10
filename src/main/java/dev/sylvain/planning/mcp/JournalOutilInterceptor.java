@@ -1,21 +1,20 @@
 package dev.sylvain.planning.mcp;
 
-import java.lang.reflect.Parameter;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.Acteur;
+import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import io.quarkiverse.mcp.server.Tool;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
-import io.quarkiverse.mcp.server.Tool;
+import java.lang.reflect.Parameter;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Writes one line of the history for every MCP tool that changes something
@@ -96,7 +95,8 @@ public class JournalOutilInterceptor {
         for (int i = 0; i < parametres.length && i < valeurs.length; i++) {
             Object valeur = valeurs[i];
             boolean nommable = valeur instanceof String || valeur instanceof Number;
-            if (nommable && !parametres[i].isAnnotationPresent(EditionArg.class)
+            if (nommable
+                    && !parametres[i].isAnnotationPresent(EditionArg.class)
                     && NOMS_ENTITE.contains(parametres[i].getName())) {
                 return String.valueOf(valeur);
             }

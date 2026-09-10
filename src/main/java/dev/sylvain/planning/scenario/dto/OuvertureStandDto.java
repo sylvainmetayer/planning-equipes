@@ -15,5 +15,4 @@ public record OuvertureStandDto(
         @NotNull LocalTime heureDebut,
         LocalTime heureFin,
         String motif,
-        @Positive Integer effectif) {
-}
+        @Positive Integer effectif) {}

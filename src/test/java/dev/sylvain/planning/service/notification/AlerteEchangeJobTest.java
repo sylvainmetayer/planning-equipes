@@ -2,20 +2,6 @@ package dev.sylvain.planning.service.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
-import javax.sql.DataSource;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DemandeEchange;
@@ -30,6 +16,17 @@ import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Swap requests left to rot (issue #300).
@@ -97,7 +94,8 @@ class AlerteEchangeJobTest {
         assertThat(job.run(threeDayThreshold(), Instant.now())).isEqualTo(1);
         assertThat(job.run(threeDayThreshold(), Instant.now())).isZero();
         // A whole day later the demande is older still, and stays silent.
-        assertThat(job.run(threeDayThreshold(), Instant.now().plusSeconds(86400))).isZero();
+        assertThat(job.run(threeDayThreshold(), Instant.now().plusSeconds(86400)))
+                .isZero();
 
         assertThat(alerteService.alertes(null))
                 .filteredOn(alerte -> "ALERTE_ECHANGE".equals(alerte.type()))
@@ -133,8 +131,9 @@ class AlerteEchangeJobTest {
     }
 
     private DemandeEchange submitDemande() {
-        return demandeEchangeService.submit("ECH-A",
-                List.of(new NouvelleDemande(9801L, "ECH-S1", "ECH-B", "Empêchement", null, null))).get(0);
+        return demandeEchangeService
+                .submit("ECH-A", List.of(new NouvelleDemande(9801L, "ECH-S1", "ECH-B", "Empêchement", null, null)))
+                .get(0);
     }
 
     private void submitAndAccept() {
@@ -159,8 +158,7 @@ class AlerteEchangeJobTest {
         posteAlice.setAnimateur(alice);
         PosteAffectation posteBruno = new PosteAffectation("ECH-P2", stand, creneau);
         posteBruno.setAnimateur(bruno);
-        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno),
-                List.of(posteAlice, posteBruno)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
     }
 
     private void execute(String sql) {

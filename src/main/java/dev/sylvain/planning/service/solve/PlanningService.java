@@ -1,29 +1,26 @@
 package dev.sylvain.planning.service.solve;
 
+import ai.timefold.solver.core.api.solver.Solver;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
+import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import ai.timefold.solver.core.api.solver.Solver;
-import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.ParametresLegaux;
-import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
-import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
-import dev.sylvain.planning.service.referentiel.ReferenceData;
 
 @ApplicationScoped
 public class PlanningService {
@@ -59,26 +56,35 @@ public class PlanningService {
 
     public PlanningService(
             @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "120") Long secondsLimit,
-            @ConfigProperty(name = "planning.solver.unimproved-seconds-limit", defaultValue = "30") Long unimprovedSecondsLimit,
-            @ConfigProperty(name = "planning.contraintes.max-emplacements-par-jour",
-                    defaultValue = "" + ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT) Integer maxEmplacementsParJour,
+            @ConfigProperty(name = "planning.solver.unimproved-seconds-limit", defaultValue = "30")
+                    Long unimprovedSecondsLimit,
+            @ConfigProperty(
+                            name = "planning.contraintes.max-emplacements-par-jour",
+                            defaultValue = "" + ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT)
+                    Integer maxEmplacementsParJour,
             ReferenceData referenceDataService,
             FeasibilityAnalyzer feasibilityAnalyzer,
             PlanningPersistenceService planningPersistenceService,
             PlanSnapshotService snapshotService,
             Config config) {
-        this.solverConfiguration = new SolverConfiguration(secondsLimit, unimprovedSecondsLimit,
-                maxEmplacementsParJour, referenceDataService, config);
+        this.solverConfiguration = new SolverConfiguration(
+                secondsLimit, unimprovedSecondsLimit, maxEmplacementsParJour, referenceDataService, config);
         this.referenceDataService = referenceDataService;
         this.planningPersistenceService = planningPersistenceService;
         this.snapshotService = snapshotService;
         this.solveRunner = new SolveRunner(solverConfiguration, referenceDataService, snapshotService);
         this.problemBuilder = new ProblemBuilder(referenceDataService, planningPersistenceService);
-        this.whatIf = new PlanningWhatIf(solverConfiguration.diagnosticService(), referenceDataService,
-                planningPersistenceService, solveRunner::prepareProblem);
-        this.diagnosticService = new PlanningDiagnosticService(solverConfiguration.diagnosticService(),
-                solverConfiguration.solutionManager(), feasibilityAnalyzer,
-                () -> planningPersistenceService.loadPersistedPlanning(), solveRunner::prepareProblem);
+        this.whatIf = new PlanningWhatIf(
+                solverConfiguration.diagnosticService(),
+                referenceDataService,
+                planningPersistenceService,
+                solveRunner::prepareProblem);
+        this.diagnosticService = new PlanningDiagnosticService(
+                solverConfiguration.diagnosticService(),
+                solverConfiguration.solutionManager(),
+                feasibilityAnalyzer,
+                () -> planningPersistenceService.loadPersistedPlanning(),
+                solveRunner::prepareProblem);
     }
 
     public PlanningEvenement buildExample() {
@@ -253,26 +259,26 @@ public class PlanningService {
     }
 
     /** @see PlanningWhatIf#simulateSwap */
-    public PlanningWhatIf.SwapSimulation simulateSwap(PlanningEvenement solved, String posteId,
-            String animateurCandidatId) {
+    public PlanningWhatIf.SwapSimulation simulateSwap(
+            PlanningEvenement solved, String posteId, String animateurCandidatId) {
         return whatIf.simulateSwap(solved, posteId, animateurCandidatId);
     }
 
     /** @see PlanningWhatIf#suggererReparations */
-    public PlanningWhatIf.SuggestionsReparation suggererReparations(PlanningEvenement solved, String posteId,
-            Integer plafondDemande) {
+    public PlanningWhatIf.SuggestionsReparation suggererReparations(
+            PlanningEvenement solved, String posteId, Integer plafondDemande) {
         return whatIf.suggererReparations(solved, posteId, plafondDemande);
     }
 
     /** @see PlanningWhatIf#creneauAvailability */
-    public PlanningWhatIf.CreneauAvailability creneauAvailability(PlanningEvenement solved, Long creneauId,
-            String standId, String posteId) {
+    public PlanningWhatIf.CreneauAvailability creneauAvailability(
+            PlanningEvenement solved, Long creneauId, String standId, String posteId) {
         return whatIf.creneauAvailability(solved, creneauId, standId, posteId);
     }
 
     /** @see PlanningWhatIf#persistedCreneauAvailability */
-    public PlanningWhatIf.CreneauAvailability persistedCreneauAvailability(Long creneauId, String standId,
-            String posteId) {
+    public PlanningWhatIf.CreneauAvailability persistedCreneauAvailability(
+            Long creneauId, String standId, String posteId) {
         return whatIf.persistedCreneauAvailability(creneauId, standId, posteId);
     }
 
@@ -287,27 +293,33 @@ public class PlanningService {
     }
 
     /** @see PlanningWhatIf#simulateEchange */
-    public PlanningWhatIf.EchangeSimulation simulateEchange(PlanningEvenement solved, String demandeurId,
-            String cibleId, long creneauId, String standId) {
+    public PlanningWhatIf.EchangeSimulation simulateEchange(
+            PlanningEvenement solved, String demandeurId, String cibleId, long creneauId, String standId) {
         return whatIf.simulateEchange(solved, demandeurId, cibleId, creneauId, standId);
     }
 
     /** @see PlanningWhatIf#simulateDeplacement */
-    public PlanningWhatIf.DeplacementSimulation simulateDeplacement(PlanningEvenement solved, String posteSourceId,
-            String posteCibleId, String animateurCibleId) {
+    public PlanningWhatIf.DeplacementSimulation simulateDeplacement(
+            PlanningEvenement solved, String posteSourceId, String posteCibleId, String animateurCibleId) {
         return whatIf.simulateDeplacement(solved, posteSourceId, posteCibleId, animateurCibleId);
     }
 
     /** @see PlanningWhatIf#simulateDirectedEchange */
-    public PlanningWhatIf.EchangeSimulation simulateDirectedEchange(PlanningEvenement solved, String demandeurId,
-            String cibleId, long creneauId, String standId, long creneauCibleId, String standCibleId) {
-        return whatIf.simulateDirectedEchange(solved, demandeurId, cibleId, creneauId, standId, creneauCibleId,
-                standCibleId);
+    public PlanningWhatIf.EchangeSimulation simulateDirectedEchange(
+            PlanningEvenement solved,
+            String demandeurId,
+            String cibleId,
+            long creneauId,
+            String standId,
+            long creneauCibleId,
+            String standCibleId) {
+        return whatIf.simulateDirectedEchange(
+                solved, demandeurId, cibleId, creneauId, standId, creneauCibleId, standCibleId);
     }
 
     /** @see PlanningWhatIf#suggererEchanges */
-    public PlanningWhatIf.SuggestionsEchange suggererEchanges(PlanningEvenement solved, String demandeurId,
-            long creneauId, String standId, Integer plafondDemande) {
+    public PlanningWhatIf.SuggestionsEchange suggererEchanges(
+            PlanningEvenement solved, String demandeurId, long creneauId, String standId, Integer plafondDemande) {
         return whatIf.suggererEchanges(solved, demandeurId, creneauId, standId, plafondDemande);
     }
 
@@ -324,8 +336,8 @@ public class PlanningService {
     }
 
     /** @see SolveRunner#solve(PlanningEvenement, Long, Consumer) */
-    public PlanningEvenement solve(PlanningEvenement problem, Long secondsLimitOverride,
-            Consumer<Solver<PlanningEvenement>> onSolverReady) {
+    public PlanningEvenement solve(
+            PlanningEvenement problem, Long secondsLimitOverride, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         return solveRunner.solve(problem, secondsLimitOverride, onSolverReady);
     }
 
@@ -350,5 +362,4 @@ public class PlanningService {
     public PlanningDiagnosticService.PlanningDiagnostic diagnose(PlanningEvenement solved) {
         return diagnosticService.diagnose(solved);
     }
-
 }

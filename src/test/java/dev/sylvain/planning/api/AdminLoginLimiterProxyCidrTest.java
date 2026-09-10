@@ -6,14 +6,12 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.response.Response;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * A proxy declared as a <b>block</b> rather than a literal address.
@@ -35,13 +33,17 @@ class AdminLoginLimiterProxyCidrTest {
     public static class Profil implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
-            return Map.of("planning.auth.connexion.max-echecs", "2",
-                    "planning.auth.connexion.duree-blocage", "PT15M",
+            return Map.of(
+                    "planning.auth.connexion.max-echecs",
+                    "2",
+                    "planning.auth.connexion.duree-blocage",
+                    "PT15M",
                     // The test client connects from the loopback, declared here
                     // as a block. Narrow it to one that excludes 127.0.0.1 and
                     // both assertions below fail: the header stops being read,
                     // and the two announced clients share the peer's counter.
-                    "planning.auth.connexion.proxys-fiables", "127.0.0.0/8");
+                    "planning.auth.connexion.proxys-fiables",
+                    "127.0.0.0/8");
         }
     }
 
@@ -58,26 +60,27 @@ class AdminLoginLimiterProxyCidrTest {
         login(address, "mauvais").then().statusCode(anyOf(is(401), is(302)));
         login(address, "mauvais").then().statusCode(anyOf(is(401), is(302)));
 
-        login(address, MOT_DE_PASSE_DEV).then()
-                .statusCode(429)
-                .body("message", containsString("Trop de tentatives"));
+        login(address, MOT_DE_PASSE_DEV).then().statusCode(429).body("message", containsString("Trop de tentatives"));
 
         // The decisive half: with the block not matching, this second client
         // would be counted on the peer's address — the same counter, already
         // locked — and would answer 429 instead of a session.
-        String cookie = login("203.0.113.41", MOT_DE_PASSE_DEV).then()
+        String cookie = login("203.0.113.41", MOT_DE_PASSE_DEV)
+                .then()
                 .statusCode(anyOf(is(302), is(200)))
-                .extract().cookie("planning-session");
+                .extract()
+                .cookie("planning-session");
         assertThat(cookie).isNotBlank();
     }
 
     private static Response login(String address, String password) {
-        return given()
-                .contentType("application/x-www-form-urlencoded")
+        return given().contentType("application/x-www-form-urlencoded")
                 .header("X-Forwarded-For", address)
                 .formParam("j_username", "admin")
                 .formParam("j_password", password)
-                .redirects().follow(false)
-                .when().post("/j_security_check");
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check");
     }
 }

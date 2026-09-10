@@ -29,5 +29,4 @@ public record AnimateurCsvImportRequest(
         String content,
         AnimateurCsvMapping mapping,
         boolean replaceAnimateurs,
-        boolean replaceJoursIndisponibles) {
-}
+        boolean replaceJoursIndisponibles) {}

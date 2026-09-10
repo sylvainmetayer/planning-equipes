@@ -1,7 +1,13 @@
 package dev.sylvain.planning.service.solve;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.analyse.PlanningKpiService;
+import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
+import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotDetail;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -9,15 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotDetail;
-import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.edition.EditionRepository;
-import dev.sylvain.planning.service.analyse.PlanningKpiService;
-import dev.sylvain.planning.service.EditionContext;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * A/B comparator (issue #70): confronts a baseline with a variant — two plan
@@ -75,16 +73,14 @@ public class SnapshotComparisonService {
             String editionNom,
             Instant creeLe,
             PlanningKpi kpi,
-            boolean kpiRecalcule) {
-    }
+            boolean kpiRecalcule) {}
 
     /**
      * Violation counts of one constraint on each side. {@code null} on a side
      * that never measured it — absence and zero are not the same fact, and
      * only one of the two is good news.
      */
-    public record DiffContrainte(String contrainte, Integer base, Integer variante) {
-    }
+    public record DiffContrainte(String contrainte, Integer base, Integer variante) {}
 
     /**
      * @param editionsDifferentes    the two sides belong to different editions,
@@ -101,8 +97,7 @@ public class SnapshotComparisonService {
             CoteComparaison variante,
             boolean editionsDifferentes,
             boolean volumetriesDifferentes,
-            List<DiffContrainte> diffViolations) {
-    }
+            List<DiffContrainte> diffViolations) {}
 
     /**
      * Compares two sides, each designated either by a snapshot id or by
@@ -163,8 +158,10 @@ public class SnapshotComparisonService {
             // the seats' hours against the créneaux they were captured on, and
             // those live in that edition — not in the one the browser happens
             // to be looking at.
-            kpi = editionContext.executeIn(detail.meta().editionId(),
-                    () -> kpiService.computeFromSnapshot(detail.affectations(), detail.meta().score()));
+            kpi = editionContext.executeIn(
+                    detail.meta().editionId(),
+                    () -> kpiService.computeFromSnapshot(
+                            detail.affectations(), detail.meta().score()));
         }
         return new CoteComparaison(
                 detail.meta().id(),
@@ -200,9 +197,8 @@ public class SnapshotComparisonService {
         contraintes.addAll(violationsVariante.keySet());
         List<DiffContrainte> diff = new ArrayList<>();
         for (String contrainte : contraintes) {
-            diff.add(new DiffContrainte(contrainte,
-                    violationsBase.get(contrainte),
-                    violationsVariante.get(contrainte)));
+            diff.add(
+                    new DiffContrainte(contrainte, violationsBase.get(contrainte), violationsVariante.get(contrainte)));
         }
         return diff;
     }

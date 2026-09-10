@@ -36,6 +36,5 @@ public class GlobalExceptionMapper implements ExceptionMapper<Throwable> {
                 .build();
     }
 
-    private record ErrorBody(String message) {
-    }
+    private record ErrorBody(String message) {}
 }

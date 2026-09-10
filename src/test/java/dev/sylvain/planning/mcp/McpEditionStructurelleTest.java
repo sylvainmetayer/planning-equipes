@@ -2,14 +2,12 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkiverse.mcp.server.ToolArg;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Set;
-
 import org.junit.jupiter.api.Test;
-
-import io.quarkiverse.mcp.server.ToolArg;
 
 /**
  * Structural guard for issue #181: a tool that works inside an edition must
@@ -32,10 +30,16 @@ import io.quarkiverse.mcp.server.ToolArg;
 class McpEditionStructurelleTest {
 
     private static final Set<String> HORS_EDITION = Set.of(
-            "lister_scenarios", "valider_scenario_yaml",
-            "arreter_solveur", "statut_solveur", "lister_jobs", "supprimer_job",
-            "lister_kpi_historique", "supprimer_kpi_historique",
-            "etat_sauvegardes", "modifier_sauvegardes");
+            "lister_scenarios",
+            "valider_scenario_yaml",
+            "arreter_solveur",
+            "statut_solveur",
+            "lister_jobs",
+            "supprimer_job",
+            "lister_kpi_historique",
+            "supprimer_kpi_historique",
+            "etat_sauvegardes",
+            "modifier_sauvegardes");
 
     /** The edition tools themselves designate their target explicitly, argument by argument. */
     private static final String OUTILS_DEDITION = EditionMcpTools.class.getName();
@@ -65,8 +69,10 @@ class McpEditionStructurelleTest {
                     .as("l'argument edition de %s doit être déclaré comme argument d'outil", outil.getName())
                     .isNotNull();
             assertThat(description.required())
-                    .as("l'argument edition de %s doit rester facultatif : sans lui, l'édition courante"
-                            + " (comportement d'avant #181)", outil.getName())
+                    .as(
+                            "l'argument edition de %s doit rester facultatif : sans lui, l'édition courante"
+                                    + " (comportement d'avant #181)",
+                            outil.getName())
                     .isFalse();
             assertThat(description.description())
                     .as("description de l'argument edition de %s", outil.getName())
@@ -81,8 +87,10 @@ class McpEditionStructurelleTest {
                 continue;
             }
             assertThat(outil.getDeclaringClass().isAnnotationPresent(EditionCiblee.class))
-                    .as("%s porte des outils avec un argument edition : sans @EditionCiblee sur la classe,"
-                            + " l'argument serait accepté puis ignoré", outil.getDeclaringClass().getSimpleName())
+                    .as(
+                            "%s porte des outils avec un argument edition : sans @EditionCiblee sur la classe,"
+                                    + " l'argument serait accepté puis ignoré",
+                            outil.getDeclaringClass().getSimpleName())
                     .isTrue();
         }
     }

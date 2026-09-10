@@ -1,5 +1,9 @@
 package dev.sylvain.planning.service.export;
 
+import dev.sylvain.planning.config.ConfigBranding;
+import dev.sylvain.planning.service.ProductName;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.awt.Color;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +16,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
 import org.openpdf.text.Chunk;
 import org.openpdf.text.Document;
 import org.openpdf.text.Element;
@@ -32,12 +35,6 @@ import org.openpdf.text.pdf.PdfPTableEvent;
 import org.openpdf.text.pdf.PdfPageEventHelper;
 import org.openpdf.text.pdf.PdfTemplate;
 import org.openpdf.text.pdf.PdfWriter;
-
-import dev.sylvain.planning.config.ConfigBranding;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ProductName;
 
 /**
  * The visual identity of the PDFs: the palette, the fonts, the images and the
@@ -94,6 +91,7 @@ public class PdfTheme {
     private final Font locationFont;
     /** Teammates line under the stand name: present but secondary to the stand itself. */
     private final Font teamFont;
+
     private final Font emptyStateFont;
     private final Font footerFont;
     // --- Global (organiser) export: dense tables rather than per-seat cards ---
@@ -103,7 +101,8 @@ public class PdfTheme {
 
     @Inject
     PdfTheme(ConfigBranding branding, ProductName productName) {
-        this(productName.value(),
+        this(
+                productName.value(),
                 branding.organisation().orElse(""),
                 branding.pdf().palette().headline(),
                 branding.pdf().palette().muted(),
@@ -122,8 +121,16 @@ public class PdfTheme {
         this(ProductName.neutral().value(), "", "#1f2933", "#6b7280", "#3a6ea5", "#e4eaf1", "#f1f4f8", "", "");
     }
 
-    private PdfTheme(String productName, String organisation, String headline, String muted, String accent,
-            String highlight, String pill, String logoResource, String stripResource) {
+    private PdfTheme(
+            String productName,
+            String organisation,
+            String headline,
+            String muted,
+            String accent,
+            String highlight,
+            String pill,
+            String logoResource,
+            String stripResource) {
         this.productName = productName.trim();
         this.organisation = organisation.trim();
         this.logoResource = logoResource.trim();
@@ -295,9 +302,10 @@ public class PdfTheme {
         if (provenance == null) {
             return null;
         }
-        String edition = provenance.editionNom() == null || provenance.editionNom().isBlank()
-                ? "à partir des données de l'édition courante"
-                : "à partir des données de l'édition « " + provenance.editionNom() + " »";
+        String edition =
+                provenance.editionNom() == null || provenance.editionNom().isBlank()
+                        ? "à partir des données de l'édition courante"
+                        : "à partir des données de l'édition « " + provenance.editionNom() + " »";
         return edition + datation(provenance);
     }
 
@@ -312,9 +320,8 @@ public class PdfTheme {
      */
     PdfPTable brandHeader(Document document, float titleWidth, String brandText, String title, float spacingAfter) {
         Image logo = loadOptionalImage(logoResource);
-        PdfPTable header = logo == null
-                ? new PdfPTable(new float[] { titleWidth })
-                : new PdfPTable(new float[] { 46f, titleWidth });
+        PdfPTable header =
+                logo == null ? new PdfPTable(new float[] {titleWidth}) : new PdfPTable(new float[] {46f, titleWidth});
         header.setTotalWidth(document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin());
         header.setLockedWidth(true);
 
@@ -458,8 +465,8 @@ public class PdfTheme {
             PdfContentByte background = canvases[PdfPTable.BACKGROUNDCANVAS];
             background.saveState();
             background.setColorFill(fill);
-            background.roundRectangle(position.getLeft(), position.getBottom(), position.getWidth(), position.getHeight(),
-                    radius);
+            background.roundRectangle(
+                    position.getLeft(), position.getBottom(), position.getWidth(), position.getHeight(), radius);
             background.fill();
             background.restoreState();
         }
@@ -476,8 +483,15 @@ public class PdfTheme {
         private final float iconDiameter;
         private final float iconGap;
 
-        TimePillEvent(String text, Font font, Color background, Color contentColor, float pillWidth,
-                float pillHeight, float iconDiameter, float iconGap) {
+        TimePillEvent(
+                String text,
+                Font font,
+                Color background,
+                Color contentColor,
+                float pillWidth,
+                float pillHeight,
+                float iconDiameter,
+                float iconGap) {
             this.text = text;
             this.font = font;
             this.background = background;
@@ -580,7 +594,12 @@ public class PdfTheme {
         }
 
         @Override
-        public void tableLayout(PdfPTable table, float[][] widths, float[] heights, int headerRows, int rowStart,
+        public void tableLayout(
+                PdfPTable table,
+                float[][] widths,
+                float[] heights,
+                int headerRows,
+                int rowStart,
                 PdfContentByte[] canvases) {
             float left = widths[0][0];
             float right = widths[0][widths[0].length - 1];
@@ -638,8 +657,8 @@ public class PdfTheme {
             // édition would run into it.
             if (provenanceText != null) {
                 Phrase provenance = new Phrase(provenanceText, font);
-                ColumnText.showTextAligned(canvas, Element.ALIGN_LEFT, provenance,
-                        document.leftMargin(), y - font.getSize() - 2f, 0);
+                ColumnText.showTextAligned(
+                        canvas, Element.ALIGN_LEFT, provenance, document.leftMargin(), y - font.getSize() - 2f, 0);
             }
 
             float templateWidth = 70f;

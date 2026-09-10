@@ -17,5 +17,4 @@ import java.time.LocalTime;
 public record FenetreHoraireDto(
         @NotNull LocalTime heureDebut,
         LocalTime heureFin,
-        @Positive Integer effectif) {
-}
+        @Positive Integer effectif) {}

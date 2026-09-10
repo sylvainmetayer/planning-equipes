@@ -1,7 +1,5 @@
 package dev.sylvain.planning.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import dev.sylvain.planning.service.backup.BackupService;
 import dev.sylvain.planning.service.backup.BackupState;
 import jakarta.inject.Inject;
@@ -41,7 +39,5 @@ public class BackupResource {
         return backupService.setActive(request != null && request.active());
     }
 
-    
-    public record ActiveRequest(boolean active) {
-    }
+    public record ActiveRequest(boolean active) {}
 }

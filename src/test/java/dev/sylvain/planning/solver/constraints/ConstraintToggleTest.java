@@ -1,16 +1,14 @@
 package dev.sylvain.planning.solver.constraints;
 
-import java.time.LocalTime;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import java.time.LocalTime;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * Covers the disable-a-constraint mechanism itself, one representative
@@ -40,8 +38,7 @@ class ConstraintToggleTest extends ConstraintTestBase {
                 .penalizesBy(1);
 
         verify("animateurDisponible")
-                .given(poste(standStrat, creneauMatin, indisponible),
-                        new ConstraintToggle("animateurDisponible"))
+                .given(poste(standStrat, creneauMatin, indisponible), new ConstraintToggle("animateurDisponible"))
                 .penalizesBy(0);
     }
 
@@ -53,7 +50,8 @@ class ConstraintToggleTest extends ConstraintTestBase {
                 .penalizesBy(1);
 
         verify("appreciationIncompatible")
-                .given(poste(standAdresse, creneauMatin, majeurAutonome("A1")),
+                .given(
+                        poste(standAdresse, creneauMatin, majeurAutonome("A1")),
                         new ConstraintToggle("appreciationIncompatible"))
                 .penalizesBy(0);
     }
@@ -65,7 +63,8 @@ class ConstraintToggleTest extends ConstraintTestBase {
                 .penalizesBy(1);
 
         verify("standReserveAuxMajeurs")
-                .given(poste(standMajeurs, creneauMatin, mineurDebutant("M1")),
+                .given(
+                        poste(standMajeurs, creneauMatin, mineurDebutant("M1")),
                         new ConstraintToggle("standReserveAuxMajeurs"))
                 .penalizesBy(0);
     }
@@ -82,7 +81,10 @@ class ConstraintToggleTest extends ConstraintTestBase {
                 .penalizesBy(1);
 
         verify("indisponibiliteForcee")
-                .given(a1, poste(standStrat, creneauMatin, a1), contrainte,
+                .given(
+                        a1,
+                        poste(standStrat, creneauMatin, a1),
+                        contrainte,
                         new ConstraintToggle("indisponibiliteForcee"))
                 .penalizesBy(0);
     }
@@ -100,7 +102,9 @@ class ConstraintToggleTest extends ConstraintTestBase {
                 .penalizesBy(1);
 
         verify("eviterChangementEmplacementEloigne")
-                .given(poste(standDrapeau, matin, a1), poste(standMairie, suite, a1),
+                .given(
+                        poste(standDrapeau, matin, a1),
+                        poste(standMairie, suite, a1),
                         new ConstraintToggle("eviterChangementEmplacementEloigne"))
                 .penalizesBy(0);
     }
@@ -113,7 +117,8 @@ class ConstraintToggleTest extends ConstraintTestBase {
                 .penalizesBy(1);
 
         verify("favoriserMixiteDesNiveaux")
-                .given(poste(standStrat, creneauMatin, referentMajeur("A1")),
+                .given(
+                        poste(standStrat, creneauMatin, referentMajeur("A1")),
                         new ConstraintToggle("favoriserMixiteDesNiveaux"))
                 .penalizesBy(0);
     }
@@ -121,7 +126,8 @@ class ConstraintToggleTest extends ConstraintTestBase {
     @Test
     void unToggleSurUneAutreContrainteNeDesactivePasCelleCi() {
         verify("standReserveAuxMajeurs")
-                .given(poste(standMajeurs, creneauMatin, mineurDebutant("M1")),
+                .given(
+                        poste(standMajeurs, creneauMatin, mineurDebutant("M1")),
                         new ConstraintToggle("appreciationIncompatible"))
                 .penalizesBy(1);
     }

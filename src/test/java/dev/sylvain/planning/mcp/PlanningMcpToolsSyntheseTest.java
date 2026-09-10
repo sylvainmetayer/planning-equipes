@@ -3,15 +3,6 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.IntStream;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -20,6 +11,13 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationsView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
+import org.junit.jupiter.api.Test;
 
 /**
  * The two answers that keep a real plan readable over MCP: a capped listing
@@ -45,8 +43,7 @@ class PlanningMcpToolsSyntheseTest {
     }
 
     private static PosteAffectation poste(String id, Stand stand, LocalDate date, String animateurId) {
-        Creneau creneau = new Creneau((long) date.getDayOfMonth(), 1, date,
-                LocalTime.of(10, 0), LocalTime.of(14, 0));
+        Creneau creneau = new Creneau((long) date.getDayOfMonth(), 1, date, LocalTime.of(10, 0), LocalTime.of(14, 0));
         PosteAffectation poste = new PosteAffectation(id, stand, creneau);
         if (animateurId != null) {
             poste.setAnimateur(new Animateur(animateurId, null, null, null, false));
@@ -88,7 +85,8 @@ class PlanningMcpToolsSyntheseTest {
 
         var synthese = tools.synthese_affectations(null);
 
-        assertThat(synthese.parStand()).singleElement()
+        assertThat(synthese.parStand())
+                .singleElement()
                 .satisfies(ligne -> assertThat(ligne.standNom()).isEqualTo("Échecs"));
         assertThat(synthese.animateursAffectes()).isEqualTo(1);
     }
@@ -121,8 +119,10 @@ class PlanningMcpToolsSyntheseTest {
                 poste("P1", stand("S1", "Échecs"), SAMEDI, "A1"),
                 poste("P2", stand("S2", "Tir à l'arc"), SAMEDI, null)));
 
-        assertThat(tools.lister_affectations("S1", null, null, null, null, null).total()).isEqualTo(1);
-        assertThat(tools.lister_affectations(null, null, null, true, null, null).total()).isEqualTo(1);
+        assertThat(tools.lister_affectations("S1", null, null, null, null, null).total())
+                .isEqualTo(1);
+        assertThat(tools.lister_affectations(null, null, null, true, null, null).total())
+                .isEqualTo(1);
     }
 
     @Test

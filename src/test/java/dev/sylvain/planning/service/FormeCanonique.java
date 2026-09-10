@@ -1,15 +1,15 @@
 package dev.sylvain.planning.service;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.LinkedHashMap;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,8 +43,7 @@ public final class FormeCanonique {
 
     private static final int PROFONDEUR_MAX = 12;
 
-    private FormeCanonique() {
-    }
+    private FormeCanonique() {}
 
     /**
      * The same form, folded to one line per element.
@@ -71,12 +70,14 @@ public final class FormeCanonique {
             // under one common key would emit them at the position of the first,
             // and the order of the walk would stop meaning anything.
             String element = element(ligne);
-            parElement.computeIfAbsent(element.isEmpty() ? ligne : element, cle -> new StringBuilder())
-                    .append(ligne).append('\n');
+            parElement
+                    .computeIfAbsent(element.isEmpty() ? ligne : element, cle -> new StringBuilder())
+                    .append(ligne)
+                    .append('\n');
         }
         List<String> empreintes = new ArrayList<>();
-        parElement.forEach((cle, lignes) -> empreintes.add(
-                cle.contains("[") ? cle + "  " + digest(lignes.toString()) : cle));
+        parElement.forEach(
+                (cle, lignes) -> empreintes.add(cle.contains("[") ? cle + "  " + digest(lignes.toString()) : cle));
         return empreintes;
     }
 
@@ -92,8 +93,7 @@ public final class FormeCanonique {
 
     private static String digest(String contenu) {
         try {
-            byte[] empreinte = MessageDigest.getInstance("SHA-256")
-                    .digest(contenu.getBytes(StandardCharsets.UTF_8));
+            byte[] empreinte = MessageDigest.getInstance("SHA-256").digest(contenu.getBytes(StandardCharsets.UTF_8));
             StringBuilder hexa = new StringBuilder();
             for (int i = 0; i < 8; i++) {
                 hexa.append(String.format("%02x", empreinte[i]));
@@ -110,8 +110,8 @@ public final class FormeCanonique {
         return texte.toString();
     }
 
-    private static void write(StringBuilder texte, String chemin, Object valeur,
-            IdentityHashMap<Object, String> vus, int profondeur) {
+    private static void write(
+            StringBuilder texte, String chemin, Object valeur, IdentityHashMap<Object, String> vus, int profondeur) {
         if (valeur == null) {
             texte.append(chemin).append(" = null\n");
             return;
@@ -152,8 +152,8 @@ public final class FormeCanonique {
             // difference would vanish.
             map.entrySet().stream()
                     .sorted(Comparator.comparing(entree -> String.valueOf(entree.getKey())))
-                    .forEach(entree -> write(texte, chemin + "{" + entree.getKey() + "}", entree.getValue(),
-                            vus, profondeur + 1));
+                    .forEach(entree ->
+                            write(texte, chemin + "{" + entree.getKey() + "}", entree.getValue(), vus, profondeur + 1));
             return;
         }
         if (valeur instanceof Collection<?> collection) {
@@ -161,7 +161,9 @@ public final class FormeCanonique {
             // rendering an element as a block of text would emit it with no
             // path, and two elements producing the same line would merge.
             List<?> elements = collection instanceof Set<?> ensemble
-                    ? ensemble.stream().sorted(Comparator.comparing(FormeCanonique::of)).toList()
+                    ? ensemble.stream()
+                            .sorted(Comparator.comparing(FormeCanonique::of))
+                            .toList()
                     : new ArrayList<>(collection);
             int index = 0;
             for (Object element : elements) {
@@ -172,12 +174,13 @@ public final class FormeCanonique {
         writeFields(texte, chemin, valeur, vus, profondeur);
     }
 
-    private static void writeFields(StringBuilder texte, String chemin, Object valeur,
-            IdentityHashMap<Object, String> vus, int profondeur) {
+    private static void writeFields(
+            StringBuilder texte, String chemin, Object valeur, IdentityHashMap<Object, String> vus, int profondeur) {
         List<Field> champs = new ArrayList<>();
         for (Class<?> type = valeur.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
             for (Field champ : type.getDeclaredFields()) {
-                if (!Modifier.isStatic(champ.getModifiers()) && !champ.isSynthetic()
+                if (!Modifier.isStatic(champ.getModifiers())
+                        && !champ.isSynthetic()
                         && !VOLATILES.contains(champ.getName())) {
                     champs.add(champ);
                 }
@@ -189,15 +192,22 @@ public final class FormeCanonique {
                 champ.setAccessible(true);
                 write(texte, chemin + "." + champ.getName(), champ.get(valeur), vus, profondeur + 1);
             } catch (ReflectiveOperationException | RuntimeException e) {
-                texte.append(chemin).append('.').append(champ.getName())
-                        .append(" = …illisible (").append(e.getClass().getSimpleName()).append(")\n");
+                texte.append(chemin)
+                        .append('.')
+                        .append(champ.getName())
+                        .append(" = …illisible (")
+                        .append(e.getClass().getSimpleName())
+                        .append(")\n");
             }
         }
     }
 
     private static boolean isLeaf(Object valeur) {
-        return valeur instanceof CharSequence || valeur instanceof Number || valeur instanceof Boolean
-                || valeur instanceof Character || valeur instanceof Enum<?>
+        return valeur instanceof CharSequence
+                || valeur instanceof Number
+                || valeur instanceof Boolean
+                || valeur instanceof Character
+                || valeur instanceof Enum<?>
                 || valeur.getClass().getName().startsWith("java.time.");
     }
 }

@@ -35,23 +35,32 @@ public class SauvegardeMcpTools {
     @Inject
     BackupService backupService;
 
-    @Tool(description = "État de la sauvegarde nocturne, toutes éditions confondues : si elle est configurée, "
-            + "où elle écrit, sa périodicité, sa rétention, sa prochaine exécution, comment s'est passée la "
-            + "dernière et les fichiers présents. Les dumps eux-mêmes ne sont jamais servis : ils portent "
-            + "toutes les données personnelles.",
-            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
+    @Tool(
+            description = "État de la sauvegarde nocturne, toutes éditions confondues : si elle est configurée, "
+                    + "où elle écrit, sa périodicité, sa rétention, sa prochaine exécution, comment s'est passée la "
+                    + "dernière et les fichiers présents. Les dumps eux-mêmes ne sont jamais servis : ils portent "
+                    + "toutes les données personnelles.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
     BackupState etat_sauvegardes() {
         return backupService.state();
     }
 
-    @Tool(description = "Suspend ou relance la sauvegarde nocturne. C'est le seul réglage modifiable : la "
-            + "destination et la rétention sont des variables d'environnement, et la restauration est une "
-            + "opération d'infrastructure hors application.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = true, openWorldHint = false))
-    BackupState modifier_sauvegardes(
-            @ToolArg(description = "Sauvegarde nocturne active ou suspendue") boolean active) {
+    @Tool(
+            description = "Suspend ou relance la sauvegarde nocturne. C'est le seul réglage modifiable : la "
+                    + "destination et la rétention sont des variables d'environnement, et la restauration est une "
+                    + "opération d'infrastructure hors application.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    BackupState modifier_sauvegardes(@ToolArg(description = "Sauvegarde nocturne active ou suspendue") boolean active) {
         return backupService.setActive(active);
     }
 }

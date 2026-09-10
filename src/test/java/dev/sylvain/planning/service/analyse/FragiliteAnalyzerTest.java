@@ -2,19 +2,11 @@ package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.AnimateurFragilite;
@@ -22,6 +14,12 @@ import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.CompetenceRare;
 import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.PosteFragile;
 import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.RapportFragilite;
 import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.SeveriteFragilite;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * Plain-Java test, no Quarkus and no solve — the whole point of the analyzer is
@@ -93,8 +91,7 @@ class FragiliteAnalyzerTest {
         Animateur alice = animateur("alice", "ESCAPE");
         Animateur bob = animateur("bob", "JEUX");
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice, bob), seats(stand, matin, alice)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), seats(stand, matin, alice)));
 
         AnimateurFragilite ligne = ligne(rapport, "alice");
         assertThat(ligne.postesIrremplacables()).isEqualTo(1);
@@ -111,8 +108,7 @@ class FragiliteAnalyzerTest {
         Animateur alice = animateur("alice", "JEUX");
         Animateur bob = animateur("bob", "JEUX");
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice, bob), seats(stand, matin, alice)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), seats(stand, matin, alice)));
 
         assertThat(ligne(rapport, "alice").postesIrremplacables()).isZero();
         assertThat(ligne(rapport, "alice").postes().getFirst().remplacants()).isEqualTo(1);
@@ -145,8 +141,7 @@ class FragiliteAnalyzerTest {
         Animateur bob = animateur("bob", "JEUX");
         bob.getJoursIndisponibles().add(JOUR);
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice, bob), seats(stand, matin, alice)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), seats(stand, matin, alice)));
 
         assertThat(ligne(rapport, "alice").postesIrremplacables()).isEqualTo(1);
         // Bob does not count as a specialist either, so the stand shows as
@@ -164,8 +159,7 @@ class FragiliteAnalyzerTest {
         Animateur mineur = animateur("mineur", "JEUX");
         mineur.setDateNaissance(JOUR.minusYears(16));
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice, mineur), seats(stand, matin, alice)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, mineur), seats(stand, matin, alice)));
 
         assertThat(ligne(rapport, "alice").postesIrremplacables()).isEqualTo(1);
         assertThat(rapport.competencesRares().getFirst().specialistes()).isEqualTo(1);
@@ -177,8 +171,7 @@ class FragiliteAnalyzerTest {
         Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
         Animateur alice = animateur("alice", "JEUX");
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice), seats(stand, matin, alice)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice), seats(stand, matin, alice)));
 
         CompetenceRare rare = rapport.competencesRares().getFirst();
         assertThat(rare.specialistes()).isZero();
@@ -196,8 +189,7 @@ class FragiliteAnalyzerTest {
         Animateur alice = animateur("alice", "JEUX");
         Animateur bob = animateur("bob", "JEUX");
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice, bob), seats(stand, matin, alice)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), seats(stand, matin, alice)));
 
         assertThat(rapport.competencesRares()).isEmpty();
         assertThat(rapport.totalCompetencesRares()).isZero();
@@ -215,8 +207,7 @@ class FragiliteAnalyzerTest {
         Animateur ninja = animateur("ninja", "POLYVALENT");
         ninja.applyNinjaTypologie("POLYVALENT");
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice, ninja), seats(stand, matin, alice)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, ninja), seats(stand, matin, alice)));
 
         CompetenceRare rare = rapport.competencesRares().getFirst();
         assertThat(rare.specialistes()).isEqualTo(1);
@@ -248,7 +239,8 @@ class FragiliteAnalyzerTest {
 
         RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob, carole, absent), postes));
 
-        assertThat(rapport.animateurs()).extracting(AnimateurFragilite::animateurId)
+        assertThat(rapport.animateurs())
+                .extracting(AnimateurFragilite::animateurId)
                 .containsExactly("alice", "bob", "carole");
         assertThat(rapport.animateurs().getFirst().severite()).isEqualTo(SeveriteFragilite.CRITIQUE);
     }
@@ -291,8 +283,7 @@ class FragiliteAnalyzerTest {
         soir.setHeureFinEffective(LocalTime.of(18, 0));
         soir.setAnimateur(bob);
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice, bob), List.of(matin, soir)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), List.of(matin, soir)));
 
         assertThat(rapport.groupesAnalyses()).isEqualTo(2);
         assertThat(ligne(rapport, "alice").postes().getFirst().heureDebut()).isEqualTo(LocalTime.of(10, 0));
@@ -351,8 +342,7 @@ class FragiliteAnalyzerTest {
         Animateur alice = animateur("alice", "JEUX");
         Animateur bob = animateur("bob", "JEUX");
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice, bob), seats(stand, pause, alice, bob)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), seats(stand, pause, alice, bob)));
 
         PosteFragile poste = ligne(rapport, "alice").postes().getFirst();
         assertThat(poste.couverturePause()).isTrue();
@@ -372,8 +362,8 @@ class FragiliteAnalyzerTest {
         Animateur bob = animateur("bob", "JEUX");
         Animateur carol = animateur("carol", "JEUX");
 
-        RapportFragilite rapport = analyzer.analyze(
-                planning(List.of(alice, bob, carol), seats(stand, slot, alice, bob, carol)));
+        RapportFragilite rapport =
+                analyzer.analyze(planning(List.of(alice, bob, carol), seats(stand, slot, alice, bob, carol)));
 
         PosteFragile poste = ligne(rapport, "alice").postes().getFirst();
         assertThat(poste.effectifMin()).isEqualTo(3);
@@ -416,8 +406,8 @@ class FragiliteAnalyzerTest {
     }
 
     private static Animateur animateur(String id, String typologie) {
-        Animateur animateur = new Animateur(id, id, id.toUpperCase(java.util.Locale.ROOT),
-                LocalDate.of(1990, 1, 1), false);
+        Animateur animateur =
+                new Animateur(id, id, id.toUpperCase(java.util.Locale.ROOT), LocalDate.of(1990, 1, 1), false);
         animateur.getCompetences().put(typologie, NiveauCompetence.AUTONOME);
         return animateur;
     }

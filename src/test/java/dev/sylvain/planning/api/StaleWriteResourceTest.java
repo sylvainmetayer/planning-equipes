@@ -24,16 +24,23 @@ class StaleWriteResourceTest {
                 {"id":"SW-S1","nom":"Stand","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1,
                  "reserveMajeurs":false,"premium":false,"niveauEffort":"NORMAL"}""";
         try {
-            String modifieLe = given().contentType(ContentType.JSON).body(stand)
-                    .when().post("/api/stands")
-                    .then().statusCode(200)
+            String modifieLe = given().contentType(ContentType.JSON)
+                    .body(stand)
+                    .when()
+                    .post("/api/stands")
+                    .then()
+                    .statusCode(200)
                     .body("stand.modifieLe", notNullValue())
-                    .extract().path("stand.modifieLe");
+                    .extract()
+                    .path("stand.modifieLe");
 
             given().contentType(ContentType.JSON)
-                    .body(stand.replace("\"nom\":\"Stand\"", "\"nom\":\"Périmé\",\"modifieLe\":\"2020-01-01T00:00:00Z\""))
-                    .when().put("/api/stands/SW-S1")
-                    .then().statusCode(409)
+                    .body(stand.replace(
+                            "\"nom\":\"Stand\"", "\"nom\":\"Périmé\",\"modifieLe\":\"2020-01-01T00:00:00Z\""))
+                    .when()
+                    .put("/api/stands/SW-S1")
+                    .then()
+                    .statusCode(409)
                     .body("code", equalTo(StaleWriteError.CODE))
                     .body("message", containsString("par une autre session"))
                     .body("modifieLe", notNullValue());
@@ -41,13 +48,17 @@ class StaleWriteResourceTest {
             // The stamp the client loaded, or none: both go through.
             given().contentType(ContentType.JSON)
                     .body(stand.replace("\"nom\":\"Stand\"", "\"nom\":\"À jour\",\"modifieLe\":\"" + modifieLe + "\""))
-                    .when().put("/api/stands/SW-S1")
-                    .then().statusCode(200)
+                    .when()
+                    .put("/api/stands/SW-S1")
+                    .then()
+                    .statusCode(200)
                     .body("stand.nom", equalTo("À jour"));
             given().contentType(ContentType.JSON)
                     .body(stand.replace("\"nom\":\"Stand\"", "\"nom\":\"Sans précondition\""))
-                    .when().put("/api/stands/SW-S1")
-                    .then().statusCode(200)
+                    .when()
+                    .put("/api/stands/SW-S1")
+                    .then()
+                    .statusCode(200)
                     .body("stand.nom", equalTo("Sans précondition"));
         } finally {
             given().when().delete("/api/stands/SW-S1");

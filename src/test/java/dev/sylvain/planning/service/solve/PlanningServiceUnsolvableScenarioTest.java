@@ -2,6 +2,18 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.scenario.ScenarioValidator;
+import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.AnomalyType;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -9,22 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.scenario.ScenarioValidator;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.AnomalyType;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
-import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
-import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 
 /**
  * {@code scenarios/scenario-avec-erreur-planning.yaml} is the one shipped scenario
@@ -45,12 +43,20 @@ class PlanningServiceUnsolvableScenarioTest {
     private static final String SCENARIO = "scenario-avec-erreur-planning.yaml";
 
     private static PlanningService service() {
-        return new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
-                new EmptyReferenceData(), new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
+        return new PlanningService(
+                3L,
+                2L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                new EmptyReferenceData(),
+                new FeasibilityAnalyzer(),
+                null,
+                null,
+                ConfigProvider.getConfig());
     }
 
     private static String yaml() {
-        try (InputStream inputStream = PlanningServiceUnsolvableScenarioTest.class.getClassLoader()
+        try (InputStream inputStream = PlanningServiceUnsolvableScenarioTest.class
+                .getClassLoader()
                 .getResourceAsStream("scenarios/" + SCENARIO)) {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -61,7 +67,8 @@ class PlanningServiceUnsolvableScenarioTest {
     /** Stands and créneaux as the screens see them: rules already expanded. */
     private static ScenarioYamlReader.ReferenceScenario reference() throws IOException {
         ScenarioYamlReader.ReferenceScenario reference = service().loadReferenceScenario(SCENARIO);
-        HoraireStandResolver.apply(reference.standsById().values(), reference.creneauxParId().values());
+        HoraireStandResolver.apply(
+                reference.standsById().values(), reference.creneauxParId().values());
         return reference;
     }
 
@@ -149,7 +156,8 @@ class PlanningServiceUnsolvableScenarioTest {
     @Test
     void aRealSolveCannotReachAFeasiblePlanning() {
         PlanningService service = service();
-        PlanningEvenement solved = service.solve(service.buildFromScenarioText(yaml()).planning(), 3L);
+        PlanningEvenement solved =
+                service.solve(service.buildFromScenarioText(yaml()).planning(), 3L);
 
         assertThat(solved.getScore().hardScore()).isNegative();
     }

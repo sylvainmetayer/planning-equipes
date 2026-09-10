@@ -1,10 +1,9 @@
 package dev.sylvain.planning.service.referentiel;
 
-import java.util.List;
-
+import dev.sylvain.planning.service.BusinessError;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.BusinessError;
+import java.util.List;
 
 /**
  * How much a deletion would take with it, for the confirmation that precedes
@@ -36,7 +35,8 @@ public class ReferenceUsageService {
 
     /** Timeslot ids arrive as text and are converted here; see {@link #creneauId}. */
     public ReferenceUsage forCreneaux(List<String> ids) {
-        return repository.forCreneaux(required(ids).stream().map(ReferenceUsageService::creneauId).toList());
+        return repository.forCreneaux(
+                required(ids).stream().map(ReferenceUsageService::creneauId).toList());
     }
 
     private static List<String> required(List<String> ids) {

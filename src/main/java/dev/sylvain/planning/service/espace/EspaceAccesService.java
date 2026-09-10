@@ -1,5 +1,13 @@
 package dev.sylvain.planning.service.espace;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.publication.MailService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -13,18 +21,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
-
 import javax.sql.DataSource;
-
-import dev.sylvain.planning.domain.Animateur;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.publication.MailService;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.espace.RateLimitVerdict;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * Passwordless authentication of the espace animateur (issue #165 follow-up):
@@ -71,8 +68,7 @@ public class EspaceAccesService {
     CodeRequestLimiter limiteurDemandesCode;
 
     /** What the "send me a code" call tells the interface. */
-    public record CodeEnvoye(String emailMasque) {
-    }
+    public record CodeEnvoye(String emailMasque) {}
 
     /** Too many codes asked for without using any: carries the delay before the next try. */
     public static class TooManyRequests extends RuntimeException {
@@ -112,8 +108,7 @@ public class EspaceAccesService {
         }
         String code = String.format("%06d", random.nextInt(1_000_000));
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO espace_acces (edition_id, animateur_id, code_hash, expire_le, tentatives_restantes)
                         VALUES (?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id, animateur_id)
@@ -147,8 +142,7 @@ public class EspaceAccesService {
         random.nextBytes(brut);
         String session = Base64.getUrlEncoder().withoutPadding().encodeToString(brut);
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO espace_session (edition_id, session_hash, animateur_id, expire_le)
                         VALUES (?, ?, ?, ?)""")) {
             ps.setString(2, hacher(session));
@@ -176,8 +170,7 @@ public class EspaceAccesService {
             return false;
         }
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT animateur_id, expire_le
                         FROM espace_session
                         WHERE edition_id = ? AND session_hash = ?""")) {
@@ -197,8 +190,7 @@ public class EspaceAccesService {
             throw new BusinessError.Invalid("Code manquant");
         }
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        """
+                PreparedStatement ps = scope.prepareScoped(connection, """
                         UPDATE espace_acces
                         SET tentatives_restantes = tentatives_restantes - 1
                         WHERE edition_id = ? AND animateur_id = ? AND tentatives_restantes > 0 AND expire_le > now()
@@ -206,8 +198,7 @@ public class EspaceAccesService {
             ps.setString(2, animateurId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
-                    throw new BusinessError.Invalid(
-                            "Code expiré ou trop d'essais : demandez un nouveau code.");
+                    throw new BusinessError.Invalid("Code expiré ou trop d'essais : demandez un nouveau code.");
                 }
                 if (!MessageDigest.isEqual(
                         rs.getString("code_hash").getBytes(StandardCharsets.UTF_8),
@@ -222,8 +213,8 @@ public class EspaceAccesService {
 
     private void deleteCode(String animateurId) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection,
-                        "DELETE FROM espace_acces WHERE edition_id = ? AND animateur_id = ?")) {
+                PreparedStatement ps = scope.prepareScoped(
+                        connection, "DELETE FROM espace_acces WHERE edition_id = ? AND animateur_id = ?")) {
             ps.setString(2, animateurId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -249,8 +240,8 @@ public class EspaceAccesService {
 
     private static String hacher(String valeur) {
         try {
-            return HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-256").digest(valeur.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of()
+                    .formatHex(MessageDigest.getInstance("SHA-256").digest(valeur.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 unavailable", e);
         }
@@ -260,5 +251,4 @@ public class EspaceAccesService {
     private String rateKey(String animateurId) {
         return editionContext.editionIdCourant() + "/" + animateurId;
     }
-
 }

@@ -1,13 +1,12 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.service.BusinessError;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.edition.EditionService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Turns the {@code edition} argument an MCP client passes into the edition id
@@ -51,8 +50,8 @@ class McpEditions {
         }
 
         List<Edition> parNom = editions.stream()
-                .filter(candidate -> candidate.getNom() != null
-                        && candidate.getNom().trim().equalsIgnoreCase(demande))
+                .filter(candidate ->
+                        candidate.getNom() != null && candidate.getNom().trim().equalsIgnoreCase(demande))
                 .toList();
         if (parNom.size() == 1) {
             return parNom.get(0).getId();

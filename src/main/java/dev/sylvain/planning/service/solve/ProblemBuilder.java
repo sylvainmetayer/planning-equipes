@@ -1,14 +1,5 @@
 package dev.sylvain.planning.service.solve;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
@@ -18,8 +9,16 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.solver.constraints.AdHocConstraints;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.solver.constraints.AdHocConstraints;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Builds the problem a solve runs on, out of the edition's reference data:
@@ -74,8 +73,8 @@ public final class ProblemBuilder {
      * The build itself, on lists already read from the referential. Locks, ad
      * hoc constraints and legal parameters are still read from here.
      */
-    private PlanningEvenement buildFromReferenceData(List<Animateur> animateurs, List<Stand> stands,
-            List<Creneau> creneaux) {
+    private PlanningEvenement buildFromReferenceData(
+            List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
         return buildFromReferenceData(animateurs, stands, creneaux, null);
     }
 
@@ -87,12 +86,14 @@ public final class ProblemBuilder {
      *                     and leaves a window in which the two disagree.
      *                     {@code null} lets the locks read it themselves.
      */
-    private PlanningEvenement buildFromReferenceData(List<Animateur> animateurs, List<Stand> stands,
-            List<Creneau> creneaux, Map<String, List<String>> planPersiste) {
+    private PlanningEvenement buildFromReferenceData(
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            Map<String, List<String>> planPersiste) {
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
-            throw new IllegalStateException(
-                    "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
-                            + "des animateurs et des créneaux d'abord.");
+            throw new IllegalStateException("Aucune donnée de référence. Chargez un scénario ou créez des stands, "
+                    + "des animateurs et des créneaux d'abord.");
         }
         List<PosteAffectation> postes = buildPostes(stands, creneaux);
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
@@ -106,8 +107,8 @@ public final class ProblemBuilder {
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
-        PlanningEvenement evenement = new PlanningEvenement(dateDebut, animateurs, postes,
-                referenceDataService.snapshotContraintes());
+        PlanningEvenement evenement =
+                new PlanningEvenement(dateDebut, animateurs, postes, referenceDataService.snapshotContraintes());
         evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
         evenement.setVerrouillages(verrouillages);
         return evenement;
@@ -115,21 +116,17 @@ public final class ProblemBuilder {
 
     /** How much of an incremental problem is frozen versus re-opened (issue #86). */
     public record StatistiquesIncremental(
-            int postesTotal,
-            int postesFiges,
-            int postesLiberes,
-            int postesLiberesManuellement,
-            int postesNouveaux) {
-    }
+            int postesTotal, int postesFiges, int postesLiberes, int postesLiberesManuellement, int postesNouveaux) {}
 
     /**
      * An incremental re-solve problem: the planning to hand to the solver, how
      * much of it is frozen, and the persisted assignments it was seeded from —
      * kept so the caller can diff the result against them.
      */
-    public record ProblemeIncremental(PlanningEvenement planning, StatistiquesIncremental statistiques,
-            Map<String, List<String>> affectationsPrecedentes) {
-    }
+    public record ProblemeIncremental(
+            PlanningEvenement planning,
+            StatistiquesIncremental statistiques,
+            Map<String, List<String>> affectationsPrecedentes) {}
 
     /**
      * A full-solve problem and where it started from (issue #174).
@@ -143,9 +140,8 @@ public final class ProblemBuilder {
      *                         start empty: the animateur is gone, or has since
      *                         declared that day off
      */
-    public record ProblemeReamorce(PlanningEvenement planning, Reamorcage reamorcage, int postesReamorces,
-            int postesLiberes) {
-    }
+    public record ProblemeReamorce(
+            PlanningEvenement planning, Reamorcage reamorcage, int postesReamorces, int postesLiberes) {}
 
     /**
      * The problem of a full solve, started from the persisted plan when
@@ -170,21 +166,19 @@ public final class ProblemBuilder {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         List<Stand> stands = referenceDataService.listSolvedStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
-        Map<String, List<String>> affectationsPrecedentes = demande == Reamorcage.AUCUN
-                ? Map.of()
-                : persistence.loadAnimateursByStandCreneau();
+        Map<String, List<String>> affectationsPrecedentes =
+                demande == Reamorcage.AUCUN ? Map.of() : persistence.loadAnimateursByStandCreneau();
         if (demande == Reamorcage.PLAN_COURANT && affectationsPrecedentes.isEmpty()) {
-            throw new IllegalStateException(
-                    "Aucun plan enregistré sur cette édition : rien d'où repartir. "
-                            + "Lancez un calcul de zéro (reamorcage=AUCUN), ou laissez le choix automatique.");
+            throw new IllegalStateException("Aucun plan enregistré sur cette édition : rien d'où repartir. "
+                    + "Lancez un calcul de zéro (reamorcage=AUCUN), ou laissez le choix automatique.");
         }
         recordStandFamilies(stands, creneaux);
         PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux, affectationsPrecedentes);
         if (affectationsPrecedentes.isEmpty()) {
             return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0);
         }
-        int[] bilan = reamorcerDepuisAffectations(planning.getPostes(), animateurs, affectationsPrecedentes,
-                planning.getContraintesAdHoc());
+        int[] bilan = reamorcerDepuisAffectations(
+                planning.getPostes(), animateurs, affectationsPrecedentes, planning.getContraintesAdHoc());
         return new ProblemeReamorce(planning, Reamorcage.PLAN_COURANT, bilan[0], bilan[1]);
     }
 
@@ -202,8 +196,11 @@ public final class ProblemBuilder {
      *
      * @return {@code {seeded, freed}}
      */
-    static int[] reamorcerDepuisAffectations(List<PosteAffectation> postes, List<Animateur> animateurs,
-            Map<String, List<String>> animateursPersistes, List<ContrainteAdHoc> contraintesAdHoc) {
+    static int[] reamorcerDepuisAffectations(
+            List<PosteAffectation> postes,
+            List<Animateur> animateurs,
+            Map<String, List<String>> animateursPersistes,
+            List<ContrainteAdHoc> contraintesAdHoc) {
         Map<String, Animateur> animateursById = new HashMap<>();
         for (Animateur animateur : animateurs) {
             animateursById.put(animateur.getId(), animateur);
@@ -229,7 +226,8 @@ public final class ProblemBuilder {
             }
             Animateur tenant = animateursById.get(tenants.get(place));
             poste.setAnimateur(tenant);
-            if (tenant == null || indisponible(tenant, poste)
+            if (tenant == null
+                    || indisponible(tenant, poste)
                     || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
                 poste.setAnimateur(null);
                 liberes++;
@@ -268,21 +266,22 @@ public final class ProblemBuilder {
         List<Creneau> creneaux = referenceDataService.listCreneaux();
         recordStandFamilies(stands, creneaux);
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
-            throw new IllegalStateException(
-                    "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
-                            + "des animateurs et des créneaux d'abord.");
+            throw new IllegalStateException("Aucune donnée de référence. Chargez un scénario ou créez des stands, "
+                    + "des animateurs et des créneaux d'abord.");
         }
-        Map<String, List<String>> affectationsPrecedentes =
-                persistence.loadAnimateursByStandCreneau();
+        Map<String, List<String>> affectationsPrecedentes = persistence.loadAnimateursByStandCreneau();
         if (affectationsPrecedentes.isEmpty()) {
-            throw new IllegalStateException(
-                    "Aucun plan persisté : lancez d'abord une résolution complète, "
-                            + "la replanification incrémentale repart de son résultat.");
+            throw new IllegalStateException("Aucun plan persisté : lancez d'abord une résolution complète, "
+                    + "la replanification incrémentale repart de son résultat.");
         }
         List<PosteAffectation> postes = buildPostes(stands, creneaux);
         List<ContrainteAdHoc> contraintesAdHoc = referenceDataService.snapshotContraintes();
-        StatistiquesIncremental statistiques = figerPostesIncremental(postes, animateurs, affectationsPrecedentes,
-                scope == null ? ReplanificationScope.automatic() : scope, contraintesAdHoc);
+        StatistiquesIncremental statistiques = figerPostesIncremental(
+                postes,
+                animateurs,
+                affectationsPrecedentes,
+                scope == null ? ReplanificationScope.automatic() : scope,
+                contraintesAdHoc);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
@@ -313,8 +312,11 @@ public final class ProblemBuilder {
      * </ul>
      * Package-private and static so it can be unit-tested without a database.
      */
-    static StatistiquesIncremental figerPostesIncremental(List<PosteAffectation> postes, List<Animateur> animateurs,
-            Map<String, List<String>> animateursPersistes, ReplanificationScope scope,
+    static StatistiquesIncremental figerPostesIncremental(
+            List<PosteAffectation> postes,
+            List<Animateur> animateurs,
+            Map<String, List<String>> animateursPersistes,
+            ReplanificationScope scope,
             List<ContrainteAdHoc> contraintesAdHoc) {
         Map<String, Animateur> animateursById = new HashMap<>();
         for (Animateur animateur : animateurs) {
@@ -353,7 +355,8 @@ public final class ProblemBuilder {
             // Seeded first: the ad hoc check below reads the seat as staffed,
             // exactly like the constraint it shares its implementation with.
             poste.setAnimateur(tenant);
-            if (tenant == null || indisponible(tenant, poste)
+            if (tenant == null
+                    || indisponible(tenant, poste)
                     || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
                 poste.setAnimateur(null);
                 liberes++;
@@ -377,8 +380,8 @@ public final class ProblemBuilder {
      * ({@link AdHocConstraints#violatesForcedIndisponibilite}), so the two can
      * never disagree about what is allowed.
      */
-    private static boolean forbiddenByContrainteAdHoc(List<ContrainteAdHoc> indisponibilitesForcees,
-            PosteAffectation poste) {
+    private static boolean forbiddenByContrainteAdHoc(
+            List<ContrainteAdHoc> indisponibilitesForcees, PosteAffectation poste) {
         for (ContrainteAdHoc contrainte : indisponibilitesForcees) {
             if (AdHocConstraints.violatesForcedIndisponibilite(contrainte, poste)) {
                 return true;
@@ -404,14 +407,13 @@ public final class ProblemBuilder {
      * again, leaving the unlocked part of the problem exactly as it was
      * before.</p>
      */
-    private void applyVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
-            List<VerrouillagePlanning> verrouillages) {
+    private void applyVerrouillages(
+            List<PosteAffectation> postes, List<Animateur> animateurs, List<VerrouillagePlanning> verrouillages) {
         PlanningPersistenceService persistenceService = persistence;
         if (verrouillages.isEmpty() || persistenceService == null) {
             return;
         }
-        applyVerrouillages(postes, animateurs, verrouillages,
-                persistenceService.loadAnimateursByStandCreneau());
+        applyVerrouillages(postes, animateurs, verrouillages, persistenceService.loadAnimateursByStandCreneau());
     }
 
     /**
@@ -419,8 +421,11 @@ public final class ProblemBuilder {
      * package-private and static so it can be unit-tested without a database,
      * like {@link #buildPostes}.
      */
-    static void applyVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
-            List<VerrouillagePlanning> verrouillages, Map<String, List<String>> animateursPersistes) {
+    static void applyVerrouillages(
+            List<PosteAffectation> postes,
+            List<Animateur> animateurs,
+            List<VerrouillagePlanning> verrouillages,
+            Map<String, List<String>> animateursPersistes) {
         if (verrouillages.isEmpty()) {
             return;
         }
@@ -441,8 +446,11 @@ public final class ProblemBuilder {
      * {@link #figerPostesIncremental}: it has its own notion of what stays
      * valid, and pins rather than merely seeds.</p>
      */
-    static void seedFromAffectations(List<PosteAffectation> postes, List<Animateur> animateurs,
-            List<VerrouillagePlanning> verrouillages, Map<String, List<String>> seed) {
+    static void seedFromAffectations(
+            List<PosteAffectation> postes,
+            List<Animateur> animateurs,
+            List<VerrouillagePlanning> verrouillages,
+            Map<String, List<String>> seed) {
         if (seed.isEmpty()) {
             return;
         }
@@ -526,7 +534,8 @@ public final class ProblemBuilder {
      * exactly the historical unfiltered cross product.</p>
      */
     public static List<PosteAffectation> buildPostes(List<Stand> stands, List<Creneau> creneaux) {
-        int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
+        int nombreFamilles =
+                creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
         Map<String, Integer> familleParStand = spreadStandsByFamily(stands, nombreFamilles);
         List<PosteAffectation> postes = new ArrayList<>();
         int counter = 0;
@@ -537,7 +546,8 @@ public final class ProblemBuilder {
                     continue;
                 }
                 List<Creneau.SegmentOuvert> segments = creneau.segmentsOuverts(stand);
-                boolean creneauEntierOuvert = segments.size() == 1 && segments.get(0).debutMinutes() == 0
+                boolean creneauEntierOuvert = segments.size() == 1
+                        && segments.get(0).debutMinutes() == 0
                         && segments.get(0).finMinutes() == creneau.getDureeMinutes();
                 for (Creneau.SegmentOuvert segment : segments) {
                     // At least one seat on an open stand, half on a
@@ -581,7 +591,8 @@ public final class ProblemBuilder {
      * them invites an entry that generates nothing.
      */
     public static Map<String, Integer> standFamilies(List<Stand> stands, List<Creneau> creneaux) {
-        int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
+        int nombreFamilles =
+                creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
         return spreadStandsByFamily(stands, nombreFamilles);
     }
 
@@ -604,7 +615,8 @@ public final class ProblemBuilder {
      * a staggered grid arrives without replacing this one.</p>
      */
     private void recordStandFamilies(List<Stand> stands, List<Creneau> creneaux) {
-        int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
+        int nombreFamilles =
+                creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
         if (nombreFamilles <= 1) {
             return;
         }
@@ -615,7 +627,8 @@ public final class ProblemBuilder {
         Map<String, Integer> families = new HashMap<>();
         int[] population = new int[nombreFamilles];
         List<Stand> sansFamille = new ArrayList<>();
-        for (Stand stand : stands.stream().sorted(Comparator.comparing(Stand::getId)).toList()) {
+        for (Stand stand :
+                stands.stream().sorted(Comparator.comparing(Stand::getId)).toList()) {
             Integer famille = stand.getFamille();
             if (famille != null && famille >= 0 && famille < nombreFamilles) {
                 families.put(stand.getId(), famille);

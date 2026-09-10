@@ -3,23 +3,22 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
-import dev.sylvain.planning.service.edition.EditionService;
-import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * Restoring a snapshot while a solve holds the solver (issue #313): the guard
@@ -60,8 +59,8 @@ class PlanSnapshotServiceSolveGuardTest {
         Creneau creneau = creneau(9601L);
         Stand stand = stand("SNAP-S1");
         Animateur animateur = animateur("SNAP-A1");
-        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
-                List.of(poste("SNAP-P1", stand, creneau, animateur)));
+        PlanningEvenement probleme =
+                new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("SNAP-P1", stand, creneau, animateur)));
         String jobId = null;
         try {
             persistence.persist(probleme);
@@ -96,8 +95,8 @@ class PlanSnapshotServiceSolveGuardTest {
         Creneau creneau = creneau(9602L);
         Stand stand = stand("SNAP-S2");
         Animateur animateur = animateur("SNAP-A2");
-        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
-                List.of(poste("SNAP-P2", stand, creneau, animateur)));
+        PlanningEvenement probleme =
+                new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("SNAP-P2", stand, creneau, animateur)));
         String jobId = null;
         try {
             editions.create(new Edition(EDITION_VOISINE, "Édition voisine des instantanés", false, null));
@@ -127,8 +126,8 @@ class PlanSnapshotServiceSolveGuardTest {
         Stand stand = stand("SNAP-S3");
         Animateur animateur = animateur("SNAP-A3");
         try {
-            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur),
-                    List.of(poste("SNAP-P3", stand, creneau, animateur))));
+            persistence.persist(new PlanningEvenement(
+                    JOUR, List.of(animateur), List.of(poste("SNAP-P3", stand, creneau, animateur))));
             attendreSolveurLibre();
             long snapshotId = snapshots.capture("Plan à remettre", false).id();
             persistence.persist(new PlanningEvenement(JOUR, List.of(animateur), List.of()));

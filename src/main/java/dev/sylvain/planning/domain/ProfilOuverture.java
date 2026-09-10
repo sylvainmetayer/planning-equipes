@@ -1,12 +1,11 @@
 package dev.sylvain.planning.domain;
 
+import dev.sylvain.planning.domain.Creneau.SegmentOuvert;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-
-import dev.sylvain.planning.domain.Creneau.SegmentOuvert;
 
 /**
  * When, inside one créneau, a stand is open, and with how many seats: the
@@ -140,8 +139,10 @@ public final class ProfilOuverture {
 
     /** Closure windows of {@code stand} overlapping the créneau, clamped to {@code [0, dureeSecondes]}, in seconds since its start. */
     private static List<int[]> closingsInSeconds(Creneau creneau, Stand stand, int dureeSecondes) {
-        if (stand == null || stand.getIndisponibilitesEffectives().isEmpty()
-                || creneau.getHeureDebut() == null || creneau.getDate() == null) {
+        if (stand == null
+                || stand.getIndisponibilitesEffectives().isEmpty()
+                || creneau.getHeureDebut() == null
+                || creneau.getDate() == null) {
             return List.of();
         }
         int debutSlotSecondes = creneau.getHeureDebut().toSecondOfDay();
@@ -186,8 +187,8 @@ public final class ProfilOuverture {
      * {@code heureFin} means "until closing time" and therefore lands exactly
      * on the créneau's end, whatever hour that is.
      */
-    private static int fenetreEndInSeconds(LocalTime heureFin, int decalageJour, int debutSlotSecondes,
-            int dureeSecondes) {
+    private static int fenetreEndInSeconds(
+            LocalTime heureFin, int decalageJour, int debutSlotSecondes, int dureeSecondes) {
         if (heureFin == null) {
             return dureeSecondes;
         }
@@ -196,7 +197,8 @@ public final class ProfilOuverture {
 
     /** True when the créneau runs past midnight, i.e. its end is at or before its start. */
     private static boolean traverseMinuit(Creneau creneau) {
-        return creneau.getHeureDebut() != null && creneau.getHeureFin() != null
+        return creneau.getHeureDebut() != null
+                && creneau.getHeureFin() != null
                 && !creneau.getHeureFin().isAfter(creneau.getHeureDebut());
     }
 
@@ -236,8 +238,10 @@ public final class ProfilOuverture {
      * {@link Stand#getEffectifMin()} for a window that names none.
      */
     private static List<int[]> ouverturesInSeconds(Creneau creneau, Stand stand, int dureeSecondes) {
-        if (stand == null || stand.getOuverturesEffectives().isEmpty()
-                || creneau.getHeureDebut() == null || creneau.getDate() == null) {
+        if (stand == null
+                || stand.getOuverturesEffectives().isEmpty()
+                || creneau.getHeureDebut() == null
+                || creneau.getDate() == null) {
             return List.of();
         }
         int debutSlotSecondes = creneau.getHeureDebut().toSecondOfDay();
@@ -297,8 +301,7 @@ public final class ProfilOuverture {
             }
             SegmentOuvert dernier = segments.isEmpty() ? null : segments.get(segments.size() - 1);
             if (dernier != null && dernier.finMinutes() == debut / 60 && dernier.effectif() == effectif) {
-                segments.set(segments.size() - 1,
-                        new SegmentOuvert(dernier.debutMinutes(), fin / 60, effectif));
+                segments.set(segments.size() - 1, new SegmentOuvert(dernier.debutMinutes(), fin / 60, effectif));
             } else {
                 segments.add(new SegmentOuvert(debut / 60, fin / 60, effectif));
             }

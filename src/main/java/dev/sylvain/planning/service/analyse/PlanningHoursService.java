@@ -1,18 +1,16 @@
 package dev.sylvain.planning.service.analyse;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
-import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Hours planned per animateur, grouped by ISO calendar week (from
@@ -51,7 +49,8 @@ public class PlanningHoursService {
         for (Animateur animateur : planning.getAnimateurs()) {
             Map<String, Double> parSemaine = heuresParAnimateurEtSemaine.getOrDefault(animateur.getId(), Map.of());
             double total = totalParAnimateur.getOrDefault(animateur.getId(), 0.0);
-            lignes.add(new HeuresAnimateur(animateur.getId(), animateur.nomAffiche(), new LinkedHashMap<>(parSemaine), total));
+            lignes.add(new HeuresAnimateur(
+                    animateur.getId(), animateur.nomAffiche(), new LinkedHashMap<>(parSemaine), total));
         }
         return new HeuresRapport(semainesTriees, lignes);
     }
@@ -98,9 +97,7 @@ public class PlanningHoursService {
     }
 
     @Schema(requiredProperties = {"total"})
-    public record HeuresAnimateur(String animateurId, String nom, Map<String, Double> heuresParSemaine, double total) {
-    }
+    public record HeuresAnimateur(String animateurId, String nom, Map<String, Double> heuresParSemaine, double total) {}
 
-    public record HeuresRapport(List<String> semaines, List<HeuresAnimateur> animateurs) {
-    }
+    public record HeuresRapport(List<String> semaines, List<HeuresAnimateur> animateurs) {}
 }

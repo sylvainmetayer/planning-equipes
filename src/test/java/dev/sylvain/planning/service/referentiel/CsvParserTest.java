@@ -3,10 +3,9 @@ package dev.sylvain.planning.service.referentiel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.service.BusinessError;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * The dialects a real spreadsheet export arrives in.

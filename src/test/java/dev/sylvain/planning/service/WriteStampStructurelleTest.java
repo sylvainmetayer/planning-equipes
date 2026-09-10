@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -30,8 +29,8 @@ class WriteStampStructurelleTest {
     private static final Path SOURCES = Path.of("src/main/java/dev/sylvain/planning/service");
 
     /** The tables a screen edits row by row — the ones two sessions can open at once. */
-    private static final List<String> REFERENTIELS = List.of(
-            "stand", "animateur", "creneau", "emplacement", "typologie", "contrainte_ad_hoc");
+    private static final List<String> REFERENTIELS =
+            List.of("stand", "animateur", "creneau", "emplacement", "typologie", "contrainte_ad_hoc");
 
     @Test
     void everyReferentialTableCarriesTheStamp() throws IOException {
@@ -66,7 +65,8 @@ class WriteStampStructurelleTest {
 
     /** Every table a migration gave {@code modifie_le}. */
     private static List<String> tablesEstampillees() throws IOException {
-        Matcher matcher = Pattern.compile("ALTER TABLE (\\w+)\\s+ADD COLUMN modifie_le").matcher(read(MIGRATIONS));
+        Matcher matcher =
+                Pattern.compile("ALTER TABLE (\\w+)\\s+ADD COLUMN modifie_le").matcher(read(MIGRATIONS));
         List<String> tables = new ArrayList<>();
         while (matcher.find()) {
             tables.add(matcher.group(1));
@@ -80,8 +80,10 @@ class WriteStampStructurelleTest {
     void everyPreconditionIsBoundThroughTheHelper() throws IOException {
         String sources = read(SOURCES);
         int clauses = sources.split("date_trunc\\('milliseconds', ", -1).length - 1;
-        int bindings = sources.split("WriteStamp\\.bindPrecondition\\(", -1).length - 1
-                + sources.split("staleWrites\\.refuseStale\\(\"creneau\"", -1).length - 1;
+        int bindings = sources.split("WriteStamp\\.bindPrecondition\\(", -1).length
+                - 1
+                + sources.split("staleWrites\\.refuseStale\\(\"creneau\"", -1).length
+                - 1;
         assertThat(bindings)
                 .as("each precondition clause needs its binding: %d clause halves, %d bindings", clauses, bindings)
                 .isGreaterThanOrEqualTo(REFERENTIELS.size());

@@ -2,15 +2,13 @@ package dev.sylvain.planning.service.diagnostic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
-import java.util.List;
-
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
 import ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification;
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.Animateur;
+import java.time.LocalDate;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * The one behaviour of the score director implementation that the contract test
@@ -33,17 +31,17 @@ class ScoreDirectorConstraintDiagnosticServiceTest {
         ConstraintJustification once = justification(ALICE);
         ConstraintJustification again = justification(ALICE);
 
-        List<MatchFacts> matches = ScoreDirectorConstraintDiagnosticService
-                .distinctFacts(List.of(once, again));
+        List<MatchFacts> matches = ScoreDirectorConstraintDiagnosticService.distinctFacts(List.of(once, again));
 
-        assertThat(matches).singleElement()
+        assertThat(matches)
+                .singleElement()
                 .satisfies(match -> assertThat(match.facts()).containsExactly(ALICE));
     }
 
     @Test
     void matchesOverDifferentFactsAreKeptApart() {
-        List<MatchFacts> matches = ScoreDirectorConstraintDiagnosticService
-                .distinctFacts(List.of(justification(ALICE), justification(BOB)));
+        List<MatchFacts> matches = ScoreDirectorConstraintDiagnosticService.distinctFacts(
+                List.of(justification(ALICE), justification(BOB)));
 
         assertThat(matches).hasSize(2);
         assertThat(matches.get(0).facts()).containsExactly(ALICE);
@@ -59,10 +57,10 @@ class ScoreDirectorConstraintDiagnosticServiceTest {
      */
     @Test
     void sameFactsFoldIntoOneWhateverTheyWeighed() {
-        ConstraintJustification light = DefaultConstraintJustification
-                .of(HardMediumSoftScore.ofHard(-1), List.of(ALICE));
-        ConstraintJustification heavy = DefaultConstraintJustification
-                .of(HardMediumSoftScore.ofHard(-5), List.of(ALICE));
+        ConstraintJustification light =
+                DefaultConstraintJustification.of(HardMediumSoftScore.ofHard(-1), List.of(ALICE));
+        ConstraintJustification heavy =
+                DefaultConstraintJustification.of(HardMediumSoftScore.ofHard(-5), List.of(ALICE));
 
         assertThat(ScoreDirectorConstraintDiagnosticService.distinctFacts(List.of(light, heavy)))
                 .singleElement()
@@ -72,8 +70,8 @@ class ScoreDirectorConstraintDiagnosticServiceTest {
     /** Encounter order is preserved: the violation popup shows the first N. */
     @Test
     void theOrderMatchesWereFoundInIsKept() {
-        List<MatchFacts> matches = ScoreDirectorConstraintDiagnosticService
-                .distinctFacts(List.of(justification(BOB), justification(ALICE), justification(BOB)));
+        List<MatchFacts> matches = ScoreDirectorConstraintDiagnosticService.distinctFacts(
+                List.of(justification(BOB), justification(ALICE), justification(BOB)));
 
         assertThat(matches).hasSize(2);
         assertThat(matches.get(0).facts()).containsExactly(BOB);

@@ -1,7 +1,13 @@
 package dev.sylvain.planning.service.referentiel;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.ModeHoraire;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -16,15 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-
-import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Turns a stand's hand-entered dated windows back into the recurring
@@ -57,8 +55,7 @@ public final class HoraireCompaction {
      */
     static final int ECART_TOLERE_MINUTES = 1;
 
-    private HoraireCompaction() {
-    }
+    private HoraireCompaction() {}
 
     /** What compaction would do, or did, to one stand. */
     @Schema(requiredProperties = {"compacte", "ecartMinutes", "exceptionsApres", "fenetresAvant", "reglesApres"})
@@ -69,8 +66,7 @@ public final class HoraireCompaction {
             int exceptionsApres,
             int ecartMinutes,
             boolean compacte,
-            String raison) {
-    }
+            String raison) {}
 
     /** Overall outcome, plus one line per stand that was looked at. */
     @Schema(requiredProperties = {"applique", "fenetresApres", "fenetresAvant", "standsCompactes"})
@@ -79,8 +75,7 @@ public final class HoraireCompaction {
             int standsCompactes,
             int fenetresAvant,
             int fenetresApres,
-            List<LigneCompactage> stands) {
-    }
+            List<LigneCompactage> stands) {}
 
     /**
      * Compacts every stand of {@code stands} in place and returns what happened.
@@ -104,7 +99,8 @@ public final class HoraireCompaction {
         int fenetresAvantTotal = 0;
         int fenetresApresTotal = 0;
         for (Stand stand : stands) {
-            int fenetresAvant = stand.getIndisponibilites().size() + stand.getOuvertures().size();
+            int fenetresAvant =
+                    stand.getIndisponibilites().size() + stand.getOuvertures().size();
             LigneCompactage ligne = compactStand(stand, creneaux, datesEvenement, endOfDay, fenetresAvant);
             lignes.add(ligne);
             fenetresAvantTotal += fenetresAvant;
@@ -116,17 +112,33 @@ public final class HoraireCompaction {
         return new RapportCompactage(applique, compactes, fenetresAvantTotal, fenetresApresTotal, lignes);
     }
 
-    private static LigneCompactage compactStand(Stand stand, List<Creneau> creneaux, Set<LocalDate> datesEvenement,
-            Map<LocalDate, Integer> endOfDay, int fenetresAvant) {
+    private static LigneCompactage compactStand(
+            Stand stand,
+            List<Creneau> creneaux,
+            Set<LocalDate> datesEvenement,
+            Map<LocalDate, Integer> endOfDay,
+            int fenetresAvant) {
         if (!stand.getHoraires().isEmpty()) {
-            return new LigneCompactage(stand.getId(), fenetresAvant, stand.getHoraires().size(), fenetresAvant, 0,
-                    false, "Le stand a déjà des horaires récurrents — compactage ignoré pour ne pas les fusionner");
+            return new LigneCompactage(
+                    stand.getId(),
+                    fenetresAvant,
+                    stand.getHoraires().size(),
+                    fenetresAvant,
+                    0,
+                    false,
+                    "Le stand a déjà des horaires récurrents — compactage ignoré pour ne pas les fusionner");
         }
         if (fenetresAvant == 0) {
             return new LigneCompactage(stand.getId(), 0, 0, 0, 0, false, "Aucune fenêtre datée à compacter");
         }
         if (datesEvenement.isEmpty()) {
-            return new LigneCompactage(stand.getId(), fenetresAvant, 0, fenetresAvant, 0, false,
+            return new LigneCompactage(
+                    stand.getId(),
+                    fenetresAvant,
+                    0,
+                    fenetresAvant,
+                    0,
+                    false,
                     "Aucun créneau : impossible de savoir quels jours une règle couvrirait");
         }
 
@@ -140,7 +152,8 @@ public final class HoraireCompaction {
         // A pattern repeated on a single day is not a pattern: leaving it dated
         // keeps the result readable instead of turning every oddity into a rule.
         Map<JourSaisi, Set<LocalDate>> groupes = new LinkedHashMap<>();
-        compactables.forEach((date, jour) -> groupes.computeIfAbsent(jour, key -> new TreeSet<>()).add(date));
+        compactables.forEach((date, jour) ->
+                groupes.computeIfAbsent(jour, key -> new TreeSet<>()).add(date));
 
         Set<LocalDate> baseGroup = baseGroup(groupes, compactables.keySet(), datesEvenement);
 
@@ -154,8 +167,8 @@ public final class HoraireCompaction {
             regles.add(buildRule(patron, dates, datesEvenement, dates == baseGroup));
         });
         if (regles.isEmpty()) {
-            return new LigneCompactage(stand.getId(), fenetresAvant, 0, fenetresAvant, 0, false,
-                    "Aucun motif répété : rien à factoriser");
+            return new LigneCompactage(
+                    stand.getId(), fenetresAvant, 0, fenetresAvant, 0, false, "Aucun motif répété : rien à factoriser");
         }
 
         List<IndisponibiliteStand> fermetures = new ArrayList<>();
@@ -167,11 +180,16 @@ public final class HoraireCompaction {
                     // pattern repeats nowhere is exactly the busy Saturday the
                     // organiser staffed differently, and dropping it here made
                     // the window fall back on effectifMin without a word.
-                    ouvertures.add(new OuvertureStand(null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(),
-                            jour.motif(), fenetre.getEffectif()));
+                    ouvertures.add(new OuvertureStand(
+                            null,
+                            date,
+                            fenetre.getHeureDebut(),
+                            fenetre.getHeureFin(),
+                            jour.motif(),
+                            fenetre.getEffectif()));
                 } else {
-                    fermetures.add(new IndisponibiliteStand(null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(),
-                            jour.motif()));
+                    fermetures.add(new IndisponibiliteStand(
+                            null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(), jour.motif()));
                 }
             }
         });
@@ -179,8 +197,13 @@ public final class HoraireCompaction {
         Stand candidat = copyWithHoraires(stand, regles, fermetures, ouvertures);
         int ecart = maxGapMinutes(stand, candidat, creneaux);
         if (ecart > ECART_TOLERE_MINUTES) {
-            return new LigneCompactage(stand.getId(), fenetresAvant, regles.size(),
-                    fermetures.size() + ouvertures.size(), ecart, false,
+            return new LigneCompactage(
+                    stand.getId(),
+                    fenetresAvant,
+                    regles.size(),
+                    fermetures.size() + ouvertures.size(),
+                    ecart,
+                    false,
                     "Les règles proposées ne reproduisent pas les mêmes segments ouverts (écart " + ecart
                             + " min) — stand laissé inchangé");
         }
@@ -190,10 +213,17 @@ public final class HoraireCompaction {
         stand.setOuvertures(ouvertures);
         stand.setFenetresEffectives(null, null);
         String raison = ecart > 0
-                ? "Compacté ; " + ecart + " min récupérée(s) en fin de journée (l'ancien 23:59 devient la fermeture réelle)"
+                ? "Compacté ; " + ecart
+                        + " min récupérée(s) en fin de journée (l'ancien 23:59 devient la fermeture réelle)"
                 : "Compacté à l'identique";
-        return new LigneCompactage(stand.getId(), fenetresAvant, regles.size(), fermetures.size() + ouvertures.size(),
-                ecart, true, raison);
+        return new LigneCompactage(
+                stand.getId(),
+                fenetresAvant,
+                regles.size(),
+                fermetures.size() + ouvertures.size(),
+                ecart,
+                true,
+                raison);
     }
 
     /** One day's hand-entered statement, normalised so two identical days compare equal. */
@@ -229,7 +259,10 @@ public final class HoraireCompaction {
             LocalDate date = ouverture.getDate();
             modes.put(date, ModeHoraire.OUVERTURE);
             fenetres.computeIfAbsent(date, key -> new LinkedHashSet<>())
-                    .add(normalize(ouverture.getHeureDebut(), ouverture.getHeureFin(), ouverture.getEffectif(),
+                    .add(normalize(
+                            ouverture.getHeureDebut(),
+                            ouverture.getHeureFin(),
+                            ouverture.getEffectif(),
                             endOfDay.get(date)));
             motifs.putIfAbsent(date, ouverture.getMotif());
         }
@@ -261,8 +294,8 @@ public final class HoraireCompaction {
      * time — within {@link #ECART_TOLERE_MINUTES}, which is what recognises the
      * {@code 23:59} written for a day closing at midnight.
      */
-    private static FenetreHoraire normalize(LocalTime heureDebut, LocalTime heureFin, Integer effectif,
-            Integer finJourneeSecondes) {
+    private static FenetreHoraire normalize(
+            LocalTime heureDebut, LocalTime heureFin, Integer effectif, Integer finJourneeSecondes) {
         // The effectif rides along untouched: only the window's end is being
         // normalised here, and two days that staff the same hours differently
         // are different rules — FenetreHoraire equality covers the effectif, so
@@ -308,8 +341,8 @@ public final class HoraireCompaction {
      * <p>The largest pattern is picked, ties broken on the earliest date, so the
      * result doesn't depend on map iteration order.</p>
      */
-    private static Set<LocalDate> baseGroup(Map<JourSaisi, Set<LocalDate>> groupes, Set<LocalDate> joursStates,
-            Set<LocalDate> datesEvenement) {
+    private static Set<LocalDate> baseGroup(
+            Map<JourSaisi, Set<LocalDate>> groupes, Set<LocalDate> joursStates, Set<LocalDate> datesEvenement) {
         if (!joursStates.containsAll(datesEvenement)) {
             return null;
         }
@@ -329,8 +362,8 @@ public final class HoraireCompaction {
      * selector that also caught a day belonging to another pattern would silently
      * restate that day, and at equal specificity nothing would arbitrate.</p>
      */
-    private static HoraireStand buildRule(JourSaisi patron, Set<LocalDate> dates, Set<LocalDate> datesEvenement,
-            boolean base) {
+    private static HoraireStand buildRule(
+            JourSaisi patron, Set<LocalDate> dates, Set<LocalDate> datesEvenement, boolean base) {
         HoraireStand regle = new HoraireStand();
         regle.setMode(patron.mode());
         regle.setFenetres(patron.fenetres());
@@ -419,8 +452,11 @@ public final class HoraireCompaction {
      * equivalence check reads. Not a general-purpose copy: keeping it to what
      * the check needs is what stops it drifting as {@link Stand} grows fields.
      */
-    private static Stand copyWithHoraires(Stand modele, List<HoraireStand> horaires,
-            List<IndisponibiliteStand> fermetures, List<OuvertureStand> ouvertures) {
+    private static Stand copyWithHoraires(
+            Stand modele,
+            List<HoraireStand> horaires,
+            List<IndisponibiliteStand> fermetures,
+            List<OuvertureStand> ouvertures) {
         Stand copie = new Stand();
         copie.setId(modele.getId());
         copie.setNom(modele.getNom());

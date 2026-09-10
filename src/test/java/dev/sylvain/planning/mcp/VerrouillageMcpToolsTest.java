@@ -3,17 +3,15 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.mcp.VerrouillageMcpTools.VerrouillageView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * The two things the view and the deletion owe an assistant: only the target

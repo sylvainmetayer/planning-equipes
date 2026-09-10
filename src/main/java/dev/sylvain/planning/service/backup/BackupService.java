@@ -1,5 +1,9 @@
 package dev.sylvain.planning.service.backup;
 
+import io.quarkus.scheduler.Scheduled;
+import io.quarkus.scheduler.Scheduler;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -7,13 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
-
 import org.jboss.logging.Logger;
-
-import io.quarkus.scheduler.Scheduled;
-import io.quarkus.scheduler.Scheduler;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 /**
  * Nightly {@code pg_dump} of the whole database, kept to a bounded number of
@@ -58,7 +56,10 @@ public class BackupService {
      * schedule assumes, and stacking a second {@code pg_dump} on top of it
      * would make that worse rather than catch up.
      */
-    @Scheduled(identity = JOB_IDENTITY, cron = "{planning.backup.cron}", timeZone = "{planning.backup.zone}",
+    @Scheduled(
+            identity = JOB_IDENTITY,
+            cron = "{planning.backup.cron}",
+            timeZone = "{planning.backup.zone}",
             concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
     public void scheduledBackup() {
         if (!configuration.configured()) {
@@ -79,9 +80,9 @@ public class BackupService {
      */
     public BackupRun run() {
         Instant attemptedAt = Instant.now();
-        Path directory = configuration.targetDirectory()
-                .orElseThrow(() -> new IllegalStateException(
-                        "No backup directory is configured (BACKUP_DIR)"));
+        Path directory = configuration
+                .targetDirectory()
+                .orElseThrow(() -> new IllegalStateException("No backup directory is configured (BACKUP_DIR)"));
         BackupStore store = new BackupStore(directory);
         BackupRun outcome;
         try {

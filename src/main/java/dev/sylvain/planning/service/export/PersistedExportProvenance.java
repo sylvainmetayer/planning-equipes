@@ -1,14 +1,12 @@
 package dev.sylvain.planning.service.export;
 
-import java.time.Instant;
-
 import dev.sylvain.planning.domain.Edition;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.time.Instant;
 
 /**
  * Reads the provenance from the édition the request works in, and from
@@ -27,8 +25,8 @@ public class PersistedExportProvenance implements ExportProvenance {
     private final PlanSnapshotService snapshots;
 
     @Inject
-    public PersistedExportProvenance(EditionService editions, PlanningPersistenceService persistence,
-            PlanSnapshotService snapshots) {
+    public PersistedExportProvenance(
+            EditionService editions, PlanningPersistenceService persistence, PlanSnapshotService snapshots) {
         this.editions = editions;
         this.persistence = persistence;
         this.snapshots = snapshots;

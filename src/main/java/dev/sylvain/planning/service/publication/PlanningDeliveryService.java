@@ -1,14 +1,13 @@
 package dev.sylvain.planning.service.publication;
 
-import java.util.List;
-
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.export.PlanningExportService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.export.PlanningExportService;
-import dev.sylvain.planning.service.BusinessError;
+import java.util.List;
 
 /**
  * Sends <b>one</b> animateur their individual planning — their PDF as an
@@ -43,8 +42,7 @@ public class PlanningDeliveryService {
      * Outcome of a send: {@code sansEmail} and {@code echecs} carry display
      * names, ready to be shown to the admin as-is.
      */
-    public record DeliveryReport(int envoyes, List<String> sansEmail, List<String> echecs) {
-    }
+    public record DeliveryReport(int envoyes, List<String> sansEmail, List<String> echecs) {}
 
     /**
      * Sends one animateur their planning. A send that failed comes back
@@ -62,8 +60,7 @@ public class PlanningDeliveryService {
      */
     public DeliveryReport sendToOneAnimateur(String animateurId) {
         if (planPublieService.jamaisPublie()) {
-            throw new BusinessError.Invalid(
-                    "Le planning n'a pas encore été publié : il n'y a rien à renvoyer.");
+            throw new BusinessError.Invalid("Le planning n'a pas encore été publié : il n'y a rien à renvoyer.");
         }
         PlanningEvenement planning = planPublieService.planPublie();
         Animateur animateur = planning.getAnimateurs().stream()

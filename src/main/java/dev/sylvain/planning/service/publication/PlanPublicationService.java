@@ -1,7 +1,26 @@
 package dev.sylvain.planning.service.publication;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.DemandeEchange;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.StatutDemandeEchange;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.espace.DemandeEchangeService;
+import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementAnimateur;
+import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementVacation;
+import dev.sylvain.planning.service.publication.PublicationDiffService.Identite;
+import dev.sylvain.planning.service.publication.PublicationDiffService.Vacation;
+import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
+import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -12,28 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.StatutDemandeEchange;
-import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementAnimateur;
-import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementVacation;
-import dev.sylvain.planning.service.publication.PublicationDiffService.Identite;
-import dev.sylvain.planning.service.publication.PublicationDiffService.Vacation;
-import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
-import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
-import io.quarkus.logging.Log;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import dev.sylvain.planning.service.export.PlanningExportService;
-import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.espace.DemandeEchangeService;
-import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.solve.PlanSnapshotService;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.solve.SolverJobService;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Publishing (issue #245): making the working plan the plan people have been
@@ -109,8 +107,13 @@ public class PlanPublicationService {
      *                    means nothing to announce.
      */
     @Schema(requiredProperties = {"premiereDiffusion"})
-    public record DestinatairePublication(String animateurId, String nomAffiche, String email,
-            boolean premiereDiffusion, List<String> changements, List<String> demandes) {
+    public record DestinatairePublication(
+            String animateurId,
+            String nomAffiche,
+            String email,
+            boolean premiereDiffusion,
+            List<String> changements,
+            List<String> demandes) {
 
         /** Everything the mail body will carry, changes first. */
         public List<String> lignes() {
@@ -132,10 +135,13 @@ public class PlanPublicationService {
      *                          if there has never been one
      */
     @Schema(requiredProperties = {"jamaisPublie", "nombreConcernes", "planVide", "solveEnCours"})
-    public record ApercuPublication(boolean jamaisPublie, boolean planVide, boolean solveEnCours,
-            Instant dernierePublicationLe, int nombreConcernes,
-            List<DestinatairePublication> destinataires) {
-    }
+    public record ApercuPublication(
+            boolean jamaisPublie,
+            boolean planVide,
+            boolean solveEnCours,
+            Instant dernierePublicationLe,
+            int nombreConcernes,
+            List<DestinatairePublication> destinataires) {}
 
     /**
      * What the screen shows once the mails have left.
@@ -144,9 +150,8 @@ public class PlanPublicationService {
      * @param echecs    names of concerned people whose mail did not leave
      */
     @Schema(requiredProperties = {"envoyes", "snapshotId"})
-    public record RapportPublication(long snapshotId, Instant publieLe, int envoyes,
-            List<String> sansEmail, List<String> echecs) {
-    }
+    public record RapportPublication(
+            long snapshotId, Instant publieLe, int envoyes, List<String> sansEmail, List<String> echecs) {}
 
     /* ------------------------------- Preview ------------------------------- */
 
@@ -180,8 +185,8 @@ public class PlanPublicationService {
      * nothing in the plan, and staying silent about it would leave them
      * waiting for an answer that already exists.
      */
-    private List<DestinatairePublication> assembler(List<ChangementAnimateur> changements,
-            Map<String, Identite> identites) {
+    private List<DestinatairePublication> assembler(
+            List<ChangementAnimateur> changements, Map<String, Identite> identites) {
         Map<String, List<String>> decisions = decisionsByAnimateur();
         Map<String, List<String>> enCours = pendingByAnimateur();
 
@@ -189,11 +194,17 @@ public class PlanPublicationService {
         for (ChangementAnimateur changement : changements) {
             List<String> lignesDemandes = new ArrayList<>(decisions.getOrDefault(changement.animateurId(), List.of()));
             lignesDemandes.addAll(enCours.getOrDefault(changement.animateurId(), List.of()));
-            byAnimateur.put(changement.animateurId(), new DestinatairePublication(
-                    changement.animateurId(), changement.nomAffiche(), changement.email(),
-                    changement.premiereDiffusion(),
-                    changement.changements().stream().map(ChangementVacation::libelle).toList(),
-                    lignesDemandes));
+            byAnimateur.put(
+                    changement.animateurId(),
+                    new DestinatairePublication(
+                            changement.animateurId(),
+                            changement.nomAffiche(),
+                            changement.email(),
+                            changement.premiereDiffusion(),
+                            changement.changements().stream()
+                                    .map(ChangementVacation::libelle)
+                                    .toList(),
+                            lignesDemandes));
         }
         for (Map.Entry<String, List<String>> entree : decisions.entrySet()) {
             if (byAnimateur.containsKey(entree.getKey())) {
@@ -205,13 +216,19 @@ public class PlanPublicationService {
             }
             List<String> lignesDemandes = new ArrayList<>(entree.getValue());
             lignesDemandes.addAll(enCours.getOrDefault(entree.getKey(), List.of()));
-            byAnimateur.put(entree.getKey(), new DestinatairePublication(
-                    entree.getKey(), identite.nomAffiche(), identite.email(), false,
-                    List.of(), lignesDemandes));
+            byAnimateur.put(
+                    entree.getKey(),
+                    new DestinatairePublication(
+                            entree.getKey(),
+                            identite.nomAffiche(),
+                            identite.email(),
+                            false,
+                            List.of(),
+                            lignesDemandes));
         }
         List<DestinatairePublication> destinataires = new ArrayList<>(byAnimateur.values());
-        destinataires.sort((gauche, droite) -> String.CASE_INSENSITIVE_ORDER
-                .compare(gauche.nomAffiche(), droite.nomAffiche()));
+        destinataires.sort(
+                (gauche, droite) -> String.CASE_INSENSITIVE_ORDER.compare(gauche.nomAffiche(), droite.nomAffiche()));
         return List.copyOf(destinataires);
     }
 
@@ -241,12 +258,11 @@ public class PlanPublicationService {
             throw new BusinessError.Conflict("Aucun planning résolu à publier.");
         }
         if (apercu.destinataires().isEmpty()) {
-            throw new BusinessError.Conflict(
-                    "Personne n'est concerné : le planning publié est déjà à jour.");
+            throw new BusinessError.Conflict("Personne n'est concerné : le planning publié est déjà à jour.");
         }
 
-        PlanSnapshotService.SnapshotMeta meta = snapshotService.capturePubliee(
-                "Publication du " + LIBELLE_FORMAT.format(ZonedDateTime.now()));
+        PlanSnapshotService.SnapshotMeta meta =
+                snapshotService.capturePubliee("Publication du " + LIBELLE_FORMAT.format(ZonedDateTime.now()));
         if (meta == null) {
             throw new BusinessError.Conflict("Aucun planning résolu à publier.");
         }
@@ -264,8 +280,14 @@ public class PlanPublicationService {
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
                 case ECHEC -> echecs.add(destinataire.nomAffiche());
             }
-            trace.add(new Destinataire(meta.id(), destinataire.animateurId(), destinataire.nomAffiche(),
-                    destinataire.email(), statut, envoyeLe, destinataire.lignes()));
+            trace.add(new Destinataire(
+                    meta.id(),
+                    destinataire.animateurId(),
+                    destinataire.nomAffiche(),
+                    destinataire.email(),
+                    statut,
+                    envoyeLe,
+                    destinataire.lignes()));
         }
         traceRepository.record(meta.id(), trace);
         demandeEchangeService.markAsCommunicated(decisionsAnnoncees(), envoyeLe);
@@ -279,8 +301,7 @@ public class PlanPublicationService {
                 .map(DestinatairePublication::animateurId)
                 .toList());
 
-        return new RapportPublication(meta.id(), meta.publieLe(), envoyes,
-                List.copyOf(sansEmail), List.copyOf(echecs));
+        return new RapportPublication(meta.id(), meta.publieLe(), envoyes, List.copyOf(sansEmail), List.copyOf(echecs));
     }
 
     private StatutEnvoi send(PlanningEvenement planning, DestinatairePublication destinataire) {
@@ -360,14 +381,15 @@ public class PlanPublicationService {
 
     private String libelleDecision(DemandeEchange demande) {
         String creneau = libelleCreneau(demande);
-        StringBuilder ligne = new StringBuilder("Votre demande d'échange")
-                .append(creneau == null ? "" : " (" + creneau + ")");
+        StringBuilder ligne =
+                new StringBuilder("Votre demande d'échange").append(creneau == null ? "" : " (" + creneau + ")");
         if (demande.getStatut() == StatutDemandeEchange.ACCEPTEE) {
             ligne.append(" a été acceptée : elle est prise en compte dans ce planning.");
         } else {
             ligne.append(" a été refusée : votre planning reste inchangé sur ce point.");
         }
-        if (demande.getCommentaireAdmin() != null && !demande.getCommentaireAdmin().isBlank()) {
+        if (demande.getCommentaireAdmin() != null
+                && !demande.getCommentaireAdmin().isBlank()) {
             ligne.append(" Commentaire de l'organisation : ").append(demande.getCommentaireAdmin());
         }
         return ligne.toString();
@@ -390,8 +412,11 @@ public class PlanPublicationService {
         return referenceDataService.listCreneaux().stream()
                 .filter(creneau -> creneau.getId() != null && creneau.getId().equals(demande.getCreneauId()))
                 .findFirst()
-                .map(creneau -> diffService.libelleVacation(new Vacation(creneau.getDate(),
-                        creneau.getHeureDebut(), creneau.getHeureFin(), demande.getStandId(),
+                .map(creneau -> diffService.libelleVacation(new Vacation(
+                        creneau.getDate(),
+                        creneau.getHeureDebut(),
+                        creneau.getHeureFin(),
+                        demande.getStandId(),
                         nomStand(demande.getStandId()))))
                 .orElse(null);
     }

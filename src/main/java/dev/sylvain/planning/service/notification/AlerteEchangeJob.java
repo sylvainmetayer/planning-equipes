@@ -1,10 +1,5 @@
 package dev.sylvain.planning.service.notification;
 
-import java.time.Duration;
-import java.time.Instant;
-
-import org.jboss.logging.Logger;
-
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
@@ -12,6 +7,9 @@ import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
+import org.jboss.logging.Logger;
 
 /**
  * Swap requests nobody has decided on (issue #300).
@@ -69,7 +67,10 @@ public class AlerteEchangeJob {
             long jours = attente.toDays();
             // The id alone: a second run finds the row and stays quiet, however
             // much older the demande has become in the meantime.
-            if (!journal.claim(JournalNotificationsRepository.Type.ALERTE_ECHANGE, demande.getId(), null,
+            if (!journal.claim(
+                    JournalNotificationsRepository.Type.ALERTE_ECHANGE,
+                    demande.getId(),
+                    null,
                     "Une demande d'échange attend une décision depuis " + jours
                             + (jours > 1 ? " jours." : " jour.")
                             + " À trancher depuis l'écran Échanges.",

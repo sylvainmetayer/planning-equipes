@@ -1,15 +1,13 @@
 package dev.sylvain.planning.api;
 
-import java.util.Optional;
-
 import dev.sylvain.planning.config.ConfigBranding;
 import dev.sylvain.planning.service.ProductName;
-
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.Optional;
 
 /**
  * The brand this deployment wears, as the browser needs it: the product name
@@ -74,6 +72,5 @@ public class BrandingResource {
             String accentColor,
             String mascotUrl,
             String mascotIconUrl,
-            String supportEmail) {
-    }
+            String supportEmail) {}
 }

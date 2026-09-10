@@ -1,15 +1,15 @@
 package dev.sylvain.planning.service.scenario;
 
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import dev.sylvain.planning.service.edition.EditionService;
-import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 
 /**
  * Importing a scenario into the referential: the order the sections are applied
@@ -96,17 +96,16 @@ public class ScenarioImportService {
      * the edition was just created), because the operator's browser may be
      * sitting on a different edition than the one that was written.
      */
-    private ScenarioImportOutcome importIntoTarget(Optional<EditionCibleDto> cibleDto,
-            Callable<Boolean> importAction) {
+    private ScenarioImportOutcome importIntoTarget(Optional<EditionCibleDto> cibleDto, Callable<Boolean> importAction) {
         try {
             if (cibleDto.isEmpty()) {
                 return new ScenarioImportOutcome(importAction.call(), null, null, null);
             }
-            EditionService.ImportTarget target =
-                    editionService.resolveForImport(cibleDto.get().id(), cibleDto.get().nom());
+            EditionService.ImportTarget target = editionService.resolveForImport(
+                    cibleDto.get().id(), cibleDto.get().nom());
             boolean decoupageAuto = editionContext.executeIn(target.edition().getId(), importAction);
-            return new ScenarioImportOutcome(decoupageAuto,
-                    target.edition().getId(), target.edition().getNom(), target.creee());
+            return new ScenarioImportOutcome(
+                    decoupageAuto, target.edition().getId(), target.edition().getNom(), target.creee());
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -138,10 +137,10 @@ public class ScenarioImportService {
     private void applyContraintes(ScenarioYamlReader.ScenarioSections sections) {
         sections.contraintes().ifPresent(contraintes -> {
             for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-                referenceDataService.setContrainteActive(definition.name(),
-                        !contraintes.desactivees().contains(definition.name()));
-                referenceDataService.setConstraintWeight(definition.name(),
-                        contraintes.poids().get(definition.name()));
+                referenceDataService.setContrainteActive(
+                        definition.name(), !contraintes.desactivees().contains(definition.name()));
+                referenceDataService.setConstraintWeight(
+                        definition.name(), contraintes.poids().get(definition.name()));
             }
         });
     }
@@ -157,7 +156,6 @@ public class ScenarioImportService {
      * @param editionCreee  the edition did not exist and this import created it; {@code null} when the
      *                      scenario named no edition
      */
-    public record ScenarioImportOutcome(boolean decoupageAuto, String editionId, String editionNom,
-            Boolean editionCreee) {
-    }
+    public record ScenarioImportOutcome(
+            boolean decoupageAuto, String editionId, String editionNom, Boolean editionCreee) {}
 }

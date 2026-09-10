@@ -52,8 +52,7 @@ public final class ScenarioBinder {
      */
     private static final ObjectMapper MAPPER = mapper();
 
-    private ScenarioBinder() {
-    }
+    private ScenarioBinder() {}
 
     /** @throws ScenarioFormatException on anything the DTO shape does not accept */
     public static ScenarioDto bind(String yamlContent) {
@@ -63,7 +62,8 @@ public final class ScenarioBinder {
                     "Le fichier de scénario n'est pas un document YAML valide (mapping attendu).");
         }
         try {
-            return MAPPER.convertValue(decoupageAutoByPresence(ScenarioYaml.normaliseDates(document)), ScenarioDto.class);
+            return MAPPER.convertValue(
+                    decoupageAutoByPresence(ScenarioYaml.normaliseDates(document)), ScenarioDto.class);
         } catch (IllegalArgumentException e) {
             throw new ScenarioFormatException(explain(e), e);
         }
@@ -116,8 +116,8 @@ public final class ScenarioBinder {
         if (e.getCause() instanceof MismatchedInputException wrongType) {
             // Without this, Jackson hands back its reference chain, which reads
             // like a stack trace and names Java classes to somebody writing YAML.
-            return "Valeur inattendue dans le scénario, sous " + path(wrongType.getPath(), false)
-                    + " : " + firstLine(wrongType);
+            return "Valeur inattendue dans le scénario, sous " + path(wrongType.getPath(), false) + " : "
+                    + firstLine(wrongType);
         }
         return e.getCause() == null ? e.getMessage() : firstLine(e.getCause());
     }
@@ -127,8 +127,8 @@ public final class ScenarioBinder {
      *                      <em>is</em> the key, and repeating it would give
      *                      "« prenomm » sous animateurs[0].prenomm"
      */
-    private static String path(java.util.List<com.fasterxml.jackson.databind.JsonMappingException.Reference> refs,
-            boolean sansLeDernier) {
+    private static String path(
+            java.util.List<com.fasterxml.jackson.databind.JsonMappingException.Reference> refs, boolean sansLeDernier) {
         StringBuilder path = new StringBuilder();
         int upTo = sansLeDernier ? refs.size() - 1 : refs.size();
         for (int i = 0; i < upTo; i++) {
