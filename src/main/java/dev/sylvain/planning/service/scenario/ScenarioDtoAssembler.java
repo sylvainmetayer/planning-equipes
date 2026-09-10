@@ -109,7 +109,11 @@ final class ScenarioDtoAssembler {
                         creneau.getJour(),
                         creneau.getDate(),
                         creneau.getHeureDebut(),
-                        creneau.getHeureFin()))
+                        creneau.getHeureFin(),
+                        // Écrit seulement quand il vaut vrai : une clé absente
+                        // de neuf créneaux sur dix serait du bruit dans un
+                        // fichier que des gens relisent.
+                        creneau.isCouverturePause() ? Boolean.TRUE : null))
                 .toList();
     }
 

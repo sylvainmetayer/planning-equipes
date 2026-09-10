@@ -95,6 +95,9 @@
     "CreneauDto" : {
       "type" : "object",
       "properties" : {
+        "couverturePause" : {
+          "type" : "boolean"
+        },
         "date" : {
           "$ref" : "#/$defs/LocalDate"
         },
