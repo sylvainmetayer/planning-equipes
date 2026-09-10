@@ -143,6 +143,47 @@ class RepasConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(120);
     }
 
+    /**
+     * A meal break <b>is</b> a break: an hour off resets the six-hour counter
+     * of art. L3121-16, so a day the rule would otherwise refuse becomes legal
+     * once the break is taken. Nothing in the code says so explicitly — it
+     * falls out of {@code longestSequenceMinutes} splitting a stretch on any
+     * gap of twenty minutes or more — which is exactly why it is locked here:
+     * a change to that threshold, or to how the meal break is modelled, must
+     * not silently make the two rules disagree.
+     */
+    @Test
+    void laCoupureRepasRemetLeCompteurDesSixHeuresAZero() {
+        Creneau journeeEntiere = creneau("07-19", 1, D1, LocalTime.of(7, 0), LocalTime.of(19, 0));
+
+        // Twelve hours in one go: six hours over the uninterrupted maximum.
+        verify("travailContinuMaxMajeur")
+                .given(new ParametresLegaux(), poste(standA, journeeEntiere, a84))
+                .penalizesBy(6 * 60);
+
+        // The same twelve hours cut by the midday break: two stretches of five
+        // and six hours, neither of them over.
+        verify("travailContinuMaxMajeur")
+                .given(
+                        new ParametresLegaux(),
+                        poste(standA, vacation("07-12", 7, 12), a84),
+                        poste(standC, vacation("13-19", 13, 19), a84))
+                .penalizesBy(0);
+    }
+
+    /** And that same day owes nothing on the meal rule: the hour is there, inside the window. */
+    @Test
+    void laMemeJourneeCoupeeSatisfaitLaRegleRepas() {
+        FenetreRepas midiUneHeure = new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60);
+
+        verify("coupureRepasObligatoire")
+                .given(
+                        midiUneHeure,
+                        poste(standA, vacation("07-12", 7, 12), a84),
+                        poste(standC, vacation("13-19", 13, 19), a84))
+                .penalizesBy(0);
+    }
+
     // --- coupureRepasAuPlusTot ---------------------------------------------
 
     @Test

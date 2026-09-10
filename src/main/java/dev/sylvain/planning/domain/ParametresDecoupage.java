@@ -52,7 +52,17 @@ public class ParametresDecoupage {
     public static final int DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT = 6 * 60;
 
     public static final int DUREE_CHEVAUCHEMENT_MINUTES_PAR_DEFAUT = 30;
-    public static final int DUREE_PAUSE_REPAS_MINUTES_PAR_DEFAUT = 45;
+    /**
+     * The meal break a day straddling a meal window must find, entirely inside
+     * it. One hour, so a two-hour window offers exactly two slots — 12-13 or
+     * 13-14 at midday, 19-20 or 20-21 in the evening — which is how the event
+     * is actually run. It was 45 minutes while this was a slicing hint only;
+     * since {@code coupureRepasObligatoire} reads it (issue #438) a duration
+     * that divides no window into whole slots is a rule nobody can plan
+     * around. See migration V71.
+     */
+    public static final int DUREE_PAUSE_REPAS_MINUTES_PAR_DEFAUT = 60;
+
     public static final LocalTime FENETRE_REPAS_MIDI_DEBUT_PAR_DEFAUT = LocalTime.of(12, 0);
     public static final LocalTime FENETRE_REPAS_MIDI_FIN_PAR_DEFAUT = LocalTime.of(14, 0);
     public static final LocalTime FENETRE_REPAS_SOIR_DEBUT_PAR_DEFAUT = LocalTime.of(19, 0);

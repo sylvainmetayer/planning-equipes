@@ -220,7 +220,7 @@ public final class ConstraintCatalog {
                     Niveau.HARD,
                     CATEGORIE_ORGANISATION_REPAS,
                     "Qui travaille de part et d'autre d'une fenêtre repas doit disposer, entièrement dans cette "
-                            + "fenêtre, d'une coupure libre de la durée paramétrée (45 min par défaut, midi "
+                            + "fenêtre, d'une coupure libre de la durée paramétrée (60 min par défaut, midi "
                             + "12 h-14 h et soir 19 h-21 h). Commencer sa journée à l'ouverture de la fenêtre, ou "
                             + "la terminer à sa fermeture, ne doit rien : on a mangé avant, ou on mangera après. "
                             + "Une journée à cheval sur les deux fenêtres doit deux coupures. Ce n'est pas une "
