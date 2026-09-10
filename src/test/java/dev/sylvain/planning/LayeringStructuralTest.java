@@ -14,8 +14,9 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * Two layering rules, both source scans: the MCP tools do not reach into the
- * REST layer, and the business layer does not import JAX-RS.
+ * Three layering rules, all source scans: the MCP tools do not reach into the
+ * REST layer, the business layer does not import JAX-RS, and a write to the
+ * referential goes through the one path that warns and journals.
  *
  * <p>Both are <em>callers</em> of the same business rules — one over HTTP, one
  * over MCP. When a tool injects a resource instead of a service, the rule it
@@ -113,7 +114,44 @@ class LayeringStructuralTest {
 
         assertThat(offenders)
                 .as("""
-                        JAX-RS imported outside api/. A refusal is a BusinessError (Invalid, NotFound,                         Conflict, Stale) and BusinessErrorMapper decides its status once for every                         caller, HTTP or MCP; a transport type in a service answers only one of them.""")
+                        JAX-RS imported outside api/. A refusal is a BusinessError (Invalid, NotFound, \
+                        Conflict, Stale) and BusinessErrorMapper decides its status once for every \
+                        caller, HTTP or MCP; a transport type in a service answers only one of them.""")
+                .isEmpty();
+    }
+
+    /**
+     * Issue #392's A6: {@code ReferenceDataService} has two ways of writing an
+     * animateur, a stand or a créneau. {@code write*} reads the fiche as it
+     * stood, notes the fields that moved for the history and returns the
+     * warnings; {@code create*} / {@code update*} just write. REST used the
+     * first, the MCP tools the second — so an assistant's edit wrote a
+     * history line with an empty « champs » column and warned nobody that the
+     * volunteer it had just made unavailable on a date outside the event.
+     * Same rule for both doors, and the façade is the only caller of its own
+     * bare writes.
+     */
+    @Test
+    void referentialWritesOutsideTheFacadeGoThroughTheJournaledPath() throws IOException {
+        Pattern ecritureNue = Pattern.compile("referenceDataService\\.(create|update)(Animateur|Stand|Creneau)\\(");
+        List<String> offenders = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
+                int line = 0;
+                for (String content : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                    line++;
+                    if (ecritureNue.matcher(content).find()) {
+                        offenders.add(SOURCES.relativize(file) + ":" + line + " — " + content.trim());
+                    }
+                }
+            }
+        }
+
+        assertThat(offenders)
+                .as("""
+                        bare create*/update* on the referential façade. Call write* instead: it \
+                        is the one path that records which fields moved and returns the warnings, \
+                        whichever door the write came through.""")
                 .isEmpty();
     }
 }

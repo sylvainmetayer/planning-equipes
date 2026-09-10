@@ -8,6 +8,7 @@ import java.util.Set;
 import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.Acteur;
 import dev.sylvain.planning.service.journal.CatalogueActions;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -48,6 +49,9 @@ public class JournalOutilInterceptor {
     @Inject
     JournalActionService journal;
 
+    @Inject
+    CurrentAction currentAction;
+
     @AroundInvoke
     Object journaliser(InvocationContext context) throws Exception {
         Optional<ActionJournalisee> action = context.getMethod().isAnnotationPresent(Tool.class)
@@ -59,7 +63,11 @@ public class JournalOutilInterceptor {
         String entiteId = entiteId(context);
         try {
             Object resultat = context.proceed();
-            journal.record(action.get(), Acteur.ASSISTANT, PRINCIPAL, entiteId, List.of(), 200);
+            // The fields the edit really changed, as the referential façade
+            // noted them on the way — the same enrichment the REST filter
+            // reads, so a « champs modifiés » column no longer depends on
+            // which door the write came through.
+            journal.record(action.get(), Acteur.ASSISTANT, PRINCIPAL, entiteId, currentAction.champs(), 200);
             return resultat;
         } catch (Exception e) {
             // A refused tool call is a fact worth keeping: an assistant that

@@ -106,6 +106,13 @@ public class ReferenceDataService implements ReferenceData {
         return animateurs.create(animateur);
     }
 
+    /**
+     * The bare write: no warning, and the history does not learn which fields
+     * moved. Every caller outside this class goes through
+     * {@link #writeAnimateur(String, Animateur)} — {@code LayeringStructuralTest}
+     * holds it, after issue #392's A6 found the MCP tools on this one, writing
+     * lines with an empty « champs » column and warning nobody.
+     */
     public Animateur updateAnimateur(String id, Animateur animateur) {
         return animateurs.update(id, animateur);
     }
@@ -184,6 +191,7 @@ public class ReferenceDataService implements ReferenceData {
         return stands.create(stand);
     }
 
+    /** The bare write — see {@link #updateAnimateur(String, Animateur)}. */
     public Stand updateStand(String id, Stand stand) {
         return stands.update(id, stand);
     }
@@ -282,6 +290,7 @@ public class ReferenceDataService implements ReferenceData {
         return creneaux.create(creneau);
     }
 
+    /** The bare write — see {@link #updateAnimateur(String, Animateur)}. */
     public Creneau updateCreneau(Long id, Creneau creneau) {
         return creneaux.update(id, creneau);
     }

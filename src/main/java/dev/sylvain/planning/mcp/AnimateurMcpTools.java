@@ -14,6 +14,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.WrittenAnimateur;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -74,7 +75,7 @@ public class AnimateurMcpTools {
             + "sera donc traité comme majeur.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = false, openWorldHint = false))
-    AnimateurView creer_animateur(
+    WrittenAnimateurView creer_animateur(
             @ToolArg(description = "Id de l'animateur (unique)") String id,
             @ToolArg(description = "Date de naissance (AAAA-MM-JJ), nécessaire pour les contraintes légales sur les mineurs", required = false) String dateNaissance,
             @ToolArg(description = "Prénom (donnée personnelle, jamais renvoyée)", required = false) String prenom,
@@ -93,14 +94,14 @@ public class AnimateurMcpTools {
         animateur.setCompetences(competences == null ? new HashMap<>() : competences(competences));
         animateur.setSouhaits(souhaits == null ? new HashSet<>() : new HashSet<>(souhaits));
         animateur.setJoursIndisponibles(McpArgs.dates(joursIndisponibles, "joursIndisponibles"));
-        return toView(referenceDataService.createAnimateur(animateur), dateReference());
+        return written(referenceDataService.writeAnimateur(animateur));
     }
 
     @Tool(description = "Modifie un animateur. Seuls les champs fournis sont modifiés : les champs omis — dont "
             + "les données personnelles que MCP ne peut pas lire — conservent leur valeur en base.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    AnimateurView modifier_animateur(
+    WrittenAnimateurView modifier_animateur(
             @ToolArg(description = "Id de l'animateur") String id,
             @ToolArg(description = "Statut manager", required = false) Boolean manager,
             @ToolArg(description = "Compétences : id de typologie -> DEBUTANT|AUTONOME|REFERENT (remplace la liste existante)", required = false) Map<String, String> competences,
@@ -124,7 +125,7 @@ public class AnimateurMcpTools {
         if (joursIndisponibles != null) {
             animateur.setJoursIndisponibles(McpArgs.dates(joursIndisponibles, "joursIndisponibles"));
         }
-        return toView(referenceDataService.updateAnimateur(id, animateur), dateReference());
+        return written(referenceDataService.writeAnimateur(id, animateur));
     }
 
     @Tool(description = "Supprime un animateur. Ses postes dans le planning enregistré ne sont pas "
@@ -162,6 +163,10 @@ public class AnimateurMcpTools {
                 .orElse(LocalDate.now());
     }
 
+    private WrittenAnimateurView written(WrittenAnimateur ecrit) {
+        return new WrittenAnimateurView(toView(ecrit.animateur(), dateReference()), WarningCodes.of(ecrit.avertissements()));
+    }
+
     static AnimateurView toView(Animateur animateur, LocalDate reference) {
         String statut = animateur.isMineurOn(reference) ? "mineur" : "majeur";
         return new AnimateurView(animateur.getId(), statut, animateur.isUnder16On(reference),
@@ -176,6 +181,14 @@ public class AnimateurMcpTools {
      */
     /** @param total animateurs in the edition, which may exceed the number returned */
     public record AnimateursView(int total, List<AnimateurView> animateurs) {
+    }
+
+    /**
+     * A write, and what it is worth a second look at — the same shape as the
+     * REST {@code WrittenAnimateur}, with the warnings as codes (see
+     * {@link WarningCodes}).
+     */
+    public record WrittenAnimateurView(AnimateurView animateur, List<String> avertissements) {
     }
 
     public record AnimateurView(String id, String statut, boolean moinsDe16Ans, boolean manager,

@@ -17,6 +17,7 @@ import dev.sylvain.planning.service.CreneauGridService.RapportGrille;
 import dev.sylvain.planning.service.CreneauGridService.RegleRecurrence;
 import dev.sylvain.planning.service.GrilleDepuisFenetres;
 import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.WrittenCreneau;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -54,20 +55,20 @@ public class CreneauMcpTools {
             + "l'édition à partir des dates.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = false, openWorldHint = false))
-    CreneauView creer_creneau(
+    WrittenCreneauView creer_creneau(
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM)") String heureFin,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Creneau creneau = new Creneau(null, 0, McpArgs.date(date, "date"),
                 McpArgs.heure(heureDebut, "heureDebut"), McpArgs.heure(heureFin, "heureFin"));
-        return toView(referenceDataService.createCreneau(creneau));
+        return written(referenceDataService.writeCreneau(creneau));
     }
 
     @Tool(description = "Modifie un créneau. Seuls les champs fournis sont modifiés.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    CreneauView modifier_creneau(
+    WrittenCreneauView modifier_creneau(
             @ToolArg(description = "Id du créneau") long id,
             @ToolArg(description = "Date (AAAA-MM-JJ)", required = false) String date,
             @ToolArg(description = "Heure de début (HH:MM)", required = false) String heureDebut,
@@ -87,7 +88,7 @@ public class CreneauMcpTools {
         if (heureFin != null) {
             creneau.setHeureFin(McpArgs.heure(heureFin, "heureFin"));
         }
-        return toView(referenceDataService.updateCreneau(id, creneau));
+        return written(referenceDataService.writeCreneau(id, creneau));
     }
 
     @Tool(description = "Supprime un créneau.",
@@ -336,9 +337,17 @@ public class CreneauMcpTools {
                 .orElseThrow(() -> new NoSuchElementException("Créneau introuvable : " + id));
     }
 
+    private static WrittenCreneauView written(WrittenCreneau ecrit) {
+        return new WrittenCreneauView(toView(ecrit.creneau()), WarningCodes.of(ecrit.avertissements()));
+    }
+
     static CreneauView toView(Creneau creneau) {
         return new CreneauView(creneau.getId(), creneau.getJour(), creneau.getDate(),
                 creneau.getHeureDebut(), creneau.getHeureFin(), creneau.getModifieLe());
+    }
+
+    /** A write and its warnings as codes — the REST {@code WrittenCreneau}, seen from MCP. */
+    public record WrittenCreneauView(CreneauView creneau, List<String> avertissements) {
     }
 
     public record CreneauView(Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin,

@@ -76,6 +76,19 @@ remplacer, contrairement au `PUT` REST. Un assistant qui ne peut pas lire
 nom/prénom/date de naissance ne peut pas les renvoyer : un remplacement complet
 les effacerait à chaque modification.
 
+**Une seule porte d'écriture, quel que soit le canal.** Les outils qui créent
+ou modifient un animateur, un stand ou un créneau passent par le même
+`write*` de `ReferenceDataService` que les resources REST — celui qui relit la
+fiche avant d'écrire, note pour l'historique les champs qui ont bougé, et
+rend les avertissements de cohérence. Une ligne du journal écrite par un
+assistant porte donc sa colonne « champs » comme une ligne écrite depuis un
+écran (audit #392, A6 : elle était vide). Les avertissements traversent en
+**codes** (`INDISPONIBILITE_HORS_EVENEMENT`, `MINEUR_PENDANT_EVENEMENT`…) et
+non en phrases : le message d'un avertissement sur un animateur date sa
+majorité, c'est-à-dire sa date de naissance décalée de dix-huit ans.
+`LayeringStructuralTest` interdit un `create*` / `update*` nu hors de la
+façade.
+
 ## Divergences volontaires avec le REST
 
 Chacune répond à la même question : l'appelant est un assistant, pas un écran

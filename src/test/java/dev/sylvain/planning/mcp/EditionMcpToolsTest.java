@@ -62,7 +62,7 @@ class EditionMcpToolsTest {
     void ecrireDansLEditionDesigneeNeTouchePasLesAutres() {
         editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
 
-        CreneauView cree = creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", EDITION_TEST);
+        CreneauView cree = creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", EDITION_TEST).creneau();
 
         assertThat(creneauTools.lister_creneaux(EDITION_TEST))
                 .extracting(CreneauView::id)

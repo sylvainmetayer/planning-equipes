@@ -22,6 +22,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.HoraireCompaction;
 import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.WrittenStand;
 import dev.sylvain.planning.service.TypologieItem;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
@@ -78,7 +79,7 @@ public class StandMcpTools {
     @Tool(description = "Crée un stand. Les typologies proposées doivent exister dans le référentiel des typologies.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = false, openWorldHint = false))
-    StandView creer_stand(
+    WrittenStandView creer_stand(
             @ToolArg(description = "Id du stand (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
             @ToolArg(description = "Ids de typologies de jeu proposées", required = false) List<String> typologiesProposees,
@@ -102,7 +103,7 @@ public class StandMcpTools {
         stand.setNiveauEffort(niveauEffort == null ? NiveauEffort.NORMAL
                 : McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
         stand.setEmplacement(emplacementId == null ? null : findEmplacement(emplacementId));
-        return toView(referenceDataService.createStand(stand));
+        return written(referenceDataService.writeStand(stand));
     }
 
     @Tool(description = "Crée un stand ET tout ce dont il dépend en un seul appel : son emplacement, ses "
@@ -160,8 +161,9 @@ public class StandMcpTools {
             stand.getHoraires().add(horaireOuverture(horaires, horairesJours, horairesJoursSemaine,
                     horairesDateDebut, horairesDateFin, horairesDates));
         }
-        return new CreationStandComplet(toView(referenceDataService.createStand(stand)), emplacementCree,
-                typologiesCreees);
+        WrittenStand ecrit = referenceDataService.writeStand(stand);
+        return new CreationStandComplet(toView(ecrit.stand()), emplacementCree, typologiesCreees,
+                WarningCodes.of(ecrit.avertissements()));
     }
 
     /**
@@ -220,14 +222,15 @@ public class StandMcpTools {
      * @param emplacementCree  id of the emplacement created along the way, {@code null} if none
      * @param typologiesCreees ids of the typologies created along the way, empty if none
      */
-    public record CreationStandComplet(StandView stand, String emplacementCree, List<String> typologiesCreees) {
+    public record CreationStandComplet(StandView stand, String emplacementCree, List<String> typologiesCreees,
+            List<String> avertissements) {
     }
 
     @Tool(description = "Modifie un stand. Seuls les champs fournis sont modifiés ; les fermetures et ouvertures "
             + "se gèrent avec les outils dédiés.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    StandView modifier_stand(
+    WrittenStandView modifier_stand(
             @ToolArg(description = "Id du stand") String id,
             @ToolArg(description = "Nom affiché", required = false) String nom,
             @ToolArg(description = "Ids de typologies proposées (remplace la liste existante)", required = false) List<String> typologiesProposees,
@@ -271,7 +274,7 @@ public class StandMcpTools {
         if (emplacementId != null) {
             stand.setEmplacement(findEmplacement(emplacementId));
         }
-        return toView(referenceDataService.updateStand(id, stand));
+        return written(referenceDataService.writeStand(id, stand));
     }
 
     @Tool(description = "Supprime un stand. Emporte aussi les postes du planning enregistré qui "
@@ -292,7 +295,7 @@ public class StandMcpTools {
             + "récurrents du stand pour ce jour-là ; pour un motif qui se répète, préférer ajouter_horaire_stand.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = false, openWorldHint = false))
-    StandView ajouter_fermeture_stand(
+    WrittenStandView ajouter_fermeture_stand(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
@@ -302,7 +305,7 @@ public class StandMcpTools {
         Stand stand = findStand(standId);
         stand.getIndisponibilites().add(new IndisponibiliteStand(null, McpArgs.date(date, "date"),
                 McpArgs.heure(heureDebut, "heureDebut"), endTimeOrClosing(heureFin), motif));
-        return toView(referenceDataService.updateStand(standId, stand));
+        return written(referenceDataService.writeStand(standId, stand));
     }
 
     @Tool(description = "Ajoute une ouverture datée sur un stand : ce jour-là, le stand n'est armé QUE sur cette "
@@ -310,7 +313,7 @@ public class StandMcpTools {
             + "ouvre jusqu'à la fermeture du jour. Pour un motif qui se répète, préférer ajouter_horaire_stand.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = false, openWorldHint = false))
-    StandView ajouter_ouverture_stand(
+    WrittenStandView ajouter_ouverture_stand(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
@@ -322,7 +325,7 @@ public class StandMcpTools {
         Stand stand = findStand(standId);
         stand.getOuvertures().add(new OuvertureStand(null, McpArgs.date(date, "date"),
                 McpArgs.heure(heureDebut, "heureDebut"), endTimeOrClosing(heureFin), motif, effectif));
-        return toView(referenceDataService.updateStand(standId, stand));
+        return written(referenceDataService.writeStand(standId, stand));
     }
 
     /** {@code null} — "until closing time" — for an omitted or empty end hour. */
@@ -334,7 +337,7 @@ public class StandMcpTools {
             + "récurrents ne sont pas touchés : la date redevient donc gouvernée par eux, s'il en existe.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
                     idempotentHint = true, openWorldHint = false))
-    StandView effacer_plages_stand(
+    WrittenStandView effacer_plages_stand(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -342,7 +345,7 @@ public class StandMcpTools {
         LocalDate jour = McpArgs.date(date, "date");
         stand.getIndisponibilites().removeIf(indispo -> jour.equals(indispo.getDate()));
         stand.getOuvertures().removeIf(ouverture -> jour.equals(ouverture.getDate()));
-        return toView(referenceDataService.updateStand(standId, stand));
+        return written(referenceDataService.writeStand(standId, stand));
     }
 
     @Tool(description = "Ajoute un horaire récurrent sur un stand : une seule règle au lieu d'une plage datée par "
@@ -354,7 +357,7 @@ public class StandMcpTools {
             + "existante prime toujours sur les règles, pour le jour qu'elle nomme.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
                     idempotentHint = false, openWorldHint = false))
-    StandView ajouter_horaire_stand(
+    WrittenStandView ajouter_horaire_stand(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "OUVERTURE ou FERMETURE") String mode,
             @ToolArg(description = "Fenêtres, ex. « 10:00-12:00,14:00- » ; un suffixe « @N » nomme l'effectif à "
@@ -390,17 +393,17 @@ public class StandMcpTools {
         horaire.setFenetres(McpArgs.fenetres(fenetres, false, true));
         horaire.setMotif(motif);
         stand.getHoraires().add(horaire);
-        return toView(referenceDataService.updateStand(standId, stand));
+        return written(referenceDataService.writeStand(standId, stand));
     }
 
     @Tool(description = "Retire tous les horaires récurrents d'un stand. Ses plages datées restent en place.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
                     idempotentHint = true, openWorldHint = false))
-    StandView effacer_horaires_stand(@ToolArg(description = "Id du stand") String standId,
+    WrittenStandView effacer_horaires_stand(@ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = findStand(standId);
         stand.getHoraires().clear();
-        return toView(referenceDataService.updateStand(standId, stand));
+        return written(referenceDataService.writeStand(standId, stand));
     }
 
     @Tool(description = "Réécrit les plages datées saisies à la main en horaires récurrents équivalents, pour "
@@ -532,6 +535,10 @@ public class StandMcpTools {
                 .orElseThrow(() -> new NoSuchElementException("Emplacement introuvable : " + id));
     }
 
+    private static WrittenStandView written(WrittenStand ecrit) {
+        return new WrittenStandView(toView(ecrit.stand()), WarningCodes.of(ecrit.avertissements()));
+    }
+
     static StandView toView(Stand stand) {
         List<PlageView> fermetures = new ArrayList<>();
         stand.getIndisponibilites().forEach(indispo -> fermetures.add(new PlageView(indispo.getDate(),
@@ -561,6 +568,10 @@ public class StandMcpTools {
 
     /** @param total stands in the edition, which may exceed the number returned */
     public record StandsView(int total, List<StandView> stands) {
+    }
+
+    /** A write and its warnings as codes — the REST {@code WrittenStand}, seen from MCP. */
+    public record WrittenStandView(StandView stand, List<String> avertissements) {
     }
 
     public record StandView(String id, String nom, Set<String> typologiesProposees, int effectifMin,
