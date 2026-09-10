@@ -13,6 +13,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import { RapportPauses } from '../../core/models';
+import { dayNavigation } from '../../core/day-navigation';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
@@ -63,8 +64,6 @@ export class PausesPage {
   protected readonly rapport = signal<RapportPauses | null>(null);
   protected readonly chargement = signal(true);
   protected readonly erreur = signal('');
-  /** ISO date picked in the selector; `null` until the report says which days exist. */
-  protected readonly jourSelectionne = signal<string | null>(null);
   protected readonly recherche = signal('');
   protected readonly sansRelaisSeulement = signal(false);
 
@@ -73,19 +72,13 @@ export class PausesPage {
   );
 
   protected readonly jours = computed<JourPauses[]>(() => joursDuRapport(this.rapport()));
-  /**
-   * Resolved rather than corrected by an effect: a stale `?jour=` falls back
-   * on the first day instead of blanking the page.
-   */
-  protected readonly jourCourant = computed<JourPauses | null>(() => {
-    const jours = this.jours();
-    const voulu = this.jourSelectionne();
-    return jours.find((jour) => jour.date === voulu) ?? jours[0] ?? null;
+  /** ISO date picked in the selector, else the first day the report covers. */
+  private readonly navigation = dayNavigation(this.jours, (jour) => jour.date, {
+    initial: this.route.snapshot.queryParamMap.get('jour')
   });
-  protected readonly estPremierJour = computed(() => this.jours()[0]?.date === this.jourCourant()?.date);
-  protected readonly estDernierJour = computed(
-    () => this.jours()[this.jours().length - 1]?.date === this.jourCourant()?.date
-  );
+  protected readonly jourCourant = this.navigation.current;
+  protected readonly estPremierJour = this.navigation.isFirst;
+  protected readonly estDernierJour = this.navigation.isLast;
   protected readonly groupes = computed<GroupeStand[]>(() =>
     groupesDuJour(this.rapport(), this.jourCourant()?.date ?? null, this.recherche(), this.sansRelaisSeulement())
   );
@@ -103,20 +96,14 @@ export class PausesPage {
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
-    this.jourSelectionne.set(params.get('jour'));
     this.recherche.set(params.get('q') ?? '');
     this.sansRelaisSeulement.set(params.get('vue') === 'sans-relais');
     void this.recharger();
-    keepViewInQueryParams(() => {
-      const courant = this.jourCourant();
-      const premier = this.jours()[0];
-      return {
-        // The first day is the default, and a default is the absence of its param.
-        jour: courant && premier && courant.date !== premier.date ? courant.date : null,
-        q: optionalParam(this.recherche()),
-        vue: this.sansRelaisSeulement() ? 'sans-relais' : null
-      };
-    });
+    keepViewInQueryParams(() => ({
+      jour: this.navigation.queryParam(),
+      q: optionalParam(this.recherche()),
+      vue: this.sansRelaisSeulement() ? 'sans-relais' : null
+    }));
   }
 
   protected async recharger(): Promise<void> {
@@ -138,16 +125,10 @@ export class PausesPage {
   }
 
   protected selectionnerJour(date: string): void {
-    this.jourSelectionne.set(date);
+    this.navigation.select(date);
   }
 
-  /** Steps to the previous/next day the report covers; a no-op at either end. */
   protected decalerJour(delta: number): void {
-    const jours = this.jours();
-    const index = jours.findIndex((jour) => jour.date === this.jourCourant()?.date);
-    const target = jours[index + delta];
-    if (target) {
-      this.selectionnerJour(target.date);
-    }
+    this.navigation.step(delta);
   }
 }

@@ -39,6 +39,8 @@ type PageInternals = {
   editingLocked: Signal<boolean>;
   coordonneesLabel: (emplacement: Emplacement) => string;
   voisinLePlusProche: (emplacement: Emplacement) => string;
+  /** Private to the component; reachable here because `private` is compile-time only. */
+  voisins: Signal<Map<string, string>>;
   remove: (emplacement: Emplacement) => Promise<void>;
   removeSelection: () => Promise<void>;
   editSelection: () => void;
@@ -203,6 +205,23 @@ describe('EmplacementsPage', () => {
   });
 
   describe('nearest-neighbour cell', () => {
+    // Read from a `matCellDef`, so once per row per change-detection pass: the
+    // scan over every other place has to happen once per referential change.
+    it('measures every place once per referential change, not once per row render', () => {
+      const page = createPage([
+        emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
+        emplacement('halle', { latitude: 47.102, longitude: 1.5 })
+      ]);
+
+      const voisins = page.voisins();
+      page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }));
+      page.voisinLePlusProche(emplacement('halle', { latitude: 47.102, longitude: 1.5 }));
+
+      expect(page.voisins()).toBe(voisins);
+      expect(voisins.get('prairie')).toContain('halle');
+      expect(voisins.get('halle')).toContain('prairie');
+    });
+
     it('says nothing when there is no other located place to measure against', () => {
       const page = createPage([emplacement('prairie', { latitude: 47.1, longitude: 1.5 })]);
 

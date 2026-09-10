@@ -153,7 +153,7 @@ describe('CreneauxPage', () => {
   const confirm = { ask: vi.fn() };
   const notifications = { notify: vi.fn() };
   const resolution = { reload: vi.fn(async () => undefined) };
-  const dialog = { open: vi.fn(() => ({ afterClosed: () => ({ subscribe: vi.fn() }) })) };
+  const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
   const causeParCreneauId = signal(new Map<string, CauseInfaisabilite>());
 
   beforeEach(() => {

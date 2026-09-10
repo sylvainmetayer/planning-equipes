@@ -1,5 +1,6 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -79,6 +80,8 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CreneauxPage {
+  /** Bounds the dialog callbacks: this page is lazy and rebuilt on every visit, a callback on a dead one writes into nothing. */
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
@@ -288,7 +291,7 @@ export class CreneauxPage {
       width: '44rem',
       autoFocus: 'first-tabbable'
     });
-    ref.afterClosed().subscribe((rapport) => {
+    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((rapport) => {
       if (rapport) {
         void this.apresSerie(rapport);
       }
@@ -309,7 +312,7 @@ export class CreneauxPage {
         autoFocus: 'first-tabbable'
       }
     );
-    ref.afterClosed().subscribe((rapport) => {
+    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((rapport) => {
       if (rapport) {
         void this.apresSerie({ nombreGeneres: rapport.nombreGeneres, creneaux: rapport.creneaux, controle: rapport.controle });
       }
@@ -345,7 +348,7 @@ export class CreneauxPage {
       maxWidth: '95vw',
       autoFocus: 'first-tabbable'
     });
-    ref.afterClosed().subscribe((ecrit) => {
+    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ecrit) => {
       if (ecrit) {
         void this.rechargerVerdict();
       }
@@ -370,7 +373,7 @@ export class CreneauxPage {
       maxWidth: '95vw',
       autoFocus: 'first-tabbable'
     });
-    refBulk.afterClosed().subscribe((ecrit) => {
+    refBulk.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ecrit) => {
       if (ecrit) {
         void this.rechargerVerdict();
       }

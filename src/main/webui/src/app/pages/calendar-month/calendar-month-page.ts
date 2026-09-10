@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -121,6 +122,8 @@ const ALL = 'ALL';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CalendarMonthPage {
+  /** Bounds the repair-assistant callback to this page's life: it is lazy and rebuilt on every visit. */
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly error = signal('');
   protected readonly loading = signal(false);
   protected readonly planning = signal<PlanningEvenement | null>(null);
@@ -454,6 +457,7 @@ export class CalendarMonthPage {
     }
     ouvrirExplication(this.dialog, planning, poste)
       .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((reparation) => {
         if (reparation) {
           this.planningState.set(null);

@@ -11,6 +11,7 @@ import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import { Emplacement, PlanningEvenement } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
+import { dayNavigation, dayNumberParam } from '../../core/day-navigation';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { CarteJourMap } from './carte-jour-map';
 import { JourneeCarte, buildJourneesCarte, formatMinutes, instantCarte } from './carte-jour';
@@ -52,8 +53,6 @@ export class CarteJourPage {
   protected readonly planning = signal<PlanningEvenement | null>(null);
   /** Emplacement referential: the coordinates, and the places holding no stand today. */
   protected readonly emplacements = signal<Emplacement[]>([]);
-  /** Day shown; null until the plan is loaded, then the first day of the event. */
-  protected readonly jourSelectionne = signal<number | null>(null);
   /** Cursor position in minutes since midnight; null means "the day's opening hour". */
   protected readonly minutesSelectionnees = signal<number | null>(null);
   /** Emplacement the list highlights and the map rings; null when none is chosen. */
@@ -70,15 +69,21 @@ export class CarteJourPage {
   );
 
   /**
-   * The day actually displayed. Resolved rather than corrected by an effect: a
-   * `jour` from the URL naming a day the plan no longer holds falls back to the
-   * first one instead of leaving the page blank.
+   * Day shown: the one asked for, else the first of the event. A new day has
+   * its own opening hour: the replay stops, the cursor goes back to it, and
+   * the picked place is dropped.
    */
-  protected readonly jourCourant = computed<JourneeCarte | null>(() => {
-    const jours = this.jours();
-    const selectionne = this.jourSelectionne();
-    return jours.find((jour) => jour.jour === selectionne) ?? jours[0] ?? null;
+  private readonly navigation = dayNavigation(this.jours, (jour) => jour.jour, {
+    initial: dayNumberParam(this.route.snapshot.queryParamMap.get('jour')),
+    onSelect: () => {
+      this.arreter();
+      this.minutesSelectionnees.set(null);
+      this.selection.set(null);
+    }
   });
+  protected readonly jourCourant = this.navigation.current;
+  protected readonly estPremierJour = this.navigation.isFirst;
+  protected readonly estDernierJour = this.navigation.isLast;
 
   /**
    * The instant the cursor points at, always inside the day. Clamped on read
@@ -143,8 +148,6 @@ export class CarteJourPage {
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
-    const jour = Number(params.get('jour'));
-    this.jourSelectionne.set(Number.isFinite(jour) && jour > 0 ? jour : null);
     // Tolerant on purpose: an absent, empty, hand-edited or obsolete `t` falls
     // back to the day's opening rather than failing the page. The day's own
     // bounds finish the job, in `minutes()`.
@@ -154,10 +157,8 @@ export class CarteJourPage {
     void this.refresh();
     keepViewInQueryParams(() => {
       const courant = this.jourCourant();
-      const premier = this.jours()[0];
       return {
-        // The first day is the default, and a default is the absence of its param.
-        jour: courant && premier && courant.jour !== premier.jour ? String(courant.jour) : null,
+        jour: this.navigation.queryParam(),
         t: courant && this.minutes() !== courant.debutMinutes ? String(this.minutes()) : null
       };
     });
@@ -187,30 +188,11 @@ export class CarteJourPage {
   }
 
   protected selectionnerJour(jour: number): void {
-    this.arreter();
-    this.jourSelectionne.set(jour);
-    // A new day has its own opening hour, and the cursor goes back to it.
-    this.minutesSelectionnees.set(null);
-    this.selection.set(null);
+    this.navigation.select(jour);
   }
 
-  /** Steps to the previous/next day of the event; a no-op at either end. */
   protected decalerJour(delta: number): void {
-    const jours = this.jours();
-    const index = jours.findIndex((jour) => jour.jour === this.jourCourant()?.jour);
-    const target = jours[index + delta];
-    if (target) {
-      this.selectionnerJour(target.jour);
-    }
-  }
-
-  protected estPremierJour(): boolean {
-    return this.jours()[0]?.jour === this.jourCourant()?.jour;
-  }
-
-  protected estDernierJour(): boolean {
-    const jours = this.jours();
-    return jours[jours.length - 1]?.jour === this.jourCourant()?.jour;
+    this.navigation.step(delta);
   }
 
   protected deplacerCurseur(minutes: number): void {

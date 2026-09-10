@@ -2,7 +2,9 @@
 //
 // The audit measured them and found them intact — 69/69 components on OnPush,
 // zero `@Input()`/`@Output()` decorators, zero `*ngIf`/`*ngFor`, zero `@for`
-// without `track`, one `.subscribe()` and it is guarded. Nothing enforced any
+// without `track`, eight `.subscribe()` — six on a page's dialog
+// `afterClosed()` and one in the shell, each bounded by `takeUntilDestroyed()`,
+// one in a root service that lives as long as the application. Nothing enforced any
 // of it: they held by discipline alone, and would degrade the day someone else
 // (or an agent) contributed. These rules are the invariants that would be
 // expensive to lose, set to `error`; the rest of the recommended sets stays

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -86,34 +86,21 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
   }
 
   /**
-   * Nearest other emplacement, in metres.
+   * Nearest other emplacement of each one, in metres — computed once per
+   * change of the referential. Read from a `matCellDef`, the former per-row
+   * scan made every change-detection pass O(N²) over the whole table.
    *
    * Two constraints reason in metres — a change of emplacement beyond 300 m is
    * penalised, and a day spread over too many of them too. Nobody can judge
    * that from two pairs of decimal coordinates, so the table says it.
    */
+  private readonly voisins = computed<Map<string, string>>(() => {
+    const emplacements = this.store.emplacements();
+    return new Map(emplacements.map((emplacement) => [emplacement.id, voisinLePlusProche(emplacement, emplacements)]));
+  });
+
   protected voisinLePlusProche(emplacement: Emplacement): string {
-    let plusProche: { nom: string; metres: number } | null = null;
-    for (const autre of this.store.emplacements()) {
-      if (autre.id === emplacement.id) {
-        continue;
-      }
-      const metres = distanceMetres(emplacement, autre);
-      if (metres === null) {
-        continue;
-      }
-      if (!plusProche || metres < plusProche.metres) {
-        plusProche = { nom: autre.nom || autre.id, metres };
-      }
-    }
-    if (!plusProche) {
-      return '';
-    }
-    const distance = formatDistance(plusProche.metres);
-    const nom = plusProche.nom;
-    return plusProche.metres > SEUIL_ELOIGNEMENT_METRES
-      ? $localize`:@@emplacements.voisin.loin:${distance}:distance: de ${nom}:nom: (au-delà du seuil d'éloignement)`
-      : $localize`:@@emplacements.voisin:${distance}:distance: de ${nom}:nom:`;
+    return this.voisins().get(emplacement.id) ?? '';
   }
 
   protected editSelection(): void {
@@ -125,4 +112,28 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
       autoFocus: 'first-tabbable'
     });
   }
+}
+
+function voisinLePlusProche(emplacement: Emplacement, emplacements: readonly Emplacement[]): string {
+  let plusProche: { nom: string; metres: number } | null = null;
+  for (const autre of emplacements) {
+    if (autre.id === emplacement.id) {
+      continue;
+    }
+    const metres = distanceMetres(emplacement, autre);
+    if (metres === null) {
+      continue;
+    }
+    if (!plusProche || metres < plusProche.metres) {
+      plusProche = { nom: autre.nom || autre.id, metres };
+    }
+  }
+  if (!plusProche) {
+    return '';
+  }
+  const distance = formatDistance(plusProche.metres);
+  const nom = plusProche.nom;
+  return plusProche.metres > SEUIL_ELOIGNEMENT_METRES
+    ? $localize`:@@emplacements.voisin.loin:${distance}:distance: de ${nom}:nom: (au-delà du seuil d'éloignement)`
+    : $localize`:@@emplacements.voisin:${distance}:distance: de ${nom}:nom:`;
 }

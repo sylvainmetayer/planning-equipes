@@ -19,6 +19,7 @@ import { PlanningEvenement, TypologieItem, RapportPauses } from '../../core/mode
 import { correspondAuFiltre } from '../../core/text-filter';
 import { typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { errorPrefix } from '../../core/error-message';
+import { dayNavigation, dayNumberParam } from '../../core/day-navigation';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { TableFilter } from '../../shared/table-filter';
 import { RailBloc, RailJour, RailLigne, buildRailJours, compterStatuts } from './rail-jour';
@@ -71,8 +72,6 @@ export class RailJourPage {
   protected readonly typologies = signal<TypologieItem[]>([]);
   /** The breaks of the plan; null when the request failed — the rail still draws. */
   protected readonly pauses = signal<RapportPauses | null>(null);
-  /** Day the rail shows; null until the plan is loaded, then the first day of the event. */
-  protected readonly jourSelectionne = signal<number | null>(null);
   protected readonly filtre = signal('');
   protected readonly view = signal<RailVue>('tous');
 
@@ -91,16 +90,14 @@ export class RailJourPage {
     return buildRailJours(planning.postes ?? [], planning.animateurs ?? [], planning.contraintesAdHoc ?? [], this.pauses());
   });
 
-  /**
-   * The day actually displayed. Resolved rather than corrected by an effect: a
-   * `jour` from the URL naming a day the plan no longer holds falls back to the
-   * first one instead of leaving the page blank.
-   */
-  protected readonly jourCourant = computed<RailJour | null>(() => {
-    const jours = this.jours();
-    const selectionne = this.jourSelectionne();
-    return jours.find((jour) => jour.jour === selectionne) ?? jours[0] ?? null;
+  /** Day the rail shows: the one asked for, else the first of the event. A new day puts the focus back on its first line. */
+  private readonly navigation = dayNavigation(this.jours, (jour) => jour.jour, {
+    initial: dayNumberParam(this.route.snapshot.queryParamMap.get('jour')),
+    onSelect: () => this.ligneFocus.set(0)
   });
+  protected readonly jourCourant = this.navigation.current;
+  protected readonly estPremierJour = this.navigation.isFirst;
+  protected readonly estDernierJour = this.navigation.isLast;
 
   protected readonly lignes = computed<RailLigne[]>(() => this.jourCourant()?.lignes ?? []);
 
@@ -249,22 +246,15 @@ export class RailJourPage {
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
-    const jour = Number(params.get('jour'));
-    this.jourSelectionne.set(Number.isFinite(jour) && jour > 0 ? jour : null);
     this.filtre.set(params.get('q') ?? '');
     const view = params.get('vue');
     this.view.set(view === 'libres' || view === 'affectes' ? view : 'tous');
     void this.refresh();
-    keepViewInQueryParams(() => {
-      const courant = this.jourCourant();
-      const premier = this.jours()[0];
-      return {
-        // The first day is the default, and a default is the absence of its param.
-        jour: courant && premier && courant.jour !== premier.jour ? String(courant.jour) : null,
-        q: optionalParam(this.filtre()),
-        vue: this.view() === 'tous' ? null : this.view()
-      };
-    });
+    keepViewInQueryParams(() => ({
+      jour: this.navigation.queryParam(),
+      q: optionalParam(this.filtre()),
+      vue: this.view() === 'tous' ? null : this.view()
+    }));
   }
 
   protected async refresh(): Promise<void> {
@@ -290,27 +280,11 @@ export class RailJourPage {
   }
 
   protected selectionnerJour(jour: number): void {
-    this.jourSelectionne.set(jour);
-    this.ligneFocus.set(0);
+    this.navigation.select(jour);
   }
 
-  /** Steps to the previous/next day of the event; a no-op at either end. */
   protected decalerJour(delta: number): void {
-    const jours = this.jours();
-    const index = jours.findIndex((jour) => jour.jour === this.jourCourant()?.jour);
-    const target = jours[index + delta];
-    if (target) {
-      this.selectionnerJour(target.jour);
-    }
-  }
-
-  protected estPremierJour(): boolean {
-    return this.jours()[0]?.jour === this.jourCourant()?.jour;
-  }
-
-  protected estDernierJour(): boolean {
-    const jours = this.jours();
-    return jours[jours.length - 1]?.jour === this.jourCourant()?.jour;
+    this.navigation.step(delta);
   }
 
   protected reinitialiserVue(): void {

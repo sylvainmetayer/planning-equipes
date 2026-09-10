@@ -1,5 +1,6 @@
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -100,6 +101,8 @@ interface DayCard {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CalendarDayPage {
+  /** Bounds the repair-assistant callback to this page's life: it is lazy and rebuilt on every visit. */
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly persistedCount = signal<string>('?');
@@ -299,6 +302,7 @@ export class CalendarDayPage {
     }
     ouvrirExplication(this.dialog, planning, poste)
       .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((reparation) => {
         if (reparation) {
           this.planningState.set(null);
