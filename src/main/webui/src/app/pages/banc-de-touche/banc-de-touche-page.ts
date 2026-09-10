@@ -5,6 +5,7 @@ import {
   inject,
   resource,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -55,6 +56,9 @@ import {
     WorkInProgressBanner,
   ],
   templateUrl: './banc-de-touche-page.html',
+  styleUrl: './banc-de-touche-page.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BancDeTouchePage {

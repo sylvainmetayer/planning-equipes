@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -93,6 +94,9 @@ export type VueOuvertures = 'CONSULTER' | 'SAISIR';
     RouterLink,
   ],
   templateUrl: './ouvertures-page.html',
+  styleUrl: '../../../styles/ouvertures.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OuverturesPage {

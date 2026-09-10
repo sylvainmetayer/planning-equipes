@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -52,6 +53,9 @@ const CADENCE_MS = 700;
     CarteJourMap,
   ],
   templateUrl: './carte-jour-page.html',
+  styleUrl: './carte-jour-page.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CarteJourPage {

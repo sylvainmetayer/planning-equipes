@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -32,6 +38,9 @@ import { StatusMessage } from '../../shared/status-message';
     StatusMessage,
   ],
   templateUrl: './conditions-utilisation-page.html',
+  styleUrl: '../../../styles/mentions-legales.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConditionsUtilisationPage {

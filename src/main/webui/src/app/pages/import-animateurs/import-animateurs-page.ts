@@ -6,6 +6,7 @@ import {
   signal,
   viewChild,
   ElementRef,
+  ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -61,6 +62,9 @@ import {
     RouterLink,
   ],
   templateUrl: './import-animateurs-page.html',
+  styleUrl: '../../../styles/import-animateurs.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImportAnimateursPage {

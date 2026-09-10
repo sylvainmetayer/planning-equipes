@@ -6,6 +6,7 @@ import {
   inject,
   signal,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -88,6 +89,9 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     StatusMessage,
   ],
   templateUrl: './parametres-page.html',
+  styleUrls: ['./parametres.css', '../../../styles/decoupage.css'],
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ParametresPage {

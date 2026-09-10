@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { firstValueFrom } from 'rxjs';
@@ -75,6 +76,9 @@ import { errorMessage } from '../../core/error-message';
     TableFilter,
   ],
   templateUrl: './animateurs-page.html',
+  styleUrl: './animateurs-page.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateursPage {

@@ -12,6 +12,7 @@ import {
   computed,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -114,6 +115,9 @@ interface DayCard {
     MatTooltipModule,
   ],
   templateUrl: './calendar-day-page.html',
+  styleUrls: ['../../../styles/calendar-day.css', '../../../styles/calendar-month.css'],
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarDayPage {

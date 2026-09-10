@@ -7,6 +7,7 @@ import {
   inject,
   signal,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -71,6 +72,9 @@ export const CLEAR_KEYWORD = 'VIDER';
     YamlValidator,
   ],
   templateUrl: './debug-page.html',
+  styleUrls: ['./debug-date-du-jour.css', './yaml-validator.css'],
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DebugPage {

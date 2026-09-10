@@ -1,13 +1,11 @@
 /* Mentions légales, politique de confidentialité, CGU : public pages with their own title bar, outside both shells. */
 
-/* Mentions légales (page publique, hors des deux coques). */
-
 /*
- * Ces pages ont leur propre barre de titre, hors des deux coques. Un
- * `mat-toolbar` ne se replie pas et ne rétrécit pas : « Conditions générales
- * d'utilisation » suivi d'un bouton Retour étirait la fenêtre de rendu à
- * 1000 px sur un téléphone, et toute la page s'affichait dézoomée. Or ce sont
- * précisément les pages qu'un animateur ouvre depuis son mobile.
+ * These pages carry their own title bar, outside both shells. A `mat-toolbar`
+ * neither wraps nor shrinks: « Conditions générales d'utilisation » followed
+ * by a Back button stretched the viewport to 1000 px on a phone, and the
+ * whole page rendered zoomed out — on precisely the pages an animateur opens
+ * from a mobile.
  */
 .mentions-page-toolbar {
   height: auto;
@@ -18,7 +16,7 @@
 
 .mentions-page-toolbar .app-title {
   font: var(--mat-sys-title-medium);
-  /* Le titre cède la place avant tout le monde : il est déjà dans l'onglet. */
+  /* The title gives way before anything else: it is already in the tab. */
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -55,8 +53,8 @@
 }
 
 /*
- * Ce qui manque se lit comme tel : une mention légale incomplète doit se
- * signaler, jamais se faire passer pour renseignée.
+ * What is missing reads as missing: an incomplete legal notice must say so,
+ * never pass for filled in.
  */
 .mentions-manquant {
   color: var(--mat-sys-error);

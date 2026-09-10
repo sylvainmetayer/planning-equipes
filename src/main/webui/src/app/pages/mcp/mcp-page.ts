@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -51,6 +52,9 @@ import { StatusMessage } from '../../shared/status-message';
     StatusMessage,
   ],
   templateUrl: './mcp-page.html',
+  styleUrl: './mcp-page.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class McpPage implements OnDestroy {

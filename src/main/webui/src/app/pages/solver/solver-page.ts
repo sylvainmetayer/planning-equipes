@@ -8,6 +8,7 @@ import {
   signal,
   untracked,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
@@ -105,6 +106,9 @@ function hardPart(score: string): number {
     SolveRecap,
   ],
   templateUrl: './solver-page.html',
+  styleUrls: ['./solver.css', './publication.css', './replanification.css', './score-curve.css'],
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolverPage {

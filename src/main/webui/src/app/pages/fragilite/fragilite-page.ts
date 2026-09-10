@@ -5,6 +5,7 @@ import {
   inject,
   resource,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -60,6 +61,9 @@ import {
     WorkInProgressBanner,
   ],
   templateUrl: './fragilite-page.html',
+  styleUrl: './fragilite-page.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FragilitePage {

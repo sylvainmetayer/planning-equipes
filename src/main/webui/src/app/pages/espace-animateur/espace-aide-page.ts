@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -27,6 +33,9 @@ import { EspaceAideCible, buildEspaceAideSections } from './espace-aide-content'
   selector: 'app-espace-aide-page',
   imports: [RouterLink, MatButtonModule, MatCardModule, MatExpansionModule, MatIconModule],
   templateUrl: './espace-aide-page.html',
+  styleUrl: './espace-aide-page.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EspaceAidePage {

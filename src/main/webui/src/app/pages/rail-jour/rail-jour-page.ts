@@ -12,6 +12,7 @@ import {
   computed,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -75,6 +76,9 @@ interface RailLegendItem {
     TableFilter,
   ],
   templateUrl: './rail-jour-page.html',
+  styleUrl: './rail-jour-page.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RailJourPage {

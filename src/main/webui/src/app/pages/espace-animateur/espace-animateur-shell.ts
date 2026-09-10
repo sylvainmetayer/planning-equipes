@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -43,6 +49,9 @@ import { BrandLogo } from '../../shared/brand-logo';
     MatTooltipModule,
   ],
   templateUrl: './espace-animateur-shell.html',
+  styleUrls: ['../../../styles/espace-animateur.css', '../../../styles/demandes.css'],
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EspaceAnimateurShell {

@@ -570,14 +570,22 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   silence, and a new connection is sent the whole series. See `docs/api.md`.
   Both loops are stopped with the shell that started
   them (the service is `providedIn: 'root'` and would outlive it).
-- CSS stays **global** and limited to what Material does not cover:
-  `src/styles.css` is a thin aggregator of `@import` rules only and the partials
-  live in `src/styles/` (`pages.css` for the shared card/form/table scaffolding,
-  `feedback.css` for the job monitor and snack-bar variants,
-  `calendar-month.css`, `calendar-day.css`, `constraints.css`,
-  `problemes.css`), each holding its
-  own `@media` rules. Add new styles as new partials; don't recreate a monolithic
-  stylesheet and don't restyle what a Material component already themes.
+- CSS is **unscoped, and loaded with the route** (issue #392, B9). Two
+  kinds of stylesheet, and nothing else: `src/styles.css` aggregates the
+  partials every screen needs (`pages.css` for the shared card/form/table
+  scaffolding, `feedback.css` for the job monitor, snack-bar and summary-banner
+  variants, `bulk-actions.css`, `detail.css`, `typologie-colors.css`, fonts and
+  branding); everything a single route draws is that page's `styleUrl`
+  (`pages/<block>/<block>-page.css`, or a shared file in `src/styles/` when two
+  pages draw the same thing — the two calendars, the two imports), declared
+  with `encapsulation: ViewEncapsulation.None` so its selectors mean exactly
+  what they did as a global partial, and shipped in the route's lazy chunk
+  rather than in the initial bundle. Each file holds its own `@media` rules.
+  A class used by several pages goes to `pages.css`, never to one page's file:
+  `scripts/check-css-scope.js` (`npm run css-scope-check`, run in CI) refuses
+  a page that uses a class only another route loads — the unit tests render
+  without CSS and would never see it. Don't restyle what a Material component
+  already themes.
 - Keep the frontend dependency-light. What is actually there, and why: Angular
   + its CLI + Angular Material + `@angular/localize` (the stack proper);
   `@sentry/angular` (error reporting, loaded by a dynamic `import()` only when a

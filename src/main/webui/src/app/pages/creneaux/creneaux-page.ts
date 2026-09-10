@@ -7,6 +7,7 @@ import {
   computed,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -85,6 +86,14 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
     BulkActionsBar,
   ],
   templateUrl: './creneaux-page.html',
+  styleUrls: [
+    './creneaux.css',
+    '../../../styles/decoupage.css',
+    '../../../styles/horaires-stand.css',
+    '../../../styles/ouvertures.css',
+  ],
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreneauxPage {

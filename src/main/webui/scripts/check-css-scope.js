@@ -156,6 +156,13 @@ const isOurs = (c) => !OWN_PREFIXES.some((p) => c.startsWith(p));
 
 function main() {
   const byFile = components();
+  const shells = [
+    ...new Set(
+      pages(byFile)
+        .map((p) => p.shell)
+        .filter(Boolean),
+    ),
+  ].map((file) => ({ file, shell: null }));
   const globalClasses = classesOf(join(ROOT, 'styles.css'));
   const allDefined = new Set(globalClasses);
   const sheetClasses = new Map();
@@ -171,15 +178,48 @@ function main() {
     );
   }
 
+  // rule 2: a page stylesheet's class used outside the pages that attach it.
+  // A class only ever named next to another class of the same sheet
+  // (`.carte-jour-pastille.etat-ferme`, `.fragilite-synthese .synthese-alerte`)
+  // is scoped by that sheet and cannot reach another page: not a leak. A
+  // sheet of an emulated-encapsulation component is scoped by Angular itself.
+  const emulated = new Set();
+  for (const c of byFile.values())
+    if (!c.encapsulationNone) for (const s of c.styles) emulated.add(s);
+  const scopedIn = new Map(); // sheet -> classes every selector qualifies by a sibling class of the sheet
+  for (const sheet of sheetClasses.keys()) {
+    const css = stripComments(readFileSync(sheet, 'utf8'));
+    const own = sheetClasses.get(sheet);
+    const bySelector = new Map();
+    for (const block of css.matchAll(/([^{}]+)\{/g)) {
+      for (const sel of block[1].split(',')) {
+        const names = [...sel.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => m[1]);
+        for (const c of names) {
+          if (!bySelector.has(c)) bySelector.set(c, []);
+          bySelector.get(c).push(names.filter((n) => n !== c));
+        }
+      }
+    }
+    const scoped = new Set();
+    for (const [c, others] of bySelector) {
+      if (others.every((list) => list.some((n) => own.has(n) && !globalClasses.has(n))))
+        scoped.add(c);
+    }
+    scopedIn.set(sheet, scoped);
+  }
+  const pageOfComponent = new Map();
+  for (const page of [...pages(byFile), ...shells])
+    for (const f of closure(byFile, page.file)) {
+      if (!pageOfComponent.has(f)) pageOfComponent.set(f, new Set());
+      pageOfComponent.get(f).add(page.file);
+    }
+  // a class that is scoped wherever it is defined cannot be met by another page: rule 1 ignores it
+  const unscoped = new Set(globalClasses);
+  for (const [sheet, classes] of sheetClasses)
+    for (const c of classes) if (!scopedIn.get(sheet)?.has(c)) unscoped.add(c);
+
   const failures = [];
   const usersOfSheet = new Map(); // stylesheet -> pages that attach it (through their closure)
-  const shells = [
-    ...new Set(
-      pages(byFile)
-        .map((p) => p.shell)
-        .filter(Boolean),
-    ),
-  ].map((file) => ({ file, shell: null }));
   for (const page of [...pages(byFile), ...shells]) {
     const members = closure(byFile, page.file);
     const scope = new Set(globalClasses);
@@ -187,13 +227,13 @@ function main() {
     for (const f of members) for (const s of byFile.get(f).styles) sheets.add(s);
     if (page.shell) for (const s of byFile.get(page.shell).styles) sheets.add(s);
     for (const s of sheets) {
-      for (const k of sheetClasses.get(s) ?? classesOf(s)) scope.add(k);
+      for (const k of sheetClasses.get(s)) scope.add(k);
       if (!usersOfSheet.has(s)) usersOfSheet.set(s, new Set());
       usersOfSheet.get(s).add(page.file);
     }
     for (const f of members) {
       for (const c of byFile.get(f).used) {
-        if (!scope.has(c) && allDefined.has(c)) {
+        if (!scope.has(c) && unscoped.has(c)) {
           failures.push(
             `${relative(APP, page.file)} : ${relative(APP, f)} uses .${c}, defined only in a stylesheet this page does not load`,
           );
@@ -201,16 +241,10 @@ function main() {
       }
     }
   }
-  // rule 2: a page stylesheet's class used outside the pages that attach it
-  const pageOfComponent = new Map();
-  for (const page of [...pages(byFile), ...shells])
-    for (const f of closure(byFile, page.file)) {
-      if (!pageOfComponent.has(f)) pageOfComponent.set(f, new Set());
-      pageOfComponent.get(f).add(page.file);
-    }
   for (const [sheet, owners] of usersOfSheet) {
+    if (emulated.has(sheet)) continue;
     for (const c of sheetClasses.get(sheet) ?? []) {
-      if (globalClasses.has(c)) continue;
+      if (globalClasses.has(c) || scopedIn.get(sheet)?.has(c)) continue;
       for (const comp of byFile.values()) {
         if (!comp.used.has(c)) continue;
         const its = pageOfComponent.get(comp.file) ?? new Set([comp.file]);

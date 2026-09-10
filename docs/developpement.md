@@ -523,6 +523,19 @@ Toute image doit porter une balise explicite, y compris dans
 `docker-compose.yml` : sans balise ou sous `latest`, Renovate n'a rien à
 proposer et la version installée dépend du jour du `pull`.
 
+## Feuilles de style
+
+Deux sortes, et pas de troisième : `src/styles.css` importe les partials que
+tout écran charge (échafaudage des cartes, formulaires et tables ; retours ;
+actions groupées ; couleurs des typologies ; polices et marque), et chaque page
+porte en `styleUrl` ce qu'elle seule dessine, avec
+`encapsulation: ViewEncapsulation.None` — les sélecteurs restent globaux, le
+fichier voyage avec le chunk de la route au lieu de peser sur le bundle
+initial. Une classe que plusieurs pages utilisent va dans `pages.css` ;
+`npm run css-scope-check` refuse une page qui utilise une classe que seule
+une autre route charge (les tests unitaires n'ont pas de CSS, personne
+d'autre ne le verrait).
+
 ## Formatage
 
 Le formatage n'est pas un sujet de revue : un outil décide, on obéit.

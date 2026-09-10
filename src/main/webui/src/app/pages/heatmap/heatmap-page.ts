@@ -6,6 +6,7 @@ import {
   inject,
   resource,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -98,6 +99,9 @@ export interface HeatmapTable {
     FormsModule,
   ],
   templateUrl: './heatmap-page.html',
+  styleUrl: './heatmap-page.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeatmapPage {

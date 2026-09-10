@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -130,6 +131,9 @@ const ALL = 'ALL';
     MatTooltipModule,
   ],
   templateUrl: './calendar-month-page.html',
+  styleUrls: ['../../../styles/calendar-month.css', '../../../styles/calendar-day.css'],
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarMonthPage {

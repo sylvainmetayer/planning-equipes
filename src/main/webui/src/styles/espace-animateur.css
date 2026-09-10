@@ -28,6 +28,11 @@
   }
 }
 
+.espace-toolbar .app-logo {
+  height: 2.5rem;
+  width: auto;
+}
+
 /* Un logo de déploiement peut être un bandeau très large : sans plafond, il
    mange la barre et ne laisse qu'une initiale au nom de la personne
    connectée. */
@@ -195,19 +200,6 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-/* Demande faite sur un autre groupe que le planning courant. */
-.espace-demande-horsgroupe,
-.echanges-hors-groupe {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  margin: 0.5rem 0 0;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.75rem;
-  background: var(--mat-sys-surface-container-high);
-  color: var(--mat-sys-on-surface-variant);
-}
-
 /*
  * Accusé de réception du planning publié (#293). Encadré plutôt que posé au fil
  * du texte : c'est la seule chose que l'animateur a à FAIRE sur cette page, et
@@ -299,11 +291,6 @@
   margin: 0;
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.9em;
-}
-
-.espace-vide {
-  color: var(--mat-sys-on-surface-variant);
-  font-style: italic;
 }
 
 /* ---------- Planning cards ---------- */
@@ -502,58 +489,6 @@
   margin: 0.5rem 0 0;
 }
 
-/* ---------- Demande cards & statut chips ---------- */
-
-.espace-demande-entete,
-/* Interrupteur admin d'ouverture/fermeture de la foire (issue #165). */
-.echanges-foire {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding: 0.6rem 1rem;
-  border-radius: 0.75rem;
-  background: var(--mat-sys-surface-container-high);
-}
-
-.echanges-foire-fermee {
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
-}
-
-.echanges-foire-etat {
-  font-size: 0.9rem;
-}
-
-/*
- * Bornes datées de la foire. La grille passe à la ligne sous l'interrupteur —
- * elle les complète, elle ne les remplace pas : l'interrupteur reste maître.
- */
-.echanges-foire-fenetre {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  flex-basis: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.echanges-foire-fenetre legend {
-  padding: 0;
-  font-size: 0.9rem;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.echanges-foire-aide {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--mat-sys-on-surface-variant);
-}
-
 /* Échéance annoncée dans l'espace quand la foire est ouverte et bornée. */
 .espace-foire-echeance {
   display: flex;
@@ -561,99 +496,6 @@
   gap: 0.4rem;
   margin: 0 0 1rem;
   color: var(--mat-sys-on-surface-variant);
-}
-
-.echanges-demande-entete {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.espace-statut {
-  padding: 0.15rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background: var(--mat-sys-surface-variant);
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.espace-statut-attente {
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
-}
-
-.espace-statut-acceptee {
-  background: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
-}
-
-.espace-statut-refusee {
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
-}
-
-.espace-demande-motif {
-  margin: 0.5rem 0 0;
-  font-style: italic;
-}
-
-.espace-demande-alerte {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 0.75rem;
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
-}
-
-.espace-demande-alerte p,
-.espace-demande-alerte ul {
-  margin: 0.15rem 0;
-}
-
-.espace-demande-commentaire {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  margin: 0.5rem 0 0;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-/* ---------- Admin Échanges screen ---------- */
-
-.echanges-demande {
-  margin-bottom: 0.75rem;
-}
-
-.echanges-demande-date {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.85rem;
-}
-
-.echanges-impact {
-  margin-top: 0.6rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 0.75rem;
-  background: var(--mat-sys-surface-variant);
-}
-
-.echanges-impact p,
-.echanges-impact ul {
-  margin: 0.2rem 0;
-}
-
-.echanges-impact-casse {
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
-}
-
-.echanges-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
 }
 
 /* Le formulaire de demande d'échange s'empile tant qu'il n'a pas la place. */
@@ -667,12 +509,6 @@
     flex-direction: row;
     align-items: center;
   }
-}
-
-/* Directed exchange: the "in return" seat, visually subordinate to the main line. */
-.espace-brouillon-contre {
-  font-style: italic;
-  color: var(--mat-sys-on-surface-variant);
 }
 
 /* Received demandes: the agreement card stands out slightly, actions inline. */
@@ -699,12 +535,6 @@
 .espace-demande-explication {
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.9rem;
-}
-
-.echanges-section-hint {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.9rem;
-  margin: -0.25rem 0 0.75rem;
 }
 
 /*
