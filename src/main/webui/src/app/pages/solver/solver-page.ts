@@ -1,31 +1,27 @@
-import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  viewChild
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatDialog } from '@angular/material/dialog';
-import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlanningApi } from '../../core/api/planning-api';
 import { intlLocale } from '../../core/locale';
 import {
-  libelleDernierePublication,
-  libellePublier,
-  raisonIndisponible,
-  resumePublication
-} from '../../core/publication';
-import {
-  ApercuPublication,
   ChangementAffectation,
   FeasibilityReport,
   ImpactPublication,
-  JobView,
   PerimetreReplanification,
   PlanningDiagnostic,
   PreviousPlan,
@@ -34,18 +30,10 @@ import {
   ResultatSolveIncremental,
   StatistiquesIncremental
 } from '../../core/models';
-import {
-  defaultPanelStorage,
-  readPanelCollapsed,
-  writePanelCollapsed
-} from '../../core/panel-collapse';
-import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
-import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
-import { ReferenceDataStore } from '../../core/reference-data.store';
 import {
   JobResults,
   SolverJobService,
@@ -61,16 +49,15 @@ import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
+import { IncrementalResult } from './incremental-result';
+import { PublicationPanel } from './publication-panel';
 import { ReplanificationDialog } from './replanification-dialog';
-import { ScoreChart } from './score-chart';
+import { ScoreCurveCard } from './score-curve-card';
+import { SolveRecap } from './solve-recap';
+import { SolverDurationCard } from './solver-duration-card';
+import { SolverQueue } from './solver-queue';
+import { SolverVolumetry } from './solver-volumetry';
 import { errorPrefix } from '../../core/error-message';
-import {
-  SOLVER_DURATION_UNIT_STEP,
-  SolverDurationUnit,
-  bestUnitFor,
-  secondsToValue,
-  valueToSeconds
-} from './solver-duration';
 
 /**
  * A constraint's raw score string looks like `-14hard/0medium/0soft`
@@ -79,45 +66,43 @@ import {
  * {@link PlanningDiagnostic.contraintes} list, which (unlike `ConstraintView`
  * on the Contraintes page) doesn't carry the constraint's `niveau`.
  */
-/**
- * Where the folded state of the score curve is kept. A stable, namespaced key,
- * like every other one this application writes to localStorage.
- */
-const SCORE_CURVE_STORAGE_KEY = 'planning-equipes.solver.scoreCurveCollapsed';
-
 function hardPart(score: string): number {
   const match = /^(-?\d+)hard/.exec(score);
   return match ? Number(match[1]) : 0;
 }
 
-
 /**
- * Solver page: launches the background solve job, and exports the resulting
- * planning (PDF + ICS bundled in one ZIP). The server always analyzes the
- * solve result as part of the same job (see {@code SolverJobService.submitSolve}
- * on the backend), so there is no separate analyze action and no client-side
- * chaining to keep in sync. Seeding the database lives on the Data setup
- * page, emptying it on the Debug page.
+ * Solver page: launches the background solve job and receives its result,
+ * whoever started it. The server always analyzes the solve result as part of
+ * the same job (see {@code SolverJobService.submitSolve} on the backend), so
+ * there is no separate analyze action and no client-side chaining to keep in
+ * sync. Seeding the database lives on the Data setup page, emptying it on the
+ * Debug page.
+ *
+ * <p>An orchestrator: the budget, the queue, the score curve, the diffusion,
+ * the volumetry, the recap and the incremental diff are each a component of
+ * their own next door. What stays here is what the result handler has to
+ * write, and the three ways of launching a solve.</p>
  */
 @Component({
   selector: 'app-solver-page',
   imports: [
-    DecimalPipe,
     MatProgressBarModule,
     StatusMessage,
-    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatTableModule,
     MatTooltipModule,
     FeasibilityBanner,
     ProblemSummaryBanner,
     OutputPanel,
-    ScoreChart
+    SolverDurationCard,
+    SolverQueue,
+    ScoreCurveCard,
+    PublicationPanel,
+    SolverVolumetry,
+    IncrementalResult,
+    SolveRecap
   ],
   templateUrl: './solver-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -129,35 +114,12 @@ export class SolverPage {
   /** Full score of the last solve, the half of the comparison of issue #274 that this page produced. */
   protected readonly score = signal<string | null>(null);
   protected readonly hardIssues = signal<HardIssue[]>([]);
+  /** Raised by the diffusion panel while it builds a document; named as the lock reason below. */
   protected readonly exportBusy = signal(false);
   protected readonly arretEnCours = signal(false);
 
-  /**
-   * Publication state (issue #245), read on demand — when the screen opens and
-   * after each publication. Nothing polls: the count is pending work to look
-   * at, not an alarm to be pushed.
-   */
-  protected readonly publicationApercu = signal<ApercuPublication | null>(null);
-  protected readonly publicationBusy = signal(false);
-  /**
-   * How many people the send under way concerns, frozen when it starts: the
-   * preview reloads at the end and would otherwise drop to zero mid-sentence.
-   * Real information rather than a fabricated percentage — the server answers
-   * once, when everything has gone out.
-   */
-  protected readonly publicationDestinatairesEnCours = signal(0);
-  protected readonly publicationListeOuverte = signal(false);
-  protected readonly publicationLibelle = computed(() => libellePublier(this.publicationApercu()));
-  protected readonly publicationRaisonIndisponible = computed(() =>
-    raisonIndisponible(this.publicationApercu())
-  );
-  protected readonly publicationDerniere = computed(() =>
-    libelleDernierePublication(this.publicationApercu(), intlLocale())
-  );
-  protected readonly publicationPossible = computed(() => {
-    const apercu = this.publicationApercu();
-    return !!apercu && apercu.nombreConcernes > 0 && !apercu.solveEnCours && !apercu.planVide;
-  });
+  /** The diffusion panel owns the publication preview; the page asks for a re-read after a solve. */
+  private readonly publication = viewChild.required(PublicationPanel);
 
   /**
    * Result of the last incremental re-solve (issue #86), cleared as soon as a
@@ -166,7 +128,6 @@ export class SolverPage {
    */
   protected readonly incrementalStats = signal<StatistiquesIncremental | null>(null);
   protected readonly incrementalChangements = signal<ChangementAffectation[]>([]);
-  protected readonly columnsChangements = ['quand', 'stand', 'avant', 'apres'];
 
   /**
    * What the last solve replaced (issue #274). A solve announcing only its own
@@ -176,51 +137,15 @@ export class SolverPage {
    * edition, or a score that could not be established.
    */
   protected readonly planPrecedent = signal<PreviousPlan | null>(null);
-  /** The comparison is only worth showing when both scores are known. */
-  protected readonly comparaisonPlan = computed(() => {
-    const precedent = this.planPrecedent();
-    const after = this.score();
-    return precedent?.score && after ? { avant: precedent.score, apres: after } : null;
-  });
-  protected readonly restaurationEnCours = signal(false);
-
-  protected readonly solverDurationLoading = signal(false);
-  protected readonly solverDurationSaving = signal(false);
-  protected readonly solverDurationError = signal('');
-
-  /**
-   * Editable value + unit for the duration persisted server-side as seconds
-   * (`/api/parametres-solveur`), only sent back when the user clicks
-   * "Enregistrer" — an unsaved value never silently applies.
-   */
-  protected readonly solverDurationUnit = signal<SolverDurationUnit>('MINUTES');
-  protected readonly solverDurationValueDraft = signal(0);
-  protected readonly solverDurationSecondsSaved = signal(0);
-  protected readonly solverDurationSecondsDraft = computed(() =>
-    valueToSeconds(this.solverDurationValueDraft(), this.solverDurationUnit())
-  );
-  protected readonly solverDurationDirty = computed(
-    () => Math.round(this.solverDurationSecondsDraft()) !== this.solverDurationSecondsSaved()
-  );
-  protected readonly solverDurationStep = computed(() => SOLVER_DURATION_UNIT_STEP[this.solverDurationUnit()]);
 
   /** The server-side lock, not a local flag: it also covers other browsers. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
   /**
-   * The narrower, per-edition lock — what the diffusion actions wait on. They
-   * read the planning persisted for the edition on screen, so only a solve
-   * writing to THAT edition can hand out a half-rewritten planning; a run on
-   * another edition leaves this one exactly as it was saved. Same rule as the
-   * data-entry screens (see `docs/decisions/0001-cloisonnement-par-edition.md`, §5).
+   * The narrower, per-edition lock — what the diffusion actions wait on. See
+   * `docs/decisions/0001-cloisonnement-par-edition.md`, §5.
    */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
-
-  /**
-   * Solves planned behind the running one. Server-side and shared: one planned
-   * from another browser shows up here too, and can be removed from here.
-   */
-  protected readonly file = computed(() => this.jobs.file());
 
   /**
    * The two solve buttons say what the click will actually do. While the
@@ -278,29 +203,6 @@ export class SolverPage {
 
   /** Whom the last finished solve would disturb, against the published plan. */
   protected readonly impactPublication = signal<ImpactPublication | null>(null);
-  protected readonly libelleImpactPublication = computed(() => {
-    const impact = this.impactPublication();
-    if (!impact) {
-      return '';
-    }
-    const quand = new Date(impact.publieLe).toLocaleString(intlLocale());
-    if (impact.personnes === 0) {
-      return $localize`:@@solver.impact.aucun:Personne ne change d'emploi du temps par rapport au plan publié le ${quand}:date:.`;
-    }
-    return $localize`:@@solver.impact.personnes:${impact.personnes}:count: personne(s) changeraient d'emploi du temps par rapport au plan publié le ${quand}:date: — c'est ce que la publication leur dirait.`;
-  });
-  protected readonly libelleReamorcage = computed(() => {
-    const reamorcage = this.reamorcageEffectue();
-    if (!reamorcage) {
-      return '';
-    }
-    if (reamorcage.mode === 'AUCUN') {
-      return $localize`:@@solver.reamorcage.aFroid:Point de départ : aucun, calcul de zéro.`;
-    }
-    return reamorcage.postesLiberes > 0
-      ? $localize`:@@solver.reamorcage.planAvecLiberes:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris et ${reamorcage.postesLiberes}:liberes: laissés libres (animateur disparu ou devenu indisponible).`
-      : $localize`:@@solver.reamorcage.plan:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris.`;
-  });
 
   /**
    * "Fin estimée" of the run in progress: its start time plus the duration it
@@ -319,10 +221,6 @@ export class SolverPage {
 
   /** Completion time of the most recent finished solve job, if any has ever run. */
   protected readonly lastRunAt = signal<string | null>(null);
-  protected readonly formattedLastRun = computed(() => {
-    const lastRunAt = this.lastRunAt();
-    return lastRunAt ? new Date(lastRunAt).toLocaleString(intlLocale()) : '';
-  });
 
   protected readonly resolution = inject(PlanningResolutionStore);
   /** True once reference data was edited after the last solve: its result may be stale. */
@@ -335,61 +233,11 @@ export class SolverPage {
    */
   protected readonly problemes = inject(ProblemesStore);
 
-  /**
-   * Volumetry of the problem Timefold is about to explore, recomputed live as
-   * `referenceData`'s signals change (a CRUD edit, a sample load, a CSV/SQL
-   * import...). `animateurTotal`/`posteTotal`/`contrainteAdHocTotal` come from
-   * `/api/planning/volumetrie`, built server-side the exact same way an actual
-   * solve is (one poste per required seat, not per stand) so they never drift
-   * from what the solver logs report. `créneauTotal` counts the
-   * edition's slots — exactly what the solver consumes.
-   */
-  private readonly referenceData = inject(ReferenceDataStore);
-  protected readonly animateurTotal = computed(() => this.referenceData.scale().animateurCount);
-  protected readonly posteTotal = computed(() => this.referenceData.scale().posteCount);
-  protected readonly contrainteAdHocTotal = computed(() => this.referenceData.scale().contrainteAdHocCount);
-  protected readonly creneauTotal = computed(() => this.referenceData.creneaux().length);
-  /** Hours the seats add up to, stand closures deducted — the same basis as the Heures page. */
-  protected readonly heuresAPourvoir = computed(() => this.referenceData.scale().hoursToFill);
-  /** Legal ceiling of what the animateurs may work over the event, unavailable days deducted. */
-  protected readonly heuresOffertes = computed(() => this.referenceData.scale().hoursAvailable);
-  /**
-   * Hours to fill over hours available. A ceiling, not a forecast: competences,
-   * rest between shifts and the pause rule all take from the denominator, so a
-   * ratio close to 1 is already an infeasible plan. `null` while nothing is
-   * offered, so the template says nothing rather than dividing by zero.
-   */
-  protected readonly tauxRemplissage = computed(() => {
-    const offertes = this.heuresOffertes();
-    return offertes > 0 ? this.heuresAPourvoir() / offertes : null;
-  });
-
-  /**
-   * Timefold's own "approximate problem scale": log10 of the search space size,
-   * i.e. `entityCount * log10(valueCount)` (valueCount ^ entityCount, not a
-   * product of the counts above — a plain product would be off by thousands of
-   * orders of magnitude and isn't worth displaying as a number).
-   *
-   * This is a naive upper bound: it counts every assignment, including the ones
-   * no constraint would ever allow (an animateur on several postes of the same
-   * créneau, or on a day they are not available). Narrowing it does not help —
-   * one-poste-per-créneau exclusivity only removes ~44 orders of magnitude, and
-   * even assuming 10 eligible animateurs per poste still leaves 10^2823. Hence
-   * the wording in the template: "espace de recherche", not "combinaisons".
-   */
-  protected readonly ordreDeGrandeur = computed(() => {
-    const animateurs = this.animateurTotal();
-    const postes = this.posteTotal();
-    return animateurs > 1 && postes > 0 ? Math.round(postes * Math.log10(animateurs)) : 0;
-  });
-
   private readonly planningApi = inject(PlanningApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
-  private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
-  private readonly snapshots = inject(PlanSnapshotStore);
   private readonly dialog = inject(MatDialog);
   private readonly crud = inject(ReferenceCrudService);
 
@@ -397,25 +245,14 @@ export class SolverPage {
     void this.loadLastRun();
     void this.chargerPointDeDepart();
     void this.problemes.reload();
-    void this.loadSolverDuration();
     void this.crud.reload();
-    void this.chargerApercuPublication();
-    // The score curve (issue #304) is pushed from here on; this one read is
-    // what puts a solve already under way on screen at once, rather than at the
-    // stream's next tick — and what shows it at all in a browser without
-    // `EventSource`. It is the only read of the curve carrying an edition, so
-    // it is also the server's chance to refuse one belonging to another.
-    void this.jobs.chargerCourbeScore();
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
-    // analyzed.
-    // Unregistered on destroy: this page is lazy-loaded and rebuilt on every
-    // navigation, so keeping the handler would stack one more copy per visit.
-    // Both kinds of solve land here: a full one carries a bare diagnostic, an
-    // incremental one wraps it (issue #86). Registered separately because they
-    // are two job types server-side, and unregistered together on destroy —
-    // this page is lazy-loaded and rebuilt on every navigation, so a handler
-    // left behind would stack one more copy per visit.
+    // analyzed. Both kinds of solve land here: a full one carries a bare
+    // diagnostic, an incremental one wraps it (issue #86). Registered
+    // separately because they are two job types server-side, and unregistered
+    // together on destroy — this page is lazy-loaded and rebuilt on every
+    // navigation, so a handler left behind would stack one more copy per visit.
     const surResultatSolve = (result: JobResults['SOLVE'] | null): void => {
       const diagnostic = extraireDiagnostic(result);
       if (diagnostic) {
@@ -427,9 +264,9 @@ export class SolverPage {
       this.impactPublication.set(extraireImpactPublication(result));
       void this.loadLastRun();
       void this.chargerPointDeDepart();
-      // Le solve vient de réécrire le plan : le décompte des personnes à
-      // prévenir n'est plus celui d'avant.
-      void this.chargerApercuPublication();
+      // The solve just rewrote the plan: the count of people to inform is no
+      // longer the one from before.
+      void this.publication().reloadPreview();
       // The solve rewrote both problem sources server-side (fresh feasibility
       // input and a new constraint analysis): re-read them for the summary.
       void this.problemes.reload();
@@ -452,64 +289,14 @@ export class SolverPage {
     });
   }
 
-  private async loadSolverDuration(): Promise<void> {
-    this.solverDurationLoading.set(true);
-    this.solverDurationError.set('');
-    try {
-      await this.solverSettings.refresh();
-      const seconds = this.solverSettings.secondsLimit();
-      this.applySolverDurationSeconds(seconds, bestUnitFor(seconds));
-    } catch (error) {
-      this.solverDurationError.set(errorPrefix(error));
-    } finally {
-      this.solverDurationLoading.set(false);
-    }
-  }
-
-  protected onSolverDurationValueDraftChange(value: number): void {
-    this.solverDurationValueDraft.set(value);
-  }
-
-  /** Switching unit re-expresses the current draft value, it never resets it (e.g. 3 min → 180 s, not back to 0). */
-  protected onSolverDurationUnitChange(unit: SolverDurationUnit): void {
-    const seconds = this.solverDurationSecondsDraft();
-    this.solverDurationUnit.set(unit);
-    this.solverDurationValueDraft.set(secondsToValue(seconds, unit));
-  }
-
-  protected async saveSolverDuration(): Promise<void> {
-    this.solverDurationSaving.set(true);
-    this.solverDurationError.set('');
-    try {
-      await this.solverSettings.setSecondsLimit(this.solverDurationSecondsDraft());
-      this.applySolverDurationSeconds(this.solverSettings.secondsLimit(), this.solverDurationUnit());
-      this.notifications.notify({
-        title: $localize`:@@dataSetup.solverDuration.saved:Durée de résolution enregistrée`,
-        message: $localize`:@@dataSetup.solverDuration.savedHint:Appliquée à tous les navigateurs.`,
-        variant: 'success'
-      });
-    } catch (error) {
-      this.solverDurationError.set(errorPrefix(error));
-    } finally {
-      this.solverDurationSaving.set(false);
-    }
-  }
-
-  /** Syncs draft + saved state from a seconds value freshly read from (or written to) the server, in the given unit. */
-  private applySolverDurationSeconds(seconds: number, unit: SolverDurationUnit): void {
-    this.solverDurationUnit.set(unit);
-    this.solverDurationValueDraft.set(secondsToValue(seconds, unit));
-    this.solverDurationSecondsSaved.set(Math.round(seconds));
-  }
+  /** Shared with the Contraintes screen: see `ProblemesStore.alerteReglesLegales`. */
+  protected readonly alerteReglesLegales = computed(() => this.problemes.alerteReglesLegales());
 
   /**
    * Why the solver actions are greyed out, in words. A disabled button with no
    * explanation is the classic dead end: the user clicks, nothing happens, and
    * nothing says a run started from another browser is holding the lock.
    */
-  /** Shared with the Contraintes screen: see `ProblemesStore.alerteReglesLegales`. */
-  protected readonly alerteReglesLegales = computed(() => this.problemes.alerteReglesLegales());
-
   protected readonly raisonVerrou = computed(() => {
     if (this.exportBusy()) {
       return $localize`:@@solver.locked.export:Un export est en cours de génération.`;
@@ -521,61 +308,6 @@ export class SolverPage {
       ? this.jobs.activeJobDescription()
       : $localize`:@@solver.locked.unknown:L'état du solveur n'est pas encore connu : les actions se débloquent dès la première réponse du serveur.`;
   });
-
-  /**
-   * The score curve to draw (issue #304): the running solve's, or the last
-   * one's until the next replaces it.
-   *
-   * <p>Null in the one case that would mislead — a solve has taken the solver
-   * but has not announced a first complete solution yet. The curve still on
-   * hand is the <em>previous</em> run's, and leaving it up while a new job is
-   * described as running would read as that job's progress.</p>
-   */
-  protected readonly courbeScore = computed(() => {
-    const trace = this.jobs.scoreTraceEdition();
-    const actif = this.jobs.activeJob();
-    return trace && actif && trace.jobId !== actif.id ? null : trace;
-  });
-
-  /**
-   * Whether the curve is folded to a single line of figures, remembered across
-   * visits (see `core/panel-collapse`). Three charts are a lot of screen for
-   * someone who launched a fifteen-minute solve and walked away.
-   *
-   * <p>Folding is a rendering choice and nothing else: the stream stays open
-   * and `SolverJobService` keeps recording, so unfolding shows the run from its
-   * first point rather than a hole starting where the panel was closed — which
-   * would defeat the one reading the curve exists to give.</p>
-   */
-  protected readonly courbeRepliee = signal(
-    readPanelCollapsed(defaultPanelStorage(), SCORE_CURVE_STORAGE_KEY)
-  );
-
-  protected readonly courbePoints = computed(() => this.courbeScore()?.points ?? []);
-  protected readonly courbeTerminee = computed(() => this.courbeScore()?.termine ?? false);
-  /** Elapsed time of the run the curve describes: its right edge, see `score-curve.ts`. */
-  protected readonly courbeDureeMs = computed(() => this.courbeScore()?.dureeMs ?? 0);
-
-  /**
-   * Whether the curve's card is on screen at all. A run on this edition brings
-   * it up even before its first point, so the card appears when the solve
-   * starts rather than a few seconds later.
-   */
-  protected readonly courbeVisible = computed(
-    () => this.courbeScore() !== null || (this.jobs.activeJob() !== null && this.editingLocked())
-  );
-
-  protected basculerCourbe(): void {
-    const replie = !this.courbeRepliee();
-    this.courbeRepliee.set(replie);
-    writePanelCollapsed(defaultPanelStorage(), SCORE_CURVE_STORAGE_KEY, replie);
-  }
-
-  protected readonly libelleBasculeCourbe = computed(() =>
-    this.courbeRepliee()
-      ? $localize`:@@solver.scoreCurve.deplier:Afficher la courbe`
-      : $localize`:@@solver.scoreCurve.replier:Réduire la courbe`
-  );
 
   /**
    * Progress of the running job, as a share of the budget it was given —
@@ -645,76 +377,11 @@ export class SolverPage {
     this.incrementalChangements.set([]);
   }
 
-  /**
-   * Puts back the plan the last solve replaced (issue #274). Offered only when
-   * the solve made things worse — the same restore the snapshots screen does,
-   * brought to where the user learns they lost something rather than leaving
-   * them to find it.
-   */
-  protected async revenirAuPlanPrecedent(): Promise<void> {
-    const precedent = this.planPrecedent();
-    if (!precedent || this.restaurationEnCours()) {
-      return;
-    }
-    const confirme = await this.confirm.ask({
-      title: $localize`:@@solver.previousPlan.restore.title:Revenir au plan d'avant ?`,
-      message: $localize`:@@solver.previousPlan.restore.message:Le résultat de cette résolution est remplacé par le plan qui était enregistré avant elle.`,
-      confirmLabel: $localize`:@@solver.previousPlan.restore.confirm:Revenir`,
-      danger: true
-    });
-    if (!confirme) {
-      return;
-    }
-    this.restaurationEnCours.set(true);
-    try {
-      const resultat = await this.snapshots.restaurer(precedent.snapshotId);
-      await this.resolution.reload();
-      this.planningState.set(null);
-      // The comparison described a plan that is no longer the persisted one.
-      this.planPrecedent.set(null);
-      this.output.set(
-        $localize`:@@solver.previousPlan.restored:${resultat.affectations}:count: affectation(s) restaurée(s) : le plan d'avant la résolution est de nouveau enregistré.`
-      );
-      void this.chargerApercuPublication();
-      void this.problemes.reload();
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.restaurationEnCours.set(false);
-    }
-  }
-
-  /** What a planned job will do, and to which edition — the two things worth reading in the queue. */
-  protected typeFileLabel(job: JobView): string {
-    if (job.type === 'SOLVE_INCREMENTAL') {
-      return $localize`:@@job.type.solveIncremental:Replanification incrémentale`;
-    }
-    return job.reamorcage === 'AUCUN'
-      ? $localize`:@@job.type.solveAFroid:Calcul du planning (de zéro)`
-      : $localize`:@@job.type.solve:Calcul du planning`;
-  }
-
-  protected editionFileLabel(job: JobView): string {
-    return job.editionNom ?? job.editionId ?? '?';
-  }
-
-  /** An empty crew is a hole in the plan, and must read as one. */
-  protected equipeLabel(equipe: string[]): string {
-    return equipe.length === 0 ? $localize`:@@solver.incremental.personne:(personne)` : equipe.join(', ');
-  }
-
-  protected quandLabel(changement: ChangementAffectation): string {
-    const jour = changement.date
-      ? new Date(`${changement.date}T00:00:00`).toLocaleDateString(intlLocale(), {
-          weekday: 'short',
-          day: 'numeric',
-          month: 'short'
-        })
-      : '';
-    const heures = changement.heureDebut && changement.heureFin
-      ? `${changement.heureDebut.slice(0, 5)} – ${changement.heureFin.slice(0, 5)}`
-      : '';
-    return [jour, heures].filter((part) => part.length > 0).join(' ');
+  /** The recap put the previous plan back: the comparison described a plan that is no longer the persisted one. */
+  protected onPlanPrecedentRestaure(message: string): void {
+    this.planPrecedent.set(null);
+    this.output.set(message);
+    void this.publication().reloadPreview();
   }
 
   /**
@@ -724,7 +391,7 @@ export class SolverPage {
    */
   protected async onRecommencerDeZero(): Promise<void> {
     const affectations = this.affectationsEnregistrees() ?? 0;
-    const publieLe = this.publicationApercu()?.dernierePublicationLe;
+    const publieLe = this.publication().preview()?.dernierePublicationLe;
     const message = $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous de lui. Pour l'améliorer plutôt que le remplacer, utilisez « Calculer le planning ».`;
     const avertissement = publieLe
       ? ' ' +
@@ -768,37 +435,6 @@ export class SolverPage {
   }
 
   /**
-   * Removes a solve from the queue before it starts. Nothing ran, so there is
-   * nothing to stop — unlike stopping the running job, which keeps its partial
-   * result.
-   */
-  protected async onRetirerDeLaFile(job: JobView): Promise<void> {
-    try {
-      await this.jobs.retirerDeLaFile(job.id);
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    }
-  }
-
-  /**
-   * The organiser's own copy: one PDF holding every assignment, laid out by
-   * day and by stand. A GET, unlike the per-animateur bundle below — the
-   * server reads the persisted planning itself rather than having the browser
-   * upload several megabytes of JSON just to get a document back.
-   */
-  protected async onExportGlobalPdf(): Promise<void> {
-    this.exportBusy.set(true);
-    this.output.set($localize`:@@solver.exportGlobalBuilding:Construction du PDF global...`);
-    try {
-      this.output.set(await this.planningApi.exportGlobalPdf());
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.exportBusy.set(false);
-    }
-  }
-
-  /**
    * Stops the running solver job, whoever started it — the partial result is
    * still analysed and persisted. Replaces the former toolbar-wide monitor:
    * this page already shows the progress, the button now lives next to it.
@@ -824,85 +460,6 @@ export class SolverPage {
       this.output.set(errorPrefix(error));
     } finally {
       this.arretEnCours.set(false);
-    }
-  }
-
-  /**
-   * Mails every animateur holding at least one poste their individual
-   * planning (PDF + espace link), built server-side from the persisted
-   * planning — same read-only source as the global PDF above. Confirmed
-   * first: it reaches everyone at once.
-   */
-  protected async onPublier(): Promise<void> {
-    if (this.publicationBusy() || !this.publicationPossible()) {
-      return;
-    }
-    const apercu = this.publicationApercu();
-    const count = apercu ? apercu.nombreConcernes : 0;
-    // Raised BEFORE the confirmation, not after it: the button drives it, and
-    // leaving it live while the dialog is open lets a second click open a
-    // second dialog — two confirmations, two POSTs, two waves of mail. On this
-    // action the double click is the failure mode, so the guard has to cover
-    // the whole gesture and not only the request.
-    this.publicationBusy.set(true);
-    this.publicationDestinatairesEnCours.set(count);
-    try {
-      const confirme = await this.confirm.ask({
-        title: $localize`:@@publication.confirmTitre:Publier le planning ?`,
-        message: $localize`:@@publication.confirmMessage:${count}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`,
-        confirmLabel: $localize`:@@publication.confirmAction:Publier`
-      });
-      if (!confirme) {
-        return;
-      }
-      this.output.set($localize`:@@publication.enCours:Publication du planning...`);
-      try {
-        const rapport = await this.planningApi.publish();
-        const resume = resumePublication(rapport);
-        this.output.set(resume.details ? `${resume.titre} — ${resume.details}` : resume.titre);
-        this.publicationListeOuverte.set(false);
-      } catch (error) {
-        this.output.set(errorPrefix(error));
-      } finally {
-        await this.chargerApercuPublication();
-      }
-    } finally {
-      this.publicationBusy.set(false);
-    }
-  }
-
-  /**
-   * Reads who is concerned. Called when the screen opens, when the list is
-   * expanded and after a publication — never on a timer: a count that refreshes
-   * behind the user's back is a count they stop reading.
-   */
-  protected async chargerApercuPublication(): Promise<void> {
-    try {
-      this.publicationApercu.set(await this.planningApi.publicationPreview());
-    } catch {
-      // Le bloc reste muet plutôt que d'annoncer un décompte qu'on n'a pas lu.
-      this.publicationApercu.set(null);
-    }
-  }
-
-  protected async onBasculerListePublication(): Promise<void> {
-    const open = !this.publicationListeOuverte();
-    this.publicationListeOuverte.set(open);
-    if (open) {
-      await this.chargerApercuPublication();
-    }
-  }
-
-  protected async onExportPlanning(): Promise<void> {
-    this.exportBusy.set(true);
-    this.output.set($localize`:@@solver.exportBuilding:Construction de l'archive d'export...`);
-    try {
-      const planning = await this.planningState.require();
-      this.output.set(await this.planningApi.exportBundle(planning));
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.exportBusy.set(false);
     }
   }
 
@@ -947,4 +504,3 @@ export class SolverPage {
     // only updates the on-page state.
   }
 }
-

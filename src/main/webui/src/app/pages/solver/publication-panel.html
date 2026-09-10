@@ -1,0 +1,102 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@solver.diffusion.title">Diffusion du planning</h2>
+    <mat-card-subtitle i18n="@@solver.diffusion.hint">
+      Ce qui sort de l'application une fois le planning satisfaisant : les documents à imprimer ou à archiver, et
+      la publication du planning. Publier, c'est envoyer leur planning à jour aux seules personnes dont l'emploi du
+      temps a changé depuis la dernière fois, en leur disant ce qui change — et c'est ce plan publié que chaque
+      animateur voit dans son espace. Ces actions lisent le planning enregistré de l'édition affichée ; elles ne sont
+      indisponibles que pendant une résolution sur cette édition-là, puisqu'elle est en train de le réécrire. Une
+      résolution lancée sur une autre édition ne les bloque pas.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()" (click)="exportBundle()">
+      <mat-icon>archive</mat-icon>
+      <ng-container i18n="@@solver.export">Exporter le planning (PDF + ICS)</ng-container>
+    </button>
+    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()"
+            i18n-matTooltip="@@solver.exportGlobal.tooltip"
+            matTooltip="Le planning complet dans un seul PDF, pour l'organisateur : toutes les affectations, présentées journée par journée puis stand par stand."
+            (click)="exportGlobalPdf()">
+      <mat-icon>picture_as_pdf</mat-icon>
+      <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
+    </button>
+    <button matButton="tonal"
+            [disabled]="busy() || editingLocked() || !publishable()"
+            i18n-matTooltip="@@publication.bouton.tooltip"
+            matTooltip="Envoyer leur planning à jour aux seules personnes dont l'emploi du temps a changé depuis la dernière publication, en leur disant ce qui change."
+            (click)="publish()">
+      <mat-icon>forward_to_inbox</mat-icon>
+      <span>{{ publishLabel() }}</span>
+    </button>
+  </mat-card-actions>
+
+  @if (busy()) {
+    <mat-card-content>
+      <!-- Tens of seconds with no sign at all, on the one action that writes to
+           real people: the natural reflex is to click again. The bar is
+           indeterminate on purpose — the server answers once, at the end, and a
+           fabricated percentage would be a lie. -->
+      <p class="publication-envoi" aria-live="polite">
+        <ng-container i18n="@@publication.envoiEnCours">
+          Envoi en cours vers {{ recipientsInFlight() }} personne(s). Cela peut prendre plusieurs
+          dizaines de secondes ; laissez cet écran ouvert, un seul envoi part à la fois.
+        </ng-container>
+      </p>
+      <mat-progress-bar mode="indeterminate"
+                        i18n-aria-label="@@publication.envoi.label" aria-label="Publication en cours" />
+    </mat-card-content>
+  }
+
+  <mat-card-content class="publication-etat">
+    <p class="publication-derniere">
+      <mat-icon inline>schedule_send</mat-icon>
+      <span>{{ lastPublication() }}</span>
+    </p>
+    @if (preview()?.jamaisPublie) {
+      <p class="publication-note" i18n="@@publication.premiere">
+        Rien n'a encore été communiqué sur cette édition : tant que vous n'avez pas publié, l'espace de chaque
+        animateur reste vide. La première publication concerne donc tout le monde.
+      </p>
+    }
+    @if (unavailableReason(); as raison) {
+      <p class="publication-note">{{ raison }}</p>
+    }
+    @if ((preview()?.nombreConcernes ?? 0) > 0) {
+      <button matButton (click)="toggleList()">
+        <mat-icon>{{ listOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
+        @if (listOpen()) {
+          <ng-container i18n="@@publication.liste.masquer">Masquer qui est concerné</ng-container>
+        } @else {
+          <ng-container i18n="@@publication.liste.voir">Voir qui est concerné et ce qui change</ng-container>
+        }
+      </button>
+      @if (listOpen()) {
+        <ul class="publication-destinataires">
+          @for (destinataire of preview()?.destinataires ?? []; track destinataire.animateurId) {
+            <li>
+              <p class="publication-destinataire-nom">
+                {{ destinataire.nomAffiche }}
+                @if (!destinataire.email) {
+                  <span class="publication-sans-email" i18n="@@publication.sansEmail">— sans adresse e-mail</span>
+                }
+                @if (destinataire.premiereDiffusion) {
+                  <span class="publication-premiere" i18n="@@publication.premiereDiffusion">— première diffusion</span>
+                }
+              </p>
+              <ul class="publication-changements">
+                @for (ligne of destinataire.changements; track ligne) {
+                  <li>{{ ligne }}</li>
+                }
+                @for (ligne of destinataire.demandes; track ligne) {
+                  <li class="publication-demande">{{ ligne }}</li>
+                }
+              </ul>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </mat-card-content>
+</mat-card>

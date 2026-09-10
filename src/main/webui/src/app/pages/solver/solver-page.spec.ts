@@ -1,12 +1,11 @@
-// The two pieces of `SolverPage` the report names as the missing half of its
-// safety net: `applySolveResult` — reached through the real result handler the
-// page registers on `SolverJobService`, not called directly — and
-// `raisonVerrou`, the sentence that says why the buttons are dead.
-//
-// `solver-duration.spec.ts` already covers the duration arithmetic. What was
-// missing here is everything that needs the component built, which is why this
-// spec carries the eleven mocks the page injects. The component is created but
-// never rendered, so this stays a logic test.
+// What the page still owns once its cards became components: the result
+// handler it registers on `SolverJobService` (`applySolveResult`, reached
+// through the real handler and not called directly), the three ways of
+// launching a solve, and `raisonVerrou`, the sentence that says why the
+// buttons are dead. The cards test themselves next door — `score-curve-card`,
+// `publication-panel`, `solve-recap`, `solver-queue`, `solver-duration-card`,
+// `solver-volumetry`, `incremental-result` — and render here for real, on the
+// same mocks.
 
 import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -27,9 +26,10 @@ import {
   FeasibilityReport,
   JobView,
   PlanningDiagnostic,
+  ImpactPublication,
   PreviousPlan,
+  ReamorcageEffectue,
   ResultatSolveIncremental,
-  ScorePoint,
   ScoreTrace,
   StatistiquesIncremental
 } from '../../core/models';
@@ -119,18 +119,9 @@ type PageInternals = {
   raisonVerrou: Signal<string>;
   lastRunAt: Signal<string | null>;
   planPrecedent: Signal<PreviousPlan | null>;
-  comparaisonPlan: Signal<{ avant: string; apres: string } | null>;
-  courbeScore: Signal<ScoreTrace | null>;
-  courbePoints: Signal<ScorePoint[]>;
-  courbeVisible: Signal<boolean>;
-  courbeRepliee: WritableSignal<boolean>;
-  basculerCourbe: () => void;
-  publicationBusy: Signal<boolean>;
-  publicationPossible: Signal<boolean>;
-  publicationDestinatairesEnCours: Signal<number>;
-  onPublier: () => Promise<void>;
-  libelleReamorcage: Signal<string>;
-  libelleImpactPublication: Signal<string>;
+  score: Signal<string | null>;
+  reamorcageEffectue: Signal<ReamorcageEffectue | null>;
+  impactPublication: Signal<ImpactPublication | null>;
   pointDeDepart: Signal<string>;
   planEnregistre: Signal<boolean>;
   onRecommencerDeZero: () => Promise<void>;
@@ -194,9 +185,6 @@ describe('SolverPage', () => {
     solverBusy.set(false);
     editingLocked.set(false);
     scoreTraceEdition.set(null);
-    // The folded state of the score curve is a real localStorage preference:
-    // clear it, or one test's fold decides the next one's opening state.
-    localStorage.removeItem('planning-equipes.solver.scoreCurveCollapsed');
     for (const stub of [
       jobs.listJobs,
       jobs.submitSolveFromReferenceData,
@@ -424,10 +412,8 @@ describe('SolverPage', () => {
 
       pushResult('SOLVE', resultat({ snapshotId: 12, score: '0hard/-6232medium/-920soft', degraded: true }));
 
-      expect(page.comparaisonPlan()).toEqual({
-        avant: '0hard/-6232medium/-920soft',
-        apres: '0hard/-7434medium/-564soft'
-      });
+      expect(page.planPrecedent()?.score).toBe('0hard/-6232medium/-920soft');
+      expect(page.score()).toBe('0hard/-7434medium/-564soft');
       expect(page.planPrecedent()?.degraded).toBe(true);
     });
 
@@ -441,23 +427,21 @@ describe('SolverPage', () => {
       expect(page.planPrecedent()?.degraded).toBe(false);
     });
 
-    // Half a comparison is worse than none: it would read as a score of zero.
-    it('draws no comparison when the previous score is unknown', () => {
+    it('keeps the snapshot to go back to even when its score is unknown', () => {
       const page = createPage();
 
       pushResult('SOLVE', resultat({ snapshotId: 12, score: null, degraded: false }));
 
-      expect(page.comparaisonPlan()).toBeNull();
       expect(page.planPrecedent()?.snapshotId).toBe(12);
+      expect(page.planPrecedent()?.score).toBeNull();
     });
 
-    it('draws no comparison on the first solve of an edition', () => {
+    it('keeps no previous plan on the first solve of an edition', () => {
       const page = createPage();
 
       pushResult('SOLVE', resultat(null));
 
       expect(page.planPrecedent()).toBeNull();
-      expect(page.comparaisonPlan()).toBeNull();
     });
 
     // A job that finished before this shipped answers a bare diagnostic: it
@@ -510,57 +494,35 @@ describe('SolverPage', () => {
       expect(page.planEnregistre()).toBe(false);
     });
 
-    it('recaps a re-seeded solve, with the seats it had to leave free', () => {
+    // The recap puts these in words (`solve-recap.spec.ts`); the page's part
+    // is to pick them out of the result, and to hold nothing on a payload from
+    // before the feature.
+    it('keeps where the solve started from, and whom it would disturb', () => {
       const page = createPage();
 
       pushResult('SOLVE', {
         diagnostic: diagnostic({ hardScore: 0 }),
         previousPlan: null,
-        reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0 }
-      });
-      expect(page.libelleReamorcage()).toBe('Point de départ : le plan enregistré, 12 postes repris.');
-
-      pushResult('SOLVE', {
-        diagnostic: diagnostic({ hardScore: 0 }),
-        previousPlan: null,
-        reamorcage: { mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2 }
-      });
-      expect(page.libelleReamorcage()).toContain('10 postes repris et 2 laissés libres');
-    });
-
-    it('says how many people the publication would inform, and nothing before any publication', () => {
-      const page = createPage();
-
-      pushResult('SOLVE', {
-        diagnostic: diagnostic({ hardScore: 0 }),
-        previousPlan: null,
+        reamorcage: { mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2 },
         impactPublication: { personnes: 12, publieLe: '2026-09-01T10:00:00Z' }
       });
-      expect(page.libelleImpactPublication()).toContain('12 personne(s) changeraient');
-
-      pushResult('SOLVE', {
-        diagnostic: diagnostic({ hardScore: 0 }),
-        previousPlan: null,
-        impactPublication: { personnes: 0, publieLe: '2026-09-01T10:00:00Z' }
-      });
-      expect(page.libelleImpactPublication()).toContain('Personne ne change');
-
-      pushResult('SOLVE', { diagnostic: diagnostic({ hardScore: 0 }), previousPlan: null, impactPublication: null });
-      expect(page.libelleImpactPublication()).toBe('');
-    });
-
-    it('recaps a cold start, and stays silent on a payload from before the feature', () => {
-      const page = createPage();
-
-      pushResult('SOLVE', {
-        diagnostic: diagnostic({ hardScore: 0 }),
-        previousPlan: null,
-        reamorcage: { mode: 'AUCUN', postes: 0, postesLiberes: 0 }
-      });
-      expect(page.libelleReamorcage()).toBe('Point de départ : aucun, calcul de zéro.');
+      expect(page.reamorcageEffectue()).toEqual({ mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2 });
+      expect(page.impactPublication()).toEqual({ personnes: 12, publieLe: '2026-09-01T10:00:00Z' });
 
       pushResult('SOLVE', diagnostic({ hardScore: 0 }));
-      expect(page.libelleReamorcage()).toBe('');
+      expect(page.reamorcageEffectue()).toBeNull();
+      expect(page.impactPublication()).toBeNull();
+    });
+
+    // The solve just rewrote the plan: the count of people to inform is the
+    // diffusion panel's, and it is the page that knows a solve landed.
+    it('asks the diffusion panel to re-read who is concerned once a solve lands', async () => {
+      createPage();
+      await vi.waitFor(() => expect(planningApi.publicationPreview).toHaveBeenCalledOnce());
+
+      pushResult('SOLVE', diagnostic());
+
+      expect(planningApi.publicationPreview).toHaveBeenCalledTimes(2);
     });
 
     it('sends the default start with the everyday button, and nothing else', async () => {
@@ -594,256 +556,6 @@ describe('SolverPage', () => {
       await page.onRecommencerDeZero();
 
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUCUN');
-    });
-  });
-
-  /**
-   * The live score curve (issue #304). The page decides two things about it,
-   * and both are about not lying: whether the card is on screen at all, and
-   * whether the curve on hand really describes the run being reported.
-   */
-  describe('the live score curve', () => {
-    const trace = (overrides: Partial<ScoreTrace> = {}): ScoreTrace => ({
-      jobId: 'job-1',
-      editionId: 'festival-2026',
-      generation: 1,
-      intervalleMs: 1000,
-      dureeMs: 30000,
-      termine: false,
-      points: [{ tempsMs: 0, hard: -40, medium: -10, soft: -1000 }],
-      ...overrides
-    });
-
-    it('shows nothing at all when no solve has ever run', () => {
-      const page = createPage();
-
-      expect(page.courbeVisible()).toBe(false);
-      expect(page.courbeScore()).toBeNull();
-    });
-
-    it('keeps the curve of the last run up once it is over', () => {
-      // Out of scope is replaying PAST solves; the one that just finished is
-      // still the answer to "was it worth waiting?", so it stays on screen
-      // until the next run replaces it.
-      scoreTraceEdition.set(trace({ termine: true }));
-      const page = createPage();
-
-      expect(page.courbeVisible()).toBe(true);
-      expect(page.courbePoints()).toHaveLength(1);
-    });
-
-    it('brings the card up as soon as a solve starts on this edition', () => {
-      // Before its first point: the card has to appear when the solve does,
-      // not a few seconds later when the solver announces a first solution.
-      activeJob.set(tracked({ id: 'job-2' }));
-      editingLocked.set(true);
-      const page = createPage();
-
-      expect(page.courbeVisible()).toBe(true);
-      expect(page.courbePoints()).toEqual([]);
-    });
-
-    it('drops the previous run\u2019s curve the moment another job takes the solver', () => {
-      // The lie this guards against: a new job is reported as running while the
-      // curve still on hand is the previous one's, so its points read as this
-      // run's progress.
-      scoreTraceEdition.set(trace({ jobId: 'job-1', termine: true }));
-      activeJob.set(tracked({ id: 'job-2' }));
-      editingLocked.set(true);
-      const page = createPage();
-
-      expect(page.courbeScore()).toBeNull();
-      expect(page.courbeVisible()).toBe(true);
-    });
-
-    it('leaves the card out for a solve running on another edition', () => {
-      // `scoreTraceEdition` is already null there (the service narrows it), and
-      // `editingLocked` is false because that run does not freeze this edition.
-      activeJob.set(tracked({ id: 'job-2', editionId: 'festival-2025' }));
-      editingLocked.set(false);
-      const page = createPage();
-
-      expect(page.courbeVisible()).toBe(false);
-    });
-
-    it('reads the curve once when the page opens', () => {
-      createPage();
-
-      // The one read carrying an edition header, hence the only one the server
-      // can refuse — see SolverJobService.chargerCourbeScore.
-      expect(jobs.chargerCourbeScore).toHaveBeenCalledTimes(1);
-    });
-
-    /**
-     * Folding it away (retour utilisateur, #333) — three charts are a lot of
-     * screen for someone who launched a fifteen-minute solve and left the room.
-     */
-    describe('folding it away', () => {
-      it('starts unfolded, and remembers the fold across visits', () => {
-        const page = createPage();
-        expect(page.courbeRepliee()).toBe(false);
-
-        page.basculerCourbe();
-
-        expect(page.courbeRepliee()).toBe(true);
-        // Written where the drawer writes its own folded groups: a fold the
-        // next visit forgets is a gesture to make again on every load.
-        expect(localStorage.getItem('planning-equipes.solver.scoreCurveCollapsed')).toBe('true');
-        // And a page rebuilt (a navigation, a reload) comes back folded.
-        expect(createPage().courbeRepliee()).toBe(true);
-      });
-
-      it('unfolds again, and stops remembering', () => {
-        localStorage.setItem('planning-equipes.solver.scoreCurveCollapsed', 'true');
-        const page = createPage();
-
-        page.basculerCourbe();
-
-        expect(page.courbeRepliee()).toBe(false);
-        expect(localStorage.getItem('planning-equipes.solver.scoreCurveCollapsed')).toBe('false');
-      });
-
-      it('keeps the whole curve while folded, rather than a hole', () => {
-        // The property that matters, and the one that would quietly break:
-        // folding is a rendering choice, so nothing may stop the recording.
-        // Reopened, the panel must show the run from its first point — that
-        // history is the entire reason the curve exists.
-        scoreTraceEdition.set(trace());
-        const page = createPage();
-        page.basculerCourbe();
-
-        expect(page.courbePoints()).toHaveLength(1);
-        expect(page.courbeVisible()).toBe(true);
-        // Points that landed while folded are held just the same.
-        scoreTraceEdition.set(
-          trace({ points: [{ tempsMs: 0, hard: -40, medium: -10, soft: -1000 }, { tempsMs: 1000, hard: 0, medium: -6, soft: -800 }] })
-        );
-        expect(page.courbePoints()).toHaveLength(2);
-
-        page.basculerCourbe();
-        expect(page.courbeRepliee()).toBe(false);
-        expect(page.courbePoints()).toHaveLength(2);
-      });
-    });
-  });
-
-  /**
-   * Publishing (retour utilisateur, #333). Tens of seconds used to pass with no
-   * sign at all, on the one action that writes to real people — and the natural
-   * reflex in front of a screen that says nothing is to click again.
-   */
-  describe('publishing the planning', () => {
-    const apercuPret = {
-      jamaisPublie: false,
-      planVide: false,
-      solveEnCours: false,
-      dernierePublicationLe: null,
-      nombreConcernes: 3,
-      destinataires: []
-    };
-
-    /** A publication that hangs until the test lets it finish. */
-    function envoiSuspendu(): { terminer: () => void } {
-      let finish = (): void => undefined;
-      planningApi.publish.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            finish = () => resolve({ envoyes: 3, sansEmail: [], echecs: [] });
-          })
-      );
-      return {
-        terminer: () => finish()
-      };
-    }
-
-    async function pagePrete(): Promise<PageInternals> {
-      planningApi.publicationPreview.mockResolvedValue(apercuPret);
-      const page = createPage();
-      await vi.waitFor(() => expect(page.publicationPossible()).toBe(true));
-      return page;
-    }
-
-    it('says a send is under way, and how many people it concerns', async () => {
-      confirm.ask.mockResolvedValue(true);
-      const envoi = envoiSuspendu();
-      const page = await pagePrete();
-
-      const publication = page.onPublier();
-      await vi.waitFor(() => expect(planningApi.publish).toHaveBeenCalledTimes(1));
-
-      expect(page.publicationBusy()).toBe(true);
-      // The count is frozen at the start: the preview reloads at the end and
-      // would otherwise fall to zero in the middle of the sentence.
-      expect(page.publicationDestinatairesEnCours()).toBe(3);
-
-      envoi.terminer();
-      await publication;
-      expect(page.publicationBusy()).toBe(false);
-    });
-
-    it('is inert while the send is in flight, rather than firing a second wave', async () => {
-      confirm.ask.mockResolvedValue(true);
-      const envoi = envoiSuspendu();
-      const page = await pagePrete();
-      const publication = page.onPublier();
-      await vi.waitFor(() => expect(planningApi.publish).toHaveBeenCalledTimes(1));
-
-      await page.onPublier();
-
-      // Real mail to real people: a second click must not send it twice.
-      expect(planningApi.publish).toHaveBeenCalledTimes(1);
-      envoi.terminer();
-      await publication;
-    });
-
-    it('is already inert while the confirmation is on screen', async () => {
-      // The window the guard used to leave open: the flag was raised only after
-      // the confirmation, so a second click opened a second dialog — and two
-      // confirmations meant two waves of mail.
-      let confirmer = (): void => undefined;
-      confirm.ask.mockImplementation(
-        () =>
-          new Promise<boolean>((resolve) => {
-            confirmer = () => resolve(true);
-          })
-      );
-      const envoi = envoiSuspendu();
-      const page = await pagePrete();
-
-      const publication = page.onPublier();
-      await vi.waitFor(() => expect(confirm.ask).toHaveBeenCalledTimes(1));
-      expect(page.publicationBusy()).toBe(true);
-
-      await page.onPublier();
-      expect(confirm.ask).toHaveBeenCalledTimes(1);
-
-      confirmer();
-      await vi.waitFor(() => expect(planningApi.publish).toHaveBeenCalledTimes(1));
-      envoi.terminer();
-      await publication;
-    });
-
-    it('releases the button when the confirmation is declined', async () => {
-      confirm.ask.mockResolvedValue(false);
-      const page = await pagePrete();
-
-      await page.onPublier();
-
-      expect(planningApi.publish).not.toHaveBeenCalled();
-      expect(page.publicationBusy()).toBe(false);
-    });
-
-    it('releases the button when the send fails', async () => {
-      confirm.ask.mockResolvedValue(true);
-      planningApi.publish.mockRejectedValue(new Error('SMTP injoignable'));
-      const page = await pagePrete();
-
-      await page.onPublier();
-
-      // Otherwise a failed send would leave the action locked until reload,
-      // with no way to try again.
-      expect(page.publicationBusy()).toBe(false);
-      expect(page.output()).toContain('SMTP injoignable');
     });
   });
 

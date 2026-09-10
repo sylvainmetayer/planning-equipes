@@ -1,0 +1,30 @@
+@if (queue().length > 0) {
+  <mat-card-content>
+    <h3 class="solver-file-titre" i18n="@@solver.file.titre">
+      File d'attente ({{ queue().length }})
+    </h3>
+    <p class="calendar-meta" i18n="@@solver.file.hint">
+      Ces tâches démarrent d'elles-mêmes, dans cet ordre, dès que le solveur se libère. Chacune lit son édition
+      telle qu'elle sera à ce moment-là : vous pouvez continuer à la préparer.
+    </p>
+    <ol class="solver-file">
+      @for (job of queue(); track job.id) {
+        <li class="solver-file-ligne">
+          <span class="solver-file-tache">{{ typeLabel(job) }}</span>
+          <span class="solver-file-edition">{{ editionLabel(job) }}</span>
+          <button
+            matIconButton
+            class="danger-action"
+            i18n-matTooltip="@@solver.file.retirer"
+            matTooltip="Retirer de la file"
+            i18n-aria-label="@@solver.file.retirer"
+            aria-label="Retirer de la file"
+            (click)="remove(job)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </li>
+      }
+    </ol>
+  </mat-card-content>
+}

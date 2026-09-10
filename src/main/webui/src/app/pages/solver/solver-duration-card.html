@@ -1,0 +1,50 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@dataSetup.solverDuration.title">Résolution du solveur</h2>
+    <mat-card-subtitle i18n="@@dataSetup.solverDuration.hint">
+      Durée maximale allouée au solveur Timefold pour une résolution ou une analyse. Par défaut : 3 min.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="calendar-toolbar">
+      <mat-form-field appearance="outline" class="solver-duration">
+        <mat-label i18n="@@dataSetup.solverDuration.label">Durée de résolution du solver</mat-label>
+        <input
+          matInput
+          type="number"
+          [attr.min]="step()"
+          [step]="step()"
+          name="solverDurationValue"
+          [disabled]="loading() || saving()"
+          [ngModel]="valueDraft()"
+          (ngModelChange)="onValueDraftChange($event)"
+        />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="solver-duration-unit">
+        <mat-label i18n="@@dataSetup.solverDuration.unit.label">Unité</mat-label>
+        <mat-select
+          name="solverDurationUnit"
+          [disabled]="loading() || saving()"
+          [ngModel]="unit()"
+          (ngModelChange)="onUnitChange($event)"
+        >
+          <mat-option value="SECONDES" i18n="@@dataSetup.solverDuration.unit.secondes">Secondes</mat-option>
+          <mat-option value="MINUTES" i18n="@@dataSetup.solverDuration.unit.minutes">Minutes</mat-option>
+          <mat-option value="HEURES" i18n="@@dataSetup.solverDuration.unit.heures">Heures</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button
+        matButton="filled"
+        type="button"
+        [disabled]="!dirty() || loading() || saving()"
+        (click)="save()"
+      >
+        <mat-icon>save</mat-icon>
+        <ng-container i18n="@@common.save">Enregistrer</ng-container>
+      </button>
+    </div>
+    @if (error()) {
+      <p class="calendar-empty">{{ error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>

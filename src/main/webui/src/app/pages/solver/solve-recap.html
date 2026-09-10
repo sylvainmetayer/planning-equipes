@@ -1,0 +1,32 @@
+@if (lastRunAt()) {
+  <mat-card-content>
+    <p class="calendar-meta" i18n="@@solver.lastRun">Dernière exécution : {{ formattedLastRun() }}</p>
+    @if (reamorcageLabel()) {
+      <p class="calendar-meta solver-reamorcage">{{ reamorcageLabel() }}</p>
+    }
+    @if (impactLabel()) {
+      <p class="calendar-meta solver-impact-publication">{{ impactLabel() }}</p>
+    }
+  </mat-card-content>
+}
+@if (comparison(); as comparaison) {
+  <mat-card-content>
+    <p class="calendar-meta" i18n="@@solver.previousPlan.comparison">
+      Avant : {{ comparaison.avant }} → après : {{ comparaison.apres }}
+    </p>
+    @if (previousPlan()?.degraded) {
+      <p class="plan-degrade" i18n="@@solver.previousPlan.degraded">
+        Cette résolution a dégradé le plan enregistré.
+      </p>
+      <button
+        matButton="tonal"
+        type="button"
+        [disabled]="restoring() || editingLocked()"
+        (click)="restore()"
+        i18n="@@solver.previousPlan.restoreAction"
+      >
+        Revenir au plan d'avant
+      </button>
+    }
+  </mat-card-content>
+}
