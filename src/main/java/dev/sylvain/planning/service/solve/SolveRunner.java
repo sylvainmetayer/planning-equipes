@@ -2,7 +2,6 @@ package dev.sylvain.planning.service.solve;
 
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
@@ -35,15 +34,11 @@ final class SolveRunner {
     private final SolverConfiguration configuration;
     private final ReferenceData referenceDataService;
 
-    /**
-     * The published plan, as a supplier: the bean is {@code @Inject}-ed into
-     * {@link PlanningService} after construction, and stays {@code null} in the
-     * plain-Java harnesses that build the service with {@code new}.
-     */
-    private final Supplier<PlanSnapshotService> snapshots;
+    /** The published plan; {@code null} in the plain-Java harnesses that build {@link PlanningService} with {@code new}. */
+    private final PlanSnapshotService snapshots;
 
     SolveRunner(SolverConfiguration configuration, ReferenceData referenceDataService,
-            Supplier<PlanSnapshotService> snapshots) {
+            PlanSnapshotService snapshots) {
         this.configuration = configuration;
         this.referenceDataService = referenceDataService;
         this.snapshots = snapshots;
@@ -137,7 +132,7 @@ final class SolveRunner {
      * nobody to keep and is skipped.
      */
     List<AffectationPubliee> affectationsPubliees() {
-        PlanSnapshotService snapshotService = snapshots.get();
+        PlanSnapshotService snapshotService = snapshots;
         if (snapshotService == null) {
             return List.of();
         }

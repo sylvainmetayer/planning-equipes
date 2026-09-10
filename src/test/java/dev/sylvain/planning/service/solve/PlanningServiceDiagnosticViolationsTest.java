@@ -121,6 +121,6 @@ class PlanningServiceDiagnosticViolationsTest {
     private static PlanningService planningService() {
         return new PlanningService(3L, 2L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, new EmptyReferenceData(),
-                new FeasibilityAnalyzer(), ConfigProvider.getConfig());
+                new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
     }
 }

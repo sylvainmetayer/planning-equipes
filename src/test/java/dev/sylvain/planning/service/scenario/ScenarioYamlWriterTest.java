@@ -317,7 +317,7 @@ class ScenarioYamlWriterTest {
     @Test
     void exportingWithoutReferenceDataFails() {
         ReferenceData referenceDataService = new EmptyReferenceData();
-        PlanningService planningService = new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
+        PlanningService planningService = new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(), null, null,
                 ConfigProvider.getConfig());
 
         assertThatThrownBy(planningService::exportScenarioYaml).isInstanceOf(IllegalStateException.class);

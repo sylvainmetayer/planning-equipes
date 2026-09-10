@@ -8,7 +8,6 @@ import java.util.function.Consumer;
 
 import ai.timefold.solver.core.api.solver.Solver;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -47,17 +46,16 @@ public class PlanningService {
     private final PlanningDiagnosticService diagnosticService;
 
     /**
-     * Field-injected rather than a constructor parameter: the plain (non-CDI)
-     * tests build this service with {@code new} and never exercise the locks,
-     * so it stays null there — {@link ProblemBuilder#applyVerrouillages} guards
-     * on it, reaching it through the supplier the builder is given.
+     * Null in the plain (non-CDI) tests, which build this service with
+     * {@code new} and never exercise the locks: {@link ProblemBuilder#applyVerrouillages}
+     * guards on it. Constructor-injected like everything else, so the five
+     * collaborators built below receive the bean itself rather than a lambda
+     * reading a field CDI would only fill after this constructor ran.
      */
-    @Inject
-    PlanningPersistenceService planningPersistenceService;
+    private final PlanningPersistenceService planningPersistenceService;
 
     /** The published plan, for {@code stabiliteDuPlanPublie}; null in a plain-Java harness like the persistence above. */
-    @Inject
-    PlanSnapshotService snapshotService;
+    private final PlanSnapshotService snapshotService;
 
     public PlanningService(
             @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "120") Long secondsLimit,
@@ -66,15 +64,18 @@ public class PlanningService {
                     defaultValue = "" + ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT) Integer maxEmplacementsParJour,
             ReferenceData referenceDataService,
             FeasibilityAnalyzer feasibilityAnalyzer,
+            PlanningPersistenceService planningPersistenceService,
+            PlanSnapshotService snapshotService,
             Config config) {
         this.solverConfiguration = new SolverConfiguration(secondsLimit, unimprovedSecondsLimit,
                 maxEmplacementsParJour, referenceDataService, config);
         this.referenceDataService = referenceDataService;
-        // The two lambdas below lazily read the fields injected after this runs.
-        this.solveRunner = new SolveRunner(solverConfiguration, referenceDataService, () -> snapshotService);
-        this.problemBuilder = new ProblemBuilder(referenceDataService, () -> planningPersistenceService);
+        this.planningPersistenceService = planningPersistenceService;
+        this.snapshotService = snapshotService;
+        this.solveRunner = new SolveRunner(solverConfiguration, referenceDataService, snapshotService);
+        this.problemBuilder = new ProblemBuilder(referenceDataService, planningPersistenceService);
         this.whatIf = new PlanningWhatIf(solverConfiguration.diagnosticService(), referenceDataService,
-                () -> planningPersistenceService, solveRunner::prepareProblem);
+                planningPersistenceService, solveRunner::prepareProblem);
         this.diagnosticService = new PlanningDiagnosticService(solverConfiguration.diagnosticService(),
                 solverConfiguration.solutionManager(), feasibilityAnalyzer,
                 () -> planningPersistenceService.loadPersistedPlanning(), solveRunner::prepareProblem);

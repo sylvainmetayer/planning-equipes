@@ -114,7 +114,7 @@ class PlanningServiceScenarioFestivalRealisteTest {
         ReferenceData referenceDataService = new EmptyReferenceData();
         PlanningService planningService = new PlanningService(420L, 0L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
-                new FeasibilityAnalyzer(), ConfigProvider.getConfig());
+                new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
 
         ScenarioYamlReader.ReferenceScenario reference = planningService.loadReferenceScenario(scenario);
         ParametresDecoupage parametresDecoupage = planningService.loadScenarioSections(scenario).parametresDecoupage()

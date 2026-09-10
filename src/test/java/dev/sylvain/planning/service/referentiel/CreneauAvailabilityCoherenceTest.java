@@ -62,7 +62,7 @@ class CreneauAvailabilityCoherenceTest {
 
     private final PlanningService planningService = new PlanningService(3L, 2L,
             ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
-            new EmptyReferenceData(), new FeasibilityAnalyzer(), ConfigProvider.getConfig());
+            new EmptyReferenceData(), new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
 
     /**
      * The criterion: anyone this screen shows as available is a candidate the

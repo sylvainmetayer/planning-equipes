@@ -41,7 +41,7 @@ class PlanningServiceScenarioFromTextTest {
 
     private static PlanningService service() {
         ReferenceData referenceDataService = new EmptyReferenceData();
-        return new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
+        return new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(), null, null,
                 ConfigProvider.getConfig());
     }
 

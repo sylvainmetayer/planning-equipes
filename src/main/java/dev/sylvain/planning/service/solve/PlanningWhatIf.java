@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,12 +62,8 @@ public final class PlanningWhatIf {
     private final ConstraintDiagnosticService constraintDiagnosticService;
     private final ReferenceData referenceDataService;
 
-    /**
-     * The persisted plan, as a supplier: the bean is {@code @Inject}-ed into
-     * {@link PlanningService} after construction, and stays {@code null} in the
-     * plain-Java harnesses that build the service with {@code new}.
-     */
-    private final Supplier<PlanningPersistenceService> persistence;
+    /** The persisted plan; {@code null} in the plain-Java harnesses that build {@link PlanningService} with {@code new}. */
+    private final PlanningPersistenceService persistence;
 
     /**
      * {@code SolveRunner#prepareProblem}: the same preparation a solve runs
@@ -78,7 +73,7 @@ public final class PlanningWhatIf {
     private final Consumer<PlanningEvenement> preparation;
 
     PlanningWhatIf(ConstraintDiagnosticService constraintDiagnosticService, ReferenceData referenceDataService,
-            Supplier<PlanningPersistenceService> persistence, Consumer<PlanningEvenement> preparation) {
+            PlanningPersistenceService persistence, Consumer<PlanningEvenement> preparation) {
         this.constraintDiagnosticService = constraintDiagnosticService;
         this.referenceDataService = referenceDataService;
         this.persistence = persistence;
@@ -441,7 +436,7 @@ public final class PlanningWhatIf {
                 .noneMatch(creneau -> Objects.equals(creneau.getId(), creneauId))) {
             throw new BusinessError.NotFound("Créneau inconnu: " + creneauId);
         }
-        PlanningEvenement persiste = persistence.get().loadPersistedPlanning();
+        PlanningEvenement persiste = persistence.loadPersistedPlanning();
         preparation.accept(persiste);
         return creneauAvailability(persiste, creneauId, standId, posteId);
     }
@@ -544,7 +539,7 @@ public final class PlanningWhatIf {
      * @param animateurId {@code null} empties the seat
      */
     public void applyReparation(String posteId, String animateurId) {
-        applyReparations(persistence.get().loadPersistedPlanning(), List.of(posteId), animateurId);
+        applyReparations(persistence.loadPersistedPlanning(), List.of(posteId), animateurId);
     }
 
     /**
@@ -576,7 +571,7 @@ public final class PlanningWhatIf {
             }
         }
         for (PosteAffectation poste : postes) {
-            persistence.get().reaffecterPoste(poste.getId(), animateurId);
+            persistence.reaffecterPoste(poste.getId(), animateurId);
         }
     }
     /**

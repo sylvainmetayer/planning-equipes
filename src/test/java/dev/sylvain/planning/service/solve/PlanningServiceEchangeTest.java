@@ -39,7 +39,7 @@ class PlanningServiceEchangeTest {
         ReferenceData referenceDataService = new EmptyReferenceData();
         planningService = new PlanningService(3L, 2L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
-                referenceDataService, new FeasibilityAnalyzer(), ConfigProvider.getConfig());
+                referenceDataService, new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
     }
 
     private final Stand standS1 = new Stand("S1", "Stand 1", Set.of("STRATEGIE"), 1, 1, false);

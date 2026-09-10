@@ -50,7 +50,7 @@ class PlanningServiceScenarioCompletTest {
     @Test
     void scenarioCompletNeViolateAucuneContrainteHard() {
         ReferenceData referenceDataService = new EmptyReferenceData();
-        PlanningService planningService = new PlanningService(420L, 0L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
+        PlanningService planningService = new PlanningService(420L, 0L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(), null, null,
                 ConfigProvider.getConfig());
 
         PlanningEvenement problem = planningService.buildExample();

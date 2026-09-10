@@ -70,7 +70,7 @@ class ProblemBuilderPersistenceGuardTest {
      */
     @Test
     void aLockedEditionWithoutPersistenceStillBuildsAProblem() {
-        ProblemBuilder builder = new ProblemBuilder(new LockedEdition(), () -> null);
+        ProblemBuilder builder = new ProblemBuilder(new LockedEdition(), null);
 
         assertThatCode(builder::buildFromReferenceData).doesNotThrowAnyException();
 

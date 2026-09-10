@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
@@ -41,15 +40,13 @@ public final class ProblemBuilder {
     private final ReferenceData referenceDataService;
 
     /**
-     * The persisted plan, as a supplier rather than a field: the bean is
-     * {@code @Inject}-ed into {@link PlanningService} after construction, and
-     * stays {@code null} in the plain-Java harnesses that build the service
-     * with {@code new} — {@link #applyVerrouillages} guards on that, as it
-     * always did.
+     * The persisted plan; {@code null} in the plain-Java harnesses that build
+     * {@link PlanningService} with {@code new} — {@link #applyVerrouillages}
+     * guards on that, as it always did.
      */
-    private final Supplier<PlanningPersistenceService> persistence;
+    private final PlanningPersistenceService persistence;
 
-    ProblemBuilder(ReferenceData referenceDataService, Supplier<PlanningPersistenceService> persistence) {
+    ProblemBuilder(ReferenceData referenceDataService, PlanningPersistenceService persistence) {
         this.referenceDataService = referenceDataService;
         this.persistence = persistence;
     }
@@ -175,7 +172,7 @@ public final class ProblemBuilder {
         List<Creneau> creneaux = referenceDataService.listCreneaux();
         Map<String, List<String>> affectationsPrecedentes = demande == Reamorcage.AUCUN
                 ? Map.of()
-                : persistence.get().loadAnimateursByStandCreneau();
+                : persistence.loadAnimateursByStandCreneau();
         if (demande == Reamorcage.PLAN_COURANT && affectationsPrecedentes.isEmpty()) {
             throw new IllegalStateException(
                     "Aucun plan enregistré sur cette édition : rien d'où repartir. "
@@ -276,7 +273,7 @@ public final class ProblemBuilder {
                             + "des animateurs et des créneaux d'abord.");
         }
         Map<String, List<String>> affectationsPrecedentes =
-                persistence.get().loadAnimateursByStandCreneau();
+                persistence.loadAnimateursByStandCreneau();
         if (affectationsPrecedentes.isEmpty()) {
             throw new IllegalStateException(
                     "Aucun plan persisté : lancez d'abord une résolution complète, "
@@ -409,7 +406,7 @@ public final class ProblemBuilder {
      */
     private void applyVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
             List<VerrouillagePlanning> verrouillages) {
-        PlanningPersistenceService persistenceService = persistence.get();
+        PlanningPersistenceService persistenceService = persistence;
         if (verrouillages.isEmpty() || persistenceService == null) {
             return;
         }

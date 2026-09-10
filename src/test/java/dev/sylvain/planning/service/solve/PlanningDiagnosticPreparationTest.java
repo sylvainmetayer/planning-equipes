@@ -100,16 +100,15 @@ class PlanningDiagnosticPreparationTest {
                 .withSources(mapConfigSource(Map.of(
                         "planning.constraint-weights." + CONTRAINTE, String.valueOf(TELLTALE_WEIGHT))))
                 .build();
-        PlanningService service = new PlanningService(2L, 1L,
-                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, edition,
-                new FeasibilityAnalyzer(), config);
-        service.planningPersistenceService = new PlanningPersistenceService() {
+        PlanningPersistenceService persistence = new PlanningPersistenceService() {
             @Override
             public PlanningEvenement loadPersistedPlanning() {
                 return planWithOneViolation();
             }
         };
-        return service;
+        return new PlanningService(2L, 1L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, edition,
+                new FeasibilityAnalyzer(), persistence, null, config);
     }
 
     /**

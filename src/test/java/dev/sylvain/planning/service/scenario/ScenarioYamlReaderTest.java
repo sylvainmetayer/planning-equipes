@@ -115,7 +115,7 @@ class ScenarioYamlReaderTest {
     void theServiceHandsTheReaderTheEditionsOwnLegalParameters() {
         PlanningService planningService = new PlanningService(3L, 2L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
-                new EditionWithTelltaleParameters(), new FeasibilityAnalyzer(), ConfigProvider.getConfig());
+                new EditionWithTelltaleParameters(), new FeasibilityAnalyzer(), null, null, ConfigProvider.getConfig());
 
         PlanningEvenement planning = planningService.buildExample(WITHOUT_LEGAL_PARAMETERS);
 
