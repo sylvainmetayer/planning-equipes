@@ -9,14 +9,14 @@
 // private window, or after clearing the local storage.
 //
 // It follows it twice, on purpose. A server-sent events stream
-// (/api/jobs/stream) carries every transition in the second it happens, and a
-// slow poll of /api/jobs/active keeps running underneath as the safety net.
-// Dropping the poll would be a regression, not a simplification: SSE fails
-// SILENTLY. A proxy that buffers, a connection cut that never reconnects, and
-// the screen stays frozen on a stale state without a word — strictly worse
-// than polling, which repairs itself at the next tick. So the poll keeps the
-// lead until the stream has proved it is alive, and takes it back after
-// STREAM_SILENCE_MS without an event or a heartbeat.
+// (/api/jobs/stream, owned by solver-stream.ts) carries every transition in the
+// second it happens, and a slow poll of /api/jobs/active keeps running
+// underneath as the safety net. Dropping the poll would be a regression, not a
+// simplification: SSE fails SILENTLY. A proxy that buffers, a connection cut
+// that never reconnects, and the screen stays frozen on a stale state without
+// a word — strictly worse than polling, which repairs itself at the next tick.
+// So the poll keeps the lead until the stream has proved it is alive, and
+// takes it back the moment the stream reports it lost it.
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
@@ -35,9 +35,10 @@ import {
   ReamorcageEffectue,
   ResultatSolve,
   ResultatSolveIncremental,
-  ScorePoint,
   ScoreTrace,
 } from './models';
+import { applyScoreDelta } from './score-trace';
+import { JobsStreamState, SolverStream } from './solver-stream';
 
 /**
  * How often the server-side solver lock is re-read. Two paces rather than one:
@@ -48,53 +49,6 @@ import {
  */
 const POLL_ACTIVE_MS = 2000;
 const POLL_IDLE_MS = 30000;
-
-/** Pushed counterpart of `/api/jobs/active` + `/api/jobs/file`, in one event. */
-const STREAM_URL = '/api/jobs/stream';
-
-/**
- * How long the stream may say nothing — no state, no heartbeat — before it is
- * treated as dead: the poll goes back to its fast pace and the stream is
- * reopened. Comfortably above the server's 20 s heartbeat, so one missed beat
- * (a hiccup, a suspended laptop) does not count as a death.
- */
-const STREAM_SILENCE_MS = 45000;
-
-/**
- * Reconnection backoff. `EventSource` does reconnect on its own, but always
- * after the same fixed delay: a server that is down is then hammered at that
- * rate for as long as it stays down, by every open tab. So the stream is closed
- * on error and reopened by hand, doubling from one second and capped — the cap
- * matters as much as the growth, since a stream that never comes back must
- * still be retried while the user has the page open.
- */
-const STREAM_RETRY_MIN_MS = 1000;
-const STREAM_RETRY_MAX_MS = 30000;
-
-/** One `state` event: everything `/jobs/active` and `/jobs/file` answer. */
-interface JobsStreamState {
-  active: JobView | null;
-  file: JobView[];
-}
-
-/**
- * One `score` event (issue #304): the points of the running solve's curve this
- * connection had not received yet.
- *
- * A delta rather than a snapshot, because the series grows for as long as the
- * run lasts — re-sending it every second would make the traffic grow with the
- * solve. `depuis` is the index the first point holds in the series: 0 means
- * "replace what you hold" (a fresh connection, a new run, or a series the
- * server has just decimated), anything else means "append at that index". The
- * client never resets on its own, so both sides stay on the same series without
- * a handshake.
- */
-interface ScoreStreamDelta extends Omit<ScoreTrace, 'points' | 'jobId'> {
-  /** Null means "there is no curve any more" — a restarted server. */
-  jobId: string | null;
-  depuis: number;
-  points: ScorePoint[];
-}
 
 /**
  * Called lazily (from methods, never at module scope): $localize only sees
@@ -185,7 +139,7 @@ export class SolverJobService {
    * <p>Server-side state like everything else here: a solve started from
    * another browser draws its curve on this one too. It carries the edition it
    * describes rather than being filtered here, exactly as {@link TrackedJob}
-   * does — see {@link ScoreStreamDelta}.</p>
+   * does — see `ScoreStreamDelta` in score-trace.ts.</p>
    */
   private readonly _scoreTrace = signal<ScoreTrace | null>(null);
   readonly scoreTrace = this._scoreTrace.asReadonly();
@@ -301,21 +255,20 @@ export class SolverJobService {
   private pollIntervalMs = 0;
   /** Id of the job the last poll saw, to reload the queue only on a real hand-over. */
   private dernierJobVu: string | null = null;
-  /** The open stream, or null when there is none: see {@link openStream}. */
-  private stream: EventSource | null = null;
   /**
-   * Whether the stream has proved it is alive — a state event or a heartbeat
-   * within the last {@link STREAM_SILENCE_MS}. Only then does the poll drop to
-   * its idle pace: until the stream has said something, and again as soon as it
-   * goes quiet, polling is what keeps the screen truthful.
+   * The pushed source. It owns the connection, its watchdog and its backoff;
+   * what it delivers lands here, in the same body a poll tick goes through —
+   * see {@link applyServerState}. Only when it has proved alive does the poll
+   * drop to its idle pace: until the stream has said something, and again as
+   * soon as it goes quiet, polling is what keeps the screen truthful.
    */
-  private streamProvenAlive = false;
-  /** Fires when the stream has been silent for too long. */
-  private silenceHandle: ReturnType<typeof setTimeout> | null = null;
-  /** Pending reconnection, so two failures never schedule two reopens. */
-  private retryHandle: ReturnType<typeof setTimeout> | null = null;
-  /** Consecutive failed opens, driving the exponential backoff. */
-  private retryCount = 0;
+  private readonly stream = new SolverStream({
+    onState: (state: JobsStreamState) =>
+      void this.applyServerState(state.active ?? null, state.file ?? []),
+    onScore: (delta) => this._scoreTrace.set(applyScoreDelta(this.scoreTrace(), delta)),
+    onAlive: () => this.schedulePolling(),
+    onLost: () => this.onStreamLost(),
+  });
 
   /**
    * Starts following the server: the stream, and the polling loop underneath
@@ -328,7 +281,7 @@ export class SolverJobService {
     this.started = true;
     void this.sync();
     this.schedulePolling();
-    this.openStream();
+    this.stream.open();
   }
 
   /**
@@ -348,13 +301,7 @@ export class SolverJobService {
     // The stream outlives a closed shell as stubbornly as the loop did, and
     // worse: `EventSource` reconnects by itself, so an expired session would
     // keep reopening a stream the server answers with a 401, forever.
-    this.closeStream();
-    if (this.retryHandle !== null) {
-      clearTimeout(this.retryHandle);
-      this.retryHandle = null;
-    }
-    this.streamProvenAlive = false;
-    this.retryCount = 0;
+    this.stream.close();
   }
 
   /**
@@ -566,7 +513,7 @@ export class SolverJobService {
     // pace buys nothing while it lasts. The loop does not stop for all that:
     // it is the net under a stream that dies without saying so.
     const idle = this.activeJob() === null && this.file().length === 0;
-    const wanted = idle || this.streamProvenAlive ? POLL_IDLE_MS : POLL_ACTIVE_MS;
+    const wanted = idle || this.stream.alive ? POLL_IDLE_MS : POLL_ACTIVE_MS;
     if (this.pollHandle !== null && this.pollIntervalMs === wanted) {
       return;
     }
@@ -594,7 +541,7 @@ export class SolverJobService {
    * <p>Called when the Solveur page opens, and only there: the curve is not
    * polled. It does not need to be. A new connection is sent the entire series
    * in its first `score` event, and the stream is already torn down and
-   * reopened both on error and after {@link STREAM_SILENCE_MS} of silence — so
+   * reopened both on error and after 45 s of silence (solver-stream.ts) — so
    * a stream that dies, buffers, or was never opened at all repairs the curve
    * through machinery that exists anyway. What this one read buys is the
    * window before that: an operator opening the page mid-solve sees the run so
@@ -668,162 +615,14 @@ export class SolverJobService {
     this.schedulePolling();
   }
 
-  /* ----------------------------- The stream ----------------------------- */
-
   /**
-   * Opens the stream, if this browser has one. `EventSource` is read off the
-   * global rather than imported, and its absence is a supported case rather
-   * than a crash: an environment without it — a very old browser, the jsdom
-   * the unit tests run in — simply keeps polling, which is exactly what the
-   * fallback below is for anyway.
+   * A live stream went silent or failed: the poll takes the lead back, and
+   * asks now rather than at its next idle tick — the state on screen has
+   * simply stopped being true, and nothing else would repair it in time.
    */
-  private openStream(): void {
-    if (!this.started || this.stream !== null || typeof EventSource === 'undefined') {
-      return;
-    }
-    const stream = new EventSource(STREAM_URL);
-    this.stream = stream;
-    stream.addEventListener('state', (event) => this.onStreamState(event as MessageEvent<string>));
-    // A heartbeat carries no state; it is only the proof the stream is alive,
-    // and that proof is precisely what the watchdog below waits for.
-    stream.addEventListener('heartbeat', () => this.markStreamAlive());
-    stream.addEventListener('score', (event) => this.onStreamScore(event as MessageEvent<string>));
-    stream.onerror = () => this.onStreamError();
-    // Armed from the open, not from the first event: a proxy that accepts the
-    // connection and then buffers it forever never sends a first event, and
-    // that silence has to be caught too.
-    this.armSilenceWatchdog();
-  }
-
-  /** A pushed state: the same aggregate as a poll, plus the queue. */
-  private onStreamState(event: MessageEvent<string>): void {
-    this.markStreamAlive();
-    let state: JobsStreamState;
-    try {
-      state = JSON.parse(event.data) as JobsStreamState;
-    } catch {
-      return; // a truncated event says nothing about the state; wait for the next
-    }
-    void this.applyServerState(state.active ?? null, state.file ?? []);
-  }
-
-  /** New points of the running solve's curve — see {@link ScoreStreamDelta}. */
-  private onStreamScore(event: MessageEvent<string>): void {
-    this.markStreamAlive();
-    let delta: ScoreStreamDelta;
-    try {
-      delta = JSON.parse(event.data) as ScoreStreamDelta;
-    } catch {
-      return; // a truncated event says nothing about the curve; wait for the next
-    }
-    this.appliquerDeltaScore(delta);
-  }
-
-  /** Splices a delta into the series held here; exported logic stays trivial on purpose. */
-  private appliquerDeltaScore(delta: ScoreStreamDelta): void {
-    if (delta.jobId === null) {
-      // The server has no curve at all — it restarted. Without this the last
-      // curve received would stay on screen with its last `termine: false`,
-      // reading as a live solve for a run the server already reports as
-      // interrupted.
-      this._scoreTrace.set(null);
-      return;
-    }
-    const courante = this.scoreTrace();
-    // Anything but a plain append restarts from what the server just sent: the
-    // server resets its cursor for exactly the same cases (a new run, a
-    // decimated series, a reconnection), so the two never disagree.
-    const rattache = delta.depuis > 0 && courante !== null && courante.jobId === delta.jobId;
-    const points = rattache
-      ? [...courante.points.slice(0, delta.depuis), ...delta.points]
-      : [...delta.points];
-    this._scoreTrace.set({
-      jobId: delta.jobId,
-      editionId: delta.editionId,
-      generation: delta.generation,
-      intervalleMs: delta.intervalleMs,
-      dureeMs: delta.dureeMs,
-      termine: delta.termine,
-      points,
-    });
-  }
-
-  private markStreamAlive(): void {
-    this.retryCount = 0;
-    if (!this.streamProvenAlive) {
-      this.streamProvenAlive = true;
-      this.schedulePolling();
-    }
-    this.armSilenceWatchdog();
-  }
-
-  private armSilenceWatchdog(): void {
-    if (this.silenceHandle !== null) {
-      clearTimeout(this.silenceHandle);
-    }
-    this.silenceHandle = setTimeout(() => this.onStreamSilent(), STREAM_SILENCE_MS);
-  }
-
-  /**
-   * The failure this whole design exists for. Nothing was reported — no error,
-   * no close, the connection may well still be open — and the state on screen
-   * has simply stopped being true. Polling takes the lead back at once rather
-   * than at its next idle tick, and the stream is thrown away and reopened.
-   */
-  private onStreamSilent(): void {
-    this.silenceHandle = null;
-    this.closeStream();
-    this.demoteToPolling();
-    this.scheduleStreamRetry();
-  }
-
-  private onStreamError(): void {
-    const wasAlive = this.streamProvenAlive;
-    this.closeStream();
-    if (wasAlive) {
-      this.demoteToPolling();
-    } else {
-      // Never proved alive: polling was already in the lead and asking it again
-      // on every failed reconnection would turn a server outage into a flood.
-      this.schedulePolling();
-    }
-    this.scheduleStreamRetry();
-  }
-
-  /** Hands the lead back to the poll, and asks it now rather than at its tick. */
-  private demoteToPolling(): void {
-    this.streamProvenAlive = false;
+  private onStreamLost(): void {
     this.schedulePolling();
     void this.sync();
-  }
-
-  private scheduleStreamRetry(): void {
-    if (!this.started || this.retryHandle !== null) {
-      return;
-    }
-    const delay = Math.min(STREAM_RETRY_MAX_MS, STREAM_RETRY_MIN_MS * 2 ** this.retryCount);
-    this.retryCount += 1;
-    this.retryHandle = setTimeout(() => {
-      this.retryHandle = null;
-      this.openStream();
-    }, delay);
-  }
-
-  /**
-   * Closes the stream and forgets it. Every reconnection goes through here
-   * first, which is what keeps handlers from piling up: a reopen builds a
-   * brand-new `EventSource` with its own listeners, and the previous one is
-   * closed and dropped rather than left listening beside it.
-   */
-  private closeStream(): void {
-    if (this.stream !== null) {
-      this.stream.close();
-      this.stream = null;
-    }
-    if (this.silenceHandle !== null) {
-      clearTimeout(this.silenceHandle);
-      this.silenceHandle = null;
-    }
   }
 
   /** Server-side queue, re-read on every poll: another client may add to it. */

@@ -294,6 +294,13 @@ strictement pire qu'un poll, lequel se répare tout seul au tick suivant.
 Le poll garde la main tant que le flux n'a pas prouvé qu'il vit, redescend à
 30 s tant qu'il vit, et **reprend la main** après 45 s de silence.
 
+Les deux moitiés sont deux fichiers : `core/solver-stream.ts` tient la
+connexion `EventSource`, son chien de garde et son backoff, sans aucun état
+métier ; `core/solver-job.service.ts` tient le poll et l'état des jobs, et
+fait passer ce que le flux pousse par le même corps qu'un tick de poll —
+c'est ce qui rend le repli honnête. Le raccord des deltas de la courbe de
+score est une fonction pure de `core/score-trace.ts`.
+
 ### Un seul écouteur clavier global
 
 `core/keyboard-shortcuts.service.ts` porte l'unique `keydown` posé sur le

@@ -499,7 +499,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   "contains every term" matching behind those pages' quick filter; `bulk-edit.ts` — the "leave unchanged / add / remove
   / replace" modes a bulk edit applies to one row; `entity-labels.ts` — plural
   entity labels of the bulk actions;
-  `solver-job.service.ts`; `notification.service.ts`, backed by `MatSnackBar`;
+  `solver-job.service.ts` — the poll and the job state, over
+  `solver-stream.ts` (the SSE connection, its silence watchdog and its
+  backoff) and `score-trace.ts` (the pure splice of score deltas);
+  `notification.service.ts`, backed by `MatSnackBar`;
   `keyboard-shortcuts.ts` + `keyboard-shortcuts.service.ts` — the application's
   **only** global `keydown`, armed with the admin shell, see below),
   `app/shared/` holds cross-page components (`job-monitor.ts`,
