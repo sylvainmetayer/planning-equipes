@@ -6,7 +6,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -31,6 +31,8 @@ function apercu(patch: Partial<RapportDerivation> = {}): RapportDerivation {
 }
 
 function monter(options: { reponse?: RapportDerivation; confirme?: boolean; dates?: [string | null, string | null] } = {}) {
+  // Two stubs, not one: a test must tell a preview from a write.
+  const preview = vi.fn(async () => options.reponse ?? apercu());
   const post = vi.fn(async () => options.reponse ?? apercu());
   const close = vi.fn();
   const ask = vi.fn(async () => options.confirme ?? true);
@@ -38,7 +40,7 @@ function monter(options: { reponse?: RapportDerivation; confirme?: boolean; date
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: ApiService, useValue: { post } },
+      { provide: CreneauxApi, useValue: { previewDerivation: preview, derive: post } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       { provide: ConfirmService, useValue: { ask } },
@@ -49,7 +51,7 @@ function monter(options: { reponse?: RapportDerivation; confirme?: boolean; date
       }
     ]
   });
-  return { fixture: TestBed.createComponent(CreneauDerivationDialog), post, close, ask };
+  return { fixture: TestBed.createComponent(CreneauDerivationDialog), preview, post, close, ask };
 }
 
 function racine(fixture: ComponentFixture<CreneauDerivationDialog>): HTMLElement {
@@ -67,7 +69,7 @@ describe('CreneauDerivationDialog', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('is prefilled with the grid dates and a 20:00 closing, and previews with the structured request', async () => {
-    const { fixture, post } = monter();
+    const { fixture, preview } = monter();
     await fixture.whenStable();
 
     expect(racine(fixture).querySelector<HTMLInputElement>('input[name="dateDebut"]')!.value).toBe('2026-07-06');
@@ -76,7 +78,7 @@ describe('CreneauDerivationDialog', () => {
     bouton(fixture, 'Prévisualiser').click();
     await fixture.whenStable();
 
-    expect(post).toHaveBeenCalledWith('/api/creneaux/derivation/apercu?mode=AMPLITUDES', {
+    expect(preview).toHaveBeenCalledWith('AMPLITUDES', {
       dateDebut: '2026-07-06',
       dateFin: '2026-07-07',
       heureFermeture: '20:00',
@@ -99,7 +101,7 @@ describe('CreneauDerivationDialog', () => {
     await fixture.whenStable();
 
     expect(ask).not.toHaveBeenCalled();
-    expect((post.mock.calls[1] as unknown as [string])[0]).toBe('/api/creneaux/derivation?mode=AMPLITUDES');
+    expect(post).toHaveBeenCalledExactlyOnceWith('AMPLITUDES', expect.anything());
     expect(close).toHaveBeenCalledWith(apercu());
   });
 
@@ -115,7 +117,7 @@ describe('CreneauDerivationDialog', () => {
     await fixture.whenStable();
 
     expect(ask).toHaveBeenCalledOnce();
-    expect(post).toHaveBeenCalledTimes(1);
+    expect(post).not.toHaveBeenCalled();
   });
 
   it('keeps the write off on an empty derivation or a blocking verdict, and says why', async () => {
@@ -137,11 +139,11 @@ describe('CreneauDerivationDialog', () => {
   });
 
   it('refuses an empty range or a missing closing time before calling the server', async () => {
-    const { fixture, post } = monter({ dates: [null, null] });
+    const { fixture, preview } = monter({ dates: [null, null] });
     await fixture.whenStable();
 
     expect(racine(fixture).querySelector('.field-error')!.textContent).toContain('première et la dernière date');
     expect(bouton(fixture, 'Prévisualiser').disabled).toBe(true);
-    expect(post).not.toHaveBeenCalled();
+    expect(preview).not.toHaveBeenCalled();
   });
 });

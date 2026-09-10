@@ -171,6 +171,14 @@ jobs:
       - name: Check the hand-written models against the OpenAPI contract
         run: npm run api-types-check
 
+      # Une page qui écrit `'/api/stands/…'` elle-même est une page qu'un
+      # renommage de route doit retrouver au grep. Les chemins vivent dans
+      # `core/api/`, un service par ressource ; ce cliquet interdit qu'un
+      # littéral revienne dans une page déjà migrée, et fait maigrir la liste
+      # des fichiers encore tolérés (#392, B3).
+      - name: Check that no page writes an API path itself
+        run: npm run api-paths-check
+
       # Un cliquet, pas une barrière : la règle s'applique aux **lignes** que la
       # branche écrit, pas au dépôt entier. Le solde — 589 noms et 240 blocs de
       # commentaire, chiffré dans #425 — se paie au fil des passages, sans

@@ -12,6 +12,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
+import { CreneauxApi } from '../../core/api/creneaux-api';
 import { BRANDING, slugMarque } from '../../core/branding';
 import { EditionStore } from '../../core/edition.store';
 import { EtatSauvegarde, ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
@@ -118,6 +120,8 @@ export class ParametresPage {
   protected readonly store = inject(ReferenceDataStore);
 
   private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
+  private readonly creneauxApi = inject(CreneauxApi);
   private readonly scenarioImport = inject(ScenarioImportService);
   private readonly crud = inject(ReferenceCrudService);
   private readonly planningState = inject(PlanningStateService);
@@ -184,7 +188,7 @@ export class ParametresPage {
   // the first one so the "Load" button always has a target.
   private async loadScenarioList(): Promise<void> {
     try {
-      const names = await this.api.get<string[]>('/api/planning/scenarios');
+      const names = await this.planningApi.scenarioNames();
       this.scenarios.set(names);
       if (names.length > 0 && !this.selectedScenario()) {
         this.selectedScenario.set(names[0]);
@@ -234,7 +238,7 @@ export class ParametresPage {
     this.exporting.set(true);
     this.output.set($localize`:@@dataSetup.exportingScenario:Export des données actuelles en fichier scénario...`);
     try {
-      const result = await this.api.downloadGet('/api/planning/export-scenario', 'scenario.yaml', 'application/x-yaml');
+      const result = await this.planningApi.exportScenario();
       this.output.set(result);
     } catch (error) {
       this.output.set(errorPrefix(error));
@@ -325,7 +329,7 @@ export class ParametresPage {
   private async chargerParametresDecoupage(): Promise<void> {
     this.parametresDecoupageLoading.set(true);
     try {
-      this.parametresDecoupage.set(await this.api.get<ParametresDecoupage>('/api/parametres-decoupage'));
+      this.parametresDecoupage.set(await this.creneauxApi.slicingParameters());
     } catch (error) {
       this.crud.reportError(error);
     } finally {
@@ -340,7 +344,7 @@ export class ParametresPage {
     }
     this.parametresDecoupageLoading.set(true);
     try {
-      this.parametresDecoupage.set(await this.api.put<ParametresDecoupage>('/api/parametres-decoupage', parametres));
+      this.parametresDecoupage.set(await this.creneauxApi.saveSlicingParameters(parametres));
       this.notifications.notify({
         title: $localize`:@@decoupage.parametresSaved:Paramètres de découpage enregistrés.`,
         variant: 'success',

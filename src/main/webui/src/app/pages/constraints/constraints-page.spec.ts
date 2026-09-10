@@ -13,7 +13,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { ConstraintsApi } from '../../core/api/constraints-api';
 import { ConstraintView, ConstraintsView } from '../../core/models';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -82,25 +82,32 @@ type PageInternals = {
 };
 
 describe('ConstraintsPage', () => {
-  const api = { get: vi.fn(), put: vi.fn() };
+  const constraintsApi = {
+    catalogue: vi.fn(),
+    diagnose: vi.fn(),
+    legalParameters: vi.fn(),
+    saveLegalParameters: vi.fn(),
+    setActive: vi.fn(),
+    setWeight: vi.fn()
+  };
   const legalDisable = { allowsDisabling: vi.fn() };
 
   beforeEach(() => {
-    api.get.mockReset();
-    api.put.mockReset();
+    for (const stub of Object.values(constraintsApi)) {
+      stub.mockReset();
+    }
     legalDisable.allowsDisabling.mockReset();
-    api.get.mockImplementation(async (url: string) =>
-      url === '/api/constraints'
-        ? view([])
-        : { dureeHebdomadaireMaxMinutes: 48 * 60, dureeHebdomadaireMaxMineurMinutes: 35 * 60, pauseMinimaleEntreVacationsMinutes: 30, reposQuotidienMinimalMinutes: 660, pauseSurPoste: false }
-    );
-    api.put.mockImplementation(async (_url: string, body: unknown) => body);
+    constraintsApi.catalogue.mockResolvedValue(view([]));
+    constraintsApi.legalParameters.mockResolvedValue({ dureeHebdomadaireMaxMinutes: 48 * 60, dureeHebdomadaireMaxMineurMinutes: 35 * 60, pauseMinimaleEntreVacationsMinutes: 30, reposQuotidienMinimalMinutes: 660, pauseSurPoste: false });
+    constraintsApi.saveLegalParameters.mockImplementation(async (body: unknown) => body);
+    constraintsApi.setActive.mockImplementation(async (_name: string, actif: boolean) => ({ actif }));
+    constraintsApi.setWeight.mockImplementation(async (_name: string, poids: number) => ({ poids }));
     legalDisable.allowsDisabling.mockResolvedValue(true);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: api },
+        { provide: ConstraintsApi, useValue: constraintsApi },
         { provide: MatDialog, useValue: { open: vi.fn() } },
         { provide: LegalDisableConfirmService, useValue: legalDisable },
         {
@@ -119,11 +126,7 @@ describe('ConstraintsPage', () => {
    * overwritten by the load landing a microtask later.
    */
   async function createPage(contraintes: ConstraintView[]): Promise<PageInternals> {
-    api.get.mockImplementation(async (url: string) =>
-      url === '/api/constraints'
-        ? view(contraintes)
-        : { dureeHebdomadaireMaxMinutes: 48 * 60, dureeHebdomadaireMaxMineurMinutes: 35 * 60, pauseMinimaleEntreVacationsMinutes: 30, reposQuotidienMinimalMinutes: 660, pauseSurPoste: false }
-    );
+    constraintsApi.catalogue.mockResolvedValue(view(contraintes));
     const page = TestBed.createComponent(ConstraintsPage).componentInstance as unknown as PageInternals;
     await vi.waitFor(() => expect(page.view()?.contraintes).toHaveLength(contraintes.length));
     return page;
@@ -131,17 +134,13 @@ describe('ConstraintsPage', () => {
 
   describe('legal parameters form', () => {
     it('loads every field and sends them all back, so a save never resets one it did not show', async () => {
-      api.get.mockImplementation(async (url: string) =>
-        url === '/api/constraints'
-          ? view([])
-          : {
-              dureeHebdomadaireMaxMinutes: 48 * 60,
-              dureeHebdomadaireMaxMineurMinutes: 35 * 60,
-              pauseMinimaleEntreVacationsMinutes: 0,
-              reposQuotidienMinimalMinutes: 9 * 60,
-              pauseSurPoste: true
-            }
-      );
+      constraintsApi.legalParameters.mockResolvedValue({
+        dureeHebdomadaireMaxMinutes: 48 * 60,
+        dureeHebdomadaireMaxMineurMinutes: 35 * 60,
+        pauseMinimaleEntreVacationsMinutes: 0,
+        reposQuotidienMinimalMinutes: 9 * 60,
+        pauseSurPoste: true
+      });
       const page = TestBed.createComponent(ConstraintsPage).componentInstance as unknown as PageInternals;
       await vi.waitFor(() => expect(page.pauseSurPoste()).toBe(true));
       expect(page.pauseEntreVacationsMinutes()).toBe(0);
@@ -150,7 +149,7 @@ describe('ConstraintsPage', () => {
       page.pauseSurPoste.set(false);
       await page.saveParametresLegaux();
 
-      expect(api.put).toHaveBeenCalledWith('/api/parametres-legaux', {
+      expect(constraintsApi.saveLegalParameters).toHaveBeenCalledWith({
         dureeHebdomadaireMaxMinutes: 48 * 60,
         dureeHebdomadaireMaxMineurMinutes: 35 * 60,
         pauseMinimaleEntreVacationsMinutes: 0,
@@ -160,15 +159,13 @@ describe('ConstraintsPage', () => {
     });
 
     it('refuses to save while a field it holds is still unknown', async () => {
-      api.get.mockImplementation(async (url: string) =>
-        url === '/api/constraints' ? view([]) : new Promise(() => undefined)
-      );
+      constraintsApi.legalParameters.mockReturnValue(new Promise(() => undefined));
       const page = TestBed.createComponent(ConstraintsPage).componentInstance as unknown as PageInternals;
       await vi.waitFor(() => expect(page.view()).not.toBeNull());
 
       await page.saveParametresLegaux();
 
-      expect(api.put).not.toHaveBeenCalledWith('/api/parametres-legaux', expect.anything());
+      expect(constraintsApi.saveLegalParameters).not.toHaveBeenCalled();
     });
   });
 
@@ -178,7 +175,7 @@ describe('ConstraintsPage', () => {
 
       await page.toggleConstraint(contrainte(), bascule(false));
 
-      expect(api.put).toHaveBeenCalledWith('/api/constraints/equilibrerCharge', { actif: false });
+      expect(constraintsApi.setActive).toHaveBeenCalledWith('equilibrerCharge', false);
       expect(page.view()?.contraintes[0].actif).toBe(false);
     });
 
@@ -194,7 +191,7 @@ describe('ConstraintsPage', () => {
       await page.toggleConstraint(REGLE_LEGALE, evenement);
 
       expect(legalDisable.allowsDisabling).toHaveBeenCalledOnce();
-      expect(api.put).not.toHaveBeenCalled();
+      expect(constraintsApi.setActive).not.toHaveBeenCalled();
       expect(page.view()?.contraintes[0].actif).toBe(true);
       // The switch itself, not only the model: `[checked]` never changed value,
       // so nothing puts it back except the page.
@@ -207,7 +204,7 @@ describe('ConstraintsPage', () => {
       const evenement = bascule(false);
       await page.toggleConstraint(REGLE_LEGALE, evenement);
 
-      expect(api.put).toHaveBeenCalledWith('/api/constraints/travailDeNuitInterditPourMineur', { actif: false });
+      expect(constraintsApi.setActive).toHaveBeenCalledWith('travailDeNuitInterditPourMineur', false);
       expect(page.view()?.contraintes[0].actif).toBe(false);
       expect(evenement.source.checked).toBe(false);
     });
@@ -215,7 +212,7 @@ describe('ConstraintsPage', () => {
     // Same lie, other cause: a refused save leaves the rule active, so the
     // switch has to come back too.
     it('puts the switch back when the save fails', async () => {
-      api.put.mockRejectedValue(new Error('refusé'));
+      constraintsApi.setActive.mockRejectedValue(new Error('refusé'));
       const page = await createPage([contrainte()]);
       const evenement = bascule(false);
 
@@ -239,12 +236,12 @@ describe('ConstraintsPage', () => {
 
   describe('the weight of a rule', () => {
     it('saves the new weight and keeps what the server answered', async () => {
-      api.put.mockResolvedValue({ poids: 7 });
+      constraintsApi.setWeight.mockResolvedValue({ poids: 7 });
       const page = await createPage([contrainte()]);
 
       await page.setPoids(contrainte(), 7);
 
-      expect(api.put).toHaveBeenCalledWith('/api/constraints/equilibrerCharge/poids', { poids: 7 });
+      expect(constraintsApi.setWeight).toHaveBeenCalledWith('equilibrerCharge', 7);
       expect(page.view()?.contraintes[0].poids).toBe(7);
     });
 
@@ -253,7 +250,7 @@ describe('ConstraintsPage', () => {
 
       await page.setPoids(contrainte({ poids: 3 }), 3);
 
-      expect(api.put).not.toHaveBeenCalled();
+      expect(constraintsApi.setWeight).not.toHaveBeenCalled();
     });
 
     // Zero is refused server-side on purpose (switching a rule off goes
@@ -263,15 +260,15 @@ describe('ConstraintsPage', () => {
       const page = await createPage([contrainte({ poids: 4 })]);
 
       await page.setPoids(contrainte({ poids: 4 }), 0);
-      expect(api.put).toHaveBeenCalledWith('/api/constraints/equilibrerCharge/poids', { poids: 1 });
+      expect(constraintsApi.setWeight).toHaveBeenCalledWith('equilibrerCharge', 1);
 
-      api.put.mockClear();
+      constraintsApi.setWeight.mockClear();
       await page.setPoids(contrainte({ poids: 4 }), 250);
-      expect(api.put).toHaveBeenCalledWith('/api/constraints/equilibrerCharge/poids', { poids: 100 });
+      expect(constraintsApi.setWeight).toHaveBeenCalledWith('equilibrerCharge', 100);
     });
 
     it('rolls the optimistic value back and reports the error when the save fails', async () => {
-      api.put.mockRejectedValue(new Error('refusé'));
+      constraintsApi.setWeight.mockRejectedValue(new Error('refusé'));
       const page = await createPage([contrainte({ poids: 2 })]);
 
       await page.setPoids(contrainte({ poids: 2 }), 9);
@@ -299,7 +296,7 @@ describe('ConstraintsPage', () => {
 
       await page.onPoidsChange(contrainte({ poids: 4 }), field);
 
-      expect(api.put).toHaveBeenCalledWith('/api/constraints/equilibrerCharge/poids', { poids: 12 });
+      expect(constraintsApi.setWeight).toHaveBeenCalledWith('equilibrerCharge', 12);
       expect(field.value).toBe('12');
     });
 
@@ -309,7 +306,7 @@ describe('ConstraintsPage', () => {
 
       await page.onPoidsChange(contrainte({ poids: 4 }), field);
 
-      expect(api.put).toHaveBeenCalledWith('/api/constraints/equilibrerCharge/poids', { poids: 1 });
+      expect(constraintsApi.setWeight).toHaveBeenCalledWith('equilibrerCharge', 1);
       expect(field.value).toBe('1');
     });
 
@@ -321,7 +318,7 @@ describe('ConstraintsPage', () => {
 
       await page.onPoidsChange(contrainte({ poids: 4 }), field);
 
-      expect(api.put).not.toHaveBeenCalled();
+      expect(constraintsApi.setWeight).not.toHaveBeenCalled();
       expect(field.value).toBe('4');
     });
   });

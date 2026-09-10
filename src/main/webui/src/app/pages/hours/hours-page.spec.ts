@@ -10,7 +10,7 @@ import { TestBed } from '@angular/core/testing';
 import { Sort } from '@angular/material/sort';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { HeuresAnimateur, HeuresRapport, PlanningEvenement } from '../../core/models';
 import { HoursPage } from './hours-page';
@@ -57,22 +57,22 @@ type PageInternals = {
 };
 
 describe('HoursPage', () => {
-  const api = { post: vi.fn(), downloadPost: vi.fn() };
+  const planningApi = { hoursReport: vi.fn(), exportHours: vi.fn() };
   const planningState = { require: vi.fn() };
 
   beforeEach(() => {
-    api.post.mockReset();
-    api.downloadPost.mockReset();
+    planningApi.hoursReport.mockReset();
+    planningApi.exportHours.mockReset();
     planningState.require.mockReset();
     planningState.require.mockResolvedValue(PLANNING);
-    api.post.mockResolvedValue({ semaines: [], animateurs: [] });
-    api.downloadPost.mockResolvedValue('Export téléchargé.');
+    planningApi.hoursReport.mockResolvedValue({ semaines: [], animateurs: [] });
+    planningApi.exportHours.mockResolvedValue('Export téléchargé.');
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
-        { provide: ApiService, useValue: api },
+        { provide: PlanningApi, useValue: planningApi },
         { provide: PlanningStateService, useValue: planningState }
       ]
     });
@@ -85,7 +85,7 @@ describe('HoursPage', () => {
   describe('loading state', () => {
     it('is busy while the report is in flight and idle once it lands', async () => {
       const pending = deferred<HeuresRapport>();
-      api.post.mockReturnValue(pending.promise);
+      planningApi.hoursReport.mockReturnValue(pending.promise);
 
       const page = createPage();
       await Promise.resolve();
@@ -96,11 +96,11 @@ describe('HoursPage', () => {
     });
 
     it('clears a previous message when a new load starts', async () => {
-      api.post.mockRejectedValueOnce(new Error('Serveur indisponible.'));
+      planningApi.hoursReport.mockRejectedValueOnce(new Error('Serveur indisponible.'));
       const page = createPage();
       await vi.waitFor(() => expect(page.output()).not.toBe(''));
 
-      api.post.mockResolvedValue({ semaines: [], animateurs: [] });
+      planningApi.hoursReport.mockResolvedValue({ semaines: [], animateurs: [] });
       await page.load();
 
       expect(page.output()).toBe('');
@@ -111,7 +111,7 @@ describe('HoursPage', () => {
       await vi.waitFor(() => expect(page.busy()).toBe(false));
 
       expect(planningState.require).toHaveBeenCalledTimes(1);
-      expect(api.post).toHaveBeenCalledWith('/api/planning/hours', PLANNING);
+      expect(planningApi.hoursReport).toHaveBeenCalledWith(PLANNING);
       expect(page.rapport()).not.toBeNull();
     });
   });
@@ -121,7 +121,7 @@ describe('HoursPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
 
-      api.post.mockRejectedValue(new Error('Serveur indisponible.'));
+      planningApi.hoursReport.mockRejectedValue(new Error('Serveur indisponible.'));
       await page.load();
 
       expect(page.rapport()).toBeNull();
@@ -135,7 +135,7 @@ describe('HoursPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.busy()).toBe(false));
 
-      expect(api.post).not.toHaveBeenCalled();
+      expect(planningApi.hoursReport).not.toHaveBeenCalled();
       expect(page.output()).toContain('Aucun planning disponible');
     });
   });
@@ -163,7 +163,7 @@ describe('HoursPage', () => {
 
   describe('displayed data', () => {
     beforeEach(() => {
-      api.post.mockResolvedValue({
+      planningApi.hoursReport.mockResolvedValue({
         semaines: ['2026-W31', '2026-W32'],
         animateurs: [row('Zoé', { '2026-W31': 10, '2026-W32': 20 }), row('Alice', { '2026-W31': 40 })]
       });
@@ -195,7 +195,7 @@ describe('HoursPage', () => {
     });
 
     it('sorts by total hours numerically, not as text', async () => {
-      api.post.mockResolvedValue({
+      planningApi.hoursReport.mockResolvedValue({
         semaines: ['2026-W31'],
         animateurs: [row('Neuf', { '2026-W31': 9 }), row('Dix', { '2026-W31': 10 })]
       });
@@ -266,10 +266,10 @@ describe('HoursPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.busy()).toBe(false));
       const pending = deferred<string>();
-      api.downloadPost.mockReturnValue(pending.promise);
+      planningApi.exportHours.mockReturnValue(pending.promise);
 
       const running = page.onExportCsv();
-      await vi.waitFor(() => expect(api.downloadPost).toHaveBeenCalled());
+      await vi.waitFor(() => expect(planningApi.exportHours).toHaveBeenCalled());
       expect(page.exportBusy()).toBe(true);
       expect(page.output()).toContain('export CSV');
 
@@ -277,18 +277,13 @@ describe('HoursPage', () => {
       await running;
       expect(page.exportBusy()).toBe(false);
       expect(page.output()).toBe('Fichier téléchargé.');
-      expect(api.downloadPost).toHaveBeenCalledWith(
-        '/api/planning/hours/export',
-        'heures-planning.csv',
-        PLANNING,
-        'text/csv'
-      );
+      expect(planningApi.exportHours).toHaveBeenCalledWith(PLANNING);
     });
 
     it('surfaces an export failure without clearing the loaded report', async () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
-      api.downloadPost.mockRejectedValue(new Error('Export refusé.'));
+      planningApi.exportHours.mockRejectedValue(new Error('Export refusé.'));
 
       await page.onExportCsv();
 

@@ -433,7 +433,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   Adding a functional block means adding a route and a `app/pages/<block>/`
   folder, never a new section inside an existing page.
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place
-  doing HTTP, `downloadFile` returns a status string and never touches the DOM;
+  touching `HttpClient`: the verbs, the error mapping, `downloadFile` returning
+  a status string and never touching the DOM; `core/api/` — one service per
+  resource, owning the `/api/…` paths and the return types, so a page asks for
+  the thing and never writes an address — `scripts/check-api-paths.js` holds it
+  as a ratchet over the files not yet migrated;
   `models.ts`; `date-utils.ts`, week starts Monday; `planning-state.service.ts`;
   `reference-data.store.ts`; `reference-crud.service.ts` — save/delete, single
   or in bulk, plus snack-bar feedback shared by the five reference pages;

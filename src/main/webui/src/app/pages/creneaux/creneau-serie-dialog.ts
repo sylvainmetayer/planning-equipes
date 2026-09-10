@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { ApiService } from '../../core/api.service';
+import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import {
@@ -68,7 +68,7 @@ export class CreneauSerieDialog {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
   protected readonly dialogRef = inject<MatDialogRef<CreneauSerieDialog, RapportRecurrence | null>>(MatDialogRef);
   private readonly data = inject<CreneauSerieData>(MAT_DIALOG_DATA);
-  private readonly api = inject(ApiService);
+  private readonly creneauxApi = inject(CreneauxApi);
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly joursSemaine: readonly JourSemaine[] = [
@@ -142,10 +142,7 @@ export class CreneauSerieDialog {
     }
     this.chargement.set(true);
     try {
-      const apercu = await this.api.post<RapportRecurrence>(
-        `/api/creneaux/recurrence/apercu?mode=${this.data.mode}`,
-        regle satisfies RegleRecurrence
-      );
+      const apercu = await this.creneauxApi.previewRecurrence(this.data.mode, regle satisfies RegleRecurrence);
       this.apercu.set(apercu);
       this.signatureApercu.set(signatureSerie(this.draft()));
     } catch (error) {
@@ -162,7 +159,7 @@ export class CreneauSerieDialog {
     }
     this.creation.set(true);
     try {
-      const rapport = await this.api.post<RapportRecurrence>(`/api/creneaux/recurrence?mode=${this.data.mode}`, regle);
+      const rapport = await this.creneauxApi.createRecurrence(this.data.mode, regle);
       this.dialogRef.close(rapport);
     } catch (error) {
       this.crud.reportError(error);

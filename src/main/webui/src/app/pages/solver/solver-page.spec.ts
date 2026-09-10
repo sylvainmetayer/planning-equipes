@@ -12,7 +12,7 @@ import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -163,7 +163,13 @@ describe('SolverPage', () => {
       return () => handlers.set(type, (handlers.get(type) ?? []).filter((entry) => entry !== handler));
     })
   };
-  const api = { get: vi.fn(), post: vi.fn(), downloadPost: vi.fn() };
+  const planningApi = {
+    persistedCount: vi.fn(),
+    publicationPreview: vi.fn(),
+    publish: vi.fn(),
+    exportGlobalPdf: vi.fn(),
+    exportBundle: vi.fn()
+  };
   const planningState = { set: vi.fn(), require: vi.fn() };
   const solverSettings = { refresh: vi.fn(), secondsLimit: () => 600 };
   const notifications = { notify: vi.fn() };
@@ -197,9 +203,11 @@ describe('SolverPage', () => {
       jobs.onResult,
       jobs.chargerCourbeScore,
       jobs.activeJobDescription,
-      api.get,
-      api.post,
-      api.downloadPost,
+      planningApi.persistedCount,
+      planningApi.publicationPreview,
+      planningApi.publish,
+      planningApi.exportGlobalPdf,
+      planningApi.exportBundle,
       planningState.set,
       planningState.require,
       solverSettings.refresh,
@@ -213,7 +221,8 @@ describe('SolverPage', () => {
       stub.mockClear();
     }
     jobs.listJobs.mockResolvedValue([]);
-    api.get.mockResolvedValue({});
+    planningApi.persistedCount.mockResolvedValue({});
+    planningApi.publicationPreview.mockResolvedValue({});
     solverSettings.refresh.mockResolvedValue(undefined);
     crud.reload.mockResolvedValue(undefined);
     resolution.reload.mockResolvedValue(undefined);
@@ -221,7 +230,7 @@ describe('SolverPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: ApiService, useValue: api },
+        { provide: PlanningApi, useValue: planningApi },
         { provide: SolverJobService, useValue: jobs },
         { provide: PlanningStateService, useValue: planningState },
         { provide: SolverSettingsService, useValue: solverSettings },
@@ -470,9 +479,7 @@ describe('SolverPage', () => {
   describe('where the solve starts from', () => {
     /** Persisted-plan count the page reads at load and after every result. */
     function persistedCount(assignments: number | null): void {
-      api.get.mockImplementation(async (url: string) =>
-        url.includes('/persisted/count') ? (assignments === null ? {} : { assignments }) : {}
-      );
+      planningApi.persistedCount.mockResolvedValue(assignments === null ? {} : { assignments });
     }
 
     it('announces a cold start and disables « Recommencer de zéro » without a plan', async () => {
@@ -738,7 +745,7 @@ describe('SolverPage', () => {
     /** A publication that hangs until the test lets it finish. */
     function envoiSuspendu(): { terminer: () => void } {
       let finish = (): void => undefined;
-      api.post.mockImplementation(
+      planningApi.publish.mockImplementation(
         () =>
           new Promise((resolve) => {
             finish = () => resolve({ envoyes: 3, sansEmail: [], echecs: [] });
@@ -750,7 +757,7 @@ describe('SolverPage', () => {
     }
 
     async function pagePrete(): Promise<PageInternals> {
-      api.get.mockResolvedValue(apercuPret);
+      planningApi.publicationPreview.mockResolvedValue(apercuPret);
       const page = createPage();
       await vi.waitFor(() => expect(page.publicationPossible()).toBe(true));
       return page;
@@ -762,7 +769,7 @@ describe('SolverPage', () => {
       const page = await pagePrete();
 
       const publication = page.onPublier();
-      await vi.waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+      await vi.waitFor(() => expect(planningApi.publish).toHaveBeenCalledTimes(1));
 
       expect(page.publicationBusy()).toBe(true);
       // The count is frozen at the start: the preview reloads at the end and
@@ -779,12 +786,12 @@ describe('SolverPage', () => {
       const envoi = envoiSuspendu();
       const page = await pagePrete();
       const publication = page.onPublier();
-      await vi.waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+      await vi.waitFor(() => expect(planningApi.publish).toHaveBeenCalledTimes(1));
 
       await page.onPublier();
 
       // Real mail to real people: a second click must not send it twice.
-      expect(api.post).toHaveBeenCalledTimes(1);
+      expect(planningApi.publish).toHaveBeenCalledTimes(1);
       envoi.terminer();
       await publication;
     });
@@ -811,7 +818,7 @@ describe('SolverPage', () => {
       expect(confirm.ask).toHaveBeenCalledTimes(1);
 
       confirmer();
-      await vi.waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+      await vi.waitFor(() => expect(planningApi.publish).toHaveBeenCalledTimes(1));
       envoi.terminer();
       await publication;
     });
@@ -822,13 +829,13 @@ describe('SolverPage', () => {
 
       await page.onPublier();
 
-      expect(api.post).not.toHaveBeenCalled();
+      expect(planningApi.publish).not.toHaveBeenCalled();
       expect(page.publicationBusy()).toBe(false);
     });
 
     it('releases the button when the send fails', async () => {
       confirm.ask.mockResolvedValue(true);
-      api.post.mockRejectedValue(new Error('SMTP injoignable'));
+      planningApi.publish.mockRejectedValue(new Error('SMTP injoignable'));
       const page = await pagePrete();
 
       await page.onPublier();

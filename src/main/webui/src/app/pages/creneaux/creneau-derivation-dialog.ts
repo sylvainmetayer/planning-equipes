@@ -7,7 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ApiService } from '../../core/api.service';
+import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -58,7 +58,7 @@ export class CreneauDerivationDialog {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
   protected readonly dialogRef = inject<MatDialogRef<CreneauDerivationDialog, RapportDerivation | null>>(MatDialogRef);
   private readonly data = inject<CreneauDerivationData>(MAT_DIALOG_DATA);
-  private readonly api = inject(ApiService);
+  private readonly creneauxApi = inject(CreneauxApi);
   private readonly crud = inject(ReferenceCrudService);
   private readonly confirm = inject(ConfirmService);
 
@@ -142,7 +142,7 @@ export class CreneauDerivationDialog {
     }
     this.chargement.set(true);
     try {
-      this.apercu.set(await this.api.post<RapportDerivation>(`/api/creneaux/derivation/apercu?mode=${this.data.mode}`, this.requete()));
+      this.apercu.set(await this.creneauxApi.previewDerivation(this.data.mode, this.requete()));
       this.signatureApercu.set(JSON.stringify(this.draft()));
     } catch (error) {
       this.crud.reportError(error);
@@ -168,7 +168,7 @@ export class CreneauDerivationDialog {
     }
     this.ecriture.set(true);
     try {
-      const rapport = await this.api.post<RapportDerivation>(`/api/creneaux/derivation?mode=${this.data.mode}`, this.requete());
+      const rapport = await this.creneauxApi.derive(this.data.mode, this.requete());
       this.dialogRef.close(rapport);
     } catch (error) {
       this.crud.reportError(error);

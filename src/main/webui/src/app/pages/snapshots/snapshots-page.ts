@@ -7,9 +7,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import { intlLocale } from '../../core/locale';
-import { PersistenceStatus, PlanSnapshot, RestaurationSnapshot } from '../../core/models';
+import { PlanSnapshot, RestaurationSnapshot } from '../../core/models';
 import { PlanSnapshotStore, ReferencesManquantesError } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -92,7 +92,7 @@ export class SnapshotsPage {
   protected readonly enCours = signal<number | 'capture' | null>(null);
   protected readonly locked = computed(() => this.jobs.editingLocked());
 
-  private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
@@ -104,7 +104,7 @@ export class SnapshotsPage {
 
   private async chargerAffectationsCourantes(): Promise<void> {
     try {
-      const statut = await this.api.get<PersistenceStatus>('/api/planning/persisted/count');
+      const statut = await this.planningApi.persistedCount();
       this.affectationsCourantes.set(statut.assignments);
     } catch {
       // Without it the delta column simply stays empty.

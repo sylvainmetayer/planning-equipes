@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import { intlLocale } from '../../core/locale';
 import {
   libelleDernierePublication,
@@ -29,7 +29,6 @@ import {
   PerimetreReplanification,
   PlanningDiagnostic,
   PreviousPlan,
-  RapportPublication,
   Reamorcage,
   ReamorcageEffectue,
   ResultatSolveIncremental,
@@ -384,7 +383,7 @@ export class SolverPage {
     return animateurs > 1 && postes > 0 ? Math.round(postes * Math.log10(animateurs)) : 0;
   });
 
-  private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
@@ -791,9 +790,7 @@ export class SolverPage {
     this.exportBusy.set(true);
     this.output.set($localize`:@@solver.exportGlobalBuilding:Construction du PDF global...`);
     try {
-      this.output.set(
-        await this.api.downloadGet('/api/planning/export/pdf/global', 'planning-global.pdf', 'application/pdf')
-      );
+      this.output.set(await this.planningApi.exportGlobalPdf());
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {
@@ -860,7 +857,7 @@ export class SolverPage {
       }
       this.output.set($localize`:@@publication.enCours:Publication du planning...`);
       try {
-        const rapport = await this.api.post<RapportPublication>('/api/planning/publication', null);
+        const rapport = await this.planningApi.publish();
         const resume = resumePublication(rapport);
         this.output.set(resume.details ? `${resume.titre} — ${resume.details}` : resume.titre);
         this.publicationListeOuverte.set(false);
@@ -881,7 +878,7 @@ export class SolverPage {
    */
   protected async chargerApercuPublication(): Promise<void> {
     try {
-      this.publicationApercu.set(await this.api.get<ApercuPublication>('/api/planning/publication'));
+      this.publicationApercu.set(await this.planningApi.publicationPreview());
     } catch {
       // Le bloc reste muet plutôt que d'annoncer un décompte qu'on n'a pas lu.
       this.publicationApercu.set(null);
@@ -901,9 +898,7 @@ export class SolverPage {
     this.output.set($localize`:@@solver.exportBuilding:Construction de l'archive d'export...`);
     try {
       const planning = await this.planningState.require();
-      this.output.set(
-        await this.api.downloadPost('/api/planning/export/bundle/all', 'planning.zip', planning, 'application/zip')
-      );
+      this.output.set(await this.planningApi.exportBundle(planning));
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {
@@ -914,7 +909,7 @@ export class SolverPage {
   /** Best-effort like {@link loadLastRun}: without it the line under the buttons simply stays empty. */
   private async chargerPointDeDepart(): Promise<void> {
     try {
-      const statut = await this.api.get<{ assignments?: number }>('/api/planning/persisted/count');
+      const statut: { assignments?: number } = await this.planningApi.persistedCount();
       this.affectationsEnregistrees.set(typeof statut.assignments === 'number' ? statut.assignments : null);
       await this.resolution.reload();
     } catch {

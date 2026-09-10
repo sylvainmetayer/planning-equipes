@@ -17,9 +17,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
+import { ConstraintsApi } from '../../core/api/constraints-api';
 import { TODAY_ANCHOR, DateMockService } from '../../core/date-mock.service';
 import { EditionStore } from '../../core/edition.store';
-import { ConstraintsView, ResetSummary } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -74,6 +75,8 @@ export class DebugPage {
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
   private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
+  private readonly constraintsApi = inject(ConstraintsApi);
   private readonly notifications = inject(NotificationService);
   private readonly jobs = inject(SolverJobService);
   private readonly recopie = inject(ConfirmationRecopie);
@@ -147,7 +150,7 @@ export class DebugPage {
     this.loading.set(true);
     this.error.set('');
     try {
-      const view = await this.api.get<ConstraintsView>('/api/constraints');
+      const view = await this.constraintsApi.catalogue();
       this.output.set(JSON.stringify(view, null, 2));
     } catch (error) {
       this.output.set('');
@@ -201,7 +204,7 @@ export class DebugPage {
     await this.instantane.proposer($localize`:@@dataSetup.action.reset:vider la base`);
     this.resetting.set(true);
     try {
-      await this.api.post<ResetSummary>('/api/planning/reset', {});
+      await this.planningApi.reset();
       this.planningState.set(null);
       await Promise.all([
         this.referenceData.reload(),

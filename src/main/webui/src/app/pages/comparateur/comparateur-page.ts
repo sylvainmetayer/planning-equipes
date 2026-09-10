@@ -7,7 +7,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import { intlLocale } from '../../core/locale';
 import { ComparaisonSnapshots, CoteComparaison, PlanSnapshot } from '../../core/models';
 import { StatusMessage } from '../../shared/status-message';
@@ -69,7 +69,7 @@ export class ComparateurPage {
     return comparaison !== null && (comparaison.base.kpiRecalcule || comparaison.variante.kpiRecalcule);
   });
 
-  private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
 
   constructor() {
     void this.chargerInstantanes();
@@ -91,7 +91,7 @@ export class ComparateurPage {
     try {
       // Every edition's snapshots, not just the current one's: the variant of
       // an edition is another edition.
-      const instantanes = await this.api.get<PlanSnapshot[]>('/api/planning/snapshots/comparables');
+      const instantanes = await this.planningApi.comparableSnapshots();
       this.instantanes.set(instantanes);
       if (this.varianteId() === '' && instantanes.length > 0) {
         this.varianteId.set(String(instantanes[0].id));
@@ -111,8 +111,7 @@ export class ComparateurPage {
     this.error.set('');
     this.comparaison.set(null);
     try {
-      const params = new URLSearchParams({ base: this.baseId(), variante: this.varianteId() });
-      this.comparaison.set(await this.api.get<ComparaisonSnapshots>(`/api/planning/snapshots/compare?${params}`));
+      this.comparaison.set(await this.planningApi.compareSnapshots(this.baseId(), this.varianteId()));
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

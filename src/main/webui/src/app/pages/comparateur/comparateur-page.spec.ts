@@ -11,7 +11,7 @@
 import { provideZonelessChangeDetection, Signal, WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import { ComparaisonSnapshots, CoteComparaison, PlanningKpi, PlanSnapshot } from '../../core/models';
 import { LigneMetrique } from './comparateur-metrics';
 import { ComparateurPage } from './comparateur-page';
@@ -115,13 +115,14 @@ function ligne(overrides: Partial<LigneMetrique> = {}): LigneMetrique {
 }
 
 describe('ComparateurPage', () => {
-  const api = { get: vi.fn() };
+  const planningApi = { comparableSnapshots: vi.fn(), compareSnapshots: vi.fn() };
 
   beforeEach(() => {
-    api.get.mockReset();
-    api.get.mockResolvedValue([]);
+    planningApi.comparableSnapshots.mockReset();
+    planningApi.compareSnapshots.mockReset();
+    planningApi.comparableSnapshots.mockResolvedValue([]);
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: ApiService, useValue: api }]
+      providers: [provideZonelessChangeDetection(), { provide: PlanningApi, useValue: planningApi }]
     });
   });
 
@@ -132,7 +133,7 @@ describe('ComparateurPage', () => {
   describe('loading state', () => {
     it('is loading while the pickers are in flight and idle once they land', async () => {
       const pending = deferred<PlanSnapshot[]>();
-      api.get.mockReturnValue(pending.promise);
+      planningApi.comparableSnapshots.mockReturnValue(pending.promise);
 
       const page = createPage();
       expect(page.chargement()).toBe(true);
@@ -148,13 +149,13 @@ describe('ComparateurPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.chargement()).toBe(false));
 
-      expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/planning/snapshots/comparables');
+      expect(planningApi.comparableSnapshots).toHaveBeenCalledOnce();
     });
 
     it('reloads the pickers on demand, since a solve elsewhere adds snapshots', async () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.chargement()).toBe(false));
-      api.get.mockResolvedValue([snapshot({ id: 9 })]);
+      planningApi.comparableSnapshots.mockResolvedValue([snapshot({ id: 9 })]);
 
       await page.rafraichir();
 
@@ -164,7 +165,7 @@ describe('ComparateurPage', () => {
 
   describe('error state', () => {
     it('shows a failed picker load and stops loading', async () => {
-      api.get.mockRejectedValue(new Error('Instantanés illisibles.'));
+      planningApi.comparableSnapshots.mockRejectedValue(new Error('Instantanés illisibles.'));
 
       const page = createPage();
       await vi.waitFor(() => expect(page.chargement()).toBe(false));
@@ -174,10 +175,10 @@ describe('ComparateurPage', () => {
     });
 
     it('shows a failed comparison and leaves no half-built table behind', async () => {
-      api.get.mockResolvedValue([snapshot({ id: 8 })]);
+      planningApi.comparableSnapshots.mockResolvedValue([snapshot({ id: 8 })]);
       const page = createPage();
       await vi.waitFor(() => expect(page.varianteId()).toBe('8'));
-      api.get.mockRejectedValue(new Error('Comparaison impossible.'));
+      planningApi.compareSnapshots.mockRejectedValue(new Error('Comparaison impossible.'));
 
       await page.comparer();
 
@@ -188,15 +189,15 @@ describe('ComparateurPage', () => {
     });
 
     it('drops the previous comparison before running a new one', async () => {
-      api.get.mockResolvedValue([snapshot({ id: 8 })]);
+      planningApi.comparableSnapshots.mockResolvedValue([snapshot({ id: 8 })]);
       const page = createPage();
       await vi.waitFor(() => expect(page.varianteId()).toBe('8'));
 
-      api.get.mockResolvedValue(comparaison());
+      planningApi.compareSnapshots.mockResolvedValue(comparaison());
       await page.comparer();
       expect(page.comparaison()).not.toBeNull();
 
-      api.get.mockRejectedValue(new Error('Comparaison impossible.'));
+      planningApi.compareSnapshots.mockRejectedValue(new Error('Comparaison impossible.'));
       await page.comparer();
 
       expect(page.comparaison()).toBeNull();
@@ -229,7 +230,7 @@ describe('ComparateurPage', () => {
     });
 
     it('preselects the first snapshot as the variant', async () => {
-      api.get.mockResolvedValue([snapshot({ id: 8 }), snapshot({ id: 9 })]);
+      planningApi.comparableSnapshots.mockResolvedValue([snapshot({ id: 8 }), snapshot({ id: 9 })]);
 
       const page = createPage();
       await vi.waitFor(() => expect(page.chargement()).toBe(false));
@@ -238,7 +239,7 @@ describe('ComparateurPage', () => {
     });
 
     it('does not overwrite a variant the user already picked when the list is reloaded', async () => {
-      api.get.mockResolvedValue([snapshot({ id: 8 }), snapshot({ id: 9 })]);
+      planningApi.comparableSnapshots.mockResolvedValue([snapshot({ id: 8 }), snapshot({ id: 9 })]);
       const page = createPage();
       await vi.waitFor(() => expect(page.varianteId()).toBe('8'));
 
@@ -264,9 +265,9 @@ describe('ComparateurPage', () => {
 
       expect(page.pretAComparer()).toBe(false);
 
-      api.get.mockClear();
+      planningApi.compareSnapshots.mockClear();
       await page.comparer();
-      expect(api.get).not.toHaveBeenCalled();
+      expect(planningApi.compareSnapshots).not.toHaveBeenCalled();
     });
 
     it('refuses to compare while a side is unset', async () => {
@@ -290,35 +291,35 @@ describe('ComparateurPage', () => {
 
   describe('displayed data', () => {
     it('sends both sides as query parameters and keeps what comes back', async () => {
-      api.get.mockResolvedValue([snapshot({ id: 8 })]);
+      planningApi.comparableSnapshots.mockResolvedValue([snapshot({ id: 8 })]);
       const page = createPage();
       await vi.waitFor(() => expect(page.varianteId()).toBe('8'));
-      api.get.mockResolvedValue(comparaison());
+      planningApi.compareSnapshots.mockResolvedValue(comparaison());
 
       await page.comparer();
 
-      expect(api.get).toHaveBeenLastCalledWith('/api/planning/snapshots/compare?base=courant&variante=8');
+      expect(planningApi.compareSnapshots).toHaveBeenLastCalledWith('courant', '8');
       expect(page.comparaison()).not.toBeNull();
       expect(page.lignes().length).toBeGreaterThan(0);
     });
 
     it('flags the degraded mode when either side had its KPI recomputed', async () => {
-      api.get.mockResolvedValue([snapshot({ id: 8 })]);
+      planningApi.comparableSnapshots.mockResolvedValue([snapshot({ id: 8 })]);
       const page = createPage();
       await vi.waitFor(() => expect(page.varianteId()).toBe('8'));
 
-      api.get.mockResolvedValue(comparaison({ variante: cote({ snapshotId: 8, kpiRecalcule: true }) }));
+      planningApi.compareSnapshots.mockResolvedValue(comparaison({ variante: cote({ snapshotId: 8, kpiRecalcule: true }) }));
       await page.comparer();
 
       expect(page.kpiRecalcule()).toBe(true);
     });
 
     it('leaves the degraded mode off when both sides carry stored KPI', async () => {
-      api.get.mockResolvedValue([snapshot({ id: 8 })]);
+      planningApi.comparableSnapshots.mockResolvedValue([snapshot({ id: 8 })]);
       const page = createPage();
       await vi.waitFor(() => expect(page.varianteId()).toBe('8'));
 
-      api.get.mockResolvedValue(comparaison());
+      planningApi.compareSnapshots.mockResolvedValue(comparaison());
       await page.comparer();
 
       expect(page.kpiRecalcule()).toBe(false);
@@ -389,24 +390,23 @@ describe('ComparateurPage', () => {
 
 describe('ComparateurPage rendering', () => {
   let fixture: ComponentFixture<ComparateurPage>;
-  let get: ReturnType<typeof vi.fn>;
 
   async function rendre(
     instantanes: PlanSnapshot[],
     resultat: ComparaisonSnapshots | Error | null = null
   ): Promise<void> {
-    get = vi.fn(async (url: string) => {
-      if (url.includes('comparables')) {
-        return instantanes;
-      }
-      if (resultat instanceof Error) {
-        throw resultat;
-      }
-      return resultat;
-    });
+    const planningApi = {
+      comparableSnapshots: vi.fn(async () => instantanes),
+      compareSnapshots: vi.fn(async () => {
+        if (resultat instanceof Error) {
+          throw resultat;
+        }
+        return resultat;
+      })
+    };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: ApiService, useValue: { get } }]
+      providers: [provideZonelessChangeDetection(), { provide: PlanningApi, useValue: planningApi }]
     });
     fixture = TestBed.createComponent(ComparateurPage);
     await fixture.whenStable();

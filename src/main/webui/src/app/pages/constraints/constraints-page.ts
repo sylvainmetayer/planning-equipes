@@ -11,7 +11,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { RouterLink } from '@angular/router';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ApiService } from '../../core/api.service';
+import { ConstraintsApi } from '../../core/api/constraints-api';
 import { urlLegifrance } from '../../core/legifrance';
 import { intlLocale } from '../../core/locale';
 import {
@@ -19,8 +19,7 @@ import {
   DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
   ConstraintView,
   ConstraintsView,
-  NiveauContrainte,
-  ParametresLegaux
+  NiveauContrainte
 } from '../../core/models';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -133,7 +132,7 @@ export class ConstraintsPage {
   /** Shared with the Solveur screen: see `ProblemesStore.alerteReglesLegales`. */
   protected readonly alerteReglesLegales = computed(() => this.problemes.alerteReglesLegales());
 
-  private readonly api = inject(ApiService);
+  private readonly constraintsApi = inject(ConstraintsApi);
   private readonly dialog = inject(MatDialog);
   private readonly legalDisable = inject(LegalDisableConfirmService);
 
@@ -193,7 +192,7 @@ export class ConstraintsPage {
     this.loading.set(true);
     this.error.set('');
     try {
-      this.apply(await this.api.get<ConstraintsView>('/api/constraints'));
+      this.apply(await this.constraintsApi.catalogue());
     } catch (error) {
       this.view.set(null);
       this.error.set(errorPrefix(error));
@@ -214,7 +213,7 @@ export class ConstraintsPage {
     this.loading.set(true);
     this.error.set('');
     try {
-      this.apply(await this.api.post<ConstraintsView>('/api/constraints/diagnostic', {}));
+      this.apply(await this.constraintsApi.diagnose());
     } catch (error) {
       this.error.set(errorPrefix(error));
     } finally {
@@ -233,7 +232,7 @@ export class ConstraintsPage {
     this.parametresLoading.set(true);
     this.parametresError.set('');
     try {
-      const parametres = await this.api.get<ParametresLegaux>('/api/parametres-legaux');
+      const parametres = await this.constraintsApi.legalParameters();
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
       this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
       this.pauseEntreVacationsMinutes.set(parametres.pauseMinimaleEntreVacationsMinutes);
@@ -281,7 +280,7 @@ export class ConstraintsPage {
     this.parametresError.set('');
     this.parametresSaved.set(false);
     try {
-      const parametres = await this.api.put<ParametresLegaux>('/api/parametres-legaux', {
+      const parametres = await this.constraintsApi.saveLegalParameters({
         dureeHebdomadaireMaxMinutes: Math.round(heures * 60),
         dureeHebdomadaireMaxMineurMinutes: Math.round(heuresMineur * 60),
         pauseMinimaleEntreVacationsMinutes: Math.round(pauseMinutes),
@@ -327,7 +326,7 @@ export class ConstraintsPage {
     this.togglingConstraint.set(constraint.name);
     this.error.set('');
     try {
-      await this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(constraint.name)}`, { actif });
+      await this.constraintsApi.setActive(constraint.name, actif);
     } catch (error) {
       this.setConstraintActif(constraint.name, !actif);
       event.source.checked = !actif;
@@ -371,10 +370,7 @@ export class ConstraintsPage {
     this.patchConstraint(constraint.name, { poids: borne });
     this.error.set('');
     try {
-      const enregistre = await this.api.put<{ poids: number }>(
-        `/api/constraints/${encodeURIComponent(constraint.name)}/poids`,
-        { poids: borne }
-      );
+      const enregistre = await this.constraintsApi.setWeight(constraint.name, borne);
       this.patchConstraint(constraint.name, { poids: enregistre.poids });
     } catch (error) {
       this.patchConstraint(constraint.name, { poids: precedent });

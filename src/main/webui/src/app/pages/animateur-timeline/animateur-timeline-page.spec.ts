@@ -10,6 +10,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { Animateur, Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
@@ -280,7 +281,8 @@ describe('buildStandsSummary', () => {
 
 describe('AnimateurTimelinePage', () => {
   let fixture: ComponentFixture<AnimateurTimelinePage>;
-  let api: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn>; downloadPost: ReturnType<typeof vi.fn> };
+  let api: { get: ReturnType<typeof vi.fn> };
+  let planningApi: { exportForAnimateur: ReturnType<typeof vi.fn>; sendToAnimateur: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
   let replaceState: ReturnType<typeof vi.fn>;
   let planningState: { loadForDisplay: ReturnType<typeof vi.fn>; require: ReturnType<typeof vi.fn> };
@@ -302,10 +304,10 @@ describe('AnimateurTimelinePage', () => {
     options: { animateurEnParametre?: string | null } = {},
     apiGet: (url: string) => unknown = () => []
   ): Promise<void> {
-    api = {
-      get: vi.fn(async (url: string) => apiGet(url)),
-      post: vi.fn(async () => ({ envoyes: 1, echecs: [] })),
-      downloadPost: vi.fn(async () => 'Téléchargement démarré.')
+    api = { get: vi.fn(async (url: string) => apiGet(url)) };
+    planningApi = {
+      exportForAnimateur: vi.fn(async () => 'Téléchargement démarré.'),
+      sendToAnimateur: vi.fn(async () => ({ envoyes: 1, echecs: [] }))
     };
     notify = vi.fn();
     replaceState = vi.fn();
@@ -318,6 +320,7 @@ describe('AnimateurTimelinePage', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: ApiService, useValue: api },
+        { provide: PlanningApi, useValue: planningApi },
         { provide: NotificationService, useValue: { notify } },
         { provide: PlanningStateService, useValue: planningState },
         { provide: Location, useValue: { path: () => '/timeline', replaceState } },
@@ -438,9 +441,10 @@ describe('AnimateurTimelinePage', () => {
     bouton('Exporter le PDF').click();
     await fixture.whenStable();
 
-    expect(api.downloadPost).toHaveBeenCalledOnce();
-    const [url, filename, corps, contentType] = api.downloadPost.mock.calls[0] as unknown as [string, string, unknown, string];
-    expect(url).toBe('/api/planning/export/pdf/animateur/a1');
+    expect(planningApi.exportForAnimateur).toHaveBeenCalledOnce();
+    const [format, animateurId, filename, corps, contentType] = planningApi.exportForAnimateur.mock.calls[0] as unknown as [string, string, string, unknown, string];
+    expect(format).toBe('pdf');
+    expect(animateurId).toBe('a1');
     // Named after the person, not after their id: the file lands in a mailbox.
     expect(filename).toBe('planning-Alice-Martin.pdf');
     // The planning goes as the request body: what is exported is what is shown.
@@ -451,7 +455,7 @@ describe('AnimateurTimelinePage', () => {
 
   it('reports an export failure instead of failing silently', async () => {
     await rendre(planningDeDeux());
-    api.downloadPost.mockRejectedValue(new Error('serveur indisponible'));
+    planningApi.exportForAnimateur.mockRejectedValue(new Error('serveur indisponible'));
 
     bouton("Exporter l'ICS").click();
     await fixture.whenStable();
@@ -467,7 +471,7 @@ describe('AnimateurTimelinePage', () => {
     bouton('Envoyer par e-mail').click();
     await fixture.whenStable();
 
-    expect(api.post).toHaveBeenCalledWith('/api/planning/envoi/animateur/a1', null);
+    expect(planningApi.sendToAnimateur).toHaveBeenCalledWith('a1');
   });
 
   it('draws the breaks of the shown days on their track and lists them, the relay-less one flagged', async () => {

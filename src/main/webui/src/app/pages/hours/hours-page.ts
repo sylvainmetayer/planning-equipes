@@ -7,7 +7,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import {
   DUREE_HEBDOMADAIRE_MAX_HEURES,
   DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
@@ -114,7 +114,7 @@ export class HoursPage {
     };
   });
 
-  private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
 
@@ -134,7 +134,7 @@ export class HoursPage {
     this.output.set('');
     try {
       const planning = await this.planningState.require();
-      this.rapport.set(await this.api.post<HeuresRapport>('/api/planning/hours', planning));
+      this.rapport.set(await this.planningApi.hoursReport(planning));
     } catch (error) {
       // The report is dropped, unlike the lists of /kpi and /comparateur which
       // survive a failed refresh. It is not an inconsistency: those pages
@@ -153,9 +153,7 @@ export class HoursPage {
     this.output.set($localize`:@@hours.exporting:Construction de l'export CSV...`);
     try {
       const planning = await this.planningState.require();
-      this.output.set(
-        await this.api.downloadPost('/api/planning/hours/export', 'heures-planning.csv', planning, 'text/csv')
-      );
+      this.output.set(await this.planningApi.exportHours(planning));
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {

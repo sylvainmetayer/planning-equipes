@@ -15,7 +15,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { CreneauxApi } from '../../core/api/creneaux-api';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { summarizeVacationsByDay } from './decoupage';
@@ -228,7 +228,7 @@ export class CreneauxPage {
 
   private async chargerGrille(): Promise<void> {
     try {
-      this.parametresDecoupage.set(await this.api.get<ParametresDecoupage>('/api/parametres-decoupage'));
+      this.parametresDecoupage.set(await this.creneauxApi.slicingParameters());
     } catch (error) {
       this.crud.reportError(error);
       return;
@@ -241,8 +241,8 @@ export class CreneauxPage {
     this.controleLoading.set(true);
     try {
       const [diagnostic, controle] = await Promise.all([
-        this.api.get<DiagnosticGrille>('/api/creneaux/diagnostic'),
-        this.api.get<RapportGrille>('/api/creneaux/controle')
+        this.creneauxApi.diagnostic(),
+        this.creneauxApi.control()
       ]);
       this.diagnostic.set(diagnostic);
       this.controle.set(controle);
@@ -268,7 +268,7 @@ export class CreneauxPage {
       // slicing settings are edited on Paramètres, and sending the whole object
       // would let a stale tab there revert this choice.
       this.parametresDecoupage.set(
-        await this.api.put<ParametresDecoupage>('/api/parametres-decoupage/mode-grille', { modeGrille: mode })
+        await this.creneauxApi.setGridMode(mode)
       );
       await this.rechargerVerdict();
     } catch (error) {
@@ -319,7 +319,7 @@ export class CreneauxPage {
   private async apresSerie(rapport: RapportRecurrence): Promise<void> {
     await Promise.all([this.crud.reload(), this.resolution.reload(), this.problemes.reloadFeasibility()]);
     this.controle.set(rapport.controle);
-    this.diagnostic.set(await this.api.get<DiagnosticGrille>('/api/creneaux/diagnostic').catch(() => this.diagnostic()));
+    this.diagnostic.set(await this.creneauxApi.diagnostic().catch(() => this.diagnostic()));
     this.notifications.notify({
       title: $localize`:@@creneaux.serie.done:${rapport.nombreGeneres}:count: créneau(x) ajoutés à la grille.`,
       variant: 'success',
@@ -383,7 +383,7 @@ export class CreneauxPage {
   // it belongs next to the list it rewrites. Its parameters are edited on the
   // Paramètres page.
 
-  private readonly api = inject(ApiService);
+  private readonly creneauxApi = inject(CreneauxApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
 
@@ -400,7 +400,7 @@ export class CreneauxPage {
     this.previewLoading.set(true);
     this.previewVacations.set(null);
     try {
-      this.previewVacations.set(await this.api.get<Creneau[]>('/api/decoupage/preview'));
+      this.previewVacations.set(await this.creneauxApi.previewSlicing());
     } catch (error) {
       this.crud.reportError(error);
     } finally {
@@ -421,12 +421,12 @@ export class CreneauxPage {
     }
     this.genererLoading.set(true);
     try {
-      await this.api.post('/api/decoupage/generer', {});
+      await this.creneauxApi.generateSlicing();
       await Promise.all([this.crud.reload(), this.resolution.reload()]);
       // The server declares the grid as vacations when it slices it, so the
       // mode is read back rather than written from here — an assistant slicing
       // over MCP has to get the same declaration.
-      this.parametresDecoupage.set(await this.api.get<ParametresDecoupage>('/api/parametres-decoupage'));
+      this.parametresDecoupage.set(await this.creneauxApi.slicingParameters());
       await this.rechargerVerdict();
       this.notifications.notify({
         title: $localize`:@@decoupage.generated:Découpage généré : les vacations ont remplacé les amplitudes.`,

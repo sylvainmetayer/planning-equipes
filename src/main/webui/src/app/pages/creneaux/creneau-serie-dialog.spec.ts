@@ -8,7 +8,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { RapportRecurrence } from '../../core/models';
@@ -26,20 +26,22 @@ function apercu(patch: Partial<RapportRecurrence['controle']> = {}): RapportRecu
 }
 
 function monter(options: { editingLocked?: boolean; reponse?: RapportRecurrence; controleActuel?: RapportRecurrence['controle'] } = {}) {
+  // Two stubs, not one: a test must tell a preview from a write.
+  const preview = vi.fn(async () => options.reponse ?? apercu());
   const post = vi.fn(async () => options.reponse ?? apercu());
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: ApiService, useValue: { post } },
+      { provide: CreneauxApi, useValue: { previewRecurrence: preview, createRecurrence: post } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { mode: 'AMPLITUDES', controleActuel: options.controleActuel ?? null } }
     ]
   });
-  return { fixture: TestBed.createComponent(CreneauSerieDialog), post, close };
+  return { fixture: TestBed.createComponent(CreneauSerieDialog), preview, post, close };
 }
 
 function racine(fixture: ComponentFixture<CreneauSerieDialog>): HTMLElement {
@@ -89,16 +91,16 @@ describe('CreneauSerieDialog', () => {
   });
 
   it('previews on the server with the structured rule, writing nothing, then allows the creation', async () => {
-    const { fixture, post, close } = monter();
+    const { fixture, preview, post, close } = monter();
     await fixture.whenStable();
     await remplirRegle(fixture);
 
     bouton(fixture, 'Prévisualiser').click();
     await fixture.whenStable();
 
-    expect(post).toHaveBeenCalledOnce();
-    const [url, corps] = post.mock.calls[0] as unknown as [string, unknown];
-    expect(url).toBe('/api/creneaux/recurrence/apercu?mode=AMPLITUDES');
+    expect(preview).toHaveBeenCalledOnce();
+    const [mode, corps] = preview.mock.calls[0] as unknown as [string, unknown];
+    expect(mode).toBe('AMPLITUDES');
     expect(corps).toEqual({
       jours: 'TOUS',
       dateDebut: '2026-07-06',
@@ -117,8 +119,7 @@ describe('CreneauSerieDialog', () => {
 
     bouton(fixture, 'Créer la série').click();
     await fixture.whenStable();
-    expect(post).toHaveBeenCalledTimes(2);
-    expect((post.mock.calls[1] as unknown as [string])[0]).toBe('/api/creneaux/recurrence?mode=AMPLITUDES');
+    expect(post).toHaveBeenCalledExactlyOnceWith('AMPLITUDES', corps);
     expect(close).toHaveBeenCalledWith(apercu());
   });
 

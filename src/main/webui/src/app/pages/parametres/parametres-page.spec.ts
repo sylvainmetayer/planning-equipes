@@ -10,6 +10,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
+import { CreneauxApi } from '../../core/api/creneaux-api';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
@@ -52,6 +54,8 @@ describe('ParametresPage ninja picker', () => {
         // The constructor loads the scenario list and the découpage
         // parameters; both answers are irrelevant to the picker under test.
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: PlanningApi, useValue: { scenarioNames: vi.fn(async () => []) } },
+        { provide: CreneauxApi, useValue: { slicingParameters: vi.fn(async () => []) } },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: EditionStore, useValue: { courant: () => null } },
         { provide: ProblemesStore, useValue: { report: () => null, reloadFeasibility: vi.fn(async () => undefined) } },
@@ -151,6 +155,8 @@ describe('ParametresPage rendering', () => {
     downloadGet: ReturnType<typeof vi.fn>;
     postRaw: ReturnType<typeof vi.fn>;
   };
+  let planningApi: { scenarioNames: ReturnType<typeof vi.fn>; exportScenario: ReturnType<typeof vi.fn> };
+  let creneauxApi: { slicingParameters: ReturnType<typeof vi.fn>; saveSlicingParameters: ReturnType<typeof vi.fn> };
   let recopie: { demander: ReturnType<typeof vi.fn> };
   let instantane: { proposer: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
@@ -202,14 +208,16 @@ describe('ParametresPage rendering', () => {
     setMailFinResolution = vi.fn(async (actif: boolean) => mailFinResolution.set(actif));
     recopie = { demander: vi.fn(async () => true) };
     instantane = { proposer: vi.fn(async () => undefined) };
+    planningApi = {
+      scenarioNames: vi.fn(async () => ['festival.yaml', 'festival-canicule.yaml']),
+      exportScenario: vi.fn(async () => 'Téléchargement démarré.')
+    };
+    creneauxApi = {
+      slicingParameters: vi.fn(async () => ({ ...PARAMETRES })),
+      saveSlicingParameters: vi.fn(async (body: unknown) => body)
+    };
     api = {
       get: vi.fn(async (url: string) => {
-        if (url.includes('scenarios')) {
-          return ['festival.yaml', 'festival-canicule.yaml'];
-        }
-        if (url.includes('parametres-decoupage')) {
-          return { ...PARAMETRES };
-        }
         if (url.includes('/api/backups')) {
           return options.sauvegarde ?? SAUVEGARDE;
         }
@@ -228,6 +236,8 @@ describe('ParametresPage rendering', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: ApiService, useValue: api },
+        { provide: PlanningApi, useValue: planningApi },
+        { provide: CreneauxApi, useValue: creneauxApi },
         { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined), save: vi.fn(async () => true), reportError: vi.fn() } },
         { provide: EditionStore, useValue: { courant: () => null } },
         { provide: ProblemesStore, useValue: { report: () => null, reloadFeasibility: vi.fn(async () => undefined) } },
@@ -333,7 +343,7 @@ describe('ParametresPage rendering', () => {
     // would leave this sentence stale in a zoneless app.
     expect(apercu()).toContain("environ 8 h");
     expect(apercu()).toContain('réparties sur 3 grilles décalées');
-    expect(api.put).not.toHaveBeenCalled();
+    expect(creneauxApi.saveSlicingParameters).not.toHaveBeenCalled();
   });
 
   it('saves the edited settings and says so', async () => {
@@ -344,9 +354,8 @@ describe('ParametresPage rendering', () => {
     racine().querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
-    expect(api.put).toHaveBeenCalledOnce();
-    const [url, corps] = api.put.mock.calls[0] as unknown as [string, { dureePauseRepasMinutes: number }];
-    expect(url).toBe('/api/parametres-decoupage');
+    expect(creneauxApi.saveSlicingParameters).toHaveBeenCalledOnce();
+    const [corps] = creneauxApi.saveSlicingParameters.mock.calls[0] as unknown as [{ dureePauseRepasMinutes: number }];
     expect(corps.dureePauseRepasMinutes).toBe(60);
     expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
   });

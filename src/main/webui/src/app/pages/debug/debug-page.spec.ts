@@ -18,6 +18,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
+import { PlanningApi } from '../../core/api/planning-api';
 import { DebugPage, CLEAR_KEYWORD } from './debug-page';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
 import type { Edition } from '../../core/models';
@@ -27,6 +28,7 @@ type PageInternals = { onResetDatabase: () => Promise<void> };
 
 describe('DebugPage reset', () => {
   const api = { get: vi.fn(), post: vi.fn() };
+  const planningApi = { reset: vi.fn() };
   const recopie = { demander: vi.fn() };
   const instantane = { proposer: vi.fn() };
   const notifications = { notify: vi.fn() };
@@ -42,6 +44,8 @@ describe('DebugPage reset', () => {
     courant.mockReset();
     api.get.mockResolvedValue({ adminEmail: null });
     api.post.mockResolvedValue({ deleted: 0 });
+    planningApi.reset.mockReset();
+    planningApi.reset.mockResolvedValue({ deleted: 0 });
     recopie.demander.mockResolvedValue(true);
     instantane.proposer.mockResolvedValue(undefined);
     courant.mockReturnValue({ id: '2026', nom: 'Année 2026' } as Edition);
@@ -51,6 +55,7 @@ describe('DebugPage reset', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: ApiService, useValue: api },
+        { provide: PlanningApi, useValue: planningApi },
         { provide: EditionStore, useValue: { courant, reload: rechargerEditions } },
         { provide: NotificationService, useValue: notifications },
         { provide: ConfirmationRecopie, useValue: recopie },
@@ -81,7 +86,7 @@ describe('DebugPage reset', () => {
 
     expect(demande().valeurAttendue).toBe('Année 2026');
     expect(instantane.proposer).toHaveBeenCalledOnce();
-    expect(api.post).toHaveBeenCalledWith('/api/planning/reset', {});
+    expect(planningApi.reset).toHaveBeenCalledOnce();
   });
 
   // The whole point of the guard: a refused transcription must leave the

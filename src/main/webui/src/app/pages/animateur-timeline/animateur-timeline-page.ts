@@ -8,12 +8,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import { indexerPauses, pausesDe, SegmentPause, segmentsPause } from '../../core/pauses-index';
 import { uniqueById } from '../../core/date-utils';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { Animateur, CompteRenduEnvoi, PlanningEvenement, PosteAffectation, TypologieItem, RapportPauses } from '../../core/models';
+import { Animateur, PlanningEvenement, PosteAffectation, TypologieItem, RapportPauses } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels, typologiePrincipale } from '../../core/typologie-colors';
 import { SelectionRecherche } from '../../shared/selection-recherche';
 import { errorMessage, errorPrefix } from '../../core/error-message';
@@ -125,6 +126,7 @@ export class AnimateurTimelinePage {
   protected readonly pauses = signal<RapportPauses | null>(null);
 
   private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
   private readonly notifications = inject(NotificationService);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
@@ -255,9 +257,8 @@ export class AnimateurTimelinePage {
     try {
       const planning = await this.planningState.require();
       const filename = exportFilename(this.animateurOptions(), animateurId, format);
-      const url = `/api/planning/export/${format}/animateur/${encodeURIComponent(animateurId)}`;
       this.notifications.notify({
-        title: await this.api.downloadPost(url, filename, planning, contentType),
+        title: await this.planningApi.exportForAnimateur(format, animateurId, filename, planning, contentType),
         variant: 'success'
       });
     } catch (error) {
@@ -288,10 +289,7 @@ export class AnimateurTimelinePage {
     const label = this.animateurOptions().find((option) => option.id === animateurId)?.label ?? animateurId;
     this.envoiBusy.set(true);
     try {
-      await this.api.post<CompteRenduEnvoi>(
-        `/api/planning/envoi/animateur/${encodeURIComponent(animateurId)}`,
-        null
-      );
+      await this.planningApi.sendToAnimateur(animateurId);
       this.notifications.notify({
         title: $localize`:@@timeline.envoi.succes:Planning envoyé à ${label}:animateur:`,
         variant: 'success'

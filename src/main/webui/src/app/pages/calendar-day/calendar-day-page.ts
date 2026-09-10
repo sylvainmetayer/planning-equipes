@@ -9,14 +9,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
-import { ApiService } from '../../core/api.service';
+import { PlanningApi } from '../../core/api/planning-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { cibleDepot, resumeDeplacement } from '../../shared/deplacement';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { Creneau, PersistenceStatus, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
+import { Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { aUneAppreciationPour, ouvrirExplication } from '../../shared/affectation-explanation-dialog';
 import { errorPrefix } from '../../core/error-message';
 
@@ -109,7 +109,7 @@ export class CalendarDayPage {
 
   protected readonly verrous = inject(VerrouillageStore);
 
-  private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly dialog = inject(MatDialog);
   private readonly explications = inject(AffectationExplanationService);
@@ -250,7 +250,7 @@ export class CalendarDayPage {
 
   private async refreshPersistedCount(): Promise<void> {
     try {
-      const status = await this.api.get<PersistenceStatus>('/api/planning/persisted/count');
+      const status = await this.planningApi.persistedCount();
       this.persistedCount.set(String(status.assignments));
     } catch {
       this.persistedCount.set($localize`:@@job.scoreUnavailable:n/d`);
