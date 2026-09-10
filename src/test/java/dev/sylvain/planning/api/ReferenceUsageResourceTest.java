@@ -18,7 +18,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.response.ValidatableResponse;

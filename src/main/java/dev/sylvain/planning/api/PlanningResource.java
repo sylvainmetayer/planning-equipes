@@ -8,11 +8,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.PlanningPersistenceService;
-import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
-import dev.sylvain.planning.service.SolvePipeline;
-import dev.sylvain.planning.service.ProblemScaleService;
+import dev.sylvain.planning.service.solve.SolvePipeline;
+import dev.sylvain.planning.service.solve.ProblemScaleService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;

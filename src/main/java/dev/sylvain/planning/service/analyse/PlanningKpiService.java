@@ -17,13 +17,13 @@ import java.util.regex.Pattern;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.service.PlanSnapshotService.AffectationSnapshot;
+import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapshot;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import dev.sylvain.planning.service.ConstraintAnalysisStore;
-import dev.sylvain.planning.service.PlanSnapshotService;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
 
 /**

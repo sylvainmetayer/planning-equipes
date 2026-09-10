@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneDetailView;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.PlanSnapshotService;
-import dev.sylvain.planning.service.PlanSnapshotService.AffectationSnapshot;
-import dev.sylvain.planning.service.PlanSnapshotService.SnapshotDetail;
-import dev.sylvain.planning.service.PlanSnapshotService.SnapshotMeta;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
+import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapshot;
+import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotDetail;
+import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotMeta;
 
 /**
  * Reading a snapshot's content is the one tool here that could hand back

@@ -9,7 +9,7 @@ import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPub
 import dev.sylvain.planning.service.publication.PlanPublicationService.DestinatairePublication;
 import dev.sylvain.planning.service.publication.PlanPublicationService.RapportPublication;
 import dev.sylvain.planning.service.publication.PlanPublieService;
-import dev.sylvain.planning.service.PlanSnapshotService;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.publication.PlanningDeliveryService;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;

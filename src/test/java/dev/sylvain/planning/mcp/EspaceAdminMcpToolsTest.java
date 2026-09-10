@@ -17,7 +17,7 @@ import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.Fe
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.InvitationReport;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
-import dev.sylvain.planning.service.PlanningWhatIf.HardViolation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
 
 /**
  * What the admin side of the espace animateur looks like once it has passed

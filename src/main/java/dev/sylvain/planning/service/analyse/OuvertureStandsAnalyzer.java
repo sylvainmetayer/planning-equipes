@@ -20,7 +20,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.HoraireStandResolver.SourceHoraire;
 import dev.sylvain.planning.service.HoraireStandResolver;
-import dev.sylvain.planning.service.ProblemBuilder;
+import dev.sylvain.planning.service.solve.ProblemBuilder;
 
 /**
  * Read-only, stand × jour view of when each stand is <b>actually</b> open, for an

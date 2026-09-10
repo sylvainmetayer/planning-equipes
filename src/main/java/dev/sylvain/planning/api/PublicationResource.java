@@ -6,7 +6,7 @@ import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
 import dev.sylvain.planning.service.publication.PlanPublicationService.RapportPublication;
 import dev.sylvain.planning.service.publication.PlanPublieService;
-import dev.sylvain.planning.service.PlanSnapshotService;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
 import jakarta.inject.Inject;

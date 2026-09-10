@@ -28,9 +28,9 @@ import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
-import dev.sylvain.planning.service.PlanSnapshotService;
-import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.PlanningWhatIf;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningWhatIf;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.TypologieService;
 

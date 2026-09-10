@@ -5,6 +5,7 @@ import java.util.List;
 import dev.sylvain.planning.domain.Animateur;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.solve.SolverJobService;
 
 /** CRUD of the animateur referential, plus the espace access token they are reached by. */
 @ApplicationScoped

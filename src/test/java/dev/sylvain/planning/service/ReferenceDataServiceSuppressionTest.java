@@ -20,6 +20,9 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.SolverJobService;
 
 /**
  * Deleting a stand or an animateur a persisted plan still references — the twin

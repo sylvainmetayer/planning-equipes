@@ -23,6 +23,7 @@ import dev.sylvain.planning.service.StandGrilleImportReport.ImportedGrilleRow;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
+import dev.sylvain.planning.service.solve.SolverJobService;
 
 /**
  * Turns the organiser's stand matrix — one row per stand, one column per

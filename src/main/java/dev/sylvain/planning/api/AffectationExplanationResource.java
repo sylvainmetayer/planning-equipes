@@ -1,11 +1,11 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.DeplacementService;
-import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.PlanningWhatIf.AffectationExplanation;
-import dev.sylvain.planning.service.PlanningWhatIf.SuggestionsReparation;
-import dev.sylvain.planning.service.PlanningWhatIf.SwapSimulation;
+import dev.sylvain.planning.service.solve.DeplacementService;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.AffectationExplanation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.SwapSimulation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;

@@ -24,7 +24,7 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import org.junit.jupiter.api.AfterEach;
 
 import dev.sylvain.planning.service.publication.PlanPublicationService;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;

@@ -57,7 +57,7 @@ import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ScenarioSections
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.HoraireStandResolver;
-import dev.sylvain.planning.service.ProblemBuilder;
+import dev.sylvain.planning.service.solve.ProblemBuilder;
 import dev.sylvain.planning.service.TypologieItem;
 
 /**

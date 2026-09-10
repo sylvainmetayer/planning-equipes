@@ -14,7 +14,7 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningService;
 
 /**
  * Reading a scenario file, with no database and no container: the reader is pure

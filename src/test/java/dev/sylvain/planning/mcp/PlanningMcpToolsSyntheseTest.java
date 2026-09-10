@@ -19,7 +19,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationsView;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 
 /**
  * The two answers that keep a real plan readable over MCP: a capped listing

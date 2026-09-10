@@ -2,7 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.analyse.FragiliteAnalyzer;
 import dev.sylvain.planning.service.analyse.FragiliteAnalyzer.RapportFragilite;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;

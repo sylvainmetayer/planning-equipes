@@ -26,7 +26,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.AlerteService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService.NouvelleDemande;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;

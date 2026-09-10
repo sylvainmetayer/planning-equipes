@@ -1,6 +1,6 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
+import dev.sylvain.planning.service.solve.SolverJobService.SolverBusyException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;

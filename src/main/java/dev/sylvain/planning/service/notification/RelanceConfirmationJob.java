@@ -13,7 +13,7 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
-import dev.sylvain.planning.service.PlanSnapshotService;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;

@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.export.PlanningExportService;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;

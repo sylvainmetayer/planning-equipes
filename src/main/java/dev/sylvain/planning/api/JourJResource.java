@@ -10,7 +10,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.JourJService;
 import dev.sylvain.planning.service.espace.JourJService.AbsenceMarquee;
 import dev.sylvain.planning.service.espace.JourJService.EtatJourJ;
-import dev.sylvain.planning.service.PlanningWhatIf.SuggestionsReparation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;

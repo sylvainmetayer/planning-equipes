@@ -8,6 +8,8 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.VacationGeneratorService;
 
 /**
  * CRUD of the créneau grid, and the découpage that turns the edition's

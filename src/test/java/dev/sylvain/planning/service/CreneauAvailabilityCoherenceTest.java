@@ -19,13 +19,15 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.service.PlanningWhatIf.AnimateurAvailability;
-import dev.sylvain.planning.service.PlanningWhatIf.CreneauAvailability;
-import dev.sylvain.planning.service.PlanningWhatIf.MotifExclusion;
-import dev.sylvain.planning.service.PlanningWhatIf.SeatStatus;
-import dev.sylvain.planning.service.PlanningWhatIf.SuggestionReparation;
-import dev.sylvain.planning.service.PlanningWhatIf.SuggestionsReparation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.AnimateurAvailability;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.CreneauAvailability;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.MotifExclusion;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.SeatStatus;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionReparation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningWhatIf;
 
 /**
  * The acceptance criterion of issue #303, written down: an animateur the

@@ -16,8 +16,8 @@ import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
 import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
 import dev.sylvain.planning.mcp.VerrouillageMcpTools.VerrouillageView;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.SolverJobService;
-import dev.sylvain.planning.service.SolverJobService.JobStatus;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 

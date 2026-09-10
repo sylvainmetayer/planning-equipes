@@ -8,7 +8,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
 
 /**

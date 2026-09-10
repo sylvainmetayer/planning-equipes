@@ -28,6 +28,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.solve.SolverJobService;
 
 /**
  * Turns a spreadsheet export into animateur fiches — in two calls, and only

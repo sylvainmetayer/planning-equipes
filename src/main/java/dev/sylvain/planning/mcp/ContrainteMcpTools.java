@@ -7,9 +7,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ConstraintAnalysisStore;
-import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
-import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
+import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.solver.ConstraintCatalog;

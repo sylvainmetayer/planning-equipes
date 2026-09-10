@@ -26,6 +26,7 @@ import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.journal.ChampsModifies;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.solve.SolverJobService;
 
 /**
  * One door onto the whole reference model, for callers that legitimately need

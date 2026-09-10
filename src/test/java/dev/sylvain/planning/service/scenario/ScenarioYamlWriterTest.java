@@ -35,8 +35,8 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.ProblemBuilder;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.ProblemBuilder;
 import dev.sylvain.planning.service.ReferenceData;
 import dev.sylvain.planning.service.TypologieItem;
 

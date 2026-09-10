@@ -2,12 +2,12 @@ package dev.sylvain.planning.api;
 
 import java.util.List;
 
-import dev.sylvain.planning.service.PlanSnapshotService;
-import dev.sylvain.planning.service.PlanSnapshotService.RestaurationResult;
-import dev.sylvain.planning.service.PlanSnapshotService.SnapshotDetail;
-import dev.sylvain.planning.service.PlanSnapshotService.SnapshotMeta;
-import dev.sylvain.planning.service.SnapshotComparisonService;
-import dev.sylvain.planning.service.SnapshotComparisonService.ComparaisonSnapshots;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
+import dev.sylvain.planning.service.solve.PlanSnapshotService.RestaurationResult;
+import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotDetail;
+import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotMeta;
+import dev.sylvain.planning.service.solve.SnapshotComparisonService;
+import dev.sylvain.planning.service.solve.SnapshotComparisonService.ComparaisonSnapshots;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;

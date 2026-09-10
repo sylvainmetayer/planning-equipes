@@ -30,10 +30,10 @@ import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.PlanSnapshotService;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.SolverJobService;
+import dev.sylvain.planning.service.solve.SolverJobService;
 
 /**
  * Publishing (issue #245): making the working plan the plan people have been

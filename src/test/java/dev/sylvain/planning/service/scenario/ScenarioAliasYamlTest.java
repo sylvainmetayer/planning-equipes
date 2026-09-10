@@ -13,7 +13,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
-import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningService;
 
 /**
  * A scenario carrying more than fifty YAML aliases is read.

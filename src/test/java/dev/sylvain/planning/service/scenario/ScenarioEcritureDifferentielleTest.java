@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
 import dev.sylvain.planning.service.HoraireStandResolver;
-import dev.sylvain.planning.service.ProblemBuilder;
+import dev.sylvain.planning.service.solve.ProblemBuilder;
 
 /**
  * What every bundled scenario reads as <b>after being written back out</b>,

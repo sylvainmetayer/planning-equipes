@@ -1,7 +1,7 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.PlanningWhatIf.CreneauAvailability;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.CreneauAvailability;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;

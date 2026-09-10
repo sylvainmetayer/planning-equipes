@@ -31,14 +31,14 @@ on:
       - 'src/main/resources/solver/solverConfig.xml'
       - 'src/main/resources/application.properties'
       - 'src/main/resources/scenarios/**'
-      - 'src/test/java/dev/sylvain/planning/service/PlanningServiceScenario*Test.java'
+      - 'src/test/java/dev/sylvain/planning/service/solve/PlanningServiceScenario*Test.java'
       # Le test phare appelle ces classes en direct, et elles décident de la taille
       # du problème (HoraireStandResolver) ou de sa construction (ProblemBuilder).
-      - 'src/main/java/dev/sylvain/planning/service/PlanningService.java'
-      - 'src/main/java/dev/sylvain/planning/service/ProblemBuilder.java'
+      - 'src/main/java/dev/sylvain/planning/service/solve/PlanningService.java'
+      - 'src/main/java/dev/sylvain/planning/service/solve/ProblemBuilder.java'
       - 'src/main/java/dev/sylvain/planning/service/HoraireStandResolver.java'
       - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
-      - 'src/main/java/dev/sylvain/planning/service/SolveRunner.java'
+      - 'src/main/java/dev/sylvain/planning/service/solve/SolveRunner.java'
       - 'src/main/java/dev/sylvain/planning/scenario/**'
       # Une montée de version Timefold est précisément le moment où l'on veut
       # savoir si les scénarios connus convergent toujours.
@@ -53,14 +53,14 @@ on:
       - 'src/main/resources/solver/solverConfig.xml'
       - 'src/main/resources/application.properties'
       - 'src/main/resources/scenarios/**'
-      - 'src/test/java/dev/sylvain/planning/service/PlanningServiceScenario*Test.java'
+      - 'src/test/java/dev/sylvain/planning/service/solve/PlanningServiceScenario*Test.java'
       # Le test phare appelle ces classes en direct, et elles décident de la taille
       # du problème (HoraireStandResolver) ou de sa construction (ProblemBuilder).
-      - 'src/main/java/dev/sylvain/planning/service/PlanningService.java'
-      - 'src/main/java/dev/sylvain/planning/service/ProblemBuilder.java'
+      - 'src/main/java/dev/sylvain/planning/service/solve/PlanningService.java'
+      - 'src/main/java/dev/sylvain/planning/service/solve/ProblemBuilder.java'
       - 'src/main/java/dev/sylvain/planning/service/HoraireStandResolver.java'
       - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
-      - 'src/main/java/dev/sylvain/planning/service/SolveRunner.java'
+      - 'src/main/java/dev/sylvain/planning/service/solve/SolveRunner.java'
       - 'src/main/java/dev/sylvain/planning/scenario/**'
       - 'pom.xml'
       - '.github/workflows/scenario-tests.yml'

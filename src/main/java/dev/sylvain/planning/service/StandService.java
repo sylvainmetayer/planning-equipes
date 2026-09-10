@@ -15,6 +15,8 @@ import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.solve.ProblemBuilder;
+import dev.sylvain.planning.service.solve.SolverJobService;
 
 /** CRUD of the stand referential, plus the two views the rest of the app reads it through. */
 @ApplicationScoped

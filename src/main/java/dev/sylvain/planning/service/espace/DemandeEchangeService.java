@@ -23,8 +23,8 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.PlanningWhatIf.EchangeSimulation;
-import dev.sylvain.planning.service.PlanningWhatIf.HardViolation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
 import dev.sylvain.planning.service.notification.Notification;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -32,9 +32,9 @@ import jakarta.inject.Inject;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.PlanningPersistenceService;
-import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.PlanningWhatIf;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningWhatIf;
 import dev.sylvain.planning.service.ReferenceDataService;
 
 /**

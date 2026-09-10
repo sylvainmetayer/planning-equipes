@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import dev.sylvain.planning.service.ConstraintAnalysisStore;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;

@@ -15,7 +15,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 

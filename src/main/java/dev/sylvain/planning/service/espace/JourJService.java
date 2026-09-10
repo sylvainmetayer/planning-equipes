@@ -25,14 +25,14 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.PlanningWhatIf.SuggestionsReparation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.PlanningPersistenceService;
-import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.PlanningWhatIf;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.PlanningWhatIf;
 import dev.sylvain.planning.service.ReferenceDataService;
 
 /**

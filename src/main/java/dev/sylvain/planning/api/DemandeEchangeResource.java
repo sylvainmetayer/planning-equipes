@@ -9,7 +9,7 @@ import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
-import dev.sylvain.planning.service.PlanningWhatIf.EchangeSimulation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
