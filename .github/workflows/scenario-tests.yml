@@ -81,12 +81,13 @@ concurrency:
 
 jobs:
   scenario:
-    # Pas de PR de fork sur le runner auto-hébergé (voir tests.yml).
+    # Même garde de fork que tests.yml, conservée pour la même raison.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: self-hosted
-    # Le runner est auto-hébergé : un solve parti en boucle l'immobiliserait
-    # sans que la facturation ne le signale. Large par rapport aux ~10 min
-    # attendues, assez serré pour libérer la machine.
+    runs-on: ubuntu-latest
+    # Ces scénarios résolvent jusqu'à la faisabilité dure, avec des budgets de
+    # 480 s à 900 s par test. Un runner GitHub est plus lent que la machine de
+    # développement : la marge est là pour ça, et un solve parti en boucle
+    # s'arrête ici plutôt que de consommer six heures facturées.
     timeout-minutes: 60
 
     steps:

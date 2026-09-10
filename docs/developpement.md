@@ -494,11 +494,14 @@ points qui ne s'y voient pas :
   nuit : la pile complète coûte trop pour une boucle de relecture ;
 - **l'image publiée porte un SBOM et une signature cosign en mode keyless**. Les
   attestations GitHub natives attendent l'ouverture du dépôt ;
-- **`docker-ghcr.yml` est le seul job sur un runner GitHub** (`ubuntu-latest`).
-  Publier l'image et ses attestations ne demande aucun secret de la machine
-  auto-hébergée, et les faire tourner chez GitHub est ce qui rendra la
-  provenance vérifiable une fois le dépôt public. Tous les autres workflows
-  restent auto-hébergés en attendant cette ouverture.
+- **tous les workflows tournent sur des runners GitHub** (`ubuntu-latest`).
+  Le résultat des tests se suit alors depuis la page d'une PR, sans dépendre
+  de la disponibilité de la machine d'un seul développeur ; le prix est que
+  ces minutes sont facturées. Pour `docker-ghcr.yml`, c'est en outre ce qui
+  rend la provenance de l'image vérifiable une fois le dépôt public.
+  La garde qui empêche une PR de fork de déclencher ces workflows est
+  **conservée** : elle tenait au socket Docker du runner auto-hébergé, et la
+  lever relève de l'ouverture publique (#286), pas d'un changement de runner.
 - **`docker-ghcr.yml` publie `:main` à chaque fusion et `1.2.0`/`1.2` sur un
   tag `vX.Y.Z`** ; `:latest` n'est jamais posé par `metadata-action`
   (`latest=false`) mais par une étape dédiée, uniquement quand le tag poussé

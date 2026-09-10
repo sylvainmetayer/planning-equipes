@@ -16,15 +16,19 @@ concurrency:
 
 jobs:
   test:
-    # Une PR de fork n'exécute rien sur ce runner. Il est auto-hébergé, avec
-    # accès au socket Docker : le workflow d'une PR
-    # externe y ferait tourner du code arbitraire en root sur l'hôte. À revoir
-    # le jour de l'ouverture publique (#286) — un job sur ubuntu-latest, ou une
-    # approbation manuelle, rendrait le retour aux contributeurs externes.
+    # Runner GitHub : le résultat des tests se suit depuis la PR, sans dépendre
+    # de la disponibilité de la machine d'un seul développeur. Le prix est que
+    # ces minutes sont facturées — voir docs/developpement.md.
+    #
+    # La garde sur les PR de fork tenait au socket Docker du runner
+    # auto-hébergé, sur lequel une PR externe aurait fait tourner du code
+    # arbitraire en root. Elle est conservée telle quelle : la lever est une
+    # décision d'ouverture publique (#286), pas un effet de bord d'un
+    # changement de runner.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: self-hosted
-    # La suite backend tourne ~20 min : au-delà d'une heure, c'est pendu,
-    # et un job pendu garde le runner unique six heures.
+    runs-on: ubuntu-latest
+    # La suite backend tourne ~20 min sur la machine de développement ; un
+    # runner GitHub est plus lent, d'où la marge. Au-delà, c'est pendu.
     timeout-minutes: 60
 
     steps:
@@ -115,13 +119,11 @@ jobs:
           retention-days: 7
 
   frontend:
-    # Pas de PR de fork sur le runner auto-hébergé (voir tests.yml).
+    # Même garde de fork que le job `test` ci-dessus.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    # Self-hosted like every other job: GitHub-hosted minutes are a metered
-    # budget, and a runner choice cannot be made dynamic on remaining credits
-    # (the job picking the runner would itself need one — see docs/developpement.md).
-    runs-on: self-hosted
-    # Sans plafond, un job pendu garde le runner unique six heures.
+    runs-on: ubuntu-latest
+    # Sans plafond, un job pendu consomme des minutes facturées jusqu'à la
+    # limite de six heures de GitHub.
     timeout-minutes: 30
 
     defaults:

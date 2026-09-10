@@ -22,10 +22,10 @@ concurrency:
 
 jobs:
   docker:
-    # The one job on a GitHub runner. Publishing the image and its attestations
-    # needs no secret held by the self-hosted machine, and running it here is
-    # what makes the provenance verifiable once the repository is public. Every
-    # other workflow stays self-hosted until that opening.
+    # Publishing the image and its attestations needs no secret held by any
+    # particular machine, and running it on a GitHub runner is what makes the
+    # provenance verifiable once the repository is public. Every workflow runs
+    # there now; this one always did.
     runs-on: ubuntu-latest
     # ~23 min réels tant que l'image se construisait aussi pour arm64 sous
     # QEMU ; sans elle, c'est la moitié. Le plafond reste large : c'est un
@@ -179,8 +179,8 @@ jobs:
       #
       # The depth-1 checkout only carries the tag being built, so the whole
       # tag list is fetched here. `--prune --prune-tags` keeps the comparison
-      # honest should the workspace ever outlive a run (a re-run, a move back
-      # to a self-hosted runner): a tag deleted from origin must not linger
+      # honest should the workspace ever outlive a run (a re-run, a runner that
+      # is not disposable): a tag deleted from origin must not linger
       # locally, stay the `newest` for ever and freeze `:latest` — silently,
       # since this step exits 0.
       - name: Point :latest at the newest stable version

@@ -27,24 +27,25 @@ permissions:
   contents: read
 
 # Par référence, et annulable : une poussée qui en suit une autre rend la
-# précédente sans objet, et la file d'un runner auto-hébergé est courte.
+# précédente sans objet, et une suite Playwright abandonnée ne consomme plus
+# de minutes facturées.
 concurrency:
   group: e2e-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   e2e:
-    # Pas de PR de fork sur le runner auto-hébergé (voir tests.yml).
+    # Même garde de fork que tests.yml, conservée pour la même raison.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 45
 
     # Le job tourne dans l'image officielle Playwright, qui porte les
-    # bibliothèques système dont Chromium a besoin. La première tentative les
-    # installait sur l'hôte (`playwright install --with-deps`) : écarté parce
-    # qu'un runner auto-hébergé n'est pas un jetable qu'on modifie — et sans
-    # elles, le binaire se télécharge très bien puis refuse de démarrer
-    # (`libglib-2.0.so.0: cannot open shared object file`).
+    # bibliothèques système dont Chromium a besoin. Les installer sur l'hôte
+    # (`playwright install --with-deps`) marcherait sur un runner jetable, mais
+    # coûterait cette installation à chaque exécution ; l'image les apporte
+    # déjà. Sans elles, le binaire se télécharge très bien puis refuse de
+    # démarrer (`libglib-2.0.so.0: cannot open shared object file`).
     #
     # La balise doit suivre la version de `@playwright/test` dans
     # `src/main/webui/package.json` : une dérive redonne un navigateur que
