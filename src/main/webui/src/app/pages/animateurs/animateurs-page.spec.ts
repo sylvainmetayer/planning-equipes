@@ -24,6 +24,7 @@ import { DetailDialog } from '../../shared/detail-dialog';
 import { AnimateurFormDialog } from './animateur-form-dialog';
 import { AnimateursPage } from './animateurs-page';
 import type { Animateur, CauseInfaisabilite, FeasibilityReport } from '../../core/models';
+import { seedStore } from '../../core/testing/seed-store';
 
 function animateur(id: string, joursIndisponibles: string[]): Animateur {
   return {
@@ -107,12 +108,12 @@ describe('AnimateursPage alert badges', () => {
   }
 
   it('flags nobody while no diagnostic is loaded', () => {
-    referenceData.animateurs.set([animateur('alice', ['2026-08-01'])]);
+    seedStore(referenceData, 'animateurs', [animateur('alice', ['2026-08-01'])]);
     expect(createPage().alerteParAnimateurId().size).toBe(0);
   });
 
   it('flags an animateur unavailable on a day carrying a CRITIQUE cause', async () => {
-    referenceData.animateurs.set([
+    seedStore(referenceData, 'animateurs', [
       animateur('alice', ['2026-08-01']),
       animateur('bob', ['2026-08-05']),
     ]);
@@ -127,7 +128,7 @@ describe('AnimateursPage alert badges', () => {
   });
 
   it('ignores a day that is only ELEVE', async () => {
-    referenceData.animateurs.set([animateur('alice', ['2026-08-01'])]);
+    seedStore(referenceData, 'animateurs', [animateur('alice', ['2026-08-01'])]);
     const page = createPage();
 
     api.get.mockResolvedValue(report([cause('ELEVE', '2026-08-01')]));
@@ -137,7 +138,7 @@ describe('AnimateursPage alert badges', () => {
   });
 
   it('ignores an animateur available on every critical day', async () => {
-    referenceData.animateurs.set([animateur('alice', [])]);
+    seedStore(referenceData, 'animateurs', [animateur('alice', [])]);
     const page = createPage();
 
     api.get.mockResolvedValue(report([cause('CRITIQUE', '2026-08-01')]));
@@ -147,14 +148,14 @@ describe('AnimateursPage alert badges', () => {
   });
 
   it('recomputes when the roster changes', async () => {
-    referenceData.animateurs.set([]);
+    seedStore(referenceData, 'animateurs', []);
     const page = createPage();
 
     api.get.mockResolvedValue(report([cause('CRITIQUE', '2026-08-01')]));
     await problemes.reloadFeasibility();
     expect(page.alerteParAnimateurId().size).toBe(0);
 
-    referenceData.animateurs.set([animateur('carole', ['2026-08-01'])]);
+    seedStore(referenceData, 'animateurs', [animateur('carole', ['2026-08-01'])]);
     expect(page.alerteParAnimateurId().has('carole')).toBe(true);
   });
 });
@@ -177,7 +178,7 @@ describe('AnimateursPage table', () => {
   }
 
   async function rendre(animateurs: Animateur[]): Promise<void> {
-    referenceData.animateurs.set(animateurs);
+    seedStore(referenceData, 'animateurs', animateurs);
     fixture = TestBed.createComponent(AnimateursPage);
     await fixture.whenStable();
   }

@@ -27,6 +27,7 @@ import { TableSelection } from '../../core/table-selection';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { CauseInfaisabilite, Creneau } from '../../core/models';
 import { CreneauxPage } from './creneaux-page';
+import { seedStore } from '../../core/testing/seed-store';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
   return { date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', ...overrides };
@@ -225,7 +226,7 @@ describe('CreneauxPage', () => {
   });
 
   function createPage(creneaux: Creneau[] = []): PageInternals {
-    referenceData.creneaux.set(creneaux);
+    seedStore(referenceData, 'creneaux', creneaux);
     return TestBed.createComponent(CreneauxPage).componentInstance as unknown as PageInternals;
   }
 
@@ -363,7 +364,7 @@ describe('CreneauxPage', () => {
       const page = createPage([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 2 })]);
       page.selection.toggleAll();
 
-      referenceData.creneaux.set([creneau({ id: 2, jour: 2 })]);
+      seedStore(referenceData, 'creneaux', [creneau({ id: 2, jour: 2 })]);
 
       expect(page.selection.selectedIds()).toEqual([2]);
     });
@@ -519,7 +520,7 @@ describe('CreneauxPage rendering', () => {
   };
 
   async function rendre(creneaux: Creneau[]): Promise<void> {
-    referenceData.creneaux.set(creneaux);
+    seedStore(referenceData, 'creneaux', creneaux);
     fixture = TestBed.createComponent(CreneauxPage);
     await fixture.whenStable();
   }

@@ -23,6 +23,7 @@ import { Emplacement } from '../../core/models';
 import { DetailDialog } from '../../shared/detail-dialog';
 import { EmplacementFormDialog } from './emplacement-form-dialog';
 import { EmplacementsPage } from './emplacements-page';
+import { seedStore } from '../../core/testing/seed-store';
 
 // A degree of latitude is ~111 km, so 0.001° ≈ 111 m: near enough to place a
 // neighbour deliberately on either side of the 300 m threshold.
@@ -76,7 +77,7 @@ describe('EmplacementsPage', () => {
   });
 
   function createPage(emplacements: Emplacement[] = []): PageInternals {
-    referenceData.emplacements.set(emplacements);
+    seedStore(referenceData, 'emplacements', emplacements);
     return TestBed.createComponent(EmplacementsPage).componentInstance as unknown as PageInternals;
   }
 
@@ -149,7 +150,7 @@ describe('EmplacementsPage', () => {
       const page = createPage([emplacement('prairie'), emplacement('halle')]);
       page.selection.toggleAll();
 
-      referenceData.emplacements.set([emplacement('halle')]);
+      seedStore(referenceData, 'emplacements', [emplacement('halle')]);
 
       expect(page.selection.selectedIds()).toEqual(['halle']);
     });
@@ -364,7 +365,7 @@ describe('EmplacementsPage table', () => {
   const editingLocked = signal(false);
 
   async function rendre(emplacements: Emplacement[]): Promise<void> {
-    referenceData.emplacements.set(emplacements);
+    seedStore(referenceData, 'emplacements', emplacements);
     fixture = TestBed.createComponent(EmplacementsPage);
     await fixture.whenStable();
   }

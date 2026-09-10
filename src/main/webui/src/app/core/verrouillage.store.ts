@@ -10,7 +10,8 @@ import { TypeVerrouillage, VerrouillagePlanning } from './models';
 @Injectable({ providedIn: 'root' })
 export class VerrouillageStore {
   /** Every lock of the edition — the ones the next solve applies. */
-  readonly verrouillages = signal<VerrouillagePlanning[]>([]);
+  private readonly _verrouillages = signal<VerrouillagePlanning[]>([]);
+  readonly verrouillages = this._verrouillages.asReadonly();
 
   /** Alias kept for the read helpers below: every lock applies now. */
   readonly actifs = computed(() => this.verrouillages());
@@ -18,7 +19,7 @@ export class VerrouillageStore {
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
-    this.verrouillages.set(await this.api.get<VerrouillagePlanning[]>('/api/verrouillages'));
+    this._verrouillages.set(await this.api.get<VerrouillagePlanning[]>('/api/verrouillages'));
   }
 
   async create(

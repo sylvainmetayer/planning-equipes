@@ -7,12 +7,13 @@ import { PlanningEvenement } from './models';
 @Injectable({ providedIn: 'root' })
 export class PlanningStateService {
   /** Planning solved (or loaded) during this session, null when none yet. */
-  readonly lastSolvedPlanning = signal<PlanningEvenement | null>(null);
+  private readonly _lastSolvedPlanning = signal<PlanningEvenement | null>(null);
+  readonly lastSolvedPlanning = this._lastSolvedPlanning.asReadonly();
 
   private readonly api = inject(ApiService);
 
   set(planning: PlanningEvenement | null): void {
-    this.lastSolvedPlanning.set(planning);
+    this._lastSolvedPlanning.set(planning);
   }
 
   /**

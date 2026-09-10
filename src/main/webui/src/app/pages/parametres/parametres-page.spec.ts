@@ -29,6 +29,7 @@ import { ScenarioImportService } from '../../core/scenario-import.service';
 import { REPLACE_KEYWORD, ParametresPage } from './parametres-page';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
 import type { EtatSauvegarde, TypologieItem } from '../../core/models';
+import { seedStore } from '../../core/testing/seed-store';
 
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
@@ -91,7 +92,7 @@ describe('ParametresPage ninja picker', () => {
   });
 
   function createPage(typologies: TypologieItem[]): PageInternals {
-    referenceData.typologies.set(typologies);
+    seedStore(referenceData, 'typologies', typologies);
     return TestBed.createComponent(ParametresPage).componentInstance as unknown as PageInternals;
   }
 

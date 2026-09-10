@@ -168,13 +168,15 @@ export type ResultHandler<T extends JobType> = (result: JobResults[T] | null) =>
 @Injectable({ providedIn: 'root' })
 export class SolverJobService {
   /** null when the solver is idle. */
-  readonly activeJob = signal<TrackedJob | null>(null);
+  private readonly _activeJob = signal<TrackedJob | null>(null);
+  readonly activeJob = this._activeJob.asReadonly();
   /**
    * Solves planned behind the running one, in the order they will start.
    * Server-side state shared by every client: a run planned from another
    * browser shows up (and can be removed) here too.
    */
-  readonly file = signal<JobView[]>([]);
+  private readonly _file = signal<JobView[]>([]);
+  readonly file = this._file.asReadonly();
   /**
    * Score curve of the solve currently running — or of the last one, until the
    * next replaces it (issue #304). Null when no solve has run since the server
@@ -185,9 +187,11 @@ export class SolverJobService {
    * describes rather than being filtered here, exactly as {@link TrackedJob}
    * does — see {@link ScoreStreamDelta}.</p>
    */
-  readonly scoreTrace = signal<ScoreTrace | null>(null);
+  private readonly _scoreTrace = signal<ScoreTrace | null>(null);
+  readonly scoreTrace = this._scoreTrace.asReadonly();
   /** Ticks every second so the monitor can display a live duration. */
-  readonly now = signal(Date.now());
+  private readonly _now = signal(Date.now());
+  readonly now = this._now.asReadonly();
 
   /**
    * Pessimistic until the first server answer: callers must not offer an
@@ -619,7 +623,7 @@ export class SolverJobService {
       // would silently return fewer points than asked for, and the two sides
       // would stay one gap apart for the rest of the run.
       if (trace && this.scoreTrace() === null) {
-        this.scoreTrace.set(trace);
+        this._scoreTrace.set(trace);
       }
     } catch {
       // Transient error: keep whatever is on screen rather than blanking it.
@@ -640,7 +644,7 @@ export class SolverJobService {
   private async applyServerState(server: JobView | null, file: JobView[] | null): Promise<void> {
     const vu = server?.id ?? null;
     if (file !== null) {
-      this.file.set(file);
+      this._file.set(file);
       this.dernierJobVu = vu;
     } else if (vu !== this.dernierJobVu) {
       // The queue only ever changes when the solver hands over: re-reading it
@@ -650,7 +654,7 @@ export class SolverJobService {
     }
     const tracked = this.activeJob();
     if (tracked && (!server || server.id !== tracked.id)) {
-      this.activeJob.set(null);
+      this._activeJob.set(null);
       await this.reportFinishedJob(tracked);
     }
     if (server) {
@@ -722,7 +726,7 @@ export class SolverJobService {
       // curve received would stay on screen with its last `termine: false`,
       // reading as a live solve for a run the server already reports as
       // interrupted.
-      this.scoreTrace.set(null);
+      this._scoreTrace.set(null);
       return;
     }
     const courante = this.scoreTrace();
@@ -733,7 +737,7 @@ export class SolverJobService {
     const points = rattache
       ? [...courante.points.slice(0, delta.depuis), ...delta.points]
       : [...delta.points];
-    this.scoreTrace.set({
+    this._scoreTrace.set({
       jobId: delta.jobId,
       editionId: delta.editionId,
       generation: delta.generation,
@@ -826,7 +830,7 @@ export class SolverJobService {
   private async rafraichirFile(): Promise<void> {
     const file = await this.api.get<JobView[]>('/api/jobs/file').catch(() => null);
     if (file) {
-      this.file.set(file);
+      this._file.set(file);
       this.schedulePolling();
     }
   }
@@ -850,8 +854,8 @@ export class SolverJobService {
   private updateTicker(): void {
     const running = this.activeJob() !== null;
     if (running && this.tickHandle === null) {
-      this.now.set(Date.now());
-      this.tickHandle = setInterval(() => this.now.set(Date.now()), 1000);
+      this._now.set(Date.now());
+      this.tickHandle = setInterval(() => this._now.set(Date.now()), 1000);
     } else if (!running && this.tickHandle !== null) {
       clearInterval(this.tickHandle);
       this.tickHandle = null;
@@ -866,7 +870,7 @@ export class SolverJobService {
     const tracked = this.activeJob();
     if (tracked?.id === job.id) {
       if (mine && !tracked.mine) {
-        this.activeJob.set({ ...tracked, mine: true });
+        this._activeJob.set({ ...tracked, mine: true });
       }
       return;
     }
@@ -883,7 +887,7 @@ export class SolverJobService {
       editionNom: job.editionNom ?? null,
       secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit),
     };
-    this.activeJob.set(entry);
+    this._activeJob.set(entry);
     // A submit() adopts its job without waiting for the next poll: start the
     // duration clock — and the fast polling pace — right away rather than up
     // to a whole idle interval later.

@@ -20,12 +20,17 @@ import { errorMessage } from './error-message';
 @Injectable({ providedIn: 'root' })
 export class ProblemesStore {
   /** `null` until loaded, or when the request failed (see `error`). */
-  readonly report = signal<FeasibilityReport | null>(null);
-  readonly constraints = signal<ConstraintsView | null>(null);
+  private readonly _report = signal<FeasibilityReport | null>(null);
+  readonly report = this._report.asReadonly();
+  private readonly _constraints = signal<ConstraintsView | null>(null);
+  readonly constraints = this._constraints.asReadonly();
   /** The breaks of the persisted plan, for the relay-less ones; null until loaded or when the request failed. */
-  readonly pauses = signal<RapportPauses | null>(null);
-  readonly loading = signal(false);
-  readonly error = signal('');
+  private readonly _pauses = signal<RapportPauses | null>(null);
+  readonly pauses = this._pauses.asReadonly();
+  private readonly _loading = signal(false);
+  readonly loading = this._loading.asReadonly();
+  private readonly _error = signal('');
+  readonly error = this._error.asReadonly();
 
   readonly causes = computed<CauseInfaisabilite[]>(() => this.report()?.causes ?? []);
   /** True only once a report has actually been loaded and says so. */
@@ -146,39 +151,48 @@ export class ProblemesStore {
   private readonly api = inject(ApiService);
 
   /**
+   * The Contraintes screen has just diagnosed the constraints itself: it
+   * hands the view over so the shared « legal rules disabled » alert, which
+   * the Solveur screen also reads, says the same thing without a second call.
+   */
+  shareConstraints(view: ConstraintsView): void {
+    this._constraints.set(view);
+  }
+
+  /**
    * Reloads the pre-solve diagnostic only — what the reference pages and the
    * Données page need. Failures are swallowed into `error`: a page badging its
    * rows must keep working when the diagnostic is unavailable.
    */
   async reloadFeasibility(): Promise<void> {
-    this.loading.set(true);
+    this._loading.set(true);
     try {
-      this.report.set(await this.api.get<FeasibilityReport>('/api/feasibility'));
-      this.error.set('');
+      this._report.set(await this.api.get<FeasibilityReport>('/api/feasibility'));
+      this._error.set('');
     } catch (error) {
-      this.report.set(null);
-      this.error.set(errorMessage(error));
+      this._report.set(null);
+      this._error.set(errorMessage(error));
     } finally {
-      this.loading.set(false);
+      this._loading.set(false);
     }
   }
 
   /** Reloads both sources, for the screens showing the full problem list. */
   async reload(): Promise<void> {
-    this.loading.set(true);
+    this._loading.set(true);
     const [feasibility, constraints, pauses] = await Promise.all([
       this.api.get<FeasibilityReport>('/api/feasibility').catch((error: unknown) => error as Error),
       this.api.get<ConstraintsView>('/api/constraints').catch((error: unknown) => error as Error),
       // Without the breaks the list is merely shorter: never a failure of the screen.
       this.api.get<RapportPauses>('/api/pauses').catch(() => null),
     ]);
-    this.report.set(feasibility instanceof Error ? null : feasibility);
-    this.constraints.set(constraints instanceof Error ? null : constraints);
-    this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
+    this._report.set(feasibility instanceof Error ? null : feasibility);
+    this._constraints.set(constraints instanceof Error ? null : constraints);
+    this._pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
     const failure = [feasibility, constraints].find(
       (result): result is Error => result instanceof Error,
     );
-    this.error.set(failure ? failure.message : '');
-    this.loading.set(false);
+    this._error.set(failure ? failure.message : '');
+    this._loading.set(false);
   }
 }

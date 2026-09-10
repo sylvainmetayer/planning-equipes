@@ -42,7 +42,7 @@ export class EspaceAidePage {
   private readonly espace = inject(EspaceAnimateurService);
 
   protected readonly sections = buildEspaceAideSections();
-  protected readonly jeton = this.espace.jeton.asReadonly();
+  protected readonly jeton = this.espace.jeton;
 
   /**
    * Drives every panel at once. One-way binding, so opening or closing a

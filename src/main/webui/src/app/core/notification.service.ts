@@ -83,7 +83,8 @@ export class NotificationService {
   private readonly snackBar = inject(MatSnackBar);
 
   /** Newest first. */
-  readonly notifications = signal<AppNotification[]>(loadPersisted());
+  private readonly _notifications = signal<AppNotification[]>(loadPersisted());
+  readonly notifications = this._notifications.asReadonly();
   readonly unreadCount = computed(
     () => this.notifications().filter((notification) => !notification.read).length,
   );
@@ -127,7 +128,7 @@ export class NotificationService {
       timestamp: Date.now(),
       read: false,
     };
-    this.notifications.update((list) => [entry, ...list].slice(0, MAX_NOTIFICATIONS));
+    this._notifications.update((list) => [entry, ...list].slice(0, MAX_NOTIFICATIONS));
     this.persist();
   }
 
@@ -176,7 +177,7 @@ export class NotificationService {
   }
 
   markRead(id: string): void {
-    this.notifications.update((list) =>
+    this._notifications.update((list) =>
       list.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification,
       ),
@@ -185,7 +186,7 @@ export class NotificationService {
   }
 
   markAllRead(): void {
-    this.notifications.update((list) =>
+    this._notifications.update((list) =>
       list.map((notification) =>
         notification.read ? notification : { ...notification, read: true },
       ),
@@ -194,7 +195,7 @@ export class NotificationService {
   }
 
   clear(): void {
-    this.notifications.set([]);
+    this._notifications.set([]);
     this.persist();
   }
 

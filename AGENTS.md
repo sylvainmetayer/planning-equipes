@@ -408,6 +408,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   loading and error states are the resource's, not hand-written signals, and a
   superseded request is discarded by it; `core/resource-state.ts` keeps the
   last good value on screen across a failed reload and words the failure.
+  The stores and services of `core/` expose **read-only signals** only
+  (`private readonly _x = signal(…)` and `readonly x = this._x.asReadonly()`):
+  a page reads, the store writes, and a write from outside goes through a
+  method of the store. `scripts/check-readonly-stores.js` (`npm run
+  stores-check`, run in CI) refuses a public writable signal in `core/`; a
+  spec that needs a store holding fixtures seeds it through
+  `core/testing/seed-store.ts`, never by writing the signal.
 - UI built with **Angular Material** (Material Design 3). The theme lives in
   `src/material-theme.scss` (`mat.theme()`, azure/blue palettes, Roboto); use the
   `--mat-sys-*` tokens in custom CSS instead of hard-coded colours. The app has

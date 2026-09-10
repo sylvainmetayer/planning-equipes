@@ -21,26 +21,33 @@ export class EspaceAnimateurService {
   private readonly api = inject(ApiService);
 
   /** Token of the espace currently displayed; set by the shell from the URL. */
-  readonly jeton = signal<string | null>(null);
-  readonly view = signal<EspaceAnimateurView | null>(null);
-  readonly demandes = signal<DemandeEchangeView[]>([]);
+  private readonly _jeton = signal<string | null>(null);
+  readonly jeton = this._jeton.asReadonly();
+  private readonly _view = signal<EspaceAnimateurView | null>(null);
+  readonly view = this._view.asReadonly();
+  private readonly _demandes = signal<DemandeEchangeView[]>([]);
+  readonly demandes = this._demandes.asReadonly();
   /** Demandes targeting ME — awaiting my agreement before the admin sees them, plus history. */
-  readonly demandesRecues = signal<DemandeEchangeView[]>([]);
-  readonly chargement = signal(false);
+  private readonly _demandesRecues = signal<DemandeEchangeView[]>([]);
+  readonly demandesRecues = this._demandesRecues.asReadonly();
+  private readonly _chargement = signal(false);
+  readonly chargement = this._chargement.asReadonly();
   /** Message of the load failure, `null` while everything is fine. */
-  readonly erreur = signal<string | null>(null);
+  private readonly _erreur = signal<string | null>(null);
+  readonly erreur = this._erreur.asReadonly();
   /**
    * True when the token is valid but no session is open (401): the interface
    * then offers the e-mail code screen instead of the espace.
    */
-  readonly authRequise = signal(false);
+  private readonly _authRequise = signal(false);
+  readonly authRequise = this._authRequise.asReadonly();
 
   /** Loads (or reloads) the whole espace for one token. */
   async charger(jeton: string): Promise<void> {
-    this.jeton.set(jeton);
-    this.chargement.set(true);
-    this.erreur.set(null);
-    this.authRequise.set(false);
+    this._jeton.set(jeton);
+    this._chargement.set(true);
+    this._erreur.set(null);
+    this._authRequise.set(false);
     try {
       const [view, demandes, recues] = await Promise.all([
         this.api.getPreservingHttpError<EspaceAnimateurView>(`/api/espace-animateur/${jeton}`),
@@ -51,20 +58,20 @@ export class EspaceAnimateurService {
           `/api/espace-animateur/${jeton}/demandes-recues`,
         ),
       ]);
-      this.view.set(view);
-      this.demandes.set(demandes);
-      this.demandesRecues.set(recues);
+      this._view.set(view);
+      this._demandes.set(demandes);
+      this._demandesRecues.set(recues);
     } catch (error) {
-      this.view.set(null);
-      this.demandes.set([]);
-      this.demandesRecues.set([]);
+      this._view.set(null);
+      this._demandes.set([]);
+      this._demandesRecues.set([]);
       if (error instanceof HttpErrorResponse && error.status === 401) {
-        this.authRequise.set(true);
+        this._authRequise.set(true);
       } else {
-        this.erreur.set(toError(error).message);
+        this._erreur.set(toError(error).message);
       }
     } finally {
-      this.chargement.set(false);
+      this._chargement.set(false);
     }
   }
 
@@ -99,7 +106,7 @@ export class EspaceAnimateurService {
       `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/accord`,
       null,
     );
-    this.demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
+    this._demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
   }
 
   /** Declines a demande targeting me: terminal, the demandeur is told. */
@@ -109,7 +116,7 @@ export class EspaceAnimateurService {
       `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/refus`,
       null,
     );
-    this.demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
+    this._demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
   }
 
   /**
@@ -125,7 +132,7 @@ export class EspaceAnimateurService {
     );
     const view = this.view();
     if (view) {
-      this.view.set({ ...view, statutConfirmation: accuse.statut, confirmeLe: accuse.confirmeLe });
+      this._view.set({ ...view, statutConfirmation: accuse.statut, confirmeLe: accuse.confirmeLe });
     }
   }
 
@@ -142,7 +149,7 @@ export class EspaceAnimateurService {
     );
     const view = this.view();
     if (view) {
-      this.view.set({ ...view, abonnementToken: reponse.abonnementToken });
+      this._view.set({ ...view, abonnementToken: reponse.abonnementToken });
     }
   }
 
@@ -172,7 +179,7 @@ export class EspaceAnimateurService {
       `/api/espace-animateur/${jeton}/demandes`,
       nouvelles,
     );
-    this.demandes.set([...soumises, ...this.demandes()]);
+    this._demandes.set([...soumises, ...this.demandes()]);
     return soumises;
   }
 
@@ -183,7 +190,7 @@ export class EspaceAnimateurService {
       `/api/espace-animateur/${jeton}/demandes/${demandeId}/annulation`,
       null,
     );
-    this.demandes.set(
+    this._demandes.set(
       await this.api.getPreservingHttpError<DemandeEchangeView[]>(
         `/api/espace-animateur/${jeton}/demandes`,
       ),
@@ -193,14 +200,15 @@ export class EspaceAnimateurService {
   /* ----- Declaration of availability (issue #291): the espace's only write ----- */
 
   /** `null` until the declaration tab has been opened once. */
-  readonly declaration = signal<DeclarationEspaceView | null>(null);
+  private readonly _declaration = signal<DeclarationEspaceView | null>(null);
+  readonly declaration = this._declaration.asReadonly();
 
   /** Loads (or reloads) the declaration tab. Kept out of `charger`: three
    * requests already fire on entering the espace, and most visits never open
    * this tab. */
   async chargerDeclaration(): Promise<void> {
     const jeton = this.requireJeton();
-    this.declaration.set(
+    this._declaration.set(
       await this.api.get<DeclarationEspaceView>(`/api/espace-animateur/${jeton}/disponibilites`),
     );
   }
@@ -212,7 +220,7 @@ export class EspaceAnimateurService {
    */
   async declarer(nouvelle: NouvelleDeclaration): Promise<void> {
     const jeton = this.requireJeton();
-    this.declaration.set(
+    this._declaration.set(
       await this.api.post<DeclarationEspaceView>(
         `/api/espace-animateur/${jeton}/disponibilites`,
         nouvelle,

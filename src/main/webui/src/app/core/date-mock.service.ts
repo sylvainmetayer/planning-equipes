@@ -25,9 +25,11 @@ export const TODAY_ANCHOR = 'date-du-jour';
 @Injectable({ providedIn: 'root' })
 export class DateMockService {
   /** The frozen date (`AAAA-MM-JJ`), or `''` when the real clock is in use. */
-  readonly dateDuJour = signal('');
+  private readonly _dateDuJour = signal('');
+  readonly dateDuJour = this._dateDuJour.asReadonly();
   /** Whether this server would accept a frozen date at all. */
-  readonly modifiable = signal(false);
+  private readonly _modifiable = signal(false);
+  readonly modifiable = this._modifiable.asReadonly();
   /** Whether the date is frozen right now — what the toolbar indicator watches. */
   readonly actif = computed(() => this.dateDuJour() !== '');
 
@@ -53,7 +55,7 @@ export class DateMockService {
   }
 
   private apply(view: DateJourJView): void {
-    this.dateDuJour.set(view.dateDuJour ?? '');
-    this.modifiable.set(view.modifiable);
+    this._dateDuJour.set(view.dateDuJour ?? '');
+    this._modifiable.set(view.modifiable);
   }
 }

@@ -18,17 +18,19 @@ export class ReferencesManquantesError extends Error {
 
 @Injectable({ providedIn: 'root' })
 export class PlanSnapshotStore {
-  readonly snapshots = signal<PlanSnapshot[]>([]);
-  readonly chargement = signal(false);
+  private readonly _snapshots = signal<PlanSnapshot[]>([]);
+  readonly snapshots = this._snapshots.asReadonly();
+  private readonly _chargement = signal(false);
+  readonly chargement = this._chargement.asReadonly();
 
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
-    this.chargement.set(true);
+    this._chargement.set(true);
     try {
-      this.snapshots.set(await this.api.get<PlanSnapshot[]>('/api/planning/snapshots'));
+      this._snapshots.set(await this.api.get<PlanSnapshot[]>('/api/planning/snapshots'));
     } finally {
-      this.chargement.set(false);
+      this._chargement.set(false);
     }
   }
 

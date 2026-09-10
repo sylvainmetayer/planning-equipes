@@ -18,7 +18,8 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class EditionStore {
-  readonly editions = signal<Edition[]>([]);
+  private readonly _editions = signal<Edition[]>([]);
+  readonly editions = this._editions.asReadonly();
 
   /**
    * What the server says this browser's requests are actually resolved to.
@@ -26,7 +27,8 @@ export class EditionStore {
    * silently answered from the default edition, and this is how the UI finds
    * out which edition it is really looking at.
    */
-  readonly courant = signal<Edition | null>(null);
+  private readonly _courant = signal<Edition | null>(null);
+  readonly courant = this._courant.asReadonly();
 
   readonly autres = computed(() =>
     this.editions().filter((edition) => edition.id !== this.courant()?.id),
@@ -39,8 +41,8 @@ export class EditionStore {
       this.api.get<Edition[]>('/api/editions'),
       this.api.get<Edition>('/api/editions/courant'),
     ]);
-    this.editions.set(editions);
-    this.courant.set(courant);
+    this._editions.set(editions);
+    this._courant.set(courant);
     // The stored choice was answered from another edition: drop it, so the
     // next reload doesn't keep sending a header the server ignores anyway.
     const stored = getStoredEditionId();

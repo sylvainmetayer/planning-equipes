@@ -9,7 +9,8 @@ import { PlanningResolution } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class PlanningResolutionStore {
-  readonly resolution = signal<PlanningResolution | null>(null);
+  private readonly _resolution = signal<PlanningResolution | null>(null);
+  readonly resolution = this._resolution.asReadonly();
 
   /**
    * True once a solve has run and reference data was edited afterwards: the
@@ -28,7 +29,7 @@ export class PlanningResolutionStore {
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
-    this.resolution.set(
+    this._resolution.set(
       await this.api.get<PlanningResolution>('/api/planning/persisted/resolution'),
     );
   }

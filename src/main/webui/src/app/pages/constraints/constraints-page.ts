@@ -241,7 +241,7 @@ export class ConstraintsPage {
     this.view.set(view);
     // Feeds the shared "legal rules disabled" alert, which the Solveur screen
     // also reads.
-    this.problemes.constraints.set(view);
+    this.problemes.shareConstraints(view);
   }
 
   protected async loadParametresLegaux(): Promise<void> {

@@ -131,7 +131,7 @@ describe('ConstraintsPage', () => {
         { provide: SolverSettingsService, useValue: { secondsLimit: () => 60 } },
         {
           provide: ProblemesStore,
-          useValue: { constraints: { set: vi.fn() }, alerteReglesLegales: () => '' },
+          useValue: { shareConstraints: vi.fn(), alerteReglesLegales: () => '' },
         },
       ],
     });

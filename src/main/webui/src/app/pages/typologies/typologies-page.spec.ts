@@ -19,6 +19,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { TypologiesPage } from './typologies-page';
 import type { TypologieItem } from '../../core/models';
+import { seedStore } from '../../core/testing/seed-store';
 
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
@@ -55,7 +56,7 @@ describe('TypologiesPage', () => {
   });
 
   function createPage(typologies: TypologieItem[]): PageInternals {
-    referenceData.typologies.set(typologies);
+    seedStore(referenceData, 'typologies', typologies);
     return TestBed.createComponent(TypologiesPage).componentInstance as unknown as PageInternals;
   }
 
@@ -87,7 +88,7 @@ describe('TypologiesPage', () => {
       ]);
       page.selection.toggleAll();
 
-      referenceData.typologies.set([{ id: 'JOKER', label: 'Joker' }]);
+      seedStore(referenceData, 'typologies', [{ id: 'JOKER', label: 'Joker' }]);
 
       expect(page.selection.selectedIds()).toEqual(['JOKER']);
     });
@@ -106,7 +107,7 @@ describe('TypologiesPage table', () => {
   const editingLocked = signal(false);
 
   async function rendre(typologies: TypologieItem[]): Promise<void> {
-    referenceData.typologies.set(typologies);
+    seedStore(referenceData, 'typologies', typologies);
     fixture = TestBed.createComponent(TypologiesPage);
     await fixture.whenStable();
   }
@@ -176,7 +177,7 @@ describe('TypologiesPage table', () => {
   });
 
   it('tells the user how many rows reference the typologie before deleting it', async () => {
-    referenceData.stands.set([
+    seedStore(referenceData, 'stands', [
       {
         id: 's1',
         nom: 'Loup-Garou',
@@ -192,7 +193,7 @@ describe('TypologiesPage table', () => {
         horaires: [],
       },
     ]);
-    referenceData.animateurs.set([
+    seedStore(referenceData, 'animateurs', [
       {
         id: 'a1',
         prenom: 'Amélie',

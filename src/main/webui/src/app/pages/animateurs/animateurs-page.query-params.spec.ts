@@ -15,6 +15,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { AnimateursPage } from './animateurs-page';
+import { seedStore } from '../../core/testing/seed-store';
 
 function animateur(id: string, prenom: string, nom: string): Animateur {
   return {
@@ -58,7 +59,10 @@ function setUp(queryParams: Record<string, string>) {
     ],
   });
   const store = TestBed.inject(ReferenceDataStore);
-  store.animateurs.set([animateur('alice', 'Alice', 'Martin'), animateur('bob', 'Bob', 'Durand')]);
+  seedStore(store, 'animateurs', [
+    animateur('alice', 'Alice', 'Martin'),
+    animateur('bob', 'Bob', 'Durand'),
+  ]);
   const fixture = TestBed.createComponent(AnimateursPage);
   return { fixture, replaceState, page: fixture.componentInstance as unknown as PageInternals };
 }

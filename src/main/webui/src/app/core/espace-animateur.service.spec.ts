@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { EspaceAnimateurService } from './espace-animateur.service';
 import type { DemandeEchangeView, EspaceAnimateurView } from './models';
+import { seedStore } from '../core/testing/seed-store';
 
 function view(): EspaceAnimateurView {
   return {
@@ -140,7 +141,7 @@ describe('EspaceAnimateurService', () => {
   });
 
   it("valider le code ouvre la session puis recharge l'espace", async () => {
-    service.jeton.set('jeton-1');
+    seedStore(service, 'jeton', 'jeton-1');
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('D1')] : view(),
     );
@@ -190,7 +191,7 @@ describe('EspaceAnimateurService', () => {
   });
 
   it('« qui peut me remplacer ? » interroge le siège demandé, id de stand échappé', async () => {
-    service.jeton.set('jeton-1');
+    seedStore(service, 'jeton', 'jeton-1');
     api.get.mockResolvedValue({
       creneauId: 12,
       standId: 'stand/un',

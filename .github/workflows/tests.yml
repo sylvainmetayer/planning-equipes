@@ -211,6 +211,11 @@ jobs:
       - name: CSS scope check
         run: npm run css-scope-check
 
+      # The stores of core/ are read by the pages and written by themselves: a
+      # public writable signal is a state nobody owns.
+      - name: Read-only stores check
+        run: npm run stores-check
+
       # Un cliquet, pas une barrière : la règle s'applique aux **lignes** que la
       # branche écrit, pas au dépôt entier. Le solde — 589 noms et 240 blocs de
       # commentaire, chiffré dans #425 — se paie au fil des passages, sans

@@ -27,6 +27,7 @@ import { CauseInfaisabilite, Emplacement, HoraireStand, Stand } from '../../core
 import { DetailDialog } from '../../shared/detail-dialog';
 import { StandFormDialog } from './stand-form-dialog';
 import { StandsPage } from './stands-page';
+import { seedStore } from '../../core/testing/seed-store';
 
 function stand(overrides: Partial<Stand> & { id: string }): Stand {
   return {
@@ -142,7 +143,7 @@ describe('StandsPage', () => {
   });
 
   function createPage(stands: Stand[] = []): PageInternals {
-    referenceData.stands.set(stands);
+    seedStore(referenceData, 'stands', stands);
     return TestBed.createComponent(StandsPage).componentInstance as unknown as PageInternals;
   }
 
@@ -224,7 +225,7 @@ describe('StandsPage', () => {
       const page = createPage([stand({ id: 'tir' }), stand({ id: 'quilles' })]);
       page.selection.toggleAll();
 
-      referenceData.stands.set([stand({ id: 'quilles' })]);
+      seedStore(referenceData, 'stands', [stand({ id: 'quilles' })]);
 
       expect(page.selection.selectedIds()).toEqual(['quilles']);
     });
@@ -433,7 +434,7 @@ describe('StandsPage table', () => {
   };
 
   async function rendre(stands: Stand[]): Promise<void> {
-    referenceData.stands.set(stands);
+    seedStore(referenceData, 'stands', stands);
     fixture = TestBed.createComponent(StandsPage);
     await fixture.whenStable();
   }

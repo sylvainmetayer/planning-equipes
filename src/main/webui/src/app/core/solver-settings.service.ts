@@ -16,9 +16,11 @@ export const DEFAULT_SOLVER_SECONDS_LIMIT = 900;
 
 @Injectable({ providedIn: 'root' })
 export class SolverSettingsService {
-  readonly secondsLimit = signal(DEFAULT_SOLVER_SECONDS_LIMIT);
+  private readonly _secondsLimit = signal(DEFAULT_SOLVER_SECONDS_LIMIT);
+  readonly secondsLimit = this._secondsLimit.asReadonly();
   /** Off by default, and inert until an admin address is configured server-side. */
-  readonly mailFinResolution = signal(false);
+  private readonly _mailFinResolution = signal(false);
+  readonly mailFinResolution = this._mailFinResolution.asReadonly();
 
   private readonly api = inject(ApiService);
 
@@ -55,7 +57,7 @@ export class SolverSettingsService {
   }
 
   private apply(parametres: ParametresSolveur): void {
-    this.secondsLimit.set(parametres.dureeResolutionSecondes);
-    this.mailFinResolution.set(parametres.mailFinResolution ?? false);
+    this._secondsLimit.set(parametres.dureeResolutionSecondes);
+    this._mailFinResolution.set(parametres.mailFinResolution ?? false);
   }
 }

@@ -119,20 +119,27 @@ const FAMILIES_INVALIDATED_BY: Readonly<Record<string, readonly ReferenceFamily[
 
 @Injectable({ providedIn: 'root' })
 export class ReferenceDataStore {
-  readonly typologies = signal<TypologieItem[]>([]);
-  readonly creneaux = signal<Creneau[]>([]);
-  readonly animateurs = signal<Animateur[]>([]);
-  readonly stands = signal<Stand[]>([]);
-  readonly emplacements = signal<Emplacement[]>([]);
-  readonly contraintes = signal<ContrainteAdHoc[]>([]);
+  private readonly _typologies = signal<TypologieItem[]>([]);
+  readonly typologies = this._typologies.asReadonly();
+  private readonly _creneaux = signal<Creneau[]>([]);
+  readonly creneaux = this._creneaux.asReadonly();
+  private readonly _animateurs = signal<Animateur[]>([]);
+  readonly animateurs = this._animateurs.asReadonly();
+  private readonly _stands = signal<Stand[]>([]);
+  readonly stands = this._stands.asReadonly();
+  private readonly _emplacements = signal<Emplacement[]>([]);
+  readonly emplacements = this._emplacements.asReadonly();
+  private readonly _contraintes = signal<ContrainteAdHoc[]>([]);
+  readonly contraintes = this._contraintes.asReadonly();
   /** Real problem scale for the next solve; see {@link Scale}. */
-  readonly scale = signal<Scale>({
+  private readonly _scale = signal<Scale>({
     animateurCount: 0,
     posteCount: 0,
     contrainteAdHocCount: 0,
     hoursToFill: 0,
     hoursAvailable: 0,
   });
+  readonly scale = this._scale.asReadonly();
 
   private readonly api = inject(ApiService);
 
@@ -144,13 +151,13 @@ export class ReferenceDataStore {
   async reload(families: readonly ReferenceFamily[] = ALL_FAMILIES): Promise<void> {
     const wanted = new Set(families);
     await Promise.all([
-      this.reloadIf(wanted, 'typologies', '/api/typologies', this.typologies),
-      this.reloadIf(wanted, 'creneaux', '/api/creneaux', this.creneaux),
-      this.reloadIf(wanted, 'animateurs', '/api/animateurs', this.animateurs),
-      this.reloadIf(wanted, 'stands', '/api/stands', this.stands),
-      this.reloadIf(wanted, 'emplacements', '/api/emplacements', this.emplacements),
-      this.reloadIf(wanted, 'contraintes', '/api/contraintes-ad-hoc', this.contraintes),
-      this.api.get<Scale>('/api/planning/volumetrie').then((scale) => this.scale.set(scale)),
+      this.reloadIf(wanted, 'typologies', '/api/typologies', this._typologies),
+      this.reloadIf(wanted, 'creneaux', '/api/creneaux', this._creneaux),
+      this.reloadIf(wanted, 'animateurs', '/api/animateurs', this._animateurs),
+      this.reloadIf(wanted, 'stands', '/api/stands', this._stands),
+      this.reloadIf(wanted, 'emplacements', '/api/emplacements', this._emplacements),
+      this.reloadIf(wanted, 'contraintes', '/api/contraintes-ad-hoc', this._contraintes),
+      this.api.get<Scale>('/api/planning/volumetrie').then((scale) => this._scale.set(scale)),
     ]);
   }
 
