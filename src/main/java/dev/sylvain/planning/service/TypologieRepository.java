@@ -69,6 +69,11 @@ public class TypologieRepository {
         return scope.exists("typologie", id);
     }
 
+    /** Same probe inside a caller's transaction, where a typologie written a moment ago is visible. */
+    boolean typologieExists(Connection connection, String id) throws SQLException {
+        return scope.exists(connection, "typologie", id);
+    }
+
     /** Writes the item and returns it stamped with the moment the database wrote it. */
     /**
      * Writes it, refusing a creation whose id is taken and an update based on an
@@ -78,25 +83,30 @@ public class TypologieRepository {
      *                      not a silent replacement
      */
     public TypologieItem saveTypologie(TypologieItem typologie, boolean failIfPresent) {
-        return scope.writeAndReturn("Failed to save typology " + typologie.id(), connection -> {
-            // Only one typologie may be ninja *per edition*: demote the previous
-            // holder in the same transaction, otherwise the partial unique index
-            // (V31, scoped per edition by V33) rejects the insert and the user
-            // sees a raw constraint violation. The demotion carries the same
-            // edition predicate as the index it protects — without it, flagging a
-            // ninja here would silently clear the one of every other edition.
-            if (typologie.ninja()) {
-                try (PreparedStatement ps = scope.prepareScoped(connection,
-                        """
-                        UPDATE typologie
-                        SET ninja = FALSE, modifie_le = now()
-                        WHERE edition_id = ? AND ninja AND id <> ?""")) {
-                    ps.setString(2, typologie.id());
-                    ps.executeUpdate();
-                }
+        return scope.writeAndReturn("Failed to save typology " + typologie.id(),
+                connection -> saveTypologie(connection, typologie, failIfPresent));
+    }
+
+    /** The same write inside a caller's transaction. */
+    TypologieItem saveTypologie(Connection connection, TypologieItem typologie, boolean failIfPresent)
+            throws SQLException {
+        // Only one typologie may be ninja *per edition*: demote the previous
+        // holder in the same transaction, otherwise the partial unique index
+        // (V31, scoped per edition by V33) rejects the insert and the user
+        // sees a raw constraint violation. The demotion carries the same
+        // edition predicate as the index it protects — without it, flagging a
+        // ninja here would silently clear the one of every other edition.
+        if (typologie.ninja()) {
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    """
+                    UPDATE typologie
+                    SET ninja = FALSE, modifie_le = now()
+                    WHERE edition_id = ? AND ninja AND id <> ?""")) {
+                ps.setString(2, typologie.id());
+                ps.executeUpdate();
             }
-            return upsertTypologie(connection, typologie, failIfPresent);
-        });
+        }
+        return upsertTypologie(connection, typologie, failIfPresent);
     }
 
     public void deleteTypologie(String id) {

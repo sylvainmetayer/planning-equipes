@@ -255,6 +255,11 @@ public class StandRepository {
         });
     }
 
+    /** The same write inside a caller's transaction. */
+    void saveStand(Connection connection, Stand stand, boolean failIfPresent) throws SQLException {
+        upsertStand(connection, stand, failIfPresent);
+    }
+
     /** Every stand of the list, in one transaction: all written, or none — what a grid save or an import promises. */
     /** Several stands, one transaction, each with its own precondition. */
     public void saveStands(List<Stand> stands) {

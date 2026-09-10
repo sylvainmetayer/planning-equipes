@@ -142,9 +142,9 @@ public class StandMcpTools {
             @ToolArg(description = "Fin de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String horairesDateFin,
             @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> horairesDates,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        List<String> typologiesCreees = createMissingTypologies(typologiesProposees,
+        List<TypologieItem> typologiesACreer = missingTypologies(typologiesProposees,
                 Boolean.TRUE.equals(creerTypologiesManquantes));
-        String emplacementCree = createMissingEmplacement(emplacementId, emplacementNom, latitude, longitude);
+        Emplacement emplacementACreer = missingEmplacement(emplacementId, emplacementNom, latitude, longitude);
 
         Stand stand = new Stand();
         stand.setId(id);
@@ -156,13 +156,19 @@ public class StandMcpTools {
         stand.setPremium(Boolean.TRUE.equals(premium));
         stand.setNiveauEffort(niveauEffort == null ? NiveauEffort.NORMAL
                 : McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
-        stand.setEmplacement(emplacementId == null ? null : findEmplacement(emplacementId));
+        stand.setEmplacement(emplacementACreer != null ? emplacementACreer
+                : emplacementId == null ? null : findEmplacement(emplacementId));
         if (horaires != null && !horaires.isBlank()) {
             stand.getHoraires().add(horaireOuverture(horaires, horairesJours, horairesJoursSemaine,
                     horairesDateDebut, horairesDateFin, horairesDates));
         }
-        WrittenStand ecrit = referenceDataService.writeStand(stand);
-        return new CreationStandComplet(toView(ecrit.stand()), emplacementCree, typologiesCreees,
+        // One transaction for the three: a stand refused on its own validation
+        // no longer leaves a typologie and an emplacement behind that the
+        // answer — which never came — was meant to enumerate.
+        WrittenStand ecrit = referenceDataService.writeStand(stand, typologiesACreer, emplacementACreer);
+        return new CreationStandComplet(toView(ecrit.stand()),
+                emplacementACreer == null ? null : emplacementACreer.getId(),
+                typologiesACreer.stream().map(TypologieItem::id).toList(),
                 WarningCodes.of(ecrit.avertissements()));
     }
 
@@ -173,35 +179,31 @@ public class StandMcpTools {
      * of into a second, near-identical entry nobody notices until the solver
      * finds no competent animateur for it.
      */
-    private List<String> createMissingTypologies(List<String> typologies, boolean autorise) {
+    /** The typologies the stand names and the referential does not hold — to be written with it, when allowed. */
+    private List<TypologieItem> missingTypologies(List<String> typologies, boolean autorise) {
         if (typologies == null || typologies.isEmpty() || !autorise) {
             return List.of();
         }
         Set<String> connues = referenceDataService.listTypologies().stream()
                 .map(TypologieItem::id)
                 .collect(Collectors.toCollection(HashSet::new));
-        List<String> creees = new ArrayList<>();
+        List<TypologieItem> manquantes = new ArrayList<>();
         for (String typologie : typologies) {
             if (connues.add(typologie)) {
-                referenceDataService.createTypologie(new TypologieItem(typologie, typologie));
-                creees.add(typologie);
+                manquantes.add(new TypologieItem(typologie, typologie));
             }
         }
-        return creees;
+        return manquantes;
     }
 
-    /** @return the id of the emplacement created here, or {@code null} when none was. */
-    private String createMissingEmplacement(String emplacementId, String nom, Double latitude, Double longitude) {
+    /** @return the emplacement to write with the stand, or {@code null} when it exists or was not named. */
+    private Emplacement missingEmplacement(String emplacementId, String nom, Double latitude, Double longitude) {
         if (emplacementId == null || emplacementId.isBlank() || nom == null || nom.isBlank()) {
             return null;
         }
         boolean exists = referenceDataService.listEmplacements().stream()
                 .anyMatch(emplacement -> emplacementId.equals(emplacement.getId()));
-        if (exists) {
-            return null;
-        }
-        referenceDataService.createEmplacement(new Emplacement(emplacementId, nom, latitude, longitude));
-        return emplacementId;
+        return exists ? null : new Emplacement(emplacementId, nom, latitude, longitude);
     }
 
     private static HoraireStand horaireOuverture(String fenetres, String jours, List<String> joursSemaine,

@@ -22,9 +22,10 @@ porte les invariants qui ne s'y voient pas.
 Toutes les tables métier portent `edition_id` (migrations V32–V36), avec une clé
 primaire composite `(edition_id, id)`.
 
-`JdbcEditionScope` est **le seul endroit** qui emprunte une connexion, lie
-l'édition courante au premier paramètre de chaque requête et porte la
-transaction. C'est ce qui rend le prédicat systématique plutôt qu'espéré :
+`JdbcEditionScope` lie l'édition courante au premier paramètre de chaque
+requête et porte la transaction. Ce n'est pas le seul endroit qui emprunte une
+connexion — vingt classes le font encore directement — et ce n'est pas lui
+qui garantit le prédicat, c'est le test :
 `IsolationEditionStructurelleTest` lit le SQL de tout le backend et échoue sur
 toute requête visant une table métier sans ce prédicat. Il **suit
 l'indirection** — constante, variable locale, concaténation, paramètre d'un
@@ -105,6 +106,20 @@ plus, et une qui cesse de les interroger sans le dire se voit dans
 `-Pscenario-tests`, comme un scénario qui ne converge plus.
 `TimefoldInternalApiStructuralTest` tient l'inventaire des quatre fichiers :
 un cinquième ne passe pas le build tant qu'il ne nomme pas son filet.
+
+## Une transaction est un `scope.write`, et une unité de travail passe sa connexion
+
+Il n'y a pas de gestionnaire de transactions : chaque `JdbcEditionScope.write`
+ou `writeAndReturn` ouvre, commite et annule. Une unité de travail qui doit
+écrire plusieurs choses ou rien — un stand avec les typologies et
+l'emplacement qu'il nomme, un import — les écrit toutes sous un seul
+`write`, en passant sa `Connection` aux dépôts et aux services qui en
+prennent une. Une méthode qui prend une `Connection` rejoint la transaction
+de l'appelant ; une qui n'en prend pas commite seule. **C'est dans la
+signature**, et c'est la raison pour laquelle `@Transactional` n'a pas été
+retenu (audit #392, A5) : un intercepteur donne au même appel l'un ou l'autre
+sens selon une annotation posée plusieurs cadres plus haut, ne voit pas les
+appels internes, et le `commit()` manuel du scope lèverait sous JTA.
 
 ## Deux politiques d'échec sur les mails, séparées structurellement
 

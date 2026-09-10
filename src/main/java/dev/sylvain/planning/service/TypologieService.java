@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,14 @@ public class TypologieService implements TypologieLibelles {
 
     public TypologieItem create(TypologieItem typologie) {
         TypologieItem cree = repository.saveTypologie(new TypologieItem(
+                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null), true);
+        changeTracker.markModified();
+        return cree;
+    }
+
+    /** {@link #create(TypologieItem)} inside a caller's transaction: written with the rest, or not at all. */
+    TypologieItem create(Connection connection, TypologieItem typologie) throws SQLException {
+        TypologieItem cree = repository.saveTypologie(connection, new TypologieItem(
                 Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null), true);
         changeTracker.markModified();
         return cree;
@@ -101,9 +111,31 @@ public class TypologieService implements TypologieLibelles {
         if (ids == null || ids.isEmpty()) {
             return;
         }
-        Set<String> inconnues = ids.stream()
+        refuseUnknown(ids.stream()
                 .filter(id -> !repository.typologieExists(id))
-                .collect(Collectors.toCollection(TreeSet::new));
+                .collect(Collectors.toCollection(TreeSet::new)));
+    }
+
+    /**
+     * Same check inside a caller's transaction, where a typologie the same
+     * unit of work has just created counts as known — on a fresh connection it
+     * would not exist yet, and a stand created together with its typologies
+     * would be refused for naming them.
+     */
+    void validerIds(Connection connection, Set<String> ids) throws SQLException {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        Set<String> inconnues = new TreeSet<>();
+        for (String id : ids) {
+            if (!repository.typologieExists(connection, id)) {
+                inconnues.add(id);
+            }
+        }
+        refuseUnknown(inconnues);
+    }
+
+    private static void refuseUnknown(Set<String> inconnues) {
         if (!inconnues.isEmpty()) {
             throw new BusinessError.Invalid(
                     "Typologie(s) inconnue(s) : " + inconnues + " — créez-les d'abord via /api/typologies");

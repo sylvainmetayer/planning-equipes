@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -71,6 +73,31 @@ public class StandService {
     public Stand create(Stand stand) {
         stand.setId(Ids.required(stand.getId(), "stand id"));
         validate(stand);
+        assignFamily(stand);
+        repository.saveStand(stand, true);
+        changeTracker.markModified();
+        return stand;
+    }
+
+    /**
+     * {@link #create(Stand)} inside a caller's transaction — the typologies the
+     * stand names may have been written by the same unit of work a moment
+     * ago, so they are checked on that connection, where they exist.
+     */
+    Stand create(Connection connection, Stand stand) throws SQLException {
+        stand.setId(Ids.required(stand.getId(), "stand id"));
+        StandValidator.check(stand);
+        if (stand.getTypologiesProposees() != null) {
+            typologies.validerIds(connection, stand.getTypologiesProposees());
+        }
+        assignFamily(stand);
+        repository.saveStand(connection, stand, true);
+        changeTracker.markModified();
+        return stand;
+    }
+
+    /** The family a new stand joins, when the grid has several and the stand names none. */
+    private void assignFamily(Stand stand) {
         checkFamilyExistsInGrid(stand);
         if (stand.getFamille() == null) {
             // Joins the least populated family of the current grid (issue
@@ -85,9 +112,6 @@ public class StandService {
                 stand.setFamille(ProblemBuilder.standFamilies(tous, grille).get(stand.getId()));
             }
         }
-        repository.saveStand(stand, true);
-        changeTracker.markModified();
-        return stand;
     }
 
     /**

@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import dev.sylvain.planning.domain.Emplacement;
@@ -27,6 +29,15 @@ public class EmplacementService {
         emplacement.setId(Ids.required(emplacement.getId(), "emplacement id"));
         validateCoordinates(emplacement);
         repository.saveEmplacement(emplacement, true);
+        changeTracker.markModified();
+        return emplacement;
+    }
+
+    /** {@link #create(Emplacement)} inside a caller's transaction: written with the rest, or not at all. */
+    Emplacement create(Connection connection, Emplacement emplacement) throws SQLException {
+        emplacement.setId(Ids.required(emplacement.getId(), "emplacement id"));
+        validateCoordinates(emplacement);
+        repository.saveEmplacement(connection, emplacement, true);
         changeTracker.markModified();
         return emplacement;
     }

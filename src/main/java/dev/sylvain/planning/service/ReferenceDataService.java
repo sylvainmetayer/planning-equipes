@@ -95,6 +95,9 @@ public class ReferenceDataService implements ReferenceData {
     @Inject
     CreneauGridService grille;
 
+    @Inject
+    JdbcEditionScope scope;
+
     /* ------------------------------ Animateurs ----------------------------- */
 
     @Override
@@ -202,6 +205,29 @@ public class ReferenceDataService implements ReferenceData {
      */
     public WrittenStand writeStand(Stand stand) {
         Stand ecrit = createStand(stand);
+        return new WrittenStand(ecrit, coherence.onStand(null, ecrit));
+    }
+
+    /**
+     * {@link #writeStand(Stand)} together with the typologies and the
+     * emplacement the stand names and that do not exist yet — all written, or
+     * none. Before this, {@code creer_stand_complet} wrote them in three
+     * transactions and a stand refused on its third left the first two behind,
+     * created without anyone being told (issue #392, A5). The typologies are
+     * validated on the same connection, where the ones written a moment ago
+     * are visible.
+     */
+    public WrittenStand writeStand(Stand stand, List<TypologieItem> typologiesACreer, Emplacement emplacementACreer) {
+        Stand ecrit = scope.writeAndReturn("Failed to create stand " + stand.getId() + " with its dependencies",
+                connection -> {
+                    for (TypologieItem typologie : typologiesACreer) {
+                        typologies.create(connection, typologie);
+                    }
+                    if (emplacementACreer != null) {
+                        emplacements.create(connection, emplacementACreer);
+                    }
+                    return stands.create(connection, stand);
+                });
         return new WrittenStand(ecrit, coherence.onStand(null, ecrit));
     }
 

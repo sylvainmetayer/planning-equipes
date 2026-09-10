@@ -65,6 +65,11 @@ public class EmplacementRepository {
         }
     }
 
+    /** The same write inside a caller's transaction. */
+    void saveEmplacement(Connection connection, Emplacement emplacement, boolean failIfPresent) throws SQLException {
+        upsertEmplacementTx(connection, emplacement, failIfPresent);
+    }
+
     public void deleteEmplacement(String id) {
         scope.delete("DELETE FROM emplacement WHERE edition_id = ? AND id = ?", id);
     }

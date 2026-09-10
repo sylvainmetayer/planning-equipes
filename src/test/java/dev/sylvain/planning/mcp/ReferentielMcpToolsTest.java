@@ -10,10 +10,12 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.mcp.AnimateurMcpTools.AnimateurView;
 import dev.sylvain.planning.mcp.CreneauMcpTools.CreneauView;
 import dev.sylvain.planning.mcp.StandMcpTools.StandView;
 import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.TypologieItem;
 import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import io.quarkus.test.junit.QuarkusTest;
@@ -165,6 +167,30 @@ class ReferentielMcpToolsTest {
         standTools.supprimer_stand("STAND-COMPLET-1", null);
         standTools.supprimer_emplacement("EMP-COMPLET-1", null);
         standTools.supprimer_typologie("TYPO-COMPLET-1", null);
+    }
+
+    /**
+     * Issue #392's A5: the tool used to write the typologies, the emplacement
+     * and the stand in three transactions, and a stand refused on its own
+     * validation left the first two behind — created, and never enumerated,
+     * since the answer that lists them never came.
+     */
+    @Test
+    void creerUnStandCompletNeLaisseRienDerriereLuiQuandLeStandEstRefuse() {
+        // effectifMin above effectifMax: refused by StandValidator, after the
+        // typologie and the emplacement would already have been written.
+        assertThatThrownBy(() -> standTools.creer_stand_complet(
+                "STAND-ATOMIQUE", "Stand refusé", List.of("TYPO-ATOMIQUE"), true,
+                5, 2, null, null, null,
+                "EMP-ATOMIQUE", "Kiosque fantôme", null, null,
+                null, null, null, null, null, null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("effectifMin");
+
+        assertThat(referenceDataService.listTypologies()).extracting(TypologieItem::id)
+                .doesNotContain("TYPO-ATOMIQUE");
+        assertThat(referenceDataService.listEmplacements()).extracting(Emplacement::getId)
+                .doesNotContain("EMP-ATOMIQUE");
     }
 
     @Test

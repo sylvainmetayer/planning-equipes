@@ -31,6 +31,17 @@ import jakarta.inject.Inject;
  * the SQL of every class that touches the database and fails on any statement
  * against a business table without an {@code edition_id} predicate, unless
  * that statement is on a short list of deliberate exceptions.</p>
+ *
+ * <p><b>Composing writes.</b> There is no transaction manager: a transaction
+ * is one {@link #write} or {@link #writeAndReturn}, and a unit of work that
+ * has to write several things or nothing — a stand with the typologies and
+ * the emplacement it names, an import — runs them all inside one, by handing
+ * its {@link Connection} down to repositories and services that take one.
+ * A method that takes a {@code Connection} joins the caller's transaction; one
+ * that does not commits on its own. It is in the signature, which is the
+ * reason {@code @Transactional} was not adopted (issue #392, A5): an
+ * interceptor makes the same call mean either, depending on an annotation
+ * several frames up.</p>
  */
 @ApplicationScoped
 public class JdbcEditionScope {
@@ -153,6 +164,16 @@ public class JdbcEditionScope {
     }
 
     /**
+     * The same probe on a connection the caller already holds — so a unit of
+     * work that writes a row and then validates against it sees its own,
+     * uncommitted write. On a fresh connection it would not: the row is not
+     * there yet for anyone else, which is the whole point of the transaction.
+     */
+    public boolean exists(Connection connection, String table, String id) throws SQLException {
+        return exists(connection, table, ps -> ps.setString(2, id));
+    }
+
+    /**
      * When {@code table} last wrote this id in the current edition — the
      * {@code modifie_le} column every referential carries (V67) — or
      * {@code null} when the row does not exist. Written once here like
@@ -202,16 +223,18 @@ public class JdbcEditionScope {
     }
 
     private boolean exists(String table, Binding binding, String what) {
-        return read("Failed to probe " + what, connection -> {
-            try (PreparedStatement ps = prepareScoped(connection,
-                    "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
-                binding.lier(ps);
-                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
-                try (ResultSet rs = ps.executeQuery()) {
-                    return rs.next();
-                }
+        return read("Failed to probe " + what, connection -> exists(connection, table, binding));
+    }
+
+    private boolean exists(Connection connection, String table, Binding binding) throws SQLException {
+        try (PreparedStatement ps = prepareScoped(connection,
+                "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
+            binding.lier(ps);
+            // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
             }
-        });
+        }
     }
 
     private void delete(String sql, Binding binding, String what) {
