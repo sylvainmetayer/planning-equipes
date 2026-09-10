@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -131,6 +132,20 @@ class PlanningServiceScenarioFestivalRealisteTest {
         HoraireStandResolver.apply(stands, vacations);
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, vacations);
         PlanningEvenement problem = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes);
+        // Same reason as the HoraireStandResolver call above: production reads
+        // these from the edition the scenario was imported into, so a plain-Java
+        // harness has to hand them over itself. Without this the grid is cut
+        // around the windows the file declares and scored against the defaults —
+        // and this fixture's evening window sits at 17:00-18:00 precisely so it
+        // falls in the gap between the afternoon and the evening block.
+        problem.setFenetresRepas(FenetreRepas.from(parametresDecoupage));
+        // And its legal parameters, for the same reason: production reads them
+        // from the edition, so a file that declares a minimum gap of zero —
+        // what a grid of touching vacations needs — must be heard here too.
+        planningService
+                .loadScenarioSections(scenario)
+                .parametresLegaux()
+                .ifPresent(legaux -> problem.setParametresLegaux(List.of(legaux)));
 
         PlanningEvenement solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
 

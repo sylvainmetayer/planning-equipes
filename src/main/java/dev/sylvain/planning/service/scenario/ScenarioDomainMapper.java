@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
@@ -120,6 +121,17 @@ final class ScenarioDomainMapper {
                 new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes, contraintesAdHoc);
         evenement.setParametresLegaux(
                 List.of(parametresLegaux(scenario.parametresLegaux()).orElseGet(parametresLegauxParDefaut)));
+        // The meal windows the file declares, not the ones the database holds:
+        // a scenario is cut with its own découpage parameters, so it has to be
+        // judged on the same ones. Reading them from the edition instead let a
+        // grid be sliced around one window and scored against another — on
+        // festival-realiste-canicule, an evening window deliberately placed at
+        // 17:00-18:00 (inert, it falls in the gap) was scored as 19:00-21:00,
+        // in the middle of the evening block, which no assignment could
+        // satisfy. A file that declares nothing inherits the defaults, exactly
+        // like an edition that never configured them.
+        evenement.setFenetresRepas(FenetreRepas.from(
+                parametresDecoupage(scenario.parametresDecoupage()).orElseGet(ParametresDecoupage::new)));
         // Same reasoning as the ad hoc constraints above, for the dosage: a file
         // that pins its weights describes the problem it was verified against,
         // and solving it must apply them whether or not it was ever imported.

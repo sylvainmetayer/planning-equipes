@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -85,6 +86,19 @@ class PlanningServiceScenarioContinuTest {
         List<Stand> stands = List.copyOf(reference.standsById().values());
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, creneauxScindes);
         PlanningEvenement problem = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes);
+        // The grid is cut with the file's own découpage parameters, so it has
+        // to be judged on the same meal windows. Production reads them from the
+        // edition the scenario was imported into; a plain-Java harness has to
+        // hand them over itself, or the plan is scored against windows the
+        // découpage never saw (issue #438).
+        problem.setFenetresRepas(FenetreRepas.from(parametresDecoupage));
+        // And its legal parameters, for the same reason: production reads them
+        // from the edition, so a file that declares a minimum gap of zero —
+        // what a grid of touching vacations needs — must be heard here too.
+        planningService
+                .loadScenarioSections(scenarioName)
+                .parametresLegaux()
+                .ifPresent(legaux -> problem.setParametresLegaux(List.of(legaux)));
 
         PlanningEvenement solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
 

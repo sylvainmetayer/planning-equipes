@@ -237,10 +237,13 @@ public final class ScenarioYamlReader {
      *                            Absent fields fall back to {@link ParametresLegaux}'s
      *                            own defaults, never to the live value, so the
      *                            scenario stays reproducible on its own
-     * @param parametresDecoupage generation-time only (never a solver problem fact,
-     *                            see its javadoc), hence read separately and applied
-     *                            by the scenario-import endpoint alone — it has no
-     *                            place on {@link PlanningEvenement}
+     * @param parametresDecoupage what the découpage consumes, read separately and
+     *                            applied by the scenario-import endpoint. Ten of its
+     *                            thirteen fields stop there; the three meal ones are
+     *                            projected into {@link dev.sylvain.planning.domain.FenetreRepas}
+     *                            facts and do reach the solver (issue #438), so a
+     *                            planning built from a file carries the windows that
+     *                            file declares
      * @param parametresSolveur   lets a large scenario pin the termination duration
      *                            it actually needs ({@code scenario-complet.yaml}
      *                            takes ~8 min to reach a good score) rather than
