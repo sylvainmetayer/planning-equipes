@@ -430,7 +430,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/staffing`, `/jour-j` (« Mode jour J » —
   the day-of screen: mark somebody absent, repair the seats they held),
   `/banc-de-touche`, `/carte-jour` (« Carte de la journée » — the day replayed
-  on the emplacement map, one time cursor), `/aide` (`/solver`,
+  on the emplacement map, one time cursor), `/rail-jour` (« Rail de la
+  journée »), `/timeline` (« Timeline animateur »), `/heatmap` (« Heatmap de
+  charge »), `/fragilite` (« Fragilité du planning »), `/kpi`, `/comparateur`
+  (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
+  `/verrouillages`, `/ouvertures` (« Ouvertures des stands »),
+  `/import-grille-stands`, `/pauses`, `/disponibilites` (what the animateurs
+  declared), `/editions`, `/historique` (« Historique des actions »), the
+  three public legal pages `/mentions-legales`, `/conditions-utilisation`,
+  `/politique-confidentialite`, and `/aide` (`/solver`,
   `/exports`, `/data-transfer`, `/data-setup`, `/decoupage` and
   `/validateur-yaml` are legacy redirects, kept for old bookmarks/links).
   Adding a functional block means adding a route and a `app/pages/<block>/`
@@ -743,7 +751,8 @@ in the scenarios.
   trailers and no others: `Signed-off-by` (`git commit -s`) and
   `Co-Authored-By: Claude <noreply@anthropic.com>` where an
   assistant helped — without a model version, which ages badly and teaches
-  nobody anything.
+  nobody anything. `.github/scripts/check-commits.sh` holds these rules on
+  every pull request.
 - **Public links go through `ApplicationLinks`, never through concatenation.**
   URLs printed outside the app (notification mails, individual PDFs) target
   **Angular SPA routes** (`src/main/webui/src/app/app.routes.ts`), not JAX-RS

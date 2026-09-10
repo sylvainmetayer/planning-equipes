@@ -143,6 +143,15 @@ jobs:
           cache: npm
           cache-dependency-path: src/main/webui/package-lock.json
 
+      # Les règles d'AGENTS.md sur les messages de commit (sujet < 72, préfixe
+      # conventionnel, deux trailers et pas d'autres) n'étaient tenues par
+      # personne : #392 a compté 14 trailers étrangers sur 50 commits. Ici,
+      # parce que ce job a l'historique complet (fetch-depth: 0).
+      - name: Check the commit messages of this branch
+        if: github.event_name == 'pull_request'
+        working-directory: .
+        run: bash .github/scripts/check-commits.sh "origin/${{ github.base_ref }}"
+
       - name: Install dependencies
         run: npm ci
 

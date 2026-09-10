@@ -1632,9 +1632,9 @@ POST /api/animateurs  →  200
 }
 ```
 
-`POST` et `PUT /api/animateurs` répondent `{ animateur, avertissements }`,
-`POST` et `PUT /api/creneaux` répondent `{ creneau, avertissements }` — le
-créneau y porte son `id` généré, comme avant — et `POST` et `PUT /api/stands`
+`POST /api/animateurs` et `PUT /api/animateurs/{id}` répondent `{ animateur, avertissements }`,
+`POST /api/creneaux` et `PUT /api/creneaux/{id}` répondent `{ creneau, avertissements }` — le
+créneau y porte son `id` généré, comme avant — et `POST /api/stands` et `PUT /api/stands/{id}`
 répondent `{ stand, avertissements }`. Les autres référentiels répondent
 toujours l'entité nue : une clé `avertissements` absente veut dire « rien à
 signaler ». `avertissements` est toujours présent sur ces trois ressources, vide

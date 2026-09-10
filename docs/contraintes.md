@@ -398,6 +398,58 @@ instruire avec un juriste ; d'ici là, contrôle manuel.
 | Dérogation sectorielle aux jours fériés ([R3164-2]) | Non instruite ; le défaut le plus protecteur s'applique |
 | Repos dominical des mineurs ([L3132-3], [L3164-3] à [L3164-5], [R3164-1]) | Le repos hebdomadaire est donné le dimanche, et les dérogations de L3132-4 et L3132-8 ne s'appliquent pas aux moins de 18 ans ; seuls des apprentis de douze secteurs énumérés peuvent travailler le dimanche. Savoir si l'organisateur relève d'une dérogation et sous quel statut chaque animateur est engagé sont des faits que le dépôt ne contient pas : un mineur placé un dimanche est aujourd'hui accepté, à contrôler manuellement |
 
+## Les contraintes, telles que le catalogue les déclare
+
+Rendu de `ConstraintCatalog`, tenu à jour par `DocumentationStructuralTest` :
+quand le catalogue change, le test échoue et imprime le tableau à coller entre
+les deux repères. Le *pourquoi* de chaque règle reste dans les sections
+ci-dessus ; ceci est la liste, complète par construction.
+
+<!-- catalogue:debut -->
+| Contrainte | Niveau | Catégorie | Ce qu'elle dit |
+|---|---|---|---|
+| `posteDoitEtrePourvu` | HARD | Affectation | Chaque place ouverte sur un stand doit être pourvue par un animateur. |
+| `animateurDisponible` | HARD | Affectation | Un animateur ne peut pas être affecté un jour qu'il a déclaré indisponible. |
+| `pasDeChevauchementHoraire` | HARD | Affectation | Un animateur ne peut pas tenir deux postes dont les créneaux se chevauchent dans le temps (y compris deux créneaux distincts qui se recouvrent, et pas seulement deux postes sur le même créneau). |
+| `standReserveAuxMajeurs` | HARD | Légal (mineurs) | Les stands réservés aux majeurs ne peuvent accueillir aucun mineur. |
+| `mineurNecessiteEncadrementMajeur` | HARD | Sécurité (mineurs) | Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du travail — maintenue en contrainte dure par choix. |
+| `travailDeNuitInterditPourMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas être affecté sur un créneau qui empiète sur sa nuit légale : 20 h-6 h avant 16 ans, 22 h-6 h de 16 à 18 ans (Code du travail art. L3163-1). |
+| `dureeQuotidienneMaxMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée (Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans (art. D4153-3). Les pauses prises sur le poste, si l'organisateur les déclare, sont déduites. |
+| `travailInterditJourFerieMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas travailler un jour férié légal (Code du travail art. L3164-6, liste de l'art. L3133-1). Aucune dérogation sectorielle n'est appliquée : celle de l'art. R3164-2 reste à instruire. |
+| `reposHebdomadaireMineur` | HARD | Légal (mineurs) | Un mineur bénéficie de deux jours de repos consécutifs à l'intérieur de chaque semaine civile, du lundi 0 h au dimanche 24 h (Code du travail art. L3164-2 et L3121-35) : un dimanche et le lundi qui le suit sont chacun un jour de repos de leur semaine, mais ne forment la paire d'aucune des deux. Les dérogations conventionnelles supposent un accord étendu ou une autorisation de l'inspection du travail : elles ne sont pas présumées. |
+| `travailContinuMaxMineur` | HARD | Légal (mineurs) | Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause d'au moins 30 minutes consécutives est obligatoire (Code du travail art. L3162-3). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
+| `dureeHebdomadaireMax` | HARD | Légal (temps de travail) | Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, d'ordre public / Convention collective de l'Animation art. 5.2). |
+| `dureeHebdomadaireMaxMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine (Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés pendant les vacances scolaires). |
+| `dureeQuotidienneMaxMajeur` | HARD | Légal (temps de travail) | Un animateur majeur ne peut pas dépasser 10 heures de travail effectif sur une même journée (Code du travail art. L3121-18). Les pauses prises sur le poste, si l'organisateur les déclare, sont déduites. |
+| `reposQuotidienMinimal` | HARD | Légal (temps de travail) | Entre deux journées travaillées, tout animateur bénéficie d'un repos quotidien minimal : 11 h pour un majeur (art. L3131-1), 12 h pour un mineur et 14 h avant 16 ans (art. L3164-1). |
+| `maxJoursTravaillesParSemaine` | HARD | Légal (temps de travail) | Aucun animateur ne peut travailler plus de six jours dans la même semaine (Code du travail art. L3132-1). |
+| `reposHebdomadaireMinimal` | HARD | Légal (temps de travail) | Chaque animateur bénéficie, dans chaque semaine, d'un repos hebdomadaire de 35 heures consécutives : 24 heures (art. L3132-2) auxquelles s'ajoutent les 11 heures de repos quotidien (art. L3131-1). Un repos à cheval sur le lundi compte en entier pour la semaine où il tombe. |
+| `travailContinuMaxMajeur` | HARD | Légal (temps de travail) | Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause d'au moins 20 minutes consécutives est obligatoire (Code du travail art. L3121-16). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
+| `pauseMinimaleEntreVacations` | HARD | Légal (temps de travail) | Entre deux vacations d'un même animateur le même jour, l'écart doit être d'au moins la pause minimale paramétrée (30 min par défaut). |
+| `indisponibiliteForcee` | HARD | Contraintes ad hoc | Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé. |
+| `incompatibiliteAdHoc` | HARD | Contraintes ad hoc | Deux animateurs déclarés incompatibles ne doivent jamais travailler sur le même créneau. |
+| `affectationForcee` | HARD | Contraintes ad hoc | Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé. |
+| `affiniteAdHoc` | SOFT | Contraintes ad hoc | Paire d'animateurs à privilégier : chaque créneau où les deux sont affectés au même stand est récompensé. Contrainte souple : elle favorise la co-affectation quand c'est possible, sans jamais la forcer. |
+| `animateurVerrouilleFige` | HARD | Verrouillage du planning | Le planning d'un animateur verrouillé ne bouge plus : ses postes validés sont figés et le solveur ne peut plus lui en attribuer de nouveaux. |
+| `animateurVerrouilleCreneauFige` | HARD | Verrouillage du planning | Un échange validé est figé sur son créneau : ce que chacun des deux animateurs y tient après l'échange ne bouge plus, sans geler le reste de leur planning. |
+| `standComplexeAvecReferent` | MEDIUM | Qualité d'organisation | Chaque stand devrait compter au moins un référent sur chaque créneau. |
+| `equilibrerCharge` | MEDIUM | Qualité d'organisation | La charge de travail doit être répartie équitablement entre les animateurs. |
+| `stabiliteDuPlanPublie` | MEDIUM | Qualité d'organisation | Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait dans le plan publié coûte : le solveur ne bouscule les gens déjà prévenus que si le gain vaut le dérangement. Muette tant que rien n'a été publié ; un stand ou un créneau créé depuis reste libre. |
+| `repartitionMineursParCreneau` | MEDIUM | Qualité d'organisation | Sur un créneau, un stand ne devrait pas compter plus de mineurs que de majeurs. |
+| `experienceRequisePourStandsPremium` | MEDIUM | Qualité d'organisation | Un stand premium ne devrait pas être tenu par un animateur débutant sur sa typologie. |
+| `eviterRoulementStandsPremium` | MEDIUM | Qualité d'organisation | Sur un stand premium, limiter le nombre d'animateurs différents qui s'y relaient au-delà d'un équipage : on privilégie la continuité. |
+| `eviterChangementEmplacementEloigne` | MEDIUM | Qualité d'organisation | Entre deux créneaux consécutifs, éviter de faire basculer un animateur vers un stand dont l'emplacement est éloigné (> 300 m à vol d'oiseau) de celui du créneau précédent. |
+| `limiterEmplacementsParJour` | MEDIUM | Qualité d'organisation | Sur une même journée, limiter le nombre d'emplacements distincts visités par un animateur (plafond réglable, 3 par défaut) : au-delà, la journée est dispersée quelles que soient les distances. |
+| `eviterEnchainementStandsEpuisants` | MEDIUM | Qualité d'organisation | Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement épuisants sans repos ni stand plus facile entre les deux. |
+| `appreciationIncompatible` | MEDIUM | Qualité d'organisation | L'appréciation de l'administrateur ne couvre aucune typologie de jeu proposée par le stand. |
+| `souhaitsIncompatibles` | MEDIUM | Qualité d'organisation | Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de l'animateur. |
+| `limiterTypologiesDistinctesParAnimateur` | MEDIUM | Qualité d'organisation | Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu sur l'ensemble du planning. |
+| `maxJoursConsecutifsTravailles` | MEDIUM | Qualité d'organisation | Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour de repos : moins est possible, plus ne devrait pas l'être. |
+| `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |
+| `equilibrerCreneauxPenibles` | SOFT | Préférences | Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium). |
+| `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |
+<!-- catalogue:fin -->
+
 ## Ajouter une contrainte
 
 1. Implémenter dans la classe de famille, en enrobant le stream initial de
