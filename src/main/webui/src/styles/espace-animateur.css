@@ -39,8 +39,8 @@
   top: 0;
   z-index: 3;
   gap: 0.25rem;
-  background: #0098d7;
-  color: #fff;
+  background: var(--app-toolbar-background);
+  color: var(--app-toolbar-foreground);
   /* Les cibles de frappe de Material débordent de quelques pixels sur les
      écrans étroits ; sans cela, la page entière gagne une barre de défilement
      horizontale pour 9 px. */
@@ -126,15 +126,23 @@
   }
 }
 
+/* Four tabs — « Mon planning », « Mes échanges », « Mes disponibilités »,
+   « Aide » — no longer fit one row of a narrow phone, and equal shares turned
+   each of them into two letters: two rows of real touch targets beat one row
+   of ellipses. Full width to the finger; at their own size from 40rem. */
 .espace-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-/* Pleine largeur au doigt : deux cibles de frappe qui se partagent l'écran
-   plutôt que deux petits boutons collés à gauche. */
 .espace-nav a {
-  flex: 1 1 0;
+  flex: 1 1 40%;
+}
+
+/* The « Aide » tab at the size of its content, so the routed ones share the rest. */
+.espace-nav .espace-nav-aide {
+  flex: 0 0 auto;
 }
 
 @media (min-width: 40rem) {

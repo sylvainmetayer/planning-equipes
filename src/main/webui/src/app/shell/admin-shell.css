@@ -65,8 +65,8 @@
   top: 0;
   z-index: 3;
   gap: 0.5rem;
-  background: #0098d7;
-  color: #fff;
+  background: var(--app-toolbar-background);
+  color: var(--app-toolbar-foreground);
 }
 
 .app-logo {

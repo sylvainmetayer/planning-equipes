@@ -20,6 +20,10 @@
    de couleur de texte sur la surface sombre et tombait sous 2,5:1. */
 :root {
   --app-accent: var(--mat-sys-primary);
+  /* The brand bar of both shells and of the public pages: the one colour that
+     stays the same in light and dark, since the logo sits on it. */
+  --app-toolbar-background: #0098d7;
+  --app-toolbar-foreground: #fff;
 }
 
 /* Le logo est rendu par <app-brand-logo> : `display: contents` laisse l'image

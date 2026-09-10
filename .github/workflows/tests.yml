@@ -204,6 +204,13 @@ jobs:
       - name: Check that no page writes an API path itself
         run: npm run api-paths-check
 
+      # A class used by a screen is defined in a stylesheet that screen loads:
+      # global partial, its own `styleUrl`, or its shell's. The unit tests
+      # render without CSS, so nothing else would see a page styled only when
+      # another route was visited first.
+      - name: CSS scope check
+        run: npm run css-scope-check
+
       # Un cliquet, pas une barrière : la règle s'applique aux **lignes** que la
       # branche écrit, pas au dépôt entier. Le solde — 589 noms et 240 blocs de
       # commentaire, chiffré dans #425 — se paie au fil des passages, sans

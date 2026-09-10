@@ -199,25 +199,3 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-
-/* ---------- Espace: the tab bar, now that there are four of them ---------- */
-
-/* Added by this feature rather than by the layout partial next door: it is the
-   fourth tab that makes the rule necessary, and it belongs with the change
-   that caused it. Three routed labels — « Mon planning », « Mes échanges »,
-   « Mes disponibilités » — plus « Aide » no longer fit one row of a narrow
-   phone, and equal shares turned each of them into two letters. Two rows of
-   real touch targets beat one row of ellipses. */
-.espace-nav {
-  flex-wrap: wrap;
-}
-
-.espace-nav a {
-  flex: 1 1 40%;
-}
-
-@media (min-width: 40rem) {
-  .espace-nav a {
-    flex: 0 0 auto;
-  }
-}

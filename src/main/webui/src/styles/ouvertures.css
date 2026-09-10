@@ -179,17 +179,23 @@
   opacity: 0.8;
 }
 
-.etat-total {
+/* The three states, on a grid cell and on its legend swatch — and nowhere
+   else: written bare, they used to paint the carte-jour's own `.etat-*`
+   markers too, which only asked for a border colour. */
+.ouverture-cellule.etat-total,
+.ouvertures-legende .etat-total {
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
 }
 
-.etat-partiel {
+.ouverture-cellule.etat-partiel,
+.ouvertures-legende .etat-partiel {
   background: var(--mat-sys-tertiary-container);
   color: var(--mat-sys-on-tertiary-container);
 }
 
-.etat-ferme {
+.ouverture-cellule.etat-ferme,
+.ouvertures-legende .etat-ferme {
   background: var(--mat-sys-surface-container-high);
   color: var(--mat-sys-on-surface-variant);
 }

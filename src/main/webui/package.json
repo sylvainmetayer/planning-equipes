@@ -21,6 +21,7 @@
     "i18n-check": "node scripts/generate-version.js && node scripts/check-i18n.js",
     "api-types-check": "node scripts/check-api-types.js",
     "api-paths-check": "node scripts/check-api-paths.js",
+    "css-scope-check": "node scripts/check-css-scope.js",
     "api-schema": "node scripts/refresh-api-schema.js",
     "e2e": "playwright test",
     "language-policy": "node scripts/check-language-policy.js",

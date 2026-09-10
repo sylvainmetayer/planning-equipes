@@ -124,9 +124,3 @@
     display: inline-flex;
   }
 }
-
-/* Onglet « Aide » de la barre de l'espace : à la taille de son contenu, pour
-   laisser « Mon planning » et « Mes échanges » se partager le reste. */
-.espace-nav .espace-nav-aide {
-  flex: 0 0 auto;
-}
