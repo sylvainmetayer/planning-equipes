@@ -5,27 +5,34 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**
- * Root of a scenario YAML file, as accepted by PlanningService's
- * import-scenario endpoints. Structural mirror only: fields that
- * PlanningService silently ignores on import (e.g. {@code creneaux[].jour},
- * {@code postes[].animateurId}) are still modeled here — so a well-formed
- * file validates cleanly — but are not given extra meaning.
+ * Root of a scenario YAML file: the one shape a scenario has, whether it is
+ * being validated, imported or written back out.
+ *
+ * <p>Fields the import silently ignores (e.g. {@code creneaux[].jour},
+ * {@code postes[].animateurId}) are still modeled, so a well-formed file
+ * validates cleanly — but they are not given extra meaning.</p>
+ *
+ * <p><b>The order of the components is the order of the file.</b> Since the
+ * export serialises this record, declaring a field here is what puts it in the
+ * written scenario, at that place. It is set to the order the hand-written
+ * writer emitted before A2, so that switching to this one moved no line of any
+ * exported file.</p>
  */
 public record ScenarioDto(
         @Valid EditionCibleDto edition,
         @NotNull @Valid FestivalDto festival,
+        @Valid ParametresSolveurDto parametresSolveur,
+        @Valid ParametresLegauxDto parametresLegaux,
+        @Valid ParametresDecoupageDto parametresDecoupage,
+        @Valid ContraintesDto contraintes,
+        List<@Valid TypologieDto> typologies,
         @NotNull List<@Valid CreneauDto> creneaux,
         List<@Valid EmplacementDto> emplacements,
-        List<@Valid TypologieDto> typologies,
         @NotNull List<@Valid StandDto> stands,
         @NotNull List<@Valid AnimateurDto> animateurs,
         // Absent: PlanningService.buildPlanningFromData generates the
         // postes itself from stands x creneaux (mirroring buildFromReferenceData).
         List<@Valid PosteDto> postes,
-        @Valid ParametresLegauxDto parametresLegaux,
-        @Valid ParametresDecoupageDto parametresDecoupage,
-        @Valid ParametresSolveurDto parametresSolveur,
-        @Valid ContraintesDto contraintes,
         List<@Valid ContrainteAdHocDto> contraintesAdHoc,
         @Valid DecoupageAutoDto decoupageAuto) {
 }

@@ -11,11 +11,13 @@ import java.util.List;
 public record StandDto(
         @NotBlank String id,
         @NotBlank String nom,
+        String emplacementId,
         @NotEmpty(message = "un stand est toujours rattaché à au moins une typologie de jeu") List<String> typologiesProposees,
         @PositiveOrZero int effectifMin,
         @PositiveOrZero int effectifMax,
         Boolean reserveMajeurs,
         Boolean premium,
+        NiveauEffort niveauEffort,
         /**
          * Relay family on a staggered grid, 0 = the first one (issue #390).
          * Absent: the import lets the least populated one be picked, which is
@@ -23,9 +25,7 @@ public record StandDto(
          * scenario re-imported keeps the pairing it was solved with.
          */
         Integer famille,
-        String emplacementId,
         List<@Valid IndisponibiliteStandDto> indisponibilites,
-        NiveauEffort niveauEffort,
         List<@Valid OuvertureStandDto> ouvertures,
         /**
          * Recurring opening/closing rules — what a stable pattern is written as,

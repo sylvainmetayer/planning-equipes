@@ -100,7 +100,10 @@ class ScenarioYamlWriterTest {
         assertThat(ouvertures.get(0)).containsEntry("date", "2026-08-20")
                 .containsEntry("heureDebut", "20:00")
                 .containsEntry("heureFin", "23:00")
-                .containsEntry("motif", null);
+                // Absent, not null. The reader does map.get(), so it cannot tell
+                // the two apart; a key that says nothing is noise in a file
+                // meant to be read and diffed by hand.
+                .doesNotContainKey("motif");
 
         List<Map<String, Object>> animateurs = (List<Map<String, Object>>) parsed.get("animateurs");
         assertThat(animateurs).hasSize(1);
@@ -116,7 +119,11 @@ class ScenarioYamlWriterTest {
         // every exported file impossible to import back.
         assertThat(postesYaml.get(0)).containsEntry("standId", "STAND-A")
                 .containsEntry("creneauId", "1")
-                .containsEntry("animateurId", null);
+                // Absent, not null. An export never pins who sits where — the
+                // seat list says which seats exist, the solve says who fills
+                // them — and writing the key out only made that look like a
+                // decision somebody had taken.
+                .doesNotContainKey("animateurId");
     }
 
     /**
@@ -159,10 +166,19 @@ class ScenarioYamlWriterTest {
         assertThat((List<String>) horaires.get(1).get("joursSemaine")).containsExactly("SUNDAY");
     }
 
-    /** A dated exception with no end hour keeps its explicit null, unlike a rule's window. */
+    /**
+     * A dated exception with no end hour leaves the key out, exactly like a
+     * rule's window does.
+     *
+     * <p>It used to write {@code heureFin: null} there and omit it in a rule's
+     * window — two helper methods written at different times, not a
+     * distinction anybody meant: the reader does {@code map.get()} either way.
+     * Since the export serialises a {@code ScenarioDto}, one rule decides for
+     * the whole file.</p>
+     */
     @Test
     @SuppressWarnings("unchecked")
-    void aDatedOpeningWithoutAnEndHourWritesANullEndHour() {
+    void aDatedOpeningWithoutAnEndHourLeavesTheKeyOut() {
         stand.setOuvertures(List.of(
                 new OuvertureStand(1L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), null, null)));
 
@@ -172,7 +188,7 @@ class ScenarioYamlWriterTest {
 
         List<Map<String, Object>> stands = (List<Map<String, Object>>) parsed.get("stands");
         List<Map<String, Object>> ouvertures = (List<Map<String, Object>>) stands.get(0).get("ouvertures");
-        assertThat(ouvertures.get(0)).containsEntry("heureDebut", "20:00").containsEntry("heureFin", null);
+        assertThat(ouvertures.get(0)).containsEntry("heureDebut", "20:00").doesNotContainKey("heureFin");
     }
 
     /**

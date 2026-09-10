@@ -1,5 +1,14 @@
 package dev.sylvain.planning.scenario;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -55,6 +64,42 @@ public final class ScenarioYaml {
                     + "|[-+]?\\.(?:inf|Inf|INF)|\\.(?:nan|NaN|NAN))$");
 
     private ScenarioYaml() {
+    }
+
+    /**
+     * How a {@link dev.sylvain.planning.scenario.dto.ScenarioDto} becomes the
+     * map a scenario file is dumped from.
+     *
+     * <p><b>Absent rather than null.</b> The hand-written writer decided key by
+     * key whether to emit a section, and forgot in places — {@code postes[]}
+     * carried an explicit {@code animateurId: null}, and a stand with no motif
+     * wrote {@code motif: null}. A key the reader treats exactly like an
+     * absent one is noise in a file meant to be read and diffed by hand.</p>
+     *
+     * <p>Dates and hours are written as the text the schema declares, never as
+     * the epoch numbers Jackson defaults to — a scenario that could not be read
+     * back would be no scenario at all. An hour is written the way
+     * {@link LocalTime#toString()} writes it, {@code 09:00} rather than
+     * Jackson's {@code 09:00:00}: the seconds are always zero here, and adding
+     * them would move every hour of every exported file for nothing.</p>
+     */
+    public static ObjectMapper writer() {
+        SimpleModule heures = new SimpleModule();
+        heures.addSerializer(LocalTime.class, new HourAsWritten());
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .registerModule(heures)
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
+
+    /** {@code 09:00}, not {@code 09:00:00}. */
+    private static final class HourAsWritten extends JsonSerializer<LocalTime> {
+        @Override
+        public void serialize(LocalTime heure, JsonGenerator generateur, SerializerProvider fournisseur)
+                throws java.io.IOException {
+            generateur.writeString(heure.toString());
+        }
     }
 
     /** A parser configured for scenario documents, aliases and all. */
