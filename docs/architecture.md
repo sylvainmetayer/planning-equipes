@@ -121,6 +121,13 @@ retenu (audit #392, A5) : un intercepteur donne au même appel l'un ou l'autre
 sens selon une annotation posée plusieurs cadres plus haut, ne voit pas les
 appels internes, et le `commit()` manuel du scope lèverait sous JTA.
 
+L'alternative a depuis été mesurée, prototype à l'appui, dans
+[`docs/decisions/0028`](decisions/0028-transactions-declaratives-narayana.md) :
+Narayana est déjà sur le classpath, six lignes font du scope un participant
+JTA, et l'unité composée se passe alors de `Connection` — au prix de trois
+garde-fous structurels. La décision reste à prendre ; tant qu'elle ne l'est
+pas, la règle ci-dessus s'applique.
+
 ## Deux politiques d'échec sur les mails, séparées structurellement
 
 Un mail qui **accompagne** une opération déjà faite (demande soumise, décision
