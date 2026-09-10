@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -10,13 +10,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
-import { errorPrefix } from '../../core/error-message';
-import {
-  AnimateurFragilite,
-  CompetenceRare,
-  RapportFragilite,
-  SeveriteFragilite,
-} from '../../core/models';
+import { AnimateurFragilite, CompetenceRare, SeveriteFragilite } from '../../core/models';
+import { errorText, retainedValue } from '../../core/resource-state';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
@@ -64,9 +59,11 @@ export class FragilitePage {
   private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
 
-  protected readonly rapport = signal<RapportFragilite | null>(null);
-  protected readonly chargement = signal(true);
-  protected readonly erreur = signal('');
+  private readonly fragilite = resource({ loader: () => this.analysesApi.fragility() });
+  /** Kept across a failed refresh; the template shows the failure in its place, not a blank card. */
+  protected readonly rapport = retainedValue(this.fragilite);
+  protected readonly chargement = this.fragilite.isLoading;
+  protected readonly erreur = errorText(this.fragilite);
   protected readonly view = signal<VueFragilite>('ANIMATEURS');
   protected readonly filtre = signal<FiltreFragilite>('TOUS');
   protected readonly recherche = signal('');
@@ -93,7 +90,6 @@ export class FragilitePage {
     this.view.set(lireVue(params.get('vue')));
     this.filtre.set(lireFiltre(params.get('filtre')));
     this.recherche.set(params.get('q') ?? '');
-    void this.recharger();
     keepViewInQueryParams(() => ({
       vue: this.view() === 'ANIMATEURS' ? null : this.view(),
       filtre: this.filtre() === 'TOUS' ? null : this.filtre(),
@@ -101,16 +97,8 @@ export class FragilitePage {
     }));
   }
 
-  protected async recharger(): Promise<void> {
-    this.chargement.set(true);
-    this.erreur.set('');
-    try {
-      this.rapport.set(await this.analysesApi.fragility());
-    } catch (error) {
-      this.erreur.set(errorPrefix(error));
-    } finally {
-      this.chargement.set(false);
-    }
+  protected recharger(): void {
+    this.fragilite.reload();
   }
 
   protected reinitialiser(): void {

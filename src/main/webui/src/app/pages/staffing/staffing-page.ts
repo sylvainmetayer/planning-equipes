@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -7,7 +7,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { CompetenceStaffing, JourStaffing, StaffingSummary, TypologieStaffing } from '../../core/models';
-import { errorPrefix } from '../../core/error-message';
+import { errorText, retainedValue } from '../../core/resource-state';
 
 /**
  * Staffing-need calculator: how many animateurs the stands and créneaux
@@ -49,13 +49,13 @@ export class StaffingPage {
     'minimumJour'
   ];
   protected readonly competenceColumns = ['typologie', 'sieges', 'minimumTotal', 'specialistes', 'manque'];
-  protected readonly summary = signal<StaffingSummary | null>(null);
-  // `false`, not `true`: the constructor calls `load()`, which flips it to
-  // `true` synchronously before its first `await`. The initial value was
-  // never observable, so `true` only claimed a loading state that no render
-  // ever saw.
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
+  private readonly analysesApi = inject(AnalysesApi);
+
+  /** Read when the screen opens: nothing here changes without a new solve or a referential edit. */
+  private readonly staffing = resource({ loader: () => this.analysesApi.staffing() });
+  protected readonly summary = retainedValue(this.staffing);
+  protected readonly loading = this.staffing.isLoading;
+  protected readonly error = errorText(this.staffing);
 
   /**
    * What one animateur may work during the week the workload bound was proved
@@ -144,24 +144,6 @@ export class StaffingPage {
    * has to be carried explicitly. Same trap as the shell's icon buttons.
    */
   protected readonly ninjaTooltip = $localize`:@@staffing.competence.ninjaTooltip:Typologie des polyvalents : ses titulaires peuvent tenir n'importe quel stand, mais ne comptent comme spécialistes que dans les compétences qu'ils déclarent — ailleurs, ils sont un renfort.`;
-
-  private readonly analysesApi = inject(AnalysesApi);
-
-  constructor() {
-    void this.load();
-  }
-
-  private async load(): Promise<void> {
-    this.loading.set(true);
-    try {
-      this.summary.set(await this.analysesApi.staffing());
-      this.error.set('');
-    } catch (error) {
-      this.error.set(errorPrefix(error));
-    } finally {
-      this.loading.set(false);
-    }
-  }
 
   protected jourCritiqueLabel(jour: JourStaffing): string {
     const date = jour.date;

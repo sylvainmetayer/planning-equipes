@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -13,7 +13,7 @@ import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { PlanningEvenement, PosteAffectation, TypologieItem } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
-import { errorPrefix } from '../../core/error-message';
+import { errorText } from '../../core/resource-state';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 
 export type HeatmapView = 'stand' | 'animateur';
@@ -88,21 +88,39 @@ export interface HeatmapTable {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HeatmapPage {
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
-  protected readonly planning = signal<PlanningEvenement | null>(null);
   protected readonly view = signal<HeatmapView>('stand');
   protected readonly animateurFilter = signal('');
   /** True as soon as the view differs from the one this page opens on. */
   protected readonly viewChanged = computed(() => this.view() !== 'stand' || this.animateurFilter().trim() !== '');
   protected readonly standColumnLabel = $localize`:@@heatmap.column.stand:Stand`;
   protected readonly animateurColumnLabel = $localize`:@@heatmap.column.animateur:Animateur`;
-  /** Typologie referential, only used to turn ids into display labels. */
-  protected readonly typologies = signal<TypologieItem[]>([]);
-
   private readonly analysesApi = inject(AnalysesApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
+
+  /**
+   * The planning and the typologie referential, read together. The latter is
+   * labels only: a missing referential degrades the badges to raw ids rather
+   * than failing the whole heatmap.
+   */
+  private readonly heatmapData = resource({
+    loader: async () => {
+      const [planning, typologies] = await Promise.all([
+        this.planningState.loadForDisplay(),
+        this.analysesApi.typologies().catch((): TypologieItem[] => [])
+      ]);
+      return { planning, typologies };
+    }
+  });
+  protected readonly loading = this.heatmapData.isLoading;
+  protected readonly error = errorText(this.heatmapData);
+  private readonly planning = computed<PlanningEvenement | null>(() =>
+    this.heatmapData.hasValue() ? this.heatmapData.value().planning : null
+  );
+  /** Typologie referential, only used to turn ids into display labels. */
+  private readonly typologies = computed<TypologieItem[]>(() =>
+    this.heatmapData.hasValue() ? this.heatmapData.value().typologies : []
+  );
 
   private readonly postes = computed(() => this.planning()?.postes ?? []);
 
@@ -190,7 +208,6 @@ export class HeatmapPage {
 
   constructor() {
     this.seedStateFromQueryParams();
-    void this.refresh();
     keepViewInQueryParams(() => ({
       view: this.view() === 'stand' ? null : this.view(),
       q: optionalParam(this.animateurFilter())
@@ -214,24 +231,8 @@ export class HeatmapPage {
     this.animateurFilter.set('');
   }
 
-  protected async refresh(): Promise<void> {
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const [planning, typologies] = await Promise.all([
-        this.planningState.loadForDisplay(),
-        // Labels only: a missing referential degrades the badges to raw ids
-        // rather than failing the whole heatmap.
-        this.analysesApi.typologies().catch(() => [])
-      ]);
-      this.planning.set(planning);
-      this.typologies.set(typologies);
-    } catch (error) {
-      this.planning.set(null);
-      this.error.set(errorPrefix(error));
-    } finally {
-      this.loading.set(false);
-    }
+  protected refresh(): void {
+    this.heatmapData.reload();
   }
 
   protected setView(view: HeatmapView): void {

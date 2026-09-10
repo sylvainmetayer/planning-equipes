@@ -386,7 +386,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 
 - Standalone components only (no `NgModule`), `signal()` / `computed()` for
   state, new control flow (`@if` / `@for`) in templates, lazy-loaded routes in
-  `app/app.routes.ts`.
+  `app/app.routes.ts`. A read-only screen loads through `resource()` — the
+  loading and error states are the resource's, not hand-written signals, and a
+  superseded request is discarded by it; `core/resource-state.ts` keeps the
+  last good value on screen across a failed reload and words the failure.
 - UI built with **Angular Material** (Material Design 3). The theme lives in
   `src/material-theme.scss` (`mat.theme()`, azure/blue palettes, Roboto); use the
   `--mat-sys-*` tokens in custom CSS instead of hard-coded colours. The app has

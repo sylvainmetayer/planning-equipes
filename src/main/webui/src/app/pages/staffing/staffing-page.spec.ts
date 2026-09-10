@@ -142,7 +142,7 @@ type PageInternals = {
   siegesNonAttribuesLabel: Signal<string>;
   siegesReservesLabel: Signal<string>;
   /** Private to the component; reachable here because `private` is compile-time only. */
-  load: () => Promise<void>;
+  staffing: { reload(): boolean };
 };
 
 describe('StaffingPage', () => {
@@ -161,9 +161,9 @@ describe('StaffingPage', () => {
   }
 
   describe('loading state', () => {
-    // `load()` raises the flag itself, synchronously, before its first await:
-    // the initial value of the signal is never observed. The point of the test
-    // is that the first paint shows a progress bar and not an empty table.
+    // The resource reports `loading` from the moment it exists, before its
+    // loader has even run: the first paint shows a progress bar and not an
+    // empty table.
     it('is loading while the first request is in flight, with nothing to show yet', () => {
       analysesApi.staffing.mockReturnValue(deferred<StaffingSummary>().promise);
 
@@ -209,9 +209,9 @@ describe('StaffingPage', () => {
       await vi.waitFor(() => expect(page.error()).not.toBe(''));
 
       analysesApi.staffing.mockResolvedValue(summary());
-      await page.load();
+      page.staffing.reload();
+      await vi.waitFor(() => expect(page.error()).toBe(''));
 
-      expect(page.error()).toBe('');
       expect(page.summary()).not.toBeNull();
     });
 
@@ -223,10 +223,10 @@ describe('StaffingPage', () => {
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
 
       analysesApi.staffing.mockRejectedValue(new Error('Référentiel incomplet.'));
-      await page.load();
+      page.staffing.reload();
+      await vi.waitFor(() => expect(page.error()).toContain('Référentiel incomplet.'));
 
       expect(page.summary()).not.toBeNull();
-      expect(page.error()).toContain('Référentiel incomplet.');
     });
   });
 
@@ -307,13 +307,14 @@ describe('StaffingPage', () => {
       analysesApi.staffing.mockResolvedValue(
         summary({ minimumTotal: 22, minimumAvecIndisponibilites: 22, indisponibilitesDeclarees: true })
       );
-      await page.load();
-      expect(page.projectionLabel()).toBe('');
+      page.staffing.reload();
+      await vi.waitFor(() => expect(page.projectionLabel()).toBe(''));
 
       analysesApi.staffing.mockResolvedValue(
         summary({ minimumTotal: 22, minimumAvecIndisponibilites: 22, indisponibilitesDeclarees: false })
       );
-      await page.load();
+      page.staffing.reload();
+      await vi.waitFor(() => expect(analysesApi.staffing).toHaveBeenCalledTimes(3));
       expect(page.projectionLabel()).toBe('');
     });
 

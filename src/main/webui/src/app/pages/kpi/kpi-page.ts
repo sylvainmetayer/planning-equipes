@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,6 +11,7 @@ import { KpiHistoriqueEntry } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StatusMessage } from '../../shared/status-message';
 import { errorMessage } from '../../core/error-message';
+import { errorText, retainedValue } from '../../core/resource-state';
 
 /**
  * KPI history (issue #89): one row per completed solve, kept across editions
@@ -44,31 +45,25 @@ export class KpiPage {
     'actions'
   ];
 
-  protected readonly entries = signal<KpiHistoriqueEntry[]>([]);
-  protected readonly chargement = signal(false);
-  protected readonly error = signal('');
-
   private readonly analysesApi = inject(AnalysesApi);
   private readonly confirm = inject(ConfirmService);
 
-  constructor() {
-    void this.recharger();
-  }
+  private readonly history = resource({ loader: () => this.analysesApi.kpiHistory() });
+  // The list is kept across a failed refresh, unlike the report of /heures
+  // which is dropped: this is history the server already holds, and losing
+  // the screen to a network blip helps nobody. The error sits next to it, and
+  // the operator just pressed « Actualiser », so nothing here passes for fresh.
+  private readonly historyKept = retainedValue(this.history);
+  protected readonly entries = computed(() => this.historyKept() ?? []);
+  protected readonly chargement = this.history.isLoading;
+  /** A deletion refused server-side; the next refresh clears it. */
+  private readonly actionError = signal('');
+  private readonly loadError = errorText(this.history, errorMessage);
+  protected readonly error = computed(() => this.actionError() || this.loadError());
 
-  protected async recharger(): Promise<void> {
-    this.chargement.set(true);
-    this.error.set('');
-    try {
-      this.entries.set(await this.analysesApi.kpiHistory());
-    } catch (error) {
-      // The list is kept, unlike the report of /heures which is dropped: this
-      // is history the server already holds, and losing the screen to a
-      // network blip helps nobody. The error sits next to it, and the operator
-      // just pressed « Actualiser », so nothing here passes for fresh.
-      this.error.set(errorMessage(error));
-    } finally {
-      this.chargement.set(false);
-    }
+  protected recharger(): void {
+    this.actionError.set('');
+    this.history.reload();
   }
 
   protected async supprimer(entry: KpiHistoriqueEntry): Promise<void> {
@@ -82,9 +77,9 @@ export class KpiPage {
     }
     try {
       await this.analysesApi.deleteKpiEntry(entry.id);
-      await this.recharger();
+      this.recharger();
     } catch (error) {
-      this.error.set(errorMessage(error));
+      this.actionError.set(errorMessage(error));
     }
   }
 

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -12,7 +12,7 @@ import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { BancDeTouche, CreneauSiege } from '../../core/models';
-import { errorPrefix } from '../../core/error-message';
+import { errorText } from '../../core/resource-state';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import {
   creneauxUtiles,
@@ -55,13 +55,49 @@ export class BancDeTouchePage {
   private readonly store = inject(ReferenceDataStore);
   private readonly route = inject(ActivatedRoute);
 
-  protected readonly creneauId = signal<number | null>(null);
+  /** The créneau the user chose; null until they do, and the server then picks one. */
+  private readonly creneauId = signal<number | null>(null);
   protected readonly standId = signal<string>('');
-  protected readonly banc = signal<BancDeTouche | null>(null);
-  protected readonly chargement = signal(false);
-  protected readonly erreur = signal('');
 
   protected readonly stands = this.store.stands;
+
+  /**
+   * Stands and animateurs come from the référentiel — they name the rows and
+   * fill the second selector. The créneaux do not: the answer carries the only
+   * ones worth offering. A resource of its own, so a refused référentiel shows
+   * as a message and not as a blank card: a `reload()` rejection used to
+   * escape into the `void`, the one outcome a screen must never produce.
+   */
+  private readonly referentiel = resource({ loader: () => this.store.reload(['stands', 'animateurs']) });
+
+  /**
+   * The bench, keyed by the two selectors. A resource rather than a method
+   * with a request counter: changing créneau then stand quickly fires two
+   * calls, and nothing guarantees they come back in order — the resource
+   * discards the answer to a request that is no longer the current one, so
+   * the table never shows one créneau while the selectors show another.
+   *
+   * No créneau yet — a cold open, or a bookmark naming one the plan no longer
+   * staffs — is a question for the server: it answers on the first créneau it
+   * does staff, and says which.
+   */
+  private readonly bench = resource({
+    params: () => ({ creneauId: this.creneauId(), standId: this.standId() }),
+    loader: ({ params }) => this.analysesApi.bench(params.creneauId, params.standId)
+  });
+  protected readonly banc = computed<BancDeTouche | null>(() => (this.bench.hasValue() ? this.bench.value() : null));
+  protected readonly chargement = computed(() => this.referentiel.isLoading() || this.bench.isLoading());
+  private readonly erreurReferentiel = errorText(this.referentiel);
+  private readonly erreurBanc = errorText(this.bench);
+  protected readonly erreur = computed(() => this.erreurReferentiel() || this.erreurBanc());
+
+  /**
+   * The créneau on screen: the one chosen, or the one the server answered on
+   * when none was. Derived rather than written back into `creneauId`, which
+   * would re-key the bench and ask the server a second time for what it has
+   * just said.
+   */
+  protected readonly creneauAffiche = computed(() => this.banc()?.creneauId ?? this.creneauId());
 
   protected readonly lignes = computed<LigneBanc[]>(() => lignes(this.banc(), this.store.animateurs()));
   protected readonly standCible = computed(() =>
@@ -83,85 +119,18 @@ export class BancDeTouchePage {
     this.creneauId.set(Number.isFinite(creneau) && creneau > 0 ? creneau : null);
     this.standId.set(params.get('stand') ?? '');
     keepViewInQueryParams(() => ({
-      creneau: this.creneauId() ?? null,
+      creneau: this.creneauAffiche() ?? null,
       stand: optionalParam(this.standId())
     }));
-    void this.premierChargement();
   }
 
-  /**
-   * Stands and animateurs come from the référentiel — they name the rows and
-   * fill the second selector. The créneaux do not: the answer carries the only
-   * ones worth offering, so on a cold open the server is asked to pick, and the
-   * screen adopts whichever créneau it answered on.
-   *
-   * A `reload()` rejection used to escape into the `void`, leaving the card
-   * blank with no message at all, which is the one outcome a screen must never
-   * produce — hence the same `catch` as the bench request.
-   */
-  private async premierChargement(): Promise<void> {
-    try {
-      await this.store.reload(['stands', 'animateurs']);
-    } catch (error) {
-      this.erreur.set(errorPrefix(error));
-      return;
-    }
-    await this.charger();
-  }
-
-  /**
-   * Fetching is driven by the two selects rather than by an `effect()` on their
-   * signals: an effect would also fire on the default créneau this component
-   * sets itself, and the order of the two requests would then depend on which
-   * write landed first.
-   */
+  /** The two selects re-key the bench; the resource does the rest. */
   protected changerCreneau(creneauId: number): void {
     this.creneauId.set(creneauId);
-    void this.charger();
   }
 
   protected changerStand(standId: string): void {
     this.standId.set(standId);
-    void this.charger();
-  }
-
-  /**
-   * Which request is allowed to write the screen. Changing créneau then stand
-   * quickly fires two calls, and nothing guarantees they come back in order:
-   * without this, the older answer could land last and leave the table showing
-   * one créneau while the selectors show another. The same counter keeps the
-   * progress bar up until the *current* request is done, instead of dropping it
-   * on the first answer to arrive.
-   */
-  private requeteCourante = 0;
-
-  private async charger(): Promise<void> {
-    const request = ++this.requeteCourante;
-    const creneauId = this.creneauId();
-    const standId = this.standId();
-    this.chargement.set(true);
-    try {
-      // No créneau yet — a cold open, or a bookmark naming one the plan no
-      // longer staffs — is a question for the server: it answers on the first
-      // créneau it does staff, and says which.
-      const banc = await this.analysesApi.bench(creneauId, standId);
-      if (request !== this.requeteCourante) {
-        return;
-      }
-      this.banc.set(banc);
-      this.creneauId.set(banc.creneauId);
-      this.erreur.set('');
-    } catch (error) {
-      if (request !== this.requeteCourante) {
-        return;
-      }
-      this.banc.set(null);
-      this.erreur.set(errorPrefix(error));
-    } finally {
-      if (request === this.requeteCourante) {
-        this.chargement.set(false);
-      }
-    }
   }
 
   /**
@@ -191,7 +160,8 @@ export class BancDeTouchePage {
   protected reinitialiser(): void {
     this.standId.set('');
     this.creneauId.set(null);
-    void this.charger();
+    // Both already at their defaults re-keys nothing: ask the server again anyway.
+    this.bench.reload();
   }
 
   protected etatLibelle(etat: EtatBanc): string {

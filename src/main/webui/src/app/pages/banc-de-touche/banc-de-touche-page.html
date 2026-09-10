@@ -24,7 +24,7 @@
       <div class="banc-controls">
         <mat-form-field appearance="outline">
           <mat-label i18n="@@bancDeTouche.slotLabel">Créneau</mat-label>
-          <mat-select [ngModel]="creneauId()" (ngModelChange)="changerCreneau($event)">
+          <mat-select [ngModel]="creneauAffiche()" (ngModelChange)="changerCreneau($event)">
             @for (creneau of creneaux(); track creneau.id) {
               <mat-option [value]="creneau.id">{{ libelleCreneau(creneau) }}</mat-option>
             }

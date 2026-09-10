@@ -65,7 +65,7 @@ type PageInternals = {
   chargement: Signal<boolean>;
   error: Signal<string>;
   columns: string[];
-  recharger: () => Promise<void>;
+  recharger: () => void;
   supprimer: (entry: KpiHistoriqueEntry) => Promise<void>;
   dateLabel: (entry: KpiHistoriqueEntry) => string;
   editionLabel: (entry: KpiHistoriqueEntry) => string;
@@ -131,15 +131,16 @@ describe('KpiPage', () => {
       expect(page.error()).toContain('Historique indisponible.');
     });
 
-    it('clears the previous message when a new load starts', async () => {
+    it('clears the previous message once the next load succeeds', async () => {
       analysesApi.kpiHistory.mockRejectedValueOnce(new Error('Historique indisponible.'));
       const page = createPage();
       await vi.waitFor(() => expect(page.error()).not.toBe(''));
 
       analysesApi.kpiHistory.mockResolvedValue([entry()]);
-      await page.recharger();
+      page.recharger();
 
-      expect(page.error()).toBe('');
+      await vi.waitFor(() => expect(page.error()).toBe(''));
+      expect(page.entries()).toHaveLength(1);
     });
 
     // The rows already fetched stay on screen: a failed refresh must not look
@@ -150,10 +151,10 @@ describe('KpiPage', () => {
       await vi.waitFor(() => expect(page.entries()).toHaveLength(1));
 
       analysesApi.kpiHistory.mockRejectedValue(new Error('Historique indisponible.'));
-      await page.recharger();
+      page.recharger();
+      await vi.waitFor(() => expect(page.error()).toContain('Historique indisponible.'));
 
       expect(page.entries()).toHaveLength(1);
-      expect(page.error()).toContain('Historique indisponible.');
     });
   });
 
@@ -259,7 +260,7 @@ describe('KpiPage', () => {
       await page.supprimer(entry({ id: 42 }));
 
       expect(analysesApi.deleteKpiEntry).toHaveBeenCalledExactlyOnceWith(42);
-      expect(analysesApi.kpiHistory).toHaveBeenCalledOnce();
+      await vi.waitFor(() => expect(analysesApi.kpiHistory).toHaveBeenCalledOnce());
     });
 
     it('warns that the deletion is permanent', async () => {
