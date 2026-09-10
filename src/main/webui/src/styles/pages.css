@@ -5,10 +5,6 @@
   margin-bottom: 1.25rem;
 }
 
-.page-card.is-editing {
-  border-color: var(--app-accent);
-}
-
 /* Element-qualified selector: Angular injects Material's own
    `.mat-mdc-dialog-content { display: block }` after this stylesheet, and at
    equal specificity the later rule wins, silently turning the grid back into
@@ -39,23 +35,6 @@ form.form-grid {
   gap: 0.75rem;
 }
 
-/* Scenario picker sits inline with the action buttons on the Data setup page. */
-.scenario-select {
-  min-width: 16rem;
-}
-
-/* Ninja typologie picker sits inline with the "Ajouter" button on the Typologies page. */
-.ninja-select {
-  min-width: 18rem;
-}
-
-/* Footer row of the Hours table: the festival-wide totals, kept visible while
-   the per-animateur rows scroll under it. */
-.hours-total-row td {
-  background: var(--mat-sys-surface-container);
-  font-weight: 500;
-}
-
 /* Quick filter (app-table-filter) sitting inline with the action buttons of a reference page.
    Pushed to the right so the buttons keep their usual place whatever the page. */
 .table-filter {
@@ -63,22 +42,6 @@ form.form-grid {
   flex: 1 1 16rem;
   max-width: 26rem;
   margin-inline-start: auto;
-}
-
-/* Wide enough that the label and hint never wrap onto the following mat-divider. */
-.solver-duration {
-  display: block;
-  width: 14rem;
-  max-width: 100%;
-  margin-bottom: 1rem;
-}
-
-/* Sits right of .solver-duration, so the value and its unit (s/min/h) read as one control. */
-.solver-duration-unit {
-  display: block;
-  width: 9rem;
-  max-width: 100%;
-  margin-bottom: 1rem;
 }
 
 .subform {
@@ -101,47 +64,8 @@ form.form-grid {
   margin: 0;
 }
 
-.competence-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.competence-row mat-form-field {
-  flex: 1 1 12rem;
-}
-
-.indisponibilite-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.indisponibilite-row mat-form-field {
-  flex: 1 1 9rem;
-}
-
 .table-wrapper {
   overflow-x: auto;
-}
-
-.stand-checklist {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: 0.5rem 1rem;
-  padding: 0.5rem 0 1rem;
-}
-
-/*
- * The timeslot-group panel reads as a list, not a grid: each row carries a
- * name plus two action buttons (queue toggle, delete), and from three or four
- * groups on, the multi-column packing made rows and actions hard to match.
- */
-.stand-checklist.groupes-creneaux-liste {
-  grid-template-columns: 1fr;
-  gap: 0.25rem;
 }
 
 .table-wrapper table {
@@ -269,27 +193,6 @@ tr.mat-mdc-row.row-selected {
   margin: 0 0 0.75rem;
 }
 
-.warning-banner {
-  margin-bottom: 1.25rem;
-  --mdc-outlined-card-container-color: var(--mat-sys-error-container);
-}
-
-.warning-banner mat-card-content {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--mat-sys-on-error-container);
-}
-
-.warning-banner mat-icon {
-  color: var(--mat-sys-error);
-  flex-shrink: 0;
-}
-
-.warning-banner p {
-  margin: 0;
-}
-
 .output-panel {
   display: block;
   margin-bottom: 1.25rem;
@@ -304,14 +207,9 @@ tr.mat-mdc-row.row-selected {
   font-family: 'Roboto Mono', ui-monospace, monospace;
   font-size: 0.8125rem;
 }
-
 @media (max-width: 740px) {
   .form-grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .competence-row {
-    flex-wrap: wrap;
   }
 }
 
@@ -328,24 +226,6 @@ tr.mat-mdc-row.row-selected {
   color: var(--mat-sys-on-error-container);
   font-size: 0.85rem;
   line-height: 1.35;
-}
-
-/* Snapshots screen (issue #138): a refused restore is an error the user must
-   read (it names the missing ids), a successful one a short confirmation. */
-.snapshot-error {
-  color: var(--mat-sys-error);
-  font: var(--mat-sys-body-medium);
-  margin: 0.75rem 0 0;
-}
-
-.snapshot-message {
-  color: var(--app-accent);
-  font: var(--mat-sys-body-medium);
-  margin: 0.75rem 0 0;
-}
-
-.snapshot-auto-chip {
-  margin-left: 0.5rem;
 }
 
 /* Page-level heading for the screens whose first card is not the page itself
@@ -369,320 +249,6 @@ tr.mat-mdc-row.row-selected {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* Repeatable sections of the stand form (recurring horaires, dated closures
-   and openings). Real <fieldset>s so each group is announced with its legend,
-   styled flat so the dialog does not turn into a stack of boxes. */
-.stand-section {
-  border: 0;
-  border-top: 1px solid var(--mat-sys-outline-variant);
-  margin: 0.5rem 0 0;
-  padding: 0.75rem 0 0;
-  min-width: 0;
-}
-
-.stand-section > legend {
-  font: var(--mat-sys-title-small);
-  color: var(--mat-sys-on-surface);
-  padding: 0;
-}
-
-/* Découpage: the thirty settings read as three questions (how long is a
-   vacation, when do people eat, how many staggered grids), so they are three
-   field groups rather than one flat wall of inputs. */
-.decoupage-groupe {
-  border: 0;
-  border-top: 1px solid var(--mat-sys-outline-variant);
-  margin: 0 0 0.5rem;
-  padding: 0.75rem 0 0;
-  min-width: 0;
-}
-
-.decoupage-groupe > legend {
-  font: var(--mat-sys-title-small);
-  color: var(--mat-sys-on-surface);
-  padding: 0;
-  margin-bottom: 0.5rem;
-}
-
-/* Hours: a week beyond a legal ceiling must not look like any other number.
-   Colour is doubled by an icon and a title, so the marking survives a
-   colour-blind reader and a monochrome print (WCAG 1.4.1). */
-.hours-depassement {
-  color: var(--mat-sys-error);
-  font-weight: 600;
-}
-
-.hours-verifier {
-  color: var(--mat-sys-tertiary);
-}
-
-.hours-alerte-icon {
-  margin-left: 0.15rem;
-}
-
-/* Digits line up column by column: comparing hours is the whole point here. */
-.hours-total-row td,
-table td.hours-depassement,
-table td.hours-verifier {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Problèmes: each problem names the screen where it can be acted upon, so the
-   user does not have to memorise an id and go hunting for it. */
-.probleme-liens {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0.5rem 0 0;
-}
-
-/* Notifications grouped by day: the heading carries the date, the rows only
-   need their time. */
-.notification-jour {
-  font: var(--mat-sys-title-small);
-  color: var(--mat-sys-on-surface-variant);
-  margin: 1rem 0 0.35rem;
-  text-transform: capitalize;
-}
-
-/* Ouvertures grid: the stand name stays put while the fifteen day columns
-   scroll under it — same reasoning as the heatmap. */
-.ouvertures-grille .colonne-stand {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: var(--mat-sys-surface);
-}
-
-/* Constraint categories are real groups of switches: the legend is hidden
-   because the card title already shows it, but assistive technology announces
-   it with each toggle. */
-.constraint-fieldset {
-  border: 0;
-  margin: 0;
-  padding: 0;
-  min-width: 0;
-}
-
-/* Créneaux: the infeasibility warning has its own sortable column, so the
-   slots at fault can be grouped rather than spotted by eye. */
-.creneau-probleme {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--mat-sys-error);
-}
-
-/* Paramètres: the "no ninja designated" warning reads as a soft banner, not a
-   bare line squeezed under the toolbar row — the missing reserve is a real
-   operational risk, it deserves a surface of its own. */
-.parametres-alerte-ninja {
-  margin: 0 1rem 0.75rem;
-  padding: 0.25rem 1rem 0.75rem;
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
-  border-radius: 0.75rem;
-}
-
-.parametres-alerte-ninja .status-message-warning {
-  color: var(--mat-sys-on-tertiary-container);
-}
-
-/* Paramètres: the two sections (édition / global) need a heading level between
-   the page title and the cards. */
-.section-title {
-  margin: 1.5rem 0 0.5rem;
-  font-size: 1.15rem;
-  font-weight: 500;
-}
-
-.parametres-renvois {
-  margin: 0;
-  padding-left: 1.25rem;
-  display: grid;
-  gap: 0.5rem;
-}
-
-/* Paramètres, automatic backup: the deployment's own facts (where the dumps
-   go, how many are kept) read as a definition list, not as a form — none of
-   them is editable from here. */
-.parametres-faits {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.25rem 1rem;
-  margin: 1rem 0 0.5rem;
-}
-
-.parametres-faits dt {
-  font-weight: 500;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.parametres-faits dd {
-  margin: 0;
-  word-break: break-word;
-}
-
-@media (max-width: 600px) {
-  .parametres-faits {
-    grid-template-columns: 1fr;
-  }
-
-  .parametres-faits dd {
-    margin-bottom: 0.5rem;
-  }
-}
-
-/* The dumps on disk: a plain listing, scrollable rather than wrapping — a
-   file name broken over two lines stops being one a reader can match against
-   what they see on the server. */
-.parametres-sauvegardes {
-  width: 100%;
-  margin-top: 1rem;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  display: block;
-  overflow-x: auto;
-}
-
-.parametres-sauvegardes caption {
-  text-align: left;
-  padding-bottom: 0.5rem;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.parametres-sauvegardes td {
-  padding: 0.35rem 1rem 0.35rem 0;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
-  white-space: nowrap;
-}
-
-.parametres-sauvegardes td:first-child {
-  font-family: var(--mat-sys-body-medium-font, monospace);
-}
-
-/* MCP: configuration and prompt blocks — selectable, copyable, scrollable. */
-.mcp-pre {
-  margin: 0.5rem 0;
-  padding: 0.75rem 1rem;
-  background: var(--mat-sys-surface-container);
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-
-.mcp-prompt {
-  white-space: pre-wrap;
-}
-
-/* Several prompts now share one card, so each needs its own visible block. */
-.mcp-prompt-bloc + .mcp-prompt-bloc {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--mat-sys-outline-variant);
-}
-
-.mcp-prompt-nom {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.mcp-prompt-description {
-  margin: 0.25rem 0 0;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-/* MCP: the API-key reveal — a short form, then the key itself, both inline in
-   the connection card rather than in a dialog, so the configuration block
-   right below updates with the real key under the reader's eyes. */
-.mcp-cle-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin: 0.5rem 0 1rem;
-  padding: 1rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 0.5rem;
-}
-
-.mcp-cle-form mat-form-field {
-  max-width: 22rem;
-}
-
-.mcp-cle-revelee {
-  margin-bottom: 1rem;
-}
-
-.mcp-cle-note {
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-/* Mentions légales (page publique, hors des deux coques). */
-
-/*
- * Ces pages ont leur propre barre de titre, hors des deux coques. Un
- * `mat-toolbar` ne se replie pas et ne rétrécit pas : « Conditions générales
- * d'utilisation » suivi d'un bouton Retour étirait la fenêtre de rendu à
- * 1000 px sur un téléphone, et toute la page s'affichait dézoomée. Or ce sont
- * précisément les pages qu'un animateur ouvre depuis son mobile.
- */
-.mentions-page-toolbar {
-  height: auto;
-  min-height: 3.5rem;
-  padding-inline: 0.75rem;
-  gap: 0.5rem;
-}
-
-.mentions-page-toolbar .app-title {
-  font: var(--mat-sys-title-medium);
-  /* Le titre cède la place avant tout le monde : il est déjà dans l'onglet. */
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mentions-page-toolbar .app-logo {
-  height: 2rem;
-  width: auto;
-  flex: 0 0 auto;
-}
-
-.mentions-page {
-  padding: 1.25rem;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.mentions-liste {
-  display: grid;
-  grid-template-columns: minmax(10rem, auto) 1fr;
-  gap: 0.35rem 1rem;
-  margin: 0;
-}
-
-.mentions-liste dt {
-  font-weight: 500;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.mentions-liste dd {
-  margin: 0;
-}
-
-/*
- * Ce qui manque se lit comme tel : une mention légale incomplète doit se
- * signaler, jamais se faire passer pour renseignée.
- */
-.mentions-manquant {
-  color: var(--mat-sys-error);
-  font-style: italic;
 }
 
 /* Citations of the Code du travail, wherever a legal rule is stated: the
@@ -729,4 +295,55 @@ table td.hours-verifier {
   white-space: pre-line;
   max-width: 26rem !important;
   text-align: left;
+}
+
+/* Toolbar, meta line and empty state of the dated views — named after the
+   calendar that had them first, used by eight screens. */
+.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-meta {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.calendar-empty {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  padding: 1rem 0;
+}
+
+.staffing-stat {
+  display: block;
+  text-align: center;
+}
+
+.staffing-stat-value {
+  font: var(--mat-sys-display-small);
+  color: var(--app-accent);
+}
+
+.staffing-stat-label {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Row-level alert marker in the reference tables. */
+.row-problem-icon {
+  color: var(--mat-sys-error);
+  vertical-align: middle;
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-left: 0.35rem;
+}
+
+/* The flexible gap of every title bar — both shells and the public pages. */
+.app-toolbar-spacer {
+  flex: 1 1 auto;
 }

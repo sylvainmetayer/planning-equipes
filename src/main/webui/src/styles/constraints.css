@@ -122,3 +122,13 @@
 .constraint-result-clean {
   color: var(--app-accent);
 }
+
+/* Constraint categories are real groups of switches: the legend is hidden
+   because the card title already shows it, but assistive technology announces
+   it with each toggle. */
+.constraint-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}

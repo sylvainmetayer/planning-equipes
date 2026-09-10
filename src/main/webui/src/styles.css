@@ -27,7 +27,7 @@
 @import url('./styles/animateur-timeline.css');
 @import url('./styles/rail-jour.css');
 @import url('./styles/carte-jour.css');
-@import url('./styles/solver-volumetry.css');
+@import url('./styles/solver.css');
 @import url('./styles/score-curve.css');
 @import url('./styles/aide.css');
 @import url('./styles/espace-animateur.css');
@@ -39,4 +39,13 @@
 @import url('./styles/jour-j.css');
 @import url('./styles/debug-date-du-jour.css');
 @import url('./styles/import-animateurs.css');
+@import url('./styles/mcp.css');
+@import url('./styles/mentions-legales.css');
+@import url('./styles/hours.css');
+@import url('./styles/parametres.css');
+@import url('./styles/notifications.css');
+@import url('./styles/snapshots.css');
+@import url('./styles/creneaux.css');
+@import url('./styles/animateurs.css');
+@import url('./styles/login.css');
 @import './styles/historique.css';

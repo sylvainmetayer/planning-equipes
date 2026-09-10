@@ -1,0 +1,17 @@
+/* Animateurs page: the competence rows of the form dialog. */
+
+.competence-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.competence-row mat-form-field {
+  flex: 1 1 12rem;
+}
+
+@media (max-width: 740px) {
+  .competence-row {
+    flex-wrap: wrap;
+  }
+}

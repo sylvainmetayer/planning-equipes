@@ -1,0 +1,35 @@
+/* Login page: the one form outside both shells. */
+
+/* ---------- Login ---------- */
+
+.login-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.login-card {
+  width: min(26rem, 100%);
+}
+
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.login-echec {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--mat-sys-error);
+  margin: 0 0 0.75rem;
+}
+
+.espace-toolbar .app-logo,
+.login-card .app-logo {
+  height: 2.5rem;
+  width: auto;
+}

@@ -1,0 +1,31 @@
+/* Hours page: the legal ceilings, and the totals row that stays visible. */
+
+/* Footer row of the Hours table: the festival-wide totals, kept visible while
+   the per-animateur rows scroll under it. */
+.hours-total-row td {
+  background: var(--mat-sys-surface-container);
+  font-weight: 500;
+}
+
+/* Hours: a week beyond a legal ceiling must not look like any other number.
+   Colour is doubled by an icon and a title, so the marking survives a
+   colour-blind reader and a monochrome print (WCAG 1.4.1). */
+.hours-depassement {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+.hours-verifier {
+  color: var(--mat-sys-tertiary);
+}
+
+.hours-alerte-icon {
+  margin-left: 0.15rem;
+}
+
+/* Digits line up column by column: comparing hours is the whole point here. */
+.hours-total-row td,
+table td.hours-depassement,
+table td.hours-verifier {
+  font-variant-numeric: tabular-nums;
+}

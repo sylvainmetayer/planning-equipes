@@ -1,7 +1,7 @@
-/* Problem list and its severity chips, plus the alert badges the reference
-   tables and the Solveur summary banner reuse. Same colour tokens as the
-   constraint level badges (constraints.css), so a "bloquant" problem reads
-   exactly like a HARD constraint. */
+/* Problem list and its severity chips. Same colour tokens as the constraint
+   level badges (constraints.css), so a "bloquant" problem reads exactly like a
+   HARD constraint. The row icon the reference tables reuse is in pages.css,
+   the summary banner in feedback.css. */
 
 .probleme-counts {
   display: flex;
@@ -58,51 +58,11 @@
   font: var(--mat-sys-body-small);
 }
 
-/* Aggregate banner on the Solveur page. */
-.probleme-summary {
-  display: block;
-  margin-bottom: 1.25rem;
-  --mdc-outlined-card-container-color: var(--mat-sys-tertiary-container);
-}
-
-.probleme-summary.probleme-summary-bloquant {
-  --mdc-outlined-card-container-color: var(--mat-sys-error-container);
-}
-
-.probleme-summary mat-card-content {
+/* Problèmes: each problem names the screen where it can be acted upon, so the
+   user does not have to memorise an id and go hunting for it. */
+.probleme-liens {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  color: var(--mat-sys-on-tertiary-container);
-}
-
-.probleme-summary.probleme-summary-bloquant mat-card-content {
-  color: var(--mat-sys-on-error-container);
-}
-
-.probleme-summary p {
-  margin: 0;
-  flex: 1 1 16rem;
-}
-
-.probleme-summary mat-icon {
-  flex-shrink: 0;
-  color: var(--mat-sys-error);
-}
-
-/* Row-level alert marker in the reference tables. */
-.row-problem-icon {
-  color: var(--mat-sys-error);
-  vertical-align: middle;
-  font-size: 1.125rem;
-  width: 1.125rem;
-  height: 1.125rem;
-  margin-left: 0.35rem;
-}
-
-@media (max-width: 599px) {
-  .probleme-summary mat-card-content {
-    align-items: flex-start;
-  }
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
 }

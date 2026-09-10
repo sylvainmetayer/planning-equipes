@@ -1,34 +1,7 @@
-/* Foire au planning (issue #165): the standalone login page, the espace
-   animateur layout and the admin "Échanges" screen. Everything Material does
-   not already theme; colours come from the --mat-sys-* tokens. */
-
-/* ---------- Login ---------- */
-
-.login-page {
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-}
-
-.login-card {
-  width: min(26rem, 100%);
-}
-
-.login-card form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-top: 1rem;
-}
-
-.login-echec {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--mat-sys-error);
-  margin: 0 0 0.75rem;
-}
+/* Foire au planning (issue #165): the espace animateur layout and what the
+   admin « Échanges » and « Disponibilités » screens reuse of it. Everything
+   Material does not already theme; colours come from the --mat-sys-* tokens.
+   The login page has its own partial. */
 
 /* ---------- Espace animateur layout ---------- */
 
@@ -53,12 +26,6 @@
     gap: 0.5rem;
     padding-inline: 1rem;
   }
-}
-
-.espace-toolbar .app-logo,
-.login-card .app-logo {
-  height: 2.5rem;
-  width: auto;
 }
 
 /* Un logo de déploiement peut être un bandeau très large : sans plafond, il

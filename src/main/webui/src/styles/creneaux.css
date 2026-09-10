@@ -1,0 +1,10 @@
+/* Créneaux page: the infeasibility column. */
+
+/* Créneaux: the infeasibility warning has its own sortable column, so the
+   slots at fault can be grouped rather than spotted by eye. */
+.creneau-probleme {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--mat-sys-error);
+}

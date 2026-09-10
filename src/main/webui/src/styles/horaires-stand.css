@@ -130,3 +130,32 @@
 .horaire-ligne .horaire-basculer-detail {
   margin-top: 0.4rem;
 }
+
+.indisponibilite-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.indisponibilite-row mat-form-field {
+  flex: 1 1 9rem;
+}
+
+/* Repeatable sections of the stand form (recurring horaires, dated closures
+   and openings). Real <fieldset>s so each group is announced with its legend,
+   styled flat so the dialog does not turn into a stack of boxes. */
+.stand-section {
+  border: 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 0 0;
+  min-width: 0;
+}
+
+.stand-section > legend {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+  padding: 0;
+}

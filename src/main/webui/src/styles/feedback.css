@@ -136,3 +136,42 @@
 .essai-bandeau mat-icon {
   flex: none;
 }
+
+/* Aggregate banner on the Solveur page. */
+.probleme-summary {
+  display: block;
+  margin-bottom: 1.25rem;
+  --mdc-outlined-card-container-color: var(--mat-sys-tertiary-container);
+}
+
+.probleme-summary.probleme-summary-bloquant {
+  --mdc-outlined-card-container-color: var(--mat-sys-error-container);
+}
+
+.probleme-summary mat-card-content {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.probleme-summary.probleme-summary-bloquant mat-card-content {
+  color: var(--mat-sys-on-error-container);
+}
+
+.probleme-summary p {
+  margin: 0;
+  flex: 1 1 16rem;
+}
+
+.probleme-summary mat-icon {
+  flex-shrink: 0;
+  color: var(--mat-sys-error);
+}
+
+@media (max-width: 599px) {
+  .probleme-summary mat-card-content {
+    align-items: flex-start;
+  }
+}

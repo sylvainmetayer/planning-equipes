@@ -112,3 +112,21 @@
   color: var(--mat-sys-error);
   font-weight: 600;
 }
+
+/* Découpage: the thirty settings read as three questions (how long is a
+   vacation, when do people eat, how many staggered grids), so they are three
+   field groups rather than one flat wall of inputs. */
+.decoupage-groupe {
+  border: 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  margin: 0 0 0.5rem;
+  padding: 0.75rem 0 0;
+  min-width: 0;
+}
+
+.decoupage-groupe > legend {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+  padding: 0;
+  margin-bottom: 0.5rem;
+}

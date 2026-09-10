@@ -7,21 +7,6 @@
   margin-bottom: 1.25rem;
 }
 
-.staffing-stat {
-  display: block;
-  text-align: center;
-}
-
-.staffing-stat-value {
-  font: var(--mat-sys-display-small);
-  color: var(--app-accent);
-}
-
-.staffing-stat-label {
-  font: var(--mat-sys-body-medium);
-  color: var(--mat-sys-on-surface-variant);
-}
-
 .staffing-critical {
   color: var(--mat-sys-error);
 }

@@ -1,0 +1,99 @@
+/* Paramètres page: the two sections, the ninja warning, the backup facts and the dumps on disk. */
+
+/* Scenario picker sits inline with the action buttons on the Data setup page. */
+.scenario-select {
+  min-width: 16rem;
+}
+
+/* Ninja typologie picker sits inline with the "Ajouter" button on the Typologies page. */
+.ninja-select {
+  min-width: 18rem;
+}
+
+/* Paramètres: the "no ninja designated" warning reads as a soft banner, not a
+   bare line squeezed under the toolbar row — the missing reserve is a real
+   operational risk, it deserves a surface of its own. */
+.parametres-alerte-ninja {
+  margin: 0 1rem 0.75rem;
+  padding: 0.25rem 1rem 0.75rem;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  border-radius: 0.75rem;
+}
+
+.parametres-alerte-ninja .status-message-warning {
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+/* Paramètres: the two sections (édition / global) need a heading level between
+   the page title and the cards. */
+.section-title {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.parametres-renvois {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* Paramètres, automatic backup: the deployment's own facts (where the dumps
+   go, how many are kept) read as a definition list, not as a form — none of
+   them is editable from here. */
+.parametres-faits {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.parametres-faits dt {
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.parametres-faits dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+@media (max-width: 600px) {
+  .parametres-faits {
+    grid-template-columns: 1fr;
+  }
+
+  .parametres-faits dd {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* The dumps on disk: a plain listing, scrollable rather than wrapping — a
+   file name broken over two lines stops being one a reader can match against
+   what they see on the server. */
+.parametres-sauvegardes {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  display: block;
+  overflow-x: auto;
+}
+
+.parametres-sauvegardes caption {
+  text-align: left;
+  padding-bottom: 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.parametres-sauvegardes td {
+  padding: 0.35rem 1rem 0.35rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  white-space: nowrap;
+}
+
+.parametres-sauvegardes td:first-child {
+  font-family: var(--mat-sys-body-medium-font, monospace);
+}

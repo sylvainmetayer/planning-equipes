@@ -1,0 +1,30 @@
+/* Solver page: problem-size stat tiles (reuses .staffing-stat) plus the product formula below them. */
+
+.solver-volumetry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.solver-volumetry-formula {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+}
+
+/* Wide enough that the label and hint never wrap onto the following mat-divider. */
+.solver-duration {
+  display: block;
+  width: 14rem;
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
+
+/* Sits right of .solver-duration, so the value and its unit (s/min/h) read as one control. */
+.solver-duration-unit {
+  display: block;
+  width: 9rem;
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
