@@ -54,34 +54,7 @@
       <mat-card-subtitle>{{ section.summary }}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      @for (block of section.blocks; track $index) {
-        @switch (block.kind) {
-          @case ('paragraph') {
-            <p class="aide-paragraph">{{ block.text }}</p>
-          }
-          @case ('list') {
-            <ul class="aide-list">
-              @for (item of block.items; track item) {
-                <li>{{ item }}</li>
-              }
-            </ul>
-          }
-          @case ('definitions') {
-            <dl class="aide-definitions">
-              @for (definition of block.items; track definition.term) {
-                <dt>{{ definition.term }}</dt>
-                <dd>{{ definition.text }}</dd>
-              }
-            </dl>
-          }
-          @case ('callout') {
-            <aside class="aide-callout">
-              <strong class="aide-callout-title">{{ block.title }}</strong>
-              <p class="aide-callout-text">{{ block.text }}</p>
-            </aside>
-          }
-        }
-      }
+      <app-help-blocks [blocks]="section.blocks" />
       @if (section.links.length > 0) {
         <div class="aide-links">
           <span class="aide-links-label" i18n="@@aide.links.label">Écrans concernés :</span>

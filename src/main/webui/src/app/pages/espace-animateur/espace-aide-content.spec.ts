@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { helpBlockText } from '../../shared/help-blocks';
 import { EspaceAideSection, buildEspaceAideSections } from './espace-aide-content';
 
 /** Every string of a section, so the tests can assert on its whole content. */
@@ -45,11 +46,10 @@ describe('buildEspaceAideSections', () => {
 
   it('never leaves a block empty', () => {
     for (const block of sections.flatMap((section) => section.blocks)) {
-      if (block.kind === 'paragraph') {
-        expect(block.text.length).toBeGreaterThan(0);
-      } else {
-        expect(block.items.length).toBeGreaterThan(0);
+      for (const text of helpBlockText(block)) {
+        expect(text.length).toBeGreaterThan(0);
       }
+      expect(helpBlockText(block).length).toBeGreaterThan(0);
     }
   });
 

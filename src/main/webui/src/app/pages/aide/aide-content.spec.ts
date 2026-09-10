@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Routes } from '@angular/router';
 import { HelpSection, buildHelpSections, filterHelpSections } from './aide-content';
+import { helpBlockText } from '../../shared/help-blocks';
 import { buildRaccourcisNavigation } from '../../core/keyboard-shortcuts';
 import { routes } from '../../app.routes';
 
@@ -278,17 +279,7 @@ describe('parametrer-pour-un-planning-complet', () => {
   });
 
   it('names the three levers and the order to check them in', () => {
-    const text = section.blocks
-      .flatMap((block) =>
-        block.kind === 'paragraph'
-          ? [block.text]
-          : block.kind === 'list'
-            ? block.items
-            : block.kind === 'callout'
-              ? [block.title + ' ' + block.text]
-              : block.items.map((d) => d.term + ' ' + d.text),
-      )
-      .join('\n');
+    const text = section.blocks.flatMap(helpBlockText).join('\n');
     expect(text).toContain('effectif par fenêtre');
     expect(text).toContain('pause minimale entre vacations');
     expect(text).toContain('Pause légale prise sur le poste');

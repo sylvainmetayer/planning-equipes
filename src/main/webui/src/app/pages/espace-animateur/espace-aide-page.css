@@ -70,47 +70,6 @@
   flex: 0 0 auto;
 }
 
-/* Prose plafonnée : sur un écran large, une ligne pleine largeur ne se lit
-   plus. Même règle que le guide de l'organisation. */
-.espace-aide-paragraphe,
-.espace-aide-liste,
-.espace-aide-etapes,
-.espace-aide-definitions {
-  max-width: 68ch;
-}
-
-.espace-aide-paragraphe {
-  font: var(--mat-sys-body-medium);
-  margin: 0 0 0.75rem;
-}
-
-.espace-aide-liste,
-.espace-aide-etapes {
-  font: var(--mat-sys-body-medium);
-  margin: 0 0 0.75rem;
-  padding-left: 1.25rem;
-}
-
-.espace-aide-liste li,
-.espace-aide-etapes li {
-  margin-bottom: 0.375rem;
-}
-
-.espace-aide-definitions {
-  margin: 0 0 0.75rem;
-}
-
-.espace-aide-definitions dt {
-  font: var(--mat-sys-title-small);
-  margin-top: 0.75rem;
-}
-
-.espace-aide-definitions dd {
-  font: var(--mat-sys-body-medium);
-  color: var(--mat-sys-on-surface-variant);
-  margin: 0.25rem 0 0;
-}
-
 /* Le raccourci vers l'onglet concerné clôt la réponse : détaché du texte, et
    large au doigt. */
 .espace-aide-lien {

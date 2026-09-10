@@ -11,6 +11,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
+import { HelpBlocks } from '../../shared/help-blocks';
 import { EspaceAideCible, buildEspaceAideSections } from './espace-aide-content';
 
 /**
@@ -31,7 +32,14 @@ import { EspaceAideCible, buildEspaceAideSections } from './espace-aide-content'
  */
 @Component({
   selector: 'app-espace-aide-page',
-  imports: [RouterLink, MatButtonModule, MatCardModule, MatExpansionModule, MatIconModule],
+  imports: [
+    RouterLink,
+    MatButtonModule,
+    MatCardModule,
+    MatExpansionModule,
+    MatIconModule,
+    HelpBlocks,
+  ],
   templateUrl: './espace-aide-page.html',
   styleUrl: './espace-aide-page.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.

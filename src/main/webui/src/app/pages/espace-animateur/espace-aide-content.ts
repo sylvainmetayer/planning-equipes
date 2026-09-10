@@ -7,18 +7,14 @@
  * generically as an accordion, and a unit test can assert on it without
  * rendering anything. Deliberately separate from `pages/aide/aide-content.ts`:
  * that guide addresses the organisers and speaks of solving, scores and
- * découpage, none of which an animateur ever sees.
+ * découpage, none of which an animateur ever sees. Only the blocks and their
+ * renderer are shared (`shared/help-blocks.ts`).
  */
+
+import { HelpBlock } from '../../shared/help-blocks';
 
 /** Tab of the espace a section sends the reader to, when there is one. */
 export type EspaceAideCible = 'planning' | 'echanges' | 'disponibilites';
-
-export type EspaceAideBlock =
-  | { kind: 'paragraph'; text: string }
-  | { kind: 'list'; items: string[] }
-  /** Numbered sequence: the reader is meant to follow it in order. */
-  | { kind: 'steps'; items: string[] }
-  | { kind: 'definitions'; items: { term: string; text: string }[] };
 
 export interface EspaceAideSection {
   /** Anchor id, also used as the `track` key. */
@@ -28,7 +24,7 @@ export interface EspaceAideSection {
   question: string;
   /** One-line answer, readable while the panel is still collapsed. */
   resume: string;
-  blocks: EspaceAideBlock[];
+  blocks: HelpBlock[];
   /** Where to act on what the section describes. */
   cible?: EspaceAideCible;
 }

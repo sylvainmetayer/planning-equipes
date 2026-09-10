@@ -30,35 +30,7 @@
         <mat-panel-description>{{ section.resume }}</mat-panel-description>
       </mat-expansion-panel-header>
 
-      @for (block of section.blocks; track $index) {
-        @switch (block.kind) {
-          @case ('paragraph') {
-            <p class="espace-aide-paragraphe">{{ block.text }}</p>
-          }
-          @case ('list') {
-            <ul class="espace-aide-liste">
-              @for (item of block.items; track item) {
-                <li>{{ item }}</li>
-              }
-            </ul>
-          }
-          @case ('steps') {
-            <ol class="espace-aide-etapes">
-              @for (item of block.items; track item) {
-                <li>{{ item }}</li>
-              }
-            </ol>
-          }
-          @case ('definitions') {
-            <dl class="espace-aide-definitions">
-              @for (definition of block.items; track definition.term) {
-                <dt>{{ definition.term }}</dt>
-                <dd>{{ definition.text }}</dd>
-              }
-            </dl>
-          }
-        }
-      }
+      <app-help-blocks [blocks]="section.blocks" />
 
       @if (section.cible; as cible) {
         @if (linkTo(cible); as lien) {

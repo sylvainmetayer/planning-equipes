@@ -16,6 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { buildHelpSections, filterHelpSections } from './aide-content';
 import { BRANDING } from '../../core/branding';
+import { HelpBlocks } from '../../shared/help-blocks';
 import { StatusMessage } from '../../shared/status-message';
 
 /**
@@ -37,6 +38,7 @@ import { StatusMessage } from '../../shared/status-message';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
+    HelpBlocks,
     StatusMessage,
   ],
   templateUrl: './aide-page.html',

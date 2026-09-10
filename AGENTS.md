@@ -507,6 +507,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   **only** global `keydown`, armed with the admin shell, see below),
   `app/shared/` holds cross-page components (`job-monitor.ts`,
   `confirm-dialog.ts` — replaces `window.confirm`, `output-panel.ts`,
+  `help-blocks.ts` — the one block model and renderer of the two user guides
+  (`pages/aide/content/*` and `espace-aide-content.ts` only choose their sections),
   `bulk-actions-bar.ts`, `table-filter.ts` — the reference pages' quick-filter
   field, `detail-dialog.ts` — their read-only "consultation" view, whose
   content each page builds in a plain `<entity>-detail.ts` next to it,

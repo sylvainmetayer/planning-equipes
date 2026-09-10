@@ -1,0 +1,35 @@
+@for (block of blocks(); track $index) {
+  @switch (block.kind) {
+    @case ('paragraph') {
+      <p class="help-paragraph">{{ block.text }}</p>
+    }
+    @case ('list') {
+      <ul class="help-list">
+        @for (item of block.items; track item) {
+          <li>{{ item }}</li>
+        }
+      </ul>
+    }
+    @case ('steps') {
+      <ol class="help-steps">
+        @for (item of block.items; track item) {
+          <li>{{ item }}</li>
+        }
+      </ol>
+    }
+    @case ('definitions') {
+      <dl class="help-definitions">
+        @for (definition of block.items; track definition.term) {
+          <dt>{{ definition.term }}</dt>
+          <dd>{{ definition.text }}</dd>
+        }
+      </dl>
+    }
+    @case ('callout') {
+      <aside class="help-callout">
+        <strong class="help-callout-title">{{ block.title }}</strong>
+        <p class="help-callout-text">{{ block.text }}</p>
+      </aside>
+    }
+  }
+}
