@@ -45,6 +45,8 @@
              refusée au démarrage. -->
         <it.admin.password>it-admin-Hs3vQ9zR</it.admin.password>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
+        <spotless-plugin.version>3.10.2</spotless-plugin.version>
+        <palantir-java-format.version>2.98.0</palantir-java-format.version>
         <!-- Full-scale scenario regression tests (@Tag("scenario-lent"):
              PlanningServiceScenarioCompletTest, PlanningServiceScenarioContinuTest)
              solve a ~2000-poste problem to hard-feasibility and take ~25-75s
@@ -278,6 +280,36 @@
                             <goal>generate-code</goal>
                             <goal>generate-code-tests</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- Formatting is not a review topic: palantir-java-format decides,
+                     `./mvnw spotless:apply` obeys, and `validate` refuses a file
+                     that was not run through it (audit #392, C10). The unused
+                     imports and the import order go with it. -->
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless-plugin.version}</version>
+                <configuration>
+                    <java>
+                        <includes>
+                            <include>src/main/java/**/*.java</include>
+                            <include>src/test/java/**/*.java</include>
+                        </includes>
+                        <palantirJavaFormat>
+                            <version>${palantir-java-format.version}</version>
+                        </palantirJavaFormat>
+                        <removeUnusedImports/>
+                        <importOrder/>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>validate</phase>
                     </execution>
                 </executions>
             </plugin>
