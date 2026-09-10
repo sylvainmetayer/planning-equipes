@@ -27,7 +27,7 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.ApplicationLinks;
+import dev.sylvain.planning.service.espace.ApplicationLinks;
 
 /**
  * Exercises PDF/ICS export against a small hand-built planning, without a

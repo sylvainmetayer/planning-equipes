@@ -20,6 +20,9 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 
 /**
  * The tabular import, end to end and in its own edition.

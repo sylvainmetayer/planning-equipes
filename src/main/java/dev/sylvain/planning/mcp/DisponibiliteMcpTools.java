@@ -6,11 +6,11 @@ import java.util.List;
 
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.StatutDeclaration;
-import dev.sylvain.planning.service.DeclarationDisponibiliteRepository.FenetreCollecte;
-import dev.sylvain.planning.service.DeclarationDisponibiliteService;
-import dev.sylvain.planning.service.DeclarationDisponibiliteService.ConfigurationAppliquee;
-import dev.sylvain.planning.service.EspaceAnimateurService;
-import dev.sylvain.planning.service.EspaceAnimateurService.DeclarationAdminView;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.ConfigurationAppliquee;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;

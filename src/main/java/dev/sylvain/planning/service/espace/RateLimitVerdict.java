@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.espace;
 
 /**
  * What a rate limiter tells the caller: go ahead, or come back in so many

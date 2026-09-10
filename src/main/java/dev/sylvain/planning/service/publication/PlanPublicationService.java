@@ -28,7 +28,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.DemandeEchangeService;
+import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.PlanSnapshotService;
 import dev.sylvain.planning.service.PlanningPersistenceService;

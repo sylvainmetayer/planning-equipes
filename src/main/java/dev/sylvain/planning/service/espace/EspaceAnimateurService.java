@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.espace;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -26,6 +26,13 @@ import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningRepository;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.PauseAnalyzer;
+import dev.sylvain.planning.service.PlanSnapshotService;
+import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.PlanningWhatIf;
+import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.TypologieService;
 
 /**
  * Read views of the espace animateur (issue #165): the animateur's own slice

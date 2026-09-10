@@ -6,9 +6,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.service.DemandeEchangeService;
-import dev.sylvain.planning.service.EspaceAnimateurService;
-import dev.sylvain.planning.service.EspaceAnimateurService.DemandeEchangeView;
+import dev.sylvain.planning.service.espace.DemandeEchangeService;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.PlanningWhatIf.EchangeSimulation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;

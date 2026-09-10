@@ -18,7 +18,7 @@ import dev.sylvain.planning.domain.Stand;
  * What a stand must satisfy before it is written, as pure functions: nothing
  * here reads the database, so each rule can be read — and tested — on its own.
  * The one rule that <i>does</i> need the referential (typologie ids must
- * exist) stays in {@link TypologieService#validerIds}.
+ * exist) stays in {@link TypologieService#validateIds}.
  */
 final class StandValidator {
 

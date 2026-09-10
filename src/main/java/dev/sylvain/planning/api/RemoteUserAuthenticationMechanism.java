@@ -2,7 +2,7 @@ package dev.sylvain.planning.api;
 
 import java.util.Set;
 
-import dev.sylvain.planning.service.RemoteUserAuthentication;
+import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AuthenticationRequest;

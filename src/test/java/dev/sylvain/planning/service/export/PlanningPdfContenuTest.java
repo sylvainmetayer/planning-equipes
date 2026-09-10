@@ -31,7 +31,7 @@ import dev.sylvain.planning.service.export.GlobalPlanningPdf;
 import dev.sylvain.planning.service.export.PdfTheme;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.export.PlanningIcs;
-import dev.sylvain.planning.service.ApplicationLinks;
+import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.TypologieLibelles;
 
 /**

@@ -88,7 +88,7 @@ public class StandService {
         stand.setId(Ids.required(stand.getId(), "stand id"));
         StandValidator.check(stand);
         if (stand.getTypologiesProposees() != null) {
-            typologies.validerIds(connection, stand.getTypologiesProposees());
+            typologies.validateIds(connection, stand.getTypologiesProposees());
         }
         assignFamily(stand);
         repository.saveStand(connection, stand, true);
@@ -253,7 +253,7 @@ public class StandService {
     private void validate(Stand stand) {
         StandValidator.check(stand);
         if (stand.getTypologiesProposees() != null) {
-            typologies.validerIds(stand.getTypologiesProposees());
+            typologies.validateIds(stand.getTypologiesProposees());
         }
     }
 

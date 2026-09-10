@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.espace;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -29,6 +29,13 @@ import dev.sylvain.planning.service.notification.Notification;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.PlanningWhatIf;
+import dev.sylvain.planning.service.ReferenceDataService;
 
 /**
  * The demande d'échange lifecycle (issue #165): submission with hard-constraint

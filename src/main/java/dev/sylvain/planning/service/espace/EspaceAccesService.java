@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.espace;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -20,6 +20,11 @@ import dev.sylvain.planning.domain.Animateur;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.publication.MailService;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.espace.RateLimitVerdict;
+import dev.sylvain.planning.service.ReferenceDataService;
 
 /**
  * Passwordless authentication of the espace animateur (issue #165 follow-up):

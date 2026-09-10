@@ -16,7 +16,7 @@ import jakarta.inject.Inject;
 /**
  * The {@code typologie} referential — the vocabulary every other referential
  * points at. Stand competences, animateur competences and animateur wishes are
- * all typologie ids, which is why {@link #validerIds} lives here rather than
+ * all typologie ids, which is why {@link #validateIds} lives here rather than
  * being copied into each of them: an unknown id is one message, written once.
  */
 @ApplicationScoped
@@ -107,7 +107,7 @@ public class TypologieService implements TypologieLibelles {
      * sorted: an import that names five unknown typologies should say so in
      * one message, not make the operator discover them one save at a time.
      */
-    void validerIds(Set<String> ids) {
+    public void validateIds(Set<String> ids) {
         if (ids == null || ids.isEmpty()) {
             return;
         }
@@ -122,7 +122,7 @@ public class TypologieService implements TypologieLibelles {
      * would not exist yet, and a stand created together with its typologies
      * would be refused for naming them.
      */
-    void validerIds(Connection connection, Set<String> ids) throws SQLException {
+    public void validateIds(Connection connection, Set<String> ids) throws SQLException {
         if (ids == null || ids.isEmpty()) {
             return;
         }

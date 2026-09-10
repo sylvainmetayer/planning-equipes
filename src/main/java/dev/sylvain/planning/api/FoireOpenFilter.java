@@ -1,6 +1,6 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.service.DemandeEchangeService;
+import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;

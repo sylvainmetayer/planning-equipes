@@ -10,7 +10,7 @@ import org.jboss.logging.Logger;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ParametresNotifications;
-import dev.sylvain.planning.service.ApplicationLinks;
+import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.PlanSnapshotService;

@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.espace;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,6 +8,8 @@ import java.time.LocalTime;
 import dev.sylvain.planning.config.DevMode;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * The source of "today" for the mode jour J screen — and for nothing else.

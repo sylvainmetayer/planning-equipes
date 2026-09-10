@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.espace;
 
 import dev.sylvain.planning.config.ConfigRemoteUser;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +14,7 @@ import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.AnimateurRepository;
 
 /**
  * Opt-in authentication by a header an access proxy injects — Pangolin's

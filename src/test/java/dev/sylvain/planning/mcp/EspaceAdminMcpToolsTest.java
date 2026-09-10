@@ -13,10 +13,10 @@ import dev.sylvain.planning.mcp.DisponibiliteMcpTools.CollecteView;
 import dev.sylvain.planning.mcp.DisponibiliteMcpTools.DeclarationMcpView;
 import dev.sylvain.planning.mcp.EchangeMcpTools.DemandeView;
 import dev.sylvain.planning.mcp.EchangeMcpTools.ViolationHardView;
-import dev.sylvain.planning.service.DeclarationDisponibiliteRepository.FenetreCollecte;
-import dev.sylvain.planning.service.DeclarationDisponibiliteService.InvitationReport;
-import dev.sylvain.planning.service.EspaceAnimateurService.DeclarationAdminView;
-import dev.sylvain.planning.service.EspaceAnimateurService.DemandeEchangeView;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.InvitationReport;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.PlanningWhatIf.HardViolation;
 
 /**

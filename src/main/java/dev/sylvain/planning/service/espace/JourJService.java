@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.espace;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -29,6 +29,11 @@ import dev.sylvain.planning.service.PlanningWhatIf.SuggestionsReparation;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.PlanningWhatIf;
+import dev.sylvain.planning.service.ReferenceDataService;
 
 /**
  * The event-day screen ("mode jour J"): somebody did not show up, and the seats

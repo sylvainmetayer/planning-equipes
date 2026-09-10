@@ -2,9 +2,9 @@ package dev.sylvain.planning.api;
 
 import java.util.Locale;
 
-import dev.sylvain.planning.service.EspaceAccesService;
+import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.TokenOwner;
-import dev.sylvain.planning.service.RemoteUserAuthentication;
+import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;

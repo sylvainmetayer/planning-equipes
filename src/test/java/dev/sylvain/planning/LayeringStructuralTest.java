@@ -44,7 +44,7 @@ class LayeringStructuralTest {
      * the response.
      */
     private static final Set<String> IMPORTS_JAX_RS_ADMIS = Set.of(
-            "service/ApplicationLinks.java",
+            "service/espace/ApplicationLinks.java",
             "observability/GlobalExceptionMapper.java");
 
     /**

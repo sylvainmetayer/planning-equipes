@@ -14,7 +14,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.service.ApplicationLinks;
+import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PublicationDiffService;
 import dev.sylvain.planning.service.ReferenceDataService;

@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.espace;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -16,13 +16,19 @@ import java.util.UUID;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.StatutDeclaration;
-import dev.sylvain.planning.service.DeclarationDisponibiliteRepository.FenetreCollecte;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
 import dev.sylvain.planning.service.notification.Notification;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.publication.MailService;
+import dev.sylvain.planning.service.AnimateurService;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.JoursEvenement;
+import dev.sylvain.planning.service.espace.RateLimitVerdict;
+import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.TypologieService;
 
 /**
  * The self-service declaration lifecycle (issue #291): an animateur proposes,
@@ -333,7 +339,7 @@ public class DeclarationDisponibiliteService {
         // dropping half of what somebody declared would be worse than a refusal
         // the admin can act on. Checked before claiming, so a proposal nobody
         // can apply stays pending rather than being burnt by the attempt.
-        typologieService.validerIds(new LinkedHashSet<>(declaration.getSouhaits()));
+        typologieService.validateIds(new LinkedHashSet<>(declaration.getSouhaits()));
 
         DeclarationDisponibilite decidee = decider(declaration, StatutDeclaration.APPLIQUEE, null);
 
@@ -429,7 +435,7 @@ public class DeclarationDisponibiliteService {
                 .toList();
         // Same referential check the CRUD applies — an unknown id is one
         // message, written once in TypologieService.
-        typologieService.validerIds(new LinkedHashSet<>(retenus));
+        typologieService.validateIds(new LinkedHashSet<>(retenus));
         return retenus;
     }
 

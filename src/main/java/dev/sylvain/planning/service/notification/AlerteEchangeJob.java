@@ -8,7 +8,7 @@ import org.jboss.logging.Logger;
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
-import dev.sylvain.planning.service.DemandeEchangeService;
+import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;

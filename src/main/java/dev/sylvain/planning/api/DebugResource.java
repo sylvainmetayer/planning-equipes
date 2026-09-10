@@ -7,7 +7,7 @@ import java.time.format.DateTimeParseException;
 
 import dev.sylvain.planning.service.publication.AdminAddress;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.JourJClock;
+import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.publication.MailService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;

@@ -26,6 +26,8 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
 
 /**
  * Turns a spreadsheet export into animateur fiches — in two calls, and only
@@ -711,7 +713,7 @@ public class AnimateurCsvImportService {
         Set<String> ids = new TreeSet<>(competences.keySet());
         ids.addAll(souhaits);
         try {
-            typologies.validerIds(ids);
+            typologies.validateIds(ids);
         } catch (BusinessError.Invalid e) {
             reasons.add(e.getMessage());
         }

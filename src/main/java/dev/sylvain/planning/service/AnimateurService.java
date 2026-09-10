@@ -82,10 +82,10 @@ public class AnimateurService {
     /** Competences and wishes are both typologie ids, checked against the same referential. */
     private void validate(Animateur animateur) {
         if (animateur.getCompetences() != null) {
-            typologies.validerIds(animateur.getCompetences().keySet());
+            typologies.validateIds(animateur.getCompetences().keySet());
         }
         if (animateur.getSouhaits() != null) {
-            typologies.validerIds(animateur.getSouhaits());
+            typologies.validateIds(animateur.getSouhaits());
         }
     }
 

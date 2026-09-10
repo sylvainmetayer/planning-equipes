@@ -7,10 +7,10 @@ import java.util.List;
 
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
-import dev.sylvain.planning.service.DemandeEchangeService;
-import dev.sylvain.planning.service.DemandeEchangeService.FenetreFoire;
-import dev.sylvain.planning.service.EspaceAnimateurService;
-import dev.sylvain.planning.service.EspaceAnimateurService.DemandeEchangeView;
+import dev.sylvain.planning.service.espace.DemandeEchangeService;
+import dev.sylvain.planning.service.espace.DemandeEchangeService.FenetreFoire;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.PlanningWhatIf.EchangeSimulation;
 import dev.sylvain.planning.service.PlanningWhatIf.HardViolation;
 import io.quarkiverse.mcp.server.Tool;

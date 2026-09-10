@@ -6,11 +6,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
-import dev.sylvain.planning.service.DeclarationDisponibiliteRepository.FenetreCollecte;
-import dev.sylvain.planning.service.DeclarationDisponibiliteService;
-import dev.sylvain.planning.service.DeclarationDisponibiliteService.InvitationReport;
-import dev.sylvain.planning.service.EspaceAnimateurService;
-import dev.sylvain.planning.service.EspaceAnimateurService.DeclarationAdminView;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.InvitationReport;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
