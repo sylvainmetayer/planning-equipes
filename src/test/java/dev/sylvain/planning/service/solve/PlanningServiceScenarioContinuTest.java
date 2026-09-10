@@ -43,12 +43,15 @@ import org.junit.jupiter.api.Test;
 @Tag("scenario-lent")
 class PlanningServiceScenarioContinuTest {
 
-    // Empirically verified: 3/3 independent cold reset/import/découpage/solve
-    // cycles against the live dev database reached 0 hard within 300s
-    // (deterministic seed=0); 120s and 180s were not enough. Keep this
-    // guardrail generous rather than shaving it to the observed minimum, the
-    // same reasoning as PlanningServiceScenarioCompletTest's own budget.
-    private static final long SECONDS_LIMITE_SECURITE = 300L;
+    // 300 s were verified on 3/3 cold cycles before the meal break existed.
+    // Since coupureRepasObligatoire applies (issue #438) the same grid lands
+    // on -1 or -2 hard at that budget — one or two seats out of 3968, and a
+    // score that moves from one run to the next, which is a solve still
+    // converging rather than a problem without an answer. Raised rather than
+    // shaved: these budgets are ceilings, not durations. A solve stops the
+    // moment it reaches zero, so the whole scenario job still runs in about
+    // ten minutes; what the ceiling buys is the run that needs a little more.
+    private static final long SECONDS_LIMITE_SECURITE = 600L;
 
     @Test
     void scenarioContinuNeViolateAucuneContrainteHard() throws IOException {
