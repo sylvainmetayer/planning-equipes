@@ -91,7 +91,7 @@ class MailTemplatesTest {
     @Test
     void everyTemplateNamedInTheCodeExistsInBothParts() throws IOException {
         List<Path> sources = List.of(
-                Path.of("src/main/java/dev/sylvain/planning/service/MailService.java"),
+                Path.of("src/main/java/dev/sylvain/planning/service/publication/MailService.java"),
                 Path.of("src/main/java/dev/sylvain/planning/service/notification/NotificationWriter.java"));
         Set<String> names = new TreeSet<>();
         for (Path source : sources) {
