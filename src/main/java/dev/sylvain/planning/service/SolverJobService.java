@@ -16,7 +16,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import ai.timefold.solver.core.api.solver.Solver;
@@ -114,10 +113,7 @@ public class SolverJobService {
     }
 
     @Inject
-    SolvePipeline pipeline;
-
-    @Inject
-    PlanningService planningService;
+    SolverJobTasks tasks;
 
     @Inject
     EditionContext editionContext;
@@ -126,7 +122,7 @@ public class SolverJobService {
     EditionRepository editionRepository;
 
     @Inject
-    SolverJobRepository jobRepository;
+    SolverJobPersistence persistence;
 
     /**
      * Announces every transition below to the open {@code /api/jobs/stream}
@@ -139,7 +135,7 @@ public class SolverJobService {
 
     /**
      * Records the score curve of the running solve (issue #304). Fed by the
-     * listener {@link #onSolverReady} registers, read back by
+     * listener {@code SolverJobTasks#onSolverReady} registers, read back by
      * {@code GET /api/jobs/score} and by the {@code score} events of
      * {@code /api/jobs/stream}.
      */
@@ -166,7 +162,7 @@ public class SolverJobService {
     private volatile boolean shutdownRequested;
 
     /** A queued job and the work it will run once the solver frees up. */
-    private record QueuedTask(SolverJob job, JobTask task) {
+    private record QueuedTask(SolverJob job, SolverJobTasks.JobTask task) {
     }
 
     /**
@@ -183,9 +179,7 @@ public class SolverJobService {
         // stored. Never queued either, so a restart can only ever find it in a
         // terminal state or interrupted.
         return submit(JobType.SOLVE, secondsLimit, false, null, false,
-                job -> resultatSolve(
-                        pipeline.execute(job.getEditionNom(), problem, secondsLimit, onSolverReady(job),
-                                this::isShutdownRequested)));
+                tasks.solve(problem, secondsLimit, this::isShutdownRequested));
     }
 
     /**
@@ -218,17 +212,6 @@ public class SolverJobService {
     }
 
     /**
-     * The result of a solve whose problem came in the request body: its
-     * starting point is whatever the caller sent, which the server cannot
-     * name — hence {@code null} rather than « de zéro », which would be a
-     * claim about a plan we never built.
-     */
-    private static ResultatSolve resultatSolve(SolvePipeline.Resolution<?> resolution) {
-        return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(), null,
-                resolution.impactPublication(), resolution.interruption());
-    }
-
-    /**
      * Full solve whose problem is built <b>inside the job</b>, from the
      * reference data of the job's edition. Deferring the build is what makes
      * queueing meaningful: a job planned while another one runs must solve the
@@ -252,22 +235,6 @@ public class SolverJobService {
     public SolverJob submitSolveFromReferenceData(Long secondsLimit, boolean enFile, Reamorcage reamorcage) {
         return submitReplayable(JobType.SOLVE, secondsLimit, null,
                 reamorcage == null ? Reamorcage.AUTO : reamorcage, enFile);
-    }
-
-    /** The work of {@link #submitSolveFromReferenceData}, see {@link #replayableTask}. */
-    private JobTask solveTaskFromReferenceData(Long secondsLimit, Reamorcage reamorcage) {
-        return job -> {
-            SolvePipeline.Resolution<ProblemBuilder.ProblemeReamorce> resolution =
-                    pipeline.execute(job.getEditionNom(),
-                            () -> planningService.buildFromReferenceData(reamorcage),
-                            ProblemBuilder.ProblemeReamorce::planning,
-                            secondsLimit, onSolverReady(job), this::isShutdownRequested);
-            ProblemBuilder.ProblemeReamorce probleme = resolution.probleme();
-            return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan(),
-                    new ReamorcageEffectue(probleme.reamorcage(), probleme.postesReamorces(),
-                            probleme.postesLiberes()),
-                    resolution.impactPublication(), resolution.interruption());
-        };
     }
 
     /**
@@ -303,21 +270,6 @@ public class SolverJobService {
         return submitReplayable(JobType.SOLVE_INCREMENTAL, secondsLimit, scope, null, enFile);
     }
 
-    /** The work of {@link #submitSolveIncremental}, see {@link #replayableTask}. */
-    private JobTask incrementalSolveTask(Long secondsLimit, ReplanificationScope scope) {
-        return job -> {
-            SolvePipeline.Resolution<ProblemBuilder.ProblemeIncremental> resolution =
-                    pipeline.execute(job.getEditionNom(),
-                            () -> planningService.buildIncrementalFromReferenceData(scope),
-                            ProblemBuilder.ProblemeIncremental::planning,
-                            secondsLimit, onSolverReady(job), this::isShutdownRequested);
-            ProblemBuilder.ProblemeIncremental probleme = resolution.probleme();
-            return new ResultatSolveIncremental(resolution.diagnostic(), probleme.statistiques(),
-                    ReplanificationDiff.compute(probleme.affectationsPrecedentes(), resolution.planning()),
-                    resolution.previousPlan(), resolution.impactPublication(), resolution.interruption());
-        };
-    }
-
     /**
      * Submits a job that knows how to rebuild its own problem. These are the
      * only ones that may be queued — and therefore the only ones a restart can
@@ -325,7 +277,7 @@ public class SolverJobService {
      * job queueable (it builds its problem when it starts, from the referential
      * of that moment) is exactly what makes it replayable.
      *
-     * <p>Routing both cases through {@link #replayableTask} is deliberate: a
+     * <p>Routing both cases through {@link SolverJobTasks#replayable} is deliberate: a
      * job restored at startup then runs the very same code as the click that
      * originally queued it, instead of a second implementation free to
      * drift.</p>
@@ -333,16 +285,7 @@ public class SolverJobService {
     private SolverJob submitReplayable(JobType type, Long secondsLimit, ReplanificationScope scope,
             Reamorcage reamorcage, boolean enFile) {
         return submit(type, secondsLimit, enFile, scope, reamorcage, true,
-                replayableTask(type, secondsLimit, scope, reamorcage));
-    }
-
-    /** Rebuilds the work of a replayable job from its persisted intention. */
-    private JobTask replayableTask(JobType type, Long secondsLimit, ReplanificationScope scope,
-            Reamorcage reamorcage) {
-        return switch (type) {
-            case SOLVE -> solveTaskFromReferenceData(secondsLimit, reamorcage == null ? Reamorcage.AUTO : reamorcage);
-            case SOLVE_INCREMENTAL -> incrementalSolveTask(secondsLimit, scope);
-        };
+                tasks.replayable(type, secondsLimit, scope, reamorcage, this::isShutdownRequested));
     }
 
     /**
@@ -353,12 +296,12 @@ public class SolverJobService {
      * the solver looks free while a hand-over is under way.
      */
     private synchronized SolverJob submit(JobType type, Long secondsLimit, boolean enFile,
-            ReplanificationScope scope, boolean rejouable, JobTask task) {
+            ReplanificationScope scope, boolean rejouable, SolverJobTasks.JobTask task) {
         return submit(type, secondsLimit, enFile, scope, null, rejouable, task);
     }
 
     private synchronized SolverJob submit(JobType type, Long secondsLimit, boolean enFile,
-            ReplanificationScope scope, Reamorcage reamorcage, boolean rejouable, JobTask task) {
+            ReplanificationScope scope, Reamorcage reamorcage, boolean rejouable, SolverJobTasks.JobTask task) {
         purgeExpiredJobs();
         Optional<SolverJob> actif = findActive();
         if (actif.isPresent() && !enFile) {
@@ -378,12 +321,12 @@ public class SolverJobService {
         if (actif.isPresent()) {
             job.markQueued();
             file.addLast(new QueuedTask(job, task));
-            store(job);
+            persistence.store(job);
         } else {
             // Written before the hand-over, never after: the worker may have
             // reached RUNNING (and written that) by the time this method
             // resumes, and a late PENDING row would overwrite it.
-            store(job);
+            persistence.store(job);
             executor.submit(() -> run(job, task));
         }
         jobStream.publish();
@@ -432,34 +375,7 @@ public class SolverJobService {
                 .orElse(editionId);
     }
 
-    /**
-     * What a job does with the {@link Solver} it has just been handed: hold it,
-     * so a cancel can stop it, and follow the scores it announces, so the
-     * browser can draw the run as it happens (issue #304).
-     *
-     * <p>One consumer rather than two hooks: both need the solver at the exact
-     * same instant — after it is built, before it blocks on {@code solve()} —
-     * and a second seam through {@code SolvePipeline} would only be a way for
-     * the two to drift apart.</p>
-     */
-    private Consumer<Solver<PlanningEvenement>> onSolverReady(SolverJob job) {
-        return solver -> {
-            // Holding it first: attachSolver honours a cancel that arrived
-            // while the problem was being built, by terminating the solver
-            // before it ever starts.
-            job.attachSolver(solver);
-            if (job.isCancelRequested()) {
-                // And then there is nothing to follow. Starting a trace anyway
-                // would clear the previous run's curve and replace it with an
-                // empty one — the screen would announce "no solution yet" for a
-                // solve that finished minutes ago.
-                return;
-            }
-            scoreTrace.follow(job.getId(), job.getEditionId(), solver);
-        };
-    }
-
-    private void run(SolverJob job, JobTask task) {
+    private void run(SolverJob job, SolverJobTasks.JobTask task) {
         if (job.getStatus() == JobStatus.CANCELLED) {
             // Cancelled between promotion and start: the solver is free, so the
             // queue must still move on rather than stall behind a dead job.
@@ -467,7 +383,7 @@ public class SolverJobService {
             return;
         }
         job.markRunning();
-        store(job);
+        persistence.store(job);
         jobStream.publish();
         Object result = null;
         Exception failure = null;
@@ -544,7 +460,7 @@ public class SolverJobService {
         } else {
             job.markCompleted(result);
         }
-        store(job);
+        persistence.store(job);
         startNext();
         // After startNext, not before: between "finished" and "the next one
         // holds the solver" there is an instant where the solver looks idle,
@@ -605,7 +521,7 @@ public class SolverJobService {
                 continue;
             }
             suivante.job().markPending();
-            store(suivante.job());
+            persistence.store(suivante.job());
             QueuedTask aLancer = suivante;
             executor.submit(() -> run(aLancer.job(), aLancer.task()));
             return;
@@ -705,7 +621,7 @@ public class SolverJobService {
             throw new SolverBusyException(job);
         }
         jobs.remove(jobId);
-        oublier(jobId);
+        persistence.forget(jobId);
         jobStream.publish();
         return true;
     }
@@ -734,7 +650,7 @@ public class SolverJobService {
         }
         // A running job is only flagged here; its terminal state is written by
         // finishAndChain once the solver actually stops.
-        store(job);
+        persistence.store(job);
         jobStream.publish();
         return Optional.of(job);
     }
@@ -744,46 +660,7 @@ public class SolverJobService {
         jobs.values().removeIf(job -> job.isFinished()
                 && job.getFinishedAt() != null
                 && job.getFinishedAt().isBefore(cutoff));
-        try {
-            jobRepository.purgeFinishedBefore(cutoff);
-        } catch (RuntimeException e) {
-            LOG.warn("Expired solver jobs could not be purged from the database", e);
-        }
-    }
-
-    /**
-     * Mirrors a job's current state into {@code solver_job}. <b>Never fails the
-     * job</b>: the queue surviving a restart is a convenience, losing a run
-     * because its bookkeeping row could not be written would not be — same
-     * contract as the automatic snapshot and the KPI history row.
-     */
-    private void store(SolverJob job) {
-        try {
-            jobRepository.record(new LigneJob(
-                    job.getId(),
-                    job.getEditionId(),
-                    job.getEditionNom(),
-                    job.getType(),
-                    job.getStatus(),
-                    job.getSecondsLimit(),
-                    job.getPerimetre(),
-                    job.getReamorcage(),
-                    job.isRejouable(),
-                    job.getError(),
-                    job.getSubmittedAt(),
-                    job.getStartedAt(),
-                    job.getFinishedAt()));
-        } catch (RuntimeException e) {
-            LOG.warnf(e, "Solver job %s could not be persisted; the run itself is unaffected", job.getId());
-        }
-    }
-
-    private void oublier(String jobId) {
-        try {
-            jobRepository.delete(jobId);
-        } catch (RuntimeException e) {
-            LOG.warnf(e, "Solver job %s could not be deleted from the database", jobId);
-        }
+        persistence.purgeFinishedBefore(cutoff);
     }
 
     /**
@@ -818,13 +695,13 @@ public class SolverJobService {
     synchronized int restaurer() {
         purgeExpiredJobs();
         int rejoues = 0;
-        for (LigneJob ligne : jobRepository.list()) {
+        for (LigneJob ligne : persistence.list()) {
             if (jobs.containsKey(ligne.id())) {
                 continue;
             }
             SolverJob job = new SolverJob(ligne);
             jobs.put(job.getId(), job);
-            JobTask task = ligne.statut() == JobStatus.QUEUED && ligne.rejouable() ? taskOrNothing(ligne) : null;
+            SolverJobTasks.JobTask task = ligne.statut() == JobStatus.QUEUED && ligne.rejouable() ? taskOrNothing(ligne) : null;
             if (task != null) {
                 file.addLast(new QueuedTask(job, task));
                 rejoues++;
@@ -833,7 +710,7 @@ public class SolverJobService {
                 // nothing can finish it now, and leaving it RUNNING would hold
                 // the lock forever.
                 job.markInterrompu();
-                store(job);
+                persistence.store(job);
             }
         }
         if (rejoues > 0) {
@@ -846,12 +723,13 @@ public class SolverJobService {
     /**
      * The work of a row to replay, or {@code null} when it cannot be rebuilt —
      * a row hand-edited in the database, or a job type added later without an
-     * entry in {@link #replayableTask}. Losing one job to a corrupt row is
+     * entry in {@link SolverJobTasks#replayable}. Losing one job to a corrupt row is
      * acceptable; letting it sink the whole queue is not.
      */
-    private JobTask taskOrNothing(LigneJob ligne) {
+    private SolverJobTasks.JobTask taskOrNothing(LigneJob ligne) {
         try {
-            return replayableTask(ligne.type(), ligne.secondsLimit(), ligne.scope(), ligne.reamorcage());
+            return tasks.replayable(ligne.type(), ligne.secondsLimit(), ligne.scope(), ligne.reamorcage(),
+                    this::isShutdownRequested);
         } catch (RuntimeException e) {
             LOG.warnf(e, "Solver job %s cannot be replayed; it comes back interrupted", ligne.id());
             return null;
@@ -895,11 +773,6 @@ public class SolverJobService {
      */
     private static final long SHUTDOWN_GRACE = 8;
 
-    @FunctionalInterface
-    private interface JobTask {
-        Object execute(SolverJob job);
-    }
-
     /** Raised when a solve or analyze is requested while another one runs. */
     public static final class SolverBusyException extends RuntimeException {
 
@@ -941,7 +814,7 @@ public class SolverJobService {
         private final ReplanificationScope scope;
         /** Where a full solve was asked to start from (issue #174); null for the other types. */
         private final Reamorcage reamorcage;
-        /** Whether this job can rebuild its own problem — see {@link #replayableTask}. */
+        /** Whether this job can rebuild its own problem — see {@link SolverJobTasks#replayable}. */
         private final boolean rejouable;
         private final Instant submittedAt;
         private volatile JobStatus status = JobStatus.PENDING;
@@ -1056,7 +929,7 @@ public class SolverJobService {
          * immediately if a cancel was already requested (the narrow race window
          * between {@link #requestCancel()} and this call).
          */
-        private void attachSolver(Solver<PlanningEvenement> solver) {
+        void attachSolver(Solver<PlanningEvenement> solver) {
             this.solver = solver;
             if (stopRequested) {
                 solver.terminateEarly();
@@ -1082,7 +955,7 @@ public class SolverJobService {
             }
         }
 
-        private boolean isCancelRequested() {
+        boolean isCancelRequested() {
             return cancelRequested;
         }
 
