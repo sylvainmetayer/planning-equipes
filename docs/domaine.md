@@ -54,7 +54,7 @@ Trois conséquences, et aucune n'est un défaut à corriger plus tard :
   grille *est* l'événement — mais un avertissement déjà affiché ne se
   réévalue pas tout seul : il décrit l'instant de l'écriture.
 
-Cette dérivation est écrite une fois (`service/JoursEvenement`) et lue à la
+Cette dérivation est écrite une fois (`service/referentiel/JoursEvenement`) et lue à la
 fois par la collecte des disponibilités et par les avertissements de saisie
 (voir [`api.md`](api.md#avertissements-de-saisie)).
 

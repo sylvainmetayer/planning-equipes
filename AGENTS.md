@@ -117,53 +117,62 @@ Single Quarkus service, no separate solver microservice. Package root:
   there too**. It also carries the two indexes the rest of the application
   reads it through — `PAR_NOM` and `NOMS_DURS` — so nothing outside `solver/`
   rebuilds them.
-- `service/` — `PlanningService` (a façade over the classes below: it builds
-  five of them in its constructor — `SolverConfiguration`, `SolveRunner`,
-  `ProblemBuilder`, `PlanningWhatIf`, `PlanningDiagnosticService` — and
-  delegates; the scenario entry points it keeps are the only ones with a body
-  of their own. The entry points `api/` and `mcp/` call are unchanged. Its
-  constructor wires the five with lazy suppliers because CDI injects its fields
-  *after* it runs: capturing them there would pin `null` in production, which
-  the repackaging pass (A4 of the audit) should settle rather than paper over),
-  `SolverConfiguration` (the
-  `SolverFactory` from `solver/solverConfig.xml`, termination, constraint
-  weights), `SolveRunner` (the solve, and the server-side preparation that
-  always overwrites what a caller sent), `PlanningDiagnosticService` (score,
-  unfilled seats, per-constraint breakdown — kept in `service/` rather than
-  `service/diagnostic/`, which would close a package cycle),
-  `PlanningWhatIf` (everything the application answers
-  about a plan without solving it again — explanation, repair, échange,
-  availability; still four responsibilities in one class, whose separation the
-  audit asks for and is now an internal matter),
-  `ProblemBuilder` (the edition's reference data
-  turned into a problem to solve — from scratch, réamorcé (#174) or
-  incremental (#86); the pieces needing no database stay static and
-  package-private, which is what lets the PosteGeneration / Reamorcage /
-  Incremental / Verrouillage tests run without a container),
-  `ScenarioYamlReader` / `ScenarioYamlWriter` (the scenario file format, both
-  pure and static, so `ScenarioYamlReaderTest` and `ScenarioYamlWriterTest`
-  exercise reading and writing without a database — they are two hand-written traversals of the
-  same `Map` shape and must be kept in step, which
-  `PlanningServiceScenarioAllerRetourTest` enforces; `PlanningService` keeps the
-  public entry points as a façade, and supplies the edition's own
-  `ParametresLegaux` as the fallback for a file that pins none),
-  `SolverJobService` (async solves,
-  plus the solver queue — persisted through `SolverJobRepository` and replayed
-  at startup, so a restart no longer loses the planned runs),
-  `ConstraintAnalysisStore` (the score breakdown the Contraintes screen shows,
-  written by every solve and re-derivable from the persisted plan alone —
-  **nothing analyses by solving a plan it then throws away**),
-  `ReferenceDataService` (facade over one service per referential family —
-  `StandService`, `AnimateurService`, `CreneauService`, …) over one repository
-  per family
-  (`StandRepository`, `AnimateurRepository`, …, plus
-  `ReferenceDataImportRepository` for the one write that spans all of them),
-  `PlanningPersistenceService`, `DatabaseDumpService`,
-  `service/backup/` (nightly `pg_dump` — see below),
-  `PlanningExportService` (facade over `AnimateurPlanningPdf`,
-  `GlobalPlanningPdf` and `PlanningIcs`, sharing `PdfTheme` — server-side only),
-  `DemandeEchangeService` / `EspaceAnimateurService` (foire au planning, issue
-  #165), `ApplicationLinks` (every public URL printed in a mail or a PDF).
+- `service/` — one subpackage per capability (issue #392, A4), and a root that
+  only holds what they all share: `BusinessError`, `Ids`, `NaturalOrder`,
+  `WriteStamp`, `ProductName`, `JdbcEditionScope`, `EditionContext`,
+  `EditionRequestScope`, `TokenOwner`, `ConcurrentModificationGuard`,
+  `ReferenceDataChangeTracker`. A class lives with the question it answers; a
+  member another package needs is public, and its name is then English (the
+  language policy reads public names only). The packages:
+  - `service/solve/` — `PlanningService` (a façade over the classes next to
+    it: its constructor builds `SolverConfiguration`, `SolveRunner`,
+    `ProblemBuilder`, `PlanningWhatIf` and `PlanningDiagnosticService` from the
+    beans it receives there — no field injection, no lazy supplier — and
+    delegates; the scenario entry points it keeps are the only ones with a
+    body of their own), `SolverConfiguration` (the `SolverFactory` from
+    `solver/solverConfig.xml`, termination, constraint weights), `SolveRunner`
+    (the solve, and the server-side preparation that always overwrites what a
+    caller sent), `PlanningWhatIf` (everything the application answers about a
+    plan without solving it again — explanation, repair, échange,
+    availability; still four responsibilities in one class), `ProblemBuilder`
+    (the edition's reference data turned into a problem to solve — from
+    scratch, réamorcé (#174) or incremental (#86); the pieces needing no
+    database stay static, which is what lets the PosteGeneration / Reamorcage /
+    Incremental / Verrouillage tests run without a container),
+    `SolverJobService` (async solves, plus the solver queue — persisted through
+    `SolverJobRepository` and replayed at startup, so a restart no longer loses
+    the planned runs; `SolverJobTasks` and `SolverJobPersistence` carry what
+    does not hold the lock), `ConstraintAnalysisStore` (the score breakdown the
+    Contraintes screen shows, written by every solve and re-derivable from the
+    persisted plan alone — **nothing analyses by solving a plan it then throws
+    away**), `PlanningPersistenceService`, `PlanSnapshotService`,
+    `SnapshotComparisonService`, `DeplacementService`.
+  - `service/analyse/` — what is read from a plan without solving it:
+    `PlanningDiagnosticService` (score, unfilled seats, per-constraint
+    breakdown), the analyzers (feasibility, fragilité, ouvertures, pauses,
+    staffing), `PlanningKpiService` / `KpiHistoriqueService`,
+    `PlanningHoursService`, `AlerteService`.
+  - `service/referentiel/` — `ReferenceDataService` (facade over one service
+    per referential family — `StandService`, `AnimateurService`,
+    `CreneauService`, … — over one repository per family, plus
+    `ReferenceDataImportRepository` for the one write that spans all of them),
+    the validators, the grids (`CreneauGridService`, `GrilleHorairesStands`,
+    `GrilleDepuisFenetres`), coherence, reference usage, and the CSV and grid
+    imports.
+  - `service/scenario/` — `ScenarioYamlReader` / `ScenarioYamlWriter` (the
+    scenario file format, both pure and static, so their tests exercise reading
+    and writing without a database; `PlanningServiceScenarioAllerRetourTest`
+    keeps them in step), `ScenarioDomainMapper`, `ScenarioDtoAssembler`,
+    `ScenarioImportService`. The DTO itself is `scenario/` at the package root.
+  - `service/edition/`; `service/publication/` (publishing, delivery,
+    confirmations, `MailService`); `service/export/` (`PlanningExportService`
+    over `AnimateurPlanningPdf`, `GlobalPlanningPdf` and `PlanningIcs`, sharing
+    `PdfTheme` — server-side only; `DatabaseDumpService`); `service/espace/`
+    (`DemandeEchangeService` / `EspaceAnimateurService`, the foire au planning
+    of issue #165; `ApplicationLinks`, every public URL printed in a mail or a
+    PDF); and the ones that predate the split — `service/diagnostic/`,
+    `service/journal/`, `service/mail/`, `service/notification/`,
+    `service/backup/` (nightly `pg_dump` — see below).
 - **Mails follow two opposite failure policies, and the split is structural.**
   `MailService` holds only what an admin explicitly asks for (an animateur's
   planning, an espace access code, the Débogage test mail): the mail *is* the
@@ -617,7 +626,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `joursIndisponibles` (`isIndisponibleOn(LocalDate)`).
 - **An edition's dates are derived, never stored.** An `Edition` carries neither
   dates nor an "ongoing" flag, so the event runs from the first to the last
-  créneau of the edition (`service/JoursEvenement`, read by the availability
+  créneau of the edition (`service/referentiel/JoursEvenement`, read by the availability
   collection and by the write-time warnings). An edition with no créneau has no
   bounds at all, and anything reasoning on them must stay silent rather than
   invent one. Being *inside* those bounds is not the same as being usable: the
