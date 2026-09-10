@@ -44,7 +44,7 @@
   ],
   "packageRules": [
     {
-      "description": "Wait a week before proposing a newly published version: a compromised release is usually pulled within days",
+      "description": "Wait a week before proposing a newly published version: a compromised release is usually pulled within days. Said once, for every package: a rule below that does not repeat it is not exempt from it",
       "matchPackageNames": ["*"],
       "minimumReleaseAge": "7 days"
     },
@@ -52,7 +52,6 @@
       "description": "Quarkus platform and extensions move together",
       "matchManagers": ["maven"],
       "matchPackageNames": ["io.quarkus{/,}**", "io.quarkus.platform{/,}**"],
-      "minimumReleaseAge": "7 days",
       "groupName": "quarkus",
       "addLabels": ["quarkus"]
     },
@@ -60,7 +59,6 @@
       "description": "Timefold solver artifacts move together",
       "matchManagers": ["maven"],
       "matchPackageNames": ["ai.timefold.solver{/,}**"],
-      "minimumReleaseAge": "7 days",
       "groupName": "timefold solver",
       "addLabels": ["timefold"]
     },
@@ -69,7 +67,6 @@
       "matchManagers": ["maven"],
       "matchDepTypes": ["test"],
       "matchUpdateTypes": ["minor", "patch"],
-      "minimumReleaseAge": "7 days",
       "groupName": "test dependencies"
     },
     {
@@ -77,14 +74,12 @@
       "matchManagers": ["maven"],
       "matchDepTypes": ["build", "plugin"],
       "matchUpdateTypes": ["minor", "patch"],
-      "minimumReleaseAge": "7 days",
       "groupName": "maven build plugins"
     },
     {
       "description": "Angular frontend (src/main/webui): Angular packages move together",
       "matchManagers": ["npm"],
       "matchPackageNames": ["@angular{/,}**", "zone.js", "rxjs"],
-      "minimumReleaseAge": "7 days",
       "groupName": "angular",
       "addLabels": ["frontend"]
     },
@@ -98,7 +93,6 @@
     {
       "description": "The CI container image must follow @playwright/test: a drift hands the suite a browser the image does not tool",
       "matchPackageNames": ["@playwright/test", "mcr.microsoft.com/playwright"],
-      "minimumReleaseAge": "7 days",
       "groupName": "playwright",
       "addLabels": ["frontend"]
     },
@@ -122,7 +116,6 @@
         "org.apache.maven:apache-maven",
         "org.apache.maven.wrapper:maven-wrapper"
       ],
-      "minimumReleaseAge": "7 days",
       "groupName": "maven"
     },
     {
@@ -136,13 +129,11 @@
         "registry.access.redhat.com/**"
       ],
       "matchUpdateTypes": ["major"],
-      "minimumReleaseAge": "7 days",
       "groupName": "java toolchain (major)",
       "dependencyDashboardApproval": true
     },
     {
       "description": "PostgreSQL major upgrades imply a data migration",
-      "minimumReleaseAge": "7 days",
       "matchPackageNames": ["postgres", "docker.io/postgres"],
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
@@ -150,7 +141,6 @@
     {
       "description": "jsonschema-generator major upgrades can break quarkus-mcp-server-http, which bundles its own victools-based generator built against an older major (mismatched majors crash MCP startup with NoSuchMethodError): handle them manually",
       "matchManagers": ["maven"],
-      "minimumReleaseAge": "7 days",
       "matchPackageNames": ["com.github.victools{/,}**"],
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true

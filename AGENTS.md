@@ -591,9 +591,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   through `/api/database/import`, the only way in left — reported by the
   pre-solve diagnostic) and
   **seeded invariant fuzzing** (random referentials solved for real, replayed
-  with `E2E_FUZZ_SEED`). **Deliberately excluded from CI**: they need the full
-  stack and write to the database — run them only against a disposable local
-  stack (see `docs/developpement.md` § Tests de bout en bout).
+  with `E2E_FUZZ_SEED`). CI runs them on every pull request (`e2e.yml`, on a
+  stack the job starts and throws away). Locally they **erase the database
+  they target**: run them only against a disposable stack (see
+  `docs/developpement.md` § Tests de bout en bout).
 
 ## Domain invariants (never break these)
 

@@ -491,7 +491,8 @@ Couvre Maven, le wrapper Maven, Docker, les actions GitHub, npm et
 `mise.toml`. Quatre règles valent d'être connues :
 
 - les mises à jour **mineures et correctives des dépendances de test** sont
-  fusionnées automatiquement ;
+  groupées dans une seule PR — rien n'est fusionné automatiquement, `automerge`
+  n'est pas activé ;
 - **Quarkus et Timefold sont groupés par écosystème**, et les paquets
   `@angular/*` dans une seule PR : une montée partielle casse le build ;
 - ce qui est **épinglé deux fois est groupé** : Maven (`mise.toml` et le
@@ -500,6 +501,11 @@ Couvre Maven, le wrapper Maven, Docker, les actions GitHub, npm et
 - les **majeures** de Java, PostgreSQL et victools passent par le tableau de
   bord (`dependencyDashboardApproval`) — ce qui suppose que l'issue de tableau
   de bord existe.
+
+Ce que Renovate ne lit pas — le `node-version` d'`application.properties`, les
+`java-version:` des workflows, les `FROM` du `Dockerfile` — est tenu d'accord
+avec `mise.toml` par `ToolchainPinsStructuralTest` : une montée de version qui
+n'en fait qu'une partie casse le build en nommant le fichier en retard.
 
 Une image lancée par un `run:` de workflow échappe au gestionnaire
 `github-actions`, qui ne lit que `uses:`, `container:` et `services:`. Un

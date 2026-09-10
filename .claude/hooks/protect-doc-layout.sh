@@ -9,7 +9,7 @@ input="$(cat)"
 tool_name="$(jq -r '.tool_name // empty' <<<"$input")"
 file_path="$(jq -r '.tool_input.file_path // empty' <<<"$input")"
 
-[ "$tool_name" = "Write" ] || exit 0
+case "$tool_name" in Edit|Write) ;; *) exit 0 ;; esac
 [ -n "$file_path" ] || exit 0
 
 case "$file_path" in

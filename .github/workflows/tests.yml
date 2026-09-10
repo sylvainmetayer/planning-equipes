@@ -62,13 +62,22 @@ jobs:
       # (skipITs defaults to true in the pom). PostgreSQL is provided by
       # Quarkus dev services (Docker is preinstalled on GitHub runners), so no
       # service container is required here.
-      # -Pcoverage attaches the JaCoCo agent. Nothing consumes the result yet —
-      # no threshold, no external service: the report is published as an
-      # artifact, to be opened when someone is actually hunting for a gap.
-      # It costs a few seconds; a failing threshold nobody agreed on would
-      # cost far more.
+      # -Pcoverage attaches the JaCoCo agent, on main only. Nothing consumes
+      # the result but a person hunting for a gap, and that person reads the
+      # report of main, not of a branch; instrumenting every pull request
+      # cost the instrumentation and the artifact for nobody.
       - name: Run tests
-        run: ./mvnw -B --no-transfer-progress verify -DskipITs=false -Pcoverage
+        run: ./mvnw -B --no-transfer-progress verify -DskipITs=false ${{ github.event_name == 'push' && '-Pcoverage' || '' }}
+
+      # Named, or nobody knows them: the job takes twenty minutes and the
+      # report says which classes take them. Read this before converting
+      # tests by hand — the gain is in the slow ones.
+      - name: The ten slowest test classes
+        if: always()
+        run: |
+          grep -ho '<testsuite [^>]*' target/surefire-reports/TEST-*.xml \
+            | sed -E 's/.* name="([^"]+)".* time="([0-9.]+)".*/\2 \1/' \
+            | sort -rn | head -10
 
       # Le contrat commité doit être celui que ce build vient de produire. Ce
       # contrôle ne peut vivre que dans ce job : c'est le seul qui a un
@@ -95,7 +104,7 @@ jobs:
           retention-days: 7
 
       - name: Upload the backend coverage report
-        if: always()
+        if: always() && github.event_name == 'push'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-backend
