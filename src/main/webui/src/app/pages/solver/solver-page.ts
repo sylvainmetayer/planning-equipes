@@ -391,11 +391,11 @@ export class SolverPage {
    */
   protected async onRecommencerDeZero(): Promise<void> {
     const affectations = this.affectationsEnregistrees() ?? 0;
-    const publieLe = this.publication().preview()?.dernierePublicationLe;
+    const publishedAt = this.publication().preview()?.dernierePublicationLe;
     const message = $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous de lui. Pour l'améliorer plutôt que le remplacer, utilisez « Calculer le planning ».`;
-    const avertissement = publieLe
+    const avertissement = publishedAt
       ? ' ' +
-        $localize`:@@solver.aFroid.confirm.publie:Un planning a été publié le ${new Date(publieLe).toLocaleString(intlLocale())}:date: : repartir de zéro peut bousculer beaucoup de personnes déjà prévenues, là où « Calculer le planning » ne bouge que ce qui en vaut la peine.`
+        $localize`:@@solver.aFroid.confirm.publie:Un planning a été publié le ${new Date(publishedAt).toLocaleString(intlLocale())}:date: : repartir de zéro peut bousculer beaucoup de personnes déjà prévenues, là où « Calculer le planning » ne bouge que ce qui en vaut la peine.`
       : '';
     const confirme = await this.confirm.ask({
       title: $localize`:@@solver.aFroid.confirm.title:Recommencer de zéro ?`,
