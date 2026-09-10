@@ -45,7 +45,13 @@ function literalsIn(file) {
   return readFileSync(file, 'utf8')
     .split('\n')
     .map((line, index) => ({ line: index + 1, text: line.trim() }))
-    .filter(({ text }) => LITERAL.test(text) && !text.startsWith('//') && !text.startsWith('*') && !text.startsWith('/*'));
+    .filter(
+      ({ text }) =>
+        LITERAL.test(text) &&
+        !text.startsWith('//') &&
+        !text.startsWith('*') &&
+        !text.startsWith('/*'),
+    );
 }
 
 const offenders = new Map();
@@ -69,7 +75,9 @@ let failed = false;
 for (const [file, hits] of [...offenders].sort()) {
   if (!allowed.has(file)) {
     failed = true;
-    console.error(`check-api-paths : ${file} écrit un chemin d'API — passez par un service de core/api/ :`);
+    console.error(
+      `check-api-paths : ${file} écrit un chemin d'API — passez par un service de core/api/ :`,
+    );
     for (const { line, text } of hits) {
       console.error(`  ${file}:${line}  ${text}`);
     }
@@ -78,11 +86,15 @@ for (const [file, hits] of [...offenders].sort()) {
 for (const file of [...allowed].sort()) {
   if (!offenders.has(file)) {
     failed = true;
-    console.error(`check-api-paths : ${file} n'écrit plus de chemin d'API — retirez-le de api-paths-exceptions.json`);
+    console.error(
+      `check-api-paths : ${file} n'écrit plus de chemin d'API — retirez-le de api-paths-exceptions.json`,
+    );
   }
 }
 
 if (failed) {
   process.exit(1);
 }
-console.log(`check-api-paths : aucun chemin d'API hors de core/api/ (${allowed.size} fichier(s) encore tolérés).`);
+console.log(
+  `check-api-paths : aucun chemin d'API hors de core/api/ (${allowed.size} fichier(s) encore tolérés).`,
+);

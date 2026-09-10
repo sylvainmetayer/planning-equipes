@@ -4,7 +4,7 @@ import {
   AnimateurBulkPatch,
   appliquerPatchAnimateur,
   patchAnimateurEstVide,
-  patchAnimateurVide
+  patchAnimateurVide,
 } from './animateur-bulk-edit';
 
 function animateur(overrides: Partial<Animateur> = {}): Animateur {
@@ -17,7 +17,7 @@ function animateur(overrides: Partial<Animateur> = {}): Animateur {
     competences: { jeuxDeSociete: 'AUTONOME' },
     souhaits: ['jeuxDeSociete'],
     joursIndisponibles: ['2026-08-01'],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -33,16 +33,24 @@ describe('patchAnimateurEstVide', () => {
   // Un mode choisi sans valeur ne modifierait rien : le bouton doit rester
   // désactivé plutôt que déclencher N écritures sans effet.
   it('reste vide tant que le mode choisi n’a pas de valeur', () => {
-    expect(patchAnimateurEstVide(patch({ competence: { mode: 'AJOUTER', typologie: '', niveau: 'REFERENT' } }))).toBe(
-      true
+    expect(
+      patchAnimateurEstVide(
+        patch({ competence: { mode: 'AJOUTER', typologie: '', niveau: 'REFERENT' } }),
+      ),
+    ).toBe(true);
+    expect(patchAnimateurEstVide(patch({ indisponibilite: { mode: 'AJOUTER', jour: '' } }))).toBe(
+      true,
     );
-    expect(patchAnimateurEstVide(patch({ indisponibilite: { mode: 'AJOUTER', jour: '' } }))).toBe(true);
-    expect(patchAnimateurEstVide(patch({ souhaits: { mode: 'AJOUTER', typologies: [] } }))).toBe(true);
+    expect(patchAnimateurEstVide(patch({ souhaits: { mode: 'AJOUTER', typologies: [] } }))).toBe(
+      true,
+    );
   });
 
   it('n’est plus vide dès qu’un champ est réellement renseigné', () => {
     expect(patchAnimateurEstVide(patch({ manager: 'OUI' }))).toBe(false);
-    expect(patchAnimateurEstVide(patch({ souhaits: { mode: 'REMPLACER', typologies: [] } }))).toBe(false);
+    expect(patchAnimateurEstVide(patch({ souhaits: { mode: 'REMPLACER', typologies: [] } }))).toBe(
+      false,
+    );
   });
 });
 
@@ -58,7 +66,7 @@ describe('appliquerPatchAnimateur', () => {
   it('ajoute une appréciation et écrase le niveau déjà connu', () => {
     const resultat = appliquerPatchAnimateur(
       animateur(),
-      patch({ competence: { mode: 'AJOUTER', typologie: 'jeuxDeSociete', niveau: 'REFERENT' } })
+      patch({ competence: { mode: 'AJOUTER', typologie: 'jeuxDeSociete', niveau: 'REFERENT' } }),
     );
 
     expect(resultat.competences).toEqual({ jeuxDeSociete: 'REFERENT' });
@@ -67,7 +75,7 @@ describe('appliquerPatchAnimateur', () => {
   it('retire une appréciation', () => {
     const resultat = appliquerPatchAnimateur(
       animateur(),
-      patch({ competence: { mode: 'RETIRER', typologie: 'jeuxDeSociete', niveau: 'AUTONOME' } })
+      patch({ competence: { mode: 'RETIRER', typologie: 'jeuxDeSociete', niveau: 'AUTONOME' } }),
     );
 
     expect(resultat.competences).toEqual({});
@@ -76,7 +84,7 @@ describe('appliquerPatchAnimateur', () => {
   it('ajoute un souhait sans perdre les existants', () => {
     const resultat = appliquerPatchAnimateur(
       animateur(),
-      patch({ souhaits: { mode: 'AJOUTER', typologies: ['jeuxDeRole'] } })
+      patch({ souhaits: { mode: 'AJOUTER', typologies: ['jeuxDeRole'] } }),
     );
 
     expect(resultat.souhaits).toEqual(['jeuxDeSociete', 'jeuxDeRole']);
@@ -85,11 +93,14 @@ describe('appliquerPatchAnimateur', () => {
   it('ajoute puis retire un jour d’indisponibilité', () => {
     const ajoute = appliquerPatchAnimateur(
       animateur(),
-      patch({ indisponibilite: { mode: 'AJOUTER', jour: '2026-08-02' } })
+      patch({ indisponibilite: { mode: 'AJOUTER', jour: '2026-08-02' } }),
     );
     expect(ajoute.joursIndisponibles).toEqual(['2026-08-01', '2026-08-02']);
 
-    const retire = appliquerPatchAnimateur(ajoute, patch({ indisponibilite: { mode: 'RETIRER', jour: '2026-08-01' } }));
+    const retire = appliquerPatchAnimateur(
+      ajoute,
+      patch({ indisponibilite: { mode: 'RETIRER', jour: '2026-08-01' } }),
+    );
     expect(retire.joursIndisponibles).toEqual(['2026-08-02']);
   });
 

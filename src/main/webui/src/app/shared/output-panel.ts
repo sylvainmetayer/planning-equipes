@@ -39,7 +39,7 @@ import { NotificationService } from '../core/notification.service';
       </mat-card>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OutputPanel {
   readonly text = input('');
@@ -60,7 +60,7 @@ export class OutputPanel {
       this.notifications.notify({
         title: $localize`:@@output.copyFailed:Copie impossible`,
         message: $localize`:@@output.copyFailedMessage:Le navigateur a refusé l'accès au presse-papiers. Sélectionnez le texte et copiez-le à la main.`,
-        variant: 'error'
+        variant: 'error',
       });
     }
   }

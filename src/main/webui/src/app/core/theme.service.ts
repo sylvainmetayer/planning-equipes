@@ -15,7 +15,7 @@ import {
   nextThemePreference,
   readThemePreference,
   resolveScheme,
-  writeThemePreference
+  writeThemePreference,
 } from './theme-preference';
 
 @Injectable({ providedIn: 'root' })
@@ -36,12 +36,15 @@ export class ThemeService {
    * *button* stops lying when the machine flips to dark at sunset — not to
    * repaint anything.
    */
-  readonly scheme = computed<ResolvedScheme>(() => resolveScheme(this._preference(), this.systemPrefersDark()));
+  readonly scheme = computed<ResolvedScheme>(() =>
+    resolveScheme(this._preference(), this.systemPrefersDark()),
+  );
 
   constructor() {
     const query = this.query;
     if (query) {
-      const onChange = (event: MediaQueryListEvent): void => this.systemPrefersDark.set(event.matches);
+      const onChange = (event: MediaQueryListEvent): void =>
+        this.systemPrefersDark.set(event.matches);
       query.addEventListener('change', onChange);
       inject(DestroyRef).onDestroy(() => query.removeEventListener('change', onChange));
     }

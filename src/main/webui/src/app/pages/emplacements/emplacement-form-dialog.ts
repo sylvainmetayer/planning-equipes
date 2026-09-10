@@ -35,10 +35,10 @@ export interface EmplacementFormData {
     MatButtonModule,
     MatIconModule,
     MapPicker,
-    StatusMessage
+    StatusMessage,
   ],
   templateUrl: './emplacement-form-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmplacementFormDialog {
   protected readonly jobs = inject(SolverJobService);
@@ -60,7 +60,7 @@ export class EmplacementFormDialog {
   protected readonly submitLabel = computed(() =>
     this.editingId()
       ? $localize`:@@emplacements.submit.edit:Modifier l'emplacement`
-      : $localize`:@@emplacements.submit.create:Créer l'emplacement`
+      : $localize`:@@emplacements.submit.create:Créer l'emplacement`,
   );
 
   protected patch(patch: Partial<EmplacementDraft>): void {
@@ -73,7 +73,7 @@ export class EmplacementFormDialog {
   protected onPositionChange(position: MapPosition): void {
     this.patch({ latitude: position.latitude, longitude: position.longitude });
     this.messagePosition.set(
-      $localize`:@@emplacements.position.set:Position choisie : ${position.latitude.toFixed(5)}:latitude:, ${position.longitude.toFixed(5)}:longitude:`
+      $localize`:@@emplacements.position.set:Position choisie : ${position.latitude.toFixed(5)}:latitude:, ${position.longitude.toFixed(5)}:longitude:`,
     );
   }
 
@@ -82,15 +82,24 @@ export class EmplacementFormDialog {
     const emplacement: Emplacement = {
       id: draft.id.trim(),
       nom: draft.nom.trim(),
-      latitude: draft.latitude === null || draft.latitude === undefined || `${draft.latitude}` === ''
-        ? null
-        : Number(draft.latitude),
-      longitude: draft.longitude === null || draft.longitude === undefined || `${draft.longitude}` === ''
-        ? null
-        : Number(draft.longitude),
-      modifieLe: draft.modifieLe
+      latitude:
+        draft.latitude === null || draft.latitude === undefined || `${draft.latitude}` === ''
+          ? null
+          : Number(draft.latitude),
+      longitude:
+        draft.longitude === null || draft.longitude === undefined || `${draft.longitude}` === ''
+          ? null
+          : Number(draft.longitude),
+      modifieLe: draft.modifieLe,
     };
-    if (await this.crud.save('emplacements', emplacement, this.editingId(), $localize`:@@emplacements.entityLabel:Emplacement`)) {
+    if (
+      await this.crud.save(
+        'emplacements',
+        emplacement,
+        this.editingId(),
+        $localize`:@@emplacements.entityLabel:Emplacement`,
+      )
+    ) {
       this.dialogRef.close(true);
     }
   }
@@ -105,6 +114,6 @@ function toDraft(emplacement: Emplacement | null): EmplacementDraft {
     nom: emplacement.nom ?? '',
     latitude: emplacement.latitude,
     longitude: emplacement.longitude,
-    modifieLe: emplacement.modifieLe ?? null
+    modifieLe: emplacement.modifieLe ?? null,
   };
 }

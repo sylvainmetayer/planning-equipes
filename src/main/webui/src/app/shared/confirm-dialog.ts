@@ -7,7 +7,7 @@ import {
   MAT_DIALOG_DATA,
   MatDialog,
   MatDialogModule,
-  MatDialogRef
+  MatDialogRef,
 } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 
@@ -59,12 +59,16 @@ export type ConfirmResult = boolean | null;
       <button matButton (click)="dialogRef.close(false)">
         {{ data.cancelLabel ?? defaultCancelLabel }}
       </button>
-      <button matButton="filled" [color]="data.danger ? 'warn' : 'primary'" (click)="dialogRef.close(true)">
+      <button
+        matButton="filled"
+        [color]="data.danger ? 'warn' : 'primary'"
+        (click)="dialogRef.close(true)"
+      >
         {{ data.confirmLabel ?? defaultConfirmLabel }}
       </button>
     </mat-dialog-actions>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmDialog {
   protected readonly dialogRef = inject<MatDialogRef<ConfirmDialog, ConfirmResult>>(MatDialogRef);
@@ -102,7 +106,7 @@ export class ConfirmService {
     const dialogRef = this.dialog.open<ConfirmDialog, ConfirmData, ConfirmResult>(ConfirmDialog, {
       data,
       width: '32rem',
-      autoFocus: 'dialog'
+      autoFocus: 'dialog',
     });
     return (await firstValueFrom(dialogRef.afterClosed())) ?? null;
   }

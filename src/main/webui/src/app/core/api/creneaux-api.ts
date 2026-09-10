@@ -13,7 +13,7 @@ import {
   RapportDerivation,
   RapportGrille,
   RapportRecurrence,
-  RegleRecurrence
+  RegleRecurrence,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -30,8 +30,14 @@ export class CreneauxApi {
     return this.api.get<RapportGrille>('/api/creneaux/controle');
   }
 
-  previewDerivation(mode: ModeGrilleCreneaux, request: DerivationRequest): Promise<RapportDerivation> {
-    return this.api.post<RapportDerivation>(`/api/creneaux/derivation/apercu?mode=${mode}`, request);
+  previewDerivation(
+    mode: ModeGrilleCreneaux,
+    request: DerivationRequest,
+  ): Promise<RapportDerivation> {
+    return this.api.post<RapportDerivation>(
+      `/api/creneaux/derivation/apercu?mode=${mode}`,
+      request,
+    );
   }
 
   /** Writes the créneaux derived from the stands' opening hours. */
@@ -61,7 +67,9 @@ export class CreneauxApi {
    * settings object would let a stale Paramètres tab revert this choice.
    */
   setGridMode(modeGrille: ModeGrilleCreneaux): Promise<ParametresDecoupage> {
-    return this.api.put<ParametresDecoupage>('/api/parametres-decoupage/mode-grille', { modeGrille });
+    return this.api.put<ParametresDecoupage>('/api/parametres-decoupage/mode-grille', {
+      modeGrille,
+    });
   }
 
   /** The vacations the slicing would produce, without writing them. */

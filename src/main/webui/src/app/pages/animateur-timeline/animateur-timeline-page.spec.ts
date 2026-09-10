@@ -19,7 +19,7 @@ import {
   buildAnimateurOptions,
   buildAnimateurTimeline,
   buildStandsSummary,
-  exportFilename
+  exportFilename,
 } from './animateur-timeline-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
@@ -39,12 +39,21 @@ function stand(id: string, typologiesProposees: string[] = []): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
 function animateur(id: string, prenom = id, nom = ''): Animateur {
-  return { id, prenom, nom, dateNaissance: '2000-01-01', manager: false, competences: {}, joursIndisponibles: [], souhaits: [] };
+  return {
+    id,
+    prenom,
+    nom,
+    dateNaissance: '2000-01-01',
+    manager: false,
+    competences: {},
+    joursIndisponibles: [],
+    souhaits: [],
+  };
 }
 
 function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffectation {
@@ -54,13 +63,25 @@ function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffe
 describe('buildAnimateurTimeline', () => {
   it('positions a single vacation spanning the whole amplitude at 0% offset and 100% width', () => {
     const days = buildAnimateurTimeline(
-      [poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1, heureDebut: '09:00', heureFin: '12:00' }), stand: stand('S1'), animateur: animateur('A') })],
-      'A'
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1, heureDebut: '09:00', heureFin: '12:00' }),
+          stand: stand('S1'),
+          animateur: animateur('A'),
+        }),
+      ],
+      'A',
     );
 
     expect(days).toHaveLength(1);
     expect(days[0].blocks).toEqual([
-      expect.objectContaining({ heureDebut: '09:00', heureFin: '12:00', offsetPercent: 0, widthPercent: 100 })
+      expect.objectContaining({
+        heureDebut: '09:00',
+        heureFin: '12:00',
+        offsetPercent: 0,
+        widthPercent: 100,
+      }),
     ]);
     expect(days[0].gaps).toHaveLength(0);
   });
@@ -74,9 +95,14 @@ describe('buildAnimateurTimeline', () => {
         poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('B', 'Alan', 'Turing') }),
         poste({ id: 'p3', creneau: c1, stand: s1, animateur: null }), // unfilled seat: nobody to name
         // Same créneau, another stand: not a teammate.
-        poste({ id: 'p4', creneau: c1, stand: stand('S2'), animateur: animateur('C', 'Grace', 'Hopper') })
+        poste({
+          id: 'p4',
+          creneau: c1,
+          stand: stand('S2'),
+          animateur: animateur('C', 'Grace', 'Hopper'),
+        }),
       ],
-      'A'
+      'A',
     );
 
     expect(days[0].blocks[0].coequipiers).toEqual(['Alan Turing']);
@@ -84,8 +110,15 @@ describe('buildAnimateurTimeline', () => {
 
   it('leaves the teammate list empty for a stand held alone', () => {
     const days = buildAnimateurTimeline(
-      [poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('A') })],
-      'A'
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1 }),
+          stand: stand('S1'),
+          animateur: animateur('A'),
+        }),
+      ],
+      'A',
     );
 
     expect(days[0].blocks[0].coequipiers).toEqual([]);
@@ -98,10 +131,24 @@ describe('buildAnimateurTimeline', () => {
     const s1 = stand('S1');
     const days = buildAnimateurTimeline(
       [
-        poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('A'), heureDebutEffective: '09:00', heureFinEffective: '12:00' }),
-        poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('B'), heureDebutEffective: '14:00', heureFinEffective: '18:00' })
+        poste({
+          id: 'p1',
+          creneau: c1,
+          stand: s1,
+          animateur: animateur('A'),
+          heureDebutEffective: '09:00',
+          heureFinEffective: '12:00',
+        }),
+        poste({
+          id: 'p2',
+          creneau: c1,
+          stand: s1,
+          animateur: animateur('B'),
+          heureDebutEffective: '14:00',
+          heureFinEffective: '18:00',
+        }),
       ],
-      'A'
+      'A',
     );
 
     expect(days[0].blocks[0].coequipiers).toEqual([]);
@@ -112,14 +159,26 @@ describe('buildAnimateurTimeline', () => {
     // 1h gap (10:00-11:00, 60 min) should land at 40% offset / 20% width.
     const days = buildAnimateurTimeline(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1, heureDebut: '08:00', heureFin: '10:00' }), stand: stand('S1'), animateur: animateur('A') }),
-        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 1, heureDebut: '11:00', heureFin: '13:00' }), stand: stand('S2'), animateur: animateur('A') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1, heureDebut: '08:00', heureFin: '10:00' }),
+          stand: stand('S1'),
+          animateur: animateur('A'),
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, jour: 1, heureDebut: '11:00', heureFin: '13:00' }),
+          stand: stand('S2'),
+          animateur: animateur('A'),
+        }),
       ],
-      'A'
+      'A',
     );
 
     expect(days[0].blocks).toHaveLength(2);
-    expect(days[0].gaps).toEqual([expect.objectContaining({ dureeMinutes: 60, offsetPercent: 40, widthPercent: 20 })]);
+    expect(days[0].gaps).toEqual([
+      expect.objectContaining({ dureeMinutes: 60, offsetPercent: 40, widthPercent: 20 }),
+    ]);
     expect(days[0].amplitudeDebut).toBe('08:00');
     expect(days[0].amplitudeFin).toBe('13:00');
   });
@@ -127,10 +186,20 @@ describe('buildAnimateurTimeline', () => {
   it('produces no gap for two back-to-back vacations', () => {
     const days = buildAnimateurTimeline(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1, heureDebut: '08:00', heureFin: '10:00' }), stand: stand('S1'), animateur: animateur('A') }),
-        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 1, heureDebut: '10:00', heureFin: '12:00' }), stand: stand('S2'), animateur: animateur('A') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1, heureDebut: '08:00', heureFin: '10:00' }),
+          stand: stand('S1'),
+          animateur: animateur('A'),
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, jour: 1, heureDebut: '10:00', heureFin: '12:00' }),
+          stand: stand('S2'),
+          animateur: animateur('A'),
+        }),
       ],
-      'A'
+      'A',
     );
 
     expect(days[0].gaps).toHaveLength(0);
@@ -138,8 +207,15 @@ describe('buildAnimateurTimeline', () => {
 
   it('treats a "00:00" end of a vacation as midnight (end of this event day), not the start of the next', () => {
     const days = buildAnimateurTimeline(
-      [poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1, heureDebut: '22:00', heureFin: '00:00' }), stand: stand('S1'), animateur: animateur('A') })],
-      'A'
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1, heureDebut: '22:00', heureFin: '00:00' }),
+          stand: stand('S1'),
+          animateur: animateur('A'),
+        }),
+      ],
+      'A',
     );
 
     expect(days[0].amplitudeFin).toBe('00:00');
@@ -155,10 +231,10 @@ describe('buildAnimateurTimeline', () => {
           stand: stand('S1'),
           animateur: animateur('A'),
           heureDebutEffective: '14:00',
-          heureFinEffective: '16:00'
-        })
+          heureFinEffective: '16:00',
+        }),
       ],
-      'A'
+      'A',
     );
 
     expect(days[0].blocks[0]).toMatchObject({ heureDebut: '14:00', heureFin: '16:00' });
@@ -167,10 +243,20 @@ describe('buildAnimateurTimeline', () => {
   it('groups vacations by event day and orders days chronologically', () => {
     const days = buildAnimateurTimeline(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 2 }), stand: stand('S1'), animateur: animateur('A') }),
-        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 1 }), stand: stand('S2'), animateur: animateur('A') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 2 }),
+          stand: stand('S1'),
+          animateur: animateur('A'),
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, jour: 1 }),
+          stand: stand('S2'),
+          animateur: animateur('A'),
+        }),
       ],
-      'A'
+      'A',
     );
 
     expect(days.map((day) => day.jour)).toEqual([1, 2]);
@@ -179,10 +265,15 @@ describe('buildAnimateurTimeline', () => {
   it('excludes other animateurs and unassigned postes', () => {
     const days = buildAnimateurTimeline(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('B') }),
-        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 1 }), stand: stand('S2') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1 }),
+          stand: stand('S1'),
+          animateur: animateur('B'),
+        }),
+        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 1 }), stand: stand('S2') }),
       ],
-      'A'
+      'A',
     );
 
     expect(days).toHaveLength(0);
@@ -192,36 +283,70 @@ describe('buildAnimateurTimeline', () => {
 describe('buildAnimateurOptions', () => {
   it('lists each animateur once, sorted by display name', () => {
     const options = buildAnimateurOptions([
-      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('B', 'Bob', 'Zed') }),
-      poste({ id: 'p2', creneau: creneau({ id: 2, jour: 1 }), stand: stand('S2'), animateur: animateur('A', 'Alice', 'Young') }),
-      poste({ id: 'p3', creneau: creneau({ id: 3, jour: 2 }), stand: stand('S1'), animateur: animateur('B', 'Bob', 'Zed') })
+      poste({
+        id: 'p1',
+        creneau: creneau({ id: 1, jour: 1 }),
+        stand: stand('S1'),
+        animateur: animateur('B', 'Bob', 'Zed'),
+      }),
+      poste({
+        id: 'p2',
+        creneau: creneau({ id: 2, jour: 1 }),
+        stand: stand('S2'),
+        animateur: animateur('A', 'Alice', 'Young'),
+      }),
+      poste({
+        id: 'p3',
+        creneau: creneau({ id: 3, jour: 2 }),
+        stand: stand('S1'),
+        animateur: animateur('B', 'Bob', 'Zed'),
+      }),
     ]);
 
     expect(options).toEqual([
       { id: 'A', label: 'Alice Young' },
-      { id: 'B', label: 'Bob Zed' }
+      { id: 'B', label: 'Bob Zed' },
     ]);
   });
 
   it('disambiguates two animateurs sharing the same display name by appending their id', () => {
     const options = buildAnimateurOptions([
-      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('id-1', 'Jean', 'Dupont') }),
-      poste({ id: 'p2', creneau: creneau({ id: 2, jour: 1 }), stand: stand('S2'), animateur: animateur('id-2', 'Jean', 'Dupont') })
+      poste({
+        id: 'p1',
+        creneau: creneau({ id: 1, jour: 1 }),
+        stand: stand('S1'),
+        animateur: animateur('id-1', 'Jean', 'Dupont'),
+      }),
+      poste({
+        id: 'p2',
+        creneau: creneau({ id: 2, jour: 1 }),
+        stand: stand('S2'),
+        animateur: animateur('id-2', 'Jean', 'Dupont'),
+      }),
     ]);
 
-    expect(options.map((option) => option.label)).toEqual(['Jean Dupont (id-1)', 'Jean Dupont (id-2)']);
+    expect(options.map((option) => option.label)).toEqual([
+      'Jean Dupont (id-1)',
+      'Jean Dupont (id-2)',
+    ]);
   });
 });
 
 describe('exportFilename', () => {
   it('builds a readable filename from the animateur display name', () => {
-    expect(exportFilename([{ id: 'id-1', label: 'Jeanne Dupont' }], 'id-1', 'pdf')).toBe('planning-Jeanne-Dupont.pdf');
-    expect(exportFilename([{ id: 'id-1', label: 'Jeanne Dupont' }], 'id-1', 'ics')).toBe('planning-Jeanne-Dupont.ics');
+    expect(exportFilename([{ id: 'id-1', label: 'Jeanne Dupont' }], 'id-1', 'pdf')).toBe(
+      'planning-Jeanne-Dupont.pdf',
+    );
+    expect(exportFilename([{ id: 'id-1', label: 'Jeanne Dupont' }], 'id-1', 'ics')).toBe(
+      'planning-Jeanne-Dupont.ics',
+    );
   });
 
   it('falls back on the id and strips path separators when the label is unusable', () => {
     expect(exportFilename([], 'a/b', 'ics')).toBe('planning-a-b.ics');
-    expect(exportFilename([{ id: 'id-1', label: '///' }], 'id-1', 'pdf')).toBe('planning-animateur.pdf');
+    expect(exportFilename([{ id: 'id-1', label: '///' }], 'id-1', 'pdf')).toBe(
+      'planning-animateur.pdf',
+    );
   });
 });
 
@@ -229,11 +354,26 @@ describe('buildStandsSummary', () => {
   it('counts each stand once even when the animateur returns to it on several days', () => {
     const days = buildAnimateurTimeline(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Zebre'), animateur: animateur('id-1', 'Jean', 'Dupont') }),
-        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Alpha'), animateur: animateur('id-1', 'Jean', 'Dupont') }),
-        poste({ id: 'p3', creneau: creneau({ id: 3, jour: 3 }), stand: stand('Alpha'), animateur: animateur('id-1', 'Jean', 'Dupont') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1 }),
+          stand: stand('Zebre'),
+          animateur: animateur('id-1', 'Jean', 'Dupont'),
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, jour: 2 }),
+          stand: stand('Alpha'),
+          animateur: animateur('id-1', 'Jean', 'Dupont'),
+        }),
+        poste({
+          id: 'p3',
+          creneau: creneau({ id: 3, jour: 3 }),
+          stand: stand('Alpha'),
+          animateur: animateur('id-1', 'Jean', 'Dupont'),
+        }),
       ],
-      'id-1'
+      'id-1',
     );
 
     expect(buildStandsSummary(days).count).toBe(2);
@@ -247,13 +387,29 @@ describe('buildStandsSummary', () => {
   it('counts each game typologie once across every stand covered', () => {
     const days = buildAnimateurTimeline(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Zebre', ['AMBIANCE']), animateur: animateur('id-1') }),
-        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Alpha', ['AMBIANCE', 'STRATEGIE']), animateur: animateur('id-1') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1 }),
+          stand: stand('Zebre', ['AMBIANCE']),
+          animateur: animateur('id-1'),
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, jour: 2 }),
+          stand: stand('Alpha', ['AMBIANCE', 'STRATEGIE']),
+          animateur: animateur('id-1'),
+        }),
       ],
-      'id-1'
+      'id-1',
     );
 
-    const summary = buildStandsSummary(days, new Map([['AMBIANCE', 'Ambiance'], ['STRATEGIE', 'Stratégie']]));
+    const summary = buildStandsSummary(
+      days,
+      new Map([
+        ['AMBIANCE', 'Ambiance'],
+        ['STRATEGIE', 'Stratégie'],
+      ]),
+    );
 
     expect(summary.count).toBe(2);
     expect(summary.typologieCount).toBe(2);
@@ -265,11 +421,26 @@ describe('buildStandsSummary', () => {
   it('gives every stand of the same typologie the same colour, and a stand without typologie the neutral one', () => {
     const days = buildAnimateurTimeline(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Alpha', ['AMBIANCE']), animateur: animateur('id-1') }),
-        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Beta', ['AMBIANCE']), animateur: animateur('id-1') }),
-        poste({ id: 'p3', creneau: creneau({ id: 3, jour: 3 }), stand: stand('Gamma'), animateur: animateur('id-1') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1 }),
+          stand: stand('Alpha', ['AMBIANCE']),
+          animateur: animateur('id-1'),
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, jour: 2 }),
+          stand: stand('Beta', ['AMBIANCE']),
+          animateur: animateur('id-1'),
+        }),
+        poste({
+          id: 'p3',
+          creneau: creneau({ id: 3, jour: 3 }),
+          stand: stand('Gamma'),
+          animateur: animateur('id-1'),
+        }),
       ],
-      'id-1'
+      'id-1',
     );
 
     const summary = buildStandsSummary(days);
@@ -282,41 +453,62 @@ describe('buildStandsSummary', () => {
 describe('AnimateurTimelinePage', () => {
   let fixture: ComponentFixture<AnimateurTimelinePage>;
   let analysesApi: { typologies: ReturnType<typeof vi.fn>; breaks: ReturnType<typeof vi.fn> };
-  let planningApi: { exportForAnimateur: ReturnType<typeof vi.fn>; sendToAnimateur: ReturnType<typeof vi.fn> };
+  let planningApi: {
+    exportForAnimateur: ReturnType<typeof vi.fn>;
+    sendToAnimateur: ReturnType<typeof vi.fn>;
+  };
   let notify: ReturnType<typeof vi.fn>;
   let replaceState: ReturnType<typeof vi.fn>;
-  let planningState: { loadForDisplay: ReturnType<typeof vi.fn>; require: ReturnType<typeof vi.fn> };
+  let planningState: {
+    loadForDisplay: ReturnType<typeof vi.fn>;
+    require: ReturnType<typeof vi.fn>;
+  };
 
   function planningDeDeux(): PlanningEvenement {
     const matin = creneau({ id: 1, jour: 1 });
     const apresMidi = creneau({ id: 2, jour: 1, heureDebut: '14:00', heureFin: '18:00' });
     return {
       postes: [
-        poste({ id: 'p1', creneau: matin, stand: stand('Tir'), animateur: animateur('a1', 'Alice', 'Martin') }),
-        poste({ id: 'p2', creneau: matin, stand: stand('Tir'), animateur: animateur('a2', 'Bob', 'Durand') }),
-        poste({ id: 'p3', creneau: apresMidi, stand: stand('Dixit'), animateur: animateur('a1', 'Alice', 'Martin') })
-      ]
+        poste({
+          id: 'p1',
+          creneau: matin,
+          stand: stand('Tir'),
+          animateur: animateur('a1', 'Alice', 'Martin'),
+        }),
+        poste({
+          id: 'p2',
+          creneau: matin,
+          stand: stand('Tir'),
+          animateur: animateur('a2', 'Bob', 'Durand'),
+        }),
+        poste({
+          id: 'p3',
+          creneau: apresMidi,
+          stand: stand('Dixit'),
+          animateur: animateur('a1', 'Alice', 'Martin'),
+        }),
+      ],
     } as unknown as PlanningEvenement;
   }
 
   async function rendre(
     evenement: PlanningEvenement | null,
     options: { animateurEnParametre?: string | null } = {},
-    analyses: { breaks?: () => unknown } = {}
+    analyses: { breaks?: () => unknown } = {},
   ): Promise<void> {
     analysesApi = {
       typologies: vi.fn(async () => []),
-      breaks: vi.fn(async () => analyses.breaks?.() ?? null)
+      breaks: vi.fn(async () => analyses.breaks?.() ?? null),
     };
     planningApi = {
       exportForAnimateur: vi.fn(async () => 'Téléchargement démarré.'),
-      sendToAnimateur: vi.fn(async () => ({ envoyes: 1, echecs: [] }))
+      sendToAnimateur: vi.fn(async () => ({ envoyes: 1, echecs: [] })),
     };
     notify = vi.fn();
     replaceState = vi.fn();
     planningState = {
       loadForDisplay: vi.fn(async () => evenement),
-      require: vi.fn(async () => evenement)
+      require: vi.fn(async () => evenement),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -330,10 +522,10 @@ describe('AnimateurTimelinePage', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { queryParamMap: { get: () => options.animateurEnParametre ?? null } }
-          }
-        }
-      ]
+            snapshot: { queryParamMap: { get: () => options.animateurEnParametre ?? null } },
+          },
+        },
+      ],
     });
     fixture = TestBed.createComponent(AnimateurTimelinePage);
     await fixture.whenStable();
@@ -345,12 +537,14 @@ describe('AnimateurTimelinePage', () => {
 
   /** Le geste de l'écran : choisir quelqu'un d'autre dans la liste. */
   function select(animateurId: string): void {
-    (fixture.componentInstance as unknown as { selectAnimateur(id: string): void }).selectAnimateur(animateurId);
+    (fixture.componentInstance as unknown as { selectAnimateur(id: string): void }).selectAnimateur(
+      animateurId,
+    );
   }
 
   function bouton(libelle: string): HTMLButtonElement {
     const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes(libelle)
+      each.textContent!.includes(libelle),
     );
     expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
     return trouve as HTMLButtonElement;
@@ -402,7 +596,7 @@ describe('AnimateurTimelinePage', () => {
     await rendre(planningDeDeux());
 
     const lignes = Array.from(racine().querySelectorAll('.timeline-block-list li')).map((each) =>
-      each.textContent!.replace(/\s+/g, ' ').trim()
+      each.textContent!.replace(/\s+/g, ' ').trim(),
     );
     expect(lignes[0]).toContain('avec Bob Durand');
     expect(lignes[1]).toContain('seul(e) sur ce stand');
@@ -411,11 +605,14 @@ describe('AnimateurTimelinePage', () => {
   it('recaps the stands to cover above the days', async () => {
     await rendre(planningDeDeux());
 
-    expect(Array.from(racine().querySelectorAll('.timeline-stand-chip')).map((each) => each.textContent!.trim())).toEqual([
-      'Dixit',
-      'Tir'
-    ]);
-    expect(racine().querySelector('.timeline-stands-card mat-card-subtitle')!.textContent!).toContain('2 stand(s)');
+    expect(
+      Array.from(racine().querySelectorAll('.timeline-stand-chip')).map((each) =>
+        each.textContent!.trim(),
+      ),
+    ).toEqual(['Dixit', 'Tir']);
+    expect(
+      racine().querySelector('.timeline-stands-card mat-card-subtitle')!.textContent!,
+    ).toContain('2 stand(s)');
   });
 
   it('says what to do when there is no planning at all', async () => {
@@ -445,7 +642,8 @@ describe('AnimateurTimelinePage', () => {
     await fixture.whenStable();
 
     expect(planningApi.exportForAnimateur).toHaveBeenCalledOnce();
-    const [format, animateurId, filename, corps, contentType] = planningApi.exportForAnimateur.mock.calls[0] as unknown as [string, string, string, unknown, string];
+    const [format, animateurId, filename, corps, contentType] = planningApi.exportForAnimateur.mock
+      .calls[0] as unknown as [string, string, string, unknown, string];
     expect(format).toBe('pdf');
     expect(animateurId).toBe('a1');
     // Named after the person, not after their id: the file lands in a mailbox.
@@ -498,13 +696,23 @@ describe('AnimateurTimelinePage', () => {
               fin: '12:00:00',
               minutes: 180,
               pausesDues: [
-                { debut: '11:40:00', fin: '12:00:00', heureLimite: '12:00:00', dureeMinutes: 20, standId: 's', standNom: evenement.postes[0].stand!.nom, relais: [], relaisDisponible: false, simultanee: false }
-              ]
-            }
+                {
+                  debut: '11:40:00',
+                  fin: '12:00:00',
+                  heureLimite: '12:00:00',
+                  dureeMinutes: 20,
+                  standId: 's',
+                  standNom: evenement.postes[0].stand!.nom,
+                  relais: [],
+                  relaisDisponible: false,
+                  simultanee: false,
+                },
+              ],
+            },
           ],
-          pausesPlanifiees: []
-        }
-      ]
+          pausesPlanifiees: [],
+        },
+      ],
     };
     await rendre(evenement, {}, { breaks: () => rapport });
 
@@ -512,21 +720,38 @@ describe('AnimateurTimelinePage', () => {
     expect(segment).not.toBeNull();
     expect(segment!.classList.contains('timeline-pause-alerte')).toBe(true);
     expect(segment!.getAttribute('aria-label')).toContain("personne d'autre sur le stand");
-    expect(racine().querySelector('.timeline-pause-item')?.textContent).toContain('Pause 11:40 – 12:00');
+    expect(racine().querySelector('.timeline-pause-item')?.textContent).toContain(
+      'Pause 11:40 – 12:00',
+    );
   });
 
   it('still draws the tracks when the breaks cannot be read, and draws none without a selected animateur', async () => {
-    await rendre(planningDeDeux(), {}, {
-      breaks: () => {
-        throw new Error('HTTP 500');
-      }
-    });
+    await rendre(
+      planningDeDeux(),
+      {},
+      {
+        breaks: () => {
+          throw new Error('HTTP 500');
+        },
+      },
+    );
     expect(racine().querySelectorAll('.timeline-day-card').length).toBeGreaterThan(0);
     expect(racine().querySelector('.timeline-pause')).toBeNull();
 
-    await rendre({ postes: [] } as unknown as PlanningEvenement, {}, {
-      breaks: () => ({ journees: [], pauseSurPoste: true, journeesAnalysees: 0, pausesDues: 0, relaisManquants: 0, message: '' })
-    });
+    await rendre(
+      { postes: [] } as unknown as PlanningEvenement,
+      {},
+      {
+        breaks: () => ({
+          journees: [],
+          pauseSurPoste: true,
+          journeesAnalysees: 0,
+          pausesDues: 0,
+          relaisManquants: 0,
+          message: '',
+        }),
+      },
+    );
     expect(racine().querySelector('.timeline-pause')).toBeNull();
     expect(racine().querySelector('.timeline-day-card')).toBeNull();
   });

@@ -3,7 +3,8 @@
 
 export type NiveauCompetence = 'DEBUTANT' | 'AUTONOME' | 'REFERENT';
 export type NiveauEffort = 'NORMAL' | 'EPUISANT';
-export type TypeContrainteAdHoc = 'INDISPONIBILITE_FORCEE' | 'INCOMPATIBILITE' | 'AFFECTATION_FORCEE' | 'AFFINITE';
+export type TypeContrainteAdHoc =
+  'INDISPONIBILITE_FORCEE' | 'INCOMPATIBILITE' | 'AFFECTATION_FORCEE' | 'AFFINITE';
 export type NiveauContrainte = 'HARD' | 'MEDIUM' | 'SOFT';
 
 /** `/api/typologies` items: the enum id plus a display label. */
@@ -136,13 +137,7 @@ export type ModeHoraire = 'OUVERTURE' | 'FERMETURE';
 export type TypeJoursHoraire = 'TOUS' | 'JOURS_SEMAINE' | 'PLAGE' | 'DATES';
 
 export type JourSemaine =
-  | 'MONDAY'
-  | 'TUESDAY'
-  | 'WEDNESDAY'
-  | 'THURSDAY'
-  | 'FRIDAY'
-  | 'SATURDAY'
-  | 'SUNDAY';
+  'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
 /**
  * A recurring opening/closing rule of a stand: windows plus the days they apply
@@ -216,9 +211,7 @@ export type EtatOuverture = 'OUVERT_TOTAL' | 'OUVERT_PARTIEL' | 'FERME';
 export type SourceHoraire = 'DEFAUT' | 'REGLE' | 'EXCEPTION';
 
 export type TypeAnomalieOuverture =
-  | 'STAND_JAMAIS_OUVERT'
-  | 'FENETRE_SANS_EFFET'
-  | 'SEGMENT_TROP_COURT';
+  'STAND_JAMAIS_OUVERT' | 'FENETRE_SANS_EFFET' | 'SEGMENT_TROP_COURT';
 
 /** One créneau of a day, as a column of the entry grid. */
 export interface ColonneCreneau {
@@ -523,7 +516,6 @@ export interface Edition {
   defaut: boolean;
   creeLe: string | null;
 }
-
 
 /**
  * When the persisted plan (`/api/planning/persisted`) was last solved.
@@ -1082,13 +1074,7 @@ export type JobType = 'SOLVE' | 'SOLVE_INCREMENTAL';
  * SolverJobService on the backend).
  */
 export type JobStatus =
-  | 'PENDING'
-  | 'QUEUED'
-  | 'RUNNING'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'CANCELLED'
-  | 'INTERROMPU';
+  'PENDING' | 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'INTERROMPU';
 
 /** `/api/jobs/...` view: the server owns the solver state, elapsed included. */
 export interface JobView {
@@ -1150,7 +1136,6 @@ export interface ScoreTrace {
   points: ScorePoint[];
 }
 
-
 /**
  * One event day of `GET /api/staffing`: what its generated seats demand.
  * `heures` are person-hours, `sieges` the number of postes that day.
@@ -1202,7 +1187,8 @@ export interface SemaineStaffing {
 }
 
 /** Which bound `GET /api/staffing` ended up retaining for `minimumTotal`. */
-export type BorneStaffing = 'PIC_SIMULTANE' | 'PIC_AVEC_PAUSE' | 'CHARGE_HORAIRE' | 'ROTATION_JOURS';
+export type BorneStaffing =
+  'PIC_SIMULTANE' | 'PIC_AVEC_PAUSE' | 'CHARGE_HORAIRE' | 'ROTATION_JOURS';
 
 /**
  * One game category of `GET /api/staffing`: the same bounds, computed on
@@ -1933,12 +1919,7 @@ export interface SuggestionsEchangeView {
 }
 
 export type StatutDemandeEchange =
-  | 'EN_ATTENTE_CIBLE'
-  | 'PROPOSEE'
-  | 'ACCEPTEE'
-  | 'REFUSEE'
-  | 'REFUSEE_CIBLE'
-  | 'ANNULEE';
+  'EN_ATTENTE_CIBLE' | 'PROPOSEE' | 'ACCEPTEE' | 'REFUSEE' | 'REFUSEE_CIBLE' | 'ANNULEE';
 
 /** One demande d'échange with every label resolved, shared by the espace and the admin screen. */
 export interface DemandeEchangeView {

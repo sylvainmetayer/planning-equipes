@@ -28,6 +28,8 @@ export class PlanningResolutionStore {
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
-    this.resolution.set(await this.api.get<PlanningResolution>('/api/planning/persisted/resolution'));
+    this.resolution.set(
+      await this.api.get<PlanningResolution>('/api/planning/persisted/resolution'),
+    );
   }
 }

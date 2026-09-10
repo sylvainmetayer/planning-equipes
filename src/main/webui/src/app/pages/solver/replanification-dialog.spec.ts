@@ -22,7 +22,7 @@ function animateur(id: string, prenom: string, nom: string): Animateur {
     manager: false,
     competences: {},
     souhaits: [],
-    joursIndisponibles: []
+    joursIndisponibles: [],
   };
 }
 
@@ -39,14 +39,14 @@ function stand(id: string, nom: string): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
 const CRENEAUX: Creneau[] = [
   { id: 1, jour: 2, date: '2026-07-15', heureDebut: '10:00', heureFin: '12:00' },
   { id: 2, jour: 1, date: '2026-07-14', heureDebut: '14:00', heureFin: '19:00' },
-  { id: 3, jour: 1, date: '2026-07-14', heureDebut: '10:00', heureFin: '12:00' }
+  { id: 3, jour: 1, date: '2026-07-14', heureDebut: '10:00', heureFin: '12:00' },
 ];
 
 function monter() {
@@ -58,13 +58,16 @@ function monter() {
       {
         provide: ReferenceDataStore,
         useValue: {
-          animateurs: signal([animateur('a1', 'Marcel', 'Proust'), animateur('a2', 'Amélie', 'Nothomb')]),
+          animateurs: signal([
+            animateur('a1', 'Marcel', 'Proust'),
+            animateur('a2', 'Amélie', 'Nothomb'),
+          ]),
           stands: signal([stand('s1', 'Loup-Garou'), stand('s2', 'Dixit')]),
-          creneaux: signal(CRENEAUX)
-        }
+          creneaux: signal(CRENEAUX),
+        },
       },
-      { provide: MatDialogRef, useValue: { close } }
-    ]
+      { provide: MatDialogRef, useValue: { close } },
+    ],
   });
   return { fixture: TestBed.createComponent(ReplanificationDialog), close };
 }
@@ -74,18 +77,27 @@ function racine(fixture: ComponentFixture<ReplanificationDialog>): HTMLElement {
 }
 
 /** Opens a `mat-select` and returns the visible options of its overlay. */
-async function options(fixture: ComponentFixture<ReplanificationDialog>, name: string): Promise<string[]> {
+async function options(
+  fixture: ComponentFixture<ReplanificationDialog>,
+  name: string,
+): Promise<string[]> {
   const select = racine(fixture).querySelector(`mat-select[name="${name}"]`) as HTMLElement;
   (select.querySelector('.mat-mdc-select-trigger') as HTMLElement).click();
   await fixture.whenStable();
-  return Array.from(document.querySelectorAll('mat-option')).map((each) => each.textContent!.trim());
+  return Array.from(document.querySelectorAll('mat-option')).map((each) =>
+    each.textContent!.trim(),
+  );
 }
 
-async function choisir(fixture: ComponentFixture<ReplanificationDialog>, name: string, libelle: string) {
+async function choisir(
+  fixture: ComponentFixture<ReplanificationDialog>,
+  name: string,
+  libelle: string,
+) {
   const disponibles = await options(fixture, name);
   expect(disponibles, `option « ${libelle} » absente`).toContain(libelle);
   const option = Array.from(document.querySelectorAll('mat-option')).find(
-    (each) => each.textContent!.trim() === libelle
+    (each) => each.textContent!.trim() === libelle,
   ) as HTMLElement;
   option.click();
   await fixture.whenStable();
@@ -117,7 +129,9 @@ describe('ReplanificationDialog', () => {
   it('explains that an empty perimeter is the automatic one, and stops saying it once something is picked', async () => {
     const { fixture } = monter();
     await fixture.whenStable();
-    expect(racine(fixture).querySelector('.calendar-meta')!.textContent!).toContain('Périmètre automatique');
+    expect(racine(fixture).querySelector('.calendar-meta')!.textContent!).toContain(
+      'Périmètre automatique',
+    );
 
     await choisir(fixture, 'standIds', 'Dixit');
 
@@ -136,7 +150,7 @@ describe('ReplanificationDialog', () => {
     expect(close).toHaveBeenCalledWith({
       animateurIds: ['a1'],
       jours: ['2026-07-14'],
-      standIds: ['s2']
+      standIds: ['s2'],
     } satisfies PerimetreReplanification);
   });
 

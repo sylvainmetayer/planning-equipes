@@ -84,7 +84,9 @@ export class NotificationService {
 
   /** Newest first. */
   readonly notifications = signal<AppNotification[]>(loadPersisted());
-  readonly unreadCount = computed(() => this.notifications().filter((notification) => !notification.read).length);
+  readonly unreadCount = computed(
+    () => this.notifications().filter((notification) => !notification.read).length,
+  );
 
   notify({
     title,
@@ -93,15 +95,19 @@ export class NotificationService {
     variant = 'info',
     timeout = SNACK_TIMEOUT_MS,
     desktop = false,
-    silent = false
+    silent = false,
   }: NotifyOptions): void {
     if (!silent) {
-      this.snackBar.open(message ? `${title} — ${message}` : title, $localize`:@@notification.close:Fermer`, {
-        duration: timeout > 0 ? timeout : undefined,
-        panelClass: `snack-${variant}`,
-        horizontalPosition: 'right',
-        verticalPosition: 'bottom'
-      });
+      this.snackBar.open(
+        message ? `${title} — ${message}` : title,
+        $localize`:@@notification.close:Fermer`,
+        {
+          duration: timeout > 0 ? timeout : undefined,
+          panelClass: `snack-${variant}`,
+          horizontalPosition: 'right',
+          verticalPosition: 'bottom',
+        },
+      );
     }
     this.push(severityOf(variant), title, messageJournal ?? message);
     if (desktop) {
@@ -119,7 +125,7 @@ export class NotificationService {
       title,
       message,
       timestamp: Date.now(),
-      read: false
+      read: false,
     };
     this.notifications.update((list) => [entry, ...list].slice(0, MAX_NOTIFICATIONS));
     this.persist();
@@ -139,7 +145,7 @@ export class NotificationService {
         title: $localize`:@@feasibility.notification.notFeasible:Planning non totalement réalisable`,
         message: this.feasibilityMessage(faisabilite),
         variant: 'warning',
-        silent: true
+        silent: true,
       });
       return;
     }
@@ -148,7 +154,7 @@ export class NotificationService {
         title: $localize`:@@feasibility.notification.hardScoreNegative:Planning non totalement réalisable`,
         message: hardScoreNegativeMessage(hardScore),
         variant: 'error',
-        silent: true
+        silent: true,
       });
     }
   }
@@ -171,14 +177,18 @@ export class NotificationService {
 
   markRead(id: string): void {
     this.notifications.update((list) =>
-      list.map((notification) => (notification.id === id ? { ...notification, read: true } : notification))
+      list.map((notification) =>
+        notification.id === id ? { ...notification, read: true } : notification,
+      ),
     );
     this.persist();
   }
 
   markAllRead(): void {
     this.notifications.update((list) =>
-      list.map((notification) => (notification.read ? notification : { ...notification, read: true }))
+      list.map((notification) =>
+        notification.read ? notification : { ...notification, read: true },
+      ),
     );
     this.persist();
   }

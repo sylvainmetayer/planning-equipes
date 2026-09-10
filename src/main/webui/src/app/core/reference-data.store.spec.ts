@@ -21,7 +21,11 @@ describe('ReferenceDataStore bulk operations', () => {
   beforeEach(() => {
     api = new FakeApi();
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), ReferenceDataStore, { provide: ApiService, useValue: api }]
+      providers: [
+        provideZonelessChangeDetection(),
+        ReferenceDataStore,
+        { provide: ApiService, useValue: api },
+      ],
     });
     store = TestBed.inject(ReferenceDataStore);
   });
@@ -65,7 +69,7 @@ describe('ReferenceDataStore bulk operations', () => {
   it('enregistre chaque ligne par PUT sur son identifiant', async () => {
     const result = await store.saveMany('animateurs', [
       { id: 'alice', manager: true },
-      { id: 'bob', manager: true }
+      { id: 'bob', manager: true },
     ]);
 
     expect(api.put).toHaveBeenCalledWith('/api/animateurs/alice', { id: 'alice', manager: true });
@@ -78,7 +82,7 @@ describe('ReferenceDataStore bulk operations', () => {
   it('remonte les avertissements portés par la réponse d’écriture', async () => {
     api.post.mockResolvedValueOnce({
       animateur: { id: 'alice' },
-      avertissements: [{ type: 'MINEUR_PENDANT_EVENEMENT', message: 'majeur le 2026-07-09' }]
+      avertissements: [{ type: 'MINEUR_PENDANT_EVENEMENT', message: 'majeur le 2026-07-09' }],
     });
 
     const { avertissements } = await store.save('animateurs', { id: 'alice' }, null);
@@ -96,7 +100,10 @@ describe('ReferenceDataStore bulk operations', () => {
   // Un créneau n'a pas d'identifiant avant son écriture : celui du serveur est
   // le seul que la bulle puisse afficher.
   it('rend l’identifiant généré par le serveur pour une création sans id', async () => {
-    api.post.mockResolvedValueOnce({ creneau: { id: 4242, date: '2026-07-08' }, avertissements: [] });
+    api.post.mockResolvedValueOnce({
+      creneau: { id: 4242, date: '2026-07-08' },
+      avertissements: [],
+    });
 
     expect((await store.save('creneaux', { id: null }, null)).id).toBe(4242);
   });
@@ -115,8 +122,14 @@ describe('ReferenceDataStore bulk operations', () => {
 
   it('regroupe les avertissements de tout le lot', async () => {
     api.put
-      .mockResolvedValueOnce({ animateur: { id: 'alice' }, avertissements: [{ type: 'X', message: 'a' }] })
-      .mockResolvedValueOnce({ animateur: { id: 'bob' }, avertissements: [{ type: 'X', message: 'b' }] });
+      .mockResolvedValueOnce({
+        animateur: { id: 'alice' },
+        avertissements: [{ type: 'X', message: 'a' }],
+      })
+      .mockResolvedValueOnce({
+        animateur: { id: 'bob' },
+        avertissements: [{ type: 'X', message: 'b' }],
+      });
 
     const result = await store.saveMany('animateurs', [{ id: 'alice' }, { id: 'bob' }]);
 
@@ -128,9 +141,7 @@ describe('ReferenceDataStore bulk operations', () => {
       await store.save('typologies', { id: 't1', nom: 'Ninja' }, 't1');
 
       const urls = api.get.mock.calls.map(([url]) => url);
-      expect(urls).toEqual(
-        expect.arrayContaining(['/api/typologies', '/api/planning/volumetrie'])
-      );
+      expect(urls).toEqual(expect.arrayContaining(['/api/typologies', '/api/planning/volumetrie']));
       // Renommer une typologie ne doit plus rapatrier 150 animateurs et 65 stands.
       expect(urls).not.toContain('/api/animateurs');
       expect(urls).not.toContain('/api/stands');
@@ -166,7 +177,7 @@ describe('ReferenceDataStore bulk operations', () => {
         '/api/stands',
         '/api/emplacements',
         '/api/contraintes-ad-hoc',
-        '/api/planning/volumetrie'
+        '/api/planning/volumetrie',
       ]) {
         expect(urls).toContain(url);
       }

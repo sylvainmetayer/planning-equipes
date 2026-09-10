@@ -34,10 +34,10 @@ export interface CreneauFormData {
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
   ],
   templateUrl: './creneau-form-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreneauFormDialog {
   protected readonly jobs = inject(SolverJobService);
@@ -59,7 +59,7 @@ export class CreneauFormDialog {
   protected readonly submitLabel = computed(() =>
     this.editingId()
       ? $localize`:@@creneaux.submit.edit:Modifier le créneau`
-      : $localize`:@@creneaux.submit.create:Créer le créneau`
+      : $localize`:@@creneaux.submit.create:Créer le créneau`,
   );
 
   /**
@@ -109,20 +109,25 @@ export class CreneauFormDialog {
       date: draft.date,
       heureDebut: draft.heureDebut,
       heureFin: draft.heureFin,
-      modifieLe: draft.modifieLe
+      modifieLe: draft.modifieLe,
     };
     if (editingId != null) {
       creneau.id = editingId;
     }
     if (
-      await this.crud.save('creneaux', creneau, editingId, $localize`:@@creneaux.entityLabel:Créneau`, {
-        requireId: false
-      })
+      await this.crud.save(
+        'creneaux',
+        creneau,
+        editingId,
+        $localize`:@@creneaux.entityLabel:Créneau`,
+        {
+          requireId: false,
+        },
+      )
     ) {
       this.dialogRef.close(true);
     }
   }
-
 }
 
 function toDraft(creneau: Creneau | null): CreneauDraft {
@@ -133,6 +138,6 @@ function toDraft(creneau: Creneau | null): CreneauDraft {
     date: creneau.date ?? '',
     heureDebut: creneau.heureDebut ?? '',
     heureFin: creneau.heureFin ?? '',
-    modifieLe: creneau.modifieLe ?? null
+    modifieLe: creneau.modifieLe ?? null,
   };
 }

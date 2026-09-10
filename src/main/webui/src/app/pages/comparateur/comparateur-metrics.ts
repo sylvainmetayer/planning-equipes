@@ -25,7 +25,10 @@ export interface LigneMetrique {
 /** 'plus' = a higher value is better, 'moins' = lower is better, null = neutral. */
 type Sens = 'plus' | 'moins' | null;
 
-export function construireLignesMetriques(base: PlanningKpi, variante: PlanningKpi): LigneMetrique[] {
+export function construireLignesMetriques(
+  base: PlanningKpi,
+  variante: PlanningKpi,
+): LigneMetrique[] {
   const lignes: LigneMetrique[] = [];
   const add = (
     key: string,
@@ -33,36 +36,49 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     valeurBase: number | null,
     valeurVariante: number | null,
     sens: Sens,
-    formatter: (valeur: number) => string = (valeur) => String(valeur)
+    formatter: (valeur: number) => string = (valeur) => String(valeur),
   ): void => {
-    const delta = valeurBase === null || valeurVariante === null ? null : valeurVariante - valeurBase;
+    const delta =
+      valeurBase === null || valeurVariante === null ? null : valeurVariante - valeurBase;
     lignes.push({
       cle: key,
       label,
       base: valeurBase === null ? '—' : formatter(valeurBase),
       variante: valeurVariante === null ? '—' : formatter(valeurVariante),
       delta,
-      tendance: tendance(delta, sens)
+      tendance: tendance(delta, sens),
     });
   };
 
   const heures = (valeur: number): string => `${valeur.toFixed(1)} h`;
-  add('scoreHard', $localize`:@@comparateur.metric.scoreHard:Score hard`, base.scoreHard, variante.scoreHard, 'plus');
+  add(
+    'scoreHard',
+    $localize`:@@comparateur.metric.scoreHard:Score hard`,
+    base.scoreHard,
+    variante.scoreHard,
+    'plus',
+  );
   add(
     'scoreMedium',
     $localize`:@@comparateur.metric.scoreMedium:Score medium`,
     base.scoreMedium,
     variante.scoreMedium,
-    'plus'
+    'plus',
   );
-  add('scoreSoft', $localize`:@@comparateur.metric.scoreSoft:Score soft`, base.scoreSoft, variante.scoreSoft, 'plus');
+  add(
+    'scoreSoft',
+    $localize`:@@comparateur.metric.scoreSoft:Score soft`,
+    base.scoreSoft,
+    variante.scoreSoft,
+    'plus',
+  );
   add(
     'couverture',
     $localize`:@@comparateur.metric.couverture:Couverture (postes pourvus)`,
     couverturePourcent(base),
     couverturePourcent(variante),
     'plus',
-    (valeur) => `${valeur.toFixed(1)} %`
+    (valeur) => `${valeur.toFixed(1)} %`,
   );
   add(
     'heuresEcartType',
@@ -70,7 +86,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     base.heuresEcartType,
     variante.heuresEcartType,
     'moins',
-    heures
+    heures,
   );
   add(
     'heuresMoyenne',
@@ -78,7 +94,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     base.heuresMoyenne,
     variante.heuresMoyenne,
     null,
-    heures
+    heures,
   );
   add(
     'heuresMin',
@@ -86,7 +102,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     base.heuresMin,
     variante.heuresMin,
     null,
-    heures
+    heures,
   );
   add(
     'heuresMax',
@@ -94,30 +110,42 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     base.heuresMax,
     variante.heuresMax,
     'moins',
-    heures
+    heures,
   );
-  add('postesTotal', $localize`:@@comparateur.metric.postesTotal:Postes`, base.postesTotal, variante.postesTotal, null);
+  add(
+    'postesTotal',
+    $localize`:@@comparateur.metric.postesTotal:Postes`,
+    base.postesTotal,
+    variante.postesTotal,
+    null,
+  );
   add(
     'animateursAffectes',
     $localize`:@@comparateur.metric.animateursAffectes:Animateurs affectés`,
     base.animateursAffectes,
     variante.animateursAffectes,
-    null
+    null,
   );
-  add('standsDistincts', $localize`:@@comparateur.metric.stands:Stands`, base.standsDistincts, variante.standsDistincts, null);
+  add(
+    'standsDistincts',
+    $localize`:@@comparateur.metric.stands:Stands`,
+    base.standsDistincts,
+    variante.standsDistincts,
+    null,
+  );
   add(
     'creneauxDistincts',
     $localize`:@@comparateur.metric.creneaux:Créneaux`,
     base.creneauxDistincts,
     variante.creneauxDistincts,
-    null
+    null,
   );
   add(
     'modificationsManuelles',
     $localize`:@@comparateur.metric.modifications:Modifications manuelles (ajustements manuels + verrouillages)`,
     base.modificationsManuelles,
     variante.modificationsManuelles,
-    null
+    null,
   );
   add(
     'dureeSolve',
@@ -125,7 +153,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
     base.dureeSolveSecondes,
     variante.dureeSolveSecondes,
     null,
-    (valeur) => `${valeur} s`
+    (valeur) => `${valeur} s`,
   );
   return lignes;
 }

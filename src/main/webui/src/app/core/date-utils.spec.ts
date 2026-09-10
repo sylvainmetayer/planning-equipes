@@ -8,7 +8,7 @@ import {
   shiftMonth,
   toDateKey,
   toMonthKey,
-  uniqueById
+  uniqueById,
 } from './date-utils';
 
 describe('getMonthStart', () => {
@@ -122,7 +122,7 @@ describe('uniqueById', () => {
     const items = [
       { id: 'a', v: 1 },
       { id: 'b', v: 2 },
-      { id: 'a', v: 3 }
+      { id: 'a', v: 3 },
     ];
     const result = uniqueById(items);
     expect(result).toHaveLength(2);

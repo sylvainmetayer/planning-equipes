@@ -34,7 +34,7 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     score: null,
     matchCount: null,
     violations: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -44,7 +44,7 @@ const REGLE_LEGALE = contrainte({
   categorie: 'Légal (mineurs)',
   description: 'Pas de travail de nuit pour un mineur (art. L3163-1).',
   protegee: true,
-  dosable: false
+  dosable: false,
 });
 
 /**
@@ -64,7 +64,7 @@ function view(contraintes: ConstraintView[]): ConstraintsView {
     faisabilite: null,
     hardScore: null,
     contraintesAdHocEnCause: [],
-    contraintes
+    contraintes,
   };
 }
 
@@ -88,7 +88,7 @@ describe('ConstraintsPage', () => {
     legalParameters: vi.fn(),
     saveLegalParameters: vi.fn(),
     setActive: vi.fn(),
-    setWeight: vi.fn()
+    setWeight: vi.fn(),
   };
   const legalDisable = { allowsDisabling: vi.fn() };
 
@@ -98,10 +98,20 @@ describe('ConstraintsPage', () => {
     }
     legalDisable.allowsDisabling.mockReset();
     constraintsApi.catalogue.mockResolvedValue(view([]));
-    constraintsApi.legalParameters.mockResolvedValue({ dureeHebdomadaireMaxMinutes: 48 * 60, dureeHebdomadaireMaxMineurMinutes: 35 * 60, pauseMinimaleEntreVacationsMinutes: 30, reposQuotidienMinimalMinutes: 660, pauseSurPoste: false });
+    constraintsApi.legalParameters.mockResolvedValue({
+      dureeHebdomadaireMaxMinutes: 48 * 60,
+      dureeHebdomadaireMaxMineurMinutes: 35 * 60,
+      pauseMinimaleEntreVacationsMinutes: 30,
+      reposQuotidienMinimalMinutes: 660,
+      pauseSurPoste: false,
+    });
     constraintsApi.saveLegalParameters.mockImplementation(async (body: unknown) => body);
-    constraintsApi.setActive.mockImplementation(async (_name: string, actif: boolean) => ({ actif }));
-    constraintsApi.setWeight.mockImplementation(async (_name: string, poids: number) => ({ poids }));
+    constraintsApi.setActive.mockImplementation(async (_name: string, actif: boolean) => ({
+      actif,
+    }));
+    constraintsApi.setWeight.mockImplementation(async (_name: string, poids: number) => ({
+      poids,
+    }));
     legalDisable.allowsDisabling.mockResolvedValue(true);
     TestBed.configureTestingModule({
       providers: [
@@ -112,11 +122,18 @@ describe('ConstraintsPage', () => {
         { provide: LegalDisableConfirmService, useValue: legalDisable },
         {
           provide: SolverJobService,
-          useValue: { solverBusy: () => false, editingLocked: () => false, onResult: () => () => undefined }
+          useValue: {
+            solverBusy: () => false,
+            editingLocked: () => false,
+            onResult: () => () => undefined,
+          },
         },
         { provide: SolverSettingsService, useValue: { secondsLimit: () => 60 } },
-        { provide: ProblemesStore, useValue: { constraints: { set: vi.fn() }, alerteReglesLegales: () => '' } }
-      ]
+        {
+          provide: ProblemesStore,
+          useValue: { constraints: { set: vi.fn() }, alerteReglesLegales: () => '' },
+        },
+      ],
     });
   });
 
@@ -127,7 +144,8 @@ describe('ConstraintsPage', () => {
    */
   async function createPage(contraintes: ConstraintView[]): Promise<PageInternals> {
     constraintsApi.catalogue.mockResolvedValue(view(contraintes));
-    const page = TestBed.createComponent(ConstraintsPage).componentInstance as unknown as PageInternals;
+    const page = TestBed.createComponent(ConstraintsPage)
+      .componentInstance as unknown as PageInternals;
     await vi.waitFor(() => expect(page.view()?.contraintes).toHaveLength(contraintes.length));
     return page;
   }
@@ -139,9 +157,10 @@ describe('ConstraintsPage', () => {
         dureeHebdomadaireMaxMineurMinutes: 35 * 60,
         pauseMinimaleEntreVacationsMinutes: 0,
         reposQuotidienMinimalMinutes: 9 * 60,
-        pauseSurPoste: true
+        pauseSurPoste: true,
       });
-      const page = TestBed.createComponent(ConstraintsPage).componentInstance as unknown as PageInternals;
+      const page = TestBed.createComponent(ConstraintsPage)
+        .componentInstance as unknown as PageInternals;
       await vi.waitFor(() => expect(page.pauseSurPoste()).toBe(true));
       expect(page.pauseEntreVacationsMinutes()).toBe(0);
       expect(page.reposQuotidienHeures()).toBe(9);
@@ -154,13 +173,14 @@ describe('ConstraintsPage', () => {
         dureeHebdomadaireMaxMineurMinutes: 35 * 60,
         pauseMinimaleEntreVacationsMinutes: 0,
         reposQuotidienMinimalMinutes: 9 * 60,
-        pauseSurPoste: false
+        pauseSurPoste: false,
       });
     });
 
     it('refuses to save while a field it holds is still unknown', async () => {
       constraintsApi.legalParameters.mockReturnValue(new Promise(() => undefined));
-      const page = TestBed.createComponent(ConstraintsPage).componentInstance as unknown as PageInternals;
+      const page = TestBed.createComponent(ConstraintsPage)
+        .componentInstance as unknown as PageInternals;
       await vi.waitFor(() => expect(page.view()).not.toBeNull());
 
       await page.saveParametresLegaux();
@@ -204,7 +224,10 @@ describe('ConstraintsPage', () => {
       const evenement = bascule(false);
       await page.toggleConstraint(REGLE_LEGALE, evenement);
 
-      expect(constraintsApi.setActive).toHaveBeenCalledWith('travailDeNuitInterditPourMineur', false);
+      expect(constraintsApi.setActive).toHaveBeenCalledWith(
+        'travailDeNuitInterditPourMineur',
+        false,
+      );
       expect(page.view()?.contraintes[0].actif).toBe(false);
       expect(evenement.source.checked).toBe(false);
     });
@@ -276,7 +299,6 @@ describe('ConstraintsPage', () => {
       expect(page.view()?.contraintes[0].poids).toBe(2);
       expect(page.error()).toContain('refusé');
     });
-
   });
 
   // One control for the thirty-nine rules, protected ones included: a number

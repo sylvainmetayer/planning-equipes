@@ -6,7 +6,7 @@ function storage(initial: Record<string, string> = {}): Pick<Storage, 'getItem' 
   const entries = new Map(Object.entries(initial));
   return {
     getItem: (key) => entries.get(key) ?? null,
-    setItem: (key, value) => void entries.set(key, value)
+    setItem: (key, value) => void entries.set(key, value),
   };
 }
 
@@ -18,7 +18,7 @@ function storageQuiRefuse(): Pick<Storage, 'getItem' | 'setItem'> {
     },
     setItem: () => {
       throw new Error('storage refusée');
-    }
+    },
   };
 }
 

@@ -13,7 +13,7 @@ import {
   PlanningEvenement,
   Stand,
   SuggestionReparation,
-  SuggestionsReparation
+  SuggestionsReparation,
 } from '../core/models';
 
 /** Lexicographic hard > medium > soft comparison, matching how Timefold itself compares scores. */
@@ -46,7 +46,7 @@ export function suggestionsTronquees(suggestions: SuggestionsReparation | null):
  */
 export function meilleuresSuggestions(
   suggestions: SuggestionsReparation | null,
-  max = MAX_SUGGESTIONS_AFFICHEES
+  max = MAX_SUGGESTIONS_AFFICHEES,
 ): SuggestionReparation[] {
   return (suggestions?.suggestions ?? []).slice(0, max);
 }

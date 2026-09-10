@@ -88,13 +88,14 @@ const insertions = (dump: string) =>
     .map((ligne) => ligne.trim())
     .filter((ligne) => ligne.toUpperCase().startsWith('INSERT INTO'));
 
-const estDeTest = (ligne: string) => PREFIXES_DE_TEST.some((prefixe) => ligne.includes(`'${prefixe}`));
+const estDeTest = (ligne: string) =>
+  PREFIXES_DE_TEST.some((prefixe) => ligne.includes(`'${prefixe}`));
 
 async function contexte(baseURL: string): Promise<APIRequestContext> {
   const requeteur = await request.newContext({ baseURL });
   await requeteur.post('/j_security_check', {
     form: { j_username: 'admin', j_password: MOT_DE_PASSE_ADMIN },
-    maxRedirects: 0
+    maxRedirects: 0,
   });
   return requeteur;
 }
@@ -108,7 +109,7 @@ async function exporter(requeteur: APIRequestContext): Promise<string> {
 async function restaurer(requeteur: APIRequestContext, dump: string): Promise<boolean> {
   const reponse = await requeteur.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
-    data: dump
+    data: dump,
   });
   await viderLaBoiteMail(requeteur);
   return reponse.ok();
@@ -133,7 +134,7 @@ function refuser(details: string): never {
     `${details}\n\n` +
       "La suite e2e efface la base qu'elle vise, à chaque spec : elle ne doit viser qu'une pile\n" +
       'jetable. Vérifiez E2E_BASE_URL, ou recréez la base si celle-ci est bien jetable :\n' +
-      '  podman rm -f e2e-postgres && podman run -d --rm --name e2e-postgres … postgres:18'
+      '  podman rm -f e2e-postgres && podman run -d --rm --name e2e-postgres … postgres:18',
   );
 }
 
@@ -167,7 +168,7 @@ export default async function etablirLaReference(): Promise<void> {
       refuser(
         `Aucune référence pour ${baseURL}, et la base porte déjà ${deTest.length} ligne(s) de test.\n` +
           "Elle ne peut donc pas en servir : la référence figerait l'état laissé par une exécution\n" +
-          'précédente, et chaque spec repartirait de là — la panne même que ce mécanisme supprime.'
+          'précédente, et chaque spec repartirait de là — la panne même que ce mécanisme supprime.',
       );
     }
 
@@ -189,5 +190,8 @@ export default async function etablirLaReference(): Promise<void> {
 export async function repartirDeLaReference(admin: APIRequestContext): Promise<void> {
   const baseURL = process.env['E2E_BASE_URL'] ?? 'http://localhost:8080';
   const reference = readFileSync(fichierDeReference(baseURL), 'utf8');
-  expect(await restaurer(admin, reference), 'la restauration de la base de référence a échoué').toBe(true);
+  expect(
+    await restaurer(admin, reference),
+    'la restauration de la base de référence a échoué',
+  ).toBe(true);
 }

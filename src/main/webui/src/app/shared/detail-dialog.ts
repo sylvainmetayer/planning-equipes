@@ -83,7 +83,7 @@ export type DetailResult = 'edit' | null;
       </button>
     </mat-dialog-actions>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailDialog {
   protected readonly data = inject<DetailData>(MAT_DIALOG_DATA);

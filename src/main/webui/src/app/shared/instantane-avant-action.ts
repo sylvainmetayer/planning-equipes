@@ -24,20 +24,20 @@ export class InstantaneAvantAction {
     const veut = await this.confirm.ask({
       title: $localize`:@@dataSetup.snapshotBefore.title:Enregistrer le plan actuel d'abord ?`,
       message: $localize`:@@dataSetup.snapshotBefore.message:${intitule}:action: va remplacer les données, et avec elles le planning résolu. Un instantané permet de le retrouver ensuite.`,
-      confirmLabel: $localize`:@@dataSetup.snapshotBefore.confirm:Enregistrer un instantané`
+      confirmLabel: $localize`:@@dataSetup.snapshotBefore.confirm:Enregistrer un instantané`,
     });
     if (!veut) {
       return;
     }
     try {
       await this.snapshots.capturer(
-        $localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`
+        $localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`,
       );
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     }
   }

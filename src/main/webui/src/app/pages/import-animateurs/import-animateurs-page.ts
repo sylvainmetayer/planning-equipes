@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild, ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+  ElementRef,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -21,7 +29,7 @@ import {
   iconeAction,
   libelleColonne,
   mappingNommeQuelquun,
-  withColonne
+  withColonne,
 } from './import-animateurs';
 
 /**
@@ -50,10 +58,10 @@ import {
     MatProgressBarModule,
     MatSelectModule,
     MatTooltipModule,
-    RouterLink
+    RouterLink,
   ],
   templateUrl: './import-animateurs-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImportAnimateursPage {
   private readonly animateursApi = inject(AnimateursApi);
@@ -85,7 +93,9 @@ export class ImportAnimateursPage {
   protected readonly colonnes = computed(() => this.rapport()?.columns ?? []);
 
   /** True once a file has been read and the server answered at least once. */
-  protected readonly fichierCharge = computed(() => this.contenu() !== '' && this.rapport() !== null);
+  protected readonly fichierCharge = computed(
+    () => this.contenu() !== '' && this.rapport() !== null,
+  );
 
   /**
    * A full replacement over a file that still has a rejected row is refused by
@@ -95,7 +105,7 @@ export class ImportAnimateursPage {
    * belongs on the button too.
    */
   protected readonly remplacementBloque = computed(
-    () => this.remplacerAnimateurs() && (this.rapport()?.rejected ?? 0) > 0
+    () => this.remplacerAnimateurs() && (this.rapport()?.rejected ?? 0) > 0,
   );
 
   protected readonly peutImporter = computed(
@@ -106,7 +116,7 @@ export class ImportAnimateursPage {
       (this.rapport()?.accepted ?? 0) > 0 &&
       !this.remplacementBloque() &&
       !this.analyseEnCours() &&
-      !this.importEnCours()
+      !this.importEnCours(),
   );
 
   protected readonly classeAction = classeAction;
@@ -259,7 +269,7 @@ export class ImportAnimateursPage {
       : $localize`:@@importCsv.confirmer.ajout:Importer ${accepted}:acceptees: ligne(s) ? Les animateurs absents du fichier sont conservés.`;
     const confirme = await this.confirm.ask({
       title: $localize`:@@importCsv.confirmer.titre:Confirmer l'import`,
-      message: question
+      message: question,
     });
     if (!confirme) {
       return;
@@ -273,7 +283,7 @@ export class ImportAnimateursPage {
       this.notifications.notify({
         title: $localize`:@@importCsv.succes.titre:Import terminé`,
         message: $localize`:@@importCsv.succes.message:${applique.created}:creations: fiche(s) créée(s), ${applique.updated}:maj: mise(s) à jour, ${applique.deleted}:supprimes: supprimée(s).`,
-        variant: 'success'
+        variant: 'success',
       });
     } catch (error) {
       this.erreur.set(errorMessage(error));
@@ -299,7 +309,7 @@ export class ImportAnimateursPage {
       content: this.contenu(),
       mapping: this.mapping(),
       replaceAnimateurs: this.remplacerAnimateurs(),
-      replaceJoursIndisponibles: this.remplacerJours()
+      replaceJoursIndisponibles: this.remplacerJours(),
     };
   }
 }

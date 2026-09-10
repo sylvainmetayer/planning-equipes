@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -42,10 +49,10 @@ const CADENCE_MS = 700;
     MatSelectModule,
     MatSliderModule,
     RouterLink,
-    CarteJourMap
+    CarteJourMap,
   ],
   templateUrl: './carte-jour-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CarteJourPage {
   protected readonly loading = signal(false);
@@ -65,7 +72,7 @@ export class CarteJourPage {
   private minuterie?: ReturnType<typeof setInterval>;
 
   protected readonly jours = computed<JourneeCarte[]>(() =>
-    buildJourneesCarte(this.planning()?.postes ?? [])
+    buildJourneesCarte(this.planning()?.postes ?? []),
   );
 
   /**
@@ -79,7 +86,7 @@ export class CarteJourPage {
       this.arreter();
       this.minutesSelectionnees.set(null);
       this.selection.set(null);
-    }
+    },
   });
   protected readonly jourCourant = this.navigation.current;
   protected readonly estPremierJour = this.navigation.isFirst;
@@ -103,7 +110,7 @@ export class CarteJourPage {
   });
 
   protected readonly instant = computed(() =>
-    instantCarte(this.jourCourant(), this.minutes(), this.emplacements())
+    instantCarte(this.jourCourant(), this.minutes(), this.emplacements()),
   );
 
   /** Changes with the day and nothing else: the map re-frames then, never on a cursor step. */
@@ -129,13 +136,14 @@ export class CarteJourPage {
     return $localize`:@@carteJour.nonSitues.count:${nonSitues}:nonSitues: stand(s) sans emplacement géolocalisé — absents de la carte`;
   });
 
-  protected readonly carteAriaLabel = computed(() =>
-    $localize`:@@carteJour.map.ariaLabel:Carte des emplacements à ${this.instant().heure}:heure:. La liste sous la carte en donne l'équivalent lisible.`
+  protected readonly carteAriaLabel = computed(
+    () =>
+      $localize`:@@carteJour.map.ariaLabel:Carte des emplacements à ${this.instant().heure}:heure:. La liste sous la carte en donne l'équivalent lisible.`,
   );
 
   /** True as soon as the cursor left the day's opening, or a place was picked. */
   protected readonly viewChanged = computed(
-    () => this.minutes() !== (this.jourCourant()?.debutMinutes ?? 0) || this.selection() !== null
+    () => this.minutes() !== (this.jourCourant()?.debutMinutes ?? 0) || this.selection() !== null,
   );
 
   protected readonly jourPrecedentLabel = $localize`:@@carteJour.previousDay:Jour précédent`;
@@ -159,7 +167,7 @@ export class CarteJourPage {
       const courant = this.jourCourant();
       return {
         jour: this.navigation.queryParam(),
-        t: courant && this.minutes() !== courant.debutMinutes ? String(this.minutes()) : null
+        t: courant && this.minutes() !== courant.debutMinutes ? String(this.minutes()) : null,
       };
     });
     // The replay must not outlive the page: a page left with the cursor
@@ -175,7 +183,7 @@ export class CarteJourPage {
         this.planningState.loadForDisplay(),
         // Coordinates and empty places only: a missing referential degrades the
         // map to what the plan itself carries rather than failing the page.
-        this.analysesApi.emplacements().catch(() => [])
+        this.analysesApi.emplacements().catch(() => []),
       ]);
       this.planning.set(planning);
       this.emplacements.set(emplacements);

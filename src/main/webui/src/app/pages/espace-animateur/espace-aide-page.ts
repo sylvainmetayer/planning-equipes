@@ -27,7 +27,7 @@ import { EspaceAideCible, buildEspaceAideSections } from './espace-aide-content'
   selector: 'app-espace-aide-page',
   imports: [RouterLink, MatButtonModule, MatCardModule, MatExpansionModule, MatIconModule],
   templateUrl: './espace-aide-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EspaceAidePage {
   private readonly espace = inject(EspaceAnimateurService);

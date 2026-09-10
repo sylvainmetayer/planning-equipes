@@ -26,10 +26,16 @@ function setUp(queryParams: Record<string, string>) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes: [] })) } },
+      {
+        provide: PlanningStateService,
+        useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes: [] })) },
+      },
       { provide: Location, useValue: { path: () => '/calendar', replaceState } },
-      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
-    ]
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+      },
+    ],
   });
   const fixture = TestBed.createComponent(CalendarMonthPage);
   return { fixture, replaceState, page: fixture.componentInstance as unknown as PageInternals };
@@ -67,12 +73,19 @@ describe('CalendarMonthPage query-param sync', () => {
   });
 
   it('writes the current state back to the URL (replacing, not pushing history)', async () => {
-    const { fixture, replaceState } = setUp({ month: '2026-07', date: '2026-07-10', animateur: 'A1', stand: 'S1' });
+    const { fixture, replaceState } = setUp({
+      month: '2026-07',
+      date: '2026-07-10',
+      animateur: 'A1',
+      stand: 'S1',
+    });
 
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(replaceState).toHaveBeenCalledWith('/calendar?month=2026-07&date=2026-07-10&animateur=A1&stand=S1');
+    expect(replaceState).toHaveBeenCalledWith(
+      '/calendar?month=2026-07&date=2026-07-10&animateur=A1&stand=S1',
+    );
   });
 
   it('clears animateur/stand from the URL (null, not "ALL") once filters are reset', async () => {

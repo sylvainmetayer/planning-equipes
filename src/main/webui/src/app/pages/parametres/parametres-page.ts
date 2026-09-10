@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -77,10 +85,10 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     FeasibilityBanner,
     OutputPanel,
     ParametresNotificationsPanel,
-    StatusMessage
+    StatusMessage,
   ],
   templateUrl: './parametres-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ParametresPage {
   /** Dump named after the deployment, so two instances' exports never collide in a downloads folder. */
@@ -113,7 +121,8 @@ export class ParametresPage {
   protected readonly transferLocked = computed(() => this.transferBusy() || this.solverBusy());
 
   private readonly sqlInput = viewChild.required<ElementRef<HTMLInputElement>>('sqlInput');
-  private readonly scenarioFileInput = viewChild.required<ElementRef<HTMLInputElement>>('scenarioFileInput');
+  private readonly scenarioFileInput =
+    viewChild.required<ElementRef<HTMLInputElement>>('scenarioFileInput');
   /** Pre-solve diagnostic shown by the banner at the top of the page. */
   protected readonly problemes = inject(ProblemesStore);
   protected readonly editions = inject(EditionStore);
@@ -160,7 +169,7 @@ export class ParametresPage {
       this.adminApi
         .mailConfig()
         .then((config) => this.adminEmail.set(config.adminEmail))
-        .catch(() => this.adminEmail.set(null))
+        .catch(() => this.adminEmail.set(null)),
     ]);
   }
 
@@ -173,7 +182,7 @@ export class ParametresPage {
           ? $localize`:@@parametres.mailFin.active:Notification de fin de résolution activée`
           : $localize`:@@parametres.mailFin.desactive:Notification de fin de résolution désactivée`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     } catch (error) {
       this.output.set(errorPrefix(error));
@@ -195,7 +204,7 @@ export class ParametresPage {
       }
     } catch (error) {
       this.output.set(
-        $localize`:@@dataSetup.scenarioListError:Erreur lors du chargement de la liste des scénarios : ${errorMessage(error)}:message:`
+        $localize`:@@dataSetup.scenarioListError:Erreur lors du chargement de la liste des scénarios : ${errorMessage(error)}:message:`,
       );
     }
   }
@@ -213,7 +222,7 @@ export class ParametresPage {
     this.output.set(
       name
         ? $localize`:@@dataSetup.loadingScenario:Chargement du scénario « ${name}:name: »...`
-        : $localize`:@@dataSetup.loadingSample:Chargement du planning d'exemple...`
+        : $localize`:@@dataSetup.loadingSample:Chargement du planning d'exemple...`,
     );
     try {
       const outcome = await this.scenarioImport.importer({ kind: 'name', name });
@@ -222,9 +231,12 @@ export class ParametresPage {
         return;
       }
       await this.chargerParametresDecoupage();
-      this.output.set(this.recapImport(outcome.result,
-        $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
-      ));
+      this.output.set(
+        this.recapImport(
+          outcome.result,
+          $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`,
+        ),
+      );
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {
@@ -236,7 +248,9 @@ export class ParametresPage {
   // it never touches the dataset, only reads it.
   protected async onExportScenario(): Promise<void> {
     this.exporting.set(true);
-    this.output.set($localize`:@@dataSetup.exportingScenario:Export des données actuelles en fichier scénario...`);
+    this.output.set(
+      $localize`:@@dataSetup.exportingScenario:Export des données actuelles en fichier scénario...`,
+    );
     try {
       const result = await this.planningApi.exportScenario();
       this.output.set(result);
@@ -258,17 +272,26 @@ export class ParametresPage {
     }
     const content = await file.text();
     this.scenarioFileImporting.set(true);
-    this.output.set($localize`:@@dataSetup.importingScenarioFile:Import de ${file.name}:fileName: en cours...`);
+    this.output.set(
+      $localize`:@@dataSetup.importingScenarioFile:Import de ${file.name}:fileName: en cours...`,
+    );
     try {
-      const outcome = await this.scenarioImport.importer({ kind: 'file', fileName: file.name, content });
+      const outcome = await this.scenarioImport.importer({
+        kind: 'file',
+        fileName: file.name,
+        content,
+      });
       if (outcome.status === 'cancelled') {
         this.output.set('');
         return;
       }
       await this.chargerParametresDecoupage();
-      this.output.set(this.recapImport(outcome.result,
-        $localize`:@@dataSetup.scenarioFileImported:Scénario ${file.name}:fileName: importé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
-      ));
+      this.output.set(
+        this.recapImport(
+          outcome.result,
+          $localize`:@@dataSetup.scenarioFileImported:Scénario ${file.name}:fileName: importé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`,
+        ),
+      );
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {
@@ -286,9 +309,11 @@ export class ParametresPage {
       ? $localize`:@@parametres.recap.editionCreee:Édition « ${nom}:edition: » créée : les données du scénario y ont été importées.`
       : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
     const courante = this.editions.courant();
-    const ailleurs = courante && courante.id !== result.editionId
-      ? ' ' + $localize`:@@parametres.recap.basculer:Vous consultez actuellement « ${courante.nom}:courante: » : basculez d'édition (bandeau en haut de l'écran) pour voir les données importées.`
-      : '';
+    const ailleurs =
+      courante && courante.id !== result.editionId
+        ? ' ' +
+          $localize`:@@parametres.recap.basculer:Vous consultez actuellement « ${courante.nom}:courante: » : basculez d'édition (bandeau en haut de l'écran) pour voir les données importées.`
+        : '';
     return destination + ailleurs;
   }
 
@@ -308,7 +333,8 @@ export class ParametresPage {
     if (!p) {
       return '';
     }
-    const heures = (minutes: number) => (minutes / 60).toFixed(1).replace('.0', '').replace('.', ',');
+    const heures = (minutes: number) =>
+      (minutes / 60).toFixed(1).replace('.0', '').replace('.', ',');
     const families =
       p.nombreFamillesDecalage > 1
         ? $localize`:@@decoupage.apercu.familles:, réparties sur ${p.nombreFamillesDecalage}:count: grilles décalées`
@@ -348,7 +374,7 @@ export class ParametresPage {
       this.notifications.notify({
         title: $localize`:@@decoupage.parametresSaved:Paramètres de découpage enregistrés.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     } catch (error) {
       this.crud.reportError(error);
@@ -367,7 +393,10 @@ export class ParametresPage {
    * has nothing to protect. A silent degradation worth a visible sentence.
    */
   protected readonly alerteNinjaManquant = computed(() => {
-    if (this.store.typologies().length === 0 || this.store.typologies().some((typologie) => typologie.ninja)) {
+    if (
+      this.store.typologies().length === 0 ||
+      this.store.typologies().some((typologie) => typologie.ninja)
+    ) {
       return '';
     }
     return $localize`:@@typologies.ninjaManquant:Aucune typologie « ninja » n'est désignée. Sans elle, aucun animateur n'est polyvalent : personne ne peut être affecté en dehors de ses compétences, et la contrainte « préserver un polyvalent libre par créneau » (votre marge de manœuvre en cas d'absence de dernière minute) ne protège plus rien. Choisissez la typologie qui joue ce rôle dans le sélecteur ci-dessous.`;
@@ -375,7 +404,7 @@ export class ParametresPage {
 
   /** Id of the typologie currently flagged ninja — at most one, `null` when none. */
   protected readonly typologieNinjaId = computed(
-    () => this.store.typologies().find((typologie) => typologie.ninja)?.id ?? null
+    () => this.store.typologies().find((typologie) => typologie.ninja)?.id ?? null,
   );
 
   /**
@@ -432,7 +461,7 @@ export class ParametresPage {
           ? $localize`:@@parametres.sauvegarde.reprise:Sauvegarde automatique réactivée`
           : $localize`:@@parametres.sauvegarde.suspendue:Sauvegarde automatique suspendue`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     } catch (error) {
       this.output.set(errorPrefix(error));
@@ -478,14 +507,16 @@ export class ParametresPage {
       title: $localize`:@@dataTransfer.replaySqlTitle:Rejouer ce dump SQL ?`,
       message: $localize`:@@dataTransfer.replaySqlPromptMessage:${file.name}:fileName: remplace la base de données entière : toutes les éditions sont écrasées, pas seulement l'édition courante. L'opération est irréversible.`,
       valeurAttendue: REPLACE_KEYWORD,
-      confirmLabel: $localize`:@@dataTransfer.replaySqlAction:Remplacer la base`
+      confirmLabel: $localize`:@@dataTransfer.replaySqlAction:Remplacer la base`,
     });
     if (!confirmed) {
       return;
     }
     await this.instantane.proposer($localize`:@@dataSetup.action.importSql:rejouer un dump SQL`);
     this.transferBusy.set(true);
-    this.output.set($localize`:@@dataTransfer.importing:Import de ${file.name}:fileName: en cours...`);
+    this.output.set(
+      $localize`:@@dataTransfer.importing:Import de ${file.name}:fileName: en cours...`,
+    );
     try {
       const summary = await this.adminApi.importDatabase(await file.text());
       await this.scenarioImport.rechargerApresImport();
@@ -505,7 +536,7 @@ export class ParametresPage {
     if (this.editionLocked()) {
       const description = this.jobs.activeJobDescription();
       this.output.set(
-        $localize`:@@dataSetup.lockedByJob:${description}:description: La configuration des données est verrouillée jusqu'à la fin.`
+        $localize`:@@dataSetup.lockedByJob:${description}:description: La configuration des données est verrouillée jusqu'à la fin.`,
       );
       return true;
     }
@@ -521,7 +552,6 @@ export class ParametresPage {
   // same reason: it is about to drive the decision to launch a solve.
 }
 
-
 // Reads the picked file and clears the input so the same file can be picked twice.
 function takeFile(event: Event): File | null {
   const input = event.target as HTMLInputElement;
@@ -529,4 +559,3 @@ function takeFile(event: Event): File | null {
   input.value = '';
   return file;
 }
-

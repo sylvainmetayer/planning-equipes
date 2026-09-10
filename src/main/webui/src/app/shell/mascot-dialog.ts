@@ -51,7 +51,7 @@ import { BRANDING } from '../core/branding';
       }
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MascotDialog {
   protected readonly branding = inject(BRANDING);

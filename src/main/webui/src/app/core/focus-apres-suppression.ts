@@ -18,12 +18,16 @@ import { Injector, afterNextRender } from '@angular/core';
  * @param selecteur what to focus instead — typically the "add a row" button of
  *                  the same section, which is the natural next action
  */
-export function focusApresSuppression(hote: HTMLElement, selecteur: string, injector: Injector): void {
+export function focusApresSuppression(
+  hote: HTMLElement,
+  selecteur: string,
+  injector: Injector,
+): void {
   afterNextRender(
     () => {
       const target = hote.querySelector<HTMLElement>(selecteur);
       target?.focus();
     },
-    { injector }
+    { injector },
   );
 }

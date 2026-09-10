@@ -18,7 +18,7 @@ function cause(overrides: Partial<CauseInfaisabilite> = {}): CauseInfaisabilite 
     demande: 6,
     capacite: 4,
     manque: 2,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -28,7 +28,7 @@ function report(causes: CauseInfaisabilite[]): FeasibilityReport {
     manqueAnimateurs: 2,
     causes,
     totalCauses: causes.length,
-    message: 'Planning non réalisable en l’état.'
+    message: 'Planning non réalisable en l’état.',
   };
 }
 
@@ -52,9 +52,9 @@ function constraintsView(): ConstraintsView {
         poids: 1,
         score: '-2hard/0medium/0soft',
         matchCount: 2,
-        violations: ['Alice : 52 h']
-      }
-    ]
+        violations: ['Alice : 52 h'],
+      },
+    ],
   };
 }
 
@@ -80,7 +80,7 @@ describe('ProblemesStore', () => {
   beforeEach(() => {
     api = new FakeApi();
     TestBed.configureTestingModule({
-      providers: [ProblemesStore, { provide: ApiService, useValue: api }]
+      providers: [ProblemesStore, { provide: ApiService, useValue: api }],
     });
     store = TestBed.inject(ProblemesStore);
   });
@@ -116,10 +116,13 @@ describe('ProblemesStore', () => {
     it('merges both sources into one ranked list', async () => {
       api.responses = {
         '/api/feasibility': report([cause({ severite: 'CRITIQUE' })]),
-        '/api/constraints': constraintsView()
+        '/api/constraints': constraintsView(),
       };
       await store.reload();
-      expect(store.problemes().map((probleme) => probleme.source)).toEqual(['FAISABILITE', 'CONTRAINTE']);
+      expect(store.problemes().map((probleme) => probleme.source)).toEqual([
+        'FAISABILITE',
+        'CONTRAINTE',
+      ]);
       expect(store.comptage()).toEqual({ bloquants: 2, avertissements: 0, mineurs: 0, total: 2 });
     });
 
@@ -128,32 +131,42 @@ describe('ProblemesStore', () => {
         '/api/feasibility': report([]),
         '/api/constraints': { ...constraintsView(), contraintes: [] },
         '/api/pauses': {
-      pauseSurPoste: true,
-      journeesAnalysees: 1,
-      pausesDues: 1,
-      relaisManquants: 1,
-      message: '',
-      journees: [
-        {
-          animateurId: 'alice',
-          nomComplet: 'Alice Martin',
-          mineur: false,
-          date: '2026-08-01',
-          jour: 1,
-          sequences: [
+          pauseSurPoste: true,
+          journeesAnalysees: 1,
+          pausesDues: 1,
+          relaisManquants: 1,
+          message: '',
+          journees: [
             {
-              debut: '13:00:00',
-              fin: '20:00:00',
-              minutes: 420,
-              pausesDues: [
-                { debut: '19:00:00', fin: '19:20:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'tir', standNom: 'Tir', relais: [], relaisDisponible: false, simultanee: false }
-              ]
-            }
+              animateurId: 'alice',
+              nomComplet: 'Alice Martin',
+              mineur: false,
+              date: '2026-08-01',
+              jour: 1,
+              sequences: [
+                {
+                  debut: '13:00:00',
+                  fin: '20:00:00',
+                  minutes: 420,
+                  pausesDues: [
+                    {
+                      debut: '19:00:00',
+                      fin: '19:20:00',
+                      heureLimite: '19:00:00',
+                      dureeMinutes: 20,
+                      standId: 'tir',
+                      standNom: 'Tir',
+                      relais: [],
+                      relaisDisponible: false,
+                      simultanee: false,
+                    },
+                  ],
+                },
+              ],
+              pausesPlanifiees: [],
+            },
           ],
-          pausesPlanifiees: []
-        }
-      ]
-    }
+        },
       };
       await store.reload();
       expect(store.pauses()?.relaisManquants).toBe(1);
@@ -167,40 +180,56 @@ describe('ProblemesStore', () => {
       api.responses = {
         '/api/feasibility': report([]),
         '/api/constraints': { ...constraintsView(), contraintes: [] },
-        '/api/pauses': { ...{
-      pauseSurPoste: true,
-      journeesAnalysees: 1,
-      pausesDues: 1,
-      relaisManquants: 1,
-      message: '',
-      journees: [
-        {
-          animateurId: 'alice',
-          nomComplet: 'Alice Martin',
-          mineur: false,
-          date: '2026-08-01',
-          jour: 1,
-          sequences: [
-            {
-              debut: '13:00:00',
-              fin: '20:00:00',
-              minutes: 420,
-              pausesDues: [
-                { debut: '19:00:00', fin: '19:20:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'tir', standNom: 'Tir', relais: [], relaisDisponible: false, simultanee: false }
-              ]
-            }
-          ],
-          pausesPlanifiees: []
-        }
-      ]
-    }, relaisManquants: 0 }
+        '/api/pauses': {
+          ...{
+            pauseSurPoste: true,
+            journeesAnalysees: 1,
+            pausesDues: 1,
+            relaisManquants: 1,
+            message: '',
+            journees: [
+              {
+                animateurId: 'alice',
+                nomComplet: 'Alice Martin',
+                mineur: false,
+                date: '2026-08-01',
+                jour: 1,
+                sequences: [
+                  {
+                    debut: '13:00:00',
+                    fin: '20:00:00',
+                    minutes: 420,
+                    pausesDues: [
+                      {
+                        debut: '19:00:00',
+                        fin: '19:20:00',
+                        heureLimite: '19:00:00',
+                        dureeMinutes: 20,
+                        standId: 'tir',
+                        standNom: 'Tir',
+                        relais: [],
+                        relaisDisponible: false,
+                        simultanee: false,
+                      },
+                    ],
+                  },
+                ],
+                pausesPlanifiees: [],
+              },
+            ],
+          },
+          relaisManquants: 0,
+        },
       };
       await store.reload();
       expect(store.alertePausesSansRelais()).toBe('');
       expect(store.problemes()).toEqual([]);
 
       // A missing endpoint shortens the list; it is never the screen's failure.
-      api.responses = { '/api/feasibility': report([]), '/api/constraints': { ...constraintsView(), contraintes: [] } };
+      api.responses = {
+        '/api/feasibility': report([]),
+        '/api/constraints': { ...constraintsView(), contraintes: [] },
+      };
       await store.reload();
       expect(store.pauses()).toBeNull();
       expect(store.alertePausesSansRelais()).toBe('');
@@ -215,7 +244,7 @@ describe('ProblemesStore', () => {
     it('still exposes the source that answered when the other one fails', async () => {
       api.responses = {
         '/api/feasibility': new Error('HTTP 404'),
-        '/api/constraints': constraintsView()
+        '/api/constraints': constraintsView(),
       };
       await store.reload();
       expect(store.report()).toBeNull();
@@ -241,14 +270,16 @@ describe('ProblemesStore', () => {
             severite: 'CRITIQUE',
             message: 'C1 et C2 se contredisent.',
             standIds: [],
-            contrainteIds: ['C1', 'C2']
-          })
-        ])
+            contrainteIds: ['C1', 'C2'],
+          }),
+        ]),
       };
       await store.reloadFeasibility();
       // Both are badged: which one to delete is the user's arbitration.
       expect([...store.causeParContrainteAdHocId().keys()]).toEqual(['C1', 'C2']);
-      expect(store.causeParContrainteAdHocId().get('C2')?.message).toBe('C1 et C2 se contredisent.');
+      expect(store.causeParContrainteAdHocId().get('C2')?.message).toBe(
+        'C1 et C2 se contredisent.',
+      );
     });
 
     it('indexes every stand named by a cause', async () => {
@@ -263,8 +294,8 @@ describe('ProblemesStore', () => {
       api.responses = {
         '/api/feasibility': report([
           cause({ severite: 'CRITIQUE', message: 'la plus grave' }),
-          cause({ severite: 'ELEVE', message: 'la moins grave' })
-        ])
+          cause({ severite: 'ELEVE', message: 'la moins grave' }),
+        ]),
       };
       await store.reloadFeasibility();
       expect(store.causeParStandId().get('tir')?.message).toBe('la plus grave');
@@ -272,7 +303,10 @@ describe('ProblemesStore', () => {
 
     it('keys créneaux by their stringified id and skips causes without one', async () => {
       api.responses = {
-        '/api/feasibility': report([cause({ creneauId: '12' }), cause({ creneauId: null, date: null })])
+        '/api/feasibility': report([
+          cause({ creneauId: '12' }),
+          cause({ creneauId: null, date: null }),
+        ]),
       };
       await store.reloadFeasibility();
       expect([...store.causeParCreneauId().keys()]).toEqual(['12']);
@@ -283,8 +317,8 @@ describe('ProblemesStore', () => {
       api.responses = {
         '/api/feasibility': report([
           cause({ severite: 'ELEVE', date: '2026-08-01' }),
-          cause({ severite: 'CRITIQUE', date: '2026-08-02' })
-        ])
+          cause({ severite: 'CRITIQUE', date: '2026-08-02' }),
+        ]),
       };
       await store.reloadFeasibility();
       expect([...store.causeCritiqueParDate().keys()]).toEqual(['2026-08-02']);

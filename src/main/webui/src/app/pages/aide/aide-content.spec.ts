@@ -85,7 +85,7 @@ describe('buildHelpSections', () => {
     expect(text).toContain('2. Saisir les référentiels');
     expect(text).toContain('3. Ouvrir la collecte');
     expect(text.indexOf('2. Saisir les référentiels')).toBeLessThan(
-      text.indexOf('3. Ouvrir la collecte')
+      text.indexOf('3. Ouvrir la collecte'),
     );
   });
 
@@ -101,7 +101,7 @@ describe('buildHelpSections', () => {
     expect(text).toContain('planning publié');
     // The two credentials are rotated separately server-side; saying otherwise
     // would send an organiser to regenerate the wrong one.
-    expect(text).toContain("ne coupe pas son abonnement");
+    expect(text).toContain('ne coupe pas son abonnement');
     // And it is findable by the words somebody would actually type.
     const ids = filterHelpSections(sections, 'agenda').map((found) => found.id);
     expect(ids).toContain('foire-au-planning');
@@ -167,7 +167,12 @@ describe('buildHelpSections', () => {
     const text = textOf(section as HelpSection);
 
     // The four types, each with what it actually covers.
-    for (const type of ['Indisponibilité forcée', 'Affectation forcée', 'Incompatibilité', 'Affinité']) {
+    for (const type of [
+      'Indisponibilité forcée',
+      'Affectation forcée',
+      'Incompatibilité',
+      'Affinité',
+    ]) {
       expect(text).toContain(type);
     }
     // The traps: any-one-of semantics, slot-not-stand, the empty scope, the
@@ -175,7 +180,7 @@ describe('buildHelpSections', () => {
     expect(text).toContain('jamais un « tous »');
     expect(text).toContain('Elle porte sur le créneau, pas sur le stand');
     expect(text).toContain('créneau supprimé');
-    expect(text).toContain('refusés à l\'enregistrement');
+    expect(text).toContain("refusés à l'enregistrement");
     expect(text).toContain('Passent donc délibérément');
     expect(text).toContain('réenregistrer sous son propre identifiant');
   });
@@ -184,7 +189,9 @@ describe('buildHelpSections', () => {
     const section = sections.find((candidate) => candidate.id === 'ajustements-manuels')!;
     const callout = section.blocks.find((block) => block.kind === 'callout');
     expect(callout).toBeDefined();
-    expect(callout?.kind === 'callout' && callout.title).toBe('Ajustement manuel ou verrouillage ?');
+    expect(callout?.kind === 'callout' && callout.title).toBe(
+      'Ajustement manuel ou verrouillage ?',
+    );
     // Before the solve versus after it, a rule versus a freeze — and the
     // practical answer, since that is what a reader came for.
     const text = callout?.kind === 'callout' ? callout.text : '';
@@ -192,14 +199,21 @@ describe('buildHelpSections', () => {
     expect(text).toContain('déjà calculé');
     expect(text).toContain('ne gèle jamais une place vide');
     expect(text).toContain('En pratique');
-    expect(section.blocks.indexOf(callout!)).toBeLessThan(section.blocks.findIndex((block) => block.kind === 'definitions'));
+    expect(section.blocks.indexOf(callout!)).toBeLessThan(
+      section.blocks.findIndex((block) => block.kind === 'definitions'),
+    );
     // The lock definition of the solver section points back at it.
     const config = sections.find((each) => each.id === 'configuration-solveur')!;
-    const verrous = config.blocks.flatMap((b) => (b.kind === 'definitions' ? b.items : [])).find((d) => d.term === 'Verrouillages')!;
+    const verrous = config.blocks
+      .flatMap((b) => (b.kind === 'definitions' ? b.items : []))
+      .find((d) => d.term === 'Verrouillages')!;
     expect(verrous.text).toContain('Ajustement manuel ou verrouillage ?');
     // And the search finds the section by either word.
     for (const mot of ['verrouillage', 'fige', 'ajustement']) {
-      expect(filterHelpSections(sections, mot).map((each) => each.id), mot).toContain('ajustements-manuels');
+      expect(
+        filterHelpSections(sections, mot).map((each) => each.id),
+        mot,
+      ).toContain('ajustements-manuels');
     }
   });
 });
@@ -227,7 +241,9 @@ describe('filterHelpSections', () => {
   });
 
   it('ignores case and diacritics', () => {
-    expect(filterHelpSections(sections, 'DECOUPAGE')).toEqual(filterHelpSections(sections, 'découpage'));
+    expect(filterHelpSections(sections, 'DECOUPAGE')).toEqual(
+      filterHelpSections(sections, 'découpage'),
+    );
   });
 
   it('requires every term of a multi-word query', () => {
@@ -245,7 +261,6 @@ describe('filterHelpSections', () => {
   it('returns nothing rather than everything when no section matches', () => {
     expect(filterHelpSections(sections, 'zzzzz')).toHaveLength(0);
   });
-
 });
 
 describe('parametrer-pour-un-planning-complet', () => {
@@ -254,8 +269,12 @@ describe('parametrer-pour-un-planning-complet', () => {
 
   it('sits between the solver configuration and the results', () => {
     const ids = sections.map((each) => each.id);
-    expect(ids.indexOf('parametrer-pour-un-planning-complet')).toBe(ids.indexOf('configuration-solveur') + 1);
-    expect(ids.indexOf('parametrer-pour-un-planning-complet')).toBe(ids.indexOf('lire-les-resultats') - 1);
+    expect(ids.indexOf('parametrer-pour-un-planning-complet')).toBe(
+      ids.indexOf('configuration-solveur') + 1,
+    );
+    expect(ids.indexOf('parametrer-pour-un-planning-complet')).toBe(
+      ids.indexOf('lire-les-resultats') - 1,
+    );
   });
 
   it('names the three levers and the order to check them in', () => {
@@ -267,37 +286,62 @@ describe('parametrer-pour-un-planning-complet', () => {
             ? block.items
             : block.kind === 'callout'
               ? [block.title + ' ' + block.text]
-              : block.items.map((d) => d.term + ' ' + d.text)
+              : block.items.map((d) => d.term + ' ' + d.text),
       )
       .join('\n');
     expect(text).toContain('effectif par fenêtre');
     expect(text).toContain('pause minimale entre vacations');
     expect(text).toContain('Pause légale prise sur le poste');
-    expect(text).toContain('lu d\'un tenant');
+    expect(text).toContain("lu d'un tenant");
     const etapes = section.blocks.find((block) => block.kind === 'list')!;
-    expect(etapes.kind === 'list' && etapes.items.map((item) => item.slice(0, 2))).toEqual(['1.', '2.', '3.', '4.', '5.']);
+    expect(etapes.kind === 'list' && etapes.items.map((item) => item.slice(0, 2))).toEqual([
+      '1.',
+      '2.',
+      '3.',
+      '4.',
+      '5.',
+    ]);
     expect(etapes.kind === 'list' && etapes.items[0]).toContain('Besoin en animateurs');
     expect(etapes.kind === 'list' && etapes.items[4]).toContain('Pauses');
   });
 
   it('links every screen the guide names, and only real routes', () => {
     expect(section.links.map((link) => link.route)).toEqual([
-      '/stands', '/ouvertures', '/creneaux', '/constraints', '/staffing', '/problemes', '/fragilite', '/pauses'
+      '/stands',
+      '/ouvertures',
+      '/creneaux',
+      '/constraints',
+      '/staffing',
+      '/problemes',
+      '/fragilite',
+      '/pauses',
     ]);
   });
 
   it('is found by the words an organiser would type', () => {
-    for (const mot of ['effectif par fenêtre', 'pause sur le poste', 'relève de midi', 'le moindre écart']) {
-      expect(filterHelpSections(sections, mot).map((each) => each.id), mot).toContain('parametrer-pour-un-planning-complet');
+    for (const mot of [
+      'effectif par fenêtre',
+      'pause sur le poste',
+      'relève de midi',
+      'le moindre écart',
+    ]) {
+      expect(
+        filterHelpSections(sections, mot).map((each) => each.id),
+        mot,
+      ).toContain('parametrer-pour-un-planning-complet');
     }
   });
 
   it('tells the stand and legal definitions about the new fields, without duplicating the guide', () => {
     const data = sections.find((each) => each.id === 'donnees')!;
-    const stands = data.blocks.flatMap((b) => (b.kind === 'definitions' ? b.items : [])).find((d) => d.term === 'Stands')!;
+    const stands = data.blocks
+      .flatMap((b) => (b.kind === 'definitions' ? b.items : []))
+      .find((d) => d.term === 'Stands')!;
     expect(stands.text).toContain('son propre effectif');
     const config = sections.find((each) => each.id === 'configuration-solveur')!;
-    const legaux = config.blocks.flatMap((b) => (b.kind === 'definitions' ? b.items : [])).find((d) => d.term === 'Paramètres légaux')!;
+    const legaux = config.blocks
+      .flatMap((b) => (b.kind === 'definitions' ? b.items : []))
+      .find((d) => d.term === 'Paramètres légaux')!;
     expect(legaux.text).toContain('pause légale prise sur le poste');
     expect(legaux.text).toContain('pause minimale entre deux vacations');
     // The measured figure lives in the guide only.

@@ -19,8 +19,11 @@ describe('BrandingTitleStrategy', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: BRANDING, useValue: { productName, organisation: '', logoUrl: '', accentColor: '' } }
-      ]
+        {
+          provide: BRANDING,
+          useValue: { productName, organisation: '', logoUrl: '', accentColor: '' },
+        },
+      ],
     });
     return TestBed.inject(BrandingTitleStrategy);
   }
@@ -49,7 +52,7 @@ describe('BrandingTitleStrategy', () => {
 
   // Une route sans titre (les redirections héritées) ne doit pas produire un
   // onglet ouvrant sur un tiret orphelin.
-  it('affiche le seul nom du produit quand la route n\'a pas de titre', () => {
+  it("affiche le seul nom du produit quand la route n'a pas de titre", () => {
     const strategy = buildStrategy('Planning Bénévoles');
 
     titreDePage(strategy, undefined);

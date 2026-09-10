@@ -38,14 +38,17 @@ try {
 
 const found = [...html.matchAll(INLINE_HANDLER)].map((match) => {
   const start = Math.max(0, match.index - 90);
-  return html.slice(start, match.index + 60).replace(/\s+/g, ' ').trim();
+  return html
+    .slice(start, match.index + 60)
+    .replace(/\s+/g, ' ')
+    .trim();
 });
 
 if (found.length > 0) {
   console.error(
     `check-csp-index : ${found.length} gestionnaire(s) d'évènement inline dans ${INDEX}.\n` +
       "La CSP servie par l'application les bloque, sans erreur visible : la ressource\n" +
-      'concernée est simplement ignorée. Voir planning.securite.csp dans application.properties.\n'
+      'concernée est simplement ignorée. Voir planning.securite.csp dans application.properties.\n',
   );
   found.forEach((extrait) => console.error(`  … ${extrait} …`));
   process.exit(1);

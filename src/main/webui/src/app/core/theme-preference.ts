@@ -33,7 +33,9 @@ export type ResolvedScheme = 'light' | 'dark';
  * written by an older version — reads as `system`: following the machine is
  * the harmless default, and it is what a first-time visitor gets.
  */
-export function readThemePreference(storage: Pick<Storage, 'getItem' | 'setItem'> | null): ThemePreference {
+export function readThemePreference(
+  storage: Pick<Storage, 'getItem' | 'setItem'> | null,
+): ThemePreference {
   if (!storage) {
     return 'system';
   }
@@ -53,7 +55,7 @@ export function readThemePreference(storage: Pick<Storage, 'getItem' | 'setItem'
  */
 export function writeThemePreference(
   storage: Pick<Storage, 'getItem' | 'setItem'> | null,
-  preference: ThemePreference
+  preference: ThemePreference,
 ): void {
   if (!storage) {
     return;
@@ -109,7 +111,10 @@ export function darkSchemeQuery(): MediaQueryList | null {
 }
 
 /** What is actually painted, given the preference and what the machine asks for. */
-export function resolveScheme(preference: ThemePreference, systemPrefersDark: boolean): ResolvedScheme {
+export function resolveScheme(
+  preference: ThemePreference,
+  systemPrefersDark: boolean,
+): ResolvedScheme {
   if (preference !== 'system') {
     return preference;
   }

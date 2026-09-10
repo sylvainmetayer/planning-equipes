@@ -22,7 +22,9 @@ test.afterAll(async () => {
 });
 
 test.describe('fiche animateur', () => {
-  test('créer, retrouver, consulter, puis supprimer un animateur avec e-mail', async ({ browser }) => {
+  test('créer, retrouver, consulter, puis supprimer un animateur avec e-mail', async ({
+    browser,
+  }) => {
     test.slow();
     const page = await pageAdmin(browser, admin);
     await page.goto('/animateurs');
@@ -45,7 +47,9 @@ test.describe('fiche animateur', () => {
 
     // The espace link exists right away: the store reload brought the
     // database-generated token back, so the copy button is enabled.
-    await expect(ligne.getByRole('button', { name: 'Copier le lien de son espace animateur' })).toBeEnabled();
+    await expect(
+      ligne.getByRole('button', { name: 'Copier le lien de son espace animateur' }),
+    ).toBeEnabled();
 
     // The consultation dialog shows the new fields.
     await ligne.getByRole('button', { name: 'Consulter le détail' }).click();
@@ -84,14 +88,14 @@ test.describe('fiche animateur', () => {
     const chevauchements = await dialog.evaluate((racine) => {
       const rectangles = Array.from(racine.querySelectorAll('mat-hint')).map((hint) => ({
         texte: (hint.textContent ?? '').trim().slice(0, 30),
-        boite: hint.getBoundingClientRect()
+        boite: hint.getBoundingClientRect(),
       }));
-      const voisins = Array.from(racine.querySelectorAll('mat-checkbox, .subform, .form-warning')).map(
-        (element) => ({
-          texte: (element.textContent ?? '').trim().slice(0, 30),
-          boite: element.getBoundingClientRect()
-        })
-      );
+      const voisins = Array.from(
+        racine.querySelectorAll('mat-checkbox, .subform, .form-warning'),
+      ).map((element) => ({
+        texte: (element.textContent ?? '').trim().slice(0, 30),
+        boite: element.getBoundingClientRect(),
+      }));
       const croise = (a: DOMRect, b: DOMRect) =>
         a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
       return rectangles

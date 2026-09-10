@@ -21,11 +21,13 @@ import { Emplacement, Stand } from '../../core/models';
 import { StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { StandBulkPatch } from './stand-bulk-edit';
 
-const EMPLACEMENTS: Emplacement[] = [{ id: 'hall', nom: 'Hall A', latitude: null, longitude: null }];
+const EMPLACEMENTS: Emplacement[] = [
+  { id: 'hall', nom: 'Hall A', latitude: null, longitude: null },
+];
 
 const TYPOLOGIES = [
   { id: 'ambiance', label: 'Ambiance' },
-  { id: 'expert', label: 'Expert' }
+  { id: 'expert', label: 'Expert' },
 ];
 
 function stand(id: string, overrides: Partial<Stand> = {}): Stand {
@@ -42,7 +44,7 @@ function stand(id: string, overrides: Partial<Stand> = {}): Stand {
     indisponibilites: [],
     ouvertures: [],
     horaires: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -66,14 +68,17 @@ function mount(stands: Stand[], options: { editingLocked?: boolean; saveMany?: n
           typologies: signal(TYPOLOGIES),
           creneaux: signal([]),
           emplacements: signal(EMPLACEMENTS),
-          stands: signal(tousLesStands)
-        }
+          stands: signal(tousLesStands),
+        },
       },
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: ReferenceCrudService, useValue: { saveMany } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { stands } }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: { stands } },
+    ],
   });
   return { fixture: TestBed.createComponent(StandBulkEditDialog), saveMany, close };
 }
@@ -83,7 +88,9 @@ function root(fixture: ComponentFixture<StandBulkEditDialog>): HTMLElement {
 }
 
 function controles(fixture: ComponentFixture<StandBulkEditDialog>): Element[] {
-  return Array.from(root(fixture).querySelectorAll('form input[matInput], form mat-select, form mat-checkbox'));
+  return Array.from(
+    root(fixture).querySelectorAll('form input[matInput], form mat-select, form mat-checkbox'),
+  );
 }
 
 /** See `stand-form-dialog.spec.ts`: the registration, not the `name` attribute, is what tells the truth. */
@@ -106,9 +113,11 @@ function nomAccessible(racine: HTMLElement, controle: Element): string {
 }
 
 /** The "Ajouter une règle d'horaire" button, or `undefined` while it is not offered. */
-function boutonAjouterHoraire(fixture: ComponentFixture<StandBulkEditDialog>): HTMLButtonElement | undefined {
+function boutonAjouterHoraire(
+  fixture: ComponentFixture<StandBulkEditDialog>,
+): HTMLButtonElement | undefined {
   return Array.from(root(fixture).querySelectorAll('button')).find((each) =>
-    each.textContent?.includes("Ajouter une règle d'horaire")
+    each.textContent?.includes("Ajouter une règle d'horaire"),
   );
 }
 
@@ -119,9 +128,11 @@ function submit(fixture: ComponentFixture<StandBulkEditDialog>): HTMLButtonEleme
 /** Writes into the dialog's patch signal the way a filled-in field would. */
 async function fill(
   fixture: ComponentFixture<StandBulkEditDialog>,
-  patch: Partial<StandBulkPatch>
+  patch: Partial<StandBulkPatch>,
 ): Promise<void> {
-  (fixture.componentInstance as unknown as { update(patch: Partial<StandBulkPatch>): void }).update(patch);
+  (fixture.componentInstance as unknown as { update(patch: Partial<StandBulkPatch>): void }).update(
+    patch,
+  );
   await fixture.whenStable();
 }
 
@@ -154,7 +165,9 @@ describe('StandBulkEditDialog', () => {
     const { fixture } = mount([stand('s1')]);
     await fixture.whenStable();
 
-    for (const champ of Array.from(root(fixture).querySelectorAll('form input[matInput], form mat-select'))) {
+    for (const champ of Array.from(
+      root(fixture).querySelectorAll('form input[matInput], form mat-select'),
+    )) {
       expect(nomAccessible(root(fixture), champ), champ.outerHTML.slice(0, 120)).not.toBe('');
     }
   });
@@ -166,7 +179,9 @@ describe('StandBulkEditDialog', () => {
     // Pinned one by one rather than merely "non-empty": a dropped `mat-label`
     // leaves Material naming the control from something else, so only the
     // expected wording catches it.
-    const champs = Array.from(root(fixture).querySelectorAll('form input[matInput], form mat-select'));
+    const champs = Array.from(
+      root(fixture).querySelectorAll('form input[matInput], form mat-select'),
+    );
     expect(champs.map((champ) => nomAccessible(root(fixture), champ))).toEqual([
       'Action',
       'Emplacement',
@@ -177,7 +192,7 @@ describe('StandBulkEditDialog', () => {
       'Réservé aux majeurs',
       'Premium (stand éditeur)',
       "Niveau d'effort",
-      'Que faire des horaires'
+      'Que faire des horaires',
     ]);
   });
 
@@ -195,7 +210,9 @@ describe('StandBulkEditDialog', () => {
     // The safety property of the whole screen: opening it and pressing save
     // must be incapable of changing anything.
     expect(submit(fixture).disabled).toBe(true);
-    expect(root(fixture).textContent).toContain('Seuls les champs renseignés ci-dessous sont modifiés');
+    expect(root(fixture).textContent).toContain(
+      'Seuls les champs renseignés ci-dessous sont modifiés',
+    );
   });
 
   it('enables the submit as soon as one field is actually filled in', async () => {
@@ -220,7 +237,10 @@ describe('StandBulkEditDialog', () => {
   });
 
   it('names the stands a staffing patch would leave inconsistent, and blocks the batch', async () => {
-    const { fixture } = mount([stand('s1', { nom: 'Loup-Garou', effectifMin: 4 }), stand('s2', { nom: 'Dixit' })]);
+    const { fixture } = mount([
+      stand('s1', { nom: 'Loup-Garou', effectifMin: 4 }),
+      stand('s2', { nom: 'Dixit' }),
+    ]);
     await fixture.whenStable();
 
     // effectifMax 2 against s1's own min of 4: the batch is refused as a whole,
@@ -271,7 +291,9 @@ describe('StandBulkEditDialog', () => {
     boutonAjouterHoraire(fixture)!.click();
     await fixture.whenStable();
 
-    const ligne = root(fixture).querySelector<HTMLInputElement>('input[name="bulkfenetresLigne0"]')!;
+    const ligne = root(fixture).querySelector<HTMLInputElement>(
+      'input[name="bulkfenetresLigne0"]',
+    )!;
     ligne.value = '14:00-';
     ligne.dispatchEvent(new Event('input'));
     await fixture.whenStable();
@@ -282,7 +304,9 @@ describe('StandBulkEditDialog', () => {
     expect(payloads).toHaveLength(2);
     for (const stand of payloads) {
       expect(stand.horaires).toHaveLength(1);
-      expect(stand.horaires[0].fenetres).toEqual([{ heureDebut: '14:00', heureFin: null, effectif: null }]);
+      expect(stand.horaires[0].fenetres).toEqual([
+        { heureDebut: '14:00', heureFin: null, effectif: null },
+      ]);
       // The editor's own state stays in the form.
       expect(stand.horaires[0]).not.toHaveProperty('saisie');
     }
@@ -304,13 +328,15 @@ describe('StandBulkEditDialog', () => {
             dateFin: null,
             dates: [],
             fenetres: [],
-            motif: null
-          }
-        ]
-      }
+            motif: null,
+          },
+        ],
+      },
     });
 
-    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map(
+      (each) => each.textContent!,
+    );
     expect(alertes.some((text) => text.includes('au moins une fenêtre'))).toBe(true);
     expect(submit(fixture).disabled).toBe(true);
   });
@@ -330,7 +356,9 @@ describe('StandBulkEditDialog', () => {
     await fill(fixture, { effectifMin: 2 });
 
     expect(root(fixture).querySelector('.locked-hint')).not.toBeNull();
-    expect((root(fixture).querySelector('fieldset.form-fieldset') as HTMLFieldSetElement).disabled).toBe(true);
+    expect(
+      (root(fixture).querySelector('fieldset.form-fieldset') as HTMLFieldSetElement).disabled,
+    ).toBe(true);
     expect(submit(fixture).disabled).toBe(true);
   });
 

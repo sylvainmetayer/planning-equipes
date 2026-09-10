@@ -1,5 +1,13 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,7 +44,7 @@ import {
   ParametresDecoupage,
   RapportDerivation,
   RapportGrille,
-  RapportRecurrence
+  RapportRecurrence,
 } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-dialog';
@@ -74,10 +82,10 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
     MatProgressSpinnerModule,
     MatTooltipModule,
     RouterLink,
-    BulkActionsBar
+    BulkActionsBar,
   ],
   templateUrl: './creneaux-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreneauxPage {
   /** Bounds the dialog callbacks: this page is lazy and rebuilt on every visit, a callback on a dead one writes into nothing. */
@@ -102,10 +110,10 @@ export class CreneauxPage {
   protected readonly columns = computed(() =>
     this.afficherFamilles()
       ? ['select', 'jour', 'date', 'horaires', 'famille', 'probleme', 'actions']
-      : ['select', 'jour', 'date', 'horaires', 'probleme', 'actions']
+      : ['select', 'jour', 'date', 'horaires', 'probleme', 'actions'],
   );
   protected readonly afficherFamilles = computed(() =>
-    this.creneauxAffiches().some((creneau) => (creneau.famille ?? 0) > 0)
+    this.creneauxAffiches().some((creneau) => (creneau.famille ?? 0) > 0),
   );
 
   /** Sorting, so the slots at fault can be grouped instead of hunted for. */
@@ -142,7 +150,7 @@ export class CreneauxPage {
    * same way.
    */
   protected readonly selection = new TableSelection<number>(
-    computed(() => this.creneauxAffiches().map((creneau) => creneau.id))
+    computed(() => this.creneauxAffiches().map((creneau) => creneau.id)),
   );
 
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -158,7 +166,7 @@ export class CreneauxPage {
     host: () => this.hote.nativeElement,
     selection: this.selection,
     open: (creneau: Creneau) => this.ouvrirLigne(creneau),
-    announcer: inject(LiveAnnouncer)
+    announcer: inject(LiveAnnouncer),
   });
 
   /**
@@ -211,7 +219,9 @@ export class CreneauxPage {
 
   /** The edition's découpage settings, carrying the declared mode; `null` until read. */
   protected readonly parametresDecoupage = signal<ParametresDecoupage | null>(null);
-  protected readonly mode = computed<ModeGrilleCreneaux>(() => this.parametresDecoupage()?.modeGrille ?? 'AMPLITUDES');
+  protected readonly mode = computed<ModeGrilleCreneaux>(
+    () => this.parametresDecoupage()?.modeGrille ?? 'AMPLITUDES',
+  );
   protected readonly diagnostic = signal<DiagnosticGrille | null>(null);
   protected readonly controle = signal<RapportGrille | null>(null);
   protected readonly controleLoading = signal(false);
@@ -221,11 +231,18 @@ export class CreneauxPage {
     const controle = this.controle();
     return controle ? bilanGrille(controle) : null;
   });
-  protected readonly anomaliesGrille = computed(() => trierAnomalies(this.controle()?.anomalies ?? []));
+  protected readonly anomaliesGrille = computed(() =>
+    trierAnomalies(this.controle()?.anomalies ?? []),
+  );
   /** The data proves a mode the declaration contradicts: worth one line, never a silent switch. */
   protected readonly desaccordMode = computed(() => {
     const diagnostic = this.diagnostic();
-    return diagnostic !== null && diagnostic.modeCertain && diagnostic.modeProbable !== null && diagnostic.modeProbable !== this.mode();
+    return (
+      diagnostic !== null &&
+      diagnostic.modeCertain &&
+      diagnostic.modeProbable !== null &&
+      diagnostic.modeProbable !== this.mode()
+    );
   });
   protected readonly gridAnomalyIcon = gridAnomalyIcon;
 
@@ -245,7 +262,7 @@ export class CreneauxPage {
     try {
       const [diagnostic, controle] = await Promise.all([
         this.creneauxApi.diagnostic(),
-        this.creneauxApi.control()
+        this.creneauxApi.control(),
       ]);
       this.diagnostic.set(diagnostic);
       this.controle.set(controle);
@@ -262,7 +279,12 @@ export class CreneauxPage {
     // Only the two modes are ever written: a toggle group settling on nothing
     // would otherwise send an absent mode, which the server reads as the
     // default — a silent reset.
-    if ((mode !== 'AMPLITUDES' && mode !== 'VACATIONS') || !actuels || actuels.modeGrille === mode || this.modeLoading()) {
+    if (
+      (mode !== 'AMPLITUDES' && mode !== 'VACATIONS') ||
+      !actuels ||
+      actuels.modeGrille === mode ||
+      this.modeLoading()
+    ) {
       return;
     }
     this.modeLoading.set(true);
@@ -270,9 +292,7 @@ export class CreneauxPage {
       // Its own endpoint: the mode is declared here while the rest of the
       // slicing settings are edited on Paramètres, and sending the whole object
       // would let a stale tab there revert this choice.
-      this.parametresDecoupage.set(
-        await this.creneauxApi.setGridMode(mode)
-      );
+      this.parametresDecoupage.set(await this.creneauxApi.setGridMode(mode));
       await this.rechargerVerdict();
     } catch (error) {
       this.crud.reportError(error);
@@ -286,16 +306,22 @@ export class CreneauxPage {
     if (this.editingLocked()) {
       return;
     }
-    const ref = this.dialog.open<CreneauSerieDialog, CreneauSerieData, RapportRecurrence | null>(CreneauSerieDialog, {
-      data: { mode: this.mode(), controleActuel: this.controle() },
-      width: '44rem',
-      autoFocus: 'first-tabbable'
-    });
-    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((rapport) => {
-      if (rapport) {
-        void this.apresSerie(rapport);
-      }
-    });
+    const ref = this.dialog.open<CreneauSerieDialog, CreneauSerieData, RapportRecurrence | null>(
+      CreneauSerieDialog,
+      {
+        data: { mode: this.mode(), controleActuel: this.controle() },
+        width: '44rem',
+        autoFocus: 'first-tabbable',
+      },
+    );
+    ref
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((rapport) => {
+        if (rapport) {
+          void this.apresSerie(rapport);
+        }
+      });
   }
 
   /** « Dériver des horaires des stands » : the grid the stands imply, previewed and written by the dialog. */
@@ -303,30 +329,45 @@ export class CreneauxPage {
     if (this.editingLocked()) {
       return;
     }
-    const dates = this.store.creneaux().map((creneau) => creneau.date).sort();
-    const ref = this.dialog.open<CreneauDerivationDialog, CreneauDerivationData, RapportDerivation | null>(
+    const dates = this.store
+      .creneaux()
+      .map((creneau) => creneau.date)
+      .sort();
+    const ref = this.dialog.open<
       CreneauDerivationDialog,
-      {
-        data: { mode: this.mode(), dateDebut: dates[0] ?? null, dateFin: dates.at(-1) ?? null },
-        width: '44rem',
-        autoFocus: 'first-tabbable'
-      }
-    );
-    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((rapport) => {
-      if (rapport) {
-        void this.apresSerie({ nombreGeneres: rapport.nombreGeneres, creneaux: rapport.creneaux, controle: rapport.controle });
-      }
+      CreneauDerivationData,
+      RapportDerivation | null
+    >(CreneauDerivationDialog, {
+      data: { mode: this.mode(), dateDebut: dates[0] ?? null, dateFin: dates.at(-1) ?? null },
+      width: '44rem',
+      autoFocus: 'first-tabbable',
     });
+    ref
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((rapport) => {
+        if (rapport) {
+          void this.apresSerie({
+            nombreGeneres: rapport.nombreGeneres,
+            creneaux: rapport.creneaux,
+            controle: rapport.controle,
+          });
+        }
+      });
   }
 
   private async apresSerie(rapport: RapportRecurrence): Promise<void> {
-    await Promise.all([this.crud.reload(), this.resolution.reload(), this.problemes.reloadFeasibility()]);
+    await Promise.all([
+      this.crud.reload(),
+      this.resolution.reload(),
+      this.problemes.reloadFeasibility(),
+    ]);
     this.controle.set(rapport.controle);
     this.diagnostic.set(await this.creneauxApi.diagnostic().catch(() => this.diagnostic()));
     this.notifications.notify({
       title: $localize`:@@creneaux.serie.done:${rapport.nombreGeneres}:count: créneau(x) ajoutés à la grille.`,
       variant: 'success',
-      timeout: 6000
+      timeout: 6000,
     });
   }
 
@@ -346,13 +387,16 @@ export class CreneauxPage {
       data: { creneau },
       width: '36rem',
       maxWidth: '95vw',
-      autoFocus: 'first-tabbable'
+      autoFocus: 'first-tabbable',
     });
-    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ecrit) => {
-      if (ecrit) {
-        void this.rechargerVerdict();
-      }
-    });
+    ref
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((ecrit) => {
+        if (ecrit) {
+          void this.rechargerVerdict();
+        }
+      });
   }
 
   protected async remove(creneau: Creneau): Promise<void> {
@@ -367,17 +411,23 @@ export class CreneauxPage {
 
   protected editSelection(): void {
     const selectionnes = new Set(this.selection.selectedIds());
-    const refBulk = this.dialog.open<CreneauBulkEditDialog, CreneauBulkEditData, boolean>(CreneauBulkEditDialog, {
-      data: { creneaux: this.store.creneaux().filter((creneau) => selectionnes.has(creneau.id)) },
-      width: '40rem',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable'
-    });
-    refBulk.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ecrit) => {
-      if (ecrit) {
-        void this.rechargerVerdict();
-      }
-    });
+    const refBulk = this.dialog.open<CreneauBulkEditDialog, CreneauBulkEditData, boolean>(
+      CreneauBulkEditDialog,
+      {
+        data: { creneaux: this.store.creneaux().filter((creneau) => selectionnes.has(creneau.id)) },
+        width: '40rem',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+      },
+    );
+    refBulk
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((ecrit) => {
+        if (ecrit) {
+          void this.rechargerVerdict();
+        }
+      });
   }
 
   /* --------------------- Découpage automatique en vacations --------------------- */
@@ -417,7 +467,7 @@ export class CreneauxPage {
       title: $localize`:@@decoupage.generer.title:Générer le découpage`,
       message: $localize`:@@decoupage.generer.confirm:Les créneaux actuels de l'édition (les amplitudes) seront remplacés par les vacations générées, et le planning résolu sera effacé avec eux. Pour re-découper avec d'autres paramètres, il faudra ré-importer le scénario source.`,
       confirmLabel: $localize`:@@decoupage.generer.submitCourt:Générer les vacations`,
-      danger: true
+      danger: true,
     });
     if (!confirme) {
       return;
@@ -434,7 +484,7 @@ export class CreneauxPage {
       this.notifications.notify({
         title: $localize`:@@decoupage.generated:Découpage généré : les vacations ont remplacé les amplitudes.`,
         variant: 'success',
-        timeout: 6000
+        timeout: 6000,
       });
     } catch (error) {
       this.crud.reportError(error);

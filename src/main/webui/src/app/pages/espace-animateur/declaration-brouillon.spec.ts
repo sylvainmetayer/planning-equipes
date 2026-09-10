@@ -6,7 +6,7 @@ import {
   declarationModifiee,
   moisDeCollecte,
   ouvertureAVenir,
-  versNouvelleDeclaration
+  versNouvelleDeclaration,
 } from './declaration-brouillon';
 
 function view(overrides: Partial<DeclarationEspaceView> = {}): DeclarationEspaceView {
@@ -20,7 +20,7 @@ function view(overrides: Partial<DeclarationEspaceView> = {}): DeclarationEspace
     souhaitsActuels: [],
     enAttente: null,
     historique: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -35,13 +35,15 @@ function enAttente(overrides: Partial<DeclarationView> = {}): DeclarationView {
     commentaireAdmin: null,
     creeLe: '2026-06-01T10:00:00Z',
     decideLe: null,
-    ...overrides
+    ...overrides,
   };
 }
 
 describe('brouillonInitial', () => {
   it('opens on the pending proposal so a correction is not retyped', () => {
-    const brouillon = brouillonInitial(view({ enAttente: enAttente({ commentaire: 'je pars tôt' }) }));
+    const brouillon = brouillonInitial(
+      view({ enAttente: enAttente({ commentaire: 'je pars tôt' }) }),
+    );
 
     expect(brouillon.joursIndisponibles).toEqual(['2026-07-10']);
     expect(brouillon.souhaits).toEqual(['T1']);
@@ -51,7 +53,9 @@ describe('brouillonInitial', () => {
   it('otherwise opens on what the organisation currently holds', () => {
     // Une page blanche voudrait dire « je suis disponible tous les jours »,
     // ce que personne n'a voulu déclarer.
-    const brouillon = brouillonInitial(view({ joursActuels: ['2026-07-11'], souhaitsActuels: ['T1'] }));
+    const brouillon = brouillonInitial(
+      view({ joursActuels: ['2026-07-11'], souhaitsActuels: ['T1'] }),
+    );
 
     expect(brouillon.joursIndisponibles).toEqual(['2026-07-11']);
     expect(brouillon.souhaits).toEqual(['T1']);
@@ -66,7 +70,11 @@ describe('brouillonInitial', () => {
   });
 
   it('stays empty without a view', () => {
-    expect(brouillonInitial(null)).toEqual({ joursIndisponibles: [], souhaits: [], commentaire: '' });
+    expect(brouillonInitial(null)).toEqual({
+      joursIndisponibles: [],
+      souhaits: [],
+      commentaire: '',
+    });
   });
 });
 
@@ -92,11 +100,17 @@ describe('ouvertureAVenir', () => {
   });
 
   it('says nothing once the window is open', () => {
-    expect(ouvertureAVenir(view({ collecteOuverte: true, collecteDebut: '2026-09-15' }), '2026-09-20')).toBeNull();
+    expect(
+      ouvertureAVenir(view({ collecteOuverte: true, collecteDebut: '2026-09-15' }), '2026-09-20'),
+    ).toBeNull();
   });
 
   it('says nothing when the window is really over', () => {
-    const source = view({ collecteOuverte: false, collecteDebut: '2026-09-01', collecteFin: '2026-09-10' });
+    const source = view({
+      collecteOuverte: false,
+      collecteDebut: '2026-09-01',
+      collecteFin: '2026-09-10',
+    });
 
     expect(ouvertureAVenir(source, '2026-09-20')).toBeNull();
   });
@@ -137,14 +151,16 @@ describe('declarationModifiee', () => {
   });
 
   it('ignores the order the days were ticked in', () => {
-    const source = view({ enAttente: enAttente({ joursIndisponibles: ['2026-07-10', '2026-07-11'] }) });
+    const source = view({
+      enAttente: enAttente({ joursIndisponibles: ['2026-07-10', '2026-07-11'] }),
+    });
 
     expect(
       declarationModifiee(source, {
         joursIndisponibles: ['2026-07-11', '2026-07-10'],
         souhaits: ['T1'],
-        commentaire: ''
-      })
+        commentaire: '',
+      }),
     ).toBe(false);
   });
 
@@ -155,18 +171,22 @@ describe('declarationModifiee', () => {
       declarationModifiee(source, {
         joursIndisponibles: ['2026-07-10', '2026-07-11'],
         souhaits: ['T1'],
-        commentaire: ''
-      })
+        commentaire: '',
+      }),
     ).toBe(true);
     expect(
-      declarationModifiee(source, { joursIndisponibles: ['2026-07-10'], souhaits: [], commentaire: '' })
+      declarationModifiee(source, {
+        joursIndisponibles: ['2026-07-10'],
+        souhaits: [],
+        commentaire: '',
+      }),
     ).toBe(true);
     expect(
       declarationModifiee(source, {
         joursIndisponibles: ['2026-07-10'],
         souhaits: ['T1'],
-        commentaire: 'je pars tôt'
-      })
+        commentaire: 'je pars tôt',
+      }),
     ).toBe(true);
   });
 
@@ -176,7 +196,7 @@ describe('declarationModifiee', () => {
     const source = view({ joursActuels: ['2026-07-10'] });
 
     expect(
-      declarationModifiee(source, { joursIndisponibles: [], souhaits: [], commentaire: '' })
+      declarationModifiee(source, { joursIndisponibles: [], souhaits: [], commentaire: '' }),
     ).toBe(true);
   });
 });
@@ -187,19 +207,22 @@ describe('versNouvelleDeclaration', () => {
       versNouvelleDeclaration({
         joursIndisponibles: ['2026-07-11', '2026-07-10'],
         souhaits: ['T2', 'T1'],
-        commentaire: '   '
-      })
+        commentaire: '   ',
+      }),
     ).toEqual({
       joursIndisponibles: ['2026-07-10', '2026-07-11'],
       souhaits: ['T1', 'T2'],
-      commentaire: null
+      commentaire: null,
     });
   });
 
   it('trims a comment that says something', () => {
     expect(
-      versNouvelleDeclaration({ joursIndisponibles: [], souhaits: [], commentaire: '  je pars tôt ' })
-        .commentaire
+      versNouvelleDeclaration({
+        joursIndisponibles: [],
+        souhaits: [],
+        commentaire: '  je pars tôt ',
+      }).commentaire,
     ).toBe('je pars tôt');
   });
 });

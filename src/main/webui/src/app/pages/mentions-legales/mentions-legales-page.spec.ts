@@ -15,7 +15,7 @@ const VIDE: MentionsLegales = {
   baseLegale: '',
   conservation: '',
   mesureAudience: false,
-  suiviErreurs: false
+  suiviErreurs: false,
 };
 
 function monter(mentions: MentionsLegales) {
@@ -23,8 +23,8 @@ function monter(mentions: MentionsLegales) {
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: ApiService, useValue: { get: vi.fn(async () => mentions) } }
-    ]
+      { provide: ApiService, useValue: { get: vi.fn(async () => mentions) } },
+    ],
   });
   return TestBed.createComponent(MentionsLegalesPage);
 }
@@ -48,7 +48,7 @@ describe('MentionsLegalesPage', () => {
       ...VIDE,
       editeur: 'Association Ludique, 12 rue des Dés, 41200 Romorantin',
       hebergeur: 'Hébergeur SAS, Paris',
-      contact: 'contact@example.org'
+      contact: 'contact@example.org',
     });
     await fixture.whenStable();
 

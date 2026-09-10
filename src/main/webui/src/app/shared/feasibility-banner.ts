@@ -44,9 +44,11 @@ const MAX_CAUSES_AFFICHEES = 5;
               <ul>
                 @for (cause of causes(); track cause.cle) {
                   <li>
-                    <span class="feasibility-severite" [class.feasibility-severite-critique]="cause.critique">{{
-                      cause.severiteLabel
-                    }}</span>
+                    <span
+                      class="feasibility-severite"
+                      [class.feasibility-severite-critique]="cause.critique"
+                      >{{ cause.severiteLabel }}</span
+                    >
                     {{ cause.message }}
                   </li>
                 }
@@ -112,7 +114,7 @@ const MAX_CAUSES_AFFICHEES = 5;
       font: var(--mat-sys-body-small);
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FeasibilityBanner {
   readonly report = input<FeasibilityReport | null>(null);
@@ -137,7 +139,7 @@ export class FeasibilityBanner {
       cle: `${index}-${cause.type}-${cause.creneauId ?? ''}`,
       critique: cause.severite === 'CRITIQUE',
       severiteLabel: niveauProblemeLabel(niveauDeCause(cause.severite)),
-      message: cause.message
+      message: cause.message,
     }));
   });
 

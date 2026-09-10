@@ -25,7 +25,10 @@ export const defaultPanelStorage = defaultNavStorage;
  * meant to be hidden costs some room, hiding one the user expects to see costs
  * them the feature.
  */
-export function readPanelCollapsed(storage: Pick<Storage, 'getItem' | 'setItem'> | null, key: string): boolean {
+export function readPanelCollapsed(
+  storage: Pick<Storage, 'getItem' | 'setItem'> | null,
+  key: string,
+): boolean {
   if (!storage) {
     return false;
   }
@@ -40,7 +43,7 @@ export function readPanelCollapsed(storage: Pick<Storage, 'getItem' | 'setItem'>
 export function writePanelCollapsed(
   storage: Pick<Storage, 'getItem' | 'setItem'> | null,
   key: string,
-  collapsed: boolean
+  collapsed: boolean,
 ): void {
   if (!storage) {
     return;

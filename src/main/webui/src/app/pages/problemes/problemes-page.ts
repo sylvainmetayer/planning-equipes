@@ -22,9 +22,16 @@ import { LegalText } from '../../shared/legal-text';
 @Component({
   selector: 'app-problemes-page',
   imports: [
-    RouterLink,MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatProgressBarModule, LegalText],
+    RouterLink,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+    MatProgressBarModule,
+    LegalText,
+  ],
   templateUrl: './problemes-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProblemesPage {
   protected readonly store = inject(ProblemesStore);
@@ -35,8 +42,8 @@ export class ProblemesPage {
     this.store.problemes().map((probleme) => ({
       ...probleme,
       niveauLabel: niveauProblemeLabel(probleme.niveau),
-      badgeClass: this.badgeClass(probleme.niveau)
-    }))
+      badgeClass: this.badgeClass(probleme.niveau),
+    })),
   );
 
   protected readonly comptage = computed(() => this.store.comptage());

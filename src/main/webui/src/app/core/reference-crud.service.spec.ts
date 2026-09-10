@@ -14,18 +14,18 @@ class FakeStore {
   reload = vi.fn(async () => undefined);
   save = vi.fn(async (_resource: string, _payload: unknown, _editingId: unknown) => ({
     id: null as string | number | null,
-    avertissements: [] as Avertissement[]
+    avertissements: [] as Avertissement[],
   }));
   remove = vi.fn(async (_resource: string, _id: unknown) => undefined);
   removeMany = vi.fn(async (_resource: string, ids: readonly (string | number)[]) => ({
     succes: [...ids],
     echecs: [] as { id: string | number; message: string }[],
-    avertissements: [] as Avertissement[]
+    avertissements: [] as Avertissement[],
   }));
   saveMany = vi.fn(async (_resource: string, payloads: readonly { id: string | number }[]) => ({
     succes: payloads.map((payload) => payload.id),
     echecs: [] as { id: string | number; message: string }[],
-    avertissements: [] as Avertissement[]
+    avertissements: [] as Avertissement[],
   }));
 }
 
@@ -82,8 +82,8 @@ describe('ReferenceCrudService', () => {
         { provide: NotificationService, useValue: notifications },
         { provide: ConfirmService, useValue: confirm },
         { provide: PlanningResolutionStore, useValue: resolution },
-        { provide: ReferenceUsageService, useValue: usages }
-      ]
+        { provide: ReferenceUsageService, useValue: usages },
+      ],
     });
     service = TestBed.inject(ReferenceCrudService);
   });
@@ -95,7 +95,7 @@ describe('ReferenceCrudService', () => {
       expect(ok).toBe(true);
       expect(store.save).toHaveBeenCalledWith('stands', { id: 'S1' }, null);
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'success' })
+        expect.objectContaining({ variant: 'success' }),
       );
     });
 
@@ -105,7 +105,7 @@ describe('ReferenceCrudService', () => {
     it('signale un avertissement sans faire échouer la sauvegarde', async () => {
       store.save.mockResolvedValueOnce({
         id: 'A1',
-        avertissements: [{ type: 'MINEUR_PENDANT_EVENEMENT', message: 'majeur le 2026-07-09' }]
+        avertissements: [{ type: 'MINEUR_PENDANT_EVENEMENT', message: 'majeur le 2026-07-09' }],
       });
 
       const ok = await service.save('animateurs', { id: 'A1' }, null, "l'animateur");
@@ -115,8 +115,8 @@ describe('ReferenceCrudService', () => {
         expect.objectContaining({
           variant: 'warning',
           timeout: 0,
-          message: expect.stringContaining('majeur le 2026-07-09')
-        })
+          message: expect.stringContaining('majeur le 2026-07-09'),
+        }),
       );
       expect(notifications.notify).toHaveBeenCalledTimes(1);
     });
@@ -126,8 +126,8 @@ describe('ReferenceCrudService', () => {
         id: 'A1',
         avertissements: ['un', 'deux', 'trois', 'quatre'].map((message) => ({
           type: 'INDISPONIBILITE_HORS_EVENEMENT' as const,
-          message
-        }))
+          message,
+        })),
       });
 
       await service.save('animateurs', { id: 'A1' }, null, "l'animateur");
@@ -148,13 +148,15 @@ describe('ReferenceCrudService', () => {
       expect(ok).toBe(false);
       expect(store.save).not.toHaveBeenCalled();
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error' })
+        expect.objectContaining({ variant: 'error' }),
       );
     });
 
     // Les créneaux passent requireId: false, leur id étant généré côté serveur.
     it('accepte un identifiant absent quand requireId vaut false', async () => {
-      const ok = await service.save('creneaux', { id: null }, null, 'le créneau', { requireId: false });
+      const ok = await service.save('creneaux', { id: null }, null, 'le créneau', {
+        requireId: false,
+      });
 
       expect(ok).toBe(true);
       expect(store.save).toHaveBeenCalled();
@@ -165,7 +167,7 @@ describe('ReferenceCrudService', () => {
     it('affiche l’identifiant rendu par le serveur, pas celui du payload absent', async () => {
       store.save.mockResolvedValueOnce({
         id: 4242,
-        avertissements: [{ type: 'CRENEAU_DEBORDE_OUVERTURE_STANDS', message: 'déborde' }]
+        avertissements: [{ type: 'CRENEAU_DEBORDE_OUVERTURE_STANDS', message: 'déborde' }],
       });
 
       await service.save('creneaux', { id: null }, null, 'Créneau', { requireId: false });
@@ -196,13 +198,16 @@ describe('ReferenceCrudService', () => {
         id: 'A1',
         avertissements: [
           { type: 'MINEUR_PENDANT_EVENEMENT', message: "L'animateur A1 est mineur" },
-          { type: 'INDISPONIBILITE_HORS_EVENEMENT', message: 'Indisponibilité le 2027-08-15' }
-        ]
+          { type: 'INDISPONIBILITE_HORS_EVENEMENT', message: 'Indisponibilité le 2027-08-15' },
+        ],
       });
 
       await service.save('animateurs', { id: 'A1' }, null, "l'animateur");
 
-      const notification = notifications.notify.mock.calls[0][0] as { message: string; messageJournal: string };
+      const notification = notifications.notify.mock.calls[0][0] as {
+        message: string;
+        messageJournal: string;
+      };
       expect(notification.message).toContain('est mineur');
       expect(notification.messageJournal).not.toContain('est mineur');
       expect(notification.messageJournal).toContain('2027-08-15');
@@ -213,36 +218,58 @@ describe('ReferenceCrudService', () => {
     // sa précondition ; recharger ne réécrit rien, rafraîchit le store et rend
     // true pour que le formulaire se ferme sur la version de l'autre session.
     describe('modification concurrente', () => {
-      const conflit = () => new ApiError(409, 'conflict', 'Modifiée par une autre session', 'MODIFICATION_CONCURRENTE');
+      const conflit = () =>
+        new ApiError(409, 'conflict', 'Modifiée par une autre session', 'MODIFICATION_CONCURRENTE');
 
       it('propose d’écraser, puis renvoie le payload sans précondition', async () => {
         store.save.mockRejectedValueOnce(conflit());
         confirm.reponseTroisEtats = true;
 
-        const ok = await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
+        const ok = await service.save(
+          'stands',
+          { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' },
+          'S1',
+          'le stand',
+        );
 
         expect(ok).toBe(true);
         expect(confirm.demandeTroisEtats()).toEqual(
-          expect.objectContaining({ confirmLabel: 'Écraser quand même', cancelLabel: 'Recharger', danger: true })
+          expect.objectContaining({
+            confirmLabel: 'Écraser quand même',
+            cancelLabel: 'Recharger',
+            danger: true,
+          }),
         );
         expect(store.save).toHaveBeenCalledTimes(2);
         expect(store.save).toHaveBeenLastCalledWith('stands', { id: 'S1', modifieLe: null }, 'S1');
-        expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+        expect(notifications.notify).toHaveBeenCalledWith(
+          expect.objectContaining({ variant: 'success' }),
+        );
       });
 
       it('recharge sans réécrire quand l’utilisateur le choisit, et laisse le formulaire se fermer', async () => {
         store.save.mockRejectedValueOnce(conflit());
         confirm.reponseTroisEtats = false;
 
-        const ok = await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
+        const ok = await service.save(
+          'stands',
+          { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' },
+          'S1',
+          'le stand',
+        );
 
         expect(ok).toBe(true);
         expect(store.save).toHaveBeenCalledTimes(1);
         expect(store.reload).toHaveBeenCalled();
         expect(notifications.notify).toHaveBeenCalledWith(
-          expect.objectContaining({ variant: 'warning', title: expect.stringContaining('rechargée') })
+          expect.objectContaining({
+            variant: 'warning',
+            title: expect.stringContaining('rechargée'),
+          }),
         );
-        expect(notifications.notify).not.toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+        expect(notifications.notify).not.toHaveBeenCalledWith(
+          expect.objectContaining({ variant: 'success' }),
+        );
       });
 
       // Écarter le dialogue (Échap, clic à côté) n'est ni écraser ni
@@ -253,24 +280,42 @@ describe('ReferenceCrudService', () => {
         store.save.mockRejectedValueOnce(conflit());
         confirm.reponseTroisEtats = null;
 
-        const ok = await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
+        const ok = await service.save(
+          'stands',
+          { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' },
+          'S1',
+          'le stand',
+        );
 
         expect(ok).toBe(false);
         expect(store.save).toHaveBeenCalledTimes(1);
         expect(store.reload).not.toHaveBeenCalled();
-        expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
+        expect(notifications.notify).toHaveBeenCalledWith(
+          expect.objectContaining({ variant: 'error' }),
+        );
       });
 
       it('date le conflit dans le fuseau du lecteur, jamais dans celui du serveur', async () => {
         store.save.mockRejectedValueOnce(
-          new ApiError(409, 'conflict', 'Ce stand a été modifié', 'MODIFICATION_CONCURRENTE', '2026-09-06T15:34:00Z')
+          new ApiError(
+            409,
+            'conflict',
+            'Ce stand a été modifié',
+            'MODIFICATION_CONCURRENTE',
+            '2026-09-06T15:34:00Z',
+          ),
         );
         confirm.reponseTroisEtats = null;
 
-        await service.save('stands', { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' }, 'S1', 'le stand');
+        await service.save(
+          'stands',
+          { id: 'S1', modifieLe: '2026-09-06T10:00:00Z' },
+          'S1',
+          'le stand',
+        );
 
         expect(confirm.demandeTroisEtats().message).toContain(
-          new Date('2026-09-06T15:34:00Z').toLocaleString('fr-FR')
+          new Date('2026-09-06T15:34:00Z').toLocaleString('fr-FR'),
         );
       });
 
@@ -281,7 +326,9 @@ describe('ReferenceCrudService', () => {
 
         expect(ok).toBe(false);
         expect(confirm.ask).not.toHaveBeenCalled();
-        expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
+        expect(notifications.notify).toHaveBeenCalledWith(
+          expect.objectContaining({ variant: 'error' }),
+        );
       });
     });
 
@@ -292,7 +339,7 @@ describe('ReferenceCrudService', () => {
 
       expect(ok).toBe(false);
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error', message: 'conflit' })
+        expect.objectContaining({ variant: 'error', message: 'conflit' }),
       );
     });
 
@@ -322,7 +369,7 @@ describe('ReferenceCrudService', () => {
 
       expect(ok).toBe(true);
       expect(notifications.notify).not.toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error' })
+        expect.objectContaining({ variant: 'error' }),
       );
     });
   });
@@ -335,7 +382,7 @@ describe('ReferenceCrudService', () => {
       expect(store.remove).toHaveBeenCalledWith('stands', 'S1');
     });
 
-    it('n\'appelle pas le store quand la confirmation est refusée', async () => {
+    it("n'appelle pas le store quand la confirmation est refusée", async () => {
       confirm.reponse = false;
 
       const ok = await service.remove('stands', 'S1', 'le stand');
@@ -352,13 +399,13 @@ describe('ReferenceCrudService', () => {
 
       expect(ok).toBe(false);
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error', message: 'référencé ailleurs' })
+        expect.objectContaining({ variant: 'error', message: 'référencé ailleurs' }),
       );
     });
 
     // Le décompte serveur est ce que la ligne du tableau ne montre pas : ni le
     // planning persisté, ni les ajustements manuels, ni les verrous.
-    it('affiche dans la confirmation l\'impact chiffré rendu par le serveur', async () => {
+    it("affiche dans la confirmation l'impact chiffré rendu par le serveur", async () => {
       usages.phrase = 'Référencé par 42 affectation(s).';
 
       await service.remove('stands', 'S1', 'le stand');
@@ -378,7 +425,7 @@ describe('ReferenceCrudService', () => {
       usages.describe.mockReturnValueOnce(
         new Promise<string>((resolve) => {
           repondre = resolve;
-        })
+        }),
       );
 
       const suppression = service.remove('stands', 'S1', 'le stand');
@@ -418,7 +465,9 @@ describe('ReferenceCrudService', () => {
       expect(removed).toBe(2);
       expect(confirm.ask).toHaveBeenCalledTimes(1);
       expect(store.removeMany).toHaveBeenCalledWith('stands', ['S1', 'S2']);
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'success' }),
+      );
     });
 
     it('ne touche à rien quand la confirmation est refusée', async () => {
@@ -436,7 +485,7 @@ describe('ReferenceCrudService', () => {
 
     // Un total agrégé, jamais un détail ligne par ligne : une seule requête
     // porte toute la sélection.
-    it('agrège l\'impact de toute la sélection en un seul appel', async () => {
+    it("agrège l'impact de toute la sélection en un seul appel", async () => {
       usages.phrase = 'Référencé par 12 affectation(s).';
 
       await service.removeMany('stands', ['S1', 'S2'], 'stands');
@@ -453,44 +502,57 @@ describe('ReferenceCrudService', () => {
       store.removeMany.mockResolvedValueOnce({
         succes: ['S1'],
         echecs: [{ id: 'S2', message: 'encore référencé' }],
-        avertissements: []
+        avertissements: [],
       });
 
       const removed = await service.removeMany('stands', ['S1', 'S2'], 'stands');
 
       expect(removed).toBe(1);
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error', message: expect.stringContaining('encore référencé') })
+        expect.objectContaining({
+          variant: 'error',
+          message: expect.stringContaining('encore référencé'),
+        }),
       );
     });
   });
 
   describe('saveMany', () => {
     it('enregistre toute la sélection sans confirmation', async () => {
-      const enregistres = await service.saveMany('animateurs', [{ id: 'a' }, { id: 'b' }], 'animateurs');
+      const enregistres = await service.saveMany(
+        'animateurs',
+        [{ id: 'a' }, { id: 'b' }],
+        'animateurs',
+      );
 
       expect(enregistres).toBe(2);
       expect(confirm.ask).not.toHaveBeenCalled();
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'success' }),
+      );
     });
 
     // Un lot de cinquante lignes doit ouvrir une seule bulle, pas cinquante.
-    it("regroupe les avertissements du lot en une seule bulle", async () => {
+    it('regroupe les avertissements du lot en une seule bulle', async () => {
       store.saveMany.mockResolvedValueOnce({
         succes: ['a', 'b'],
         echecs: [],
         avertissements: [
           { type: 'MINEUR_PENDANT_EVENEMENT', message: 'a est mineur' },
-          { type: 'MINEUR_PENDANT_EVENEMENT', message: 'b est mineur' }
-        ]
+          { type: 'MINEUR_PENDANT_EVENEMENT', message: 'b est mineur' },
+        ],
       });
 
-      const enregistres = await service.saveMany('animateurs', [{ id: 'a' }, { id: 'b' }], 'animateurs');
+      const enregistres = await service.saveMany(
+        'animateurs',
+        [{ id: 'a' }, { id: 'b' }],
+        'animateurs',
+      );
 
       expect(enregistres).toBe(2);
       expect(notifications.notify).toHaveBeenCalledTimes(1);
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'warning', timeout: 0 })
+        expect.objectContaining({ variant: 'warning', timeout: 0 }),
       );
     });
 
@@ -505,14 +567,17 @@ describe('ReferenceCrudService', () => {
         echecs: [{ id: 'b', message: 'résolution en cours' }],
         avertissements: [
           { type: 'INDISPONIBILITE_HORS_EVENEMENT', message: 'Indisponibilité le 2027-08-15' },
-          { type: 'MINEUR_PENDANT_EVENEMENT', message: "L'animateur a est mineur" }
-        ]
+          { type: 'MINEUR_PENDANT_EVENEMENT', message: "L'animateur a est mineur" },
+        ],
       });
 
       await service.saveMany('animateurs', [{ id: 'a' }, { id: 'b' }], 'animateurs');
 
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error', message: expect.stringContaining('résolution en cours') })
+        expect.objectContaining({
+          variant: 'error',
+          message: expect.stringContaining('résolution en cours'),
+        }),
       );
       const journal = notifications.notify.mock.calls[1][0] as { message: string; silent: boolean };
       expect(journal.silent).toBe(true);
@@ -525,18 +590,18 @@ describe('ReferenceCrudService', () => {
 
       expect(await service.saveMany('animateurs', [{ id: 'a' }], 'animateurs')).toBe(0);
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error', message: 'indisponible' })
+        expect.objectContaining({ variant: 'error', message: 'indisponible' }),
       );
     });
   });
 
   describe('reload', () => {
-    it('rapporte l\'erreur sans la propager à la vue', async () => {
+    it("rapporte l'erreur sans la propager à la vue", async () => {
       store.reload.mockRejectedValueOnce(new Error('indisponible'));
 
       await expect(service.reload()).resolves.toBeUndefined();
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error', message: 'indisponible' })
+        expect.objectContaining({ variant: 'error', message: 'indisponible' }),
       );
     });
   });
@@ -546,28 +611,35 @@ describe('ReferenceCrudService', () => {
       service.reportError(new ApiError(404, 'notFound', 'Stand introuvable'));
 
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Cette donnée n'existe plus", message: 'Stand introuvable' })
+        expect.objectContaining({
+          title: "Cette donnée n'existe plus",
+          message: 'Stand introuvable',
+        }),
       );
     });
 
     it('tells a concurrent edit apart from a rejected form', () => {
       service.reportError(new ApiError(409, 'conflict', 'Modifié'));
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Modifiée entre-temps' })
+        expect.objectContaining({ title: 'Modifiée entre-temps' }),
       );
 
       service.reportError(new ApiError(400, 'invalid', 'Champ manquant'));
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Saisie refusée' })
+        expect.objectContaining({ title: 'Saisie refusée' }),
       );
     });
 
     it('keeps the generic title for a technical failure and for a plain Error', () => {
       service.reportError(new ApiError(500, 'technical', 'Boum'));
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ title: 'Erreur' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Erreur' }),
+      );
 
       service.reportError(new Error('Boum'));
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ title: 'Erreur' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Erreur' }),
+      );
     });
   });
 });

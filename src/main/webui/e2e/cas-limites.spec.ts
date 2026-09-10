@@ -3,7 +3,15 @@
 // both sides, and admin deep links without a session.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { SEED, contexteAdmin, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning, ouvrirSelect } from './support';
+import {
+  SEED,
+  contexteAdmin,
+  jetonDe,
+  ouvrirSessionEspace,
+  pageAdmin,
+  seedPlanning,
+  ouvrirSelect,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
@@ -32,7 +40,7 @@ test.describe('cas limites', () => {
 
     // …until the admin rotates the token.
     const rotation = await admin.post(`/api/animateurs/${SEED.demandeur}/token`, {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
     expect(rotation.ok(), await rotation.text()).toBe(true);
     const { token: nouveauJeton } = (await rotation.json()) as { token: string };
@@ -40,7 +48,9 @@ test.describe('cas limites', () => {
 
     // The already-open page dies on reload: clean dead end, no leak.
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.getByText("Ce lien n'est pas (ou plus) valide", { exact: false })).toBeVisible();
+    await expect(
+      page.getByText("Ce lien n'est pas (ou plus) valide", { exact: false }),
+    ).toBeVisible();
     await expect(page.getByText('Alice E2E')).toHaveCount(0);
 
     // The API answers the same 404 as a never-issued token.
@@ -52,7 +62,10 @@ test.describe('cas limites', () => {
     await expect(page.getByText('Alice E2E')).toBeVisible();
   });
 
-  test('une demande infaisable est signalée à l’animateur et à l’admin', async ({ page, browser }) => {
+  test('une demande infaisable est signalée à l’animateur et à l’admin', async ({
+    page,
+    browser,
+  }) => {
     test.slow();
     await seedPlanning(admin, { avecCollegueIndisponible: true });
     const jeton = await jetonDe(admin, SEED.demandeur);
@@ -75,7 +88,9 @@ test.describe('cas limites', () => {
     // The admin sees the same warning on the demande.
     const pageEchanges = await pageAdmin(browser, admin);
     await pageEchanges.goto('/echanges');
-    await expect(pageEchanges.getByText('Signalée infaisable à la soumission', { exact: false })).toBeVisible();
+    await expect(
+      pageEchanges.getByText('Signalée infaisable à la soumission', { exact: false }),
+    ).toBeVisible();
     await pageEchanges.context().close();
   });
 
@@ -106,27 +121,36 @@ test.describe('cas limites', () => {
     // Denis tient aussi un siège le lendemain : c'est l'échange d'un jour
     // contre un autre, celui qui fait de ce bouton un assistant d'ÉCHANGE.
     const dirige = page.locator('.espace-suggestions-liste').nth(1);
-    await expect(page.getByRole('heading', { name: 'Vous échangez contre un autre créneau' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Vous échangez contre un autre créneau' }),
+    ).toBeVisible();
     await expect(dirige).toContainText('Denis E2E');
     await expect(dirige).toContainText('Stand E2E deux');
 
     // Bruno travaille déjà ce créneau : l'échange tient, mais Alice ne serait
     // pas libérée — elle changerait de stand.
     const croise = page.locator('.espace-suggestions-liste').nth(2);
-    await expect(page.getByRole('heading', { name: 'Vous échangez sur ce même créneau' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Vous échangez sur ce même créneau' }),
+    ).toBeVisible();
     await expect(croise).toContainText('Bruno E2E');
 
     // Chloé a posé la journée : l'échange casserait une règle, elle n'est jamais proposée.
-    await expect(page.locator('.espace-suggestions-liste li').filter({ hasText: 'Chloé E2E' })).toHaveCount(0);
+    await expect(
+      page.locator('.espace-suggestions-liste li').filter({ hasText: 'Chloé E2E' }),
+    ).toHaveCount(0);
 
     // Retenir l'échange d'un jour contre un autre remplit le formulaire — le
     // collègue ET le créneau repris — sans rien soumettre de lui-même.
     await dirige.getByRole('button', { name: 'Choisir' }).first().click();
     await expect(
-      page.locator('mat-form-field').filter({ hasText: 'Échanger avec' }).first()
+      page.locator('mat-form-field').filter({ hasText: 'Échanger avec' }).first(),
     ).toContainText('Denis E2E');
     await expect(
-      page.locator('mat-form-field').filter({ hasText: 'Son créneau que je veux en échange' }).first()
+      page
+        .locator('mat-form-field')
+        .filter({ hasText: 'Son créneau que je veux en échange' })
+        .first(),
     ).toContainText('Stand E2E deux');
     await expect(page.getByText('En attente du collègue')).toHaveCount(0);
 
@@ -138,7 +162,10 @@ test.describe('cas limites', () => {
     await expect(page.getByText('En attente du collègue').first()).toBeVisible();
   });
 
-  test("fermer la foire rend l'espace consultable seulement, téléchargements compris", async ({ page, browser }) => {
+  test("fermer la foire rend l'espace consultable seulement, téléchargements compris", async ({
+    page,
+    browser,
+  }) => {
     test.slow();
     await seedPlanning(admin);
     const jeton = await jetonDe(admin, SEED.demandeur);
@@ -162,7 +189,14 @@ test.describe('cas limites', () => {
 
     // The API refuses too: closing is enforced server-side.
     const refus = await page.request.post(`/api/espace-animateur/${jeton}/demandes`, {
-      data: [{ creneauId: SEED.creneauId, standId: SEED.standDemandeur, cibleId: SEED.cible, motif: null }]
+      data: [
+        {
+          creneauId: SEED.creneauId,
+          standId: SEED.standDemandeur,
+          cibleId: SEED.cible,
+          motif: null,
+        },
+      ],
     });
     expect(refus.status()).toBe(400);
 

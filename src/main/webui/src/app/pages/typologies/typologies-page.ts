@@ -21,7 +21,9 @@ import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog'
  * silently strips it from every stand and animateur that named it.
  */
 function usagesTypologie(typologieId: string, store: ReferenceDataStore): string {
-  const stands = store.stands().filter((stand) => stand.typologiesProposees?.includes(typologieId)).length;
+  const stands = store
+    .stands()
+    .filter((stand) => stand.typologiesProposees?.includes(typologieId)).length;
   const animateurs = store
     .animateurs()
     .filter((animateur) => Object.keys(animateur.competences ?? {}).includes(typologieId)).length;
@@ -52,10 +54,10 @@ function usagesTypologie(typologieId: string, store: ReferenceDataStore): string
     MatTooltipModule,
     RouterLink,
     BulkActionsBar,
-    TableFilter
+    TableFilter,
   ],
   templateUrl: './typologies-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
   protected readonly columns = ['select', 'id', 'label', 'ninja', 'actions'];
@@ -71,20 +73,20 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
       detail: (typologie, store) => ({
         title: typologie.label || typologie.id,
         subtitle: typologie.id,
-        sections: buildTypologieDetail(typologie, store.stands(), store.animateurs())
+        sections: buildTypologieDetail(typologie, store.stands(), store.animateurs()),
       }),
       formulaire: (typologie, dialog: MatDialog) => {
         dialog.open<TypologieFormDialog, TypologieFormData, boolean>(TypologieFormDialog, {
           data: { typologie },
           width: '40rem',
           maxWidth: '95vw',
-          autoFocus: 'first-tabbable'
+          autoFocus: 'first-tabbable',
         });
       },
       ressource: 'typologies',
       libelle: () => $localize`:@@typologies.entityLabel:Typologie`,
       libellePluriel: labelTypologiesPluriel,
-      usages: (typologie, store) => usagesTypologie(typologie.id, store)
+      usages: (typologie, store) => usagesTypologie(typologie.id, store),
     });
   }
 }

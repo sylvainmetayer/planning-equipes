@@ -6,7 +6,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AnalysesApi } from '../../core/api/analyses-api';
-import { CompetenceStaffing, JourStaffing, StaffingSummary, TypologieStaffing } from '../../core/models';
+import {
+  CompetenceStaffing,
+  JourStaffing,
+  StaffingSummary,
+  TypologieStaffing,
+} from '../../core/models';
 import { errorText, retainedValue } from '../../core/resource-state';
 
 /**
@@ -34,9 +39,16 @@ import { errorText, retainedValue } from '../../core/resource-state';
  */
 @Component({
   selector: 'app-staffing-page',
-  imports: [MatCardModule, MatIconModule, MatProgressBarModule, MatTableModule, MatTooltipModule, DecimalPipe],
+  imports: [
+    MatCardModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTableModule,
+    MatTooltipModule,
+    DecimalPipe,
+  ],
   templateUrl: './staffing-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffingPage {
   protected readonly columns = [
@@ -46,9 +58,15 @@ export class StaffingPage {
     'heures',
     'picSimultane',
     'picAvecPause',
-    'minimumJour'
+    'minimumJour',
   ];
-  protected readonly competenceColumns = ['typologie', 'sieges', 'minimumTotal', 'specialistes', 'manque'];
+  protected readonly competenceColumns = [
+    'typologie',
+    'sieges',
+    'minimumTotal',
+    'specialistes',
+    'manque',
+  ];
   private readonly analysesApi = inject(AnalysesApi);
 
   /** Read when the screen opens: nothing here changes without a new solve or a referential edit. */
@@ -64,10 +82,14 @@ export class StaffingPage {
    * reconstructed the weekly ceiling and hid the fact that a week the event
    * barely touches offers far less than it.
    */
-  protected readonly heuresParSemaine = computed(() => this.summary()?.capaciteHeuresParAnimateur ?? 0);
+  protected readonly heuresParSemaine = computed(
+    () => this.summary()?.capaciteHeuresParAnimateur ?? 0,
+  );
 
   /** Hours the busiest week has to cover — the numerator of the workload bound. */
-  protected readonly heuresSemaineCritique = computed(() => this.summary()?.semaineCritique?.heures ?? 0);
+  protected readonly heuresSemaineCritique = computed(
+    () => this.summary()?.semaineCritique?.heures ?? 0,
+  );
 
   /**
    * The projection line, shown only when it says something the bounds do not:
@@ -76,7 +98,11 @@ export class StaffingPage {
    */
   protected readonly projectionLabel = computed(() => {
     const summary = this.summary();
-    if (!summary || !summary.indisponibilitesDeclarees || summary.minimumAvecIndisponibilites <= summary.minimumTotal) {
+    if (
+      !summary ||
+      !summary.indisponibilitesDeclarees ||
+      summary.minimumAvecIndisponibilites <= summary.minimumTotal
+    ) {
       return '';
     }
     const projete = summary.minimumAvecIndisponibilites;
@@ -84,7 +110,9 @@ export class StaffingPage {
     return $localize`:@@staffing.projection.description:Avec les indisponibilités déjà déclarées, il faudrait un vivier de ${projete}:projete: personnes pour couvrir un besoin de ${minimum}:minimum: : la journée la plus tendue ne dispose pas de tout l'effectif. C'est une projection — elle suppose que les recrues à venir seront indisponibles aussi souvent que les personnes déjà connues — et non une borne prouvée.`;
   });
 
-  protected readonly competence = computed<CompetenceStaffing | null>(() => this.summary()?.parCompetence ?? null);
+  protected readonly competence = computed<CompetenceStaffing | null>(
+    () => this.summary()?.parCompetence ?? null,
+  );
 
   /**
    * How the shared polyvalent reserve reads against the shortfalls — an

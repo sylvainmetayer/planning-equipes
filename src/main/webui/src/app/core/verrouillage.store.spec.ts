@@ -7,7 +7,7 @@ import type { TypeVerrouillage, VerrouillagePlanning } from './models';
 function verrouillage(
   id: string,
   type: TypeVerrouillage,
-  target: Partial<VerrouillagePlanning>
+  target: Partial<VerrouillagePlanning>,
 ): VerrouillagePlanning {
   return {
     id,
@@ -17,7 +17,7 @@ function verrouillage(
     creneauId: null,
     jour: null,
     raison: null,
-    ...target
+    ...target,
   };
 }
 
@@ -41,15 +41,15 @@ describe('VerrouillageStore', () => {
   beforeEach(() => {
     api = new FakeApi();
     TestBed.configureTestingModule({
-      providers: [VerrouillageStore, { provide: ApiService, useValue: api }]
+      providers: [VerrouillageStore, { provide: ApiService, useValue: api }],
     });
     store = TestBed.inject(VerrouillageStore);
   });
 
-  it('recharge et applique tous les verrouillages de l\'édition', async () => {
+  it("recharge et applique tous les verrouillages de l'édition", async () => {
     api.responses['/api/verrouillages'] = [
       verrouillage('V1', 'JOUR', { jour: '2026-07-08' }),
-      verrouillage('V2', 'STAND', { standId: 'STAND-A' })
+      verrouillage('V2', 'STAND', { standId: 'STAND-A' }),
     ];
 
     await store.reload();
@@ -63,7 +63,7 @@ describe('VerrouillageStore', () => {
     api.responses['/api/verrouillages'] = [
       verrouillage('V1', 'ANIMATEUR', { animateurId: 'A1' }),
       verrouillage('V2', 'STAND', { standId: 'STAND-A' }),
-      verrouillage('V3', 'CRENEAU', { creneauId: 42 })
+      verrouillage('V3', 'CRENEAU', { creneauId: 42 }),
     ];
 
     await store.reload();
@@ -80,7 +80,10 @@ describe('VerrouillageStore', () => {
     api.responses['/api/verrouillages'] = [];
 
     await store.create({ type: 'JOUR', jour: '2026-07-08' });
-    expect(api.post).toHaveBeenCalledWith('/api/verrouillages', { type: 'JOUR', jour: '2026-07-08' });
+    expect(api.post).toHaveBeenCalledWith('/api/verrouillages', {
+      type: 'JOUR',
+      jour: '2026-07-08',
+    });
     expect(api.get).toHaveBeenCalledWith('/api/verrouillages');
 
     await store.remove('V1');

@@ -26,7 +26,7 @@ export interface DayNavigation<J, K extends string | number> {
 export function dayNavigation<J, K extends string | number>(
   days: Signal<readonly J[]>,
   keyOf: (day: J) => K,
-  options: { initial?: K | null; onSelect?: (key: K) => void } = {}
+  options: { initial?: K | null; onSelect?: (key: K) => void } = {},
 ): DayNavigation<J, K> {
   const selected = signal<K | null>(options.initial ?? null);
   const current = computed<J | null>(() => {

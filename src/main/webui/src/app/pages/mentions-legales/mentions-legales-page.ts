@@ -24,9 +24,17 @@ import { REPO_URL } from '../../version';
  */
 @Component({
   selector: 'app-mentions-legales-page',
-  imports: [BrandLogo, MatButtonModule, MatCardModule, MatIconModule, MatToolbarModule, RouterLink, StatusMessage],
+  imports: [
+    BrandLogo,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatToolbarModule,
+    RouterLink,
+    StatusMessage,
+  ],
   templateUrl: './mentions-legales-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MentionsLegalesPage {
   /**
@@ -51,7 +59,7 @@ export class MentionsLegalesPage {
         mentions.hebergeur,
         mentions.contact,
         mentions.baseLegale,
-        mentions.conservation
+        mentions.conservation,
       ].every((valeur) => !valeur)
     );
   });
@@ -77,7 +85,7 @@ export class MentionsLegalesPage {
       // un animateur sur son téléphone, réseau incertain : lui dire quoi faire
       // vaut mieux que lui montrer une erreur d'analyse JSON.
       this.erreur.set(
-        $localize`:@@mentions.chargementImpossible:Ces informations n'ont pas pu être chargées. Réessayez dans un instant ; si cela persiste, prévenez l'organisation.`
+        $localize`:@@mentions.chargementImpossible:Ces informations n'ont pas pu être chargées. Réessayez dans un instant ; si cela persiste, prévenez l'organisation.`,
       );
     }
   }

@@ -10,7 +10,7 @@ import {
   CelluleJourOuverture,
   LigneStandOuverture,
   RapportOuvertures,
-  TypeAnomalieOuverture
+  TypeAnomalieOuverture,
 } from '../../core/models';
 
 /** Which rows to show: everything, or only what deserves a second look. */
@@ -30,7 +30,10 @@ export function largeurPourcent(cellule: CelluleJourOuverture): number {
 }
 
 /** `135` → `2 h 15`, `45` → `45 min`. Labels come from the caller, so no `$localize` here. */
-export function dureeCourte(minutes: number, libelles: { heures: string; minutes: string }): string {
+export function dureeCourte(
+  minutes: number,
+  libelles: { heures: string; minutes: string },
+): string {
   if (minutes <= 0) {
     return '—';
   }
@@ -49,7 +52,7 @@ export function standsEnAnomalie(anomalies: readonly AnomalieOuverture[]): Set<s
 
 /** The anomalies of one stand, so a row can carry its own tooltip. */
 export function anomaliesParStand(
-  anomalies: readonly AnomalieOuverture[]
+  anomalies: readonly AnomalieOuverture[],
 ): Map<string, AnomalieOuverture[]> {
   const parStand = new Map<string, AnomalieOuverture[]>();
   for (const anomaly of anomalies) {
@@ -68,7 +71,7 @@ export function anomaliesParStand(
 export function filtrerStands(
   rapport: RapportOuvertures,
   filtre: FiltreOuvertures,
-  recherche: string
+  recherche: string,
 ): LigneStandOuverture[] {
   const enAnomalie = standsEnAnomalie(rapport.anomalies);
   const terme = recherche.trim().toLocaleLowerCase();
@@ -103,18 +106,27 @@ export function synthese(rapport: RapportOuvertures): SyntheseOuvertures {
   return {
     stands: rapport.stands.length,
     jamaisOuverts: rapport.standsJamaisOuverts,
-    avecJourFerme: rapport.stands.filter((ligne) => ligne.jours.some((jour) => jour.etat === 'FERME')).length,
-    avecJourPartiel: rapport.stands.filter((ligne) => ligne.jours.some((jour) => jour.etat === 'OUVERT_PARTIEL'))
-      .length,
+    avecJourFerme: rapport.stands.filter((ligne) =>
+      ligne.jours.some((jour) => jour.etat === 'FERME'),
+    ).length,
+    avecJourPartiel: rapport.stands.filter((ligne) =>
+      ligne.jours.some((jour) => jour.etat === 'OUVERT_PARTIEL'),
+    ).length,
     postesTotal: rapport.postesTotal,
-    anomalies: rapport.anomalies.length
+    anomalies: rapport.anomalies.length,
   };
 }
 
 /** CSS class of a cell, driving its colour: state first, then which layer decided it. */
 export function classeCellule(cellule: CelluleJourOuverture): string {
-  const etat = cellule.etat === 'FERME' ? 'ferme' : cellule.etat === 'OUVERT_PARTIEL' ? 'partiel' : 'total';
-  const source = cellule.source === 'EXCEPTION' ? ' source-exception' : cellule.source === 'REGLE' ? ' source-regle' : '';
+  const etat =
+    cellule.etat === 'FERME' ? 'ferme' : cellule.etat === 'OUVERT_PARTIEL' ? 'partiel' : 'total';
+  const source =
+    cellule.source === 'EXCEPTION'
+      ? ' source-exception'
+      : cellule.source === 'REGLE'
+        ? ' source-regle'
+        : '';
   return `ouverture-cellule etat-${etat}${source}`;
 }
 

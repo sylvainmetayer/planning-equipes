@@ -44,19 +44,27 @@ import { MatInputModule } from '@angular/material/input';
         (keydown.arrowdown)="entrerDansTableau($event)"
       />
       @if (value()) {
-        <button matIconButton matSuffix type="button" [attr.aria-label]="clearLabel" [title]="clearLabel"
-                (click)="value.set('')">
+        <button
+          matIconButton
+          matSuffix
+          type="button"
+          [attr.aria-label]="clearLabel"
+          [title]="clearLabel"
+          (click)="value.set('')"
+        >
           <mat-icon>close</mat-icon>
         </button>
       }
       @if (value()) {
         <!-- Announced, not just shown: the count is the feedback of the typing,
              and a screen-reader user otherwise filters blind. -->
-        <mat-hint role="status" i18n="@@filter.matchCount">{{ matches() }} ligne(s) sur {{ total() }}</mat-hint>
+        <mat-hint role="status" i18n="@@filter.matchCount"
+          >{{ matches() }} ligne(s) sur {{ total() }}</mat-hint
+        >
       }
     </mat-form-field>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableFilter {
   /** Two-way bound to the page's filter signal. */

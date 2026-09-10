@@ -14,7 +14,7 @@ import {
   JourSemaine,
   ModeHoraire,
   Stand,
-  TypeJoursHoraire
+  TypeJoursHoraire,
 } from './models';
 
 /** Same order as the backend `TypeJoursHoraire`: least specific first. */
@@ -22,7 +22,7 @@ const SPECIFICITE: Record<TypeJoursHoraire, number> = {
   TOUS: 0,
   JOURS_SEMAINE: 1,
   PLAGE: 2,
-  DATES: 3
+  DATES: 3,
 };
 
 const JOURS_SEMAINE: JourSemaine[] = [
@@ -32,7 +32,7 @@ const JOURS_SEMAINE: JourSemaine[] = [
   'WEDNESDAY',
   'THURSDAY',
   'FRIDAY',
-  'SATURDAY'
+  'SATURDAY',
 ];
 
 /** What one day of the event resolves to, and which layer decided it. */
@@ -57,7 +57,8 @@ export function couvreJour(horaire: HoraireStand, date: string): boolean {
       return horaire.joursSemaine.includes(jourSemaineDe(date));
     case 'PLAGE':
       return (
-        (!horaire.dateDebut || date >= horaire.dateDebut) && (!horaire.dateFin || date <= horaire.dateFin)
+        (!horaire.dateDebut || date >= horaire.dateDebut) &&
+        (!horaire.dateFin || date <= horaire.dateFin)
       );
     case 'DATES':
       return horaire.dates.includes(date);
@@ -86,7 +87,7 @@ export function resoudreJour(stand: Stand, date: string): JourResolu {
   }
 
   const couvrantes = (stand.horaires ?? []).filter(
-    (horaire) => couvreJour(horaire, date) && horaire.fenetres.some(fenetreValide)
+    (horaire) => couvreJour(horaire, date) && horaire.fenetres.some(fenetreValide),
   );
   if (couvrantes.length === 0) {
     return { date, mode: null, fenetres: [], source: 'DEFAUT' };
@@ -112,7 +113,9 @@ function sort(fenetres: readonly FenetreHoraire[]): FenetreHoraire[] {
       heureDebut: fenetre.heureDebut,
       heureFin: fenetre.heureFin,
       // Carried only when named, so a window without one keeps its historical shape.
-      ...(fenetre.effectif !== null && fenetre.effectif !== undefined ? { effectif: fenetre.effectif } : {})
+      ...(fenetre.effectif !== null && fenetre.effectif !== undefined
+        ? { effectif: fenetre.effectif }
+        : {}),
     }))
     .sort((a, b) => a.heureDebut.localeCompare(b.heureDebut));
 }
@@ -122,7 +125,10 @@ function sort(fenetres: readonly FenetreHoraire[]): FenetreHoraire[] {
  * stand's minimum" and is fine; anything else must be a whole number of at
  * least one — a window nobody should staff is a closure, not a zero.
  */
-export function effectifFenetreInvalide(effectif: number | null | undefined, effectifMax?: number): boolean {
+export function effectifFenetreInvalide(
+  effectif: number | null | undefined,
+  effectifMax?: number,
+): boolean {
   if (effectif === null || effectif === undefined) {
     return false;
   }
@@ -131,7 +137,9 @@ export function effectifFenetreInvalide(effectif: number | null | undefined, eff
   }
   // Mirrors `StandValidator.checkEffectifFenetre`: a window cannot make
   // mandatory more seats than the stand is declared able to hold.
-  return effectifMax !== undefined && Number.isFinite(effectifMax) && effectif > Number(effectifMax);
+  return (
+    effectifMax !== undefined && Number.isFinite(effectifMax) && effectif > Number(effectifMax)
+  );
 }
 
 /** `09:00:00` → `09:00`; leaves anything already short alone. */
@@ -146,7 +154,8 @@ export function heureCourte(heure: string): string {
  */
 export function decrireFenetre(fenetre: FenetreHoraire, libelleFermeture: string): string {
   const fin = fenetre.heureFin ? heureCourte(fenetre.heureFin) : libelleFermeture;
-  const effectif = fenetre.effectif !== null && fenetre.effectif !== undefined ? ` ×${fenetre.effectif}` : '';
+  const effectif =
+    fenetre.effectif !== null && fenetre.effectif !== undefined ? ` ×${fenetre.effectif}` : '';
   return `${heureCourte(fenetre.heureDebut)} → ${fin}${effectif}`;
 }
 
@@ -157,7 +166,7 @@ export function decrireFenetre(fenetre: FenetreHoraire, libelleFermeture: string
  */
 export function resumerHoraires(
   stand: Stand,
-  libelles: { aucun: string; regles: (n: number) => string; exceptions: (n: number) => string }
+  libelles: { aucun: string; regles: (n: number) => string; exceptions: (n: number) => string },
 ): string {
   const regles = (stand.horaires ?? []).length;
   const exceptions = (stand.indisponibilites ?? []).length + (stand.ouvertures ?? []).length;
@@ -265,7 +274,8 @@ export function formaterFenetres(fenetres: readonly FenetreHoraire[]): string {
     .map((fenetre) => {
       const debut = heureCourte(fenetre.heureDebut);
       const fin = fenetre.heureFin ? heureCourte(fenetre.heureFin) : '';
-      const effectif = fenetre.effectif !== null && fenetre.effectif !== undefined ? `@${fenetre.effectif}` : '';
+      const effectif =
+        fenetre.effectif !== null && fenetre.effectif !== undefined ? `@${fenetre.effectif}` : '';
       return `${debut}-${fin}${effectif}`;
     })
     .join(', ');
@@ -291,7 +301,7 @@ export function horaireVide(): HoraireStand {
     dateFin: null,
     dates: [],
     fenetres: [{ heureDebut: '', heureFin: null, effectif: null }],
-    motif: null
+    motif: null,
   };
 }
 
@@ -314,7 +324,7 @@ export function erreurHoraire(
     datesRequises: string;
   },
   /** The stand's declared capacity, when known: a window may not ask for more. */
-  effectifMax?: number
+  effectifMax?: number,
 ): string | null {
   if (horaire.fenetres.length === 0) {
     return messages.fenetreRequise;

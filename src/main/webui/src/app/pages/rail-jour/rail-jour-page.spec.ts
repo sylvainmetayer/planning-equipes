@@ -29,7 +29,7 @@ function stand(id: string): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
@@ -43,7 +43,7 @@ function animateur(prenom: string, overrides: Partial<Animateur> = {}): Animateu
     competences: {},
     souhaits: [],
     joursIndisponibles: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -69,11 +69,16 @@ function planningDeuxJours(): PlanningEvenement {
         id: 'p2',
         creneau: creneau({ id: 2, jour: 2, date: '2026-08-02' }),
         stand: stand('Dixit'),
-        animateur: ALICE
+        animateur: ALICE,
       }),
-      poste({ id: 'p3', creneau: creneau({ id: 3, jour: 2, date: '2026-08-02' }), stand: stand('Tir'), animateur: BOB })
+      poste({
+        id: 'p3',
+        creneau: creneau({ id: 3, jour: 2, date: '2026-08-02' }),
+        stand: stand('Tir'),
+        animateur: BOB,
+      }),
     ],
-    score: null
+    score: null,
   };
 }
 
@@ -84,7 +89,7 @@ describe('RailJourPage', () => {
   async function rendre(
     evenement: PlanningEvenement,
     queryParams: Record<string, string> = {},
-    analyses: { breaks?: () => unknown } = {}
+    analyses: { breaks?: () => unknown } = {},
   ): Promise<void> {
     loadForDisplay = vi.fn(async () => evenement);
     TestBed.resetTestingModule();
@@ -92,16 +97,22 @@ describe('RailJourPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
         {
           provide: AnalysesApi,
-          useValue: { typologies: vi.fn(async () => []), breaks: vi.fn(async () => analyses.breaks?.() ?? null) }
+          useValue: {
+            typologies: vi.fn(async () => []),
+            breaks: vi.fn(async () => analyses.breaks?.() ?? null),
+          },
         },
         { provide: PlanningStateService, useValue: { loadForDisplay } },
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } }
-      ]
+        { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
+      ],
     });
     fixture = TestBed.createComponent(RailJourPage);
     await fixture.whenStable();
@@ -112,7 +123,9 @@ describe('RailJourPage', () => {
   }
 
   function noms(): string[] {
-    return Array.from(racine().querySelectorAll('.rail-nom-label')).map((each) => each.textContent!.trim());
+    return Array.from(racine().querySelectorAll('.rail-nom-label')).map((each) =>
+      each.textContent!.trim(),
+    );
   }
 
   function cellule(index: number): HTMLElement {
@@ -121,7 +134,7 @@ describe('RailJourPage', () => {
 
   async function basculerVue(libelle: string): Promise<void> {
     const bouton = Array.from(racine().querySelectorAll('mat-button-toggle button')).find((each) =>
-      each.textContent!.includes(libelle)
+      each.textContent!.includes(libelle),
     ) as HTMLElement;
     bouton.click();
     await fixture.whenStable();
@@ -219,7 +232,9 @@ describe('RailJourPage', () => {
     // must not do is draw the scale again on every line. The hour gridlines are
     // a repeating background, so the DOM grows with the lines and the seats,
     // never with lines x hours.
-    const animateurs = Array.from({ length: 150 }, (_, index) => animateur(`A${String(index).padStart(3, '0')}`));
+    const animateurs = Array.from({ length: 150 }, (_, index) =>
+      animateur(`A${String(index).padStart(3, '0')}`),
+    );
     const postes = animateurs.flatMap((each, ligne) =>
       Array.from({ length: 5 }, (_, index) =>
         poste({
@@ -227,12 +242,12 @@ describe('RailJourPage', () => {
           creneau: creneau({
             id: index + 1,
             heureDebut: `${String(9 + index * 3).padStart(2, '0')}:00`,
-            heureFin: `${String(11 + index * 3).padStart(2, '0')}:00`
+            heureFin: `${String(11 + index * 3).padStart(2, '0')}:00`,
           }),
           stand: stand('Tir'),
-          animateur: each
-        })
-      )
+          animateur: each,
+        }),
+      ),
     );
     await rendre({ animateurs, postes, score: null });
 
@@ -284,13 +299,23 @@ describe('RailJourPage', () => {
               fin: '12:00:00',
               minutes: 180,
               pausesDues: [
-                { debut: '11:00:00', fin: '11:20:00', heureLimite: '15:00:00', dureeMinutes: 20, standId: 'tir', standNom: 'Tir', relais: [], relaisDisponible: false, simultanee: false }
-              ]
-            }
+                {
+                  debut: '11:00:00',
+                  fin: '11:20:00',
+                  heureLimite: '15:00:00',
+                  dureeMinutes: 20,
+                  standId: 'tir',
+                  standNom: 'Tir',
+                  relais: [],
+                  relaisDisponible: false,
+                  simultanee: false,
+                },
+              ],
+            },
           ],
-          pausesPlanifiees: []
-        }
-      ]
+          pausesPlanifiees: [],
+        },
+      ],
     };
 
     it('draws each break on its line, the relay-less one in the alert style, and names it in the summary', async () => {
@@ -305,11 +330,15 @@ describe('RailJourPage', () => {
     });
 
     it('still draws the rail when the breaks cannot be read', async () => {
-      await rendre(planningDeuxJours(), {}, {
-        breaks: () => {
-          throw new Error('HTTP 500');
-        }
-      });
+      await rendre(
+        planningDeuxJours(),
+        {},
+        {
+          breaks: () => {
+            throw new Error('HTTP 500');
+          },
+        },
+      );
 
       expect(noms()).toHaveLength(3);
       expect(racine().querySelector('.rail-pause')).toBeNull();
@@ -325,13 +354,19 @@ describe('RailJourPage', () => {
         providers: [
           provideZonelessChangeDetection(),
           { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-          { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
-          { provide: AnalysesApi, useValue: { typologies: vi.fn(async () => []), breaks: vi.fn(async () => null) } },
+          {
+            provide: ActivatedRoute,
+            useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+          },
+          {
+            provide: AnalysesApi,
+            useValue: { typologies: vi.fn(async () => []), breaks: vi.fn(async () => null) },
+          },
           { provide: PlanningStateService, useValue: { loadForDisplay } },
-        { provide: SolverJobService, useValue: { editingLocked: () => false } },
-        { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } }
-        ]
+          { provide: SolverJobService, useValue: { editingLocked: () => false } },
+          { provide: NotificationService, useValue: { notify: vi.fn() } },
+          { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
+        ],
       });
       fixture = TestBed.createComponent(RailJourPage);
       await fixture.whenStable();

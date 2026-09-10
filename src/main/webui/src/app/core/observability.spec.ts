@@ -7,17 +7,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  */
 const sentry = vi.hoisted(() => ({
   init: vi.fn(),
-  createErrorHandler: vi.fn(() => ({ handleError: vi.fn() }))
+  createErrorHandler: vi.fn(() => ({ handleError: vi.fn() })),
 }));
 vi.mock('@sentry/angular', () => sentry);
-import { initObservability, loadAppConfig, masquerJetonEspace, masquerJetonPartout } from './observability';
+import {
+  initObservability,
+  loadAppConfig,
+  masquerJetonEspace,
+  masquerJetonPartout,
+} from './observability';
 import { AppConfig } from './models';
 
 const CONFIG: AppConfig = {
   sentryDsn: 'https://key@bugsink.example.com/1',
   sentryEnvironment: 'production',
   cloudflareWebAnalyticsToken: 'token-de-test',
-  devMode: false
+  devMode: false,
 };
 
 describe('loadAppConfig', () => {
@@ -28,7 +33,7 @@ describe('loadAppConfig', () => {
   it('returns the fetched config on success', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(CONFIG) })
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(CONFIG) }),
     );
     await expect(loadAppConfig()).resolves.toEqual(CONFIG);
   });
@@ -39,7 +44,7 @@ describe('loadAppConfig', () => {
       sentryDsn: '',
       sentryEnvironment: 'local',
       cloudflareWebAnalyticsToken: '',
-      devMode: false
+      devMode: false,
     });
   });
 
@@ -49,7 +54,7 @@ describe('loadAppConfig', () => {
       sentryDsn: '',
       sentryEnvironment: 'local',
       cloudflareWebAnalyticsToken: '',
-      devMode: false
+      devMode: false,
     });
   });
 });
@@ -71,7 +76,9 @@ describe('initObservability', () => {
   });
 
   it("registers Sentry's ErrorHandler when a DSN is configured", async () => {
-    await expect(initObservability({ ...CONFIG, cloudflareWebAnalyticsToken: '' })).resolves.toHaveLength(1);
+    await expect(
+      initObservability({ ...CONFIG, cloudflareWebAnalyticsToken: '' }),
+    ).resolves.toHaveLength(1);
   });
 
   it('initialises the SDK with the release and both token-masking hooks', async () => {
@@ -105,7 +112,7 @@ describe('initObservability', () => {
     expect(script?.getAttribute('type')).toBe('module');
     expect(script?.getAttribute('src')).toBe('https://static.cloudflareinsights.com/beacon.min.js');
     expect(script?.getAttribute('data-cf-beacon')).toBe(
-      JSON.stringify({ token: CONFIG.cloudflareWebAnalyticsToken })
+      JSON.stringify({ token: CONFIG.cloudflareWebAnalyticsToken }),
     );
   });
 
@@ -122,13 +129,13 @@ describe('initObservability', () => {
 describe('masquerJetonEspace', () => {
   it('remplace le jeton d’un lien d’espace, où qu’il apparaisse dans l’URL', () => {
     expect(masquerJetonEspace('https://planning.example.org/animateur/a1b2c3d4/echanges')).toBe(
-      'https://planning.example.org/animateur/<jeton>/echanges'
+      'https://planning.example.org/animateur/<jeton>/echanges',
     );
     // Les appels d'API portent le même jeton et atterrissent dans les fils
     // d'Ariane du rapport d'erreur : les masquer aussi, sinon le premier
     // masquage ne sert à rien.
     expect(masquerJetonEspace('/api/espace-animateur/a1b2c3d4/postes')).toBe(
-      '/api/espace-animateur/<jeton>/postes'
+      '/api/espace-animateur/<jeton>/postes',
     );
   });
 
@@ -140,7 +147,7 @@ describe('masquerJetonEspace', () => {
     // Un fil d'Ariane peut concaténer plusieurs URL : en laisser passer une
     // seule suffirait à identifier la personne.
     expect(masquerJetonEspace('/animateur/aaa -> /animateur/bbb?x=1')).toBe(
-      '/animateur/<jeton> -> /animateur/<jeton>?x=1'
+      '/animateur/<jeton> -> /animateur/<jeton>?x=1',
     );
   });
 });
@@ -151,12 +158,12 @@ describe('masquerJetonPartout', () => {
     // masquer que `data.url` laissait passer le jeton à chaque changement de page.
     const breadcrumb = {
       category: 'navigation',
-      data: { from: '/animateur/a1b2c3', to: '/animateur/a1b2c3/echanges' }
+      data: { from: '/animateur/a1b2c3', to: '/animateur/a1b2c3/echanges' },
     };
 
     expect(masquerJetonPartout(breadcrumb).data).toEqual({
       from: '/animateur/<jeton>',
-      to: '/animateur/<jeton>/echanges'
+      to: '/animateur/<jeton>/echanges',
     });
   });
 
@@ -168,14 +175,15 @@ describe('masquerJetonPartout', () => {
         values: [
           {
             type: 'HttpErrorResponse',
-            value: 'Http failure response for /api/espace-animateur/a1b2c3/postes: 500 Server Error'
-          }
-        ]
-      }
+            value:
+              'Http failure response for /api/espace-animateur/a1b2c3/postes: 500 Server Error',
+          },
+        ],
+      },
     };
 
     expect(masquerJetonPartout(event).exception.values[0].value).toBe(
-      'Http failure response for /api/espace-animateur/<jeton>/postes: 500 Server Error'
+      'Http failure response for /api/espace-animateur/<jeton>/postes: 500 Server Error',
     );
   });
 
@@ -183,7 +191,7 @@ describe('masquerJetonPartout', () => {
     const event = { level: 'error', extra: { compteur: 3, actif: true, vide: null } };
     expect(masquerJetonPartout(event)).toEqual({
       level: 'error',
-      extra: { compteur: 3, actif: true, vide: null }
+      extra: { compteur: 3, actif: true, vide: null },
     });
   });
 });

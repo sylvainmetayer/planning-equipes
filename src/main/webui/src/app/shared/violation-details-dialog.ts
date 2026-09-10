@@ -29,7 +29,8 @@ export interface ViolationDetailsData {
       </ul>
       @if (data.violations.length < data.matchCount) {
         <p class="violation-details-truncated" i18n="@@violationDetails.truncated">
-          Affichage limité aux {{ data.violations.length }} premières occurrences sur {{ data.matchCount }}.
+          Affichage limité aux {{ data.violations.length }} premières occurrences sur
+          {{ data.matchCount }}.
         </p>
       }
     </mat-dialog-content>
@@ -57,7 +58,7 @@ export interface ViolationDetailsData {
       margin-bottom: 0;
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ViolationDetailsDialog {
   protected readonly dialogRef = inject<MatDialogRef<ViolationDetailsDialog>>(MatDialogRef);

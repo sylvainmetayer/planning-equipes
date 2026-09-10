@@ -22,7 +22,7 @@ function job(overrides: Partial<JobView> = {}): JobView {
     elapsedSeconds: 0,
     error: null,
     result: null,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -37,7 +37,7 @@ describe('SolverQueue', () => {
     jobs.retirerDeLaFile.mockReset();
     jobs.retirerDeLaFile.mockResolvedValue(undefined);
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: SolverJobService, useValue: jobs }]
+      providers: [provideZonelessChangeDetection(), { provide: SolverJobService, useValue: jobs }],
     });
   });
 
@@ -59,19 +59,25 @@ describe('SolverQueue', () => {
   it('names what each planned job will do, and on which edition', () => {
     const root = render([
       job({ id: 'a', type: 'SOLVE', reamorcage: 'AUTO' }),
-      job({ id: 'b', type: 'SOLVE', reamorcage: 'AUCUN', editionNom: null, editionId: 'brouillon' }),
-      job({ id: 'c', type: 'SOLVE_INCREMENTAL' })
+      job({
+        id: 'b',
+        type: 'SOLVE',
+        reamorcage: 'AUCUN',
+        editionNom: null,
+        editionId: 'brouillon',
+      }),
+      job({ id: 'c', type: 'SOLVE_INCREMENTAL' }),
     ]);
 
     expect(root.querySelector('.solver-file-titre')!.textContent).toContain("File d'attente (3)");
     const lignes = Array.from(root.querySelectorAll('.solver-file-ligne')).map((ligne) => [
       ligne.querySelector('.solver-file-tache')!.textContent!.trim(),
-      ligne.querySelector('.solver-file-edition')!.textContent!.trim()
+      ligne.querySelector('.solver-file-edition')!.textContent!.trim(),
     ]);
     expect(lignes).toEqual([
       ['Calcul du planning', 'Festival 2026'],
       ['Calcul du planning (de zéro)', 'brouillon'],
-      ['Replanification incrémentale', 'Festival 2026']
+      ['Replanification incrémentale', 'Festival 2026'],
     ]);
   });
 

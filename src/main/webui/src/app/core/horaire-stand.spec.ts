@@ -12,7 +12,7 @@ import {
   parseFenetres,
   resoudreHoraires,
   resoudreJour,
-  resumerHoraires
+  resumerHoraires,
 } from './horaire-stand';
 import { HoraireStand, Stand } from './models';
 
@@ -21,10 +21,11 @@ const MESSAGES = {
   heureDebutRequise: 'heureDebutRequise',
   fenetreInversee: 'fenetreInversee',
   effectifInvalide: 'effectifInvalide',
-  effectifDepasse: (effectif: number, effectifMax: number) => `effectifDepasse ${effectif}>${effectifMax}`,
+  effectifDepasse: (effectif: number, effectifMax: number) =>
+    `effectifDepasse ${effectif}>${effectifMax}`,
   joursSemaineRequis: 'joursSemaineRequis',
   plageRequise: 'plageRequise',
-  datesRequises: 'datesRequises'
+  datesRequises: 'datesRequises',
 };
 
 function regle(patch: Partial<HoraireStand>): HoraireStand {
@@ -45,7 +46,7 @@ function stand(patch: Partial<Stand>): Stand {
     indisponibilites: [],
     ouvertures: [],
     horaires: [],
-    ...patch
+    ...patch,
   };
 }
 
@@ -86,7 +87,7 @@ describe('couvreJour', () => {
 });
 
 describe('resoudreJour', () => {
-  it("laisse le jour ouvert par défaut quand rien ne le concerne", () => {
+  it('laisse le jour ouvert par défaut quand rien ne le concerne', () => {
     const resolu = resoudreJour(stand({}), '2026-07-08');
     expect(resolu.mode).toBeNull();
     expect(resolu.source).toBe('DEFAUT');
@@ -101,10 +102,10 @@ describe('resoudreJour', () => {
           jours: 'TOUS',
           fenetres: [
             { heureDebut: '10:00', heureFin: '12:00' },
-            { heureDebut: '14:00', heureFin: null }
-          ]
-        })
-      ]
+            { heureDebut: '14:00', heureFin: null },
+          ],
+        }),
+      ],
     });
 
     const solved = resoudreHoraires(bourse, DATES);
@@ -115,7 +116,7 @@ describe('resoudreJour', () => {
       expect(jour.source).toBe('REGLE');
       expect(jour.fenetres).toEqual([
         { heureDebut: '10:00', heureFin: '12:00' },
-        { heureDebut: '14:00', heureFin: null }
+        { heureDebut: '14:00', heureFin: null },
       ]);
     }
   });
@@ -127,19 +128,25 @@ describe('resoudreJour', () => {
         regle({
           jours: 'JOURS_SEMAINE',
           joursSemaine: ['SATURDAY'],
-          fenetres: [{ heureDebut: '10:00', heureFin: null }]
-        })
-      ]
+          fenetres: [{ heureDebut: '10:00', heureFin: null }],
+        }),
+      ],
     });
 
-    expect(resoudreJour(avecWeekend, '2026-07-08').fenetres).toEqual([{ heureDebut: '14:00', heureFin: null }]);
-    expect(resoudreJour(avecWeekend, '2026-07-11').fenetres).toEqual([{ heureDebut: '10:00', heureFin: null }]);
+    expect(resoudreJour(avecWeekend, '2026-07-08').fenetres).toEqual([
+      { heureDebut: '14:00', heureFin: null },
+    ]);
+    expect(resoudreJour(avecWeekend, '2026-07-11').fenetres).toEqual([
+      { heureDebut: '10:00', heureFin: null },
+    ]);
   });
 
-  it("fait primer une exception datée sur les règles, et la signale comme telle", () => {
+  it('fait primer une exception datée sur les règles, et la signale comme telle', () => {
     const avecException = stand({
       horaires: [regle({ jours: 'TOUS', fenetres: [{ heureDebut: '14:00', heureFin: null }] })],
-      indisponibilites: [{ id: null, date: '2026-07-10', heureDebut: '10:00', heureFin: null, motif: 'Férié' }]
+      indisponibilites: [
+        { id: null, date: '2026-07-10', heureDebut: '10:00', heureFin: null, motif: 'Férié' },
+      ],
     });
 
     const resolu = resoudreJour(avecException, '2026-07-10');
@@ -152,9 +159,17 @@ describe('resoudreJour', () => {
   it("donne l'ouverture gagnante en cas d'égalité de spécificité — le choix le plus restrictif", () => {
     const ambigu = stand({
       horaires: [
-        regle({ mode: 'FERMETURE', jours: 'TOUS', fenetres: [{ heureDebut: '14:00', heureFin: '16:00' }] }),
-        regle({ mode: 'OUVERTURE', jours: 'TOUS', fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })
-      ]
+        regle({
+          mode: 'FERMETURE',
+          jours: 'TOUS',
+          fenetres: [{ heureDebut: '14:00', heureFin: '16:00' }],
+        }),
+        regle({
+          mode: 'OUVERTURE',
+          jours: 'TOUS',
+          fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }],
+        }),
+      ],
     });
 
     const resolu = resoudreJour(ambigu, '2026-07-08');
@@ -165,7 +180,7 @@ describe('resoudreJour', () => {
 
   it('ignore une fenêtre à moitié saisie', () => {
     const incomplet = stand({
-      horaires: [regle({ jours: 'TOUS', fenetres: [{ heureDebut: '', heureFin: null }] })]
+      horaires: [regle({ jours: 'TOUS', fenetres: [{ heureDebut: '', heureFin: null }] })],
     });
 
     expect(resoudreJour(incomplet, '2026-07-08').mode).toBeNull();
@@ -174,43 +189,98 @@ describe('resoudreJour', () => {
 
 describe('erreurHoraire', () => {
   it('accepte une fenêtre sans heure de fin : jusqu’à la fermeture', () => {
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '14:00', heureFin: null }] }), MESSAGES)).toBeNull();
+    expect(
+      erreurHoraire(regle({ fenetres: [{ heureDebut: '14:00', heureFin: null }] }), MESSAGES),
+    ).toBeNull();
   });
 
   it('refuse une fenêtre inversée', () => {
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '18:00', heureFin: '14:00' }] }), MESSAGES)).toBe(
-      'fenetreInversee'
-    );
+    expect(
+      erreurHoraire(regle({ fenetres: [{ heureDebut: '18:00', heureFin: '14:00' }] }), MESSAGES),
+    ).toBe('fenetreInversee');
   });
 
   it('accepte une fenêtre sans effectif ou avec un entier d’au moins 1', () => {
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: null }] }), MESSAGES)).toBeNull();
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 1 }] }), MESSAGES)).toBeNull();
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 7 }] }), MESSAGES)).toBeNull();
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: null }] }),
+        MESSAGES,
+      ),
+    ).toBeNull();
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 1 }] }),
+        MESSAGES,
+      ),
+    ).toBeNull();
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 7 }] }),
+        MESSAGES,
+      ),
+    ).toBeNull();
   });
 
   it('refuse un effectif de fenêtre nul, négatif ou fractionnaire', () => {
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 0 }] }), MESSAGES)).toBe('effectifInvalide');
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: -1 }] }), MESSAGES)).toBe('effectifInvalide');
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 2.5 }] }), MESSAGES)).toBe('effectifInvalide');
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 0 }] }),
+        MESSAGES,
+      ),
+    ).toBe('effectifInvalide');
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: -1 }] }),
+        MESSAGES,
+      ),
+    ).toBe('effectifInvalide');
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 2.5 }] }),
+        MESSAGES,
+      ),
+    ).toBe('effectifInvalide');
   });
 
   it('nomme les deux nombres quand une fenêtre dépasse la capacité du stand', () => {
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 4 }] }), MESSAGES, 2)).toBe(
-      'effectifDepasse 4>2'
-    );
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 2 }] }), MESSAGES, 2)).toBeNull();
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 4 }] }),
+        MESSAGES,
+        2,
+      ),
+    ).toBe('effectifDepasse 4>2');
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 2 }] }),
+        MESSAGES,
+        2,
+      ),
+    ).toBeNull();
     // A zero is a zero before it is "above the maximum".
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 0 }] }), MESSAGES, 2)).toBe('effectifInvalide');
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 0 }] }),
+        MESSAGES,
+        2,
+      ),
+    ).toBe('effectifInvalide');
   });
 
   it('signale une fenêtre inversée avant son effectif', () => {
-    expect(erreurHoraire(regle({ fenetres: [{ heureDebut: '12:00', heureFin: '10:00', effectif: 0 }] }), MESSAGES)).toBe('fenetreInversee');
+    expect(
+      erreurHoraire(
+        regle({ fenetres: [{ heureDebut: '12:00', heureFin: '10:00', effectif: 0 }] }),
+        MESSAGES,
+      ),
+    ).toBe('fenetreInversee');
   });
 
   it('refuse un sélecteur sans les données qu’il exige', () => {
     const base = { fenetres: [{ heureDebut: '14:00', heureFin: null }] };
-    expect(erreurHoraire(regle({ ...base, jours: 'JOURS_SEMAINE' }), MESSAGES)).toBe('joursSemaineRequis');
+    expect(erreurHoraire(regle({ ...base, jours: 'JOURS_SEMAINE' }), MESSAGES)).toBe(
+      'joursSemaineRequis',
+    );
     expect(erreurHoraire(regle({ ...base, jours: 'PLAGE' }), MESSAGES)).toBe('plageRequise');
     expect(erreurHoraire(regle({ ...base, jours: 'DATES' }), MESSAGES)).toBe('datesRequises');
   });
@@ -220,7 +290,7 @@ describe('erreurHoraire', () => {
       jours: 'PLAGE',
       dateDebut: '2026-07-11',
       dateFin: '2026-07-09',
-      fenetres: [{ heureDebut: '14:00', heureFin: null }]
+      fenetres: [{ heureDebut: '14:00', heureFin: null }],
     });
     expect(erreurHoraire(plage, MESSAGES)).toBe('plageRequise');
   });
@@ -229,7 +299,10 @@ describe('erreurHoraire', () => {
 describe('conflitDeMode', () => {
   it('signale deux règles de même portée et de modes opposés', () => {
     expect(
-      conflitDeMode([regle({ mode: 'OUVERTURE', jours: 'TOUS' }), regle({ mode: 'FERMETURE', jours: 'TOUS' })])
+      conflitDeMode([
+        regle({ mode: 'OUVERTURE', jours: 'TOUS' }),
+        regle({ mode: 'FERMETURE', jours: 'TOUS' }),
+      ]),
     ).toBe(true);
   });
 
@@ -237,8 +310,8 @@ describe('conflitDeMode', () => {
     expect(
       conflitDeMode([
         regle({ mode: 'OUVERTURE', jours: 'TOUS' }),
-        regle({ mode: 'FERMETURE', jours: 'DATES', dates: ['2026-07-14'] })
-      ])
+        regle({ mode: 'FERMETURE', jours: 'DATES', dates: ['2026-07-14'] }),
+      ]),
     ).toBe(false);
   });
 
@@ -246,31 +319,50 @@ describe('conflitDeMode', () => {
     expect(
       conflitDeMode([
         regle({ mode: 'OUVERTURE', jours: 'DATES', dates: ['2026-07-14'] }),
-        regle({ mode: 'FERMETURE', jours: 'DATES', dates: ['2026-07-19'] })
-      ])
+        regle({ mode: 'FERMETURE', jours: 'DATES', dates: ['2026-07-19'] }),
+      ]),
     ).toBe(false);
   });
 });
 
 describe('decrireFenetre / resumerHoraires', () => {
   it('nomme la fermeture plutôt qu’une heure inventée', () => {
-    expect(decrireFenetre({ heureDebut: '14:00', heureFin: null }, 'fermeture')).toBe('14:00 → fermeture');
-    expect(decrireFenetre({ heureDebut: '10:00:00', heureFin: '12:00:00' }, 'fermeture')).toBe('10:00 → 12:00');
+    expect(decrireFenetre({ heureDebut: '14:00', heureFin: null }, 'fermeture')).toBe(
+      '14:00 → fermeture',
+    );
+    expect(decrireFenetre({ heureDebut: '10:00:00', heureFin: '12:00:00' }, 'fermeture')).toBe(
+      '10:00 → 12:00',
+    );
   });
 
   it('montre l’effectif d’une fenêtre qui en nomme un, et rien sinon', () => {
-    expect(decrireFenetre({ heureDebut: '14:00', heureFin: '20:00', effectif: 3 }, 'fermeture')).toBe('14:00 → 20:00 ×3');
-    expect(decrireFenetre({ heureDebut: '14:00', heureFin: null, effectif: 1 }, 'fermeture')).toBe('14:00 → fermeture ×1');
-    expect(decrireFenetre({ heureDebut: '14:00', heureFin: null, effectif: null }, 'fermeture')).toBe('14:00 → fermeture');
-    expect(decrireFenetre({ heureDebut: '14:00', heureFin: null, effectif: undefined }, 'fermeture')).toBe('14:00 → fermeture');
+    expect(
+      decrireFenetre({ heureDebut: '14:00', heureFin: '20:00', effectif: 3 }, 'fermeture'),
+    ).toBe('14:00 → 20:00 ×3');
+    expect(decrireFenetre({ heureDebut: '14:00', heureFin: null, effectif: 1 }, 'fermeture')).toBe(
+      '14:00 → fermeture ×1',
+    );
+    expect(
+      decrireFenetre({ heureDebut: '14:00', heureFin: null, effectif: null }, 'fermeture'),
+    ).toBe('14:00 → fermeture');
+    expect(
+      decrireFenetre({ heureDebut: '14:00', heureFin: null, effectif: undefined }, 'fermeture'),
+    ).toBe('14:00 → fermeture');
   });
 
   it('garde l’effectif des fenêtres quand il résout un jour', () => {
     const jour = resoudreJour(
       stand({
-        horaires: [regle({ fenetres: [{ heureDebut: '14:00', heureFin: '20:00', effectif: 4 }, { heureDebut: '10:00', heureFin: '12:00' }] })]
+        horaires: [
+          regle({
+            fenetres: [
+              { heureDebut: '14:00', heureFin: '20:00', effectif: 4 },
+              { heureDebut: '10:00', heureFin: '12:00' },
+            ],
+          }),
+        ],
       }),
-      '2026-07-10'
+      '2026-07-10',
     );
 
     expect(jour.fenetres.map((fenetre) => fenetre.effectif)).toEqual([undefined, 4]);
@@ -280,17 +372,19 @@ describe('decrireFenetre / resumerHoraires', () => {
     const libelles = {
       aucun: '—',
       regles: (n: number) => `${n} règle(s)`,
-      exceptions: (n: number) => `${n} exception(s)`
+      exceptions: (n: number) => `${n} exception(s)`,
     };
     expect(resumerHoraires(stand({}), libelles)).toBe('—');
     expect(
       resumerHoraires(
         stand({
           horaires: [regle({}), regle({})],
-          indisponibilites: [{ id: null, date: '2026-07-10', heureDebut: '10:00', heureFin: null, motif: null }]
+          indisponibilites: [
+            { id: null, date: '2026-07-10', heureDebut: '10:00', heureFin: null, motif: null },
+          ],
         }),
-        libelles
-      )
+        libelles,
+      ),
     ).toBe('2 règle(s) · 1 exception(s)');
   });
 });
@@ -302,8 +396,8 @@ describe('parseFenetres', () => {
       morceau: null,
       fenetres: [
         { heureDebut: '10:00', heureFin: '12:00', effectif: 2 },
-        { heureDebut: '14:00', heureFin: null, effectif: null }
-      ]
+        { heureDebut: '14:00', heureFin: null, effectif: null },
+      ],
     });
   });
 
@@ -311,12 +405,15 @@ describe('parseFenetres', () => {
     const saisie = parseFenetres(' 9h-12h30 ; 14 - 18:50 @ 3 ');
     expect(saisie.fenetres).toEqual([
       { heureDebut: '09:00', heureFin: '12:30', effectif: null },
-      { heureDebut: '14:00', heureFin: '18:50', effectif: 3 }
+      { heureDebut: '14:00', heureFin: '18:50', effectif: 3 },
     ]);
   });
 
   it('accepte le tiret cadratin et la flèche que l’aperçu affiche', () => {
-    expect(parseFenetres('10:00 → 12:00, 14:00 – 20:00').fenetres?.map((f) => f.heureFin)).toEqual(['12:00', '20:00']);
+    expect(parseFenetres('10:00 → 12:00, 14:00 – 20:00').fenetres?.map((f) => f.heureFin)).toEqual([
+      '12:00',
+      '20:00',
+    ]);
   });
 
   it('refuse une ligne vide, en nommant l’erreur plutôt que de renvoyer zéro fenêtre', () => {
@@ -325,7 +422,10 @@ describe('parseFenetres', () => {
   });
 
   it('nomme le morceau fautif d’une fenêtre sans séparateur', () => {
-    expect(parseFenetres('10:00-12:00, 14:00')).toMatchObject({ erreur: 'FORME', morceau: '14:00' });
+    expect(parseFenetres('10:00-12:00, 14:00')).toMatchObject({
+      erreur: 'FORME',
+      morceau: '14:00',
+    });
   });
 
   it('refuse une heure illisible ou hors du cadran', () => {
@@ -335,7 +435,10 @@ describe('parseFenetres', () => {
   });
 
   it('refuse un effectif nul, non entier ou absent après le @', () => {
-    expect(parseFenetres('10:00-12:00@0')).toMatchObject({ erreur: 'EFFECTIF', morceau: '10:00-12:00@0' });
+    expect(parseFenetres('10:00-12:00@0')).toMatchObject({
+      erreur: 'EFFECTIF',
+      morceau: '10:00-12:00@0',
+    });
     expect(parseFenetres('10:00-12:00@2.5')).toMatchObject({ erreur: 'EFFECTIF' });
     expect(parseFenetres('10:00-12:00@')).toMatchObject({ erreur: 'EFFECTIF' });
   });
@@ -381,7 +484,7 @@ describe('formaterFenetres', () => {
   it('écrit ce que parseFenetres relit à l’identique', () => {
     const fenetres = [
       { heureDebut: '10:00', heureFin: '12:00', effectif: 2 },
-      { heureDebut: '14:00', heureFin: null, effectif: null }
+      { heureDebut: '14:00', heureFin: null, effectif: null },
     ];
     const ligne = formaterFenetres(fenetres);
     expect(ligne).toBe('10:00-12:00@2, 14:00-');
@@ -389,13 +492,18 @@ describe('formaterFenetres', () => {
   });
 
   it('raccourcit les heures à la seconde et laisse de côté une fenêtre sans début', () => {
-    expect(formaterFenetres([{ heureDebut: '10:00:00', heureFin: '12:00:00' }])).toBe('10:00-12:00');
+    expect(formaterFenetres([{ heureDebut: '10:00:00', heureFin: '12:00:00' }])).toBe(
+      '10:00-12:00',
+    );
     // Une ligne « - » était refusée par le parseur de ce même fichier à la
     // frappe suivante : la fenêtre à moitié saisie reste dans la règle, et
     // c'est « heure de début » qui la signale.
     expect(formaterFenetres([{ heureDebut: '', heureFin: null }])).toBe('');
     expect(
-      formaterFenetres([{ heureDebut: '10:00', heureFin: '12:00' }, { heureDebut: '', heureFin: null }])
+      formaterFenetres([
+        { heureDebut: '10:00', heureFin: '12:00' },
+        { heureDebut: '', heureFin: null },
+      ]),
     ).toBe('10:00-12:00');
     expect(formaterFenetres([])).toBe('');
   });
@@ -409,7 +517,9 @@ describe('estCasParticulier', () => {
 
   it('l’est dès que la règle ferme, cible des jours ou porte un motif', () => {
     expect(estCasParticulier(regle({ mode: 'FERMETURE' }))).toBe(true);
-    expect(estCasParticulier(regle({ jours: 'JOURS_SEMAINE', joursSemaine: ['MONDAY'] }))).toBe(true);
+    expect(estCasParticulier(regle({ jours: 'JOURS_SEMAINE', joursSemaine: ['MONDAY'] }))).toBe(
+      true,
+    );
     expect(estCasParticulier(regle({ jours: 'PLAGE' }))).toBe(true);
     expect(estCasParticulier(regle({ jours: 'DATES' }))).toBe(true);
     expect(estCasParticulier(regle({ motif: 'canicule' }))).toBe(true);

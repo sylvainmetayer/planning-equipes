@@ -16,7 +16,7 @@ import {
   JourStaffing,
   SemaineStaffing,
   StaffingSummary,
-  TypologieStaffing
+  TypologieStaffing,
 } from '../../core/models';
 import { StaffingPage } from './staffing-page';
 
@@ -40,7 +40,7 @@ function jour(overrides: Partial<JourStaffing> = {}): JourStaffing {
     picAvecPause: 22,
     minimumJour: 22,
     disponibles: 40,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -55,7 +55,7 @@ function semaine(overrides: Partial<SemaineStaffing> = {}): SemaineStaffing {
     chargeTotal: 30,
     joursPersonne: 154,
     rotationTotal: 26,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -75,7 +75,7 @@ function typologie(overrides: Partial<TypologieStaffing> = {}): TypologieStaffin
     borneRetenue: 'PIC_AVEC_PAUSE',
     specialistes: 6,
     manque: 0,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -89,7 +89,7 @@ function competence(overrides: Partial<CompetenceStaffing> = {}): CompetenceStaf
     manquePolyvalents: 0,
     animateursTotal: 40,
     typologieNinjaDefinie: true,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -117,7 +117,7 @@ function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
     dureeQuotidienneMaxMinutes: 600,
     joursTravaillesMaxParSemaine: 6,
     parCompetence: competence(),
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -152,7 +152,10 @@ describe('StaffingPage', () => {
     analysesApi.staffing.mockReset();
     analysesApi.staffing.mockResolvedValue(summary());
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: AnalysesApi, useValue: analysesApi }]
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: AnalysesApi, useValue: analysesApi },
+      ],
     });
   });
 
@@ -238,8 +241,8 @@ describe('StaffingPage', () => {
           capaciteHeuresParAnimateur: 0,
           parSemaine: [],
           semaineCritique: null,
-          parJour: []
-        })
+          parJour: [],
+        }),
       );
 
       const page = createPage();
@@ -271,8 +274,13 @@ describe('StaffingPage', () => {
         summary({
           capaciteHeuresParAnimateur: 20,
           nombreSemaines: 3,
-          semaineCritique: semaine({ semaine: '2026-W30', jours: 2, joursTravaillables: 2, heures: 96 })
-        })
+          semaineCritique: semaine({
+            semaine: '2026-W30',
+            jours: 2,
+            joursTravaillables: 2,
+            heures: 96,
+          }),
+        }),
       );
 
       const page = createPage();
@@ -284,7 +292,9 @@ describe('StaffingPage', () => {
     });
 
     it('highlights the rotation bound like any other when the server retained it', async () => {
-      analysesApi.staffing.mockResolvedValue(summary({ borneRetenue: 'ROTATION_JOURS', rotationTotal: 26 }));
+      analysesApi.staffing.mockResolvedValue(
+        summary({ borneRetenue: 'ROTATION_JOURS', rotationTotal: 26 }),
+      );
 
       const page = createPage();
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
@@ -298,20 +308,32 @@ describe('StaffingPage', () => {
     // the bounds do not, and never when nobody declared anything.
     it('shows the availability projection only when declared days off push it above the floor', async () => {
       analysesApi.staffing.mockResolvedValue(
-        summary({ minimumTotal: 22, minimumAvecIndisponibilites: 31, indisponibilitesDeclarees: true })
+        summary({
+          minimumTotal: 22,
+          minimumAvecIndisponibilites: 31,
+          indisponibilitesDeclarees: true,
+        }),
       );
       const page = createPage();
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
       expect(page.projectionLabel()).toContain('31');
 
       analysesApi.staffing.mockResolvedValue(
-        summary({ minimumTotal: 22, minimumAvecIndisponibilites: 22, indisponibilitesDeclarees: true })
+        summary({
+          minimumTotal: 22,
+          minimumAvecIndisponibilites: 22,
+          indisponibilitesDeclarees: true,
+        }),
       );
       page.staffing.reload();
       await vi.waitFor(() => expect(page.projectionLabel()).toBe(''));
 
       analysesApi.staffing.mockResolvedValue(
-        summary({ minimumTotal: 22, minimumAvecIndisponibilites: 22, indisponibilitesDeclarees: false })
+        summary({
+          minimumTotal: 22,
+          minimumAvecIndisponibilites: 22,
+          indisponibilitesDeclarees: false,
+        }),
       );
       page.staffing.reload();
       await vi.waitFor(() => expect(analysesApi.staffing).toHaveBeenCalledTimes(3));
@@ -341,7 +363,9 @@ describe('StaffingPage', () => {
     it('names the busiest day by its number, date and open stands', () => {
       const page = createPage();
 
-      const label = page.jourCritiqueLabel(jour({ jour: 4, date: '2026-08-04', standsOuverts: 27 }));
+      const label = page.jourCritiqueLabel(
+        jour({ jour: 4, date: '2026-08-04', standsOuverts: 27 }),
+      );
 
       expect(label).toContain('4');
       expect(label).toContain('2026-08-04');
@@ -429,11 +453,17 @@ describe('StaffingPage', () => {
     // nothing can only be held by a polyvalent — by nobody when the
     // referential marks none.
     it('separates the seats only polyvalents can hold from those no typologie claims', async () => {
-      const withNinja = await pageWith({ siegesReservesAuxPolyvalents: 20, typologieNinjaDefinie: true });
+      const withNinja = await pageWith({
+        siegesReservesAuxPolyvalents: 20,
+        typologieNinjaDefinie: true,
+      });
       expect(withNinja.siegesReservesLabel()).toContain('20');
       expect(withNinja.siegesReservesLabel()).toContain('seuls les polyvalents');
 
-      const withoutNinja = await pageWith({ siegesReservesAuxPolyvalents: 20, typologieNinjaDefinie: false });
+      const withoutNinja = await pageWith({
+        siegesReservesAuxPolyvalents: 20,
+        typologieNinjaDefinie: false,
+      });
       expect(withoutNinja.siegesReservesLabel()).toContain('personne');
     });
 

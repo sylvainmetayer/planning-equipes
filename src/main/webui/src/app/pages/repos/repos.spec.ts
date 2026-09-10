@@ -19,7 +19,7 @@ function stand(id: string): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
@@ -33,7 +33,7 @@ function animateur(id: string, overrides: Partial<Animateur> = {}): Animateur {
     competences: {},
     souhaits: [],
     joursIndisponibles: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -41,7 +41,10 @@ function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffe
   return { stand: null, creneau: null, animateur: null, ...overrides };
 }
 
-function indisponibiliteForcee(animateurIds: string[], overrides: Partial<ContrainteAdHoc> = {}): ContrainteAdHoc {
+function indisponibiliteForcee(
+  animateurIds: string[],
+  overrides: Partial<ContrainteAdHoc> = {},
+): ContrainteAdHoc {
   return {
     id: `c-${animateurIds.join('-')}`,
     type: 'INDISPONIBILITE_FORCEE',
@@ -49,7 +52,7 @@ function indisponibiliteForcee(animateurIds: string[], overrides: Partial<Contra
     creneau: null,
     stand: null,
     raison: 'test',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -68,14 +71,17 @@ function troisJours(animateurs: (string | null)[]): PosteAffectation[] {
       id: `p${index + 1}`,
       stand: stand('Tir'),
       creneau: creneau({ id: index + 1, jour: index + 1, date: `2026-08-0${index + 1}` }),
-      animateur: id ? animateur(id) : null
-    })
+      animateur: id ? animateur(id) : null,
+    }),
   );
 }
 
 describe('buildTableauRepos', () => {
   it('gives every animateur of the edition a line, assigned or not', () => {
-    const tableau = buildTableauRepos(troisJours(['Ines', 'Ines', 'Ines']), [animateur('Ines'), animateur('Oscar')]);
+    const tableau = buildTableauRepos(troisJours(['Ines', 'Ines', 'Ines']), [
+      animateur('Ines'),
+      animateur('Oscar'),
+    ]);
 
     expect(tableau.lignes.map((each) => each.nom)).toEqual(['Ines', 'Oscar']);
     // Somebody the solver never used rests every day — that is the information.
@@ -87,31 +93,44 @@ describe('buildTableauRepos', () => {
     const tableau = buildTableauRepos(troisJours(['Ines', null, 'Ines']), [animateur('Ines')]);
 
     expect(tableau.jours.map((each) => each.jour)).toEqual([1, 2, 3]);
-    expect(tableau.jours.map((each) => each.date)).toEqual(['2026-08-01', '2026-08-02', '2026-08-03']);
+    expect(tableau.jours.map((each) => each.date)).toEqual([
+      '2026-08-01',
+      '2026-08-02',
+      '2026-08-03',
+    ]);
   });
 
   it('counts an unassigned day as rest and a declared day as unavailable', () => {
     const tableau = buildTableauRepos(troisJours(['Ines', null, 'Ines']), [
       animateur('Ines', { joursIndisponibles: ['2026-08-02'] }),
-      animateur('Oscar', { joursIndisponibles: ['2026-08-02'] })
+      animateur('Oscar', { joursIndisponibles: ['2026-08-02'] }),
     ]);
 
     const ines = ligne(tableau.lignes, 'Ines');
-    expect(ines.cellules.map((each) => each.statut)).toEqual(['travaille', 'indisponible', 'travaille']);
+    expect(ines.cellules.map((each) => each.statut)).toEqual([
+      'travaille',
+      'indisponible',
+      'travaille',
+    ]);
     expect(ines.joursRepos).toBe(0);
     expect(ines.joursIndisponibles).toBe(1);
     // The two states are not merged: Oscar's day 2 is not a day off he was given.
     expect(ligne(tableau.lignes, 'Oscar').cellules.map((each) => each.statut)).toEqual([
       'repos',
       'indisponible',
-      'repos'
+      'repos',
     ]);
   });
 
   it('sums the hours worked each day, narrowed windows included', () => {
     const tableau = buildTableauRepos(
       [
-        poste({ id: 'p1', stand: stand('Tir'), creneau: creneau({ id: 1 }), animateur: animateur('Ines') }),
+        poste({
+          id: 'p1',
+          stand: stand('Tir'),
+          creneau: creneau({ id: 1 }),
+          animateur: animateur('Ines'),
+        }),
         poste({
           id: 'p2',
           stand: stand('Dixit'),
@@ -119,10 +138,10 @@ describe('buildTableauRepos', () => {
           // Partially closed stand (issue #60): the poste's own window wins.
           heureDebutEffective: '14:00',
           heureFinEffective: '16:30',
-          animateur: animateur('Ines')
-        })
+          animateur: animateur('Ines'),
+        }),
       ],
-      [animateur('Ines')]
+      [animateur('Ines')],
     );
 
     const cellule = ligne(tableau.lignes, 'Ines').cellules[0];
@@ -137,23 +156,35 @@ describe('buildTableauRepos', () => {
         id: `p${index}`,
         stand: stand('Tir'),
         creneau: creneau({ id: index, jour: index + 1, date: `2026-08-0${index + 1}` }),
-        animateur: travaille ? animateur('Ines') : null
-      })
+        animateur: travaille ? animateur('Ines') : null,
+      }),
     );
 
-    expect(ligne(buildTableauRepos(cinqJours, [animateur('Ines')]).lignes, 'Ines').serieMax).toBe(2);
+    expect(ligne(buildTableauRepos(cinqJours, [animateur('Ines')]).lignes, 'Ines').serieMax).toBe(
+      2,
+    );
   });
 
   it('flags only the animateurs working every single day', () => {
     const tableau = buildTableauRepos(
       [
         ...troisJours(['Ines', 'Ines', 'Ines']),
-        poste({ id: 'q2', stand: stand('Dixit'), creneau: creneau({ id: 12, jour: 2, date: '2026-08-02' }), animateur: animateur('Zoe') }),
-        poste({ id: 'q3', stand: stand('Dixit'), creneau: creneau({ id: 13, jour: 3, date: '2026-08-03' }), animateur: animateur('Zoe') })
+        poste({
+          id: 'q2',
+          stand: stand('Dixit'),
+          creneau: creneau({ id: 12, jour: 2, date: '2026-08-02' }),
+          animateur: animateur('Zoe'),
+        }),
+        poste({
+          id: 'q3',
+          stand: stand('Dixit'),
+          creneau: creneau({ id: 13, jour: 3, date: '2026-08-03' }),
+          animateur: animateur('Zoe'),
+        }),
       ],
       // Zoé works days 2 and 3 and was unavailable on day 1: she did not work
       // every day, so she is not the one to look at, however busy she is.
-      [animateur('Ines'), animateur('Zoe', { joursIndisponibles: ['2026-08-01'] })]
+      [animateur('Ines'), animateur('Zoe', { joursIndisponibles: ['2026-08-01'] })],
     );
 
     expect(ligne(tableau.lignes, 'Ines').sansRepos).toBe(true);
@@ -163,7 +194,7 @@ describe('buildTableauRepos', () => {
 
   it('names an assignment landing on a day declared unavailable', () => {
     const tableau = buildTableauRepos(troisJours(['Ines', 'Ines', 'Ines']), [
-      animateur('Ines', { joursIndisponibles: ['2026-08-02'] })
+      animateur('Ines', { joursIndisponibles: ['2026-08-02'] }),
     ]);
 
     const cellules = ligne(tableau.lignes, 'Ines').cellules;
@@ -183,10 +214,14 @@ describe('buildTableauRepos', () => {
 
     // Scoped to one créneau or one stand, the exception still leaves the day
     // workable: counting it as a day off would invent rest nobody granted.
-    const target = buildTableauRepos(postes, [animateur('Zoe')], [
-      indisponibiliteForcee(['Zoe'], { creneau: { id: 1 } }),
-      indisponibiliteForcee(['Zoe'], { stand: { id: 'Tir' } })
-    ]);
+    const target = buildTableauRepos(
+      postes,
+      [animateur('Zoe')],
+      [
+        indisponibiliteForcee(['Zoe'], { creneau: { id: 1 } }),
+        indisponibiliteForcee(['Zoe'], { stand: { id: 'Tir' } }),
+      ],
+    );
     expect(ligne(target.lignes, 'Zoe').joursIndisponibles).toBe(0);
     expect(ligne(target.lignes, 'Zoe').joursRepos).toBe(3);
   });
@@ -194,10 +229,19 @@ describe('buildTableauRepos', () => {
   it('puts the longest runs first, so the top of the grid is the list to act on', () => {
     const postes = [
       ...troisJours(['Ines', 'Ines', 'Ines']),
-      poste({ id: 'q1', stand: stand('Dixit'), creneau: creneau({ id: 21, jour: 1, date: '2026-08-01' }), animateur: animateur('Alice') })
+      poste({
+        id: 'q1',
+        stand: stand('Dixit'),
+        creneau: creneau({ id: 21, jour: 1, date: '2026-08-01' }),
+        animateur: animateur('Alice'),
+      }),
     ];
 
-    const tableau = buildTableauRepos(postes, [animateur('Alice'), animateur('Ines'), animateur('Zoe')]);
+    const tableau = buildTableauRepos(postes, [
+      animateur('Alice'),
+      animateur('Ines'),
+      animateur('Zoe'),
+    ]);
 
     expect(tableau.lignes.map((each) => each.nom)).toEqual(['Ines', 'Alice', 'Zoe']);
   });
@@ -211,10 +255,13 @@ describe('buildTableauRepos', () => {
   it('tells apart two animateurs sharing a name', () => {
     const tableau = buildTableauRepos(troisJours([null, null, null]), [
       animateur('a1', { prenom: 'Ines', nom: 'Dupont' }),
-      animateur('a2', { prenom: 'Ines', nom: 'Dupont' })
+      animateur('a2', { prenom: 'Ines', nom: 'Dupont' }),
     ]);
 
-    expect(tableau.lignes.map((each) => each.nom)).toEqual(['Ines Dupont (a1)', 'Ines Dupont (a2)']);
+    expect(tableau.lignes.map((each) => each.nom)).toEqual([
+      'Ines Dupont (a1)',
+      'Ines Dupont (a2)',
+    ]);
   });
 });
 
@@ -222,18 +269,21 @@ describe('totauxParJour', () => {
   it('counts, day by day, who works, who rests and who was unavailable', () => {
     const tableau = buildTableauRepos(troisJours(['Ines', null, 'Ines']), [
       animateur('Ines'),
-      animateur('Oscar', { joursIndisponibles: ['2026-08-02'] })
+      animateur('Oscar', { joursIndisponibles: ['2026-08-02'] }),
     ]);
 
     expect(totauxParJour(tableau.jours, tableau.lignes)).toEqual([
       { jour: 1, travaillent: 1, repos: 1, indisponibles: 0 },
       { jour: 2, travaillent: 0, repos: 1, indisponibles: 1 },
-      { jour: 3, travaillent: 1, repos: 1, indisponibles: 0 }
+      { jour: 3, travaillent: 1, repos: 1, indisponibles: 0 },
     ]);
   });
 
   it('counts the rows it is handed, so a filtered grid keeps an honest footer', () => {
-    const tableau = buildTableauRepos(troisJours(['Ines', null, 'Ines']), [animateur('Ines'), animateur('Oscar')]);
+    const tableau = buildTableauRepos(troisJours(['Ines', null, 'Ines']), [
+      animateur('Ines'),
+      animateur('Oscar'),
+    ]);
 
     const totaux = totauxParJour(tableau.jours, filtrerLignes(tableau.lignes, 'Oscar', false));
 
@@ -245,11 +295,13 @@ describe('filtrerLignes', () => {
   const lignes = buildTableauRepos(troisJours(['Ines', 'Ines', 'Ines']), [
     animateur('a1', { prenom: 'Inès', nom: 'Dupont' }),
     animateur('Ines'),
-    animateur('a2', { prenom: 'Oscar', nom: 'Martin' })
+    animateur('a2', { prenom: 'Oscar', nom: 'Martin' }),
   ]).lignes;
 
   it('matches the name whatever its accents and its case', () => {
-    expect(filtrerLignes(lignes, 'ines dup', false).map((each) => each.nom)).toEqual(['Inès Dupont']);
+    expect(filtrerLignes(lignes, 'ines dup', false).map((each) => each.nom)).toEqual([
+      'Inès Dupont',
+    ]);
   });
 
   it('keeps everything on an empty search', () => {

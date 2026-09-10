@@ -18,18 +18,24 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { TypologieItem } from '../../core/models';
 import { TypologieFormDialog } from './typologie-form-dialog';
 
-function monter(typologie: TypologieItem | null, options: { editingLocked?: boolean; saveOk?: boolean } = {}) {
+function monter(
+  typologie: TypologieItem | null,
+  options: { editingLocked?: boolean; saveOk?: boolean } = {},
+) {
   const save = vi.fn(async () => options.saveOk ?? true);
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: ReferenceCrudService, useValue: { save } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { typologie } }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: { typologie } },
+    ],
   });
   return { fixture: TestBed.createComponent(TypologieFormDialog), save, close };
 }
@@ -42,7 +48,11 @@ function champ(fixture: ComponentFixture<TypologieFormDialog>, name: string): HT
   return racine(fixture).querySelector(`input[name="${name}"]`) as HTMLInputElement;
 }
 
-function saisir(fixture: ComponentFixture<TypologieFormDialog>, name: string, valeur: string): void {
+function saisir(
+  fixture: ComponentFixture<TypologieFormDialog>,
+  name: string,
+  valeur: string,
+): void {
   const input = champ(fixture, name);
   input.value = valeur;
   input.dispatchEvent(new Event('input'));
@@ -62,7 +72,9 @@ describe('TypologieFormDialog', () => {
 
   beforeEach(() => {
     erreursConsole = [];
-    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => erreursConsole.push(args));
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) =>
+      erreursConsole.push(args),
+    );
   });
 
   it('names every control, so the labels render and no NG01352 is thrown', async () => {
@@ -77,8 +89,12 @@ describe('TypologieFormDialog', () => {
     const { fixture } = monter({ id: 'ambiance', label: 'Ambiance', ninja: false });
     await fixture.whenStable();
 
-    expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe('Modifier la typologie ambiance');
-    expect(racine(fixture).querySelector('button[type="submit"]')!.textContent!).toContain('Modifier la typologie');
+    expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe(
+      'Modifier la typologie ambiance',
+    );
+    expect(racine(fixture).querySelector('button[type="submit"]')!.textContent!).toContain(
+      'Modifier la typologie',
+    );
   });
 
   it('announces a creation when opened on nothing', async () => {
@@ -86,7 +102,9 @@ describe('TypologieFormDialog', () => {
     await fixture.whenStable();
 
     expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe('Nouvelle typologie');
-    expect(racine(fixture).querySelector('button[type="submit"]')!.textContent!).toContain('Créer la typologie');
+    expect(racine(fixture).querySelector('button[type="submit"]')!.textContent!).toContain(
+      'Créer la typologie',
+    );
   });
 
   it('locks the identifier of an existing typologie but not of a new one', async () => {
@@ -110,9 +128,18 @@ describe('TypologieFormDialog', () => {
     await fixture.whenStable();
 
     expect(save).toHaveBeenCalledOnce();
-    const [resource, payload, editingId] = save.mock.calls[0] as unknown as [string, TypologieItem, string | null];
+    const [resource, payload, editingId] = save.mock.calls[0] as unknown as [
+      string,
+      TypologieItem,
+      string | null,
+    ];
     expect(resource).toBe('typologies');
-    expect(payload).toEqual({ id: 'ambiance', label: 'Ambiance festive', ninja: false, modifieLe: null });
+    expect(payload).toEqual({
+      id: 'ambiance',
+      label: 'Ambiance festive',
+      ninja: false,
+      modifieLe: null,
+    });
     expect(editingId).toBe('ambiance');
     expect(close).toHaveBeenCalledWith(true);
   });
@@ -132,7 +159,10 @@ describe('TypologieFormDialog', () => {
   });
 
   it('keeps the dialog open when the save is refused', async () => {
-    const { fixture, close } = monter({ id: 'ambiance', label: 'Ambiance', ninja: false }, { saveOk: false });
+    const { fixture, close } = monter(
+      { id: 'ambiance', label: 'Ambiance', ninja: false },
+      { saveOk: false },
+    );
     await fixture.whenStable();
 
     submit(fixture);
@@ -152,11 +182,16 @@ describe('TypologieFormDialog', () => {
   });
 
   it('disables the whole form and says why while a solve is running', async () => {
-    const { fixture } = monter({ id: 'ambiance', label: 'Ambiance', ninja: false }, { editingLocked: true });
+    const { fixture } = monter(
+      { id: 'ambiance', label: 'Ambiance', ninja: false },
+      { editingLocked: true },
+    );
     await fixture.whenStable();
 
     expect(racine(fixture).querySelector('.locked-hint')).not.toBeNull();
     expect((racine(fixture).querySelector('fieldset') as HTMLFieldSetElement).disabled).toBe(true);
-    expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 });

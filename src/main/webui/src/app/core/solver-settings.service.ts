@@ -35,12 +35,19 @@ export class SolverSettingsService {
   }
 
   async setSecondsLimit(seconds: number): Promise<void> {
-    const value = Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : DEFAULT_SOLVER_SECONDS_LIMIT;
-    await this.enregistrer({ dureeResolutionSecondes: value, mailFinResolution: this.mailFinResolution() });
+    const value =
+      Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : DEFAULT_SOLVER_SECONDS_LIMIT;
+    await this.enregistrer({
+      dureeResolutionSecondes: value,
+      mailFinResolution: this.mailFinResolution(),
+    });
   }
 
   async setMailFinResolution(actif: boolean): Promise<void> {
-    await this.enregistrer({ dureeResolutionSecondes: this.secondsLimit(), mailFinResolution: actif });
+    await this.enregistrer({
+      dureeResolutionSecondes: this.secondsLimit(),
+      mailFinResolution: actif,
+    });
   }
 
   private async enregistrer(parametres: ParametresSolveur): Promise<void> {

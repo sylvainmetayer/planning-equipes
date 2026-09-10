@@ -24,12 +24,18 @@ import {
   ouvertureVide,
   toDraft,
   typologiesVides,
-  versStand
+  versStand,
 } from './stand-draft';
 import type { Emplacement, HoraireStand, Stand } from '../../core/models';
 
 function draft(overrides: Partial<StandDraft> = {}): StandDraft {
-  return { ...toDraft(null), id: 'S1', nom: 'Stand 1', typologiesProposees: ['STRATEGIE'], ...overrides };
+  return {
+    ...toDraft(null),
+    id: 'S1',
+    nom: 'Stand 1',
+    typologiesProposees: ['STRATEGIE'],
+    ...overrides,
+  };
 }
 
 function plage(overrides: Partial<ReturnType<typeof plageVide>> = {}) {
@@ -46,7 +52,7 @@ function horaire(overrides: Partial<HoraireStand> = {}): HoraireStand {
     dateFin: null,
     dates: [],
     fenetres: [{ heureDebut: '10:00', heureFin: '18:00' }],
-    ...overrides
+    ...overrides,
   } as HoraireStand;
 }
 
@@ -123,17 +129,27 @@ describe('effectifInvalide', () => {
 describe('dated exceptions', () => {
   it('refuses a closure without a date or without a start time', () => {
     expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ date: '' })] }))).toBe(true);
-    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureDebut: '' })] }))).toBe(true);
+    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureDebut: '' })] }))).toBe(
+      true,
+    );
   });
 
   it('refuses an end time that is not strictly after the start', () => {
-    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: '10:00' })] }))).toBe(true);
-    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: '09:00' })] }))).toBe(true);
+    expect(
+      indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: '10:00' })] })),
+    ).toBe(true);
+    expect(
+      indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: '09:00' })] })),
+    ).toBe(true);
   });
 
   it('accepts an empty end time, which means "until closing time"', () => {
-    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: null })] }))).toBe(false);
-    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: '' })] }))).toBe(false);
+    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: null })] }))).toBe(
+      false,
+    );
+    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: '' })] }))).toBe(
+      false,
+    );
   });
 
   it('applies exactly the same rules to the opening exceptions', () => {
@@ -184,10 +200,20 @@ describe('window effectif', () => {
   });
 
   it('flags an opening whose effectif cannot be saved, and only that', () => {
-    expect(effectifOuvertureInvalide(draft({ ouvertures: [{ ...plage(), effectif: 0 }] }))).toBe(true);
-    expect(effectifOuvertureInvalide(draft({ effectifMax: 4, ouvertures: [{ ...plage(), effectif: 2 }, plage()] }))).toBe(false);
+    expect(effectifOuvertureInvalide(draft({ ouvertures: [{ ...plage(), effectif: 0 }] }))).toBe(
+      true,
+    );
+    expect(
+      effectifOuvertureInvalide(
+        draft({ effectifMax: 4, ouvertures: [{ ...plage(), effectif: 2 }, plage()] }),
+      ),
+    ).toBe(false);
     // Above the stand's declared capacity, the server would refuse it too.
-    expect(effectifOuvertureInvalide(draft({ effectifMax: 2, ouvertures: [{ ...plage(), effectif: 5 }] }))).toBe(true);
+    expect(
+      effectifOuvertureInvalide(
+        draft({ effectifMax: 2, ouvertures: [{ ...plage(), effectif: 5 }] }),
+      ),
+    ).toBe(true);
     expect(effectifOuvertureInvalide(draft({ ouvertures: [] }))).toBe(false);
     // The generic opening check does not double-report it.
     expect(ouvertureInvalide(draft({ ouvertures: [{ ...plage(), effectif: 0 }] }))).toBe(false);
@@ -198,7 +224,7 @@ describe('conflitOuvertureFermeture', () => {
   it('refuses the same day being both closed and opened', () => {
     const invalide = draft({
       indisponibilites: [plage({ date: '2026-07-10' })],
-      ouvertures: [plage({ date: '2026-07-10' })]
+      ouvertures: [plage({ date: '2026-07-10' })],
     });
 
     expect(conflitOuvertureFermeture(invalide)).toBe(true);
@@ -207,7 +233,7 @@ describe('conflitOuvertureFermeture', () => {
   it('accepts a closure and an opening on two different days', () => {
     const valid = draft({
       indisponibilites: [plage({ date: '2026-07-10' })],
-      ouvertures: [plage({ date: '2026-07-11' })]
+      ouvertures: [plage({ date: '2026-07-11' })],
     });
 
     expect(conflitOuvertureFermeture(valid)).toBe(false);
@@ -216,7 +242,7 @@ describe('conflitOuvertureFermeture', () => {
   it('does not count a row whose date has not been filled in yet as a conflict', () => {
     const enCoursDeSaisie = draft({
       indisponibilites: [plage({ date: '' })],
-      ouvertures: [plage({ date: '' })]
+      ouvertures: [plage({ date: '' })],
     });
 
     expect(conflitOuvertureFermeture(enCoursDeSaisie)).toBe(false);
@@ -234,14 +260,17 @@ describe('brouillonInvalide', () => {
     expect(brouillonInvalide(draft({ ouvertures: [plage({ heureDebut: '' })] }))).toBe(true);
     expect(
       brouillonInvalide(
-        draft({ indisponibilites: [plage({ date: '2026-07-10' })], ouvertures: [plage({ date: '2026-07-10' })] })
-      )
+        draft({
+          indisponibilites: [plage({ date: '2026-07-10' })],
+          ouvertures: [plage({ date: '2026-07-10' })],
+        }),
+      ),
     ).toBe(true);
   });
 });
 
 describe('typologiesVides — un stand a toujours au moins une typologie (#343)', () => {
-  it('rend le brouillon invalide tant qu\'aucune typologie n\'est choisie', () => {
+  it("rend le brouillon invalide tant qu'aucune typologie n'est choisie", () => {
     const without = { ...draft(), typologiesProposees: [] };
     expect(typologiesVides(without)).toBe(true);
     expect(brouillonInvalide(without)).toBe(true);
@@ -254,7 +283,12 @@ describe('typologiesVides — un stand a toujours au moins une typologie (#343)'
 
 describe('modifieLe — la précondition de #362 voyage de la fiche ouverte au payload', () => {
   it('reprend le modifieLe de la fiche et le renvoie tel quel', () => {
-    const stand = { ...toDraft(null), id: 'S1', nom: 'Stand', modifieLe: '2026-09-06T10:00:00.123456Z' } as unknown as Stand;
+    const stand = {
+      ...toDraft(null),
+      id: 'S1',
+      nom: 'Stand',
+      modifieLe: '2026-09-06T10:00:00.123456Z',
+    } as unknown as Stand;
 
     const draft = toDraft(stand);
 
@@ -287,7 +321,7 @@ describe('toDraft', () => {
       typologiesProposees: ['t1'],
       indisponibilites: [plage()],
       ouvertures: [],
-      horaires: [horaire({ joursSemaine: ['MONDAY'], dates: ['2026-07-10'] })]
+      horaires: [horaire({ joursSemaine: ['MONDAY'], dates: ['2026-07-10'] })],
     } as unknown as Stand;
 
     const copie = toDraft(stand);
@@ -332,7 +366,9 @@ describe('versStand', () => {
   });
 
   it('resolves the emplacement against the store, and stays null when none is picked', () => {
-    expect(versStand(draft({ emplacementId: 'salle-1' }), emplacements).emplacement).toEqual(emplacements[0]);
+    expect(versStand(draft({ emplacementId: 'salle-1' }), emplacements).emplacement).toEqual(
+      emplacements[0],
+    );
     expect(versStand(draft({ emplacementId: null }), emplacements).emplacement).toBeNull();
     // Picked then deleted elsewhere: null rather than a dangling reference.
     expect(versStand(draft({ emplacementId: 'disparue' }), emplacements).emplacement).toBeNull();
@@ -341,7 +377,7 @@ describe('versStand', () => {
   it('turns an emptied time field back into "until closing time"', () => {
     const stand = versStand(
       draft({ indisponibilites: [plage({ heureFin: '' })], ouvertures: [plage({ heureFin: '' })] }),
-      emplacements
+      emplacements,
     );
 
     expect(stand.indisponibilites[0].heureFin).toBeNull();
@@ -354,19 +390,19 @@ describe('versStand', () => {
         ouvertures: [
           { ...plage(), effectif: 4 },
           { ...plage({ date: '2026-07-11' }), effectif: null },
-          { ...plage({ date: '2026-07-12' }), effectif: '' as unknown as number }
+          { ...plage({ date: '2026-07-12' }), effectif: '' as unknown as number },
         ],
         horaires: [
           horaire({
             fenetres: [
               { heureDebut: '10:00', heureFin: '12:00', effectif: 3 },
               { heureDebut: '14:00', heureFin: null, effectif: '' as unknown as number },
-              { heureDebut: '16:00', heureFin: null }
-            ]
-          })
-        ]
+              { heureDebut: '16:00', heureFin: null },
+            ],
+          }),
+        ],
       }),
-      emplacements
+      emplacements,
     );
 
     expect(stand.ouvertures.map((ouverture) => ouverture.effectif)).toEqual([4, null, null]);
@@ -376,7 +412,7 @@ describe('versStand', () => {
   it('reads an empty effectif as zero rather than as NaN', () => {
     const stand = versStand(
       draft({ effectifMin: '' as unknown as number, effectifMax: '' as unknown as number }),
-      emplacements
+      emplacements,
     );
 
     expect(stand.effectifMin).toBe(0);
@@ -386,7 +422,13 @@ describe('versStand', () => {
 
 describe('normaliserHoraire', () => {
   it('drops the bounds a rule switched away from PLAGE was still dragging along', () => {
-    const regle = horaire({ jours: 'TOUS', dateDebut: '2026-07-10', dateFin: '2026-07-12', dates: ['2026-07-10'], joursSemaine: ['MONDAY'] });
+    const regle = horaire({
+      jours: 'TOUS',
+      dateDebut: '2026-07-10',
+      dateFin: '2026-07-12',
+      dates: ['2026-07-10'],
+      joursSemaine: ['MONDAY'],
+    });
 
     const normalise = normaliserHoraire(regle);
 
@@ -397,25 +439,50 @@ describe('normaliserHoraire', () => {
   });
 
   it('keeps only what the chosen scope uses', () => {
-    expect(normaliserHoraire(horaire({ jours: 'JOURS_SEMAINE', joursSemaine: ['MONDAY'], dates: ['2026-07-10'] })).joursSemaine).toEqual(['MONDAY']);
-    expect(normaliserHoraire(horaire({ jours: 'DATES', dates: ['2026-07-10'], joursSemaine: ['MONDAY'] })).dates).toEqual(['2026-07-10']);
-    expect(normaliserHoraire(horaire({ jours: 'PLAGE', dateDebut: '2026-07-10', dateFin: '2026-07-12' })).dateDebut).toBe('2026-07-10');
+    expect(
+      normaliserHoraire(
+        horaire({ jours: 'JOURS_SEMAINE', joursSemaine: ['MONDAY'], dates: ['2026-07-10'] }),
+      ).joursSemaine,
+    ).toEqual(['MONDAY']);
+    expect(
+      normaliserHoraire(
+        horaire({ jours: 'DATES', dates: ['2026-07-10'], joursSemaine: ['MONDAY'] }),
+      ).dates,
+    ).toEqual(['2026-07-10']);
+    expect(
+      normaliserHoraire(horaire({ jours: 'PLAGE', dateDebut: '2026-07-10', dateFin: '2026-07-12' }))
+        .dateDebut,
+    ).toBe('2026-07-10');
   });
 
   it('normalises the end time of every window, not just the first', () => {
-    const regle = horaire({ fenetres: [{ heureDebut: '10:00', heureFin: '' }, { heureDebut: '14:00', heureFin: '' }] });
+    const regle = horaire({
+      fenetres: [
+        { heureDebut: '10:00', heureFin: '' },
+        { heureDebut: '14:00', heureFin: '' },
+      ],
+    });
 
-    expect(normaliserHoraire(regle).fenetres.every((fenetre) => fenetre.heureFin === null)).toBe(true);
+    expect(normaliserHoraire(regle).fenetres.every((fenetre) => fenetre.heureFin === null)).toBe(
+      true,
+    );
   });
 
   // The compact line and the two fold states belong to the form, not to the
   // entity: sent along, they would reach a backend that has no such fields.
   it('leaves the editing state of the form behind', () => {
-    const normalise = normaliserHoraire({ ...horaire(), saisie: '10:00-12:00', deplie: true, detail: true });
+    const normalise = normaliserHoraire({
+      ...horaire(),
+      saisie: '10:00-12:00',
+      deplie: true,
+      detail: true,
+    });
 
     expect(normalise).not.toHaveProperty('saisie');
     expect(normalise).not.toHaveProperty('deplie');
     expect(normalise).not.toHaveProperty('detail');
-    expect(normalise.fenetres).toEqual(horaire().fenetres.map((fenetre) => ({ ...fenetre, effectif: null })));
+    expect(normalise.fenetres).toEqual(
+      horaire().fenetres.map((fenetre) => ({ ...fenetre, effectif: null })),
+    );
   });
 });

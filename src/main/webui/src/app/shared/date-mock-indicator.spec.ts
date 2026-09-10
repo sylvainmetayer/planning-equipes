@@ -24,10 +24,10 @@ describe('DateMockIndicator', () => {
           useValue: {
             dateDuJour: date,
             modifiable: signal(true),
-            actif: () => date() !== ''
-          }
-        }
-      ]
+            actif: () => date() !== '',
+          },
+        },
+      ],
     });
     fixture = TestBed.createComponent(DateMockIndicator);
     await fixture.whenStable();

@@ -29,7 +29,7 @@ async function bootstrap(): Promise<void> {
   const [isEnglish, appConfig_, branding] = await Promise.all([
     loadEnglishTranslations(),
     loadAppConfig(),
-    loadBranding()
+    loadBranding(),
   ]);
   // Before the first frame: the tab must never flash a placeholder name, and
   // the accent colour must be in place before any component paints.
@@ -51,8 +51,8 @@ async function bootstrap(): Promise<void> {
       // instead of asking the server again.
       { provide: APP_CONFIG, useValue: appConfig_ },
       { provide: BRANDING, useValue: branding },
-      { provide: LOCALE_ID, useValue: locale }
-    ]
+      { provide: LOCALE_ID, useValue: locale },
+    ],
   });
 }
 

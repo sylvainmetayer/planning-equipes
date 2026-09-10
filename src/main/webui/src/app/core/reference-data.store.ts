@@ -11,7 +11,7 @@ import {
   Emplacement,
   Stand,
   TypologieItem,
-  Scale
+  Scale,
 } from './models';
 import { errorMessage } from './error-message';
 
@@ -82,12 +82,7 @@ export interface SaveResult {
 
 /** The six collections this store holds, as reload targets. */
 export type ReferenceFamily =
-  | 'typologies'
-  | 'creneaux'
-  | 'animateurs'
-  | 'stands'
-  | 'emplacements'
-  | 'contraintes';
+  'typologies' | 'creneaux' | 'animateurs' | 'stands' | 'emplacements' | 'contraintes';
 
 const ALL_FAMILIES: readonly ReferenceFamily[] = [
   'typologies',
@@ -95,7 +90,7 @@ const ALL_FAMILIES: readonly ReferenceFamily[] = [
   'animateurs',
   'stands',
   'emplacements',
-  'contraintes'
+  'contraintes',
 ];
 
 /**
@@ -119,7 +114,7 @@ const FAMILIES_INVALIDATED_BY: Readonly<Record<string, readonly ReferenceFamily[
   animateurs: ['animateurs', 'contraintes'],
   stands: ['stands', 'contraintes'],
   emplacements: ['emplacements', 'stands'],
-  'contraintes-ad-hoc': ['contraintes']
+  'contraintes-ad-hoc': ['contraintes'],
 };
 
 @Injectable({ providedIn: 'root' })
@@ -136,7 +131,7 @@ export class ReferenceDataStore {
     posteCount: 0,
     contrainteAdHocCount: 0,
     hoursToFill: 0,
-    hoursAvailable: 0
+    hoursAvailable: 0,
   });
 
   private readonly api = inject(ApiService);
@@ -155,7 +150,7 @@ export class ReferenceDataStore {
       this.reloadIf(wanted, 'stands', '/api/stands', this.stands),
       this.reloadIf(wanted, 'emplacements', '/api/emplacements', this.emplacements),
       this.reloadIf(wanted, 'contraintes', '/api/contraintes-ad-hoc', this.contraintes),
-      this.api.get<Scale>('/api/planning/volumetrie').then((scale) => this.scale.set(scale))
+      this.api.get<Scale>('/api/planning/volumetrie').then((scale) => this.scale.set(scale)),
     ]);
   }
 
@@ -163,7 +158,7 @@ export class ReferenceDataStore {
     wanted: ReadonlySet<ReferenceFamily>,
     family: ReferenceFamily,
     url: string,
-    target: { set(value: T[]): void }
+    target: { set(value: T[]): void },
   ): Promise<void> {
     if (!wanted.has(family)) {
       return;
@@ -185,11 +180,14 @@ export class ReferenceDataStore {
   async save<T extends { id?: string | number | null }>(
     resource: string,
     payload: T,
-    editingId: string | number | null
+    editingId: string | number | null,
   ): Promise<SaveResult> {
     const reponse =
       editingId !== null && editingId !== undefined
-        ? await this.api.put<unknown>(`/api/${resource}/${encodeURIComponent(String(editingId))}`, payload)
+        ? await this.api.put<unknown>(
+            `/api/${resource}/${encodeURIComponent(String(editingId))}`,
+            payload,
+          )
         : await this.api.post<unknown>(`/api/${resource}`, payload);
     await this.reload(this.familiesFor(resource));
     return { id: idEcrit(reponse), avertissements: avertissementsDe(reponse) };
@@ -208,22 +206,25 @@ export class ReferenceDataStore {
    */
   async removeMany(resource: string, ids: readonly (string | number)[]): Promise<BulkResult> {
     return this.runBulk(resource, ids, (id) =>
-      this.api.delete(`/api/${resource}/${encodeURIComponent(String(id))}`)
+      this.api.delete(`/api/${resource}/${encodeURIComponent(String(id))}`),
     );
   }
 
   /** Same batching as {@link removeMany}, for entities already patched by the caller. */
-  async saveMany<T extends { id: string | number }>(resource: string, payloads: readonly T[]): Promise<BulkResult> {
+  async saveMany<T extends { id: string | number }>(
+    resource: string,
+    payloads: readonly T[],
+  ): Promise<BulkResult> {
     const parId = new Map<string | number, T>(payloads.map((payload) => [payload.id, payload]));
     return this.runBulk(resource, [...parId.keys()], (id) =>
-      this.api.put(`/api/${resource}/${encodeURIComponent(String(id))}`, parId.get(id))
+      this.api.put(`/api/${resource}/${encodeURIComponent(String(id))}`, parId.get(id)),
     );
   }
 
   private async runBulk(
     resource: string,
     ids: readonly (string | number)[],
-    action: (id: string | number) => Promise<unknown>
+    action: (id: string | number) => Promise<unknown>,
   ): Promise<BulkResult> {
     const result: BulkResult = { succes: [], echecs: [], avertissements: [] };
     for (const id of ids) {
@@ -234,12 +235,11 @@ export class ReferenceDataStore {
         result.echecs.push({
           id,
           message: errorMessage(error),
-          concurrente: error instanceof ApiError && error.modificationConcurrente
+          concurrente: error instanceof ApiError && error.modificationConcurrente,
         });
       }
     }
     await this.reload(this.familiesFor(resource));
     return result;
   }
-
 }

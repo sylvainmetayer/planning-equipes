@@ -20,12 +20,16 @@ export class ConstraintsApi {
   }
 
   setActive(name: string, actif: boolean): Promise<{ actif: boolean }> {
-    return this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(name)}`, { actif });
+    return this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(name)}`, {
+      actif,
+    });
   }
 
   /** The weight as the server kept it — it clamps, and the page shows what was stored. */
   setWeight(name: string, poids: number): Promise<{ poids: number }> {
-    return this.api.put<{ poids: number }>(`/api/constraints/${encodeURIComponent(name)}/poids`, { poids });
+    return this.api.put<{ poids: number }>(`/api/constraints/${encodeURIComponent(name)}/poids`, {
+      poids,
+    });
   }
 
   legalParameters(): Promise<ParametresLegaux> {

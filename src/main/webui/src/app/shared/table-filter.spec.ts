@@ -10,7 +10,7 @@ import { TableFilter } from './table-filter';
 
 @Component({
   imports: [TableFilter],
-  template: `<app-table-filter [(value)]="valeur" (enterTable)="entrees.set(entrees() + 1)" />`
+  template: `<app-table-filter [(value)]="valeur" (enterTable)="entrees.set(entrees() + 1)" />`,
 })
 class Hote {
   readonly valeur = signal('');

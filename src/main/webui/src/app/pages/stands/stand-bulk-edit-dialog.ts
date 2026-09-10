@@ -22,7 +22,7 @@ import {
   appliquerPatchStand,
   patchStandEstVide,
   patchStandVide,
-  standsAvecEffectifInvalide
+  standsAvecEffectifInvalide,
 } from './stand-bulk-edit';
 
 export interface StandBulkEditData {
@@ -50,10 +50,10 @@ export interface StandBulkEditData {
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    HoraireReglesEditor
+    HoraireReglesEditor,
   ],
   templateUrl: './stand-bulk-edit-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StandBulkEditDialog {
   protected readonly store = inject(ReferenceDataStore);
@@ -71,7 +71,7 @@ export class StandBulkEditDialog {
 
   /** Stands the patch would leave with `effectifMax < effectifMin`: the batch is blocked as a whole. */
   protected readonly standsInvalides = computed(() =>
-    standsAvecEffectifInvalide(this.data.stands, this.patch(), this.store.emplacements())
+    standsAvecEffectifInvalide(this.data.stands, this.patch(), this.store.emplacements()),
   );
   protected readonly effectifInvalideMessage = computed(() => {
     const noms = this.standsInvalides()
@@ -83,29 +83,29 @@ export class StandBulkEditDialog {
   protected readonly modesBooleen: { value: ModeBooleen; label: string }[] = [
     { value: 'INCHANGE', label: $localize`:@@bulk.mode.inchange:Ne pas modifier` },
     { value: 'OUI', label: $localize`:@@common.oui:Oui` },
-    { value: 'NON', label: $localize`:@@common.non:Non` }
+    { value: 'NON', label: $localize`:@@common.non:Non` },
   ];
   protected readonly modesListe: { value: ModeListe; label: string }[] = [
     { value: 'AUCUN', label: $localize`:@@bulk.mode.inchange:Ne pas modifier` },
     { value: 'AJOUTER', label: $localize`:@@bulk.mode.ajouter:Ajouter` },
     { value: 'RETIRER', label: $localize`:@@bulk.mode.retirer:Retirer` },
-    { value: 'REMPLACER', label: $localize`:@@bulk.mode.remplacer:Remplacer` }
+    { value: 'REMPLACER', label: $localize`:@@bulk.mode.remplacer:Remplacer` },
   ];
   protected readonly modesEmplacement: { value: ModeEmplacement; label: string }[] = [
     { value: 'INCHANGE', label: $localize`:@@bulk.mode.inchange:Ne pas modifier` },
     { value: 'DEFINIR', label: $localize`:@@bulk.mode.definir:Définir` },
-    { value: 'EFFACER', label: $localize`:@@bulk.mode.effacer:Effacer` }
+    { value: 'EFFACER', label: $localize`:@@bulk.mode.effacer:Effacer` },
   ];
   protected readonly niveauxEffort: { value: 'INCHANGE' | NiveauEffort; label: string }[] = [
     { value: 'INCHANGE', label: $localize`:@@bulk.mode.inchange:Ne pas modifier` },
     { value: 'NORMAL', label: 'NORMAL' },
-    { value: 'EPUISANT', label: 'EPUISANT' }
+    { value: 'EPUISANT', label: 'EPUISANT' },
   ];
   protected readonly modesHoraires: { value: ModeHoraires; label: string }[] = [
     { value: 'INCHANGE', label: $localize`:@@bulk.mode.inchange:Ne pas modifier` },
     { value: 'AJOUTER', label: $localize`:@@bulk.mode.ajouter:Ajouter` },
     { value: 'REMPLACER', label: $localize`:@@bulk.mode.remplacer:Remplacer` },
-    { value: 'EFFACER', label: $localize`:@@bulk.mode.effacer:Effacer` }
+    { value: 'EFFACER', label: $localize`:@@bulk.mode.effacer:Effacer` },
   ];
   /** First problem among the rules being applied, or `null` — same check as the single-stand form. */
   protected readonly erreurHoraires = computed(() => {
@@ -137,12 +137,19 @@ export class StandBulkEditDialog {
   }
 
   protected async save(): Promise<void> {
-    if (this.rienAModifier() || this.standsInvalides().length > 0 || this.enCours() || this.erreurHoraires()) {
+    if (
+      this.rienAModifier() ||
+      this.standsInvalides().length > 0 ||
+      this.enCours() ||
+      this.erreurHoraires()
+    ) {
       return;
     }
     const patch = this.patch();
     const emplacements = this.store.emplacements();
-    const payloads = this.data.stands.map((stand) => appliquerPatchStand(stand, patch, emplacements));
+    const payloads = this.data.stands.map((stand) =>
+      appliquerPatchStand(stand, patch, emplacements),
+    );
     this.enCours.set(true);
     try {
       if ((await this.crud.saveMany('stands', payloads, labelStandsPluriel())) > 0) {

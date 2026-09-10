@@ -44,11 +44,10 @@ function placeholders(message) {
 function extraire() {
   const sortie = mkdtempSync(join(tmpdir(), 'planning-i18n-'));
   try {
-    execFileSync(
-      'npx',
-      ['ng', 'extract-i18n', '--format=json', `--output-path=${sortie}`],
-      { cwd: join(__dirname, '..'), stdio: ['ignore', 'ignore', 'inherit'] }
-    );
+    execFileSync('npx', ['ng', 'extract-i18n', '--format=json', `--output-path=${sortie}`], {
+      cwd: join(__dirname, '..'),
+      stdio: ['ignore', 'ignore', 'inherit'],
+    });
     return JSON.parse(readFileSync(join(sortie, 'messages.json'), 'utf8')).translations;
   } finally {
     rmSync(sortie, { recursive: true, force: true });
@@ -120,7 +119,10 @@ function libellesDivergents(source, anglais) {
       }
       const candidats = (libelles.get(comparable(citee)) ?? []).filter((autre) => autre !== id);
       const attendus = candidats.filter((autre) => autre in anglais).map((autre) => anglais[autre]);
-      if (attendus.length === 0 || attendus.some((attendu) => citeesEn.includes(comparable(attendu)))) {
+      if (
+        attendus.length === 0 ||
+        attendus.some((attendu) => citeesEn.includes(comparable(attendu)))
+      ) {
         continue;
       }
       rapport.set(id, [...(rapport.get(id) ?? []), { citee, attendus }]);
@@ -140,8 +142,15 @@ const divergents = Object.keys(source)
 
 const libelles = libellesDivergents(source, anglais);
 
-if (manquants.length === 0 && orphelins.length === 0 && divergents.length === 0 && libelles.size === 0) {
-  console.log(`i18n-check : ${Object.keys(source).length}/${Object.keys(source).length} messages traduits, placeholders cohérents, libellés cités alignés sur l'écran.`);
+if (
+  manquants.length === 0 &&
+  orphelins.length === 0 &&
+  divergents.length === 0 &&
+  libelles.size === 0
+) {
+  console.log(
+    `i18n-check : ${Object.keys(source).length}/${Object.keys(source).length} messages traduits, placeholders cohérents, libellés cités alignés sur l'écran.`,
+  );
   process.exit(0);
 }
 
@@ -149,28 +158,26 @@ console.error('i18n-check : le catalogue anglais a dérivé des chaînes sources
 
 if (manquants.length > 0) {
   lister(
-    'Sans traduction anglaise — ces écrans s\'afficheront en français',
+    "Sans traduction anglaise — ces écrans s'afficheront en français",
     manquants,
-    (id) => `      source : ${JSON.stringify(source[id])}`
+    (id) => `      source : ${JSON.stringify(source[id])}`,
   );
 }
 if (orphelins.length > 0) {
-  lister(
-    'Traduits mais absents du code — à supprimer de messages.en.json',
-    orphelins
-  );
+  lister('Traduits mais absents du code — à supprimer de messages.en.json', orphelins);
 }
 if (divergents.length > 0) {
   lister(
-    'Placeholders divergents — casse à l\'affichage, en anglais uniquement',
+    "Placeholders divergents — casse à l'affichage, en anglais uniquement",
     divergents,
-    (id) => `      source : ${placeholders(source[id]).join(' ') || '(aucun)'}\n      anglais : ${placeholders(anglais[id]).join(' ') || '(aucun)'}`
+    (id) =>
+      `      source : ${placeholders(source[id]).join(' ') || '(aucun)'}\n      anglais : ${placeholders(anglais[id]).join(' ') || '(aucun)'}`,
   );
 }
 
 if (libelles.size > 0) {
   lister(
-    'Libellés cités qui ne correspondent à rien à l\'écran en anglais',
+    "Libellés cités qui ne correspondent à rien à l'écran en anglais",
     [...libelles.keys()],
     (id) =>
       libelles
@@ -178,9 +185,9 @@ if (libelles.size > 0) {
         .map(
           (ecart) =>
             `      cité (fr) : ${JSON.stringify(ecart.citee)}\n` +
-            `      à l'écran (en) : ${ecart.attendus.map((attendu) => JSON.stringify(attendu)).join(' | ')}`
+            `      à l'écran (en) : ${ecart.attendus.map((attendu) => JSON.stringify(attendu)).join(' | ')}`,
         )
-        .join('\n')
+        .join('\n'),
   );
 }
 

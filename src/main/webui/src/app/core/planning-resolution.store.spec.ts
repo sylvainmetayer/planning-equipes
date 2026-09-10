@@ -9,7 +9,7 @@ function resolution(overrides: Partial<PlanningResolution> = {}): PlanningResolu
     solved: true,
     resoluLe: '2026-07-01T10:00:00Z',
     derniereModificationDonnees: null,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -31,7 +31,7 @@ describe('PlanningResolutionStore', () => {
   beforeEach(() => {
     api = new FakeApi();
     TestBed.configureTestingModule({
-      providers: [PlanningResolutionStore, { provide: ApiService, useValue: api }]
+      providers: [PlanningResolutionStore, { provide: ApiService, useValue: api }],
     });
     store = TestBed.inject(PlanningResolutionStore);
   });
@@ -43,12 +43,22 @@ describe('PlanningResolutionStore', () => {
 
   describe('dataStale', () => {
     it('is true when reference data was edited after the solve', async () => {
-      await load(resolution({ resoluLe: '2026-07-01T10:00:00Z', derniereModificationDonnees: '2026-07-01T11:00:00Z' }));
+      await load(
+        resolution({
+          resoluLe: '2026-07-01T10:00:00Z',
+          derniereModificationDonnees: '2026-07-01T11:00:00Z',
+        }),
+      );
       expect(store.dataStale()).toBe(true);
     });
 
     it('is false when the last edit predates the solve', async () => {
-      await load(resolution({ resoluLe: '2026-07-01T10:00:00Z', derniereModificationDonnees: '2026-07-01T09:00:00Z' }));
+      await load(
+        resolution({
+          resoluLe: '2026-07-01T10:00:00Z',
+          derniereModificationDonnees: '2026-07-01T09:00:00Z',
+        }),
+      );
       expect(store.dataStale()).toBe(false);
     });
 
@@ -58,7 +68,13 @@ describe('PlanningResolutionStore', () => {
     });
 
     it('is false while nothing has ever been solved', async () => {
-      await load(resolution({ solved: false, resoluLe: null, derniereModificationDonnees: '2026-07-01T11:00:00Z' }));
+      await load(
+        resolution({
+          solved: false,
+          resoluLe: null,
+          derniereModificationDonnees: '2026-07-01T11:00:00Z',
+        }),
+      );
       expect(store.dataStale()).toBe(false);
     });
   });

@@ -6,12 +6,24 @@
 // map would measure an empty container and prove nothing — and the map is
 // deliberately not the accessible surface here, the list below it is.
 
-import { ChangeDetectionStrategy, Component, input, output, provideZonelessChangeDetection } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  output,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
-import { Creneau, Emplacement, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
+import {
+  Creneau,
+  Emplacement,
+  PlanningEvenement,
+  PosteAffectation,
+  Stand,
+} from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { MarqueurJour } from './carte-jour';
 import { CarteJourMap } from './carte-jour-map';
@@ -20,7 +32,7 @@ import { CarteJourPage } from './carte-jour-page';
 @Component({
   selector: 'app-carte-jour-map',
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class CarteJourMapStub {
   readonly marqueurs = input.required<MarqueurJour[]>();
@@ -30,7 +42,12 @@ class CarteJourMapStub {
   readonly marqueurChoisi = output<string>();
 }
 
-const PLACE: Emplacement = { id: 'PLACE', nom: 'Place du Drapeau', latitude: 46.65, longitude: -0.25 };
+const PLACE: Emplacement = {
+  id: 'PLACE',
+  nom: 'Place du Drapeau',
+  latitude: 46.65,
+  longitude: -0.25,
+};
 
 function stand(id: string, emplacement: Emplacement | null): Stand {
   return {
@@ -45,7 +62,7 @@ function stand(id: string, emplacement: Emplacement | null): Stand {
     emplacement,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
@@ -65,7 +82,7 @@ const ALICE = {
   manager: false,
   competences: {},
   souhaits: [],
-  joursIndisponibles: []
+  joursIndisponibles: [],
 };
 
 /**
@@ -76,20 +93,31 @@ function planningDeuxJours(): PlanningEvenement {
   return {
     animateurs: [ALICE],
     postes: [
-      poste({ id: 'p1', creneau: creneau({ id: 1 }), stand: stand('Tir', PLACE), animateur: ALICE }),
+      poste({
+        id: 'p1',
+        creneau: creneau({ id: 1 }),
+        stand: stand('Tir', PLACE),
+        animateur: ALICE,
+      }),
       poste({
         id: 'p2',
         creneau: creneau({ id: 2, heureDebut: '14:00', heureFin: '16:00' }),
-        stand: stand('Dixit', null)
+        stand: stand('Dixit', null),
       }),
       poste({
         id: 'p3',
-        creneau: creneau({ id: 3, jour: 2, date: '2026-08-02', heureDebut: '14:00', heureFin: '16:00' }),
+        creneau: creneau({
+          id: 3,
+          jour: 2,
+          date: '2026-08-02',
+          heureDebut: '14:00',
+          heureFin: '16:00',
+        }),
         stand: stand('Tir', PLACE),
-        animateur: ALICE
-      })
+        animateur: ALICE,
+      }),
     ],
-    score: null
+    score: null,
   };
 }
 
@@ -99,21 +127,27 @@ describe('CarteJourPage', () => {
   async function rendre(
     evenement: PlanningEvenement,
     queryParams: Record<string, string> = {},
-    emplacements: Emplacement[] = [PLACE]
+    emplacements: Emplacement[] = [PLACE],
   ): Promise<void> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
         { provide: ApiService, useValue: { get: vi.fn(async () => emplacements) } },
-        { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => evenement) } }
-      ]
+        {
+          provide: PlanningStateService,
+          useValue: { loadForDisplay: vi.fn(async () => evenement) },
+        },
+      ],
     });
     TestBed.overrideComponent(CarteJourPage, {
       remove: { imports: [CarteJourMap] },
-      add: { imports: [CarteJourMapStub] }
+      add: { imports: [CarteJourMapStub] },
     });
     fixture = TestBed.createComponent(CarteJourPage);
     await fixture.whenStable();
@@ -133,7 +167,7 @@ describe('CarteJourPage', () => {
 
   function etats(): string[] {
     return Array.from(racine().querySelectorAll('.carte-jour-liste .carte-jour-pastille')).map(
-      (each) => each.className
+      (each) => each.className,
     );
   }
 
@@ -165,7 +199,7 @@ describe('CarteJourPage', () => {
     await curseur(15 * 60);
     expect(compteurs()).toContain('1 stand(s) ouvert(s) sur 2');
     expect(racine().querySelector('[data-test="carte-jour-non-situes"]')!.textContent).toContain(
-      'aucune pourvue'
+      'aucune pourvue',
     );
   });
 
@@ -195,7 +229,7 @@ describe('CarteJourPage', () => {
     expect(heure()).toBe('15:00');
 
     const reinitialiser = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes('Réinitialiser la vue')
+      each.textContent!.includes('Réinitialiser la vue'),
     ) as HTMLElement;
     reinitialiser.click();
     await fixture.whenStable();

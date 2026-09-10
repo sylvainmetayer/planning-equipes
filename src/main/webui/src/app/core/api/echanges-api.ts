@@ -16,7 +16,11 @@ export class EchangesApi {
     return this.api.get<ConfigurationFoire>('/api/echanges/configuration');
   }
 
-  saveConfiguration(configuration: { foireOuverte: boolean; debut: string | null; fin: string | null }): Promise<ConfigurationFoire> {
+  saveConfiguration(configuration: {
+    foireOuverte: boolean;
+    debut: string | null;
+    fin: string | null;
+  }): Promise<ConfigurationFoire> {
     return this.api.put<ConfigurationFoire>('/api/echanges/configuration', configuration);
   }
 
@@ -26,7 +30,13 @@ export class EchangesApi {
   }
 
   /** `accepter` or `refuser`, with the administrator's word for the animateurs. */
-  decide(demandeId: number | string, action: string, commentaire: string | null): Promise<DemandeEchangeView> {
-    return this.api.post<DemandeEchangeView>(`/api/echanges/${demandeId}/${action}`, { commentaire });
+  decide(
+    demandeId: number | string,
+    action: string,
+    commentaire: string | null,
+  ): Promise<DemandeEchangeView> {
+    return this.api.post<DemandeEchangeView>(`/api/echanges/${demandeId}/${action}`, {
+      commentaire,
+    });
   }
 }

@@ -39,8 +39,8 @@ export function colonnes(rapport: RapportOuvertures): ColonneGrille[] {
       creneauId: creneau.id,
       heureDebut: creneau.heureDebut,
       heureFin: creneau.heureFin,
-      rang
-    }))
+      rang,
+    })),
   );
 }
 
@@ -115,7 +115,11 @@ export function readCell(text: string): number | null | undefined {
 }
 
 /** A copy of `cellules` with one cell changed; the map is never mutated, so a signal holding it notifies. */
-export function ecrireCellule(cellules: Cellules, adresse: AdresseCellule, valeur: number | null): Cellules {
+export function ecrireCellule(
+  cellules: Cellules,
+  adresse: AdresseCellule,
+  valeur: number | null,
+): Cellules {
   const copie = new Map(cellules);
   const ligne = new Map(copie.get(adresse.standId) ?? []);
   ligne.set(adresse.creneauId, valeur);
@@ -151,14 +155,14 @@ export function saisie(
   cellules: Cellules,
   standIds: readonly string[],
   inertes: ReadonlySet<string> = new Set(),
-  modifieLeParStand: ReadonlyMap<string, string | null> = new Map()
+  modifieLeParStand: ReadonlyMap<string, string | null> = new Map(),
 ): SaisieStandGrille[] {
   return standIds.map((standId) => ({
     standId,
     modifieLe: modifieLeParStand.get(standId) ?? null,
     cellules: Array.from(cellules.get(standId) ?? [])
       .filter(([creneauId]) => !inertes.has(key(standId, creneauId)))
-      .map(([creneauId, effectif]) => ({ creneauId, effectif }))
+      .map(([creneauId, effectif]) => ({ creneauId, effectif })),
   }));
 }
 
@@ -171,7 +175,7 @@ export function deplacement(
   key: string,
   courante: AdresseCellule,
   standIds: readonly string[],
-  colonnesGrille: readonly ColonneGrille[]
+  colonnesGrille: readonly ColonneGrille[],
 ): AdresseCellule | null {
   const ligne = standIds.indexOf(courante.standId);
   const colonne = colonnesGrille.findIndex((each) => each.creneauId === courante.creneauId);
@@ -218,7 +222,7 @@ export function collerBloc(
   depuis: AdresseCellule,
   standIds: readonly string[],
   colonnesGrille: readonly ColonneGrille[],
-  inertes: ReadonlySet<string> = new Set()
+  inertes: ReadonlySet<string> = new Set(),
 ): Cellules {
   const ligne0 = standIds.indexOf(depuis.standId);
   const colonne0 = colonnesGrille.findIndex((each) => each.creneauId === depuis.creneauId);
@@ -260,13 +264,15 @@ export function recopierJour(
   dateSource: string,
   standIds: readonly string[],
   colonnesGrille: readonly ColonneGrille[],
-  inertes: ReadonlySet<string> = new Set()
+  inertes: ReadonlySet<string> = new Set(),
 ): Cellules {
   const source = colonnesGrille.filter((colonne) => colonne.date === dateSource);
   if (source.length === 0) {
     return cellules;
   }
-  const parHeures = new Map(source.map((colonne) => [colonne.heureDebut + '-' + colonne.heureFin, colonne.creneauId]));
+  const parHeures = new Map(
+    source.map((colonne) => [colonne.heureDebut + '-' + colonne.heureFin, colonne.creneauId]),
+  );
   let resultat = cellules;
   for (const target of colonnesGrille) {
     if (target.date === dateSource) {
@@ -290,11 +296,18 @@ export function recopierJour(
 }
 
 /** How many cells a copy of one day onto the others actually changed. */
-export function countCopied(before: Cellules, after: Cellules, colonnesGrille: readonly ColonneGrille[]): number {
+export function countCopied(
+  before: Cellules,
+  after: Cellules,
+  colonnesGrille: readonly ColonneGrille[],
+): number {
   let changees = 0;
   for (const [standId, ligne] of after) {
     for (const colonne of colonnesGrille) {
-      if ((ligne.get(colonne.creneauId) ?? null) !== (before.get(standId)?.get(colonne.creneauId) ?? null)) {
+      if (
+        (ligne.get(colonne.creneauId) ?? null) !==
+        (before.get(standId)?.get(colonne.creneauId) ?? null)
+      ) {
         changees++;
       }
     }
@@ -306,7 +319,7 @@ export function countCopied(before: Cellules, after: Cellules, colonnesGrille: r
 export function jourDeReference(
   cellules: Cellules,
   standId: string,
-  colonnesGrille: readonly ColonneGrille[]
+  colonnesGrille: readonly ColonneGrille[],
 ): string | null {
   const ligne = cellules.get(standId);
   for (const colonne of colonnesGrille) {
@@ -318,7 +331,11 @@ export function jourDeReference(
 }
 
 /** The headcounts of one row, in column order — what the row's own summary reads. */
-export function valeursLigne(cellules: Cellules, standId: string, colonnesGrille: readonly ColonneGrille[]): (number | null)[] {
+export function valeursLigne(
+  cellules: Cellules,
+  standId: string,
+  colonnesGrille: readonly ColonneGrille[],
+): (number | null)[] {
   const ligne = cellules.get(standId);
   return colonnesGrille.map((colonne) => ligne?.get(colonne.creneauId) ?? null);
 }

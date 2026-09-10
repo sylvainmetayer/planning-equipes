@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -16,7 +24,10 @@ import { keepViewInQueryParams } from '../../core/view-query-params';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { PlanningEvenement, PosteAffectation } from '../../core/models';
-import { aUneAppreciationPour, ouvrirExplication } from '../../shared/affectation-explanation-dialog';
+import {
+  aUneAppreciationPour,
+  ouvrirExplication,
+} from '../../shared/affectation-explanation-dialog';
 import {
   buildMonthCells,
   getMonthStart,
@@ -26,7 +37,7 @@ import {
   shiftMonth,
   toDateKey,
   toMonthKey,
-  uniqueById
+  uniqueById,
 } from '../../core/date-utils';
 import { errorPrefix } from '../../core/error-message';
 
@@ -116,10 +127,10 @@ const ALL = 'ALL';
     MatProgressBarModule,
     MatListModule,
     MatDividerModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   templateUrl: './calendar-month-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarMonthPage {
   /** Bounds the repair-assistant callback to this page's life: it is lazy and rebuilt on every visit. */
@@ -148,24 +159,33 @@ export class CalendarMonthPage {
   protected readonly pourquoiLuiLabel = $localize`:@@affectationExplanation.tooltip:Pourquoi lui ?`;
 
   protected readonly monthLabel = computed(() =>
-    this.month().toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' })
+    this.month().toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' }),
   );
 
   protected readonly animateurOptions = computed<FilterOption[]>(() =>
     disambiguateLabels(
-      uniqueById(this.postes().map((poste) => poste.animateur).filter((animateur) => !!animateur)).map(
-        (animateur) => ({ value: animateur.id, label: `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() })
-      )
-    ).sort((left, right) => left.label.localeCompare(right.label))
+      uniqueById(
+        this.postes()
+          .map((poste) => poste.animateur)
+          .filter((animateur) => !!animateur),
+      ).map((animateur) => ({
+        value: animateur.id,
+        label: `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim(),
+      })),
+    ).sort((left, right) => left.label.localeCompare(right.label)),
   );
 
   protected readonly standOptions = computed<FilterOption[]>(() =>
     disambiguateLabels(
-      uniqueById(this.postes().map((poste) => poste.stand).filter((stand) => !!stand)).map((stand) => ({
+      uniqueById(
+        this.postes()
+          .map((poste) => poste.stand)
+          .filter((stand) => !!stand),
+      ).map((stand) => ({
         value: stand.id,
-        label: stand.nom || stand.id
-      }))
-    ).sort((left, right) => left.label.localeCompare(right.label))
+        label: stand.nom || stand.id,
+      })),
+    ).sort((left, right) => left.label.localeCompare(right.label)),
   );
 
   /** Assignments of the filtered postes, grouped by date then by timeslot. */
@@ -223,7 +243,7 @@ export class CalendarMonthPage {
         today: dateKey === todayKey,
         count: slots?.length ?? 0,
         understaffed: hasUnderstaffedStand(slots),
-        appreciationMismatch: hasAppreciationMismatch(slots)
+        appreciationMismatch: hasAppreciationMismatch(slots),
       };
     });
   });
@@ -237,7 +257,7 @@ export class CalendarMonthPage {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
     });
   });
 
@@ -272,7 +292,7 @@ export class CalendarMonthPage {
       month: toMonthKey(this.month()),
       date: this.selectedDateKey(),
       animateur: this.animateurFilter() === ALL ? null : this.animateurFilter(),
-      stand: this.standFilter() === ALL ? null : this.standFilter()
+      stand: this.standFilter() === ALL ? null : this.standFilter(),
     }));
   }
 
@@ -283,7 +303,10 @@ export class CalendarMonthPage {
 
   /** True when this stand-line is frozen, either by its stand or by its créneau. */
   protected estLigneVerrouillee(slot: SlotEntry, stand: StandLine): boolean {
-    return this.verrous.estStandVerrouille(stand.standId) || this.verrous.estCreneauVerrouille(slot.creneauId);
+    return (
+      this.verrous.estStandVerrouille(stand.standId) ||
+      this.verrous.estCreneauVerrouille(slot.creneauId)
+    );
   }
 
   protected readonly verrouilleTooltip = $localize`:@@verrouillages.indicator:Verrouillé : ces affectations ne bougeront plus à la prochaine résolution`;
@@ -308,7 +331,6 @@ export class CalendarMonthPage {
       this.standFilter.set(stand);
     }
   }
-
 
   protected async refresh(): Promise<void> {
     this.loading.set(true);
@@ -480,7 +502,10 @@ export function hasUnderstaffedStand(slots: SlotEntry[] | undefined): boolean {
 /** True for a stand-line with at least one filled seat whose animateur has no appreciation on this stand's typologies. */
 function isStandLineSansAppreciation(stand: StandLine): boolean {
   return stand.entries.some(
-    (entry) => entry.poste.animateur && entry.poste.stand && !aUneAppreciationPour(entry.poste.animateur, entry.poste.stand)
+    (entry) =>
+      entry.poste.animateur &&
+      entry.poste.stand &&
+      !aUneAppreciationPour(entry.poste.animateur, entry.poste.stand),
   );
 }
 
@@ -501,25 +526,35 @@ function standLineKey(line: StandLine): string {
  * count the filtered subset instead of the line's real headcount and its
  * real number of seats.
  */
-function withTrueHeadcounts(filtered: Map<string, SlotEntry[]>, truth: Map<string, SlotEntry[]>): Map<string, SlotEntry[]> {
+function withTrueHeadcounts(
+  filtered: Map<string, SlotEntry[]>,
+  truth: Map<string, SlotEntry[]>,
+): Map<string, SlotEntry[]> {
   const result = new Map<string, SlotEntry[]>();
   filtered.forEach((slots, dateKey) => {
-    const truthSlotsByCreneau = new Map((truth.get(dateKey) ?? []).map((slot) => [slot.creneauId, slot]));
+    const truthSlotsByCreneau = new Map(
+      (truth.get(dateKey) ?? []).map((slot) => [slot.creneauId, slot]),
+    );
     result.set(
       dateKey,
       slots.map((slot) => {
         const truthLinesByKey = new Map(
-          (truthSlotsByCreneau.get(slot.creneauId)?.stands ?? []).map((line) => [standLineKey(line), line])
+          (truthSlotsByCreneau.get(slot.creneauId)?.stands ?? []).map((line) => [
+            standLineKey(line),
+            line,
+          ]),
         );
         return {
           ...slot,
           stands: slot.stands.map((line) => ({
             ...line,
-            totalAssigned: truthLinesByKey.get(standLineKey(line))?.totalAssigned ?? line.totalAssigned,
-            effectifRequis: truthLinesByKey.get(standLineKey(line))?.effectifRequis ?? line.effectifRequis
-          }))
+            totalAssigned:
+              truthLinesByKey.get(standLineKey(line))?.totalAssigned ?? line.totalAssigned,
+            effectifRequis:
+              truthLinesByKey.get(standLineKey(line))?.effectifRequis ?? line.effectifRequis,
+          })),
         };
-      })
+      }),
     );
   });
   return result;
@@ -541,7 +576,9 @@ export function disambiguateLabels(options: FilterOption[]): FilterOption[] {
     counts.set(option.label, (counts.get(option.label) ?? 0) + 1);
   }
   return options.map((option) =>
-    (counts.get(option.label) ?? 0) > 1 ? { ...option, label: `${option.label} (${option.value})` } : option
+    (counts.get(option.label) ?? 0) > 1
+      ? { ...option, label: `${option.label} (${option.value})` }
+      : option,
   );
 }
 
@@ -573,7 +610,7 @@ export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, 
         heureFin: creneau.heureFin,
         jour: creneau.jour,
         stands: [],
-        standMap: new Map()
+        standMap: new Map(),
       };
       slots.set(creneau.id, slot);
     }
@@ -590,7 +627,7 @@ export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, 
         entries: [],
         effectifRequis: 0, // one more per poste of this line, filled or not — see below.
         couverturePause: creneau.couverturePause === true,
-        totalAssigned: 0 // recomputed below: `entries` is narrowed by the filters, the headcount must not be.
+        totalAssigned: 0, // recomputed below: `entries` is narrowed by the filters, the headcount must not be.
       };
       slot.standMap.set(lineKey, line);
     }
@@ -613,8 +650,10 @@ export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, 
         stands: Array.from(slot.standMap.values())
           .map((line) => ({ ...line, totalAssigned: line.entries.length }))
           .sort(
-            (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)
-          )
+            (left, right) =>
+              left.standNom.localeCompare(right.standNom) ||
+              left.heureDebut.localeCompare(right.heureDebut),
+          ),
       }))
       .sort((left, right) => `${left.heureDebut}`.localeCompare(`${right.heureDebut}`));
     result.set(dateKey, entries);

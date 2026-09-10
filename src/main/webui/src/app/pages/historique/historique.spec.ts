@@ -8,7 +8,7 @@ import {
   lireFiltreResultat,
   parJournee,
   qui,
-  surQuoi
+  surQuoi,
 } from './historique';
 
 function entree(partial: Partial<EntreeHistorique> = {}): EntreeHistorique {
@@ -26,7 +26,7 @@ function entree(partial: Partial<EntreeHistorique> = {}): EntreeHistorique {
     champs: ['nom', 'email'],
     resultat: 'SUCCES',
     statut: 200,
-    ...partial
+    ...partial,
   };
 }
 
@@ -41,7 +41,7 @@ describe('filter', () => {
       entree(),
       entree({ id: 2, acteur: 'ASSISTANT', acteurId: 'mcp' }),
       entree({ id: 3, resultat: 'REFUS', statut: 409 }),
-      entree({ id: 4, entite: 'STAND', entiteId: 'S1', entiteNom: null })
+      entree({ id: 4, entite: 'STAND', entiteId: 'S1', entiteNom: null }),
     ];
     expect(filter(entrees, 'ASSISTANT', 'TOUS', '', '').map((e) => e.id)).toEqual([2]);
     expect(filter(entrees, 'TOUS', 'REFUS', '', '').map((e) => e.id)).toEqual([3]);
@@ -50,7 +50,17 @@ describe('filter', () => {
 
   /** The search covers what the row shows — and only that, or it would look broken. */
   it('cherche dans la phrase, la personne, l’objet et les champs', () => {
-    const entrees = [entree(), entree({ id: 2, libelle: 'Stand ajouté', entite: 'STAND', entiteId: 'S1', entiteNom: null, champs: [] })];
+    const entrees = [
+      entree(),
+      entree({
+        id: 2,
+        libelle: 'Stand ajouté',
+        entite: 'STAND',
+        entiteId: 'S1',
+        entiteNom: null,
+        champs: [],
+      }),
+    ];
     expect(filter(entrees, 'TOUS', 'TOUS', '', 'alice').map((e) => e.id)).toEqual([1]);
     expect(filter(entrees, 'TOUS', 'TOUS', '', 'email').map((e) => e.id)).toEqual([1]);
     expect(filter(entrees, 'TOUS', 'TOUS', '', 'stand').map((e) => e.id)).toEqual([2]);
@@ -61,7 +71,9 @@ describe('filter', () => {
 
 describe('qui', () => {
   it('nomme l’animateur encore au référentiel, et son identifiant sinon', () => {
-    expect(qui(entree({ acteur: 'ANIMATEUR', acteurId: 'A1', acteurNom: 'Alice Martin' }))).toBe('Alice Martin');
+    expect(qui(entree({ acteur: 'ANIMATEUR', acteurId: 'A1', acteurNom: 'Alice Martin' }))).toBe(
+      'Alice Martin',
+    );
     expect(qui(entree({ acteur: 'ANIMATEUR', acteurId: 'A1', acteurNom: null }))).toBe('A1');
   });
 
@@ -90,7 +102,7 @@ describe('parJournee', () => {
     const journees = parJournee([
       entree({ id: 1, survenuLe: midi }),
       entree({ id: 2, survenuLe: matin }),
-      entree({ id: 3, survenuLe: veille })
+      entree({ id: 3, survenuLe: veille }),
     ]);
     expect(journees.map((j) => j.jour)).toEqual([journeeLocale(midi), journeeLocale(veille)]);
     expect(journees[0].entrees.map((e) => e.id)).toEqual([1, 2]);
@@ -106,17 +118,20 @@ describe('parJournee', () => {
     const veille = journeeLocale('2026-09-07T22:30:00Z');
     const attendu = new Date('2026-09-07T22:30:00Z');
     const mois = `${attendu.getMonth() + 1}`.padStart(2, '0');
-    expect(veille).toBe(`${attendu.getFullYear()}-${mois}-${`${attendu.getDate()}`.padStart(2, '0')}`);
+    expect(veille).toBe(
+      `${attendu.getFullYear()}-${mois}-${`${attendu.getDate()}`.padStart(2, '0')}`,
+    );
 
     const journees = parJournee([
       entree({ id: 1, survenuLe: '2026-09-07T22:30:00Z' }),
-      entree({ id: 2, survenuLe: '2026-09-07T08:00:00Z' })
+      entree({ id: 2, survenuLe: '2026-09-07T08:00:00Z' }),
     ]);
     // Sur un fuseau à l'est de Greenwich les deux tombent des jours
     // différents ; sur UTC elles tombent le même. Dans les deux cas le
     // regroupement suit l'horloge du lecteur, ce que l'ancien `slice(0, 10)`
     // ne faisait pas.
-    const memeJour = journeeLocale('2026-09-07T22:30:00Z') === journeeLocale('2026-09-07T08:00:00Z');
+    const memeJour =
+      journeeLocale('2026-09-07T22:30:00Z') === journeeLocale('2026-09-07T08:00:00Z');
     expect(journees).toHaveLength(memeJour ? 1 : 2);
   });
 });
@@ -133,7 +148,11 @@ describe('lecture des filtres depuis l’URL', () => {
 
 describe('entitesPresentes', () => {
   it('ne propose que les objets réellement présents, triés', () => {
-    const entrees = [entree({ entite: 'STAND' }), entree({ id: 2 }), entree({ id: 3, entite: null })];
+    const entrees = [
+      entree({ entite: 'STAND' }),
+      entree({ id: 2 }),
+      entree({ id: 3, entite: null }),
+    ];
     expect(entitesPresentes(entrees)).toEqual(['ANIMATEUR', 'STAND']);
   });
 });

@@ -19,7 +19,7 @@ function stand(id: string, typologies: string[] = []): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
@@ -33,7 +33,7 @@ function animateur(id: string, overrides: Partial<Animateur> = {}): Animateur {
     competences: {},
     souhaits: [],
     joursIndisponibles: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -43,7 +43,7 @@ function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffe
 
 function indisponibiliteForcee(
   animateurIds: string[],
-  overrides: Partial<ContrainteAdHoc> = {}
+  overrides: Partial<ContrainteAdHoc> = {},
 ): ContrainteAdHoc {
   return {
     id: `c-${animateurIds.join('-')}`,
@@ -52,7 +52,7 @@ function indisponibiliteForcee(
     creneau: null,
     stand: null,
     raison: 'test',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -67,8 +67,15 @@ function ligne(lignes: RailLigne[], nom: string): RailLigne {
 describe('buildRailJours', () => {
   it('gives every animateur of the edition a line, assigned or not', () => {
     const jours = buildRailJours(
-      [poste({ id: 'p1', creneau: creneau({ id: 1 }), stand: stand('S1'), animateur: animateur('Ines') })],
-      [animateur('Ines'), animateur('Oscar'), animateur('Zoe')]
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1 }),
+          stand: stand('S1'),
+          animateur: animateur('Ines'),
+        }),
+      ],
+      [animateur('Ines'), animateur('Oscar'), animateur('Zoe')],
     );
 
     expect(jours).toHaveLength(1);
@@ -78,8 +85,19 @@ describe('buildRailJours', () => {
 
   it('tells a free animateur from one who declared the day unavailable', () => {
     const jours = buildRailJours(
-      [poste({ id: 'p1', creneau: creneau({ id: 1, date: '2026-08-01' }), stand: stand('S1'), animateur: animateur('Ines') })],
-      [animateur('Ines'), animateur('Oscar'), animateur('Zoe', { joursIndisponibles: ['2026-08-01'] })]
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, date: '2026-08-01' }),
+          stand: stand('S1'),
+          animateur: animateur('Ines'),
+        }),
+      ],
+      [
+        animateur('Ines'),
+        animateur('Oscar'),
+        animateur('Zoe', { joursIndisponibles: ['2026-08-01'] }),
+      ],
     );
 
     expect(ligne(jours[0].lignes, 'Oscar').statut).toBe('libre');
@@ -96,16 +114,26 @@ describe('buildRailJours', () => {
           id: 'p1',
           creneau: creneau({ id: 1, heureDebut: '09:30', heureFin: '10:00' }),
           stand: stand('S0'),
-          animateur: animateur('Oscar')
+          animateur: animateur('Oscar'),
         }),
-        poste({ id: 'p2', creneau: creneau({ id: 2 }), stand: stand('S1'), animateur: animateur('Ines') })
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2 }),
+          stand: stand('S1'),
+          animateur: animateur('Ines'),
+        }),
       ],
-      [animateur('Ines'), animateur('Oscar')]
+      [animateur('Ines'), animateur('Oscar')],
     );
 
     expect(jours[0].debutMinutes).toBe(9 * 60);
     expect(jours[0].finMinutes).toBe(12 * 60);
-    expect(jours[0].heures.map((heure) => heure.label)).toEqual(['09:00', '10:00', '11:00', '12:00']);
+    expect(jours[0].heures.map((heure) => heure.label)).toEqual([
+      '09:00',
+      '10:00',
+      '11:00',
+      '12:00',
+    ]);
     const bloc = ligne(jours[0].lignes, 'Ines').blocs[0];
     expect(bloc.offsetPercent).toBeCloseTo((1 / 3) * 100);
     expect(bloc.widthPercent).toBeCloseTo((2 / 3) * 100);
@@ -114,10 +142,19 @@ describe('buildRailJours', () => {
   it('widens the rail to unfilled seats too', () => {
     const jours = buildRailJours(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, heureDebut: '08:00', heureFin: '10:00' }), stand: stand('S0') }),
-        poste({ id: 'p2', creneau: creneau({ id: 2 }), stand: stand('S1'), animateur: animateur('Ines') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, heureDebut: '08:00', heureFin: '10:00' }),
+          stand: stand('S0'),
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2 }),
+          stand: stand('S1'),
+          animateur: animateur('Ines'),
+        }),
       ],
-      [animateur('Ines')]
+      [animateur('Ines')],
     );
 
     expect(jours[0].debutMinutes).toBe(8 * 60);
@@ -132,13 +169,16 @@ describe('buildRailJours', () => {
           stand: stand('S1'),
           animateur: animateur('Ines'),
           heureDebutEffective: '11:00',
-          heureFinEffective: '12:00'
-        })
+          heureFinEffective: '12:00',
+        }),
       ],
-      [animateur('Ines')]
+      [animateur('Ines')],
     );
 
-    expect(ligne(jours[0].lignes, 'Ines').blocs[0]).toMatchObject({ heureDebut: '11:00', heureFin: '12:00' });
+    expect(ligne(jours[0].lignes, 'Ines').blocs[0]).toMatchObject({
+      heureDebut: '11:00',
+      heureFin: '12:00',
+    });
   });
 
   it('reads a vacation ending at midnight as the end of the day, not its start', () => {
@@ -148,10 +188,10 @@ describe('buildRailJours', () => {
           id: 'p1',
           creneau: creneau({ id: 1, heureDebut: '22:00', heureFin: '00:00' }),
           stand: stand('S1'),
-          animateur: animateur('Ines')
-        })
+          animateur: animateur('Ines'),
+        }),
       ],
-      [animateur('Ines')]
+      [animateur('Ines')],
     );
 
     expect(jours[0].finMinutes).toBe(24 * 60);
@@ -165,16 +205,16 @@ describe('buildRailJours', () => {
           id: 'p1',
           creneau: creneau({ id: 1, heureDebut: '10:00', heureFin: '12:00' }),
           stand: stand('S1'),
-          animateur: animateur('Ines')
+          animateur: animateur('Ines'),
         }),
         poste({
           id: 'p2',
           creneau: creneau({ id: 2, heureDebut: '11:00', heureFin: '13:00' }),
           stand: stand('S2'),
-          animateur: animateur('Ines')
-        })
+          animateur: animateur('Ines'),
+        }),
       ],
-      [animateur('Ines')]
+      [animateur('Ines')],
     );
 
     const ines = ligne(jours[0].lignes, 'Ines');
@@ -189,20 +229,24 @@ describe('buildRailJours', () => {
           id: 'p1',
           creneau: creneau({ id: 1, heureDebut: '09:00', heureFin: '12:00' }),
           stand: stand('S1'),
-          animateur: animateur('Ines')
+          animateur: animateur('Ines'),
         }),
         poste({
           id: 'p2',
           creneau: creneau({ id: 2, heureDebut: '14:00', heureFin: '16:30' }),
           stand: stand('S2'),
-          animateur: animateur('Ines')
-        })
+          animateur: animateur('Ines'),
+        }),
       ],
-      [animateur('Ines')]
+      [animateur('Ines')],
     );
 
     const ines = ligne(jours[0].lignes, 'Ines');
-    expect(ines).toMatchObject({ amplitudeDebut: '09:00', amplitudeFin: '16:30', chevauchement: false });
+    expect(ines).toMatchObject({
+      amplitudeDebut: '09:00',
+      amplitudeFin: '16:30',
+      chevauchement: false,
+    });
     // 3 h + 2 h 30 of actual work, not the 7 h 30 of the span.
     expect(ines.dureeLabel).toContain('5');
     expect(ines.resume).toContain('Ines');
@@ -216,10 +260,10 @@ describe('buildRailJours', () => {
           id: 'p1',
           creneau: creneau({ id: 1 }),
           stand: stand('S1', ['reflexion', 'adresse']),
-          animateur: animateur('Ines')
-        })
+          animateur: animateur('Ines'),
+        }),
       ],
-      [animateur('Ines')]
+      [animateur('Ines')],
     );
 
     const bloc = ligne(jours[0].lignes, 'Ines').blocs[0];
@@ -235,11 +279,16 @@ describe('buildRailJours', () => {
           id: 'p2',
           creneau: creneau({ id: 2, jour: 2, date: '2026-08-02' }),
           stand: stand('S1'),
-          animateur: animateur('Oscar')
+          animateur: animateur('Oscar'),
         }),
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('Ines') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1 }),
+          stand: stand('S1'),
+          animateur: animateur('Ines'),
+        }),
       ],
-      [animateur('Ines'), animateur('Oscar')]
+      [animateur('Ines'), animateur('Oscar')],
     );
 
     expect(jours.map((jour) => jour.jour)).toEqual([1, 2]);
@@ -249,12 +298,28 @@ describe('buildRailJours', () => {
   });
 
   it('disambiguates two animateurs sharing the same display name', () => {
-    const jours = buildRailJours([], [animateur('a1', { prenom: 'Jean', nom: 'Dupont' }), animateur('a2', { prenom: 'Jean', nom: 'Dupont' })]);
+    const jours = buildRailJours(
+      [],
+      [
+        animateur('a1', { prenom: 'Jean', nom: 'Dupont' }),
+        animateur('a2', { prenom: 'Jean', nom: 'Dupont' }),
+      ],
+    );
     expect(jours).toEqual([]);
 
     const avecJour = buildRailJours(
-      [poste({ id: 'p1', creneau: creneau({ id: 1 }), stand: stand('S1'), animateur: animateur('a1') })],
-      [animateur('a1', { prenom: 'Jean', nom: 'Dupont' }), animateur('a2', { prenom: 'Jean', nom: 'Dupont' })]
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1 }),
+          stand: stand('S1'),
+          animateur: animateur('a1'),
+        }),
+      ],
+      [
+        animateur('a1', { prenom: 'Jean', nom: 'Dupont' }),
+        animateur('a2', { prenom: 'Jean', nom: 'Dupont' }),
+      ],
     );
     expect(avecJour[0].lignes.map((l) => l.nom)).toEqual(['Jean Dupont (a1)', 'Jean Dupont (a2)']);
   });
@@ -266,16 +331,16 @@ describe('buildRailJours', () => {
           id: 'p1',
           creneau: creneau({ id: 1, heureDebut: '10:00', heureFin: '12:00' }),
           stand: stand('S1'),
-          animateur: animateur('Ines')
+          animateur: animateur('Ines'),
         }),
         poste({
           id: 'p2',
           creneau: creneau({ id: 2, heureDebut: '11:00', heureFin: '13:00' }),
           stand: stand('S2'),
-          animateur: animateur('Ines')
-        })
+          animateur: animateur('Ines'),
+        }),
       ],
-      [animateur('Ines')]
+      [animateur('Ines')],
     );
 
     expect(ligne(jours[0].lignes, 'Ines').resume).toContain('chevauchent');
@@ -287,10 +352,10 @@ describe('buildRailJours', () => {
     const jours = buildRailJours(
       [
         poste({ id: 'p1', creneau: matin, stand: stand('S1'), animateur: animateur('Ines') }),
-        poste({ id: 'p2', creneau: apresMidi, stand: stand('S1') })
+        poste({ id: 'p2', creneau: apresMidi, stand: stand('S1') }),
       ],
       [animateur('Ines'), animateur('Zoe')],
-      [indisponibiliteForcee(['Zoe'], { creneau: { id: 2 } })]
+      [indisponibiliteForcee(['Zoe'], { creneau: { id: 2 } })],
     );
 
     const zoe = ligne(jours[0].lignes, 'Zoe');
@@ -304,10 +369,17 @@ describe('buildRailJours', () => {
 
   it('counts an animateur blocked all day out of the mobilisable ones', () => {
     const jours = buildRailJours(
-      [poste({ id: 'p1', creneau: creneau({ id: 1 }), stand: stand('S1'), animateur: animateur('Ines') })],
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1 }),
+          stand: stand('S1'),
+          animateur: animateur('Ines'),
+        }),
+      ],
       [animateur('Ines'), animateur('Zoe')],
       // No créneau: the exception covers the whole event, so the whole day.
-      [indisponibiliteForcee(['Zoe'])]
+      [indisponibiliteForcee(['Zoe'])],
     );
 
     expect(ligne(jours[0].lignes, 'Zoe').statut).toBe('indisponible');
@@ -318,9 +390,16 @@ describe('buildRailJours', () => {
     // « pas sur ce stand » forbids a seat, not a person: counting it as an
     // unavailability would hide exactly who a day of tension is looking for.
     const jours = buildRailJours(
-      [poste({ id: 'p1', creneau: creneau({ id: 1 }), stand: stand('S1'), animateur: animateur('Ines') })],
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1 }),
+          stand: stand('S1'),
+          animateur: animateur('Ines'),
+        }),
+      ],
       [animateur('Ines'), animateur('Zoe')],
-      [indisponibiliteForcee(['Zoe'], { stand: { id: 'S1' } })]
+      [indisponibiliteForcee(['Zoe'], { stand: { id: 'S1' } })],
     );
 
     const zoe = ligne(jours[0].lignes, 'Zoe');
@@ -331,16 +410,21 @@ describe('buildRailJours', () => {
   it('ignores an exception naming a créneau of another day', () => {
     const jours = buildRailJours(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('Ines') }),
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1 }),
+          stand: stand('S1'),
+          animateur: animateur('Ines'),
+        }),
         poste({
           id: 'p2',
           creneau: creneau({ id: 2, jour: 2, date: '2026-08-02' }),
           stand: stand('S1'),
-          animateur: animateur('Ines')
-        })
+          animateur: animateur('Ines'),
+        }),
       ],
       [animateur('Ines'), animateur('Zoe')],
-      [indisponibiliteForcee(['Zoe'], { creneau: { id: 2 } })]
+      [indisponibiliteForcee(['Zoe'], { creneau: { id: 2 } })],
     );
 
     expect(ligne(jours[0].lignes, 'Zoe').blocages).toHaveLength(0);
@@ -354,15 +438,19 @@ describe('buildRailJours', () => {
           id: 'p1',
           creneau: creneau({ id: 1, heureDebut: '09:00', heureFin: '12:00' }),
           stand: stand('S1'),
-          animateur: animateur('Ines')
+          animateur: animateur('Ines'),
         }),
-        poste({ id: 'p2', creneau: creneau({ id: 2, heureDebut: '12:00', heureFin: '15:00' }), stand: stand('S1') })
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, heureDebut: '12:00', heureFin: '15:00' }),
+          stand: stand('S1'),
+        }),
       ],
       [animateur('Ines'), animateur('Zoe')],
       [
         indisponibiliteForcee(['Zoe'], { creneau: { id: 1 } }),
-        { ...indisponibiliteForcee(['Zoe'], { creneau: { id: 2 } }), id: 'c2' }
-      ]
+        { ...indisponibiliteForcee(['Zoe'], { creneau: { id: 2 } }), id: 'c2' },
+      ],
     );
 
     const zoe = ligne(jours[0].lignes, 'Zoe');
@@ -375,71 +463,107 @@ describe('buildRailJours', () => {
 
   it('still lines up an animateur holding a seat but missing from the referential', () => {
     const jours = buildRailJours(
-      [poste({ id: 'p1', creneau: creneau({ id: 1 }), stand: stand('S1'), animateur: animateur('Fantome') })],
-      []
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1 }),
+          stand: stand('S1'),
+          animateur: animateur('Fantome'),
+        }),
+      ],
+      [],
     );
 
     expect(ligne(jours[0].lignes, 'Fantome').blocs).toHaveLength(1);
   });
 
-describe('buildRailJours — pauses', () => {
-  it('draws the breaks of the day on the line, flags the relay-less one and says it in the summary', () => {
-    const alice = animateur('alice');
-    const postes = [poste({ id: 'p1', creneau: creneau({ id: 1, date: '2026-08-01', heureDebut: '13:00', heureFin: '20:00' }), stand: stand('Tir'), animateur: alice })];
-    const pauses = {
-      pauseSurPoste: true,
-      journeesAnalysees: 1,
-      pausesDues: 1,
-      relaisManquants: 1,
-      message: '',
-      journees: [
-        {
-          animateurId: 'alice',
-          nomComplet: 'Alice',
-          mineur: false,
-          date: '2026-08-01',
-          jour: 1,
-          sequences: [
-            {
-              debut: '13:00:00',
-              fin: '20:00:00',
-              minutes: 420,
-              pausesDues: [
-                { debut: '19:00:00', fin: '19:20:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'Tir', standNom: 'Tir', relais: [], relaisDisponible: false, simultanee: false }
-              ]
-            }
-          ],
-          pausesPlanifiees: []
-        }
-      ]
-    };
+  describe('buildRailJours — pauses', () => {
+    it('draws the breaks of the day on the line, flags the relay-less one and says it in the summary', () => {
+      const alice = animateur('alice');
+      const postes = [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, date: '2026-08-01', heureDebut: '13:00', heureFin: '20:00' }),
+          stand: stand('Tir'),
+          animateur: alice,
+        }),
+      ];
+      const pauses = {
+        pauseSurPoste: true,
+        journeesAnalysees: 1,
+        pausesDues: 1,
+        relaisManquants: 1,
+        message: '',
+        journees: [
+          {
+            animateurId: 'alice',
+            nomComplet: 'Alice',
+            mineur: false,
+            date: '2026-08-01',
+            jour: 1,
+            sequences: [
+              {
+                debut: '13:00:00',
+                fin: '20:00:00',
+                minutes: 420,
+                pausesDues: [
+                  {
+                    debut: '19:00:00',
+                    fin: '19:20:00',
+                    heureLimite: '19:00:00',
+                    dureeMinutes: 20,
+                    standId: 'Tir',
+                    standNom: 'Tir',
+                    relais: [],
+                    relaisDisponible: false,
+                    simultanee: false,
+                  },
+                ],
+              },
+            ],
+            pausesPlanifiees: [],
+          },
+        ],
+      };
 
-    const [jour] = buildRailJours(postes, [alice], [], pauses);
-    const ligne = jour.lignes[0];
+      const [jour] = buildRailJours(postes, [alice], [], pauses);
+      const ligne = jour.lignes[0];
 
-    expect(ligne.pauses).toHaveLength(1);
-    expect(ligne.pauses[0].sansRelais).toBe(true);
-    // Scale 13:00 → 20:00, whole hours: 19:00 sits at 6/7 of the track.
-    expect(ligne.pauses[0].offsetPercent).toBeCloseTo((6 / 7) * 100, 5);
-    expect(ligne.resume).toContain("Pause 19:00 – 19:20 sur Tir — personne d'autre sur le stand");
+      expect(ligne.pauses).toHaveLength(1);
+      expect(ligne.pauses[0].sansRelais).toBe(true);
+      // Scale 13:00 → 20:00, whole hours: 19:00 sits at 6/7 of the track.
+      expect(ligne.pauses[0].offsetPercent).toBeCloseTo((6 / 7) * 100, 5);
+      expect(ligne.resume).toContain("Pause 19:00 – 19:20 sur Tir — personne d'autre sur le stand");
+    });
+
+    it('ignores a seat without a timeslot rather than failing the day', () => {
+      const alice = animateur('alice');
+      const postes = [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, date: '2026-08-01' }),
+          stand: stand('Tir'),
+          animateur: alice,
+        }),
+        poste({ id: 'p2', creneau: undefined, stand: stand('Tir'), animateur: alice }),
+      ];
+
+      expect(buildRailJours(postes, [alice], [])).toHaveLength(1);
+    });
+
+    it('draws nothing without a report, and an empty line carries no break', () => {
+      const alice = animateur('alice');
+      const postes = [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, date: '2026-08-01', heureDebut: '13:00', heureFin: '20:00' }),
+          stand: stand('Tir'),
+          animateur: alice,
+        }),
+      ];
+
+      const [without] = buildRailJours(postes, [alice, animateur('bob')], []);
+      expect(without.lignes.every((ligne) => ligne.pauses.length === 0)).toBe(true);
+    });
   });
-
-  it('ignores a seat without a timeslot rather than failing the day', () => {
-    const alice = animateur('alice');
-    const postes = [
-      poste({ id: 'p1', creneau: creneau({ id: 1, date: '2026-08-01' }), stand: stand('Tir'), animateur: alice }),
-      poste({ id: 'p2', creneau: undefined, stand: stand('Tir'), animateur: alice })
-    ];
-
-    expect(buildRailJours(postes, [alice], [])).toHaveLength(1);
-  });
-
-  it('draws nothing without a report, and an empty line carries no break', () => {
-    const alice = animateur('alice');
-    const postes = [poste({ id: 'p1', creneau: creneau({ id: 1, date: '2026-08-01', heureDebut: '13:00', heureFin: '20:00' }), stand: stand('Tir'), animateur: alice })];
-
-    const [without] = buildRailJours(postes, [alice, animateur('bob')], []);
-    expect(without.lignes.every((ligne) => ligne.pauses.length === 0)).toBe(true);
-  });
-});
 });

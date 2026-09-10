@@ -22,7 +22,7 @@ export function appliquerPatchCreneau(creneau: Creneau, patch: CreneauBulkPatch)
   return {
     ...creneau,
     heureDebut: patch.heureDebut || creneau.heureDebut,
-    heureFin: patch.heureFin || creneau.heureFin
+    heureFin: patch.heureFin || creneau.heureFin,
   };
 }
 
@@ -39,7 +39,7 @@ export function appliquerPatchCreneau(creneau: Creneau, patch: CreneauBulkPatch)
  */
 export function creneauxFranchissantMinuit(
   creneaux: readonly Creneau[],
-  patch: CreneauBulkPatch
+  patch: CreneauBulkPatch,
 ): Creneau[] {
   return creneaux.filter((creneau) => {
     const resultat = appliquerPatchCreneau(creneau, patch);

@@ -15,7 +15,7 @@ import { DeplacementSimulation, HardMediumSoftScore, PosteAffectation } from '..
 export function cibleDepot(
   sousLePointeur: Element | null,
   postesLibres: readonly PosteAffectation[],
-  postesTenus: readonly PosteAffectation[]
+  postesTenus: readonly PosteAffectation[],
 ): string | null {
   const vise = sousLePointeur?.closest<HTMLElement>('[data-poste-id]')?.dataset['posteId'] ?? null;
   const connus = new Set([...postesLibres, ...postesTenus].map((poste) => poste.id));
@@ -32,7 +32,7 @@ export function scoreLabel(score: HardMediumSoftScore): string {
 /** The snack bar of a drop that went through: who went where, and what it cost or saved. */
 export function resumeDeplacement(
   simulation: DeplacementSimulation,
-  nomDe: (animateurId: string) => string
+  nomDe: (animateurId: string) => string,
 ): { title: string; message: string } {
   const source = nomDe(simulation.animateurSourceId);
   const target = simulation.animateurCibleId ? nomDe(simulation.animateurCibleId) : null;

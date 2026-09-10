@@ -38,10 +38,10 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
     MatTableModule,
     MatTooltipModule,
     BulkActionsBar,
-    TableFilter
+    TableFilter,
   ],
   templateUrl: './emplacements-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
   protected readonly columns = ['select', 'id', 'nom', 'coordonnees', 'voisin', 'actions'];
@@ -57,24 +57,24 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
         emplacement.id,
         emplacement.nom,
         emplacement.latitude,
-        emplacement.longitude
+        emplacement.longitude,
       ],
       detail: (emplacement, store) => ({
         title: emplacement.nom || emplacement.id,
         subtitle: emplacement.id,
-        sections: buildEmplacementDetail(emplacement, store.stands())
+        sections: buildEmplacementDetail(emplacement, store.stands()),
       }),
       formulaire: (emplacement, dialog: MatDialog) => {
         dialog.open<EmplacementFormDialog, EmplacementFormData, boolean>(EmplacementFormDialog, {
           data: { emplacement },
           width: '40rem',
           maxWidth: '95vw',
-          autoFocus: 'first-tabbable'
+          autoFocus: 'first-tabbable',
         });
       },
       ressource: 'emplacements',
       libelle: () => $localize`:@@emplacements.entityLabel:Emplacement`,
-      libellePluriel: labelEmplacementsPluriel
+      libellePluriel: labelEmplacementsPluriel,
     });
   }
 
@@ -96,7 +96,12 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
    */
   private readonly voisins = computed<Map<string, string>>(() => {
     const emplacements = this.store.emplacements();
-    return new Map(emplacements.map((emplacement) => [emplacement.id, voisinLePlusProche(emplacement, emplacements)]));
+    return new Map(
+      emplacements.map((emplacement) => [
+        emplacement.id,
+        voisinLePlusProche(emplacement, emplacements),
+      ]),
+    );
   });
 
   protected voisinLePlusProche(emplacement: Emplacement): string {
@@ -105,16 +110,26 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
 
   protected editSelection(): void {
     const selectionnes = new Set(this.selection.selectedIds());
-    this.dialog.open<EmplacementBulkEditDialog, EmplacementBulkEditData, boolean>(EmplacementBulkEditDialog, {
-      data: { emplacements: this.store.emplacements().filter((emplacement) => selectionnes.has(emplacement.id)) },
-      width: '44rem',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable'
-    });
+    this.dialog.open<EmplacementBulkEditDialog, EmplacementBulkEditData, boolean>(
+      EmplacementBulkEditDialog,
+      {
+        data: {
+          emplacements: this.store
+            .emplacements()
+            .filter((emplacement) => selectionnes.has(emplacement.id)),
+        },
+        width: '44rem',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+      },
+    );
   }
 }
 
-function voisinLePlusProche(emplacement: Emplacement, emplacements: readonly Emplacement[]): string {
+function voisinLePlusProche(
+  emplacement: Emplacement,
+  emplacements: readonly Emplacement[],
+): string {
   let plusProche: { nom: string; metres: number } | null = null;
   for (const autre of emplacements) {
     if (autre.id === emplacement.id) {

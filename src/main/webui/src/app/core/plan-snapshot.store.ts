@@ -9,7 +9,7 @@ import { PlanSnapshot, RestaurationSnapshot } from './models';
 export class ReferencesManquantesError extends Error {
   constructor(
     message: string,
-    readonly references: string[]
+    readonly references: string[],
   ) {
     super(message);
     this.name = 'ReferencesManquantesError';
@@ -53,7 +53,7 @@ export class PlanSnapshotStore {
       // that list is the whole point of the message shown to the user.
       return await this.api.postPreservingHttpError<RestaurationSnapshot>(
         `/api/planning/snapshots/${id}/restore`,
-        {}
+        {},
       );
     } catch (error) {
       const references = referencesManquantes(error);
@@ -68,7 +68,9 @@ export class PlanSnapshotStore {
 function referencesManquantes(error: unknown): string[] | null {
   const body = corpsErreur(error);
   return body && Array.isArray(body.referencesManquantes)
-    ? body.referencesManquantes.filter((reference): reference is string => typeof reference === 'string')
+    ? body.referencesManquantes.filter(
+        (reference): reference is string => typeof reference === 'string',
+      )
     : null;
 }
 
@@ -77,7 +79,7 @@ function messageErreur(error: unknown): string {
 }
 
 function corpsErreur(
-  error: unknown
+  error: unknown,
 ): { message?: string; referencesManquantes?: unknown[] } | null {
   if (!(error instanceof HttpErrorResponse)) {
     return null;

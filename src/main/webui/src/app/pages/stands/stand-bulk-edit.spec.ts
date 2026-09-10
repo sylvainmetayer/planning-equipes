@@ -5,7 +5,7 @@ import {
   appliquerPatchStand,
   patchStandEstVide,
   patchStandVide,
-  standsAvecEffectifInvalide
+  standsAvecEffectifInvalide,
 } from './stand-bulk-edit';
 
 const kiosque: Emplacement = { id: 'kiosque', nom: 'Kiosque', latitude: 47.2, longitude: -1.55 };
@@ -25,7 +25,7 @@ function stand(overrides: Partial<Stand> = {}): Stand {
     indisponibilites: [],
     ouvertures: [],
     horaires: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -39,12 +39,16 @@ describe('patchStandEstVide', () => {
   });
 
   it('reste vide tant qu’aucun emplacement n’est choisi', () => {
-    expect(patchStandEstVide(patch({ emplacement: { mode: 'DEFINIR', emplacementId: null } }))).toBe(true);
+    expect(
+      patchStandEstVide(patch({ emplacement: { mode: 'DEFINIR', emplacementId: null } })),
+    ).toBe(true);
   });
 
   it('n’est plus vide dès qu’un champ est renseigné', () => {
     expect(patchStandEstVide(patch({ effectifMax: 6 }))).toBe(false);
-    expect(patchStandEstVide(patch({ emplacement: { mode: 'EFFACER', emplacementId: null } }))).toBe(false);
+    expect(
+      patchStandEstVide(patch({ emplacement: { mode: 'EFFACER', emplacementId: null } })),
+    ).toBe(false);
   });
 });
 
@@ -58,13 +62,21 @@ describe('appliquerPatchStand', () => {
   // Le cas d'usage principal : rattacher d'un coup plusieurs stands au même
   // point GPS du plan.
   it('affecte le même emplacement à tous les stands', () => {
-    const resultat = appliquerPatchStand(stand(), patch({ emplacement: { mode: 'DEFINIR', emplacementId: 'mairie' } }), emplacements);
+    const resultat = appliquerPatchStand(
+      stand(),
+      patch({ emplacement: { mode: 'DEFINIR', emplacementId: 'mairie' } }),
+      emplacements,
+    );
 
     expect(resultat.emplacement).toEqual(mairie);
   });
 
   it('détache les stands de leur emplacement', () => {
-    const resultat = appliquerPatchStand(stand(), patch({ emplacement: { mode: 'EFFACER', emplacementId: null } }), emplacements);
+    const resultat = appliquerPatchStand(
+      stand(),
+      patch({ emplacement: { mode: 'EFFACER', emplacementId: null } }),
+      emplacements,
+    );
 
     expect(resultat.emplacement).toBeNull();
   });
@@ -73,7 +85,7 @@ describe('appliquerPatchStand', () => {
     const resultat = appliquerPatchStand(
       stand(),
       patch({ typologies: { mode: 'REMPLACER', typologies: ['jeuxDeRole'] } }),
-      emplacements
+      emplacements,
     );
 
     expect(resultat.typologiesProposees).toEqual(['jeuxDeRole']);
@@ -90,7 +102,7 @@ describe('appliquerPatchStand', () => {
     const resultat = appliquerPatchStand(
       stand(),
       patch({ reserveMajeurs: 'OUI', premium: 'OUI', niveauEffort: 'EPUISANT' }),
-      emplacements
+      emplacements,
     );
 
     expect(resultat.reserveMajeurs).toBe(true);
@@ -101,7 +113,9 @@ describe('appliquerPatchStand', () => {
   // Les fermetures/ouvertures ponctuelles sont propres à chaque stand : jamais touchées.
   it('conserve fermetures et ouvertures', () => {
     const avecFermeture = stand({
-      indisponibilites: [{ id: 1, date: '2026-08-01', heureDebut: '14:00', heureFin: '16:00', motif: null }]
+      indisponibilites: [
+        { id: 1, date: '2026-08-01', heureDebut: '14:00', heureFin: '16:00', motif: null },
+      ],
     });
 
     const resultat = appliquerPatchStand(avecFermeture, patch({ premium: 'OUI' }), emplacements);
@@ -124,13 +138,15 @@ describe('appliquerPatchStand', () => {
     const resultat = appliquerPatchStand(
       avecHoraire,
       patch({ horaires: { mode: 'REMPLACER', horaires: [regleQuotidienne()] } }),
-      emplacements
+      emplacements,
     );
 
     expect(resultat.horaires).toHaveLength(1);
     expect(resultat.horaires[0].id).toBeNull();
     // Normalised like the single-stand form: an absent effectif is sent as null, never as a missing key.
-    expect(resultat.horaires[0].fenetres).toEqual([{ heureDebut: '14:00', heureFin: null, effectif: null }]);
+    expect(resultat.horaires[0].fenetres).toEqual([
+      { heureDebut: '14:00', heureFin: null, effectif: null },
+    ]);
   });
 
   it('ajoute une règle sans écraser celles du stand', () => {
@@ -139,7 +155,7 @@ describe('appliquerPatchStand', () => {
     const resultat = appliquerPatchStand(
       avecHoraire,
       patch({ horaires: { mode: 'AJOUTER', horaires: [regleQuotidienne()] } }),
-      emplacements
+      emplacements,
     );
 
     expect(resultat.horaires).toHaveLength(2);
@@ -148,13 +164,15 @@ describe('appliquerPatchStand', () => {
   it('efface les horaires sans toucher aux exceptions datées', () => {
     const avecTout = stand({
       horaires: [regleQuotidienne()],
-      indisponibilites: [{ id: 1, date: '2026-08-01', heureDebut: '14:00', heureFin: null, motif: null }]
+      indisponibilites: [
+        { id: 1, date: '2026-08-01', heureDebut: '14:00', heureFin: null, motif: null },
+      ],
     });
 
     const resultat = appliquerPatchStand(
       avecTout,
       patch({ horaires: { mode: 'EFFACER', horaires: [] } }),
-      emplacements
+      emplacements,
     );
 
     expect(resultat.horaires).toEqual([]);
@@ -168,12 +186,16 @@ describe('appliquerPatchStand', () => {
    * comme un horaire changé.
    */
   it('oublie les jours d’une portée quittée', () => {
-    const quittee = { ...regleQuotidienne(), jours: 'TOUS' as const, joursSemaine: ['MONDAY' as const] };
+    const quittee = {
+      ...regleQuotidienne(),
+      jours: 'TOUS' as const,
+      joursSemaine: ['MONDAY' as const],
+    };
 
     const resultat = appliquerPatchStand(
       stand(),
       patch({ horaires: { mode: 'REMPLACER', horaires: [quittee] } }),
-      emplacements
+      emplacements,
     );
 
     expect(resultat.horaires[0].joursSemaine).toEqual([]);
@@ -205,13 +227,16 @@ function regleQuotidienne(): HoraireStand {
     dateFin: null,
     dates: [],
     fenetres: [{ heureDebut: '14:00', heureFin: null }],
-    motif: null
+    motif: null,
   };
 }
 
 describe('standsAvecEffectifInvalide', () => {
   it('repère les stands dont le maximum passerait sous le minimum', () => {
-    const stands = [stand({ id: 'petit', effectifMin: 1 }), stand({ id: 'grand', effectifMin: 5, effectifMax: 8 })];
+    const stands = [
+      stand({ id: 'petit', effectifMin: 1 }),
+      stand({ id: 'grand', effectifMin: 5, effectifMax: 8 }),
+    ];
 
     const invalides = standsAvecEffectifInvalide(stands, patch({ effectifMax: 3 }), []);
 

@@ -10,7 +10,9 @@ const STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
  * value written by an older version) yields an empty set: every group open is
  * the harmless default.
  */
-export function readCollapsedGroups(storage: Pick<Storage, 'getItem' | 'setItem'> | null): Set<string> {
+export function readCollapsedGroups(
+  storage: Pick<Storage, 'getItem' | 'setItem'> | null,
+): Set<string> {
   if (!storage) {
     return new Set();
   }
@@ -20,7 +22,9 @@ export function readCollapsedGroups(storage: Pick<Storage, 'getItem' | 'setItem'
       return new Set();
     }
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? new Set(parsed.filter((id): id is string => typeof id === 'string')) : new Set();
+    return Array.isArray(parsed)
+      ? new Set(parsed.filter((id): id is string => typeof id === 'string'))
+      : new Set();
   } catch {
     return new Set();
   }
@@ -29,7 +33,7 @@ export function readCollapsedGroups(storage: Pick<Storage, 'getItem' | 'setItem'
 /** Writes the folded groups, ignoring a storage that refuses to be written to (private mode, quota). */
 export function writeCollapsedGroups(
   storage: Pick<Storage, 'getItem' | 'setItem'> | null,
-  collapsed: ReadonlySet<string>
+  collapsed: ReadonlySet<string>,
 ): void {
   if (!storage) {
     return;

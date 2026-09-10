@@ -49,14 +49,15 @@ export interface DerivationDraft {
     MatCheckboxModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   templateUrl: './creneau-derivation-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreneauDerivationDialog {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
-  protected readonly dialogRef = inject<MatDialogRef<CreneauDerivationDialog, RapportDerivation | null>>(MatDialogRef);
+  protected readonly dialogRef =
+    inject<MatDialogRef<CreneauDerivationDialog, RapportDerivation | null>>(MatDialogRef);
   private readonly data = inject<CreneauDerivationData>(MAT_DIALOG_DATA);
   private readonly creneauxApi = inject(CreneauxApi);
   private readonly crud = inject(ReferenceCrudService);
@@ -67,7 +68,7 @@ export class CreneauDerivationDialog {
     dateFin: this.data.dateFin ?? '',
     heureFermeture: '20:00',
     dureeMinimaleMinutes: 15,
-    remplacer: false
+    remplacer: false,
   });
   protected readonly apercu = signal<RapportDerivation | null>(null);
   private readonly signatureApercu = signal<string | null>(null);
@@ -91,7 +92,7 @@ export class CreneauDerivationDialog {
     return null;
   });
   protected readonly apercuAJour = computed(
-    () => this.apercu() !== null && this.signatureApercu() === JSON.stringify(this.draft())
+    () => this.apercu() !== null && this.signatureApercu() === JSON.stringify(this.draft()),
   );
   protected readonly resume = computed(() => {
     const apercu = this.apercu();
@@ -101,10 +102,17 @@ export class CreneauDerivationDialog {
     const apercu = this.apercu();
     return apercu ? bilanGrille(apercu.controle) : null;
   });
-  protected readonly anomalies = computed(() => trierAnomalies(this.apercu()?.controle.anomalies ?? []));
+  protected readonly anomalies = computed(() =>
+    trierAnomalies(this.apercu()?.controle.anomalies ?? []),
+  );
   protected readonly bloquee = computed(() => grilleBloquee(this.apercu()?.controle ?? null));
   protected readonly peutEcrire = computed(
-    () => this.apercuAJour() && !this.bloquee() && (this.apercu()?.nombreGeneres ?? 0) > 0 && !this.ecriture() && !this.editingLocked()
+    () =>
+      this.apercuAJour() &&
+      !this.bloquee() &&
+      (this.apercu()?.nombreGeneres ?? 0) > 0 &&
+      !this.ecriture() &&
+      !this.editingLocked(),
   );
   protected readonly gridAnomalyIcon = gridAnomalyIcon;
 
@@ -114,9 +122,10 @@ export class CreneauDerivationDialog {
       .filter((coupure) => coupure.date === date)
       .map((coupure) => {
         const reste = coupure.nombreStands - coupure.standIds.length;
-        const stands = reste > 0
-          ? $localize`:@@creneaux.derivation.coupure.autres:${coupure.standIds.join(', ')}:stands: et ${reste}:reste: autre(s)`
-          : coupure.standIds.join(', ');
+        const stands =
+          reste > 0
+            ? $localize`:@@creneaux.derivation.coupure.autres:${coupure.standIds.join(', ')}:stands: et ${reste}:reste: autre(s)`
+            : coupure.standIds.join(', ');
         return `${coupure.heure.slice(0, 5)} (${stands})`;
       });
   }
@@ -132,7 +141,7 @@ export class CreneauDerivationDialog {
       dateFin: draft.dateFin,
       heureFermeture: draft.heureFermeture,
       dureeMinimaleMinutes: Number(draft.dureeMinimaleMinutes),
-      remplacer: draft.remplacer
+      remplacer: draft.remplacer,
     };
   }
 
@@ -160,7 +169,7 @@ export class CreneauDerivationDialog {
         title: $localize`:@@creneaux.derivation.remplacer.title:Remplacer la grille ?`,
         message: $localize`:@@creneaux.derivation.remplacer.confirm:Les créneaux actuels de l'édition seront remplacés par les créneaux dérivés, et le planning résolu sera effacé avec eux.`,
         confirmLabel: $localize`:@@creneaux.derivation.remplacer.label:Remplacer`,
-        danger: true
+        danger: true,
       });
       if (!confirme) {
         return;

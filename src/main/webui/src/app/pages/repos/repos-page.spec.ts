@@ -22,7 +22,7 @@ function stand(id: string): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
@@ -36,7 +36,7 @@ function animateur(prenom: string, overrides: Partial<Animateur> = {}): Animateu
     competences: {},
     souhaits: [],
     joursIndisponibles: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -62,37 +62,46 @@ function planningDeuxJours(): PlanningEvenement {
         id: 'p2',
         creneau: creneau({ id: 2, jour: 2, date: '2026-08-02' }),
         stand: stand('Dixit'),
-        animateur: ALICE
+        animateur: ALICE,
       }),
       poste({
         id: 'p3',
         creneau: creneau({ id: 3, jour: 2, date: '2026-08-02' }),
         stand: stand('Tir'),
-        animateur: BOB
+        animateur: BOB,
       }),
       poste({
         id: 'p4',
         creneau: creneau({ id: 4, jour: 2, date: '2026-08-02' }),
         stand: stand('Loup'),
-        animateur: CHLOE
-      })
+        animateur: CHLOE,
+      }),
     ],
-    score: null
+    score: null,
   };
 }
 
 describe('ReposPage', () => {
   let fixture: ComponentFixture<ReposPage>;
 
-  async function rendre(evenement: PlanningEvenement, queryParams: Record<string, string> = {}): Promise<void> {
+  async function rendre(
+    evenement: PlanningEvenement,
+    queryParams: Record<string, string> = {},
+  ): Promise<void> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
-        { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => evenement) } }
-      ]
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
+        {
+          provide: PlanningStateService,
+          useValue: { loadForDisplay: vi.fn(async () => evenement) },
+        },
+      ],
     });
     fixture = TestBed.createComponent(ReposPage);
     await fixture.whenStable();
@@ -103,11 +112,15 @@ describe('ReposPage', () => {
   }
 
   function noms(): string[] {
-    return Array.from(racine().querySelectorAll('.repos-row-label')).map((each) => each.textContent!.trim());
+    return Array.from(racine().querySelectorAll('.repos-row-label')).map((each) =>
+      each.textContent!.trim(),
+    );
   }
 
   function cellule(ligne: number, colonne: number): HTMLElement {
-    return racine().querySelector(`[data-ligne="${ligne}"][data-colonne="${colonne}"]`) as HTMLElement;
+    return racine().querySelector(
+      `[data-ligne="${ligne}"][data-colonne="${colonne}"]`,
+    ) as HTMLElement;
   }
 
   async function saisirFiltre(valeur: string): Promise<void> {
@@ -146,7 +159,7 @@ describe('ReposPage', () => {
     await rendre(planningDeuxJours());
 
     const pied = Array.from(racine().querySelectorAll('tfoot .repos-total-cell')).map((each) =>
-      each.textContent!.trim()
+      each.textContent!.trim(),
     );
     expect(pied.slice(0, 2)).toEqual(['1', '0']);
   });
@@ -212,16 +225,19 @@ describe('ReposPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
         {
           provide: PlanningStateService,
           useValue: {
             loadForDisplay: vi.fn(async () => {
               throw new Error('boom');
-            })
-          }
-        }
-      ]
+            }),
+          },
+        },
+      ],
     });
     fixture = TestBed.createComponent(ReposPage);
     await fixture.whenStable();

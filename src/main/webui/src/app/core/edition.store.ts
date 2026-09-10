@@ -10,7 +10,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
 import { Edition } from './models';
-import { clearStoredEditionId, getStoredEditionId, setStoredEditionIdAndReload } from './edition-courante';
+import {
+  clearStoredEditionId,
+  getStoredEditionId,
+  setStoredEditionIdAndReload,
+} from './edition-courante';
 
 @Injectable({ providedIn: 'root' })
 export class EditionStore {
@@ -24,14 +28,16 @@ export class EditionStore {
    */
   readonly courant = signal<Edition | null>(null);
 
-  readonly autres = computed(() => this.editions().filter((edition) => edition.id !== this.courant()?.id));
+  readonly autres = computed(() =>
+    this.editions().filter((edition) => edition.id !== this.courant()?.id),
+  );
 
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
     const [editions, courant] = await Promise.all([
       this.api.get<Edition[]>('/api/editions'),
-      this.api.get<Edition>('/api/editions/courant')
+      this.api.get<Edition>('/api/editions/courant'),
     ]);
     this.editions.set(editions);
     this.courant.set(courant);

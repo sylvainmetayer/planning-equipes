@@ -1,5 +1,18 @@
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDropList,
+  CdkDropListGroup,
+} from '@angular/cdk/drag-drop';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
@@ -59,10 +72,10 @@ interface RailLegendItem {
     MatIconModule,
     MatProgressBarModule,
     MatSelectModule,
-    TableFilter
+    TableFilter,
   ],
   templateUrl: './rail-jour-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RailJourPage {
   protected readonly loading = signal(false);
@@ -87,13 +100,18 @@ export class RailJourPage {
     }
     // The ad hoc exceptions travel with the plan already: no second request to
     // know which hours someone was recorded as unavailable on.
-    return buildRailJours(planning.postes ?? [], planning.animateurs ?? [], planning.contraintesAdHoc ?? [], this.pauses());
+    return buildRailJours(
+      planning.postes ?? [],
+      planning.animateurs ?? [],
+      planning.contraintesAdHoc ?? [],
+      this.pauses(),
+    );
   });
 
   /** Day the rail shows: the one asked for, else the first of the event. A new day puts the focus back on its first line. */
   private readonly navigation = dayNavigation(this.jours, (jour) => jour.jour, {
     initial: dayNumberParam(this.route.snapshot.queryParamMap.get('jour')),
-    onSelect: () => this.ligneFocus.set(0)
+    onSelect: () => this.ligneFocus.set(0),
   });
   protected readonly jourCourant = this.navigation.current;
   protected readonly estPremierJour = this.navigation.isFirst;
@@ -132,7 +150,7 @@ export class RailJourPage {
         if (bloc.typologie) {
           ids.add(bloc.typologie);
         }
-      })
+      }),
     );
     return Array.from(ids)
       .map((id) => ({ id, label: typologieLabel(labels, id), colorClass: typologieColorClass(id) }))
@@ -167,7 +185,9 @@ export class RailJourPage {
   });
 
   /** True as soon as the filters differ from the ones this page opens on — the day itself is navigation, not a filter. */
-  protected readonly viewChanged = computed(() => this.view() !== 'tous' || this.filtre().trim() !== '');
+  protected readonly viewChanged = computed(
+    () => this.view() !== 'tous' || this.filtre().trim() !== '',
+  );
 
   /**
    * The line the grid hands the focus to (roving tabindex): one stop for the
@@ -196,8 +216,10 @@ export class RailJourPage {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   /** Any other person's line receives, whether they work at that hour (swap) or not (hand-over). */
-  protected readonly peutRecevoir = (drag: CdkDrag<RailBloc>, drop: CdkDropList<RailLigne>): boolean =>
-    drag.dropContainer !== drop && drop.data.statut !== 'indisponible';
+  protected readonly peutRecevoir = (
+    drag: CdkDrag<RailBloc>,
+    drop: CdkDropList<RailLigne>,
+  ): boolean => drag.dropContainer !== drop && drop.data.statut !== 'indisponible';
 
   /**
    * A vacation dropped on another person's line: that person takes the seat,
@@ -218,16 +240,19 @@ export class RailJourPage {
       const simulation = await this.explications.deplacer(
         bloc.posteId,
         { animateurId: receveur.animateurId },
-        porteur.animateurId
+        porteur.animateurId,
       );
-      this.notifications.notify({ ...resumeDeplacement(simulation, (id) => this.nomDe(id)), variant: 'success' });
+      this.notifications.notify({
+        ...resumeDeplacement(simulation, (id) => this.nomDe(id)),
+        variant: 'success',
+      });
       this.planningState.set(null);
       await this.refresh();
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@railJour.depotRefuse:Déplacement refusé`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
       // The refusal may be « this seat moved under you »: re-read the day.
       this.planningState.set(null);
@@ -253,7 +278,7 @@ export class RailJourPage {
     keepViewInQueryParams(() => ({
       jour: this.navigation.queryParam(),
       q: optionalParam(this.filtre()),
-      vue: this.view() === 'tous' ? null : this.view()
+      vue: this.view() === 'tous' ? null : this.view(),
     }));
   }
 
@@ -266,7 +291,7 @@ export class RailJourPage {
         // Labels only: a missing referential degrades the legend to raw ids
         // rather than failing the rail.
         this.analysesApi.typologies().catch(() => []),
-        this.analysesApi.breaks().catch(() => null)
+        this.analysesApi.breaks().catch(() => null),
       ]);
       this.planning.set(planning);
       this.typologies.set(typologies);

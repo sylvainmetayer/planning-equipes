@@ -5,10 +5,12 @@ import {
   nextThemePreference,
   readThemePreference,
   resolveScheme,
-  writeThemePreference
+  writeThemePreference,
 } from './theme-preference';
 
-function fakeStorage(initial?: string): Pick<Storage, 'getItem' | 'setItem'> & { value: string | null } {
+function fakeStorage(
+  initial?: string,
+): Pick<Storage, 'getItem' | 'setItem'> & { value: string | null } {
   return {
     value: initial ?? null,
     getItem(): string | null {
@@ -16,7 +18,7 @@ function fakeStorage(initial?: string): Pick<Storage, 'getItem' | 'setItem'> & {
     },
     setItem(_key: string, value: string): void {
       this.value = value;
-    }
+    },
   };
 }
 
@@ -47,7 +49,7 @@ describe('theme-preference', () => {
       },
       setItem(): void {
         throw new Error('blocked');
-      }
+      },
     };
     expect(readThemePreference(hostile)).toBe('system');
     expect(() => writeThemePreference(hostile, 'dark')).not.toThrow();

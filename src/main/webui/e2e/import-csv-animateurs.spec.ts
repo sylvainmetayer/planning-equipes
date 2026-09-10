@@ -35,11 +35,11 @@ test.afterAll(async () => {
 async function nettoyer(): Promise<void> {
   const script = [
     `delete from poste_affectation where animateur_id like 'E2E-CSV-%';`,
-    `delete from animateur where id like 'E2E-CSV-%';`
+    `delete from animateur where id like 'E2E-CSV-%';`,
   ].join('\n');
   const reponse = await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
-    data: script
+    data: script,
   });
   expect(reponse.ok(), await reponse.text()).toBe(true);
 }
@@ -48,7 +48,7 @@ async function deposer(page: Page, nom: string, contenu: string): Promise<void> 
   await page.locator('input[type="file"]').setInputFiles({
     name: nom,
     mimeType: 'text/csv',
-    buffer: Buffer.from(contenu, 'utf-8')
+    buffer: Buffer.from(contenu, 'utf-8'),
   });
 }
 
@@ -74,10 +74,10 @@ test("le format attendu et l'aide se lisent avant tout choix de fichier", async 
   await expect(contenu).not.toContainText('Fichier chargé');
   const ordre = await contenu.evaluate((racine) => {
     const texte = [...racine.querySelectorAll('p')].find((noeud) =>
-      noeud.textContent?.includes('La date de naissance est obligatoire')
+      noeud.textContent?.includes('La date de naissance est obligatoire'),
     );
     const bouton = [...racine.querySelectorAll('button')].find((noeud) =>
-      noeud.textContent?.includes('Choisir un fichier CSV')
+      noeud.textContent?.includes('Choisir un fichier CSV'),
     );
     return texte && bouton
       ? texte.compareDocumentPosition(bouton) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -99,7 +99,9 @@ test("le format attendu et l'aide se lisent avant tout choix de fichier", async 
   await page.context().close();
 });
 
-test('un fichier propre : aperçu, validation, rapport, et les fiches en base', async ({ browser }) => {
+test('un fichier propre : aperçu, validation, rapport, et les fiches en base', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/import-animateurs');
   await expect(page.locator('#contenu')).toContainText('Import des animateurs');
@@ -111,8 +113,8 @@ test('un fichier propre : aperçu, validation, rapport, et les fiches en base', 
       'id;prenom;nom;date de naissance;jours indisponibles',
       `${IDS[0]};Amélie;Duranteau;12/03/1990;${JOUR_EVENEMENT}`,
       `${IDS[1]};Bruno;Lefèvreau;04/06/1988;`,
-      ''
-    ].join('\n')
+      '',
+    ].join('\n'),
   );
 
   // The preview: shown, counted, and — the invariant — written nowhere.
@@ -133,7 +135,11 @@ test('un fichier propre : aperçu, validation, rapport, et les fiches en base', 
 
   // And the fiches are really there, with the off day the file carried.
   const apres = await admin.get('/api/animateurs');
-  const roster = (await apres.json()) as { id: string; nom: string; joursIndisponibles: string[] }[];
+  const roster = (await apres.json()) as {
+    id: string;
+    nom: string;
+    joursIndisponibles: string[];
+  }[];
   const amelie = roster.find((animateur) => animateur.id === IDS[0]);
   expect(amelie?.nom).toBe('Duranteau');
   expect(amelie?.joursIndisponibles).toEqual(['2026-07-10']);
@@ -143,7 +149,7 @@ test('un fichier propre : aperçu, validation, rapport, et les fiches en base', 
 });
 
 test('un fichier sale : les lignes fautives sont rejetées, les bonnes passent quand même', async ({
-  browser
+  browser,
 }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/import-animateurs');
@@ -159,8 +165,8 @@ test('un fichier sale : les lignes fautives sont rejetées, les bonnes passent q
       'E2E-CSV-BAD3;Elena;Rossi;01/01/1990;elena@example.org;typologie-inexistante;',
       'E2E-CSV-BAD4;Farid;Belkacem;01/01/1990;farid@example.org;;01/01/2031',
       `${IDS[1]};Bruno;Lefèvreau;04/06/1988;bruno@example.org;;`,
-      ''
-    ].join('\n')
+      '',
+    ].join('\n'),
   );
 
   await expect(ligne(page, 2)).toContainText('Création');
@@ -192,7 +198,7 @@ test('un fichier sans en-tête reconnaissable se mappe à la main', async ({ bro
   await deposer(
     page,
     'sans-entete.csv',
-    ['colonne A;colonne B;colonne C', `Duranteau;Amélie;12/03/1990`, ''].join('\n')
+    ['colonne A;colonne B;colonne C', `Duranteau;Amélie;12/03/1990`, ''].join('\n'),
   );
 
   // Nothing recognised: the screen still draws its mapping editor, and says why.
@@ -234,7 +240,7 @@ async function choisirColonne(page: Page, champ: string, option: string): Promis
  * a free-text column dropped on « Nom ». It used to preview all green and then
  * die on the column width — a 500, with the whole file rolled back.
  */
-test('une colonne mal mappée est refusée à l\'aperçu, pas à l\'écriture', async ({ browser }) => {
+test("une colonne mal mappée est refusée à l'aperçu, pas à l'écriture", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/import-animateurs');
 
@@ -245,8 +251,8 @@ test('une colonne mal mappée est refusée à l\'aperçu, pas à l\'écriture', 
     [
       'id;prenom;nom;date de naissance;commentaires',
       `${IDS[0]};Amélie;Duranteau;12/03/1990;${commentaire}`,
-      ''
-    ].join('\n')
+      '',
+    ].join('\n'),
   );
 
   await expect(ligne(page, 2)).toContainText('Création');
@@ -270,7 +276,7 @@ test('un classeur .xlsx est refusé avec la marche à suivre', async ({ browser 
   await page.locator('input[type="file"]').setInputFiles({
     name: 'benevoles.xlsx',
     mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    buffer: Buffer.from('PK not really a workbook', 'utf-8')
+    buffer: Buffer.from('PK not really a workbook', 'utf-8'),
   });
 
   await expect(page.getByRole('alert')).toContainText('seul le CSV est lu');

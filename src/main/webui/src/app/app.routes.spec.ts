@@ -73,14 +73,17 @@ describe('app.routes', () => {
     }
   });
 
-  it('résout un titre fonction jusqu\'au titre du document', async () => {
+  it("résout un titre fonction jusqu'au titre du document", async () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([{ path: 'essai', title: () => 'Titre résolu', component: PageVide }]),
-        { provide: BRANDING, useValue: { productName: 'Produit', organisation: '', logoUrl: '', accentColor: '' } },
-        { provide: TitleStrategy, useClass: BrandingTitleStrategy }
-      ]
+        {
+          provide: BRANDING,
+          useValue: { productName: 'Produit', organisation: '', logoUrl: '', accentColor: '' },
+        },
+        { provide: TitleStrategy, useClass: BrandingTitleStrategy },
+      ],
     });
 
     const harness = await RouterTestingHarness.create();

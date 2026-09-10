@@ -15,7 +15,7 @@ describe('ReferenceUsageService', () => {
   beforeEach(() => {
     api = new FakeApi();
     TestBed.configureTestingModule({
-      providers: [ReferenceUsageService, { provide: ApiService, useValue: api }]
+      providers: [ReferenceUsageService, { provide: ApiService, useValue: api }],
     });
     service = TestBed.inject(ReferenceUsageService);
   });
@@ -62,7 +62,7 @@ describe('ReferenceUsageService', () => {
    * laissait passer des URL que le serveur refuse, et le décompte disparaissait
    * en silence sur les grandes sélections.
    */
-  it('borne chaque requête sur la longueur, pas sur le nombre d\'identifiants', async () => {
+  it("borne chaque requête sur la longueur, pas sur le nombre d'identifiants", async () => {
     const ids = Array.from({ length: 60 }, (_, index) => `S${index}-${'x'.repeat(60)}`);
 
     await service.describe('stands', ids);
@@ -79,9 +79,9 @@ describe('ReferenceUsageService', () => {
 
     await service.describe('stands', ids);
 
-    const envoyes = api.get.mock.calls.flatMap(([url]) =>
-      [...new URLSearchParams(url.slice(url.indexOf('?') + 1)).getAll('id')]
-    );
+    const envoyes = api.get.mock.calls.flatMap(([url]) => [
+      ...new URLSearchParams(url.slice(url.indexOf('?') + 1)).getAll('id'),
+    ]);
     expect(envoyes).toEqual(ids);
   });
 

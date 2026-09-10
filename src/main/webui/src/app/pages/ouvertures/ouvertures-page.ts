@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -18,7 +25,7 @@ import {
   AnomalieOuverture,
   CelluleJourOuverture,
   LigneStandOuverture,
-  RapportOuvertures
+  RapportOuvertures,
 } from '../../core/models';
 import {
   anomaliesParStand,
@@ -28,7 +35,7 @@ import {
   FiltreOuvertures,
   iconeAnomalie,
   largeurPourcent,
-  synthese
+  synthese,
 } from './ouvertures';
 import {
   AdresseCellule,
@@ -49,7 +56,7 @@ import {
   readCell,
   recopierJour,
   saisie,
-  standsModifies
+  standsModifies,
 } from './grille-horaires';
 
 /** The two faces of the screen: reading what a solve would get, or typing it. */
@@ -83,10 +90,10 @@ export type VueOuvertures = 'CONSULTER' | 'SAISIR';
     MatInputModule,
     MatIconModule,
     MatTooltipModule,
-    RouterLink
+    RouterLink,
   ],
   templateUrl: './ouvertures-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OuverturesPage {
   private readonly standsApi = inject(StandsApi);
@@ -102,13 +109,13 @@ export class OuverturesPage {
 
   /** The stamps the displayed grid was built from, sent back as preconditions (issue #362). */
   private readonly modifieLeParStand = computed(
-    () => new Map((this.rapport()?.stands ?? []).map((ligne) => [ligne.standId, ligne.modifieLe]))
+    () => new Map((this.rapport()?.stands ?? []).map((ligne) => [ligne.standId, ligne.modifieLe])),
   );
   protected readonly chargement = signal(true);
   protected readonly filtre = signal<FiltreOuvertures>('TOUS');
   protected readonly recherche = signal('');
   protected readonly view = signal<VueOuvertures>(
-    this.route.snapshot.queryParamMap.get('vue') === 'saisie' ? 'SAISIR' : 'CONSULTER'
+    this.route.snapshot.queryParamMap.get('vue') === 'saisie' ? 'SAISIR' : 'CONSULTER',
   );
 
   /* ------------------------------- entry grid ------------------------------ */
@@ -128,7 +135,9 @@ export class OuverturesPage {
     const rapport = this.rapport();
     return rapport ? colonnes(rapport) : [];
   });
-  protected readonly standsModifies = computed(() => standsModifies(this.cellules(), this.reference()));
+  protected readonly standsModifies = computed(() =>
+    standsModifies(this.cellules(), this.reference()),
+  );
   private readonly standIdsAffiches = computed(() => this.lignes().map((ligne) => ligne.standId));
 
   protected readonly synthese = computed(() => {
@@ -139,7 +148,9 @@ export class OuverturesPage {
     const rapport = this.rapport();
     return rapport ? filtrerStands(rapport, this.filtre(), this.recherche()) : [];
   });
-  private readonly anomaliesParStand = computed(() => anomaliesParStand(this.rapport()?.anomalies ?? []));
+  private readonly anomaliesParStand = computed(() =>
+    anomaliesParStand(this.rapport()?.anomalies ?? []),
+  );
 
   constructor() {
     keepViewInQueryParams(() => ({ vue: optionalParam(this.view() === 'SAISIR' ? 'saisie' : '') }));
@@ -170,7 +181,7 @@ export class OuverturesPage {
         title: $localize`:@@ouvertures.saisie.quitterTitle:Abandonner les modifications ?`,
         message: $localize`:@@ouvertures.saisie.quitterMessage:${this.standsModifies().length}:stands: stand(s) ont des cases modifiées non enregistrées.`,
         confirmLabel: $localize`:@@ouvertures.saisie.quitterLabel:Abandonner`,
-        danger: true
+        danger: true,
       });
       if (!abandon) {
         return;
@@ -190,7 +201,10 @@ export class OuverturesPage {
   }
 
   protected estModifiee(standId: string, creneauId: number): boolean {
-    return (this.cellules().get(standId)?.get(creneauId) ?? null) !== (this.reference().get(standId)?.get(creneauId) ?? null);
+    return (
+      (this.cellules().get(standId)?.get(creneauId) ?? null) !==
+      (this.reference().get(standId)?.get(creneauId) ?? null)
+    );
   }
 
   protected estPartielle(standId: string, creneauId: number): boolean {
@@ -255,12 +269,19 @@ export class OuverturesPage {
     if (event.key === 'ArrowRight' && (champ.selectionEnd ?? 0) < champ.value.length) {
       return;
     }
-    const target = deplacement(event.key, { standId, creneauId }, this.standIdsAffiches(), this.colonnes());
+    const target = deplacement(
+      event.key,
+      { standId, creneauId },
+      this.standIdsAffiches(),
+      this.colonnes(),
+    );
     if (target === null) {
       return;
     }
     event.preventDefault();
-    this.hote.nativeElement.querySelector<HTMLInputElement>(`[data-cellule="${key(target.standId, target.creneauId)}"]`)?.focus();
+    this.hote.nativeElement
+      .querySelector<HTMLInputElement>(`[data-cellule="${key(target.standId, target.creneauId)}"]`)
+      ?.focus();
   }
 
   /** A block copied from a spreadsheet lands from the cell it is pasted in; a single value pastes as typed. */
@@ -271,14 +292,21 @@ export class OuverturesPage {
     }
     event.preventDefault();
     this.cellules.update((cellules) =>
-      collerBloc(cellules, text, { standId, creneauId }, this.standIdsAffiches(), this.colonnes(), this.inertes())
+      collerBloc(
+        cellules,
+        text,
+        { standId, creneauId },
+        this.standIdsAffiches(),
+        this.colonnes(),
+        this.inertes(),
+      ),
     );
   }
 
   /** The day's cells, for every displayed stand, copied onto every other day. */
   protected recopierJour(date: string): void {
     this.appliquerRecopie((cellules) =>
-      recopierJour(cellules, date, this.standIdsAffiches(), this.colonnes(), this.inertes())
+      recopierJour(cellules, date, this.standIdsAffiches(), this.colonnes(), this.inertes()),
     );
   }
 
@@ -290,7 +318,9 @@ export class OuverturesPage {
         ? (this.colonnes().find((colonne) => colonne.creneauId === active.creneauId)?.date ?? null)
         : jourDeReference(this.cellules(), standId, this.colonnes());
     if (date !== null) {
-      this.appliquerRecopie((cellules) => recopierJour(cellules, date, [standId], this.colonnes(), this.inertes()));
+      this.appliquerRecopie((cellules) =>
+        recopierJour(cellules, date, [standId], this.colonnes(), this.inertes()),
+      );
     }
   }
 
@@ -308,7 +338,7 @@ export class OuverturesPage {
       this.notifications.notify({
         title: $localize`:@@ouvertures.saisie.recopieVide:Aucune case recopiée : les créneaux des autres jours n'ont pas les mêmes horaires.`,
         variant: 'warning',
-        timeout: 6000
+        timeout: 6000,
       });
     }
   }
@@ -328,13 +358,13 @@ export class OuverturesPage {
       return;
     }
     const aplatis = modifies.filter((standId) =>
-      Array.from(this.partielles()).some((clef) => clef.startsWith(standId + '#'))
+      Array.from(this.partielles()).some((clef) => clef.startsWith(standId + '#')),
     );
     if (aplatis.length > 0) {
       const confirme = await this.confirm.ask({
         title: $localize`:@@ouvertures.saisie.aplatirTitle:Aligner des fenêtres sur les créneaux ?`,
         message: $localize`:@@ouvertures.saisie.aplatirMessage:${aplatis.join(', ')}:stands: : certaines fenêtres ne suivaient pas les bornes des créneaux. Enregistrer depuis la grille les aligne sur les créneaux.`,
-        confirmLabel: $localize`:@@ouvertures.saisie.aplatirLabel:Enregistrer`
+        confirmLabel: $localize`:@@ouvertures.saisie.aplatirLabel:Enregistrer`,
       });
       if (!confirme) {
         return;
@@ -343,14 +373,16 @@ export class OuverturesPage {
     this.enregistrement.set(true);
     try {
       const rapport = await this.standsApi.saveOpeningsGrid(
-        saisie(this.cellules(), modifies, this.inertes(), this.modifieLeParStand())
+        saisie(this.cellules(), modifies, this.inertes(), this.modifieLeParStand()),
       );
       const regles = rapport.stands.reduce((total, ligne) => total + ligne.regles, 0);
       const exceptions = rapport.stands.reduce((total, ligne) => total + ligne.exceptions, 0);
       // A stand whose rules would not reproduce its own segments stays fully
       // dated, and the server says so per stand — worth a line rather than a
       // number the reader cannot explain.
-      const nonCompactes = rapport.stands.filter((ligne) => !ligne.compacte).map((ligne) => ligne.standId);
+      const nonCompactes = rapport.stands
+        .filter((ligne) => !ligne.compacte)
+        .map((ligne) => ligne.standId);
       this.notifications.notify({
         title: $localize`:@@ouvertures.saisie.doneTitle:Horaires enregistrés`,
         message:
@@ -359,7 +391,7 @@ export class OuverturesPage {
             ? ' ' +
               $localize`:@@ouvertures.saisie.doneNonCompactes:${nonCompactes.join(', ')}:stands: sont restés en fenêtres datées : leur motif ne se répète pas.`
             : ''),
-        variant: 'success'
+        variant: 'success',
       });
       await this.recharger();
     } catch (error) {
@@ -376,7 +408,7 @@ export class OuverturesPage {
   protected duree(minutes: number): string {
     return dureeCourte(minutes, {
       heures: $localize`:@@ouvertures.duree.heures:h`,
-      minutes: $localize`:@@ouvertures.duree.minutes:min`
+      minutes: $localize`:@@ouvertures.duree.minutes:min`,
     });
   }
 
@@ -402,13 +434,15 @@ export class OuverturesPage {
       lignes.push(
         cellule.fenetres
           .map((fenetre) => `${this.heure(fenetre.heureDebut)} → ${this.heure(fenetre.heureFin)}`)
-          .join(', ')
+          .join(', '),
       );
     }
     lignes.push(
-      $localize`:@@ouvertures.tooltip.ouvert:Ouvert ${this.duree(cellule.minutesOuvertes)}:ouvert: sur ${this.duree(cellule.minutesAmplitude)}:amplitude:`
+      $localize`:@@ouvertures.tooltip.ouvert:Ouvert ${this.duree(cellule.minutesOuvertes)}:ouvert: sur ${this.duree(cellule.minutesAmplitude)}:amplitude:`,
     );
-    lignes.push($localize`:@@ouvertures.tooltip.postes:${cellule.postes}:postes: poste(s) généré(s)`);
+    lignes.push(
+      $localize`:@@ouvertures.tooltip.postes:${cellule.postes}:postes: poste(s) généré(s)`,
+    );
     lignes.push(this.libelleSource(cellule));
     return lignes.join('\n');
   }

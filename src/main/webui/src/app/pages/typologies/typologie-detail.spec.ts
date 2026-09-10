@@ -15,7 +15,7 @@ function stand(id: string, typologiesProposees: string[]): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
@@ -28,7 +28,7 @@ function animateur(id: string, competences: Record<string, string>): Animateur {
     manager: false,
     competences: competences as Animateur['competences'],
     souhaits: [],
-    joursIndisponibles: []
+    joursIndisponibles: [],
   };
 }
 
@@ -39,7 +39,7 @@ describe('buildTypologieDetail', () => {
     const sections = buildTypologieDetail(
       enfance,
       [stand('S1', ['ENF']), stand('S2', ['DIV'])],
-      [animateur('A1', { ENF: 'AUTONOME' }), animateur('A2', { DIV: 'DEBUTANT' })]
+      [animateur('A1', { ENF: 'AUTONOME' }), animateur('A2', { DIV: 'DEBUTANT' })],
     );
 
     const chips = sections.flatMap((section) => section.rows).filter((row) => row.chips);
@@ -48,7 +48,11 @@ describe('buildTypologieDetail', () => {
   });
 
   it('shows an explicit "aucun" on both sides, which is exactly what this view is opened to spot', () => {
-    const sections = buildTypologieDetail(enfance, [stand('S1', ['DIV'])], [animateur('A1', { DIV: 'AUTONOME' })]);
+    const sections = buildTypologieDetail(
+      enfance,
+      [stand('S1', ['DIV'])],
+      [animateur('A1', { DIV: 'AUTONOME' })],
+    );
 
     const rows = sections.flatMap((section) => section.rows).filter((row) => row.muted);
     expect(rows).toHaveLength(2);

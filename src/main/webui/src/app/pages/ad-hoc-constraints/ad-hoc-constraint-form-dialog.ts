@@ -11,7 +11,12 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
 
-const CONTRAINTE_TYPE_VALUES: TypeContrainteAdHoc[] = ['INDISPONIBILITE_FORCEE', 'INCOMPATIBILITE', 'AFFECTATION_FORCEE', 'AFFINITE'];
+const CONTRAINTE_TYPE_VALUES: TypeContrainteAdHoc[] = [
+  'INDISPONIBILITE_FORCEE',
+  'INCOMPATIBILITE',
+  'AFFECTATION_FORCEE',
+  'AFFINITE',
+];
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
@@ -54,9 +59,17 @@ export interface AdHocConstraintFormData {
  */
 @Component({
   selector: 'app-ad-hoc-constraint-form-dialog',
-  imports: [FormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule],
+  imports: [
+    FormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule,
+  ],
   templateUrl: './ad-hoc-constraint-form-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdHocConstraintFormDialog {
   protected readonly types = contrainteTypes();
@@ -65,7 +78,8 @@ export class AdHocConstraintFormDialog {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
-  protected readonly dialogRef = inject<MatDialogRef<AdHocConstraintFormDialog, boolean>>(MatDialogRef);
+  protected readonly dialogRef =
+    inject<MatDialogRef<AdHocConstraintFormDialog, boolean>>(MatDialogRef);
   private readonly data = inject<AdHocConstraintFormData>(MAT_DIALOG_DATA);
   private readonly crud = inject(ReferenceCrudService);
 
@@ -92,10 +106,17 @@ export class AdHocConstraintFormDialog {
       stand: draft.standId ? { id: draft.standId } : null,
       raison: draft.raison.trim(),
       creeParUtilisateurId: 'ui',
-      modifieLe: draft.modifieLe
+      modifieLe: draft.modifieLe,
     };
     // Always POST (create-or-overwrite): the backend has no PUT for this resource.
-    if (await this.crud.save('contraintes-ad-hoc', contrainte, null, $localize`:@@adHoc.entityLabel:Ajustement`)) {
+    if (
+      await this.crud.save(
+        'contraintes-ad-hoc',
+        contrainte,
+        null,
+        $localize`:@@adHoc.entityLabel:Ajustement`,
+      )
+    ) {
       this.dialogRef.close(true);
     }
   }
@@ -103,7 +124,15 @@ export class AdHocConstraintFormDialog {
 
 function toDraft(contrainte: ContrainteAdHoc | null): ContrainteDraft {
   if (!contrainte) {
-    return { id: '', type: CONTRAINTE_TYPE_VALUES[0], creneauId: '', standId: '', raison: '', animateurIds: [], modifieLe: null };
+    return {
+      id: '',
+      type: CONTRAINTE_TYPE_VALUES[0],
+      creneauId: '',
+      standId: '',
+      raison: '',
+      animateurIds: [],
+      modifieLe: null,
+    };
   }
   return {
     id: contrainte.id,
@@ -112,6 +141,6 @@ function toDraft(contrainte: ContrainteAdHoc | null): ContrainteDraft {
     creneauId: contrainte.creneau?.id ?? '',
     standId: contrainte.stand?.id ?? '',
     raison: contrainte.raison ?? '',
-    animateurIds: (contrainte.animateursConcernes ?? []).map((animateur) => animateur.id)
+    animateurIds: (contrainte.animateursConcernes ?? []).map((animateur) => animateur.id),
   };
 }

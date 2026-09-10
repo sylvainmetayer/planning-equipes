@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { Animateur, AnimateurBanc, BancDeTouche, CreneauSiege, MotifExclusion } from '../../core/models';
+import {
+  Animateur,
+  AnimateurBanc,
+  BancDeTouche,
+  CreneauSiege,
+  MotifExclusion,
+} from '../../core/models';
 import {
   creneauxUtiles,
   etatDe,
@@ -7,7 +13,7 @@ import {
   libelleCreneau,
   libelleStand,
   lignes,
-  ordreMotifs
+  ordreMotifs,
 } from './banc-de-touche';
 
 const creneauSiege = (id: number, family = 0): CreneauSiege => ({
@@ -16,14 +22,14 @@ const creneauSiege = (id: number, family = 0): CreneauSiege => ({
   date: '2026-07-16',
   heureDebut: '10:00',
   heureFin: '13:00',
-  famille: family
+  famille: family,
 });
 
 const motif = (contrainte: string, niveau: MotifExclusion['niveau']): MotifExclusion => ({
   contrainte,
   niveau,
   categorie: 'Légal (temps de travail)',
-  description: 'Une règle du Code du travail.'
+  description: 'Une règle du Code du travail.',
 });
 
 const ligne = (partial: Partial<AnimateurBanc> & { animateurId: string }): AnimateurBanc => ({
@@ -31,7 +37,7 @@ const ligne = (partial: Partial<AnimateurBanc> & { animateurId: string }): Anima
   degradeLePlan: false,
   delta: null,
   motifs: [],
-  ...partial
+  ...partial,
 });
 
 const animateur = (id: string, prenom: string, nom: string): Animateur => ({
@@ -42,20 +48,28 @@ const animateur = (id: string, prenom: string, nom: string): Animateur => ({
   manager: false,
   competences: {},
   souhaits: [],
-  joursIndisponibles: []
+  joursIndisponibles: [],
 });
 
 describe('etatDe', () => {
   it('sépare les trois états au lieu de les aplatir en deux', () => {
-    expect(etatDe(ligne({ animateurId: 'A', disponible: true, degradeLePlan: false }))).toBe('disponible');
-    expect(etatDe(ligne({ animateurId: 'B', disponible: false, degradeLePlan: false }))).toBe('sousReserve');
-    expect(etatDe(ligne({ animateurId: 'C', disponible: false, degradeLePlan: true }))).toBe('impossible');
+    expect(etatDe(ligne({ animateurId: 'A', disponible: true, degradeLePlan: false }))).toBe(
+      'disponible',
+    );
+    expect(etatDe(ligne({ animateurId: 'B', disponible: false, degradeLePlan: false }))).toBe(
+      'sousReserve',
+    );
+    expect(etatDe(ligne({ animateurId: 'C', disponible: false, degradeLePlan: true }))).toBe(
+      'impossible',
+    );
   });
 
   // The server guarantees `disponible` implies `!degradeLePlan`; if that ever
   // stops holding, the stricter reading must win rather than the laxer one.
-  it("retient le verdict le plus strict si le serveur se contredit", () => {
-    expect(etatDe(ligne({ animateurId: 'D', disponible: true, degradeLePlan: true }))).toBe('impossible');
+  it('retient le verdict le plus strict si le serveur se contredit', () => {
+    expect(etatDe(ligne({ animateurId: 'D', disponible: true, degradeLePlan: true }))).toBe(
+      'impossible',
+    );
   });
 });
 
@@ -64,13 +78,13 @@ describe('ordreMotifs', () => {
     const ordonnes = ordreMotifs([
       motif('souhaitsIncompatibles', 'MEDIUM'),
       motif('reposQuotidienMinimal', 'HARD'),
-      motif('animateurDisponible', 'HARD')
+      motif('animateurDisponible', 'HARD'),
     ]);
 
     expect(ordonnes.map((m) => m.contrainte)).toEqual([
       'animateurDisponible',
       'reposQuotidienMinimal',
-      'souhaitsIncompatibles'
+      'souhaitsIncompatibles',
     ]);
   });
 
@@ -98,14 +112,17 @@ describe('lignes', () => {
         disponible: false,
         degradeLePlan: true,
         delta: { hardScore: -3, mediumScore: 0, softScore: 0 },
-        motifs: [motif('souhaitsIncompatibles', 'MEDIUM'), motif('animateurDisponible', 'HARD')]
+        motifs: [motif('souhaitsIncompatibles', 'MEDIUM'), motif('animateurDisponible', 'HARD')],
       }),
-      ligne({ animateurId: 'A-INCONNU', disponible: false, degradeLePlan: false })
-    ]
+      ligne({ animateurId: 'A-INCONNU', disponible: false, degradeLePlan: false }),
+    ],
   };
 
   it('garde l’ordre du serveur et nomme chaque animateur', () => {
-    const rows = lignes(banc, [animateur('A1', 'Léa', 'Martin'), animateur('A2', 'Omar', 'Bernard')]);
+    const rows = lignes(banc, [
+      animateur('A1', 'Léa', 'Martin'),
+      animateur('A2', 'Omar', 'Bernard'),
+    ]);
 
     expect(rows.map((row) => row.nom)).toEqual(['Léa Martin', 'Omar Bernard', 'A-INCONNU']);
     expect(rows.map((row) => row.etat)).toEqual(['disponible', 'impossible', 'sousReserve']);
@@ -116,7 +133,10 @@ describe('lignes', () => {
     const omar = rows.find((row) => row.animateurId === 'A2');
 
     expect(omar?.coutDur).toBe(-3);
-    expect(omar?.motifs.map((m) => m.contrainte)).toEqual(['animateurDisponible', 'souhaitsIncompatibles']);
+    expect(omar?.motifs.map((m) => m.contrainte)).toEqual([
+      'animateurDisponible',
+      'souhaitsIncompatibles',
+    ]);
   });
 
   // The bench is read from a persisted plan, which can legitimately be older
@@ -137,8 +157,12 @@ describe('libellés', () => {
   const creneau: CreneauSiege = creneauSiege(7);
 
   it('distingue deux vacations de même horaire par leur famille', () => {
-    expect(libelleCreneau({ ...creneau, famille: 1 }, true)).toBe('J3 · 2026-07-16 · 10:00-13:00 (F2)');
-    expect(libelleCreneau({ ...creneau, famille: 0 }, true)).toBe('J3 · 2026-07-16 · 10:00-13:00 (F1)');
+    expect(libelleCreneau({ ...creneau, famille: 1 }, true)).toBe(
+      'J3 · 2026-07-16 · 10:00-13:00 (F2)',
+    );
+    expect(libelleCreneau({ ...creneau, famille: 0 }, true)).toBe(
+      'J3 · 2026-07-16 · 10:00-13:00 (F1)',
+    );
   });
 
   // Every créneau carries a family; tagging them all « F1 » when no découpage
@@ -151,7 +175,7 @@ describe('libellés', () => {
 
   it('coupe les secondes que l’API renvoie sur les horaires', () => {
     expect(libelleCreneau({ ...creneau, heureDebut: '10:00:00', heureFin: '13:00:00' })).toBe(
-      'J3 · 2026-07-16 · 10:00-13:00'
+      'J3 · 2026-07-16 · 10:00-13:00',
     );
   });
 
@@ -176,7 +200,7 @@ describe('creneauxUtiles', () => {
     total: 0,
     disponibles: 0,
     creneauxAvecSieges: [creneauSiege(1), creneauSiege(2)],
-    animateurs: []
+    animateurs: [],
   };
 
   // The selector offers these and nothing else: a créneau the saved plan does
@@ -192,7 +216,7 @@ describe('creneauxUtiles', () => {
     expect(creneauxUtiles({ ...vide, statut: 'NO_PLAN', creneauxAvecSieges: [] })).toEqual([]);
   });
 
-  it("rend une liste vide de lignes sur une réponse sans siège, sans planter", () => {
+  it('rend une liste vide de lignes sur une réponse sans siège, sans planter', () => {
     expect(lignes(vide, [])).toEqual([]);
   });
 });

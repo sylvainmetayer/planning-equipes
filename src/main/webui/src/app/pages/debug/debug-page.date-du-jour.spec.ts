@@ -32,7 +32,7 @@ describe('DebugPage — date du jour', () => {
   };
 
   async function rendre(
-    options: { modifiable?: boolean; dateDuJour?: string; focus?: string | null } = {}
+    options: { modifiable?: boolean; dateDuJour?: string; focus?: string | null } = {},
   ): Promise<void> {
     const dateDuJour = signal(options.dateDuJour ?? '');
     const modifiable = signal(options.modifiable ?? true);
@@ -40,7 +40,7 @@ describe('DebugPage — date du jour', () => {
       dateDuJour,
       modifiable,
       actif: () => dateDuJour() !== '',
-      set: vi.fn(async (valeur: string) => dateDuJour.set(valeur))
+      set: vi.fn(async (valeur: string) => dateDuJour.set(valeur)),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -49,7 +49,7 @@ describe('DebugPage — date du jour', () => {
         { provide: DateMockService, useValue: dates },
         {
           provide: ApiService,
-          useValue: { get: vi.fn(async () => ({ adminEmail: null })), post: vi.fn() }
+          useValue: { get: vi.fn(async () => ({ adminEmail: null })), post: vi.fn() },
         },
         { provide: EditionStore, useValue: { courant: () => null } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
@@ -62,13 +62,13 @@ describe('DebugPage — date du jour', () => {
         { provide: ProblemesStore, useValue: { reloadFeasibility: vi.fn(async () => undefined) } },
         {
           provide: SolverJobService,
-          useValue: { solverBusy: () => false, activeJobDescription: () => '' }
+          useValue: { solverBusy: () => false, activeJobDescription: () => '' },
         },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: { get: () => options.focus ?? null } } }
-        }
-      ]
+          useValue: { snapshot: { queryParamMap: { get: () => options.focus ?? null } } },
+        },
+      ],
     });
     fixture = TestBed.createComponent(DebugPage);
     await fixture.whenStable();
@@ -106,7 +106,7 @@ describe('DebugPage — date du jour', () => {
 
     expect(dates.set).toHaveBeenCalledWith('2026-07-08');
     const validate = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button')
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
     ).find((each) => /valider|enregistrer/i.test(each.textContent ?? ''));
     expect(validate).toBeUndefined();
   });

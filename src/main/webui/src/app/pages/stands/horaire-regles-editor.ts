@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Injector, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { ControlContainer, FormsModule, NgForm } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -12,7 +21,7 @@ import {
   estCasParticulier,
   formaterFenetres,
   horaireVide,
-  parseFenetres
+  parseFenetres,
 } from '../../core/horaire-stand';
 import { FenetreHoraire, JourSemaine } from '../../core/models';
 import {
@@ -22,7 +31,7 @@ import {
   datesFromText,
   fenetreVide,
   patchDansListe,
-  retirerDe
+  retirerDe,
 } from './stand-draft';
 import { erreurRegle, libelleJourSemaine, messageConflitDeMode } from './stand-horaires';
 
@@ -51,11 +60,11 @@ import { erreurRegle, libelleJourSemaine, messageConflitDeMode } from './stand-h
     MatCheckboxModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   viewProviders: [{ provide: ControlContainer, useExisting: NgForm }],
   templateUrl: './horaire-regles-editor.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HoraireReglesEditor {
   readonly horaires = input.required<readonly HoraireDraft[]>();
@@ -76,12 +85,12 @@ export class HoraireReglesEditor {
     'THURSDAY',
     'FRIDAY',
     'SATURDAY',
-    'SUNDAY'
+    'SUNDAY',
   ];
 
   /** The problems rule by rule, so each card carries its own. */
   protected readonly erreursRegles = computed(() =>
-    this.horaires().map((horaire) => erreurRegle(horaire, this.effectifMax()))
+    this.horaires().map((horaire) => erreurRegle(horaire, this.effectifMax())),
   );
 
   /** The one check that spans several rules: two rules of one scope disagreeing on the mode. */
@@ -137,7 +146,10 @@ export class HoraireReglesEditor {
    */
   protected patchLigneFenetres(index: number, saisie: string): void {
     const resultat = parseFenetres(saisie);
-    this.patchHoraire(index, resultat.erreur === null ? { saisie, fenetres: resultat.fenetres } : { saisie });
+    this.patchHoraire(
+      index,
+      resultat.erreur === null ? { saisie, fenetres: resultat.fenetres } : { saisie },
+    );
   }
 
   /** Shows the windows one row of fields each, or back as one line — the same windows either way. */
@@ -154,7 +166,11 @@ export class HoraireReglesEditor {
     this.majFenetres(indexHoraire, (fenetres) => ajouterA(fenetres, fenetreVide()));
   }
 
-  protected patchFenetre(indexHoraire: number, indexFenetre: number, patch: Partial<FenetreHoraire>): void {
+  protected patchFenetre(
+    indexHoraire: number,
+    indexFenetre: number,
+    patch: Partial<FenetreHoraire>,
+  ): void {
     this.majFenetres(indexHoraire, (fenetres) => patchDansListe(fenetres, indexFenetre, patch));
   }
 
@@ -167,7 +183,9 @@ export class HoraireReglesEditor {
   protected basculerJourSemaine(indexHoraire: number, jour: JourSemaine, coche: boolean): void {
     const horaire = this.horaires()[indexHoraire];
     if (horaire) {
-      this.patchHoraire(indexHoraire, { joursSemaine: basculerJour(horaire.joursSemaine, jour, coche) });
+      this.patchHoraire(indexHoraire, {
+        joursSemaine: basculerJour(horaire.joursSemaine, jour, coche),
+      });
     }
   }
 
@@ -176,7 +194,10 @@ export class HoraireReglesEditor {
     this.patchHoraire(indexHoraire, { dates: datesFromText(valeur) });
   }
 
-  private majFenetres(indexHoraire: number, transformer: (fenetres: FenetreHoraire[]) => FenetreHoraire[]): void {
+  private majFenetres(
+    indexHoraire: number,
+    transformer: (fenetres: FenetreHoraire[]) => FenetreHoraire[],
+  ): void {
     const horaire = this.horaires()[indexHoraire];
     if (horaire) {
       // Edited row by row: the line is derived again from the windows.

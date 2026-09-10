@@ -24,13 +24,17 @@ export function indexerPauses(rapport: RapportPauses | null | undefined): IndexP
     }
     index.set(
       clePauses(journee.date, journee.animateurId),
-      [...pauses].sort((a, b) => a.debut.localeCompare(b.debut))
+      [...pauses].sort((a, b) => a.debut.localeCompare(b.debut)),
     );
   }
   return index;
 }
 
-export function pausesDe(index: IndexPauses, date: string | null | undefined, animateurId: string): PauseDueView[] {
+export function pausesDe(
+  index: IndexPauses,
+  date: string | null | undefined,
+  animateurId: string,
+): PauseDueView[] {
   return index.get(clePauses(date, animateurId)) ?? [];
 }
 
@@ -53,7 +57,11 @@ export interface SegmentPause {
  * `amplitudeMinutes`. Breaks outside the track are dropped rather than drawn
  * off-scale.
  */
-export function segmentsPause(pauses: PauseDueView[], debutMinutes: number, amplitudeMinutes: number): SegmentPause[] {
+export function segmentsPause(
+  pauses: PauseDueView[],
+  debutMinutes: number,
+  amplitudeMinutes: number,
+): SegmentPause[] {
   const amplitude = Math.max(1, amplitudeMinutes);
   const segments: SegmentPause[] = [];
   for (const pause of pauses) {
@@ -71,10 +79,12 @@ export function segmentsPause(pauses: PauseDueView[], debutMinutes: number, ampl
       heureFin: formatHeure(pause.fin),
       standNom: pause.standNom,
       offsetPercent: ((Math.max(debut, debutMinutes) - debutMinutes) / amplitude) * 100,
-      widthPercent: ((Math.min(fin, debutMinutes + amplitude) - Math.max(debut, debutMinutes)) / amplitude) * 100,
+      widthPercent:
+        ((Math.min(fin, debutMinutes + amplitude) - Math.max(debut, debutMinutes)) / amplitude) *
+        100,
       sansRelais: !pause.relaisDisponible,
       simultanee: pause.simultanee,
-      label: libellePause(pause)
+      label: libellePause(pause),
     });
   }
   return segments;
@@ -93,7 +103,10 @@ export function libellePause(pause: PauseDueView): string {
 }
 
 /** How many breaks of the report — or of one day of it — have nobody to relay. */
-export function compterSansRelais(rapport: RapportPauses | null | undefined, date?: string | null): number {
+export function compterSansRelais(
+  rapport: RapportPauses | null | undefined,
+  date?: string | null,
+): number {
   let total = 0;
   for (const journee of rapport?.journees ?? []) {
     if (date && journee.date !== date) {

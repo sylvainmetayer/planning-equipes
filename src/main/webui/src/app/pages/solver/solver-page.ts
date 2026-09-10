@@ -7,7 +7,7 @@ import {
   inject,
   signal,
   untracked,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,7 +28,7 @@ import {
   Reamorcage,
   ReamorcageEffectue,
   ResultatSolveIncremental,
-  StatistiquesIncremental
+  StatistiquesIncremental,
 } from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -41,7 +41,7 @@ import {
   extraireImpactPublication,
   extrairePlanPrecedent,
   extraireReamorcage,
-  formatDuration
+  formatDuration,
 } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -102,10 +102,10 @@ function hardPart(score: string): number {
     PublicationPanel,
     SolverVolumetry,
     IncrementalResult,
-    SolveRecap
+    SolveRecap,
   ],
   templateUrl: './solver-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolverPage {
   protected readonly output = signal('');
@@ -156,17 +156,17 @@ export class SolverPage {
   protected readonly libelleSolve = computed(() =>
     this.solverBusy()
       ? $localize`:@@solver.planifierSolve:Planifier le calcul`
-      : $localize`:@@solver.solve:Calculer le planning`
+      : $localize`:@@solver.solve:Calculer le planning`,
   );
   protected readonly libelleIncremental = computed(() =>
     this.solverBusy()
       ? $localize`:@@solver.planifierIncremental:Planifier la correction`
-      : $localize`:@@solver.incremental:Corriger après un changement`
+      : $localize`:@@solver.incremental:Corriger après un changement`,
   );
   protected readonly libelleAFroid = computed(() =>
     this.solverBusy()
       ? $localize`:@@solver.planifierAFroid:Planifier un calcul de zéro`
-      : $localize`:@@solver.aFroid:Recommencer de zéro`
+      : $localize`:@@solver.aFroid:Recommencer de zéro`,
   );
 
   /* ------------------------------ Point de départ ----------------------------- */
@@ -273,7 +273,7 @@ export class SolverPage {
     };
     const desabonner = [
       this.jobs.onResult('SOLVE', surResultatSolve),
-      this.jobs.onResult('SOLVE_INCREMENTAL', surResultatSolve)
+      this.jobs.onResult('SOLVE_INCREMENTAL', surResultatSolve),
     ];
     inject(DestroyRef).onDestroy(() => desabonner.forEach((retirer) => retirer()));
     // Explains why the solver buttons are locked when the job comes from
@@ -283,7 +283,7 @@ export class SolverPage {
       if (job && !job.mine) {
         const description = untracked(() => this.jobs.activeJobDescription());
         this.output.set(
-          $localize`:@@solver.lockedByOther:${description}:description: Les actions du solveur sont verrouillées jusqu'à la fin.`
+          $localize`:@@solver.lockedByOther:${description}:description: Les actions du solveur sont verrouillées jusqu'à la fin.`,
         );
       }
     });
@@ -332,7 +332,7 @@ export class SolverPage {
    */
   protected async onSolveIncremental(): Promise<void> {
     const scope = await firstValueFrom(
-      this.dialog.open(ReplanificationDialog, { width: '640px' }).afterClosed()
+      this.dialog.open(ReplanificationDialog, { width: '640px' }).afterClosed(),
     );
     if (!scope) {
       return;
@@ -344,7 +344,7 @@ export class SolverPage {
     this.output.set(
       enFile
         ? $localize`:@@solver.incremental.planning:Planification de la replanification incrémentale...`
-        : $localize`:@@solver.incremental.submitting:Envoi de la replanification incrémentale au solveur...`
+        : $localize`:@@solver.incremental.submitting:Envoi de la replanification incrémentale au solveur...`,
     );
     try {
       // No duration passed on purpose: the server applies its own short budget,
@@ -353,7 +353,7 @@ export class SolverPage {
       this.output.set(
         enFile
           ? $localize`:@@solver.incremental.planned:Replanification planifiée : elle démarrera d'elle-même sur cette édition dès que la tâche en cours sera terminée.`
-          : $localize`:@@solver.incremental.submitted:Replanification incrémentale en cours : le planning enregistré sert de point de départ, seuls les postes rouverts sont recalculés.`
+          : $localize`:@@solver.incremental.submitted:Replanification incrémentale en cours : le planning enregistré sert de point de départ, seuls les postes rouverts sont recalculés.`,
       );
     } catch (error) {
       this.output.set(errorPrefix(error));
@@ -401,7 +401,7 @@ export class SolverPage {
       title: $localize`:@@solver.aFroid.confirm.title:Recommencer de zéro ?`,
       message: message + avertissement,
       confirmLabel: $localize`:@@solver.aFroid.confirm.action:Recommencer de zéro`,
-      danger: true
+      danger: true,
     });
     if (confirme) {
       await this.onTimefoldSolve('AUCUN');
@@ -413,7 +413,7 @@ export class SolverPage {
     this.output.set(
       enFile
         ? $localize`:@@solver.planning:Planification du calcul...`
-        : $localize`:@@solver.submitting:Envoi du calcul au solveur en arrière-plan...`
+        : $localize`:@@solver.submitting:Envoi du calcul au solveur en arrière-plan...`,
     );
     this.feasibility.set(null);
     this.hardScore.set(null);
@@ -423,11 +423,15 @@ export class SolverPage {
       // uploaded, so even a very large scenario can be solved without hitting the
       // HTTP body limit (which would fail with a network error). A planned solve
       // builds it when it starts, not now — the edition can keep being prepared.
-      await this.jobs.submitSolveFromReferenceData(this.solverSettings.secondsLimit(), enFile, reamorcage);
+      await this.jobs.submitSolveFromReferenceData(
+        this.solverSettings.secondsLimit(),
+        enFile,
+        reamorcage,
+      );
       this.output.set(
         enFile
           ? $localize`:@@solver.planned:Calcul planifié : il démarrera de lui-même sur cette édition dès que la tâche en cours sera terminée. Vous pouvez fermer cet écran.`
-          : $localize`:@@solver.submitted:Calcul du planning sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`
+          : $localize`:@@solver.submitted:Calcul du planning sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`,
       );
     } catch (error) {
       this.output.set(errorPrefix(error));
@@ -448,7 +452,7 @@ export class SolverPage {
       title: $localize`:@@solver.arreter:Arrêter le solveur`,
       message: $localize`:@@solver.arreterConfirm:Arrêter ${job.label}:jobLabel: en cours ? Le résultat partiel sera tout de même analysé et enregistré.`,
       confirmLabel: $localize`:@@solver.arreter:Arrêter le solveur`,
-      danger: true
+      danger: true,
     });
     if (!confirme) {
       return;
@@ -467,7 +471,9 @@ export class SolverPage {
   private async chargerPointDeDepart(): Promise<void> {
     try {
       const statut: { assignments?: number } = await this.planningApi.persistedCount();
-      this.affectationsEnregistrees.set(typeof statut.assignments === 'number' ? statut.assignments : null);
+      this.affectationsEnregistrees.set(
+        typeof statut.assignments === 'number' ? statut.assignments : null,
+      );
       await this.resolution.reload();
     } catch {
       this.affectationsEnregistrees.set(null);

@@ -23,7 +23,10 @@ export function patchEmplacementEstVide(patch: EmplacementBulkPatch): boolean {
   return mode === 'DEFINIR' && (latitude === null || longitude === null);
 }
 
-export function appliquerPatchEmplacement(emplacement: Emplacement, patch: EmplacementBulkPatch): Emplacement {
+export function appliquerPatchEmplacement(
+  emplacement: Emplacement,
+  patch: EmplacementBulkPatch,
+): Emplacement {
   const { mode, latitude, longitude } = patch.coordonnees;
   if (mode === 'EFFACER') {
     return { ...emplacement, latitude: null, longitude: null };

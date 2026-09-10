@@ -7,7 +7,7 @@ import {
   buildRaccourcisNavigation,
   chercherCommandes,
   isInputField,
-  routePourTouche
+  routePourTouche,
 } from './keyboard-shortcuts';
 import { Animateur, Creneau, Stand } from './models';
 
@@ -20,7 +20,16 @@ function element(tag: string, attributs: Record<string, string> = {}): HTMLEleme
 }
 
 function animateur(id: string, prenom: string, nom: string): Animateur {
-  return { id, prenom, nom, dateNaissance: null, manager: false, competences: {}, souhaits: [], joursIndisponibles: [] };
+  return {
+    id,
+    prenom,
+    nom,
+    dateNaissance: null,
+    manager: false,
+    competences: {},
+    souhaits: [],
+    joursIndisponibles: [],
+  };
 }
 
 function stand(id: string, nom: string): Stand {
@@ -36,7 +45,7 @@ function stand(id: string, nom: string): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
@@ -110,13 +119,15 @@ describe('buildDestinationsNavigation', () => {
           route.path !== undefined &&
           route.path !== 'login' &&
           !route.path.includes(':') &&
-          !route.path.includes('*')
+          !route.path.includes('*'),
       )
       .map((route) => (route.path === '' ? '/' : `/${route.path}`));
   }
 
   it('proposes every page of the application, so nothing is unreachable by keyboard', () => {
-    expect(new Set(destinations.map((destination) => destination.route))).toEqual(new Set(routesReelles()));
+    expect(new Set(destinations.map((destination) => destination.route))).toEqual(
+      new Set(routesReelles()),
+    );
   });
 
   it('gives every destination a translated label and its own icon', () => {
@@ -147,7 +158,10 @@ describe('chercherCommandes', () => {
     destinations: buildDestinationsNavigation(),
     animateurs: [animateur('a1', 'Amélie', 'Durand'), animateur('a2', 'Bruno', 'Lefèvre')],
     stands: [stand('s1', 'Village des Enfants'), stand('s2', 'Médiathèque')],
-    creneaux: [creneau(1, '2026-07-18', '10:00', '12:00'), creneau(2, '2026-07-19', '14:00', '16:00')]
+    creneaux: [
+      creneau(1, '2026-07-18', '10:00', '12:00'),
+      creneau(2, '2026-07-19', '14:00', '16:00'),
+    ],
   };
 
   it('lists the pages only when nothing is typed', () => {
@@ -157,21 +171,27 @@ describe('chercherCommandes', () => {
   });
 
   it('finds an animateur by first name, and sends the user to their timeline', () => {
-    const [trouve] = chercherCommandes('amelie', sources).filter((commande) => commande.famille === 'animateur');
+    const [trouve] = chercherCommandes('amelie', sources).filter(
+      (commande) => commande.famille === 'animateur',
+    );
     expect(trouve.label).toBe('Amélie Durand');
     expect(trouve.route).toBe('/timeline');
     expect(trouve.queryParams).toEqual({ animateur: 'a1' });
   });
 
   it('finds a stand ignoring accents, and opens the calendar filtered on it', () => {
-    const [trouve] = chercherCommandes('mediatheque', sources).filter((commande) => commande.famille === 'stand');
+    const [trouve] = chercherCommandes('mediatheque', sources).filter(
+      (commande) => commande.famille === 'stand',
+    );
     expect(trouve.label).toBe('Médiathèque');
     expect(trouve.route).toBe('/calendar');
     expect(trouve.queryParams).toEqual({ stand: 's2' });
   });
 
   it('finds a créneau by its date, and opens the calendar on that day', () => {
-    const [trouve] = chercherCommandes('2026-07-19', sources).filter((commande) => commande.famille === 'creneau');
+    const [trouve] = chercherCommandes('2026-07-19', sources).filter(
+      (commande) => commande.famille === 'creneau',
+    );
     expect(trouve.route).toBe('/calendar');
     expect(trouve.queryParams).toEqual({ month: '2026-07', date: '2026-07-19' });
   });
@@ -184,9 +204,13 @@ describe('chercherCommandes', () => {
   it('caps each family, so a one-letter query stays a list and not a table', () => {
     const beaucoup = {
       ...sources,
-      animateurs: Array.from({ length: 40 }, (_, index) => animateur(`a${index}`, 'Alex', `Nom${index}`))
+      animateurs: Array.from({ length: 40 }, (_, index) =>
+        animateur(`a${index}`, 'Alex', `Nom${index}`),
+      ),
     };
-    const animateurs = chercherCommandes('alex', beaucoup).filter((commande) => commande.famille === 'animateur');
+    const animateurs = chercherCommandes('alex', beaucoup).filter(
+      (commande) => commande.famille === 'animateur',
+    );
     expect(animateurs).toHaveLength(MAX_PER_FAMILY);
   });
 

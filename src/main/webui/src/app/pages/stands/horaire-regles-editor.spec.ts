@@ -16,10 +16,14 @@ import { HoraireReglesEditor } from './horaire-regles-editor';
   imports: [FormsModule, HoraireReglesEditor],
   template: `
     <form>
-      <app-horaire-regles-editor [prefixe]="prefixe" [horaires]="horaires()" [effectifMax]="4"
-                                 (horairesChange)="recu.push($event); horaires.set($event)" />
+      <app-horaire-regles-editor
+        [prefixe]="prefixe"
+        [horaires]="horaires()"
+        [effectifMax]="4"
+        (horairesChange)="recu.push($event); horaires.set($event)"
+      />
     </form>
-  `
+  `,
 })
 class Hote {
   prefixe = 'bulk';
@@ -34,18 +38,23 @@ function monter(): ComponentFixture<Hote> {
 }
 
 function nomsEnregistres(fixture: ComponentFixture<Hote>): string[] {
-  return Object.keys(fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm).controls);
+  return Object.keys(
+    fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm).controls,
+  );
 }
 
 function bouton(fixture: ComponentFixture<Hote>, libelle: string): HTMLButtonElement {
-  return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find((each) =>
-    each.textContent!.includes(libelle)
+  return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find(
+    (each) => each.textContent!.includes(libelle),
   )!;
 }
 
 /** A plain rule, the shape the form starts a stand on. */
 function regle(): HoraireDraft {
-  return { ...horaireVide(), fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: null }] };
+  return {
+    ...horaireVide(),
+    fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: null }],
+  };
 }
 
 /** The rendered selects, in template order: mode then days when unfolded, none when folded. */
@@ -54,11 +63,15 @@ function selects(fixture: ComponentFixture<Hote>): HTMLElement[] {
 }
 
 /** Picks an option of a `mat-select` the way a user does: open, then click. */
-async function choisir(fixture: ComponentFixture<Hote>, index: number, libelle: string): Promise<void> {
+async function choisir(
+  fixture: ComponentFixture<Hote>,
+  index: number,
+  libelle: string,
+): Promise<void> {
   (selects(fixture)[index].querySelector('.mat-mdc-select-trigger') as HTMLElement).click();
   await fixture.whenStable();
   const option = Array.from(document.querySelectorAll('mat-option')).find(
-    (each) => each.textContent!.trim() === libelle
+    (each) => each.textContent!.trim() === libelle,
   );
   expect(option, `option « ${libelle} » absente`).toBeDefined();
   (option as HTMLElement).click();
@@ -70,13 +83,19 @@ describe('HoraireReglesEditor', () => {
 
   beforeEach(() => {
     erreursConsole = [];
-    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => erreursConsole.push(args));
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) =>
+      erreursConsole.push(args),
+    );
   });
   afterEach(() => vi.restoreAllMocks());
 
   /** Every control the editor renders, and what the host form registered. */
   function controles(fixture: ComponentFixture<Hote>): Element[] {
-    return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('input[matInput], mat-select, mat-checkbox'));
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll(
+        'input[matInput], mat-select, mat-checkbox',
+      ),
+    );
   }
 
   it('registers its controls with the host form, under the prefix, and never mutates the input', async () => {
@@ -101,9 +120,7 @@ describe('HoraireReglesEditor', () => {
   // le sélecteur que l'on venait d'utiliser disparaissait.
   it('keeps a card unfolded once its selectors have been used', async () => {
     const fixture = monter();
-    fixture.componentInstance.horaires.set([
-      { ...regle(), jours: 'DATES', dates: ['2026-07-14'] }
-    ]);
+    fixture.componentInstance.horaires.set([{ ...regle(), jours: 'DATES', dates: ['2026-07-14'] }]);
     await fixture.whenStable();
     expect(nomsEnregistres(fixture)).toContain('bulkhoraireJours0');
 
@@ -121,20 +138,24 @@ describe('HoraireReglesEditor', () => {
     await fixture.whenStable();
     bouton(fixture, "Ajouter une règle d'horaire").click();
     await fixture.whenStable();
-    const ligne = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[name="bulkfenetresLigne0"]')!;
+    const ligne = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      'input[name="bulkfenetresLigne0"]',
+    )!;
 
     ligne.value = '10:00-12:00@2, 14:00-';
     ligne.dispatchEvent(new Event('input'));
     await fixture.whenStable();
     expect(fixture.componentInstance.horaires()[0].fenetres).toEqual([
       { heureDebut: '10:00', heureFin: '12:00', effectif: 2 },
-      { heureDebut: '14:00', heureFin: null, effectif: null }
+      { heureDebut: '14:00', heureFin: null, effectif: null },
     ]);
     expect((fixture.nativeElement as HTMLElement).querySelector('.field-error')).toBeNull();
 
     ligne.value = '10:00-12:00@9';
     ligne.dispatchEvent(new Event('input'));
     await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.field-error')!.textContent).toContain('(9)');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.field-error')!.textContent,
+    ).toContain('(9)');
   });
 });

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Injector, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -31,7 +39,7 @@ import {
   retirerDe,
   toDraft,
   typologiesVides,
-  versStand
+  versStand,
 } from './stand-draft';
 
 export interface StandFormData {
@@ -64,10 +72,10 @@ export interface StandFormData {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
-    HoraireReglesEditor
+    HoraireReglesEditor,
   ],
   templateUrl: './stand-form-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StandFormDialog {
   protected readonly store = inject(ReferenceDataStore);
@@ -93,21 +101,33 @@ export class StandFormDialog {
   protected readonly typologiesInvalides = computed(() => typologiesVides(this.draft()));
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
-    return id ? $localize`:@@stands.form.editTitle:Modifier le stand ${id}:id:` : $localize`:@@stands.form.newTitle:Nouveau stand`;
+    return id
+      ? $localize`:@@stands.form.editTitle:Modifier le stand ${id}:id:`
+      : $localize`:@@stands.form.newTitle:Nouveau stand`;
   });
   protected readonly submitLabel = computed(() =>
-    this.editingId() ? $localize`:@@stands.submit.edit:Modifier le stand` : $localize`:@@stands.submit.create:Créer le stand`
+    this.editingId()
+      ? $localize`:@@stands.submit.edit:Modifier le stand`
+      : $localize`:@@stands.submit.create:Créer le stand`,
   );
 
-  protected readonly indisponibiliteInvalide = computed(() => indisponibiliteInvalide(this.draft()));
+  protected readonly indisponibiliteInvalide = computed(() =>
+    indisponibiliteInvalide(this.draft()),
+  );
 
   protected readonly ouvertureInvalide = computed(() => ouvertureInvalide(this.draft()));
 
-  protected readonly conflitOuvertureFermeture = computed(() => conflitOuvertureFermeture(this.draft()));
-  protected readonly effectifOuvertureInvalide = computed(() => effectifOuvertureInvalide(this.draft()));
+  protected readonly conflitOuvertureFermeture = computed(() =>
+    conflitOuvertureFermeture(this.draft()),
+  );
+  protected readonly effectifOuvertureInvalide = computed(() =>
+    effectifOuvertureInvalide(this.draft()),
+  );
 
   /** First problem among the recurring rules, or `null` — mirrors the backend's own check. */
-  protected readonly erreurHoraires = computed(() => premiereErreurHoraire(this.draft().horaires, Number(this.draft().effectifMax)));
+  protected readonly erreurHoraires = computed(() =>
+    premiereErreurHoraire(this.draft().horaires, Number(this.draft().effectifMax)),
+  );
 
   /** The stand's declared capacity, as the rule editor checks the windows against. */
   protected readonly effectifMaxDeclare = computed(() => Number(this.draft().effectifMax));
@@ -128,9 +148,9 @@ export class StandFormDialog {
       {
         indisponibilites: draft.indisponibilites,
         ouvertures: draft.ouvertures,
-        horaires: draft.horaires
+        horaires: draft.horaires,
       } as Stand,
-      this.datesEvenement()
+      this.datesEvenement(),
     );
   });
 
@@ -174,7 +194,10 @@ export class StandFormDialog {
   }
 
   protected readonly formulaireInvalide = computed(
-    () => brouillonInvalide(this.draft()) || this.effectifOuvertureInvalide() || this.erreurHoraires() !== null
+    () =>
+      brouillonInvalide(this.draft()) ||
+      this.effectifOuvertureInvalide() ||
+      this.erreurHoraires() !== null,
   );
 
   protected async save(): Promise<void> {
@@ -182,7 +205,14 @@ export class StandFormDialog {
       return;
     }
     const stand = versStand(this.draft(), this.store.emplacements());
-    if (await this.crud.save('stands', stand, this.editingId(), $localize`:@@stands.entityLabel:Stand`)) {
+    if (
+      await this.crud.save(
+        'stands',
+        stand,
+        this.editingId(),
+        $localize`:@@stands.entityLabel:Stand`,
+      )
+    ) {
       this.dialogRef.close(true);
     }
   }

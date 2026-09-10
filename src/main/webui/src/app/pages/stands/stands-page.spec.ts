@@ -41,7 +41,7 @@ function stand(overrides: Partial<Stand> & { id: string }): Stand {
     indisponibilites: [],
     ouvertures: [],
     horaires: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -60,7 +60,7 @@ function horaire(fenetres: number): HoraireStand {
     dateFin: null,
     dates: [],
     fenetres: Array.from({ length: fenetres }, () => ({ heureDebut: '10:00', heureFin: '12:00' })),
-    motif: null
+    motif: null,
   };
 }
 
@@ -90,7 +90,7 @@ describe('StandsPage', () => {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
-    reportError: vi.fn()
+    reportError: vi.fn(),
   };
   const api = { get: vi.fn() };
   const standsApi = { compactSchedules: vi.fn() };
@@ -107,7 +107,13 @@ describe('StandsPage', () => {
     confirm.ask.mockReset();
     notifications.notify.mockReset();
     dialog.open.mockClear();
-    api.get.mockResolvedValue({ feasible: true, manqueAnimateurs: 0, causes: [], totalCauses: 0, message: '' });
+    api.get.mockResolvedValue({
+      feasible: true,
+      manqueAnimateurs: 0,
+      causes: [],
+      totalCauses: 0,
+      message: '',
+    });
     confirm.ask.mockResolvedValue(true);
     TestBed.configureTestingModule({
       providers: [
@@ -116,12 +122,21 @@ describe('StandsPage', () => {
         { provide: ApiService, useValue: api },
         { provide: StandsApi, useValue: standsApi },
         { provide: ReferenceCrudService, useValue: crud },
-        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
+        {
+          provide: SolverJobService,
+          useValue: { solverBusy: () => false, editingLocked: () => false },
+        },
         { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: notifications },
-        { provide: ProblemesStore, useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParStandId: () => new Map() } }
-      ]
+        {
+          provide: ProblemesStore,
+          useValue: {
+            reloadFeasibility: vi.fn(async () => undefined),
+            causeParStandId: () => new Map(),
+          },
+        },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
@@ -145,7 +160,10 @@ describe('StandsPage', () => {
     });
 
     it('matches on the id and on the name', () => {
-      const page = createPage([stand({ id: 'tir', nom: 'Tir à la corde' }), stand({ id: 'quilles', nom: 'Molkky' })]);
+      const page = createPage([
+        stand({ id: 'tir', nom: 'Tir à la corde' }),
+        stand({ id: 'quilles', nom: 'Molkky' }),
+      ]);
 
       page.filtre.set('molkky');
       expect(page.standsFiltres().map((row) => row.id)).toEqual(['quilles']);
@@ -157,7 +175,7 @@ describe('StandsPage', () => {
     it('matches on a proposed typologie', () => {
       const page = createPage([
         stand({ id: 'tir', typologiesProposees: ['AMBIANCE'] }),
-        stand({ id: 'quilles', typologiesProposees: ['STRATEGIE'] })
+        stand({ id: 'quilles', typologiesProposees: ['STRATEGIE'] }),
       ]);
 
       page.filtre.set('strategie');
@@ -168,7 +186,7 @@ describe('StandsPage', () => {
     it('matches on the emplacement name and id', () => {
       const page = createPage([
         stand({ id: 'tir', emplacement: emplacement('prairie', 'Grande prairie') }),
-        stand({ id: 'quilles', emplacement: emplacement('halle', 'Halle') })
+        stand({ id: 'quilles', emplacement: emplacement('halle', 'Halle') }),
       ]);
 
       page.filtre.set('prairie');
@@ -187,7 +205,11 @@ describe('StandsPage', () => {
 
   describe('multi-selection', () => {
     it('deletes exactly the ticked rows', async () => {
-      const page = createPage([stand({ id: 'tir' }), stand({ id: 'quilles' }), stand({ id: 'palet' })]);
+      const page = createPage([
+        stand({ id: 'tir' }),
+        stand({ id: 'quilles' }),
+        stand({ id: 'palet' }),
+      ]);
 
       page.selection.toggle('tir');
       page.selection.toggle('palet');
@@ -226,7 +248,7 @@ describe('StandsPage', () => {
 
       expect(dialog.open).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ data: { stands: [expect.objectContaining({ id: 'quilles' })] } })
+        expect.objectContaining({ data: { stands: [expect.objectContaining({ id: 'quilles' })] } }),
       );
     });
 
@@ -251,17 +273,19 @@ describe('StandsPage', () => {
     it('lists the typologies of a stand, comma separated', () => {
       const page = createPage();
 
-      expect(page.typologiesLabel(stand({ id: 'tir', typologiesProposees: ['AMBIANCE', 'STRATEGIE'] }))).toBe(
-        'AMBIANCE, STRATEGIE'
-      );
+      expect(
+        page.typologiesLabel(stand({ id: 'tir', typologiesProposees: ['AMBIANCE', 'STRATEGIE'] })),
+      ).toBe('AMBIANCE, STRATEGIE');
     });
 
     it('names the emplacement of a stand', () => {
       const page = createPage();
 
-      expect(page.emplacementLabel(stand({ id: 'tir', emplacement: emplacement('prairie', 'Grande prairie') }))).toBe(
-        'Grande prairie'
-      );
+      expect(
+        page.emplacementLabel(
+          stand({ id: 'tir', emplacement: emplacement('prairie', 'Grande prairie') }),
+        ),
+      ).toBe('Grande prairie');
     });
 
     it('carries no suffix on a plain stand', () => {
@@ -274,7 +298,7 @@ describe('StandsPage', () => {
       const page = createPage();
 
       const suffix = page.effectifSuffix(
-        stand({ id: 'tir', reserveMajeurs: true, premium: true, niveauEffort: 'EPUISANT' })
+        stand({ id: 'tir', reserveMajeurs: true, premium: true, niveauEffort: 'EPUISANT' }),
       );
 
       expect(suffix).toContain('majeurs');
@@ -304,8 +328,10 @@ describe('StandsPage', () => {
           id: 'tir',
           // One rule, twelve windows: what the column must say is "1 rule".
           horaires: [horaire(12)],
-          ouvertures: [{ id: null, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', motif: null }]
-        })
+          ouvertures: [
+            { id: null, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', motif: null },
+          ],
+        }),
       );
 
       expect(label).toContain('1');
@@ -316,37 +342,55 @@ describe('StandsPage', () => {
   describe('compacting the opening hours', () => {
     it('runs a dry run first and writes nothing when there is nothing to compact', async () => {
       const page = createPage();
-      standsApi.compactSchedules.mockResolvedValue({ standsCompactes: 0, fenetresAvant: 0, fenetresApres: 0 });
+      standsApi.compactSchedules.mockResolvedValue({
+        standsCompactes: 0,
+        fenetresAvant: 0,
+        fenetresApres: 0,
+      });
 
       await page.compacterHoraires();
 
       expect(standsApi.compactSchedules).toHaveBeenCalledExactlyOnceWith(false);
       expect(confirm.ask).not.toHaveBeenCalled();
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'info' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'info' }),
+      );
     });
 
     it('shows the trade before writing, and writes nothing when it is refused', async () => {
       const page = createPage();
-      standsApi.compactSchedules.mockResolvedValue({ standsCompactes: 3, fenetresAvant: 24, fenetresApres: 6 });
+      standsApi.compactSchedules.mockResolvedValue({
+        standsCompactes: 3,
+        fenetresAvant: 24,
+        fenetresApres: 6,
+      });
       confirm.ask.mockResolvedValue(false);
 
       await page.compacterHoraires();
 
-      expect(confirm.ask).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('24') }));
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('24') }),
+      );
       expect(standsApi.compactSchedules).toHaveBeenCalledOnce();
       expect(crud.reload).toHaveBeenCalledOnce();
     });
 
     it('applies the compaction once confirmed, then reloads and reports', async () => {
       const page = createPage();
-      standsApi.compactSchedules.mockResolvedValue({ standsCompactes: 3, fenetresAvant: 24, fenetresApres: 6 });
+      standsApi.compactSchedules.mockResolvedValue({
+        standsCompactes: 3,
+        fenetresAvant: 24,
+        fenetresApres: 6,
+      });
       crud.reload.mockClear();
 
       await page.compacterHoraires();
 
       expect(standsApi.compactSchedules).toHaveBeenLastCalledWith(true);
       expect(crud.reload).toHaveBeenCalledOnce();
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'success' }),
+      );
     });
 
     it('lowers the in-flight flag whether the round-trip succeeds or fails', async () => {
@@ -385,7 +429,7 @@ describe('StandsPage table', () => {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
-    reportError: vi.fn()
+    reportError: vi.fn(),
   };
 
   async function rendre(stands: Stand[]): Promise<void> {
@@ -400,13 +444,13 @@ describe('StandsPage table', () => {
 
   function lignes(): string[][] {
     return Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim())
+      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim()),
     );
   }
 
   function action(indexLigne: number, nom: string): HTMLButtonElement {
     const bouton = Array.from(
-      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button')
+      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button'),
     ).find((each) => each.getAttribute('aria-label') === nom);
     expect(bouton, `action « ${nom} » absente`).toBeDefined();
     return bouton as HTMLButtonElement;
@@ -414,7 +458,7 @@ describe('StandsPage table', () => {
 
   function boutonCarte(libelle: string): HTMLButtonElement {
     const bouton = Array.from(racine().querySelectorAll('mat-card-actions button')).find((each) =>
-      each.textContent!.includes(libelle)
+      each.textContent!.includes(libelle),
     );
     expect(bouton, `bouton « ${libelle} » absent`).toBeDefined();
     return bouton as HTMLButtonElement;
@@ -431,7 +475,16 @@ describe('StandsPage table', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
-        { provide: StandsApi, useValue: { compactSchedules: vi.fn(async () => ({ standsCompactes: 0, fenetresAvant: 0, fenetresApres: 0 })) } },
+        {
+          provide: StandsApi,
+          useValue: {
+            compactSchedules: vi.fn(async () => ({
+              standsCompactes: 0,
+              fenetresAvant: 0,
+              fenetresApres: 0,
+            })),
+          },
+        },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
         { provide: MatDialog, useValue: dialog },
@@ -439,17 +492,25 @@ describe('StandsPage table', () => {
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         {
           provide: ProblemesStore,
-          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParStandId }
-        }
-      ]
+          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParStandId },
+        },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
 
   it('renders the staffing range, its qualifiers and the typologies of each stand', async () => {
     await rendre([
-      stand({ id: 's1', nom: 'Loup-Garou', effectifMin: 2, effectifMax: 4, premium: true, reserveMajeurs: true, typologiesProposees: ['ambiance', 'expert'] }),
-      stand({ id: 's2', nom: 'Dixit' })
+      stand({
+        id: 's1',
+        nom: 'Loup-Garou',
+        effectifMin: 2,
+        effectifMax: 4,
+        premium: true,
+        reserveMajeurs: true,
+        typologiesProposees: ['ambiance', 'expert'],
+      }),
+      stand({ id: 's2', nom: 'Dixit' }),
     ]);
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Stands (2)');
@@ -481,10 +542,10 @@ describe('StandsPage table', () => {
             standIds: ['s1'],
             demande: 1,
             capacite: 0,
-            manque: 1
-          } as unknown as CauseInfaisabilite
-        ]
-      ])
+            manque: 1,
+          } as unknown as CauseInfaisabilite,
+        ],
+      ]),
     );
     await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
 
@@ -494,7 +555,9 @@ describe('StandsPage table', () => {
 
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
-    expect(racine().querySelector('.empty-hint')!.textContent!).toContain('Aucun stand pour le moment');
+    expect(racine().querySelector('.empty-hint')!.textContent!).toContain(
+      'Aucun stand pour le moment',
+    );
 
     await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
     const input = racine().querySelector('app-table-filter input') as HTMLInputElement;
@@ -502,7 +565,9 @@ describe('StandsPage table', () => {
     input.dispatchEvent(new Event('input'));
     await fixture.whenStable();
 
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucune ligne ne correspond au filtre.');
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
+      'Aucune ligne ne correspond au filtre.',
+    );
   });
 
   it('greys out the writing actions while a solve is running, the horaires compaction included', async () => {

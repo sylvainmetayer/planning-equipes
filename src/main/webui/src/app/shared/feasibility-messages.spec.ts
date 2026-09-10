@@ -24,7 +24,7 @@ describe('feasibility-messages', () => {
   describe('causesRestantesMessage', () => {
     // Le backend plafonne la liste des causes mais compte le total : quand
     // rien n'est masqué il ne faut afficher aucune mention, pas un « + 0 ».
-    it('retourne une chaîne vide quand rien n\'est masqué', () => {
+    it("retourne une chaîne vide quand rien n'est masqué", () => {
       expect(causesRestantesMessage(0)).toBe('');
     });
 

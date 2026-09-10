@@ -7,7 +7,16 @@ import { ReferenceDataStore } from '../core/reference-data.store';
 import { Animateur } from '../core/models';
 
 function animateur(id: string, prenom: string, nom: string): Animateur {
-  return { id, prenom, nom, dateNaissance: null, manager: false, competences: {}, souhaits: [], joursIndisponibles: [] };
+  return {
+    id,
+    prenom,
+    nom,
+    dateNaissance: null,
+    manager: false,
+    competences: {},
+    souhaits: [],
+    joursIndisponibles: [],
+  };
 }
 
 async function monter(): Promise<{
@@ -20,15 +29,15 @@ async function monter(): Promise<{
     animateurs: signal<Animateur[]>([animateur('a1', 'Amélie', 'Durand')]),
     stands: signal([]),
     creneaux: signal([]),
-    reload: vi.fn().mockResolvedValue(undefined)
+    reload: vi.fn().mockResolvedValue(undefined),
   };
   TestBed.configureTestingModule({
     imports: [CommandPaletteDialog],
     providers: [
       provideZonelessChangeDetection(),
       { provide: MatDialogRef, useValue: dialogRef },
-      { provide: ReferenceDataStore, useValue: store }
-    ]
+      { provide: ReferenceDataStore, useValue: store },
+    ],
   });
   const fixture = TestBed.createComponent(CommandPaletteDialog);
   await fixture.whenStable();
@@ -80,19 +89,29 @@ describe('CommandPaletteDialog', () => {
   it('moves the highlight with the arrows, and wraps around', async () => {
     const { fixture } = await monter();
     const champ = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    champ.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    champ.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }),
+    );
     await fixture.whenStable();
     expect(champ.getAttribute('aria-activedescendant')).toBe('palette-option-1');
-    champ.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
-    champ.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+    champ.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }),
+    );
+    champ.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }),
+    );
     await fixture.whenStable();
-    expect(champ.getAttribute('aria-activedescendant')).toBe(`palette-option-${options(fixture).length - 1}`);
+    expect(champ.getAttribute('aria-activedescendant')).toBe(
+      `palette-option-${options(fixture).length - 1}`,
+    );
   });
 
   it('resets the highlight to the first result on every new query', async () => {
     const { fixture } = await monter();
     const champ = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    champ.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    champ.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }),
+    );
     await fixture.whenStable();
     saisir(fixture, 'animateurs');
     await fixture.whenStable();
@@ -104,7 +123,9 @@ describe('CommandPaletteDialog', () => {
     saisir(fixture, 'animateurs');
     await fixture.whenStable();
     const champ = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    champ.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    champ.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
     expect(dialogRef.close).toHaveBeenCalledWith(expect.objectContaining({ route: '/animateurs' }));
   });
 
@@ -115,7 +136,7 @@ describe('CommandPaletteDialog', () => {
     const ligne = options(fixture).find((option) => option.textContent?.includes('Amélie'));
     ligne?.click();
     expect(dialogRef.close).toHaveBeenCalledWith(
-      expect.objectContaining({ route: '/timeline', queryParams: { animateur: 'a1' } })
+      expect.objectContaining({ route: '/timeline', queryParams: { animateur: 'a1' } }),
     );
   });
 
@@ -124,7 +145,9 @@ describe('CommandPaletteDialog', () => {
     saisir(fixture, 'zzzzzz');
     await fixture.whenStable();
     expect(options(fixture)).toHaveLength(0);
-    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('Aucun résultat');
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain(
+      'Aucun résultat',
+    );
   });
 
   it('loads the referential it searches only when the store is still empty', async () => {

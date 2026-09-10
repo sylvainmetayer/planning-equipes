@@ -9,7 +9,14 @@
 //      seulement masquer le bouton.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { SEED, contexteAdmin, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning } from './support';
+import {
+  SEED,
+  contexteAdmin,
+  jetonDe,
+  ouvrirSessionEspace,
+  pageAdmin,
+  seedPlanning,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
@@ -23,7 +30,7 @@ function jour(decalage: number): string {
 
 async function configurerFoire(
   admin: APIRequestContext,
-  corps: { foireOuverte: boolean; debut?: string | null; fin?: string | null }
+  corps: { foireOuverte: boolean; debut?: string | null; fin?: string | null },
 ): Promise<void> {
   const reponse = await admin.put('/api/echanges/configuration', { data: corps });
   expect(reponse.ok(), await reponse.text()).toBe(true);
@@ -58,7 +65,7 @@ test.describe('Accusé de réception : la colonne s’explique', () => {
     const explication = (await aide.getAttribute('aria-label')) ?? '';
     expect(explication).toContain('Relancé');
     expect(explication).toContain("Il n'y en aura pas d'autre");
-    expect(explication).toContain("on ne lui a rien demandé");
+    expect(explication).toContain('on ne lui a rien demandé');
     expect(explication).toContain('que les personnes dont le planning a réellement changé');
 
     // Atteignable au clavier : l'infobulle doit s'ouvrir sur une tabulation.
@@ -88,7 +95,9 @@ test.describe('Accusé de réception : la colonne s’explique', () => {
     // Le panneau de Material ne porte pas `role="tooltip"` : c'est un simple
     // div, décrit au lecteur d'écran par l'`aria-label` vérifié plus haut. On
     // vérifie donc ce qu'une personne voit — le texte, dans la surcouche.
-    await expect(page.locator('.cdk-overlay-container').getByText("Il n'y en aura pas d'autre")).toBeVisible();
+    await expect(
+      page.locator('.cdk-overlay-container').getByText("Il n'y en aura pas d'autre"),
+    ).toBeVisible();
 
     await page.close();
   });
@@ -105,7 +114,7 @@ test.describe('Foire au planning : bornes datées', () => {
     const jeton = await jetonDe(admin, SEED.demandeur);
     await ouvrirSessionEspace(admin, jeton, EMAIL_ALICE);
     const refus = await admin.post(`/api/espace-animateur/${jeton}/demandes`, {
-      data: [{ creneauId: SEED.creneauId, standId: SEED.standDemandeur, cibleId: SEED.cible }]
+      data: [{ creneauId: SEED.creneauId, standId: SEED.standDemandeur, cibleId: SEED.cible }],
     });
 
     expect(refus.status(), await refus.text()).toBe(400);
@@ -113,7 +122,7 @@ test.describe('Foire au planning : bornes datées', () => {
   });
 
   test("avant la date d'ouverture, l'espace dit « pas encore ouverte » et non « fermée »", async ({
-    page
+    page,
   }) => {
     const debut = jour(5);
     await configurerFoire(admin, { foireOuverte: true, debut, fin: null });
@@ -125,7 +134,9 @@ test.describe('Foire au planning : bornes datées', () => {
     // Le reproche d'origine : « c'est terminé » annoncé à quelqu'un qui arrive
     // deux semaines trop tôt, et qui ne revient donc jamais.
     await expect(page.getByText('pas encore ouverte', { exact: false })).toBeVisible();
-    await expect(page.getByText('La foire au planning est fermée', { exact: false })).toHaveCount(0);
+    await expect(page.getByText('La foire au planning est fermée', { exact: false })).toHaveCount(
+      0,
+    );
   });
 
   test("une fois la fenêtre passée, l'espace dit bien « fermée »", async ({ page }) => {

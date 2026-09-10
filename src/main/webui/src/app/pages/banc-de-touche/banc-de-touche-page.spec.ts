@@ -29,7 +29,7 @@ function banc(creneauId: number, partial: Partial<BancDeTouche> = {}): BancDeTou
     disponibles: 2,
     creneauxAvecSieges: [creneau(5), creneau(7)],
     animateurs: [],
-    ...partial
+    ...partial,
   };
 }
 
@@ -70,8 +70,11 @@ describe('BancDeTouchePage', () => {
         { provide: AnalysesApi, useValue: analysesApi },
         { provide: ReferenceDataStore, useValue: store },
         { provide: Location, useValue: { path: () => '/banc-de-touche', replaceState: vi.fn() } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
-      ]
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
+      ],
     });
     fixture = TestBed.createComponent(BancDeTouchePage);
     return fixture.componentInstance as unknown as PageInternals;

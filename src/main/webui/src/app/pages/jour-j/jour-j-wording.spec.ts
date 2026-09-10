@@ -5,7 +5,7 @@ import type {
   CreneauJourJ,
   EtatJourJ,
   PosteAPourvoir,
-  SuggestionsReparation
+  SuggestionsReparation,
 } from '../../core/models';
 import {
   aucuneSuggestion,
@@ -19,7 +19,7 @@ import {
   plage,
   porteeDesSuggestions,
   rappelPublication,
-  resumeDuJour
+  resumeDuJour,
 } from './jour-j-wording';
 
 function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
@@ -32,7 +32,7 @@ function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
     postesAPourvoir: [],
     absences: [],
     animateurs: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -43,7 +43,7 @@ function creneau(overrides: Partial<CreneauJourJ> = {}): CreneauJourJ {
     heureDebut: '14:00:00',
     heureFin: '18:00:00',
     enCours: false,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -53,7 +53,7 @@ function animateur(overrides: Partial<AnimateurAffecte> = {}): AnimateurAffecte 
     nomAffiche: 'Alice Referente',
     postesRestants: 2,
     absent: false,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -66,7 +66,7 @@ function poste(overrides: Partial<PosteAPourvoir> = {}): PosteAPourvoir {
     heureDebut: '14:00:00',
     heureFin: '18:00:00',
     verrouille: false,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -80,7 +80,7 @@ function suggestions(overrides: Partial<SuggestionsReparation> = {}): Suggestion
     candidatsEvalues: 20,
     plafond: 20,
     suggestions: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -132,7 +132,7 @@ describe('rappelPublication', () => {
     solveEnCours: false,
     dernierePublicationLe: null,
     nombreConcernes,
-    destinataires: []
+    destinataires: [],
   });
 
   it('stays silent when nobody is waiting', () => {
@@ -153,7 +153,7 @@ describe('porteeDesSuggestions', () => {
    */
   it('names both counts when the search stopped at the plafond', () => {
     const text = porteeDesSuggestions(
-      suggestions({ candidatsEligibles: 137, candidatsEvalues: 20 })
+      suggestions({ candidatsEligibles: 137, candidatsEvalues: 20 }),
     );
     expect(text).toContain('20');
     expect(text).toContain('137');
@@ -162,7 +162,7 @@ describe('porteeDesSuggestions', () => {
 
   it('says so plainly when the whole pool was evaluated', () => {
     const text = porteeDesSuggestions(
-      suggestions({ candidatsEligibles: 12, candidatsEvalues: 12 })
+      suggestions({ candidatsEligibles: 12, candidatsEvalues: 12 }),
     );
     expect(text).toContain('12');
     expect(text).not.toContain('pas tout le vivier');
@@ -206,8 +206,8 @@ describe('nomDuCandidat', () => {
     animateursDeService: [animateur()],
     animateurs: [
       { animateurId: 'A1', nomAffiche: 'Alice Referente' },
-      { animateurId: 'A2', nomAffiche: 'Bruno Autonome' }
-    ]
+      { animateurId: 'A2', nomAffiche: 'Bruno Autonome' },
+    ],
   });
 
   it('names people from the roster', () => {

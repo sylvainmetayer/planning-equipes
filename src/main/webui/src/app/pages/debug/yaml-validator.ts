@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,7 +27,7 @@ import { errorPrefix } from '../../core/error-message';
   selector: 'app-yaml-validator',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule],
   templateUrl: './yaml-validator.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class YamlValidator {
   protected readonly validating = signal(false);
@@ -51,7 +58,7 @@ export class YamlValidator {
       this.summary.set(
         result.valide
           ? $localize`:@@yamlValidator.valid:${file.name}:fileName: est valide.`
-          : $localize`:@@yamlValidator.invalid:${file.name}:fileName: contient ${result.erreurs.length}:count: erreur(s) :`
+          : $localize`:@@yamlValidator.invalid:${file.name}:fileName: contient ${result.erreurs.length}:count: erreur(s) :`,
       );
     } catch (err) {
       this.error.set(errorPrefix(err));
@@ -68,4 +75,3 @@ function takeFile(event: Event): File | null {
   input.value = '';
   return file;
 }
-

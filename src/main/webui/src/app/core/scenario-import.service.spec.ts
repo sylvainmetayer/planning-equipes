@@ -23,7 +23,13 @@ import type { CibleImport, Edition, ImpactImport, ImportScenarioResult } from '.
 const EDITION_COURANTE = { id: 'ed-2026', nom: 'Année 2026' } as Edition;
 
 function target(overrides: Partial<CibleImport> = {}): CibleImport {
-  return { editionId: null, existe: false, editionNomFichier: null, editionNomExistant: null, ...overrides };
+  return {
+    editionId: null,
+    existe: false,
+    editionNomFichier: null,
+    editionNomExistant: null,
+    ...overrides,
+  };
 }
 
 function impact(overrides: Partial<ImpactImport> = {}): ImpactImport {
@@ -41,7 +47,11 @@ describe('ScenarioImportService', () => {
   let confirm: { ask: ReturnType<typeof vi.fn> };
   let snapshots: { capturer: ReturnType<typeof vi.fn> };
   let notifications: { notify: ReturnType<typeof vi.fn> };
-  let editions: { courant: ReturnType<typeof signal<Edition | null>>; basculer: ReturnType<typeof vi.fn>; reload: ReturnType<typeof vi.fn> };
+  let editions: {
+    courant: ReturnType<typeof signal<Edition | null>>;
+    basculer: ReturnType<typeof vi.fn>;
+    reload: ReturnType<typeof vi.fn>;
+  };
   let refreshed: string[];
 
   /** What the import endpoint answers; `null` means "no edition routing". */
@@ -73,7 +83,7 @@ describe('ScenarioImportService', () => {
         return impactResponse;
       }),
       post: vi.fn(async () => importResult),
-      postRaw: vi.fn(async (url: string) => (url.includes('cible') ? target() : importResult))
+      postRaw: vi.fn(async (url: string) => (url.includes('cible') ? target() : importResult)),
     };
     confirm = { ask: vi.fn(async () => true) };
     snapshots = { capturer: vi.fn(async () => undefined) };
@@ -81,7 +91,7 @@ describe('ScenarioImportService', () => {
     editions = {
       courant: signal<Edition | null>(EDITION_COURANTE),
       basculer: vi.fn(),
-      reload: vi.fn(async () => refreshed.push('editions'))
+      reload: vi.fn(async () => refreshed.push('editions')),
     };
 
     TestBed.configureTestingModule({
@@ -93,12 +103,27 @@ describe('ScenarioImportService', () => {
         { provide: PlanSnapshotStore, useValue: snapshots },
         { provide: NotificationService, useValue: notifications },
         { provide: EditionStore, useValue: editions },
-        { provide: PlanningStateService, useValue: { set: vi.fn(() => refreshed.push('planningState')) } },
-        { provide: ReferenceDataStore, useValue: { reload: vi.fn(async () => refreshed.push('referenceData')) } },
-        { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => refreshed.push('resolution')) } },
-        { provide: SolverSettingsService, useValue: { refresh: vi.fn(async () => refreshed.push('solverSettings')) } },
-        { provide: ProblemesStore, useValue: { reloadFeasibility: vi.fn(async () => refreshed.push('problemes')) } }
-      ]
+        {
+          provide: PlanningStateService,
+          useValue: { set: vi.fn(() => refreshed.push('planningState')) },
+        },
+        {
+          provide: ReferenceDataStore,
+          useValue: { reload: vi.fn(async () => refreshed.push('referenceData')) },
+        },
+        {
+          provide: PlanningResolutionStore,
+          useValue: { reload: vi.fn(async () => refreshed.push('resolution')) },
+        },
+        {
+          provide: SolverSettingsService,
+          useValue: { refresh: vi.fn(async () => refreshed.push('solverSettings')) },
+        },
+        {
+          provide: ProblemesStore,
+          useValue: { reloadFeasibility: vi.fn(async () => refreshed.push('problemes')) },
+        },
+      ],
     });
     service = TestBed.inject(ScenarioImportService);
   });
@@ -109,7 +134,9 @@ describe('ScenarioImportService', () => {
 
       expect(outcome.status).toBe('imported');
       expect(api.post).toHaveBeenCalledTimes(1);
-      expect(api.post.mock.calls[0][0]).toBe('/api/reference-data/import-scenario?name=edition-1708');
+      expect(api.post.mock.calls[0][0]).toBe(
+        '/api/reference-data/import-scenario?name=edition-1708',
+      );
     });
 
     it('falls back to the default sample when no scenario is named', async () => {
@@ -127,7 +154,11 @@ describe('ScenarioImportService', () => {
 
   describe('scenario file', () => {
     it('posts the YAML as-is and asks the server where it is routed', async () => {
-      await service.importer({ kind: 'file', fileName: 'festival.yaml', content: 'edition:\n  id: ed-2027\n' });
+      await service.importer({
+        kind: 'file',
+        fileName: 'festival.yaml',
+        content: 'edition:\n  id: ed-2027\n',
+      });
 
       const urls = api.postRaw.mock.calls.map(([url]) => url);
       expect(urls[0]).toBe('/api/reference-data/cible-scenario-fichier');
@@ -142,10 +173,10 @@ describe('ScenarioImportService', () => {
       });
 
       await expect(
-        service.importer({ kind: 'file', fileName: 'festival.yaml', content: ': broken' })
+        service.importer({ kind: 'file', fileName: 'festival.yaml', content: ': broken' }),
       ).rejects.toThrow('mapping values are not allowed here');
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error' })
+        expect.objectContaining({ variant: 'error' }),
       );
     });
   });
@@ -202,7 +233,7 @@ describe('ScenarioImportService', () => {
       api.postRaw = vi.fn(async (url: string) =>
         url.includes('cible')
           ? target({ editionId: 'ed-2027', existe: true, editionNomExistant: 'Année 2027' })
-          : importResult
+          : importResult,
       );
 
       await service.importer({ kind: 'file', fileName: 'f.yaml', content: 'x' });
@@ -220,7 +251,7 @@ describe('ScenarioImportService', () => {
 
       expect(outcome.status).toBe('imported');
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error', message: 'disque plein' })
+        expect.objectContaining({ variant: 'error', message: 'disque plein' }),
       );
     });
   });
@@ -236,13 +267,17 @@ describe('ScenarioImportService', () => {
           'resolution',
           'solverSettings',
           'problemes',
-          'editions'
-        ])
+          'editions',
+        ]),
       );
     });
 
     it('offers to switch when the file routed the import to another edition, and switches on yes', async () => {
-      importResult = { editionId: 'ed-2027', editionNom: 'Année 2027', editionCreee: true } as ImportScenarioResult;
+      importResult = {
+        editionId: 'ed-2027',
+        editionNom: 'Année 2027',
+        editionCreee: true,
+      } as ImportScenarioResult;
 
       await service.importer({ kind: 'name', name: 'edition-1708' });
 
@@ -252,7 +287,11 @@ describe('ScenarioImportService', () => {
     });
 
     it('stays on the current edition when the switch is declined', async () => {
-      importResult = { editionId: 'ed-2027', editionNom: 'Année 2027', editionCreee: true } as ImportScenarioResult;
+      importResult = {
+        editionId: 'ed-2027',
+        editionNom: 'Année 2027',
+        editionCreee: true,
+      } as ImportScenarioResult;
       confirm.ask = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
       await service.importer({ kind: 'name', name: 'edition-1708' });
@@ -261,7 +300,11 @@ describe('ScenarioImportService', () => {
     });
 
     it('never offers to switch to the edition already being shown', async () => {
-      importResult = { editionId: 'ed-2026', editionNom: 'Année 2026', editionCreee: false } as ImportScenarioResult;
+      importResult = {
+        editionId: 'ed-2026',
+        editionNom: 'Année 2026',
+        editionCreee: false,
+      } as ImportScenarioResult;
 
       await service.importer({ kind: 'name', name: 'edition-1708' });
 
@@ -275,7 +318,7 @@ describe('ScenarioImportService', () => {
       await service.importer({ kind: 'name', name: 'edition-1708' });
 
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'info' })
+        expect.objectContaining({ variant: 'info' }),
       );
     });
 

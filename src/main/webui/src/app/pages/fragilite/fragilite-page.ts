@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  resource,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -82,7 +89,8 @@ export class FragilitePage {
   );
   /** True as soon as the screen shows something other than its default view. */
   protected readonly viewChanged = computed(
-    () => this.view() !== 'ANIMATEURS' || this.filtre() !== 'TOUS' || this.recherche().trim() !== '',
+    () =>
+      this.view() !== 'ANIMATEURS' || this.filtre() !== 'TOUS' || this.recherche().trim() !== '',
   );
 
   constructor() {

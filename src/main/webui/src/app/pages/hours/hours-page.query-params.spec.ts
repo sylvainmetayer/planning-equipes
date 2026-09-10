@@ -19,8 +19,8 @@ const RAPPORT: HeuresRapport = {
   semaines: ['2026-W33'],
   animateurs: [
     { animateurId: 'bob', nom: 'Bob', heuresParSemaine: { '2026-W33': 30 }, total: 30 },
-    { animateurId: 'alice', nom: 'Alice', heuresParSemaine: { '2026-W33': 12 }, total: 12 }
-  ]
+    { animateurId: 'alice', nom: 'Alice', heuresParSemaine: { '2026-W33': 12 }, total: 12 },
+  ],
 } as HeuresRapport;
 
 type PageInternals = {
@@ -35,11 +35,17 @@ function setUp(queryParams: Record<string, string>) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: ApiService, useValue: { post: vi.fn(async () => RAPPORT), downloadPost: vi.fn() } },
+      {
+        provide: ApiService,
+        useValue: { post: vi.fn(async () => RAPPORT), downloadPost: vi.fn() },
+      },
       { provide: PlanningStateService, useValue: { require: vi.fn(async () => PLANNING) } },
       { provide: Location, useValue: { path: () => '/hours', replaceState } },
-      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
-    ]
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+      },
+    ],
   });
   const fixture = TestBed.createComponent(HoursPage);
   return { fixture, replaceState, page: fixture.componentInstance as unknown as PageInternals };

@@ -65,7 +65,10 @@ export interface SerieScore {
  * @param dureeMs how long the run has been going. The curve's right edge; it
  *                cannot be derived from the points — see the note above.
  */
-export function construireSeries(points: readonly ScorePoint[], dureeMs: number): SerieScore[] | null {
+export function construireSeries(
+  points: readonly ScorePoint[],
+  dureeMs: number,
+): SerieScore[] | null {
   if (points.length === 0) {
     return null;
   }
@@ -113,7 +116,7 @@ function serie(niveau: NiveauScore, points: readonly ScorePoint[], fin: number):
     haut,
     bas,
     dernier,
-    plateauMs: plateau(points, valeurs, fin)
+    plateauMs: plateau(points, valeurs, fin),
   };
 }
 

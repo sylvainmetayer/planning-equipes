@@ -4,10 +4,17 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationService } from './notification.service';
 
-function configure(): { service: NotificationService; snackBar: { open: ReturnType<typeof vi.fn> } } {
+function configure(): {
+  service: NotificationService;
+  snackBar: { open: ReturnType<typeof vi.fn> };
+} {
   const snackBar = { open: vi.fn() };
   TestBed.configureTestingModule({
-    providers: [provideZonelessChangeDetection(), NotificationService, { provide: MatSnackBar, useValue: snackBar }]
+    providers: [
+      provideZonelessChangeDetection(),
+      NotificationService,
+      { provide: MatSnackBar, useValue: snackBar },
+    ],
   });
   return { service: TestBed.inject(NotificationService), snackBar };
 }
@@ -37,7 +44,7 @@ describe('NotificationService', () => {
     ['info' as const, 'info' as const],
     ['success' as const, 'info' as const],
     ['warning' as const, 'warning' as const],
-    ['error' as const, 'alert' as const]
+    ['error' as const, 'alert' as const],
   ])('maps toast variant %s to severity %s', (variant, severity) => {
     const { service } = configure();
     service.notify({ title: 'x', variant });
@@ -52,12 +59,16 @@ describe('NotificationService', () => {
   it('keeps messageJournal in the log while the snack bar shows message', () => {
     const { service, snackBar } = configure();
 
-    service.notify({ title: 'Saved', message: 'A1 is a minor · off day 2027-08-15', messageJournal: 'off day 2027-08-15' });
+    service.notify({
+      title: 'Saved',
+      message: 'A1 is a minor · off day 2027-08-15',
+      messageJournal: 'off day 2027-08-15',
+    });
 
     expect(snackBar.open).toHaveBeenCalledWith(
       expect.stringContaining('A1 is a minor'),
       expect.anything(),
-      expect.anything()
+      expect.anything(),
     );
     expect(service.notifications()[0].message).toBe('off day 2027-08-15');
 
@@ -78,7 +89,11 @@ describe('NotificationService', () => {
     const { service } = configure();
     service.push('alert', 'Broken constraint', 'detail');
     expect(service.unreadCount()).toBe(1);
-    expect(service.notifications()[0]).toMatchObject({ severity: 'alert', title: 'Broken constraint', read: false });
+    expect(service.notifications()[0]).toMatchObject({
+      severity: 'alert',
+      title: 'Broken constraint',
+      read: false,
+    });
   });
 
   it('markRead() clears the unread flag for one entry only', () => {

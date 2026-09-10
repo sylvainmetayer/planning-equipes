@@ -23,11 +23,15 @@ function rapport(partial: Partial<RapportFragilite> = {}): RapportFragilite {
     animateursIrremplacables: 0,
     ninjaConfigure: true,
     message: 'Douze groupes analysés.',
-    ...partial
+    ...partial,
   };
 }
 
-function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error: Error) => void;
+} {
   let resolve: (value: T) => void = () => undefined;
   let reject: (error: Error) => void = () => undefined;
   const promise = new Promise<T>((res, rej) => {
@@ -55,8 +59,11 @@ describe('FragilitePage loading', () => {
         provideZonelessChangeDetection(),
         { provide: AnalysesApi, useValue: analysesApi },
         { provide: Location, useValue: { path: () => '/fragilite', replaceState: vi.fn() } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } }
-      ]
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
+      ],
     });
   });
 

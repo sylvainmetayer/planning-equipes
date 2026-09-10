@@ -69,13 +69,13 @@ export class ReferenceCrudService {
     payload: T,
     editingId: string | number | null,
     label: string,
-    options: { requireId?: boolean } = {}
+    options: { requireId?: boolean } = {},
   ): Promise<boolean> {
     const requireId = options.requireId ?? true;
     if (requireId && !payload.id) {
       this.notifications.notify({
         title: $localize`:@@crud.idRequired:Un identifiant est requis.`,
-        variant: 'error'
+        variant: 'error',
       });
       return false;
     }
@@ -98,7 +98,7 @@ export class ReferenceCrudService {
           message: detailler(avertissements),
           messageJournal: detailler(avertissements.filter(estJournalisable)),
           variant: 'warning',
-          timeout: 0
+          timeout: 0,
         });
         return true;
       }
@@ -107,7 +107,7 @@ export class ReferenceCrudService {
           ? $localize`:@@crud.updated:Modification de ${label}:label: ${identifiant}:id: effectuée.`
           : $localize`:@@crud.created:Création de ${label}:label: ${identifiant}:id: effectuée.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
       return true;
     } catch (error) {
@@ -138,7 +138,7 @@ export class ReferenceCrudService {
   private async persister<T extends { id?: string | number | null }>(
     resource: string,
     payload: T,
-    editingId: string | number | null
+    editingId: string | number | null,
   ): Promise<SaveResult> {
     try {
       return await this.store.save(resource, payload, editingId);
@@ -151,7 +151,7 @@ export class ReferenceCrudService {
         message: error.message + quand(error.modifieLe),
         confirmLabel: $localize`:@@crud.concurrent.overwrite:Écraser quand même`,
         cancelLabel: $localize`:@@crud.concurrent.reload:Recharger`,
-        danger: true
+        danger: true,
       });
       if (choix === true) {
         return this.store.save(resource, { ...payload, modifieLe: null }, editingId);
@@ -165,7 +165,7 @@ export class ReferenceCrudService {
         title: $localize`:@@crud.concurrent.reloaded:Fiche rechargée, vos modifications n'ont pas été enregistrées.`,
         message: $localize`:@@crud.concurrent.reloadedHint:Rouvrez-la pour les reporter sur la version actuelle.`,
         variant: 'warning',
-        timeout: 8000
+        timeout: 8000,
       });
       return { id: RECHARGE, avertissements: [] };
     }
@@ -184,13 +184,18 @@ export class ReferenceCrudService {
    *               Left empty, the counters of the entity are asked to the
    *               server instead — see {@link ReferenceUsageService}.
    */
-  async remove(resource: string, id: string | number, label: string, detail = ''): Promise<boolean> {
+  async remove(
+    resource: string,
+    id: string | number,
+    label: string,
+    detail = '',
+  ): Promise<boolean> {
     const confirmed = await this.confirm.ask({
       title: $localize`:@@crud.deleteTitle:Supprimer ${label}:label: ${id}:id: ?`,
       message: $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
       detail: detail ? Promise.resolve(detail) : this.usages.describe(resource, [id]),
       confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
-      danger: true
+      danger: true,
     });
     if (!confirmed) {
       return false;
@@ -201,7 +206,7 @@ export class ReferenceCrudService {
       this.notifications.notify({
         title: $localize`:@@crud.deleted:Suppression de ${label}:label: ${id}:id: effectuée.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
       return true;
     } catch (error) {
@@ -219,7 +224,7 @@ export class ReferenceCrudService {
   async removeMany(
     resource: string,
     ids: readonly (string | number)[],
-    labelPluriel: string
+    labelPluriel: string,
   ): Promise<number> {
     if (ids.length === 0) {
       return 0;
@@ -232,7 +237,7 @@ export class ReferenceCrudService {
       // list of fifty impact sentences would say less than their sum.
       detail: this.usages.describe(resource, ids),
       confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
-      danger: true
+      danger: true,
     });
     if (!confirmed) {
       return 0;
@@ -242,8 +247,10 @@ export class ReferenceCrudService {
       this.refreshResolution();
       this.reportBulk(
         result,
-        (count) => $localize`:@@crud.deletedMany:Suppression de ${count}:count: ${labelPluriel}:label: effectuée.`,
-        (count) => $localize`:@@crud.deleteManyFailed:${count}:count: ${labelPluriel}:label: n'ont pas pu être supprimés.`
+        (count) =>
+          $localize`:@@crud.deletedMany:Suppression de ${count}:count: ${labelPluriel}:label: effectuée.`,
+        (count) =>
+          $localize`:@@crud.deleteManyFailed:${count}:count: ${labelPluriel}:label: n'ont pas pu être supprimés.`,
       );
       return result.succes.length;
     } catch (error) {
@@ -260,7 +267,7 @@ export class ReferenceCrudService {
   async saveMany<T extends { id: string | number }>(
     resource: string,
     payloads: readonly T[],
-    labelPluriel: string
+    labelPluriel: string,
   ): Promise<number> {
     if (payloads.length === 0) {
       return 0;
@@ -270,8 +277,10 @@ export class ReferenceCrudService {
       this.refreshResolution();
       this.reportBulk(
         result,
-        (count) => $localize`:@@crud.updatedMany:Modification de ${count}:count: ${labelPluriel}:label: effectuée.`,
-        (count) => $localize`:@@crud.updateManyFailed:${count}:count: ${labelPluriel}:label: n'ont pas pu être modifiés.`
+        (count) =>
+          $localize`:@@crud.updatedMany:Modification de ${count}:count: ${labelPluriel}:label: effectuée.`,
+        (count) =>
+          $localize`:@@crud.updateManyFailed:${count}:count: ${labelPluriel}:label: n'ont pas pu être modifiés.`,
       );
       return result.succes.length;
     } catch (error) {
@@ -288,7 +297,7 @@ export class ReferenceCrudService {
   private reportBulk(
     result: BulkResult,
     successTitle: (count: number) => string,
-    failureTitle: (count: number) => string
+    failureTitle: (count: number) => string,
   ): void {
     if (result.echecs.length === 0 && result.avertissements.length > 0) {
       // Every row went through, and some of them raised something: one snack
@@ -298,7 +307,7 @@ export class ReferenceCrudService {
         message: detailler(result.avertissements),
         messageJournal: detailler(result.avertissements.filter(estJournalisable)),
         variant: 'warning',
-        timeout: 0
+        timeout: 0,
       });
       return;
     }
@@ -306,7 +315,7 @@ export class ReferenceCrudService {
       this.notifications.notify({
         title: successTitle(result.succes.length),
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
       return;
     }
@@ -328,10 +337,11 @@ export class ReferenceCrudService {
     this.notifications.notify({
       title: failureTitle(result.echecs.length),
       message:
-        (restants > 0 ? `${details} · ${$localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`}` : details) +
-        suite,
+        (restants > 0
+          ? `${details} · ${$localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`}`
+          : details) + suite,
       variant: 'error',
-      timeout: concurrentes > 0 ? 0 : undefined
+      timeout: concurrentes > 0 ? 0 : undefined,
     });
     // A partly failed batch still wrote most of its rows, and what they raised
     // is not cancelled by the one row the server refused. The snack bar is
@@ -343,7 +353,7 @@ export class ReferenceCrudService {
         title: $localize`:@@crud.bulkPartialWarnings:${result.avertissements.length}:count: point(s) à vérifier sur les lignes enregistrées.`,
         message: detailler(result.avertissements.filter(estJournalisable)),
         variant: 'warning',
-        silent: true
+        silent: true,
       });
     }
   }
@@ -368,7 +378,7 @@ export class ReferenceCrudService {
     this.notifications.notify({
       title: titreErreur(error),
       message: errorMessage(error),
-      variant: 'error'
+      variant: 'error',
     });
   }
 }
@@ -385,7 +395,9 @@ function detailler(avertissements: readonly Avertissement[]): string {
     .map((avertissement) => avertissement.message)
     .join(' · ');
   const restants = avertissements.length - MAX_AVERTISSEMENTS_DETAILLES;
-  return restants > 0 ? `${detail} · ${$localize`:@@crud.moreWarnings:et ${restants}:count: autre(s)`}` : detail;
+  return restants > 0
+    ? `${detail} · ${$localize`:@@crud.moreWarnings:et ${restants}:count: autre(s)`}`
+    : detail;
 }
 
 /**

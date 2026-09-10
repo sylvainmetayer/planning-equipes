@@ -15,7 +15,7 @@ import {
   NatureEchange,
   PosteAnimateurView,
   SuggestionEchangeView,
-  SuggestionsEchangeView
+  SuggestionsEchangeView,
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { LegalText } from '../../shared/legal-text';
@@ -24,7 +24,7 @@ import {
   ajouterBrouillon,
   brouillonComplet,
   retirerBrouillon,
-  versNouvellesDemandes
+  versNouvellesDemandes,
 } from './echange-brouillon';
 import { errorMessage } from '../../core/error-message';
 
@@ -57,10 +57,10 @@ interface DemandeRow extends DemandeEchangeView {
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    LegalText
+    LegalText,
   ],
   templateUrl: './espace-echanges-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EspaceEchangesPage {
   protected readonly espace = inject(EspaceAnimateurService);
@@ -87,11 +87,13 @@ export class EspaceEchangesPage {
   protected readonly envoiEnCours = signal(false);
 
   protected readonly formulaireComplet = computed(() =>
-    brouillonComplet(this.posteChoisi(), this.cibleId())
+    brouillonComplet(this.posteChoisi(), this.cibleId()),
   );
 
   /** True when the search stopped at its ceiling: the list is the best of what was tried, not everyone. */
-  protected readonly suggestionsTronquees = computed(() => this.suggestions()?.listeTronquee ?? false);
+  protected readonly suggestionsTronquees = computed(
+    () => this.suggestions()?.listeTronquee ?? false,
+  );
 
   /** Closed foire = read-only history: no submission form, no withdrawals. */
   protected readonly foireOpen = computed(() => this.espace.view()?.foireOuverte ?? true);
@@ -113,19 +115,20 @@ export class EspaceEchangesPage {
     this.espace.demandes().map((demande) => ({
       ...demande,
       statutLabel: statutDemandeLabel(demande.statut),
-      statutClasse: statutDemandeClasse(demande.statut)
-    }))
+      statutClasse: statutDemandeClasse(demande.statut),
+    })),
   );
 
   /** Demandes targeting me and still waiting for MY agreement — the actionable ones. */
   protected readonly recuesEnAttente = computed<DemandeRow[]>(() =>
-    this.espace.demandesRecues()
+    this.espace
+      .demandesRecues()
       .filter((demande) => demande.statut === 'EN_ATTENTE_CIBLE')
       .map((demande) => ({
         ...demande,
         statutLabel: statutDemandeLabel(demande.statut),
-        statutClasse: statutDemandeClasse(demande.statut)
-      }))
+        statutClasse: statutDemandeClasse(demande.statut),
+      })),
   );
 
   protected async accorder(demande: DemandeRow): Promise<void> {
@@ -134,13 +137,13 @@ export class EspaceEchangesPage {
       this.notifications.notify({
         title: $localize`:@@espace.recues.accordee:Votre accord est transmis : l'organisation tranchera.`,
         variant: 'success',
-        timeout: 5000
+        timeout: 5000,
       });
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     }
   }
@@ -151,13 +154,13 @@ export class EspaceEchangesPage {
       this.notifications.notify({
         title: $localize`:@@espace.recues.declinee:Demande déclinée — votre collègue en est informé.`,
         variant: 'success',
-        timeout: 5000
+        timeout: 5000,
       });
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     }
   }
@@ -186,7 +189,7 @@ export class EspaceEchangesPage {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       this.rechercheEnCours.set(false);
@@ -207,15 +210,16 @@ export class EspaceEchangesPage {
     this.posteCibleChoisi.set(
       this.postesCollegue().find(
         (poste) =>
-          poste.creneauId === suggestion.creneauCibleId && poste.standId === suggestion.standCibleId
-      ) ?? null
+          poste.creneauId === suggestion.creneauCibleId &&
+          poste.standId === suggestion.standCibleId,
+      ) ?? null,
     );
   }
 
   /** The retained suggestions of one family, in the order the server ranked them. */
   protected suggestionsDe(nature: NatureEchange): SuggestionEchangeView[] {
     return (this.suggestions()?.suggestions ?? []).filter(
-      (suggestion) => suggestion.nature === nature
+      (suggestion) => suggestion.nature === nature,
     );
   }
 
@@ -255,8 +259,8 @@ export class EspaceEchangesPage {
         cibleNom: target?.nomComplet ?? this.cibleId(),
         creneauCibleLabel: posteCible
           ? `${posteCible.date ?? ''} ${posteCible.heureDebut}–${posteCible.heureFin} · ${posteCible.standNom}`.trim()
-          : null
-      })
+          : null,
+      }),
     );
     this.posteChoisi.set(null);
     this.cibleId.set('');
@@ -283,20 +287,20 @@ export class EspaceEchangesPage {
         this.notifications.notify({
           title: $localize`:@@espace.echanges.soumisAvecAlerte:Demandes envoyées — attention`,
           message: $localize`:@@espace.echanges.soumisAvecAlerteDetail:${infaisables}:count: demande(s) ne semblent pas réalisables en l'état du planning (voir le détail ci-dessous). Elles ont tout de même été transmises pour arbitrage.`,
-          variant: 'warning'
+          variant: 'warning',
         });
       } else {
         this.notifications.notify({
           title: $localize`:@@espace.echanges.soumis:Vos demandes ont été transmises à l'organisation.`,
           variant: 'success',
-          timeout: 5000
+          timeout: 5000,
         });
       }
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       this.envoiEnCours.set(false);
@@ -309,13 +313,13 @@ export class EspaceEchangesPage {
       this.notifications.notify({
         title: $localize`:@@espace.echanges.annulee:Demande annulée.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     }
   }

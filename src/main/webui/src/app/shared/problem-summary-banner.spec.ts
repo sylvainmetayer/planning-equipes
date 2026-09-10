@@ -26,7 +26,7 @@ describe('ProblemSummaryBanner', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), provideRouter([])]
+      providers: [provideZonelessChangeDetection(), provideRouter([])],
     });
     fixture = TestBed.createComponent(ProblemSummaryBanner);
   });
@@ -47,11 +47,11 @@ describe('ProblemSummaryBanner', () => {
       probleme('a', 'BLOQUANT'),
       probleme('b', 'BLOQUANT'),
       probleme('c', 'AVERTISSEMENT'),
-      probleme('d', 'MINEUR')
+      probleme('d', 'MINEUR'),
     ]);
 
     expect(racine.querySelector('mat-card-content p')!.textContent!.trim()).toBe(
-      '4 problème(s) : 2 bloquant(s), 1 avertissement(s), 1 mineur(s).'
+      '4 problème(s) : 2 bloquant(s), 1 avertissement(s), 1 mineur(s).',
     );
   });
 

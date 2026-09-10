@@ -17,15 +17,15 @@ function rendre(branding: Partial<Branding>) {
   const jobs = {
     activeJob: signal({ id: 'j1' }),
     file: signal([]),
-    activeJobDescription: signal('Résolution en cours')
+    activeJobDescription: signal('Résolution en cours'),
   };
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
       { provide: SolverJobService, useValue: jobs },
-      { provide: BRANDING, useValue: { ...BRANDING_NEUTRE, ...branding } }
-    ]
+      { provide: BRANDING, useValue: { ...BRANDING_NEUTRE, ...branding } },
+    ],
   });
   const fixture = TestBed.createComponent(SolverRunningIndicator);
   TestBed.tick();
@@ -36,7 +36,8 @@ describe('SolverRunningIndicator', () => {
   it('spins the deployment mascot when one is configured', () => {
     const fixture = rendre({ mascotIconUrl: 'mascotte.png' });
 
-    const image: HTMLImageElement | null = fixture.nativeElement.querySelector('img.solver-running-icon');
+    const image: HTMLImageElement | null =
+      fixture.nativeElement.querySelector('img.solver-running-icon');
 
     expect(image?.getAttribute('src')).toBe('mascotte.png');
   });

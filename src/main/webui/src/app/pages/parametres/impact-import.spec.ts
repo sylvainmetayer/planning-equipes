@@ -11,12 +11,12 @@ function impact(overrides: Partial<ImpactImport> = {}): ImpactImport {
     demandesEchange: 3,
     demandesEnAttente: 2,
     verrous: 4,
-    ...overrides
+    ...overrides,
   };
 }
 
 describe('messageImpactImport', () => {
-  it("chiffre le référentiel, le planning résolu et les demandes menacées", () => {
+  it('chiffre le référentiel, le planning résolu et les demandes menacées', () => {
     const message = messageImpactImport(impact(), 'charger un scénario');
     expect(message).toContain('charger un scénario');
     expect(message).toContain('12 animateur(s) et 5 stand(s)');
@@ -31,7 +31,7 @@ describe('messageImpactImport', () => {
   it('reste utile sans planning résolu ni demandes : pas de lignes vides', () => {
     const message = messageImpactImport(
       impact({ planningResolu: false, demandesEchange: 0, demandesEnAttente: 0 }),
-      'importer un fichier scénario'
+      'importer un fichier scénario',
     );
     expect(message).toContain('12 animateur(s)');
     expect(message).not.toContain('affectation');

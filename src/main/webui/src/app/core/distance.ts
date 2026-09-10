@@ -28,7 +28,9 @@ export function distanceMetres(depuis: PointGeo, vers: PointGeo): number | null 
   const deltaLongitude = radians(vers.longitude - depuis.longitude);
   const a =
     Math.sin(deltaLatitude / 2) ** 2 +
-    Math.cos(radians(depuis.latitude)) * Math.cos(radians(vers.latitude)) * Math.sin(deltaLongitude / 2) ** 2;
+    Math.cos(radians(depuis.latitude)) *
+      Math.cos(radians(vers.latitude)) *
+      Math.sin(deltaLongitude / 2) ** 2;
   return Math.round(2 * RAYON_TERRE_METRES * Math.asin(Math.min(1, Math.sqrt(a))));
 }
 

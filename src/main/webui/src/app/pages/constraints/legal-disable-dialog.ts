@@ -17,7 +17,12 @@
 
 import { ChangeDetectionStrategy, Component, Injectable, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -36,7 +41,7 @@ export interface LegalDisableData {
   selector: 'app-legal-disable-dialog',
   imports: [MatDialogModule, MatButtonModule, MatIconModule, RouterLink, LegalText],
   templateUrl: './legal-disable-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LegalDisableDialog {
   protected readonly dialogRef = inject<MatDialogRef<LegalDisableDialog, boolean>>(MatDialogRef);
@@ -57,11 +62,18 @@ export class LegalDisableConfirmService {
     if (!constraint.protegee) {
       return true;
     }
-    const dialogRef = this.dialog.open<LegalDisableDialog, LegalDisableData, boolean>(LegalDisableDialog, {
-      data: { name: constraint.name, description: constraint.description, categorie: constraint.categorie },
-      width: '38rem',
-      autoFocus: 'dialog'
-    });
+    const dialogRef = this.dialog.open<LegalDisableDialog, LegalDisableData, boolean>(
+      LegalDisableDialog,
+      {
+        data: {
+          name: constraint.name,
+          description: constraint.description,
+          categorie: constraint.categorie,
+        },
+        width: '38rem',
+        autoFocus: 'dialog',
+      },
+    );
     return (await firstValueFrom(dialogRef.afterClosed())) === true;
   }
 }

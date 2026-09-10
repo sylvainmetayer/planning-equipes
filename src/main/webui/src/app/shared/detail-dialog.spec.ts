@@ -23,10 +23,13 @@ function monter(data: DetailData, options: { editingLocked?: boolean } = {}) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: data }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: data },
+    ],
   });
   const fixture = TestBed.createComponent(DetailDialog);
   fixture.detectChanges();
@@ -41,14 +44,14 @@ const DATA: DetailData = {
       title: 'Identité',
       rows: [
         { label: 'Nom', value: 'Loup-Garou' },
-        { label: 'E-mail', value: 'aucun', muted: true }
-      ]
+        { label: 'E-mail', value: 'aucun', muted: true },
+      ],
     },
     {
       title: 'Appréciation',
-      rows: [{ label: 'Typologies', chips: ['Ambiance', 'Expert'] }]
-    }
-  ]
+      rows: [{ label: 'Typologies', chips: ['Ambiance', 'Expert'] }],
+    },
+  ],
 };
 
 /** The tooltip text bound on the edit button, shown or not. */
@@ -68,9 +71,11 @@ describe('DetailDialog', () => {
 
     expect(racine.querySelector('h2')!.textContent!.trim()).toBe('Loup-Garou');
     expect(racine.querySelector('.detail-subtitle')!.textContent!.trim()).toBe('Stand s42');
-    expect(Array.from(racine.querySelectorAll('.detail-section-title')).map((each) => each.textContent!.trim())).toEqual(
-      ['Identité', 'Appréciation']
-    );
+    expect(
+      Array.from(racine.querySelectorAll('.detail-section-title')).map((each) =>
+        each.textContent!.trim(),
+      ),
+    ).toEqual(['Identité', 'Appréciation']);
   });
 
   it('omits the subtitle line entirely when there is none, rather than leaving an empty paragraph', () => {
@@ -83,17 +88,18 @@ describe('DetailDialog', () => {
     const { racine } = monter(DATA);
 
     const identite = racine.querySelector('.detail-section')!;
-    expect(Array.from(identite.querySelectorAll('dt')).map((each) => each.textContent!.trim())).toEqual([
-      'Nom',
-      'E-mail'
-    ]);
+    expect(
+      Array.from(identite.querySelectorAll('dt')).map((each) => each.textContent!.trim()),
+    ).toEqual(['Nom', 'E-mail']);
     expect(identite.querySelectorAll('dd')[0].textContent!.trim()).toBe('Loup-Garou');
   });
 
   it('mutes only the rows marked as hints', () => {
     const { racine } = monter(DATA);
 
-    const valeurs = Array.from(racine.querySelectorAll('.detail-section')[0].querySelectorAll('dd'));
+    const valeurs = Array.from(
+      racine.querySelectorAll('.detail-section')[0].querySelectorAll('dd'),
+    );
     expect(valeurs[0].classList.contains('detail-muted')).toBe(false);
     expect(valeurs[1].classList.contains('detail-muted')).toBe(true);
   });

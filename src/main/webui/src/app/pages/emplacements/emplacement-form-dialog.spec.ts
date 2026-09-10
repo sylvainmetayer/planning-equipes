@@ -18,18 +18,24 @@ import { Emplacement } from '../../core/models';
 import { MapPicker } from '../../shared/map-picker';
 import { EmplacementFormDialog } from './emplacement-form-dialog';
 
-function monter(emplacement: Emplacement | null, options: { editingLocked?: boolean; saveOk?: boolean } = {}) {
+function monter(
+  emplacement: Emplacement | null,
+  options: { editingLocked?: boolean; saveOk?: boolean } = {},
+) {
   const save = vi.fn(async () => options.saveOk ?? true);
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: ReferenceCrudService, useValue: { save } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { emplacement } }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: { emplacement } },
+    ],
   });
   return { fixture: TestBed.createComponent(EmplacementFormDialog), save, close };
 }
@@ -42,7 +48,11 @@ function champ(fixture: ComponentFixture<EmplacementFormDialog>, name: string): 
   return racine(fixture).querySelector(`input[name="${name}"]`) as HTMLInputElement;
 }
 
-function saisir(fixture: ComponentFixture<EmplacementFormDialog>, name: string, valeur: string): void {
+function saisir(
+  fixture: ComponentFixture<EmplacementFormDialog>,
+  name: string,
+  valeur: string,
+): void {
   const input = champ(fixture, name);
   input.value = valeur;
   input.dispatchEvent(new Event('input'));
@@ -60,7 +70,7 @@ function payload(save: ReturnType<typeof vi.fn>): Emplacement {
 function cliquerSurLaCarte(
   fixture: ComponentFixture<EmplacementFormDialog>,
   latitude: number,
-  longitude: number
+  longitude: number,
 ): void {
   const picker = fixture.debugElement.query(By.directive(MapPicker)).componentInstance as MapPicker;
   picker.positionChange.emit({ latitude, longitude });
@@ -73,7 +83,9 @@ describe('EmplacementFormDialog', () => {
 
   beforeEach(() => {
     erreursConsole = [];
-    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => erreursConsole.push(args));
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) =>
+      erreursConsole.push(args),
+    );
   });
 
   it('names every control, so the labels render and no NG01352 is thrown', async () => {
@@ -93,7 +105,9 @@ describe('EmplacementFormDialog', () => {
     expect(champ(fixture, 'nom').value).toBe('Hall A');
     expect(champ(fixture, 'latitude').value).toBe('47.2');
     expect(champ(fixture, 'longitude').value).toBe('-1.55');
-    expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe("Modifier l'emplacement hall");
+    expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe(
+      "Modifier l'emplacement hall",
+    );
   });
 
   it('locks the identifier of an existing emplacement but not of a new one', async () => {
@@ -119,7 +133,7 @@ describe('EmplacementFormDialog', () => {
     // screen-reader user that the click landed somewhere.
     // The leading text is the status icon's ligature.
     expect(racine(fixture).querySelector('app-status-message')!.textContent!).toContain(
-      'Position choisie : 47.21725, -1.55362'
+      'Position choisie : 47.21725, -1.55362',
     );
   });
 
@@ -135,12 +149,23 @@ describe('EmplacementFormDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    expect(payload(save)).toEqual({ id: 'hall', nom: 'Hall A', latitude: 47.2, longitude: -1.55, modifieLe: null });
+    expect(payload(save)).toEqual({
+      id: 'hall',
+      nom: 'Hall A',
+      latitude: 47.2,
+      longitude: -1.55,
+      modifieLe: null,
+    });
     expect(close).toHaveBeenCalledWith(true);
   });
 
   it('saves an emplacement with no coordinates as null, never as an empty string', async () => {
-    const { fixture, save } = monter({ id: 'hall', nom: 'Hall A', latitude: null, longitude: null });
+    const { fixture, save } = monter({
+      id: 'hall',
+      nom: 'Hall A',
+      latitude: null,
+      longitude: null,
+    });
     await fixture.whenStable();
 
     submit(fixture);
@@ -181,6 +206,10 @@ describe('EmplacementFormDialog', () => {
 
     expect(racine(fixture).querySelector('.locked-hint')).not.toBeNull();
     expect((racine(fixture).querySelector('fieldset') as HTMLFieldSetElement).disabled).toBe(true);
-    expect((fixture.debugElement.query(By.directive(MapPicker)).componentInstance as MapPicker).disabled()).toBe(true);
+    expect(
+      (
+        fixture.debugElement.query(By.directive(MapPicker)).componentInstance as MapPicker
+      ).disabled(),
+    ).toBe(true);
   });
 });

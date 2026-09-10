@@ -22,8 +22,8 @@ function monter(data: ConfirmData) {
     providers: [
       provideZonelessChangeDetection(),
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: data }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: data },
+    ],
   });
   const fixture = TestBed.createComponent(ConfirmDialog);
   fixture.detectChanges();
@@ -36,10 +36,15 @@ function boutons(racine: HTMLElement): HTMLButtonElement[] {
 
 describe('ConfirmDialog', () => {
   it('shows the title and the message it was opened with', () => {
-    const { racine } = monter({ title: 'Supprimer le stand s42 ?', message: 'Action irréversible.' });
+    const { racine } = monter({
+      title: 'Supprimer le stand s42 ?',
+      message: 'Action irréversible.',
+    });
 
     expect(racine.querySelector('h2')!.textContent!.trim()).toBe('Supprimer le stand s42 ?');
-    expect(racine.querySelector('mat-dialog-content p')!.textContent!.trim()).toBe('Action irréversible.');
+    expect(racine.querySelector('mat-dialog-content p')!.textContent!.trim()).toBe(
+      'Action irréversible.',
+    );
   });
 
   /**
@@ -63,7 +68,7 @@ describe('ConfirmDialog', () => {
     const paragraphes = Array.from(racine.querySelectorAll('mat-dialog-content p'));
     expect(paragraphes.map((p) => p.textContent!.trim())).toEqual([
       'Action irréversible.',
-      'Référencé par 42 affectation(s).'
+      'Référencé par 42 affectation(s).',
     ]);
   });
 
@@ -88,9 +93,17 @@ describe('ConfirmDialog', () => {
   });
 
   it('uses the caller labels when it gives them', () => {
-    const { racine } = monter({ title: 't', message: 'm', confirmLabel: 'Supprimer', cancelLabel: 'Garder' });
+    const { racine } = monter({
+      title: 't',
+      message: 'm',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Garder',
+    });
 
-    expect(boutons(racine).map((bouton) => bouton.textContent!.trim())).toEqual(['Garder', 'Supprimer']);
+    expect(boutons(racine).map((bouton) => bouton.textContent!.trim())).toEqual([
+      'Garder',
+      'Supprimer',
+    ]);
   });
 
   // Three states, not two: the cancel button answers false, and only Escape
@@ -127,7 +140,7 @@ describe('ConfirmService', () => {
     dialog = { open: vi.fn() };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: MatDialog, useValue: dialog }]
+      providers: [provideZonelessChangeDetection(), { provide: MatDialog, useValue: dialog }],
     });
     service = TestBed.inject(ConfirmService);
   });
@@ -162,7 +175,7 @@ describe('ConfirmService', () => {
     expect(dialog.open.mock.calls[0][1].data).toEqual({
       title: 'Supprimer ?',
       message: 'Irréversible.',
-      danger: true
+      danger: true,
     });
   });
 });

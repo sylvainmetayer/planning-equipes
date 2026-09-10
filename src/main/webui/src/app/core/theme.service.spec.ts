@@ -44,11 +44,19 @@ describe('ThemeService', () => {
     media = new FakeMediaQueryList();
     // jsdom ships no matchMedia at all, which is also the browser case this
     // service has to survive: the fake is installed per test, not globally.
-    Object.defineProperty(window, 'matchMedia', { value: () => media, configurable: true, writable: true });
+    Object.defineProperty(window, 'matchMedia', {
+      value: () => media,
+      configurable: true,
+      writable: true,
+    });
   });
 
   afterEach(() => {
-    Object.defineProperty(window, 'matchMedia', { value: realMatchMedia, configurable: true, writable: true });
+    Object.defineProperty(window, 'matchMedia', {
+      value: realMatchMedia,
+      configurable: true,
+      writable: true,
+    });
     localStorage.removeItem(STORAGE_KEY);
     document.documentElement.style.colorScheme = '';
   });
@@ -109,7 +117,11 @@ describe('ThemeService', () => {
   });
 
   it('works at all where there is no matchMedia', () => {
-    Object.defineProperty(window, 'matchMedia', { value: undefined, configurable: true, writable: true });
+    Object.defineProperty(window, 'matchMedia', {
+      value: undefined,
+      configurable: true,
+      writable: true,
+    });
     const theme = service();
     expect(theme.scheme()).toBe('light');
     theme.set('dark');

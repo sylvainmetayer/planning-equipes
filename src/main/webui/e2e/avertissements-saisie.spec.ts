@@ -21,7 +21,10 @@ let standsVoisins: Record<string, unknown>[] = [];
 
 /** Les créneaux créés par l'IHM ont un id généré : on les retrouve par leur date. */
 async function supprimerCreneauxDuJour(): Promise<void> {
-  const creneaux = (await (await admin.get('/api/creneaux')).json()) as { id: number; date: string }[];
+  const creneaux = (await (await admin.get('/api/creneaux')).json()) as {
+    id: number;
+    date: string;
+  }[];
   for (const creneau of creneaux.filter((candidat) => candidat.date === JOUR)) {
     await admin.delete(`/api/creneaux/${creneau.id}`).catch(() => undefined);
   }
@@ -34,9 +37,12 @@ test.beforeAll(async ({ playwright }, testInfo) => {
   // TOUS les créneaux de l'édition, donc une ligne oubliée par une autre suite
   // déplacerait les bornes sous les assertions. Le créneau de référence est ce
   // qui donne des bornes à l'édition : sans lui, rien n'est « hors bornes ».
-  await seedReferentielSolveur(admin, [], [], [
-    { id: CRENEAU_REFERENCE, date: JOUR, debut: '14:00', fin: '18:00' }
-  ]);
+  await seedReferentielSolveur(
+    admin,
+    [],
+    [],
+    [{ id: CRENEAU_REFERENCE, date: JOUR, debut: '14:00', fin: '18:00' }],
+  );
 
   // La base d'une pile e2e porte un stand de démonstration, ouvert par défaut :
   // il suffirait à couvrir n'importe quel créneau. On le ferme pour la journée
@@ -48,9 +54,9 @@ test.beforeAll(async ({ playwright }, testInfo) => {
         ...voisin,
         indisponibilites: [
           ...(voisin['indisponibilites'] as unknown[]),
-          { date: JOUR, heureDebut: '00:00:00', heureFin: null, motif: 'e2e' }
-        ]
-      }
+          { date: JOUR, heureDebut: '00:00:00', heureFin: null, motif: 'e2e' },
+        ],
+      },
     });
     expect(ferme.ok(), await ferme.text()).toBe(true);
   }
@@ -67,8 +73,8 @@ test.beforeAll(async ({ playwright }, testInfo) => {
       effectifMin: 1,
       effectifMax: 2,
       reserveMajeurs: false,
-      horaires: [{ mode: 'OUVERTURE', jours: 'TOUS', fenetres: [{ heureDebut: '14:00:00' }] }]
-    }
+      horaires: [{ mode: 'OUVERTURE', jours: 'TOUS', fenetres: [{ heureDebut: '14:00:00' }] }],
+    },
   });
   expect(stand.ok(), await stand.text()).toBe(true);
 });
@@ -85,7 +91,9 @@ test.afterAll(async () => {
 });
 
 test.describe('avertissements de saisie', () => {
-  test('un créneau qui déborde les ouvertures est enregistré, avec un message', async ({ browser }) => {
+  test('un créneau qui déborde les ouvertures est enregistré, avec un message', async ({
+    browser,
+  }) => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/creneaux');
 
@@ -129,7 +137,9 @@ test.describe('avertissements de saisie', () => {
     await page.context().close();
   });
 
-  test("un stand dont la fenêtre ne recoupe aucun créneau est enregistré, avec un message", async ({ browser }) => {
+  test('un stand dont la fenêtre ne recoupe aucun créneau est enregistré, avec un message', async ({
+    browser,
+  }) => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/stands');
 
@@ -157,7 +167,7 @@ test.describe('avertissements de saisie', () => {
   });
 
   test('une date de naissance mineure et une indisponibilité hors bornes sont enregistrées, avec un message', async ({
-    browser
+    browser,
   }) => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/animateurs');
@@ -211,7 +221,9 @@ test.describe('avertissements de saisie', () => {
    * indisponibilités. Une édition en lot envoie exactement cette requête-là,
    * une par ligne cochée.
    */
-  test('modifier un mineur sans toucher sa date de naissance ne signale rien', async ({ browser }) => {
+  test('modifier un mineur sans toucher sa date de naissance ne signale rien', async ({
+    browser,
+  }) => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/animateurs');
     await page.getByLabel('Filtrer').fill(ANIMATEUR);

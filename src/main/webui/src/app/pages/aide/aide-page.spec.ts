@@ -23,8 +23,8 @@ async function monterAvecFragment(fragment: string | null): Promise<ComponentFix
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: ActivatedRoute, useValue: { snapshot: { fragment } } }
-    ]
+      { provide: ActivatedRoute, useValue: { snapshot: { fragment } } },
+    ],
   });
   const fixture = TestBed.createComponent(AidePage);
   fixture.detectChanges();

@@ -13,7 +13,7 @@ import {
   RapportFragilite,
   RapportPauses,
   StaffingSummary,
-  TypologieItem
+  TypologieItem,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })

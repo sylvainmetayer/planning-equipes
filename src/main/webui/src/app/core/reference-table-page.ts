@@ -113,10 +113,10 @@ export abstract class ReferenceTablePage<T> {
     this.lignesFiltrees = computed(() =>
       config
         .rows(this.store)
-        .filter((ligne) => correspondAuFiltre(this.filtre(), config.champsFiltre(ligne)))
+        .filter((ligne) => correspondAuFiltre(this.filtre(), config.champsFiltre(ligne))),
     );
     this.selection = new TableSelection<string>(
-      computed(() => this.lignesFiltrees().map((ligne) => config.id(ligne)))
+      computed(() => this.lignesFiltrees().map((ligne) => config.id(ligne))),
     );
     this.navigation = new TableNavigation<T, string>({
       rows: this.lignesFiltrees,
@@ -127,7 +127,7 @@ export abstract class ReferenceTablePage<T> {
         void this.consult(ligne);
         return true;
       },
-      announcer: inject(LiveAnnouncer)
+      announcer: inject(LiveAnnouncer),
     });
     void this.crud.reload();
   }
@@ -139,8 +139,12 @@ export abstract class ReferenceTablePage<T> {
   protected async consult(ligne: T): Promise<void> {
     const result = await firstValueFrom(
       this.dialog
-        .open(DetailDialog, { data: this.config.detail(ligne, this.store), width: '40rem', maxWidth: '95vw' })
-        .afterClosed()
+        .open(DetailDialog, {
+          data: this.config.detail(ligne, this.store),
+          width: '40rem',
+          maxWidth: '95vw',
+        })
+        .afterClosed(),
     );
     if (result === 'edit') {
       this.edit(ligne);
@@ -169,6 +173,10 @@ export abstract class ReferenceTablePage<T> {
   }
 
   protected async removeSelection(): Promise<void> {
-    await this.crud.removeMany(this.config.ressource, this.selection.selectedIds(), this.config.libellePluriel());
+    await this.crud.removeMany(
+      this.config.ressource,
+      this.selection.selectedIds(),
+      this.config.libellePluriel(),
+    );
   }
 }

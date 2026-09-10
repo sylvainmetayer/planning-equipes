@@ -34,7 +34,7 @@ function animateur(id: string, joursIndisponibles: string[]): Animateur {
     manager: false,
     competences: {},
     souhaits: [],
-    joursIndisponibles
+    joursIndisponibles,
   };
 }
 
@@ -51,7 +51,7 @@ function cause(severite: CauseInfaisabilite['severite'], date: string): CauseInf
     contrainteIds: [],
     demande: 6,
     capacite: 4,
-    manque: 2
+    manque: 2,
   };
 }
 
@@ -61,7 +61,7 @@ function report(causes: CauseInfaisabilite[]): FeasibilityReport {
     manqueAnimateurs: 2,
     causes,
     totalCauses: causes.length,
-    message: 'Planning non réalisable en l’état.'
+    message: 'Planning non réalisable en l’état.',
   };
 }
 
@@ -72,7 +72,10 @@ describe('AnimateursPage alert badges', () => {
   let referenceData: ReferenceDataStore;
   let problemes: ProblemesStore;
   const api = { get: vi.fn(async () => report([])) };
-  const animateursApi = { regenerateToken: vi.fn(async () => undefined), confirmations: vi.fn(async () => []) };
+  const animateursApi = {
+    regenerateToken: vi.fn(async () => undefined),
+    confirmations: vi.fn(async () => []),
+  };
 
   beforeEach(() => {
     api.get.mockReset();
@@ -81,13 +84,19 @@ describe('AnimateursPage alert badges', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
         { provide: ApiService, useValue: api },
         { provide: AnimateursApi, useValue: animateursApi },
         { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
-        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
-        { provide: MatDialog, useValue: { open: vi.fn() } }
-      ]
+        {
+          provide: SolverJobService,
+          useValue: { solverBusy: () => false, editingLocked: () => false },
+        },
+        { provide: MatDialog, useValue: { open: vi.fn() } },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
     problemes = TestBed.inject(ProblemesStore);
@@ -103,7 +112,10 @@ describe('AnimateursPage alert badges', () => {
   });
 
   it('flags an animateur unavailable on a day carrying a CRITIQUE cause', async () => {
-    referenceData.animateurs.set([animateur('alice', ['2026-08-01']), animateur('bob', ['2026-08-05'])]);
+    referenceData.animateurs.set([
+      animateur('alice', ['2026-08-01']),
+      animateur('bob', ['2026-08-05']),
+    ]);
     const page = createPage();
 
     api.get.mockResolvedValue(report([cause('CRITIQUE', '2026-08-01')]));
@@ -154,7 +166,10 @@ describe('AnimateursPage table', () => {
   let confirm: { ask: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
   let api: { get: ReturnType<typeof vi.fn> };
-  let animateursApi: { regenerateToken: ReturnType<typeof vi.fn>; confirmations: ReturnType<typeof vi.fn> };
+  let animateursApi: {
+    regenerateToken: ReturnType<typeof vi.fn>;
+    confirmations: ReturnType<typeof vi.fn>;
+  };
   const editingLocked = signal(false);
 
   function personne(id: string, overrides: Partial<Animateur> = {}): Animateur {
@@ -174,14 +189,14 @@ describe('AnimateursPage table', () => {
   /** Text of every body row, cell by cell. */
   function lignes(): string[][] {
     return Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim())
+      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim()),
     );
   }
 
   /** Action buttons of one row, by their accessible name. */
   function action(indexLigne: number, nom: string): HTMLButtonElement {
     const boutons = Array.from(
-      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button')
+      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button'),
     );
     const bouton = boutons.find((each) => each.getAttribute('aria-label') === nom);
     expect(bouton, `action « ${nom} » absente`).toBeDefined();
@@ -190,14 +205,16 @@ describe('AnimateursPage table', () => {
 
   /** Header cell texts, in display order. */
   function entetes(): string[] {
-    return Array.from(racine().querySelectorAll('thead th')).map((cell) => cell.textContent!.trim());
+    return Array.from(racine().querySelectorAll('thead th')).map((cell) =>
+      cell.textContent!.trim(),
+    );
   }
 
   /** Clicks the sort header whose label starts with `libelle`. */
   async function sort(libelle: string): Promise<void> {
-    const entete = Array.from(racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]')).find(
-      (cell) => cell.textContent!.trim().startsWith(libelle)
-    );
+    const entete = Array.from(
+      racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]'),
+    ).find((cell) => cell.textContent!.trim().startsWith(libelle));
     expect(entete, `en-tête triable « ${libelle} » absent`).toBeDefined();
     (entete!.querySelector('.mat-sort-header-container') as HTMLElement).click();
     await fixture.whenStable();
@@ -218,30 +235,49 @@ describe('AnimateursPage table', () => {
     notify = vi.fn();
     // The referential endpoints answer a list; only /api/feasibility answers a report.
     api = {
-      get: vi.fn(async (url: string) => (url.includes('feasibility') ? report([]) : []))
+      get: vi.fn(async (url: string) => (url.includes('feasibility') ? report([]) : [])),
     };
-    animateursApi = { regenerateToken: vi.fn(async () => undefined), confirmations: vi.fn(async () => []) };
+    animateursApi = {
+      regenerateToken: vi.fn(async () => undefined),
+      confirmations: vi.fn(async () => []),
+    };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
         { provide: ApiService, useValue: api },
         { provide: AnimateursApi, useValue: animateursApi },
-        { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined), remove: vi.fn(async () => true), removeMany: vi.fn(async () => 0) } },
+        {
+          provide: ReferenceCrudService,
+          useValue: {
+            reload: vi.fn(async () => undefined),
+            remove: vi.fn(async () => true),
+            removeMany: vi.fn(async () => 0),
+          },
+        },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
         { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
-        { provide: NotificationService, useValue: { notify } }
-      ]
+        { provide: NotificationService, useValue: { notify } },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
 
   it('renders one row per animateur, with the derived majority and no appreciation column', async () => {
     await rendre([
-      personne('alice', { prenom: 'Amélie', nom: 'Nothomb', dateNaissance: '1990-05-04', manager: true, competences: { ambiance: 'REFERENT' } }),
-      personne('bob', { prenom: 'Bob', nom: 'Ados', dateNaissance: '2015-01-01' })
+      personne('alice', {
+        prenom: 'Amélie',
+        nom: 'Nothomb',
+        dateNaissance: '1990-05-04',
+        manager: true,
+        competences: { ambiance: 'REFERENT' },
+      }),
+      personne('bob', { prenom: 'Bob', nom: 'Ados', dateNaissance: '2015-01-01' }),
     ]);
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Animateurs (2)');
@@ -264,7 +300,7 @@ describe('AnimateursPage table', () => {
     await rendre([
       personne('mineur', { dateNaissance: '2015-01-01' }),
       personne('inconnu', { dateNaissance: null }),
-      personne('majeur', { dateNaissance: '1990-01-01' })
+      personne('majeur', { dateNaissance: '1990-01-01' }),
     ]);
 
     await sort('Majeur');
@@ -285,7 +321,7 @@ describe('AnimateursPage table', () => {
     await rendre([
       personne('c', { prenom: 'Zoé', nom: 'Abadie' }),
       personne('a', { prenom: 'Élodie', nom: 'Blanc' }),
-      personne('b', { prenom: 'Adrien', nom: 'Costa' })
+      personne('b', { prenom: 'Adrien', nom: 'Costa' }),
     ]);
 
     await sort('Nom');
@@ -303,7 +339,7 @@ describe('AnimateursPage table', () => {
     await rendre([
       personne('trois', { joursIndisponibles: ['2026-07-01', '2026-07-02', '2026-07-03'] }),
       personne('aucune', { joursIndisponibles: [] }),
-      personne('une', { joursIndisponibles: ['2026-07-01'] })
+      personne('une', { joursIndisponibles: ['2026-07-01'] }),
     ]);
 
     await sort('Indisponibilités');
@@ -312,17 +348,51 @@ describe('AnimateursPage table', () => {
 
   it('puts what is left to chase on top of the acknowledgement sort', async () => {
     animateursApi.confirmations.mockResolvedValue([
-      { animateurId: 'confirme', statut: 'CONFIRME', affecte: true, confirmeLe: null, relanceLe: null },
-      { animateurId: 'relance', statut: 'RELANCE', affecte: true, confirmeLe: null, relanceLe: null },
-      { animateurId: 'silencieux', statut: 'NON_VU', affecte: true, confirmeLe: null, relanceLe: null },
-      { animateurId: 'sansPoste', statut: 'NON_VU', affecte: false, confirmeLe: null, relanceLe: null }
+      {
+        animateurId: 'confirme',
+        statut: 'CONFIRME',
+        affecte: true,
+        confirmeLe: null,
+        relanceLe: null,
+      },
+      {
+        animateurId: 'relance',
+        statut: 'RELANCE',
+        affecte: true,
+        confirmeLe: null,
+        relanceLe: null,
+      },
+      {
+        animateurId: 'silencieux',
+        statut: 'NON_VU',
+        affecte: true,
+        confirmeLe: null,
+        relanceLe: null,
+      },
+      {
+        animateurId: 'sansPoste',
+        statut: 'NON_VU',
+        affecte: false,
+        confirmeLe: null,
+        relanceLe: null,
+      },
     ]);
-    await rendre([personne('confirme'), personne('sansPoste'), personne('relance'), personne('silencieux')]);
+    await rendre([
+      personne('confirme'),
+      personne('sansPoste'),
+      personne('relance'),
+      personne('silencieux'),
+    ]);
     await fixture.whenStable();
 
     await sort('Accusé de réception');
     // Silencieux, relancé, confirmé — and last the person nothing was asked of.
-    expect(lignes().map((row) => row[1])).toEqual(['silencieux', 'relance', 'confirme', 'sansPoste']);
+    expect(lignes().map((row) => row[1])).toEqual([
+      'silencieux',
+      'relance',
+      'confirme',
+      'sansPoste',
+    ]);
   });
 
   it('opens the acknowledgement tooltip without sorting the column it sits in', async () => {
@@ -340,7 +410,11 @@ describe('AnimateursPage table', () => {
 
     const champ = racine().querySelector('app-table-filter input') as HTMLInputElement;
     champ.focus();
-    const touche = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+    const touche = new KeyboardEvent('keydown', {
+      key: 'ArrowDown',
+      bubbles: true,
+      cancelable: true,
+    });
     champ.dispatchEvent(touche);
     await fixture.whenStable();
 
@@ -349,20 +423,27 @@ describe('AnimateursPage table', () => {
   });
 
   it('narrows the table on the quick filter, and says when nothing matches', async () => {
-    await rendre([personne('alice', { prenom: 'Amélie', nom: 'Nothomb' }), personne('bob', { prenom: 'Bob', nom: 'Ados' })]);
+    await rendre([
+      personne('alice', { prenom: 'Amélie', nom: 'Nothomb' }),
+      personne('bob', { prenom: 'Bob', nom: 'Ados' }),
+    ]);
 
     await filter('nothomb');
     expect(lignes().map((row) => row[1])).toEqual(['alice']);
 
     await filter('zzz');
     expect(lignes()).toEqual([]);
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucune ligne ne correspond au filtre.');
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
+      'Aucune ligne ne correspond au filtre.',
+    );
   });
 
   it('says the referential is empty, not that the filter matched nothing', async () => {
     await rendre([]);
 
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucun animateur pour le moment.');
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
+      'Aucun animateur pour le moment.',
+    );
   });
 
   it('ticks only the displayed rows on "tout sélectionner", and warns that the scope is filtered', async () => {
@@ -373,9 +454,9 @@ describe('AnimateursPage table', () => {
     await fixture.whenStable();
 
     // The whole point of the warning: this is one click away from a bulk delete.
-    expect(racine().querySelector('app-bulk-actions-bar .bulk-bar-count')!.textContent!.trim()).toBe(
-      '1 élément(s) sélectionné(s)'
-    );
+    expect(
+      racine().querySelector('app-bulk-actions-bar .bulk-bar-count')!.textContent!.trim(),
+    ).toBe('1 élément(s) sélectionné(s)');
     expect(racine().querySelector('.bulk-bar-scope')).not.toBeNull();
   });
 
@@ -402,8 +483,8 @@ describe('AnimateursPage table', () => {
   it('offers the espace link only to the animateurs who have one', async () => {
     await rendre([personne('alice', { accessToken: 'jeton-1' }), personne('bob')]);
 
-    expect(action(0, "Copier le lien de son espace animateur").disabled).toBe(false);
-    expect(action(1, "Copier le lien de son espace animateur").disabled).toBe(true);
+    expect(action(0, 'Copier le lien de son espace animateur').disabled).toBe(false);
+    expect(action(1, 'Copier le lien de son espace animateur').disabled).toBe(true);
   });
 
   it('greys out every writing action while a solve is running, but not the read-only ones', async () => {
@@ -414,11 +495,13 @@ describe('AnimateursPage table', () => {
     expect(action(0, 'Modifier').disabled).toBe(true);
     expect(action(0, 'Supprimer').disabled).toBe(true);
     expect(action(0, 'Régénérer le lien de son espace').disabled).toBe(true);
-    expect((racine().querySelector('mat-card-actions button') as HTMLButtonElement).disabled).toBe(true);
+    expect((racine().querySelector('mat-card-actions button') as HTMLButtonElement).disabled).toBe(
+      true,
+    );
     // Reading a row and copying a link change nothing: locking them would only
     // punish the user for the solver's duration.
     expect(action(0, 'Consulter le détail').disabled).toBe(false);
-    expect(action(0, "Copier le lien de son espace animateur").disabled).toBe(false);
+    expect(action(0, 'Copier le lien de son espace animateur').disabled).toBe(false);
   });
 
   it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {
@@ -453,10 +536,10 @@ describe('AnimateursPage table', () => {
     await rendre([personne('alice', { accessToken: 'jeton-1' })]);
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
-      value: { writeText: vi.fn(async () => Promise.reject(new Error('denied'))) }
+      value: { writeText: vi.fn(async () => Promise.reject(new Error('denied'))) },
     });
 
-    action(0, "Copier le lien de son espace animateur").click();
+    action(0, 'Copier le lien de son espace animateur').click();
     await fixture.whenStable();
 
     // A silent failure would leave the user thinking the link is in their buffer.
@@ -477,7 +560,9 @@ describe('AnimateursPage table', () => {
   it('never lets a sortable header take its name from a control it contains', async () => {
     await rendre([personne('alice')]);
 
-    const triables = Array.from(racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]'));
+    const triables = Array.from(
+      racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]'),
+    );
     expect(triables.length, 'colonnes triables rendues').toBeGreaterThan(0);
 
     for (const entete of triables) {
@@ -493,7 +578,7 @@ describe('AnimateursPage table', () => {
         nomme,
         `l'en-tête « ${entete.textContent!.trim().slice(0, 30)} » contient un contrôle nommé ` +
           `(« ${controles[0].getAttribute('aria-label')!.slice(0, 40)}… ») et laisse son bouton de ` +
-          `tri se nommer par son contenu : appliquer appSortHeaderName`
+          `tri se nommer par son contenu : appliquer appSortHeaderName`,
       ).toBe(true);
     }
   });
@@ -502,15 +587,19 @@ describe('AnimateursPage table', () => {
     await rendre([personne('alice')]);
 
     const entete = Array.from(
-      racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]')
+      racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]'),
     ).find((cell) => cell.textContent!.trim().startsWith('Accusé de réception'))!;
-    const reference = entete.querySelector('.mat-sort-header-container')!.getAttribute('aria-labelledby');
+    const reference = entete
+      .querySelector('.mat-sort-header-container')!
+      .getAttribute('aria-labelledby');
 
-    expect(racine().querySelector(`#${reference}`)!.textContent!.trim()).toBe('Accusé de réception');
+    expect(racine().querySelector(`#${reference}`)!.textContent!.trim()).toBe(
+      'Accusé de réception',
+    );
     // The help keeps the whole thing: that is what issue #338 put there, and
     // what a screen reader must read when the focus reaches the button itself.
     expect(entete.querySelector('.column-help')!.getAttribute('aria-label')).toContain(
-      "Ce que l'animateur a répondu"
+      "Ce que l'animateur a répondu",
     );
   });
 });

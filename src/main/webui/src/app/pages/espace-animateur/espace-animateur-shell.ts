@@ -40,19 +40,22 @@ import { BrandLogo } from '../../shared/brand-logo';
     MatInputModule,
     MatMenuModule,
     MatProgressBarModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   templateUrl: './espace-animateur-shell.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EspaceAnimateurShell {
   protected readonly espace = inject(EspaceAnimateurService);
   protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly route = inject(ActivatedRoute);
-  protected readonly jeton = toSignal(this.route.paramMap.pipe(map((params) => params.get('jeton'))), {
-    initialValue: null
-  });
+  protected readonly jeton = toSignal(
+    this.route.paramMap.pipe(map((params) => params.get('jeton'))),
+    {
+      initialValue: null,
+    },
+  );
 
   constructor() {
     const jeton = this.route.snapshot.paramMap.get('jeton');

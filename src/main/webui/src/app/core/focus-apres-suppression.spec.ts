@@ -44,7 +44,9 @@ describe('focusApresSuppression', () => {
   });
 
   it('focuses the first match when a section repeats the same button', async () => {
-    const host = hostWith('<button class="ajouter" id="premier"></button><button class="ajouter" id="second"></button>');
+    const host = hostWith(
+      '<button class="ajouter" id="premier"></button><button class="ajouter" id="second"></button>',
+    );
 
     focusApresSuppression(host, '.ajouter', injector);
     await render();

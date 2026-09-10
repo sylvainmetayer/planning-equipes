@@ -10,7 +10,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { EchangesApi } from '../../core/api/echanges-api';
 import { statutDemandeClasse, statutDemandeLabel } from '../../core/demande-echange-labels';
-import { ConfigurationFoire, DemandeEchangeView, EchangeSimulation, HardMediumSoftScore } from '../../core/models';
+import {
+  ConfigurationFoire,
+  DemandeEchangeView,
+  EchangeSimulation,
+  HardMediumSoftScore,
+} from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { formatDeltaScore } from '../../core/score-format';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -41,10 +46,10 @@ interface DemandeRow extends DemandeEchangeView {
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
   ],
   templateUrl: './echanges-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EchangesPage {
   private readonly echangesApi = inject(EchangesApi);
@@ -81,17 +86,21 @@ export class EchangesPage {
     this.demandes().map((demande) => ({
       ...demande,
       statutLabel: statutDemandeLabel(demande.statut),
-      statutClasse: statutDemandeClasse(demande.statut)
-    }))
+      statutClasse: statutDemandeClasse(demande.statut),
+    })),
   );
 
   /** Actionable queue: the colleague already agreed, only the admin's word is missing. */
-  protected readonly enAttente = computed(() => this.rows().filter((row) => row.statut === 'PROPOSEE'));
+  protected readonly enAttente = computed(() =>
+    this.rows().filter((row) => row.statut === 'PROPOSEE'),
+  );
   /** Still waiting for the targeted colleague: informative — refusable, but not acceptable yet. */
   protected readonly enAttenteCible = computed(() =>
-    this.rows().filter((row) => row.statut === 'EN_ATTENTE_CIBLE'));
+    this.rows().filter((row) => row.statut === 'EN_ATTENTE_CIBLE'),
+  );
   protected readonly decidees = computed(() =>
-    this.rows().filter((row) => row.statut !== 'PROPOSEE' && row.statut !== 'EN_ATTENTE_CIBLE'));
+    this.rows().filter((row) => row.statut !== 'PROPOSEE' && row.statut !== 'EN_ATTENTE_CIBLE'),
+  );
 
   constructor() {
     void this.reload();
@@ -102,7 +111,7 @@ export class EchangesPage {
     try {
       const [demandes, configuration] = await Promise.all([
         this.echangesApi.list(),
-        this.echangesApi.configuration()
+        this.echangesApi.configuration(),
       ]);
       this.demandes.set(demandes);
       this.apply(configuration);
@@ -145,14 +154,14 @@ export class EchangesPage {
       const configuration = await this.echangesApi.saveConfiguration({
         foireOuverte: open,
         debut: this.debut(),
-        fin: this.fin()
+        fin: this.fin(),
       });
       this.apply(configuration);
       this.notifications.notify({
         title: configuration.foireOuverte
           ? $localize`:@@echanges.foireOuverteNotif:Foire au planning ouverte : les animateurs peuvent proposer des échanges.`
           : $localize`:@@echanges.foireFermeeNotif:Foire au planning fermée : les espaces animateurs passent en consultation seule.`,
-        variant: 'success'
+        variant: 'success',
       });
     } catch (error) {
       this.report(error);
@@ -188,30 +197,42 @@ export class EchangesPage {
     const confirmed = await this.confirm.ask({
       title: $localize`:@@echanges.accepterTitre:Accepter l'échange de ${demande.demandeurNom}:demandeur: ?`,
       message: $localize`:@@echanges.accepterMessage:L'échange avec ${demande.cibleNom}:cible: sera appliqué immédiatement au planning et verrouillé sur ce créneau. La demande ne pourra plus être refusée ensuite.`,
-      confirmLabel: $localize`:@@echanges.accepterConfirm:Accepter`
+      confirmLabel: $localize`:@@echanges.accepterConfirm:Accepter`,
     });
     if (!confirmed) {
       return;
     }
-    await this.decider(demande, 'acceptation', null,
-      $localize`:@@echanges.acceptee:Échange appliqué au planning et verrouillé. Régénérez le planning depuis la page Solveur pour que le reste du planning en tienne compte.`);
+    await this.decider(
+      demande,
+      'acceptation',
+      null,
+      $localize`:@@echanges.acceptee:Échange appliqué au planning et verrouillé. Régénérez le planning depuis la page Solveur pour que le reste du planning en tienne compte.`,
+    );
   }
 
   protected async refuser(demande: DemandeRow): Promise<void> {
     const commentaire = await PromptDialog.ask(this.dialog, {
       title: $localize`:@@echanges.refuserTitre:Refuser la demande de ${demande.demandeurNom}:demandeur:`,
       label: $localize`:@@echanges.refuserLabel:Motif du refus (transmis à l'animateur)`,
-      confirmLabel: $localize`:@@echanges.refuserConfirm:Refuser`
+      confirmLabel: $localize`:@@echanges.refuserConfirm:Refuser`,
     });
     if (commentaire === null) {
       return;
     }
-    await this.decider(demande, 'refus', commentaire,
-      $localize`:@@echanges.refusee:Demande refusée, le planning reste inchangé.`);
+    await this.decider(
+      demande,
+      'refus',
+      commentaire,
+      $localize`:@@echanges.refusee:Demande refusée, le planning reste inchangé.`,
+    );
   }
 
-  private async decider(demande: DemandeRow, action: 'acceptation' | 'refus', commentaire: string | null,
-      confirmation: string): Promise<void> {
+  private async decider(
+    demande: DemandeRow,
+    action: 'acceptation' | 'refus',
+    commentaire: string | null,
+    confirmation: string,
+  ): Promise<void> {
     this.decisionEnCours.set(demande.id);
     try {
       await this.echangesApi.decide(demande.id, action, commentaire);
@@ -228,7 +249,7 @@ export class EchangesPage {
     this.notifications.notify({
       title: $localize`:@@crud.error:Erreur`,
       message: errorMessage(error),
-      variant: 'error'
+      variant: 'error',
     });
   }
 }

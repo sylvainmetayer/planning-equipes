@@ -42,7 +42,7 @@ describe('ParametresPage ninja picker', () => {
   const crud = {
     reload: vi.fn(async () => undefined),
     save: vi.fn(async () => true),
-    reportError: vi.fn()
+    reportError: vi.fn(),
   };
 
   beforeEach(() => {
@@ -55,21 +55,37 @@ describe('ParametresPage ninja picker', () => {
         // The constructor loads the scenario list and the découpage
         // parameters; both answers are irrelevant to the picker under test.
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
-        { provide: AdminApi, useValue: { mailConfig: vi.fn(async () => ({ adminEmail: null })), backups: vi.fn(async () => null) } },
+        {
+          provide: AdminApi,
+          useValue: {
+            mailConfig: vi.fn(async () => ({ adminEmail: null })),
+            backups: vi.fn(async () => null),
+          },
+        },
         { provide: PlanningApi, useValue: { scenarioNames: vi.fn(async () => []) } },
         { provide: CreneauxApi, useValue: { slicingParameters: vi.fn(async () => []) } },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: EditionStore, useValue: { courant: () => null } },
-        { provide: ProblemesStore, useValue: { report: () => null, reloadFeasibility: vi.fn(async () => undefined) } },
+        {
+          provide: ProblemesStore,
+          useValue: { report: () => null, reloadFeasibility: vi.fn(async () => undefined) },
+        },
         { provide: PlanningStateService, useValue: { set: vi.fn() } },
         { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
-        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false, activeJobDescription: () => '' } },
+        {
+          provide: SolverJobService,
+          useValue: {
+            solverBusy: () => false,
+            editingLocked: () => false,
+            activeJobDescription: () => '',
+          },
+        },
         { provide: SolverSettingsService, useValue: { refresh: vi.fn(async () => undefined) } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         { provide: PlanSnapshotStore, useValue: { capturer: vi.fn(async () => undefined) } },
         { provide: InstantaneAvantAction, useValue: { proposer: vi.fn(async () => undefined) } },
-        { provide: ConfirmationRecopie, useValue: { demander: vi.fn(async () => true) } }
-      ]
+        { provide: ConfirmationRecopie, useValue: { demander: vi.fn(async () => true) } },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
@@ -82,7 +98,7 @@ describe('ParametresPage ninja picker', () => {
   it('reads the current ninja typologie from the store', () => {
     const page = createPage([
       { id: 'STRATEGIE', label: 'Stratégie' },
-      { id: 'JOKER', label: 'Joker', ninja: true }
+      { id: 'JOKER', label: 'Joker', ninja: true },
     ]);
     expect(page.typologieNinjaId()).toBe('JOKER');
   });
@@ -99,13 +115,15 @@ describe('ParametresPage ninja picker', () => {
 
   it('stays silent on an empty referential and once a ninja is designated', () => {
     expect(createPage([]).alerteNinjaManquant()).toBe('');
-    expect(createPage([{ id: 'JOKER', label: 'Joker', ninja: true }]).alerteNinjaManquant()).toBe('');
+    expect(createPage([{ id: 'JOKER', label: 'Joker', ninja: true }]).alerteNinjaManquant()).toBe(
+      '',
+    );
   });
 
   it('promotes the selected typologie, letting the server demote the previous one', async () => {
     const page = createPage([
       { id: 'STRATEGIE', label: 'Stratégie' },
-      { id: 'JOKER', label: 'Joker', ninja: true }
+      { id: 'JOKER', label: 'Joker', ninja: true },
     ]);
 
     await page.setNinja('STRATEGIE');
@@ -115,7 +133,7 @@ describe('ParametresPage ninja picker', () => {
       'typologies',
       { id: 'STRATEGIE', label: 'Stratégie', ninja: true },
       'STRATEGIE',
-      expect.anything()
+      expect.anything(),
     );
   });
 
@@ -128,7 +146,7 @@ describe('ParametresPage ninja picker', () => {
       'typologies',
       { id: 'JOKER', label: 'Joker', ninja: false },
       'JOKER',
-      expect.anything()
+      expect.anything(),
     );
   });
 
@@ -159,8 +177,14 @@ describe('ParametresPage rendering', () => {
     exportDatabase: ReturnType<typeof vi.fn>;
     importDatabase: ReturnType<typeof vi.fn>;
   };
-  let planningApi: { scenarioNames: ReturnType<typeof vi.fn>; exportScenario: ReturnType<typeof vi.fn> };
-  let creneauxApi: { slicingParameters: ReturnType<typeof vi.fn>; saveSlicingParameters: ReturnType<typeof vi.fn> };
+  let planningApi: {
+    scenarioNames: ReturnType<typeof vi.fn>;
+    exportScenario: ReturnType<typeof vi.fn>;
+  };
+  let creneauxApi: {
+    slicingParameters: ReturnType<typeof vi.fn>;
+    saveSlicingParameters: ReturnType<typeof vi.fn>;
+  };
   let recopie: { demander: ReturnType<typeof vi.fn> };
   let instantane: { proposer: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
@@ -179,7 +203,7 @@ describe('ParametresPage rendering', () => {
     fenetreRepasSoirDebut: '18:30',
     fenetreRepasSoirFin: '21:00',
     nombreFamillesDecalage: 1,
-    dureeDecalageMaxMinutes: 60
+    dureeDecalageMaxMinutes: 60,
   };
 
   const SAUVEGARDE: EtatSauvegarde = {
@@ -194,17 +218,25 @@ describe('ParametresPage rendering', () => {
       attemptedAt: '2026-03-08T03:00:00Z',
       succeeded: true,
       file: 'planning-20260308-040000.dump',
-      message: null
+      message: null,
     },
     files: [
-      { name: 'planning-20260308-040000.dump', sizeBytes: 5 * 1024 * 1024, createdAt: '2026-03-08T03:00:00Z' },
-      { name: 'planning-20260307-040000.dump', sizeBytes: 5 * 1024 * 1024, createdAt: '2026-03-07T03:00:00Z' }
+      {
+        name: 'planning-20260308-040000.dump',
+        sizeBytes: 5 * 1024 * 1024,
+        createdAt: '2026-03-08T03:00:00Z',
+      },
+      {
+        name: 'planning-20260307-040000.dump',
+        sizeBytes: 5 * 1024 * 1024,
+        createdAt: '2026-03-07T03:00:00Z',
+      },
     ],
-    directoryError: null
+    directoryError: null,
   };
 
   async function rendre(
-    options: { adminEmail?: string | null; sauvegarde?: EtatSauvegarde } = {}
+    options: { adminEmail?: string | null; sauvegarde?: EtatSauvegarde } = {},
   ): Promise<void> {
     editingLocked.set(false);
     mailFinResolution.set(false);
@@ -214,19 +246,24 @@ describe('ParametresPage rendering', () => {
     instantane = { proposer: vi.fn(async () => undefined) };
     planningApi = {
       scenarioNames: vi.fn(async () => ['festival.yaml', 'festival-canicule.yaml']),
-      exportScenario: vi.fn(async () => 'Téléchargement démarré.')
+      exportScenario: vi.fn(async () => 'Téléchargement démarré.'),
     };
     creneauxApi = {
       slicingParameters: vi.fn(async () => ({ ...PARAMETRES })),
-      saveSlicingParameters: vi.fn(async (body: unknown) => body)
+      saveSlicingParameters: vi.fn(async (body: unknown) => body),
     };
     api = { get: vi.fn(async () => []) };
     adminApi = {
-      mailConfig: vi.fn(async () => ({ adminEmail: options.adminEmail === undefined ? 'admin@exemple.test' : options.adminEmail })),
+      mailConfig: vi.fn(async () => ({
+        adminEmail: options.adminEmail === undefined ? 'admin@exemple.test' : options.adminEmail,
+      })),
       backups: vi.fn(async () => options.sauvegarde ?? SAUVEGARDE),
-      setBackupsActive: vi.fn(async (active: boolean) => ({ ...(options.sauvegarde ?? SAUVEGARDE), active })),
+      setBackupsActive: vi.fn(async (active: boolean) => ({
+        ...(options.sauvegarde ?? SAUVEGARDE),
+        active,
+      })),
       exportDatabase: vi.fn(async () => 'Téléchargement démarré.'),
-      importDatabase: vi.fn(async () => ({ message: 'Base remplacée.' }))
+      importDatabase: vi.fn(async () => ({ message: 'Base remplacée.' })),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -237,9 +274,19 @@ describe('ParametresPage rendering', () => {
         { provide: AdminApi, useValue: adminApi },
         { provide: PlanningApi, useValue: planningApi },
         { provide: CreneauxApi, useValue: creneauxApi },
-        { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined), save: vi.fn(async () => true), reportError: vi.fn() } },
+        {
+          provide: ReferenceCrudService,
+          useValue: {
+            reload: vi.fn(async () => undefined),
+            save: vi.fn(async () => true),
+            reportError: vi.fn(),
+          },
+        },
         { provide: EditionStore, useValue: { courant: () => null } },
-        { provide: ProblemesStore, useValue: { report: () => null, reloadFeasibility: vi.fn(async () => undefined) } },
+        {
+          provide: ProblemesStore,
+          useValue: { report: () => null, reloadFeasibility: vi.fn(async () => undefined) },
+        },
         { provide: PlanningStateService, useValue: { set: vi.fn() } },
         { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
         {
@@ -247,12 +294,16 @@ describe('ParametresPage rendering', () => {
           useValue: {
             solverBusy: () => editingLocked(),
             editingLocked,
-            activeJobDescription: () => 'Une résolution est en cours.'
-          }
+            activeJobDescription: () => 'Une résolution est en cours.',
+          },
         },
         {
           provide: SolverSettingsService,
-          useValue: { refresh: vi.fn(async () => undefined), mailFinResolution, setMailFinResolution }
+          useValue: {
+            refresh: vi.fn(async () => undefined),
+            mailFinResolution,
+            setMailFinResolution,
+          },
         },
         { provide: NotificationService, useValue: { notify } },
         { provide: PlanSnapshotStore, useValue: { capturer: vi.fn(async () => undefined) } },
@@ -260,9 +311,12 @@ describe('ParametresPage rendering', () => {
         { provide: ConfirmationRecopie, useValue: recopie },
         {
           provide: ScenarioImportService,
-          useValue: { importer: vi.fn(async () => ({ status: 'imported', result: null })), rechargerApresImport: vi.fn(async () => undefined) }
-        }
-      ]
+          useValue: {
+            importer: vi.fn(async () => ({ status: 'imported', result: null })),
+            rechargerApresImport: vi.fn(async () => undefined),
+          },
+        },
+      ],
     });
     fixture = TestBed.createComponent(ParametresPage);
     await fixture.whenStable();
@@ -284,7 +338,7 @@ describe('ParametresPage rendering', () => {
 
   function bouton(libelle: string): HTMLButtonElement {
     const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes(libelle)
+      each.textContent!.includes(libelle),
     );
     expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
     return trouve as HTMLButtonElement;
@@ -298,7 +352,7 @@ describe('ParametresPage rendering', () => {
   /** One card of the page, found by its heading — several now carry a switch. */
   function carte(titre: string): HTMLElement {
     const trouve = Array.from(racine().querySelectorAll('mat-card')).find((each) =>
-      each.textContent!.includes(titre)
+      each.textContent!.includes(titre),
     );
     expect(trouve, `carte « ${titre} » absente`).toBeDefined();
     return trouve as HTMLElement;
@@ -317,7 +371,10 @@ describe('ParametresPage rendering', () => {
 
   /** The découpage preview sentence, rebuilt on every keystroke. */
   function apercu(): string {
-    return racine().querySelector('form app-status-message')!.textContent!.replace(/\s+/g, ' ').trim();
+    return racine()
+      .querySelector('form app-status-message')!
+      .textContent!.replace(/\s+/g, ' ')
+      .trim();
   }
 
   it('fills the découpage form from the server and summarises it in one sentence', async () => {
@@ -340,7 +397,7 @@ describe('ParametresPage rendering', () => {
 
     // The preview is a computed over an immutable signal: an in-place mutation
     // would leave this sentence stale in a zoneless app.
-    expect(apercu()).toContain("environ 8 h");
+    expect(apercu()).toContain('environ 8 h');
     expect(apercu()).toContain('réparties sur 3 grilles décalées');
     expect(creneauxApi.saveSlicingParameters).not.toHaveBeenCalled();
   });
@@ -354,7 +411,9 @@ describe('ParametresPage rendering', () => {
     await fixture.whenStable();
 
     expect(creneauxApi.saveSlicingParameters).toHaveBeenCalledOnce();
-    const [corps] = creneauxApi.saveSlicingParameters.mock.calls[0] as unknown as [{ dureePauseRepasMinutes: number }];
+    const [corps] = creneauxApi.saveSlicingParameters.mock.calls[0] as unknown as [
+      { dureePauseRepasMinutes: number },
+    ];
     expect(corps.dureePauseRepasMinutes).toBe(60);
     expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
   });
@@ -362,7 +421,9 @@ describe('ParametresPage rendering', () => {
   it('lists the scenarios and preselects one, so the load button always has a target', async () => {
     await rendre();
 
-    expect(racine().querySelector('.scenario-select .mat-mdc-select-value')!.textContent!.trim()).toBe('festival.yaml');
+    expect(
+      racine().querySelector('.scenario-select .mat-mdc-select-value')!.textContent!.trim(),
+    ).toBe('festival.yaml');
     expect(bouton('Charger le scénario sélectionné').disabled).toBe(false);
   });
 
@@ -401,7 +462,10 @@ describe('ParametresPage rendering', () => {
   /** Picks the dump file the SQL card's hidden input reacts to. */
   function choisirDump(): void {
     const input = racine().querySelector('input[type="file"][accept^=".sql"]') as HTMLInputElement;
-    Object.defineProperty(input, 'files', { configurable: true, value: [file('sauvegarde.sql', '-- dump')] });
+    Object.defineProperty(input, 'files', {
+      configurable: true,
+      value: [file('sauvegarde.sql', '-- dump')],
+    });
     input.dispatchEvent(new Event('change'));
   }
 
@@ -474,9 +538,9 @@ describe('ParametresPage rendering', () => {
           attemptedAt: '2026-03-08T03:00:00Z',
           succeeded: false,
           file: null,
-          message: 'pg_dump failed (exit 1): connection refused'
-        }
-      }
+          message: 'pg_dump failed (exit 1): connection refused',
+        },
+      },
     });
 
     expect(text(carte('Sauvegarde automatique'))).toContain('connection refused');
@@ -484,7 +548,7 @@ describe('ParametresPage rendering', () => {
 
   it('says the feature is inert when the deployment configured no directory', async () => {
     await rendre({
-      sauvegarde: { ...SAUVEGARDE, configured: false, directory: null, files: [], nextRun: null }
+      sauvegarde: { ...SAUVEGARDE, configured: false, directory: null, files: [], nextRun: null },
     });
 
     const contenu = text(carte('Sauvegarde automatique'));
@@ -497,7 +561,7 @@ describe('ParametresPage rendering', () => {
     await rendre();
 
     const bascule = carte('Sauvegarde automatique').querySelector(
-      'mat-slide-toggle button[role="switch"]'
+      'mat-slide-toggle button[role="switch"]',
     ) as HTMLButtonElement;
     bascule.click();
     await fixture.whenStable();

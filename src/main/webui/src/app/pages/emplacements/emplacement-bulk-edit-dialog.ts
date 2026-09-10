@@ -16,7 +16,7 @@ import {
   ModeCoordonnees,
   appliquerPatchEmplacement,
   patchEmplacementEstVide,
-  patchEmplacementVide
+  patchEmplacementVide,
 } from './emplacement-bulk-edit';
 
 export interface EmplacementBulkEditData {
@@ -38,17 +38,18 @@ export interface EmplacementBulkEditData {
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MapPicker
+    MapPicker,
   ],
   templateUrl: './emplacement-bulk-edit-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmplacementBulkEditDialog {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
-  protected readonly dialogRef = inject<MatDialogRef<EmplacementBulkEditDialog, boolean>>(MatDialogRef);
+  protected readonly dialogRef =
+    inject<MatDialogRef<EmplacementBulkEditDialog, boolean>>(MatDialogRef);
   private readonly data = inject<EmplacementBulkEditData>(MAT_DIALOG_DATA);
   private readonly crud = inject(ReferenceCrudService);
 
@@ -59,7 +60,7 @@ export class EmplacementBulkEditDialog {
   protected readonly modesCoordonnees: { value: ModeCoordonnees; label: string }[] = [
     { value: 'INCHANGE', label: $localize`:@@bulk.mode.inchange:Ne pas modifier` },
     { value: 'DEFINIR', label: $localize`:@@bulk.mode.definir:Définir` },
-    { value: 'EFFACER', label: $localize`:@@bulk.mode.effacer:Effacer` }
+    { value: 'EFFACER', label: $localize`:@@bulk.mode.effacer:Effacer` },
   ];
 
   protected readonly formTitle = $localize`:@@emplacements.bulk.title:Modifier ${this.data.emplacements.length}:count: emplacements`;
@@ -75,7 +76,11 @@ export class EmplacementBulkEditDialog {
   }
 
   protected onPositionChange(position: MapPosition): void {
-    this.updateCoordonnees({ mode: 'DEFINIR', latitude: position.latitude, longitude: position.longitude });
+    this.updateCoordonnees({
+      mode: 'DEFINIR',
+      latitude: position.latitude,
+      longitude: position.longitude,
+    });
   }
 
   protected async save(): Promise<void> {
@@ -83,7 +88,9 @@ export class EmplacementBulkEditDialog {
       return;
     }
     const patch = this.patch();
-    const payloads = this.data.emplacements.map((emplacement) => appliquerPatchEmplacement(emplacement, patch));
+    const payloads = this.data.emplacements.map((emplacement) =>
+      appliquerPatchEmplacement(emplacement, patch),
+    );
     this.enCours.set(true);
     try {
       if ((await this.crud.saveMany('emplacements', payloads, labelEmplacementsPluriel())) > 0) {

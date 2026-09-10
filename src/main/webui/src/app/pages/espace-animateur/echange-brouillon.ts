@@ -16,10 +16,7 @@ export interface BrouillonDemande extends NouvelleDemandeEchange {
 }
 
 /** True when the form holds everything a demande needs (the motif stays optional). */
-export function brouillonComplet(
-  poste: PosteAnimateurView | null,
-  cibleId: string
-): boolean {
+export function brouillonComplet(poste: PosteAnimateurView | null, cibleId: string): boolean {
   return poste !== null && cibleId.trim().length > 0;
 }
 
@@ -29,27 +26,27 @@ export function brouillonComplet(
  */
 export function ajouterBrouillon(
   brouillons: readonly BrouillonDemande[],
-  nouveau: BrouillonDemande
+  nouveau: BrouillonDemande,
 ): BrouillonDemande[] {
   return [
     ...brouillons.filter(
       (brouillon) =>
-        brouillon.creneauId !== nouveau.creneauId || brouillon.standId !== nouveau.standId
+        brouillon.creneauId !== nouveau.creneauId || brouillon.standId !== nouveau.standId,
     ),
-    nouveau
+    nouveau,
   ];
 }
 
 export function retirerBrouillon(
   brouillons: readonly BrouillonDemande[],
-  index: number
+  index: number,
 ): BrouillonDemande[] {
   return brouillons.filter((ignored, position) => position !== index);
 }
 
 /** What actually leaves for the backend: the draft minus its display labels. */
 export function versNouvellesDemandes(
-  brouillons: readonly BrouillonDemande[]
+  brouillons: readonly BrouillonDemande[],
 ): NouvelleDemandeEchange[] {
   return brouillons.map(({ creneauId, standId, cibleId, motif, creneauCibleId, standCibleId }) => ({
     creneauId,
@@ -57,6 +54,6 @@ export function versNouvellesDemandes(
     cibleId,
     motif: motif && motif.trim() ? motif.trim() : null,
     creneauCibleId: creneauCibleId ?? null,
-    standCibleId: creneauCibleId != null ? (standCibleId ?? null) : null
+    standCibleId: creneauCibleId != null ? (standCibleId ?? null) : null,
   }));
 }

@@ -3,7 +3,7 @@ import {
   AnomalieOuverture,
   CelluleJourOuverture,
   LigneStandOuverture,
-  RapportOuvertures
+  RapportOuvertures,
 } from '../../core/models';
 import {
   anomaliesParStand,
@@ -13,7 +13,7 @@ import {
   iconeAnomalie,
   largeurPourcent,
   standsEnAnomalie,
-  synthese
+  synthese,
 } from './ouvertures';
 
 const LIBELLES = { heures: 'h', minutes: 'min' };
@@ -28,7 +28,7 @@ function cellule(patch: Partial<CelluleJourOuverture> = {}): CelluleJourOuvertur
     minutesAmplitude: 600,
     postes: 2,
     creneaux: [{ creneauId: 1, effectif: 2, partiel: false, horsFamille: false }],
-    ...patch
+    ...patch,
   };
 }
 
@@ -41,7 +41,7 @@ function ligne(patch: Partial<LigneStandOuverture> = {}): LigneStandOuverture {
     minutesOuvertes: 600,
     postes: 2,
     modifieLe: '2026-09-06T10:00:00Z',
-    ...patch
+    ...patch,
   };
 }
 
@@ -55,14 +55,16 @@ function rapport(patch: Partial<RapportOuvertures> = {}): RapportOuvertures {
         heureFin: '20:00',
         minutes: 600,
         nombreCreneaux: 1,
-        creneaux: [{ id: 1, heureDebut: '10:00', heureFin: '20:00', famille: 0, couverturePause: false }]
-      }
+        creneaux: [
+          { id: 1, heureDebut: '10:00', heureFin: '20:00', famille: 0, couverturePause: false },
+        ],
+      },
     ],
     stands: [ligne()],
     standsJamaisOuverts: 0,
     postesTotal: 2,
     anomalies: [],
-    ...patch
+    ...patch,
   };
 }
 
@@ -103,10 +105,10 @@ describe('classeCellule', () => {
   it('porte l’état, et la provenance seulement quand elle est explicite', () => {
     expect(classeCellule(cellule())).toBe('ouverture-cellule etat-total');
     expect(classeCellule(cellule({ etat: 'OUVERT_PARTIEL', source: 'REGLE' }))).toBe(
-      'ouverture-cellule etat-partiel source-regle'
+      'ouverture-cellule etat-partiel source-regle',
     );
     expect(classeCellule(cellule({ etat: 'FERME', source: 'EXCEPTION' }))).toBe(
-      'ouverture-cellule etat-ferme source-exception'
+      'ouverture-cellule etat-ferme source-exception',
     );
   });
 });
@@ -117,29 +119,36 @@ describe('filtrerStands', () => {
     standId: 'FERME-PARTOUT',
     standNom: 'Fermé partout',
     date: null,
-    message: 'jamais ouvert'
+    message: 'jamais ouvert',
   };
   const complet = rapport({
     stands: [
       ligne({ standId: 'COMPLET', nom: 'Complet' }),
       ligne({ standId: 'PARTIEL', nom: 'Partiel', jours: [cellule({ etat: 'OUVERT_PARTIEL' })] }),
-      ligne({ standId: 'FERME-PARTOUT', nom: 'Fermé partout', jours: [cellule({ etat: 'FERME' })], postes: 0 })
+      ligne({
+        standId: 'FERME-PARTOUT',
+        nom: 'Fermé partout',
+        jours: [cellule({ etat: 'FERME' })],
+        postes: 0,
+      }),
     ],
-    anomalies: [anomaly]
+    anomalies: [anomaly],
   });
 
   it('rend tout par défaut', () => {
     expect(filtrerStands(complet, 'TOUS', '').map((l) => l.standId)).toEqual([
       'COMPLET',
       'PARTIEL',
-      'FERME-PARTOUT'
+      'FERME-PARTOUT',
     ]);
   });
 
   // Le raccourci de validation : sur soixante stands, dérouler toute la grille
   // pour trouver les trois qui clochent annule l'intérêt de l'écran.
   it('ne garde que les stands en anomalie', () => {
-    expect(filtrerStands(complet, 'ANOMALIES', '').map((l) => l.standId)).toEqual(['FERME-PARTOUT']);
+    expect(filtrerStands(complet, 'ANOMALIES', '').map((l) => l.standId)).toEqual([
+      'FERME-PARTOUT',
+    ]);
   });
 
   it('isole les jours partiels et les jours fermés', () => {
@@ -149,7 +158,9 @@ describe('filtrerStands', () => {
 
   it('cherche dans l’id comme dans le nom, sans casse', () => {
     expect(filtrerStands(complet, 'TOUS', 'partiel').map((l) => l.standId)).toEqual(['PARTIEL']);
-    expect(filtrerStands(complet, 'TOUS', 'FERMÉ PARTOUT').map((l) => l.standId)).toEqual(['FERME-PARTOUT']);
+    expect(filtrerStands(complet, 'TOUS', 'FERMÉ PARTOUT').map((l) => l.standId)).toEqual([
+      'FERME-PARTOUT',
+    ]);
     expect(filtrerStands(complet, 'TOUS', 'inconnu')).toEqual([]);
   });
 
@@ -164,14 +175,20 @@ describe('synthese', () => {
       rapport({
         stands: [
           ligne({ standId: 'A', jours: [cellule(), cellule({ etat: 'FERME' })] }),
-          ligne({ standId: 'B', jours: [cellule({ etat: 'OUVERT_PARTIEL' })] })
+          ligne({ standId: 'B', jours: [cellule({ etat: 'OUVERT_PARTIEL' })] }),
         ],
         standsJamaisOuverts: 1,
         postesTotal: 7,
         anomalies: [
-          { type: 'SEGMENT_TROP_COURT', standId: 'A', standNom: 'A', date: '2026-07-08', message: 'court' }
-        ]
-      })
+          {
+            type: 'SEGMENT_TROP_COURT',
+            standId: 'A',
+            standNom: 'A',
+            date: '2026-07-08',
+            message: 'court',
+          },
+        ],
+      }),
     );
 
     expect(bilan).toEqual({
@@ -180,7 +197,7 @@ describe('synthese', () => {
       avecJourFerme: 1,
       avecJourPartiel: 1,
       postesTotal: 7,
-      anomalies: 1
+      anomalies: 1,
     });
   });
 });
@@ -188,9 +205,21 @@ describe('synthese', () => {
 describe('anomaliesParStand / standsEnAnomalie', () => {
   it('regroupe par stand', () => {
     const anomalies: AnomalieOuverture[] = [
-      { type: 'SEGMENT_TROP_COURT', standId: 'A', standNom: 'A', date: '2026-07-08', message: 'un' },
-      { type: 'FENETRE_SANS_EFFET', standId: 'A', standNom: 'A', date: '2026-07-09', message: 'deux' },
-      { type: 'STAND_JAMAIS_OUVERT', standId: 'B', standNom: 'B', date: null, message: 'trois' }
+      {
+        type: 'SEGMENT_TROP_COURT',
+        standId: 'A',
+        standNom: 'A',
+        date: '2026-07-08',
+        message: 'un',
+      },
+      {
+        type: 'FENETRE_SANS_EFFET',
+        standId: 'A',
+        standNom: 'A',
+        date: '2026-07-09',
+        message: 'deux',
+      },
+      { type: 'STAND_JAMAIS_OUVERT', standId: 'B', standNom: 'B', date: null, message: 'trois' },
     ];
 
     expect(anomaliesParStand(anomalies).get('A')).toHaveLength(2);
@@ -200,9 +229,9 @@ describe('anomaliesParStand / standsEnAnomalie', () => {
 
 describe('iconeAnomalie', () => {
   it('donne une icône distincte par type, pour ne pas dépendre de la couleur seule', () => {
-    const icones = (['STAND_JAMAIS_OUVERT', 'FENETRE_SANS_EFFET', 'SEGMENT_TROP_COURT'] as const).map(
-      iconeAnomalie
-    );
+    const icones = (
+      ['STAND_JAMAIS_OUVERT', 'FENETRE_SANS_EFFET', 'SEGMENT_TROP_COURT'] as const
+    ).map(iconeAnomalie);
     expect(new Set(icones).size).toBe(3);
   });
 });

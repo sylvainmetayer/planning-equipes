@@ -159,12 +159,15 @@ export class KeyboardShortcutsService {
     if (this.dialog.openDialogs.length > 0) {
       return;
     }
-    this.palette = this.dialog.open<CommandPaletteDialog, undefined, CommandePalette | null>(CommandPaletteDialog, {
-      width: '36rem',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable',
-      restoreFocus: true
-    });
+    this.palette = this.dialog.open<CommandPaletteDialog, undefined, CommandePalette | null>(
+      CommandPaletteDialog,
+      {
+        width: '36rem',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+        restoreFocus: true,
+      },
+    );
     this.palette.afterClosed().subscribe((commande) => {
       this.palette = null;
       if (commande) {
@@ -200,11 +203,14 @@ export class KeyboardShortcutsService {
    */
   private validerFormulaireActif(): boolean {
     const actif = document.activeElement as HTMLElement | null;
-    const formulaire = actif?.closest('form') ?? document.querySelector('.mat-mdc-dialog-container form');
+    const formulaire =
+      actif?.closest('form') ?? document.querySelector('.mat-mdc-dialog-container form');
     if (!formulaire) {
       return false;
     }
-    const submit = formulaire.querySelector<HTMLButtonElement>('button[type="submit"]:not([disabled])');
+    const submit = formulaire.querySelector<HTMLButtonElement>(
+      'button[type="submit"]:not([disabled])',
+    );
     if (submit) {
       submit.click();
       return true;

@@ -162,7 +162,7 @@ export class TableNavigation<TRow, TId extends SelectionId> {
         // rank recorded at focus time is what remains otherwise.
         const lastDisplayed = previous?.source.anchor === anchor ? previous.value : anchor.index;
         return Math.min(Math.max(lastDisplayed, 0), rows.length - 1);
-      }
+      },
     });
   }
 

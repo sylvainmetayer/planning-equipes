@@ -97,8 +97,8 @@ for (const nom of contrat.keys()) {
   if (jumeau && contrat.has(jumeau[1])) {
     ecarts.push(
       `${nom} est un nom de collision : le contrat porte déjà « ${jumeau[1]} », et SmallRye a suffixé ` +
-        "le second de deux types homonymes. Renommez-en un côté serveur — le suffixe change de " +
-        "propriétaire d'une génération à l'autre."
+        'le second de deux types homonymes. Renommez-en un côté serveur — le suffixe change de ' +
+        "propriétaire d'une génération à l'autre.",
     );
   }
 }
@@ -108,7 +108,7 @@ for (const [nom, proprietesFront] of front) {
     if (contrat.has(nom)) {
       ecarts.push(
         `${nom} est déclaré hors contrat, mais le schéma porte désormais ce nom. ` +
-          'Retirez-le de « horsContrat » dans scripts/api-types-mapping.json.'
+          'Retirez-le de « horsContrat » dans scripts/api-types-mapping.json.',
       );
     }
     continue;
@@ -119,7 +119,7 @@ for (const [nom, proprietesFront] of front) {
     ecarts.push(
       renommes[nom]
         ? `${nom} pointe « ${nomServeur} », qui n'est plus dans le contrat.`
-        : `${nom} n'a pas de schéma. Rattachez-le dans « renommes », ou dites pourquoi dans « horsContrat ».`
+        : `${nom} n'a pas de schéma. Rattachez-le dans « renommes », ou dites pourquoi dans « horsContrat ».`,
     );
     continue;
   }
@@ -143,16 +143,20 @@ for (const [nom, proprietesFront] of front) {
 // comme une décision alors que le type a disparu.
 for (const nom of [...Object.keys(renommes), ...Object.keys(horsContrat)]) {
   if (!front.has(nom)) {
-    ecarts.push(`${nom} figure dans scripts/api-types-mapping.json mais n'existe plus dans models.ts.`);
+    ecarts.push(
+      `${nom} figure dans scripts/api-types-mapping.json mais n'existe plus dans models.ts.`,
+    );
   }
 }
 
 if (ecarts.length > 0) {
-  console.error(`check-api-types : ${ecarts.length} écart(s) entre models.ts et le contrat OpenAPI.\n`);
+  console.error(
+    `check-api-types : ${ecarts.length} écart(s) entre models.ts et le contrat OpenAPI.\n`,
+  );
   ecarts.forEach((ecart) => console.error(`  - ${ecart}`));
   console.error(
-    "\nLe contrat fait foi (audit #392, question 12). Un champ que le serveur envoie et\n" +
-      "que le front ne déclare pas n'échoue nulle part : il est simplement invisible.\n"
+    '\nLe contrat fait foi (audit #392, question 12). Un champ que le serveur envoie et\n' +
+      "que le front ne déclare pas n'échoue nulle part : il est simplement invisible.\n",
   );
   process.exit(1);
 }
@@ -160,5 +164,5 @@ if (ecarts.length > 0) {
 const verifies = front.size - Object.keys(horsContrat).length;
 console.log(
   `check-api-types : ${verifies} type(s) confrontés au contrat, ` +
-    `${Object.keys(horsContrat).length} hors contrat avec leur raison, 0 écart.`
+    `${Object.keys(horsContrat).length} hors contrat avec leur raison, 0 écart.`,
 );

@@ -66,10 +66,10 @@ interface VerrouillageRow extends VerrouillagePlanning {
     MatTooltipModule,
     StatusMessage,
     WorkInProgressBanner,
-    RouterLink
+    RouterLink,
   ],
   templateUrl: './verrouillages-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VerrouillagesPage {
   protected readonly columns = ['type', 'cible', 'raison', 'actions'];
@@ -89,7 +89,7 @@ export class VerrouillagesPage {
 
   /** Distinct event days, from the créneaux of the reference data. */
   protected readonly jours = computed(() =>
-    Array.from(new Set(this.store.creneaux().map((creneau) => creneau.date))).sort()
+    Array.from(new Set(this.store.creneaux().map((creneau) => creneau.date))).sort(),
   );
 
   protected readonly rows = computed<VerrouillageRow[]>(() =>
@@ -97,8 +97,8 @@ export class VerrouillagesPage {
       ...verrouillage,
       typeLabel: typeLabel(verrouillage.type),
       cibleLabel: this.cibleLabel(verrouillage),
-      actif: true
-    }))
+      actif: true,
+    })),
   );
 
   private readonly notifications = inject(NotificationService);
@@ -192,13 +192,13 @@ export class VerrouillagesPage {
         standId: type === 'STAND' ? this.standId() : null,
         creneauId: type === 'CRENEAU' ? Number(this.creneauId()) : null,
         jour: type === 'JOUR' ? this.jour() : null,
-        raison: this.raison() || null
+        raison: this.raison() || null,
       });
       this.raison.set('');
       this.notifications.notify({
         title: $localize`:@@verrouillages.created:Verrouillage enregistré.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     } catch (error) {
       this.report(error);
@@ -210,7 +210,7 @@ export class VerrouillagesPage {
       title: $localize`:@@verrouillages.deleteTitle:Déverrouiller ${row.cibleLabel}:cible: ?`,
       message: $localize`:@@verrouillages.deleteMessage:La prochaine résolution pourra de nouveau modifier ces affectations.`,
       confirmLabel: $localize`:@@verrouillages.deleteConfirm:Déverrouiller`,
-      danger: true
+      danger: true,
     });
     if (!confirmed) {
       return;
@@ -220,7 +220,7 @@ export class VerrouillagesPage {
       this.notifications.notify({
         title: $localize`:@@verrouillages.deleted:Verrouillage supprimé.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     } catch (error) {
       this.report(error);
@@ -231,23 +231,39 @@ export class VerrouillagesPage {
   private cibleLabel(verrouillage: VerrouillagePlanning): string {
     switch (verrouillage.type) {
       case 'ANIMATEUR': {
-        const animateur = this.store.animateurs().find((candidate) => candidate.id === verrouillage.animateurId);
-        return animateur ? `${animateur.prenom} ${animateur.nom}`.trim() : (verrouillage.animateurId ?? '—');
+        const animateur = this.store
+          .animateurs()
+          .find((candidate) => candidate.id === verrouillage.animateurId);
+        return animateur
+          ? `${animateur.prenom} ${animateur.nom}`.trim()
+          : (verrouillage.animateurId ?? '—');
       }
       case 'STAND': {
-        const stand = this.store.stands().find((candidate) => candidate.id === verrouillage.standId);
+        const stand = this.store
+          .stands()
+          .find((candidate) => candidate.id === verrouillage.standId);
         return stand?.nom || (verrouillage.standId ?? '—');
       }
       case 'JOUR':
         return verrouillage.jour ?? '—';
       case 'CRENEAU': {
-        const creneau = this.store.creneaux().find((candidate) => candidate.id === verrouillage.creneauId);
-        return creneau ? `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}` : String(verrouillage.creneauId ?? '—');
+        const creneau = this.store
+          .creneaux()
+          .find((candidate) => candidate.id === verrouillage.creneauId);
+        return creneau
+          ? `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}`
+          : String(verrouillage.creneauId ?? '—');
       }
       case 'ANIMATEUR_CRENEAU': {
-        const animateur = this.store.animateurs().find((candidate) => candidate.id === verrouillage.animateurId);
-        const creneau = this.store.creneaux().find((candidate) => candidate.id === verrouillage.creneauId);
-        const nomAnimateur = animateur ? `${animateur.prenom} ${animateur.nom}`.trim() : (verrouillage.animateurId ?? '—');
+        const animateur = this.store
+          .animateurs()
+          .find((candidate) => candidate.id === verrouillage.animateurId);
+        const creneau = this.store
+          .creneaux()
+          .find((candidate) => candidate.id === verrouillage.creneauId);
+        const nomAnimateur = animateur
+          ? `${animateur.prenom} ${animateur.nom}`.trim()
+          : (verrouillage.animateurId ?? '—');
         const libelleCreneau = creneau
           ? `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}`
           : String(verrouillage.creneauId ?? '—');
@@ -260,7 +276,7 @@ export class VerrouillagesPage {
     this.notifications.notify({
       title: $localize`:@@crud.error:Erreur`,
       message: errorMessage(error),
-      variant: 'error'
+      variant: 'error',
     });
   }
 }

@@ -12,7 +12,9 @@ describe('ConstraintsApi', () => {
     for (const stub of Object.values(api)) {
       stub.mockReset();
     }
-    TestBed.configureTestingModule({ providers: [ConstraintsApi, { provide: ApiService, useValue: api }] });
+    TestBed.configureTestingModule({
+      providers: [ConstraintsApi, { provide: ApiService, useValue: api }],
+    });
     constraints = TestBed.inject(ConstraintsApi);
   });
 
@@ -31,8 +33,12 @@ describe('ConstraintsApi', () => {
     await constraints.setActive('equilibrerCharge', false);
     await constraints.setWeight('equilibrerCharge', 7);
 
-    expect(api.put).toHaveBeenNthCalledWith(1, '/api/constraints/equilibrerCharge', { actif: false });
-    expect(api.put).toHaveBeenNthCalledWith(2, '/api/constraints/equilibrerCharge/poids', { poids: 7 });
+    expect(api.put).toHaveBeenNthCalledWith(1, '/api/constraints/equilibrerCharge', {
+      actif: false,
+    });
+    expect(api.put).toHaveBeenNthCalledWith(2, '/api/constraints/equilibrerCharge/poids', {
+      poids: 7,
+    });
   });
 
   it('sends the legal parameters whole', async () => {
@@ -41,7 +47,7 @@ describe('ConstraintsApi', () => {
       dureeHebdomadaireMaxMineurMinutes: 2100,
       pauseMinimaleEntreVacationsMinutes: 30,
       reposQuotidienMinimalMinutes: 660,
-      pauseSurPoste: false
+      pauseSurPoste: false,
     } as ParametresLegaux;
 
     await constraints.saveLegalParameters(parametres);

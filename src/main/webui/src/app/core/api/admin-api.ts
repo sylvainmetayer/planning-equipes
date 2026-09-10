@@ -3,7 +3,13 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { EtatSauvegarde, ImportSummary, MentionsLegales, ParametresNotifications, StatutSession } from '../models';
+import {
+  EtatSauvegarde,
+  ImportSummary,
+  MentionsLegales,
+  ParametresNotifications,
+  StatutSession,
+} from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminApi {

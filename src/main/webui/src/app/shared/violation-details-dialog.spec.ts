@@ -18,8 +18,8 @@ function monter(data: ViolationDetailsData) {
     providers: [
       provideZonelessChangeDetection(),
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: data }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: data },
+    ],
   });
   const fixture = TestBed.createComponent(ViolationDetailsDialog);
   fixture.detectChanges();
@@ -30,7 +30,7 @@ const COMPLET: ViolationDetailsData = {
   constraintName: 'Repos entre deux vacations',
   description: 'Un animateur doit disposer de 11 h entre deux journées.',
   matchCount: 2,
-  violations: ['Amélie Nothomb — 14/07', 'Marcel Proust — 15/07']
+  violations: ['Amélie Nothomb — 14/07', 'Marcel Proust — 15/07'],
 };
 
 describe('ViolationDetailsDialog', () => {
@@ -39,15 +39,18 @@ describe('ViolationDetailsDialog', () => {
 
     expect(racine.querySelector('h2')!.textContent!.trim()).toBe('Repos entre deux vacations');
     expect(racine.querySelector('.violation-details-description')!.textContent!.trim()).toBe(
-      'Un animateur doit disposer de 11 h entre deux journées.'
+      'Un animateur doit disposer de 11 h entre deux journées.',
     );
   });
 
   it('lists one line per violation', () => {
     const { racine } = monter(COMPLET);
 
-    expect(Array.from(racine.querySelectorAll('.violation-details-list li')).map((each) => each.textContent!.trim()))
-      .toEqual(['Amélie Nothomb — 14/07', 'Marcel Proust — 15/07']);
+    expect(
+      Array.from(racine.querySelectorAll('.violation-details-list li')).map((each) =>
+        each.textContent!.trim(),
+      ),
+    ).toEqual(['Amélie Nothomb — 14/07', 'Marcel Proust — 15/07']);
   });
 
   it('stays silent about truncation when every violation is shown', () => {
@@ -59,7 +62,10 @@ describe('ViolationDetailsDialog', () => {
   it('says the list is capped when the server sent fewer lines than matches', () => {
     const { racine } = monter({ ...COMPLET, matchCount: 40 });
 
-    const note = racine.querySelector('.violation-details-truncated')!.textContent!.replace(/\s+/g, ' ').trim();
+    const note = racine
+      .querySelector('.violation-details-truncated')!
+      .textContent!.replace(/\s+/g, ' ')
+      .trim();
     expect(note).toBe('Affichage limité aux 2 premières occurrences sur 40.');
   });
 

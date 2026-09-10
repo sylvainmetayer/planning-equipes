@@ -8,7 +8,13 @@ import { ChangementAffectation, StatistiquesIncremental } from '../../core/model
 import { IncrementalResult } from './incremental-result';
 
 function statistiques(): StatistiquesIncremental {
-  return { postesTotal: 200, postesFiges: 180, postesLiberes: 20, postesLiberesManuellement: 2, postesNouveaux: 0 };
+  return {
+    postesTotal: 200,
+    postesFiges: 180,
+    postesLiberes: 20,
+    postesLiberesManuellement: 2,
+    postesNouveaux: 0,
+  };
 }
 
 function changement(overrides: Partial<ChangementAffectation> = {}): ChangementAffectation {
@@ -21,7 +27,7 @@ function changement(overrides: Partial<ChangementAffectation> = {}): ChangementA
     heureFin: '12:00:00',
     avant: ['Alice'],
     apres: ['Bob'],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -41,13 +47,17 @@ describe('IncrementalResult', () => {
   }
 
   function rows(root: HTMLElement): string[] {
-    return Array.from(root.querySelectorAll('tr[mat-row]')).map((row) => row.textContent!.replace(/\s+/g, ' ').trim());
+    return Array.from(root.querySelectorAll('tr[mat-row]')).map((row) =>
+      row.textContent!.replace(/\s+/g, ' ').trim(),
+    );
   }
 
   it('frames the diff with the four counts', () => {
     const root = render([]);
 
-    const values = Array.from(root.querySelectorAll('.staffing-stat-value')).map((value) => value.textContent!.trim());
+    const values = Array.from(root.querySelectorAll('.staffing-stat-value')).map((value) =>
+      value.textContent!.trim(),
+    );
     expect(values).toEqual(['180', '20', '2', '0']);
   });
 
@@ -59,7 +69,10 @@ describe('IncrementalResult', () => {
   });
 
   it('lists each moved crew with its créneau, seconds dropped from the hours', () => {
-    const root = render([changement(), changement({ standNom: 'Quilles', avant: ['Chloé', 'Dan'], apres: ['Dan'] })]);
+    const root = render([
+      changement(),
+      changement({ standNom: 'Quilles', avant: ['Chloé', 'Dan'], apres: ['Dan'] }),
+    ]);
 
     const lines = rows(root);
     expect(lines).toHaveLength(2);

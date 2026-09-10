@@ -24,46 +24,59 @@ interface RaccourciGeneral {
     <h2 mat-dialog-title i18n="@@shortcuts.title">Raccourcis clavier</h2>
     <mat-dialog-content>
       <p class="raccourcis-intro" i18n="@@shortcuts.intro">
-        Les raccourcis à une touche ne se déclenchent jamais pendant que vous saisissez du texte : ils reprennent
-        dès que le focus quitte le champ.
+        Les raccourcis à une touche ne se déclenchent jamais pendant que vous saisissez du texte :
+        ils reprennent dès que le focus quitte le champ.
       </p>
 
       <h3 class="raccourcis-titre" i18n="@@shortcuts.general.title">Général</h3>
       <dl class="raccourcis-liste">
         @for (raccourci of general; track raccourci.touches) {
-          <dt><kbd>{{ raccourci.touches }}</kbd></dt>
+          <dt>
+            <kbd>{{ raccourci.touches }}</kbd>
+          </dt>
           <dd>{{ raccourci.description }}</dd>
         }
       </dl>
 
-      <h3 class="raccourcis-titre" i18n="@@shortcuts.table.title">Dans un tableau de données de référence</h3>
+      <h3 class="raccourcis-titre" i18n="@@shortcuts.table.title">
+        Dans un tableau de données de référence
+      </h3>
       <p class="raccourcis-intro" i18n="@@shortcuts.table.intro">
-        Pour entrer dans le tableau : « / » place le curseur dans le filtre de la page, puis Flèche bas saute sur la
-        ligne courante. Tab y entre aussi, sur une seule ligne, et en ressort vers les boutons de cette ligne : le
-        tableau ne retient jamais le focus.
+        Pour entrer dans le tableau : « / » place le curseur dans le filtre de la page, puis Flèche
+        bas saute sur la ligne courante. Tab y entre aussi, sur une seule ligne, et en ressort vers
+        les boutons de cette ligne : le tableau ne retient jamais le focus.
       </p>
       <dl class="raccourcis-liste">
         @for (raccourci of tableau; track raccourci.touches) {
-          <dt><kbd>{{ raccourci.touches }}</kbd></dt>
+          <dt>
+            <kbd>{{ raccourci.touches }}</kbd>
+          </dt>
           <dd>{{ raccourci.description }}</dd>
         }
       </dl>
 
-      <h3 class="raccourcis-titre" i18n="@@shortcuts.navigation.title">Navigation : « g » puis une lettre</h3>
+      <h3 class="raccourcis-titre" i18n="@@shortcuts.navigation.title">
+        Navigation : « g » puis une lettre
+      </h3>
       <dl class="raccourcis-liste">
         @for (raccourci of navigation; track raccourci.touche) {
-          <dt><kbd>g</kbd> <kbd>{{ raccourci.touche }}</kbd></dt>
+          <dt>
+            <kbd>g</kbd> <kbd>{{ raccourci.touche }}</kbd>
+          </dt>
           <dd>{{ raccourci.label }}</dd>
         }
       </dl>
 
       <p class="raccourcis-note" i18n="@@shortcuts.note">
-        Les pages sans lettre restent accessibles par la palette, qui liste toutes les pages de l'application.
+        Les pages sans lettre restent accessibles par la palette, qui liste toutes les pages de
+        l'application.
       </p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <a matButton routerLink="/aide" mat-dialog-close i18n="@@shortcuts.help">Voir l'aide</a>
-      <button matButton="filled" type="button" mat-dialog-close i18n="@@common.close">Fermer</button>
+      <button matButton="filled" type="button" mat-dialog-close i18n="@@common.close">
+        Fermer
+      </button>
     </mat-dialog-actions>
   `,
   styles: `
@@ -99,7 +112,7 @@ interface RaccourciGeneral {
       white-space: nowrap;
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KeyboardShortcutsDialog {
   protected readonly navigation: RaccourciNavigation[] = buildRaccourcisNavigation();
@@ -112,43 +125,43 @@ export class KeyboardShortcutsDialog {
   protected readonly tableau: RaccourciGeneral[] = [
     {
       touches: $localize`:@@shortcuts.key.arrowDown:Flèche bas`,
-      description: $localize`:@@shortcuts.table.enter:Depuis le filtre de la page, entrer dans le tableau : le focus saute sur la ligne courante.`
+      description: $localize`:@@shortcuts.table.enter:Depuis le filtre de la page, entrer dans le tableau : le focus saute sur la ligne courante.`,
     },
     {
       touches: '↑ ↓',
-      description: $localize`:@@shortcuts.table.move:Passer d'une ligne à l'autre du tableau.`
+      description: $localize`:@@shortcuts.table.move:Passer d'une ligne à l'autre du tableau.`,
     },
     {
       touches: $localize`:@@shortcuts.key.homeEnd:Début / Fin`,
-      description: $localize`:@@shortcuts.table.bounds:Aller à la première ou à la dernière ligne affichée.`
+      description: $localize`:@@shortcuts.table.bounds:Aller à la première ou à la dernière ligne affichée.`,
     },
     {
       touches: $localize`:@@shortcuts.key.enter:Entrée`,
-      description: $localize`:@@shortcuts.table.open:Ouvrir la ligne : sa fiche de consultation, ou son formulaire là où il n'y a pas de fiche.`
+      description: $localize`:@@shortcuts.table.open:Ouvrir la ligne : sa fiche de consultation, ou son formulaire là où il n'y a pas de fiche.`,
     },
     {
       touches: $localize`:@@shortcuts.key.space:Espace`,
-      description: $localize`:@@shortcuts.table.select:Cocher ou décocher la ligne, pour une action groupée.`
-    }
+      description: $localize`:@@shortcuts.table.select:Cocher ou décocher la ligne, pour une action groupée.`,
+    },
   ];
 
   protected readonly general: RaccourciGeneral[] = [
     {
       touches: 'Ctrl + K',
-      description: $localize`:@@shortcuts.general.palette:Ouvrir la palette de commandes : aller à une page, ou chercher un animateur, un stand, un créneau.`
+      description: $localize`:@@shortcuts.general.palette:Ouvrir la palette de commandes : aller à une page, ou chercher un animateur, un stand, un créneau.`,
     },
     { touches: '?', description: $localize`:@@shortcuts.general.help:Afficher cette liste.` },
     {
       touches: '/',
-      description: $localize`:@@shortcuts.general.filter:Placer le curseur dans le filtre de la page, quand elle en a un.`
+      description: $localize`:@@shortcuts.general.filter:Placer le curseur dans le filtre de la page, quand elle en a un.`,
     },
     {
       touches: 'Ctrl + ' + $localize`:@@shortcuts.key.enter:Entrée`,
-      description: $localize`:@@shortcuts.general.submit:Valider le formulaire en cours de saisie.`
+      description: $localize`:@@shortcuts.general.submit:Valider le formulaire en cours de saisie.`,
     },
     {
       touches: $localize`:@@shortcuts.key.escape:Échap`,
-      description: $localize`:@@shortcuts.general.close:Fermer la fenêtre ouverte.`
-    }
+      description: $localize`:@@shortcuts.general.close:Fermer la fenêtre ouverte.`,
+    },
   ];
 }

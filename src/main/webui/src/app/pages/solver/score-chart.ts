@@ -2,7 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { ScorePoint } from '../../core/models';
 import { intlLocale } from '../../core/locale';
 import { formatDuration } from '../../core/solver-job.service';
-import { HAUTEUR_COURBE, LARGEUR_COURBE, NiveauScore, SerieScore, construireSeries } from './score-curve';
+import {
+  HAUTEUR_COURBE,
+  LARGEUR_COURBE,
+  NiveauScore,
+  SerieScore,
+  construireSeries,
+} from './score-curve';
 
 /**
  * The score of the running solve, drawn as it happens (issue #304).
@@ -40,49 +46,54 @@ import { HAUTEUR_COURBE, LARGEUR_COURBE, NiveauScore, SerieScore, construireSeri
           }
         </p>
       } @else {
-      <div class="score-curve">
-        @for (serie of courbes; track serie.niveau) {
-          <div class="score-curve-niveau">
-            <div class="score-curve-entete">
-              <h3 class="score-curve-titre">{{ titre(serie.niveau) }}</h3>
-              <span class="score-curve-valeur" [class.score-curve-resolu]="serie.dernier === 0">
-                {{ nombre(serie.dernier) }}
-              </span>
-              <span class="score-curve-plateau">{{ etat(serie) }}</span>
-            </div>
-            <svg
-              class="score-curve-cadre"
-              [attr.viewBox]="'0 0 ' + largeur + ' ' + hauteur"
-              preserveAspectRatio="none"
-              role="img"
-              [attr.aria-label]="resume(serie)"
-            >
-              <!-- The zero line: the level at which nothing is violated any
+        <div class="score-curve">
+          @for (serie of courbes; track serie.niveau) {
+            <div class="score-curve-niveau">
+              <div class="score-curve-entete">
+                <h3 class="score-curve-titre">{{ titre(serie.niveau) }}</h3>
+                <span class="score-curve-valeur" [class.score-curve-resolu]="serie.dernier === 0">
+                  {{ nombre(serie.dernier) }}
+                </span>
+                <span class="score-curve-plateau">{{ etat(serie) }}</span>
+              </div>
+              <svg
+                class="score-curve-cadre"
+                [attr.viewBox]="'0 0 ' + largeur + ' ' + hauteur"
+                preserveAspectRatio="none"
+                role="img"
+                [attr.aria-label]="resume(serie)"
+              >
+                <!-- The zero line: the level at which nothing is violated any
                    more. Drawn even when it is the very top edge, because a
                    curve flattening against it is the readable end state. -->
-              <line
-                class="score-curve-zero"
-                x1="0"
-                x2="100%"
-                [attr.y1]="serie.zeroY"
-                [attr.y2]="serie.zeroY"
-                vector-effect="non-scaling-stroke"
-              />
-              <polyline class="score-curve-trace" [attr.points]="serie.polyline" vector-effect="non-scaling-stroke" />
-            </svg>
-          </div>
-        }
-      </div>
+                <line
+                  class="score-curve-zero"
+                  x1="0"
+                  x2="100%"
+                  [attr.y1]="serie.zeroY"
+                  [attr.y2]="serie.zeroY"
+                  vector-effect="non-scaling-stroke"
+                />
+                <polyline
+                  class="score-curve-trace"
+                  [attr.points]="serie.polyline"
+                  vector-effect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+          }
+        </div>
       }
     } @else if (!replie()) {
       <!-- Not while folded: the point of folding is to give the room back, and
            a paragraph explaining an empty chart is exactly the room in question. -->
       <p class="score-curve-vide" i18n="@@solver.scoreCurve.attente">
-        Le solveur n'a pas encore annoncé de première solution complète : la courbe démarre dès qu'il en tient une.
+        Le solveur n'a pas encore annoncé de première solution complète : la courbe démarre dès
+        qu'il en tient une.
       </p>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScoreChart {
   /** The curve so far. Growing at one point per second at most — see the backend's `SolverScoreTrace`. */

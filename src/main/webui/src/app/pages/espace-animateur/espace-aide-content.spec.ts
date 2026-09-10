@@ -28,8 +28,8 @@ describe('buildEspaceAideSections', () => {
         'suivi',
         'demandes-recues',
         'declarer-disponibilites',
-        'foire-fermee'
-      ])
+        'foire-fermee',
+      ]),
     );
   });
 

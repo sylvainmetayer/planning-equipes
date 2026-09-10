@@ -6,13 +6,20 @@ import { ParametresSolveur } from './models';
 import { DEFAULT_SOLVER_SECONDS_LIMIT, SolverSettingsService } from './solver-settings.service';
 
 class FakeApi {
-  get = vi.fn(async () => ({ dureeResolutionSecondes: DEFAULT_SOLVER_SECONDS_LIMIT, mailFinResolution: false }));
+  get = vi.fn(async () => ({
+    dureeResolutionSecondes: DEFAULT_SOLVER_SECONDS_LIMIT,
+    mailFinResolution: false,
+  }));
   put = vi.fn(async (_url: string, body: ParametresSolveur) => body);
 }
 
 function configure(api: FakeApi): SolverSettingsService {
   TestBed.configureTestingModule({
-    providers: [provideZonelessChangeDetection(), SolverSettingsService, { provide: ApiService, useValue: api }]
+    providers: [
+      provideZonelessChangeDetection(),
+      SolverSettingsService,
+      { provide: ApiService, useValue: api },
+    ],
   });
   return TestBed.inject(SolverSettingsService);
 }
@@ -51,7 +58,7 @@ describe('SolverSettingsService', () => {
     await service.setSecondsLimit(90.4);
     expect(api.put).toHaveBeenCalledWith('/api/parametres-solveur', {
       dureeResolutionSecondes: 90,
-      mailFinResolution: false
+      mailFinResolution: false,
     });
     expect(service.secondsLimit()).toBe(90);
   });
@@ -74,13 +81,13 @@ describe('SolverSettingsService', () => {
     await service.setSecondsLimit(300);
     expect(api.put).toHaveBeenLastCalledWith('/api/parametres-solveur', {
       dureeResolutionSecondes: 300,
-      mailFinResolution: true
+      mailFinResolution: true,
     });
 
     await service.setMailFinResolution(false);
     expect(api.put).toHaveBeenLastCalledWith('/api/parametres-solveur', {
       dureeResolutionSecondes: 300,
-      mailFinResolution: false
+      mailFinResolution: false,
     });
     expect(service.secondsLimit()).toBe(300);
     expect(service.mailFinResolution()).toBe(false);

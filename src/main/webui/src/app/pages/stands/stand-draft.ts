@@ -15,7 +15,7 @@ import {
   JourSemaine,
   NiveauEffort,
   OuvertureStand,
-  Stand
+  Stand,
 } from '../../core/models';
 
 /**
@@ -98,7 +98,7 @@ export function normaliserEffectif(effectif: number | null | undefined | string)
 export function basculerJour(
   joursSemaine: readonly JourSemaine[],
   jour: JourSemaine,
-  coche: boolean
+  coche: boolean,
 ): JourSemaine[] {
   return coche
     ? [...new Set([...joursSemaine, jour])]
@@ -144,16 +144,26 @@ export function ouvertureInvalide(draft: StandDraft): boolean {
 
 /** An opening naming a zero, negative or fractional effectif — reported apart, it has its own sentence. */
 export function effectifOuvertureInvalide(draft: StandDraft): boolean {
-  return draft.ouvertures.some((ouverture) => effectifFenetreInvalide(ouverture.effectif, Number(draft.effectifMax)));
+  return draft.ouvertures.some((ouverture) =>
+    effectifFenetreInvalide(ouverture.effectif, Number(draft.effectifMax)),
+  );
 }
 
-function plageInvalide(plage: { date: string; heureDebut: string; heureFin: string | null }): boolean {
-  return !plage.date || !plage.heureDebut || (!!plage.heureFin && plage.heureFin <= plage.heureDebut);
+function plageInvalide(plage: {
+  date: string;
+  heureDebut: string;
+  heureFin: string | null;
+}): boolean {
+  return (
+    !plage.date || !plage.heureDebut || (!!plage.heureFin && plage.heureFin <= plage.heureDebut)
+  );
 }
 
 /** A day can't carry both a closure and an opening — the backend rejects this outright. */
 export function conflitOuvertureFermeture(draft: StandDraft): boolean {
-  const joursFermeture = new Set(draft.indisponibilites.map((indispo) => indispo.date).filter(Boolean));
+  const joursFermeture = new Set(
+    draft.indisponibilites.map((indispo) => indispo.date).filter(Boolean),
+  );
   return draft.ouvertures.some((ouverture) => ouverture.date && joursFermeture.has(ouverture.date));
 }
 
@@ -190,7 +200,7 @@ export function toDraft(stand: Stand | null): StandDraft {
       indisponibilites: [],
       ouvertures: [],
       horaires: [],
-      modifieLe: null
+      modifieLe: null,
     };
   }
   return {
@@ -213,8 +223,8 @@ export function toDraft(stand: Stand | null): StandDraft {
       ...horaire,
       joursSemaine: [...horaire.joursSemaine],
       dates: [...horaire.dates],
-      fenetres: horaire.fenetres.map((fenetre) => ({ ...fenetre }))
-    }))
+      fenetres: horaire.fenetres.map((fenetre) => ({ ...fenetre })),
+    })),
   };
 }
 
@@ -229,17 +239,20 @@ export function versStand(draft: StandDraft, emplacements: readonly Emplacement[
     reserveMajeurs: draft.reserveMajeurs,
     premium: draft.premium,
     niveauEffort: draft.niveauEffort,
-    famille: draft.famille === null || draft.famille === undefined || Number.isNaN(Number(draft.famille)) ? null : Number(draft.famille),
+    famille:
+      draft.famille === null || draft.famille === undefined || Number.isNaN(Number(draft.famille))
+        ? null
+        : Number(draft.famille),
     emplacement: draft.emplacementId
       ? (emplacements.find((emplacement) => emplacement.id === draft.emplacementId) ?? null)
       : null,
     indisponibilites: draft.indisponibilites.map(normaliserPlage),
     ouvertures: draft.ouvertures.map((ouverture) => ({
       ...normaliserPlage(ouverture),
-      effectif: normaliserEffectif(ouverture.effectif)
+      effectif: normaliserEffectif(ouverture.effectif),
     })),
     horaires: draft.horaires.map(normaliserHoraire),
-    modifieLe: draft.modifieLe
+    modifieLe: draft.modifieLe,
   };
 }
 
@@ -259,13 +272,13 @@ export function normaliserHoraire(horaire: HoraireDraft): HoraireStand {
     fenetres: horaire.fenetres.map((fenetre) => ({
       ...fenetre,
       heureFin: fenetre.heureFin || null,
-      effectif: normaliserEffectif(fenetre.effectif)
+      effectif: normaliserEffectif(fenetre.effectif),
     })),
     // Only the fields the chosen scope uses are sent, so a rule switched from
     // PLAGE to TOUS doesn't keep dragging its old bounds along.
     joursSemaine: horaire.jours === 'JOURS_SEMAINE' ? horaire.joursSemaine : [],
     dateDebut: horaire.jours === 'PLAGE' ? horaire.dateDebut : null,
     dateFin: horaire.jours === 'PLAGE' ? horaire.dateFin : null,
-    dates: horaire.jours === 'DATES' ? horaire.dates : []
+    dates: horaire.jours === 'DATES' ? horaire.dates : [],
   };
 }

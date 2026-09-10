@@ -60,7 +60,13 @@ type ShellInternals = {
 describe('AdminShell', () => {
   const handset = new Subject<{ matches: boolean }>();
   const breakpoints = { observe: vi.fn(() => handset.asObservable()) };
-  const jobs = { start: vi.fn(), stop: vi.fn(), onResult: vi.fn(), file: () => [], activeJob: () => null };
+  const jobs = {
+    start: vi.fn(),
+    stop: vi.fn(),
+    onResult: vi.fn(),
+    file: () => [],
+    activeJob: () => null,
+  };
   const announcer = { announce: vi.fn() };
   // `openDialogs` too: the global shortcuts (issue #314) ask MatDialog whether
   // something is already open before reacting to a single key press.
@@ -98,7 +104,7 @@ describe('AdminShell', () => {
         // outlives the file that called it.
         unobserve = vi.fn();
         disconnect = vi.fn();
-      }
+      },
     );
     localStorage.removeItem(NAV_STORAGE_KEY);
     localStorage.removeItem(THEME_STORAGE_KEY);
@@ -113,7 +119,7 @@ describe('AdminShell', () => {
       snackBar.dismiss,
       adminApi.logout,
       api.get,
-      unregisterResult
+      unregisterResult,
     ]) {
       stub.mockClear();
     }
@@ -138,11 +144,13 @@ describe('AdminShell', () => {
         // A mascot is configured by default here: the Konami easter egg only
         // exists on a deployment that has one, and most of these tests are
         // about the sequence, not about the brand.
-        { provide: BRANDING, useValue: { ...BRANDING_NEUTRE, mascotUrl: 'mascotte.png' } }
-      ]
+        { provide: BRANDING, useValue: { ...BRANDING_NEUTRE, mascotUrl: 'mascotte.png' } },
+      ],
     });
     // Spied before the shell is built: it preloads them in its constructor.
-    resolutionReload = vi.spyOn(TestBed.inject(PlanningResolutionStore), 'reload').mockResolvedValue(undefined);
+    resolutionReload = vi
+      .spyOn(TestBed.inject(PlanningResolutionStore), 'reload')
+      .mockResolvedValue(undefined);
     editionsReload = vi.spyOn(TestBed.inject(EditionStore), 'reload').mockResolvedValue(undefined);
   });
 
@@ -422,7 +430,9 @@ describe('AdminShell', () => {
 
       shell.toggleAllGroups();
 
-      expect(JSON.parse(localStorage.getItem(NAV_STORAGE_KEY) ?? '[]')).toHaveLength(shell.navGroups.length);
+      expect(JSON.parse(localStorage.getItem(NAV_STORAGE_KEY) ?? '[]')).toHaveLength(
+        shell.navGroups.length,
+      );
     });
   });
 
@@ -475,7 +485,7 @@ describe('AdminShell', () => {
       'ArrowLeft',
       'ArrowRight',
       'b',
-      'a'
+      'a',
     ];
 
     // `bubbles: true` matters: the listener sits on `document`, so an event
@@ -509,8 +519,8 @@ describe('AdminShell', () => {
           { provide: MatSnackBar, useValue: snackBar },
           { provide: ApiService, useValue: api },
           { provide: AdminApi, useValue: adminApi },
-          { provide: BRANDING, useValue: BRANDING_NEUTRE }
-        ]
+          { provide: BRANDING, useValue: BRANDING_NEUTRE },
+        ],
       });
       vi.spyOn(TestBed.inject(PlanningResolutionStore), 'reload').mockResolvedValue(undefined);
       vi.spyOn(TestBed.inject(EditionStore), 'reload').mockResolvedValue(undefined);
@@ -633,7 +643,7 @@ describe('AdminShell', () => {
           for (const listener of listeners) {
             listener({ matches } as MediaQueryListEvent);
           }
-        }
+        },
       };
       vi.stubGlobal('matchMedia', () => media);
       return media;

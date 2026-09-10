@@ -54,7 +54,9 @@ test('la heatmap se remet à zéro en une action, et l’URL avec elle', async (
   await page.context().close();
 });
 
-test('une vue inconnue dans l’URL laisse la heatmap sur sa vue d’ouverture', async ({ browser }) => {
+test('une vue inconnue dans l’URL laisse la heatmap sur sa vue d’ouverture', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/heatmap?view=par-jour');
 
@@ -84,7 +86,10 @@ test('le tri des heures survit au rechargement, dans les deux sens', async ({ br
   await expect(noms).toHaveText([/Bruno E2E/, /Alice E2E/]);
   // L'en-tête aussi : une flèche de tri qui ne suit pas les lignes restaurées
   // affiche un tableau trié en le disant non trié.
-  await expect(page.getByRole('columnheader', { name: 'Animateur' })).toHaveAttribute('aria-sort', 'descending');
+  await expect(page.getByRole('columnheader', { name: 'Animateur' })).toHaveAttribute(
+    'aria-sort',
+    'descending',
+  );
   await page.context().close();
 });
 
@@ -98,7 +103,9 @@ test('une colonne de semaine disparue ne casse pas le tableau des heures', async
   await page.context().close();
 });
 
-test('le filtre des animateurs se restaure au rechargement et se vide en une action', async ({ browser }) => {
+test('le filtre des animateurs se restaure au rechargement et se vide en une action', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/animateurs');
   const lignes = page.locator('table tbody td.mat-column-nom');
@@ -120,7 +127,9 @@ test('le filtre des animateurs se restaure au rechargement et se vide en une act
   await page.context().close();
 });
 
-test('un filtre se tape d’une traite, sans reprendre le focus entre deux lettres', async ({ browser }) => {
+test('un filtre se tape d’une traite, sans reprendre le focus entre deux lettres', async ({
+  browser,
+}) => {
   // Le défaut que l'utilisateur a remonté, et qu'aucun test unitaire ne pouvait
   // voir : il naît de l'interaction entre le routeur, le DOM et le focus réel
   // du navigateur. Refléter l'état de vue dans l'URL passait par une navigation
@@ -149,7 +158,9 @@ test('un filtre se tape d’une traite, sans reprendre le focus entre deux lettr
   await page.context().close();
 });
 
-test('la timeline suit l’animateur choisi dans l’URL, et ce lien rouvre la même personne', async ({ browser }) => {
+test('la timeline suit l’animateur choisi dans l’URL, et ce lien rouvre la même personne', async ({
+  browser,
+}) => {
   // Le lien qu'on partage depuis cet écran, c'est « regarde le planning
   // d'Untel » : c'est donc la sélection, et non un tri, que l'URL doit porter.
   // Cette page écrivait son URL à la main, hors du helper partagé, jusqu'à ce
@@ -185,7 +196,9 @@ test('un lien de timeline partagé ouvre directement la bonne personne', async (
   await page.context().close();
 });
 
-test('le bouton Retour quitte la timeline au lieu de rejouer chaque sélection', async ({ browser }) => {
+test('le bouton Retour quitte la timeline au lieu de rejouer chaque sélection', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/hours');
   await page.goto('/timeline');
@@ -205,7 +218,9 @@ test('le bouton Retour quitte la timeline au lieu de rejouer chaque sélection',
   await page.context().close();
 });
 
-test('le bouton Retour quitte l’écran au lieu de rejouer chaque frappe du filtre', async ({ browser }) => {
+test('le bouton Retour quitte l’écran au lieu de rejouer chaque frappe du filtre', async ({
+  browser,
+}) => {
   // `replaceUrl` : sans lui, filtrer sur cinq caractères laisserait cinq
   // entrées d'historique, et il faudrait cinq retours pour sortir de la page.
   const page = await pageAdmin(browser, admin);

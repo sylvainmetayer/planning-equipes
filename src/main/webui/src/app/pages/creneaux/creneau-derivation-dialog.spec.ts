@@ -18,19 +18,31 @@ function apercu(patch: Partial<RapportDerivation> = {}): RapportDerivation {
     nombreGeneres: 2,
     creneaux: [
       { id: 0, jour: 0, date: '2026-07-06', heureDebut: '10:00', heureFin: '12:00' },
-      { id: 0, jour: 0, date: '2026-07-06', heureDebut: '14:00', heureFin: '20:00' }
+      { id: 0, jour: 0, date: '2026-07-06', heureDebut: '14:00', heureFin: '20:00' },
     ],
     coupures: [
       { date: '2026-07-06', heure: '10:00:00', standIds: ['A', 'B'], nombreStands: 5 },
-      { date: '2026-07-06', heure: '12:00:00', standIds: ['A'], nombreStands: 1 }
+      { date: '2026-07-06', heure: '12:00:00', standIds: ['A'], nombreStands: 1 },
     ],
     joursSansFenetre: ['2026-07-07'],
-    controle: { mode: 'AMPLITUDES', nombreCreneaux: 2, anomalies: [], ouvertures: [], faisabilite: null },
-    ...patch
+    controle: {
+      mode: 'AMPLITUDES',
+      nombreCreneaux: 2,
+      anomalies: [],
+      ouvertures: [],
+      faisabilite: null,
+    },
+    ...patch,
   };
 }
 
-function monter(options: { reponse?: RapportDerivation; confirme?: boolean; dates?: [string | null, string | null] } = {}) {
+function monter(
+  options: {
+    reponse?: RapportDerivation;
+    confirme?: boolean;
+    dates?: [string | null, string | null];
+  } = {},
+) {
   // Two stubs, not one: a test must tell a preview from a write.
   const preview = vi.fn(async () => options.reponse ?? apercu());
   const post = vi.fn(async () => options.reponse ?? apercu());
@@ -47,9 +59,13 @@ function monter(options: { reponse?: RapportDerivation; confirme?: boolean; date
       { provide: MatDialogRef, useValue: { close } },
       {
         provide: MAT_DIALOG_DATA,
-        useValue: { mode: 'AMPLITUDES', dateDebut: options.dates ? options.dates[0] : '2026-07-06', dateFin: options.dates ? options.dates[1] : '2026-07-07' }
-      }
-    ]
+        useValue: {
+          mode: 'AMPLITUDES',
+          dateDebut: options.dates ? options.dates[0] : '2026-07-06',
+          dateFin: options.dates ? options.dates[1] : '2026-07-07',
+        },
+      },
+    ],
   });
   return { fixture: TestBed.createComponent(CreneauDerivationDialog), preview, post, close, ask };
 }
@@ -58,8 +74,13 @@ function racine(fixture: ComponentFixture<CreneauDerivationDialog>): HTMLElement
   return fixture.nativeElement as HTMLElement;
 }
 
-function bouton(fixture: ComponentFixture<CreneauDerivationDialog>, libelle: string): HTMLButtonElement {
-  return Array.from(racine(fixture).querySelectorAll('button')).find((each) => each.textContent!.includes(libelle))!;
+function bouton(
+  fixture: ComponentFixture<CreneauDerivationDialog>,
+  libelle: string,
+): HTMLButtonElement {
+  return Array.from(racine(fixture).querySelectorAll('button')).find((each) =>
+    each.textContent!.includes(libelle),
+  )!;
 }
 
 describe('CreneauDerivationDialog', () => {
@@ -72,7 +93,9 @@ describe('CreneauDerivationDialog', () => {
     const { fixture, preview } = monter();
     await fixture.whenStable();
 
-    expect(racine(fixture).querySelector<HTMLInputElement>('input[name="dateDebut"]')!.value).toBe('2026-07-06');
+    expect(racine(fixture).querySelector<HTMLInputElement>('input[name="dateDebut"]')!.value).toBe(
+      '2026-07-06',
+    );
     expect(bouton(fixture, 'Écrire la grille').disabled).toBe(true);
 
     bouton(fixture, 'Prévisualiser').click();
@@ -83,7 +106,7 @@ describe('CreneauDerivationDialog', () => {
       dateFin: '2026-07-07',
       heureFermeture: '20:00',
       dureeMinimaleMinutes: 15,
-      remplacer: false
+      remplacer: false,
     });
     expect(racine(fixture).querySelectorAll('.vacation-chip')).toHaveLength(2);
     expect(racine(fixture).textContent).toContain('2 coupure(s)');
@@ -121,7 +144,14 @@ describe('CreneauDerivationDialog', () => {
   });
 
   it('keeps the write off on an empty derivation or a blocking verdict, and says why', async () => {
-    const vide = monter({ reponse: apercu({ nombreGeneres: 0, creneaux: [], coupures: [], joursSansFenetre: ['2026-07-06', '2026-07-07'] }) });
+    const vide = monter({
+      reponse: apercu({
+        nombreGeneres: 0,
+        creneaux: [],
+        coupures: [],
+        joursSansFenetre: ['2026-07-06', '2026-07-07'],
+      }),
+    });
     await vide.fixture.whenStable();
     bouton(vide.fixture, 'Prévisualiser').click();
     await vide.fixture.whenStable();
@@ -129,7 +159,17 @@ describe('CreneauDerivationDialog', () => {
     expect(bouton(vide.fixture, 'Écrire la grille').disabled).toBe(true);
 
     const bloquee = monter({
-      reponse: apercu({ controle: { mode: 'AMPLITUDES', nombreCreneaux: 4, anomalies: [{ severite: 'ERREUR', type: 'DOUBLON', date: '2026-07-06', message: 'Doublon' }], ouvertures: [], faisabilite: null } })
+      reponse: apercu({
+        controle: {
+          mode: 'AMPLITUDES',
+          nombreCreneaux: 4,
+          anomalies: [
+            { severite: 'ERREUR', type: 'DOUBLON', date: '2026-07-06', message: 'Doublon' },
+          ],
+          ouvertures: [],
+          faisabilite: null,
+        },
+      }),
     });
     await bloquee.fixture.whenStable();
     bouton(bloquee.fixture, 'Prévisualiser').click();
@@ -142,7 +182,9 @@ describe('CreneauDerivationDialog', () => {
     const { fixture, preview } = monter({ dates: [null, null] });
     await fixture.whenStable();
 
-    expect(racine(fixture).querySelector('.field-error')!.textContent).toContain('première et la dernière date');
+    expect(racine(fixture).querySelector('.field-error')!.textContent).toContain(
+      'première et la dernière date',
+    );
     expect(bouton(fixture, 'Prévisualiser').disabled).toBe(true);
     expect(preview).not.toHaveBeenCalled();
   });

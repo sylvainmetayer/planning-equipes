@@ -11,7 +11,7 @@ const DISABLED_CONFIG: AppConfig = {
   sentryDsn: '',
   sentryEnvironment: 'local',
   cloudflareWebAnalyticsToken: '',
-  devMode: false
+  devMode: false,
 };
 
 /**
@@ -27,7 +27,10 @@ export async function loadAppConfig(): Promise<AppConfig> {
     }
     return (await response.json()) as AppConfig;
   } catch (error) {
-    console.error('Could not load the observability config, error tracking and analytics stay disabled.', error);
+    console.error(
+      'Could not load the observability config, error tracking and analytics stay disabled.',
+      error,
+    );
     return DISABLED_CONFIG;
   }
 }
@@ -114,7 +117,7 @@ export async function initObservability(config: AppConfig): Promise<Provider[]> 
       // The SDK always attaches the full request URL, and records fetch/xhr
       // calls as breadcrumbs — both carry the access token here.
       beforeSend: (event) => masquerJetonPartout(event),
-      beforeBreadcrumb: (breadcrumb) => masquerJetonPartout(breadcrumb)
+      beforeBreadcrumb: (breadcrumb) => masquerJetonPartout(breadcrumb),
     });
     providers.push({ provide: ErrorHandler, useValue: Sentry.createErrorHandler() });
   }

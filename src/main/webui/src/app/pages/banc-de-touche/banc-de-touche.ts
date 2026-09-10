@@ -3,7 +3,14 @@
 // animateur may take a seat: the server already did, from the constraints
 // themselves (issue #303). This only sorts, groups and words the answer.
 
-import { Animateur, AnimateurBanc, BancDeTouche, CreneauSiege, MotifExclusion, Stand } from '../../core/models';
+import {
+  Animateur,
+  AnimateurBanc,
+  BancDeTouche,
+  CreneauSiege,
+  MotifExclusion,
+  Stand,
+} from '../../core/models';
 
 /**
  * The three states a line can be in. Deliberately three and not two: the
@@ -61,7 +68,7 @@ export function lignes(banc: BancDeTouche | null, animateurs: Animateur[]): Lign
       nom: animateur ? `${animateur.prenom} ${animateur.nom}` : ligne.animateurId,
       etat: etatDe(ligne),
       motifs: ordreMotifs(ligne.motifs),
-      coutDur: ligne.delta ? ligne.delta.hardScore : null
+      coutDur: ligne.delta ? ligne.delta.hardScore : null,
     };
   });
 }

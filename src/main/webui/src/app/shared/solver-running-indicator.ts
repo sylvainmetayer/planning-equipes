@@ -87,7 +87,7 @@ import { SolverJobService } from '../core/solver-job.service';
       }
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolverRunningIndicator {
   protected readonly jobs = inject(SolverJobService);

@@ -18,7 +18,7 @@ import {
   FeasibilityReport,
   NiveauContrainte,
   TypeCauseInfaisabilite,
-  RapportPauses
+  RapportPauses,
 } from './models';
 import { formatHeure } from './time-of-day';
 
@@ -53,7 +53,7 @@ function detailsDePauses(pauses: RapportPauses): string[] {
       for (const pause of sequence.pausesDues) {
         if (!pause.relaisDisponible) {
           lignes.push(
-            $localize`:@@problemes.pauses.detail:${journee.date}:date: · ${journee.nomComplet}:animateur: · ${formatHeure(pause.debut)}:debut: – ${formatHeure(pause.fin)}:fin: · ${pause.standNom}:stand:`
+            $localize`:@@problemes.pauses.detail:${journee.date}:date: · ${journee.nomComplet}:animateur: · ${formatHeure(pause.debut)}:debut: – ${formatHeure(pause.fin)}:fin: · ${pause.standNom}:stand:`,
           );
         }
       }
@@ -117,19 +117,28 @@ export function typeCauseLabel(type: TypeCauseInfaisabilite): string {
 export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
   const liens: LienProbleme[] = [];
   if (cause.creneauId !== null && cause.creneauId !== undefined) {
-    liens.push({ route: '/creneaux', libelle: $localize`:@@problemes.lien.creneaux:Voir les créneaux` });
+    liens.push({
+      route: '/creneaux',
+      libelle: $localize`:@@problemes.lien.creneaux:Voir les créneaux`,
+    });
   }
   if (cause.standIds.length > 0) {
     liens.push({ route: '/stands', libelle: $localize`:@@problemes.lien.stands:Voir les stands` });
-    liens.push({ route: '/ouvertures', libelle: $localize`:@@problemes.lien.ouvertures:Vérifier les ouvertures` });
+    liens.push({
+      route: '/ouvertures',
+      libelle: $localize`:@@problemes.lien.ouvertures:Vérifier les ouvertures`,
+    });
   }
   if (cause.manque > 0) {
-    liens.push({ route: '/staffing', libelle: $localize`:@@problemes.lien.staffing:Besoin en animateurs` });
+    liens.push({
+      route: '/staffing',
+      libelle: $localize`:@@problemes.lien.staffing:Besoin en animateurs`,
+    });
   }
   if ((cause.contrainteIds ?? []).length > 0) {
     liens.push({
       route: '/ad-hoc-constraints',
-      libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`
+      libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`,
     });
   }
   return liens;
@@ -140,8 +149,11 @@ export function detailsDeCause(cause: CauseInfaisabilite): string[] {
   if (cause.creneauId !== null && cause.creneauId !== undefined) {
     const creneauId = String(cause.creneauId);
     const date = cause.date ?? '';
-    const heures = cause.heureDebut && cause.heureFin ? `${cause.heureDebut}–${cause.heureFin}` : '';
-    details.push($localize`:@@problemes.detail.creneau:Créneau ${creneauId}:id: ${date}:date: ${heures}:hours:`);
+    const heures =
+      cause.heureDebut && cause.heureFin ? `${cause.heureDebut}–${cause.heureFin}` : '';
+    details.push(
+      $localize`:@@problemes.detail.creneau:Créneau ${creneauId}:id: ${date}:date: ${heures}:hours:`,
+    );
   }
   if (cause.standIds.length > 0) {
     const stands = cause.standIds.join(', ');
@@ -149,14 +161,16 @@ export function detailsDeCause(cause: CauseInfaisabilite): string[] {
   }
   if ((cause.contrainteIds ?? []).length > 0) {
     const contraintes = cause.contrainteIds.join(', ');
-    details.push($localize`:@@problemes.detail.contraintesAdHoc:Ajustements manuels : ${contraintes}:contraintes:`);
+    details.push(
+      $localize`:@@problemes.detail.contraintesAdHoc:Ajustements manuels : ${contraintes}:contraintes:`,
+    );
   }
   if (cause.manque > 0) {
     const manque = cause.manque;
     const demande = cause.demande;
     const capacite = cause.capacite;
     details.push(
-      $localize`:@@problemes.detail.effectif:Il manque ${manque}:manque: animateur(s) : ${demande}:demande: demandé(s) pour ${capacite}:capacite: disponible(s).`
+      $localize`:@@problemes.detail.effectif:Il manque ${manque}:manque: animateur(s) : ${demande}:demande: demandé(s) pour ${capacite}:capacite: disponible(s).`,
     );
   }
   return details;
@@ -189,7 +203,7 @@ export function construireProblemes(
   report: FeasibilityReport | null,
   contraintes: ConstraintView[] = [],
   contraintesAdHocEnCause: ContributionAdHoc[] = [],
-  pauses: RapportPauses | null = null
+  pauses: RapportPauses | null = null,
 ): Probleme[] {
   const problemes: Probleme[] = [];
 
@@ -204,7 +218,7 @@ export function construireProblemes(
       titre: $localize`:@@problemes.pauses.titre:Pauses sans relais`,
       message: $localize`:@@problemes.pauses.message:${pauses.relaisManquants}:count: pause(s) légale(s) tombent sur un stand où personne d'autre n'est présent : la personne est seule, personne ne peut la relayer. Prévoyez un relais extérieur, ou renforcez le stand.`,
       details: detailsDePauses(pauses),
-      liens: [{ route: '/pauses', libelle: $localize`:@@problemes.lien.pauses:Voir les pauses` }]
+      liens: [{ route: '/pauses', libelle: $localize`:@@problemes.lien.pauses:Voir les pauses` }],
     });
   }
 
@@ -216,7 +230,7 @@ export function construireProblemes(
       titre: typeCauseLabel(cause.type),
       message: cause.message,
       details: detailsDeCause(cause),
-      liens: liensDeCause(cause)
+      liens: liensDeCause(cause),
     });
   });
 
@@ -228,21 +242,23 @@ export function construireProblemes(
       // per-match lines: "affectationForcee : 12" is where reading stops
       // otherwise, and the exceptions are the only thing anyone can act on.
       const enCause = contraintesAdHocEnCause.filter((contribution) =>
-        contribution.contraintes.includes(contrainte.name)
+        contribution.contraintes.includes(contrainte.name),
       );
       const lignes =
         contrainte.violations.length > 0
           ? contrainte.violations
-          : [$localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`];
+          : [
+              $localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`,
+            ];
       const liens: LienProbleme[] = [
         // A violated rule is acted upon on the constraints screen: that is where
         // its weight is explained and where it can be relaxed.
-        { route: '/constraints', libelle: $localize`:@@problemes.lien.contraintes:Voir la règle` }
+        { route: '/constraints', libelle: $localize`:@@problemes.lien.contraintes:Voir la règle` },
       ];
       if (enCause.length > 0) {
         liens.push({
           route: '/ad-hoc-constraints',
-          libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`
+          libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`,
         });
       }
       problemes.push({
@@ -252,14 +268,16 @@ export function construireProblemes(
         titre: contrainte.name,
         message: contrainte.description,
         details: [...detailsEnCause(enCause), ...lignes],
-        liens
+        liens,
       });
     });
 
   // Array.prototype.sort is stable, so problems of the same tier and source keep
   // the order the server ranked them in.
   return problemes.sort(
-    (a, b) => RANG_NIVEAU[a.niveau] - RANG_NIVEAU[b.niveau] || RANG_SOURCE[a.source] - RANG_SOURCE[b.source]
+    (a, b) =>
+      RANG_NIVEAU[a.niveau] - RANG_NIVEAU[b.niveau] ||
+      RANG_SOURCE[a.source] - RANG_SOURCE[b.source],
   );
 }
 
@@ -268,6 +286,6 @@ export function compterProblemes(problemes: Probleme[]): ComptageProblemes {
     bloquants: problemes.filter((probleme) => probleme.niveau === 'BLOQUANT').length,
     avertissements: problemes.filter((probleme) => probleme.niveau === 'AVERTISSEMENT').length,
     mineurs: problemes.filter((probleme) => probleme.niveau === 'MINEUR').length,
-    total: problemes.length
+    total: problemes.length,
   };
 }

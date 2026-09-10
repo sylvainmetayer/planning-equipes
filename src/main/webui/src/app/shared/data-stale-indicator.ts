@@ -32,13 +32,13 @@ import { PlanningResolutionStore } from '../core/planning-resolution.store';
       cursor: help;
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DataStaleIndicator {
   protected readonly resolution = inject(PlanningResolutionStore);
 
   protected readonly tooltip = computed(
     () =>
-      $localize`:@@dataStale.tooltip:Des données de référence ont été modifiées depuis le dernier calcul du planning. Le résultat affiché peut ne plus être à jour ; relancez le solveur si besoin.`
+      $localize`:@@dataStale.tooltip:Des données de référence ont été modifiées depuis le dernier calcul du planning. Le résultat affiché peut ne plus être à jour ; relancez le solveur si besoin.`,
   );
 }

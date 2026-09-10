@@ -17,18 +17,24 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
 import { CreneauFormDialog } from './creneau-form-dialog';
 
-function monter(creneau: Creneau | null, options: { editingLocked?: boolean; saveOk?: boolean } = {}) {
+function monter(
+  creneau: Creneau | null,
+  options: { editingLocked?: boolean; saveOk?: boolean } = {},
+) {
   const save = vi.fn(async () => options.saveOk ?? true);
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: ReferenceCrudService, useValue: { save } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { creneau } }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: { creneau } },
+    ],
   });
   return { fixture: TestBed.createComponent(CreneauFormDialog), save, close };
 }
@@ -56,14 +62,22 @@ function payload(save: ReturnType<typeof vi.fn>): Partial<Creneau> {
   return (save.mock.calls[0] as unknown as [string, Partial<Creneau>])[1];
 }
 
-const CRENEAU: Creneau = { id: 7, jour: 1, date: '2026-07-14', heureDebut: '10:00', heureFin: '12:00' };
+const CRENEAU: Creneau = {
+  id: 7,
+  jour: 1,
+  date: '2026-07-14',
+  heureDebut: '10:00',
+  heureFin: '12:00',
+};
 
 describe('CreneauFormDialog', () => {
   let erreursConsole: unknown[][];
 
   beforeEach(() => {
     erreursConsole = [];
-    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => erreursConsole.push(args));
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) =>
+      erreursConsole.push(args),
+    );
   });
 
   it('names every control, so the labels render and no NG01352 is thrown', async () => {
@@ -82,7 +96,9 @@ describe('CreneauFormDialog', () => {
     expect(champ(fixture, 'date').value).toBe('2026-07-14');
     expect(champ(fixture, 'heureDebut').value).toBe('10:00');
     expect(champ(fixture, 'heureFin').value).toBe('12:00');
-    expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe('Modifier le créneau du 2026-07-14 10:00');
+    expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe(
+      'Modifier le créneau du 2026-07-14 10:00',
+    );
   });
 
   it('starts empty on a creation and offers to create', async () => {
@@ -91,7 +107,9 @@ describe('CreneauFormDialog', () => {
 
     expect(champ(fixture, 'date').value).toBe('');
     expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe('Nouveau créneau');
-    expect(racine(fixture).querySelector('button[type="submit"]')!.textContent!).toContain('Créer le créneau');
+    expect(racine(fixture).querySelector('button[type="submit"]')!.textContent!).toContain(
+      'Créer le créneau',
+    );
   });
 
   it('sends no id on a creation, and lets the server generate it', async () => {
@@ -106,13 +124,18 @@ describe('CreneauFormDialog', () => {
     await fixture.whenStable();
 
     expect(save).toHaveBeenCalledOnce();
-    expect(payload(save)).toEqual({ date: '2026-07-15', heureDebut: '14:00', heureFin: '19:00', modifieLe: null });
+    expect(payload(save)).toEqual({
+      date: '2026-07-15',
+      heureDebut: '14:00',
+      heureFin: '19:00',
+      modifieLe: null,
+    });
     const [, , editingId, , options] = save.mock.calls[0] as unknown as [
       string,
       Partial<Creneau>,
       number | null,
       string,
-      { requireId?: boolean }
+      { requireId?: boolean },
     ];
     expect(editingId).toBeNull();
     // Without this flag the shared CRUD would refuse an id-less payload.
@@ -129,7 +152,13 @@ describe('CreneauFormDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    expect(payload(save)).toEqual({ id: 7, date: '2026-07-14', heureDebut: '10:00', heureFin: '13:00', modifieLe: null });
+    expect(payload(save)).toEqual({
+      id: 7,
+      date: '2026-07-14',
+      heureDebut: '10:00',
+      heureFin: '13:00',
+      modifieLe: null,
+    });
     expect((save.mock.calls[0] as unknown as [string, unknown, number])[2]).toBe(7);
   });
 
@@ -159,7 +188,9 @@ describe('CreneauFormDialog', () => {
 
     expect(racine(fixture).querySelector('.locked-hint')).not.toBeNull();
     expect((racine(fixture).querySelector('fieldset') as HTMLFieldSetElement).disabled).toBe(true);
-    expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   // The three `required` attributes used to be decorative: `(ngSubmit)` fires
@@ -170,7 +201,9 @@ describe('CreneauFormDialog', () => {
     const { fixture, save } = monter(null);
     await fixture.whenStable();
 
-    expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled,
+    ).toBe(true);
 
     submit(fixture);
     await fixture.whenStable();
@@ -193,12 +226,19 @@ describe('CreneauFormDialog', () => {
     await fixture.whenStable();
 
     expect(racine(fixture).textContent).toContain('franchit minuit');
-    expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(false);
+    expect(
+      (racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled,
+    ).toBe(false);
 
     submit(fixture);
     await fixture.whenStable();
 
-    expect(payload(save)).toEqual({ date: '2026-07-08', heureDebut: '20:00', heureFin: '00:00', modifieLe: null });
+    expect(payload(save)).toEqual({
+      date: '2026-07-08',
+      heureDebut: '20:00',
+      heureFin: '00:00',
+      modifieLe: null,
+    });
   });
 
   it('says nothing about midnight for a slot that stays inside its day', async () => {

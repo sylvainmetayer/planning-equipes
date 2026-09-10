@@ -40,12 +40,12 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
                 standId: 'JEUX',
                 standNom: 'Village des jeux',
                 relais: [{ animateurId: 'bob', nomComplet: 'Bob Durand' }],
-                relaisDisponible: true
-              }
-            ]
-          }
+                relaisDisponible: true,
+              },
+            ],
+          },
         ],
-        pausesPlanifiees: [{ debut: '12:00:00', fin: '13:00:00', minutes: 60 }]
+        pausesPlanifiees: [{ debut: '12:00:00', fin: '13:00:00', minutes: 60 }],
       },
       {
         animateurId: 'carol',
@@ -68,15 +68,15 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
                 standId: 'REF',
                 standNom: 'Référencement',
                 relais: [],
-                relaisDisponible: false
-              }
-            ]
-          }
+                relaisDisponible: false,
+              },
+            ],
+          },
         ],
-        pausesPlanifiees: []
-      }
+        pausesPlanifiees: [],
+      },
     ],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -89,7 +89,7 @@ describe('PausesPage', () => {
 
   async function mount(
     data: RapportPauses | (() => Promise<RapportPauses>),
-    queryParams: Record<string, string> = {}
+    queryParams: Record<string, string> = {},
   ): Promise<ComponentFixture<PausesPage>> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -97,8 +97,11 @@ describe('PausesPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: AnalysesApi, useValue: analysesApi },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
-      ]
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
+      ],
     });
     analysesApi.breaks.mockImplementation(typeof data === 'function' ? data : async () => data);
     const fixture = TestBed.createComponent(PausesPage);
@@ -111,8 +114,9 @@ describe('PausesPage', () => {
   }
 
   function titresStands(fixture: ComponentFixture<PausesPage>): string[] {
-    return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.pauses-stand-titre'))
-      .map((titre) => titre.textContent!.replace(/\s+/g, ' ').trim());
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.pauses-stand-titre'),
+    ).map((titre) => titre.textContent!.replace(/\s+/g, ' ').trim());
   }
 
   it('shows the first day grouped by stand, with the deadline and the relay', async () => {
@@ -136,7 +140,9 @@ describe('PausesPage', () => {
   it('moves to the next day, flags the missing relay and the minor, and lands the day in the URL', async () => {
     const fixture = await mount(rapport());
 
-    const suivant = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button[title="Jour suivant"]')!;
+    const suivant = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      'button[title="Jour suivant"]',
+    )!;
     suivant.click();
     await fixture.whenStable();
 
@@ -171,16 +177,25 @@ describe('PausesPage', () => {
   });
 
   it('says so when nothing is persisted, and when nothing is to organise', async () => {
-    expect(text(await mount(rapport({ journeesAnalysees: 0, journees: [], pausesDues: 0 })))).toContain('Aucun planning persisté');
+    expect(
+      text(await mount(rapport({ journeesAnalysees: 0, journees: [], pausesDues: 0 }))),
+    ).toContain('Aucun planning persisté');
 
-    const rien = await mount(rapport({ journees: [], pausesDues: 0, relaisManquants: 0, message: 'Rien.' }));
+    const rien = await mount(
+      rapport({ journees: [], pausesDues: 0, relaisManquants: 0, message: 'Rien.' }),
+    );
     expect(text(rien)).toContain('rien à organiser');
     expect(rien.nativeElement.querySelector('.pauses-alerte')).toBeNull();
   });
 
   it('resets the filters with one button, and leaves the day alone', async () => {
     const fixture = await mount(rapport(), { jour: '2026-07-11', q: 'carol', vue: 'sans-relais' });
-    const page = fixture.componentInstance as unknown as { reinitialiser(): void; recherche(): string; sansRelaisSeulement(): boolean; viewChanged(): boolean };
+    const page = fixture.componentInstance as unknown as {
+      reinitialiser(): void;
+      recherche(): string;
+      sansRelaisSeulement(): boolean;
+      viewChanged(): boolean;
+    };
     expect(page.viewChanged()).toBe(true);
 
     page.reinitialiser();

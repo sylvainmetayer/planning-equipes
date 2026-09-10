@@ -1,7 +1,12 @@
 // What a bulk edit of stands can change, and how it applies to one row.
 // Kept apart from the dialog so the rules are unit-tested without rendering.
 
-import { ModeBooleen, ModeListe, appliquerModeBooleen, appliquerModeListe } from '../../core/bulk-edit';
+import {
+  ModeBooleen,
+  ModeListe,
+  appliquerModeBooleen,
+  appliquerModeListe,
+} from '../../core/bulk-edit';
 import { Emplacement, HoraireStand, NiveauEffort, Stand } from '../../core/models';
 import { HoraireDraft, normaliserHoraire } from './stand-draft';
 
@@ -41,14 +46,15 @@ export function patchStandVide(): StandBulkPatch {
     reserveMajeurs: 'INCHANGE',
     premium: 'INCHANGE',
     niveauEffort: 'INCHANGE',
-    horaires: { mode: 'INCHANGE', horaires: [] }
+    horaires: { mode: 'INCHANGE', horaires: [] },
   };
 }
 
 /** True while the form would change nothing: the submit button stays disabled. */
 export function patchStandEstVide(patch: StandBulkPatch): boolean {
   const emplacementInactif =
-    patch.emplacement.mode === 'INCHANGE' || (patch.emplacement.mode === 'DEFINIR' && !patch.emplacement.emplacementId);
+    patch.emplacement.mode === 'INCHANGE' ||
+    (patch.emplacement.mode === 'DEFINIR' && !patch.emplacement.emplacementId);
   const typologiesInactives =
     patch.typologies.mode === 'AUCUN' ||
     (patch.typologies.typologies.length === 0 && patch.typologies.mode !== 'REMPLACER');
@@ -70,7 +76,7 @@ export function patchStandEstVide(patch: StandBulkPatch): boolean {
 export function appliquerPatchStand(
   stand: Stand,
   patch: StandBulkPatch,
-  emplacements: readonly Emplacement[]
+  emplacements: readonly Emplacement[],
 ): Stand {
   return {
     ...stand,
@@ -78,14 +84,15 @@ export function appliquerPatchStand(
     typologiesProposees: appliquerModeListe(
       stand.typologiesProposees ?? [],
       patch.typologies.typologies,
-      patch.typologies.mode
+      patch.typologies.mode,
     ),
     effectifMin: patch.effectifMin ?? stand.effectifMin,
     effectifMax: patch.effectifMax ?? stand.effectifMax,
     reserveMajeurs: appliquerModeBooleen(Boolean(stand.reserveMajeurs), patch.reserveMajeurs),
     premium: appliquerModeBooleen(Boolean(stand.premium), patch.premium),
-    niveauEffort: patch.niveauEffort === 'INCHANGE' ? (stand.niveauEffort ?? 'NORMAL') : patch.niveauEffort,
-    horaires: appliquerHoraires(stand.horaires ?? [], patch.horaires)
+    niveauEffort:
+      patch.niveauEffort === 'INCHANGE' ? (stand.niveauEffort ?? 'NORMAL') : patch.niveauEffort,
+    horaires: appliquerHoraires(stand.horaires ?? [], patch.horaires),
   };
 }
 
@@ -94,7 +101,10 @@ export function appliquerPatchStand(
  * per stand, so handing the same objects to fifty payloads would send fifty
  * stands the id of one of them.
  */
-function appliquerHoraires(actuels: readonly HoraireStand[], patch: StandBulkPatch['horaires']): HoraireStand[] {
+function appliquerHoraires(
+  actuels: readonly HoraireStand[],
+  patch: StandBulkPatch['horaires'],
+): HoraireStand[] {
   switch (patch.mode) {
     case 'INCHANGE':
       return [...actuels];
@@ -120,7 +130,7 @@ function copierHoraire(horaire: HoraireDraft): HoraireStand {
     ...normalise,
     id: null,
     joursSemaine: [...normalise.joursSemaine],
-    dates: [...normalise.dates]
+    dates: [...normalise.dates],
   };
 }
 
@@ -132,7 +142,7 @@ function copierHoraire(horaire: HoraireDraft): HoraireStand {
 export function standsAvecEffectifInvalide(
   stands: readonly Stand[],
   patch: StandBulkPatch,
-  emplacements: readonly Emplacement[]
+  emplacements: readonly Emplacement[],
 ): Stand[] {
   return stands.filter((stand) => {
     const resultat = appliquerPatchStand(stand, patch, emplacements);
@@ -143,7 +153,7 @@ export function standsAvecEffectifInvalide(
 function appliquerEmplacement(
   actuel: Emplacement | null,
   patch: StandBulkPatch['emplacement'],
-  emplacements: readonly Emplacement[]
+  emplacements: readonly Emplacement[],
 ): Emplacement | null {
   if (patch.mode === 'EFFACER') {
     return null;

@@ -17,7 +17,7 @@ import {
   ModeEntree,
   appliquerPatchAnimateur,
   patchAnimateurEstVide,
-  patchAnimateurVide
+  patchAnimateurVide,
 } from './animateur-bulk-edit';
 
 const NIVEAUX: NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
@@ -42,10 +42,10 @@ export interface AnimateurBulkEditData {
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
   ],
   templateUrl: './animateur-bulk-edit-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateurBulkEditDialog {
   protected readonly niveaux = NIVEAUX;
@@ -54,7 +54,8 @@ export class AnimateurBulkEditDialog {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
-  protected readonly dialogRef = inject<MatDialogRef<AnimateurBulkEditDialog, boolean>>(MatDialogRef);
+  protected readonly dialogRef =
+    inject<MatDialogRef<AnimateurBulkEditDialog, boolean>>(MatDialogRef);
   private readonly data = inject<AnimateurBulkEditData>(MAT_DIALOG_DATA);
   private readonly crud = inject(ReferenceCrudService);
 
@@ -65,16 +66,16 @@ export class AnimateurBulkEditDialog {
   protected readonly modesBooleen: { value: ModeBooleen; label: string }[] = [
     { value: 'INCHANGE', label: $localize`:@@bulk.mode.inchange:Ne pas modifier` },
     { value: 'OUI', label: $localize`:@@common.oui:Oui` },
-    { value: 'NON', label: $localize`:@@common.non:Non` }
+    { value: 'NON', label: $localize`:@@common.non:Non` },
   ];
   protected readonly modesEntree: { value: ModeEntree; label: string }[] = [
     { value: 'AUCUN', label: $localize`:@@bulk.mode.inchange:Ne pas modifier` },
     { value: 'AJOUTER', label: $localize`:@@bulk.mode.ajouter:Ajouter` },
-    { value: 'RETIRER', label: $localize`:@@bulk.mode.retirer:Retirer` }
+    { value: 'RETIRER', label: $localize`:@@bulk.mode.retirer:Retirer` },
   ];
   protected readonly modesListe: { value: ModeListe; label: string }[] = [
     ...this.modesEntree,
-    { value: 'REMPLACER', label: $localize`:@@bulk.mode.remplacer:Remplacer` }
+    { value: 'REMPLACER', label: $localize`:@@bulk.mode.remplacer:Remplacer` },
   ];
 
   protected readonly formTitle = $localize`:@@animateurs.bulk.title:Modifier ${this.data.animateurs.length}:count: animateurs`;
@@ -88,7 +89,9 @@ export class AnimateurBulkEditDialog {
       return;
     }
     const patch = this.patch();
-    const payloads = this.data.animateurs.map((animateur) => appliquerPatchAnimateur(animateur, patch));
+    const payloads = this.data.animateurs.map((animateur) =>
+      appliquerPatchAnimateur(animateur, patch),
+    );
     this.enCours.set(true);
     try {
       if ((await this.crud.saveMany('animateurs', payloads, labelAnimateursPluriel())) > 0) {

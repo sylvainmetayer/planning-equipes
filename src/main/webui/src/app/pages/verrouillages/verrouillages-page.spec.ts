@@ -20,7 +20,7 @@ import { VerrouillagesPage } from './verrouillages-page';
 
 const CRENEAUX = [
   { id: 1, date: '2026-07-10', heureDebut: '10:00', heureFin: '12:00' },
-  { id: 2, date: '2026-07-11', heureDebut: '10:00', heureFin: '12:00' }
+  { id: 2, date: '2026-07-11', heureDebut: '10:00', heureFin: '12:00' },
 ];
 
 function mount() {
@@ -34,18 +34,18 @@ function mount() {
           creneaux: signal(CRENEAUX),
           animateurs: signal([]),
           stands: signal([]),
-          reload: vi.fn(async () => undefined)
-        }
+          reload: vi.fn(async () => undefined),
+        },
       },
       {
         provide: VerrouillageStore,
-        useValue: { verrouillages: signal([]), reload: vi.fn(async () => undefined) }
+        useValue: { verrouillages: signal([]), reload: vi.fn(async () => undefined) },
       },
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       { provide: NotificationService, useValue: { notify: vi.fn() } },
       { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } },
-      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => null) } }
-    ]
+      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => null) } },
+    ],
   });
   return TestBed.createComponent(VerrouillagesPage);
 }
@@ -109,7 +109,7 @@ describe('VerrouillagesPage lock form', () => {
     // The root cause guard: NG01352 is thrown per unnamed ngModel, and it is
     // that throw — not a styling choice — that swallows the labels above.
     const controls = Array.from(
-      root.querySelectorAll('form.form-grid mat-select, form.form-grid input[matInput]')
+      root.querySelectorAll('form.form-grid mat-select, form.form-grid input[matInput]'),
     );
     for (const control of controls) {
       expect(control.getAttribute('name')).toBeTruthy();
@@ -131,7 +131,7 @@ describe('VerrouillagesPage impact and list', () => {
 
   const ANIMATEURS = [
     { id: 'a1', prenom: 'Amélie', nom: 'Nothomb' },
-    { id: 'a2', prenom: 'Marcel', nom: 'Proust' }
+    { id: 'a2', prenom: 'Marcel', nom: 'Proust' },
   ];
   const STANDS = [{ id: 's1', nom: 'Loup-Garou' }];
 
@@ -144,12 +144,15 @@ describe('VerrouillagesPage impact and list', () => {
         { id: 'p1', creneau: jour1, stand: STANDS[0], animateur: ANIMATEURS[0] },
         { id: 'p2', creneau: jour1, stand: STANDS[0], animateur: ANIMATEURS[1] },
         { id: 'p3', creneau: jour2, stand: STANDS[0], animateur: ANIMATEURS[0] },
-        { id: 'p4', creneau: jour2, stand: STANDS[0], animateur: null }
-      ]
+        { id: 'p4', creneau: jour2, stand: STANDS[0], animateur: null },
+      ],
     } as unknown as PlanningEvenement;
   }
 
-  async function rendre(evenement: PlanningEvenement | null, verrouillages: VerrouillagePlanning[] = []): Promise<void> {
+  async function rendre(
+    evenement: PlanningEvenement | null,
+    verrouillages: VerrouillagePlanning[] = [],
+  ): Promise<void> {
     editingLocked.set(false);
     notify = vi.fn();
     confirm = { ask: vi.fn(async () => true) };
@@ -157,7 +160,7 @@ describe('VerrouillagesPage impact and list', () => {
       verrouillages: signal(verrouillages),
       reload: vi.fn(async () => undefined),
       create: vi.fn(async () => undefined),
-      remove: vi.fn(async () => undefined)
+      remove: vi.fn(async () => undefined),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -170,15 +173,18 @@ describe('VerrouillagesPage impact and list', () => {
             creneaux: signal(CRENEAUX),
             animateurs: signal(ANIMATEURS),
             stands: signal(STANDS),
-            reload: vi.fn(async () => undefined)
-          }
+            reload: vi.fn(async () => undefined),
+          },
         },
         { provide: VerrouillageStore, useValue: verrous },
         { provide: SolverJobService, useValue: { editingLocked } },
         { provide: NotificationService, useValue: { notify } },
         { provide: ConfirmService, useValue: confirm },
-        { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => evenement) } }
-      ]
+        {
+          provide: PlanningStateService,
+          useValue: { loadForDisplay: vi.fn(async () => evenement) },
+        },
+      ],
     });
     fixture = TestBed.createComponent(VerrouillagesPage);
     await fixture.whenStable();
@@ -194,7 +200,7 @@ describe('VerrouillagesPage impact and list', () => {
     (select.querySelector('.mat-mdc-select-trigger') as HTMLElement).click();
     await fixture.whenStable();
     const option = Array.from(document.querySelectorAll('mat-option')).find(
-      (each) => each.textContent!.replace(/\s+/g, ' ').trim() === libelle
+      (each) => each.textContent!.replace(/\s+/g, ' ').trim() === libelle,
     );
     expect(option, `option « ${libelle} » absente`).toBeDefined();
     (option as HTMLElement).click();
@@ -207,7 +213,7 @@ describe('VerrouillagesPage impact and list', () => {
 
   function boutonVerrouiller(): HTMLButtonElement {
     return Array.from(racine().querySelectorAll('mat-card-actions button')).find((each) =>
-      each.textContent!.includes('Verrouiller')
+      each.textContent!.includes('Verrouiller'),
     ) as HTMLButtonElement;
   }
 
@@ -270,7 +276,7 @@ describe('VerrouillagesPage impact and list', () => {
       standId: null,
       creneauId: 1,
       jour: null,
-      raison: 'Équipe fixée avec le client'
+      raison: 'Équipe fixée avec le client',
     });
     // Left filled, the reason would silently ride along on the next lock.
     expect((racine().querySelector('input[name="raison"]') as HTMLInputElement).value).toBe('');
@@ -292,41 +298,99 @@ describe('VerrouillagesPage impact and list', () => {
 
   it('names the target of each lock by its label, never by a raw id', async () => {
     await rendre(planning(), [
-      { id: 1, type: 'ANIMATEUR', animateurId: 'a1', standId: null, creneauId: null, jour: null, raison: null },
-      { id: 2, type: 'STAND', animateurId: null, standId: 's1', creneauId: null, jour: null, raison: 'Demande du client' },
-      { id: 3, type: 'JOUR', animateurId: null, standId: null, creneauId: null, jour: '2026-07-10', raison: null },
-      { id: 4, type: 'CRENEAU', animateurId: null, standId: null, creneauId: 1, jour: null, raison: null },
-      { id: 5, type: 'ANIMATEUR_CRENEAU', animateurId: 'a2', standId: null, creneauId: 1, jour: null, raison: null }
+      {
+        id: 1,
+        type: 'ANIMATEUR',
+        animateurId: 'a1',
+        standId: null,
+        creneauId: null,
+        jour: null,
+        raison: null,
+      },
+      {
+        id: 2,
+        type: 'STAND',
+        animateurId: null,
+        standId: 's1',
+        creneauId: null,
+        jour: null,
+        raison: 'Demande du client',
+      },
+      {
+        id: 3,
+        type: 'JOUR',
+        animateurId: null,
+        standId: null,
+        creneauId: null,
+        jour: '2026-07-10',
+        raison: null,
+      },
+      {
+        id: 4,
+        type: 'CRENEAU',
+        animateurId: null,
+        standId: null,
+        creneauId: 1,
+        jour: null,
+        raison: null,
+      },
+      {
+        id: 5,
+        type: 'ANIMATEUR_CRENEAU',
+        animateurId: 'a2',
+        standId: null,
+        creneauId: 1,
+        jour: null,
+        raison: null,
+      },
     ] as unknown as VerrouillagePlanning[]);
 
     const cibles = Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      row.querySelectorAll('td')[1].textContent!.trim()
+      row.querySelectorAll('td')[1].textContent!.trim(),
     );
     expect(cibles).toEqual([
       'Amélie Nothomb',
       'Loup-Garou',
       '2026-07-10',
       '2026-07-10 10:00–12:00',
-      'Marcel Proust · 2026-07-10 10:00–12:00'
+      'Marcel Proust · 2026-07-10 10:00–12:00',
     ]);
     // The type posed by an accepted échange is named too, not left blank.
     expect(racine().querySelectorAll('tbody tr')[4].querySelector('td')!.textContent!).toContain(
-      'Animateur sur un créneau'
+      'Animateur sur un créneau',
     );
   });
 
   it('falls back to the stored id when the target no longer exists', async () => {
     await rendre(planning(), [
-      { id: 1, type: 'ANIMATEUR', animateurId: 'disparu', standId: null, creneauId: null, jour: null, raison: null }
+      {
+        id: 1,
+        type: 'ANIMATEUR',
+        animateurId: 'disparu',
+        standId: null,
+        creneauId: null,
+        jour: null,
+        raison: null,
+      },
     ] as unknown as VerrouillagePlanning[]);
 
     // A lock aimed at a deleted animateur must stay visible, and removable.
-    expect(racine().querySelectorAll('tbody tr')[0].querySelectorAll('td')[1].textContent!.trim()).toBe('disparu');
+    expect(
+      racine().querySelectorAll('tbody tr')[0].querySelectorAll('td')[1].textContent!.trim(),
+    ).toBe('disparu');
   });
 
   it('never unlocks without an explicit confirmation', async () => {
     await rendre(planning(), [
-      { id: 7, type: 'JOUR', animateurId: null, standId: null, creneauId: null, jour: '2026-07-10', raison: null }
+      {
+        id: 7,
+        type: 'JOUR',
+        animateurId: null,
+        standId: null,
+        creneauId: null,
+        jour: '2026-07-10',
+        raison: null,
+      },
     ] as unknown as VerrouillagePlanning[]);
     confirm.ask.mockResolvedValue(false);
 
@@ -343,12 +407,22 @@ describe('VerrouillagesPage impact and list', () => {
   it('says the planning is fully re-optimisable when no lock is posed', async () => {
     await rendre(planning());
 
-    expect(racine().querySelector('.empty-hint')!.textContent!).toContain('le solveur peut réoptimiser tout le planning');
+    expect(racine().querySelector('.empty-hint')!.textContent!).toContain(
+      'le solveur peut réoptimiser tout le planning',
+    );
   });
 
   it('disables locking and unlocking while a solve is running', async () => {
     await rendre(planning(), [
-      { id: 7, type: 'JOUR', animateurId: null, standId: null, creneauId: null, jour: '2026-07-10', raison: null }
+      {
+        id: 7,
+        type: 'JOUR',
+        animateurId: null,
+        standId: null,
+        creneauId: null,
+        jour: '2026-07-10',
+        raison: null,
+      },
     ] as unknown as VerrouillagePlanning[]);
     await choisir('jour', '2026-07-10');
     editingLocked.set(true);
@@ -356,6 +430,8 @@ describe('VerrouillagesPage impact and list', () => {
 
     // A lock posed mid-solve would not be taken into account by the run anyway.
     expect(boutonVerrouiller().disabled).toBe(true);
-    expect((racine().querySelector('tbody .row-actions button') as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (racine().querySelector('tbody .row-actions button') as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 });

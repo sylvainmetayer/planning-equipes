@@ -10,14 +10,14 @@ export type SolverDurationUnit = 'SECONDES' | 'MINUTES' | 'HEURES';
 export const SOLVER_DURATION_UNIT_FACTORS: Record<SolverDurationUnit, number> = {
   SECONDES: 1,
   MINUTES: 60,
-  HEURES: 3600
+  HEURES: 3600,
 };
 
 /** Per-unit `<input type="number">` granularity: whole seconds, half-minutes, quarter-hours. */
 export const SOLVER_DURATION_UNIT_STEP: Record<SolverDurationUnit, number> = {
   SECONDES: 1,
   MINUTES: 0.5,
-  HEURES: 0.25
+  HEURES: 0.25,
 };
 
 export function secondsToValue(seconds: number, unit: SolverDurationUnit): number {

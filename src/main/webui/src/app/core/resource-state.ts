@@ -17,7 +17,8 @@ import { errorPrefix } from './error-message';
 export function retainedValue<T>(source: Resource<T | undefined>): Signal<T | null> {
   return linkedSignal<ResourceStatus, T | null>({
     source: source.status,
-    computation: (_status, previous) => (source.hasValue() ? (source.value() as T) : (previous?.value ?? null))
+    computation: (_status, previous) =>
+      source.hasValue() ? (source.value() as T) : (previous?.value ?? null),
   });
 }
 
@@ -25,7 +26,10 @@ export function retainedValue<T>(source: Resource<T | undefined>): Signal<T | nu
  * The failure as the sentence the screen shows, empty while there is none.
  * Stays up while a reload is in flight, and clears on the next success.
  */
-export function errorText(source: Resource<unknown>, format: (error: unknown) => string = errorPrefix): Signal<string> {
+export function errorText(
+  source: Resource<unknown>,
+  format: (error: unknown) => string = errorPrefix,
+): Signal<string> {
   return computed(() => {
     const error = source.error();
     return error ? format(error) : '';

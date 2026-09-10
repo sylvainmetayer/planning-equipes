@@ -52,7 +52,7 @@ export type StatusTone = 'error' | 'warning' | 'success' | 'info';
       color: var(--mat-sys-on-surface-variant);
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatusMessage {
   readonly text = input('');

@@ -54,7 +54,7 @@ export class ReferenceUsageService {
     }
     try {
       const lots = await Promise.all(
-        split(ids).map((lot) => this.api.get<ReferenceUsage>(`/api/${resource}/usages?${lot}`))
+        split(ids).map((lot) => this.api.get<ReferenceUsage>(`/api/${resource}/usages?${lot}`)),
       );
       return phraseUsages(lots.reduce(additionner, AUCUN));
     } catch {
@@ -99,7 +99,7 @@ function additionner(cumul: ReferenceUsage, lot: ReferenceUsage): ReferenceUsage
   return {
     affectations: cumul.affectations + lot.affectations,
     contraintesAdHoc: cumul.contraintesAdHoc + lot.contraintesAdHoc,
-    verrouillages: cumul.verrouillages + lot.verrouillages
+    verrouillages: cumul.verrouillages + lot.verrouillages,
   };
 }
 

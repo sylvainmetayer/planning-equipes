@@ -50,7 +50,7 @@ function job(overrides: Partial<JobView> = {}): JobView {
     elapsedSeconds: 3,
     error: null,
     result: null,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -120,8 +120,8 @@ class FakeEventSource {
         intervalleMs: 1000,
         dureeMs: 30000,
         termine: false,
-        ...delta
-      })
+        ...delta,
+      }),
     );
   }
 
@@ -179,15 +179,19 @@ describe('SolverJobService — server-sent events', () => {
     FakeEventSource.instances = [];
     (globalThis as { EventSource?: unknown }).EventSource = FakeEventSource;
     api = new FakeApi();
-    notifications = { notify: vi.fn(), notifyFeasibility: vi.fn(), requestDesktopPermission: vi.fn() };
+    notifications = {
+      notify: vi.fn(),
+      notifyFeasibility: vi.fn(),
+      requestDesktopPermission: vi.fn(),
+    };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         SolverJobService,
         { provide: ApiService, useValue: api },
         { provide: EditionStore, useValue: { courant: () => ({ id: 'ed-1' }) } },
-        { provide: NotificationService, useValue: notifications }
-      ]
+        { provide: NotificationService, useValue: notifications },
+      ],
     });
     service = TestBed.inject(SolverJobService);
   });
@@ -349,7 +353,7 @@ describe('SolverJobService — server-sent events', () => {
     FakeEventSource.last.emitState(null);
     await vi.advanceTimersByTimeAsync(0);
     const completions = notifications.notify.mock.calls.filter(
-      ([notification]) => notification.variant === 'success'
+      ([notification]) => notification.variant === 'success',
     );
     expect(completions).toHaveLength(1);
     expect(api.get.mock.calls.filter(([url]) => url === '/api/jobs/job-1')).toHaveLength(1);
@@ -404,7 +408,12 @@ describe('SolverJobService — server-sent events', () => {
    * rather than an error: appending what should have replaced.
    */
   describe('score curve', () => {
-    const point = (tempsMs: number, hard: number): ScorePoint => ({ tempsMs, hard, medium: 0, soft: 0 });
+    const point = (tempsMs: number, hard: number): ScorePoint => ({
+      tempsMs,
+      hard,
+      medium: 0,
+      soft: 0,
+    });
 
     it('has no curve at all until the server sends one', async () => {
       service.start();
@@ -432,7 +441,11 @@ describe('SolverJobService — server-sent events', () => {
 
       // A reconnection, or a series the server has just decimated: it starts
       // over at zero, and appending here would draw every point twice.
-      FakeEventSource.last.emitScore({ generation: 2, depuis: 0, points: [point(0, -40), point(2000, -10)] });
+      FakeEventSource.last.emitScore({
+        generation: 2,
+        depuis: 0,
+        points: [point(0, -40), point(2000, -10)],
+      });
       await vi.advanceTimersByTimeAsync(0);
 
       expect(service.scoreTrace()?.points.map((p) => p.hard)).toEqual([-40, -10]);
@@ -444,7 +457,12 @@ describe('SolverJobService — server-sent events', () => {
       FakeEventSource.last.emitScore({ depuis: 0, points: [point(0, -40)], termine: true });
       await vi.advanceTimersByTimeAsync(0);
 
-      FakeEventSource.last.emitScore({ jobId: 'job-2', generation: 2, depuis: 0, points: [point(0, -900)] });
+      FakeEventSource.last.emitScore({
+        jobId: 'job-2',
+        generation: 2,
+        depuis: 0,
+        points: [point(0, -900)],
+      });
       await vi.advanceTimersByTimeAsync(0);
 
       const trace = service.scoreTrace();
@@ -521,7 +539,7 @@ describe('SolverJobService — server-sent events', () => {
         intervalleMs: 1000,
         dureeMs: 5000,
         termine: false,
-        points
+        points,
       });
 
       it('fills the curve when nothing is held yet', async () => {

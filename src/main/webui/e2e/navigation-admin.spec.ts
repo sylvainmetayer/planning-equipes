@@ -56,7 +56,7 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
   { path: '/parametres', marker: 'Paramètres de découpage' },
   { path: '/mcp-client', marker: 'Se connecter au serveur MCP' },
-  { path: '/debug', marker: 'Validateur YAML' }
+  { path: '/debug', marker: 'Validateur YAML' },
 ];
 
 test('chaque page du menu admin se charge et affiche son contenu', async ({ browser }) => {
@@ -100,7 +100,9 @@ test("la colonne d'actions reste visible sur un écran étroit", async ({ browse
     const dernierBouton = cellule.locator('button').last();
     const boite = await dernierBouton.boundingBox();
     expect(boite, `dernier bouton de ${route}`).not.toBeNull();
-    expect(boite!.x + boite!.width, `dernier bouton hors écran sur ${route}`).toBeLessThanOrEqual(900);
+    expect(boite!.x + boite!.width, `dernier bouton hors écran sur ${route}`).toBeLessThanOrEqual(
+      900,
+    );
     expect(boite!.x, `dernier bouton hors écran à gauche sur ${route}`).toBeGreaterThanOrEqual(0);
   }
   await page.context().close();
@@ -109,7 +111,9 @@ test("la colonne d'actions reste visible sur un écran étroit", async ({ browse
 test('le catalogue des contraintes documente le verrouillage des échanges', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/constraints');
-  await expect(page.locator('#contenu')).toContainText('Un échange validé est figé sur son créneau');
+  await expect(page.locator('#contenu')).toContainText(
+    'Un échange validé est figé sur son créneau',
+  );
   await page.context().close();
 });
 

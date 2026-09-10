@@ -3,7 +3,7 @@ import { Emplacement } from '../../core/models';
 import {
   appliquerPatchEmplacement,
   patchEmplacementEstVide,
-  patchEmplacementVide
+  patchEmplacementVide,
 } from './emplacement-bulk-edit';
 
 const kiosque: Emplacement = { id: 'kiosque', nom: 'Kiosque', latitude: 47.2, longitude: -1.55 };
@@ -15,12 +15,24 @@ describe('patchEmplacementEstVide', () => {
 
   // Une seule des deux coordonnées ne suffit pas à placer un point.
   it('reste vide tant que les deux coordonnées ne sont pas saisies', () => {
-    expect(patchEmplacementEstVide({ coordonnees: { mode: 'DEFINIR', latitude: 47.2, longitude: null } })).toBe(true);
+    expect(
+      patchEmplacementEstVide({
+        coordonnees: { mode: 'DEFINIR', latitude: 47.2, longitude: null },
+      }),
+    ).toBe(true);
   });
 
   it('n’est plus vide avec un point complet ou un effacement', () => {
-    expect(patchEmplacementEstVide({ coordonnees: { mode: 'DEFINIR', latitude: 47.2, longitude: -1.55 } })).toBe(false);
-    expect(patchEmplacementEstVide({ coordonnees: { mode: 'EFFACER', latitude: null, longitude: null } })).toBe(false);
+    expect(
+      patchEmplacementEstVide({
+        coordonnees: { mode: 'DEFINIR', latitude: 47.2, longitude: -1.55 },
+      }),
+    ).toBe(false);
+    expect(
+      patchEmplacementEstVide({
+        coordonnees: { mode: 'EFFACER', latitude: null, longitude: null },
+      }),
+    ).toBe(false);
   });
 });
 
@@ -31,7 +43,7 @@ describe('appliquerPatchEmplacement', () => {
 
   it('place tous les emplacements sur le même point', () => {
     const resultat = appliquerPatchEmplacement(kiosque, {
-      coordonnees: { mode: 'DEFINIR', latitude: 48.85, longitude: 2.35 }
+      coordonnees: { mode: 'DEFINIR', latitude: 48.85, longitude: 2.35 },
     });
 
     expect(resultat).toEqual({ ...kiosque, latitude: 48.85, longitude: 2.35 });
@@ -39,7 +51,7 @@ describe('appliquerPatchEmplacement', () => {
 
   it('efface les coordonnées', () => {
     const resultat = appliquerPatchEmplacement(kiosque, {
-      coordonnees: { mode: 'EFFACER', latitude: null, longitude: null }
+      coordonnees: { mode: 'EFFACER', latitude: null, longitude: null },
     });
 
     expect(resultat).toEqual({ ...kiosque, latitude: null, longitude: null });
@@ -47,7 +59,7 @@ describe('appliquerPatchEmplacement', () => {
 
   it('conserve le nom de chaque emplacement', () => {
     const resultat = appliquerPatchEmplacement(kiosque, {
-      coordonnees: { mode: 'DEFINIR', latitude: 48.85, longitude: 2.35 }
+      coordonnees: { mode: 'DEFINIR', latitude: 48.85, longitude: 2.35 },
     });
 
     expect(resultat.nom).toBe('Kiosque');

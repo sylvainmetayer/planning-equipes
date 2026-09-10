@@ -24,16 +24,16 @@ import { StandFormDialog } from './stand-form-dialog';
 const CRENEAUX: Creneau[] = [
   { id: 1, jour: 1, date: '2026-07-14', heureDebut: '10:00', heureFin: '12:00' },
   { id: 2, jour: 1, date: '2026-07-14', heureDebut: '14:00', heureFin: '19:00' },
-  { id: 3, jour: 2, date: '2026-07-15', heureDebut: '10:00', heureFin: '12:00' }
+  { id: 3, jour: 2, date: '2026-07-15', heureDebut: '10:00', heureFin: '12:00' },
 ];
 
 const EMPLACEMENTS: Emplacement[] = [
-  { id: 'hall', nom: 'Hall A', latitude: null, longitude: null }
+  { id: 'hall', nom: 'Hall A', latitude: null, longitude: null },
 ];
 
 const TYPOLOGIES = [
   { id: 'ambiance', label: 'Ambiance' },
-  { id: 'expert', label: 'Expert' }
+  { id: 'expert', label: 'Expert' },
 ];
 
 function stand(overrides: Partial<Stand> = {}): Stand {
@@ -50,7 +50,7 @@ function stand(overrides: Partial<Stand> = {}): Stand {
     indisponibilites: [],
     ouvertures: [],
     horaires: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -67,7 +67,7 @@ function regle(overrides: Partial<HoraireStand> = {}): HoraireStand {
     dates: [],
     fenetres: [],
     motif: null,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -93,14 +93,17 @@ function mount(donnee: Stand | null, options: { editingLocked?: boolean } = {}) 
           typologies: signal(TYPOLOGIES),
           creneaux: signal(CRENEAUX),
           emplacements: signal(EMPLACEMENTS),
-          stands: signal([])
-        }
+          stands: signal([]),
+        },
       },
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: ReferenceCrudService, useValue: { save } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { stand: donnee } }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: { stand: donnee } },
+    ],
   });
   return { fixture: TestBed.createComponent(StandFormDialog), save, close };
 }
@@ -111,7 +114,9 @@ function root(fixture: ComponentFixture<StandFormDialog>): HTMLElement {
 
 /** Every control of the form that `ngModel` binds — the population NG01352 applies to. */
 function controles(fixture: ComponentFixture<StandFormDialog>): Element[] {
-  return Array.from(root(fixture).querySelectorAll('form input[matInput], form mat-select, form mat-checkbox'));
+  return Array.from(
+    root(fixture).querySelectorAll('form input[matInput], form mat-select, form mat-checkbox'),
+  );
 }
 
 /**
@@ -150,7 +155,7 @@ function nomAccessible(racine: HTMLElement, controle: Element): string {
 /** Clicks the button whose visible label contains `libelle`. */
 function cliquer(fixture: ComponentFixture<StandFormDialog>, libelle: string): void {
   const bouton = Array.from(root(fixture).querySelectorAll('button')).find((each) =>
-    each.textContent?.includes(libelle)
+    each.textContent?.includes(libelle),
   );
   expect(bouton, `bouton « ${libelle} » absent`).toBeDefined();
   bouton!.click();
@@ -188,7 +193,9 @@ describe('StandFormDialog', () => {
     const { fixture } = mount(stand());
     await fixture.whenStable();
 
-    const champs = Array.from(root(fixture).querySelectorAll('form input[matInput], form mat-select'));
+    const champs = Array.from(
+      root(fixture).querySelectorAll('form input[matInput], form mat-select'),
+    );
     for (const champ of champs) {
       expect(nomAccessible(root(fixture), champ), champ.outerHTML.slice(0, 120)).not.toBe('');
     }
@@ -209,12 +216,16 @@ describe('StandFormDialog', () => {
   it('locks the identifier of an existing stand but not of a new one', async () => {
     const { fixture: existant } = mount(stand());
     await existant.whenStable();
-    expect((root(existant).querySelector('input[name="id"]') as HTMLInputElement).readOnly).toBe(true);
+    expect((root(existant).querySelector('input[name="id"]') as HTMLInputElement).readOnly).toBe(
+      true,
+    );
 
     TestBed.resetTestingModule();
     const { fixture: nouveau } = mount(null);
     await nouveau.whenStable();
-    expect((root(nouveau).querySelector('input[name="id"]') as HTMLInputElement).readOnly).toBe(false);
+    expect((root(nouveau).querySelector('input[name="id"]') as HTMLInputElement).readOnly).toBe(
+      false,
+    );
   });
 
   it('shows the staffing error and blocks the submit when the maximum is below the minimum', async () => {
@@ -268,10 +279,9 @@ describe('StandFormDialog', () => {
     // Three créneaux over two days: the strip shows the days, not the créneaux.
     const cellules = root(fixture).querySelectorAll('.apercu-jour');
     expect(cellules).toHaveLength(2);
-    expect(Array.from(cellules).map((cell) => cell.querySelector('.apercu-date')!.textContent!.trim())).toEqual([
-      '14/07',
-      '15/07'
-    ]);
+    expect(
+      Array.from(cellules).map((cell) => cell.querySelector('.apercu-date')!.textContent!.trim()),
+    ).toEqual(['14/07', '15/07']);
   });
 
   it('describes a day narrowed by a recurring rule in the preview', async () => {
@@ -287,10 +297,10 @@ describe('StandFormDialog', () => {
             dateFin: null,
             dates: [],
             fenetres: [{ heureDebut: '14:00', heureFin: null }],
-            motif: null
-          }
-        ]
-      })
+            motif: null,
+          },
+        ],
+      }),
     );
     await fixture.whenStable();
 
@@ -319,17 +329,23 @@ describe('StandFormDialog', () => {
   });
 
   it('opens a plain rule folded: one line of windows, no mode or day selector', async () => {
-    const { fixture } = mount(stand({ horaires: [regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })] }));
+    const { fixture } = mount(
+      stand({ horaires: [regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })] }),
+    );
     await fixture.whenStable();
 
     expect(nomsEnregistres(fixture)).not.toContain('horaireMode0');
     expect(nomsEnregistres(fixture)).not.toContain('horaireJours0');
-    expect(root(fixture).querySelector('.horaire-resume')!.textContent!.trim()).toBe('Ouvert tous les jours');
+    expect(root(fixture).querySelector('.horaire-resume')!.textContent!.trim()).toBe(
+      'Ouvert tous les jours',
+    );
     expect(ligne(fixture).value).toBe('10:00-12:00');
   });
 
   it('unfolds the selectors behind « Cas particulier », keeping what the rule already said', async () => {
-    const { fixture } = mount(stand({ horaires: [regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })] }));
+    const { fixture } = mount(
+      stand({ horaires: [regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })] }),
+    );
     await fixture.whenStable();
 
     const bouton = root(fixture).querySelector<HTMLButtonElement>('.horaire-cas-particulier')!;
@@ -346,7 +362,11 @@ describe('StandFormDialog', () => {
 
   it('opens a closing rule unfolded, with nothing to fold it back on', async () => {
     const { fixture } = mount(
-      stand({ horaires: [regle({ mode: 'FERMETURE', fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })] })
+      stand({
+        horaires: [
+          regle({ mode: 'FERMETURE', fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }),
+        ],
+      }),
     );
     await fixture.whenStable();
 
@@ -366,7 +386,9 @@ describe('StandFormDialog', () => {
     const erreur = root(fixture).querySelector('#stand-horaire-erreur-0')!;
     expect(erreur.textContent).toContain('au moins une fenêtre');
     // Material prepends its own hint id: the error id must be among them.
-    expect(ligne(fixture).getAttribute('aria-describedby')!.split(/\s+/)).toContain('stand-horaire-erreur-0');
+    expect(ligne(fixture).getAttribute('aria-describedby')!.split(/\s+/)).toContain(
+      'stand-horaire-erreur-0',
+    );
     expect(submit(fixture).disabled).toBe(true);
   });
 
@@ -375,9 +397,9 @@ describe('StandFormDialog', () => {
       stand({
         horaires: [
           regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }),
-          regle({ mode: 'FERMETURE', fenetres: [{ heureDebut: '13:00', heureFin: '14:00' }] })
-        ]
-      })
+          regle({ mode: 'FERMETURE', fenetres: [{ heureDebut: '13:00', heureFin: '14:00' }] }),
+        ],
+      }),
     );
     await fixture.whenStable();
 
@@ -406,10 +428,10 @@ describe('StandFormDialog', () => {
             dateFin: null,
             dates: [],
             fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }],
-            motif: null
-          }
-        ]
-      })
+            motif: null,
+          },
+        ],
+      }),
     );
     await fixture.whenStable();
 
@@ -421,7 +443,7 @@ describe('StandFormDialog', () => {
       'Jeudi',
       'Vendredi',
       'Samedi',
-      'Dimanche'
+      'Dimanche',
     ]);
   });
 
@@ -438,14 +460,16 @@ describe('StandFormDialog', () => {
             dateFin: null,
             dates: [],
             fenetres: [],
-            motif: null
-          }
-        ]
-      })
+            motif: null,
+          },
+        ],
+      }),
     );
     await fixture.whenStable();
 
-    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map(
+      (each) => each.textContent!,
+    );
     expect(alertes.some((text) => text.includes('au moins une fenêtre'))).toBe(true);
     expect(submit(fixture).disabled).toBe(true);
   });
@@ -459,11 +483,11 @@ describe('StandFormDialog', () => {
           regle({
             fenetres: [
               { heureDebut: '10:00', heureFin: '12:00' },
-              { heureDebut: '14:00', heureFin: null, effectif: 2 }
-            ]
-          })
-        ]
-      })
+              { heureDebut: '14:00', heureFin: null, effectif: 2 },
+            ],
+          }),
+        ],
+      }),
     );
     await fixture.whenStable();
 
@@ -477,7 +501,7 @@ describe('StandFormDialog', () => {
     const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
     expect(payload.horaires[0].fenetres).toEqual([
       { heureDebut: '10:00', heureFin: '12:00', effectif: 3 },
-      { heureDebut: '14:00', heureFin: null, effectif: null }
+      { heureDebut: '14:00', heureFin: null, effectif: null },
     ]);
     // The form's own state never reaches the backend.
     expect(payload.horaires[0]).not.toHaveProperty('saisie');
@@ -488,8 +512,15 @@ describe('StandFormDialog', () => {
       stand({
         id: 's7',
         effectifMax: 4,
-        horaires: [regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }, { heureDebut: '14:00', heureFin: null, effectif: 2 }] })]
-      })
+        horaires: [
+          regle({
+            fenetres: [
+              { heureDebut: '10:00', heureFin: '12:00' },
+              { heureDebut: '14:00', heureFin: null, effectif: 2 },
+            ],
+          }),
+        ],
+      }),
     );
     await fixture.whenStable();
 
@@ -497,7 +528,7 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     const effectifs = Array.from(
-      root(fixture).querySelectorAll<HTMLInputElement>('.horaire-fenetre-row input[type="number"]')
+      root(fixture).querySelectorAll<HTMLInputElement>('.horaire-fenetre-row input[type="number"]'),
     );
     expect(effectifs).toHaveLength(2);
     expect(effectifs[0].value).toBe('');
@@ -528,14 +559,16 @@ describe('StandFormDialog', () => {
             dateFin: null,
             dates: [],
             fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 0 }],
-            motif: null
-          }
-        ]
-      })
+            motif: null,
+          },
+        ],
+      }),
     );
     await fixture.whenStable();
 
-    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map(
+      (each) => each.textContent!,
+    );
     expect(alertes.some((text) => text.includes("L'effectif d'une fenêtre"))).toBe(true);
     expect(submit(fixture).disabled).toBe(true);
   });
@@ -545,21 +578,36 @@ describe('StandFormDialog', () => {
       stand({
         id: 's8',
         effectifMax: 6,
-        ouvertures: [{ id: null, date: '2026-07-14', heureDebut: '14:00', heureFin: null, motif: null, effectif: 0 }]
-      })
+        ouvertures: [
+          {
+            id: null,
+            date: '2026-07-14',
+            heureDebut: '14:00',
+            heureFin: null,
+            motif: null,
+            effectif: 0,
+          },
+        ],
+      }),
     );
     await fixture.whenStable();
 
-    let alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    let alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map(
+      (each) => each.textContent!,
+    );
     expect(alertes.some((text) => text.includes("L'effectif d'une ouverture"))).toBe(true);
     expect(submit(fixture).disabled).toBe(true);
 
-    const champ = root(fixture).querySelector<HTMLInputElement>('.indisponibilite-row input[type="number"]')!;
+    const champ = root(fixture).querySelector<HTMLInputElement>(
+      '.indisponibilite-row input[type="number"]',
+    )!;
     champ.value = '5';
     champ.dispatchEvent(new Event('input'));
     await fixture.whenStable();
 
-    alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map(
+      (each) => each.textContent!,
+    );
     expect(alertes.some((text) => text.includes("L'effectif d'une ouverture"))).toBe(false);
     expect(submit(fixture).disabled).toBe(false);
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
@@ -583,14 +631,16 @@ describe('StandFormDialog', () => {
             dateFin: null,
             dates: [],
             fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 5 }],
-            motif: null
-          }
-        ]
-      })
+            motif: null,
+          },
+        ],
+      }),
     );
     await fixture.whenStable();
 
-    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
+    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map(
+      (each) => each.textContent!,
+    );
     // The two numbers that disagree, not a sentence about zero.
     expect(alertes.some((text) => text.includes('(5)') && text.includes('(2)'))).toBe(true);
     expect(submit(fixture).disabled).toBe(true);
@@ -599,14 +649,22 @@ describe('StandFormDialog', () => {
   it('refuses a day carrying both a closure and an opening', async () => {
     const { fixture } = mount(
       stand({
-        indisponibilites: [{ id: null, date: '2026-07-14', heureDebut: '10:00', heureFin: null, motif: null }],
-        ouvertures: [{ id: null, date: '2026-07-14', heureDebut: '14:00', heureFin: null, motif: null }]
-      })
+        indisponibilites: [
+          { id: null, date: '2026-07-14', heureDebut: '10:00', heureFin: null, motif: null },
+        ],
+        ouvertures: [
+          { id: null, date: '2026-07-14', heureDebut: '14:00', heureFin: null, motif: null },
+        ],
+      }),
     );
     await fixture.whenStable();
 
-    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map((each) => each.textContent!);
-    expect(alertes.some((text) => text.includes('à la fois une fermeture et une ouverture'))).toBe(true);
+    const alertes = Array.from(root(fixture).querySelectorAll('.field-error')).map(
+      (each) => each.textContent!,
+    );
+    expect(alertes.some((text) => text.includes('à la fois une fermeture et une ouverture'))).toBe(
+      true,
+    );
     expect(submit(fixture).disabled).toBe(true);
   });
 
@@ -615,7 +673,9 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     expect(root(fixture).querySelector('.locked-hint')).not.toBeNull();
-    expect((root(fixture).querySelector('fieldset.form-fieldset') as HTMLFieldSetElement).disabled).toBe(true);
+    expect(
+      (root(fixture).querySelector('fieldset.form-fieldset') as HTMLFieldSetElement).disabled,
+    ).toBe(true);
     expect(submit(fixture).disabled).toBe(true);
   });
 
@@ -627,7 +687,11 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     expect(save).toHaveBeenCalledOnce();
-    const [resource, payload, editingId] = save.mock.calls[0] as unknown as [string, Stand, string | null];
+    const [resource, payload, editingId] = save.mock.calls[0] as unknown as [
+      string,
+      Stand,
+      string | null,
+    ];
     expect(resource).toBe('stands');
     expect(payload.id).toBe('s42');
     expect(payload.nom).toBe('Dixit');
@@ -659,19 +723,21 @@ describe('StandFormDialog', () => {
             typologies: signal(TYPOLOGIES),
             creneaux: signal(CRENEAUX),
             emplacements: signal(EMPLACEMENTS),
-            stands: signal([])
-          }
+            stands: signal([]),
+          },
         },
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
         { provide: ReferenceCrudService, useValue: { save } },
         { provide: MatDialogRef, useValue: { close } },
-        { provide: MAT_DIALOG_DATA, useValue: { stand: stand() } }
-      ]
+        { provide: MAT_DIALOG_DATA, useValue: { stand: stand() } },
+      ],
     });
     const fixture = TestBed.createComponent(StandFormDialog);
     await fixture.whenStable();
 
-    (fixture.nativeElement as HTMLElement).querySelector('form')!.dispatchEvent(new Event('submit'));
+    (fixture.nativeElement as HTMLElement)
+      .querySelector('form')!
+      .dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
     expect(save).toHaveBeenCalledOnce();

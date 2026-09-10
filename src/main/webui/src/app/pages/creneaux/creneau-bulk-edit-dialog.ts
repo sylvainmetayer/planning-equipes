@@ -16,7 +16,7 @@ import {
   appliquerPatchCreneau,
   creneauxFranchissantMinuit,
   patchCreneauEstVide,
-  patchCreneauVide
+  patchCreneauVide,
 } from './creneau-bulk-edit';
 
 export interface CreneauBulkEditData {
@@ -37,10 +37,10 @@ export interface CreneauBulkEditData {
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
   ],
   templateUrl: './creneau-bulk-edit-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreneauBulkEditDialog {
   protected readonly store = inject(ReferenceDataStore);
@@ -58,7 +58,7 @@ export class CreneauBulkEditDialog {
 
   /** Slots the patch would leave ending before they start: the batch is blocked as a whole. */
   protected readonly creneauxDeNuit = computed(() =>
-    creneauxFranchissantMinuit(this.data.creneaux, this.patch())
+    creneauxFranchissantMinuit(this.data.creneaux, this.patch()),
   );
 
   protected readonly formTitle = $localize`:@@creneaux.bulk.title:Modifier ${this.data.creneaux.length}:count: créneaux`;

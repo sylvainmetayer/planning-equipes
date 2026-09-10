@@ -9,12 +9,15 @@ import {
   keepViewInQueryParams,
   optionalParam,
   readSort,
-  sortQueryParams
+  sortQueryParams,
 } from './view-query-params';
 
 describe('readSort', () => {
   it('reads a column and its direction from the URL', () => {
-    expect(readSort(convertToParamMap({ sort: 'total', dir: 'desc' }))).toEqual({ active: 'total', direction: 'desc' });
+    expect(readSort(convertToParamMap({ sort: 'total', dir: 'desc' }))).toEqual({
+      active: 'total',
+      direction: 'desc',
+    });
   });
 
   it('falls back to no sort when the URL carries none', () => {
@@ -33,14 +36,17 @@ describe('readSort', () => {
     // A bookmarked link outliving the column it named must not fail the page.
     expect(readSort(convertToParamMap({ sort: 'colonne-supprimee', dir: 'asc' }))).toEqual({
       active: 'colonne-supprimee',
-      direction: 'asc'
+      direction: 'asc',
     });
   });
 });
 
 describe('sortQueryParams', () => {
   it('writes the column and its direction', () => {
-    expect(sortQueryParams({ active: 'total', direction: 'asc' })).toEqual({ sort: 'total', dir: 'asc' });
+    expect(sortQueryParams({ active: 'total', direction: 'asc' })).toEqual({
+      sort: 'total',
+      dir: 'asc',
+    });
   });
 
   it('clears both params when the table is unsorted, instead of leaving a stale column behind', () => {
@@ -76,7 +82,7 @@ describe('keepViewInQueryParams', () => {
    */
   function monter(etat: () => Params) {
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), provideRouter([]), provideLocationMocks()]
+      providers: [provideZonelessChangeDetection(), provideRouter([]), provideLocationMocks()],
     });
     const router = TestBed.inject(Router);
     const location = TestBed.inject(Location);

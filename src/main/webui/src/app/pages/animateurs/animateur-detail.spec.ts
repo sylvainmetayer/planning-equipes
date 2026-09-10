@@ -12,11 +12,14 @@ function animateur(overrides: Partial<Animateur> = {}): Animateur {
     competences: {},
     souhaits: [],
     joursIndisponibles: [],
-    ...overrides
+    ...overrides,
   };
 }
 
-function rowValue(sections: ReturnType<typeof buildAnimateurDetail>, label: string): string | undefined {
+function rowValue(
+  sections: ReturnType<typeof buildAnimateurDetail>,
+  label: string,
+): string | undefined {
   return sections.flatMap((section) => section.rows).find((row) => row.label === label)?.value;
 }
 
@@ -28,12 +31,20 @@ describe('buildAnimateurDetail', () => {
 
   it('counts the birthday as not yet passed earlier in the year', () => {
     // Born 2009-06-15, read on 2026-06-14: still 16, i.e. still a minor.
-    const sections = buildAnimateurDetail(animateur({ dateNaissance: '2009-06-15' }), [], new Date(2026, 5, 14));
+    const sections = buildAnimateurDetail(
+      animateur({ dateNaissance: '2009-06-15' }),
+      [],
+      new Date(2026, 5, 14),
+    );
     expect(rowValue(sections, 'Majeur')).toBe('Mineur (16 ans)');
   });
 
   it('says "inconnu" rather than guessing when there is no birth date', () => {
-    const sections = buildAnimateurDetail(animateur({ dateNaissance: null }), [], new Date(2026, 6, 8));
+    const sections = buildAnimateurDetail(
+      animateur({ dateNaissance: null }),
+      [],
+      new Date(2026, 6, 8),
+    );
     expect(rowValue(sections, 'Majeur')).toBe('Inconnu');
   });
 
@@ -42,7 +53,7 @@ describe('buildAnimateurDetail', () => {
     const sections = buildAnimateurDetail(
       animateur({ competences: { ENF: 'REFERENT' } }),
       typologies,
-      new Date(2026, 6, 8)
+      new Date(2026, 6, 8),
     );
 
     const chips = sections.flatMap((section) => section.rows).find((row) => row.chips)?.chips;
@@ -53,11 +64,11 @@ describe('buildAnimateurDetail', () => {
     const withDays = buildAnimateurDetail(
       animateur({ joursIndisponibles: ['2026-07-12', '2026-07-06'] }),
       [],
-      new Date(2026, 6, 8)
+      new Date(2026, 6, 8),
     );
     expect(withDays.flatMap((section) => section.rows).find((row) => row.chips)?.chips).toEqual([
       '2026-07-06',
-      '2026-07-12'
+      '2026-07-12',
     ]);
 
     const without = buildAnimateurDetail(animateur(), [], new Date(2026, 6, 8));
@@ -68,7 +79,7 @@ describe('buildAnimateurDetail', () => {
     const sections = buildAnimateurDetail(
       animateur({ email: 'ada@example.org', accessToken: 'jeton-opaque' }),
       [],
-      new Date(2026, 6, 8)
+      new Date(2026, 6, 8),
     );
     expect(rowValue(sections, 'E-mail')).toBe('ada@example.org');
     expect(rowValue(sections, 'Lien espace animateur')).toBe('/animateur/jeton-opaque');

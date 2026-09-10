@@ -33,8 +33,8 @@ test.afterEach(async () => {
     headers: { 'Content-Type': 'text/plain' },
     data: [
       `delete from contrainte_animateur where contrainte_id like 'E2E-ADHOC-%';`,
-      `delete from contrainte_ad_hoc where id like 'E2E-ADHOC-%';`
-    ].join('\n')
+      `delete from contrainte_ad_hoc where id like 'E2E-ADHOC-%';`,
+    ].join('\n'),
   });
 });
 
@@ -46,7 +46,7 @@ function indisponibilite() {
     animateursConcernes: [{ id: SEED.demandeur }],
     creneau: { id: SEED.creneauId },
     stand: null,
-    raison: 'E2E : Alice en formation'
+    raison: 'E2E : Alice en formation',
   };
 }
 
@@ -58,11 +58,13 @@ function affectationForcee(id = FORCEE) {
     animateursConcernes: [{ id: SEED.demandeur }],
     creneau: { id: SEED.creneauId },
     stand: { id: SEED.standDemandeur },
-    raison: 'E2E : Alice imposée sur son stand'
+    raison: 'E2E : Alice imposée sur son stand',
   };
 }
 
-test("une exception contradictoire est refusée à la saisie, en nommant les deux", async ({ browser }) => {
+test('une exception contradictoire est refusée à la saisie, en nommant les deux', async ({
+  browser,
+}) => {
   const premiere = await admin.post('/api/contraintes-ad-hoc', { data: indisponibilite() });
   expect(premiere.ok(), await premiere.text()).toBe(true);
 
@@ -87,25 +89,25 @@ test('deux affectations forcées simultanées sur le même animateur sont refus�
   // Same créneau, another stand: two seats would be needed, and no one holds
   // two seats at the same hour.
   const seconde = await admin.post('/api/contraintes-ad-hoc', {
-    data: { ...affectationForcee(SECONDE_FORCEE), stand: { id: SEED.standCible } }
+    data: { ...affectationForcee(SECONDE_FORCEE), stand: { id: SEED.standCible } },
   });
   expect(seconde.status()).toBe(400);
   expect(await seconde.text()).toContain(FORCEE);
 });
 
-test("réenregistrer une exception sous son propre id reste possible", async () => {
+test('réenregistrer une exception sous son propre id reste possible', async () => {
   const creation = await admin.post('/api/contraintes-ad-hoc', { data: indisponibilite() });
   expect(creation.ok(), await creation.text()).toBe(true);
 
   // The saved version replaces the previous one instead of coexisting with it:
   // editing an exception is the only thing POST can mean here.
   const reecriture = await admin.post('/api/contraintes-ad-hoc', {
-    data: { ...indisponibilite(), raison: 'E2E : motif corrigé' }
+    data: { ...indisponibilite(), raison: 'E2E : motif corrigé' },
   });
   expect(reecriture.ok(), await reecriture.text()).toBe(true);
 });
 
-test("une contradiction déjà en base est signalée avant toute résolution", async ({ browser }) => {
+test('une contradiction déjà en base est signalée avant toute résolution', async ({ browser }) => {
   // Straight into the database: every write refuses this pair now, so this is
   // the only way to reproduce an edition that recorded it earlier.
   const insertion = await admin.post('/api/database/import', {
@@ -114,8 +116,8 @@ test("une contradiction déjà en base est signalée avant toute résolution", a
       `insert into contrainte_ad_hoc (edition_id, id, type, creneau_id, raison) values ('DEFAUT', '${INDISPO}', 'INDISPONIBILITE_FORCEE', ${SEED.creneauId}, 'E2E : Alice en formation');`,
       `insert into contrainte_animateur (edition_id, contrainte_id, animateur_id, position) values ('DEFAUT', '${INDISPO}', '${SEED.demandeur}', 0);`,
       `insert into contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison) values ('DEFAUT', '${FORCEE}', 'AFFECTATION_FORCEE', ${SEED.creneauId}, '${SEED.standDemandeur}', 'E2E : Alice imposée');`,
-      `insert into contrainte_animateur (edition_id, contrainte_id, animateur_id, position) values ('DEFAUT', '${FORCEE}', '${SEED.demandeur}', 0);`
-    ].join('\n')
+      `insert into contrainte_animateur (edition_id, contrainte_id, animateur_id, position) values ('DEFAUT', '${FORCEE}', '${SEED.demandeur}', 0);`,
+    ].join('\n'),
   });
   expect(insertion.ok(), await insertion.text()).toBe(true);
 
@@ -136,6 +138,8 @@ test("une contradiction déjà en base est signalée avant toute résolution", a
 
   // And the rows themselves are badged, on the screen that owns them.
   await page.goto('/ad-hoc-constraints');
-  await expect(page.getByRole('row', { name: new RegExp(FORCEE) }).getByText('warning')).toBeVisible();
+  await expect(
+    page.getByRole('row', { name: new RegExp(FORCEE) }).getByText('warning'),
+  ).toBeVisible();
   await page.context().close();
 });

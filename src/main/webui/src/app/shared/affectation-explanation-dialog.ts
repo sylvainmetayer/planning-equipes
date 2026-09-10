@@ -7,7 +7,12 @@
 
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AffectationExplanationService } from '../core/affectation-explanation.service';
@@ -19,14 +24,14 @@ import {
   PlanningEvenement,
   PosteAffectation,
   SuggestionReparation,
-  SuggestionsReparation
+  SuggestionsReparation,
 } from '../core/models';
 import { errorPrefix } from '../core/error-message';
 import {
   compareDelta,
   meilleuresSuggestions,
   nomAnimateur,
-  suggestionsTronquees
+  suggestionsTronquees,
 } from './affectation-explanation-rules';
 
 export interface AffectationExplanationDialogData {
@@ -36,13 +41,7 @@ export interface AffectationExplanationDialogData {
 
 @Component({
   selector: 'app-affectation-explanation-dialog',
-  imports: [
-    MatDialogModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    LegalText
-  ],
+  imports: [MatDialogModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, LegalText],
   template: `
     <h2 mat-dialog-title>
       {{ data.poste.stand?.nom }}
@@ -58,15 +57,24 @@ export interface AffectationExplanationDialogData {
       } @else if (explanation(); as explication) {
         <p class="affectation-explanation-score" i18n="@@affectationExplanation.score">
           Score global :
-          <strong>{{ explication.score.hardScore }}hard / {{ explication.score.mediumScore }}medium / {{ explication.score.softScore }}soft</strong>
+          <strong
+            >{{ explication.score.hardScore }}hard / {{ explication.score.mediumScore }}medium /
+            {{ explication.score.softScore }}soft</strong
+          >
         </p>
 
         @if (explication.contraintesViolees.length > 0) {
-          <h3 i18n="@@affectationExplanation.violatedTitle">Contraintes non respectées pour ce poste</h3>
+          <h3 i18n="@@affectationExplanation.violatedTitle">
+            Contraintes non respectées pour ce poste
+          </h3>
           <ul class="affectation-explanation-list">
             @for (impact of explication.contraintesViolees; track impact.name) {
               <li>
-                <span class="affectation-explanation-badge" [class]="'niveau-' + (impact.niveau ?? 'inconnu')">{{ impact.niveau }}</span>
+                <span
+                  class="affectation-explanation-badge"
+                  [class]="'niveau-' + (impact.niveau ?? 'inconnu')"
+                  >{{ impact.niveau }}</span
+                >
                 <strong><app-legal-text [text]="impact.description ?? impact.name" /></strong>
                 @if (impact.details.length > 0) {
                   <ul>
@@ -82,17 +90,27 @@ export interface AffectationExplanationDialogData {
           <p i18n="@@affectationExplanation.noViolation">Aucun écart détecté sur ce poste.</p>
         }
 
-        <p class="affectation-explanation-respected-count" i18n="@@affectationExplanation.respectedCount">
-          {{ explication.contraintesRespectees.length }} autre(s) contrainte(s) sans écart sur ce poste.
+        <p
+          class="affectation-explanation-respected-count"
+          i18n="@@affectationExplanation.respectedCount"
+        >
+          {{ explication.contraintesRespectees.length }} autre(s) contrainte(s) sans écart sur ce
+          poste.
         </p>
 
         <h3 i18n="@@affectationExplanation.repairTitle">Suggestions de réparation</h3>
-        <p class="affectation-explanation-respected-count" i18n="@@affectationExplanation.repairHint">
-          Cherche les remplaçants qui n'introduisent aucun écart dur, classés par impact sur le score.
+        <p
+          class="affectation-explanation-respected-count"
+          i18n="@@affectationExplanation.repairHint"
+        >
+          Cherche les remplaçants qui n'introduisent aucun écart dur, classés par impact sur le
+          score.
         </p>
         <button matButton="tonal" [disabled]="suggestionsLoading()" (click)="chercherSuggestions()">
           <mat-icon>healing</mat-icon>
-          <ng-container i18n="@@affectationExplanation.repairSearch">Chercher des remplaçants viables</ng-container>
+          <ng-container i18n="@@affectationExplanation.repairSearch"
+            >Chercher des remplaçants viables</ng-container
+          >
         </button>
 
         @if (suggestionsLoading()) {
@@ -100,14 +118,21 @@ export interface AffectationExplanationDialogData {
         } @else if (suggestionsError()) {
           <p class="affectation-explanation-error">{{ suggestionsError() }}</p>
         } @else if (suggestions(); as reparations) {
-          <p class="affectation-explanation-respected-count" i18n="@@affectationExplanation.repairCost">
-            {{ reparations.suggestions.length }} remplacement(s) viable(s), sur {{ reparations.candidatsEvalues }} candidat(s)
-            évalué(s) parmi {{ reparations.candidatsEligibles }} éligible(s).
+          <p
+            class="affectation-explanation-respected-count"
+            i18n="@@affectationExplanation.repairCost"
+          >
+            {{ reparations.suggestions.length }} remplacement(s) viable(s), sur
+            {{ reparations.candidatsEvalues }} candidat(s) évalué(s) parmi
+            {{ reparations.candidatsEligibles }} éligible(s).
           </p>
           @if (tronquees()) {
-            <p class="affectation-explanation-error" i18n="@@affectationExplanation.repairTruncated">
-              Recherche arrêtée au plafond de {{ reparations.plafond }} candidats : ce sont les meilleurs de ceux évalués,
-              pas une réponse exhaustive.
+            <p
+              class="affectation-explanation-error"
+              i18n="@@affectationExplanation.repairTruncated"
+            >
+              Recherche arrêtée au plafond de {{ reparations.plafond }} candidats : ce sont les
+              meilleurs de ceux évalués, pas une réponse exhaustive.
             </p>
           }
           @if (reparations.suggestions.length === 0) {
@@ -142,7 +167,9 @@ export interface AffectationExplanationDialogData {
                   }
                   <button matButton [disabled]="applicationEnCours()" (click)="apply(suggestion)">
                     <mat-icon>check</mat-icon>
-                    <ng-container i18n="@@affectationExplanation.repairApply">Appliquer</ng-container>
+                    <ng-container i18n="@@affectationExplanation.repairApply"
+                      >Appliquer</ng-container
+                    >
                   </button>
                 </li>
               }
@@ -193,7 +220,7 @@ export interface AffectationExplanationDialogData {
       color: var(--mat-sys-error);
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AffectationExplanationDialog {
   protected readonly dialogRef = inject<MatDialogRef<AffectationExplanationDialog>>(MatDialogRef);
@@ -210,7 +237,9 @@ export class AffectationExplanationDialog {
   protected readonly applicationEnCours = signal(false);
 
   protected readonly tronquees = computed(() => suggestionsTronquees(this.suggestions()));
-  protected readonly meilleures = computed<SuggestionReparation[]>(() => meilleuresSuggestions(this.suggestions()));
+  protected readonly meilleures = computed<SuggestionReparation[]>(() =>
+    meilleuresSuggestions(this.suggestions()),
+  );
 
   constructor() {
     void this.charger();
@@ -220,7 +249,10 @@ export class AffectationExplanationDialog {
     this.loading.set(true);
     this.error.set('');
     try {
-      const explication = await this.explanationService.explique(this.data.planning, this.data.poste.id);
+      const explication = await this.explanationService.explique(
+        this.data.planning,
+        this.data.poste.id,
+      );
       this.explanation.set(explication);
     } catch (error) {
       this.error.set(errorPrefix(error));
@@ -252,7 +284,7 @@ export class AffectationExplanationDialog {
     this.suggestionsError.set('');
     try {
       this.suggestions.set(
-        await this.explanationService.suggererReparations(this.data.planning, this.data.poste.id)
+        await this.explanationService.suggererReparations(this.data.planning, this.data.poste.id),
       );
     } catch (error) {
       this.suggestions.set(null);
@@ -304,10 +336,10 @@ export { aUneAppreciationPour } from './affectation-explanation-rules';
 export function ouvrirExplication(
   dialog: MatDialog,
   planning: PlanningEvenement,
-  poste: PosteAffectation
+  poste: PosteAffectation,
 ): MatDialogRef<AffectationExplanationDialog, ReparationAppliquee | undefined> {
   return dialog.open(AffectationExplanationDialog, {
     data: { poste, planning },
-    width: '32rem'
+    width: '32rem',
   });
 }

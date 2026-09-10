@@ -6,16 +6,18 @@ import {
   typologieColorIndex,
   typologieLabel,
   typologieLabels,
-  typologiePrincipale
+  typologiePrincipale,
 } from './typologie-colors';
 
 describe('typologieColorIndex', () => {
   it('always lands inside the palette', () => {
-    ['STRATEGIE', 'AMBIANCE', 'ENFANT', 'x', '', 'très-long-identifiant-de-typologie'].forEach((id) => {
-      const index = typologieColorIndex(id);
-      expect(index).toBeGreaterThanOrEqual(0);
-      expect(index).toBeLessThan(TYPOLOGIE_COLOR_COUNT);
-    });
+    ['STRATEGIE', 'AMBIANCE', 'ENFANT', 'x', '', 'très-long-identifiant-de-typologie'].forEach(
+      (id) => {
+        const index = typologieColorIndex(id);
+        expect(index).toBeGreaterThanOrEqual(0);
+        expect(index).toBeLessThan(TYPOLOGIE_COLOR_COUNT);
+      },
+    );
   });
 
   it('gives the same typologie the same colour every time, and different ids different buckets', () => {
@@ -33,7 +35,9 @@ describe('typologieColorClass', () => {
   });
 
   it('names the palette class of the typologie', () => {
-    expect(typologieColorClass('STRATEGIE')).toBe(`typologie-color-${typologieColorIndex('STRATEGIE')}`);
+    expect(typologieColorClass('STRATEGIE')).toBe(
+      `typologie-color-${typologieColorIndex('STRATEGIE')}`,
+    );
   });
 });
 
@@ -56,6 +60,8 @@ describe('typologieLabel', () => {
   });
 
   it('falls back on the id when the referential has an empty label', () => {
-    expect(typologieLabel(typologieLabels([{ id: 'STRATEGIE', label: '' }]), 'STRATEGIE')).toBe('STRATEGIE');
+    expect(typologieLabel(typologieLabels([{ id: 'STRATEGIE', label: '' }]), 'STRATEGIE')).toBe(
+      'STRATEGIE',
+    );
   });
 });

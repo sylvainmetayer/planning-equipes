@@ -10,7 +10,9 @@ test.describe('mur d’authentification', () => {
     expect(reponse.status()).toBe(401);
   });
 
-  test("l'espace animateur reste public : un jeton inconnu répond 404, pas 401", async ({ request }) => {
+  test("l'espace animateur reste public : un jeton inconnu répond 404, pas 401", async ({
+    request,
+  }) => {
     const reponse = await request.get('/api/espace-animateur/jeton-invente', { maxRedirects: 0 });
     expect(reponse.status()).toBe(404);
   });

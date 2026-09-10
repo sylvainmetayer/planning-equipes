@@ -6,13 +6,24 @@
 // one that opened it — performs the navigation. That keeps what a result *is*
 // (`core/keyboard-shortcuts.ts`) and what it *does* out of the rendering.
 
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { CommandePalette, buildDestinationsNavigation, chercherCommandes } from '../core/keyboard-shortcuts';
+import {
+  CommandePalette,
+  buildDestinationsNavigation,
+  chercherCommandes,
+} from '../core/keyboard-shortcuts';
 import { ReferenceDataStore } from '../core/reference-data.store';
 
 @Component({
@@ -43,7 +54,12 @@ import { ReferenceDataStore } from '../core/reference-data.store';
       <p class="palette-resume" role="status">{{ resume() }}</p>
 
       @if (resultats().length > 0) {
-        <ul id="palette-resultats" class="palette-liste" role="listbox" [attr.aria-label]="listeLabel">
+        <ul
+          id="palette-resultats"
+          class="palette-liste"
+          role="listbox"
+          [attr.aria-label]="listeLabel"
+        >
           @for (commande of resultats(); track commande.id; let index = $index) {
             <li
               class="palette-item"
@@ -133,7 +149,7 @@ import { ReferenceDataStore } from '../core/reference-data.store';
       white-space: nowrap;
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommandPaletteDialog {
   private readonly dialogRef = inject(MatDialogRef<CommandPaletteDialog, CommandePalette | null>);
@@ -147,8 +163,8 @@ export class CommandPaletteDialog {
       destinations: this.destinations,
       animateurs: this.store.animateurs(),
       stands: this.store.stands(),
-      creneaux: this.store.creneaux()
-    })
+      creneaux: this.store.creneaux(),
+    }),
   );
 
   /**
@@ -158,11 +174,11 @@ export class CommandPaletteDialog {
    */
   protected readonly indexActif = linkedSignal<readonly CommandePalette[], number>({
     source: this.resultats,
-    computation: () => 0
+    computation: () => 0,
   });
 
   protected readonly idOptionActive = computed(() =>
-    this.resultats().length > 0 ? `palette-option-${this.indexActif()}` : null
+    this.resultats().length > 0 ? `palette-option-${this.indexActif()}` : null,
   );
 
   protected readonly listeLabel = $localize`:@@palette.results.label:Résultats de la palette`;
@@ -179,7 +195,11 @@ export class CommandPaletteDialog {
     // referential (the calendars, the solver). Loading it here — and only when
     // it is still empty — is what makes "find an animateur" work on the first
     // Ctrl+K of a session, without adding a fetch to every page.
-    if (this.store.animateurs().length === 0 && this.store.stands().length === 0 && this.store.creneaux().length === 0) {
+    if (
+      this.store.animateurs().length === 0 &&
+      this.store.stands().length === 0 &&
+      this.store.creneaux().length === 0
+    ) {
       void this.store.reload(['animateurs', 'stands', 'creneaux']).catch(() => undefined);
     }
   }
@@ -228,7 +248,9 @@ export class CommandPaletteDialog {
 
   /** Keeps the highlighted row inside the scrollable list, as the arrows walk past its edge. */
   private faireDefilerVersActif(): void {
-    document.getElementById(`palette-option-${this.indexActif()}`)?.scrollIntoView({ block: 'nearest' });
+    document
+      .getElementById(`palette-option-${this.indexActif()}`)
+      ?.scrollIntoView({ block: 'nearest' });
   }
 
   protected activer(commande: CommandePalette): void {

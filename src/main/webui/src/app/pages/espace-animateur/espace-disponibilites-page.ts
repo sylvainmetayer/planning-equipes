@@ -18,7 +18,7 @@ import {
   declarationModifiee,
   moisDeCollecte,
   ouvertureAVenir,
-  versNouvelleDeclaration
+  versNouvelleDeclaration,
 } from './declaration-brouillon';
 
 /**
@@ -43,10 +43,10 @@ import {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatProgressBarModule
+    MatProgressBarModule,
   ],
   templateUrl: './espace-disponibilites-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EspaceDisponibilitesPage {
   protected readonly espace = inject(EspaceAnimateurService);
@@ -60,7 +60,7 @@ export class EspaceDisponibilitesPage {
   protected readonly brouillon = signal<BrouillonDeclaration>({
     joursIndisponibles: [],
     souhaits: [],
-    commentaire: ''
+    commentaire: '',
   });
 
   protected readonly view = computed(() => this.espace.declaration());
@@ -76,7 +76,7 @@ export class EspaceDisponibilitesPage {
    * opening in two weeks is already over.
    */
   protected readonly pasEncoreOuverte = computed(() =>
-    ouvertureAVenir(this.view(), toDateKey(new Date()))
+    ouvertureAVenir(this.view(), toDateKey(new Date())),
   );
 
   constructor() {
@@ -108,7 +108,7 @@ export class EspaceDisponibilitesPage {
     this.envoye.set(false);
     this.brouillon.update((brouillon) => ({
       ...brouillon,
-      joursIndisponibles: basculer(brouillon.joursIndisponibles, jour)
+      joursIndisponibles: basculer(brouillon.joursIndisponibles, jour),
     }));
   }
 
@@ -116,7 +116,7 @@ export class EspaceDisponibilitesPage {
     this.envoye.set(false);
     this.brouillon.update((brouillon) => ({
       ...brouillon,
-      souhaits: basculer(brouillon.souhaits, typologieId)
+      souhaits: basculer(brouillon.souhaits, typologieId),
     }));
   }
 

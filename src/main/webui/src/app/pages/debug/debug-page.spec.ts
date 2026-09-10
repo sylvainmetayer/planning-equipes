@@ -67,9 +67,9 @@ describe('DebugPage reset', () => {
         { provide: ProblemesStore, useValue: { reloadFeasibility: vi.fn(async () => undefined) } },
         {
           provide: SolverJobService,
-          useValue: { solverBusy: () => false, activeJobDescription: () => '' }
-        }
-      ]
+          useValue: { solverBusy: () => false, activeJobDescription: () => '' },
+        },
+      ],
     });
   });
 
@@ -145,13 +145,18 @@ describe('DebugPage reset', () => {
   // something the server will refuse anyway.
   it('asks for nothing while a solve is running', async () => {
     TestBed.overrideProvider(SolverJobService, {
-      useValue: { solverBusy: () => true, activeJobDescription: () => 'Une résolution est en cours.' }
+      useValue: {
+        solverBusy: () => true,
+        activeJobDescription: () => 'Une résolution est en cours.',
+      },
     });
 
     await page().onResetDatabase();
 
     expect(recopie.demander).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
-    expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'warning' }));
+    expect(notifications.notify).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'warning' }),
+    );
   });
 });

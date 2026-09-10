@@ -20,7 +20,7 @@ import * as L from 'leaflet';
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'leaflet-images/marker-icon-2x.png',
   iconUrl: 'leaflet-images/marker-icon.png',
-  shadowUrl: 'leaflet-images/marker-shadow.png'
+  shadowUrl: 'leaflet-images/marker-shadow.png',
 });
 
 const TUILES_OSM = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -35,7 +35,8 @@ const TUILES_OSM = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
  */
 export function ajouterTuilesOsm(map: L.Map): L.TileLayer {
   return L.tileLayer(TUILES_OSM, {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
     // The server sends Referrer-Policy: no-referrer on every response, to
     // keep the espace animateur token — which travels in the URL — out of
@@ -44,6 +45,6 @@ export function ajouterTuilesOsm(map: L.Map): L.TileLayer {
     // would come up blank. This per-tile policy wins over the document one
     // and still never sends the path: only the origin leaves, and only when
     // the tile request isn't a downgrade to http.
-    referrerPolicy: 'strict-origin-when-cross-origin'
+    referrerPolicy: 'strict-origin-when-cross-origin',
   }).addTo(map);
 }

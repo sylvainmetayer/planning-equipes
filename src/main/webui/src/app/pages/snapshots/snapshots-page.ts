@@ -36,10 +36,10 @@ import { errorPrefix } from '../../core/error-message';
     MatProgressBarModule,
     MatTableModule,
     MatTooltipModule,
-    StatusMessage
+    StatusMessage,
   ],
   templateUrl: './snapshots-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SnapshotsPage {
   protected readonly columns = ['libelle', 'score', 'affectations', 'creeLe', 'actions'];
@@ -48,7 +48,7 @@ export class SnapshotsPage {
     'scoreAuto',
     'affectationsAuto',
     'creeLeAuto',
-    'actionsAuto'
+    'actionsAuto',
   ];
 
   /**
@@ -57,15 +57,14 @@ export class SnapshotsPage {
    * the deliberate ones and bury them.
    */
   protected readonly instantanesManuels = computed(() =>
-    this.store.snapshots().filter((snapshot) => !snapshot.automatique)
+    this.store.snapshots().filter((snapshot) => !snapshot.automatique),
   );
   protected readonly instantanesAutomatiques = computed(() =>
-    this.store.snapshots().filter((snapshot) => snapshot.automatique)
+    this.store.snapshots().filter((snapshot) => snapshot.automatique),
   );
 
   /** Assignments currently persisted, to compare a snapshot against. */
   protected readonly affectationsCourantes = signal<number | null>(null);
-
 
   /**
    * How a snapshot differs from the plan in place — restoring blind is exactly
@@ -125,7 +124,7 @@ export class SnapshotsPage {
     const libelle = await PromptDialog.ask(this.dialog, {
       title: $localize`:@@snapshots.capture.title:Enregistrer le plan actuel`,
       label: $localize`:@@snapshots.capture.label:Nom de l'instantané`,
-      confirmLabel: $localize`:@@snapshots.capture.confirm:Enregistrer`
+      confirmLabel: $localize`:@@snapshots.capture.confirm:Enregistrer`,
     });
     if (!libelle) {
       return;
@@ -135,7 +134,9 @@ export class SnapshotsPage {
     this.message.set('');
     try {
       await this.store.capturer(libelle);
-      this.message.set($localize`:@@snapshots.captured:Instantané « ${libelle}:libelle: » enregistré.`);
+      this.message.set(
+        $localize`:@@snapshots.captured:Instantané « ${libelle}:libelle: » enregistré.`,
+      );
     } catch (error) {
       this.error.set(this.messageErreur(error));
     } finally {
@@ -151,7 +152,7 @@ export class SnapshotsPage {
       title: $localize`:@@snapshots.restore.title:Restaurer cet instantané ?`,
       message: $localize`:@@snapshots.restore.message:Le plan actuellement enregistré est remplacé par « ${snapshot.libelle}:libelle: ». Enregistrez-le d'abord si vous voulez le garder.`,
       confirmLabel: $localize`:@@snapshots.restore.confirm:Restaurer`,
-      danger: true
+      danger: true,
     });
     if (!confirme) {
       return;
@@ -166,7 +167,7 @@ export class SnapshotsPage {
       }
       await this.resolution.reload();
       this.message.set(
-        $localize`:@@snapshots.restored:${resultat.affectations}:count: affectation(s) restaurée(s) depuis « ${snapshot.libelle}:libelle: ».`
+        $localize`:@@snapshots.restored:${resultat.affectations}:count: affectation(s) restaurée(s) depuis « ${snapshot.libelle}:libelle: ».`,
       );
     } catch (error) {
       this.error.set(this.messageErreur(error));
@@ -183,7 +184,7 @@ export class SnapshotsPage {
     const confirme = await this.confirm.ask({
       title: $localize`:@@snapshots.delete.title:Supprimer cet instantané ?`,
       message: $localize`:@@snapshots.delete.message:« ${snapshot.libelle}:libelle: » sera définitivement perdu.`,
-      danger: true
+      danger: true,
     });
     if (!confirme) {
       return;
@@ -202,7 +203,6 @@ export class SnapshotsPage {
   protected dateLabel(snapshot: PlanSnapshot): string {
     return snapshot.creeLe ? new Date(snapshot.creeLe).toLocaleString(intlLocale()) : '';
   }
-
 
   /** A refused restore names what is missing: that list is the actionable part. */
   private messageErreur(error: unknown): string {

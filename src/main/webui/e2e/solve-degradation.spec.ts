@@ -14,7 +14,7 @@ import {
   lancerSolve,
   pageAdmin,
   planningPersiste,
-  seedReferentielSolveur
+  seedReferentielSolveur,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -34,18 +34,18 @@ const ANIMATEURS: AnimateurSeed[] = [
   { id: 'SOLV-DEG-E', prenom: 'Elena', nom: 'Degrade', dateNaissance: '1994-05-05' },
   { id: 'SOLV-DEG-F', prenom: 'Farid', nom: 'Degrade', dateNaissance: '1995-06-06' },
   { id: 'SOLV-DEG-G', prenom: 'Gaby', nom: 'Degrade', dateNaissance: '1996-07-07' },
-  { id: 'SOLV-DEG-H', prenom: 'Hugo', nom: 'Degrade', dateNaissance: '1997-08-08' }
+  { id: 'SOLV-DEG-H', prenom: 'Hugo', nom: 'Degrade', dateNaissance: '1997-08-08' },
 ];
 const STANDS: StandSeed[] = [
   { id: 'SOLV-DEG-S1', nom: 'Stand Degrade un', effectif: 1 },
   { id: 'SOLV-DEG-S2', nom: 'Stand Degrade deux', effectif: 1 },
-  { id: 'SOLV-DEG-S3', nom: 'Stand Degrade trois', effectif: 1 }
+  { id: 'SOLV-DEG-S3', nom: 'Stand Degrade trois', effectif: 1 },
 ];
 const CRENEAUX: CreneauSeed[] = [
   { id: C1, date: '2026-08-12', debut: '10:00', fin: '12:00' },
   { id: C2, date: '2026-08-13', debut: '10:00', fin: '12:00' },
   { id: C3, date: '2026-08-14', debut: '10:00', fin: '12:00' },
-  { id: C4, date: '2026-08-15', debut: '10:00', fin: '12:00' }
+  { id: C4, date: '2026-08-15', debut: '10:00', fin: '12:00' },
 ];
 
 /** Twelve seats: 3 stands × 4 créneaux, each stand needing one animateur. */
@@ -67,20 +67,22 @@ test.afterAll(async () => {
 async function reseed(): Promise<void> {
   await seedReferentielSolveur(admin, ANIMATEURS, STANDS, CRENEAUX);
   const parametres = await admin.put('/api/parametres-solveur', {
-    data: { dureeResolutionSecondes: DUREE_SOLVE_SECONDES }
+    data: { dureeResolutionSecondes: DUREE_SOLVE_SECONDES },
   });
   expect(parametres.ok(), await parametres.text()).toBe(true);
 }
 
 /** Seats of this spec's stands that the persisted plan currently holds. */
-async function postesDuSpec(): Promise<{ standId: string; creneauId: number; animateurId: string | null }[]> {
+async function postesDuSpec(): Promise<
+  { standId: string; creneauId: number; animateurId: string | null }[]
+> {
   const planning = await planningPersiste(admin);
   return planning.postes
     .filter((poste) => poste.stand?.id.startsWith('SOLV-DEG-'))
     .map((poste) => ({
       standId: poste.stand?.id as string,
       creneauId: poste.creneau?.id as number,
-      animateurId: poste.animateur?.id ?? null
+      animateurId: poste.animateur?.id ?? null,
     }));
 }
 
@@ -93,12 +95,16 @@ async function postesDuSpec(): Promise<{ standId: string; creneauId: number; ani
 async function agrandirLeStand(standId: string, effectif: number): Promise<void> {
   const lecture = await admin.get('/api/stands');
   expect(lecture.ok(), await lecture.text()).toBe(true);
-  const stands = (await lecture.json()) as { id: string; effectifMin: number; effectifMax: number }[];
+  const stands = (await lecture.json()) as {
+    id: string;
+    effectifMin: number;
+    effectifMax: number;
+  }[];
   const stand = stands.find((candidat) => candidat.id === standId);
   expect(stand, `stand ${standId} absent du référentiel`).toBeTruthy();
 
   const ecriture = await admin.put(`/api/stands/${standId}`, {
-    data: { ...stand, effectifMin: effectif, effectifMax: effectif }
+    data: { ...stand, effectifMin: effectif, effectifMax: effectif },
   });
   expect(ecriture.ok(), await ecriture.text()).toBe(true);
 }
@@ -143,7 +149,7 @@ test("le premier solve d'une édition n'a rien à comparer, le suivant nomme le 
   expect(second.result?.previousPlan?.score).toBe(premier.result?.diagnostic.score);
 });
 
-test("une résolution qui améliore le plan ne crie pas au loup", async ({ browser }) => {
+test('une résolution qui améliore le plan ne crie pas au loup', async ({ browser }) => {
   test.slow();
   // Deliberately the other way round: start from an unstaffable problem, so
   // the first plan is bad, then give the edition back a problem it can solve.
@@ -167,7 +173,9 @@ test("une résolution qui améliore le plan ne crie pas au loup", async ({ brows
   await page.context().close();
 });
 
-test("une résolution qui dégrade le plan le dit, et le retour en arrière rétablit l'ancien", async ({ browser }) => {
+test("une résolution qui dégrade le plan le dit, et le retour en arrière rétablit l'ancien", async ({
+  browser,
+}) => {
   test.slow();
   await reseed();
   const initial = await lancerSolve(admin, DUREE_SOLVE_SECONDES);
@@ -205,22 +213,32 @@ test("une résolution qui dégrade le plan le dit, et le retour en arrière rét
  * starts from, « Recommencer de zéro » asks before throwing the saved plan
  * away, and the recap says which starting point the run actually used.
  */
-test('« Calculer » repart du plan enregistré, « Recommencer de zéro » demande confirmation', async ({ browser }) => {
+test('« Calculer » repart du plan enregistré, « Recommencer de zéro » demande confirmation', async ({
+  browser,
+}) => {
   test.slow();
   await reseed();
   const page = await pageAdmin(browser, admin);
   try {
     await page.goto('/');
-    await expect(page.locator('#contenu')).toContainText('Aucun plan enregistré : le calcul part de zéro.');
+    await expect(page.locator('#contenu')).toContainText(
+      'Aucun plan enregistré : le calcul part de zéro.',
+    );
     await expect(page.getByRole('button', { name: 'Recommencer de zéro' })).toBeDisabled();
 
     await resoudreDepuisLaPage(page);
-    await expect(page.locator('#contenu')).toContainText('Point de départ : aucun, calcul de zéro.');
-    await expect(page.locator('#contenu')).toContainText(/repart du plan enregistré le .* \(\d+ affectations\)/);
+    await expect(page.locator('#contenu')).toContainText(
+      'Point de départ : aucun, calcul de zéro.',
+    );
+    await expect(page.locator('#contenu')).toContainText(
+      /repart du plan enregistré le .* \(\d+ affectations\)/,
+    );
     await expect(page.getByRole('button', { name: 'Recommencer de zéro' })).toBeEnabled();
 
     await resoudreDepuisLaPage(page);
-    await expect(page.locator('#contenu')).toContainText(/Point de départ : le plan enregistré, \d+ postes repris\./);
+    await expect(page.locator('#contenu')).toContainText(
+      /Point de départ : le plan enregistré, \d+ postes repris\./,
+    );
 
     await page.getByRole('button', { name: 'Recommencer de zéro' }).click();
     const confirmation = page.getByRole('dialog');
@@ -232,7 +250,9 @@ test('« Calculer » repart du plan enregistré, « Recommencer de zéro » dema
     await expect
       .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 90_000 })
       .toBe(204);
-    await expect(page.locator('#contenu')).toContainText('Point de départ : aucun, calcul de zéro.');
+    await expect(page.locator('#contenu')).toContainText(
+      'Point de départ : aucun, calcul de zéro.',
+    );
   } finally {
     await page.context().close();
   }

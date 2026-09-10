@@ -13,7 +13,7 @@ import {
   StandSeed,
   contexteAdmin,
   pageAdmin,
-  seedReferentielSolveur
+  seedReferentielSolveur,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -30,18 +30,18 @@ const ANIMATEURS: AnimateurSeed[] = [
   { id: 'SOLV-U', prenom: 'Uma', nom: 'Solve', dateNaissance: '1994-05-05' },
   { id: 'SOLV-V', prenom: 'Victor', nom: 'Solve', dateNaissance: '1995-06-06' },
   { id: 'SOLV-W', prenom: 'Wendy', nom: 'Solve', dateNaissance: '1996-07-07' },
-  { id: 'SOLV-X', prenom: 'Xavier', nom: 'Solve', dateNaissance: '1997-08-08' }
+  { id: 'SOLV-X', prenom: 'Xavier', nom: 'Solve', dateNaissance: '1997-08-08' },
 ];
 const STANDS: StandSeed[] = [
   { id: 'SOLV-S1', nom: 'Stand Solve un', effectif: 1 },
   { id: 'SOLV-S2', nom: 'Stand Solve deux', effectif: 1 },
-  { id: 'SOLV-S3', nom: 'Stand Solve trois', effectif: 1 }
+  { id: 'SOLV-S3', nom: 'Stand Solve trois', effectif: 1 },
 ];
 const CRENEAUX: CreneauSeed[] = [
   { id: 987201, date: '2026-07-12', debut: '10:00', fin: '12:00' },
   { id: 987202, date: '2026-07-13', debut: '10:00', fin: '12:00' },
   { id: 987203, date: '2026-07-14', debut: '10:00', fin: '12:00' },
-  { id: 987204, date: '2026-07-15', debut: '10:00', fin: '12:00' }
+  { id: 987204, date: '2026-07-15', debut: '10:00', fin: '12:00' },
 ];
 
 let admin: APIRequestContext;
@@ -61,13 +61,18 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test("pendant un solve, la saisie n'est verrouillée que sur l'édition du job", async ({ browser }) => {
+test("pendant un solve, la saisie n'est verrouillée que sur l'édition du job", async ({
+  browser,
+}) => {
   test.slow();
   await seedReferentielSolveur(admin, ANIMATEURS, STANDS, CRENEAUX);
   // The admin context sends no X-Edition-Id header, so the job below is
   // submitted for the DEFAULT edition — the page starts there too (fresh
   // localStorage), then switches to EDITION_B mid-solve.
-  const editionA = (await (await admin.get('/api/editions/courant')).json()) as { id: string; nom: string };
+  const editionA = (await (await admin.get('/api/editions/courant')).json()) as {
+    id: string;
+    nom: string;
+  };
   expect(editionA.id).not.toBe(EDITION_B.id);
 
   const page = await pageAdmin(browser, admin);
@@ -90,11 +95,14 @@ test("pendant un solve, la saisie n'est verrouillée que sur l'édition du job",
     await expect(page.getByRole('button', { name: 'Ajouter' })).toBeDisabled();
     await expect(page.locator('.solver-running-indicator')).toHaveAttribute(
       'aria-label',
-      new RegExp(`sur l'édition « ${editionA.nom} »`)
+      new RegExp(`sur l'édition « ${editionA.nom} »`),
     );
 
     // Switched to the other edition: its referential stays editable…
-    await page.evaluate((id) => localStorage.setItem('planning-equipes.editionId', id), EDITION_B.id);
+    await page.evaluate(
+      (id) => localStorage.setItem('planning-equipes.editionId', id),
+      EDITION_B.id,
+    );
     await page.goto('/typologies');
     await expect(page.getByRole('button', { name: 'Ajouter' })).toBeEnabled();
 

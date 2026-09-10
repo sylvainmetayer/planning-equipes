@@ -31,7 +31,7 @@ function nomAccessible(element: Element): string {
     .map((noeud) =>
       noeud.nodeType === Node.ELEMENT_NODE
         ? nomAccessible(noeud as Element)
-        : (noeud.textContent ?? '')
+        : (noeud.textContent ?? ''),
     )
     .join(' ')
     .replace(/\s+/g, ' ')
@@ -53,7 +53,7 @@ function nomAccessible(element: Element): string {
         </th>
       </tr>
     </table>
-  `
+  `,
 })
 class HoteTest {
   readonly aide = AIDE;

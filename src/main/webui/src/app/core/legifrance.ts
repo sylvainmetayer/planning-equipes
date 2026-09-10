@@ -16,7 +16,8 @@
 // hard constraints match the law. The search form below always resolves to
 // the version currently in force, and costs nothing for articles cited later.
 
-const RECHERCHE_ARTICLE = 'https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=';
+const RECHERCHE_ARTICLE =
+  'https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=';
 
 /**
  * Convention collective nationale ÉCLAT (animation, IDCC 1518). Its clauses

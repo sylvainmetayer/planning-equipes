@@ -6,14 +6,14 @@ import {
   PlanningEvenement,
   Stand,
   SuggestionReparation,
-  SuggestionsReparation
+  SuggestionsReparation,
 } from '../core/models';
 import {
   aUneAppreciationPour,
   compareDelta,
   meilleuresSuggestions,
   nomAnimateur,
-  suggestionsTronquees
+  suggestionsTronquees,
 } from './affectation-explanation-rules';
 
 function score(hardScore: number, mediumScore: number, softScore: number): HardMediumSoftScore {
@@ -29,7 +29,7 @@ function animateur(id: string, competences: Record<string, NiveauCompetence> = {
     manager: false,
     competences,
     souhaits: [],
-    joursIndisponibles: []
+    joursIndisponibles: [],
   };
 }
 
@@ -46,7 +46,7 @@ function stand(typologiesProposees: string[]): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
@@ -76,11 +76,18 @@ describe('compareDelta', () => {
 
 describe('aUneAppreciationPour', () => {
   it('is true as soon as one typologie of the stand is appreciated', () => {
-    expect(aUneAppreciationPour(animateur('a1', { ambiance: 'DEBUTANT' }), stand(['expert', 'ambiance']))).toBe(true);
+    expect(
+      aUneAppreciationPour(
+        animateur('a1', { ambiance: 'DEBUTANT' }),
+        stand(['expert', 'ambiance']),
+      ),
+    ).toBe(true);
   });
 
   it('is false when none of the stand typologies is appreciated', () => {
-    expect(aUneAppreciationPour(animateur('a1', { ambiance: 'REFERENT' }), stand(['expert']))).toBe(false);
+    expect(aUneAppreciationPour(animateur('a1', { ambiance: 'REFERENT' }), stand(['expert']))).toBe(
+      false,
+    );
   });
 
   it('is false for a stand offering no typologie at all', () => {
@@ -90,13 +97,21 @@ describe('aUneAppreciationPour', () => {
   // The appreciation is a level, and `DEBUTANT` is a real one: keying on
   // presence rather than truthiness is what keeps a beginner a candidate.
   it('counts an appreciation whose level is the lowest one', () => {
-    expect(aUneAppreciationPour(animateur('a1', { ambiance: 'DEBUTANT' }), stand(['ambiance']))).toBe(true);
+    expect(
+      aUneAppreciationPour(animateur('a1', { ambiance: 'DEBUTANT' }), stand(['ambiance'])),
+    ).toBe(true);
   });
 });
 
 describe('suggestions de réparation (issue #71)', () => {
   function suggestion(animateurId: string, delta: HardMediumSoftScore): SuggestionReparation {
-    return { animateurId, scoreApres: score(0, 0, 0), delta, violationsResolues: [], violationsIntroduites: [] };
+    return {
+      animateurId,
+      scoreApres: score(0, 0, 0),
+      delta,
+      violationsResolues: [],
+      violationsIntroduites: [],
+    };
   }
 
   function reparations(overrides: Partial<SuggestionsReparation> = {}): SuggestionsReparation {
@@ -109,7 +124,7 @@ describe('suggestions de réparation (issue #71)', () => {
       candidatsEvalues: 3,
       plafond: 20,
       suggestions: [],
-      ...overrides
+      ...overrides,
     };
   }
 
@@ -122,11 +137,15 @@ describe('suggestions de réparation (issue #71)', () => {
   }
 
   it('does not call the answer truncated when every eligible candidate was evaluated', () => {
-    expect(suggestionsTronquees(reparations({ candidatsEligibles: 3, candidatsEvalues: 3 }))).toBe(false);
+    expect(suggestionsTronquees(reparations({ candidatsEligibles: 3, candidatsEvalues: 3 }))).toBe(
+      false,
+    );
   });
 
   it('calls it truncated as soon as the plafond stopped the search short', () => {
-    expect(suggestionsTronquees(reparations({ candidatsEligibles: 137, candidatsEvalues: 20 }))).toBe(true);
+    expect(
+      suggestionsTronquees(reparations({ candidatsEligibles: 137, candidatsEvalues: 20 })),
+    ).toBe(true);
   });
 
   it('reports nothing truncated while no search has run', () => {
@@ -135,16 +154,12 @@ describe('suggestions de réparation (issue #71)', () => {
 
   it('keeps the server ranking untouched and only trims to the display cap', () => {
     const rangees = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'].map((id, index) =>
-      suggestion(id, score(0, 0, -index))
+      suggestion(id, score(0, 0, -index)),
     );
 
-    expect(meilleuresSuggestions(reparations({ suggestions: rangees })).map((each) => each.animateurId)).toEqual([
-      'a1',
-      'a2',
-      'a3',
-      'a4',
-      'a5'
-    ]);
+    expect(
+      meilleuresSuggestions(reparations({ suggestions: rangees })).map((each) => each.animateurId),
+    ).toEqual(['a1', 'a2', 'a3', 'a4', 'a5']);
   });
 
   it('returns every suggestion when there are fewer than the cap', () => {
@@ -158,10 +173,14 @@ describe('suggestions de réparation (issue #71)', () => {
   });
 
   it('names a suggested animateur from the planning the dialog holds', () => {
-    expect(nomAnimateur(planning([personne('a1', 'Camille', 'Durand')]), 'a1')).toBe('Camille Durand');
+    expect(nomAnimateur(planning([personne('a1', 'Camille', 'Durand')]), 'a1')).toBe(
+      'Camille Durand',
+    );
   });
 
   it('falls back to the raw id when the referential no longer knows that animateur', () => {
-    expect(nomAnimateur(planning([personne('a1', 'Camille', 'Durand')]), 'disparu')).toBe('disparu');
+    expect(nomAnimateur(planning([personne('a1', 'Camille', 'Durand')]), 'disparu')).toBe(
+      'disparu',
+    );
   });
 });

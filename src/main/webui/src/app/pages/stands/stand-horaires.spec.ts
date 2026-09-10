@@ -8,7 +8,7 @@ import {
   erreurRegle,
   libelleJour,
   libelleJourSemaine,
-  premiereErreurHoraire
+  premiereErreurHoraire,
 } from './stand-horaires';
 
 function horaire(overrides: Partial<HoraireStand> = {}): HoraireStand {
@@ -22,7 +22,7 @@ function horaire(overrides: Partial<HoraireStand> = {}): HoraireStand {
     dates: [],
     fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }],
     motif: null,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -40,52 +40,64 @@ describe('premiereErreurHoraire', () => {
   });
 
   it('refuses a window with no start time', () => {
-    expect(premiereErreurHoraire([horaire({ fenetres: [{ heureDebut: '', heureFin: '12:00' }] })])).toContain(
-      'heure de début'
-    );
+    expect(
+      premiereErreurHoraire([horaire({ fenetres: [{ heureDebut: '', heureFin: '12:00' }] })]),
+    ).toContain('heure de début');
   });
 
   it('refuses a window whose end is not after its start', () => {
-    expect(premiereErreurHoraire([horaire({ fenetres: [{ heureDebut: '14:00', heureFin: '10:00' }] })])).toContain(
-      "L'heure de fin doit être après"
-    );
+    expect(
+      premiereErreurHoraire([horaire({ fenetres: [{ heureDebut: '14:00', heureFin: '10:00' }] })]),
+    ).toContain("L'heure de fin doit être après");
   });
 
   // An empty end time is the documented way of saying "until closing time".
   it('accepts a window left open until closing time', () => {
-    expect(premiereErreurHoraire([horaire({ fenetres: [{ heureDebut: '14:00', heureFin: null }] })])).toBeNull();
+    expect(
+      premiereErreurHoraire([horaire({ fenetres: [{ heureDebut: '14:00', heureFin: null }] })]),
+    ).toBeNull();
   });
 
   it('refuses a weekday-scoped rule naming no weekday', () => {
-    expect(premiereErreurHoraire([horaire({ jours: 'JOURS_SEMAINE', joursSemaine: [] })])).toContain(
-      'au moins un jour de la semaine'
-    );
+    expect(
+      premiereErreurHoraire([horaire({ jours: 'JOURS_SEMAINE', joursSemaine: [] })]),
+    ).toContain('au moins un jour de la semaine');
   });
 
   it('refuses a range-scoped rule with no coherent bounds', () => {
-    expect(premiereErreurHoraire([horaire({ jours: 'PLAGE', dateDebut: null, dateFin: null })])).toContain(
-      'date de début et une date de fin'
-    );
+    expect(
+      premiereErreurHoraire([horaire({ jours: 'PLAGE', dateDebut: null, dateFin: null })]),
+    ).toContain('date de début et une date de fin');
   });
 
   it('refuses a date-scoped rule naming no date', () => {
-    expect(premiereErreurHoraire([horaire({ jours: 'DATES', dates: [] })])).toContain('au moins une date');
+    expect(premiereErreurHoraire([horaire({ jours: 'DATES', dates: [] })])).toContain(
+      'au moins une date',
+    );
   });
 
   it('reports the first faulty rule, not the last', () => {
-    const erreur = premiereErreurHoraire([horaire({ fenetres: [] }), horaire({ jours: 'DATES', dates: [] })]);
+    const erreur = premiereErreurHoraire([
+      horaire({ fenetres: [] }),
+      horaire({ jours: 'DATES', dates: [] }),
+    ]);
     expect(erreur).toContain('au moins une fenêtre');
   });
 
   // Two rules of the same scope, same days, one opening and one closing: the
   // backend cannot decide which wins, so the form refuses it up front.
   it('refuses an opening and a closing rule of the same scope on the same days', () => {
-    const erreur = premiereErreurHoraire([horaire({ mode: 'OUVERTURE' }), horaire({ mode: 'FERMETURE' })]);
+    const erreur = premiereErreurHoraire([
+      horaire({ mode: 'OUVERTURE' }),
+      horaire({ mode: 'FERMETURE' }),
+    ]);
     expect(erreur).toContain("l'un une ouverture et l'autre une fermeture");
   });
 
   it('accepts two rules of the same scope that agree on their mode', () => {
-    expect(premiereErreurHoraire([horaire({ mode: 'OUVERTURE' }), horaire({ mode: 'OUVERTURE' })])).toBeNull();
+    expect(
+      premiereErreurHoraire([horaire({ mode: 'OUVERTURE' }), horaire({ mode: 'OUVERTURE' })]),
+    ).toBeNull();
   });
 
   it('accepts an empty rule set', () => {
@@ -102,7 +114,7 @@ describe('libelleJourSemaine', () => {
       'THURSDAY',
       'FRIDAY',
       'SATURDAY',
-      'SUNDAY'
+      'SUNDAY',
     ];
     expect(jours.map(libelleJourSemaine)).toEqual([
       'Lundi',
@@ -111,7 +123,7 @@ describe('libelleJourSemaine', () => {
       'Jeudi',
       'Vendredi',
       'Samedi',
-      'Dimanche'
+      'Dimanche',
     ]);
   });
 });
@@ -152,9 +164,9 @@ describe('decrireJour', () => {
       jour({
         fenetres: [
           { heureDebut: '10:00', heureFin: '12:00' },
-          { heureDebut: '14:00', heureFin: null }
-        ]
-      })
+          { heureDebut: '14:00', heureFin: null },
+        ],
+      }),
     );
     expect(text).toBe('Ouvert 10:00 → 12:00, 14:00 → fermeture');
   });
@@ -164,19 +176,23 @@ describe('decrireJour', () => {
       jour({
         fenetres: [
           { heureDebut: '10:00', heureFin: '12:00' },
-          { heureDebut: '14:00', heureFin: '20:00', effectif: 3 }
-        ]
-      })
+          { heureDebut: '14:00', heureFin: '20:00', effectif: 3 },
+        ],
+      }),
     );
     expect(text).toBe('Ouvert 10:00 → 12:00, 14:00 → 20:00 ×3');
   });
 
   it('says "fermeture" for a window running to the end of the day', () => {
-    expect(decrireJour(jour({ fenetres: [{ heureDebut: '14:00', heureFin: null }] }))).toContain('fermeture');
+    expect(decrireJour(jour({ fenetres: [{ heureDebut: '14:00', heureFin: null }] }))).toContain(
+      'fermeture',
+    );
   });
 
   it('distinguishes a closing day from an opening one', () => {
-    const ferme = decrireJour(jour({ mode: 'FERMETURE', fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }));
+    const ferme = decrireJour(
+      jour({ mode: 'FERMETURE', fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }),
+    );
     expect(ferme).toContain('Fermé');
     expect(ferme).not.toContain('Ouvert');
   });
@@ -217,9 +233,15 @@ describe('erreurRegle', () => {
 
   it('falls back on the rule checks once the line parses', () => {
     expect(erreurRegle({ ...horaire(), saisie: '10:00-12:00' })).toBeNull();
-    expect(erreurRegle({ ...horaire({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 5 }] }), saisie: null }, 2)).toContain(
-      "L'effectif d'une fenêtre"
-    );
+    expect(
+      erreurRegle(
+        {
+          ...horaire({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00', effectif: 5 }] }),
+          saisie: null,
+        },
+        2,
+      ),
+    ).toContain("L'effectif d'une fenêtre");
   });
 
   it('checks the windows when no line was ever typed', () => {

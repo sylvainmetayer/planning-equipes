@@ -17,7 +17,9 @@ import { MatIconModule } from '@angular/material/icon';
         <!-- The selection follows the filter: "select all" ticks what is on
              screen, not the whole referential. Worth saying before a bulk
              delete, not after. -->
-        <span class="bulk-bar-scope" i18n="@@bulk.filteredScope">(lignes affichées par le filtre uniquement)</span>
+        <span class="bulk-bar-scope" i18n="@@bulk.filteredScope"
+          >(lignes affichées par le filtre uniquement)</span
+        >
       }
       @if (editable()) {
         <button matButton type="button" [disabled]="disabled()" (click)="edit.emit()">
@@ -25,7 +27,13 @@ import { MatIconModule } from '@angular/material/icon';
           <ng-container i18n="@@bulk.editSelection">Modifier la sélection</ng-container>
         </button>
       }
-      <button matButton type="button" class="danger-action" [disabled]="disabled()" (click)="remove.emit()">
+      <button
+        matButton
+        type="button"
+        class="danger-action"
+        [disabled]="disabled()"
+        (click)="remove.emit()"
+      >
         <mat-icon>delete</mat-icon>
         <ng-container i18n="@@bulk.deleteSelection">Supprimer la sélection</ng-container>
       </button>
@@ -34,7 +42,7 @@ import { MatIconModule } from '@angular/material/icon';
       </button>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BulkActionsBar {
   readonly count = input.required<number>();
@@ -50,6 +58,6 @@ export class BulkActionsBar {
   readonly clear = output<void>();
 
   protected readonly countLabel = computed(
-    () => $localize`:@@bulk.selectedCount:${this.count()}:count: élément(s) sélectionné(s)`
+    () => $localize`:@@bulk.selectedCount:${this.count()}:count: élément(s) sélectionné(s)`,
   );
 }

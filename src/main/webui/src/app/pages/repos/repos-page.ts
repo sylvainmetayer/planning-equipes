@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -11,7 +18,14 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { TableFilter } from '../../shared/table-filter';
-import { LigneRepos, TableauRepos, TotalJour, buildTableauRepos, filtrerLignes, totauxParJour } from './repos';
+import {
+  LigneRepos,
+  TableauRepos,
+  TotalJour,
+  buildTableauRepos,
+  filtrerLignes,
+  totauxParJour,
+} from './repos';
 
 /**
  * Rest days: one line per animateur, one column per day of the event, each
@@ -36,10 +50,10 @@ import { LigneRepos, TableauRepos, TotalJour, buildTableauRepos, filtrerLignes, 
     MatIconModule,
     MatProgressBarModule,
     MatTooltipModule,
-    TableFilter
+    TableFilter,
   ],
   templateUrl: './repos-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReposPage {
   protected readonly loading = signal(false);
@@ -60,22 +74,28 @@ export class ReposPage {
     }
     // The ad hoc exceptions travel with the plan already: no second request to
     // know who was kept off the whole event.
-    return buildTableauRepos(planning.postes ?? [], planning.animateurs ?? [], planning.contraintesAdHoc ?? []);
+    return buildTableauRepos(
+      planning.postes ?? [],
+      planning.animateurs ?? [],
+      planning.contraintesAdHoc ?? [],
+    );
   });
 
   protected readonly lignes = computed<LigneRepos[]>(() => this.tableau().lignes);
 
   protected readonly lignesAffichees = computed<LigneRepos[]>(() =>
-    filtrerLignes(this.lignes(), this.filtre(), this.sansReposSeulement())
+    filtrerLignes(this.lignes(), this.filtre(), this.sansReposSeulement()),
   );
 
   /** Footer of the grid, counted over the rows actually displayed. */
   protected readonly totaux = computed<TotalJour[]>(() =>
-    totauxParJour(this.tableau().jours, this.lignesAffichees())
+    totauxParJour(this.tableau().jours, this.lignesAffichees()),
   );
 
   /** How many people never get a day off — the number this screen exists to bring down. */
-  protected readonly sansReposCount = computed(() => this.lignes().filter((ligne) => ligne.sansRepos).length);
+  protected readonly sansReposCount = computed(
+    () => this.lignes().filter((ligne) => ligne.sansRepos).length,
+  );
 
   protected readonly compteursLabel = computed(() => {
     const total = this.lignes().length;
@@ -85,7 +105,9 @@ export class ReposPage {
   });
 
   /** True as soon as the view differs from the one this page opens on. */
-  protected readonly viewChanged = computed(() => this.filtre().trim() !== '' || this.sansReposSeulement());
+  protected readonly viewChanged = computed(
+    () => this.filtre().trim() !== '' || this.sansReposSeulement(),
+  );
 
   protected readonly animateurColumnLabel = $localize`:@@repos.column.animateur:Animateur`;
   protected readonly sansReposLabel = $localize`:@@repos.row.sansRepos:Aucun jour de repos sur tout l'événement`;
@@ -122,7 +144,7 @@ export class ReposPage {
     void this.refresh();
     keepViewInQueryParams(() => ({
       q: optionalParam(this.filtre()),
-      sansRepos: this.sansReposSeulement() ? '1' : null
+      sansRepos: this.sansReposSeulement() ? '1' : null,
     }));
   }
 

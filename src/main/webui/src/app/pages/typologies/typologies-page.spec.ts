@@ -31,7 +31,7 @@ describe('TypologiesPage', () => {
   const crud = {
     reload: vi.fn(async () => undefined),
     save: vi.fn(async () => true),
-    removeMany: vi.fn(async () => 0)
+    removeMany: vi.fn(async () => 0),
   };
 
   beforeEach(() => {
@@ -44,9 +44,12 @@ describe('TypologiesPage', () => {
         provideRouter([]),
         { provide: ApiService, useValue: { get: vi.fn() } },
         { provide: ReferenceCrudService, useValue: crud },
-        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
-        { provide: MatDialog, useValue: { open: vi.fn() } }
-      ]
+        {
+          provide: SolverJobService,
+          useValue: { solverBusy: () => false, editingLocked: () => false },
+        },
+        { provide: MatDialog, useValue: { open: vi.fn() } },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
@@ -61,14 +64,18 @@ describe('TypologiesPage', () => {
       const page = createPage([
         { id: 'STRATEGIE', label: 'Stratégie' },
         { id: 'JOKER', label: 'Joker' },
-        { id: 'AMBIANCE', label: 'Ambiance' }
+        { id: 'AMBIANCE', label: 'Ambiance' },
       ]);
 
       page.selection.toggle('STRATEGIE');
       page.selection.toggle('AMBIANCE');
       await page.removeSelection();
 
-      expect(crud.removeMany).toHaveBeenCalledWith('typologies', ['STRATEGIE', 'AMBIANCE'], expect.anything());
+      expect(crud.removeMany).toHaveBeenCalledWith(
+        'typologies',
+        ['STRATEGIE', 'AMBIANCE'],
+        expect.anything(),
+      );
     });
 
     // Le référentiel est rechargé après chaque écriture : une ligne disparue
@@ -76,7 +83,7 @@ describe('TypologiesPage', () => {
     it('oublie une typologie supprimée entre-temps', () => {
       const page = createPage([
         { id: 'STRATEGIE', label: 'Stratégie' },
-        { id: 'JOKER', label: 'Joker' }
+        { id: 'JOKER', label: 'Joker' },
       ]);
       page.selection.toggleAll();
 
@@ -94,7 +101,7 @@ describe('TypologiesPage table', () => {
   const crud = {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async (..._args: unknown[]) => true),
-    removeMany: vi.fn(async () => 0)
+    removeMany: vi.fn(async () => 0),
   };
   const editingLocked = signal(false);
 
@@ -110,13 +117,13 @@ describe('TypologiesPage table', () => {
 
   function lignes(): string[][] {
     return Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim())
+      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim()),
     );
   }
 
   function action(indexLigne: number, nom: string): HTMLButtonElement {
     const boutons = Array.from(
-      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button')
+      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button'),
     );
     const bouton = boutons.find((each) => each.getAttribute('aria-label') === nom);
     expect(bouton, `action « ${nom} » absente`).toBeDefined();
@@ -135,8 +142,8 @@ describe('TypologiesPage table', () => {
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
-        { provide: MatDialog, useValue: dialog }
-      ]
+        { provide: MatDialog, useValue: dialog },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
@@ -144,24 +151,24 @@ describe('TypologiesPage table', () => {
   it('renders one row per typologie and counts them in the title', async () => {
     await rendre([
       { id: 'ambiance', label: 'Ambiance' },
-      { id: 'expert', label: 'Expert' }
+      { id: 'expert', label: 'Expert' },
     ]);
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Typologies (2)');
     expect(lignes().map((row) => [row[1], row[2]])).toEqual([
       ['ambiance', 'Ambiance'],
-      ['expert', 'Expert']
+      ['expert', 'Expert'],
     ]);
   });
 
   it('marks the ninja typologie, and only it', async () => {
     await rendre([
       { id: 'ambiance', label: 'Ambiance' },
-      { id: 'ninja', label: 'Ninja', ninja: true }
+      { id: 'ninja', label: 'Ninja', ninja: true },
     ]);
 
     const cellules = Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      row.querySelectorAll('td')[3].querySelector('mat-icon')
+      row.querySelectorAll('td')[3].querySelector('mat-icon'),
     );
     expect(cellules[0]).toBeNull();
     // Announced, not just drawn: the icon carries the whole meaning of the cell.
@@ -182,8 +189,8 @@ describe('TypologiesPage table', () => {
         emplacement: null,
         indisponibilites: [],
         ouvertures: [],
-        horaires: []
-      }
+        horaires: [],
+      },
     ]);
     referenceData.animateurs.set([
       {
@@ -194,15 +201,20 @@ describe('TypologiesPage table', () => {
         manager: false,
         competences: { ambiance: 'REFERENT' },
         souhaits: [],
-        joursIndisponibles: []
-      }
+        joursIndisponibles: [],
+      },
     ]);
     await rendre([{ id: 'ambiance', label: 'Ambiance' }]);
 
     action(0, 'Supprimer').click();
     await fixture.whenStable();
 
-    expect(crud.remove).toHaveBeenCalledWith('typologies', 'ambiance', 'Typologie', '1 stand(s) et 1 animateur(s) la référencent.');
+    expect(crud.remove).toHaveBeenCalledWith(
+      'typologies',
+      'ambiance',
+      'Typologie',
+      '1 stand(s) et 1 animateur(s) la référencent.',
+    );
   });
 
   it('says plainly when nothing references the typologie', async () => {
@@ -215,7 +227,7 @@ describe('TypologiesPage table', () => {
       'typologies',
       'ambiance',
       'Typologie',
-      'Aucun stand ni animateur ne la référence.'
+      'Aucun stand ni animateur ne la référence.',
     );
   });
 
@@ -242,7 +254,9 @@ describe('TypologiesPage table', () => {
 
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucune typologie pour le moment.');
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
+      'Aucune typologie pour le moment.',
+    );
 
     await rendre([{ id: 'ambiance', label: 'Ambiance' }]);
     const input = racine().querySelector('app-table-filter input') as HTMLInputElement;
@@ -250,13 +264,17 @@ describe('TypologiesPage table', () => {
     input.dispatchEvent(new Event('input'));
     await fixture.whenStable();
 
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucune ligne ne correspond au filtre.');
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
+      'Aucune ligne ne correspond au filtre.',
+    );
   });
 
   it('points at the Paramètres page for the ninja choice instead of editing it here', async () => {
     await rendre([{ id: 'ambiance', label: 'Ambiance' }]);
 
-    const lien = Array.from(racine().querySelectorAll('a')).find((each) => each.textContent!.includes('ninja'))!;
+    const lien = Array.from(racine().querySelectorAll('a')).find((each) =>
+      each.textContent!.includes('ninja'),
+    )!;
     expect(lien.getAttribute('href')).toBe('/parametres');
   });
 });

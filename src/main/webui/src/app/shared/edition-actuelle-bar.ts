@@ -108,7 +108,7 @@ import { Edition } from '../core/models';
       }
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditionActuelleBar {
   private readonly store = inject(EditionStore);

@@ -21,14 +21,14 @@ module.exports = tseslint.config(
     // 150-odd errors about a report nobody wrote. CI never saw it because
     // lint runs before the tests that produce it — locally, the order is
     // whatever you happen to type.
-    ignores: ['dist/**', 'node_modules/**', '.angular/**', 'coverage/**', 'src/version.ts']
+    ignores: ['dist/**', 'node_modules/**', '.angular/**', 'coverage/**', 'src/version.ts'],
   },
   {
     files: ['**/*.ts'],
     extends: [
       eslint.configs.recommended,
       ...tseslint.configs.recommended,
-      ...angular.configs.tsRecommended
+      ...angular.configs.tsRecommended,
     ],
     processor: angular.processInlineTemplates,
     rules: {
@@ -46,12 +46,18 @@ module.exports = tseslint.config(
       // ...rest} = x`) is the idiomatic way to build an `Omit<>` payload.
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
       ],
       // Selector conventions of the repository.
-      '@angular-eslint/component-selector': ['error', { type: 'element', prefix: 'app', style: 'kebab-case' }],
-      '@angular-eslint/directive-selector': ['error', { type: 'attribute', prefix: 'app', style: 'camelCase' }]
-    }
+      '@angular-eslint/component-selector': [
+        'error',
+        { type: 'element', prefix: 'app', style: 'kebab-case' },
+      ],
+      '@angular-eslint/directive-selector': [
+        'error',
+        { type: 'attribute', prefix: 'app', style: 'camelCase' },
+      ],
+    },
   },
   {
     files: ['**/*.html'],
@@ -65,8 +71,8 @@ module.exports = tseslint.config(
       '@angular-eslint/template/alt-text': 'error',
       '@angular-eslint/template/elements-content': 'error',
       '@angular-eslint/template/label-has-associated-control': 'error',
-      '@angular-eslint/template/valid-aria': 'error'
-    }
+      '@angular-eslint/template/valid-aria': 'error',
+    },
   },
   {
     // Specs legitimately reach into privates and build partial fixtures.
@@ -78,7 +84,7 @@ module.exports = tseslint.config(
       // it to satisfy the linter makes the runner refuse to load the file
       // ("First argument must use the object destructuring pattern") — which is
       // exactly what happened, and what the e2e run caught.
-      'no-empty-pattern': 'off'
-    }
-  }
+      'no-empty-pattern': 'off',
+    },
+  },
 );

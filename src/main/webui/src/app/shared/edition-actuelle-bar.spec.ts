@@ -22,8 +22,11 @@ describe('EditionActuelleBar', () => {
         provideRouter([]),
         // The strip now embeds the groupe de créneaux selector, which fetches
         // its own (here empty) list on creation.
-        { provide: ApiService, useValue: { get: vi.fn().mockResolvedValue([]), put: vi.fn(), post: vi.fn() } }
-      ]
+        {
+          provide: ApiService,
+          useValue: { get: vi.fn().mockResolvedValue([]), put: vi.fn(), post: vi.fn() },
+        },
+      ],
     });
     store = TestBed.inject(EditionStore);
     fixture = TestBed.createComponent(EditionActuelleBar);
@@ -51,7 +54,9 @@ describe('EditionActuelleBar', () => {
     store.editions.set([edition('B', 'Année 2026', true)]);
     store.courant.set(edition('B', 'Année 2026', true));
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('[mat-menu-trigger-for], [matMenuTriggerFor]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[mat-menu-trigger-for], [matMenuTriggerFor]'),
+    ).toBeNull();
     expect(text()).not.toContain('Changer');
   });
 
@@ -64,7 +69,7 @@ describe('EditionActuelleBar', () => {
     // `basculer` is protected (template-only API); the test drives it through a
     // structural view of the component instead of loosening its visibility.
     (fixture.componentInstance as unknown as { basculer: (e: Edition) => void }).basculer(
-      edition('A', 'Année 2025')
+      edition('A', 'Année 2025'),
     );
 
     expect(basculer).toHaveBeenCalledWith(edition('A', 'Année 2025'));

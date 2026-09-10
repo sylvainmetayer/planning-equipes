@@ -28,7 +28,7 @@ describe('PublicationPanel', () => {
     publicationPreview: vi.fn(),
     publish: vi.fn(),
     exportGlobalPdf: vi.fn(),
-    exportBundle: vi.fn()
+    exportBundle: vi.fn(),
   };
   const planningState = { require: vi.fn() };
   const confirm = { ask: vi.fn() };
@@ -40,7 +40,7 @@ describe('PublicationPanel', () => {
     solveEnCours: false,
     dernierePublicationLe: null,
     nombreConcernes: 3,
-    destinataires: []
+    destinataires: [],
   };
 
   let fixture: ComponentFixture<PublicationPanel>;
@@ -56,7 +56,7 @@ describe('PublicationPanel', () => {
       planningApi.exportGlobalPdf,
       planningApi.exportBundle,
       planningState.require,
-      confirm.ask
+      confirm.ask,
     ]) {
       stub.mockReset();
     }
@@ -67,8 +67,8 @@ describe('PublicationPanel', () => {
         { provide: PlanningApi, useValue: planningApi },
         { provide: PlanningStateService, useValue: planningState },
         { provide: ConfirmService, useValue: confirm },
-        { provide: SolverJobService, useValue: { editingLocked: () => editingLocked() } }
-      ]
+        { provide: SolverJobService, useValue: { editingLocked: () => editingLocked() } },
+      ],
     });
   });
 
@@ -88,7 +88,7 @@ describe('PublicationPanel', () => {
       () =>
         new Promise((resolve) => {
           finish = () => resolve({ envoyes: 3, sansEmail: [], echecs: [] });
-        })
+        }),
     );
     return { terminer: () => finish() };
   }
@@ -150,7 +150,7 @@ describe('PublicationPanel', () => {
       () =>
         new Promise<boolean>((resolve) => {
           confirmer = () => resolve(true);
-        })
+        }),
     );
     const envoi = envoiSuspendu();
     const panel = await panelPret();

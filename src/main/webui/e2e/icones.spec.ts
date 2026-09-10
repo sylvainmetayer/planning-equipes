@@ -50,7 +50,7 @@ test('la police des icônes est servie comme une police, pas comme une page', as
 });
 
 test('le navigateur charge la police et rend les icônes en glyphes, pas en mots rognés', async ({
-  browser
+  browser,
 }, testInfo) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/stands');
@@ -61,7 +61,7 @@ test('le navigateur charge la police et rend les icônes en glyphes, pas en mots
     await document.fonts.ready;
     return {
       chargee: document.fonts.check('24px "Material Icons"'),
-      faces: [...document.fonts].filter((f) => f.family === 'Material Icons').map((f) => f.status)
+      faces: [...document.fonts].filter((f) => f.family === 'Material Icons').map((f) => f.status),
     };
   });
   expect(police.faces, "la déclaration @font-face n'a pas été vue").not.toHaveLength(0);
@@ -79,7 +79,7 @@ test('le navigateur charge la police et rend les icônes en glyphes, pas en mots
       largeur: rect.width,
       hauteur: rect.height,
       // A clipped word overflows its box; a glyph does not.
-      debordement: el.scrollWidth - el.clientWidth
+      debordement: el.scrollWidth - el.clientWidth,
     };
   });
 
@@ -87,15 +87,19 @@ test('le navigateur charge la police et rend les icônes en glyphes, pas en mots
   // show what was actually drawn, which is the whole point of a screenshot here.
   await testInfo.attach('icone-supprimer.png', {
     body: await icone.screenshot(),
-    contentType: 'image/png'
+    contentType: 'image/png',
   });
 
   expect(mesure.famille).toContain('Material Icons');
   expect(mesure.largeur).toBeGreaterThan(0);
-  expect(mesure.largeur, `l'icône fait ${Math.round(mesure.largeur)} px de large : c'est un mot, pas un glyphe`)
-    .toBeLessThanOrEqual(LARGEUR_MAX_GLYPHE);
+  expect(
+    mesure.largeur,
+    `l'icône fait ${Math.round(mesure.largeur)} px de large : c'est un mot, pas un glyphe`,
+  ).toBeLessThanOrEqual(LARGEUR_MAX_GLYPHE);
   expect(mesure.hauteur).toBeLessThanOrEqual(LARGEUR_MAX_GLYPHE);
-  expect(mesure.debordement, "l'icône déborde de sa boîte : elle est rognée").toBeLessThanOrEqual(1);
+  expect(mesure.debordement, "l'icône déborde de sa boîte : elle est rognée").toBeLessThanOrEqual(
+    1,
+  );
 
   await page.close();
 });
@@ -128,20 +132,26 @@ test("la colonne d'actions ne remplace aucun bouton par « ... »", async ({ bro
       textOverflow: style.textOverflow,
       overflow: style.overflow,
       boutons: boutons.length,
-      dernierDedans: dernier.getBoundingClientRect().right <= el.getBoundingClientRect().right + 1
+      dernierDedans: dernier.getBoundingClientRect().right <= el.getBoundingClientRect().right + 1,
     };
   });
 
   expect(etat.boutons, "la ligne n'a aucun bouton d'action").toBeGreaterThan(0);
-  expect(etat.textOverflow, 'la cellule tronquerait son dernier bouton en « ... »').not.toBe('ellipsis');
-  expect(etat.overflow, "la cellule masque ce qui dépasse : le dernier bouton n'est plus atteignable")
-    .not.toBe('hidden');
+  expect(etat.textOverflow, 'la cellule tronquerait son dernier bouton en « ... »').not.toBe(
+    'ellipsis',
+  );
+  expect(
+    etat.overflow,
+    "la cellule masque ce qui dépasse : le dernier bouton n'est plus atteignable",
+  ).not.toBe('hidden');
   expect(etat.dernierDedans, 'le dernier bouton déborde déjà de sa cellule').toBe(true);
 
   await page.close();
 });
 
-test("une icône en deux mots forme sa ligature aussi, l'underscore compris", async ({ browser }) => {
+test("une icône en deux mots forme sa ligature aussi, l'underscore compris", async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/stands');
   await page.waitForLoadState('networkidle');
@@ -149,7 +159,9 @@ test("une icône en deux mots forme sa ligature aussi, l'underscore compris", as
   // A width alone would not do: while the font is still loading, `font-display:
   // block` draws nothing at all — narrow, and invisible. So the face has to be
   // usable before the measurement means anything.
-  await page.waitForFunction(() => document.fonts.check('24px "Material Icons"'), null, { timeout: 10_000 });
+  await page.waitForFunction(() => document.fonts.check('24px "Material Icons"'), null, {
+    timeout: 10_000,
+  });
 
   // `grid_view` sits in the navigation: its underscore is a glyph of its own,
   // and a subset font that dropped it would draw the two words instead.
@@ -164,14 +176,18 @@ test("une icône en deux mots forme sa ligature aussi, l'underscore compris", as
       largeur: cible.getBoundingClientRect().width,
       texte: cible.textContent!.trim(),
       visible: cible.getBoundingClientRect().width > 0,
-      trop: cible.getBoundingClientRect().width > maximum
+      trop: cible.getBoundingClientRect().width > maximum,
     };
   }, LARGEUR_MAX_GLYPHE);
 
   expect(mesure.trouvee, 'aucune icône en deux mots sur cet écran').toBe(true);
-  expect(mesure.visible, `« ${mesure.texte} » n'occupe aucune place : rien n'est dessiné`).toBe(true);
-  expect(mesure.trop, `« ${mesure.texte} » fait ${Math.round(mesure.largeur)} px : la ligature ne s'est pas formée`)
-    .toBe(false);
+  expect(mesure.visible, `« ${mesure.texte} » n'occupe aucune place : rien n'est dessiné`).toBe(
+    true,
+  );
+  expect(
+    mesure.trop,
+    `« ${mesure.texte} » fait ${Math.round(mesure.largeur)} px : la ligature ne s'est pas formée`,
+  ).toBe(false);
 
   await page.close();
 });

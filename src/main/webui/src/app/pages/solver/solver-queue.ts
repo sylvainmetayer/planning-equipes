@@ -17,7 +17,7 @@ import { SolverJobService } from '../../core/solver-job.service';
   selector: 'app-solver-queue',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatTooltipModule],
   templateUrl: './solver-queue.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolverQueue {
   private readonly jobs = inject(SolverJobService);

@@ -5,7 +5,7 @@ import {
   ajouterBrouillon,
   brouillonComplet,
   retirerBrouillon,
-  versNouvellesDemandes
+  versNouvellesDemandes,
 } from './echange-brouillon';
 
 function poste(creneauId: number, standId: string): PosteAnimateurView {
@@ -16,11 +16,16 @@ function poste(creneauId: number, standId: string): PosteAnimateurView {
     heureFin: '12:00',
     standId,
     standNom: standId,
-    coequipiers: []
+    coequipiers: [],
   };
 }
 
-function brouillon(creneauId: number, standId: string, cibleId = 'a2', motif: string | null = null): BrouillonDemande {
+function brouillon(
+  creneauId: number,
+  standId: string,
+  cibleId = 'a2',
+  motif: string | null = null,
+): BrouillonDemande {
   return {
     creneauId,
     standId,
@@ -28,7 +33,7 @@ function brouillon(creneauId: number, standId: string, cibleId = 'a2', motif: st
     motif,
     creneauLabel: '10:00–12:00',
     standNom: standId,
-    cibleNom: 'Alice Blot'
+    cibleNom: 'Alice Blot',
   };
 }
 
@@ -70,10 +75,27 @@ describe('retirerBrouillon', () => {
 
 describe('versNouvellesDemandes', () => {
   it('ne transmet que les champs du backend et normalise le motif', () => {
-    const demandes = versNouvellesDemandes([brouillon(1, 'S1', 'a2', '  repos  '), brouillon(2, 'S2', 'a3', '   ')]);
+    const demandes = versNouvellesDemandes([
+      brouillon(1, 'S1', 'a2', '  repos  '),
+      brouillon(2, 'S2', 'a3', '   '),
+    ]);
     expect(demandes).toEqual([
-      { creneauId: 1, standId: 'S1', cibleId: 'a2', motif: 'repos', creneauCibleId: null, standCibleId: null },
-      { creneauId: 2, standId: 'S2', cibleId: 'a3', motif: null, creneauCibleId: null, standCibleId: null }
+      {
+        creneauId: 1,
+        standId: 'S1',
+        cibleId: 'a2',
+        motif: 'repos',
+        creneauCibleId: null,
+        standCibleId: null,
+      },
+      {
+        creneauId: 2,
+        standId: 'S2',
+        cibleId: 'a3',
+        motif: null,
+        creneauCibleId: null,
+        standCibleId: null,
+      },
     ]);
   });
 
@@ -82,10 +104,17 @@ describe('versNouvellesDemandes', () => {
       ...brouillon(1, 'S1', 'a2', null),
       creneauCibleId: 7,
       standCibleId: 'S9',
-      creneauCibleLabel: 'mar. 14 juil. 10:00–12:00 · Stand neuf'
+      creneauCibleLabel: 'mar. 14 juil. 10:00–12:00 · Stand neuf',
     };
     expect(versNouvellesDemandes([directed])).toEqual([
-      { creneauId: 1, standId: 'S1', cibleId: 'a2', motif: null, creneauCibleId: 7, standCibleId: 'S9' }
+      {
+        creneauId: 1,
+        standId: 'S1',
+        cibleId: 'a2',
+        motif: null,
+        creneauCibleId: 7,
+        standCibleId: 'S9',
+      },
     ]);
   });
 });

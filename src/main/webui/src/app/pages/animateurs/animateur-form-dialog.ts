@@ -58,10 +58,10 @@ export interface AnimateurFormData {
     MatChipsModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   templateUrl: './animateur-form-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateurFormDialog {
   protected readonly niveaux = NIVEAUX;
@@ -91,7 +91,7 @@ export class AnimateurFormDialog {
   protected readonly submitLabel = computed(() =>
     this.editingId()
       ? $localize`:@@animateurs.submit.edit:Modifier l'animateur`
-      : $localize`:@@animateurs.submit.create:Créer l'animateur`
+      : $localize`:@@animateurs.submit.create:Créer l'animateur`,
   );
 
   /**
@@ -135,9 +135,16 @@ export class AnimateurFormDialog {
       competences,
       souhaits: draft.souhaits,
       joursIndisponibles: draft.joursIndisponibles,
-      modifieLe: draft.modifieLe
+      modifieLe: draft.modifieLe,
     };
-    if (await this.crud.save('animateurs', animateur, this.editingId(), $localize`:@@animateurs.entityLabel:Animateur`)) {
+    if (
+      await this.crud.save(
+        'animateurs',
+        animateur,
+        this.editingId(),
+        $localize`:@@animateurs.entityLabel:Animateur`,
+      )
+    ) {
       this.dialogRef.close(true);
     }
   }
@@ -154,7 +161,7 @@ export class AnimateurFormDialog {
     const prises = new Set(
       this.draft()
         .competences.filter((_, position) => position !== index)
-        .map((row) => row.typologie)
+        .map((row) => row.typologie),
     );
     return this.store.typologies().filter((typologie) => !prises.has(typologie.id));
   }
@@ -172,21 +179,23 @@ export class AnimateurFormDialog {
     }
     this.draft.update((draft) => ({
       ...draft,
-      competences: [...draft.competences, { typologie: libre.id, niveau: 'AUTONOME' }]
+      competences: [...draft.competences, { typologie: libre.id, niveau: 'AUTONOME' }],
     }));
   }
 
   protected removeCompetence(index: number): void {
     this.draft.update((draft) => ({
       ...draft,
-      competences: draft.competences.filter((_, position) => position !== index)
+      competences: draft.competences.filter((_, position) => position !== index),
     }));
   }
 
   protected updateCompetence(index: number, patch: Partial<CompetenceRow>): void {
     this.draft.update((draft) => ({
       ...draft,
-      competences: draft.competences.map((row, position) => (position === index ? { ...row, ...patch } : row))
+      competences: draft.competences.map((row, position) =>
+        position === index ? { ...row, ...patch } : row,
+      ),
     }));
   }
 
@@ -199,7 +208,7 @@ export class AnimateurFormDialog {
       ...draft,
       joursIndisponibles: draft.joursIndisponibles.includes(date)
         ? draft.joursIndisponibles
-        : [...draft.joursIndisponibles, date]
+        : [...draft.joursIndisponibles, date],
     }));
     this.newJour.set('');
   }
@@ -207,7 +216,7 @@ export class AnimateurFormDialog {
   protected removeJour(date: string): void {
     this.draft.update((draft) => ({
       ...draft,
-      joursIndisponibles: draft.joursIndisponibles.filter((day) => day !== date)
+      joursIndisponibles: draft.joursIndisponibles.filter((day) => day !== date),
     }));
   }
 
@@ -228,7 +237,7 @@ function toDraft(animateur: Animateur | null): AnimateurDraft {
       competences: [],
       souhaits: [],
       joursIndisponibles: [],
-      modifieLe: null
+      modifieLe: null,
     };
   }
   return {
@@ -239,8 +248,11 @@ function toDraft(animateur: Animateur | null): AnimateurDraft {
     dateNaissance: animateur.dateNaissance ?? '',
     manager: animateur.manager ?? false,
     email: animateur.email ?? '',
-    competences: Object.entries(animateur.competences ?? {}).map(([typologie, niveau]) => ({ typologie, niveau })),
+    competences: Object.entries(animateur.competences ?? {}).map(([typologie, niveau]) => ({
+      typologie,
+      niveau,
+    })),
     souhaits: [...(animateur.souhaits ?? [])],
-    joursIndisponibles: [...(animateur.joursIndisponibles ?? [])]
+    joursIndisponibles: [...(animateur.joursIndisponibles ?? [])],
   };
 }

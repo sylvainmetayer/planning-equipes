@@ -79,14 +79,14 @@ export class ScenarioImportService {
   private async resoudreCible(source: ScenarioSource): Promise<CibleImport> {
     if (source.kind === 'name') {
       return this.api.get<CibleImport>(
-        `/api/reference-data/cible-scenario?name=${encodeURIComponent(source.name ?? '')}`
+        `/api/reference-data/cible-scenario?name=${encodeURIComponent(source.name ?? '')}`,
       );
     }
     try {
       return await this.api.postRaw<CibleImport>(
         '/api/reference-data/cible-scenario-fichier',
         source.content,
-        'application/x-yaml'
+        'application/x-yaml',
       );
     } catch (error) {
       // Only for a file: the operator picked this artifact, so an unreadable
@@ -107,7 +107,7 @@ export class ScenarioImportService {
       return await this.api.postRaw<ImportScenarioResult | null>(
         '/api/reference-data/import-scenario-fichier',
         source.content,
-        'application/x-yaml'
+        'application/x-yaml',
       );
     } catch (error) {
       this.signalerFichierInvalide(error);
@@ -119,7 +119,7 @@ export class ScenarioImportService {
     this.notifications.notify({
       title: $localize`:@@dataSetup.importScenarioFileInvalid:Fichier scénario invalide`,
       message: errorMessage(error),
-      variant: 'error'
+      variant: 'error',
     });
   }
 
@@ -138,17 +138,25 @@ export class ScenarioImportService {
     let importDansEditionCourante = true;
     let compterImpact = true;
     if (!target.editionId) {
-      lignes.push($localize`:@@parametres.impact.edition:L'import écrit dans l'édition « ${courante}:edition: », et elle seule.`);
+      lignes.push(
+        $localize`:@@parametres.impact.edition:L'import écrit dans l'édition « ${courante}:edition: », et elle seule.`,
+      );
     } else if (!target.existe) {
       const nom = target.editionNomFichier ?? target.editionId;
-      lignes.push($localize`:@@parametres.cible.creation:Ce fichier désigne l'édition « ${nom}:cible: » : elle sera CRÉÉE et recevra l'import — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`);
+      lignes.push(
+        $localize`:@@parametres.cible.creation:Ce fichier désigne l'édition « ${nom}:cible: » : elle sera CRÉÉE et recevra l'import — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`,
+      );
       importDansEditionCourante = false;
       compterImpact = false;
     } else if (target.editionId === this.editions.courant()?.id) {
-      lignes.push($localize`:@@parametres.cible.courante:Ce fichier désigne l'édition « ${courante}:edition: » — votre édition actuelle : l'import y écrit, et dans elle seule.`);
+      lignes.push(
+        $localize`:@@parametres.cible.courante:Ce fichier désigne l'édition « ${courante}:edition: » — votre édition actuelle : l'import y écrit, et dans elle seule.`,
+      );
     } else {
       const nom = target.editionNomExistant ?? target.editionId;
-      lignes.push($localize`:@@parametres.cible.existante:Ce fichier désigne l'édition existante « ${nom}:cible: » : l'import remplacera SES données — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`);
+      lignes.push(
+        $localize`:@@parametres.cible.existante:Ce fichier désigne l'édition existante « ${nom}:cible: » : l'import remplacera SES données — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`,
+      );
       editionImpact = target.editionId;
       importDansEditionCourante = false;
     }
@@ -156,7 +164,10 @@ export class ScenarioImportService {
     if (compterImpact) {
       try {
         impact = editionImpact
-          ? await this.api.getDansEdition<ImpactImport>('/api/reference-data/impact-import', editionImpact)
+          ? await this.api.getDansEdition<ImpactImport>(
+              '/api/reference-data/impact-import',
+              editionImpact,
+            )
           : await this.api.get<ImpactImport>('/api/reference-data/impact-import');
       } catch {
         // Counting is comfort, not safety: without it the dialog still warns.
@@ -167,7 +178,7 @@ export class ScenarioImportService {
       title: $localize`:@@dataSetup.impact.titre:Importer et remplacer les données ?`,
       message: lignes.join(' '),
       confirmLabel: $localize`:@@dataTransfer.importAction:Importer`,
-      danger: true
+      danger: true,
     });
     if (!confirme) {
       return false;
@@ -181,16 +192,18 @@ export class ScenarioImportService {
   /** A failed snapshot must not silently cancel the import the operator asked for. */
   private async capturerInstantane(intitule: string): Promise<void> {
     try {
-      await this.snapshots.capturer($localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`);
+      await this.snapshots.capturer(
+        $localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`,
+      );
       this.notifications.notify({
         title: $localize`:@@dataSetup.impact.instantane:Instantané du plan enregistré avant l'import.`,
-        variant: 'info'
+        variant: 'info',
       });
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     }
   }
@@ -217,7 +230,7 @@ export class ScenarioImportService {
       this.problemes.reloadFeasibility(),
       // An `edition:` scenario section may just have created an edition: the
       // switcher in the shell must list it right away.
-      this.editions.reload()
+      this.editions.reload(),
     ]);
   }
 
@@ -238,9 +251,12 @@ export class ScenarioImportService {
       : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
     const basculer = await this.confirm.ask({
       title: $localize`:@@parametres.recap.titre:Import dans une édition désignée par le fichier`,
-      message: destination + ' ' + $localize`:@@parametres.recap.question:Voulez-vous basculer dessus maintenant ? (La page se recharge.)`,
+      message:
+        destination +
+        ' ' +
+        $localize`:@@parametres.recap.question:Voulez-vous basculer dessus maintenant ? (La page se recharge.)`,
       confirmLabel: $localize`:@@parametres.recap.oui:Basculer sur « ${nom}:edition: »`,
-      cancelLabel: $localize`:@@parametres.recap.non:Rester sur « ${courante}:courante: »`
+      cancelLabel: $localize`:@@parametres.recap.non:Rester sur « ${courante}:courante: »`,
     });
     if (basculer) {
       this.editions.basculer({ id: result.editionId } as Edition);
@@ -257,7 +273,7 @@ export class ScenarioImportService {
     this.notifications.notify({
       title: $localize`:@@dataSetup.decoupageAuto.applied:Découpage automatique appliqué`,
       message: $localize`:@@dataSetup.decoupageAuto.appliedHint:Les amplitudes du scénario ont été découpées : l'édition porte désormais les vacations générées.`,
-      variant: 'info'
+      variant: 'info',
     });
   }
 }

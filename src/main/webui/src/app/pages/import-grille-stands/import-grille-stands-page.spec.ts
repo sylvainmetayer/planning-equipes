@@ -27,23 +27,67 @@ function rapport(applied: boolean): ImportGrilleRapport {
     applied,
     separator: ';',
     columns: [
-      { index: 1, label: '2026-07-08 10:00-12:00', date: '2026-07-08', heureDebut: '10:00', heureFin: '12:00', creneauId: 1, creneaux: 2, reason: null },
-      { index: 2, label: '2026-07-08 montage', date: '2026-07-08', heureDebut: null, heureFin: null, creneauId: null, creneaux: 0, reason: 'En-tête illisible' }
+      {
+        index: 1,
+        label: '2026-07-08 10:00-12:00',
+        date: '2026-07-08',
+        heureDebut: '10:00',
+        heureFin: '12:00',
+        creneauId: 1,
+        creneaux: 2,
+        reason: null,
+      },
+      {
+        index: 2,
+        label: '2026-07-08 montage',
+        date: '2026-07-08',
+        heureDebut: null,
+        heureFin: null,
+        creneauId: null,
+        creneaux: 0,
+        reason: 'En-tête illisible',
+      },
     ],
     creneauxAbsents: ['2026-07-09 10:00-12:00'],
     total: 2,
     accepted: 1,
     rejected: 1,
     rows: [
-      { line: 3, label: 'BOURSE', standId: 'BOURSE', action: 'UPDATED', reasons: [], cellulesOuvertes: 1, regles: 1, exceptions: 0, effectifMin: 2, effectifMax: 2 },
-      { line: 4, label: 'Inconnu', standId: null, action: 'REJECTED', reasons: ['Aucun stand « Inconnu »'], cellulesOuvertes: 0, regles: 0, exceptions: 0, effectifMin: null, effectifMax: null }
+      {
+        line: 3,
+        label: 'BOURSE',
+        standId: 'BOURSE',
+        action: 'UPDATED',
+        reasons: [],
+        cellulesOuvertes: 1,
+        regles: 1,
+        exceptions: 0,
+        effectifMin: 2,
+        effectifMax: 2,
+      },
+      {
+        line: 4,
+        label: 'Inconnu',
+        standId: null,
+        action: 'REJECTED',
+        reasons: ['Aucun stand « Inconnu »'],
+        cellulesOuvertes: 0,
+        regles: 0,
+        exceptions: 0,
+        effectifMin: null,
+        effectifMax: null,
+      },
     ],
-    warnings: ['1 créneau(x) sans colonne.']
+    warnings: ['1 créneau(x) sans colonne.'],
   };
 }
 
 describe('ImportGrilleStandsPage', () => {
-  const standsApi = { analyseGridImport: vi.fn(), applyGridImport: vi.fn(), downloadGridExample: vi.fn(async () => 'ok') };
+  const standsApi = {
+    analyseGridImport: vi.fn(),
+    applyGridImport: vi.fn(),
+    downloadGridExample: vi.fn(async () => 'ok'),
+  };
   const confirm = { ask: vi.fn(async () => true) };
   const store = { reload: vi.fn(async () => undefined) };
   const notifications = { notify: vi.fn() };
@@ -65,8 +109,8 @@ describe('ImportGrilleStandsPage', () => {
         { provide: StandsApi, useValue: standsApi },
         { provide: ConfirmService, useValue: confirm },
         { provide: ReferenceDataStore, useValue: store },
-        { provide: NotificationService, useValue: notifications }
-      ]
+        { provide: NotificationService, useValue: notifications },
+      ],
     });
     fixture = TestBed.createComponent(ImportGrilleStandsPage);
     page = fixture.componentInstance as unknown as PageInternals;
@@ -79,7 +123,9 @@ describe('ImportGrilleStandsPage', () => {
 
   async function chargerEtAnalyser(): Promise<void> {
     standsApi.analyseGridImport.mockResolvedValueOnce(rapport(false));
-    (fixture.componentInstance as unknown as { contenu: { set(v: string): void } }).contenu.set('stand;2026-07-08\n;10:00-12:00\nBOURSE;2\n');
+    (fixture.componentInstance as unknown as { contenu: { set(v: string): void } }).contenu.set(
+      'stand;2026-07-08\n;10:00-12:00\nBOURSE;2\n',
+    );
     page.nomFichier.set('grille.csv');
     await page.analyser();
     await fixture.whenStable();
@@ -90,7 +136,9 @@ describe('ImportGrilleStandsPage', () => {
 
     expect(standsApi.analyseGridImport).toHaveBeenCalledOnce();
     expect(standsApi.applyGridImport).not.toHaveBeenCalled();
-    expect((standsApi.analyseGridImport.mock.calls[0] as unknown as [{ fileName: string }])[0].fileName).toBe('grille.csv');
+    expect(
+      (standsApi.analyseGridImport.mock.calls[0] as unknown as [{ fileName: string }])[0].fileName,
+    ).toBe('grille.csv');
     const text = racine().textContent!.replace(/\s+/g, ' ');
     expect(text).toContain('1 colonne(s) reconnue(s)');
     expect(text).toContain('2026-07-08 montage');
@@ -98,7 +146,9 @@ describe('ImportGrilleStandsPage', () => {
     expect(text).toContain('1 créneau(x) sans colonne.');
     expect(racine().querySelectorAll('tbody tr')).toHaveLength(2);
     expect(racine().querySelector('tr[data-ligne="3"]')!.textContent).toContain('1 règle(s)');
-    expect(racine().querySelector('tr[data-ligne="4"]')!.textContent).toContain('Aucun stand « Inconnu »');
+    expect(racine().querySelector('tr[data-ligne="4"]')!.textContent).toContain(
+      'Aucun stand « Inconnu »',
+    );
     expect(page.peutImporter()).toBe(true);
   });
 
@@ -114,7 +164,9 @@ describe('ImportGrilleStandsPage', () => {
     const [corps] = standsApi.applyGridImport.mock.calls[0] as unknown as [unknown];
     expect(corps).toEqual((standsApi.analyseGridImport.mock.calls[0] as unknown as [unknown])[0]);
     expect(store.reload).toHaveBeenCalledOnce();
-    expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+    expect(notifications.notify).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'success' }),
+    );
     expect(page.rapport()?.applied).toBe(true);
     // Applied: the import button is gone, nothing to re-import.
     expect(page.peutImporter()).toBe(false);
@@ -133,7 +185,9 @@ describe('ImportGrilleStandsPage', () => {
   it('shows the server refusal in place and keeps the import off', async () => {
     standsApi.analyseGridImport.mockRejectedValueOnce(new Error("L'édition n'a aucun créneau"));
     page.nomFichier.set('grille.csv');
-    (fixture.componentInstance as unknown as { contenu: { set(v: string): void } }).contenu.set('x');
+    (fixture.componentInstance as unknown as { contenu: { set(v: string): void } }).contenu.set(
+      'x',
+    );
     await page.analyser();
     await fixture.whenStable();
 

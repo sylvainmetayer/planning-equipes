@@ -17,7 +17,7 @@ import {
   PlanningEvenement,
   RapportPublication,
   ResetSummary,
-  ScenarioValidationResult
+  ScenarioValidationResult,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -36,17 +36,30 @@ export class PlanningApi {
 
   /** Downloads the current dataset as a scenario file; resolves to the sentence to show. */
   exportScenario(): Promise<string> {
-    return this.api.downloadGet('/api/planning/export-scenario', 'scenario.yaml', 'application/x-yaml');
+    return this.api.downloadGet(
+      '/api/planning/export-scenario',
+      'scenario.yaml',
+      'application/x-yaml',
+    );
   }
 
   /** The global PDF, built server-side from the persisted planning. */
   exportGlobalPdf(): Promise<string> {
-    return this.api.downloadGet('/api/planning/export/pdf/global', 'planning-global.pdf', 'application/pdf');
+    return this.api.downloadGet(
+      '/api/planning/export/pdf/global',
+      'planning-global.pdf',
+      'application/pdf',
+    );
   }
 
   /** Every per-animateur document in one archive, built from the planning the browser sends. */
   exportBundle(planning: PlanningEvenement): Promise<string> {
-    return this.api.downloadPost('/api/planning/export/bundle/all', 'planning.zip', planning, 'application/zip');
+    return this.api.downloadPost(
+      '/api/planning/export/bundle/all',
+      'planning.zip',
+      planning,
+      'application/zip',
+    );
   }
 
   /** One animateur's planning as PDF or ICS, from the planning the browser sends — what is exported is what is shown. */
@@ -55,7 +68,7 @@ export class PlanningApi {
     animateurId: string,
     filename: string,
     planning: PlanningEvenement,
-    contentType: string
+    contentType: string,
   ): Promise<string> {
     const url = `/api/planning/export/${format}/animateur/${encodeURIComponent(animateurId)}`;
     return this.api.downloadPost(url, filename, planning, contentType);
@@ -65,7 +78,7 @@ export class PlanningApi {
   sendToAnimateur(animateurId: string): Promise<CompteRenduEnvoi> {
     return this.api.post<CompteRenduEnvoi>(
       `/api/planning/envoi/animateur/${encodeURIComponent(animateurId)}`,
-      null
+      null,
     );
   }
 
@@ -85,7 +98,12 @@ export class PlanningApi {
   }
 
   exportHours(planning: PlanningEvenement): Promise<string> {
-    return this.api.downloadPost('/api/planning/hours/export', 'heures-planning.csv', planning, 'text/csv');
+    return this.api.downloadPost(
+      '/api/planning/hours/export',
+      'heures-planning.csv',
+      planning,
+      'text/csv',
+    );
   }
 
   /** Empties the current edition: stands, créneaux, animateurs, seats, ad hoc constraints. */
@@ -105,6 +123,10 @@ export class PlanningApi {
 
   /** Structural validation of a scenario file, without importing anything. */
   validateScenarioFile(yaml: string): Promise<ScenarioValidationResult> {
-    return this.api.postRaw<ScenarioValidationResult>('/api/reference-data/valider-scenario-fichier', yaml, 'application/x-yaml');
+    return this.api.postRaw<ScenarioValidationResult>(
+      '/api/reference-data/valider-scenario-fichier',
+      yaml,
+      'application/x-yaml',
+    );
   }
 }

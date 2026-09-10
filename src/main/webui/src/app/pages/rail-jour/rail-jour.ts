@@ -5,10 +5,32 @@
 // Pure functions, kept out of the component so the geometry and the wording of
 // a line are unit-tested without rendering 150 rows.
 
-import { Animateur, ContrainteAdHoc, PauseDueView, PosteAffectation, RapportPauses } from '../../core/models';
-import { IndexPauses, indexerPauses, pausesDe, SegmentPause, segmentsPause } from '../../core/pauses-index';
-import { endMinutesOfDay, formatDuration, formatHeure, formatHourTick, minutesOfDay } from '../../core/time-of-day';
-import { standTypologies, typologieColorClass, typologiePrincipale } from '../../core/typologie-colors';
+import {
+  Animateur,
+  ContrainteAdHoc,
+  PauseDueView,
+  PosteAffectation,
+  RapportPauses,
+} from '../../core/models';
+import {
+  IndexPauses,
+  indexerPauses,
+  pausesDe,
+  SegmentPause,
+  segmentsPause,
+} from '../../core/pauses-index';
+import {
+  endMinutesOfDay,
+  formatDuration,
+  formatHeure,
+  formatHourTick,
+  minutesOfDay,
+} from '../../core/time-of-day';
+import {
+  standTypologies,
+  typologieColorClass,
+  typologiePrincipale,
+} from '../../core/typologie-colors';
 
 /**
  * Why a line is empty, which is the whole point of showing empty lines: on a
@@ -92,12 +114,17 @@ export interface RailJour {
 function libelles(animateurs: Animateur[]): Map<string, string> {
   const bruts = new Map<string, string>();
   animateurs.forEach((animateur) =>
-    bruts.set(animateur.id, `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id)
+    bruts.set(
+      animateur.id,
+      `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id,
+    ),
   );
   const compte = new Map<string, number>();
   bruts.forEach((label) => compte.set(label, (compte.get(label) ?? 0) + 1));
   const libelle = new Map<string, string>();
-  bruts.forEach((label, id) => libelle.set(id, (compte.get(label) ?? 0) > 1 ? `${label} (${id})` : label));
+  bruts.forEach((label, id) =>
+    libelle.set(id, (compte.get(label) ?? 0) > 1 ? `${label} (${id})` : label),
+  );
   return libelle;
 }
 
@@ -176,7 +203,7 @@ function merge(fenetres: Fenetre[]): Fenetre[] {
 function blocagesParAnimateur(
   contraintes: ContrainteAdHoc[],
   creneaux: Map<number, Fenetre>,
-  journee: Fenetre
+  journee: Fenetre,
 ): Map<string, Fenetre[]> {
   const blocages = new Map<string, Fenetre[]>();
   contraintes.forEach((contrainte) => {
@@ -213,7 +240,7 @@ function spanDuPoste(poste: PosteAffectation): Span {
     heureDebut: formatHeure(heureDebut),
     heureFin: formatHeure(heureFin),
     debutMinutes: minutesOfDay(heureDebut),
-    finMinutes: endMinutesOfDay(heureFin)
+    finMinutes: endMinutesOfDay(heureFin),
   };
 }
 
@@ -236,7 +263,7 @@ export function buildRailJours(
   postes: PosteAffectation[],
   animateurs: Animateur[],
   contraintes: ContrainteAdHoc[] = [],
-  pauses: RapportPauses | null = null
+  pauses: RapportPauses | null = null,
 ): RailJour[] {
   const indexPauses = indexerPauses(pauses);
   const jours = new Map<number, ContenuJour>();
@@ -247,7 +274,12 @@ export function buildRailJours(
     }
     let jour = jours.get(creneau.jour);
     if (!jour) {
-      jour = { date: creneau.date ?? null, spansParAnimateur: new Map(), spans: [], creneaux: new Map() };
+      jour = {
+        date: creneau.date ?? null,
+        spansParAnimateur: new Map(),
+        spans: [],
+        creneaux: new Map(),
+      };
       jours.set(creneau.jour, jour);
     }
     // The créneau's own hours, not the poste's possibly narrowed window: an ad
@@ -256,7 +288,7 @@ export function buildRailJours(
       debutMinutes: minutesOfDay(creneau.heureDebut),
       finMinutes: endMinutesOfDay(creneau.heureFin),
       heureDebut: formatHeure(creneau.heureDebut),
-      heureFin: formatHeure(creneau.heureFin)
+      heureFin: formatHeure(creneau.heureFin),
     });
     const span = spanDuPoste(poste);
     // Unfilled seats still widen the rail: an unstaffed 08:00 opening is part
@@ -274,8 +306,9 @@ export function buildRailJours(
 
   return Array.from(jours.entries())
     .sort((left, right) => left[0] - right[0])
-    .map(([jour, contenu]) => buildRailJour(jour, contenu,
-      indexPauses, contraintes, effectif, noms));
+    .map(([jour, contenu]) =>
+      buildRailJour(jour, contenu, indexPauses, contraintes, effectif, noms),
+    );
 }
 
 function buildRailJour(
@@ -284,16 +317,20 @@ function buildRailJour(
   indexPauses: IndexPauses,
   contraintes: ContrainteAdHoc[],
   animateurs: Animateur[],
-  noms: Map<string, string>
+  noms: Map<string, string>,
 ): RailJour {
   const { date, spans: spansDuJour, spansParAnimateur } = contenu;
-  const premier = spansDuJour.reduce((tot, span) => (span.debutMinutes < tot.debutMinutes ? span : tot));
-  const dernier = spansDuJour.reduce((tard, span) => (span.finMinutes > tard.finMinutes ? span : tard));
+  const premier = spansDuJour.reduce((tot, span) =>
+    span.debutMinutes < tot.debutMinutes ? span : tot,
+  );
+  const dernier = spansDuJour.reduce((tard, span) =>
+    span.finMinutes > tard.finMinutes ? span : tard,
+  );
   const journee: Fenetre = {
     debutMinutes: premier.debutMinutes,
     finMinutes: dernier.finMinutes,
     heureDebut: premier.heureDebut,
-    heureFin: dernier.heureFin
+    heureFin: dernier.heureFin,
   };
   // Rounded outwards to whole hours so the scale's ticks are evenly spaced and
   // the gridlines can be drawn by one repeating background.
@@ -308,7 +345,7 @@ function buildRailJour(
     heures.push({
       minutes,
       label: formatHourTick(minutes / 60),
-      offsetPercent: ((minutes - debutMinutes) / amplitude) * 100
+      offsetPercent: ((minutes - debutMinutes) / amplitude) * 100,
     });
   }
 
@@ -321,8 +358,8 @@ function buildRailJour(
         spansParAnimateur.get(animateur.id) ?? [],
         merge(blocages.get(animateur.id) ?? []),
         echelle,
-        pausesDe(indexPauses, date, animateur.id)
-      )
+        pausesDe(indexPauses, date, animateur.id),
+      ),
     )
     .sort((left, right) => left.nom.localeCompare(right.nom));
 
@@ -335,7 +372,7 @@ function buildRailJour(
     debutMinutes,
     finMinutes,
     heures,
-    lignes
+    lignes,
   };
 }
 
@@ -346,7 +383,7 @@ function buildRailLigne(
   spans: Span[],
   fenetresBloquees: Fenetre[],
   echelle: Echelle,
-  pausesDuJour: PauseDueView[] = []
+  pausesDuJour: PauseDueView[] = [],
 ): RailLigne {
   const { debutMinutes, amplitude } = echelle;
   const pauses = segmentsPause(pausesDuJour, debutMinutes, amplitude);
@@ -355,12 +392,15 @@ function buildRailLigne(
     heureFin: fenetre.heureFin,
     offsetPercent: ((fenetre.debutMinutes - debutMinutes) / amplitude) * 100,
     widthPercent: ((fenetre.finMinutes - fenetre.debutMinutes) / amplitude) * 100,
-    label: $localize`:@@railJour.blocage.tooltip:Indisponibilité saisie : ${fenetre.heureDebut}:debut: – ${fenetre.heureFin}:fin:`
+    label: $localize`:@@railJour.blocage.tooltip:Indisponibilité saisie : ${fenetre.heureDebut}:debut: – ${fenetre.heureFin}:fin:`,
   }));
-  const plages = fenetresBloquees.map((fenetre) => `${fenetre.heureDebut} – ${fenetre.heureFin}`).join(' ; ');
+  const plages = fenetresBloquees
+    .map((fenetre) => `${fenetre.heureDebut} – ${fenetre.heureFin}`)
+    .join(' ; ');
   const journeeEntiere = fenetresBloquees.some(
     (fenetre) =>
-      fenetre.debutMinutes <= echelle.journee.debutMinutes && fenetre.finMinutes >= echelle.journee.finMinutes
+      fenetre.debutMinutes <= echelle.journee.debutMinutes &&
+      fenetre.finMinutes >= echelle.journee.finMinutes,
   );
 
   const ordonnes = [...spans].sort((left, right) => left.debutMinutes - right.debutMinutes);
@@ -378,7 +418,7 @@ function buildRailLigne(
       typologie: span.typologie,
       colorClass: span.colorClass,
       chevauchement: overlap,
-      label: `${span.standNom} · ${span.heureDebut} – ${span.heureFin}`
+      label: `${span.standNom} · ${span.heureDebut} – ${span.heureFin}`,
     };
   });
 
@@ -406,15 +446,18 @@ function buildRailLigne(
       amplitudeFin: null,
       chevauchement: false,
       pauses: [],
-      resume: statut === 'indisponible' ? base : mentionnerBlocages(base, plages)
+      resume: statut === 'indisponible' ? base : mentionnerBlocages(base, plages),
     };
   }
 
-  const minutesTravaillees = ordonnes.reduce((total, span) => total + (span.finMinutes - span.debutMinutes), 0);
+  const minutesTravaillees = ordonnes.reduce(
+    (total, span) => total + (span.finMinutes - span.debutMinutes),
+    0,
+  );
   const dureeLabel = formatDuration(minutesTravaillees);
   const amplitudeDebut = ordonnes[0].heureDebut;
   const amplitudeFin = ordonnes.reduce((last, span) =>
-    span.finMinutes >= last.finMinutes ? span : last
+    span.finMinutes >= last.finMinutes ? span : last,
   ).heureFin;
   const detail = blocs.map((bloc) => bloc.label).join(' ; ');
   const count = blocs.length;
@@ -434,7 +477,7 @@ function buildRailLigne(
     // The red outline and the warning icon are visual only; a line read out
     // loud must say the one anomaly this view exists to make visible.
     pauses,
-    resume: mentionnerPauses(mentionOverlap(mentionnerBlocages(base, plages), overlap), pauses)
+    resume: mentionnerPauses(mentionOverlap(mentionnerBlocages(base, plages), overlap), pauses),
   };
 }
 
@@ -464,10 +507,14 @@ function mentionOverlap(base: string, overlap: boolean): string {
 }
 
 /** How many lines each status holds — the header's at-a-glance count. */
-export function compterStatuts(lignes: RailLigne[]): { affectes: number; libres: number; indisponibles: number } {
+export function compterStatuts(lignes: RailLigne[]): {
+  affectes: number;
+  libres: number;
+  indisponibles: number;
+} {
   return {
     affectes: lignes.filter((ligne) => ligne.statut === 'affecte').length,
     libres: lignes.filter((ligne) => ligne.statut === 'libre').length,
-    indisponibles: lignes.filter((ligne) => ligne.statut === 'indisponible').length
+    indisponibles: lignes.filter((ligne) => ligne.statut === 'indisponible').length,
   };
 }

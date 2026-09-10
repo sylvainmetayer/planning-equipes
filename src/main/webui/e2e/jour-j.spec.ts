@@ -76,7 +76,7 @@ test('la date du jour ne peut pas être figée hors mode développement', async 
 
   await expect(page.locator('#date-du-jour')).toHaveCount(0);
   const refus = await page.request.put('/api/debug/date-du-jour', {
-    data: { dateDuJour: '2026-07-08' }
+    data: { dateDuJour: '2026-07-08' },
   });
   expect(refus.status()).toBe(400);
   await page.context().close();

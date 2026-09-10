@@ -16,34 +16,41 @@ function snapshot(id: number, libelle = 'S' + id): PlanSnapshot {
     creeLe: '2026-08-18T10:00:00Z',
     editionId: 'DEFAUT',
     editionNom: 'Édition par défaut',
-    kpi: null
+    kpi: null,
   };
 }
 
 describe('PlanSnapshotStore', () => {
   let store: PlanSnapshotStore;
-  let api: { get: ReturnType<typeof vi.fn>; postPreservingHttpError: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> };
+  let api: {
+    get: ReturnType<typeof vi.fn>;
+    postPreservingHttpError: ReturnType<typeof vi.fn>;
+    post: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     api = {
       get: vi.fn().mockResolvedValue([]),
       post: vi.fn().mockResolvedValue({}),
       postPreservingHttpError: vi.fn(),
-      delete: vi.fn().mockResolvedValue(undefined)
+      delete: vi.fn().mockResolvedValue(undefined),
     };
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: ApiService, useValue: api }]
+      providers: [provideZonelessChangeDetection(), { provide: ApiService, useValue: api }],
     });
     store = TestBed.inject(PlanSnapshotStore);
   });
-
 
   it('surfaces the ids a refused restore names', async () => {
     api.postPreservingHttpError.mockRejectedValue(
       new HttpErrorResponse({
         status: 409,
-        error: { message: 'Références disparues', referencesManquantes: ['stand:S1', 'creneau:42'] }
-      })
+        error: {
+          message: 'Références disparues',
+          referencesManquantes: ['stand:S1', 'creneau:42'],
+        },
+      }),
     );
 
     await expect(store.restaurer(7)).rejects.toBeInstanceOf(ReferencesManquantesError);
@@ -58,7 +65,6 @@ describe('PlanSnapshotStore', () => {
 
     await expect(store.restaurer(7)).rejects.not.toBeInstanceOf(ReferencesManquantesError);
   });
-
 
   it('reloads the list after a capture and after a delete', async () => {
     api.get.mockResolvedValue([snapshot(1)]);

@@ -30,12 +30,21 @@ function stand(id: string, typologiesProposees: string[] = []): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
 function animateur(id: string): Animateur {
-  return { id, prenom: id, nom: '', dateNaissance: '2000-01-01', manager: false, competences: {}, joursIndisponibles: [], souhaits: [] };
+  return {
+    id,
+    prenom: id,
+    nom: '',
+    dateNaissance: '2000-01-01',
+    manager: false,
+    competences: {},
+    joursIndisponibles: [],
+    souhaits: [],
+  };
 }
 
 function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffectation {
@@ -55,7 +64,7 @@ describe('buildStandHeatmap', () => {
     const c1 = creneau({ id: 1, jour: 1 });
     const table = buildStandHeatmap([
       poste({ id: 'p1', creneau: c1, stand: stand('S1'), animateur: animateur('A') }),
-      poste({ id: 'p2', creneau: c1, stand: stand('S1') })
+      poste({ id: 'p2', creneau: c1, stand: stand('S1') }),
     ]);
 
     expect(table.rows[0].cells[0]).toMatchObject({ level: 'warning', label: '1/2' });
@@ -63,15 +72,22 @@ describe('buildStandHeatmap', () => {
 
   it('marks a fully-staffed stand as ok', () => {
     const c1 = creneau({ id: 1, jour: 1 });
-    const table = buildStandHeatmap([poste({ id: 'p1', creneau: c1, stand: stand('S1'), animateur: animateur('A') })]);
+    const table = buildStandHeatmap([
+      poste({ id: 'p1', creneau: c1, stand: stand('S1'), animateur: animateur('A') }),
+    ]);
 
     expect(table.rows[0].cells[0]).toMatchObject({ level: 'ok', label: '1/1' });
   });
 
   it('marks a day with no créneau for that stand as none, distinct from a gap', () => {
     const table = buildStandHeatmap([
-      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('A') }),
-      poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('S2') })
+      poste({
+        id: 'p1',
+        creneau: creneau({ id: 1, jour: 1 }),
+        stand: stand('S1'),
+        animateur: animateur('A'),
+      }),
+      poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('S2') }),
     ]);
 
     const s1Row = table.rows.find((row) => row.id === 'S1')!;
@@ -82,7 +98,7 @@ describe('buildStandHeatmap', () => {
     const c1 = creneau({ id: 1, jour: 1 });
     const table = buildStandHeatmap([
       poste({ id: 'p1', creneau: c1, stand: stand('Zebre') }),
-      poste({ id: 'p2', creneau: c1, stand: stand('Alpha') })
+      poste({ id: 'p2', creneau: c1, stand: stand('Alpha') }),
     ]);
 
     expect(table.rows.map((row) => row.label)).toEqual(['Alpha', 'Zebre']);
@@ -92,7 +108,12 @@ describe('buildStandHeatmap', () => {
 describe('buildAnimateurHeatmap', () => {
   it('marks a single poste that day as ok', () => {
     const table = buildAnimateurHeatmap([
-      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('A') })
+      poste({
+        id: 'p1',
+        creneau: creneau({ id: 1, jour: 1 }),
+        stand: stand('S1'),
+        animateur: animateur('A'),
+      }),
     ]);
 
     expect(table.rows[0].cells[0]).toMatchObject({ level: 'ok', label: '1' });
@@ -104,20 +125,22 @@ describe('buildAnimateurHeatmap', () => {
     const jour3 = creneau({ id: 3, jour: 1 });
     const table = buildAnimateurHeatmap([
       poste({ id: 'p1', creneau: jour1, stand: stand('S1'), animateur: animateur('A') }),
-      poste({ id: 'p2', creneau: jour2, stand: stand('S2'), animateur: animateur('A') })
+      poste({ id: 'p2', creneau: jour2, stand: stand('S2'), animateur: animateur('A') }),
     ]);
     expect(table.rows[0].cells[0]).toMatchObject({ level: 'warning', label: '2' });
 
     const overloaded = buildAnimateurHeatmap([
       poste({ id: 'p1', creneau: jour1, stand: stand('S1'), animateur: animateur('A') }),
       poste({ id: 'p2', creneau: jour2, stand: stand('S2'), animateur: animateur('A') }),
-      poste({ id: 'p3', creneau: jour3, stand: stand('S3'), animateur: animateur('A') })
+      poste({ id: 'p3', creneau: jour3, stand: stand('S3'), animateur: animateur('A') }),
     ]);
     expect(overloaded.rows[0].cells[0]).toMatchObject({ level: 'critical', label: '3' });
   });
 
   it('excludes unassigned postes and never produces a row for them', () => {
-    const table = buildAnimateurHeatmap([poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1') })]);
+    const table = buildAnimateurHeatmap([
+      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1') }),
+    ]);
 
     expect(table.rows).toHaveLength(0);
   });
@@ -128,7 +151,7 @@ describe('buildAnimateurHeatmap', () => {
     const table = buildAnimateurHeatmap([
       poste({ id: 'p1', creneau: jour1, stand: stand('S1'), animateur: animateur('Light') }),
       poste({ id: 'p2', creneau: jour1, stand: stand('S2'), animateur: animateur('Heavy') }),
-      poste({ id: 'p3', creneau: jour2, stand: stand('S3'), animateur: animateur('Heavy') })
+      poste({ id: 'p3', creneau: jour2, stand: stand('S3'), animateur: animateur('Heavy') }),
     ]);
 
     expect(table.rows.map((row) => row.id)).toEqual(['Heavy', 'Light']);
@@ -136,9 +159,24 @@ describe('buildAnimateurHeatmap', () => {
 
   it('lists the distinct stands of an animateur in the row-header tooltip, alphabetically and without duplicates', () => {
     const table = buildAnimateurHeatmap([
-      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Zebre'), animateur: animateur('A') }),
-      poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Alpha'), animateur: animateur('A') }),
-      poste({ id: 'p3', creneau: creneau({ id: 3, jour: 3 }), stand: stand('Alpha'), animateur: animateur('A') })
+      poste({
+        id: 'p1',
+        creneau: creneau({ id: 1, jour: 1 }),
+        stand: stand('Zebre'),
+        animateur: animateur('A'),
+      }),
+      poste({
+        id: 'p2',
+        creneau: creneau({ id: 2, jour: 2 }),
+        stand: stand('Alpha'),
+        animateur: animateur('A'),
+      }),
+      poste({
+        id: 'p3',
+        creneau: creneau({ id: 3, jour: 3 }),
+        stand: stand('Alpha'),
+        animateur: animateur('A'),
+      }),
     ]);
 
     expect(table.rows[0].headerTooltip).toContain('2');
@@ -148,27 +186,50 @@ describe('buildAnimateurHeatmap', () => {
   it('adds the distinct game typologies of those stands to the tooltip, with one coloured badge each', () => {
     const table = buildAnimateurHeatmap(
       [
-        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Alpha', ['AMBIANCE']), animateur: animateur('A') }),
-        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Beta', ['AMBIANCE', 'STRATEGIE']), animateur: animateur('A') })
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1 }),
+          stand: stand('Alpha', ['AMBIANCE']),
+          animateur: animateur('A'),
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, jour: 2 }),
+          stand: stand('Beta', ['AMBIANCE', 'STRATEGIE']),
+          animateur: animateur('A'),
+        }),
       ],
-      new Map([['AMBIANCE', 'Ambiance'], ['STRATEGIE', 'Stratégie']])
+      new Map([
+        ['AMBIANCE', 'Ambiance'],
+        ['STRATEGIE', 'Stratégie'],
+      ]),
     );
 
-    expect(table.rows[0].typologies.map((typologie) => typologie.label)).toEqual(['Ambiance', 'Stratégie']);
+    expect(table.rows[0].typologies.map((typologie) => typologie.label)).toEqual([
+      'Ambiance',
+      'Stratégie',
+    ]);
     expect(table.rows[0].typologies[0].colorClass).not.toBe(table.rows[0].typologies[1].colorClass);
     expect(table.rows[0].headerTooltip).toContain('Ambiance, Stratégie');
   });
 
   it('leaves an animateur without any stand typologie without a badge', () => {
     const table = buildAnimateurHeatmap([
-      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Alpha'), animateur: animateur('A') })
+      poste({
+        id: 'p1',
+        creneau: creneau({ id: 1, jour: 1 }),
+        stand: stand('Alpha'),
+        animateur: animateur('A'),
+      }),
     ]);
 
     expect(table.rows[0].typologies).toEqual([]);
   });
 
   it('leaves the stand rows without a header tooltip', () => {
-    const table = buildStandHeatmap([poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1') })]);
+    const table = buildStandHeatmap([
+      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1') }),
+    ]);
 
     expect(table.rows[0].headerTooltip).toBe('');
   });
@@ -189,7 +250,7 @@ describe('HeatmapPage grid', () => {
     return planning([
       poste({ id: 'p1', creneau: j1, stand: stand('Tir'), animateur: animateur('Alice') }),
       poste({ id: 'p2', creneau: j2, stand: stand('Tir'), animateur: animateur('Alice') }),
-      poste({ id: 'p3', creneau: j1, stand: stand('Dixit'), animateur: animateur('Bob') })
+      poste({ id: 'p3', creneau: j1, stand: stand('Dixit'), animateur: animateur('Bob') }),
     ]);
   }
 
@@ -200,10 +261,13 @@ describe('HeatmapPage grid', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
-        { provide: PlanningStateService, useValue: { loadForDisplay } }
-      ]
+        { provide: PlanningStateService, useValue: { loadForDisplay } },
+      ],
     });
     fixture = TestBed.createComponent(HeatmapPage);
     await fixture.whenStable();
@@ -218,7 +282,9 @@ describe('HeatmapPage grid', () => {
   }
 
   function cellule(ligne: number, colonne: number): HTMLElement {
-    return racine().querySelector(`[data-ligne="${ligne}"][data-colonne="${colonne}"]`) as HTMLElement;
+    return racine().querySelector(
+      `[data-ligne="${ligne}"][data-colonne="${colonne}"]`,
+    ) as HTMLElement;
   }
 
   /** The single cell the grid hands the focus to on Tab. */
@@ -232,7 +298,7 @@ describe('HeatmapPage grid', () => {
 
   async function basculerVue(libelle: string): Promise<void> {
     const bouton = Array.from(racine().querySelectorAll('mat-button-toggle button')).find((each) =>
-      each.textContent!.includes(libelle)
+      each.textContent!.includes(libelle),
     ) as HTMLElement;
     bouton.click();
     await fixture.whenStable();
@@ -241,10 +307,11 @@ describe('HeatmapPage grid', () => {
   it('renders one row per stand and one column per event day', async () => {
     await rendre(planningDeuxAnimateurs());
 
-    expect(Array.from(racine().querySelectorAll('.heatmap-row-label')).map((each) => each.textContent!.trim())).toEqual([
-      'Dixit',
-      'Tir'
-    ]);
+    expect(
+      Array.from(racine().querySelectorAll('.heatmap-row-label')).map((each) =>
+        each.textContent!.trim(),
+      ),
+    ).toEqual(['Dixit', 'Tir']);
     expect(racine().querySelectorAll('.heatmap-day-header')).toHaveLength(2);
     // Every cell describes its day out loud: the colour alone means nothing.
     expect(cellules()[0].getAttribute('aria-label')).toBeTruthy();
@@ -266,16 +333,21 @@ describe('HeatmapPage grid', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
-        { provide: PlanningStateService, useValue: { loadForDisplay } }
-      ]
+        { provide: PlanningStateService, useValue: { loadForDisplay } },
+      ],
     });
     fixture = TestBed.createComponent(HeatmapPage);
     await fixture.whenStable();
 
     expect(racine().querySelector('.heatmap-table')).toBeNull();
-    const messages = Array.from(racine().querySelectorAll('.empty-hint')).map((each) => each.textContent!);
+    const messages = Array.from(racine().querySelectorAll('.empty-hint')).map(
+      (each) => each.textContent!,
+    );
     expect(messages.some((text) => text.includes('boom'))).toBe(true);
   });
 
@@ -285,10 +357,11 @@ describe('HeatmapPage grid', () => {
 
     await basculerVue('Par animateur');
     expect(racine().querySelector('.heatmap-filter')).not.toBeNull();
-    expect(Array.from(racine().querySelectorAll('.heatmap-row-label')).map((each) => each.textContent!.trim())).toEqual([
-      'Alice',
-      'Bob'
-    ]);
+    expect(
+      Array.from(racine().querySelectorAll('.heatmap-row-label')).map((each) =>
+        each.textContent!.trim(),
+      ),
+    ).toEqual(['Alice', 'Bob']);
   });
 
   it('exposes exactly one tab stop for the whole grid', async () => {

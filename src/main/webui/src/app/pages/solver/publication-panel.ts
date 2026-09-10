@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  output,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,7 +20,7 @@ import {
   libelleDernierePublication,
   libellePublier,
   raisonIndisponible,
-  resumePublication
+  resumePublication,
 } from '../../core/publication';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -33,7 +40,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
   selector: 'app-publication-panel',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule],
   templateUrl: './publication-panel.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PublicationPanel {
   private readonly planningApi = inject(PlanningApi);
@@ -73,7 +80,9 @@ export class PublicationPanel {
   protected readonly listOpen = signal(false);
   protected readonly publishLabel = computed(() => libellePublier(this.preview()));
   protected readonly unavailableReason = computed(() => raisonIndisponible(this.preview()));
-  protected readonly lastPublication = computed(() => libelleDernierePublication(this.preview(), intlLocale()));
+  protected readonly lastPublication = computed(() =>
+    libelleDernierePublication(this.preview(), intlLocale()),
+  );
   protected readonly publishable = computed(() => {
     const preview = this.preview();
     return !!preview && preview.nombreConcernes > 0 && !preview.solveEnCours && !preview.planVide;
@@ -146,7 +155,7 @@ export class PublicationPanel {
       const confirmed = await this.confirm.ask({
         title: $localize`:@@publication.confirmTitre:Publier le planning ?`,
         message: $localize`:@@publication.confirmMessage:${count}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`,
-        confirmLabel: $localize`:@@publication.confirmAction:Publier`
+        confirmLabel: $localize`:@@publication.confirmAction:Publier`,
       });
       if (!confirmed) {
         return;
@@ -155,7 +164,9 @@ export class PublicationPanel {
       try {
         const report = await this.planningApi.publish();
         const summary = resumePublication(report);
-        this.reported.emit(summary.details ? `${summary.titre} — ${summary.details}` : summary.titre);
+        this.reported.emit(
+          summary.details ? `${summary.titre} — ${summary.details}` : summary.titre,
+        );
         this.listOpen.set(false);
       } catch (error) {
         this.reported.emit(errorPrefix(error));

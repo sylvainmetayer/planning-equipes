@@ -15,26 +15,43 @@ function stand(id: string, emplacement: Emplacement | null): Stand {
     emplacement,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
-const place: Emplacement = { id: 'PLACE', nom: 'Place du Drapeau', latitude: 46.6487, longitude: 2.2503 };
+const place: Emplacement = {
+  id: 'PLACE',
+  nom: 'Place du Drapeau',
+  latitude: 46.6487,
+  longitude: 2.2503,
+};
 
 describe('buildEmplacementDetail', () => {
   it('lists the stands tied to this place, and only those', () => {
     const autre: Emplacement = { id: 'AUTRE', nom: 'Ailleurs', latitude: null, longitude: null };
-    const sections = buildEmplacementDetail(place, [stand('S1', place), stand('S2', autre), stand('S3', place)]);
+    const sections = buildEmplacementDetail(place, [
+      stand('S1', place),
+      stand('S2', autre),
+      stand('S3', place),
+    ]);
 
-    expect(sections.flatMap((section) => section.rows).find((row) => row.chips)?.chips).toEqual(['S1', 'S3']);
+    expect(sections.flatMap((section) => section.rows).find((row) => row.chips)?.chips).toEqual([
+      'S1',
+      'S3',
+    ]);
   });
 
   it('warns that a place without coordinates does not constrain travel', () => {
-    const sections = buildEmplacementDetail({ id: 'X', nom: 'Sans GPS', latitude: null, longitude: null });
+    const sections = buildEmplacementDetail({
+      id: 'X',
+      nom: 'Sans GPS',
+      latitude: null,
+      longitude: null,
+    });
 
     const values = sections.flatMap((section) => section.rows).map((row) => row.value);
     expect(values).toContain(
-      "Sans coordonnées, la règle sur les déplacements lointains ne s'applique pas à ces stands"
+      "Sans coordonnées, la règle sur les déplacements lointains ne s'applique pas à ces stands",
     );
   });
 

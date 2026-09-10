@@ -36,8 +36,8 @@ export class ProblemesStore {
       this.report(),
       this.constraints()?.contraintes ?? [],
       this.constraints()?.contraintesAdHocEnCause ?? [],
-      this.pauses()
-    )
+      this.pauses(),
+    ),
   );
   readonly comptage = computed(() => compterProblemes(this.problemes()));
 
@@ -57,7 +57,9 @@ export class ProblemesStore {
    * exactly the set the confirmation covers — the dialog promises as much.
    */
   readonly reglesLegalesDesactivees = computed(() =>
-    (this.constraints()?.contraintes ?? []).filter((contrainte) => contrainte.protegee && !contrainte.actif)
+    (this.constraints()?.contraintes ?? []).filter(
+      (contrainte) => contrainte.protegee && !contrainte.actif,
+    ),
   );
 
   /** The one line the Solveur screen says about relay-less breaks, empty when there is none. */
@@ -168,12 +170,14 @@ export class ProblemesStore {
       this.api.get<FeasibilityReport>('/api/feasibility').catch((error: unknown) => error as Error),
       this.api.get<ConstraintsView>('/api/constraints').catch((error: unknown) => error as Error),
       // Without the breaks the list is merely shorter: never a failure of the screen.
-      this.api.get<RapportPauses>('/api/pauses').catch(() => null)
+      this.api.get<RapportPauses>('/api/pauses').catch(() => null),
     ]);
     this.report.set(feasibility instanceof Error ? null : feasibility);
     this.constraints.set(constraints instanceof Error ? null : constraints);
     this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
-    const failure = [feasibility, constraints].find((result): result is Error => result instanceof Error);
+    const failure = [feasibility, constraints].find(
+      (result): result is Error => result instanceof Error,
+    );
     this.error.set(failure ? failure.message : '');
     this.loading.set(false);
   }

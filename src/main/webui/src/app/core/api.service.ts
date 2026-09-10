@@ -64,7 +64,12 @@ export class ApiService {
   }
 
   /** POSTs a payload and saves the response as a file. */
-  async downloadPost(url: string, filename: string, payload: unknown, contentType: string): Promise<string> {
+  async downloadPost(
+    url: string,
+    filename: string,
+    payload: unknown,
+    contentType: string,
+  ): Promise<string> {
     const blob = await this.run(this.http.post(url, payload, { responseType: 'blob' }));
     return this.saveAs(blob, filename, contentType);
   }
@@ -128,7 +133,7 @@ export class ApiError extends Error {
      * instant rather than a formatted date, because it runs in UTC while
      * every date the user reads is rendered by their own browser.
      */
-    readonly modifieLe: string | null = null
+    readonly modifieLe: string | null = null,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -179,16 +184,20 @@ export function toError(error: unknown): Error {
     if (error.status === 401) {
       return new SessionExpireeError();
     }
-    const body = error.error as { message?: string; code?: string; modifieLe?: string } | string | null;
+    const body = error.error as
+      { message?: string; code?: string; modifieLe?: string } | string | null;
     const message =
       body && typeof body === 'object' && body.message
         ? body.message
         : $localize`:@@api.requestFailed:Échec de la requête (code ${error.status}:status:)`;
-    const code = body && typeof body === 'object' && typeof body.code === 'string' ? body.code : null;
+    const code =
+      body && typeof body === 'object' && typeof body.code === 'string' ? body.code : null;
     // Produced here and nowhere else: every caller can now switch on `kind`
     // instead of re-deriving the meaning from the message text.
     const modifieLe =
-      body && typeof body === 'object' && typeof body.modifieLe === 'string' ? body.modifieLe : null;
+      body && typeof body === 'object' && typeof body.modifieLe === 'string'
+        ? body.modifieLe
+        : null;
     return new ApiError(error.status, kindForStatus(error.status), message, code, modifieLe);
   }
   return error instanceof Error ? error : new Error(String(error));

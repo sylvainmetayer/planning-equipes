@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { JourneeAnimateurPauses, PauseDueView, RapportPauses } from './models';
-import { compterSansRelais, indexerPauses, libellePause, pausesDe, segmentsPause } from './pauses-index';
+import {
+  compterSansRelais,
+  indexerPauses,
+  libellePause,
+  pausesDe,
+  segmentsPause,
+} from './pauses-index';
 
 function pause(overrides: Partial<PauseDueView> = {}): PauseDueView {
   return {
@@ -13,7 +19,7 @@ function pause(overrides: Partial<PauseDueView> = {}): PauseDueView {
     relais: [{ animateurId: 'bob', nomComplet: 'Bob Durand' }],
     relaisDisponible: true,
     simultanee: false,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -26,12 +32,19 @@ function journee(overrides: Partial<JourneeAnimateurPauses> = {}): JourneeAnimat
     jour: 3,
     sequences: [{ debut: '13:00:00', fin: '20:00:00', minutes: 420, pausesDues: [pause()] }],
     pausesPlanifiees: [],
-    ...overrides
+    ...overrides,
   };
 }
 
 function rapport(journees: JourneeAnimateurPauses[]): RapportPauses {
-  return { pauseSurPoste: true, journeesAnalysees: journees.length, pausesDues: 0, relaisManquants: 0, journees, message: '' };
+  return {
+    pauseSurPoste: true,
+    journeesAnalysees: journees.length,
+    pausesDues: 0,
+    relaisManquants: 0,
+    journees,
+    message: '',
+  };
 }
 
 describe('indexerPauses / pausesDe', () => {
@@ -40,14 +53,28 @@ describe('indexerPauses / pausesDe', () => {
       rapport([
         journee({
           sequences: [
-            { debut: '08:00:00', fin: '20:30:00', minutes: 750, pausesDues: [pause({ debut: '20:20:00', fin: '20:40:00' }), pause({ debut: '14:00:00', fin: '14:20:00' })] }
-          ]
+            {
+              debut: '08:00:00',
+              fin: '20:30:00',
+              minutes: 750,
+              pausesDues: [
+                pause({ debut: '20:20:00', fin: '20:40:00' }),
+                pause({ debut: '14:00:00', fin: '14:20:00' }),
+              ],
+            },
+          ],
         }),
-        journee({ animateurId: 'bob', sequences: [{ debut: '13:00:00', fin: '18:00:00', minutes: 300, pausesDues: [] }] })
-      ])
+        journee({
+          animateurId: 'bob',
+          sequences: [{ debut: '13:00:00', fin: '18:00:00', minutes: 300, pausesDues: [] }],
+        }),
+      ]),
     );
 
-    expect(pausesDe(index, '2026-07-10', 'alice').map((p) => p.debut)).toEqual(['14:00:00', '20:20:00']);
+    expect(pausesDe(index, '2026-07-10', 'alice').map((p) => p.debut)).toEqual([
+      '14:00:00',
+      '20:20:00',
+    ]);
     expect(pausesDe(index, '2026-07-10', 'bob')).toEqual([]);
     expect(pausesDe(index, '2026-07-11', 'alice')).toEqual([]);
     expect(pausesDe(indexerPauses(null), '2026-07-10', 'alice')).toEqual([]);
@@ -72,9 +99,12 @@ describe('segmentsPause', () => {
 
   it('flags the relay-less and the simultaneous breaks, in that order of importance', () => {
     const [seul, ensemble] = segmentsPause(
-      [pause({ relais: [], relaisDisponible: false, simultanee: true }), pause({ debut: '19:00:00', fin: '19:20:00', simultanee: true })],
+      [
+        pause({ relais: [], relaisDisponible: false, simultanee: true }),
+        pause({ debut: '19:00:00', fin: '19:20:00', simultanee: true }),
+      ],
       13 * 60,
-      420
+      420,
     );
 
     expect(seul.sansRelais).toBe(true);
@@ -86,9 +116,12 @@ describe('segmentsPause', () => {
 
   it('clips a break to the track and drops one outside it', () => {
     const segments = segmentsPause(
-      [pause({ debut: '12:50:00', fin: '13:10:00' }), pause({ debut: '21:00:00', fin: '21:20:00' })],
+      [
+        pause({ debut: '12:50:00', fin: '13:10:00' }),
+        pause({ debut: '21:00:00', fin: '21:20:00' }),
+      ],
       13 * 60,
-      420
+      420,
     );
 
     expect(segments).toHaveLength(1);
@@ -107,8 +140,28 @@ describe('segmentsPause', () => {
 describe('compterSansRelais / libellePause', () => {
   it('counts the relay-less breaks of the report, or of one day', () => {
     const r = rapport([
-      journee({ sequences: [{ debut: '13:00:00', fin: '20:00:00', minutes: 420, pausesDues: [pause({ relais: [], relaisDisponible: false })] }] }),
-      journee({ animateurId: 'bob', date: '2026-07-11', sequences: [{ debut: '13:00:00', fin: '20:00:00', minutes: 420, pausesDues: [pause({ relais: [], relaisDisponible: false }), pause()] }] })
+      journee({
+        sequences: [
+          {
+            debut: '13:00:00',
+            fin: '20:00:00',
+            minutes: 420,
+            pausesDues: [pause({ relais: [], relaisDisponible: false })],
+          },
+        ],
+      }),
+      journee({
+        animateurId: 'bob',
+        date: '2026-07-11',
+        sequences: [
+          {
+            debut: '13:00:00',
+            fin: '20:00:00',
+            minutes: 420,
+            pausesDues: [pause({ relais: [], relaisDisponible: false }), pause()],
+          },
+        ],
+      }),
     ]);
 
     expect(compterSansRelais(r)).toBe(2);
@@ -118,6 +171,8 @@ describe('compterSansRelais / libellePause', () => {
 
   it('names the stand and the times, and says what is wrong', () => {
     expect(libellePause(pause())).toBe('Pause 18:40 – 19:00 sur Village des jeux');
-    expect(libellePause(pause({ relaisDisponible: false, relais: [] }))).toBe("Pause 18:40 – 19:00 sur Village des jeux — personne d'autre sur le stand");
+    expect(libellePause(pause({ relaisDisponible: false, relais: [] }))).toBe(
+      "Pause 18:40 – 19:00 sur Village des jeux — personne d'autre sur le stand",
+    );
   });
 });

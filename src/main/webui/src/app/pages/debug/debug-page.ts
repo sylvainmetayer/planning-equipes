@@ -6,7 +6,7 @@ import {
   effect,
   inject,
   signal,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -58,10 +58,20 @@ export const CLEAR_KEYWORD = 'VIDER';
  */
 @Component({
   selector: 'app-debug-page',
-  imports: [FormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatIconModule,
-    MatInputModule, MatProgressBarModule, OutputPanel, StatusMessage, YamlValidator],
+  imports: [
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressBarModule,
+    OutputPanel,
+    StatusMessage,
+    YamlValidator,
+  ],
   templateUrl: './debug-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DebugPage {
   protected readonly loading = signal(false);
@@ -171,7 +181,7 @@ export class DebugPage {
       // dump and must not be clobbered by a lock warning.
       this.notifications.notify({
         title: $localize`:@@dataSetup.lockedByJob:${description}:description: La configuration des données est verrouillée jusqu'à la fin.`,
-        variant: 'warning'
+        variant: 'warning',
       });
       return;
     }
@@ -196,7 +206,7 @@ export class DebugPage {
         ? $localize`:@@dataSetup.resetPromptMessage:Tous les stands, créneaux, animateurs, affectations et ajustements manuels de l'édition « ${nomEdition}:edition: » sont supprimés, et rien n'est rechargé. Les autres éditions ne sont pas touchées.`
         : $localize`:@@dataSetup.resetPromptMessageSansEdition:Tous les stands, créneaux, animateurs, affectations et ajustements manuels de l'édition courante sont supprimés, et rien n'est rechargé. Les autres éditions ne sont pas touchées.`,
       valeurAttendue: nomEdition ?? CLEAR_KEYWORD,
-      confirmLabel: $localize`:@@dataSetup.resetConfirmLabel:Vider`
+      confirmLabel: $localize`:@@dataSetup.resetConfirmLabel:Vider`,
     });
     if (!confirmed) {
       return;
@@ -210,17 +220,17 @@ export class DebugPage {
         this.referenceData.reload(),
         this.resolution.reload(),
         this.solverSettings.refresh(),
-        this.problemes.reloadFeasibility()
+        this.problemes.reloadFeasibility(),
       ]);
       this.notifications.notify({
         title: $localize`:@@dataSetup.resetDone:Base de données vidée. Chargez un planning d'exemple pour la repeupler.`,
-        variant: 'info'
+        variant: 'info',
       });
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@debug.resetFailed:Base de données non vidée`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       this.resetting.set(false);
@@ -233,7 +243,7 @@ export class DebugPage {
     this.notifications.notify({
       title: $localize`:@@debug.testNotification.title:Notification de test (${severity}:severity:)`,
       message: $localize`:@@debug.testNotification.message:Générée depuis la page Débogage.`,
-      variant
+      variant,
     });
   }
 
@@ -272,13 +282,13 @@ export class DebugPage {
       this.notifications.notify({
         title: $localize`:@@debug.mailTest.envoye:Mail de test envoyé à ${result.adminEmail}:adresse:.`,
         variant: 'success',
-        timeout: 6000
+        timeout: 6000,
       });
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@debug.mailTest.echec:Échec de l'envoi du mail de test`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       this.mailTestBusy.set(false);
@@ -298,4 +308,3 @@ export class DebugPage {
     }
   }
 }
-

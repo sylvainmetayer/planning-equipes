@@ -39,10 +39,10 @@ import { PromptDialog } from '../../shared/prompt-dialog';
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
   ],
   templateUrl: './disponibilites-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DisponibilitesPage {
   private readonly disponibilitesApi = inject(DisponibilitesApi);
@@ -68,10 +68,10 @@ export class DisponibilitesPage {
   protected readonly prevenir = signal(false);
 
   protected readonly enAttente = computed(() =>
-    this.declarations().filter((declaration) => declaration.statut === 'EN_ATTENTE')
+    this.declarations().filter((declaration) => declaration.statut === 'EN_ATTENTE'),
   );
   protected readonly decidees = computed(() =>
-    this.declarations().filter((declaration) => declaration.statut !== 'EN_ATTENTE')
+    this.declarations().filter((declaration) => declaration.statut !== 'EN_ATTENTE'),
   );
 
   constructor() {
@@ -83,7 +83,7 @@ export class DisponibilitesPage {
     try {
       const [declarations, configuration] = await Promise.all([
         this.disponibilitesApi.declarations(),
-        this.disponibilitesApi.configuration()
+        this.disponibilitesApi.configuration(),
       ]);
       this.declarations.set(declarations);
       this.configuration.set(configuration);
@@ -107,7 +107,7 @@ export class DisponibilitesPage {
         collecteOuverte: open,
         debut: this.debut() || null,
         fin: this.fin() || null,
-        prevenirAnimateurs: open && this.prevenir()
+        prevenirAnimateurs: open && this.prevenir(),
       });
       this.configuration.set(reponse);
       this.prevenir.set(false);
@@ -115,7 +115,7 @@ export class DisponibilitesPage {
         title: reponse.collecteOuverte
           ? $localize`:@@dispo.ouverteNotif:Collecte ouverte : les animateurs peuvent déclarer leurs disponibilités.`
           : $localize`:@@dispo.fermeeNotif:Collecte fermée : les espaces animateurs n'acceptent plus de déclaration.`,
-        variant: 'success'
+        variant: 'success',
       });
       if (reponse.invitation) {
         this.notifications.notify({
@@ -125,7 +125,7 @@ export class DisponibilitesPage {
               ? undefined
               : $localize`:@@dispo.invitationRestes:Sans adresse : ${reponse.invitation.sansEmail.join(', ')}:sansEmail:. Échecs : ${reponse.invitation.echecs.join(', ')}:echecs:.`,
           variant: reponse.invitation.echecs.length > 0 ? 'error' : 'success',
-          timeout: 8000
+          timeout: 8000,
         });
       }
     } catch (error) {
@@ -141,7 +141,7 @@ export class DisponibilitesPage {
     const confirmed = await this.confirm.ask({
       title: $localize`:@@dispo.appliquerTitre:Appliquer la déclaration de ${declaration.animateurNom}:animateur: ?`,
       message: $localize`:@@dispo.appliquerMessage:Sa fiche dira désormais ce qu'il a déclaré : ${declaration.joursIndisponibles.length}:jours: jour(s) d'indisponibilité et ${declaration.souhaitsLabels.length}:souhaits: souhait(s) remplaceront ce qu'elle contient. Le planning enregistré devra être régénéré.`,
-      confirmLabel: $localize`:@@dispo.appliquerConfirm:Appliquer`
+      confirmLabel: $localize`:@@dispo.appliquerConfirm:Appliquer`,
     });
     if (!confirmed) {
       return;
@@ -150,7 +150,7 @@ export class DisponibilitesPage {
       declaration,
       'application',
       null,
-      $localize`:@@dispo.appliquee:Déclaration appliquée. Régénérez le planning depuis la page Solveur pour qu'il en tienne compte.`
+      $localize`:@@dispo.appliquee:Déclaration appliquée. Régénérez le planning depuis la page Solveur pour qu'il en tienne compte.`,
     );
   }
 
@@ -158,7 +158,7 @@ export class DisponibilitesPage {
     const commentaire = await PromptDialog.ask(this.dialog, {
       title: $localize`:@@dispo.refuserTitre:Refuser la déclaration de ${declaration.animateurNom}:animateur:`,
       label: $localize`:@@dispo.refuserLabel:Motif du refus (lu par l'animateur dans son espace)`,
-      confirmLabel: $localize`:@@dispo.refuserConfirm:Refuser`
+      confirmLabel: $localize`:@@dispo.refuserConfirm:Refuser`,
     });
     if (commentaire === null) {
       return;
@@ -167,7 +167,7 @@ export class DisponibilitesPage {
       declaration,
       'refus',
       commentaire,
-      $localize`:@@dispo.refusee:Déclaration refusée, les données restent inchangées.`
+      $localize`:@@dispo.refusee:Déclaration refusée, les données restent inchangées.`,
     );
   }
 
@@ -175,7 +175,7 @@ export class DisponibilitesPage {
     declaration: DeclarationAdminView,
     action: 'application' | 'refus',
     commentaire: string | null,
-    confirmation: string
+    confirmation: string,
   ): Promise<void> {
     this.decisionEnCours.set(declaration.id);
     try {
@@ -204,7 +204,7 @@ export class DisponibilitesPage {
     this.notifications.notify({
       title: $localize`:@@crud.error:Erreur`,
       message: errorMessage(error),
-      variant: 'error'
+      variant: 'error',
     });
   }
 }

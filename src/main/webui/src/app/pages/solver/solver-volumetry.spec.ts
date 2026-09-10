@@ -19,16 +19,25 @@ describe('SolverVolumetry', () => {
     posteCount: 0,
     contrainteAdHocCount: 0,
     hoursToFill: 0,
-    hoursAvailable: 0
+    hoursAvailable: 0,
   });
   const creneaux = signal<unknown[]>([]);
   let fixture: ComponentFixture<SolverVolumetry>;
 
   beforeEach(() => {
-    scale.set({ animateurCount: 0, posteCount: 0, contrainteAdHocCount: 0, hoursToFill: 0, hoursAvailable: 0 });
+    scale.set({
+      animateurCount: 0,
+      posteCount: 0,
+      contrainteAdHocCount: 0,
+      hoursToFill: 0,
+      hoursAvailable: 0,
+    });
     creneaux.set([]);
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: ReferenceDataStore, useValue: { scale, creneaux } }]
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ReferenceDataStore, useValue: { scale, creneaux } },
+      ],
     });
   });
 
@@ -43,7 +52,13 @@ describe('SolverVolumetry', () => {
   }
 
   it('says nothing about the fill ratio while no hour is offered', () => {
-    scale.set({ animateurCount: 10, posteCount: 40, contrainteAdHocCount: 0, hoursToFill: 120, hoursAvailable: 0 });
+    scale.set({
+      animateurCount: 10,
+      posteCount: 40,
+      contrainteAdHocCount: 0,
+      hoursToFill: 120,
+      hoursAvailable: 0,
+    });
     const card = createCard();
 
     expect(card.fillRatio()).toBeNull();
@@ -51,7 +66,13 @@ describe('SolverVolumetry', () => {
   });
 
   it('puts hours to fill over hours available', () => {
-    scale.set({ animateurCount: 10, posteCount: 40, contrainteAdHocCount: 0, hoursToFill: 120, hoursAvailable: 160 });
+    scale.set({
+      animateurCount: 10,
+      posteCount: 40,
+      contrainteAdHocCount: 0,
+      hoursToFill: 120,
+      hoursAvailable: 160,
+    });
     const card = createCard();
 
     expect(card.fillRatio()).toBeCloseTo(0.75);
@@ -59,7 +80,13 @@ describe('SolverVolumetry', () => {
   });
 
   it('gives the problem scale as postes times log10 of the animateurs', () => {
-    scale.set({ animateurCount: 100, posteCount: 1500, contrainteAdHocCount: 0, hoursToFill: 0, hoursAvailable: 0 });
+    scale.set({
+      animateurCount: 100,
+      posteCount: 1500,
+      contrainteAdHocCount: 0,
+      hoursToFill: 0,
+      hoursAvailable: 0,
+    });
     const card = createCard();
 
     expect(card.problemScale()).toBe(3000);
@@ -67,15 +94,33 @@ describe('SolverVolumetry', () => {
   });
 
   it('shows no scale at all with a single animateur or no poste', () => {
-    scale.set({ animateurCount: 1, posteCount: 1500, contrainteAdHocCount: 0, hoursToFill: 0, hoursAvailable: 0 });
+    scale.set({
+      animateurCount: 1,
+      posteCount: 1500,
+      contrainteAdHocCount: 0,
+      hoursToFill: 0,
+      hoursAvailable: 0,
+    });
     expect(createCard().problemScale()).toBe(0);
 
-    scale.set({ animateurCount: 100, posteCount: 0, contrainteAdHocCount: 0, hoursToFill: 0, hoursAvailable: 0 });
+    scale.set({
+      animateurCount: 100,
+      posteCount: 0,
+      contrainteAdHocCount: 0,
+      hoursToFill: 0,
+      hoursAvailable: 0,
+    });
     expect(createCard().problemScale()).toBe(0);
   });
 
   it('follows the store as it changes', () => {
-    scale.set({ animateurCount: 10, posteCount: 40, contrainteAdHocCount: 3, hoursToFill: 0, hoursAvailable: 0 });
+    scale.set({
+      animateurCount: 10,
+      posteCount: 40,
+      contrainteAdHocCount: 3,
+      hoursToFill: 0,
+      hoursAvailable: 0,
+    });
     creneaux.set([{}, {}]);
     createCard();
     expect(text()).toContain('10 animateurs sur 40 postes (2 créneaux), sous 3 ajustements');

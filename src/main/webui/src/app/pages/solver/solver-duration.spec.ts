@@ -8,7 +8,7 @@ import {
   SolverDurationUnit,
   bestUnitFor,
   secondsToValue,
-  valueToSeconds
+  valueToSeconds,
 } from './solver-duration';
 
 describe('valueToSeconds', () => {

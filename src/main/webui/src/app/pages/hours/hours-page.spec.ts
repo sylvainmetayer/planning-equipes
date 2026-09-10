@@ -29,7 +29,7 @@ function row(nom: string, heuresParSemaine: Record<string, number>): HeuresAnima
     animateurId: nom.toLowerCase(),
     nom,
     heuresParSemaine,
-    total: Object.values(heuresParSemaine).reduce((sum, heures) => sum + heures, 0)
+    total: Object.values(heuresParSemaine).reduce((sum, heures) => sum + heures, 0),
   };
 }
 
@@ -71,10 +71,13 @@ describe('HoursPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
         { provide: PlanningApi, useValue: planningApi },
-        { provide: PlanningStateService, useValue: planningState }
-      ]
+        { provide: PlanningStateService, useValue: planningState },
+      ],
     });
   });
 
@@ -130,7 +133,9 @@ describe('HoursPage', () => {
     });
 
     it('reports a missing planning raised upstream rather than calling the endpoint', async () => {
-      planningState.require.mockRejectedValue(new Error('Aucun planning disponible pour le moment.'));
+      planningState.require.mockRejectedValue(
+        new Error('Aucun planning disponible pour le moment.'),
+      );
 
       const page = createPage();
       await vi.waitFor(() => expect(page.busy()).toBe(false));
@@ -156,7 +161,7 @@ describe('HoursPage', () => {
         animateurCount: 0,
         parSemaine: {},
         total: 0,
-        moyenneParAnimateur: 0
+        moyenneParAnimateur: 0,
       });
     });
   });
@@ -165,7 +170,10 @@ describe('HoursPage', () => {
     beforeEach(() => {
       planningApi.hoursReport.mockResolvedValue({
         semaines: ['2026-W31', '2026-W32'],
-        animateurs: [row('Zoé', { '2026-W31': 10, '2026-W32': 20 }), row('Alice', { '2026-W31': 40 })]
+        animateurs: [
+          row('Zoé', { '2026-W31': 10, '2026-W32': 20 }),
+          row('Alice', { '2026-W31': 40 }),
+        ],
       });
     });
 
@@ -197,7 +205,7 @@ describe('HoursPage', () => {
     it('sorts by total hours numerically, not as text', async () => {
       planningApi.hoursReport.mockResolvedValue({
         semaines: ['2026-W31'],
-        animateurs: [row('Neuf', { '2026-W31': 9 }), row('Dix', { '2026-W31': 10 })]
+        animateurs: [row('Neuf', { '2026-W31': 9 }), row('Dix', { '2026-W31': 10 })],
       });
       const page = createPage();
       await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
@@ -221,7 +229,10 @@ describe('HoursPage', () => {
       page.sort.set({ active: 'animateur', direction: 'asc' });
       page.sortedAnimateurs();
 
-      expect(page.rapport()!.animateurs.map((animateur) => animateur.nom)).toEqual(['Zoé', 'Alice']);
+      expect(page.rapport()!.animateurs.map((animateur) => animateur.nom)).toEqual([
+        'Zoé',
+        'Alice',
+      ]);
     });
 
     it('sums the event-wide totals week by week and averages them per animateur', async () => {
@@ -232,7 +243,7 @@ describe('HoursPage', () => {
         animateurCount: 2,
         parSemaine: { '2026-W31': 50, '2026-W32': 20 },
         total: 70,
-        moyenneParAnimateur: 35
+        moyenneParAnimateur: 35,
       });
     });
   });

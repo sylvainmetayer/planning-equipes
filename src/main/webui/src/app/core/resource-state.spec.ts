@@ -3,7 +3,12 @@
 // so a change in Angular's own semantics (value throwing in error state, the
 // previous value kept while reloading) is caught here and nowhere else.
 
-import { Injector, provideZonelessChangeDetection, resource, runInInjectionContext } from '@angular/core';
+import {
+  Injector,
+  provideZonelessChangeDetection,
+  resource,
+  runInInjectionContext,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorText, retainedValue } from './resource-state';

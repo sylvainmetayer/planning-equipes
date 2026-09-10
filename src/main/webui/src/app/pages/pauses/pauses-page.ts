@@ -25,7 +25,7 @@ import {
   libelleRelais,
   LignePausePlanifiee,
   planifieesDuJour,
-  syntheseDuJour
+  syntheseDuJour,
 } from './pauses';
 
 /**
@@ -52,10 +52,10 @@ import {
     MatSelectModule,
     MatTooltipModule,
     RouterLink,
-    WorkInProgressBanner
+    WorkInProgressBanner,
   ],
   templateUrl: './pauses-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PausesPage {
   private readonly analysesApi = inject(AnalysesApi);
@@ -68,26 +68,35 @@ export class PausesPage {
   protected readonly sansRelaisSeulement = signal(false);
 
   protected readonly messageEssai = signal(
-    $localize`:@@pauses.messageEssai:Les pauses sont lues sur le planning persisté et les paramètres légaux du jour ; l'outil ne les planifie pas, il dit où elles tombent et qui peut relayer.`
+    $localize`:@@pauses.messageEssai:Les pauses sont lues sur le planning persisté et les paramètres légaux du jour ; l'outil ne les planifie pas, il dit où elles tombent et qui peut relayer.`,
   );
 
   protected readonly jours = computed<JourPauses[]>(() => joursDuRapport(this.rapport()));
   /** ISO date picked in the selector, else the first day the report covers. */
   private readonly navigation = dayNavigation(this.jours, (jour) => jour.date, {
-    initial: this.route.snapshot.queryParamMap.get('jour')
+    initial: this.route.snapshot.queryParamMap.get('jour'),
   });
   protected readonly jourCourant = this.navigation.current;
   protected readonly estPremierJour = this.navigation.isFirst;
   protected readonly estDernierJour = this.navigation.isLast;
   protected readonly groupes = computed<GroupeStand[]>(() =>
-    groupesDuJour(this.rapport(), this.jourCourant()?.date ?? null, this.recherche(), this.sansRelaisSeulement())
+    groupesDuJour(
+      this.rapport(),
+      this.jourCourant()?.date ?? null,
+      this.recherche(),
+      this.sansRelaisSeulement(),
+    ),
   );
   protected readonly planifiees = computed<LignePausePlanifiee[]>(() =>
-    planifieesDuJour(this.rapport(), this.jourCourant()?.date ?? null, this.recherche())
+    planifieesDuJour(this.rapport(), this.jourCourant()?.date ?? null, this.recherche()),
   );
-  protected readonly synthese = computed(() => syntheseDuJour(this.rapport(), this.jourCourant()?.date ?? null));
+  protected readonly synthese = computed(() =>
+    syntheseDuJour(this.rapport(), this.jourCourant()?.date ?? null),
+  );
   /** True as soon as a filter narrows the day; the day itself is navigation, not a filter. */
-  protected readonly viewChanged = computed(() => this.recherche().trim() !== '' || this.sansRelaisSeulement());
+  protected readonly viewChanged = computed(
+    () => this.recherche().trim() !== '' || this.sansRelaisSeulement(),
+  );
 
   protected readonly heure = heure;
   protected readonly libelleRelais = libelleRelais;
@@ -102,7 +111,7 @@ export class PausesPage {
     keepViewInQueryParams(() => ({
       jour: this.navigation.queryParam(),
       q: optionalParam(this.recherche()),
-      vue: this.sansRelaisSeulement() ? 'sans-relais' : null
+      vue: this.sansRelaisSeulement() ? 'sans-relais' : null,
     }));
   }
 

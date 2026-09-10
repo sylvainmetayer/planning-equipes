@@ -68,7 +68,7 @@ async function ouvrirContraintes(page: Page): Promise<void> {
 }
 
 test('désactiver une règle légale demande une confirmation, et annuler ne change rien', async ({
-  browser
+  browser,
 }) => {
   const page = await pageAdmin(browser, admin);
   await ouvrirContraintes(page);
@@ -97,7 +97,7 @@ test('désactiver une règle légale demande une confirmation, et annuler ne cha
 });
 
 test('confirmer la modale éteint bien la règle, et la réactiver ne redemande rien', async ({
-  browser
+  browser,
 }) => {
   const page = await pageAdmin(browser, admin);
   await ouvrirContraintes(page);
@@ -195,7 +195,7 @@ test("le poids d'une règle non dosable survit à un rechargement", async ({ bro
 });
 
 test('une règle protégée porte son pictogramme et le même champ de poids que les autres', async ({
-  browser
+  browser,
 }) => {
   const page = await pageAdmin(browser, admin);
   await ouvrirContraintes(page);

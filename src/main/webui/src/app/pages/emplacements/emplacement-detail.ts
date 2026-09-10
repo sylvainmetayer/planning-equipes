@@ -9,7 +9,10 @@ import { Emplacement, Stand } from '../../core/models';
  * are tied to this place. That link is the whole point of an emplacement —
  * it is what makes `eviterChangementEmplacementEloigne` bite.
  */
-export function buildEmplacementDetail(emplacement: Emplacement, stands: readonly Stand[] = []): DetailSection[] {
+export function buildEmplacementDetail(
+  emplacement: Emplacement,
+  stands: readonly Stand[] = [],
+): DetailSection[] {
   const rattaches = stands
     .filter((stand) => stand.emplacement?.id === emplacement.id)
     .map((stand) => stand.nom || stand.id)
@@ -21,8 +24,8 @@ export function buildEmplacementDetail(emplacement: Emplacement, stands: readonl
       title: $localize`:@@detail.section.identity:Identité`,
       rows: [
         { label: $localize`:@@common.id:Id`, value: emplacement.id },
-        { label: $localize`:@@common.nom:Nom`, value: emplacement.nom }
-      ]
+        { label: $localize`:@@common.nom:Nom`, value: emplacement.nom },
+      ],
     },
     {
       title: $localize`:@@detail.section.coordonnees:Coordonnées`,
@@ -30,12 +33,12 @@ export function buildEmplacementDetail(emplacement: Emplacement, stands: readonl
         {
           label: $localize`:@@emplacements.field.latitude:Latitude`,
           value: geolocalise ? emplacement.latitude!.toFixed(5) : $localize`:@@detail.none:Aucun`,
-          muted: !geolocalise
+          muted: !geolocalise,
         },
         {
           label: $localize`:@@emplacements.field.longitude:Longitude`,
           value: geolocalise ? emplacement.longitude!.toFixed(5) : $localize`:@@detail.none:Aucun`,
-          muted: !geolocalise
+          muted: !geolocalise,
         },
         ...(geolocalise
           ? []
@@ -43,10 +46,10 @@ export function buildEmplacementDetail(emplacement: Emplacement, stands: readonl
               {
                 label: $localize`:@@detail.emplacement.effet:Effet sur le planning`,
                 value: $localize`:@@detail.emplacement.sansCoordonnees:Sans coordonnées, la règle sur les déplacements lointains ne s'applique pas à ces stands`,
-                muted: true
-              }
-            ])
-      ]
+                muted: true,
+              },
+            ]),
+      ],
     },
     {
       title: $localize`:@@detail.emplacement.stands:Stands rattachés`,
@@ -54,14 +57,14 @@ export function buildEmplacementDetail(emplacement: Emplacement, stands: readonl
         rattaches.length > 0
           ? {
               label: $localize`:@@detail.emplacement.standsCount:${rattaches.length}:count: stand(s)`,
-              chips: rattaches
+              chips: rattaches,
             }
           : {
               label: $localize`:@@detail.emplacement.stands:Stands rattachés`,
               value: $localize`:@@detail.none:Aucun`,
-              muted: true
-            }
-      ]
-    }
+              muted: true,
+            },
+      ],
+    },
   ];
 }

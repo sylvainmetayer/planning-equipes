@@ -26,7 +26,7 @@ test.afterAll(async () => {
 });
 
 test("sans variable de marque, l'endpoint annonce une identité neutre et sans logo", async ({
-  browser
+  browser,
 }) => {
   const page = await pageAdmin(browser, admin);
 
@@ -39,7 +39,7 @@ test("sans variable de marque, l'endpoint annonce une identité neutre et sans l
 });
 
 test('le titre de la page est construit à partir de la marque, pas codé dans la route', async ({
-  browser
+  browser,
 }) => {
   const page = await pageAdmin(browser, admin);
 

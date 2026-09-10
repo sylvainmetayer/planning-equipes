@@ -5,11 +5,18 @@ import {
   appliquerPatchCreneau,
   creneauxFranchissantMinuit,
   patchCreneauEstVide,
-  patchCreneauVide
+  patchCreneauVide,
 } from './creneau-bulk-edit';
 
 function creneau(overrides: Partial<Creneau> = {}): Creneau {
-  return { id: 1, jour: 1, date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00', ...overrides };
+  return {
+    id: 1,
+    jour: 1,
+    date: '2026-08-01',
+    heureDebut: '09:00',
+    heureFin: '12:00',
+    ...overrides,
+  };
 }
 
 function patch(overrides: Partial<CreneauBulkPatch> = {}): CreneauBulkPatch {
@@ -51,7 +58,10 @@ describe('appliquerPatchCreneau', () => {
 
 describe('creneauxFranchissantMinuit', () => {
   it('repère un créneau qui se terminerait le lendemain', () => {
-    const creneaux = [creneau({ id: 1 }), creneau({ id: 2, heureDebut: '14:00', heureFin: '18:00' })];
+    const creneaux = [
+      creneau({ id: 1 }),
+      creneau({ id: 2, heureDebut: '14:00', heureFin: '18:00' }),
+    ];
 
     const deNuit = creneauxFranchissantMinuit(creneaux, patch({ heureFin: '12:00' }));
 
@@ -64,7 +74,10 @@ describe('creneauxFranchissantMinuit', () => {
 
   // Le cas archétypal : une soirée saisie en masse, 20:00 → 00:00.
   it('compte le créneau qui se termine à minuit pile', () => {
-    const deNuit = creneauxFranchissantMinuit([creneau({ id: 3 })], patch({ heureDebut: '20:00', heureFin: '00:00' }));
+    const deNuit = creneauxFranchissantMinuit(
+      [creneau({ id: 3 })],
+      patch({ heureDebut: '20:00', heureFin: '00:00' }),
+    );
 
     expect(deNuit.map((c) => c.id)).toEqual([3]);
   });

@@ -14,12 +14,12 @@ const C1 = 987401;
 const ANIMATEURS = [
   { id: 'SOLV-DD-A', prenom: 'Anna', nom: 'Glisse', dateNaissance: '1990-01-01' },
   { id: 'SOLV-DD-B', prenom: 'Boris', nom: 'Glisse', dateNaissance: '1991-02-02' },
-  { id: 'SOLV-DD-C', prenom: 'Cléo', nom: 'Glisse', dateNaissance: '1992-03-03' }
+  { id: 'SOLV-DD-C', prenom: 'Cléo', nom: 'Glisse', dateNaissance: '1992-03-03' },
 ];
 const STANDS = [
   { id: 'SOLV-DD-S1', nom: 'Stand Glisse un' },
   { id: 'SOLV-DD-S2', nom: 'Stand Glisse deux' },
-  { id: 'SOLV-DD-S3', nom: 'Stand Glisse trois' }
+  { id: 'SOLV-DD-S3', nom: 'Stand Glisse trois' },
 ];
 
 /**
@@ -47,23 +47,27 @@ async function seedPlan(options: SeedOptions = {}): Promise<void> {
     `delete from stand where id like 'SOLV-DD-%';`,
     ...STANDS.map(
       (stand, index) =>
-        `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${stand.id}', '${stand.nom}', 1, 1, ${index === 0 && options.premierStandReserveMajeurs ? 'true' : 'false'});`
+        `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${stand.id}', '${stand.nom}', 1, 1, ${index === 0 && options.premierStandReserveMajeurs ? 'true' : 'false'});`,
     ),
     ...STANDS.map(
-      (stand) => `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${stand.id}', 'STRATEGIE');`
+      (stand) =>
+        `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${stand.id}', 'STRATEGIE');`,
     ),
     ...ANIMATEURS.map(
       (animateur) =>
-        `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.id === 'SOLV-DD-C' && options.cleoMineureEtLibre ? '2012-01-01' : animateur.dateNaissance}', false);`
+        `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.id === 'SOLV-DD-C' && options.cleoMineureEtLibre ? '2012-01-01' : animateur.dateNaissance}', false);`,
     ),
     `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${C1}, '2026-07-22', '10:00', '12:00');`,
     ...STANDS.map((stand, index) =>
       index === 2 && options.cleoMineureEtLibre
         ? `insert into poste_affectation (edition_id, id, stand_id, creneau_id) values ('DEFAUT', 'SOLV-DD-P3', '${stand.id}', ${C1});`
-        : `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'SOLV-DD-P${index + 1}', '${stand.id}', ${C1}, '${ANIMATEURS[index].id}');`
-    )
+        : `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'SOLV-DD-P${index + 1}', '${stand.id}', ${C1}, '${ANIMATEURS[index].id}');`,
+    ),
   ].join('\n');
-  const reponse = await admin.post('/api/database/import', { headers: { 'Content-Type': 'text/plain' }, data: script });
+  const reponse = await admin.post('/api/database/import', {
+    headers: { 'Content-Type': 'text/plain' },
+    data: script,
+  });
   expect(reponse.ok(), await reponse.text()).toBe(true);
 }
 
@@ -128,17 +132,25 @@ async function glisser(page: Page, source: Locator, cible: Locator): Promise<voi
   // Le seuil du CDK, franchi avant de viser : c'est ce mouvement-là qui fige
   // les rectangles, et il doit partir de la source.
   await page.mouse.move(depart!.x + depart!.width / 2 + 8, depart!.y + depart!.height / 2 + 8);
-  await page.mouse.move(arrivee!.x + arrivee!.width / 2, arrivee!.y + arrivee!.height / 2, { steps: 12 });
+  await page.mouse.move(arrivee!.x + arrivee!.width / 2, arrivee!.y + arrivee!.height / 2, {
+    steps: 12,
+  });
   await page.mouse.up();
 }
 
 test.describe('glisser-déposer', () => {
   test.beforeEach(async () => {
     await seedPlan();
-    expect(await occupants()).toEqual({ 'SOLV-DD-S1': 'SOLV-DD-A', 'SOLV-DD-S2': 'SOLV-DD-B', 'SOLV-DD-S3': 'SOLV-DD-C' });
+    expect(await occupants()).toEqual({
+      'SOLV-DD-S1': 'SOLV-DD-A',
+      'SOLV-DD-S2': 'SOLV-DD-B',
+      'SOLV-DD-S3': 'SOLV-DD-C',
+    });
   });
 
-  test('sur le calendrier, déposer un nom sur une personne échange les deux sièges', async ({ browser }) => {
+  test('sur le calendrier, déposer un nom sur une personne échange les deux sièges', async ({
+    browser,
+  }) => {
     const avant = await occupants();
     const page = await pageAdmin(browser, admin);
     try {
@@ -149,9 +161,15 @@ test.describe('glisser-déposer', () => {
 
       // The drag is taken by the handle, not by the name (the name stays
       // selectable and, on touch, scrollable — see the review of #308).
-      await glisser(page, ligneUn.locator('.affectation-poignee'), ligneDeux.locator('.affectation-link'));
+      await glisser(
+        page,
+        ligneUn.locator('.affectation-poignee'),
+        ligneDeux.locator('.affectation-link'),
+      );
 
-      await expect(page.locator('mat-snack-bar-container')).toContainText('ont échangé leurs sièges');
+      await expect(page.locator('mat-snack-bar-container')).toContainText(
+        'ont échangé leurs sièges',
+      );
       await expect.poll(async () => (await occupants())['SOLV-DD-S1']).toBe(avant['SOLV-DD-S2']);
       expect((await occupants())['SOLV-DD-S2']).toBe(avant['SOLV-DD-S1']);
       // The screen re-read the plan: the names swapped on it too.
@@ -161,7 +179,9 @@ test.describe('glisser-déposer', () => {
     }
   });
 
-  test('sur le calendrier, déposer un nom sur un siège libre le déplace et libère son siège', async ({ browser }) => {
+  test('sur le calendrier, déposer un nom sur un siège libre le déplace et libère son siège', async ({
+    browser,
+  }) => {
     // Free one seat first: the third stand's holder is taken off it.
     const avant = await occupants();
     const liberation = await admin.post('/api/postes/SOLV-DD-P3/affectation');
@@ -174,7 +194,11 @@ test.describe('glisser-déposer', () => {
       const ligneTrois = page.locator('.day-stand', { hasText: 'Stand Glisse trois' });
       await expect(ligneTrois.locator('.siege-libre')).toBeVisible();
 
-      await glisser(page, ligneUn.locator('.affectation-poignee'), ligneTrois.locator('.siege-libre'));
+      await glisser(
+        page,
+        ligneUn.locator('.affectation-poignee'),
+        ligneTrois.locator('.siege-libre'),
+      );
 
       await expect(page.locator('mat-snack-bar-container')).toContainText('a changé de siège');
       await expect.poll(async () => (await occupants())['SOLV-DD-S3']).toBe(avant['SOLV-DD-S1']);
@@ -184,7 +208,9 @@ test.describe('glisser-déposer', () => {
     }
   });
 
-  test("sur le rail, déposer une vacation sur une autre personne l'échange", async ({ browser }) => {
+  test("sur le rail, déposer une vacation sur une autre personne l'échange", async ({
+    browser,
+  }) => {
     const avant = await occupants();
     const page = await pageAdmin(browser, admin);
     try {
@@ -195,7 +221,9 @@ test.describe('glisser-déposer', () => {
 
       await glisser(page, ligneA.locator('.rail-bloc-poignee'), ligneB.locator('.rail-cell'));
 
-      await expect(page.locator('mat-snack-bar-container')).toContainText('ont échangé leurs sièges');
+      await expect(page.locator('mat-snack-bar-container')).toContainText(
+        'ont échangé leurs sièges',
+      );
       const apres = await occupants();
       const standDeA = Object.keys(avant).find((stand) => avant[stand] === 'SOLV-DD-A')!;
       const standDeB = Object.keys(avant).find((stand) => avant[stand] === 'SOLV-DD-B')!;
@@ -206,7 +234,9 @@ test.describe('glisser-déposer', () => {
     }
   });
 
-  test('un dépôt qui casserait une règle dure est refusé, et le plan ne bouge pas', async ({ browser }) => {
+  test('un dépôt qui casserait une règle dure est refusé, et le plan ne bouge pas', async ({
+    browser,
+  }) => {
     // Cléo becomes a minor and leaves her seat; the first stand is adults-only.
     // Handing her Anna's seat there is a hard violation, and the rail is where
     // a free person receives a vacation.

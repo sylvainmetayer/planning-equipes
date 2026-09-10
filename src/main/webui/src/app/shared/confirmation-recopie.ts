@@ -48,7 +48,7 @@ export class ConfirmationRecopie {
       message: demande.message,
       label: $localize`:@@confirmationRecopie.label:Saisissez « ${demande.valeurAttendue}:attendu: » pour confirmer`,
       confirmLabel: demande.confirmLabel,
-      danger: true
+      danger: true,
     });
     if (saisi === null) {
       // Cancelled: the user knows they cancelled, saying so would be noise.
@@ -60,7 +60,7 @@ export class ConfirmationRecopie {
       this.notifications.notify({
         title: $localize`:@@confirmationRecopie.mismatch:Saisie incorrecte : rien n'a été fait.`,
         message: $localize`:@@confirmationRecopie.mismatchDetail:Le texte attendu était « ${demande.valeurAttendue}:attendu: ».`,
-        variant: 'error'
+        variant: 'error',
       });
       return false;
     }

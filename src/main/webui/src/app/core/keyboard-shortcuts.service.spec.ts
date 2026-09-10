@@ -11,12 +11,15 @@ import { KeyboardShortcutsService } from './keyboard-shortcuts.service';
 /** The two things this service asks of `MatDialog`: opening one, and knowing whether one is open. */
 function fakeDialog() {
   const ferme = new Subject<unknown>();
-  const reference = { afterClosed: () => ferme.asObservable(), close: vi.fn((valeur: unknown) => ferme.next(valeur)) };
+  const reference = {
+    afterClosed: () => ferme.asObservable(),
+    close: vi.fn((valeur: unknown) => ferme.next(valeur)),
+  };
   return {
     openDialogs: [] as unknown[],
     open: vi.fn(() => reference),
     reference,
-    ferme
+    ferme,
   };
 }
 
@@ -28,8 +31,8 @@ function configure() {
       provideZonelessChangeDetection(),
       KeyboardShortcutsService,
       { provide: MatDialog, useValue: dialog },
-      { provide: Router, useValue: router }
-    ]
+      { provide: Router, useValue: router },
+    ],
   });
   const service = TestBed.inject(KeyboardShortcutsService);
   service.start();
@@ -37,7 +40,10 @@ function configure() {
 }
 
 /** Dispatches a real `keydown` on the document, from `cible` when one is given. */
-function frapper(key: string, options: KeyboardEventInit & { cible?: Element } = {}): KeyboardEvent {
+function frapper(
+  key: string,
+  options: KeyboardEventInit & { cible?: Element } = {},
+): KeyboardEvent {
   const { cible: target, ...init } = options;
   const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
   (target ?? document.body).dispatchEvent(event);
@@ -98,7 +104,9 @@ describe('KeyboardShortcutsService', () => {
     const { dialog, router } = start();
     frapper('k', { ctrlKey: true });
     dialog.ferme.next({ route: '/timeline', queryParams: { animateur: 'a1' } });
-    expect(router.navigate).toHaveBeenCalledWith(['/timeline'], { queryParams: { animateur: 'a1' } });
+    expect(router.navigate).toHaveBeenCalledWith(['/timeline'], {
+      queryParams: { animateur: 'a1' },
+    });
   });
 
   it('navigates nowhere when the palette is dismissed', () => {
@@ -215,7 +223,12 @@ describe('KeyboardShortcutsService', () => {
 
   it('ignores a key another listener has already handled', () => {
     const { dialog } = start();
-    const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true });
+    const event = new KeyboardEvent('keydown', {
+      key: 'k',
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
     event.preventDefault();
     document.body.dispatchEvent(event);
     expect(dialog.open).not.toHaveBeenCalled();

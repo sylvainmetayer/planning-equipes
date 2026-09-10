@@ -31,7 +31,9 @@ async function autreSessionRenomme(nom: string): Promise<void> {
   const stands = (await lecture.json()) as { id: string; nom: string }[];
   const stand = stands.find((candidat) => candidat.id === STAND_ID);
   expect(stand, `${STAND_ID} should be seeded`).toBeDefined();
-  const ecriture = await admin.put(`/api/stands/${STAND_ID}`, { data: { ...stand, nom, modifieLe: null } });
+  const ecriture = await admin.put(`/api/stands/${STAND_ID}`, {
+    data: { ...stand, nom, modifieLe: null },
+  });
   expect(ecriture.status(), await ecriture.text()).toBe(200);
 }
 
@@ -59,11 +61,16 @@ async function ouvrirPuisSubirUneEcritureAilleurs(page: Page): Promise<void> {
 
 test.describe('modification concurrente', () => {
   test.beforeEach(async () => {
-    await seedReferentielSolveur(admin, [], [{ id: STAND_ID, nom: 'Stand concurrent', effectif: 1 }], []);
+    await seedReferentielSolveur(
+      admin,
+      [],
+      [{ id: STAND_ID, nom: 'Stand concurrent', effectif: 1 }],
+      [],
+    );
   });
 
   test("« Recharger » n'écrit rien et referme le formulaire sur la version de l'autre session", async ({
-    browser
+    browser,
   }) => {
     const page = await pageAdmin(browser, admin);
     try {
@@ -78,14 +85,16 @@ test.describe('modification concurrente', () => {
       await conflit.getByRole('button', { name: 'Recharger' }).click();
 
       await expect(page.getByRole('dialog')).toHaveCount(0);
-      await expect(page.getByRole('row', { name: new RegExp(STAND_ID) })).toContainText('Renommé ailleurs');
+      await expect(page.getByRole('row', { name: new RegExp(STAND_ID) })).toContainText(
+        'Renommé ailleurs',
+      );
       expect(await nomEnBase()).toBe('Renommé ailleurs');
     } finally {
       await page.context().close();
     }
   });
 
-  test("« Écraser quand même » impose la saisie de cet écran", async ({ browser }) => {
+  test('« Écraser quand même » impose la saisie de cet écran', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
     try {
       await ouvrirPuisSubirUneEcritureAilleurs(page);
@@ -95,7 +104,9 @@ test.describe('modification concurrente', () => {
       await conflit.getByRole('button', { name: 'Écraser quand même' }).click();
 
       await expect(page.getByRole('dialog')).toHaveCount(0);
-      await expect(page.getByRole('row', { name: new RegExp(STAND_ID) })).toContainText('Renommé ici');
+      await expect(page.getByRole('row', { name: new RegExp(STAND_ID) })).toContainText(
+        'Renommé ici',
+      );
       expect(await nomEnBase()).toBe('Renommé ici');
     } finally {
       await page.context().close();
@@ -107,7 +118,10 @@ test.describe('modification concurrente', () => {
     try {
       await page.goto('/stands');
       await page.getByLabel('Filtrer').fill(STAND_ID);
-      await page.getByRole('row', { name: new RegExp(STAND_ID) }).getByRole('button', { name: 'Modifier' }).click();
+      await page
+        .getByRole('row', { name: new RegExp(STAND_ID) })
+        .getByRole('button', { name: 'Modifier' })
+        .click();
       const formulaire = page.getByRole('dialog');
       await formulaire.getByLabel('Nom', { exact: true }).fill('Renommé tranquillement');
       await formulaire.getByRole('button', { name: 'Modifier le stand' }).click();

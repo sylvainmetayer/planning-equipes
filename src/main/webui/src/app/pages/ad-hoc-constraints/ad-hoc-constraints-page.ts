@@ -11,7 +11,10 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
-import { AdHocConstraintFormData, AdHocConstraintFormDialog } from './ad-hoc-constraint-form-dialog';
+import {
+  AdHocConstraintFormData,
+  AdHocConstraintFormDialog,
+} from './ad-hoc-constraint-form-dialog';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
@@ -39,9 +42,16 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
  */
 @Component({
   selector: 'app-ad-hoc-constraints-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule, RouterLink],
+  imports: [
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTableModule,
+    MatTooltipModule,
+    RouterLink,
+  ],
   templateUrl: './ad-hoc-constraints-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdHocConstraintsPage {
   protected readonly columns = ['id', 'type', 'animateurs', 'portee', 'raison', 'actions'];
@@ -78,7 +88,7 @@ export class AdHocConstraintsPage {
     const standId = contrainte.stand?.id;
     const scope = [
       this.creneauScopeLabel(contrainte.creneau),
-      standId ? $localize`:@@adHoc.scope.stand:stand ${standId}:id:` : ''
+      standId ? $localize`:@@adHoc.scope.stand:stand ${standId}:id:` : '',
     ]
       .filter(Boolean)
       .join(' · ');
@@ -106,15 +116,22 @@ export class AdHocConstraintsPage {
   }
 
   private openDialog(contrainte: ContrainteAdHoc | null): void {
-    this.dialog.open<AdHocConstraintFormDialog, AdHocConstraintFormData, boolean>(AdHocConstraintFormDialog, {
-      data: { contrainte },
-      width: '40rem',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable'
-    });
+    this.dialog.open<AdHocConstraintFormDialog, AdHocConstraintFormData, boolean>(
+      AdHocConstraintFormDialog,
+      {
+        data: { contrainte },
+        width: '40rem',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+      },
+    );
   }
 
   protected async remove(contrainte: ContrainteAdHoc): Promise<void> {
-    await this.crud.remove('contraintes-ad-hoc', contrainte.id, $localize`:@@adHoc.entityLabel:Ajustement`);
+    await this.crud.remove(
+      'contraintes-ad-hoc',
+      contrainte.id,
+      $localize`:@@adHoc.entityLabel:Ajustement`,
+    );
   }
 }

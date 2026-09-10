@@ -13,7 +13,7 @@ import {
   NouvelleDeclaration,
   NouvelleDemandeEchange,
   PosteAnimateurView,
-  SuggestionsEchangeView
+  SuggestionsEchangeView,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -44,8 +44,12 @@ export class EspaceAnimateurService {
     try {
       const [view, demandes, recues] = await Promise.all([
         this.api.getPreservingHttpError<EspaceAnimateurView>(`/api/espace-animateur/${jeton}`),
-        this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`),
-        this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes-recues`)
+        this.api.getPreservingHttpError<DemandeEchangeView[]>(
+          `/api/espace-animateur/${jeton}/demandes`,
+        ),
+        this.api.getPreservingHttpError<DemandeEchangeView[]>(
+          `/api/espace-animateur/${jeton}/demandes-recues`,
+        ),
       ]);
       this.view.set(view);
       this.demandes.set(demandes);
@@ -70,7 +74,10 @@ export class EspaceAnimateurService {
    */
   async demanderCode(): Promise<string> {
     const jeton = this.requireJeton();
-    const reponse = await this.api.post<{ emailMasque: string }>(`/api/espace-animateur/${jeton}/code`, null);
+    const reponse = await this.api.post<{ emailMasque: string }>(
+      `/api/espace-animateur/${jeton}/code`,
+      null,
+    );
     return reponse.emailMasque;
   }
 
@@ -89,7 +96,9 @@ export class EspaceAnimateurService {
   async accorderRecue(demandeId: string): Promise<void> {
     const jeton = this.requireJeton();
     const demande = await this.api.post<DemandeEchangeView>(
-      `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/accord`, null);
+      `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/accord`,
+      null,
+    );
     this.demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
   }
 
@@ -97,7 +106,9 @@ export class EspaceAnimateurService {
   async declinerRecue(demandeId: string): Promise<void> {
     const jeton = this.requireJeton();
     const demande = await this.api.post<DemandeEchangeView>(
-      `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/refus`, null);
+      `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/refus`,
+      null,
+    );
     this.demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
   }
 
@@ -108,7 +119,10 @@ export class EspaceAnimateurService {
    */
   async confirmerPlanning(): Promise<void> {
     const jeton = this.requireJeton();
-    const accuse = await this.api.post<AccuseReception>(`/api/espace-animateur/${jeton}/confirmation`, null);
+    const accuse = await this.api.post<AccuseReception>(
+      `/api/espace-animateur/${jeton}/confirmation`,
+      null,
+    );
     const view = this.view();
     if (view) {
       this.view.set({ ...view, statutConfirmation: accuse.statut, confirmeLe: accuse.confirmeLe });
@@ -123,7 +137,9 @@ export class EspaceAnimateurService {
   async regenererAbonnement(): Promise<void> {
     const jeton = this.requireJeton();
     const reponse = await this.api.post<{ abonnementToken: string }>(
-      `/api/espace-animateur/${jeton}/abonnement`, null);
+      `/api/espace-animateur/${jeton}/abonnement`,
+      null,
+    );
     const view = this.view();
     if (view) {
       this.view.set({ ...view, abonnementToken: reponse.abonnementToken });
@@ -133,7 +149,8 @@ export class EspaceAnimateurService {
   /** A colleague's seats, for the « créneau souhaité en échange » picker of a directed exchange. */
   async postesCollegue(collegueId: string): Promise<PosteAnimateurView[]> {
     return this.api.get<PosteAnimateurView[]>(
-      `/api/espace-animateur/${this.jeton()}/collegues/${encodeURIComponent(collegueId)}/postes`);
+      `/api/espace-animateur/${this.jeton()}/collegues/${encodeURIComponent(collegueId)}/postes`,
+    );
   }
 
   /**
@@ -144,15 +161,16 @@ export class EspaceAnimateurService {
   async suggestionsEchange(creneauId: number, standId: string): Promise<SuggestionsEchangeView> {
     const jeton = this.requireJeton();
     return this.api.get<SuggestionsEchangeView>(
-      `/api/espace-animateur/${jeton}/suggestions-echange`
-        + `?creneauId=${creneauId}&standId=${encodeURIComponent(standId)}`);
+      `/api/espace-animateur/${jeton}/suggestions-echange` +
+        `?creneauId=${creneauId}&standId=${encodeURIComponent(standId)}`,
+    );
   }
 
   async soumettre(nouvelles: NouvelleDemandeEchange[]): Promise<DemandeEchangeView[]> {
     const jeton = this.requireJeton();
     const soumises = await this.api.post<DemandeEchangeView[]>(
       `/api/espace-animateur/${jeton}/demandes`,
-      nouvelles
+      nouvelles,
     );
     this.demandes.set([...soumises, ...this.demandes()]);
     return soumises;
@@ -161,9 +179,14 @@ export class EspaceAnimateurService {
   /** Withdraws one still-pending demande, then refreshes the list. */
   async annuler(demandeId: string): Promise<void> {
     const jeton = this.requireJeton();
-    await this.api.post<void>(`/api/espace-animateur/${jeton}/demandes/${demandeId}/annulation`, null);
+    await this.api.post<void>(
+      `/api/espace-animateur/${jeton}/demandes/${demandeId}/annulation`,
+      null,
+    );
     this.demandes.set(
-      await this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`)
+      await this.api.getPreservingHttpError<DemandeEchangeView[]>(
+        `/api/espace-animateur/${jeton}/demandes`,
+      ),
     );
   }
 
@@ -178,7 +201,7 @@ export class EspaceAnimateurService {
   async chargerDeclaration(): Promise<void> {
     const jeton = this.requireJeton();
     this.declaration.set(
-      await this.api.get<DeclarationEspaceView>(`/api/espace-animateur/${jeton}/disponibilites`)
+      await this.api.get<DeclarationEspaceView>(`/api/espace-animateur/${jeton}/disponibilites`),
     );
   }
 
@@ -190,7 +213,10 @@ export class EspaceAnimateurService {
   async declarer(nouvelle: NouvelleDeclaration): Promise<void> {
     const jeton = this.requireJeton();
     this.declaration.set(
-      await this.api.post<DeclarationEspaceView>(`/api/espace-animateur/${jeton}/disponibilites`, nouvelle)
+      await this.api.post<DeclarationEspaceView>(
+        `/api/espace-animateur/${jeton}/disponibilites`,
+        nouvelle,
+      ),
     );
   }
 

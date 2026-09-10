@@ -18,7 +18,7 @@ import {
   input,
   output,
   signal,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import * as L from 'leaflet';
 import { ajouterTuilesOsm } from '../../shared/leaflet-base';
@@ -38,7 +38,7 @@ const ZOOM_MAX_CADRAGE = 17;
     role="application"
     [attr.aria-label]="ariaLabel()"
   ></div>`,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CarteJourMap implements AfterViewInit, OnDestroy {
   readonly marqueurs = input.required<MarqueurJour[]>();
@@ -127,7 +127,7 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
         icon: icone,
         // Leaflet gives a keyboard-reachable marker a tabindex of its own; the
         // real accessible equivalent of this map is the list next to it.
-        keyboard: true
+        keyboard: true,
         // No `title` here: see `legender` — Leaflet would keep it alongside its
         // own tooltip.
       });
@@ -187,7 +187,7 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
       html: `<span class="carte-jour-pastille etat-${marqueur.etat}${selectionne ? ' selection' : ''}">${compte}</span>`,
       iconSize: [28, 28],
       iconAnchor: [14, 14],
-      tooltipAnchor: [0, -14]
+      tooltipAnchor: [0, -14],
     });
   }
 
@@ -200,7 +200,9 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
       this.map.setView(CENTRE_DEFAUT, ZOOM_DEFAUT);
       return;
     }
-    const bornes = L.latLngBounds(marqueurs.map((marqueur) => [marqueur.latitude, marqueur.longitude]));
+    const bornes = L.latLngBounds(
+      marqueurs.map((marqueur) => [marqueur.latitude, marqueur.longitude]),
+    );
     this.map.fitBounds(bornes, { padding: [32, 32], maxZoom: ZOOM_MAX_CADRAGE });
   }
 }

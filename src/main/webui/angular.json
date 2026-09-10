@@ -43,9 +43,7 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "polyfills": [
-              "@angular/localize/init"
-            ],
+            "polyfills": ["@angular/localize/init"],
             "assets": [
               {
                 "glob": "**/*",
@@ -62,9 +60,7 @@
               "node_modules/leaflet/dist/leaflet.css",
               "src/styles.css"
             ],
-            "allowedCommonJsDependencies": [
-              "leaflet"
-            ]
+            "allowedCommonJsDependencies": ["leaflet"]
           },
           "configurations": {
             "production": {

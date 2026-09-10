@@ -18,18 +18,21 @@ function cause(overrides: Partial<CauseInfaisabilite> = {}): CauseInfaisabilite 
     demande: 6,
     capacite: 4,
     manque: 2,
-    ...overrides
+    ...overrides,
   };
 }
 
-function report(causes: CauseInfaisabilite[], overrides: Partial<FeasibilityReport> = {}): FeasibilityReport {
+function report(
+  causes: CauseInfaisabilite[],
+  overrides: Partial<FeasibilityReport> = {},
+): FeasibilityReport {
   return {
     feasible: false,
     manqueAnimateurs: 2,
     causes,
     totalCauses: causes.length,
     message: 'Planning non réalisable en l’état.',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -59,7 +62,7 @@ describe('FeasibilityBanner', () => {
   it('shows the overall message and one line per cause when infeasible', async () => {
     fixture.componentRef.setInput(
       'report',
-      report([cause({ message: 'première cause' }), cause({ message: 'deuxième cause' })])
+      report([cause({ message: 'première cause' }), cause({ message: 'deuxième cause' })]),
     );
     await fixture.whenStable();
 
@@ -71,7 +74,10 @@ describe('FeasibilityBanner', () => {
   });
 
   it('marks a CRITIQUE cause apart from an ELEVE one', async () => {
-    fixture.componentRef.setInput('report', report([cause({ severite: 'CRITIQUE' }), cause({ severite: 'ELEVE' })]));
+    fixture.componentRef.setInput(
+      'report',
+      report([cause({ severite: 'CRITIQUE' }), cause({ severite: 'ELEVE' })]),
+    );
     await fixture.whenStable();
 
     const severites = fixture.nativeElement.querySelectorAll('.feasibility-severite');
@@ -86,7 +92,9 @@ describe('FeasibilityBanner', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.querySelectorAll('li')).toHaveLength(5);
-    const restantes = fixture.nativeElement.querySelector('.feasibility-restantes') as HTMLElement | null;
+    const restantes = fixture.nativeElement.querySelector(
+      '.feasibility-restantes',
+    ) as HTMLElement | null;
     expect(restantes).not.toBeNull();
     expect(restantes!.textContent).toContain('18');
   });

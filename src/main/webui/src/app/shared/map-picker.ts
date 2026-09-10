@@ -13,7 +13,7 @@ import {
   input,
   output,
   signal,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import * as L from 'leaflet';
 // Also installs the default marker icon paths, by importing it.
@@ -32,7 +32,7 @@ export interface MapPosition {
   selector: 'app-map-picker',
   templateUrl: './map-picker.html',
   styleUrl: './map-picker.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MapPicker implements AfterViewInit, OnDestroy {
   readonly latitude = input<number | null>(null);
@@ -86,7 +86,7 @@ export class MapPicker implements AfterViewInit, OnDestroy {
     const position = this.currentPosition();
     this.map = L.map(this.mapHost().nativeElement).setView(
       position ?? DEFAULT_CENTER,
-      position ? POINT_ZOOM : DEFAULT_ZOOM
+      position ? POINT_ZOOM : DEFAULT_ZOOM,
     );
     ajouterTuilesOsm(this.map);
     if (position) {

@@ -16,11 +16,14 @@ function stand(overrides: Partial<Stand> = {}): Stand {
     indisponibilites: [],
     ouvertures: [],
     horaires: [],
-    ...overrides
+    ...overrides,
   };
 }
 
-function rowValue(sections: ReturnType<typeof buildStandDetail>, label: string): string | undefined {
+function rowValue(
+  sections: ReturnType<typeof buildStandDetail>,
+  label: string,
+): string | undefined {
   return sections.flatMap((section) => section.rows).find((row) => row.label === label)?.value;
 }
 
@@ -44,7 +47,9 @@ describe('buildStandDetail', () => {
 
   it('shows the emplacement with its coordinates when it is geocoded', () => {
     const sections = buildStandDetail(
-      stand({ emplacement: { id: 'PLACE', nom: 'Place du Drapeau', latitude: 46.6487, longitude: 2.2503 } })
+      stand({
+        emplacement: { id: 'PLACE', nom: 'Place du Drapeau', latitude: 46.6487, longitude: 2.2503 },
+      }),
     );
 
     expect(rowValue(sections, 'Emplacement')).toBe('Place du Drapeau (46.64870, 2.25030)');
@@ -63,7 +68,7 @@ describe('buildStandDetail', () => {
             dateFin: null,
             dates: [],
             fenetres: [{ heureDebut: '09:00', heureFin: null }],
-            motif: null
+            motif: null,
           },
           {
             id: 2,
@@ -75,17 +80,17 @@ describe('buildStandDetail', () => {
             dates: ['2026-07-08', '2026-07-13'],
             fenetres: [
               { heureDebut: '10:00', heureFin: '12:00' },
-              { heureDebut: '14:00', heureFin: null }
+              { heureDebut: '14:00', heureFin: null },
             ],
-            motif: 'Après-midi seulement'
-          }
-        ]
-      })
+            motif: 'Après-midi seulement',
+          },
+        ],
+      }),
     );
 
     expect(rowValue(sections, 'Règle 1')).toBe('Fermeture · Tous les jours · 09:00 → fermeture');
     expect(rowValue(sections, 'Règle 2')).toBe(
-      'Ouverture · 08/07, 13/07 · 10:00 → 12:00, 14:00 → fermeture — Après-midi seulement'
+      'Ouverture · 08/07, 13/07 · 10:00 → 12:00, 14:00 → fermeture — Après-midi seulement',
     );
   });
 
@@ -102,10 +107,10 @@ describe('buildStandDetail', () => {
             dateFin: null,
             dates: [],
             fenetres: [{ heureDebut: '00:00', heureFin: null }],
-            motif: null
-          }
-        ]
-      })
+            motif: null,
+          },
+        ],
+      }),
     );
 
     expect(rowValue(sections, 'Règle 1')).toContain('Dimanche, Lundi');
@@ -114,9 +119,13 @@ describe('buildStandDetail', () => {
   it('lists each dated exception with its window and reason', () => {
     const sections = buildStandDetail(
       stand({
-        ouvertures: [{ id: 1, date: '2026-07-08', heureDebut: '20:00', heureFin: null, motif: 'Nocturne' }],
-        indisponibilites: [{ id: 2, date: '2026-07-09', heureDebut: '14:00', heureFin: '16:00', motif: null }]
-      })
+        ouvertures: [
+          { id: 1, date: '2026-07-08', heureDebut: '20:00', heureFin: null, motif: 'Nocturne' },
+        ],
+        indisponibilites: [
+          { id: 2, date: '2026-07-09', heureDebut: '14:00', heureFin: '16:00', motif: null },
+        ],
+      }),
     );
 
     expect(rowValue(sections, 'Ouverture du 2026-07-08')).toBe('20:00 → fermeture — Nocturne');
@@ -127,9 +136,20 @@ describe('buildStandDetail', () => {
     const sections = buildStandDetail(
       stand({
         effectifMin: 1,
-        ouvertures: [{ id: 1, date: '2026-07-08', heureDebut: '14:00', heureFin: '20:00', motif: 'Tournoi', effectif: 4 }],
-        indisponibilites: [{ id: 2, date: '2026-07-09', heureDebut: '14:00', heureFin: null, motif: null }]
-      })
+        ouvertures: [
+          {
+            id: 1,
+            date: '2026-07-08',
+            heureDebut: '14:00',
+            heureFin: '20:00',
+            motif: 'Tournoi',
+            effectif: 4,
+          },
+        ],
+        indisponibilites: [
+          { id: 2, date: '2026-07-09', heureDebut: '14:00', heureFin: null, motif: null },
+        ],
+      }),
     );
 
     expect(rowValue(sections, 'Ouverture du 2026-07-08')).toBe('14:00 → 20:00 ×4 — Tournoi');
@@ -140,12 +160,14 @@ describe('buildStandDetail', () => {
   it('summarises how many rules and exceptions the stand carries', () => {
     const sections = buildStandDetail(
       stand({
-        ouvertures: [{ id: 1, date: '2026-07-08', heureDebut: '10:00', heureFin: '12:00', motif: null }],
+        ouvertures: [
+          { id: 1, date: '2026-07-08', heureDebut: '10:00', heureFin: '12:00', motif: null },
+        ],
         indisponibilites: [
           { id: 2, date: '2026-07-09', heureDebut: '14:00', heureFin: '16:00', motif: null },
-          { id: 3, date: '2026-07-10', heureDebut: '14:00', heureFin: '16:00', motif: null }
-        ]
-      })
+          { id: 3, date: '2026-07-10', heureDebut: '14:00', heureFin: '16:00', motif: null },
+        ],
+      }),
     );
 
     expect(rowValue(sections, 'Horaires')).toBe('3 exception(s)');

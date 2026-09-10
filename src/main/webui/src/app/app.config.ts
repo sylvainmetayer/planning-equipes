@@ -22,6 +22,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withNavigationErrorHandler(handleNavigationError)),
     // Routes name the page; the product name is appended from the
     // deployment's configuration (core/branding.ts).
-    { provide: TitleStrategy, useClass: BrandingTitleStrategy }
-  ]
+    { provide: TitleStrategy, useClass: BrandingTitleStrategy },
+  ],
 };

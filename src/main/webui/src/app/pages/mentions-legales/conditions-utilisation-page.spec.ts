@@ -15,7 +15,7 @@ const VIDE: MentionsLegales = {
   baseLegale: '',
   conservation: '',
   mesureAudience: false,
-  suiviErreurs: false
+  suiviErreurs: false,
 };
 
 function monter() {
@@ -23,8 +23,8 @@ function monter() {
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: ApiService, useValue: { get: vi.fn(async () => VIDE) } }
-    ]
+      { provide: ApiService, useValue: { get: vi.fn(async () => VIDE) } },
+    ],
   });
   return TestBed.createComponent(ConditionsUtilisationPage);
 }
@@ -38,7 +38,7 @@ describe('ConditionsUtilisationPage', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('aide à la décision');
-    expect(text).toContain("ni certification de conformité");
+    expect(text).toContain('ni certification de conformité');
   });
 
   it('dit que l’organisateur reste l’employeur et le responsable du respect de la réglementation', async () => {

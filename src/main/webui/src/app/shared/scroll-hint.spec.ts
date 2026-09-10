@@ -6,17 +6,23 @@ import { ScrollHint, resteDuContenuPlusBas } from './scroll-hint';
 
 describe('resteDuContenuPlusBas', () => {
   it('annonce du contenu caché quand la page dépasse largement la fenêtre', () => {
-    expect(resteDuContenuPlusBas({ scrollHeight: 2000, scrollTop: 0, clientHeight: 800 })).toBe(true);
+    expect(resteDuContenuPlusBas({ scrollHeight: 2000, scrollTop: 0, clientHeight: 800 })).toBe(
+      true,
+    );
   });
 
   it('se tait une fois le bas atteint', () => {
-    expect(resteDuContenuPlusBas({ scrollHeight: 2000, scrollTop: 1200, clientHeight: 800 })).toBe(false);
+    expect(resteDuContenuPlusBas({ scrollHeight: 2000, scrollTop: 1200, clientHeight: 800 })).toBe(
+      false,
+    );
   });
 
   it('ignore les quelques pixels d’une ombre ou d’un arrondi', () => {
     // Sous le seuil : la page est en pratique entièrement lue, l'indicateur
     // ne serait que du bruit dans le coin de l'écran.
-    expect(resteDuContenuPlusBas({ scrollHeight: 1020, scrollTop: 0, clientHeight: 1000 })).toBe(false);
+    expect(resteDuContenuPlusBas({ scrollHeight: 1020, scrollTop: 0, clientHeight: 1000 })).toBe(
+      false,
+    );
   });
 });
 
@@ -26,7 +32,7 @@ describe('resteDuContenuPlusBas', () => {
   template: `
     <div #zone style="height: 100px; overflow: auto"><div style="height: 1000px"></div></div>
     <app-scroll-hint [conteneur]="zone" />
-  `
+  `,
 })
 class HoteTest {
   readonly hint = viewChild.required(ScrollHint);
@@ -46,7 +52,7 @@ describe('ScrollHint', () => {
         // outlives the file that called it.
         unobserve = vi.fn();
         disconnect = vi.fn();
-      }
+      },
     );
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
   });

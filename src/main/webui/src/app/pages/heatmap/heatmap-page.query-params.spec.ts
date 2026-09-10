@@ -26,10 +26,16 @@ function setUp(queryParams: Record<string, string>) {
     providers: [
       provideZonelessChangeDetection(),
       { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
-      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes: [] })) } },
+      {
+        provide: PlanningStateService,
+        useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes: [] })) },
+      },
       { provide: Location, useValue: { path: () => '/heatmap', replaceState } },
-      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
-    ]
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+      },
+    ],
   });
   const fixture = TestBed.createComponent(HeatmapPage);
   return { fixture, replaceState, page: fixture.componentInstance as unknown as PageInternals };

@@ -12,12 +12,17 @@ import {
   DUREE_HEBDOMADAIRE_MAX_HEURES,
   DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
   HeuresAnimateur,
-  HeuresRapport
+  HeuresRapport,
 } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { OutputPanel } from '../../shared/output-panel';
 import { errorPrefix } from '../../core/error-message';
-import { NO_SORT, keepViewInQueryParams, readSort, sortQueryParams } from '../../core/view-query-params';
+import {
+  NO_SORT,
+  keepViewInQueryParams,
+  readSort,
+  sortQueryParams,
+} from '../../core/view-query-params';
 
 /**
  * Hours screen: hours planned per animateur, broken down by ISO calendar
@@ -35,20 +40,26 @@ import { NO_SORT, keepViewInQueryParams, readSort, sortQueryParams } from '../..
     MatTableModule,
     MatSortModule,
     DecimalPipe,
-    OutputPanel
+    OutputPanel,
   ],
   templateUrl: './hours-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HoursPage {
   protected readonly output = signal('');
   protected readonly busy = signal(false);
   protected readonly exportBusy = signal(false);
   protected readonly rapport = signal<HeuresRapport | null>(null);
-  protected readonly columns = computed(() => ['animateur', ...(this.rapport()?.semaines ?? []), 'total']);
+  protected readonly columns = computed(() => [
+    'animateur',
+    ...(this.rapport()?.semaines ?? []),
+    'total',
+  ]);
   protected readonly sort = signal<Sort>(NO_SORT);
   /** True as soon as the table is sorted on something other than its source order. */
-  protected readonly viewChanged = computed(() => this.sort().active !== '' && this.sort().direction !== '');
+  protected readonly viewChanged = computed(
+    () => this.sort().active !== '' && this.sort().direction !== '',
+  );
 
   /**
    * Weekly ceilings the table marks up. The point of this screen is to catch an
@@ -103,14 +114,17 @@ export class HoursPage {
     // footer row.
     const parSemaine: Record<string, number | undefined> = {};
     for (const semaine of rapport?.semaines ?? []) {
-      parSemaine[semaine] = animateurs.reduce((sum, row) => sum + (row.heuresParSemaine[semaine] ?? 0), 0);
+      parSemaine[semaine] = animateurs.reduce(
+        (sum, row) => sum + (row.heuresParSemaine[semaine] ?? 0),
+        0,
+      );
     }
     const total = animateurs.reduce((sum, row) => sum + row.total, 0);
     return {
       animateurCount: animateurs.length,
       parSemaine,
       total,
-      moyenneParAnimateur: animateurs.length > 0 ? total / animateurs.length : 0
+      moyenneParAnimateur: animateurs.length > 0 ? total / animateurs.length : 0,
     };
   });
 
@@ -161,7 +175,6 @@ export class HoursPage {
     }
   }
 }
-
 
 function compareByColumn(a: HeuresAnimateur, b: HeuresAnimateur, column: string): number {
   if (column === 'animateur') {

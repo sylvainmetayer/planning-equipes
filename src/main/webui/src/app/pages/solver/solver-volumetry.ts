@@ -16,14 +16,16 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
   selector: 'app-solver-volumetry',
   imports: [DecimalPipe, MatCardModule],
   templateUrl: './solver-volumetry.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolverVolumetry {
   private readonly referenceData = inject(ReferenceDataStore);
 
   protected readonly animateurCount = computed(() => this.referenceData.scale().animateurCount);
   protected readonly posteCount = computed(() => this.referenceData.scale().posteCount);
-  protected readonly adHocConstraintCount = computed(() => this.referenceData.scale().contrainteAdHocCount);
+  protected readonly adHocConstraintCount = computed(
+    () => this.referenceData.scale().contrainteAdHocCount,
+  );
   protected readonly creneauCount = computed(() => this.referenceData.creneaux().length);
   /** Hours the seats add up to, stand closures deducted — the same basis as the Heures page. */
   protected readonly hoursToFill = computed(() => this.referenceData.scale().hoursToFill);

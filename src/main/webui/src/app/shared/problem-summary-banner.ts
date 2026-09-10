@@ -23,12 +23,14 @@ import { compterProblemes, Probleme } from '../core/problemes';
         <mat-card-content>
           <mat-icon>error</mat-icon>
           <p>{{ texte }}</p>
-          <a matButton="tonal" routerLink="/problemes" i18n="@@problemes.summary.link">Voir les problèmes</a>
+          <a matButton="tonal" routerLink="/problemes" i18n="@@problemes.summary.link"
+            >Voir les problèmes</a
+          >
         </mat-card-content>
       </mat-card>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProblemSummaryBanner {
   readonly problemes = input<Probleme[]>([]);

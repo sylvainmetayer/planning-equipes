@@ -31,7 +31,7 @@ import {
   ReamorcageEffectue,
   ResultatSolveIncremental,
   ScoreTrace,
-  StatistiquesIncremental
+  StatistiquesIncremental,
 } from '../../core/models';
 import { HardIssue } from '../../shared/feasibility-banner';
 import { SolverPage } from './solver-page';
@@ -41,7 +41,13 @@ function contrainte(name: string, score: string, matchCount = 1): ConstraintDiag
 }
 
 function report(): FeasibilityReport {
-  return { feasible: false, manqueAnimateurs: 2, causes: [], totalCauses: 0, message: 'Non réalisable.' };
+  return {
+    feasible: false,
+    manqueAnimateurs: 2,
+    causes: [],
+    totalCauses: 0,
+    message: 'Non réalisable.',
+  };
 }
 
 function diagnostic(overrides: Partial<PlanningDiagnostic> = {}): PlanningDiagnostic {
@@ -52,12 +58,18 @@ function diagnostic(overrides: Partial<PlanningDiagnostic> = {}): PlanningDiagno
     faisabilite: null,
     hardScore: -3,
     contraintesAdHocEnCause: [],
-    ...overrides
+    ...overrides,
   };
 }
 
 function statistiques(): StatistiquesIncremental {
-  return { postesTotal: 200, postesFiges: 180, postesLiberes: 20, postesLiberesManuellement: 2, postesNouveaux: 0 };
+  return {
+    postesTotal: 200,
+    postesFiges: 180,
+    postesLiberes: 20,
+    postesLiberesManuellement: 2,
+    postesNouveaux: 0,
+  };
 }
 
 function changement(standId: string): ChangementAffectation {
@@ -69,7 +81,7 @@ function changement(standId: string): ChangementAffectation {
     heureDebut: '10:00',
     heureFin: '12:00',
     avant: ['Alice'],
-    apres: ['Bob']
+    apres: ['Bob'],
   };
 }
 
@@ -84,7 +96,7 @@ function tracked(overrides: Partial<TrackedJob> = {}): TrackedJob {
     editionId: 'festival-2026',
     editionNom: 'Festival 2026',
     secondsLimit: 600,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -103,7 +115,7 @@ function jobView(overrides: Partial<JobView> = {}): JobView {
     elapsedSeconds: 3600,
     error: null,
     result: null,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -151,15 +163,19 @@ describe('SolverPage', () => {
     submitSolveFromReferenceData: vi.fn(async () => ({})),
     onResult: vi.fn((type: string, handler: (result: unknown) => void) => {
       handlers.set(type, [...(handlers.get(type) ?? []), handler]);
-      return () => handlers.set(type, (handlers.get(type) ?? []).filter((entry) => entry !== handler));
-    })
+      return () =>
+        handlers.set(
+          type,
+          (handlers.get(type) ?? []).filter((entry) => entry !== handler),
+        );
+    }),
   };
   const planningApi = {
     persistedCount: vi.fn(),
     publicationPreview: vi.fn(),
     publish: vi.fn(),
     exportGlobalPdf: vi.fn(),
-    exportBundle: vi.fn()
+    exportBundle: vi.fn(),
   };
   const planningState = { set: vi.fn(), require: vi.fn() };
   const solverSettings = { refresh: vi.fn(), secondsLimit: () => 600 };
@@ -176,7 +192,7 @@ describe('SolverPage', () => {
     alerteReglesLegales: () => '',
     alertePausesSansRelais: () => '',
     comptage: () => ({ total: 0 }),
-    problemes: () => []
+    problemes: () => [],
   };
 
   beforeEach(() => {
@@ -204,7 +220,7 @@ describe('SolverPage', () => {
       crud.reload,
       crud.reportError,
       resolution.reload,
-      problemes.reload
+      problemes.reload,
     ]) {
       stub.mockClear();
     }
@@ -227,8 +243,8 @@ describe('SolverPage', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: PlanningResolutionStore, useValue: resolution },
-        { provide: ProblemesStore, useValue: problemes }
-      ]
+        { provide: ProblemesStore, useValue: problemes },
+      ],
     });
   });
 
@@ -288,9 +304,9 @@ describe('SolverPage', () => {
           contraintes: [
             contrainte('reposObligatoire', '-14hard/0medium/0soft', 14),
             contrainte('equiteHeures', '0hard/0medium/-120soft', 30),
-            contrainte('couverture', '0hard/-2medium/0soft', 2)
-          ]
-        })
+            contrainte('couverture', '0hard/-2medium/0soft', 2),
+          ],
+        }),
       );
 
       expect(page.hardIssues()).toEqual([{ name: 'reposObligatoire', matchCount: 14 }]);
@@ -299,7 +315,10 @@ describe('SolverPage', () => {
     it('reports no hard issue on a plan that satisfies every hard rule', () => {
       const page = createPage();
 
-      pushResult('SOLVE', diagnostic({ contraintes: [contrainte('equiteHeures', '0hard/0medium/-120soft')] }));
+      pushResult(
+        'SOLVE',
+        diagnostic({ contraintes: [contrainte('equiteHeures', '0hard/0medium/-120soft')] }),
+      );
 
       expect(page.hardIssues()).toEqual([]);
     });
@@ -361,7 +380,7 @@ describe('SolverPage', () => {
         diagnostic: diagnostic({ hardScore: 0 }),
         statistiques: statistiques(),
         changements: [changement('tir'), changement('quilles')],
-        previousPlan: null
+        previousPlan: null,
       };
     }
 
@@ -404,13 +423,16 @@ describe('SolverPage', () => {
   describe('the plan a solve replaced', () => {
     const resultat = (previousPlan: PreviousPlan | null): unknown => ({
       diagnostic: diagnostic({ score: '0hard/-7434medium/-564soft', hardScore: 0 }),
-      previousPlan
+      previousPlan,
     });
 
     it('compares the score before and after the solve', () => {
       const page = createPage();
 
-      pushResult('SOLVE', resultat({ snapshotId: 12, score: '0hard/-6232medium/-920soft', degraded: true }));
+      pushResult(
+        'SOLVE',
+        resultat({ snapshotId: 12, score: '0hard/-6232medium/-920soft', degraded: true }),
+      );
 
       expect(page.planPrecedent()?.score).toBe('0hard/-6232medium/-920soft');
       expect(page.score()).toBe('0hard/-7434medium/-564soft');
@@ -422,7 +444,10 @@ describe('SolverPage', () => {
     it('flags nothing when the solve improved the plan', () => {
       const page = createPage();
 
-      pushResult('SOLVE', resultat({ snapshotId: 12, score: '0hard/-9000medium/-999soft', degraded: false }));
+      pushResult(
+        'SOLVE',
+        resultat({ snapshotId: 12, score: '0hard/-9000medium/-999soft', degraded: false }),
+      );
 
       expect(page.planPrecedent()?.degraded).toBe(false);
     });
@@ -504,9 +529,13 @@ describe('SolverPage', () => {
         diagnostic: diagnostic({ hardScore: 0 }),
         previousPlan: null,
         reamorcage: { mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2 },
-        impactPublication: { personnes: 12, publieLe: '2026-09-01T10:00:00Z' }
+        impactPublication: { personnes: 12, publieLe: '2026-09-01T10:00:00Z' },
       });
-      expect(page.reamorcageEffectue()).toEqual({ mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2 });
+      expect(page.reamorcageEffectue()).toEqual({
+        mode: 'PLAN_COURANT',
+        postes: 10,
+        postesLiberes: 2,
+      });
       expect(page.impactPublication()).toEqual({ personnes: 12, publieLe: '2026-09-01T10:00:00Z' });
 
       pushResult('SOLVE', diagnostic({ hardScore: 0 }));
@@ -542,7 +571,7 @@ describe('SolverPage', () => {
       await page.onRecommencerDeZero();
 
       expect(confirm.ask).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Recommencer de zéro ?', danger: true })
+        expect.objectContaining({ title: 'Recommencer de zéro ?', danger: true }),
       );
       expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
     });
@@ -627,7 +656,7 @@ describe('SolverPage', () => {
       jobs.listJobs.mockResolvedValue([
         jobView({ id: 'running', status: 'RUNNING', finishedAt: null }),
         jobView({ id: 'done', finishedAt: '2026-08-01T12:00:00Z' }),
-        jobView({ id: 'older', finishedAt: '2026-07-01T12:00:00Z' })
+        jobView({ id: 'older', finishedAt: '2026-07-01T12:00:00Z' }),
       ]);
 
       const page = createPage();

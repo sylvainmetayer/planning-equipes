@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, resource, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  resource,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -12,7 +20,12 @@ import { ActivatedRoute } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { PlanningEvenement, PosteAffectation, TypologieItem } from '../../core/models';
-import { standTypologies, typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
+import {
+  standTypologies,
+  typologieColorClass,
+  typologieLabel,
+  typologieLabels,
+} from '../../core/typologie-colors';
 import { errorText } from '../../core/resource-state';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 
@@ -82,16 +95,18 @@ export interface HeatmapTable {
     MatTooltipModule,
     MatFormFieldModule,
     MatInputModule,
-    FormsModule
+    FormsModule,
   ],
   templateUrl: './heatmap-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeatmapPage {
   protected readonly view = signal<HeatmapView>('stand');
   protected readonly animateurFilter = signal('');
   /** True as soon as the view differs from the one this page opens on. */
-  protected readonly viewChanged = computed(() => this.view() !== 'stand' || this.animateurFilter().trim() !== '');
+  protected readonly viewChanged = computed(
+    () => this.view() !== 'stand' || this.animateurFilter().trim() !== '',
+  );
   protected readonly standColumnLabel = $localize`:@@heatmap.column.stand:Stand`;
   protected readonly animateurColumnLabel = $localize`:@@heatmap.column.animateur:Animateur`;
   private readonly analysesApi = inject(AnalysesApi);
@@ -107,19 +122,19 @@ export class HeatmapPage {
     loader: async () => {
       const [planning, typologies] = await Promise.all([
         this.planningState.loadForDisplay(),
-        this.analysesApi.typologies().catch((): TypologieItem[] => [])
+        this.analysesApi.typologies().catch((): TypologieItem[] => []),
       ]);
       return { planning, typologies };
-    }
+    },
   });
   protected readonly loading = this.heatmapData.isLoading;
   protected readonly error = errorText(this.heatmapData);
   private readonly planning = computed<PlanningEvenement | null>(() =>
-    this.heatmapData.hasValue() ? this.heatmapData.value().planning : null
+    this.heatmapData.hasValue() ? this.heatmapData.value().planning : null,
   );
   /** Typologie referential, only used to turn ids into display labels. */
   private readonly typologies = computed<TypologieItem[]>(() =>
-    this.heatmapData.hasValue() ? this.heatmapData.value().typologies : []
+    this.heatmapData.hasValue() ? this.heatmapData.value().typologies : [],
   );
 
   private readonly postes = computed(() => this.planning()?.postes ?? []);
@@ -132,11 +147,14 @@ export class HeatmapPage {
     if (!query) {
       return table;
     }
-    return { days: table.days, rows: table.rows.filter((row) => row.label.toLocaleLowerCase().includes(query)) };
+    return {
+      days: table.days,
+      rows: table.rows.filter((row) => row.label.toLocaleLowerCase().includes(query)),
+    };
   });
 
   protected readonly activeTable = computed<HeatmapTable>(() =>
-    this.view() === 'stand' ? this.standTable() : this.animateurTable()
+    this.view() === 'stand' ? this.standTable() : this.animateurTable(),
   );
 
   /**
@@ -210,7 +228,7 @@ export class HeatmapPage {
     this.seedStateFromQueryParams();
     keepViewInQueryParams(() => ({
       view: this.view() === 'stand' ? null : this.view(),
-      q: optionalParam(this.animateurFilter())
+      q: optionalParam(this.animateurFilter()),
     }));
   }
 
@@ -274,15 +292,21 @@ export function buildStandHeatmap(postes: PosteAffectation[]): HeatmapTable {
       const cells = days.map((day) => {
         const cell = byDay?.get(day.jour);
         if (!cell || cell.total === 0) {
-          return { jour: day.jour, level: 'none' as const, label: '', tooltip: standDayTooltip(standNom, day, null) };
+          return {
+            jour: day.jour,
+            level: 'none' as const,
+            label: '',
+            tooltip: standDayTooltip(standNom, day, null),
+          };
         }
         total += cell.total - cell.filled;
-        const level: HeatmapLevel = cell.filled === 0 ? 'critical' : cell.filled < cell.total ? 'warning' : 'ok';
+        const level: HeatmapLevel =
+          cell.filled === 0 ? 'critical' : cell.filled < cell.total ? 'warning' : 'ok';
         return {
           jour: day.jour,
           level,
           label: `${cell.filled}/${cell.total}`,
-          tooltip: standDayTooltip(standNom, day, cell)
+          tooltip: standDayTooltip(standNom, day, cell),
         };
       });
       return { id: standId, label: standNom, total, headerTooltip: '', typologies: [], cells };
@@ -292,7 +316,10 @@ export function buildStandHeatmap(postes: PosteAffectation[]): HeatmapTable {
 }
 
 /** Load heatmap: one row per animateur with at least one poste, ranked by total postes (heaviest first). */
-export function buildAnimateurHeatmap(postes: PosteAffectation[], labels: Map<string, string> = new Map()): HeatmapTable {
+export function buildAnimateurHeatmap(
+  postes: PosteAffectation[],
+  labels: Map<string, string> = new Map(),
+): HeatmapTable {
   const days = buildDayColumns(postes);
   const animateurs = new Map<string, string>();
   const counts = new Map<string, Map<number, number>>();
@@ -305,7 +332,10 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[], labels: Map<st
     if (!animateur || !creneau) {
       return;
     }
-    animateurs.set(animateur.id, `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id);
+    animateurs.set(
+      animateur.id,
+      `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id,
+    );
     const standNom = poste.stand?.nom || poste.stand?.id;
     if (standNom) {
       let stands = standsByAnimateur.get(animateur.id);
@@ -339,7 +369,7 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[], labels: Map<st
         jour: day.jour,
         level: animateurLoadLevel(count),
         label: count > 0 ? String(count) : '',
-        tooltip: animateurDayTooltip(label, day, count)
+        tooltip: animateurDayTooltip(label, day, count),
       };
     });
     const typologies = buildTypologieBadges(typologiesByAnimateur.get(animateurId), labels);
@@ -349,19 +379,32 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[], labels: Map<st
       total,
       headerTooltip: animateurStandsTooltip(standsByAnimateur.get(animateurId), typologies),
       typologies,
-      cells
+      cells,
     };
   });
 
-  return { days, rows: rows.sort((left, right) => right.total - left.total || left.label.localeCompare(right.label)) };
+  return {
+    days,
+    rows: rows.sort(
+      (left, right) => right.total - left.total || left.label.localeCompare(right.label),
+    ),
+  };
 }
 
 /** Distinct typologies of an animateur's stands, sorted by label, with their colour. */
-function buildTypologieBadges(typologies: Set<string> | undefined, labels: Map<string, string>): HeatmapTypologieBadge[] {
+function buildTypologieBadges(
+  typologies: Set<string> | undefined,
+  labels: Map<string, string>,
+): HeatmapTypologieBadge[] {
   return Array.from(typologies ?? [])
     .map((id) => {
       const label = typologieLabel(labels, id);
-      return { id, label, colorClass: typologieColorClass(id), initiale: label.slice(0, 1).toLocaleUpperCase() };
+      return {
+        id,
+        label,
+        colorClass: typologieColorClass(id),
+        initiale: label.slice(0, 1).toLocaleUpperCase(),
+      };
     })
     .sort((left, right) => left.label.localeCompare(right.label));
 }
@@ -372,7 +415,10 @@ function buildTypologieBadges(typologies: Set<string> | undefined, labels: Map<s
  * nothing about how many different stands they have to cover over the event,
  * nor how many different games they have to learn.
  */
-function animateurStandsTooltip(stands: Set<string> | undefined, typologies: HeatmapTypologieBadge[]): string {
+function animateurStandsTooltip(
+  stands: Set<string> | undefined,
+  typologies: HeatmapTypologieBadge[],
+): string {
   const noms = Array.from(stands ?? []).sort((left, right) => left.localeCompare(right));
   if (noms.length === 0) {
     return $localize`:@@heatmap.animateur.standsNone:Aucun stand affecté`;
@@ -413,7 +459,11 @@ function buildDayColumns(postes: PosteAffectation[]): HeatmapDayColumn[] {
     .map(([jour, date]) => ({ jour, date, label: $localize`:@@heatmap.dayColumn:J${jour}:jour:` }));
 }
 
-function standDayTooltip(standNom: string, day: HeatmapDayColumn, cell: { total: number; filled: number } | null): string {
+function standDayTooltip(
+  standNom: string,
+  day: HeatmapDayColumn,
+  cell: { total: number; filled: number } | null,
+): string {
   const dayLabel = dayLabelForTooltip(day);
   if (!cell || cell.total === 0) {
     return $localize`:@@heatmap.stand.tooltipNone:${standNom}:stand: — ${dayLabel}:day: : pas de créneau`;

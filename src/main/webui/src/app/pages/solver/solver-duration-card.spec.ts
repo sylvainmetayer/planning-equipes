@@ -29,7 +29,7 @@ describe('SolverDurationCard', () => {
   const solverSettings = {
     refresh: vi.fn(),
     setSecondsLimit: vi.fn(),
-    secondsLimit: () => secondsLimit
+    secondsLimit: () => secondsLimit,
   };
   const notifications = { notify: vi.fn() };
   let fixture: ComponentFixture<SolverDurationCard>;
@@ -47,8 +47,8 @@ describe('SolverDurationCard', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: SolverSettingsService, useValue: solverSettings },
-        { provide: NotificationService, useValue: notifications }
-      ]
+        { provide: NotificationService, useValue: notifications },
+      ],
     });
   });
 
@@ -88,7 +88,9 @@ describe('SolverDurationCard', () => {
 
     expect(solverSettings.setSecondsLimit).toHaveBeenCalledExactlyOnceWith(300);
     expect(card.dirty()).toBe(false);
-    expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+    expect(notifications.notify).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'success' }),
+    );
   });
 
   it('shows the refusal in place and keeps the draft', async () => {

@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -34,10 +41,17 @@ import { StatusMessage } from '../../shared/status-message';
  */
 @Component({
   selector: 'app-mcp-page',
-  imports: [FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule,
-    StatusMessage],
+  imports: [
+    FormsModule,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    StatusMessage,
+  ],
   templateUrl: './mcp-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class McpPage implements OnDestroy {
   /** How long a revealed key stays on screen without being copied. */
@@ -117,7 +131,7 @@ export class McpPage implements OnDestroy {
   /** Client configuration matching the current deployment, Pangolin headers included when detected. */
   protected readonly configurationClient = computed(() => {
     const headers: Record<string, string> = {
-      [this.enTeteCle()]: this.cle() || '<clé PLANNING_MCP_API_KEY>'
+      [this.enTeteCle()]: this.cle() || '<clé PLANNING_MCP_API_KEY>',
     };
     if (this.pangolin()) {
       headers['P-Access-Token-Id'] = this.pangolinAccessTokenId() || '<id du jeton Pangolin>';
@@ -128,9 +142,9 @@ export class McpPage implements OnDestroy {
         'planning-equipes': {
           type: 'http',
           url: `${this.origin}/mcp`,
-          headers
-        }
-      }
+          headers,
+        },
+      },
     };
     return JSON.stringify(config, null, 2);
   });
@@ -165,7 +179,9 @@ export class McpPage implements OnDestroy {
       // Deliberately one message for every failure mode: telling a wrong
       // password from a rate-limited one would help exactly the person this
       // second check exists to stop.
-      this.erreur.set($localize`:@@mcp.cle.echec:Mot de passe refusé, ou trop de tentatives. Réessayez dans quelques minutes.`);
+      this.erreur.set(
+        $localize`:@@mcp.cle.echec:Mot de passe refusé, ou trop de tentatives. Réessayez dans quelques minutes.`,
+      );
     } finally {
       this.enCours.set(false);
       this.motDePasse.set('');
@@ -193,7 +209,7 @@ export class McpPage implements OnDestroy {
     this.notifications.notify({
       title: $localize`:@@mcp.copie:Copié dans le presse-papiers.`,
       variant: 'success',
-      timeout: 3000
+      timeout: 3000,
     });
   }
 }

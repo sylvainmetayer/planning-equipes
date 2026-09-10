@@ -58,9 +58,14 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test("l'import d'un fichier à section edition annonce la cible, importe ailleurs et propose la bascule", async ({ browser }) => {
+test("l'import d'un fichier à section edition annonce la cible, importe ailleurs et propose la bascule", async ({
+  browser,
+}) => {
   test.slow();
-  const editionCourante = (await (await admin.get('/api/editions/courant')).json()) as { id: string; nom: string };
+  const editionCourante = (await (await admin.get('/api/editions/courant')).json()) as {
+    id: string;
+    nom: string;
+  };
 
   const page = await pageAdmin(browser, admin);
   await page.goto('/parametres');
@@ -72,7 +77,7 @@ test("l'import d'un fichier à section edition annonce la cible, importe ailleur
   await fileChooser.setFiles({
     name: 'scenario-edition.yaml',
     mimeType: 'application/x-yaml',
-    buffer: Buffer.from(SCENARIO, 'utf8')
+    buffer: Buffer.from(SCENARIO, 'utf8'),
   });
 
   // BEFORE anything is written: the confirmation names the target edition,
@@ -86,7 +91,9 @@ test("l'import d'un fichier à section edition annonce la cible, importe ailleur
   // AFTER: the unmissable recap dialog offers to switch onto the target.
   const recap = page.getByRole('dialog');
   await expect(recap).toContainText(`Édition « ${EDITION_IMPORT.nom} » créée`);
-  await expect(recap.getByRole('button', { name: `Basculer sur « ${EDITION_IMPORT.nom} »` })).toBeVisible();
+  await expect(
+    recap.getByRole('button', { name: `Basculer sur « ${EDITION_IMPORT.nom} »` }),
+  ).toBeVisible();
 
   // The ambient edition was never touched by the import.
   const standsCourants = (await (await page.request.get('/api/stands')).json()) as { id: string }[];

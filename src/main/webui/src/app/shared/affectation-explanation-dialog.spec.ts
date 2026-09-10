@@ -23,11 +23,11 @@ import {
   PosteAffectation,
   Stand,
   SuggestionReparation,
-  SuggestionsReparation
+  SuggestionsReparation,
 } from '../core/models';
 import {
   AffectationExplanationDialog,
-  AffectationExplanationDialogData
+  AffectationExplanationDialogData,
 } from './affectation-explanation-dialog';
 
 function score(hardScore: number, mediumScore: number, softScore: number): HardMediumSoftScore {
@@ -42,7 +42,7 @@ function impact(name: string, overrides: Partial<ContrainteImpact> = {}): Contra
     description: null,
     matchCount: 1,
     details: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -55,7 +55,7 @@ function animateur(id: string, prenom: string, nom: string): Animateur {
     manager: false,
     competences: { ambiance: 'REFERENT' },
     souhaits: [],
-    joursIndisponibles: []
+    joursIndisponibles: [],
   };
 }
 
@@ -71,7 +71,7 @@ const STAND: Stand = {
   emplacement: null,
   indisponibilites: [],
   ouvertures: [],
-  horaires: []
+  horaires: [],
 };
 
 const TITULAIRE = animateur('a1', 'Camille', 'Durand');
@@ -79,7 +79,11 @@ const CANDIDAT = animateur('a2', 'Alex', 'Martin');
 
 const POSTE: PosteAffectation = { id: 'p1', stand: STAND, creneau: null, animateur: TITULAIRE };
 
-const PLANNING: PlanningEvenement = { animateurs: [TITULAIRE, CANDIDAT], postes: [POSTE], score: null };
+const PLANNING: PlanningEvenement = {
+  animateurs: [TITULAIRE, CANDIDAT],
+  postes: [POSTE],
+  score: null,
+};
 
 function explication(overrides: Partial<AffectationExplanation> = {}): AffectationExplanation {
   return {
@@ -88,18 +92,21 @@ function explication(overrides: Partial<AffectationExplanation> = {}): Affectati
     score: score(-2, 0, -35),
     contraintesViolees: [],
     contraintesRespectees: [],
-    ...overrides
+    ...overrides,
   };
 }
 
-function suggestion(animateurId: string, overrides: Partial<SuggestionReparation> = {}): SuggestionReparation {
+function suggestion(
+  animateurId: string,
+  overrides: Partial<SuggestionReparation> = {},
+): SuggestionReparation {
   return {
     animateurId,
     scoreApres: score(0, 0, -38),
     delta: score(2, 0, -3),
     violationsResolues: [],
     violationsIntroduites: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -113,7 +120,7 @@ function suggestions(overrides: Partial<SuggestionsReparation> = {}): Suggestion
     candidatsEvalues: 1,
     plafond: 20,
     suggestions: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -125,7 +132,7 @@ interface ServiceStub {
 
 function mount(
   service: Partial<ServiceStub>,
-  data: Partial<AffectationExplanationDialogData> = {}
+  data: Partial<AffectationExplanationDialogData> = {},
 ): { fixture: ComponentFixture<AffectationExplanationDialog>; close: ReturnType<typeof vi.fn> } {
   const close = vi.fn();
   TestBed.configureTestingModule({
@@ -137,15 +144,15 @@ function mount(
           explique: vi.fn(async () => explication()),
           suggererReparations: vi.fn(async () => suggestions()),
           appliquerReparation: vi.fn(async () => undefined),
-          ...service
-        }
+          ...service,
+        },
       },
       { provide: MatDialogRef, useValue: { close } },
       {
         provide: MAT_DIALOG_DATA,
-        useValue: { poste: POSTE, planning: PLANNING, ...data }
-      }
-    ]
+        useValue: { poste: POSTE, planning: PLANNING, ...data },
+      },
+    ],
   });
   return { fixture: TestBed.createComponent(AffectationExplanationDialog), close };
 }
@@ -202,7 +209,7 @@ describe('AffectationExplanationDialog', () => {
 
   it('renders the score the server returned, not a hard-coded one', async () => {
     const { fixture } = mount({
-      explique: vi.fn(async () => explication({ score: score(-7, -1, -12) }))
+      explique: vi.fn(async () => explication({ score: score(-7, -1, -12) })),
     });
     await fixture.whenStable();
 
@@ -218,11 +225,11 @@ describe('AffectationExplanationDialog', () => {
             impact('reposQuotidien', {
               niveau: 'HARD' as NiveauContrainte,
               description: 'Repos quotidien de 11 h',
-              details: ['Camille Durand le 2026-07-14', 'Camille Durand le 2026-07-15']
-            })
-          ]
-        })
-      )
+              details: ['Camille Durand le 2026-07-14', 'Camille Durand le 2026-07-15'],
+            }),
+          ],
+        }),
+      ),
     });
     await fixture.whenStable();
 
@@ -233,12 +240,14 @@ describe('AffectationExplanationDialog', () => {
     expect(affiche).not.toContain('reposQuotidien');
     expect(affiche).toContain('Camille Durand le 2026-07-14');
     expect(affiche).toContain('Camille Durand le 2026-07-15');
-    expect(root(fixture).querySelector('.affectation-explanation-badge.niveau-HARD')).not.toBeNull();
+    expect(
+      root(fixture).querySelector('.affectation-explanation-badge.niveau-HARD'),
+    ).not.toBeNull();
   });
 
   it('falls back to the constraint name when the server sends no description', async () => {
     const { fixture } = mount({
-      explique: vi.fn(async () => explication({ contraintesViolees: [impact('mineurApres22h')] }))
+      explique: vi.fn(async () => explication({ contraintesViolees: [impact('mineurApres22h')] })),
     });
     await fixture.whenStable();
 
@@ -256,23 +265,27 @@ describe('AffectationExplanationDialog', () => {
   it('counts the respected constraints from the list the server sent', async () => {
     const { fixture } = mount({
       explique: vi.fn(async () =>
-        explication({ contraintesRespectees: [impact('c1'), impact('c2'), impact('c3')] })
-      )
+        explication({ contraintesRespectees: [impact('c1'), impact('c2'), impact('c3')] }),
+      ),
     });
     await fixture.whenStable();
 
-    expect(root(fixture).querySelector('.affectation-explanation-respected-count')!.textContent).toContain('3');
+    expect(
+      root(fixture).querySelector('.affectation-explanation-respected-count')!.textContent,
+    ).toContain('3');
   });
 
   it('shows the failure instead of an empty dialog when the explanation cannot be loaded', async () => {
     const { fixture } = mount({
       explique: vi.fn(async () => {
         throw new Error('poste introuvable');
-      })
+      }),
     });
     await fixture.whenStable();
 
-    expect(root(fixture).querySelector('.affectation-explanation-error')!.textContent).toContain('poste introuvable');
+    expect(root(fixture).querySelector('.affectation-explanation-error')!.textContent).toContain(
+      'poste introuvable',
+    );
     expect(root(fixture).querySelector('mat-spinner')).toBeNull();
     expect(text(fixture)).not.toContain('Score global');
   });
@@ -288,14 +301,14 @@ describe('AffectationExplanationDialog', () => {
     expect(close).toHaveBeenCalled();
   });
 
-  describe("assistant de réparation (issue #71)", () => {
+  describe('assistant de réparation (issue #71)', () => {
     /** Clicks the button whose label contains `libelle`, and lets the handler settle. */
     async function cliquer(
       fixture: ComponentFixture<AffectationExplanationDialog>,
-      libelle: string
+      libelle: string,
     ): Promise<void> {
       const bouton = Array.from(root(fixture).querySelectorAll('button')).find((each) =>
-        each.textContent?.includes(libelle)
+        each.textContent?.includes(libelle),
       )!;
       bouton.click();
       await fixture.whenStable();
@@ -316,11 +329,13 @@ describe('AffectationExplanationDialog', () => {
           suggestions({
             suggestions: [
               suggestion('a2', {
-                violationsResolues: [impact('pasDeChevauchementHoraire', { description: 'Pas de chevauchement' })]
-              })
-            ]
-          })
-        )
+                violationsResolues: [
+                  impact('pasDeChevauchementHoraire', { description: 'Pas de chevauchement' }),
+                ],
+              }),
+            ],
+          }),
+        ),
       });
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
@@ -331,7 +346,7 @@ describe('AffectationExplanationDialog', () => {
 
     it('says so plainly when no candidate can take the seat without breaking a hard rule', async () => {
       const { fixture } = mount({
-        suggererReparations: vi.fn(async () => suggestions({ suggestions: [] }))
+        suggererReparations: vi.fn(async () => suggestions({ suggestions: [] })),
       });
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
@@ -347,8 +362,12 @@ describe('AffectationExplanationDialog', () => {
     it('warns that a truncated search is not an exhaustive answer', async () => {
       const { fixture } = mount({
         suggererReparations: vi.fn(async () =>
-          suggestions({ candidatsEligibles: 137, candidatsEvalues: 20, suggestions: [suggestion('a2')] })
-        )
+          suggestions({
+            candidatsEligibles: 137,
+            candidatsEvalues: 20,
+            suggestions: [suggestion('a2')],
+          }),
+        ),
       });
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
@@ -359,8 +378,12 @@ describe('AffectationExplanationDialog', () => {
     it('stays silent about truncation when the whole eligible pool was evaluated', async () => {
       const { fixture } = mount({
         suggererReparations: vi.fn(async () =>
-          suggestions({ candidatsEligibles: 2, candidatsEvalues: 2, suggestions: [suggestion('a2')] })
-        )
+          suggestions({
+            candidatsEligibles: 2,
+            candidatsEvalues: 2,
+            suggestions: [suggestion('a2')],
+          }),
+        ),
       });
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
@@ -372,7 +395,7 @@ describe('AffectationExplanationDialog', () => {
       const appliquerReparation = vi.fn(async () => undefined);
       const { fixture, close } = mount({
         suggererReparations: vi.fn(async () => suggestions({ suggestions: [suggestion('a2')] })),
-        appliquerReparation
+        appliquerReparation,
       });
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
@@ -387,7 +410,7 @@ describe('AffectationExplanationDialog', () => {
         suggererReparations: vi.fn(async () => suggestions({ suggestions: [suggestion('a2')] })),
         appliquerReparation: vi.fn(async () => {
           throw new Error('Ce poste est verrouillé');
-        })
+        }),
       });
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');
@@ -401,7 +424,7 @@ describe('AffectationExplanationDialog', () => {
       const { fixture } = mount({
         suggererReparations: vi.fn(async () => {
           throw new Error('recherche impossible');
-        })
+        }),
       });
       await fixture.whenStable();
       await cliquer(fixture, 'Chercher des remplaçants viables');

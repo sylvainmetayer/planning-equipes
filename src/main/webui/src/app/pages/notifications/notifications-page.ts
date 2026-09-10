@@ -5,12 +5,16 @@ import { MatIconModule } from '@angular/material/icon';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { intlLocale } from '../../core/locale';
 import { AlerteView } from '../../core/models';
-import { AppNotification, NotificationService, NotificationSeverity } from '../../core/notification.service';
+import {
+  AppNotification,
+  NotificationService,
+  NotificationSeverity,
+} from '../../core/notification.service';
 
 const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
   info: 'info',
   warning: 'warning',
-  alert: 'error'
+  alert: 'error',
 };
 
 /**
@@ -24,7 +28,7 @@ const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
   selector: 'app-notifications-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule],
   templateUrl: './notifications-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotificationsPage {
   protected readonly notifications = inject(NotificationService);
@@ -112,7 +116,11 @@ export class NotificationsPage {
     if (jour === aujourdhui - unJour) {
       return $localize`:@@notifications.yesterday:Hier`;
     }
-    return date.toLocaleDateString(intlLocale(), { weekday: 'long', day: 'numeric', month: 'long' });
+    return date.toLocaleDateString(intlLocale(), {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
   }
 
   protected icon(severity: AppNotification['severity']): string {
@@ -125,6 +133,9 @@ export class NotificationsPage {
 
   /** Only the time: the day is already the group heading above the row. */
   protected formattedTime(timestamp: number): string {
-    return new Date(timestamp).toLocaleTimeString(intlLocale(), { hour: '2-digit', minute: '2-digit' });
+    return new Date(timestamp).toLocaleTimeString(intlLocale(), {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 }

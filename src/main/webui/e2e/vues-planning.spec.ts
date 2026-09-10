@@ -27,7 +27,9 @@ test('les heures planifiées listent les animateurs du planning enregistré', as
   await page.context().close();
 });
 
-test("le besoin en effectif se calcule sur les stands et créneaux ensemencés", async ({ browser }) => {
+test('le besoin en effectif se calcule sur les stands et créneaux ensemencés', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/staffing');
   await expect(page.locator('#contenu')).toContainText('Minimum retenu');
@@ -43,7 +45,9 @@ test('la grille des ouvertures montre les stands ensemencés', async ({ browser 
   await page.context().close();
 });
 
-test('la grille des jours de repos montre les animateurs du planning enregistré', async ({ browser }) => {
+test('la grille des jours de repos montre les animateurs du planning enregistré', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/repos');
   await expect(page.locator('#contenu')).toContainText('Jours de repos');
@@ -66,7 +70,9 @@ test("la timeline d'un animateur montre ses stands à couvrir", async ({ browser
   await page.context().close();
 });
 
-test("l'envoi des plannings par e-mail rend compte, individuellement et pour tous", async ({ browser }) => {
+test("l'envoi des plannings par e-mail rend compte, individuellement et pour tous", async ({
+  browser,
+}) => {
   test.slow();
   const page = await pageAdmin(browser, admin);
   await page.goto('/timeline');

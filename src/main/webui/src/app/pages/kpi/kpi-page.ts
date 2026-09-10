@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  resource,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,10 +35,10 @@ import { errorText, retainedValue } from '../../core/resource-state';
     MatProgressBarModule,
     MatTableModule,
     MatTooltipModule,
-    StatusMessage
+    StatusMessage,
   ],
   templateUrl: './kpi-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KpiPage {
   protected readonly columns = [
@@ -42,7 +49,7 @@ export class KpiPage {
     'fairness',
     'modifications',
     'duree',
-    'actions'
+    'actions',
   ];
 
   private readonly analysesApi = inject(AnalysesApi);
@@ -70,7 +77,7 @@ export class KpiPage {
     const confirme = await this.confirm.ask({
       title: $localize`:@@kpi.delete.title:Supprimer cette ligne d'historique ?`,
       message: $localize`:@@kpi.delete.message:La mesure du ${this.dateLabel(entry)}:date: sera définitivement perdue.`,
-      danger: true
+      danger: true,
     });
     if (!confirme) {
       return;

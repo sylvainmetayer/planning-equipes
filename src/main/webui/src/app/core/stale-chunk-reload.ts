@@ -65,7 +65,11 @@ export function shouldReload(storage: Storage | null, url: string, now: number):
     const raw = storage.getItem(STORAGE_KEY);
     if (raw) {
       const previous = JSON.parse(raw) as { url?: string; at?: number };
-      if (previous.url === url && typeof previous.at === 'number' && now - previous.at < RELOAD_COOLDOWN_MS) {
+      if (
+        previous.url === url &&
+        typeof previous.at === 'number' &&
+        now - previous.at < RELOAD_COOLDOWN_MS
+      ) {
         return false;
       }
     }
@@ -99,7 +103,7 @@ export function handleNavigationError(
   navigate: (url: string) => void = (url) => window.location.replace(url),
   storage: Storage | null = safeSessionStorage(),
   now: number = Date.now(),
-  online: boolean = navigator.onLine
+  online: boolean = navigator.onLine,
 ): void {
   if (online && isChunkLoadFailure(event.error) && shouldReload(storage, event.url, now)) {
     navigate(event.url);

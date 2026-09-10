@@ -23,18 +23,18 @@ function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
     maintenant: '2026-07-08T13:30:00',
     creneauxDuJour: 2,
     creneauxRestants: [
-      { id: 2, date: '2026-07-08', heureDebut: '14:00:00', heureFin: '18:00:00', enCours: false }
+      { id: 2, date: '2026-07-08', heureDebut: '14:00:00', heureFin: '18:00:00', enCours: false },
     ],
     animateursDeService: [
-      { animateurId: 'A1', nomAffiche: 'Alice Referente', postesRestants: 1, absent: false }
+      { animateurId: 'A1', nomAffiche: 'Alice Referente', postesRestants: 1, absent: false },
     ],
     postesAPourvoir: [],
     absences: [],
     animateurs: [
       { animateurId: 'A1', nomAffiche: 'Alice Referente' },
-      { animateurId: 'A2', nomAffiche: 'Bruno Autonome' }
+      { animateurId: 'A2', nomAffiche: 'Bruno Autonome' },
     ],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -45,7 +45,7 @@ const posteLibere = {
   creneauId: 2,
   heureDebut: '14:00:00',
   heureFin: '18:00:00',
-  verrouille: false
+  verrouille: false,
 };
 
 function marquee(): AbsenceMarquee {
@@ -61,10 +61,10 @@ function marquee(): AbsenceMarquee {
         raison: 'Absent le 2026-07-08 (mode jour J)',
         creeParUtilisateurId: 'admin',
         creeLe: '2026-07-08T11:30:00Z',
-        annulable: true
-      }
+        annulable: true,
+      },
     ],
-    postesLiberes: [posteLibere]
+    postesLiberes: [posteLibere],
   };
 }
 
@@ -83,9 +83,9 @@ function suggestions(): SuggestionsReparation {
         scoreApres: { hardScore: 0, mediumScore: 0, softScore: -2 },
         delta: { hardScore: 1, mediumScore: 0, softScore: -2 },
         violationsResolues: [],
-        violationsIntroduites: []
-      }
-    ]
+        violationsIntroduites: [],
+      },
+    ],
   };
 }
 
@@ -117,8 +117,8 @@ describe('JourJPage', () => {
         solveEnCours: false,
         dernierePublicationLe: null,
         nombreConcernes: 3,
-        destinataires: []
-      }))
+        destinataires: [],
+      })),
     };
     reparations = { appliquerReparation: vi.fn(async () => undefined) };
     notify = vi.fn();
@@ -129,8 +129,8 @@ describe('JourJPage', () => {
         provideRouter([]),
         { provide: JourJService, useValue: jourJ },
         { provide: AffectationExplanationService, useValue: reparations },
-        { provide: NotificationService, useValue: { notify } }
-      ]
+        { provide: NotificationService, useValue: { notify } },
+      ],
     });
     fixture = TestBed.createComponent(JourJPage);
     await fixture.whenStable();
@@ -143,7 +143,7 @@ describe('JourJPage', () => {
 
   function bouton(libelle: string): HTMLButtonElement {
     const trouve = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button')
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
     ).find((each) => (each.textContent ?? '').includes(libelle));
     expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
     return trouve as HTMLButtonElement;
@@ -161,7 +161,7 @@ describe('JourJPage', () => {
    */
   it('warns that it writes to the saved plan, in its own words', () => {
     const banniere = (fixture.nativeElement as HTMLElement).querySelector(
-      '.work-in-progress-banner'
+      '.work-in-progress-banner',
     );
     expect(banniere).not.toBeNull();
     expect(banniere!.textContent).toContain('il agit');
@@ -178,9 +178,9 @@ describe('JourJPage', () => {
   it('reminds how many people are waiting for a publication, without offering to publish', () => {
     expect(text()).toContain('3');
     expect(text()).toContain('publi');
-    const send = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button')
-    ).find((each) => /publier|envoyer/i.test(each.textContent ?? ''));
+    const send = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find(
+      (each) => /publier|envoyer/i.test(each.textContent ?? ''),
+    );
     expect(send).toBeUndefined();
   });
 
@@ -244,7 +244,7 @@ describe('JourJPage', () => {
 
     expect(reparations.appliquerReparation).toHaveBeenCalledWith('P2', 'A2');
     expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({ variant: 'success', message: expect.stringContaining('republié') })
+      expect.objectContaining({ variant: 'success', message: expect.stringContaining('republié') }),
     );
   });
 
@@ -258,7 +258,7 @@ describe('JourJPage', () => {
     const autrePoste = { ...posteLibere, posteId: 'P3', standNom: 'Homme-jeu' };
     await rendre(etat({ postesAPourvoir: [posteLibere, autrePoste] }));
     for (const bloc of Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button')
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
     ).filter((each) => (each.textContent ?? '').includes('Trouver un remplaçant'))) {
       bloc.click();
       await fixture.whenStable();
@@ -281,9 +281,9 @@ describe('JourJPage', () => {
     await rendre(etat({ postesAPourvoir: [{ ...posteLibere, verrouille: true }] }));
 
     expect(text()).toContain('verrou');
-    const find = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button')
-    ).find((each) => (each.textContent ?? '').includes('Trouver un remplaçant'));
+    const find = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find(
+      (each) => (each.textContent ?? '').includes('Trouver un remplaçant'),
+    );
     expect(find).toBeUndefined();
   });
 
@@ -308,8 +308,8 @@ describe('JourJPage', () => {
       expect.objectContaining({
         variant: 'error',
         timeout: 0,
-        message: expect.stringContaining('FORCE-1')
-      })
+        message: expect.stringContaining('FORCE-1'),
+      }),
     );
   });
 
@@ -334,16 +334,16 @@ describe('JourJPage', () => {
                 raison: null,
                 creeParUtilisateurId: 'admin',
                 creeLe: '2026-07-08T11:30:00Z',
-                annulable: false
-              }
-            ]
-          }
-        ]
-      })
+                annulable: false,
+              },
+            ],
+          },
+        ],
+      }),
     );
 
     const cancel = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button')
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
     ).find((each) => (each.textContent ?? '').includes("Annuler toute l'absence"));
     expect(cancel).toBeUndefined();
     expect(text()).toContain('Ajustement partagé');
@@ -365,12 +365,12 @@ describe('JourJPage', () => {
                 raison: 'Absent (mode jour J)',
                 creeParUtilisateurId: 'admin',
                 creeLe: '2026-07-08T11:30:00Z',
-                annulable: true
-              }
-            ]
-          }
-        ]
-      })
+                annulable: true,
+              },
+            ],
+          },
+        ],
+      }),
     );
 
     bouton('Annuler ce créneau').click();

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, model, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
@@ -32,7 +40,7 @@ export interface OptionSelection {
     MatChipsModule,
     MatFormFieldModule,
     MatIconModule,
-    MatInputModule
+    MatInputModule,
   ],
   template: `
     <mat-form-field appearance="outline" class="selection-recherche">
@@ -80,7 +88,7 @@ export interface OptionSelection {
       width: 100%;
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelectionRecherche {
   readonly options = input<OptionSelection[]>([]);

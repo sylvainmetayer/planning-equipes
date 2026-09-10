@@ -10,7 +10,7 @@ import {
   inject,
   linkedSignal,
   signal,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
@@ -32,7 +32,7 @@ import {
   defaultNavStorage,
   readCollapsedGroups,
   toggleCollapsedGroup,
-  writeCollapsedGroups
+  writeCollapsedGroups,
 } from '../core/nav-collapse';
 import { KeyboardShortcutsService } from '../core/keyboard-shortcuts.service';
 import { NotificationService } from '../core/notification.service';
@@ -50,7 +50,6 @@ import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
 import { BRANDING } from '../core/branding';
 import { MascotDialog } from './mascot-dialog';
 import { NavGroup, buildNavGroups } from './nav-groups';
-
 
 /**
  * Admin shell: Material toolbar, navigation drawer listing every admin page,
@@ -77,11 +76,11 @@ import { NavGroup, buildNavGroups } from './nav-groups';
     DateMockIndicator,
     ScrollHint,
     SolverRunningIndicator,
-    EditionActuelleBar
+    EditionActuelleBar,
   ],
   templateUrl: './admin-shell.html',
   styleUrl: './admin-shell.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminShell {
   private readonly destroyRef = inject(DestroyRef);
@@ -89,7 +88,9 @@ export class AdminShell {
    * Built once, from the server's own answer: what the backend says it is,
    * not what this bundle was built as.
    */
-  protected readonly navGroups = buildNavGroups(inject(APP_CONFIG, { optional: true })?.devMode ?? false);
+  protected readonly navGroups = buildNavGroups(
+    inject(APP_CONFIG, { optional: true })?.devMode ?? false,
+  );
   protected readonly jobs = inject(SolverJobService);
   private readonly branding = inject(BRANDING);
   protected readonly resolution = inject(PlanningResolutionStore);
@@ -107,26 +108,30 @@ export class AdminShell {
 
   /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
   protected readonly hasUnreadAlert = computed(() =>
-    this.notifications.notifications().some((notification) => notification.severity === 'alert' && !notification.read)
+    this.notifications
+      .notifications()
+      .some((notification) => notification.severity === 'alert' && !notification.read),
   );
   protected readonly notificationBadgeContent = computed(() =>
-    this.hasUnreadAlert() ? '⚠' : String(this.notifications.unreadCount())
+    this.hasUnreadAlert() ? '⚠' : String(this.notifications.unreadCount()),
   );
   protected readonly notificationBadgeDescription = computed(() =>
     this.hasUnreadAlert()
       ? $localize`:@@nav.notificationsBadge.alert:Alerte non lue`
-      : $localize`:@@nav.notificationsBadge.count:${this.notifications.unreadCount()}:count: notification(s) non lue(s)`
+      : $localize`:@@nav.notificationsBadge.count:${this.notifications.unreadCount()}:count: notification(s) non lue(s)`,
   );
 
   private readonly handset = toSignal(
     inject(BreakpointObserver)
       .observe([Breakpoints.Handset, Breakpoints.TabletPortrait])
       .pipe(map((state) => state.matches)),
-    { initialValue: false }
+    { initialValue: false },
   );
 
   /** The drawer overlays the content on small screens, docks on large ones. */
-  protected readonly drawerMode = computed<'over' | 'side'>(() => (this.handset() ? 'over' : 'side'));
+  protected readonly drawerMode = computed<'over' | 'side'>(() =>
+    this.handset() ? 'over' : 'side',
+  );
   /**
    * The drawer follows the viewport, but stays user-controllable afterwards:
    * `linkedSignal` is exactly that — derived until written, reset by the next
@@ -165,7 +170,7 @@ export class AdminShell {
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
-        takeUntilDestroyed()
+        takeUntilDestroyed(),
       )
       .subscribe(() => queueMicrotask(() => this.annoncerNavigation()));
     // Global keyboard shortcuts (issue #314), armed for the admin session only:
@@ -218,8 +223,18 @@ export class AdminShell {
     if (!this.branding.mascotUrl) {
       return;
     }
-    const sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
-      'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    const sequence = [
+      'ArrowUp',
+      'ArrowUp',
+      'ArrowDown',
+      'ArrowDown',
+      'ArrowLeft',
+      'ArrowRight',
+      'ArrowLeft',
+      'ArrowRight',
+      'b',
+      'a',
+    ];
     let position = 0;
     const onKey = (event: KeyboardEvent): void => {
       const target = event.target as HTMLElement | null;
@@ -245,7 +260,9 @@ export class AdminShell {
 
   /** Folded navigation groups, remembered across visits (see `core/nav-collapse`). */
   private readonly navStorage = defaultNavStorage();
-  protected readonly collapsedGroups = signal<ReadonlySet<string>>(readCollapsedGroups(this.navStorage));
+  protected readonly collapsedGroups = signal<ReadonlySet<string>>(
+    readCollapsedGroups(this.navStorage),
+  );
 
   protected isCollapsed(group: NavGroup): boolean {
     return this.collapsedGroups().has(group.id);
@@ -257,11 +274,15 @@ export class AdminShell {
     writeCollapsedGroups(this.navStorage, next);
   }
 
-  protected readonly allCollapsed = computed(() => this.collapsedGroups().size >= this.navGroups.length);
+  protected readonly allCollapsed = computed(
+    () => this.collapsedGroups().size >= this.navGroups.length,
+  );
 
   /** One control for the five groups: folding them one by one is five clicks. */
   protected toggleAllGroups(): void {
-    const next = this.allCollapsed() ? new Set<string>() : new Set(this.navGroups.map((group) => group.id));
+    const next = this.allCollapsed()
+      ? new Set<string>()
+      : new Set(this.navGroups.map((group) => group.id));
     this.collapsedGroups.set(next);
     writeCollapsedGroups(this.navStorage, next);
   }
@@ -318,7 +339,9 @@ export class AdminShell {
    * "dark because it is 9 pm" do not look identical. The accessible name
    * spells the difference out.</p>
    */
-  protected readonly themeIcon = computed(() => (this.theme.scheme() === 'dark' ? 'dark_mode' : 'light_mode'));
+  protected readonly themeIcon = computed(() =>
+    this.theme.scheme() === 'dark' ? 'dark_mode' : 'light_mode',
+  );
 
   /**
    * The accessible name carries the current state *and* what activating will

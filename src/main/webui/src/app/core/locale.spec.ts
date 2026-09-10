@@ -13,11 +13,11 @@ describe('locale', () => {
   });
 
   describe('getStoredLocale', () => {
-    it('retombe sur le français quand rien n\'est stocké', () => {
+    it("retombe sur le français quand rien n'est stocké", () => {
       expect(getStoredLocale()).toBe('fr');
     });
 
-    it('retourne l\'anglais quand il a été stocké', () => {
+    it("retourne l'anglais quand il a été stocké", () => {
       localStorage.setItem(STORAGE_KEY, 'en');
       expect(getStoredLocale()).toBe('en');
     });
@@ -51,7 +51,7 @@ describe('locale', () => {
       // (sinon le reload emporterait la valeur avant qu'elle soit lue).
       vi.spyOn(window, 'location', 'get').mockReturnValue({
         ...window.location,
-        reload
+        reload,
       } as unknown as Location);
 
       setStoredLocaleAndReload('en');

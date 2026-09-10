@@ -23,7 +23,7 @@ function animateur(id: string, prenom: string, nom: string): Animateur {
     nom,
     competences: {},
     souhaits: [],
-    joursIndisponibles: []
+    joursIndisponibles: [],
   } as unknown as Animateur;
 }
 
@@ -40,13 +40,22 @@ function setUp(queryParams: Record<string, string>) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: ApiService, useValue: { get: vi.fn(async () => ({ causes: [], totalCauses: 0, message: '' })) } },
+      {
+        provide: ApiService,
+        useValue: { get: vi.fn(async () => ({ causes: [], totalCauses: 0, message: '' })) },
+      },
       { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
-      { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
+      {
+        provide: SolverJobService,
+        useValue: { solverBusy: () => false, editingLocked: () => false },
+      },
       { provide: MatDialog, useValue: { open: vi.fn() } },
       { provide: Location, useValue: { path: () => '/animateurs', replaceState } },
-      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
-    ]
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+      },
+    ],
   });
   const store = TestBed.inject(ReferenceDataStore);
   store.animateurs.set([animateur('alice', 'Alice', 'Martin'), animateur('bob', 'Bob', 'Durand')]);

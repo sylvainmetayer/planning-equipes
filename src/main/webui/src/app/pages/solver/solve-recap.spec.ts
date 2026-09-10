@@ -34,7 +34,13 @@ describe('SolveRecap', () => {
   let failed: string[];
 
   beforeEach(() => {
-    for (const stub of [snapshots.restaurer, resolution.reload, planningState.set, problemes.reload, confirm.ask]) {
+    for (const stub of [
+      snapshots.restaurer,
+      resolution.reload,
+      planningState.set,
+      problemes.reload,
+      confirm.ask,
+    ]) {
       stub.mockReset();
     }
     resolution.reload.mockResolvedValue(undefined);
@@ -47,8 +53,8 @@ describe('SolveRecap', () => {
         { provide: PlanningStateService, useValue: planningState },
         { provide: ProblemesStore, useValue: problemes },
         { provide: ConfirmService, useValue: confirm },
-        { provide: SolverJobService, useValue: { editingLocked: () => false } }
-      ]
+        { provide: SolverJobService, useValue: { editingLocked: () => false } },
+      ],
     });
   });
 
@@ -70,10 +76,16 @@ describe('SolveRecap', () => {
   }
 
   it('recaps a re-seeded solve, with the seats it had to leave free', () => {
-    const recap = createRecap({ reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0 } });
+    const recap = createRecap({
+      reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0 },
+    });
     expect(recap.reamorcageLabel()).toBe('Point de départ : le plan enregistré, 12 postes repris.');
 
-    fixture.componentRef.setInput('reamorcage', { mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2 });
+    fixture.componentRef.setInput('reamorcage', {
+      mode: 'PLAN_COURANT',
+      postes: 10,
+      postesLiberes: 2,
+    });
     expect(recap.reamorcageLabel()).toContain('10 postes repris et 2 laissés libres');
   });
 
@@ -110,12 +122,12 @@ describe('SolveRecap', () => {
     it('compares the score before and after the solve', () => {
       const recap = createRecap({
         previousPlan: { snapshotId: 12, score: '0hard/-6232medium/-920soft', degraded: true },
-        score: '0hard/-7434medium/-564soft'
+        score: '0hard/-7434medium/-564soft',
       });
 
       expect(recap.comparison()).toEqual({
         avant: '0hard/-6232medium/-920soft',
-        apres: '0hard/-7434medium/-564soft'
+        apres: '0hard/-7434medium/-564soft',
       });
       expect(text()).toContain('Cette résolution a dégradé le plan enregistré.');
     });
@@ -125,7 +137,7 @@ describe('SolveRecap', () => {
     it('offers no way back when the solve improved the plan', () => {
       createRecap({
         previousPlan: { snapshotId: 12, score: '0hard/-9000medium/-999soft', degraded: false },
-        score: '0hard/-7434medium/-564soft'
+        score: '0hard/-7434medium/-564soft',
       });
 
       expect(text()).toContain('Avant :');
@@ -135,7 +147,10 @@ describe('SolveRecap', () => {
 
     // Half a comparison is worse than none: it would read as a score of zero.
     it('draws no comparison when the previous score is unknown', () => {
-      const recap = createRecap({ previousPlan: { snapshotId: 12, score: null, degraded: false }, score: '0hard/0medium/0soft' });
+      const recap = createRecap({
+        previousPlan: { snapshotId: 12, score: null, degraded: false },
+        score: '0hard/0medium/0soft',
+      });
 
       expect(recap.comparison()).toBeNull();
     });
@@ -157,7 +172,9 @@ describe('SolveRecap', () => {
 
       await recap.restore();
 
-      expect(confirm.ask).toHaveBeenCalledWith(expect.objectContaining({ title: "Revenir au plan d'avant ?", danger: true }));
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Revenir au plan d'avant ?", danger: true }),
+      );
       expect(snapshots.restaurer).not.toHaveBeenCalled();
       expect(restored).toEqual([]);
     });
@@ -173,7 +190,9 @@ describe('SolveRecap', () => {
       expect(resolution.reload).toHaveBeenCalledOnce();
       expect(planningState.set).toHaveBeenCalledExactlyOnceWith(null);
       expect(problemes.reload).toHaveBeenCalledOnce();
-      expect(restored).toEqual(['148 affectation(s) restaurée(s) : le plan d\'avant la résolution est de nouveau enregistré.']);
+      expect(restored).toEqual([
+        "148 affectation(s) restaurée(s) : le plan d'avant la résolution est de nouveau enregistré.",
+      ]);
       expect(recap.restoring()).toBe(false);
     });
 

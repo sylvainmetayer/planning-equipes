@@ -42,10 +42,10 @@ const HEURE_RAPPEL_MAX = '23:00';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
   ],
   templateUrl: './parametres-notifications.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ParametresNotificationsPanel {
   private readonly adminApi = inject(AdminApi);
@@ -135,13 +135,13 @@ export class ParametresNotificationsPanel {
       this.notifications.notify({
         title: $localize`:@@parametres.notifications.enregistre:Notifications planifiées enregistrées.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       this.enregistrement.set(false);

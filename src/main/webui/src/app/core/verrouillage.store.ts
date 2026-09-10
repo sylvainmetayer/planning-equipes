@@ -21,7 +21,9 @@ export class VerrouillageStore {
     this.verrouillages.set(await this.api.get<VerrouillagePlanning[]>('/api/verrouillages'));
   }
 
-  async create(verrouillage: Partial<VerrouillagePlanning> & { type: TypeVerrouillage }): Promise<void> {
+  async create(
+    verrouillage: Partial<VerrouillagePlanning> & { type: TypeVerrouillage },
+  ): Promise<void> {
     await this.api.post('/api/verrouillages', verrouillage);
     await this.reload();
   }
@@ -32,12 +34,20 @@ export class VerrouillageStore {
   }
 
   estJourVerrouille(jour: string | null | undefined): boolean {
-    return !!jour && this.actifs().some((verrouillage) => verrouillage.type === 'JOUR' && verrouillage.jour === jour);
+    return (
+      !!jour &&
+      this.actifs().some(
+        (verrouillage) => verrouillage.type === 'JOUR' && verrouillage.jour === jour,
+      )
+    );
   }
 
   estStandVerrouille(standId: string | null | undefined): boolean {
     return (
-      !!standId && this.actifs().some((verrouillage) => verrouillage.type === 'STAND' && verrouillage.standId === standId)
+      !!standId &&
+      this.actifs().some(
+        (verrouillage) => verrouillage.type === 'STAND' && verrouillage.standId === standId,
+      )
     );
   }
 
@@ -45,14 +55,19 @@ export class VerrouillageStore {
     return (
       creneauId !== null &&
       creneauId !== undefined &&
-      this.actifs().some((verrouillage) => verrouillage.type === 'CRENEAU' && verrouillage.creneauId === creneauId)
+      this.actifs().some(
+        (verrouillage) => verrouillage.type === 'CRENEAU' && verrouillage.creneauId === creneauId,
+      )
     );
   }
 
   estAnimateurVerrouille(animateurId: string | null | undefined): boolean {
     return (
       !!animateurId &&
-      this.actifs().some((verrouillage) => verrouillage.type === 'ANIMATEUR' && verrouillage.animateurId === animateurId)
+      this.actifs().some(
+        (verrouillage) =>
+          verrouillage.type === 'ANIMATEUR' && verrouillage.animateurId === animateurId,
+      )
     );
   }
 }

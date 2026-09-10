@@ -7,7 +7,7 @@ import {
   mappingNommeQuelquun,
   mappingVide,
   mappingVideOuNul,
-  withColonne
+  withColonne,
 } from './import-animateurs';
 
 describe('withColonne', () => {
@@ -86,6 +86,8 @@ describe('row presentation', () => {
     expect(classeAction('CREATED')).toBe('import-ligne-creation');
     expect(classeAction('UPDATED')).toBe('import-ligne-maj');
     expect(classeAction('REJECTED')).toBe('import-ligne-rejet');
-    expect(new Set(['CREATED', 'UPDATED', 'REJECTED'].map((a) => iconeAction(a as never))).size).toBe(3);
+    expect(
+      new Set(['CREATED', 'UPDATED', 'REJECTED'].map((a) => iconeAction(a as never))).size,
+    ).toBe(3);
   });
 });

@@ -45,8 +45,8 @@ describe('ConfirmationRecopie', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: MatDialog, useValue: dialog },
-        { provide: NotificationService, useValue: notifications }
-      ]
+        { provide: NotificationService, useValue: notifications },
+      ],
     });
   });
 
@@ -57,7 +57,7 @@ describe('ConfirmationRecopie', () => {
   const demande = {
     title: 'Vider la base de données ?',
     message: "Tout est supprimé pour l'édition Année 2026.",
-    valeurAttendue: 'Année 2026'
+    valeurAttendue: 'Année 2026',
   };
 
   it('confirms when the expected text was typed back, and says nothing more', async () => {
@@ -72,7 +72,7 @@ describe('ConfirmationRecopie', () => {
 
     await expect(service().demander(demande)).resolves.toBe(false);
     expect(notifications.notify).toHaveBeenCalledExactlyOnceWith(
-      expect.objectContaining({ variant: 'error' })
+      expect.objectContaining({ variant: 'error' }),
     );
     // The expected text is repeated: a rejection the user cannot act on is a
     // dead end, and they will just click the button again.

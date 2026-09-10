@@ -3,7 +3,13 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { ImportGrilleDemande, ImportGrilleRapport, RapportCompactage, RapportOuvertures, RapportSaisieGrille } from '../models';
+import {
+  ImportGrilleDemande,
+  ImportGrilleRapport,
+  RapportCompactage,
+  RapportOuvertures,
+  RapportSaisieGrille,
+} from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class StandsApi {
@@ -11,11 +17,18 @@ export class StandsApi {
 
   /** Rewrites hand-entered dated windows as the recurring rules they repeat; a preview writes nothing. */
   compactSchedules(apply: boolean): Promise<RapportCompactage> {
-    return this.api.post<RapportCompactage>(`/api/stands/compactage-horaires?appliquer=${apply}`, {});
+    return this.api.post<RapportCompactage>(
+      `/api/stands/compactage-horaires?appliquer=${apply}`,
+      {},
+    );
   }
 
   downloadGridExample(): Promise<string> {
-    return this.api.downloadGet('/api/stands/import-grille/exemple', 'grille-stands.csv', 'text/csv');
+    return this.api.downloadGet(
+      '/api/stands/import-grille/exemple',
+      'grille-stands.csv',
+      'text/csv',
+    );
   }
 
   /** What the grid import would do, without writing anything. */

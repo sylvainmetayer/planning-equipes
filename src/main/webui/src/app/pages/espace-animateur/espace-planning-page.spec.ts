@@ -37,7 +37,7 @@ function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView
     foireFermeLe: null,
     abonnementToken: 'abo-1',
     pauses: [],
-    ...overrides
+    ...overrides,
   } as EspaceAnimateurView;
 }
 
@@ -49,7 +49,7 @@ function poste(): PosteAnimateurView {
     creneauId: 1,
     heureDebut: '10:00',
     heureFin: '12:00',
-    coequipiers: []
+    coequipiers: [],
   };
 }
 
@@ -81,10 +81,10 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
             view: espaceView,
             jeton: espaceJeton,
             regenererAbonnement,
-            confirmerPlanning: vi.fn(async () => undefined)
-          }
-        }
-      ]
+            confirmerPlanning: vi.fn(async () => undefined),
+          },
+        },
+      ],
     });
     fixture = TestBed.createComponent(EspacePlanningPage);
     await fixture.whenStable();
@@ -97,7 +97,9 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
   /** Matched on the label span: the icon ligature is text inside the button too. */
   function bouton(libelle: string): HTMLButtonElement {
     return Array.from(racine().querySelectorAll('button')).find((each) =>
-      Array.from(each.querySelectorAll('span')).some((span) => span.textContent!.trim() === libelle)
+      Array.from(each.querySelectorAll('span')).some(
+        (span) => span.textContent!.trim() === libelle,
+      ),
     )!;
   }
 
@@ -147,24 +149,20 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     const premiereJournee = racine().querySelector('.espace-jour')!;
     // Node.DOCUMENT_POSITION_FOLLOWING: the card comes after the band.
     expect(bande.compareDocumentPosition(premiereJournee) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
+      Node.DOCUMENT_POSITION_FOLLOWING,
     );
 
     // Reading order inside the band, and Material's own action hierarchy:
     // filled for the subscription, outlined for the PDF, plain text for the
     // one-shot ICS. Nothing invented, no hard-coded colour.
     const actions = Array.from(
-      racine().querySelectorAll<HTMLAnchorElement>('.espace-agenda-actions a')
+      racine().querySelectorAll<HTMLAnchorElement>('.espace-agenda-actions a'),
     );
     // `span:not([class])` is the label: Material's own spans (ripple, touch
     // target) all carry a class, and the icon is a `mat-icon` element.
     expect(
-      actions.map((each) => each.querySelector('span:not([class])')!.textContent!.trim())
-    ).toEqual([
-      "S'abonner dans mon agenda",
-      'Télécharger en PDF',
-      'Télécharger le fichier ICS'
-    ]);
+      actions.map((each) => each.querySelector('span:not([class])')!.textContent!.trim()),
+    ).toEqual(["S'abonner dans mon agenda", 'Télécharger en PDF', 'Télécharger le fichier ICS']);
     expect(actions[0].classList).toContain('mat-mdc-unelevated-button');
     expect(actions[1].classList).toContain('mat-mdc-outlined-button');
     expect(actions[2].classList).toContain('mat-mdc-button');
@@ -232,7 +230,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     await copy();
 
     expect(writeText).toHaveBeenCalledExactlyOnceWith(
-      `${window.location.origin}/api/abonnements/abo-1/planning.ics`
+      `${window.location.origin}/api/abonnements/abo-1/planning.ics`,
     );
     expect(succes()).not.toBeNull();
     expect(erreur()).toBeNull();
@@ -273,9 +271,18 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
       view({
         postes: [poste()],
         pauses: [
-          { date: '2026-07-10', debut: '18:40:00', fin: '19:00:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: true }
-        ]
-      })
+          {
+            date: '2026-07-10',
+            debut: '18:40:00',
+            fin: '19:00:00',
+            heureLimite: '19:00:00',
+            dureeMinutes: 20,
+            standId: 'stand-1',
+            standNom: 'Stand un',
+            relaisDisponible: true,
+          },
+        ],
+      }),
     );
     await rendre();
 
@@ -287,11 +294,22 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
       view({
         postes: [poste()],
         pauses: [
-          { date: '2026-07-10', debut: '18:40:00', fin: '19:00:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: false }
-        ]
-      })
+          {
+            date: '2026-07-10',
+            debut: '18:40:00',
+            fin: '19:00:00',
+            heureLimite: '19:00:00',
+            dureeMinutes: 20,
+            standId: 'stand-1',
+            standNom: 'Stand un',
+            relaisDisponible: false,
+          },
+        ],
+      }),
     );
     await rendre();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.espace-pause-seul')?.textContent).toContain("personne d'autre sur le stand");
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.espace-pause-seul')?.textContent,
+    ).toContain("personne d'autre sur le stand");
   });
 });

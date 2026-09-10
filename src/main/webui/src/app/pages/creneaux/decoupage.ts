@@ -33,6 +33,6 @@ export function summarizeVacationsByDay(vacations: Creneau[]): DecoupageJourSumm
       date,
       vacations: [...jour]
         .sort((a, b) => a.heureDebut.localeCompare(b.heureDebut))
-        .map((creneau) => ({ heureDebut: creneau.heureDebut, heureFin: creneau.heureFin }))
+        .map((creneau) => ({ heureDebut: creneau.heureDebut, heureFin: creneau.heureFin })),
     }));
 }

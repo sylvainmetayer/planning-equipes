@@ -23,6 +23,8 @@ export class BrandingTitleStrategy extends TitleStrategy {
    */
   override updateTitle(snapshot: RouterStateSnapshot): void {
     const page = this.buildTitle(snapshot);
-    this.title.setTitle(page ? `${page} — ${this.branding.productName}` : this.branding.productName);
+    this.title.setTitle(
+      page ? `${page} — ${this.branding.productName}` : this.branding.productName,
+    );
   }
 }

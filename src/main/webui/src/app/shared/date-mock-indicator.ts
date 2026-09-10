@@ -45,7 +45,7 @@ import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
       align-items: center;
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DateMockIndicator {
   protected readonly dates = inject(DateMockService);
@@ -53,6 +53,6 @@ export class DateMockIndicator {
 
   protected readonly tooltip = computed(
     () =>
-      $localize`:@@dateMock.tooltip:MOCK — la date du jour est figée au ${this.dates.dateDuJour()}:date: sur ce serveur. Les écrans qui raisonnent sur « maintenant », à commencer par le mode jour J, ne montrent pas la réalité. Cliquez pour modifier ou effacer cette date.`
+      $localize`:@@dateMock.tooltip:MOCK — la date du jour est figée au ${this.dates.dateDuJour()}:date: sur ce serveur. Les écrans qui raisonnent sur « maintenant », à commencer par le mode jour J, ne montrent pas la réalité. Cliquez pour modifier ou effacer cette date.`,
   );
 }

@@ -48,13 +48,22 @@ function nombreFamilles(store: ReferenceDataStore): number {
     MatTooltipModule,
     RouterLink,
     BulkActionsBar,
-    TableFilter
+    TableFilter,
   ],
   templateUrl: './stands-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StandsPage extends ReferenceTablePage<Stand> {
-  protected readonly columns = ['select', 'id', 'nom', 'effectif', 'typologies', 'emplacement', 'horaires', 'actions'];
+  protected readonly columns = [
+    'select',
+    'id',
+    'nom',
+    'effectif',
+    'typologies',
+    'emplacement',
+    'horaires',
+    'actions',
+  ];
 
   /** The template names the rows after the entity, as the other pages do. */
   protected readonly standsFiltres = this.lignesFiltrees;
@@ -78,24 +87,24 @@ export class StandsPage extends ReferenceTablePage<Stand> {
         stand.nom,
         ...(stand.typologiesProposees ?? []),
         stand.emplacement?.nom,
-        stand.emplacement?.id
+        stand.emplacement?.id,
       ],
       detail: (stand, store) => ({
         title: stand.nom || stand.id,
         subtitle: stand.id,
-        sections: buildStandDetail(stand, store.typologies(), nombreFamilles(store))
+        sections: buildStandDetail(stand, store.typologies(), nombreFamilles(store)),
       }),
       formulaire: (stand, dialog: MatDialog) => {
         dialog.open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {
           data: { stand },
           width: '40rem',
           maxWidth: '95vw',
-          autoFocus: 'first-tabbable'
+          autoFocus: 'first-tabbable',
         });
       },
       ressource: 'stands',
       libelle: () => $localize`:@@stands.entityLabel:Stand`,
-      libellePluriel: labelStandsPluriel
+      libellePluriel: labelStandsPluriel,
     });
     void this.problemes.reloadFeasibility();
   }
@@ -107,7 +116,8 @@ export class StandsPage extends ReferenceTablePage<Stand> {
   protected effectifSuffix(stand: Stand): string {
     const majeurs = stand.reserveMajeurs ? $localize`:@@stands.suffix.majeurs: · majeurs` : '';
     const premium = stand.premium ? $localize`:@@stands.suffix.premium: · premium` : '';
-    const epuisant = stand.niveauEffort === 'EPUISANT' ? $localize`:@@stands.suffix.epuisant: · épuisant` : '';
+    const epuisant =
+      stand.niveauEffort === 'EPUISANT' ? $localize`:@@stands.suffix.epuisant: · épuisant` : '';
     return `${majeurs}${premium}${epuisant}`;
   }
 
@@ -124,7 +134,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
     return resumerHoraires(stand, {
       aucun: '—',
       regles: (n) => $localize`:@@stands.horaires.summary.regles:${n}:count: règle(s)`,
-      exceptions: (n) => $localize`:@@stands.horaires.summary.exceptions:${n}:count: exception(s)`
+      exceptions: (n) => $localize`:@@stands.horaires.summary.exceptions:${n}:count: exception(s)`,
     });
   }
 
@@ -152,14 +162,14 @@ export class StandsPage extends ReferenceTablePage<Stand> {
       this.notifications.notify({
         title: $localize`:@@stands.compactage.rienATitle:Aucun horaire à compacter`,
         message: $localize`:@@stands.compactage.rienAMessage:Aucun stand ne répète un motif qui pourrait devenir une règle.`,
-        variant: 'info'
+        variant: 'info',
       });
       return;
     }
     const confirme = await this.confirm.ask({
       title: $localize`:@@stands.compactage.confirmTitle:Compacter les horaires ?`,
       message: $localize`:@@stands.compactage.confirmMessage:${apercu.standsCompactes}:stands: stand(s) verront leurs ${apercu.fenetresAvant}:avant: plages datées remplacées par ${apercu.fenetresApres}:apres: règles et exceptions. Les stands dont les règles ne reproduiraient pas exactement les mêmes ouvertures sont laissés inchangés.`,
-      confirmLabel: $localize`:@@stands.compactage.confirmLabel:Compacter`
+      confirmLabel: $localize`:@@stands.compactage.confirmLabel:Compacter`,
     });
     if (!confirme) {
       return;
@@ -169,7 +179,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
     this.notifications.notify({
       title: $localize`:@@stands.compactage.doneTitle:Horaires compactés`,
       message: $localize`:@@stands.compactage.doneMessage:${rapport.standsCompactes}:stands: stand(s) compacté(s), ${rapport.fenetresAvant}:avant: plages ramenées à ${rapport.fenetresApres}:apres: entrées.`,
-      variant: 'success'
+      variant: 'success',
     });
   }
 
@@ -179,7 +189,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
       data: { stands: this.store.stands().filter((stand) => selectionnes.has(stand.id)) },
       width: '48rem',
       maxWidth: '95vw',
-      autoFocus: 'first-tabbable'
+      autoFocus: 'first-tabbable',
     });
   }
 }

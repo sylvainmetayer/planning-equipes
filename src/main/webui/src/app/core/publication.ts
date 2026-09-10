@@ -39,13 +39,16 @@ export function raisonIndisponible(apercu: ApercuPublication | null): string {
 }
 
 /** « Jamais publié » or the date of the last publication, as a plain fact. */
-export function libelleDernierePublication(apercu: ApercuPublication | null, locale: string): string {
+export function libelleDernierePublication(
+  apercu: ApercuPublication | null,
+  locale: string,
+): string {
   if (!apercu || !apercu.dernierePublicationLe) {
     return $localize`:@@publication.derniere.jamais:Jamais publié`;
   }
   const quand = new Date(apercu.dernierePublicationLe).toLocaleString(locale, {
     dateStyle: 'medium',
-    timeStyle: 'short'
+    timeStyle: 'short',
   });
   return $localize`:@@publication.derniere.le:Dernière publication le ${quand}:quand:`;
 }
@@ -55,16 +58,21 @@ export function libelleDernierePublication(apercu: ApercuPublication | null, loc
  * naming who was skipped (no address) or failed — the admin acts on names,
  * not counts.
  */
-export function resumePublication(rapport: RapportPublication): { titre: string; details?: string } {
+export function resumePublication(rapport: RapportPublication): {
+  titre: string;
+  details?: string;
+} {
   const titre = $localize`:@@publication.resume.succes:Planning publié — ${rapport.envoyes}:count: personne(s) prévenue(s)`;
   const details: string[] = [];
   if (rapport.sansEmail.length > 0) {
     details.push(
-      $localize`:@@publication.resume.sansEmail:Sans adresse e-mail : ${rapport.sansEmail.join(', ')}:noms:`
+      $localize`:@@publication.resume.sansEmail:Sans adresse e-mail : ${rapport.sansEmail.join(', ')}:noms:`,
     );
   }
   if (rapport.echecs.length > 0) {
-    details.push($localize`:@@publication.resume.echecs:Échec de l'envoi : ${rapport.echecs.join(', ')}:noms:`);
+    details.push(
+      $localize`:@@publication.resume.echecs:Échec de l'envoi : ${rapport.echecs.join(', ')}:noms:`,
+    );
   }
   return { titre, details: details.length > 0 ? details.join(' — ') : undefined };
 }

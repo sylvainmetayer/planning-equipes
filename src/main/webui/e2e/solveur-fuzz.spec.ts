@@ -14,7 +14,7 @@ import {
   contexteAdmin,
   lancerSolve,
   planningPersiste,
-  seedReferentielSolveur
+  seedReferentielSolveur,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -53,13 +53,13 @@ function genererProbleme(alea: () => number, iteration: number): Genere {
 
   const creneaux: CreneauSeed[] = jours.flatMap((date, indexJour) => [
     { id: base + indexJour * 10, date, debut: '10:00', fin: '12:00' },
-    { id: base + indexJour * 10 + 1, date, debut: '14:00', fin: '16:00' }
+    { id: base + indexJour * 10 + 1, date, debut: '14:00', fin: '16:00' },
   ]);
 
   const stands: StandSeed[] = [
     { id: 'FUZZ-S1', nom: 'Stand Fuzz un', effectif: 1 + entier(2) },
     { id: 'FUZZ-S2', nom: 'Stand Fuzz deux', effectif: 1 + entier(2) },
-    { id: 'FUZZ-S3', nom: 'Stand Fuzz majeurs', effectif: 1, reserveMajeurs: true }
+    { id: 'FUZZ-S3', nom: 'Stand Fuzz majeurs', effectif: 1, reserveMajeurs: true },
   ];
 
   // 14 adults: the worst roll (10 seats a day, 3 adults on a personal off
@@ -74,22 +74,24 @@ function genererProbleme(alea: () => number, iteration: number): Genere {
       nom: 'Fuzz',
       dateNaissance: `${1980 + entier(20)}-06-15`,
       // A few random personal off days, never enough to starve the seats.
-      joursIndisponibles: index < 3 && alea() < 0.6 ? [jours[entier(jours.length)]] : []
+      joursIndisponibles: index < 3 && alea() < 0.6 ? [jours[entier(jours.length)]] : [],
     })),
     ...mineurs.map((id, index) => ({
       id,
       prenom: `Mineur${index}`,
       nom: 'Fuzz',
       dateNaissance: '2010-06-15',
-      joursIndisponibles: []
-    }))
+      joursIndisponibles: [],
+    })),
   ];
 
   // Constraint targets: three DISTINCT adults with no personal off day, so
   // the forced assignment can never collide with an unavailability, and the
   // pair stays satisfiable.
   const candidats = animateurs
-    .filter((animateur) => adultes.includes(animateur.id) && animateur.joursIndisponibles!.length === 0)
+    .filter(
+      (animateur) => adultes.includes(animateur.id) && animateur.joursIndisponibles!.length === 0,
+    )
     .map((animateur) => animateur.id);
   const indispoCible = candidats[entier(candidats.length)];
   let force = candidats[entier(candidats.length)];
@@ -111,19 +113,26 @@ function genererProbleme(alea: () => number, iteration: number): Genere {
     mineurs,
     indispoForcee: { animateurId: indispoCible, creneauId: indispoCreneau },
     incompatibles,
-    affectationForcee: { animateurId: force, standId: forceStand, creneauId: forceCreneau }
+    affectationForcee: { animateurId: force, standId: forceStand, creneauId: forceCreneau },
   };
 }
 
 /** Every structural promise the hard rules make, checked on the raw planning. */
 function verifierInvariants(planning: PlanningPersiste, probleme: Genere): void {
   const postesFuzz = planning.postes.filter((poste) => poste.stand?.id.startsWith('FUZZ-'));
-  const sieges = probleme.stands.reduce((somme, stand) => somme + stand.effectif, 0) * probleme.creneaux.length;
+  const sieges =
+    probleme.stands.reduce((somme, stand) => somme + stand.effectif, 0) * probleme.creneaux.length;
   expect(postesFuzz, 'un poste par siège requis').toHaveLength(sieges);
-  expect(postesFuzz.every((poste) => poste.animateur !== null), 'tous les postes pourvus').toBe(true);
+  expect(
+    postesFuzz.every((poste) => poste.animateur !== null),
+    'tous les postes pourvus',
+  ).toBe(true);
 
   const indisposParAnimateur = new Map(
-    probleme.animateurs.map((animateur) => [animateur.id, new Set(animateur.joursIndisponibles ?? [])])
+    probleme.animateurs.map((animateur) => [
+      animateur.id,
+      new Set(animateur.joursIndisponibles ?? []),
+    ]),
   );
   const parCreneau = new Map<number, string[]>();
   for (const poste of postesFuzz) {
@@ -134,24 +143,31 @@ function verifierInvariants(planning: PlanningPersiste, probleme: Genere): void 
     // Personal unavailability (opt-out availability).
     expect(
       indisposParAnimateur.get(animateurId)?.has(poste.creneau!.date ?? ''),
-      `${animateurId} affecté un jour déclaré indisponible`
+      `${animateurId} affecté un jour déclaré indisponible`,
     ).toBe(false);
     // Reserved-to-adults stand never hosts a minor.
     if (poste.stand!.id === 'FUZZ-S3') {
-      expect(probleme.mineurs, `mineur ${animateurId} sur le stand réservé aux majeurs`).not.toContain(animateurId);
+      expect(
+        probleme.mineurs,
+        `mineur ${animateurId} sur le stand réservé aux majeurs`,
+      ).not.toContain(animateurId);
     }
   }
   for (const [creneauId, occupants] of parCreneau) {
     // One seat per animateur per créneau.
-    expect(new Set(occupants).size, `chevauchement sur le créneau ${creneauId}`).toBe(occupants.length);
+    expect(new Set(occupants).size, `chevauchement sur le créneau ${creneauId}`).toBe(
+      occupants.length,
+    );
     // Ad hoc: forced unavailability and incompatibility.
     if (creneauId === probleme.indispoForcee.creneauId) {
-      expect(occupants, 'indisponibilité forcée violée').not.toContain(probleme.indispoForcee.animateurId);
+      expect(occupants, 'indisponibilité forcée violée').not.toContain(
+        probleme.indispoForcee.animateurId,
+      );
     }
     const [gauche, droite] = probleme.incompatibles;
     expect(
       occupants.includes(gauche) && occupants.includes(droite),
-      `incompatibles réunis sur le créneau ${creneauId}`
+      `incompatibles réunis sur le créneau ${creneauId}`,
     ).toBe(false);
   }
   // Ad hoc: forced assignment honoured on the exact seat.
@@ -159,7 +175,7 @@ function verifierInvariants(planning: PlanningPersiste, probleme: Genere): void 
     (poste) =>
       poste.stand!.id === probleme.affectationForcee.standId &&
       poste.creneau!.id === probleme.affectationForcee.creneauId &&
-      poste.animateur!.id === probleme.affectationForcee.animateurId
+      poste.animateur!.id === probleme.affectationForcee.animateurId,
   );
   expect(siegeForce, 'affectation forcée absente du planning').toBeTruthy();
 }
@@ -198,7 +214,7 @@ for (const iteration of [0, 1]) {
         animateursConcernes: [{ id: probleme.indispoForcee.animateurId }],
         creneau: { id: probleme.indispoForcee.creneauId },
         stand: null,
-        raison: `Fuzz ${graine}/${iteration} : indisponibilité forcée`
+        raison: `Fuzz ${graine}/${iteration} : indisponibilité forcée`,
       },
       {
         id: `FUZZ-ADHOC-FORCEE-${iteration}`,
@@ -206,7 +222,7 @@ for (const iteration of [0, 1]) {
         animateursConcernes: [{ id: probleme.affectationForcee.animateurId }],
         creneau: { id: probleme.affectationForcee.creneauId },
         stand: { id: probleme.affectationForcee.standId },
-        raison: `Fuzz ${graine}/${iteration} : affectation forcée`
+        raison: `Fuzz ${graine}/${iteration} : affectation forcée`,
       },
       {
         id: `FUZZ-ADHOC-INCOMPAT-${iteration}`,
@@ -214,15 +230,18 @@ for (const iteration of [0, 1]) {
         animateursConcernes: probleme.incompatibles.map((id) => ({ id })),
         creneau: null,
         stand: null,
-        raison: `Fuzz ${graine}/${iteration} : incompatibilité`
-      }
+        raison: `Fuzz ${graine}/${iteration} : incompatibilité`,
+      },
     ]) {
       const reponse = await admin.post('/api/contraintes-ad-hoc', { data: contrainte });
       expect(reponse.ok(), await reponse.text()).toBe(true);
     }
 
     const job = await lancerSolve(admin, 8);
-    expect(job.result?.diagnostic.hardScore, `problème infaisable (graine ${graine}, itération ${iteration})`).toBe(0);
+    expect(
+      job.result?.diagnostic.hardScore,
+      `problème infaisable (graine ${graine}, itération ${iteration})`,
+    ).toBe(0);
     verifierInvariants(await planningPersiste(admin), probleme);
   });
 }

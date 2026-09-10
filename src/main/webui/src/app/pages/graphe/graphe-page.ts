@@ -46,10 +46,17 @@ const NO_EMPLACEMENT = '__sans_emplacement__';
  */
 @Component({
   selector: 'app-graphe-page',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, MapPicker, StatusMessage],
+  imports: [
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MapPicker,
+    StatusMessage,
+  ],
   templateUrl: './graphe-page.html',
   styleUrl: './graphe-page.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GraphePage {
   private readonly reference = inject(ReferenceDataStore);
@@ -112,7 +119,7 @@ export class GraphePage {
       id: emplacement.id,
       libelle: emplacement.nom,
       detail: this.coordonnees(emplacement),
-      descendants: parEmplacement.get(emplacement.id)?.length ?? 0
+      descendants: parEmplacement.get(emplacement.id)?.length ?? 0,
     }));
     const orphelins = parEmplacement.get(NO_EMPLACEMENT)?.length ?? 0;
     if (orphelins > 0) {
@@ -120,7 +127,7 @@ export class GraphePage {
         id: NO_EMPLACEMENT,
         libelle: $localize`:@@graphe.sansEmplacement:Sans emplacement`,
         detail: $localize`:@@graphe.sansEmplacement.detail:Stands dont la fiche ne porte aucun lieu`,
-        descendants: orphelins
+        descendants: orphelins,
       });
     }
     return noeuds.sort((a, b) => a.libelle.localeCompare(b.libelle));
@@ -137,7 +144,7 @@ export class GraphePage {
         id: stand.id,
         libelle: stand.nom,
         detail: $localize`:@@graphe.stand.detail:effectif ${stand.effectifMin}:min:–${stand.effectifMax}:max:`,
-        descendants: new Set((postes.get(stand.id) ?? []).map((poste) => poste.creneau.id)).size
+        descendants: new Set((postes.get(stand.id) ?? []).map((poste) => poste.creneau.id)).size,
       }))
       .sort((a, b) => a.libelle.localeCompare(b.libelle));
   });
@@ -149,7 +156,10 @@ export class GraphePage {
     }
     const parCreneau = new Map<number, { creneau: Creneau; animateurs: Set<string> }>();
     for (const poste of this.postesParStand().get(stand) ?? []) {
-      const entree = parCreneau.get(poste.creneau.id) ?? { creneau: poste.creneau, animateurs: new Set<string>() };
+      const entree = parCreneau.get(poste.creneau.id) ?? {
+        creneau: poste.creneau,
+        animateurs: new Set<string>(),
+      };
       if (poste.animateur) {
         entree.animateurs.add(poste.animateur.id);
       }
@@ -160,7 +170,7 @@ export class GraphePage {
         id: String(creneau.id),
         libelle: `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}`,
         detail: $localize`:@@graphe.creneau.detail:jour ${creneau.jour}:jour:`,
-        descendants: animateurs.size
+        descendants: animateurs.size,
       }))
       .sort((a, b) => a.libelle.localeCompare(b.libelle));
   });
@@ -182,7 +192,7 @@ export class GraphePage {
         id: animateur.id,
         libelle: `${animateur.prenom} ${animateur.nom}`,
         detail: animateur.manager ? $localize`:@@graphe.animateur.manager:manager` : undefined,
-        descendants: 0
+        descendants: 0,
       }))
       .sort((a, b) => a.libelle.localeCompare(b.libelle));
   });
@@ -238,26 +248,30 @@ export class GraphePage {
   /* ------------------------------- Détail --------------------------------- */
 
   /** The deepest selected node — what the right-hand panel describes. */
-  protected readonly noeudCourant = computed<{ niveau: NiveauGraphe; noeud: NoeudGraphe } | null>(() => {
-    const candidats: [NiveauGraphe, NoeudGraphe[], string | null][] = [
-      ['animateur', this.animateurs(), this.animateurSelectionne()],
-      ['creneau', this.creneaux(), this.creneauSelectionne()],
-      ['stand', this.stands(), this.standSelectionne()],
-      ['emplacement', this.emplacements(), this.emplacementSelectionne()]
-    ];
-    for (const [niveau, noeuds, id] of candidats) {
-      const noeud = id ? noeuds.find((candidat) => candidat.id === id) : undefined;
-      if (noeud) {
-        return { niveau, noeud };
+  protected readonly noeudCourant = computed<{ niveau: NiveauGraphe; noeud: NoeudGraphe } | null>(
+    () => {
+      const candidats: [NiveauGraphe, NoeudGraphe[], string | null][] = [
+        ['animateur', this.animateurs(), this.animateurSelectionne()],
+        ['creneau', this.creneaux(), this.creneauSelectionne()],
+        ['stand', this.stands(), this.standSelectionne()],
+        ['emplacement', this.emplacements(), this.emplacementSelectionne()],
+      ];
+      for (const [niveau, noeuds, id] of candidats) {
+        const noeud = id ? noeuds.find((candidat) => candidat.id === id) : undefined;
+        if (noeud) {
+          return { niveau, noeud };
+        }
       }
-    }
-    return null;
-  });
+      return null;
+    },
+  );
 
   /** The selected emplacement's own record, for the map — null for the "sans emplacement" bucket. */
   protected readonly emplacementCourant = computed<Emplacement | null>(() => {
     const id = this.emplacementSelectionne();
-    return id ? (this.reference.emplacements().find((candidat) => candidat.id === id) ?? null) : null;
+    return id
+      ? (this.reference.emplacements().find((candidat) => candidat.id === id) ?? null)
+      : null;
   });
 
   /**
@@ -275,18 +289,25 @@ export class GraphePage {
     const parent = this.parentDe(courant.niveau);
     const total = enfants.length + (parent ? 1 : 0);
     const rayon = 74;
-    const points = [...(parent ? [{ libelle: parent, parent: true }] : []), ...enfants.map((enfant) => ({
-      libelle: enfant.libelle,
-      parent: false
-    }))].map((point, index) => {
+    const points = [
+      ...(parent ? [{ libelle: parent, parent: true }] : []),
+      ...enfants.map((enfant) => ({
+        libelle: enfant.libelle,
+        parent: false,
+      })),
+    ].map((point, index) => {
       const angle = (2 * Math.PI * index) / Math.max(total, 1) - Math.PI / 2;
       return {
         ...point,
         x: 100 + rayon * Math.cos(angle),
-        y: 100 + rayon * Math.sin(angle)
+        y: 100 + rayon * Math.sin(angle),
       };
     });
-    return { centre: courant.noeud.libelle, points, tronques: Math.max(0, courant.noeud.descendants - enfants.length) };
+    return {
+      centre: courant.noeud.libelle,
+      points,
+      tronques: Math.max(0, courant.noeud.descendants - enfants.length),
+    };
   });
 
   /** Above this, the ring stops being readable and starts being decoration. */

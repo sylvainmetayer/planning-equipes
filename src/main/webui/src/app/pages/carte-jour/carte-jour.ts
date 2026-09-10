@@ -123,7 +123,7 @@ const SEVERITE: Record<EtatEmplacement, number> = {
   partiel: 1,
   pourvu: 2,
   ferme: 3,
-  sansStand: 4
+  sansStand: 4,
 };
 
 interface ContenuJour {
@@ -157,7 +157,7 @@ export function buildJourneesCarte(postes: PosteAffectation[]): JourneeCarte[] {
         standId: stand.id,
         nom: stand.nom || stand.id,
         emplacement: stand.emplacement,
-        postes: []
+        postes: [],
       };
       jour.stands.set(stand.id, standJour);
     }
@@ -170,7 +170,7 @@ export function buildJourneesCarte(postes: PosteAffectation[]): JourneeCarte[] {
       finMinutes: endMinutesOfDay(heureFin),
       heureDebut,
       heureFin,
-      pourvu: poste.animateur != null
+      pourvu: poste.animateur != null,
     });
   });
 
@@ -180,7 +180,9 @@ export function buildJourneesCarte(postes: PosteAffectation[]): JourneeCarte[] {
 }
 
 function buildJourneeCarte(jour: number, contenu: ContenuJour): JourneeCarte {
-  const stands = Array.from(contenu.stands.values()).sort((left, right) => left.nom.localeCompare(right.nom));
+  const stands = Array.from(contenu.stands.values()).sort((left, right) =>
+    left.nom.localeCompare(right.nom),
+  );
   const fenetres = stands.flatMap((stand) => stand.postes);
   const premier = Math.min(...fenetres.map((fenetre) => fenetre.debutMinutes));
   const dernier = Math.max(...fenetres.map((fenetre) => fenetre.finMinutes));
@@ -196,7 +198,7 @@ function buildJourneeCarte(jour: number, contenu: ContenuJour): JourneeCarte {
       : $localize`:@@calendarDay.dayTitle:Jour ${jour}:jour:`,
     debutMinutes,
     finMinutes,
-    stands
+    stands,
   };
 }
 
@@ -209,7 +211,7 @@ export function formatMinutes(minutes: number): string {
 /** One stand resolved at one instant: which of its seats cover it, and how many are filled. */
 export function etatStandInstant(stand: StandJour, minutes: number): StandInstant {
   const couvrants = stand.postes.filter(
-    (poste) => poste.debutMinutes <= minutes && minutes < poste.finMinutes
+    (poste) => poste.debutMinutes <= minutes && minutes < poste.finMinutes,
   );
   const sieges = couvrants.length;
   const pourvus = couvrants.filter((poste) => poste.pourvu).length;
@@ -227,7 +229,7 @@ export function etatStandInstant(stand: StandJour, minutes: number): StandInstan
     // would otherwise read as no emplacement at all, and `resumeNonSitue` would
     // tell the operator to attach one instead of filling in the coordinates.
     emplacementNom: stand.emplacement ? stand.emplacement.nom || stand.emplacement.id : null,
-    resume: resumeStand(stand.nom, etat, sieges, pourvus, horaire)
+    resume: resumeStand(stand.nom, etat, sieges, pourvus, horaire),
   };
 }
 
@@ -255,7 +257,13 @@ function plagesDistinctes(postes: FenetrePoste[]): string {
   return plages.join(' ; ');
 }
 
-function resumeStand(nom: string, etat: EtatStand, sieges: number, pourvus: number, horaire: string): string {
+function resumeStand(
+  nom: string,
+  etat: EtatStand,
+  sieges: number,
+  pourvus: number,
+  horaire: string,
+): string {
   switch (etat) {
     case 'ferme':
       return $localize`:@@carteJour.stand.ferme:${nom}:stand: — fermé à cette heure-là`;
@@ -272,7 +280,7 @@ function resumeStand(nom: string, etat: EtatStand, sieges: number, pourvus: numb
 function etatAgrege(stands: StandInstant[]): EtatStand {
   return stands.reduce<EtatStand>(
     (pire, stand) => (SEVERITE[stand.etat] < SEVERITE[pire] ? stand.etat : pire),
-    'ferme'
+    'ferme',
   );
 }
 
@@ -288,7 +296,7 @@ function etatAgrege(stands: StandInstant[]): EtatStand {
 export function instantCarte(
   journee: JourneeCarte | null,
   minutes: number,
-  emplacements: readonly Emplacement[] = []
+  emplacements: readonly Emplacement[] = [],
 ): InstantCarte {
   const heure = formatMinutes(minutes);
   if (!journee) {
@@ -305,8 +313,8 @@ export function instantCarte(
         decouverts: 0,
         partiels: 0,
         nonSitues: 0,
-        emplacementsSansStand: 0
-      }
+        emplacementsSansStand: 0,
+      },
     };
   }
 
@@ -330,7 +338,9 @@ export function instantCarte(
     groupes.set(point.id, groupe);
   });
 
-  const marqueurs = Array.from(groupes.values()).map((groupe) => marqueur(groupe.point, groupe.stands));
+  const marqueurs = Array.from(groupes.values()).map((groupe) =>
+    marqueur(groupe.point, groupe.stands),
+  );
   // Located places holding no stand of the day — drawn neutral rather than
   // omitted, so the site keeps its shape as the cursor moves.
   let emplacementsSansStand = 0;
@@ -358,8 +368,8 @@ export function instantCarte(
       decouverts: all.filter((stand) => stand.etat === 'decouvert').length,
       partiels: all.filter((stand) => stand.etat === 'partiel').length,
       nonSitues: nonSitues.length,
-      emplacementsSansStand
-    }
+      emplacementsSansStand,
+    },
   };
 }
 
@@ -378,7 +388,7 @@ function resumeNonSitue(instant: StandInstant): string {
 /** Worst state first, then alphabetically — the order of the list next to the map. */
 function parSeverite(
   left: { etat: EtatEmplacement; nom: string },
-  right: { etat: EtatEmplacement; nom: string }
+  right: { etat: EtatEmplacement; nom: string },
 ): number {
   return SEVERITE[left.etat] - SEVERITE[right.etat] || left.nom.localeCompare(right.nom);
 }
@@ -434,6 +444,6 @@ function marqueur(point: PointEmplacement, stands: StandInstant[]): MarqueurJour
         ? $localize`:@@carteJour.marqueur.sansStand:${point.nom}:emplacement: : aucun stand rattaché ce jour-là`
         : ouverts === 0
           ? $localize`:@@carteJour.marqueur.ferme:${point.nom}:emplacement: : aucun stand ouvert à cette heure-là, sur ${total}:total: rattaché(s)`
-          : $localize`:@@carteJour.marqueur.ouvert:${point.nom}:emplacement: : ${ouverts}:ouverts: stand(s) ouvert(s) sur ${total}:total:, ${pourvus}:pourvus: place(s) pourvue(s) sur ${sieges}:sieges:`
+          : $localize`:@@carteJour.marqueur.ouvert:${point.nom}:emplacement: : ${ouverts}:ouverts: stand(s) ouvert(s) sur ${total}:total:, ${pourvus}:pourvus: place(s) pourvue(s) sur ${sieges}:sieges:`,
   };
 }

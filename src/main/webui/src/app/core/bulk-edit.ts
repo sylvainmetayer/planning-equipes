@@ -15,7 +15,11 @@ export type ModeBooleen = 'INCHANGE' | 'OUI' | 'NON';
  * Applies `mode` to one row's current values. Order is preserved and duplicates
  * are dropped, so applying the same edit twice is a no-op.
  */
-export function appliquerModeListe(actuels: readonly string[], valeurs: readonly string[], mode: ModeListe): string[] {
+export function appliquerModeListe(
+  actuels: readonly string[],
+  valeurs: readonly string[],
+  mode: ModeListe,
+): string[] {
   if (mode === 'AUCUN' || (valeurs.length === 0 && mode !== 'REMPLACER')) {
     return [...actuels];
   }

@@ -16,7 +16,7 @@ import {
   ouvrirSessionEspace,
   pageAdmin,
   publierPlanning,
-  seedPlanning
+  seedPlanning,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -41,12 +41,16 @@ test.afterAll(async () => {
 test.describe('espace animateur', () => {
   test('un jeton inconnu montre une impasse propre, sans chrome admin', async ({ page }) => {
     await page.goto('/animateur/jeton-invente');
-    await expect(page.getByText("Ce lien n'est pas (ou plus) valide", { exact: false })).toBeVisible();
+    await expect(
+      page.getByText("Ce lien n'est pas (ou plus) valide", { exact: false }),
+    ).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Mon planning' })).toHaveCount(0);
   });
 
-  test("sans session, le lien mène à l'écran du code d'accès — pas au planning", async ({ page }) => {
+  test("sans session, le lien mène à l'écran du code d'accès — pas au planning", async ({
+    page,
+  }) => {
     await page.goto(`/animateur/${jeton}`);
     await expect(page.getByText('Accès à votre espace')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Recevoir mon code par e-mail' })).toBeVisible();
@@ -59,7 +63,9 @@ test.describe('espace animateur', () => {
   test("le code reçu par e-mail ouvre l'espace depuis l'écran d'accès", async ({ page }) => {
     await page.goto(`/animateur/${jeton}`);
     await page.getByRole('button', { name: 'Recevoir mon code par e-mail' }).click();
-    await expect(page.getByText('Code envoyé à E•••@example.org', { exact: false })).toBeVisible();
+    await expect(
+      page.getByText('Code envoyé à E•••@example.org', { exact: false }),
+    ).toBeVisible();
     // The code lands in Mailpit — typed here as the animateur would type it.
     const code = await dernierCodeMailpit(page.request, EMAIL_ALICE);
     await page.getByLabel('Code reçu').fill(code);
@@ -96,7 +102,10 @@ test.describe('espace animateur', () => {
     await contexteBruno.close();
   }
 
-  test("soumettre un échange, le voir accepté par l'admin, retrouver le résultat", async ({ page, browser }) => {
+  test("soumettre un échange, le voir accepté par l'admin, retrouver le résultat", async ({
+    page,
+    browser,
+  }) => {
     // Two browser contexts and a decision round trip: triple the budget.
     test.slow();
     // --- Animateur side: build then submit one demande. ---
@@ -116,7 +125,7 @@ test.describe('espace animateur', () => {
 
     // --- Admin side: the demande shows up and gets accepted. ---
     const contexteAdminNavigateur = await browser.newContext({
-      storageState: await admin.storageState()
+      storageState: await admin.storageState(),
     });
     const pageAdmin = await contexteAdminNavigateur.newPage();
     await pageAdmin.goto('/echanges');
@@ -125,7 +134,7 @@ test.describe('espace animateur', () => {
     await expect(pageAdmin.getByText('Échange croisé', { exact: false })).toBeVisible();
     // The score delta renders as a real score, never as a raw object dump.
     await expect(pageAdmin.locator('.echanges-impact code')).toHaveText(
-      /^[+-]?\d+hard \/ [+-]?\d+medium \/ [+-]?\d+soft$/
+      /^[+-]?\d+hard \/ [+-]?\d+medium \/ [+-]?\d+soft$/,
     );
     await expect(pageAdmin.getByText('[object Object]')).toHaveCount(0);
     await pageAdmin.getByRole('button', { name: 'Accepter', exact: true }).first().click();
@@ -200,7 +209,10 @@ test.describe('espace animateur', () => {
    * connecté. Le `GET` part donc d'un contexte neuf, sans le moindre cookie —
    * un test qui réutiliserait la session de la page ne prouverait rien.
    */
-  test("l'adresse d'abonnement sert l'ICS depuis un contexte sans cookie", async ({ page, browser }) => {
+  test("l'adresse d'abonnement sert l'ICS depuis un contexte sans cookie", async ({
+    page,
+    browser,
+  }) => {
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     const vue = await page.request.get(`/api/espace-animateur/${jeton}`);
     expect(vue.ok(), await vue.text()).toBe(true);
@@ -275,7 +287,7 @@ test.describe('espace animateur', () => {
     // Le haut de la première journée doit rester dans l'écran : remonter
     // l'abonnement ne doit pas revenir à cacher ce qu'on vient consulter.
     const journee = await premiereJournee.boundingBox();
-    expect(journee, 'la première journée n\'a pas de boîte').not.toBeNull();
+    expect(journee, "la première journée n'a pas de boîte").not.toBeNull();
     expect(journee!.y).toBeLessThan(hauteur);
   });
 

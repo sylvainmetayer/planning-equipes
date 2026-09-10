@@ -23,12 +23,14 @@ function kpi(overrides: Partial<PlanningKpi> = {}): PlanningKpi {
     tauxModificationsManuelles: 0,
     dureeSolveSecondes: 60,
     violationsParContrainte: {},
-    ...overrides
+    ...overrides,
   };
 }
 
 function ligne(base: PlanningKpi, variante: PlanningKpi, key: string) {
-  const trouvee = construireLignesMetriques(base, variante).find((candidate) => candidate.cle === key);
+  const trouvee = construireLignesMetriques(base, variante).find(
+    (candidate) => candidate.cle === key,
+  );
   expect(trouvee, `ligne ${key}`).toBeDefined();
   return trouvee!;
 }
@@ -44,11 +46,17 @@ describe('construireLignesMetriques', () => {
   });
 
   it('un score qui s’éloigne de zéro est une dégradation', () => {
-    expect(ligne(kpi({ scoreHard: 0 }), kpi({ scoreHard: -4 }), 'scoreHard').tendance).toBe('degradation');
+    expect(ligne(kpi({ scoreHard: 0 }), kpi({ scoreHard: -4 }), 'scoreHard').tendance).toBe(
+      'degradation',
+    );
   });
 
   it('un écart-type des heures qui baisse est une amélioration (fairness inversée)', () => {
-    const fairness = ligne(kpi({ heuresEcartType: 3 }), kpi({ heuresEcartType: 1.5 }), 'heuresEcartType');
+    const fairness = ligne(
+      kpi({ heuresEcartType: 3 }),
+      kpi({ heuresEcartType: 1.5 }),
+      'heuresEcartType',
+    );
 
     expect(fairness.delta).toBe(-1.5);
     expect(fairness.tendance).toBe('amelioration');
@@ -75,7 +83,7 @@ describe('construireLignesMetriques', () => {
     const coverage = ligne(
       kpi({ postesTotal: 100, postesPourvus: 90 }),
       kpi({ postesTotal: 100, postesPourvus: 100 }),
-      'couverture'
+      'couverture',
     );
 
     expect(coverage.base).toBe('90.0 %');

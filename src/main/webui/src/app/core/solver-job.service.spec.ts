@@ -24,7 +24,7 @@ function job(overrides: Partial<JobView> = {}): JobView {
     elapsedSeconds: 3,
     error: null,
     result: null,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -74,7 +74,11 @@ describe('SolverJobService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     api = new FakeApi();
-    notifications = { notify: vi.fn(), notifyFeasibility: vi.fn(), requestDesktopPermission: vi.fn() };
+    notifications = {
+      notify: vi.fn(),
+      notifyFeasibility: vi.fn(),
+      requestDesktopPermission: vi.fn(),
+    };
     editionCourante = { id: 'ed-1' };
     TestBed.configureTestingModule({
       providers: [
@@ -82,8 +86,8 @@ describe('SolverJobService', () => {
         SolverJobService,
         { provide: ApiService, useValue: api },
         { provide: EditionStore, useValue: { courant: () => editionCourante } },
-        { provide: NotificationService, useValue: notifications }
-      ]
+        { provide: NotificationService, useValue: notifications },
+      ],
     });
     service = TestBed.inject(SolverJobService);
   });
@@ -93,12 +97,18 @@ describe('SolverJobService', () => {
   });
 
   /** Plays "a job is running", then "the solver is idle", so a job completes. */
-  async function runJobToCompletion(result: unknown = { score: '0hard/0medium/0soft' }): Promise<void> {
+  async function runJobToCompletion(
+    result: unknown = { score: '0hard/0medium/0soft' },
+  ): Promise<void> {
     api.activeResponses = [
       { status: 200, body: job() },
-      { status: 204, body: null }
+      { status: 204, body: null },
     ];
-    api.jobsById['job-1'] = job({ status: 'COMPLETED', finishedAt: '2026-07-01T10:00:30Z', result });
+    api.jobsById['job-1'] = job({
+      status: 'COMPLETED',
+      finishedAt: '2026-07-01T10:00:30Z',
+      result,
+    });
     service.start();
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
@@ -150,7 +160,9 @@ describe('SolverJobService', () => {
 
     it('publie la file telle que le serveur la rapporte', async () => {
       api.activeResponses = [{ status: 200, body: job() }];
-      api.file = [job({ id: 'job-2', status: 'QUEUED', editionId: 'ed-2', editionNom: 'Canicule' })];
+      api.file = [
+        job({ id: 'job-2', status: 'QUEUED', editionId: 'ed-2', editionNom: 'Canicule' }),
+      ];
       service.start();
       await vi.advanceTimersByTimeAsync(0);
 
@@ -217,7 +229,9 @@ describe('SolverJobService', () => {
       expect(service.activeJob()?.id).toBe('job-2');
 
       api.postResult = conflit(job({ id: 'job-3', status: 'QUEUED' }));
-      await expect(service.submitSolveFromReferenceData(120, true)).rejects.toThrow(/déjà planifiée/);
+      await expect(service.submitSolveFromReferenceData(120, true)).rejects.toThrow(
+        /déjà planifiée/,
+      );
       // Une tâche seulement planifiée, elle, ne prend la place de personne.
       expect(service.activeJob()?.id).toBe('job-2');
     });
@@ -390,7 +404,7 @@ describe('SolverJobService', () => {
     it('speeds back up as soon as a job is picked up', async () => {
       api.activeResponses = [
         { status: 204, body: null },
-        { status: 200, body: job() }
+        { status: 200, body: job() },
       ];
       const responses = api.activeResponses;
       api.getResponse = vi.fn(async () => responses.shift() ?? { status: 200, body: job() });
@@ -423,9 +437,11 @@ describe('SolverJobService', () => {
     it('reloads the queue when another job takes the solver', async () => {
       const responses = [
         { status: 200, body: job({ id: 'job-1' }) },
-        { status: 200, body: job({ id: 'job-2' }) }
+        { status: 200, body: job({ id: 'job-2' }) },
       ];
-      api.getResponse = vi.fn(async () => responses.shift() ?? { status: 200, body: job({ id: 'job-2' }) });
+      api.getResponse = vi.fn(
+        async () => responses.shift() ?? { status: 200, body: job({ id: 'job-2' }) },
+      );
       api.jobsById['job-1'] = job({ id: 'job-1', status: 'COMPLETED' });
       service.start();
       await vi.advanceTimersByTimeAsync(0);
@@ -438,5 +454,4 @@ describe('SolverJobService', () => {
       expect(later).toBe(afterFirstPoll + 1);
     });
   });
-
 });

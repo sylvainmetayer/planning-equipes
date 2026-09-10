@@ -25,7 +25,7 @@ import {
   lireFiltreResultat,
   parJournee,
   qui,
-  surQuoi
+  surQuoi,
 } from './historique';
 
 /**
@@ -50,10 +50,10 @@ import {
     MatProgressBarModule,
     MatSelectModule,
     MatTooltipModule,
-    StatusMessage
+    StatusMessage,
   ],
   templateUrl: './historique-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoriquePage {
   private readonly analysesApi = inject(AnalysesApi);
@@ -70,7 +70,7 @@ export class HistoriquePage {
 
   protected readonly entites = computed(() => entitesPresentes(this.entrees()));
   protected readonly filtrees = computed(() =>
-    filter(this.entrees(), this.acteur(), this.resultat(), this.entite(), this.recherche())
+    filter(this.entrees(), this.acteur(), this.resultat(), this.entite(), this.recherche()),
   );
   protected readonly journees = computed(() => parJournee(this.filtrees()));
 
@@ -80,7 +80,7 @@ export class HistoriquePage {
       this.acteur() !== 'TOUS' ||
       this.resultat() !== 'TOUS' ||
       this.entite() !== '' ||
-      this.recherche().trim() !== ''
+      this.recherche().trim() !== '',
   );
 
   constructor() {
@@ -94,7 +94,7 @@ export class HistoriquePage {
       acteur: this.acteur() === 'TOUS' ? null : this.acteur(),
       resultat: this.resultat() === 'TOUS' ? null : this.resultat(),
       entite: optionalParam(this.entite()),
-      q: optionalParam(this.recherche())
+      q: optionalParam(this.recherche()),
     }));
   }
 
@@ -141,7 +141,7 @@ export class HistoriquePage {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
     });
   }
 }

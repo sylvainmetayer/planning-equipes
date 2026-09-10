@@ -51,7 +51,7 @@ describe('EmplacementsPage', () => {
   const crud = {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async () => true),
-    removeMany: vi.fn(async () => 0)
+    removeMany: vi.fn(async () => 0),
   };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => ({ subscribe: vi.fn() }) })) };
 
@@ -65,9 +65,12 @@ describe('EmplacementsPage', () => {
         provideZonelessChangeDetection(),
         { provide: ApiService, useValue: { get: vi.fn() } },
         { provide: ReferenceCrudService, useValue: crud },
-        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
-        { provide: MatDialog, useValue: dialog }
-      ]
+        {
+          provide: SolverJobService,
+          useValue: { solverBusy: () => false, editingLocked: () => false },
+        },
+        { provide: MatDialog, useValue: dialog },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
@@ -93,7 +96,7 @@ describe('EmplacementsPage', () => {
     it('matches on the id and on the name', () => {
       const page = createPage([
         emplacement('prairie', { nom: 'Grande prairie' }),
-        emplacement('halle', { nom: 'Halle couverte' })
+        emplacement('halle', { nom: 'Halle couverte' }),
       ]);
 
       page.filtre.set('couverte');
@@ -106,7 +109,7 @@ describe('EmplacementsPage', () => {
     it('matches on the coordinates, which is how a misplaced point is found', () => {
       const page = createPage([
         emplacement('prairie', { latitude: 47.12345, longitude: 1.5 }),
-        emplacement('halle', { latitude: 48.9, longitude: 1.5 })
+        emplacement('halle', { latitude: 48.9, longitude: 1.5 }),
       ]);
 
       page.filtre.set('47.123');
@@ -125,13 +128,21 @@ describe('EmplacementsPage', () => {
 
   describe('multi-selection', () => {
     it('deletes exactly the ticked rows', async () => {
-      const page = createPage([emplacement('prairie'), emplacement('halle'), emplacement('chapiteau')]);
+      const page = createPage([
+        emplacement('prairie'),
+        emplacement('halle'),
+        emplacement('chapiteau'),
+      ]);
 
       page.selection.toggle('prairie');
       page.selection.toggle('chapiteau');
       await page.removeSelection();
 
-      expect(crud.removeMany).toHaveBeenCalledWith('emplacements', ['prairie', 'chapiteau'], expect.anything());
+      expect(crud.removeMany).toHaveBeenCalledWith(
+        'emplacements',
+        ['prairie', 'chapiteau'],
+        expect.anything(),
+      );
     });
 
     it('forgets an emplacement deleted in the meantime', () => {
@@ -160,7 +171,9 @@ describe('EmplacementsPage', () => {
 
       expect(dialog.open).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ data: { emplacements: [expect.objectContaining({ id: 'halle' })] } })
+        expect.objectContaining({
+          data: { emplacements: [expect.objectContaining({ id: 'halle' })] },
+        }),
       );
     });
 
@@ -191,16 +204,18 @@ describe('EmplacementsPage', () => {
     it('renders both coordinates to five decimals, which is metre-level precision', () => {
       const page = createPage();
 
-      expect(page.coordonneesLabel(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }))).toBe(
-        '47.10000, 1.50000'
-      );
+      expect(
+        page.coordonneesLabel(emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
+      ).toBe('47.10000, 1.50000');
     });
 
     // Zero is a valid coordinate; `||` would have turned the equator into a dash.
     it('renders a coordinate of zero rather than treating it as missing', () => {
       const page = createPage();
 
-      expect(page.coordonneesLabel(emplacement('prairie', { latitude: 0, longitude: 0 }))).toBe('0.00000, 0.00000');
+      expect(page.coordonneesLabel(emplacement('prairie', { latitude: 0, longitude: 0 }))).toBe(
+        '0.00000, 0.00000',
+      );
     });
   });
 
@@ -210,7 +225,7 @@ describe('EmplacementsPage', () => {
     it('measures every place once per referential change, not once per row render', () => {
       const page = createPage([
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
-        emplacement('halle', { latitude: 47.102, longitude: 1.5 })
+        emplacement('halle', { latitude: 47.102, longitude: 1.5 }),
       ]);
 
       const voisins = page.voisins();
@@ -225,13 +240,15 @@ describe('EmplacementsPage', () => {
     it('says nothing when there is no other located place to measure against', () => {
       const page = createPage([emplacement('prairie', { latitude: 47.1, longitude: 1.5 })]);
 
-      expect(page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }))).toBe('');
+      expect(
+        page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
+      ).toBe('');
     });
 
     it('says nothing when the place itself has no coordinates', () => {
       const page = createPage([
         emplacement('prairie'),
-        emplacement('halle', { latitude: 47.1, longitude: 1.5 })
+        emplacement('halle', { latitude: 47.1, longitude: 1.5 }),
       ]);
 
       expect(page.voisinLePlusProche(emplacement('prairie'))).toBe('');
@@ -240,18 +257,26 @@ describe('EmplacementsPage', () => {
     it('ignores the other places that have no coordinates', () => {
       const page = createPage([
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
-        emplacement('halle')
+        emplacement('halle'),
       ]);
 
-      expect(page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }))).toBe('');
+      expect(
+        page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
+      ).toBe('');
     });
 
     it('names the closest neighbour, not merely the first one found', () => {
       const loin = emplacement('loin', { latitude: 47.11, longitude: 1.5 });
       const proche = emplacement('proche', { latitude: 47.101, longitude: 1.5 });
-      const page = createPage([emplacement('prairie', { latitude: 47.1, longitude: 1.5 }), loin, proche]);
+      const page = createPage([
+        emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
+        loin,
+        proche,
+      ]);
 
-      const label = page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }));
+      const label = page.voisinLePlusProche(
+        emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
+      );
 
       expect(label).toContain('proche');
       expect(label).not.toContain('loin');
@@ -260,10 +285,12 @@ describe('EmplacementsPage', () => {
     it('never measures a place against itself', () => {
       const page = createPage([
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
-        emplacement('halle', { latitude: 47.102, longitude: 1.5 })
+        emplacement('halle', { latitude: 47.102, longitude: 1.5 }),
       ]);
 
-      const label = page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }));
+      const label = page.voisinLePlusProche(
+        emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
+      );
 
       expect(label).toContain('halle');
       expect(label).not.toContain('0 m');
@@ -275,10 +302,12 @@ describe('EmplacementsPage', () => {
     it('flags a neighbour beyond the 300 m threshold the solver penalises', () => {
       const page = createPage([
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
-        emplacement('halle', { latitude: 47.105, longitude: 1.5 })
+        emplacement('halle', { latitude: 47.105, longitude: 1.5 }),
       ]);
 
-      const label = page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }));
+      const label = page.voisinLePlusProche(
+        emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
+      );
 
       expect(label).toContain('seuil');
     });
@@ -286,10 +315,12 @@ describe('EmplacementsPage', () => {
     it('leaves a neighbour within the threshold unflagged', () => {
       const page = createPage([
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
-        emplacement('halle', { latitude: 47.102, longitude: 1.5 })
+        emplacement('halle', { latitude: 47.102, longitude: 1.5 }),
       ]);
 
-      const label = page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }));
+      const label = page.voisinLePlusProche(
+        emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
+      );
 
       expect(label).not.toContain('seuil');
       expect(label).toContain('m');
@@ -298,10 +329,12 @@ describe('EmplacementsPage', () => {
     it('falls back to the neighbour id when it has no name', () => {
       const page = createPage([
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
-        emplacement('halle', { nom: '', latitude: 47.102, longitude: 1.5 })
+        emplacement('halle', { nom: '', latitude: 47.102, longitude: 1.5 }),
       ]);
 
-      expect(page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }))).toContain('halle');
+      expect(
+        page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
+      ).toContain('halle');
     });
   });
 
@@ -323,7 +356,11 @@ describe('EmplacementsPage table', () => {
   let referenceData: ReferenceDataStore;
   let fixture: ComponentFixture<EmplacementsPage>;
   let dialog: { open: ReturnType<typeof vi.fn> };
-  const crud = { reload: vi.fn(async () => undefined), remove: vi.fn(async () => true), removeMany: vi.fn(async () => 0) };
+  const crud = {
+    reload: vi.fn(async () => undefined),
+    remove: vi.fn(async () => true),
+    removeMany: vi.fn(async () => 0),
+  };
   const editingLocked = signal(false);
 
   async function rendre(emplacements: Emplacement[]): Promise<void> {
@@ -338,13 +375,13 @@ describe('EmplacementsPage table', () => {
 
   function lignes(): string[][] {
     return Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim())
+      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim()),
     );
   }
 
   function action(indexLigne: number, nom: string): HTMLButtonElement {
     const bouton = Array.from(
-      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button')
+      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button'),
     ).find((each) => each.getAttribute('aria-label') === nom);
     expect(bouton, `action « ${nom} » absente`).toBeDefined();
     return bouton as HTMLButtonElement;
@@ -360,8 +397,8 @@ describe('EmplacementsPage table', () => {
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
-        { provide: MatDialog, useValue: dialog }
-      ]
+        { provide: MatDialog, useValue: dialog },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
@@ -369,7 +406,7 @@ describe('EmplacementsPage table', () => {
   it('renders the coordinates and the nearest neighbour of each row', async () => {
     await rendre([
       emplacement('hall', { nom: 'Hall A', latitude: 47.2, longitude: -1.55 }),
-      emplacement('salle', { nom: 'Salle B', latitude: 47.201, longitude: -1.55 })
+      emplacement('salle', { nom: 'Salle B', latitude: 47.201, longitude: -1.55 }),
     ]);
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Emplacements (2)');
@@ -382,7 +419,7 @@ describe('EmplacementsPage table', () => {
   it('warns in the neighbour cell when the closest place is past the threshold', async () => {
     await rendre([
       emplacement('hall', { nom: 'Hall A', latitude: 47.2, longitude: -1.55 }),
-      emplacement('loin', { nom: 'Chapiteau', latitude: 47.21, longitude: -1.55 })
+      emplacement('loin', { nom: 'Chapiteau', latitude: 47.21, longitude: -1.55 }),
     ]);
 
     expect(lignes()[0][4]).toContain("au-delà du seuil d'éloignement");
@@ -397,7 +434,7 @@ describe('EmplacementsPage table', () => {
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
     expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
-      'Aucun emplacement pour le moment. Créez-en un ci-dessus.'
+      'Aucun emplacement pour le moment. Créez-en un ci-dessus.',
     );
 
     await rendre([emplacement('hall', { nom: 'Hall A' })]);
@@ -406,7 +443,9 @@ describe('EmplacementsPage table', () => {
     input.dispatchEvent(new Event('input'));
     await fixture.whenStable();
 
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucune ligne ne correspond au filtre.');
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
+      'Aucune ligne ne correspond au filtre.',
+    );
   });
 
   it('greys out the writing actions while a solve is running, but not the consultation', async () => {

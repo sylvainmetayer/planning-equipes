@@ -12,7 +12,9 @@ describe('CreneauxApi', () => {
     for (const stub of Object.values(api)) {
       stub.mockReset();
     }
-    TestBed.configureTestingModule({ providers: [CreneauxApi, { provide: ApiService, useValue: api }] });
+    TestBed.configureTestingModule({
+      providers: [CreneauxApi, { provide: ApiService, useValue: api }],
+    });
     creneaux = TestBed.inject(CreneauxApi);
   });
 
@@ -26,7 +28,7 @@ describe('CreneauxApi', () => {
       '/api/creneaux/diagnostic',
       '/api/creneaux/controle',
       '/api/parametres-decoupage',
-      '/api/decoupage/preview'
+      '/api/decoupage/preview',
     ]);
   });
 
@@ -44,7 +46,7 @@ describe('CreneauxApi', () => {
       ['/api/creneaux/derivation/apercu?mode=AMPLITUDES', request],
       ['/api/creneaux/derivation?mode=AMPLITUDES', request],
       ['/api/creneaux/recurrence/apercu?mode=VACATIONS', regle],
-      ['/api/creneaux/recurrence?mode=VACATIONS', regle]
+      ['/api/creneaux/recurrence?mode=VACATIONS', regle],
     ]);
   });
 
@@ -55,7 +57,9 @@ describe('CreneauxApi', () => {
     await creneaux.setGridMode('VACATIONS');
 
     expect(api.put).toHaveBeenNthCalledWith(1, '/api/parametres-decoupage', parametres);
-    expect(api.put).toHaveBeenNthCalledWith(2, '/api/parametres-decoupage/mode-grille', { modeGrille: 'VACATIONS' });
+    expect(api.put).toHaveBeenNthCalledWith(2, '/api/parametres-decoupage/mode-grille', {
+      modeGrille: 'VACATIONS',
+    });
   });
 
   it('generates the slicing with an empty body', async () => {

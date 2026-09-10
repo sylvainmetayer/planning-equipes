@@ -35,13 +35,13 @@ export function brouillonInitial(view: DeclarationEspaceView | null): BrouillonD
     return {
       joursIndisponibles: [...view.enAttente.joursIndisponibles],
       souhaits: [...view.enAttente.souhaits],
-      commentaire: view.enAttente.commentaire ?? ''
+      commentaire: view.enAttente.commentaire ?? '',
     };
   }
   return {
     joursIndisponibles: [...view.joursActuels],
     souhaits: [...view.souhaitsActuels],
-    commentaire: ''
+    commentaire: '',
   };
 }
 
@@ -58,7 +58,7 @@ export function brouillonInitial(view: DeclarationEspaceView | null): BrouillonD
  */
 export function ouvertureAVenir(
   view: DeclarationEspaceView | null,
-  aujourdHui: string
+  aujourdHui: string,
 ): string | null {
   if (!view || view.collecteOuverte || !view.collecteDebut) {
     return null;
@@ -97,7 +97,7 @@ export function basculer(valeurs: readonly string[], valeur: string): string[] {
  */
 export function declarationModifiee(
   view: DeclarationEspaceView | null,
-  brouillon: BrouillonDeclaration
+  brouillon: BrouillonDeclaration,
 ): boolean {
   if (!view) {
     return false;
@@ -106,7 +106,7 @@ export function declarationModifiee(
     ? {
         jours: view.enAttente.joursIndisponibles,
         souhaits: view.enAttente.souhaits,
-        commentaire: view.enAttente.commentaire ?? ''
+        commentaire: view.enAttente.commentaire ?? '',
       }
     : { jours: view.joursActuels, souhaits: view.souhaitsActuels, commentaire: '' };
   return (
@@ -121,7 +121,7 @@ export function versNouvelleDeclaration(brouillon: BrouillonDeclaration): Nouvel
   return {
     joursIndisponibles: [...brouillon.joursIndisponibles].sort(),
     souhaits: [...brouillon.souhaits].sort(),
-    commentaire: brouillon.commentaire.trim() ? brouillon.commentaire.trim() : null
+    commentaire: brouillon.commentaire.trim() ? brouillon.commentaire.trim() : null,
   };
 }
 

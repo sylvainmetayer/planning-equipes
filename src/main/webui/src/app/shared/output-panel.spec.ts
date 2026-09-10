@@ -11,8 +11,8 @@ describe('OutputPanel', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: NotificationService, useValue: { notify: vi.fn() } }
-      ]
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+      ],
     });
     fixture = TestBed.createComponent(OutputPanel);
   });

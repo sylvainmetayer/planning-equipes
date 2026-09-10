@@ -7,7 +7,7 @@ import {
   clearStoredEditionId,
   editionScopedKey,
   getStoredEditionId,
-  setStoredEditionIdAndReload
+  setStoredEditionIdAndReload,
 } from './edition-courante';
 
 const STORAGE_KEY = 'planning-equipes.editionId';
@@ -44,7 +44,7 @@ describe('edition courante', () => {
       const reload = vi.fn(() => order.push(`reload:${localStorage.getItem(STORAGE_KEY)}`));
       vi.spyOn(window, 'location', 'get').mockReturnValue({
         ...window.location,
-        reload
+        reload,
       } as unknown as Location);
 
       setStoredEditionIdAndReload('ed-2026');
@@ -59,7 +59,7 @@ describe('edition courante', () => {
       localStorage.setItem(STORAGE_KEY, 'ed-2025');
       vi.spyOn(window, 'location', 'get').mockReturnValue({
         ...window.location,
-        reload: vi.fn()
+        reload: vi.fn(),
       } as unknown as Location);
 
       setStoredEditionIdAndReload('ed-2026');
@@ -87,12 +87,14 @@ describe('edition courante', () => {
     it('suffixes the key with the current edition, so two editions never share a log', () => {
       localStorage.setItem(STORAGE_KEY, 'ed-2026');
       expect(editionScopedKey('planning-equipes.notifications')).toBe(
-        'planning-equipes.notifications.ed-2026'
+        'planning-equipes.notifications.ed-2026',
       );
     });
 
     it('leaves the key bare when no edition is chosen', () => {
-      expect(editionScopedKey('planning-equipes.notifications')).toBe('planning-equipes.notifications');
+      expect(editionScopedKey('planning-equipes.notifications')).toBe(
+        'planning-equipes.notifications',
+      );
     });
 
     it('gives two different editions two different keys', () => {

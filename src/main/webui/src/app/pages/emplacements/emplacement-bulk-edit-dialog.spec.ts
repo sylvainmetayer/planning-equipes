@@ -18,21 +18,27 @@ import { EmplacementBulkEditDialog } from './emplacement-bulk-edit-dialog';
 
 const EMPLACEMENTS: Emplacement[] = [
   { id: 'hall', nom: 'Hall A', latitude: 47.2, longitude: -1.55 },
-  { id: 'salle', nom: 'Salle B', latitude: null, longitude: null }
+  { id: 'salle', nom: 'Salle B', latitude: null, longitude: null },
 ];
 
-function monter(emplacements: Emplacement[], options: { editingLocked?: boolean; saved?: number } = {}) {
+function monter(
+  emplacements: Emplacement[],
+  options: { editingLocked?: boolean; saved?: number } = {},
+) {
   const saveMany = vi.fn(async () => options.saved ?? emplacements.length);
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: ReferenceCrudService, useValue: { saveMany } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { emplacements } }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: { emplacements } },
+    ],
   });
   return { fixture: TestBed.createComponent(EmplacementBulkEditDialog), saveMany, close };
 }
@@ -53,13 +59,13 @@ function submit(fixture: ComponentFixture<EmplacementBulkEditDialog>): void {
 async function choisir(
   fixture: ComponentFixture<EmplacementBulkEditDialog>,
   name: string,
-  libelle: string
+  libelle: string,
 ): Promise<void> {
   const select = racine(fixture).querySelector(`mat-select[name="${name}"]`) as HTMLElement;
   (select.querySelector('.mat-mdc-select-trigger') as HTMLElement).click();
   await fixture.whenStable();
   const option = Array.from(document.querySelectorAll('mat-option')).find(
-    (each) => each.textContent!.trim() === libelle
+    (each) => each.textContent!.trim() === libelle,
   );
   expect(option, `option « ${libelle} » absente`).toBeDefined();
   (option as HTMLElement).click();
@@ -69,7 +75,7 @@ async function choisir(
 function cliquerSurLaCarte(
   fixture: ComponentFixture<EmplacementBulkEditDialog>,
   latitude: number,
-  longitude: number
+  longitude: number,
 ): void {
   const picker = fixture.debugElement.query(By.directive(MapPicker)).componentInstance as MapPicker;
   picker.positionChange.emit({ latitude, longitude });
@@ -77,7 +83,9 @@ function cliquerSurLaCarte(
 
 /** Visible text of the "Action" select. */
 function modeAffiche(fixture: ComponentFixture<EmplacementBulkEditDialog>): string {
-  return racine(fixture).querySelector('mat-select[name="coordonneesMode"] .mat-mdc-select-value')!.textContent!.trim();
+  return racine(fixture)
+    .querySelector('mat-select[name="coordonneesMode"] .mat-mdc-select-value')!
+    .textContent!.trim();
 }
 
 describe('EmplacementBulkEditDialog', () => {
@@ -85,7 +93,9 @@ describe('EmplacementBulkEditDialog', () => {
     const { fixture } = monter(EMPLACEMENTS);
     await fixture.whenStable();
 
-    expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe('Modifier 2 emplacements');
+    expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe(
+      'Modifier 2 emplacements',
+    );
     expect(modeAffiche(fixture)).toBe('Ne pas modifier');
     expect(bouton(fixture).disabled).toBe(true);
   });
@@ -94,11 +104,15 @@ describe('EmplacementBulkEditDialog', () => {
     const { fixture } = monter(EMPLACEMENTS);
     await fixture.whenStable();
 
-    expect((racine(fixture).querySelector('input[name="latitude"]') as HTMLInputElement).disabled).toBe(true);
+    expect(
+      (racine(fixture).querySelector('input[name="latitude"]') as HTMLInputElement).disabled,
+    ).toBe(true);
 
     await choisir(fixture, 'coordonneesMode', 'Définir');
 
-    expect((racine(fixture).querySelector('input[name="latitude"]') as HTMLInputElement).disabled).toBe(false);
+    expect(
+      (racine(fixture).querySelector('input[name="latitude"]') as HTMLInputElement).disabled,
+    ).toBe(false);
   });
 
   it('switches the action to « Définir » by itself when the user clicks the map', async () => {
@@ -110,7 +124,9 @@ describe('EmplacementBulkEditDialog', () => {
 
     // Otherwise the point is picked and the apply button stays dead.
     expect(modeAffiche(fixture)).toBe('Définir');
-    expect((racine(fixture).querySelector('input[name="latitude"]') as HTMLInputElement).value).toBe('47.21725');
+    expect(
+      (racine(fixture).querySelector('input[name="latitude"]') as HTMLInputElement).value,
+    ).toBe('47.21725');
     expect(bouton(fixture).disabled).toBe(false);
   });
 
@@ -127,7 +143,7 @@ describe('EmplacementBulkEditDialog', () => {
     expect(resource).toBe('emplacements');
     expect(payloads.map((each) => [each.id, each.latitude, each.longitude])).toEqual([
       ['hall', 47.2, -1.55],
-      ['salle', 47.2, -1.55]
+      ['salle', 47.2, -1.55],
     ]);
     // Names are per-place and must survive a coordinate batch.
     expect(payloads.map((each) => each.nom)).toEqual(['Hall A', 'Salle B']);
@@ -172,7 +188,11 @@ describe('EmplacementBulkEditDialog', () => {
 
     expect(racine(fixture).querySelector('.locked-hint')).not.toBeNull();
     expect((racine(fixture).querySelector('fieldset') as HTMLFieldSetElement).disabled).toBe(true);
-    expect((fixture.debugElement.query(By.directive(MapPicker)).componentInstance as MapPicker).disabled()).toBe(true);
+    expect(
+      (
+        fixture.debugElement.query(By.directive(MapPicker)).componentInstance as MapPicker
+      ).disabled(),
+    ).toBe(true);
   });
 
   it('cancels without writing anything', async () => {

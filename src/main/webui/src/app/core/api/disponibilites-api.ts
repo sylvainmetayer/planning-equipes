@@ -26,7 +26,13 @@ export class DisponibilitesApi {
   }
 
   /** `application` or `refus` of one declaration, with the administrator's word. */
-  decide(declarationId: number | string, action: string, commentaire: string | null): Promise<DeclarationAdminView> {
-    return this.api.post<DeclarationAdminView>(`/api/disponibilites/${declarationId}/${action}`, { commentaire });
+  decide(
+    declarationId: number | string,
+    action: string,
+    commentaire: string | null,
+  ): Promise<DeclarationAdminView> {
+    return this.api.post<DeclarationAdminView>(`/api/disponibilites/${declarationId}/${action}`, {
+      commentaire,
+    });
   }
 }

@@ -8,7 +8,7 @@ import {
   AffectationExplanation,
   DeplacementSimulation,
   PlanningEvenement,
-  SuggestionsReparation
+  SuggestionsReparation,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -18,7 +18,7 @@ export class AffectationExplanationService {
   explique(planning: PlanningEvenement, posteId: string): Promise<AffectationExplanation> {
     return this.api.post<AffectationExplanation>(
       `/api/postes/${encodeURIComponent(posteId)}/explication`,
-      withoutScore(planning)
+      withoutScore(planning),
     );
   }
 
@@ -27,10 +27,13 @@ export class AffectationExplanationService {
    * animateurs itself and returns the viable ones, best impact first. Bounded
    * server-side — the answer says how many candidates it actually evaluated.
    */
-  suggererReparations(planning: PlanningEvenement, posteId: string): Promise<SuggestionsReparation> {
+  suggererReparations(
+    planning: PlanningEvenement,
+    posteId: string,
+  ): Promise<SuggestionsReparation> {
     return this.api.post<SuggestionsReparation>(
       `/api/postes/${encodeURIComponent(posteId)}/suggestions-reparation`,
-      withoutScore(planning)
+      withoutScore(planning),
     );
   }
 
@@ -49,7 +52,7 @@ export class AffectationExplanationService {
     posteId: string,
     target: { posteId?: string; animateurId?: string },
     /** Who the view believes holds the seat: the server refuses (409) if somebody else does now. */
-    occupant?: string | null
+    occupant?: string | null,
   ): Promise<DeplacementSimulation> {
     const params = new URLSearchParams();
     if (target.posteId) {
@@ -63,7 +66,7 @@ export class AffectationExplanationService {
     }
     return this.api.post<DeplacementSimulation>(
       `/api/postes/${encodeURIComponent(posteId)}/deplacement?${params}`,
-      null
+      null,
     );
   }
 

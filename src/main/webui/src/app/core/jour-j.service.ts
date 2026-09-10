@@ -34,11 +34,11 @@ export class JourJService {
     animateurId: string,
     raison: string,
     date?: string,
-    heure?: string
+    heure?: string,
   ): Promise<AbsenceMarquee> {
     return this.api.post<AbsenceMarquee>(`/api/jour-j/absences${query({ date, heure })}`, {
       animateurId,
-      raison: raison.trim() ? raison.trim() : null
+      raison: raison.trim() ? raison.trim() : null,
     });
   }
 
@@ -46,7 +46,7 @@ export class JourJService {
   annulerAbsence(animateurId: string, date?: string, creneauId?: number): Promise<void> {
     const url = `/api/jour-j/absences/${encodeURIComponent(animateurId)}${query({
       date,
-      creneauId: creneauId === undefined ? undefined : String(creneauId)
+      creneauId: creneauId === undefined ? undefined : String(creneauId),
     })}`;
     return this.api.delete(url);
   }
@@ -55,7 +55,7 @@ export class JourJService {
   suggestions(posteId: string): Promise<SuggestionsReparation> {
     return this.api.post<SuggestionsReparation>(
       `/api/jour-j/postes/${encodeURIComponent(posteId)}/suggestions`,
-      null
+      null,
     );
   }
 

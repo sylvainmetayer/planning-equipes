@@ -21,7 +21,7 @@ import { BRANDING } from '../core/branding';
       <img [src]="branding.logoUrl" [alt]="branding.productName" class="app-logo" />
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BrandLogo {
   protected readonly branding = inject(BRANDING);

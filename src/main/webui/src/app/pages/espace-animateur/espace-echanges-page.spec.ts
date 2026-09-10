@@ -24,7 +24,7 @@ import {
   NatureEchange,
   StatutDemandeEchange,
   SuggestionEchangeView,
-  SuggestionsEchangeView
+  SuggestionsEchangeView,
 } from '../../core/models';
 import { BrouillonDemande } from './echange-brouillon';
 import { EspaceEchangesPage } from './espace-echanges-page';
@@ -38,7 +38,7 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
     standId: 'tir',
     standNom: 'Tir à la corde',
     coequipiers: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -58,11 +58,15 @@ function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView
     foireFermeLe: null,
     abonnementToken: 'abo-1',
     pauses: [],
-    ...overrides
+    ...overrides,
   };
 }
 
-function demande(id: string, statut: StatutDemandeEchange, overrides: Partial<DemandeEchangeView> = {}): DemandeEchangeView {
+function demande(
+  id: string,
+  statut: StatutDemandeEchange,
+  overrides: Partial<DemandeEchangeView> = {},
+): DemandeEchangeView {
   return {
     id,
     creneauId: 1,
@@ -84,13 +88,13 @@ function demande(id: string, statut: StatutDemandeEchange, overrides: Partial<De
     motif: null,
     statut,
     prevalidationOk: true,
-    ...overrides
+    ...overrides,
   } as DemandeEchangeView;
 }
 
 function suggestions(
   trouvees: SuggestionEchangeView[],
-  overrides: Partial<SuggestionsEchangeView> = {}
+  overrides: Partial<SuggestionsEchangeView> = {},
 ): SuggestionsEchangeView {
   return {
     creneauId: 1,
@@ -99,14 +103,14 @@ function suggestions(
     optionsEvaluees: trouvees.length,
     listeTronquee: false,
     suggestions: trouvees,
-    ...overrides
+    ...overrides,
   };
 }
 
 function suggestion(
   animateurId: string,
   nature: NatureEchange,
-  overrides: Partial<SuggestionEchangeView> = {}
+  overrides: Partial<SuggestionEchangeView> = {},
 ): SuggestionEchangeView {
   return {
     animateurId,
@@ -118,7 +122,7 @@ function suggestion(
     heureFinCible: null,
     standCibleId: null,
     standCibleNom: null,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -164,7 +168,7 @@ describe('EspaceEchangesPage', () => {
     soumettre: vi.fn(),
     annuler: vi.fn(),
     accorderRecue: vi.fn(),
-    declinerRecue: vi.fn()
+    declinerRecue: vi.fn(),
   };
   const notifications = { notify: vi.fn() };
 
@@ -178,7 +182,7 @@ describe('EspaceEchangesPage', () => {
       espace.soumettre,
       espace.annuler,
       espace.accorderRecue,
-      espace.declinerRecue
+      espace.declinerRecue,
     ]) {
       stub.mockReset();
     }
@@ -193,13 +197,14 @@ describe('EspaceEchangesPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: EspaceAnimateurService, useValue: espace },
-        { provide: NotificationService, useValue: notifications }
-      ]
+        { provide: NotificationService, useValue: notifications },
+      ],
     });
   });
 
   function createPage(): PageInternals {
-    return TestBed.createComponent(EspaceEchangesPage).componentInstance as unknown as PageInternals;
+    return TestBed.createComponent(EspaceEchangesPage)
+      .componentInstance as unknown as PageInternals;
   }
 
   // « Qui peut me remplacer ? » — the animateur who does not want a créneau and
@@ -250,7 +255,7 @@ describe('EspaceEchangesPage', () => {
       expect(page.suggestions()).toBeNull();
       expect(page.rechercheEnCours()).toBe(false);
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error', message: 'Aucun planning persisté.' })
+        expect.objectContaining({ variant: 'error', message: 'Aucun planning persisté.' }),
       );
     });
 
@@ -261,8 +266,8 @@ describe('EspaceEchangesPage', () => {
       espace.suggestionsEchange.mockResolvedValue(
         suggestions(
           [suggestion('bob', 'CROISE', { standCibleId: 'quilles', standCibleNom: 'Quilles' })],
-          { optionsEligibles: 137, optionsEvaluees: 20, listeTronquee: true }
-        )
+          { optionsEligibles: 137, optionsEvaluees: 20, listeTronquee: true },
+        ),
       );
 
       await page.chercherRemplacants();
@@ -295,8 +300,8 @@ describe('EspaceEchangesPage', () => {
           creneauCibleId: 9,
           standCibleId: 'quilles',
           dateCible: '2026-08-02',
-          standCibleNom: 'Quilles'
-        })
+          standCibleNom: 'Quilles',
+        }),
       );
 
       expect(page.cibleId()).toBe('bob');
@@ -312,7 +317,7 @@ describe('EspaceEchangesPage', () => {
       espace.postesCollegue.mockResolvedValue([poste({ creneauId: 3, standId: 'tir' })]);
 
       await page.retenirSuggestion(
-        suggestion('bob', 'DIRIGE', { creneauCibleId: 9, standCibleId: 'quilles' })
+        suggestion('bob', 'DIRIGE', { creneauCibleId: 9, standCibleId: 'quilles' }),
       );
 
       expect(page.posteCibleChoisi()).toBeNull();
@@ -325,8 +330,8 @@ describe('EspaceEchangesPage', () => {
         suggestions([
           suggestion('bob', 'LIBERE'),
           suggestion('carole', 'DIRIGE', { creneauCibleId: 9, standCibleId: 'quilles' }),
-          suggestion('david', 'CROISE', { standCibleId: 'quilles', standCibleNom: 'Quilles' })
-        ])
+          suggestion('david', 'CROISE', { standCibleId: 'quilles', standCibleNom: 'Quilles' }),
+        ]),
       );
 
       await page.chercherRemplacants();
@@ -414,7 +419,7 @@ describe('EspaceEchangesPage', () => {
         cibleId: 'bob',
         motif: 'mariage',
         creneauCibleId: null,
-        standCibleId: null
+        standCibleId: null,
       });
       expect(page.posteChoisi()).toBeNull();
       expect(page.cibleId()).toBe('');
@@ -517,7 +522,7 @@ describe('EspaceEchangesPage', () => {
       await page.soumettre();
 
       expect(espace.soumettre).toHaveBeenCalledExactlyOnceWith([
-        expect.objectContaining({ creneauId: 1, standId: 'tir', cibleId: 'bob' })
+        expect.objectContaining({ creneauId: 1, standId: 'tir', cibleId: 'bob' }),
       ]);
       expect(page.brouillons()).toEqual([]);
       expect(page.envoiEnCours()).toBe(false);
@@ -529,7 +534,9 @@ describe('EspaceEchangesPage', () => {
 
       await page.soumettre();
 
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'success' }),
+      );
     });
 
     // An infeasible demande is still submitted for arbitration, but the
@@ -539,13 +546,13 @@ describe('EspaceEchangesPage', () => {
       espace.soumettre.mockResolvedValue([
         demande('d1', 'PROPOSEE', { prevalidationOk: false }),
         demande('d2', 'PROPOSEE', { prevalidationOk: true }),
-        demande('d3', 'PROPOSEE', { prevalidationOk: false })
+        demande('d3', 'PROPOSEE', { prevalidationOk: false }),
       ]);
 
       await page.soumettre();
 
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'warning', message: expect.stringContaining('2') })
+        expect.objectContaining({ variant: 'warning', message: expect.stringContaining('2') }),
       );
     });
 
@@ -556,7 +563,9 @@ describe('EspaceEchangesPage', () => {
 
       await page.soumettre();
 
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'success' }),
+      );
     });
 
     it('keeps the batch and reports the failure when the submission is refused', async () => {
@@ -567,7 +576,10 @@ describe('EspaceEchangesPage', () => {
 
       expect(page.brouillons()).toHaveLength(1);
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error', message: expect.stringContaining('Foire fermée.') })
+        expect.objectContaining({
+          variant: 'error',
+          message: expect.stringContaining('Foire fermée.'),
+        }),
       );
       expect(page.envoiEnCours()).toBe(false);
     });
@@ -578,7 +590,7 @@ describe('EspaceEchangesPage', () => {
       espace.soumettre.mockReturnValue(
         new Promise<DemandeEchangeView[]>((resolve) => {
           release = resolve;
-        })
+        }),
       );
 
       const first = page.soumettre();
@@ -611,7 +623,7 @@ describe('EspaceEchangesPage', () => {
         demande('d1', 'EN_ATTENTE_CIBLE'),
         demande('d2', 'PROPOSEE'),
         demande('d3', 'REFUSEE_CIBLE'),
-        demande('d4', 'EN_ATTENTE_CIBLE')
+        demande('d4', 'EN_ATTENTE_CIBLE'),
       ]);
       const page = createPage();
 
@@ -634,7 +646,9 @@ describe('EspaceEchangesPage', () => {
       await page.accorder({ id: 'd1' });
 
       expect(espace.accorderRecue).toHaveBeenCalledExactlyOnceWith('d1');
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'success' }),
+      );
     });
 
     it('confirms a refusal and says the colleague is informed', async () => {
@@ -643,7 +657,9 @@ describe('EspaceEchangesPage', () => {
       await page.decliner({ id: 'd1' });
 
       expect(espace.declinerRecue).toHaveBeenCalledExactlyOnceWith('d1');
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'success' }),
+      );
     });
 
     it('confirms a withdrawal', async () => {
@@ -652,7 +668,9 @@ describe('EspaceEchangesPage', () => {
       await page.annuler({ id: 'd1' });
 
       expect(espace.annuler).toHaveBeenCalledExactlyOnceWith('d1');
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'success' }),
+      );
     });
 
     // An animateur has no console: a rejected action that says nothing looks
@@ -660,7 +678,7 @@ describe('EspaceEchangesPage', () => {
     it.each([
       ['accorder', (page: PageInternals) => page.accorder({ id: 'd1' }), espace.accorderRecue],
       ['decliner', (page: PageInternals) => page.decliner({ id: 'd1' }), espace.declinerRecue],
-      ['annuler', (page: PageInternals) => page.annuler({ id: 'd1' }), espace.annuler]
+      ['annuler', (page: PageInternals) => page.annuler({ id: 'd1' }), espace.annuler],
     ])('reports a refused %s instead of failing silently', async (_name, act, stub) => {
       const page = createPage();
       stub.mockRejectedValue(new Error('Demande déjà tranchée.'));
@@ -668,7 +686,10 @@ describe('EspaceEchangesPage', () => {
       await act(page);
 
       expect(notifications.notify).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({ variant: 'error', message: expect.stringContaining('Demande déjà tranchée.') })
+        expect.objectContaining({
+          variant: 'error',
+          message: expect.stringContaining('Demande déjà tranchée.'),
+        }),
       );
     });
   });
@@ -693,7 +714,7 @@ describe('EspaceEchangesPage rendering', () => {
       soumettre: vi.fn(async () => undefined),
       annuler: vi.fn(async () => undefined),
       accorderRecue: vi.fn(async () => undefined),
-      declinerRecue: vi.fn(async () => undefined)
+      declinerRecue: vi.fn(async () => undefined),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -701,10 +722,15 @@ describe('EspaceEchangesPage rendering', () => {
         provideZonelessChangeDetection(),
         {
           provide: EspaceAnimateurService,
-          useValue: { view: espaceView, demandes: espaceDemandes, demandesRecues: espaceRecues, ...espace }
+          useValue: {
+            view: espaceView,
+            demandes: espaceDemandes,
+            demandesRecues: espaceRecues,
+            ...espace,
+          },
         },
-        { provide: NotificationService, useValue: { notify: vi.fn() } }
-      ]
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+      ],
     });
     fixture = TestBed.createComponent(EspaceEchangesPage);
     await fixture.whenStable();
@@ -719,7 +745,9 @@ describe('EspaceEchangesPage rendering', () => {
   }
 
   function bouton(libelle: string): HTMLButtonElement | undefined {
-    return Array.from(racine().querySelectorAll('button')).find((each) => each.textContent!.includes(libelle));
+    return Array.from(racine().querySelectorAll('button')).find((each) =>
+      each.textContent!.includes(libelle),
+    );
   }
 
   beforeEach(() => {
@@ -770,8 +798,8 @@ describe('EspaceEchangesPage rendering', () => {
         heureDebutCible: '14:00',
         heureFinCible: '18:00',
         standCibleNom: 'Molkky',
-        motif: 'Mariage'
-      })
+        motif: 'Mariage',
+      }),
     ]);
     await rendre();
 
@@ -800,8 +828,8 @@ describe('EspaceEchangesPage rendering', () => {
     espaceDemandes.set([
       demande('d1', 'PROPOSEE', {
         prevalidationOk: false,
-        contraintesViolees: ['Repos quotidien insuffisant']
-      } as Partial<DemandeEchangeView>)
+        contraintesViolees: ['Repos quotidien insuffisant'],
+      } as Partial<DemandeEchangeView>),
     ]);
     await rendre();
 
@@ -815,8 +843,8 @@ describe('EspaceEchangesPage rendering', () => {
       demande('d1', 'REFUSEE', {
         prevalidationOk: false,
         contraintesViolees: ['Repos quotidien insuffisant'],
-        commentaireAdmin: 'Impossible ce week-end.'
-      } as Partial<DemandeEchangeView>)
+        commentaireAdmin: 'Impossible ce week-end.',
+      } as Partial<DemandeEchangeView>),
     ]);
     await rendre();
 

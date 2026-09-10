@@ -23,9 +23,17 @@ import { BrandLogo } from '../../shared/brand-logo';
  */
 @Component({
   selector: 'app-login-page',
-  imports: [BrandLogo, FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule],
+  imports: [
+    BrandLogo,
+    FormsModule,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+  ],
   templateUrl: './login-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginPage {
   /** The card names the deployment, not the software: "<produit> — administration". */
@@ -49,14 +57,14 @@ export class LoginPage {
     this.echec.set(false);
     const corps = new URLSearchParams({
       j_username: this.utilisateur(),
-      j_password: this.motDePasse()
+      j_password: this.motDePasse(),
     });
     try {
       await firstValueFrom(
         this.http.post('/j_security_check', corps.toString(), {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          responseType: 'text'
-        })
+          responseType: 'text',
+        }),
       );
       const statut = await this.adminApi.session();
       if (statut.authentifie) {

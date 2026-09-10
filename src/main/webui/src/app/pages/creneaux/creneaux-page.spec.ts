@@ -45,7 +45,7 @@ function cause(manque: number): CauseInfaisabilite {
     contrainteIds: [],
     demande: 6,
     capacite: 6 - manque,
-    manque
+    manque,
   };
 }
 
@@ -62,7 +62,7 @@ const PARAMETRES_DECOUPAGE = {
   strategieCouverturePendantPause: 'FERMETURE',
   modeGrille: 'AMPLITUDES',
   nombreFamillesDecalage: 1,
-  dureeDecalageMaxMinutes: 0
+  dureeDecalageMaxMinutes: 0,
 };
 
 const DIAGNOSTIC = {
@@ -73,7 +73,7 @@ const DIAGNOSTIC = {
   contientCouverturePause: false,
   modeProbable: 'AMPLITUDES',
   modeCertain: false,
-  explication: 'Durée médiane de 120 min : rien ne le prouve.'
+  explication: 'Durée médiane de 120 min : rien ne le prouve.',
 };
 
 const CONTROLE = {
@@ -81,7 +81,7 @@ const CONTROLE = {
   nombreCreneaux: 1,
   anomalies: [] as { severite: string; type: string; date: string | null; message: string }[],
   ouvertures: [] as unknown[],
-  faisabilite: null
+  faisabilite: null,
 };
 
 /**
@@ -89,7 +89,11 @@ const CONTROLE = {
  * business, the three others answer here by URL, with `autres` for whatever
  * a test wants the remaining calls (the découpage preview) to return.
  */
-function reponseApi(url: string, autres: unknown = [], surcharges: { parametres?: object; diagnostic?: object; controle?: object } = {}): unknown {
+function reponseApi(
+  url: string,
+  autres: unknown = [],
+  surcharges: { parametres?: object; diagnostic?: object; controle?: object } = {},
+): unknown {
   if (url.includes('parametres-decoupage')) {
     return { ...PARAMETRES_DECOUPAGE, ...(surcharges.parametres ?? {}) };
   }
@@ -103,11 +107,28 @@ function reponseApi(url: string, autres: unknown = [], surcharges: { parametres?
 }
 
 /** Wires the fake resource service the way the URL dispatch used to: each read answers from {@link reponseApi}. */
-function brancher(creneauxApi: { diagnostic: ReturnType<typeof vi.fn>; control: ReturnType<typeof vi.fn>; slicingParameters: ReturnType<typeof vi.fn>; previewSlicing: ReturnType<typeof vi.fn> }, autres: unknown = [], surcharges: { parametres?: object; diagnostic?: object; controle?: object } = {}): void {
-  creneauxApi.slicingParameters.mockImplementation(async () => reponseApi('parametres-decoupage', autres, surcharges));
-  creneauxApi.diagnostic.mockImplementation(async () => reponseApi('/creneaux/diagnostic', autres, surcharges));
-  creneauxApi.control.mockImplementation(async () => reponseApi('/creneaux/controle', autres, surcharges));
-  creneauxApi.previewSlicing.mockImplementation(async () => reponseApi('preview', autres, surcharges));
+function brancher(
+  creneauxApi: {
+    diagnostic: ReturnType<typeof vi.fn>;
+    control: ReturnType<typeof vi.fn>;
+    slicingParameters: ReturnType<typeof vi.fn>;
+    previewSlicing: ReturnType<typeof vi.fn>;
+  },
+  autres: unknown = [],
+  surcharges: { parametres?: object; diagnostic?: object; controle?: object } = {},
+): void {
+  creneauxApi.slicingParameters.mockImplementation(async () =>
+    reponseApi('parametres-decoupage', autres, surcharges),
+  );
+  creneauxApi.diagnostic.mockImplementation(async () =>
+    reponseApi('/creneaux/diagnostic', autres, surcharges),
+  );
+  creneauxApi.control.mockImplementation(async () =>
+    reponseApi('/creneaux/controle', autres, surcharges),
+  );
+  creneauxApi.previewSlicing.mockImplementation(async () =>
+    reponseApi('preview', autres, surcharges),
+  );
 }
 
 /** Reaches the protected members the template binds to. */
@@ -140,7 +161,7 @@ describe('CreneauxPage', () => {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
-    reportError: vi.fn()
+    reportError: vi.fn(),
   };
   const creneauxApi = {
     diagnostic: vi.fn(),
@@ -148,7 +169,7 @@ describe('CreneauxPage', () => {
     slicingParameters: vi.fn(),
     setGridMode: vi.fn(),
     previewSlicing: vi.fn(),
-    generateSlicing: vi.fn()
+    generateSlicing: vi.fn(),
   };
   const confirm = { ask: vi.fn() };
   const notifications = { notify: vi.fn() };
@@ -157,7 +178,13 @@ describe('CreneauxPage', () => {
   const causeParCreneauId = signal(new Map<string, CauseInfaisabilite>());
 
   beforeEach(() => {
-    for (const stub of [crud.reload, crud.remove, crud.removeMany, crud.reportError, resolution.reload]) {
+    for (const stub of [
+      crud.reload,
+      crud.remove,
+      crud.removeMany,
+      crud.reportError,
+      resolution.reload,
+    ]) {
       stub.mockClear();
     }
     for (const stub of Object.values(creneauxApi)) {
@@ -170,23 +197,29 @@ describe('CreneauxPage', () => {
     confirm.ask.mockResolvedValue(true);
     brancher(creneauxApi);
     creneauxApi.generateSlicing.mockResolvedValue(undefined);
-    creneauxApi.setGridMode.mockImplementation(async (modeGrille: string) => ({ ...PARAMETRES_DECOUPAGE, modeGrille }));
+    creneauxApi.setGridMode.mockImplementation(async (modeGrille: string) => ({
+      ...PARAMETRES_DECOUPAGE,
+      modeGrille,
+    }));
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: CreneauxApi, useValue: creneauxApi },
         { provide: ReferenceCrudService, useValue: crud },
-        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
+        {
+          provide: SolverJobService,
+          useValue: { solverBusy: () => false, editingLocked: () => false },
+        },
         { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: notifications },
         { provide: PlanningResolutionStore, useValue: resolution },
         {
           provide: ProblemesStore,
-          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParCreneauId }
-        }
-      ]
+          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParCreneauId },
+        },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
@@ -207,14 +240,20 @@ describe('CreneauxPage', () => {
     // of every slot; without the column they read as inexplicable duplicates,
     // and with it they are noise on the groups that have a single family.
     it('hides the column when no displayed slot carries a family', () => {
-      const page = createPage([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 2, famille: 0 })]);
+      const page = createPage([
+        creneau({ id: 1, jour: 1 }),
+        creneau({ id: 2, jour: 2, famille: 0 }),
+      ]);
 
       expect(page.afficherFamilles()).toBe(false);
       expect(page.columns()).not.toContain('famille');
     });
 
     it('shows the column as soon as one displayed slot carries a family', () => {
-      const page = createPage([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 2, famille: 1 })]);
+      const page = createPage([
+        creneau({ id: 1, jour: 1 }),
+        creneau({ id: 2, jour: 2, famille: 1 }),
+      ]);
 
       expect(page.afficherFamilles()).toBe(true);
       expect(page.columns()).toContain('famille');
@@ -241,7 +280,7 @@ describe('CreneauxPage', () => {
       const page = createPage([
         creneau({ id: 3, jour: 2, heureDebut: '09:00' }),
         creneau({ id: 1, jour: 1, heureDebut: '14:00' }),
-        creneau({ id: 2, jour: 1, heureDebut: '09:00' })
+        creneau({ id: 2, jour: 1, heureDebut: '09:00' }),
       ]);
 
       page.sort.set({ active: 'jour', direction: 'asc' });
@@ -257,13 +296,13 @@ describe('CreneauxPage', () => {
       const page = createPage([
         creneau({ id: 1, jour: 1 }),
         creneau({ id: 2, jour: 2 }),
-        creneau({ id: 3, jour: 3 })
+        creneau({ id: 3, jour: 3 }),
       ]);
       causeParCreneauId.set(
         new Map([
           ['1', cause(2)],
-          ['3', cause(5)]
-        ])
+          ['3', cause(5)],
+        ]),
       );
 
       page.sort.set({ active: 'probleme', direction: 'asc' });
@@ -307,7 +346,11 @@ describe('CreneauxPage', () => {
 
   describe('multi-selection', () => {
     it('deletes exactly the ticked rows', async () => {
-      const page = createPage([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 2 }), creneau({ id: 3, jour: 3 })]);
+      const page = createPage([
+        creneau({ id: 1, jour: 1 }),
+        creneau({ id: 2, jour: 2 }),
+        creneau({ id: 3, jour: 3 }),
+      ]);
 
       page.selection.toggle(1);
       page.selection.toggle(3);
@@ -334,7 +377,7 @@ describe('CreneauxPage', () => {
       const page = createPage([
         creneau({ id: 1, jour: 1 }),
         creneau({ id: 2, jour: 2 }),
-        creneau({ id: 3, jour: 3 })
+        creneau({ id: 3, jour: 3 }),
       ]);
       page.sort.set({ active: 'jour', direction: 'desc' });
 
@@ -352,7 +395,7 @@ describe('CreneauxPage', () => {
 
       expect(dialog.open).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ data: { creneaux: [expect.objectContaining({ id: 2 })] } })
+        expect.objectContaining({ data: { creneaux: [expect.objectContaining({ id: 2 })] } }),
       );
     });
 
@@ -386,7 +429,7 @@ describe('CreneauxPage', () => {
       creneauxApi.previewSlicing.mockResolvedValue([
         creneau({ id: 1, jour: 1, date: '2026-08-01' }),
         creneau({ id: 2, jour: 1, date: '2026-08-01' }),
-        creneau({ id: 3, jour: 2, date: '2026-08-02' })
+        creneau({ id: 3, jour: 2, date: '2026-08-02' }),
       ]);
 
       await page.previsualiserDecoupage();
@@ -428,7 +471,9 @@ describe('CreneauxPage', () => {
       expect(creneauxApi.generateSlicing).toHaveBeenCalledOnce();
       expect(crud.reload).toHaveBeenCalledOnce();
       expect(resolution.reload).toHaveBeenCalledOnce();
-      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'success' }),
+      );
     });
 
     it('reports a failed generation and reloads nothing', async () => {
@@ -463,14 +508,14 @@ describe('CreneauxPage rendering', () => {
     slicingParameters: vi.fn(),
     previewSlicing: vi.fn(),
     generateSlicing: vi.fn(async () => undefined),
-    setGridMode: vi.fn(async (modeGrille: string) => ({ ...PARAMETRES_DECOUPAGE, modeGrille }))
+    setGridMode: vi.fn(async (modeGrille: string) => ({ ...PARAMETRES_DECOUPAGE, modeGrille })),
   };
   const confirm = { ask: vi.fn(async () => false) };
   const crud = {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
-    reportError: vi.fn()
+    reportError: vi.fn(),
   };
 
   async function rendre(creneaux: Creneau[]): Promise<void> {
@@ -484,18 +529,22 @@ describe('CreneauxPage rendering', () => {
   }
 
   function entetes(): string[] {
-    return Array.from(racine().querySelectorAll('thead th')).map((each) => each.textContent!.trim());
+    return Array.from(racine().querySelectorAll('thead th')).map((each) =>
+      each.textContent!.trim(),
+    );
   }
 
   function lignes(): string[][] {
     return Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.replace(/\s+/g, ' ').trim())
+      Array.from(row.querySelectorAll('td')).map((cell) =>
+        cell.textContent!.replace(/\s+/g, ' ').trim(),
+      ),
     );
   }
 
   function bouton(libelle: string): HTMLButtonElement {
     const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes(libelle)
+      each.textContent!.includes(libelle),
     );
     expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
     return trouve as HTMLButtonElement;
@@ -517,26 +566,32 @@ describe('CreneauxPage rendering', () => {
         { provide: CreneauxApi, useValue: creneauxApi },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
-        { provide: MatDialog, useValue: { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) } },
+        {
+          provide: MatDialog,
+          useValue: { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) },
+        },
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
         {
           provide: ProblemesStore,
-          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParCreneauId }
-        }
-      ]
+          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParCreneauId },
+        },
+      ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
   });
 
   it('renders one row per créneau, with its event day and hours', async () => {
-    await rendre([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 2, heureDebut: '14:00', heureFin: '19:00' })]);
+    await rendre([
+      creneau({ id: 1, jour: 1 }),
+      creneau({ id: 2, jour: 2, heureDebut: '14:00', heureFin: '19:00' }),
+    ]);
 
     expect(racine().querySelector('h2')!.textContent!).toContain('Créneaux (2)');
     expect(lignes().map((row) => [row[1], row[3]])).toEqual([
       ['J1', '10:00–12:00'],
-      ['J2', '14:00–19:00']
+      ['J2', '14:00–19:00'],
     ]);
   });
 
@@ -563,7 +618,9 @@ describe('CreneauxPage rendering', () => {
   it('says the referential is empty rather than showing a bare table', async () => {
     await rendre([]);
 
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucun créneau pour le moment.');
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
+      'Aucun créneau pour le moment.',
+    );
   });
 
   it('locks the writing actions, and says why, while a solve is running', async () => {
@@ -581,7 +638,7 @@ describe('CreneauxPage rendering', () => {
   it('previews the slicing without writing anything', async () => {
     brancher(creneauxApi, [
       { id: 1, jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00' },
-      { id: 2, jour: 1, date: '2026-08-01', heureDebut: '12:00', heureFin: '14:00' }
+      { id: 2, jour: 1, date: '2026-08-01', heureDebut: '12:00', heureFin: '14:00' },
     ]);
     await rendre([creneau({ id: 1, jour: 1 })]);
 
@@ -591,10 +648,9 @@ describe('CreneauxPage rendering', () => {
     expect(creneauxApi.generateSlicing).not.toHaveBeenCalled();
     const resume = racine().querySelector('.decoupage-resume')!;
     expect(resume.textContent!).toContain('2026-08-01');
-    expect(Array.from(resume.querySelectorAll('.vacation-chip')).map((each) => each.textContent!.trim())).toEqual([
-      '10:00–12:00',
-      '12:00–14:00'
-    ]);
+    expect(
+      Array.from(resume.querySelectorAll('.vacation-chip')).map((each) => each.textContent!.trim()),
+    ).toEqual(['10:00–12:00', '12:00–14:00']);
   });
 
   it('never generates the slicing without an explicit confirmation', async () => {
@@ -616,7 +672,7 @@ describe('CreneauxPage rendering', () => {
     await rendre([creneau({ id: 1, jour: 1 })]);
 
     const lien = Array.from(racine().querySelectorAll('a')).find((each) =>
-      each.textContent!.includes('découpage')
+      each.textContent!.includes('découpage'),
     )!;
     expect(lien.getAttribute('href')).toBe('/parametres');
   });
@@ -652,11 +708,17 @@ describe('CreneauxPage rendering', () => {
       expect(creneauxApi.control.mock.calls.length).toBe(lectures + 1);
       // Nothing to slice on a grid of final vacations.
       expect(bouton('Générer les vacations').disabled).toBe(true);
-      expect(racine().textContent).toContain("rien à découper");
+      expect(racine().textContent).toContain('rien à découper');
     });
 
     it('says when the data proves a mode the declaration contradicts', async () => {
-      brancher(creneauxApi, [], { diagnostic: { modeProbable: 'VACATIONS', modeCertain: true, explication: 'Grille déjà découpée : 3 familles.' } });
+      brancher(creneauxApi, [], {
+        diagnostic: {
+          modeProbable: 'VACATIONS',
+          modeCertain: true,
+          explication: 'Grille déjà découpée : 3 familles.',
+        },
+      });
       await rendreEtLire([creneau({ id: 1, jour: 1 })]);
 
       const diagnostic = racine().querySelector('.grille-diagnostic')!;
@@ -666,18 +728,44 @@ describe('CreneauxPage rendering', () => {
 
     it('shows the verdict on the page, errors first, and the stand openings apart', async () => {
       brancher(creneauxApi, [], {
-          controle: {
-            anomalies: [
-              { severite: 'AVERTISSEMENT', type: 'TROU_DANS_LA_JOURNEE', date: '2026-08-01', message: 'Trou de 12:00 à 14:00' },
-              { severite: 'ERREUR', type: 'DOUBLON', date: '2026-08-01', message: 'Doublon 10:00-12:00' }
-            ],
-            ouvertures: [{ type: 'STAND_JAMAIS_OUVERT', standId: 'S1', standNom: 'Stand un', date: null, message: 'Jamais ouvert' }],
-            faisabilite: { feasible: false, manqueAnimateurs: 2, causes: [], totalCauses: 1, message: 'Il manque 2 animateurs.' }
-          }
-        });
+        controle: {
+          anomalies: [
+            {
+              severite: 'AVERTISSEMENT',
+              type: 'TROU_DANS_LA_JOURNEE',
+              date: '2026-08-01',
+              message: 'Trou de 12:00 à 14:00',
+            },
+            {
+              severite: 'ERREUR',
+              type: 'DOUBLON',
+              date: '2026-08-01',
+              message: 'Doublon 10:00-12:00',
+            },
+          ],
+          ouvertures: [
+            {
+              type: 'STAND_JAMAIS_OUVERT',
+              standId: 'S1',
+              standNom: 'Stand un',
+              date: null,
+              message: 'Jamais ouvert',
+            },
+          ],
+          faisabilite: {
+            feasible: false,
+            manqueAnimateurs: 2,
+            causes: [],
+            totalCauses: 1,
+            message: 'Il manque 2 animateurs.',
+          },
+        },
+      });
       await rendreEtLire([creneau({ id: 1, jour: 1 })]);
 
-      const messages = Array.from(racine().querySelectorAll('.controle-anomalies li')).map((each) => each.textContent!.replace(/\s+/g, ' ').trim());
+      const messages = Array.from(racine().querySelectorAll('.controle-anomalies li')).map((each) =>
+        each.textContent!.replace(/\s+/g, ' ').trim(),
+      );
       expect(messages[0]).toContain('Doublon');
       expect(messages[1]).toContain('Trou');
       expect(messages[2]).toContain('Stand un');
@@ -696,9 +784,11 @@ describe('CreneauxPage rendering', () => {
 
       bouton('Créer une série').click();
       expect(dialog.open).toHaveBeenCalledOnce();
-      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: { mode: string } }])[1].data).toEqual({
+      expect(
+        (dialog.open.mock.calls[0] as unknown as [unknown, { data: { mode: string } }])[1].data,
+      ).toEqual({
         mode: 'AMPLITUDES',
-        controleActuel: { ...CONTROLE }
+        controleActuel: { ...CONTROLE },
       });
 
       editingLocked.set(true);
@@ -707,17 +797,22 @@ describe('CreneauxPage rendering', () => {
     });
 
     it('opens the derivation dialog prefilled with the span of the grid', async () => {
-      await rendreEtLire([creneau({ id: 2, jour: 2, date: '2026-08-03' }), creneau({ id: 1, jour: 1, date: '2026-08-01' })]);
+      await rendreEtLire([
+        creneau({ id: 2, jour: 2, date: '2026-08-03' }),
+        creneau({ id: 1, jour: 1, date: '2026-08-01' }),
+      ]);
       const dialog = TestBed.inject(MatDialog) as unknown as { open: ReturnType<typeof vi.fn> };
 
       bouton('Dériver des horaires des stands').click();
 
       expect(dialog.open).toHaveBeenCalledOnce();
-      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: object }])[1].data).toEqual({
-        mode: 'AMPLITUDES',
-        dateDebut: '2026-08-01',
-        dateFin: '2026-08-03'
-      });
+      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: object }])[1].data).toEqual(
+        {
+          mode: 'AMPLITUDES',
+          dateDebut: '2026-08-01',
+          dateFin: '2026-08-03',
+        },
+      );
     });
 
     it('declares the grid as vacations once the découpage has generated them', async () => {

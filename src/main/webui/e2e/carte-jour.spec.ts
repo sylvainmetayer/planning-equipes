@@ -24,7 +24,7 @@ const SEED = {
   creneauSoir: 987501,
   lieuMatin: 'CJ-L-MATIN',
   lieuSoir: 'CJ-L-SOIR',
-  jour: '2026-07-20'
+  jour: '2026-07-20',
 } as const;
 
 let admin: APIRequestContext;
@@ -38,7 +38,7 @@ function nettoyage(): string {
     `delete from animateur where id like 'CJ-%';`,
     `delete from stand_typologie where stand_id like 'CJ-%';`,
     `delete from stand where id like 'CJ-%';`,
-    `delete from emplacement where id like 'CJ-%';`
+    `delete from emplacement where id like 'CJ-%';`,
   ].join('\n');
 }
 
@@ -65,11 +65,11 @@ async function amorcer(): Promise<void> {
     // for. Nomade: staffed but nowhere to draw it.
     `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'CJ-P1', '${SEED.matin}', ${SEED.creneauMatin}, '${SEED.animateur}');`,
     `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'CJ-P2', '${SEED.soir}', ${SEED.creneauSoir}, null);`,
-    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'CJ-P3', '${SEED.nomade}', ${SEED.creneauMatin}, '${SEED.animateur}');`
+    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'CJ-P3', '${SEED.nomade}', ${SEED.creneauMatin}, '${SEED.animateur}');`,
   ].join('\n');
   const reponse = await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
-    data: script
+    data: script,
   });
   expect(reponse.ok(), await reponse.text()).toBe(true);
 }
@@ -86,7 +86,7 @@ test.afterAll(async () => {
   // up keeps a stand nobody seeded out of the next spec's problem.
   await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
-    data: nettoyage()
+    data: nettoyage(),
   });
   await admin.dispose();
 });
@@ -134,7 +134,9 @@ test("la carte de la journée change d'état quand le curseur se déplace", asyn
   await reglerCurseur(page, 18 * 60);
   await expect(page.locator('[data-test="carte-jour-heure"]')).toHaveText('18:00');
   await expect(compteurs).toContainText('1 stand(s) ouvert(s) sur 3');
-  await expect(page.locator('.carte-jour-liste .carte-jour-pastille.etat-decouvert')).toHaveCount(1);
+  await expect(page.locator('.carte-jour-liste .carte-jour-pastille.etat-decouvert')).toHaveCount(
+    1,
+  );
   await expect(contenu).toContainText('sans personne');
 
   // 13:00, between the two: nothing is open anywhere. The badge of a closed
@@ -142,14 +144,16 @@ test("la carte de la journée change d'état quand le curseur se déplace", asyn
   // number of stands attached to it.
   await reglerCurseur(page, 13 * 60);
   await expect(compteurs).toContainText('0 stand(s) ouvert(s) sur 3');
-  await expect(page.locator('.leaflet-marker-icon[aria-label="Halle du matin"] .carte-jour-pastille')).toHaveText(
-    '0'
-  );
+  await expect(
+    page.locator('.leaflet-marker-icon[aria-label="Halle du matin"] .carte-jour-pastille'),
+  ).toHaveText('0');
 
   await page.context().close();
 });
 
-test('la carte dessine les emplacements et garde les stands non situés à côté', async ({ browser }) => {
+test('la carte dessine les emplacements et garde les stands non situés à côté', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await ouvrirJourDeLaFixture(page);
 
@@ -171,7 +175,9 @@ test('la carte dessine les emplacements et garde les stands non situés à côt�
   await page.context().close();
 });
 
-test("l'instant du curseur survit à un rafraîchissement et se réinitialise", async ({ browser }) => {
+test("l'instant du curseur survit à un rafraîchissement et se réinitialise", async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await ouvrirJourDeLaFixture(page);
 

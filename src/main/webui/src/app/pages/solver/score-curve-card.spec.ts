@@ -27,7 +27,7 @@ function tracked(overrides: Partial<TrackedJob> = {}): TrackedJob {
     editionId: 'festival-2026',
     editionNom: 'Festival 2026',
     secondsLimit: 600,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -39,7 +39,7 @@ const trace = (overrides: Partial<ScoreTrace> = {}): ScoreTrace => ({
   dureeMs: 30000,
   termine: false,
   points: [{ tempsMs: 0, hard: -40, medium: -10, soft: -1000 }],
-  ...overrides
+  ...overrides,
 });
 
 describe('ScoreCurveCard', () => {
@@ -51,7 +51,7 @@ describe('ScoreCurveCard', () => {
     activeJob,
     editingLocked: () => editingLocked(),
     scoreTraceEdition,
-    chargerCourbeScore: vi.fn(async () => undefined)
+    chargerCourbeScore: vi.fn(async () => undefined),
   };
 
   beforeEach(() => {
@@ -63,7 +63,7 @@ describe('ScoreCurveCard', () => {
     // test's fold decides the next one's opening state.
     localStorage.removeItem(SCORE_CURVE_STORAGE_KEY);
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: SolverJobService, useValue: jobs }]
+      providers: [provideZonelessChangeDetection(), { provide: SolverJobService, useValue: jobs }],
     });
   });
 
@@ -173,7 +173,12 @@ describe('ScoreCurveCard', () => {
       expect(card.visible()).toBe(true);
       // Points that landed while folded are held just the same.
       scoreTraceEdition.set(
-        trace({ points: [{ tempsMs: 0, hard: -40, medium: -10, soft: -1000 }, { tempsMs: 1000, hard: 0, medium: -6, soft: -800 }] })
+        trace({
+          points: [
+            { tempsMs: 0, hard: -40, medium: -10, soft: -1000 },
+            { tempsMs: 1000, hard: 0, medium: -6, soft: -800 },
+          ],
+        }),
       );
       expect(card.points()).toHaveLength(2);
 

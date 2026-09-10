@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -29,15 +36,17 @@ import { StatusMessage } from '../../shared/status-message';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
-    StatusMessage
+    StatusMessage,
   ],
   templateUrl: './aide-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AidePage {
   private readonly sections = buildHelpSections(inject(BRANDING).supportEmail);
   protected readonly query = signal('');
-  protected readonly visibleSections = computed(() => filterHelpSections(this.sections, this.query()));
+  protected readonly visibleSections = computed(() =>
+    filterHelpSections(this.sections, this.query()),
+  );
   protected readonly noResult = computed(() => this.visibleSections().length === 0);
 
   private readonly route = inject(ActivatedRoute);

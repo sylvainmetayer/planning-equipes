@@ -12,7 +12,12 @@ import { provideZonelessChangeDetection, Signal, WritableSignal } from '@angular
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanningApi } from '../../core/api/planning-api';
-import { ComparaisonSnapshots, CoteComparaison, PlanningKpi, PlanSnapshot } from '../../core/models';
+import {
+  ComparaisonSnapshots,
+  CoteComparaison,
+  PlanningKpi,
+  PlanSnapshot,
+} from '../../core/models';
 import { LigneMetrique } from './comparateur-metrics';
 import { ComparateurPage } from './comparateur-page';
 
@@ -46,7 +51,7 @@ function kpi(overrides: Partial<PlanningKpi> = {}): PlanningKpi {
     tauxModificationsManuelles: 0.035,
     dureeSolveSecondes: 600,
     violationsParContrainte: {},
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -61,7 +66,7 @@ function snapshot(overrides: Partial<PlanSnapshot> = {}): PlanSnapshot {
     editionId: 'festival-2026',
     editionNom: 'Festival 2026',
     kpi: kpi(),
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -74,7 +79,7 @@ function cote(overrides: Partial<CoteComparaison> = {}): CoteComparaison {
     creeLe: '2026-08-01T10:00:00Z',
     kpi: kpi(),
     kpiRecalcule: false,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -85,7 +90,7 @@ function comparaison(overrides: Partial<ComparaisonSnapshots> = {}): Comparaison
     editionsDifferentes: false,
     volumetriesDifferentes: false,
     diffViolations: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -111,7 +116,15 @@ type PageInternals = {
 };
 
 function ligne(overrides: Partial<LigneMetrique> = {}): LigneMetrique {
-  return { cle: 'scoreSoft', label: 'Score soft', base: '-12', variante: '-8', delta: 4, tendance: null, ...overrides };
+  return {
+    cle: 'scoreSoft',
+    label: 'Score soft',
+    base: '-12',
+    variante: '-8',
+    delta: 4,
+    tendance: null,
+    ...overrides,
+  };
 }
 
 describe('ComparateurPage', () => {
@@ -122,7 +135,10 @@ describe('ComparateurPage', () => {
     planningApi.compareSnapshots.mockReset();
     planningApi.comparableSnapshots.mockResolvedValue([]);
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: PlanningApi, useValue: planningApi }]
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: PlanningApi, useValue: planningApi },
+      ],
     });
   });
 
@@ -308,7 +324,9 @@ describe('ComparateurPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.varianteId()).toBe('8'));
 
-      planningApi.compareSnapshots.mockResolvedValue(comparaison({ variante: cote({ snapshotId: 8, kpiRecalcule: true }) }));
+      planningApi.compareSnapshots.mockResolvedValue(
+        comparaison({ variante: cote({ snapshotId: 8, kpiRecalcule: true }) }),
+      );
       await page.comparer();
 
       expect(page.kpiRecalcule()).toBe(true);
@@ -330,7 +348,9 @@ describe('ComparateurPage', () => {
     it('names a snapshot by its label, its edition and its date', () => {
       const page = createPage();
 
-      const label = page.libelle(snapshot({ libelle: 'Avant canicule', editionNom: 'Festival 2026' }));
+      const label = page.libelle(
+        snapshot({ libelle: 'Avant canicule', editionNom: 'Festival 2026' }),
+      );
 
       expect(label).toContain('Avant canicule');
       expect(label).toContain('Festival 2026');
@@ -340,7 +360,9 @@ describe('ComparateurPage', () => {
     it('falls back to the edition id, and drops the date part when there is none', () => {
       const page = createPage();
 
-      const label = page.libelle(snapshot({ editionNom: null, editionId: 'edition-1708', creeLe: null }));
+      const label = page.libelle(
+        snapshot({ editionNom: null, editionId: 'edition-1708', creeLe: null }),
+      );
 
       expect(label).toBe('Avant canicule — edition-1708');
     });
@@ -375,8 +397,12 @@ describe('ComparateurPage', () => {
     it('says in words whether the variation is an improvement or a regression', () => {
       const page = createPage();
 
-      expect(page.deltaLabel(ligne({ delta: 4, tendance: 'amelioration' }))).toContain('amélioration');
-      expect(page.deltaLabel(ligne({ delta: -4, tendance: 'degradation' }))).toContain('dégradation');
+      expect(page.deltaLabel(ligne({ delta: 4, tendance: 'amelioration' }))).toContain(
+        'amélioration',
+      );
+      expect(page.deltaLabel(ligne({ delta: -4, tendance: 'degradation' }))).toContain(
+        'dégradation',
+      );
     });
 
     it('distinguishes an unmeasured violation count from zero', () => {
@@ -393,7 +419,7 @@ describe('ComparateurPage rendering', () => {
 
   async function rendre(
     instantanes: PlanSnapshot[],
-    resultat: ComparaisonSnapshots | Error | null = null
+    resultat: ComparaisonSnapshots | Error | null = null,
   ): Promise<void> {
     const planningApi = {
       comparableSnapshots: vi.fn(async () => instantanes),
@@ -402,11 +428,14 @@ describe('ComparateurPage rendering', () => {
           throw resultat;
         }
         return resultat;
-      })
+      }),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: PlanningApi, useValue: planningApi }]
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: PlanningApi, useValue: planningApi },
+      ],
     });
     fixture = TestBed.createComponent(ComparateurPage);
     await fixture.whenStable();
@@ -422,7 +451,7 @@ describe('ComparateurPage rendering', () => {
 
   function bouton(libelle: string): HTMLButtonElement {
     const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes(libelle)
+      each.textContent!.includes(libelle),
     );
     expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
     return trouve as HTMLButtonElement;
@@ -460,12 +489,14 @@ describe('ComparateurPage rendering', () => {
     await comparer();
 
     const lignes = Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim())
+      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim()),
     );
     expect(lignes.length).toBeGreaterThan(0);
     expect(lignes[0][0]).not.toBe('');
     // Both column headers name their side, so a reader knows which is which.
-    const entetes = Array.from(racine().querySelectorAll('thead th')).map((each) => each.textContent!.trim());
+    const entetes = Array.from(racine().querySelectorAll('thead th')).map((each) =>
+      each.textContent!.trim(),
+    );
     expect(entetes.some((entete) => entete.includes('Avant canicule'))).toBe(true);
     expect(entetes.some((entete) => entete.includes('Après canicule'))).toBe(true);
   });
@@ -510,7 +541,7 @@ describe('ComparateurPage rendering', () => {
     expect(text()).not.toContain('Écarts par contrainte');
 
     await comparerAvec({
-      diffViolations: [{ contrainte: 'Repos quotidien', base: 3, variante: 0 }]
+      diffViolations: [{ contrainte: 'Repos quotidien', base: 3, variante: 0 }],
     } as Partial<ComparaisonSnapshots>);
 
     expect(text()).toContain('Écarts par contrainte');

@@ -37,10 +37,10 @@ const COURANT = 'courant';
     MatSelectModule,
     MatTableModule,
     MatTooltipModule,
-    StatusMessage
+    StatusMessage,
   ],
   templateUrl: './comparateur-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ComparateurPage {
   protected readonly columns = ['metrique', 'base', 'variante', 'delta'];
@@ -56,17 +56,21 @@ export class ComparateurPage {
 
   protected readonly lignes = computed<LigneMetrique[]>(() => {
     const comparaison = this.comparaison();
-    return comparaison ? construireLignesMetriques(comparaison.base.kpi, comparaison.variante.kpi) : [];
+    return comparaison
+      ? construireLignesMetriques(comparaison.base.kpi, comparaison.variante.kpi)
+      : [];
   });
 
   protected readonly pretAComparer = computed(
-    () => this.baseId() !== '' && this.varianteId() !== '' && this.baseId() !== this.varianteId()
+    () => this.baseId() !== '' && this.varianteId() !== '' && this.baseId() !== this.varianteId(),
   );
 
   /** Degraded mode: at least one side predates KPI capture and had to be recomputed. */
   protected readonly kpiRecalcule = computed(() => {
     const comparaison = this.comparaison();
-    return comparaison !== null && (comparaison.base.kpiRecalcule || comparaison.variante.kpiRecalcule);
+    return (
+      comparaison !== null && (comparaison.base.kpiRecalcule || comparaison.variante.kpiRecalcule)
+    );
   });
 
   private readonly planningApi = inject(PlanningApi);
@@ -111,7 +115,9 @@ export class ComparateurPage {
     this.error.set('');
     this.comparaison.set(null);
     try {
-      this.comparaison.set(await this.planningApi.compareSnapshots(this.baseId(), this.varianteId()));
+      this.comparaison.set(
+        await this.planningApi.compareSnapshots(this.baseId(), this.varianteId()),
+      );
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -147,11 +153,12 @@ export class ComparateurPage {
   }
 
   protected violationsLabel(valeur: number | null): string {
-    return valeur === null ? $localize`:@@comparateur.violations.inconnu:non mesuré` : String(valeur);
+    return valeur === null
+      ? $localize`:@@comparateur.violations.inconnu:non mesuré`
+      : String(valeur);
   }
 }
 
 function arrondi(valeur: number): string {
   return Number.isInteger(valeur) ? String(valeur) : valeur.toFixed(1);
 }
-

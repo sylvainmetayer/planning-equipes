@@ -84,47 +84,157 @@ interface DefinitionRoute {
 function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
   return new Map<string, DefinitionRoute>([
     ['/', { label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle', touche: 'g' }],
-    ['/notifications', { label: $localize`:@@nav.link.notifications:Notifications`, icon: 'notifications', touche: 'n' }],
-    ['/problemes', { label: $localize`:@@nav.link.problemes:Problèmes`, icon: 'report_problem', touche: 'p' }],
-    ['/echanges', { label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz', touche: 'x' }],
-    ['/disponibilites', { label: $localize`:@@nav.link.disponibilites:Disponibilités`, icon: 'event_available' }],
+    [
+      '/notifications',
+      {
+        label: $localize`:@@nav.link.notifications:Notifications`,
+        icon: 'notifications',
+        touche: 'n',
+      },
+    ],
+    [
+      '/problemes',
+      { label: $localize`:@@nav.link.problemes:Problèmes`, icon: 'report_problem', touche: 'p' },
+    ],
+    [
+      '/echanges',
+      { label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz', touche: 'x' },
+    ],
+    [
+      '/disponibilites',
+      { label: $localize`:@@nav.link.disponibilites:Disponibilités`, icon: 'event_available' },
+    ],
     ['/constraints', { label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' }],
-    ['/ad-hoc-constraints', { label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`, icon: 'rule' }],
-    ['/instantanes', { label: $localize`:@@nav.link.snapshots:Instantanés`, icon: 'history', touche: 'i' }],
+    [
+      '/ad-hoc-constraints',
+      { label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`, icon: 'rule' },
+    ],
+    [
+      '/instantanes',
+      { label: $localize`:@@nav.link.snapshots:Instantanés`, icon: 'history', touche: 'i' },
+    ],
     ['/aide', { label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline', touche: 'u' }],
     ['/editions', { label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' }],
-    ['/ouvertures', { label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`, icon: 'storefront', touche: 'o' }],
-    ['/staffing', { label: $localize`:@@nav.link.staffing:Besoin en animateurs`, icon: 'engineering', touche: 'b' }],
-    ['/fragilite', { label: $localize`:@@nav.link.fragilite:Fragilité du planning`, icon: 'personal_injury' }],
+    [
+      '/ouvertures',
+      {
+        label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
+        icon: 'storefront',
+        touche: 'o',
+      },
+    ],
+    [
+      '/staffing',
+      {
+        label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
+        icon: 'engineering',
+        touche: 'b',
+      },
+    ],
+    [
+      '/fragilite',
+      { label: $localize`:@@nav.link.fragilite:Fragilité du planning`, icon: 'personal_injury' },
+    ],
     ['/pauses', { label: $localize`:@@nav.link.pauses:Pauses`, icon: 'free_breakfast' }],
-    ['/banc-de-touche', { label: $localize`:@@nav.link.bancDeTouche:Banc de touche`, icon: 'airline_seat_recline_normal' }],
+    [
+      '/banc-de-touche',
+      {
+        label: $localize`:@@nav.link.bancDeTouche:Banc de touche`,
+        icon: 'airline_seat_recline_normal',
+      },
+    ],
     ['/jour-j', { label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' }],
     ['/stands', { label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront', touche: 's' }],
-    ['/emplacements', { label: $localize`:@@nav.link.emplacements:Emplacements`, icon: 'place', touche: 'e' }],
-    ['/animateurs', { label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups', touche: 'a' }],
-    ['/creneaux', { label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule', touche: 'c' }],
-    ['/typologies', { label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category', touche: 't' }],
-    ['/import-animateurs', { label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`, icon: 'table_view' }],
-    ['/import-grille-stands', { label: $localize`:@@nav.link.importGrilleStands:Import de la grille des stands`, icon: 'grid_view' }],
-    ['/calendar', { label: $localize`:@@nav.link.calendar:Calendrier des affectations`, icon: 'calendar_month', touche: 'm' }],
-    ['/day-calendar', { label: $localize`:@@nav.link.dayCalendar:Calendrier journalier`, icon: 'view_day', touche: 'j' }],
+    [
+      '/emplacements',
+      { label: $localize`:@@nav.link.emplacements:Emplacements`, icon: 'place', touche: 'e' },
+    ],
+    [
+      '/animateurs',
+      { label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups', touche: 'a' },
+    ],
+    [
+      '/creneaux',
+      { label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule', touche: 'c' },
+    ],
+    [
+      '/typologies',
+      { label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category', touche: 't' },
+    ],
+    [
+      '/import-animateurs',
+      {
+        label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`,
+        icon: 'table_view',
+      },
+    ],
+    [
+      '/import-grille-stands',
+      {
+        label: $localize`:@@nav.link.importGrilleStands:Import de la grille des stands`,
+        icon: 'grid_view',
+      },
+    ],
+    [
+      '/calendar',
+      {
+        label: $localize`:@@nav.link.calendar:Calendrier des affectations`,
+        icon: 'calendar_month',
+        touche: 'm',
+      },
+    ],
+    [
+      '/day-calendar',
+      {
+        label: $localize`:@@nav.link.dayCalendar:Calendrier journalier`,
+        icon: 'view_day',
+        touche: 'j',
+      },
+    ],
     ['/hours', { label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule', touche: 'h' }],
     ['/repos', { label: $localize`:@@nav.link.repos:Jours de repos`, icon: 'weekend' }],
     ['/heatmap', { label: $localize`:@@nav.link.heatmap:Heatmap de charge`, icon: 'grid_view' }],
     ['/timeline', { label: $localize`:@@nav.link.timeline:Timeline animateur`, icon: 'timeline' }],
-    ['/rail-jour', { label: $localize`:@@nav.link.railJour:Rail de la journée`, icon: 'view_timeline' }],
+    [
+      '/rail-jour',
+      { label: $localize`:@@nav.link.railJour:Rail de la journée`, icon: 'view_timeline' },
+    ],
     ['/carte-jour', { label: $localize`:@@nav.link.carteJour:Carte de la journée`, icon: 'map' }],
     ['/graphe', { label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' }],
-    ['/kpi', { label: $localize`:@@nav.link.kpi:Autopsie du planning`, icon: 'query_stats', touche: 'k' }],
-    ['/comparateur', { label: $localize`:@@nav.link.comparateur:Comparateur A/B`, icon: 'compare_arrows' }],
-    ['/parametres', { label: $localize`:@@nav.link.parametres:Paramètres`, icon: 'settings', touche: 'r' }],
+    [
+      '/kpi',
+      { label: $localize`:@@nav.link.kpi:Autopsie du planning`, icon: 'query_stats', touche: 'k' },
+    ],
+    [
+      '/comparateur',
+      { label: $localize`:@@nav.link.comparateur:Comparateur A/B`, icon: 'compare_arrows' },
+    ],
+    [
+      '/parametres',
+      { label: $localize`:@@nav.link.parametres:Paramètres`, icon: 'settings', touche: 'r' },
+    ],
     ['/mcp-client', { label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' }],
     ['/historique', { label: $localize`:@@nav.link.historique:Historique`, icon: 'manage_search' }],
     ['/debug', { label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report', touche: 'd' }],
-    ['/verrouillages', { label: $localize`:@@nav.link.verrouillages:Verrouillages`, icon: 'lock', touche: 'v' }],
-    ['/mentions-legales', { label: $localize`:@@nav.link.mentionsLegales:Mentions légales`, icon: 'gavel' }],
-    ['/politique-confidentialite', { label: $localize`:@@nav.link.confidentialite:Politique de confidentialité`, icon: 'privacy_tip' }],
-    ['/conditions-utilisation', { label: $localize`:@@nav.link.cgu:Conditions d'utilisation`, icon: 'handshake' }]
+    [
+      '/verrouillages',
+      { label: $localize`:@@nav.link.verrouillages:Verrouillages`, icon: 'lock', touche: 'v' },
+    ],
+    [
+      '/mentions-legales',
+      { label: $localize`:@@nav.link.mentionsLegales:Mentions légales`, icon: 'gavel' },
+    ],
+    [
+      '/politique-confidentialite',
+      {
+        label: $localize`:@@nav.link.confidentialite:Politique de confidentialité`,
+        icon: 'privacy_tip',
+      },
+    ],
+    [
+      '/conditions-utilisation',
+      { label: $localize`:@@nav.link.cgu:Conditions d'utilisation`, icon: 'handshake' },
+    ],
   ]);
 }
 
@@ -162,7 +272,7 @@ export function buildDestinationsNavigation(): CommandePalette[] {
       hint: chemin,
       icon: definition?.icon ?? 'arrow_forward',
       route: chemin,
-      raccourci: definition?.touche ? `g ${definition.touche}` : undefined
+      raccourci: definition?.touche ? `g ${definition.touche}` : undefined,
     };
   });
 }
@@ -178,13 +288,19 @@ export interface RaccourciNavigation {
 export function buildRaccourcisNavigation(): RaccourciNavigation[] {
   return [...buildDefinitionsRoutes()]
     .filter(([, definition]) => definition.touche !== undefined)
-    .map(([route, definition]) => ({ touche: definition.touche as string, route, label: definition.label }))
+    .map(([route, definition]) => ({
+      touche: definition.touche as string,
+      route,
+      label: definition.label,
+    }))
     .sort((a, b) => a.touche.localeCompare(b.touche));
 }
 
 /** Route reached by `g` then this letter, or `null` when the letter is unassigned. */
 export function routePourTouche(touche: string): string | null {
-  const trouve = [...buildDefinitionsRoutes()].find(([, definition]) => definition.touche === touche);
+  const trouve = [...buildDefinitionsRoutes()].find(
+    ([, definition]) => definition.touche === touche,
+  );
   return trouve ? trouve[0] : null;
 }
 
@@ -214,7 +330,7 @@ function commandeAnimateur(animateur: Animateur): CommandePalette {
     hint: animateur.id,
     icon: 'person',
     route: '/timeline',
-    queryParams: { animateur: animateur.id }
+    queryParams: { animateur: animateur.id },
   };
 }
 
@@ -227,7 +343,7 @@ function commandeStand(stand: Stand): CommandePalette {
     hint: stand.emplacement?.nom ?? stand.id,
     icon: 'storefront',
     route: '/calendar',
-    queryParams: { stand: stand.id }
+    queryParams: { stand: stand.id },
   };
 }
 
@@ -240,7 +356,7 @@ function commandeCreneau(creneau: Creneau): CommandePalette {
     hint: $localize`:@@palette.creneau.jour:Jour ${creneau.jour}:jour:`,
     icon: 'schedule',
     route: '/calendar',
-    queryParams: { month: creneau.date.slice(0, 7), date: creneau.date }
+    queryParams: { month: creneau.date.slice(0, 7), date: creneau.date },
   };
 }
 
@@ -254,13 +370,15 @@ function commandeCreneau(creneau: Creneau): CommandePalette {
  */
 export function chercherCommandes(query: string, sources: SourcesPalette): CommandePalette[] {
   const destinations = sources.destinations.filter((destination) =>
-    correspondAuFiltre(query, [destination.label, destination.hint, destination.raccourci])
+    correspondAuFiltre(query, [destination.label, destination.hint, destination.raccourci]),
   );
   if (!query.trim()) {
     return [...destinations];
   }
   const animateurs = sources.animateurs
-    .filter((animateur) => correspondAuFiltre(query, [animateur.prenom, animateur.nom, animateur.id]))
+    .filter((animateur) =>
+      correspondAuFiltre(query, [animateur.prenom, animateur.nom, animateur.id]),
+    )
     .slice(0, MAX_PER_FAMILY)
     .map(commandeAnimateur);
   const stands = sources.stands
@@ -269,7 +387,12 @@ export function chercherCommandes(query: string, sources: SourcesPalette): Comma
     .map(commandeStand);
   const creneaux = sources.creneaux
     .filter((creneau) =>
-      correspondAuFiltre(query, [creneau.date, creneau.heureDebut, creneau.heureFin, `jour ${creneau.jour}`])
+      correspondAuFiltre(query, [
+        creneau.date,
+        creneau.heureDebut,
+        creneau.heureFin,
+        `jour ${creneau.jour}`,
+      ]),
     )
     .slice(0, MAX_PER_FAMILY)
     .map(commandeCreneau);

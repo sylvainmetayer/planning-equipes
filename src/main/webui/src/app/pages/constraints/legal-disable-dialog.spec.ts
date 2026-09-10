@@ -24,7 +24,7 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     score: null,
     matchCount: null,
     violations: [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -35,7 +35,7 @@ describe('LegalDisableConfirmService', () => {
   beforeEach(() => {
     dialog.open.mockReset();
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: MatDialog, useValue: dialog }]
+      providers: [provideZonelessChangeDetection(), { provide: MatDialog, useValue: dialog }],
     });
     service = TestBed.inject(LegalDisableConfirmService);
   });
@@ -60,7 +60,7 @@ describe('LegalDisableConfirmService', () => {
     expect(dialog.open.mock.calls[0][1].data).toEqual({
       name: 'travailDeNuitInterditPourMineur',
       description: 'Pas de travail de nuit pour un mineur (art. L3163-1).',
-      categorie: 'Légal (mineurs)'
+      categorie: 'Légal (mineurs)',
     });
   });
 

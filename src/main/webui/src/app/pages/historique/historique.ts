@@ -32,7 +32,7 @@ export function filter(
   acteur: FiltreActeur,
   resultat: FiltreResultat,
   entite: string,
-  recherche: string
+  recherche: string,
 ): EntreeHistorique[] {
   return entrees.filter((entree) => {
     if (acteur !== 'TOUS' && entree.acteur !== acteur) {
@@ -49,14 +49,18 @@ export function filter(
       entree.acteurNom ?? entree.acteurId ?? '',
       entree.entiteNom ?? '',
       entree.entiteId ?? '',
-      entree.champs.join(' ')
+      entree.champs.join(' '),
     ]);
   });
 }
 
 /** The entity families present in what was loaded, so the filter offers only real ones. */
 export function entitesPresentes(entrees: EntreeHistorique[]): string[] {
-  return [...new Set(entrees.map((entree) => entree.entite).filter((entite): entite is string => !!entite))].sort();
+  return [
+    ...new Set(
+      entrees.map((entree) => entree.entite).filter((entite): entite is string => !!entite),
+    ),
+  ].sort();
 }
 
 /**
@@ -72,7 +76,9 @@ export function qui(entree: EntreeHistorique): string {
     return $localize`:@@historique.acteur.assistant:Assistant (MCP)`;
   }
   if (entree.acteur === 'ANIMATEUR') {
-    return entree.acteurNom ?? entree.acteurId ?? $localize`:@@historique.acteur.animateur:Animateur`;
+    return (
+      entree.acteurNom ?? entree.acteurId ?? $localize`:@@historique.acteur.animateur:Animateur`
+    );
   }
   if (entree.acteur === 'ANONYME') {
     return $localize`:@@historique.acteur.anonyme:Visiteur non identifié`;
@@ -105,7 +111,9 @@ export function journeeLocale(iso: string): string {
 }
 
 /** Groups the lines by calendar day, newest first — an event week piles up hundreds. */
-export function parJournee(entrees: EntreeHistorique[]): { jour: string; entrees: EntreeHistorique[] }[] {
+export function parJournee(
+  entrees: EntreeHistorique[],
+): { jour: string; entrees: EntreeHistorique[] }[] {
   const journees = new Map<string, EntreeHistorique[]>();
   for (const entree of entrees) {
     const jour = journeeLocale(entree.survenuLe);

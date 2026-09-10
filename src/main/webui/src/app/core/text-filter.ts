@@ -22,7 +22,9 @@ export function normaliserPourFiltre(value: string): string {
  * Enfants » whichever order the words appear in the row.
  */
 export function termesDuFiltre(query: string): string[] {
-  return normaliserPourFiltre(query).split(/\s+/).filter((terme) => terme.length > 0);
+  return normaliserPourFiltre(query)
+    .split(/\s+/)
+    .filter((terme) => terme.length > 0);
 }
 
 /**
@@ -34,15 +36,16 @@ export function termesDuFiltre(query: string): string[] {
  * rather than field by field: a row is looked up by whatever the user
  * remembers of it (an id, a name, a location), not by one designated column.</p>
  */
-export function correspondAuFiltre(query: string, champs: readonly (string | number | null | undefined)[]): boolean {
+export function correspondAuFiltre(
+  query: string,
+  champs: readonly (string | number | null | undefined)[],
+): boolean {
   const termes = termesDuFiltre(query);
   if (termes.length === 0) {
     return true;
   }
   const haystack = normaliserPourFiltre(
-    champs
-      .filter((champ) => champ !== null && champ !== undefined && champ !== '')
-      .join(' ')
+    champs.filter((champ) => champ !== null && champ !== undefined && champ !== '').join(' '),
   );
   return termes.every((terme) => haystack.includes(terme));
 }

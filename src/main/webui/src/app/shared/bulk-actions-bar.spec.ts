@@ -48,7 +48,9 @@ describe('BulkActionsBar', () => {
     rendre({ count: 12 });
 
     expect(racine().querySelector('.bulk-bar')!.getAttribute('role')).toBe('status');
-    expect(racine().querySelector('.bulk-bar-count')!.textContent!.trim()).toBe('12 élément(s) sélectionné(s)');
+    expect(racine().querySelector('.bulk-bar-count')!.textContent!.trim()).toBe(
+      '12 élément(s) sélectionné(s)',
+    );
   });
 
   it('follows the count when the selection changes', () => {
@@ -56,7 +58,9 @@ describe('BulkActionsBar', () => {
     fixture.componentRef.setInput('count', 4);
     fixture.detectChanges();
 
-    expect(racine().querySelector('.bulk-bar-count')!.textContent!.trim()).toBe('4 élément(s) sélectionné(s)');
+    expect(racine().querySelector('.bulk-bar-count')!.textContent!.trim()).toBe(
+      '4 élément(s) sélectionné(s)',
+    );
   });
 
   it('warns that the selection is scoped to the filtered rows, and only then', () => {
@@ -66,14 +70,16 @@ describe('BulkActionsBar', () => {
     fixture.componentRef.setInput('filtre', true);
     fixture.detectChanges();
     expect(racine().querySelector('.bulk-bar-scope')!.textContent!.trim()).toBe(
-      '(lignes affichées par le filtre uniquement)'
+      '(lignes affichées par le filtre uniquement)',
     );
   });
 
   it('hides the bulk edit on the pages whose entities share no editable field', () => {
     rendre({ editable: false });
 
-    expect(boutons().some((each) => each.textContent!.includes('Modifier la sélection'))).toBe(false);
+    expect(boutons().some((each) => each.textContent!.includes('Modifier la sélection'))).toBe(
+      false,
+    );
     // Deleting stays available: only the edit is entity-dependent.
     expect(bouton('Supprimer la sélection')).toBeDefined();
   });

@@ -16,9 +16,16 @@ export interface TypologieFormData {
 /** Add/edit dialog for a typologie: id plus display label. */
 @Component({
   selector: 'app-typologie-form-dialog',
-  imports: [FormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
+  imports: [
+    FormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+  ],
   templateUrl: './typologie-form-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TypologieFormDialog {
   protected readonly jobs = inject(SolverJobService);
@@ -40,7 +47,7 @@ export class TypologieFormDialog {
   protected readonly submitLabel = computed(() =>
     this.editingId()
       ? $localize`:@@typologies.submit.edit:Modifier la typologie`
-      : $localize`:@@typologies.submit.create:Créer la typologie`
+      : $localize`:@@typologies.submit.create:Créer la typologie`,
   );
 
   protected patch(patch: Partial<TypologieItem>): void {
@@ -55,9 +62,16 @@ export class TypologieFormDialog {
       id: draft.id.trim(),
       label: draft.label.trim(),
       ninja: draft.ninja ?? false,
-      modifieLe: draft.modifieLe ?? null
+      modifieLe: draft.modifieLe ?? null,
     };
-    if (await this.crud.save('typologies', typologie, this.editingId(), $localize`:@@typologies.entityLabel:Typologie`)) {
+    if (
+      await this.crud.save(
+        'typologies',
+        typologie,
+        this.editingId(),
+        $localize`:@@typologies.entityLabel:Typologie`,
+      )
+    ) {
       this.dialogRef.close(true);
     }
   }
@@ -65,6 +79,11 @@ export class TypologieFormDialog {
 
 function toDraft(typologie: TypologieItem | null): TypologieItem {
   return typologie
-    ? { id: typologie.id, label: typologie.label ?? '', ninja: typologie.ninja ?? false, modifieLe: typologie.modifieLe ?? null }
+    ? {
+        id: typologie.id,
+        label: typologie.label ?? '',
+        ninja: typologie.ninja ?? false,
+        modifieLe: typologie.modifieLe ?? null,
+      }
     : { id: '', label: '', ninja: false, modifieLe: null };
 }

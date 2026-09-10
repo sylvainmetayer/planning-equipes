@@ -52,7 +52,11 @@
    tinted rather than left to read as an empty row of the table. */
 .rail-swatch-libre,
 .rail-cell-libre .rail-track {
-  background-color: color-mix(in srgb, var(--mat-sys-primary-container) 40%, var(--mat-sys-surface-container-low));
+  background-color: color-mix(
+    in srgb,
+    var(--mat-sys-primary-container) 40%,
+    var(--mat-sys-surface-container-low)
+  );
 }
 
 /* Same hatching as the track of an unavailable animateur — the two must read as
@@ -211,7 +215,11 @@
   border-radius: var(--mat-sys-corner-extra-small);
   background-color: var(--mat-sys-surface-container-low);
   /* Hour gridlines; the step comes from the component (`background-size`). */
-  background-image: linear-gradient(to right, var(--mat-sys-outline-variant) 0 1px, transparent 1px);
+  background-image: linear-gradient(
+    to right,
+    var(--mat-sys-outline-variant) 0 1px,
+    transparent 1px
+  );
   background-repeat: repeat;
 }
 

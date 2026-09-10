@@ -11,7 +11,7 @@ describe('extraireDiagnostic', () => {
     postesNonPourvus: 0,
     contraintes: [],
     faisabilite: null,
-    hardScore: 0
+    hardScore: 0,
   } as unknown as PlanningDiagnostic;
 
   it('rend le diagnostic tel quel pour une résolution complète', () => {
@@ -26,9 +26,9 @@ describe('extraireDiagnostic', () => {
         postesFiges: 9,
         postesLiberes: 1,
         postesLiberesManuellement: 0,
-        postesNouveaux: 0
+        postesNouveaux: 0,
       },
-      changements: []
+      changements: [],
     };
 
     expect(extraireDiagnostic(wrapper)).toBe(diagnostic);
@@ -54,7 +54,7 @@ describe('extrairePlanPrecedent', () => {
     postesNonPourvus: 0,
     contraintes: [],
     faisabilite: null,
-    hardScore: 0
+    hardScore: 0,
   } as unknown as PlanningDiagnostic;
 
   it('rend le plan remplacé porté par le résultat', () => {

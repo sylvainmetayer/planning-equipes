@@ -6,7 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   defaultPanelStorage,
   readPanelCollapsed,
-  writePanelCollapsed
+  writePanelCollapsed,
 } from '../../core/panel-collapse';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ScoreChart } from './score-chart';
@@ -27,7 +27,7 @@ export const SCORE_CURVE_STORAGE_KEY = 'planning-equipes.solver.scoreCurveCollap
   selector: 'app-score-curve-card',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatTooltipModule, ScoreChart],
   templateUrl: './score-curve-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScoreCurveCard {
   private readonly jobs = inject(SolverJobService);
@@ -66,7 +66,9 @@ export class ScoreCurveCard {
    * first point rather than a hole starting where the panel was closed — which
    * would defeat the one reading the curve exists to give.</p>
    */
-  protected readonly folded = signal(readPanelCollapsed(defaultPanelStorage(), SCORE_CURVE_STORAGE_KEY));
+  protected readonly folded = signal(
+    readPanelCollapsed(defaultPanelStorage(), SCORE_CURVE_STORAGE_KEY),
+  );
 
   protected readonly points = computed(() => this.trace()?.points ?? []);
   protected readonly finished = computed(() => this.trace()?.termine ?? false);
@@ -79,7 +81,7 @@ export class ScoreCurveCard {
    * rather than a few seconds later.
    */
   protected readonly visible = computed(
-    () => this.trace() !== null || (this.jobs.activeJob() !== null && this.jobs.editingLocked())
+    () => this.trace() !== null || (this.jobs.activeJob() !== null && this.jobs.editingLocked()),
   );
 
   protected toggle(): void {
@@ -91,6 +93,6 @@ export class ScoreCurveCard {
   protected readonly toggleLabel = computed(() =>
     this.folded()
       ? $localize`:@@solver.scoreCurve.deplier:Afficher la courbe`
-      : $localize`:@@solver.scoreCurve.replier:Réduire la courbe`
+      : $localize`:@@solver.scoreCurve.replier:Réduire la courbe`,
   );
 }

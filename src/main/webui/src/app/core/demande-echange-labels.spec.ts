@@ -9,7 +9,7 @@ describe('demande-echange-labels', () => {
     'ACCEPTEE',
     'REFUSEE',
     'REFUSEE_CIBLE',
-    'ANNULEE'
+    'ANNULEE',
   ];
 
   it('couvre chaque statut du cycle de vie avec un libellé français', () => {

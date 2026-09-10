@@ -1,5 +1,18 @@
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDropList,
+  CdkDropListGroup,
+} from '@angular/cdk/drag-drop';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,7 +31,10 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { cibleDepot, resumeDeplacement } from '../../shared/deplacement';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
-import { aUneAppreciationPour, ouvrirExplication } from '../../shared/affectation-explanation-dialog';
+import {
+  aUneAppreciationPour,
+  ouvrirExplication,
+} from '../../shared/affectation-explanation-dialog';
 import { errorPrefix } from '../../core/error-message';
 
 interface AssignedEntry {
@@ -95,10 +111,10 @@ interface DayCard {
     MatCheckboxModule,
     MatIconModule,
     MatProgressBarModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   templateUrl: './calendar-day-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarDayPage {
   /** Bounds the repair-assistant callback to this page's life: it is lazy and rebuilt on every visit. */
@@ -127,7 +143,9 @@ export class CalendarDayPage {
    */
   protected readonly seulementProblemes = signal(false);
 
-  private readonly toutesLesJournees = computed<DayCard[]>(() => buildDays(this.planning()?.postes ?? []));
+  private readonly toutesLesJournees = computed<DayCard[]>(() =>
+    buildDays(this.planning()?.postes ?? []),
+  );
 
   protected readonly days = computed<DayCard[]>(() => {
     if (!this.seulementProblemes()) {
@@ -143,10 +161,10 @@ export class CalendarDayPage {
               (stand) =>
                 this.isUnderstaffed(stand) ||
                 this.hasAppreciationMismatch(stand) ||
-                stand.entries.length === 0
-            )
+                stand.entries.length === 0,
+            ),
           }))
-          .filter((slot) => slot.stands.length > 0)
+          .filter((slot) => slot.stands.length > 0),
       }))
       .filter((day) => day.slots.length > 0);
   });
@@ -165,7 +183,10 @@ export class CalendarDayPage {
 
   /** True when this stand-line is frozen, either by its stand or by its créneau. */
   protected estLigneVerrouillee(slot: SlotCard, stand: StandLine): boolean {
-    return this.verrous.estStandVerrouille(stand.standId) || this.verrous.estCreneauVerrouille(slot.creneauId);
+    return (
+      this.verrous.estStandVerrouille(stand.standId) ||
+      this.verrous.estCreneauVerrouille(slot.creneauId)
+    );
   }
 
   protected readonly verrouilleTooltip = $localize`:@@verrouillages.indicator:Verrouillé : ces affectations ne bougeront plus à la prochaine résolution`;
@@ -179,8 +200,12 @@ export class CalendarDayPage {
    * day that has somewhere to put it — a free seat, or a person to swap with.
    * Bound as an arrow so the CDK can call it without a receiver.
    */
-  protected readonly peutRecevoir = (drag: CdkDrag<PosteAffectation>, drop: CdkDropList<StandLine>): boolean =>
-    drag.dropContainer !== drop && (drop.data.postesLibres.length > 0 || drop.data.entries.length > 0);
+  protected readonly peutRecevoir = (
+    drag: CdkDrag<PosteAffectation>,
+    drop: CdkDropList<StandLine>,
+  ): boolean =>
+    drag.dropContainer !== drop &&
+    (drop.data.postesLibres.length > 0 || drop.data.entries.length > 0);
 
   /**
    * A name dropped on another line: the seat under the pointer decides
@@ -189,7 +214,9 @@ export class CalendarDayPage {
    * result on the persisted plan and refuses it when a hard rule would break,
    * naming the rule — which is what the snack bar then shows.
    */
-  protected async onDrop(event: CdkDragDrop<StandLine, StandLine, PosteAffectation>): Promise<void> {
+  protected async onDrop(
+    event: CdkDragDrop<StandLine, StandLine, PosteAffectation>,
+  ): Promise<void> {
     if (event.previousContainer === event.container) {
       return;
     }
@@ -199,22 +226,33 @@ export class CalendarDayPage {
     const target = cibleDepot(
       sousLePointeur,
       ligne.postesLibres,
-      ligne.entries.map((entry) => entry.poste)
+      ligne.entries.map((entry) => entry.poste),
     );
     if (!target) {
       this.notifications.notify({
         title: $localize`:@@calendarDay.depotSansSiege:Aucun siège libre sur cette ligne : déposez sur une personne pour échanger.`,
-        variant: 'warning'
+        variant: 'warning',
       });
       return;
     }
     await this.deplacer(source.id, target, source.animateur?.id ?? null);
   }
 
-  private async deplacer(posteSourceId: string, posteCibleId: string, occupant: string | null): Promise<void> {
+  private async deplacer(
+    posteSourceId: string,
+    posteCibleId: string,
+    occupant: string | null,
+  ): Promise<void> {
     try {
-      const simulation = await this.explications.deplacer(posteSourceId, { posteId: posteCibleId }, occupant);
-      this.notifications.notify({ ...resumeDeplacement(simulation, (id) => this.nomDe(id)), variant: 'success' });
+      const simulation = await this.explications.deplacer(
+        posteSourceId,
+        { posteId: posteCibleId },
+        occupant,
+      );
+      this.notifications.notify({
+        ...resumeDeplacement(simulation, (id) => this.nomDe(id)),
+        variant: 'success',
+      });
       // The persisted plan moved under the cached one: drop the cache, then
       // re-read — the same care openExplanation takes after a repair.
       this.planningState.set(null);
@@ -223,7 +261,7 @@ export class CalendarDayPage {
       this.notifications.notify({
         title: $localize`:@@calendarDay.depotRefuse:Déplacement refusé`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
       // The refusal may be « this seat moved under you »: re-read, so the
       // second attempt is made on what is actually there.
@@ -234,7 +272,9 @@ export class CalendarDayPage {
 
   private nomDe(animateurId: string): string {
     const animateur = this.planning()?.animateurs?.find((candidat) => candidat.id === animateurId);
-    return animateur ? `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateurId : animateurId;
+    return animateur
+      ? `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateurId
+      : animateurId;
   }
 
   protected async refresh(): Promise<void> {
@@ -320,7 +360,10 @@ function isStandLineUnderstaffed(stand: StandLine): boolean {
 /** True for a stand-line with at least one filled seat whose animateur has no appreciation on this stand's typologies. */
 function isStandLineSansAppreciation(stand: StandLine): boolean {
   return stand.entries.some(
-    (entry) => entry.poste.animateur && entry.poste.stand && !aUneAppreciationPour(entry.poste.animateur, entry.poste.stand)
+    (entry) =>
+      entry.poste.animateur &&
+      entry.poste.stand &&
+      !aUneAppreciationPour(entry.poste.animateur, entry.poste.stand),
   );
 }
 
@@ -330,7 +373,10 @@ function hasAppreciationMismatchIn(slots: SlotCard[]): boolean {
 }
 
 export function buildDays(postes: PosteAffectation[]): DayCard[] {
-  const days = new Map<number, { jour: number; date: string | null; creneaux: Map<number, Creneau> }>();
+  const days = new Map<
+    number,
+    { jour: number; date: string | null; creneaux: Map<number, Creneau> }
+  >();
   const assignments = new Map<
     number,
     Map<
@@ -404,11 +450,13 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
               entries: entry.entries,
               postesLibres: entry.postesLibres,
               effectifRequis: entry.sieges,
-              couverturePause: creneau.couverturePause === true
+              couverturePause: creneau.couverturePause === true,
             }))
             .sort(
-              (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)
-            )
+              (left, right) =>
+                left.standNom.localeCompare(right.standNom) ||
+                left.heureDebut.localeCompare(right.heureDebut),
+            ),
         }));
       return {
         jour: day.jour,
@@ -418,7 +466,7 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
           : $localize`:@@calendarDay.dayTitle:Jour ${day.jour}:jour:`,
         slots,
         understaffed: slots.some((slot) => slot.stands.some(isStandLineUnderstaffed)),
-        appreciationMismatch: hasAppreciationMismatchIn(slots)
+        appreciationMismatch: hasAppreciationMismatchIn(slots),
       };
     });
 }

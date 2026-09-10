@@ -14,8 +14,20 @@ import { uniqueById } from '../../core/date-utils';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { Animateur, PlanningEvenement, PosteAffectation, TypologieItem, RapportPauses } from '../../core/models';
-import { standTypologies, typologieColorClass, typologieLabel, typologieLabels, typologiePrincipale } from '../../core/typologie-colors';
+import {
+  Animateur,
+  PlanningEvenement,
+  PosteAffectation,
+  TypologieItem,
+  RapportPauses,
+} from '../../core/models';
+import {
+  standTypologies,
+  typologieColorClass,
+  typologieLabel,
+  typologieLabels,
+  typologiePrincipale,
+} from '../../core/typologie-colors';
 import { SelectionRecherche } from '../../shared/selection-recherche';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
@@ -108,10 +120,10 @@ export interface TimelineDay {
     MatIconModule,
     MatProgressBarModule,
     MatTooltipModule,
-    SelectionRecherche
+    SelectionRecherche,
   ],
   templateUrl: './animateur-timeline-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateurTimelinePage {
   protected readonly loading = signal(false);
@@ -131,7 +143,9 @@ export class AnimateurTimelinePage {
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
 
-  protected readonly animateurOptions = computed<AnimateurOption[]>(() => buildAnimateurOptions(this.planning()?.postes ?? []));
+  protected readonly animateurOptions = computed<AnimateurOption[]>(() =>
+    buildAnimateurOptions(this.planning()?.postes ?? []),
+  );
 
   protected readonly days = computed<TimelineDay[]>(() => {
     const animateurId = this.selectedAnimateurId();
@@ -153,7 +167,10 @@ export class AnimateurTimelinePage {
     for (const day of this.days()) {
       const pauses = pausesDe(this.indexPauses(), day.date, animateurId);
       if (pauses.length > 0) {
-        segments.set(day.jour, segmentsPause(pauses, day.amplitudeDebutMinutes, day.amplitudeMinutes));
+        segments.set(
+          day.jour,
+          segmentsPause(pauses, day.amplitudeDebutMinutes, day.amplitudeMinutes),
+        );
       }
     }
     return segments;
@@ -164,7 +181,7 @@ export class AnimateurTimelinePage {
   }
 
   protected readonly standsSummary = computed<TimelineStandsSummary>(() =>
-    buildStandsSummary(this.days(), typologieLabels(this.typologies()))
+    buildStandsSummary(this.days(), typologieLabels(this.typologies())),
   );
 
   /** Stand, hours and — the point of the addition — who else is on that line. */
@@ -203,13 +220,16 @@ export class AnimateurTimelinePage {
         // rather than failing the whole timeline.
         this.analysesApi.typologies().catch(() => []),
         // Same spirit: without the breaks the tracks still draw.
-        this.analysesApi.breaks().catch(() => null)
+        this.analysesApi.breaks().catch(() => null),
       ]);
       this.planning.set(planning);
       this.typologies.set(typologies);
       this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
       const options = this.animateurOptions();
-      if (!this.selectedAnimateurId() || !options.some((option) => option.id === this.selectedAnimateurId())) {
+      if (
+        !this.selectedAnimateurId() ||
+        !options.some((option) => option.id === this.selectedAnimateurId())
+      ) {
         this.selectedAnimateurId.set(options[0]?.id ?? null);
       }
     } catch (error) {
@@ -258,15 +278,21 @@ export class AnimateurTimelinePage {
       const planning = await this.planningState.require();
       const filename = exportFilename(this.animateurOptions(), animateurId, format);
       this.notifications.notify({
-        title: await this.planningApi.exportForAnimateur(format, animateurId, filename, planning, contentType),
-        variant: 'success'
+        title: await this.planningApi.exportForAnimateur(
+          format,
+          animateurId,
+          filename,
+          planning,
+          contentType,
+        ),
+        variant: 'success',
       });
     } catch (error) {
       const message = errorMessage(error);
       this.notifications.notify({
         title: $localize`:@@timeline.exportFailed:Export impossible`,
         message,
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       this.exportBusy.set(false);
@@ -286,39 +312,46 @@ export class AnimateurTimelinePage {
     if (!animateurId || this.envoiBusy()) {
       return;
     }
-    const label = this.animateurOptions().find((option) => option.id === animateurId)?.label ?? animateurId;
+    const label =
+      this.animateurOptions().find((option) => option.id === animateurId)?.label ?? animateurId;
     this.envoiBusy.set(true);
     try {
       await this.planningApi.sendToAnimateur(animateurId);
       this.notifications.notify({
         title: $localize`:@@timeline.envoi.succes:Planning envoyé à ${label}:animateur:`,
-        variant: 'success'
+        variant: 'success',
       });
     } catch (error) {
       const message = errorMessage(error);
       this.notifications.notify({
         title: $localize`:@@timeline.envoi.echec:Envoi impossible`,
         message,
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       this.envoiBusy.set(false);
     }
   }
-
 }
 
 export function buildAnimateurOptions(postes: PosteAffectation[]): AnimateurOption[] {
   const animateurs = uniqueById(
-    postes.map((poste) => poste.animateur).filter((animateur): animateur is Animateur => !!animateur)
+    postes
+      .map((poste) => poste.animateur)
+      .filter((animateur): animateur is Animateur => !!animateur),
   );
-  const labels = animateurs.map((animateur) => `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id);
+  const labels = animateurs.map(
+    (animateur) => `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id,
+  );
   const counts = new Map<string, number>();
   labels.forEach((label) => counts.set(label, (counts.get(label) ?? 0) + 1));
   return animateurs
     .map((animateur, index) => {
       const label = labels[index];
-      return { id: animateur.id, label: (counts.get(label) ?? 0) > 1 ? `${label} (${animateur.id})` : label };
+      return {
+        id: animateur.id,
+        label: (counts.get(label) ?? 0) > 1 ? `${label} (${animateur.id})` : label,
+      };
     })
     .sort((left, right) => left.label.localeCompare(right.label));
 }
@@ -327,7 +360,11 @@ export function buildAnimateurOptions(postes: PosteAffectation[]): AnimateurOpti
  * `planning-Jeanne-Dupont.pdf` rather than the raw id, so a downloaded file
  * stays readable — every character a file system may choke on is folded to `-`.
  */
-export function exportFilename(options: AnimateurOption[], animateurId: string, format: 'pdf' | 'ics'): string {
+export function exportFilename(
+  options: AnimateurOption[],
+  animateurId: string,
+  format: 'pdf' | 'ics',
+): string {
   const label = options.find((option) => option.id === animateurId)?.label ?? animateurId;
   const safeLabel = label.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '') || 'animateur';
   return `planning-${safeLabel}.${format}`;
@@ -340,7 +377,10 @@ export function exportFilename(options: AnimateurOption[], animateurId: string, 
  * the typologie count: two stands of the same typologie are one game family to
  * learn, not two, so it is the second number that says how varied the job is.
  */
-export function buildStandsSummary(days: TimelineDay[], labels: Map<string, string> = new Map()): TimelineStandsSummary {
+export function buildStandsSummary(
+  days: TimelineDay[],
+  labels: Map<string, string> = new Map(),
+): TimelineStandsSummary {
   const typologiesByStand = new Map<string, Set<string>>();
   days.forEach((day) =>
     day.blocks.forEach((block) => {
@@ -353,7 +393,7 @@ export function buildStandsSummary(days: TimelineDay[], labels: Map<string, stri
         typologiesByStand.set(block.standNom, typologies);
       }
       block.typologies.forEach((typologie) => typologies!.add(typologie));
-    })
+    }),
   );
 
   const allTypologies = new Set<string>();
@@ -362,7 +402,9 @@ export function buildStandsSummary(days: TimelineDay[], labels: Map<string, stri
     .map(([nom, typologies]) => {
       typologies.forEach((typologie) => allTypologies.add(typologie));
       const ids = Array.from(typologies).sort((left, right) => left.localeCompare(right));
-      const noms = ids.map((id) => typologieLabel(labels, id)).sort((left, right) => left.localeCompare(right));
+      const noms = ids
+        .map((id) => typologieLabel(labels, id))
+        .sort((left, right) => left.localeCompare(right));
       return {
         nom,
         typologies: noms,
@@ -370,7 +412,7 @@ export function buildStandsSummary(days: TimelineDay[], labels: Map<string, stri
         tooltip:
           noms.length === 0
             ? $localize`:@@timeline.stands.typologieNone:${nom}:stand: — aucune typologie renseignée`
-            : $localize`:@@timeline.stands.typologieTooltip:${nom}:stand: — typologie(s) : ${noms.join(', ')}:typologies:`
+            : $localize`:@@timeline.stands.typologieTooltip:${nom}:stand: — typologie(s) : ${noms.join(', ')}:typologies:`,
       };
     });
 
@@ -382,7 +424,10 @@ export function buildStandsSummary(days: TimelineDay[], labels: Map<string, stri
 }
 
 /** One entry per event day the animateur works, sorted chronologically. */
-export function buildAnimateurTimeline(postes: PosteAffectation[], animateurId: string): TimelineDay[] {
+export function buildAnimateurTimeline(
+  postes: PosteAffectation[],
+  animateurId: string,
+): TimelineDay[] {
   // Built over every poste, not only this animateur's: who else holds a seat
   // on the same line is exactly what the teammate list needs.
   const equipesParLigne = equipesParLigneDeStand(postes);
@@ -402,7 +447,9 @@ export function buildAnimateurTimeline(postes: PosteAffectation[], animateurId: 
 
   return Array.from(byDay.entries())
     .sort((left, right) => left[0] - right[0])
-    .map(([jour, day]) => buildTimelineDay(jour, day.date, day.postes, animateurId, equipesParLigne));
+    .map(([jour, day]) =>
+      buildTimelineDay(jour, day.date, day.postes, animateurId, equipesParLigne),
+    );
 }
 
 /** Identity of a staffed line: one stand, one créneau, one window — the same key the calendars group on. */
@@ -414,7 +461,9 @@ function ligneKey(poste: PosteAffectation): string {
 }
 
 /** Every assigned animateur (id + display name) per staffed line. */
-function equipesParLigneDeStand(postes: PosteAffectation[]): Map<string, { id: string; nom: string }[]> {
+function equipesParLigneDeStand(
+  postes: PosteAffectation[],
+): Map<string, { id: string; nom: string }[]> {
   const equipes = new Map<string, { id: string; nom: string }[]>();
   postes.forEach((poste) => {
     if (!poste.creneau || !poste.animateur) {
@@ -424,7 +473,8 @@ function equipesParLigneDeStand(postes: PosteAffectation[]): Map<string, { id: s
     const equipe = equipes.get(key) ?? [];
     equipe.push({
       id: poste.animateur.id,
-      nom: `${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim() || poste.animateur.id
+      nom:
+        `${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim() || poste.animateur.id,
     });
     equipes.set(key, equipe);
   });
@@ -436,7 +486,7 @@ function buildTimelineDay(
   date: string | null,
   postes: PosteAffectation[],
   animateurId: string,
-  equipesParLigne: Map<string, { id: string; nom: string }[]>
+  equipesParLigne: Map<string, { id: string; nom: string }[]>,
 ): TimelineDay {
   const spans = postes
     .map((poste) => {
@@ -454,7 +504,7 @@ function buildTimelineDay(
         heureDebut,
         heureFin,
         startMinutes: minutesOfDay(heureDebut),
-        endMinutes: endMinutesOfDay(heureFin)
+        endMinutes: endMinutesOfDay(heureFin),
       };
     })
     .sort((left, right) => left.startMinutes - right.startMinutes);
@@ -471,7 +521,7 @@ function buildTimelineDay(
     heureDebut: span.heureDebut,
     heureFin: span.heureFin,
     offsetPercent: ((span.startMinutes - amplitudeDebutMinutes) / range) * 100,
-    widthPercent: ((span.endMinutes - span.startMinutes) / range) * 100
+    widthPercent: ((span.endMinutes - span.startMinutes) / range) * 100,
   }));
 
   const gaps: TimelineGap[] = [];
@@ -483,12 +533,14 @@ function buildTimelineDay(
       gaps.push({
         dureeMinutes,
         offsetPercent: ((previous.endMinutes - amplitudeDebutMinutes) / range) * 100,
-        widthPercent: (dureeMinutes / range) * 100
+        widthPercent: (dureeMinutes / range) * 100,
       });
     }
   }
 
-  const amplitudeDebut = spans.find((span) => span.startMinutes === amplitudeDebutMinutes)!.heureDebut;
+  const amplitudeDebut = spans.find(
+    (span) => span.startMinutes === amplitudeDebutMinutes,
+  )!.heureDebut;
   const amplitudeFin = spans.find((span) => span.endMinutes === amplitudeFinMinutes)!.heureFin;
 
   return {
@@ -503,6 +555,6 @@ function buildTimelineDay(
     amplitudeFin,
     amplitudeLabel: $localize`:@@timeline.amplitude:${amplitudeDebut}:debut: – ${amplitudeFin}:fin: (${formatDuration(amplitudeFinMinutes - amplitudeDebutMinutes)}:duree:)`,
     blocks,
-    gaps
+    gaps,
   };
 }

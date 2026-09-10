@@ -21,7 +21,10 @@ describe('construireSeries', () => {
     // Le cas qui interdit un axe commun : à cette échelle-là, un hard à -36
     // serait un trait plat confondu avec zéro à côté d’un soft à -400 000,
     // alors que c’est lui qui décide de la faisabilité.
-    const series = construireSeries([point(0, -36, -500, -400000), point(10000, 0, -500, -300000)], 10000);
+    const series = construireSeries(
+      [point(0, -36, -500, -400000), point(10000, 0, -500, -300000)],
+      10000,
+    );
 
     // Le hard part du bas de SA boîte et finit collé au plafond : il a atteint
     // zéro, ce que l’écran doit rendre lisible d’un coup d’œil.
@@ -51,7 +54,11 @@ describe('construireSeries', () => {
    * encore — soit l’inverse de ce que l’utilisateur vient y lire.
    */
   describe('quand la résolution plafonne', () => {
-    const progression = [point(0, -40, -10, -1000), point(60000, 0, -6, -800), point(120000, 0, -6, -700)];
+    const progression = [
+      point(0, -40, -10, -1000),
+      point(60000, 0, -6, -800),
+      point(120000, 0, -6, -700),
+    ];
 
     it('tient la dernière valeur à plat jusqu’au bord droit', () => {
       // Dernière amélioration à t=120 s, mais le solveur tourne depuis 600 s.
@@ -95,7 +102,9 @@ describe('construireSeries', () => {
     // d’un solve resterait invisible.
     const series = construireSeries([point(2500, -3, -2, -1)], 2500);
 
-    expect(serie(series, 'hard').polyline).toBe(`0,${HAUTEUR_COURBE} ${LARGEUR_COURBE},${HAUTEUR_COURBE}`);
+    expect(serie(series, 'hard').polyline).toBe(
+      `0,${HAUTEUR_COURBE} ${LARGEUR_COURBE},${HAUTEUR_COURBE}`,
+    );
     expect(serie(series, 'hard').dernier).toBe(-3);
   });
 

@@ -26,10 +26,10 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
-    MatSelectModule
+    MatSelectModule,
   ],
   templateUrl: './replanification-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReplanificationDialog {
   protected readonly dialogRef =
@@ -43,28 +43,29 @@ export class ReplanificationDialog {
 
   /** The event days, deduplicated from the créneaux and in chronological order. */
   protected readonly joursDisponibles = computed(() =>
-    [...new Set(this.store.creneaux().map((creneau) => creneau.date))].sort()
+    [...new Set(this.store.creneaux().map((creneau) => creneau.date))].sort(),
   );
 
   protected readonly animateursTries = computed(() =>
     [...this.store.animateurs()].sort((a, b) =>
-      `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, intlLocale())
-    )
+      `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, intlLocale()),
+    ),
   );
 
   protected readonly standsTries = computed(() =>
-    [...this.store.stands()].sort((a, b) => a.nom.localeCompare(b.nom, intlLocale()))
+    [...this.store.stands()].sort((a, b) => a.nom.localeCompare(b.nom, intlLocale())),
   );
 
   protected readonly perimetreVide = computed(
-    () => this.animateurIds().length === 0 && this.jours().length === 0 && this.standIds().length === 0
+    () =>
+      this.animateurIds().length === 0 && this.jours().length === 0 && this.standIds().length === 0,
   );
 
   protected jourLabel(jour: string): string {
     return new Date(`${jour}T00:00:00`).toLocaleDateString(intlLocale(), {
       weekday: 'long',
       day: 'numeric',
-      month: 'long'
+      month: 'long',
     });
   }
 
@@ -72,7 +73,7 @@ export class ReplanificationDialog {
     this.dialogRef.close({
       animateurIds: this.animateurIds(),
       jours: this.jours(),
-      standIds: this.standIds()
+      standIds: this.standIds(),
     });
   }
 }

@@ -44,7 +44,7 @@ function kpi(overrides: Partial<PlanningKpi> = {}): PlanningKpi {
     tauxModificationsManuelles: 0.035,
     dureeSolveSecondes: 600,
     violationsParContrainte: {},
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -55,7 +55,7 @@ function entry(overrides: Partial<KpiHistoriqueEntry> = {}): KpiHistoriqueEntry 
     editionNom: 'Festival 2026',
     kpi: kpi(),
     creeLe: '2026-08-01T10:00:00Z',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -91,8 +91,8 @@ describe('KpiPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: AnalysesApi, useValue: analysesApi },
-        { provide: ConfirmService, useValue: confirm }
-      ]
+        { provide: ConfirmService, useValue: confirm },
+      ],
     });
   });
 
@@ -170,7 +170,11 @@ describe('KpiPage', () => {
 
   describe('displayed data', () => {
     it('keeps the server order of the history rows', async () => {
-      analysesApi.kpiHistory.mockResolvedValue([entry({ id: 3 }), entry({ id: 1 }), entry({ id: 2 })]);
+      analysesApi.kpiHistory.mockResolvedValue([
+        entry({ id: 3 }),
+        entry({ id: 1 }),
+        entry({ id: 2 }),
+      ]);
 
       const page = createPage();
       await vi.waitFor(() => expect(page.entries()).toHaveLength(3));
@@ -182,21 +186,25 @@ describe('KpiPage', () => {
       const page = createPage();
 
       expect(page.editionLabel(entry({ editionNom: 'Festival 2026' }))).toBe('Festival 2026');
-      expect(page.editionLabel(entry({ editionNom: null, editionId: 'edition-1708' }))).toBe('edition-1708');
+      expect(page.editionLabel(entry({ editionNom: null, editionId: 'edition-1708' }))).toBe(
+        'edition-1708',
+      );
     });
 
     it('renders the coverage as a ratio and its percentage', () => {
       const page = createPage();
 
-      expect(page.couvertureLabel(entry({ kpi: kpi({ postesPourvus: 190, postesTotal: 200 }) }))).toBe(
-        '190 / 200 (95.0 %)'
-      );
+      expect(
+        page.couvertureLabel(entry({ kpi: kpi({ postesPourvus: 190, postesTotal: 200 }) })),
+      ).toBe('190 / 200 (95.0 %)');
     });
 
     it('renders a dash rather than dividing by zero when the plan has no seat', () => {
       const page = createPage();
 
-      expect(page.couvertureLabel(entry({ kpi: kpi({ postesPourvus: 0, postesTotal: 0 }) }))).toBe('—');
+      expect(page.couvertureLabel(entry({ kpi: kpi({ postesPourvus: 0, postesTotal: 0 }) }))).toBe(
+        '—',
+      );
     });
 
     it('renders fairness as a standard deviation of hours, and a dash when unmeasured', () => {
@@ -210,12 +218,18 @@ describe('KpiPage', () => {
       const page = createPage();
 
       expect(
-        page.modificationsLabel(entry({ kpi: kpi({ modificationsManuelles: 7, tauxModificationsManuelles: 0.035 }) }))
+        page.modificationsLabel(
+          entry({ kpi: kpi({ modificationsManuelles: 7, tauxModificationsManuelles: 0.035 }) }),
+        ),
       ).toBe('7 (3.5 %)');
       expect(
-        page.modificationsLabel(entry({ kpi: kpi({ modificationsManuelles: 7, tauxModificationsManuelles: null }) }))
+        page.modificationsLabel(
+          entry({ kpi: kpi({ modificationsManuelles: 7, tauxModificationsManuelles: null }) }),
+        ),
       ).toBe('7');
-      expect(page.modificationsLabel(entry({ kpi: kpi({ modificationsManuelles: null }) }))).toBe('—');
+      expect(page.modificationsLabel(entry({ kpi: kpi({ modificationsManuelles: null }) }))).toBe(
+        '—',
+      );
     });
 
     it('renders the solve duration in seconds, and a dash when unmeasured', () => {
@@ -228,7 +242,9 @@ describe('KpiPage', () => {
     it('renders the score as captured, and a dash when the solve recorded none', () => {
       const page = createPage();
 
-      expect(page.scoreLabel(entry({ kpi: kpi({ score: '0hard/-12soft' }) }))).toBe('0hard/-12soft');
+      expect(page.scoreLabel(entry({ kpi: kpi({ score: '0hard/-12soft' }) }))).toBe(
+        '0hard/-12soft',
+      );
       expect(page.scoreLabel(entry({ kpi: kpi({ score: null }) }))).toBe('—');
     });
 

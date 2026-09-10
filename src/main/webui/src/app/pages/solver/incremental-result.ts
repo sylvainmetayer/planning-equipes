@@ -13,7 +13,7 @@ import { ChangementAffectation, StatistiquesIncremental } from '../../core/model
   selector: 'app-incremental-result',
   imports: [MatCardModule, MatTableModule],
   templateUrl: './incremental-result.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IncrementalResult {
   readonly stats = input.required<StatistiquesIncremental>();
@@ -23,7 +23,9 @@ export class IncrementalResult {
 
   /** An empty crew is a hole in the plan, and must read as one. */
   protected crewLabel(crew: string[]): string {
-    return crew.length === 0 ? $localize`:@@solver.incremental.personne:(personne)` : crew.join(', ');
+    return crew.length === 0
+      ? $localize`:@@solver.incremental.personne:(personne)`
+      : crew.join(', ');
   }
 
   protected whenLabel(changement: ChangementAffectation): string {
@@ -31,12 +33,13 @@ export class IncrementalResult {
       ? new Date(`${changement.date}T00:00:00`).toLocaleDateString(intlLocale(), {
           weekday: 'short',
           day: 'numeric',
-          month: 'short'
+          month: 'short',
         })
       : '';
-    const hours = changement.heureDebut && changement.heureFin
-      ? `${changement.heureDebut.slice(0, 5)} – ${changement.heureFin.slice(0, 5)}`
-      : '';
+    const hours =
+      changement.heureDebut && changement.heureFin
+        ? `${changement.heureDebut.slice(0, 5)} – ${changement.heureFin.slice(0, 5)}`
+        : '';
     return [day, hours].filter((part) => part.length > 0).join(' ');
   }
 }

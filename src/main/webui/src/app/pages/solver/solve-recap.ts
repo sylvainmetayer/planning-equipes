@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { errorPrefix } from '../../core/error-message';
@@ -22,7 +30,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
   selector: 'app-solve-recap',
   imports: [MatCardModule, MatButtonModule],
   templateUrl: './solve-recap.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolveRecap {
   private readonly snapshots = inject(PlanSnapshotStore);
@@ -102,7 +110,7 @@ export class SolveRecap {
       title: $localize`:@@solver.previousPlan.restore.title:Revenir au plan d'avant ?`,
       message: $localize`:@@solver.previousPlan.restore.message:Le résultat de cette résolution est remplacé par le plan qui était enregistré avant elle.`,
       confirmLabel: $localize`:@@solver.previousPlan.restore.confirm:Revenir`,
-      danger: true
+      danger: true,
     });
     if (!confirmed) {
       return;
@@ -114,7 +122,7 @@ export class SolveRecap {
       this.planningState.set(null);
       void this.problemes.reload();
       this.restored.emit(
-        $localize`:@@solver.previousPlan.restored:${result.affectations}:count: affectation(s) restaurée(s) : le plan d'avant la résolution est de nouveau enregistré.`
+        $localize`:@@solver.previousPlan.restored:${result.affectations}:count: affectation(s) restaurée(s) : le plan d'avant la résolution est de nouveau enregistré.`,
       );
     } catch (error) {
       this.failed.emit(errorPrefix(error));

@@ -4,7 +4,14 @@
 
 import { DetailRow, DetailSection } from '../../shared/detail-dialog';
 import { decrireFenetre, resumerHoraires } from '../../core/horaire-stand';
-import { HoraireStand, IndisponibiliteStand, JourSemaine, OuvertureStand, Stand, TypologieItem } from '../../core/models';
+import {
+  HoraireStand,
+  IndisponibiliteStand,
+  JourSemaine,
+  OuvertureStand,
+  Stand,
+  TypologieItem,
+} from '../../core/models';
 
 /**
  * Identity, staffing, schedule and — the reason a detail view is worth more
@@ -20,9 +27,11 @@ import { HoraireStand, IndisponibiliteStand, JourSemaine, OuvertureStand, Stand,
 export function buildStandDetail(
   stand: Stand,
   typologies: readonly TypologieItem[] = [],
-  nombreFamilles = 1
+  nombreFamilles = 1,
 ): DetailSection[] {
-  const labels = new Map(typologies.map((typologie) => [typologie.id, typologie.label || typologie.id]));
+  const labels = new Map(
+    typologies.map((typologie) => [typologie.id, typologie.label || typologie.id]),
+  );
   const aucun = $localize`:@@detail.none:Aucun`;
 
   return [
@@ -34,28 +43,28 @@ export function buildStandDetail(
         {
           label: $localize`:@@stands.field.emplacement:Emplacement`,
           value: stand.emplacement ? emplacementLabel(stand) : aucun,
-          muted: !stand.emplacement
-        }
-      ]
+          muted: !stand.emplacement,
+        },
+      ],
     },
     {
       title: $localize`:@@detail.section.staffing:Effectif`,
       rows: [
         {
           label: $localize`:@@stands.column.effectif:Effectif`,
-          value: $localize`:@@detail.stand.effectifRange:${stand.effectifMin}:min: à ${stand.effectifMax}:max: animateur(s)`
+          value: $localize`:@@detail.stand.effectifRange:${stand.effectifMin}:min: à ${stand.effectifMax}:max: animateur(s)`,
         },
         {
           label: $localize`:@@stands.field.reserveMajeurs:Réservé aux majeurs`,
-          value: ouiNon(stand.reserveMajeurs)
+          value: ouiNon(stand.reserveMajeurs),
         },
         {
           label: $localize`:@@stands.field.premium:Premium (stand éditeur)`,
-          value: ouiNon(stand.premium)
+          value: ouiNon(stand.premium),
         },
         {
           label: $localize`:@@stands.field.niveauEffort:Épuisant physiquement`,
-          value: ouiNon(stand.niveauEffort === 'EPUISANT')
+          value: ouiNon(stand.niveauEffort === 'EPUISANT'),
         },
         ...(nombreFamilles > 1
           ? [
@@ -64,11 +73,11 @@ export function buildStandDetail(
                 value:
                   stand.famille === null || stand.famille === undefined
                     ? $localize`:@@stands.famille.nonAttribuee:pas encore attribuée`
-                    : $localize`:@@stands.famille.valeur:Famille ${stand.famille + 1}:numero:`
-              }
+                    : $localize`:@@stands.famille.valeur:Famille ${stand.famille + 1}:numero:`,
+              },
             ]
-          : [])
-      ]
+          : []),
+      ],
     },
     {
       title: $localize`:@@detail.section.typologies:Typologies proposées`,
@@ -76,10 +85,10 @@ export function buildStandDetail(
         (stand.typologiesProposees ?? []).length > 0
           ? {
               label: $localize`:@@stands.column.typologies:Typologies`,
-              chips: (stand.typologiesProposees ?? []).map((id) => labels.get(id) ?? id)
+              chips: (stand.typologiesProposees ?? []).map((id) => labels.get(id) ?? id),
             }
-          : { label: $localize`:@@stands.column.typologies:Typologies`, value: aucun, muted: true }
-      ]
+          : { label: $localize`:@@stands.column.typologies:Typologies`, value: aucun, muted: true },
+      ],
     },
     {
       title: $localize`:@@detail.section.horaires:Horaires`,
@@ -89,20 +98,23 @@ export function buildStandDetail(
           value: resumerHoraires(stand, {
             aucun: $localize`:@@detail.stand.horairesAucun:Ouvert par défaut, aucune règle`,
             regles: (n) => $localize`:@@stands.horaires.summary.regles:${n}:count: règle(s)`,
-            exceptions: (n) => $localize`:@@stands.horaires.summary.exceptions:${n}:count: exception(s)`
-          })
+            exceptions: (n) =>
+              $localize`:@@stands.horaires.summary.exceptions:${n}:count: exception(s)`,
+          }),
         },
         // Each rule spelled out, not just counted: "2 règles" says nothing
         // about when the stand is actually open, which is the one thing this
         // view is opened to check.
         ...(stand.horaires ?? []).map((horaire, index) => ({
           label: $localize`:@@detail.stand.regle:Règle ${index + 1}:numero:`,
-          value: decrireHoraire(horaire)
+          value: decrireHoraire(horaire),
         })),
         ...(stand.ouvertures ?? []).map((ouverture) => decrireExceptionRow(ouverture, true)),
-        ...(stand.indisponibilites ?? []).map((indisponibilite) => decrireExceptionRow(indisponibilite, false))
-      ]
-    }
+        ...(stand.indisponibilites ?? []).map((indisponibilite) =>
+          decrireExceptionRow(indisponibilite, false),
+        ),
+      ],
+    },
   ];
 }
 
@@ -112,9 +124,10 @@ export function buildStandDetail(
  * the editor asks for them.
  */
 function decrireHoraire(horaire: HoraireStand): string {
-  const mode = horaire.mode === 'OUVERTURE'
-    ? $localize`:@@detail.stand.mode.ouverture:Ouverture`
-    : $localize`:@@detail.stand.mode.fermeture:Fermeture`;
+  const mode =
+    horaire.mode === 'OUVERTURE'
+      ? $localize`:@@detail.stand.mode.ouverture:Ouverture`
+      : $localize`:@@detail.stand.mode.fermeture:Fermeture`;
   const fenetres = (horaire.fenetres ?? [])
     .map((fenetre) => decrireFenetre(fenetre, $localize`:@@stands.apercu.fermeture:fermeture`))
     .join(', ');
@@ -137,20 +150,23 @@ function decrireJours(horaire: HoraireStand): string {
   }
 }
 
-function decrireExceptionRow(exception: OuvertureStand | IndisponibiliteStand, ouverture: boolean): DetailRow {
+function decrireExceptionRow(
+  exception: OuvertureStand | IndisponibiliteStand,
+  ouverture: boolean,
+): DetailRow {
   const fenetre = decrireFenetre(
     {
       heureDebut: exception.heureDebut,
       heureFin: exception.heureFin,
-      effectif: ouverture ? (exception as OuvertureStand).effectif ?? null : null
+      effectif: ouverture ? ((exception as OuvertureStand).effectif ?? null) : null,
     },
-    $localize`:@@stands.apercu.fermeture:fermeture`
+    $localize`:@@stands.apercu.fermeture:fermeture`,
   );
   return {
     label: ouverture
       ? $localize`:@@detail.stand.ouvertureDatee:Ouverture du ${exception.date}:date:`
       : $localize`:@@detail.stand.fermetureDatee:Fermeture du ${exception.date}:date:`,
-    value: exception.motif ? `${fenetre} — ${exception.motif}` : fenetre
+    value: exception.motif ? `${fenetre} — ${exception.motif}` : fenetre,
   };
 }
 

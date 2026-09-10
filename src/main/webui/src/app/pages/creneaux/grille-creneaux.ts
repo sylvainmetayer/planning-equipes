@@ -9,7 +9,7 @@ import {
   JourSemaine,
   RapportGrille,
   RegleRecurrence,
-  TypeJoursHoraire
+  TypeJoursHoraire,
 } from '../../core/models';
 
 /** The dialog's own state: strings where the inputs are, the windows as one line. */
@@ -24,7 +24,15 @@ export interface SerieDraft {
 }
 
 export function serieVide(): SerieDraft {
-  return { jours: 'TOUS', dateDebut: '', dateFin: '', joursSemaine: [], dates: '', exclusions: '', fenetres: '' };
+  return {
+    jours: 'TOUS',
+    dateDebut: '',
+    dateFin: '',
+    joursSemaine: [],
+    dates: '',
+    exclusions: '',
+    fenetres: '',
+  };
 }
 
 /** Comma-separated ISO dates; anything that is not one is dropped. */
@@ -67,7 +75,11 @@ export function datesIllisibles(text: string): string[] {
 export function regleDepuis(draft: SerieDraft): RegleOuErreur {
   const saisie = parseFenetres(draft.fenetres);
   if (saisie.erreur !== null) {
-    return { regle: null, erreur: saisie.erreur === 'VIDE' ? 'FENETRES_VIDES' : 'FENETRE_ILLISIBLE', morceau: saisie.morceau };
+    return {
+      regle: null,
+      erreur: saisie.erreur === 'VIDE' ? 'FENETRES_VIDES' : 'FENETRE_ILLISIBLE',
+      morceau: saisie.morceau,
+    };
   }
   const fenetres: FenetreHoraire[] = [];
   for (const fenetre of saisie.fenetres) {
@@ -75,12 +87,16 @@ export function regleDepuis(draft: SerieDraft): RegleOuErreur {
       return { regle: null, erreur: 'FIN_REQUISE', morceau: fenetre.heureDebut };
     }
     if (fenetre.effectif !== null && fenetre.effectif !== undefined) {
-      return { regle: null, erreur: 'EFFECTIF_REFUSE', morceau: `${fenetre.heureDebut}-${fenetre.heureFin}@${fenetre.effectif}` };
+      return {
+        regle: null,
+        erreur: 'EFFECTIF_REFUSE',
+        morceau: `${fenetre.heureDebut}-${fenetre.heureFin}@${fenetre.effectif}`,
+      };
     }
     fenetres.push({ heureDebut: fenetre.heureDebut, heureFin: fenetre.heureFin });
   }
   const illisibles = datesIllisibles(draft.exclusions).concat(
-    draft.jours === 'DATES' ? datesIllisibles(draft.dates) : []
+    draft.jours === 'DATES' ? datesIllisibles(draft.dates) : [],
   );
   if (illisibles.length > 0) {
     // Silently dropped before: a « 14/07/2026 » among the exclusions wrote the
@@ -111,10 +127,10 @@ export function regleDepuis(draft: SerieDraft): RegleOuErreur {
       joursSemaine: draft.jours === 'JOURS_SEMAINE' ? draft.joursSemaine : [],
       dates,
       exclusions: datesFromText(draft.exclusions),
-      fenetres
+      fenetres,
     },
     erreur: null,
-    morceau: null
+    morceau: null,
   };
 }
 
@@ -133,9 +149,10 @@ export interface BilanGrille {
 export function bilanGrille(rapport: RapportGrille): BilanGrille {
   return {
     erreurs: rapport.anomalies.filter((anomaly) => anomaly.severite === 'ERREUR').length,
-    avertissements: rapport.anomalies.filter((anomaly) => anomaly.severite === 'AVERTISSEMENT').length,
+    avertissements: rapport.anomalies.filter((anomaly) => anomaly.severite === 'AVERTISSEMENT')
+      .length,
     ouvertures: rapport.ouvertures.length,
-    faisable: rapport.faisabilite ? rapport.faisabilite.feasible : null
+    faisable: rapport.faisabilite ? rapport.faisabilite.feasible : null,
   };
 }
 
@@ -148,20 +165,27 @@ export function bilanGrille(rapport: RapportGrille): BilanGrille {
  * make every rule unwritable, blaming a rule that is fine for an error about
  * another date.
  */
-export function erreursIntroduites(after: RapportGrille, before: RapportGrille | null): AnomalieGrille[] {
+export function erreursIntroduites(
+  after: RapportGrille,
+  before: RapportGrille | null,
+): AnomalieGrille[] {
   const connues = new Set(
     (before?.anomalies ?? [])
       .filter((anomaly) => anomaly.severite === 'ERREUR')
-      .map((anomaly) => `${anomaly.type}#${anomaly.date}#${anomaly.message}`)
+      .map((anomaly) => `${anomaly.type}#${anomaly.date}#${anomaly.message}`),
   );
   return after.anomalies.filter(
     (anomaly) =>
-      anomaly.severite === 'ERREUR' && !connues.has(`${anomaly.type}#${anomaly.date}#${anomaly.message}`)
+      anomaly.severite === 'ERREUR' &&
+      !connues.has(`${anomaly.type}#${anomaly.date}#${anomaly.message}`),
   );
 }
 
 /** Whether the verdict allows a rule to be written: warnings do, an error (a doublon, say) does not. */
-export function grilleBloquee(rapport: RapportGrille | null, before: RapportGrille | null = null): boolean {
+export function grilleBloquee(
+  rapport: RapportGrille | null,
+  before: RapportGrille | null = null,
+): boolean {
   return rapport !== null && erreursIntroduites(rapport, before).length > 0;
 }
 

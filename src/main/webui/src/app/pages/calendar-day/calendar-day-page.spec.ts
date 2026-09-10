@@ -19,12 +19,21 @@ function stand(id: string, effectifMin = 1): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
 function animateur(id: string): Animateur {
-  return { id, prenom: id, nom: '', dateNaissance: '2000-01-01', manager: false, competences: {}, souhaits: [], joursIndisponibles: [] };
+  return {
+    id,
+    prenom: id,
+    nom: '',
+    dateNaissance: '2000-01-01',
+    manager: false,
+    competences: {},
+    souhaits: [],
+    joursIndisponibles: [],
+  };
 }
 
 function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffectation {
@@ -41,7 +50,7 @@ describe('buildDays — issue #60 partial-closure regression', () => {
     const s1 = stand('STAND-01');
     const days = buildDays([
       poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') }),
-      poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('Ines') })
+      poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('Ines') }),
     ]);
 
     expect(days[0].slots[0].stands).toHaveLength(1);
@@ -64,7 +73,7 @@ describe('buildDays — issue #60 partial-closure regression', () => {
         stand: s1,
         animateur: animateur('Oscar'),
         heureDebutEffective: '16:00',
-        heureFinEffective: '19:00'
+        heureFinEffective: '19:00',
       }),
       poste({
         id: 'p2',
@@ -72,8 +81,8 @@ describe('buildDays — issue #60 partial-closure regression', () => {
         stand: s1,
         animateur: animateur('Ines'),
         heureDebutEffective: '13:40',
-        heureFinEffective: '14:00'
-      })
+        heureFinEffective: '14:00',
+      }),
     ]);
 
     const lines = days[0].slots[0].stands;
@@ -85,12 +94,16 @@ describe('buildDays — issue #60 partial-closure regression', () => {
     expect(oscar).toMatchObject({ heureFin: '19:00' });
     expect(labels(oscar!)).toEqual(['Oscar']);
     // Neither line ever claims the full créneau span the closure cuts through.
-    expect(lines.every((line) => !(line.heureDebut === '13:40' && line.heureFin === '19:00'))).toBe(true);
+    expect(lines.every((line) => !(line.heureDebut === '13:40' && line.heureFin === '19:00'))).toBe(
+      true,
+    );
   });
 
   it('falls back to the créneau hours when a poste has no effective-window override', () => {
     const c1 = creneau({ id: 1, heureDebut: '09:00', heureFin: '12:00' });
-    const days = buildDays([poste({ id: 'p1', creneau: c1, stand: stand('S1'), animateur: animateur('A') })]);
+    const days = buildDays([
+      poste({ id: 'p1', creneau: c1, stand: stand('S1'), animateur: animateur('A') }),
+    ]);
 
     expect(days[0].slots[0].stands[0]).toMatchObject({ heureDebut: '09:00', heureFin: '12:00' });
   });
@@ -106,7 +119,7 @@ describe('buildDays — understaffing indicator', () => {
     const s1 = stand('Stratégie 16', 2);
     const days = buildDays([
       poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') }),
-      poste({ id: 'p2', creneau: c1, stand: s1 })
+      poste({ id: 'p2', creneau: c1, stand: s1 }),
     ]);
 
     const line = days[0].slots[0].stands[0];
@@ -120,7 +133,7 @@ describe('buildDays — understaffing indicator', () => {
     const s1 = stand('S1', 2);
     const days = buildDays([
       poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('A') }),
-      poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('B') })
+      poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('B') }),
     ]);
 
     const line = days[0].slots[0].stands[0];
@@ -133,7 +146,12 @@ describe('buildDays — understaffing indicator', () => {
     // shortfall — the previous effectifMin comparison flagged every such slot.
     const pause = creneau({ id: 2, heureDebut: '12:00', heureFin: '13:00', couverturePause: true });
     const days = buildDays([
-      poste({ id: 'p1', creneau: pause, stand: stand('Stand Argent', 2), animateur: animateur('Oscar') })
+      poste({
+        id: 'p1',
+        creneau: pause,
+        stand: stand('Stand Argent', 2),
+        animateur: animateur('Oscar'),
+      }),
     ]);
 
     const line = days[0].slots[0].stands[0];
@@ -147,7 +165,7 @@ describe('buildDays — understaffing indicator', () => {
     const s1 = stand('Stratégie 16', 2);
     const days = buildDays([
       poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') }),
-      poste({ id: 'p2', creneau: c1, stand: s1 })
+      poste({ id: 'p2', creneau: c1, stand: s1 }),
     ]);
 
     expect(days[0].understaffed).toBe(true);
@@ -157,7 +175,7 @@ describe('buildDays — understaffing indicator', () => {
     const c1 = creneau({ id: 1, jour: 1 });
     const days = buildDays([
       poste({ id: 'p1', creneau: c1, stand: stand('S1', 1), animateur: animateur('A') }),
-      poste({ id: 'p2', creneau: c1, stand: stand('S2', 1) })
+      poste({ id: 'p2', creneau: c1, stand: stand('S2', 1) }),
     ]);
 
     expect(days[0].understaffed).toBe(false);

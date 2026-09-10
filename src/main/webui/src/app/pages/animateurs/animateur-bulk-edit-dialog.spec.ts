@@ -17,7 +17,7 @@ import { AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
 
 const TYPOLOGIES = [
   { id: 'ambiance', label: 'Ambiance' },
-  { id: 'expert', label: 'Expert' }
+  { id: 'expert', label: 'Expert' },
 ];
 
 const ANIMATEURS: Animateur[] = [
@@ -29,7 +29,7 @@ const ANIMATEURS: Animateur[] = [
     manager: false,
     competences: { ambiance: 'DEBUTANT' },
     souhaits: ['expert'],
-    joursIndisponibles: []
+    joursIndisponibles: [],
   },
   {
     id: 'a2',
@@ -39,11 +39,14 @@ const ANIMATEURS: Animateur[] = [
     manager: true,
     competences: {},
     souhaits: [],
-    joursIndisponibles: ['2026-07-14']
-  }
+    joursIndisponibles: ['2026-07-14'],
+  },
 ];
 
-function monter(animateurs: Animateur[], options: { editingLocked?: boolean; saved?: number } = {}) {
+function monter(
+  animateurs: Animateur[],
+  options: { editingLocked?: boolean; saved?: number } = {},
+) {
   const saveMany = vi.fn(async () => options.saved ?? animateurs.length);
   const close = vi.fn();
   TestBed.resetTestingModule();
@@ -51,11 +54,14 @@ function monter(animateurs: Animateur[], options: { editingLocked?: boolean; sav
     providers: [
       provideZonelessChangeDetection(),
       { provide: ReferenceDataStore, useValue: { typologies: signal(TYPOLOGIES) } },
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: ReferenceCrudService, useValue: { saveMany } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { animateurs } }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: { animateurs } },
+    ],
   });
   return { fixture: TestBed.createComponent(AnimateurBulkEditDialog), saveMany, close };
 }
@@ -76,13 +82,13 @@ function submit(fixture: ComponentFixture<AnimateurBulkEditDialog>): void {
 async function choisir(
   fixture: ComponentFixture<AnimateurBulkEditDialog>,
   name: string,
-  libelle: string
+  libelle: string,
 ): Promise<void> {
   const select = racine(fixture).querySelector(`mat-select[name="${name}"]`) as HTMLElement;
   (select.querySelector('.mat-mdc-select-trigger') as HTMLElement).click();
   await fixture.whenStable();
   const option = Array.from(document.querySelectorAll('mat-option')).find(
-    (each) => each.textContent!.trim() === libelle
+    (each) => each.textContent!.trim() === libelle,
   );
   expect(option, `option « ${libelle} » absente`).toBeDefined();
   (option as HTMLElement).click();
@@ -114,7 +120,7 @@ describe('AnimateurBulkEditDialog', () => {
 
     expect(payloads(saveMany).map((each) => [each.id, each.manager])).toEqual([
       ['a1', true],
-      ['a2', true]
+      ['a2', true],
     ]);
     // The three untouched edits must leave every other field exactly as it was.
     expect(payloads(saveMany)[0].competences).toEqual({ ambiance: 'DEBUTANT' });
@@ -160,7 +166,7 @@ describe('AnimateurBulkEditDialog', () => {
 
     expect(payloads(saveMany).map((each) => each.competences)).toEqual([
       { ambiance: 'REFERENT' },
-      { ambiance: 'REFERENT' }
+      { ambiance: 'REFERENT' },
     ]);
   });
 
@@ -170,9 +176,11 @@ describe('AnimateurBulkEditDialog', () => {
 
     await choisir(fixture, 'competenceMode', 'Retirer');
     await choisir(fixture, 'competenceTypologie', 'Ambiance');
-    expect(racine(fixture).querySelector('mat-select[name="competenceNiveau"]')!.getAttribute('aria-disabled')).toBe(
-      'true'
-    );
+    expect(
+      racine(fixture)
+        .querySelector('mat-select[name="competenceNiveau"]')!
+        .getAttribute('aria-disabled'),
+    ).toBe('true');
 
     submit(fixture);
     await fixture.whenStable();
@@ -208,7 +216,10 @@ describe('AnimateurBulkEditDialog', () => {
 
     submit(fixture);
     await fixture.whenStable();
-    expect(payloads(saveMany).map((each) => each.joursIndisponibles)).toEqual([['2026-07-14'], ['2026-07-14']]);
+    expect(payloads(saveMany).map((each) => each.joursIndisponibles)).toEqual([
+      ['2026-07-14'],
+      ['2026-07-14'],
+    ]);
   });
 
   it('keeps the dialog open when the server saved nothing', async () => {

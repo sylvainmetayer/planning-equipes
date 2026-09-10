@@ -14,7 +14,7 @@ import {
   SolverDurationUnit,
   bestUnitFor,
   secondsToValue,
-  valueToSeconds
+  valueToSeconds,
 } from './solver-duration';
 
 /**
@@ -33,10 +33,10 @@ import {
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
   ],
   templateUrl: './solver-duration-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolverDurationCard {
   private readonly solverSettings = inject(SolverSettingsService);
@@ -50,7 +50,9 @@ export class SolverDurationCard {
   protected readonly valueDraft = signal(0);
   protected readonly secondsSaved = signal(0);
   protected readonly secondsDraft = computed(() => valueToSeconds(this.valueDraft(), this.unit()));
-  protected readonly dirty = computed(() => Math.round(this.secondsDraft()) !== this.secondsSaved());
+  protected readonly dirty = computed(
+    () => Math.round(this.secondsDraft()) !== this.secondsSaved(),
+  );
   protected readonly step = computed(() => SOLVER_DURATION_UNIT_STEP[this.unit()]);
 
   constructor() {
@@ -91,7 +93,7 @@ export class SolverDurationCard {
       this.notifications.notify({
         title: $localize`:@@dataSetup.solverDuration.saved:Durée de résolution enregistrée`,
         message: $localize`:@@dataSetup.solverDuration.savedHint:Appliquée à tous les navigateurs.`,
-        variant: 'success'
+        variant: 'success',
       });
     } catch (error) {
       this.error.set(errorPrefix(error));

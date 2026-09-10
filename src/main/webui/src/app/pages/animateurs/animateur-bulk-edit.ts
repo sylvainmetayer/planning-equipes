@@ -1,7 +1,12 @@
 // What a bulk edit of animateurs can change, and how it applies to one row.
 // Kept apart from the dialog so the rules are unit-tested without rendering.
 
-import { ModeBooleen, ModeListe, appliquerModeBooleen, appliquerModeListe } from '../../core/bulk-edit';
+import {
+  ModeBooleen,
+  ModeListe,
+  appliquerModeBooleen,
+  appliquerModeListe,
+} from '../../core/bulk-edit';
 import { Animateur, NiveauCompetence } from '../../core/models';
 
 /** Appréciation and indisponibilités are keyed edits: add/overwrite one entry, or remove it. */
@@ -21,7 +26,7 @@ export function patchAnimateurVide(): AnimateurBulkPatch {
     manager: 'INCHANGE',
     competence: { mode: 'AUCUN', typologie: '', niveau: 'AUTONOME' },
     souhaits: { mode: 'AUCUN', typologies: [] },
-    indisponibilite: { mode: 'AUCUN', jour: '' }
+    indisponibilite: { mode: 'AUCUN', jour: '' },
   };
 }
 
@@ -31,23 +36,39 @@ export function patchAnimateurEstVide(patch: AnimateurBulkPatch): boolean {
   const souhaitsInactifs =
     patch.souhaits.mode === 'AUCUN' ||
     (patch.souhaits.typologies.length === 0 && patch.souhaits.mode !== 'REMPLACER');
-  const indisponibiliteInactive = patch.indisponibilite.mode === 'AUCUN' || !patch.indisponibilite.jour;
-  return patch.manager === 'INCHANGE' && competenceInactive && souhaitsInactifs && indisponibiliteInactive;
+  const indisponibiliteInactive =
+    patch.indisponibilite.mode === 'AUCUN' || !patch.indisponibilite.jour;
+  return (
+    patch.manager === 'INCHANGE' &&
+    competenceInactive &&
+    souhaitsInactifs &&
+    indisponibiliteInactive
+  );
 }
 
-export function appliquerPatchAnimateur(animateur: Animateur, patch: AnimateurBulkPatch): Animateur {
+export function appliquerPatchAnimateur(
+  animateur: Animateur,
+  patch: AnimateurBulkPatch,
+): Animateur {
   return {
     ...animateur,
     manager: appliquerModeBooleen(Boolean(animateur.manager), patch.manager),
     competences: appliquerCompetence(animateur.competences ?? {}, patch.competence),
-    souhaits: appliquerModeListe(animateur.souhaits ?? [], patch.souhaits.typologies, patch.souhaits.mode),
-    joursIndisponibles: appliquerIndisponibilite(animateur.joursIndisponibles ?? [], patch.indisponibilite)
+    souhaits: appliquerModeListe(
+      animateur.souhaits ?? [],
+      patch.souhaits.typologies,
+      patch.souhaits.mode,
+    ),
+    joursIndisponibles: appliquerIndisponibilite(
+      animateur.joursIndisponibles ?? [],
+      patch.indisponibilite,
+    ),
   };
 }
 
 function appliquerCompetence(
   actuelles: Record<string, NiveauCompetence>,
-  patch: AnimateurBulkPatch['competence']
+  patch: AnimateurBulkPatch['competence'],
 ): Record<string, NiveauCompetence> {
   if (patch.mode === 'AUCUN' || !patch.typologie) {
     return { ...actuelles };
@@ -61,7 +82,10 @@ function appliquerCompetence(
   return competences;
 }
 
-function appliquerIndisponibilite(jours: readonly string[], patch: AnimateurBulkPatch['indisponibilite']): string[] {
+function appliquerIndisponibilite(
+  jours: readonly string[],
+  patch: AnimateurBulkPatch['indisponibilite'],
+): string[] {
   if (patch.mode === 'AUCUN' || !patch.jour) {
     return [...jours];
   }

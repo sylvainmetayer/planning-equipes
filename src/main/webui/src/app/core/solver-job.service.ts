@@ -36,7 +36,7 @@ import {
   ResultatSolve,
   ResultatSolveIncremental,
   ScorePoint,
-  ScoreTrace
+  ScoreTrace,
 } from './models';
 
 /**
@@ -264,7 +264,9 @@ export class SolverJobService {
   readonly activeJobDescription = computed(() => {
     const job = this.activeJob();
     if (!job) {
-      return this.stateKnown() ? '' : $localize`:@@job.stateUnknown:L'état du solveur n'est pas encore connu.`;
+      return this.stateKnown()
+        ? ''
+        : $localize`:@@job.stateUnknown:L'état du solveur n'est pas encore connu.`;
     }
     const duration = formatDuration(elapsedSeconds(job, this.now()));
     const edition = job.editionNom ?? job.editionId ?? '?';
@@ -400,7 +402,11 @@ export class SolverJobService {
    *               refused; it starts by itself, and reads the referential as
    *               it stands at that moment
    */
-  submitSolveFromReferenceData(seconds?: number, enFile = false, reamorcage: Reamorcage = 'AUTO'): Promise<JobView> {
+  submitSolveFromReferenceData(
+    seconds?: number,
+    enFile = false,
+    reamorcage: Reamorcage = 'AUTO',
+  ): Promise<JobView> {
     // AUTO is the server's default too: only a deliberate choice travels.
     const endpoint =
       reamorcage === 'AUTO'
@@ -420,7 +426,7 @@ export class SolverJobService {
   submitSolveIncremental(
     scope: PerimetreReplanification,
     seconds?: number,
-    enFile = false
+    enFile = false,
   ): Promise<JobView> {
     return this.submit('/api/solve/incremental/async', scope, 'SOLVE_INCREMENTAL', seconds, enFile);
   }
@@ -455,7 +461,7 @@ export class SolverJobService {
     payload: unknown,
     type: JobType,
     seconds?: number,
-    enFile = false
+    enFile = false,
   ): Promise<JobView> {
     this.notifications.requestDesktopPermission();
     const params = new URLSearchParams();
@@ -465,7 +471,8 @@ export class SolverJobService {
     if (enFile) {
       params.set('enFile', 'true');
     }
-    const url = params.size > 0 ? `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params}` : endpoint;
+    const url =
+      params.size > 0 ? `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params}` : endpoint;
     let job: JobView;
     try {
       // Raw errors: the 409 branch below needs the status and the body.
@@ -481,7 +488,7 @@ export class SolverJobService {
       this.notifications.notify({
         title: $localize`:@@job.queued:${jobLabel(type)}:jobLabel: planifiée`,
         message: $localize`:@@job.queuedMessage:Elle démarrera d'elle-même sur l'édition « ${edition}:edition: » dès que la tâche en cours sera terminée. Vous pouvez fermer cet écran.`,
-        timeout: 6000
+        timeout: 6000,
       });
       await this.rafraichirFile();
       return job;
@@ -490,7 +497,7 @@ export class SolverJobService {
     this.notifications.notify({
       title: $localize`:@@job.started:${jobLabel(type)}:jobLabel: démarrée`,
       message: $localize`:@@job.startedMessage:Cela s'exécute sur le serveur — vous pouvez continuer à utiliser l'application, depuis ce navigateur ou un autre.`,
-      timeout: 5000
+      timeout: 5000,
     });
     return job;
   }
@@ -508,7 +515,7 @@ export class SolverJobService {
     this.notifications.notify({
       title: $localize`:@@job.refusedTitle:Lancement refusé`,
       message: refus.message,
-      variant: 'error'
+      variant: 'error',
     });
     return refus;
   }
@@ -525,14 +532,14 @@ export class SolverJobService {
       if (conflit.status === 'QUEUED') {
         const edition = conflit.editionNom ?? conflit.editionId ?? '?';
         return new Error(
-          $localize`:@@job.alreadyQueued:${jobLabel(conflit.type)}:jobLabel: est déjà planifiée sur l'édition « ${edition}:edition: ». Retirez-la de la file si vous voulez la replanifier.`
+          $localize`:@@job.alreadyQueued:${jobLabel(conflit.type)}:jobLabel: est déjà planifiée sur l'édition « ${edition}:edition: ». Retirez-la de la file si vous voulez la replanifier.`,
         );
       }
       this.adopt(conflit, false);
       const duration = formatDuration(conflit.elapsedSeconds);
       const edition = conflit.editionNom ?? conflit.editionId ?? '?';
       return new Error(
-        $localize`:@@job.alreadyRunningEdition:${jobLabel(conflit.type)}:jobLabel: est déjà en cours sur l'édition « ${edition}:edition: » (${duration}:duration:). Planifiez-la pour qu'elle démarre à la suite, ou attendez la fin.`
+        $localize`:@@job.alreadyRunningEdition:${jobLabel(conflit.type)}:jobLabel: est déjà en cours sur l'édition « ${edition}:edition: » (${duration}:duration:). Planifiez-la pour qu'elle démarre à la suite, ou attendez la fin.`,
       );
     }
     return toError(error);
@@ -733,7 +740,7 @@ export class SolverJobService {
       intervalleMs: delta.intervalleMs,
       dureeMs: delta.dureeMs,
       termine: delta.termine,
-      points
+      points,
     });
   }
 
@@ -874,7 +881,7 @@ export class SolverJobService {
       mine: mienne,
       editionId: job.editionId ?? null,
       editionNom: job.editionNom ?? null,
-      secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit)
+      secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit),
     };
     this.activeJob.set(entry);
     // A submit() adopts its job without waiting for the next poll: start the
@@ -888,7 +895,7 @@ export class SolverJobService {
       this.notifications.notify({
         title: $localize`:@@job.queuedStartedTitle:${entry.label}:jobLabel: planifiée : c'est parti`,
         message: $localize`:@@job.queuedStartedMessage:La tâche en attente vient de prendre le solveur, sur l'édition « ${edition}:edition: ».`,
-        timeout: 6000
+        timeout: 6000,
       });
       return;
     }
@@ -897,7 +904,7 @@ export class SolverJobService {
       const edition = entry.editionNom ?? entry.editionId ?? '?';
       this.notifications.notify({
         title: $localize`:@@job.alreadyRunningTitle:${entry.label}:jobLabel: déjà en cours`,
-        message: $localize`:@@job.alreadyRunningMessage:Démarrage depuis une autre session il y a ${duration}:duration:, sur l'édition « ${edition}:edition: ». Les actions du solveur sont verrouillées jusqu'à la fin ; la saisie n'est bloquée que sur cette édition-là.`
+        message: $localize`:@@job.alreadyRunningMessage:Démarrage depuis une autre session il y a ${duration}:duration:, sur l'édition « ${edition}:edition: ». Les actions du solveur sont verrouillées jusqu'à la fin ; la saisie n'est bloquée que sur cette édition-là.`,
       });
     }
   }
@@ -908,7 +915,7 @@ export class SolverJobService {
     if (!job) {
       this.notifications.notify({
         title: $localize`:@@job.finishedUnknownTitle:${entry.label}:jobLabel: terminée`,
-        message: $localize`:@@job.finishedUnknownMessage:Le serveur ne connaît plus cette tâche (redémarrage ou purge de rétention).`
+        message: $localize`:@@job.finishedUnknownMessage:Le serveur ne connaît plus cette tâche (redémarrage ou purge de rétention).`,
       });
       return;
     }
@@ -918,7 +925,7 @@ export class SolverJobService {
         message: job.error ?? '',
         variant: 'error',
         desktop: true,
-        timeout: 0
+        timeout: 0,
       });
       // A cancelled job is not an empty job: the server keeps its partial
       // result (a stopped solve is still persisted and analyzed, a stopped
@@ -936,7 +943,7 @@ export class SolverJobService {
       title: $localize`:@@job.completedTitle:${entry.label}:jobLabel: terminée en ${duration}:duration:`,
       message: describeResult(job.result),
       variant: 'success',
-      desktop: true
+      desktop: true,
     });
     // Raised here rather than by the solving page's onResult handler:
     // that handler only exists while its page is mounted, so a solve finishing
@@ -1030,4 +1037,3 @@ function describeResult(result: unknown): string {
   const postesNonPourvus = diagnostic.postesNonPourvus;
   return $localize`:@@job.result:Score ${score}:score: — ${postesNonPourvus}:count: poste(s) non pourvu(s).`;
 }
-

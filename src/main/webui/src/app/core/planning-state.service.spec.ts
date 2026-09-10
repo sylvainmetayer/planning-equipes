@@ -17,7 +17,7 @@ function stand(id: string, effectifMax: number): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
@@ -34,7 +34,7 @@ function animateur(id: string): Animateur {
     manager: false,
     competences: { STRATEGIE: 'REFERENT' },
     souhaits: [],
-    joursIndisponibles: []
+    joursIndisponibles: [],
   };
 }
 
@@ -56,7 +56,7 @@ describe('PlanningStateService', () => {
   beforeEach(() => {
     api = new FakeApi();
     TestBed.configureTestingModule({
-      providers: [PlanningStateService, { provide: ApiService, useValue: api }]
+      providers: [PlanningStateService, { provide: ApiService, useValue: api }],
     });
     service = TestBed.inject(PlanningStateService);
   });
@@ -64,8 +64,10 @@ describe('PlanningStateService', () => {
   describe('loadForDisplay / require', () => {
     const solved: PlanningEvenement = {
       animateurs: [animateur('A1')],
-      postes: [{ id: 'p1', stand: stand('S1', 1), creneau: creneau(1), animateur: animateur('A1') }],
-      score: { hardScore: 0, mediumScore: 0, softScore: 0 }
+      postes: [
+        { id: 'p1', stand: stand('S1', 1), creneau: creneau(1), animateur: animateur('A1') },
+      ],
+      score: { hardScore: 0, mediumScore: 0, softScore: 0 },
     };
 
     it('returns the in-session planning without calling the API', async () => {
@@ -86,7 +88,11 @@ describe('PlanningStateService', () => {
 
     it('require() throws when the loaded planning has no postes', async () => {
       api.responses = {
-        '/api/planning/persisted': { animateurs: [], postes: [], score: null } satisfies PlanningEvenement
+        '/api/planning/persisted': {
+          animateurs: [],
+          postes: [],
+          score: null,
+        } satisfies PlanningEvenement,
       };
 
       await expect(service.require()).rejects.toThrow(/Aucun planning disponible/);

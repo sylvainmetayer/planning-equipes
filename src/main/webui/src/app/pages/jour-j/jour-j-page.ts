@@ -15,7 +15,7 @@ import {
   ApercuPublication,
   EtatJourJ,
   PosteAPourvoir,
-  SuggestionsReparation
+  SuggestionsReparation,
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { compareDelta } from '../../shared/affectation-explanation-rules';
@@ -30,7 +30,7 @@ import {
   plage,
   porteeDesSuggestions,
   rappelPublication,
-  resumeDuJour
+  resumeDuJour,
 } from './jour-j-wording';
 
 /**
@@ -59,10 +59,10 @@ import {
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
-    WorkInProgressBanner
+    WorkInProgressBanner,
   ],
   templateUrl: './jour-j-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JourJPage {
   private readonly jourJ = inject(JourJService);
@@ -103,23 +103,23 @@ export class JourJPage {
   protected readonly deService = computed(() =>
     (this.etat()?.animateursDeService ?? []).map((animateur: AnimateurAffecte) => ({
       ...animateur,
-      charge: chargeRestante(animateur)
-    }))
+      charge: chargeRestante(animateur),
+    })),
   );
 
   protected readonly creneaux = computed(() =>
     (this.etat()?.creneauxRestants ?? []).map((creneau) => ({
       id: creneau.id,
-      libelle: libelleCreneau(creneau)
-    }))
+      libelle: libelleCreneau(creneau),
+    })),
   );
 
   protected readonly trous = computed(() =>
     (this.etat()?.postesAPourvoir ?? []).map((poste: PosteAPourvoir) => ({
       ...poste,
       plage: plage(poste.heureDebut, poste.heureFin),
-      blocage: blocageDuPoste(poste)
-    }))
+      blocage: blocageDuPoste(poste),
+    })),
   );
 
   protected readonly absences = computed(() =>
@@ -131,9 +131,9 @@ export class JourJPage {
       annulable: absence.entrees.some((entree) => entree.annulable),
       entrees: absence.entrees.map((entree) => ({
         ...entree,
-        plage: plage(entree.heureDebut, entree.heureFin)
-      }))
-    }))
+        plage: plage(entree.heureDebut, entree.heureFin),
+      })),
+    })),
   );
 
   constructor() {
@@ -186,7 +186,7 @@ export class JourJPage {
       this.notifications.notify({
         title: $localize`:@@jourJ.absence.faite:${marquee.nomAffiche}:nom: est marqué absent`,
         message: $localize`:@@jourJ.absence.detail:${marquee.entrees.length}:creneaux: créneau(x) indisponibles, ${marquee.postesLiberes.length}:postes: poste(s) libéré(s).`,
-        variant: 'success'
+        variant: 'success',
       });
       await this.recharger();
       for (const poste of marquee.postesLiberes) {
@@ -199,7 +199,7 @@ export class JourJPage {
         title: $localize`:@@jourJ.absence.refusee:Absence refusée`,
         message: messageDe(error),
         variant: 'error',
-        timeout: 0
+        timeout: 0,
       });
     } finally {
       this.enCoursDAbsence.set(false);
@@ -214,7 +214,7 @@ export class JourJPage {
       this.notifications.notify({
         title: $localize`:@@jourJ.annulation.echec:Annulation impossible`,
         message: messageDe(error),
-        variant: 'error'
+        variant: 'error',
       });
     }
   }
@@ -246,7 +246,7 @@ export class JourJPage {
       ameliore: compareDelta(suggestion.delta) === 'better',
       // Worth saying on the button: taking this seat adds to a day they are
       // already working, rather than filling an idle one.
-      dejaDeService: dejaDeService(this.etat(), suggestion.animateurId)
+      dejaDeService: dejaDeService(this.etat(), suggestion.animateurId),
     }));
   }
 
@@ -259,11 +259,11 @@ export class JourJPage {
       this.notifications.notify({
         title: $localize`:@@jourJ.suggestions.echec:Recherche impossible`,
         message: messageDe(error),
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       this.rechercheEnCours.update((liste) =>
-        liste.filter((identifiant) => identifiant !== posteId)
+        liste.filter((identifiant) => identifiant !== posteId),
       );
     }
   }
@@ -282,13 +282,13 @@ export class JourJPage {
       // nothing else, so a stale list is all it takes to create an overlap this
       // screen would never report. They are dropped, then searched again.
       const aRafraichir = Object.keys(this.suggestionsParPoste()).filter(
-        (identifiant) => identifiant !== posteId
+        (identifiant) => identifiant !== posteId,
       );
       this.suggestionsParPoste.set({});
       this.notifications.notify({
         title: $localize`:@@jourJ.affectation.faite:Poste pourvu`,
         message: $localize`:@@jourJ.affectation.detail:${nomDuCandidat(this.etat(), animateurId)}:nom: prend ce poste. Le planning publié ne bouge pas tant que vous n'avez pas republié.`,
-        variant: 'success'
+        variant: 'success',
       });
       await this.recharger();
       const trousRestants = new Set(this.trous().map((trou) => trou.posteId));
@@ -302,7 +302,7 @@ export class JourJPage {
         title: $localize`:@@jourJ.affectation.echec:Affectation refusée`,
         message: messageDe(error),
         variant: 'error',
-        timeout: 0
+        timeout: 0,
       });
     } finally {
       this.affectationEnCours.set(null);

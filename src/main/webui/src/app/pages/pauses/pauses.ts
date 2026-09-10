@@ -93,7 +93,7 @@ function lignesDe(journee: JourneeAnimateurPauses): LignePause[] {
         standId: pause.standId,
         standNom: pause.standNom,
         relais: pause.relais,
-        relaisDisponible: pause.relaisDisponible
+        relaisDisponible: pause.relaisDisponible,
       });
     }
   }
@@ -104,7 +104,7 @@ function correspond(ligne: LignePause, recherche: string): boolean {
   return correspondAuFiltre(recherche, [
     ligne.nomComplet,
     ligne.standNom,
-    ...ligne.relais.map((relais) => relais.nomComplet)
+    ...ligne.relais.map((relais) => relais.nomComplet),
   ]);
 }
 
@@ -118,7 +118,7 @@ export function groupesDuJour(
   rapport: RapportPauses | null,
   date: string | null,
   recherche = '',
-  sansRelaisSeulement = false
+  sansRelaisSeulement = false,
 ): GroupeStand[] {
   if (!rapport || !date) {
     return [];
@@ -137,7 +137,12 @@ export function groupesDuJour(
       }
       let groupe = parStand.get(ligne.standId);
       if (!groupe) {
-        groupe = { standId: ligne.standId, standNom: ligne.standNom, lignes: [], relaisManquants: 0 };
+        groupe = {
+          standId: ligne.standId,
+          standNom: ligne.standNom,
+          lignes: [],
+          relaisManquants: 0,
+        };
         parStand.set(ligne.standId, groupe);
       }
       groupe.lignes.push(ligne);
@@ -148,12 +153,14 @@ export function groupesDuJour(
   }
   const groupes = Array.from(parStand.values());
   for (const groupe of groupes) {
-    groupe.lignes.sort((a, b) => a.debut.localeCompare(b.debut) || a.nomComplet.localeCompare(b.nomComplet));
+    groupe.lignes.sort(
+      (a, b) => a.debut.localeCompare(b.debut) || a.nomComplet.localeCompare(b.nomComplet),
+    );
   }
   return groupes.sort(
     (a, b) =>
       b.relaisManquants - a.relaisManquants ||
-      a.standNom.localeCompare(b.standNom, undefined, { sensitivity: 'base' })
+      a.standNom.localeCompare(b.standNom, undefined, { sensitivity: 'base' }),
   );
 }
 
@@ -161,7 +168,7 @@ export function groupesDuJour(
 export function planifieesDuJour(
   rapport: RapportPauses | null,
   date: string | null,
-  recherche = ''
+  recherche = '',
 ): LignePausePlanifiee[] {
   if (!rapport || !date) {
     return [];
@@ -180,11 +187,13 @@ export function planifieesDuJour(
         nomComplet: journee.nomComplet,
         debut: pause.debut,
         fin: pause.fin,
-        minutes: pause.minutes
+        minutes: pause.minutes,
       });
     }
   }
-  return lignes.sort((a, b) => a.debut.localeCompare(b.debut) || a.nomComplet.localeCompare(b.nomComplet));
+  return lignes.sort(
+    (a, b) => a.debut.localeCompare(b.debut) || a.nomComplet.localeCompare(b.nomComplet),
+  );
 }
 
 /** The counters of the selected day: breaks to organise, of which without relay, over how many people. */

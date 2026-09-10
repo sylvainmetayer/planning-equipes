@@ -48,7 +48,7 @@ export class DateMockService {
   /** An empty string hands the clock back; the server answers 400 outside dev mode. */
   async set(date: string): Promise<void> {
     this.apply(
-      await this.api.put<DateJourJView>('/api/debug/date-du-jour', { dateDuJour: date || null })
+      await this.api.put<DateJourJView>('/api/debug/date-du-jour', { dateDuJour: date || null }),
     );
   }
 

@@ -20,8 +20,8 @@ describe('JourJService', () => {
       providers: [
         provideZonelessChangeDetection(),
         JourJService,
-        { provide: ApiService, useValue: api }
-      ]
+        { provide: ApiService, useValue: api },
+      ],
     });
     service = TestBed.inject(JourJService);
   });
@@ -40,7 +40,7 @@ describe('JourJService', () => {
     await service.marquerAbsent('A1', '   ');
     expect(api.post).toHaveBeenCalledWith('/api/jour-j/absences', {
       animateurId: 'A1',
-      raison: null
+      raison: null,
     });
 
     await service.marquerAbsent('A1', '  Malade  ');

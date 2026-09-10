@@ -19,7 +19,7 @@ import { MapPicker } from './map-picker';
     [longitude]="longitude()"
     [disabled]="disabled()"
   />`,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class Host {
   readonly latitude = signal<number | null>(null);
@@ -91,7 +91,8 @@ describe('MapPicker', () => {
     host.longitude.set(-1.55);
     fixture.detectChanges();
 
-    const placed = (picker as unknown as { marker?: { getLatLng(): { lat: number; lng: number } } }).marker;
+    const placed = (picker as unknown as { marker?: { getLatLng(): { lat: number; lng: number } } })
+      .marker;
     expect(placed?.getLatLng().lat).toBeCloseTo(47.2);
     expect(placed?.getLatLng().lng).toBeCloseTo(-1.55);
   });

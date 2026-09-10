@@ -21,25 +21,25 @@ import { segmenterArticles } from '../core/legifrance';
 @Component({
   selector: 'app-legal-text',
   template: `@for (segment of segments(); track $index) {
-      @if (segment.url) {
-        <a
-          class="legal-article-link"
-          [href]="segment.url"
-          [attr.aria-label]="ariaLabel(segment.text)"
-          target="_blank"
-          rel="noopener"
-          >{{ segment.text }}</a
-        >
-      } @else {
-        <span>{{ segment.text }}</span>
-      }
-    }`,
+    @if (segment.url) {
+      <a
+        class="legal-article-link"
+        [href]="segment.url"
+        [attr.aria-label]="ariaLabel(segment.text)"
+        target="_blank"
+        rel="noopener"
+        >{{ segment.text }}</a
+      >
+    } @else {
+      <span>{{ segment.text }}</span>
+    }
+  }`,
   styles: `
     :host {
       display: inline;
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LegalText {
   /** The sentence to render. Usually a `ConstraintView.description`. */

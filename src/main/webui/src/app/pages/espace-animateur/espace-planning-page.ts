@@ -3,7 +3,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { abonnementIcsUrl, espacePlanningIcsUrl, espacePlanningPdfUrl } from '../../core/api/espace-animateur-links';
+import {
+  abonnementIcsUrl,
+  espacePlanningIcsUrl,
+  espacePlanningPdfUrl,
+} from '../../core/api/espace-animateur-links';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { errorMessage } from '../../core/error-message';
 import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
@@ -27,7 +31,7 @@ interface JourPlanning {
   selector: 'app-espace-planning-page',
   imports: [DatePipe, MatButtonModule, MatCardModule, MatIconModule],
   templateUrl: './espace-planning-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EspacePlanningPage {
   protected readonly espace = inject(EspaceAnimateurService);
@@ -150,7 +154,7 @@ export class EspacePlanningPage {
       // No clipboard (insecure context, refusal): say so rather than
       // pretending it worked — the address is displayed right above.
       this.erreurAbonnement.set(
-        $localize`:@@espace.planning.abonnementCopieEchec:Copie impossible : sélectionnez l'adresse ci-dessus.`
+        $localize`:@@espace.planning.abonnementCopieEchec:Copie impossible : sélectionnez l'adresse ci-dessus.`,
       );
     }
   }
@@ -176,7 +180,7 @@ export class EspacePlanningPage {
    * itself.
    */
   protected readonly telechargementsOfferts = computed(
-    () => this.jours().length > 0 && !!this.lienPdf()
+    () => this.jours().length > 0 && !!this.lienPdf(),
   );
 
   protected readonly jours = computed<JourPlanning[]>(() => {
@@ -203,7 +207,7 @@ export class EspacePlanningPage {
       date,
       postes,
       repos: false,
-      pauses: (pausesParJour.get(date) ?? []).sort((a, b) => a.debut.localeCompare(b.debut))
+      pauses: (pausesParJour.get(date) ?? []).sort((a, b) => a.debut.localeCompare(b.debut)),
     }));
     // Rest days take their chronological place among the worked ones: a day
     // silently missing reads as an oversight, an explicit « Repos » card as a

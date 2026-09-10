@@ -18,7 +18,7 @@ import {
   planningPersiste,
   postesDe,
   publierPlanning,
-  seedReferentielSolveur
+  seedReferentielSolveur,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -42,18 +42,18 @@ const ANIMATEURS: AnimateurSeed[] = [
   { id: 'SOLV-U', prenom: 'Uma', nom: 'Solve', dateNaissance: '1994-05-05' },
   { id: 'SOLV-V', prenom: 'Victor', nom: 'Solve', dateNaissance: '1995-06-06' },
   { id: 'SOLV-W', prenom: 'Wendy', nom: 'Solve', dateNaissance: '1996-07-07' },
-  { id: 'SOLV-X', prenom: 'Xavier', nom: 'Solve', dateNaissance: '1997-08-08' }
+  { id: 'SOLV-X', prenom: 'Xavier', nom: 'Solve', dateNaissance: '1997-08-08' },
 ];
 const STANDS: StandSeed[] = [
   { id: 'SOLV-S1', nom: 'Stand Solve un', effectif: 1 },
   { id: 'SOLV-S2', nom: 'Stand Solve deux', effectif: 1 },
-  { id: 'SOLV-S3', nom: 'Stand Solve trois', effectif: 1 }
+  { id: 'SOLV-S3', nom: 'Stand Solve trois', effectif: 1 },
 ];
 const CRENEAUX: CreneauSeed[] = [
   { id: C1, date: '2026-07-12', debut: '10:00', fin: '12:00' },
   { id: C2, date: '2026-07-13', debut: '10:00', fin: '12:00' },
   { id: C3, date: '2026-07-14', debut: '10:00', fin: '12:00' },
-  { id: C4, date: '2026-07-15', debut: '10:00', fin: '12:00' }
+  { id: C4, date: '2026-07-15', debut: '10:00', fin: '12:00' },
 ];
 
 let admin: APIRequestContext;
@@ -77,7 +77,7 @@ test('un solve lancé depuis la page Solveur pourvoit tous les postes', async ({
   await reseed();
   // Short default duration, so the UI button triggers a quick run.
   const parametres = await admin.put('/api/parametres-solveur', {
-    data: { dureeResolutionSecondes: 6 }
+    data: { dureeResolutionSecondes: 6 },
   });
   expect(parametres.ok()).toBe(true);
 
@@ -105,7 +105,9 @@ test('un solve lancé depuis la page Solveur pourvoit tous les postes', async ({
   await page.context().close();
 });
 
-test('les contraintes ad hoc sont respectées par le solve et visibles dans le frontend', async ({ browser }) => {
+test('les contraintes ad hoc sont respectées par le solve et visibles dans le frontend', async ({
+  browser,
+}) => {
   test.slow();
   await reseed();
 
@@ -118,7 +120,7 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
       animateursConcernes: [{ id: 'SOLV-P' }],
       creneau: { id: C1 },
       stand: null,
-      raison: 'E2E : Paula indisponible le matin'
+      raison: 'E2E : Paula indisponible le matin',
     },
     {
       id: 'SOLV-ADHOC-FORCEE',
@@ -126,7 +128,7 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
       animateursConcernes: [{ id: 'SOLV-Q' }],
       creneau: { id: C2 },
       stand: { id: 'SOLV-S1' },
-      raison: 'E2E : Quentin imposé sur Stand Solve un'
+      raison: 'E2E : Quentin imposé sur Stand Solve un',
     },
     {
       id: 'SOLV-ADHOC-INCOMPAT',
@@ -134,8 +136,8 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
       animateursConcernes: [{ id: 'SOLV-R' }, { id: 'SOLV-T' }],
       creneau: null,
       stand: null,
-      raison: 'E2E : Rita et Tom incompatibles'
-    }
+      raison: 'E2E : Rita et Tom incompatibles',
+    },
   ];
   for (const contrainte of creations) {
     const reponse = await admin.post('/api/contraintes-ad-hoc', { data: contrainte });
@@ -163,8 +165,10 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
     const surCreneau = planning.postes
       .filter((poste) => poste.creneau?.id === creneau && poste.animateur)
       .map((poste) => poste.animateur?.id);
-    expect(surCreneau.includes('SOLV-R') && surCreneau.includes('SOLV-T'),
-      `Rita et Tom tous deux sur le créneau ${creneau}`).toBe(false);
+    expect(
+      surCreneau.includes('SOLV-R') && surCreneau.includes('SOLV-T'),
+      `Rita et Tom tous deux sur le créneau ${creneau}`,
+    ).toBe(false);
   }
 
   // The forced seat reads back in the frontend: Quentin's timeline shows it.
@@ -185,7 +189,7 @@ test('un animateur verrouillé garde exactement son planning après re-résoluti
   const planAvant = postesDe(await planningPersiste(admin), 'SOLV-P');
 
   const verrou = await admin.post('/api/verrouillages', {
-    data: { type: 'ANIMATEUR', animateurId: 'SOLV-P', raison: 'E2E : Paula validée' }
+    data: { type: 'ANIMATEUR', animateurId: 'SOLV-P', raison: 'E2E : Paula validée' },
   });
   expect(verrou.ok(), await verrou.text()).toBe(true);
   const verrouId = ((await verrou.json()) as { id: string }).id;
@@ -197,7 +201,7 @@ test('un animateur verrouillé garde exactement son planning après re-résoluti
   await admin.delete(`/api/verrouillages/${verrouId}`);
 });
 
-test("un échange accepté survit à la régénération du planning", async ({ browser }) => {
+test('un échange accepté survit à la régénération du planning', async ({ browser }) => {
   test.slow();
   // Clean problem: no ad hoc constraint, no lock, fresh solve.
   await reseed();
@@ -219,7 +223,7 @@ test("un échange accepté survit à la régénération du planning", async ({ b
   await publierPlanning(admin);
   await ouvrirSessionEspace(admin, jeton, `${surS1}@example.org`);
   const soumission = await admin.post(`/api/espace-animateur/${jeton}/demandes`, {
-    data: [{ creneauId: C1, standId: 'SOLV-S1', cibleId: surS2, motif: 'E2E régénération' }]
+    data: [{ creneauId: C1, standId: 'SOLV-S1', cibleId: surS2, motif: 'E2E régénération' }],
   });
   expect(soumission.ok(), await soumission.text()).toBe(true);
   const demandeId = ((await soumission.json()) as { id: string }[])[0].id;
@@ -229,7 +233,7 @@ test("un échange accepté survit à la régénération du planning", async ({ b
   const jetonCible = await jetonDe(admin, surS2);
   await ouvrirSessionEspace(admin, jetonCible, `${surS2}@example.org`);
   const accord = await admin.post(
-    `/api/espace-animateur/${jetonCible}/demandes-recues/${demandeId}/accord`
+    `/api/espace-animateur/${jetonCible}/demandes-recues/${demandeId}/accord`,
   );
   expect(accord.ok(), await accord.text()).toBe(true);
 
@@ -265,11 +269,13 @@ test("un échange accepté survit à la régénération du planning", async ({ b
  * pendant que le panneau est fermé : le rouvrir doit montrer cette
  * résolution-là depuis son début, pas un trou commençant au clic.
  */
-test('la courbe de score se replie, s’en souvient, et continue d’enregistrer', async ({ browser }) => {
+test('la courbe de score se replie, s’en souvient, et continue d’enregistrer', async ({
+  browser,
+}) => {
   test.slow();
   await reseed();
   const parametres = await admin.put('/api/parametres-solveur', {
-    data: { dureeResolutionSecondes: 6 }
+    data: { dureeResolutionSecondes: 6 },
   });
   expect(parametres.ok()).toBe(true);
 

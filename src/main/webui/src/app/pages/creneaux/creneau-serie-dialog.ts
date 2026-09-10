@@ -16,7 +16,7 @@ import {
   ModeGrilleCreneaux,
   RapportGrille,
   RapportRecurrence,
-  RegleRecurrence
+  RegleRecurrence,
 } from '../../core/models';
 import { libelleJourSemaine } from '../stands/stand-horaires';
 import { summarizeVacationsByDay } from './decoupage';
@@ -30,7 +30,7 @@ import {
   regleDepuis,
   serieVide,
   signatureSerie,
-  trierAnomalies
+  trierAnomalies,
 } from './grille-creneaux';
 
 export interface CreneauSerieData {
@@ -59,14 +59,15 @@ export interface CreneauSerieData {
     MatCheckboxModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   templateUrl: './creneau-serie-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreneauSerieDialog {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
-  protected readonly dialogRef = inject<MatDialogRef<CreneauSerieDialog, RapportRecurrence | null>>(MatDialogRef);
+  protected readonly dialogRef =
+    inject<MatDialogRef<CreneauSerieDialog, RapportRecurrence | null>>(MatDialogRef);
   private readonly data = inject<CreneauSerieData>(MAT_DIALOG_DATA);
   private readonly creneauxApi = inject(CreneauxApi);
   private readonly crud = inject(ReferenceCrudService);
@@ -78,7 +79,7 @@ export class CreneauSerieDialog {
     'THURSDAY',
     'FRIDAY',
     'SATURDAY',
-    'SUNDAY'
+    'SUNDAY',
   ];
 
   protected readonly draft = signal<SerieDraft>(serieVide());
@@ -94,7 +95,7 @@ export class CreneauSerieDialog {
     return resultat.erreur === null ? null : this.message(resultat.erreur, resultat.morceau);
   });
   protected readonly apercuAJour = computed(
-    () => this.apercu() !== null && this.signatureApercu() === signatureSerie(this.draft())
+    () => this.apercu() !== null && this.signatureApercu() === signatureSerie(this.draft()),
   );
   protected readonly bilan = computed(() => {
     const apercu = this.apercu();
@@ -109,7 +110,7 @@ export class CreneauSerieDialog {
     return apercu ? trierAnomalies(apercu.controle.anomalies) : [];
   });
   protected readonly bloquee = computed(() =>
-    grilleBloquee(this.apercu()?.controle ?? null, this.data.controleActuel)
+    grilleBloquee(this.apercu()?.controle ?? null, this.data.controleActuel),
   );
   /** The errors this rule would add — the ones the message is about. */
   protected readonly erreursIntroduites = computed(() => {
@@ -117,7 +118,7 @@ export class CreneauSerieDialog {
     return apercu ? erreursIntroduites(apercu.controle, this.data.controleActuel) : [];
   });
   protected readonly peutCreer = computed(
-    () => this.apercuAJour() && !this.bloquee() && !this.creation() && !this.editingLocked()
+    () => this.apercuAJour() && !this.bloquee() && !this.creation() && !this.editingLocked(),
   );
 
   protected readonly gridAnomalyIcon = gridAnomalyIcon;
@@ -132,7 +133,11 @@ export class CreneauSerieDialog {
 
   protected basculerJour(jour: JourSemaine, coche: boolean): void {
     const actuels = this.draft().joursSemaine;
-    this.patch({ joursSemaine: coche ? [...new Set([...actuels, jour])] : actuels.filter((autre) => autre !== jour) });
+    this.patch({
+      joursSemaine: coche
+        ? [...new Set([...actuels, jour])]
+        : actuels.filter((autre) => autre !== jour),
+    });
   }
 
   protected async previsualiser(): Promise<void> {
@@ -142,7 +147,10 @@ export class CreneauSerieDialog {
     }
     this.chargement.set(true);
     try {
-      const apercu = await this.creneauxApi.previewRecurrence(this.data.mode, regle satisfies RegleRecurrence);
+      const apercu = await this.creneauxApi.previewRecurrence(
+        this.data.mode,
+        regle satisfies RegleRecurrence,
+      );
       this.apercu.set(apercu);
       this.signatureApercu.set(signatureSerie(this.draft()));
     } catch (error) {

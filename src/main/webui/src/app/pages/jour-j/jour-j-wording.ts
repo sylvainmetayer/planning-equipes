@@ -12,7 +12,7 @@ import type {
   CreneauJourJ,
   EtatJourJ,
   PosteAPourvoir,
-  SuggestionsReparation
+  SuggestionsReparation,
 } from '../../core/models';
 
 /** `09:00:00` → `09:00`. The server sends whole `LocalTime`s; the aisle reads hours. */

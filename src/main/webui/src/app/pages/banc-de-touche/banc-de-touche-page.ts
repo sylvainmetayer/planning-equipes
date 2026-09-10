@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  resource,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -21,7 +28,7 @@ import {
   LigneBanc,
   libelleCreneau,
   libelleStand,
-  lignes
+  lignes,
 } from './banc-de-touche';
 
 /**
@@ -45,10 +52,10 @@ import {
     MatProgressBarModule,
     MatSelectModule,
     MatTooltipModule,
-    WorkInProgressBanner
+    WorkInProgressBanner,
   ],
   templateUrl: './banc-de-touche-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BancDeTouchePage {
   private readonly analysesApi = inject(AnalysesApi);
@@ -68,7 +75,9 @@ export class BancDeTouchePage {
    * as a message and not as a blank card: a `reload()` rejection used to
    * escape into the `void`, the one outcome a screen must never produce.
    */
-  private readonly referentiel = resource({ loader: () => this.store.reload(['stands', 'animateurs']) });
+  private readonly referentiel = resource({
+    loader: () => this.store.reload(['stands', 'animateurs']),
+  });
 
   /**
    * The bench, keyed by the two selectors. A resource rather than a method
@@ -83,10 +92,14 @@ export class BancDeTouchePage {
    */
   private readonly bench = resource({
     params: () => ({ creneauId: this.creneauId(), standId: this.standId() }),
-    loader: ({ params }) => this.analysesApi.bench(params.creneauId, params.standId)
+    loader: ({ params }) => this.analysesApi.bench(params.creneauId, params.standId),
   });
-  protected readonly banc = computed<BancDeTouche | null>(() => (this.bench.hasValue() ? this.bench.value() : null));
-  protected readonly chargement = computed(() => this.referentiel.isLoading() || this.bench.isLoading());
+  protected readonly banc = computed<BancDeTouche | null>(() =>
+    this.bench.hasValue() ? this.bench.value() : null,
+  );
+  protected readonly chargement = computed(
+    () => this.referentiel.isLoading() || this.bench.isLoading(),
+  );
   private readonly erreurReferentiel = errorText(this.referentiel);
   private readonly erreurBanc = errorText(this.bench);
   protected readonly erreur = computed(() => this.erreurReferentiel() || this.erreurBanc());
@@ -99,9 +112,11 @@ export class BancDeTouchePage {
    */
   protected readonly creneauAffiche = computed(() => this.banc()?.creneauId ?? this.creneauId());
 
-  protected readonly lignes = computed<LigneBanc[]>(() => lignes(this.banc(), this.store.animateurs()));
+  protected readonly lignes = computed<LigneBanc[]>(() =>
+    lignes(this.banc(), this.store.animateurs()),
+  );
   protected readonly standCible = computed(() =>
-    libelleStand(this.store.stands(), this.banc()?.standCibleId ?? null)
+    libelleStand(this.store.stands(), this.banc()?.standCibleId ?? null),
   );
   /**
    * The whole of what the créneau selector offers, and it comes from the
@@ -120,7 +135,7 @@ export class BancDeTouchePage {
     this.standId.set(params.get('stand') ?? '');
     keepViewInQueryParams(() => ({
       creneau: this.creneauAffiche() ?? null,
-      stand: optionalParam(this.standId())
+      stand: optionalParam(this.standId()),
     }));
   }
 

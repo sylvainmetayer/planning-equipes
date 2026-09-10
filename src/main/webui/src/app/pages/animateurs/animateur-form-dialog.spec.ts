@@ -22,7 +22,7 @@ import { AnimateurFormDialog } from './animateur-form-dialog';
 
 const TYPOLOGIES = [
   { id: 'ambiance', label: 'Ambiance' },
-  { id: 'expert', label: 'Expert' }
+  { id: 'expert', label: 'Expert' },
 ];
 
 function animateur(overrides: Partial<Animateur> = {}): Animateur {
@@ -36,11 +36,14 @@ function animateur(overrides: Partial<Animateur> = {}): Animateur {
     competences: {},
     souhaits: [],
     joursIndisponibles: [],
-    ...overrides
+    ...overrides,
   };
 }
 
-function monter(donnee: Animateur | null, options: { editingLocked?: boolean; saveOk?: boolean } = {}) {
+function monter(
+  donnee: Animateur | null,
+  options: { editingLocked?: boolean; saveOk?: boolean } = {},
+) {
   const save = vi.fn(async () => options.saveOk ?? true);
   const close = vi.fn();
   TestBed.resetTestingModule();
@@ -48,11 +51,14 @@ function monter(donnee: Animateur | null, options: { editingLocked?: boolean; sa
     providers: [
       provideZonelessChangeDetection(),
       { provide: ReferenceDataStore, useValue: { typologies: signal(TYPOLOGIES) } },
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: ReferenceCrudService, useValue: { save } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { animateur: donnee } }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: { animateur: donnee } },
+    ],
   });
   return { fixture: TestBed.createComponent(AnimateurFormDialog), save, close };
 }
@@ -65,7 +71,11 @@ function champ(fixture: ComponentFixture<AnimateurFormDialog>, name: string): HT
   return racine(fixture).querySelector(`input[name="${name}"]`) as HTMLInputElement;
 }
 
-function saisir(fixture: ComponentFixture<AnimateurFormDialog>, name: string, valeur: string): void {
+function saisir(
+  fixture: ComponentFixture<AnimateurFormDialog>,
+  name: string,
+  valeur: string,
+): void {
   const input = champ(fixture, name);
   input.value = valeur;
   input.dispatchEvent(new Event('input'));
@@ -74,7 +84,7 @@ function saisir(fixture: ComponentFixture<AnimateurFormDialog>, name: string, va
 /** Clicks the button whose visible label is exactly `libelle` (icon ligature aside). */
 function cliquer(fixture: ComponentFixture<AnimateurFormDialog>, libelle: string): void {
   const bouton = Array.from(racine(fixture).querySelectorAll('button')).find(
-    (each) => each.textContent?.replace(/^(add|delete|save|cancel)/, '').trim() === libelle
+    (each) => each.textContent?.replace(/^(add|delete|save|cancel)/, '').trim() === libelle,
   );
   expect(bouton, `bouton « ${libelle} » absent`).toBeDefined();
   bouton!.click();
@@ -99,7 +109,9 @@ describe('AnimateurFormDialog', () => {
 
   beforeEach(() => {
     erreursConsole = [];
-    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => erreursConsole.push(args));
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) =>
+      erreursConsole.push(args),
+    );
   });
 
   it('names every control, so the labels render and no NG01352 is thrown', async () => {
@@ -142,7 +154,9 @@ describe('AnimateurFormDialog', () => {
     saisir(fixture, 'dateNaissance', recent.toISOString().slice(0, 10));
     await fixture.whenStable();
 
-    expect(racine(fixture).querySelector('.form-warning')!.textContent!).toContain('moins de 16 ans');
+    expect(racine(fixture).querySelector('.form-warning')!.textContent!).toContain(
+      'moins de 16 ans',
+    );
   });
 
   it('does not warn on an unparseable or empty birth date', async () => {
@@ -153,18 +167,24 @@ describe('AnimateurFormDialog', () => {
   });
 
   it('shows the appreciation rows of the animateur, one per typologie', async () => {
-    const { fixture } = monter(animateur({ competences: { ambiance: 'REFERENT', expert: 'DEBUTANT' } }));
+    const { fixture } = monter(
+      animateur({ competences: { ambiance: 'REFERENT', expert: 'DEBUTANT' } }),
+    );
     await fixture.whenStable();
 
     expect(racine(fixture).querySelectorAll('.competence-row')).toHaveLength(3); // 2 appréciations + la ligne « Jour »
-    expect(racine(fixture).querySelector('.empty-hint')!.textContent!).not.toContain('Aucune appréciation');
+    expect(racine(fixture).querySelector('.empty-hint')!.textContent!).not.toContain(
+      'Aucune appréciation',
+    );
   });
 
   it('says so when nothing is declared, instead of showing an empty block', async () => {
     const { fixture } = monter(animateur());
     await fixture.whenStable();
 
-    const hints = Array.from(racine(fixture).querySelectorAll('.empty-hint')).map((each) => each.textContent!.trim());
+    const hints = Array.from(racine(fixture).querySelectorAll('.empty-hint')).map((each) =>
+      each.textContent!.trim(),
+    );
     expect(hints).toContain('Aucune appréciation déclarée.');
     expect(hints).toContain('Disponible tous les jours.');
   });
@@ -186,10 +206,14 @@ describe('AnimateurFormDialog', () => {
   });
 
   it('removes the appreciation row the user pointed at, not the last one', async () => {
-    const { fixture, save } = monter(animateur({ competences: { ambiance: 'REFERENT', expert: 'DEBUTANT' } }));
+    const { fixture, save } = monter(
+      animateur({ competences: { ambiance: 'REFERENT', expert: 'DEBUTANT' } }),
+    );
     await fixture.whenStable();
 
-    const remove = Array.from(racine(fixture).querySelectorAll('.competence-row button.danger-action'));
+    const remove = Array.from(
+      racine(fixture).querySelectorAll('.competence-row button.danger-action'),
+    );
     (remove[0] as HTMLButtonElement).click();
     await fixture.whenStable();
     submit(fixture);
@@ -217,8 +241,8 @@ describe('AnimateurFormDialog', () => {
     // One chip only: the trailing text is the remove button's icon ligature.
     expect(
       Array.from(racine(fixture).querySelectorAll('mat-chip')).map((each) =>
-        each.textContent!.replace('cancel', '').trim()
-      )
+        each.textContent!.replace('cancel', '').trim(),
+      ),
     ).toEqual(['2026-07-14']);
     submit(fixture);
     await fixture.whenStable();
@@ -230,7 +254,9 @@ describe('AnimateurFormDialog', () => {
     await fixture.whenStable();
 
     expect(
-      Array.from(racine(fixture).querySelectorAll('mat-chip button')).map((each) => each.getAttribute('aria-label'))
+      Array.from(racine(fixture).querySelectorAll('mat-chip button')).map((each) =>
+        each.getAttribute('aria-label'),
+      ),
     ).toEqual(['Retirer 2026-07-14', 'Retirer 2026-07-15']);
   });
 
@@ -256,7 +282,7 @@ describe('AnimateurFormDialog', () => {
       souhaits: [],
       joursIndisponibles: [],
       // The precondition of issue #362: null on a fixture that never carried a stamp.
-      modifieLe: null
+      modifieLe: null,
     });
     expect(close).toHaveBeenCalledWith(true);
   });
@@ -278,7 +304,9 @@ describe('AnimateurFormDialog', () => {
 
     expect(racine(fixture).querySelector('.locked-hint')).not.toBeNull();
     expect((racine(fixture).querySelector('fieldset') as HTMLFieldSetElement).disabled).toBe(true);
-    expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   // An animateur holds ONE appreciation per typologie: two rows on the same one
@@ -309,7 +337,7 @@ describe('AnimateurFormDialog', () => {
     await fixture.whenStable();
 
     const add = [...racine(fixture).querySelectorAll('button')].find((bouton) =>
-      bouton.textContent?.includes('Ajouter une appréciation')
+      bouton.textContent?.includes('Ajouter une appréciation'),
     ) as HTMLButtonElement;
     expect(add.disabled).toBe(true);
   });

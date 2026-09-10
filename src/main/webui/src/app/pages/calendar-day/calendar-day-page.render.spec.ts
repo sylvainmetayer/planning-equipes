@@ -34,11 +34,15 @@ function stand(id: string, typologiesProposees: string[] = ['ambiance']): Stand 
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
-function animateur(id: string, prenom: string, competences: Record<string, 'DEBUTANT'> = { ambiance: 'DEBUTANT' }) {
+function animateur(
+  id: string,
+  prenom: string,
+  competences: Record<string, 'DEBUTANT'> = { ambiance: 'DEBUTANT' },
+) {
   return {
     id,
     prenom,
@@ -47,7 +51,7 @@ function animateur(id: string, prenom: string, competences: Record<string, 'DEBU
     manager: false,
     competences,
     souhaits: [],
-    joursIndisponibles: []
+    joursIndisponibles: [],
   } satisfies Animateur;
 }
 
@@ -60,7 +64,7 @@ function poste(
   sur: Stand | null,
   sur2: Creneau | null,
   occupant: Animateur | null,
-  overrides: Partial<PosteAffectation> = {}
+  overrides: Partial<PosteAffectation> = {},
 ): PosteAffectation {
   return { id, stand: sur, creneau: sur2, animateur: occupant, ...overrides };
 }
@@ -114,11 +118,11 @@ function mount(options: Options = {}) {
           reload: vi.fn(async () => undefined),
           estJourVerrouille: options.verrous?.estJourVerrouille ?? (() => false),
           estStandVerrouille: options.verrous?.estStandVerrouille ?? (() => false),
-          estCreneauVerrouille: options.verrous?.estCreneauVerrouille ?? (() => false)
-        }
+          estCreneauVerrouille: options.verrous?.estCreneauVerrouille ?? (() => false),
+        },
       },
-      { provide: MatDialog, useValue: { open } }
-    ]
+      { provide: MatDialog, useValue: { open } },
+    ],
   });
   return { fixture: TestBed.createComponent(CalendarDayPage), open, loadForDisplay };
 }
@@ -138,7 +142,9 @@ function lignes(fixture: ComponentFixture<CalendarDayPage>) {
     sousEffectif: ligne.classList.contains('understaffed-slot'),
     vide: ligne.classList.contains('empty-slot'),
     ecartAppreciation: ligne.classList.contains('appreciation-mismatch-slot'),
-    icones: Array.from(ligne.querySelectorAll('mat-icon')).map((icone) => icone.textContent!.trim())
+    icones: Array.from(ligne.querySelectorAll('mat-icon')).map((icone) =>
+      icone.textContent!.trim(),
+    ),
   }));
 }
 
@@ -160,16 +166,26 @@ describe('CalendarDayPage rendering', () => {
   it('renders one card per event day, titled and dated', async () => {
     const { fixture } = mount({
       planning: planning([
-        poste('p1', AMBIANCE, creneau({ id: 1, jour: 1, date: '2026-07-14' }), animateur('a1', 'Camille')),
-        poste('p2', AMBIANCE, creneau({ id: 2, jour: 2, date: '2026-07-15' }), animateur('a1', 'Camille'))
-      ])
+        poste(
+          'p1',
+          AMBIANCE,
+          creneau({ id: 1, jour: 1, date: '2026-07-14' }),
+          animateur('a1', 'Camille'),
+        ),
+        poste(
+          'p2',
+          AMBIANCE,
+          creneau({ id: 2, jour: 2, date: '2026-07-15' }),
+          animateur('a1', 'Camille'),
+        ),
+      ]),
     });
     await fixture.whenStable();
 
     const cartes = Array.from(root(fixture).querySelectorAll('.day-card h2'));
     expect(cartes.map((each) => each.textContent!.replace(/\s+/g, ' ').trim())).toEqual([
       'Jour 1 — 2026-07-14',
-      'Jour 2 — 2026-07-15'
+      'Jour 2 — 2026-07-15',
     ]);
   });
 
@@ -177,8 +193,8 @@ describe('CalendarDayPage rendering', () => {
     const { fixture } = mount({
       planning: planning([
         poste('p1', AMBIANCE, C1, animateur('a1', 'Camille')),
-        poste('p2', AMBIANCE, C1, animateur('a2', 'Alex'))
-      ])
+        poste('p2', AMBIANCE, C1, animateur('a2', 'Alex')),
+      ]),
     });
     await fixture.whenStable();
 
@@ -193,7 +209,9 @@ describe('CalendarDayPage rendering', () => {
   // it: the warning has to be there every time it is opened, so it is asserted
   // like any other part of the page.
   it('says on the page that dragging is still under test', async () => {
-    const { fixture } = mount({ planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]) });
+    const { fixture } = mount({
+      planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
+    });
     await fixture.whenStable();
 
     const bandeau = root(fixture).querySelector('.essai-bandeau');
@@ -217,8 +235,8 @@ describe('CalendarDayPage rendering', () => {
       planning: planning([
         poste('p1', AMBIANCE, C1, animateur('a1', 'Camille')),
         poste('p2', AMBIANCE, C1, null),
-        poste('p3', AMBIANCE, C1, null)
-      ])
+        poste('p3', AMBIANCE, C1, null),
+      ]),
     });
     await fixture.whenStable();
 
@@ -226,15 +244,17 @@ describe('CalendarDayPage rendering', () => {
     expect(libres.map((chip) => chip.dataset['posteId'])).toEqual(['p2', 'p3']);
     // The seat id sits on the draggable wrapper, which contains the name: a
     // drop resolves it with closest(), from wherever the pointer landed.
-    expect(root(fixture).querySelector<HTMLElement>('.affectation-glissable')!.dataset['posteId']).toBe('p1');
+    expect(
+      root(fixture).querySelector<HTMLElement>('.affectation-glissable')!.dataset['posteId'],
+    ).toBe('p1');
   });
 
   it('flags an understaffed line with a warning icon naming the shortfall', async () => {
     const { fixture } = mount({
       planning: planning([
         poste('p1', AMBIANCE, C1, animateur('a1', 'Camille')),
-        poste('p2', AMBIANCE, C1, null)
-      ])
+        poste('p2', AMBIANCE, C1, null),
+      ]),
     });
     await fixture.whenStable();
 
@@ -248,7 +268,9 @@ describe('CalendarDayPage rendering', () => {
   });
 
   it('does not flag a fully staffed line', async () => {
-    const { fixture } = mount({ planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]) });
+    const { fixture } = mount({
+      planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
+    });
     await fixture.whenStable();
 
     expect(lignes(fixture)[0].sousEffectif).toBe(false);
@@ -260,7 +282,9 @@ describe('CalendarDayPage rendering', () => {
     // vacation, so filling it is full coverage, not a shortfall. The halving
     // happens upstream, at seat generation — the flag only drives the icon.
     const pause = creneau({ id: 9, couverturePause: true });
-    const { fixture } = mount({ planning: planning([poste('p1', AMBIANCE, pause, animateur('a1', 'Camille'))]) });
+    const { fixture } = mount({
+      planning: planning([poste('p1', AMBIANCE, pause, animateur('a1', 'Camille'))]),
+    });
     await fixture.whenStable();
 
     const ligne = lignes(fixture)[0];
@@ -274,8 +298,8 @@ describe('CalendarDayPage rendering', () => {
     const { fixture } = mount({
       planning: planning([
         poste('p1', AMBIANCE, pause, animateur('a1', 'Camille')),
-        poste('p2', AMBIANCE, pause, null)
-      ])
+        poste('p2', AMBIANCE, pause, null),
+      ]),
     });
     await fixture.whenStable();
 
@@ -289,14 +313,18 @@ describe('CalendarDayPage rendering', () => {
 
   it('flags a seat held by someone with no appreciation for the stand', async () => {
     const { fixture } = mount({
-      planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille', { autre: 'DEBUTANT' }))])
+      planning: planning([
+        poste('p1', AMBIANCE, C1, animateur('a1', 'Camille', { autre: 'DEBUTANT' })),
+      ]),
     });
     await fixture.whenStable();
 
     const ligne = lignes(fixture)[0];
     expect(ligne.ecartAppreciation).toBe(true);
     expect(ligne.icones).toContain('psychology');
-    expect(root(fixture).querySelector('.day-card')!.classList).toContain('has-appreciation-mismatch');
+    expect(root(fixture).querySelector('.day-card')!.classList).toContain(
+      'has-appreciation-mismatch',
+    );
   });
 
   it('says when a line only covers part of its créneau', async () => {
@@ -304,19 +332,21 @@ describe('CalendarDayPage rendering', () => {
       planning: planning([
         poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'), {
           heureDebutEffective: '10:00',
-          heureFinEffective: '11:00'
-        })
-      ])
+          heureFinEffective: '11:00',
+        }),
+      ]),
     });
     await fixture.whenStable();
 
-    expect(root(fixture).querySelector('.day-stand-partial')!.textContent!.replace(/\s+/g, ' ')).toContain(
-      'ouvert 10:00 – 11:00 seulement'
-    );
+    expect(
+      root(fixture).querySelector('.day-stand-partial')!.textContent!.replace(/\s+/g, ' '),
+    ).toContain('ouvert 10:00 – 11:00 seulement');
   });
 
   it('shows no partial-closure note when the line covers the whole créneau', async () => {
-    const { fixture } = mount({ planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]) });
+    const { fixture } = mount({
+      planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
+    });
     await fixture.whenStable();
 
     expect(root(fixture).querySelector('.day-stand-partial')).toBeNull();
@@ -325,7 +355,7 @@ describe('CalendarDayPage rendering', () => {
   it('padlocks a day frozen by a lock', async () => {
     const { fixture } = mount({
       planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
-      verrous: { estJourVerrouille: (date) => date === '2026-07-14' }
+      verrous: { estJourVerrouille: (date) => date === '2026-07-14' },
     });
     await fixture.whenStable();
 
@@ -337,7 +367,7 @@ describe('CalendarDayPage rendering', () => {
   it('padlocks a single line frozen by its stand', async () => {
     const { fixture } = mount({
       planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
-      verrous: { estStandVerrouille: (id) => id === 'Loup-Garou' }
+      verrous: { estStandVerrouille: (id) => id === 'Loup-Garou' },
     });
     await fixture.whenStable();
 
@@ -352,8 +382,8 @@ describe('CalendarDayPage rendering', () => {
         poste('p1', stand('Dixit'), C1, animateur('a1', 'Camille')),
         // Understaffed.
         poste('p2', AMBIANCE, C1, animateur('a2', 'Alex')),
-        poste('p3', AMBIANCE, C1, null)
-      ])
+        poste('p3', AMBIANCE, C1, null),
+      ]),
     });
     await fixture.whenStable();
     expect(lignes(fixture)).toHaveLength(2);
@@ -369,7 +399,7 @@ describe('CalendarDayPage rendering', () => {
 
   it('drops a whole day from the grid when the filter leaves nothing on it', async () => {
     const { fixture } = mount({
-      planning: planning([poste('p1', stand('Dixit'), C1, animateur('a1', 'Camille'))])
+      planning: planning([poste('p1', stand('Dixit'), C1, animateur('a1', 'Camille'))]),
     });
     await fixture.whenStable();
     expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(1);
@@ -382,9 +412,9 @@ describe('CalendarDayPage rendering', () => {
   });
 
   function filtrerProblemes(fixture: ComponentFixture<CalendarDayPage>, actif: boolean): void {
-    (fixture.componentInstance as unknown as { seulementProblemes: { set(value: boolean): void } }).seulementProblemes.set(
-      actif
-    );
+    (
+      fixture.componentInstance as unknown as { seulementProblemes: { set(value: boolean): void } }
+    ).seulementProblemes.set(actif);
   }
 
   it('opens the explanation dialog on the seat that was clicked', async () => {
@@ -397,7 +427,9 @@ describe('CalendarDayPage rendering', () => {
     await fixture.whenStable();
 
     expect(open).toHaveBeenCalledOnce();
-    const config = open.mock.calls[0][1] as { data: { poste: PosteAffectation; planning: PlanningEvenement } };
+    const config = open.mock.calls[0][1] as {
+      data: { poste: PosteAffectation; planning: PlanningEvenement };
+    };
     expect(config.data.poste.id).toBe('p1');
     expect(config.data.planning).toBe(planningAffiche);
   });
@@ -432,7 +464,7 @@ describe('CalendarDayPage rendering', () => {
     expect(loadForDisplay).toHaveBeenCalledOnce();
 
     const rafraichir = Array.from(root(fixture).querySelectorAll('button')).find((each) =>
-      each.textContent?.includes('Actualiser')
+      each.textContent?.includes('Actualiser'),
     )!;
     rafraichir.click();
     await fixture.whenStable();
@@ -450,7 +482,7 @@ describe('CalendarDayPage rendering', () => {
       'warning',
       'restaurant',
       'psychology',
-      'lock'
+      'lock',
     ]);
   });
 });

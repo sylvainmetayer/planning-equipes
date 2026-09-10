@@ -33,19 +33,33 @@ function stand(id: string): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
-    horaires: []
+    horaires: [],
   };
 }
 
 function animateur(id: string): Animateur {
-  return { id, prenom: id, nom: '', dateNaissance: '2000-01-01', manager: false, competences: {}, souhaits: [], joursIndisponibles: [] };
+  return {
+    id,
+    prenom: id,
+    nom: '',
+    dateNaissance: '2000-01-01',
+    manager: false,
+    competences: {},
+    souhaits: [],
+    joursIndisponibles: [],
+  };
 }
 
 function creneau(id: number, date: string): Creneau {
   return { id, jour: 1, date, heureDebut: '14:00', heureFin: '18:00' };
 }
 
-function poste(id: string, standRef: Stand, creneauRef: Creneau, animateurRef: Animateur | null): PosteAffectation {
+function poste(
+  id: string,
+  standRef: Stand,
+  creneauRef: Creneau,
+  animateurRef: Animateur | null,
+): PosteAffectation {
   return { id, stand: standRef, creneau: creneauRef, animateur: animateurRef };
 }
 
@@ -53,10 +67,16 @@ function setUp(postes: PosteAffectation[], queryParams: Record<string, string> =
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes })) } },
+      {
+        provide: PlanningStateService,
+        useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes })) },
+      },
       { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
-    ]
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+      },
+    ],
   });
   const fixture = TestBed.createComponent(CalendarMonthPage);
   return { fixture, page: fixture.componentInstance as unknown as PageInternals };
@@ -76,10 +96,9 @@ describe('CalendarMonthPage — the displayed month follows the selection', () =
   });
 
   it('jumps to the first month holding an affectation of the selected animateur', async () => {
-    const { fixture, page } = setUp(
-      [poste('p1', s1, juillet10, a1), poste('p2', s1, aout03, a2)],
-      { month: '2026-08' }
-    );
+    const { fixture, page } = setUp([poste('p1', s1, juillet10, a1), poste('p2', s1, aout03, a2)], {
+      month: '2026-08',
+    });
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -93,10 +112,9 @@ describe('CalendarMonthPage — the displayed month follows the selection', () =
   });
 
   it('stays on the displayed month when it already holds an affectation of the selection', async () => {
-    const { fixture, page } = setUp(
-      [poste('p1', s1, juillet10, a1), poste('p2', s1, aout03, a1)],
-      { month: '2026-08' }
-    );
+    const { fixture, page } = setUp([poste('p1', s1, juillet10, a1), poste('p2', s1, aout03, a1)], {
+      month: '2026-08',
+    });
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -110,7 +128,7 @@ describe('CalendarMonthPage — the displayed month follows the selection', () =
   it('picks the first month of the selection, not merely an earlier one with other affectations', async () => {
     const { fixture, page } = setUp(
       [poste('p1', s1, juillet10, a2), poste('p2', s1, juillet12, a1), poste('p3', s1, aout03, a2)],
-      { month: '2026-08' }
+      { month: '2026-08' },
     );
     fixture.detectChanges();
     await fixture.whenStable();
@@ -124,10 +142,9 @@ describe('CalendarMonthPage — the displayed month follows the selection', () =
   });
 
   it('applies the same rule to the stand filter', async () => {
-    const { fixture, page } = setUp(
-      [poste('p1', s1, juillet10, a1), poste('p2', s2, aout03, a2)],
-      { month: '2026-08' }
-    );
+    const { fixture, page } = setUp([poste('p1', s1, juillet10, a1), poste('p2', s2, aout03, a2)], {
+      month: '2026-08',
+    });
     fixture.detectChanges();
     await fixture.whenStable();
 

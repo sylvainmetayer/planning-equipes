@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BRANDING_NEUTRE, accentForBothSchemes, appliquerBranding, loadBranding, slugMarque } from './branding';
+import {
+  BRANDING_NEUTRE,
+  accentForBothSchemes,
+  appliquerBranding,
+  loadBranding,
+  slugMarque,
+} from './branding';
 
 /** Ce que `core/branding.ts` doit produire pour `#8b1e3f`, moitié claire intacte. */
 const PAIR_8B1E3F = 'light-dark(#8b1e3f, oklch(from #8b1e3f max(l, 0.78) min(c, 0.14) h))';
@@ -33,7 +39,7 @@ describe('branding', () => {
     function repond(body: unknown, ok = true): void {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue({ ok, status: ok ? 200 : 500, json: async () => body })
+        vi.fn().mockResolvedValue({ ok, status: ok ? 200 : 500, json: async () => body }),
       );
     }
 
@@ -42,7 +48,7 @@ describe('branding', () => {
         productName: 'Planning Bénévoles',
         organisation: 'Ville hôte',
         logoUrl: 'logo.png',
-        accentColor: '#8b1e3f'
+        accentColor: '#8b1e3f',
       });
 
       await expect(loadBranding()).resolves.toEqual({
@@ -52,7 +58,7 @@ describe('branding', () => {
         accentColor: '#8b1e3f',
         mascotUrl: '',
         mascotIconUrl: '',
-        supportEmail: ''
+        supportEmail: '',
       });
     });
 
@@ -76,7 +82,7 @@ describe('branding', () => {
   });
 
   describe('appliquerBranding', () => {
-    it('nomme l\'onglet avec le nom du produit', () => {
+    it("nomme l'onglet avec le nom du produit", () => {
       appliquerBranding({ ...BRANDING_NEUTRE, productName: 'Planning Bénévoles' });
 
       expect(document.title).toBe('Planning Bénévoles');
@@ -85,7 +91,7 @@ describe('branding', () => {
     // Le fond sombre est arrivé avec l'issue #317 : une encre de marque choisie
     // sur fond blanc doit désormais être posée en paire, sinon elle sert de
     // couleur de texte illisible sur la surface sombre.
-    it('pose la couleur d\'accent en paire claire/sombre', () => {
+    it("pose la couleur d'accent en paire claire/sombre", () => {
       navigateurSachantDeriver(true);
 
       appliquerBranding({ ...BRANDING_NEUTRE, accentColor: '#8b1e3f' });
@@ -103,7 +109,7 @@ describe('branding', () => {
 
     // Sans couleur configurée, l'accent compilé par mat.theme() doit rester en
     // place : écrire une chaîne vide écraserait la valeur par défaut.
-    it('ne touche pas à l\'accent quand rien n\'est configuré', () => {
+    it("ne touche pas à l'accent quand rien n'est configuré", () => {
       appliquerBranding(BRANDING_NEUTRE);
 
       expect(document.documentElement.style.getPropertyValue('--app-accent')).toBe('');
@@ -113,23 +119,23 @@ describe('branding', () => {
   describe('accentForBothSchemes', () => {
     // La moitié claire reste la couleur configurée au caractère près : le
     // thème clair ne doit pas bouger d'un pixel, seule la moitié sombre naît.
-    it('garde la couleur configurée en clair et l\'éclaircit en sombre', () => {
+    it("garde la couleur configurée en clair et l'éclaircit en sombre", () => {
       navigateurSachantDeriver(true);
 
       expect(accentForBothSchemes('#8b1e3f')).toBe(PAIR_8B1E3F);
     });
 
-    it('accepte n\'importe quelle notation de couleur CSS', () => {
+    it("accepte n'importe quelle notation de couleur CSS", () => {
       navigateurSachantDeriver(true);
 
       expect(accentForBothSchemes('rebeccapurple')).toBe(
-        'light-dark(rebeccapurple, oklch(from rebeccapurple max(l, 0.78) min(c, 0.14) h))'
+        'light-dark(rebeccapurple, oklch(from rebeccapurple max(l, 0.78) min(c, 0.14) h))',
       );
     });
 
     // Firefox 120 à 127 connaît `light-dark()` mais pas la syntaxe relative :
     // la paire y serait invalide et emporterait aussi la moitié claire.
-    it('retombe sur la couleur brute quand la paire n\'est pas parsable', () => {
+    it("retombe sur la couleur brute quand la paire n'est pas parsable", () => {
       navigateurSachantDeriver(false);
 
       expect(accentForBothSchemes('#8b1e3f')).toBe('#8b1e3f');

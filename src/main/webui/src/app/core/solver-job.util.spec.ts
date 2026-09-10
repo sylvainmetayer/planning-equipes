@@ -26,7 +26,7 @@ describe('elapsedSeconds', () => {
     mine: true,
     editionId: 'ed-1',
     editionNom: 'Année 2026',
-    secondsLimit: 180
+    secondsLimit: 180,
   };
 
   it('rounds the elapsed time to whole seconds', () => {

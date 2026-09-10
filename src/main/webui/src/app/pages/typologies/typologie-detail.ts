@@ -13,7 +13,7 @@ import { Animateur, Stand, TypologieItem } from '../../core/models';
 export function buildTypologieDetail(
   typologie: TypologieItem,
   stands: readonly Stand[] = [],
-  animateurs: readonly Animateur[] = []
+  animateurs: readonly Animateur[] = [],
 ): DetailSection[] {
   const standsProposant = stands
     .filter((stand) => (stand.typologiesProposees ?? []).includes(typologie.id))
@@ -29,12 +29,15 @@ export function buildTypologieDetail(
       title: $localize`:@@detail.section.identity:Identité`,
       rows: [
         { label: $localize`:@@common.id:Id`, value: typologie.id },
-        { label: $localize`:@@typologies.field.label:Libellé`, value: typologie.label || typologie.id },
+        {
+          label: $localize`:@@typologies.field.label:Libellé`,
+          value: typologie.label || typologie.id,
+        },
         {
           label: $localize`:@@typologies.field.ninja:Typologie ninja`,
-          value: typologie.ninja ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`
-        }
-      ]
+          value: typologie.ninja ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`,
+        },
+      ],
     },
     {
       title: $localize`:@@detail.typologie.usage:Utilisation`,
@@ -42,24 +45,24 @@ export function buildTypologieDetail(
         standsProposant.length > 0
           ? {
               label: $localize`:@@detail.typologie.stands:Stands proposant cette typologie (${standsProposant.length}:count:)`,
-              chips: standsProposant
+              chips: standsProposant,
             }
           : {
               label: $localize`:@@detail.typologie.standsVide:Stands proposant cette typologie`,
               value: $localize`:@@detail.none:Aucun`,
-              muted: true
+              muted: true,
             },
         animateursCompetents.length > 0
           ? {
               label: $localize`:@@detail.typologie.animateurs:Animateurs appréciés sur cette typologie (${animateursCompetents.length}:count:)`,
-              chips: animateursCompetents
+              chips: animateursCompetents,
             }
           : {
               label: $localize`:@@detail.typologie.animateursVide:Animateurs appréciés sur cette typologie`,
               value: $localize`:@@detail.none:Aucun`,
-              muted: true
-            }
-      ]
-    }
+              muted: true,
+            },
+      ],
+    },
   ];
 }

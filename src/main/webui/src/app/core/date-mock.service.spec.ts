@@ -30,8 +30,8 @@ describe('DateMockService', () => {
       providers: [
         provideZonelessChangeDetection(),
         DateMockService,
-        { provide: ApiService, useValue: api }
-      ]
+        { provide: ApiService, useValue: api },
+      ],
     });
     service = TestBed.inject(DateMockService);
   }
@@ -92,8 +92,8 @@ describe('DateMockService', () => {
       providers: [
         provideZonelessChangeDetection(),
         DateMockService,
-        { provide: ApiService, useValue: api }
-      ]
+        { provide: ApiService, useValue: api },
+      ],
     });
     service = TestBed.inject(DateMockService);
 

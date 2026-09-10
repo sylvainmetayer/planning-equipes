@@ -17,8 +17,8 @@ function rendre(branding: Partial<Branding>) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: BRANDING, useValue: { ...BRANDING_NEUTRE, ...branding } }
-    ]
+      { provide: BRANDING, useValue: { ...BRANDING_NEUTRE, ...branding } },
+    ],
   });
   const fixture = TestBed.createComponent(BrandLogo);
   fixture.detectChanges();

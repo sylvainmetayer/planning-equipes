@@ -47,13 +47,17 @@ describe('resumeDeplacement', () => {
     scoreApres: { hardScore: 0, mediumScore: -2, softScore: -1 },
     delta: { hardScore: 0, mediumScore: 1, softScore: 0 },
     casseContrainteDure: false,
-    nouvellesViolationsDures: []
+    nouvellesViolationsDures: [],
   };
 
   it('tells a swap, a move and a hand-over apart, and always shows both scores', () => {
     expect(resumeDeplacement(base, nomDe).title).toBe('Alice et Bruno ont échangé leurs sièges.');
-    expect(resumeDeplacement({ ...base, animateurCibleId: null }, nomDe).title).toContain('Alice a changé de siège');
-    expect(resumeDeplacement({ ...base, posteCibleId: null }, nomDe).title).toBe('Bruno prend le siège de Alice.');
+    expect(resumeDeplacement({ ...base, animateurCibleId: null }, nomDe).title).toContain(
+      'Alice a changé de siège',
+    );
+    expect(resumeDeplacement({ ...base, posteCibleId: null }, nomDe).title).toBe(
+      'Bruno prend le siège de Alice.',
+    );
     expect(resumeDeplacement(base, nomDe).message).toBe('Score : 0/-3/-1 → 0/-2/-1.');
   });
 

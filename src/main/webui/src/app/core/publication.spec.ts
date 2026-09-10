@@ -3,7 +3,7 @@ import {
   libelleDernierePublication,
   libellePublier,
   raisonIndisponible,
-  resumePublication
+  resumePublication,
 } from './publication';
 import type { ApercuPublication } from './models';
 
@@ -15,7 +15,7 @@ function apercu(patch: Partial<ApercuPublication> = {}): ApercuPublication {
     dernierePublicationLe: '2026-08-25T12:30:00Z',
     nombreConcernes: 0,
     destinataires: [],
-    ...patch
+    ...patch,
   };
 }
 
@@ -32,14 +32,16 @@ describe('libellePublier', () => {
     expect(libellePublier(apercu({ nombreConcernes: 0 }))).toBe('Tout le monde est à jour');
   });
 
-  it('ne suppose rien quand l\'aperçu n\'a pas pu être lu', () => {
+  it("ne suppose rien quand l'aperçu n'a pas pu être lu", () => {
     expect(libellePublier(null)).toBe('Tout le monde est à jour');
   });
 });
 
 describe('raisonIndisponible', () => {
   it('explique le refus pendant une résolution', () => {
-    expect(raisonIndisponible(apercu({ solveEnCours: true, nombreConcernes: 4 }))).toContain('résolution');
+    expect(raisonIndisponible(apercu({ solveEnCours: true, nombreConcernes: 4 }))).toContain(
+      'résolution',
+    );
   });
 
   it('explique un planning absent', () => {
@@ -50,8 +52,10 @@ describe('raisonIndisponible', () => {
     expect(raisonIndisponible(apercu({ nombreConcernes: 2 }))).toBe('');
   });
 
-  it('donne la priorité au solve : c\'est lui qui va tout réécrire', () => {
-    expect(raisonIndisponible(apercu({ solveEnCours: true, planVide: true }))).toContain('résolution');
+  it("donne la priorité au solve : c'est lui qui va tout réécrire", () => {
+    expect(raisonIndisponible(apercu({ solveEnCours: true, planVide: true }))).toContain(
+      'résolution',
+    );
   });
 });
 
@@ -62,8 +66,10 @@ describe('libelleDernierePublication', () => {
     expect(libelle).toContain('2026');
   });
 
-  it('dit « jamais » plutôt que d\'afficher une date vide', () => {
-    expect(libelleDernierePublication(apercu({ dernierePublicationLe: null }), 'fr-FR')).toBe('Jamais publié');
+  it("dit « jamais » plutôt que d'afficher une date vide", () => {
+    expect(libelleDernierePublication(apercu({ dernierePublicationLe: null }), 'fr-FR')).toBe(
+      'Jamais publié',
+    );
     expect(libelleDernierePublication(null, 'fr-FR')).toBe('Jamais publié');
   });
 });
@@ -75,20 +81,20 @@ describe('resumePublication', () => {
       publieLe: '2026-08-25T12:30:00Z',
       envoyes: 3,
       sansEmail: [],
-      echecs: []
+      echecs: [],
     });
 
     expect(resume.titre).toContain('3');
     expect(resume.details).toBeUndefined();
   });
 
-  it('nomme les manqués, parce que l\'admin agit sur des noms', () => {
+  it("nomme les manqués, parce que l'admin agit sur des noms", () => {
     const resume = resumePublication({
       snapshotId: 7,
       publieLe: '2026-08-25T12:30:00Z',
       envoyes: 1,
       sansEmail: ['Bruno Petit'],
-      echecs: ['Chloé Durand']
+      echecs: ['Chloé Durand'],
     });
 
     expect(resume.details).toContain('Bruno Petit');

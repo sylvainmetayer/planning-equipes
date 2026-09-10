@@ -22,9 +22,17 @@ import { StatusMessage } from '../../shared/status-message';
  */
 @Component({
   selector: 'app-politique-confidentialite-page',
-  imports: [BrandLogo, MatButtonModule, MatCardModule, MatIconModule, MatToolbarModule, RouterLink, StatusMessage],
+  imports: [
+    BrandLogo,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatToolbarModule,
+    RouterLink,
+    StatusMessage,
+  ],
   templateUrl: './politique-confidentialite-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PolitiqueConfidentialitePage {
   protected readonly mentions = signal<MentionsLegales | null>(null);
@@ -81,7 +89,7 @@ export class PolitiqueConfidentialitePage {
       // un animateur sur son téléphone, réseau incertain : lui dire quoi faire
       // vaut mieux que lui montrer une erreur d'analyse JSON.
       this.erreur.set(
-        $localize`:@@mentions.chargementImpossible:Ces informations n'ont pas pu être chargées. Réessayez dans un instant ; si cela persiste, prévenez l'organisation.`
+        $localize`:@@mentions.chargementImpossible:Ces informations n'ont pas pu être chargées. Réessayez dans un instant ; si cela persiste, prévenez l'organisation.`,
       );
     }
   }

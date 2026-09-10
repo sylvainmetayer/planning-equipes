@@ -16,7 +16,7 @@ import { CreneauBulkEditDialog } from './creneau-bulk-edit-dialog';
 
 const CRENEAUX: Creneau[] = [
   { id: 1, jour: 1, date: '2026-07-14', heureDebut: '10:00', heureFin: '12:00' },
-  { id: 2, jour: 1, date: '2026-07-14', heureDebut: '14:00', heureFin: '19:00' }
+  { id: 2, jour: 1, date: '2026-07-14', heureDebut: '14:00', heureFin: '19:00' },
 ];
 
 function monter(creneaux: Creneau[], options: { editingLocked?: boolean; saved?: number } = {}) {
@@ -27,11 +27,14 @@ function monter(creneaux: Creneau[], options: { editingLocked?: boolean; saved?:
     providers: [
       provideZonelessChangeDetection(),
       { provide: ReferenceDataStore, useValue: { creneaux: signal(creneaux) } },
-      { provide: SolverJobService, useValue: { editingLocked: signal(options.editingLocked ?? false) } },
+      {
+        provide: SolverJobService,
+        useValue: { editingLocked: signal(options.editingLocked ?? false) },
+      },
       { provide: ReferenceCrudService, useValue: { saveMany } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { creneaux } }
-    ]
+      { provide: MAT_DIALOG_DATA, useValue: { creneaux } },
+    ],
   });
   return { fixture: TestBed.createComponent(CreneauBulkEditDialog), saveMany, close };
 }
@@ -40,7 +43,11 @@ function racine(fixture: ComponentFixture<CreneauBulkEditDialog>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
 
-function saisir(fixture: ComponentFixture<CreneauBulkEditDialog>, name: string, valeur: string): void {
+function saisir(
+  fixture: ComponentFixture<CreneauBulkEditDialog>,
+  name: string,
+  valeur: string,
+): void {
   const input = racine(fixture).querySelector(`input[name="${name}"]`) as HTMLInputElement;
   input.value = valeur;
   input.dispatchEvent(new Event('input'));
@@ -88,7 +95,7 @@ describe('CreneauBulkEditDialog', () => {
     expect(resource).toBe('creneaux');
     expect(payloads.map((creneau) => [creneau.id, creneau.heureDebut, creneau.heureFin])).toEqual([
       [1, '09:00', '12:00'],
-      [2, '09:00', '19:00']
+      [2, '09:00', '19:00'],
     ]);
     expect(close).toHaveBeenCalledWith(true);
   });
@@ -145,8 +152,8 @@ describe('CreneauBulkEditDialog', () => {
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
         { provide: ReferenceCrudService, useValue: { saveMany } },
         { provide: MatDialogRef, useValue: { close: vi.fn() } },
-        { provide: MAT_DIALOG_DATA, useValue: { creneaux: CRENEAUX } }
-      ]
+        { provide: MAT_DIALOG_DATA, useValue: { creneaux: CRENEAUX } },
+      ],
     });
     const fixture = TestBed.createComponent(CreneauBulkEditDialog);
     await fixture.whenStable();

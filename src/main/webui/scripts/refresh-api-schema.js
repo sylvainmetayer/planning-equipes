@@ -26,7 +26,7 @@ const COMMITE = join(RACINE, '../../../docs/schema/openapi.json');
 if (!existsSync(FRAIS)) {
   console.error(
     `api-schema : ${FRAIS} est absent.\n` +
-      'Le contrat est déposé par le build Maven — lancez `./mvnw package -DskipTests` d\'abord.\n'
+      "Le contrat est déposé par le build Maven — lancez `./mvnw package -DskipTests` d'abord.\n",
   );
   process.exit(1);
 }
@@ -41,6 +41,6 @@ if (avant === apres) {
   const schemas = Object.keys(JSON.parse(apres).components?.schemas ?? {}).length;
   console.log(
     `api-schema : docs/schema/openapi.json mis à jour (${schemas} schémas). ` +
-      'Relisez le diff : il dit ce que l\'API a changé.'
+      "Relisez le diff : il dit ce que l'API a changé.",
   );
 }

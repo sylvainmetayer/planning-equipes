@@ -21,7 +21,7 @@ function view(): EspaceAnimateurView {
     foireOuvreLe: null,
     foireFermeLe: null,
     abonnementToken: 'abo-1',
-    pauses: []
+    pauses: [],
   };
 }
 
@@ -51,7 +51,7 @@ function demande(id: string): DemandeEchangeView {
     commentaireAdmin: null,
     creeLe: '2026-07-01T10:00:00Z',
     cibleDecideLe: null,
-    decideLe: null
+    decideLe: null,
   };
 }
 
@@ -71,21 +71,23 @@ describe('EspaceAnimateurService', () => {
       providers: [
         provideZonelessChangeDetection(),
         EspaceAnimateurService,
-        { provide: ApiService, useValue: api }
-      ]
+        { provide: ApiService, useValue: api },
+      ],
     });
     service = TestBed.inject(EspaceAnimateurService);
   });
 
   it('charge la vue et les demandes du jeton, et vide toute erreur passée', async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view()
+      url.endsWith('/demandes') ? [demande('D1')] : view(),
     );
 
     await service.charger('jeton-1');
 
     expect(api.getPreservingHttpError).toHaveBeenCalledWith('/api/espace-animateur/jeton-1');
-    expect(api.getPreservingHttpError).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/demandes');
+    expect(api.getPreservingHttpError).toHaveBeenCalledWith(
+      '/api/espace-animateur/jeton-1/demandes',
+    );
     expect(service.jeton()).toBe('jeton-1');
     expect(service.view()?.animateurId).toBe('A1');
     expect(service.demandes().map((d) => d.id)).toEqual(['D1']);
@@ -95,7 +97,7 @@ describe('EspaceAnimateurService', () => {
 
   it('un échec de chargement pose le message et remet la vue à zéro', async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view()
+      url.endsWith('/demandes') ? [demande('D1')] : view(),
     );
     await service.charger('jeton-1');
 
@@ -110,7 +112,7 @@ describe('EspaceAnimateurService', () => {
 
   it("la rotation de l'abonnement remplace le jeton sans recharger l'espace", async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view()
+      url.endsWith('/demandes') ? [demande('D1')] : view(),
     );
     await service.charger('jeton-1');
     api.getPreservingHttpError.mockClear();
@@ -140,29 +142,31 @@ describe('EspaceAnimateurService', () => {
   it("valider le code ouvre la session puis recharge l'espace", async () => {
     service.jeton.set('jeton-1');
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view()
+      url.endsWith('/demandes') ? [demande('D1')] : view(),
     );
 
     await service.validerCode('123456');
 
-    expect(api.post).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/session', { code: '123456' });
+    expect(api.post).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/session', {
+      code: '123456',
+    });
     expect(service.view()?.animateurId).toBe('A1');
     expect(service.authRequise()).toBe(false);
   });
 
   it('la soumission poste le lot et insère les demandes stockées en tête de liste', async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('ANCIENNE')] : view()
+      url.endsWith('/demandes') ? [demande('ANCIENNE')] : view(),
     );
     await service.charger('jeton-1');
     api.post.mockResolvedValue([demande('NOUVELLE')]);
 
     const soumises = await service.soumettre([
-      { creneauId: 1, standId: 'S1', cibleId: 'A2', motif: null }
+      { creneauId: 1, standId: 'S1', cibleId: 'A2', motif: null },
     ]);
 
     expect(api.post).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/demandes', [
-      { creneauId: 1, standId: 'S1', cibleId: 'A2', motif: null }
+      { creneauId: 1, standId: 'S1', cibleId: 'A2', motif: null },
     ]);
     expect(soumises.map((d) => d.id)).toEqual(['NOUVELLE']);
     expect(service.demandes().map((d) => d.id)).toEqual(['NOUVELLE', 'ANCIENNE']);
@@ -170,7 +174,7 @@ describe('EspaceAnimateurService', () => {
 
   it("l'annulation poste puis recharge la liste depuis le serveur", async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view()
+      url.endsWith('/demandes') ? [demande('D1')] : view(),
     );
     await service.charger('jeton-1');
 
@@ -180,7 +184,7 @@ describe('EspaceAnimateurService', () => {
 
     expect(api.post).toHaveBeenCalledWith(
       '/api/espace-animateur/jeton-1/demandes/D1/annulation',
-      null
+      null,
     );
     expect(service.demandes()[0].statut).toBe('ANNULEE');
   });
@@ -193,20 +197,20 @@ describe('EspaceAnimateurService', () => {
       optionsEligibles: 3,
       optionsEvaluees: 3,
       listeTronquee: false,
-      suggestions: []
+      suggestions: [],
     });
 
     const trouvees = await service.suggestionsEchange(12, 'stand/un');
 
     expect(api.get).toHaveBeenCalledWith(
-      '/api/espace-animateur/jeton-1/suggestions-echange?creneauId=12&standId=stand%2Fun'
+      '/api/espace-animateur/jeton-1/suggestions-echange?creneauId=12&standId=stand%2Fun',
     );
     expect(trouvees.suggestions).toEqual([]);
   });
 
   it('soumettre ou annuler sans espace chargé est un bug appelant : erreur explicite', async () => {
     await expect(
-      service.soumettre([{ creneauId: 1, standId: 'S1', cibleId: 'A2', motif: null }])
+      service.soumettre([{ creneauId: 1, standId: 'S1', cibleId: 'A2', motif: null }]),
     ).rejects.toThrow('Espace animateur non chargé');
     await expect(service.annuler('D1')).rejects.toThrow('Espace animateur non chargé');
     expect(api.post).not.toHaveBeenCalled();

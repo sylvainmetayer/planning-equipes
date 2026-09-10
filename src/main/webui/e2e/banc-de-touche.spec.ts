@@ -37,7 +37,7 @@ test.afterAll(async () => {
 async function sql(script: string): Promise<void> {
   const reponse = await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
-    data: script
+    data: script,
   });
   expect(reponse.ok(), await reponse.text()).toBe(true);
 }
@@ -53,7 +53,7 @@ async function semer(): Promise<void> {
     `delete from poste_affectation where creneau_id = ${CRENEAU_SANS_SIEGE};\n` +
       `delete from creneau where id = ${CRENEAU_SANS_SIEGE};\n` +
       `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) ` +
-      `values ('DEFAUT', ${CRENEAU_SANS_SIEGE}, '${DATE_SANS_SIEGE}', '09:00', '11:00');`
+      `values ('DEFAUT', ${CRENEAU_SANS_SIEGE}, '${DATE_SANS_SIEGE}', '09:00', '11:00');`,
   );
 }
 
@@ -90,7 +90,7 @@ test("l'écran s'annonce comme livré à l'essai", async ({ browser }) => {
 
   await expect(page.locator('#contenu')).toContainText("Cet écran est livré à l'essai");
   await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toContainText(
-    'En cours de développement'
+    'En cours de développement',
   );
   await page.context().close();
 });
@@ -101,7 +101,7 @@ test("l'écran s'annonce comme livré à l'essai", async ({ browser }) => {
  * selector is built from the answer, so this also proves the page no longer
  * reads the créneau referential to fill it.
  */
-test("le sélecteur ne propose pas un créneau que le plan ne pourvoit pas", async ({ browser }) => {
+test('le sélecteur ne propose pas un créneau que le plan ne pourvoit pas', async ({ browser }) => {
   // Guard against a vacuous assertion: the créneau really is in the
   // référentiel — it is only absent from the plan — so leaving it out of the
   // selector is a decision, not an accident of the fixture.

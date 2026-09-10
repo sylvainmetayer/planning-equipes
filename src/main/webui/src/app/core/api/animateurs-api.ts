@@ -24,7 +24,11 @@ export class AnimateursApi {
   }
 
   downloadCsvExample(): Promise<string> {
-    return this.api.downloadGet('/api/animateurs/import-csv/exemple', 'festival-realiste-animateurs.csv', 'text/csv');
+    return this.api.downloadGet(
+      '/api/animateurs/import-csv/exemple',
+      'festival-realiste-animateurs.csv',
+      'text/csv',
+    );
   }
 
   /** What the import would do, without writing anything. */

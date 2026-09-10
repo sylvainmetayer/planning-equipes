@@ -29,7 +29,7 @@ describe('LegalText', () => {
 
   it('links each cited article to Légifrance, in a new tab', async () => {
     const host = await render(
-      '35 heures (Code du travail art. L3162-1 ; art. D4153-3 avant 16 ans).'
+      '35 heures (Code du travail art. L3162-1 ; art. D4153-3 avant 16 ans).',
     );
     expect(links(host).map((lien) => lien.textContent)).toEqual(['L3162-1', 'D4153-3']);
     expect(links(host)[0].getAttribute('href')).toContain('legifrance.gouv.fr');

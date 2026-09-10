@@ -36,10 +36,10 @@ import { errorMessage } from '../../core/error-message';
     MatIconModule,
     MatInputModule,
     MatTableModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   templateUrl: './editions-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditionsPage {
   protected readonly columns = ['nom', 'id', 'etat', 'actions'];
@@ -68,8 +68,11 @@ export class EditionsPage {
       return;
     }
     const target: Pick<Edition, 'id' | 'nom'> = {
-      id: slugify(nom, this.store.editions().map((edition) => edition.id)),
-      nom
+      id: slugify(
+        nom,
+        this.store.editions().map((edition) => edition.id),
+      ),
+      nom,
     };
     const source = this.sourceDuplication();
     await this.executer(async () => {
@@ -81,7 +84,7 @@ export class EditionsPage {
           ? $localize`:@@editions.duplicated:Édition ${nom}:nom: créée à partir de ${source}:source:.`
           : $localize`:@@editions.created:Édition ${nom}:nom: créée.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     });
   }
@@ -115,7 +118,7 @@ export class EditionsPage {
       confirmLabel: $localize`:@@common.delete:Supprimer`,
       // Supprimer une édition entière est plus destructeur que vider la base :
       // le bouton se lit comme tel, au même titre que les deux autres recopies.
-      danger: true
+      danger: true,
     });
     if (saisi === null) {
       return;
@@ -123,7 +126,7 @@ export class EditionsPage {
     if (saisi.trim() !== edition.nom.trim()) {
       this.notifications.notify({
         title: $localize`:@@editions.delete.mismatch:Nom incorrect : l'édition n'a pas été supprimée.`,
-        variant: 'error'
+        variant: 'error',
       });
       return;
     }
@@ -138,7 +141,7 @@ export class EditionsPage {
     } catch (error) {
       this.notifications.notify({
         title: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       this.enCours.set(false);
@@ -151,7 +154,7 @@ export class EditionsPage {
     } catch (error) {
       this.notifications.notify({
         title: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     }
   }

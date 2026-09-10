@@ -8,7 +8,14 @@
 // deux personnes concernées, écrit à elles seules, puis retombe à zéro.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { SEED, contexteAdmin, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning } from './support';
+import {
+  SEED,
+  contexteAdmin,
+  jetonDe,
+  ouvrirSessionEspace,
+  pageAdmin,
+  seedPlanning,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
@@ -35,7 +42,7 @@ async function deplacerUnSiege(admin: APIRequestContext): Promise<void> {
     data:
       `delete from poste_affectation where id = 'E2E-P2';\n` +
       `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) ` +
-      `values ('DEFAUT', 'E2E-P2', '${SEED.standCible}', ${SEED.creneauId}, '${SEED.demandeur}');`
+      `values ('DEFAUT', 'E2E-P2', '${SEED.standCible}', ${SEED.creneauId}, '${SEED.demandeur}');`,
   });
   expect(reponse.ok(), await reponse.text()).toBe(true);
 }
@@ -68,18 +75,24 @@ test.describe('Publication du planning', () => {
     const etat = await apercu(admin);
     expect(etat.nombreConcernes).toBe(2);
     expect(etat.destinataires.map((destinataire) => destinataire.animateurId).sort()).toEqual(
-      [SEED.cible, SEED.demandeur].sort()
+      [SEED.cible, SEED.demandeur].sort(),
     );
-    const alice = etat.destinataires.find((destinataire) => destinataire.animateurId === SEED.demandeur);
+    const alice = etat.destinataires.find(
+      (destinataire) => destinataire.animateurId === SEED.demandeur,
+    );
     expect(alice?.changements.join(' ')).toContain('Stand E2E deux');
   });
 
-  test('le bouton porte le décompte et la liste nominative se relit avant l’envoi', async ({ browser }) => {
+  test('le bouton porte le décompte et la liste nominative se relit avant l’envoi', async ({
+    browser,
+  }) => {
     await deplacerUnSiege(admin);
     const page = await pageAdmin(browser, admin);
     await page.goto('/solveur');
 
-    await expect(page.getByRole('button', { name: /Publier — 2 personnes concernées/ })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /Publier — 2 personnes concernées/ }),
+    ).toBeVisible();
     await page.getByRole('button', { name: /Voir qui est concerné/ }).click();
     await expect(page.getByText('Stand E2E deux', { exact: false }).first()).toBeVisible();
 
@@ -151,9 +164,12 @@ test.describe('Publication du planning', () => {
     expect(trace.ok()).toBe(true);
     const destinataires = (await trace.json()) as { animateurId: string; statut: string }[];
     expect(destinataires.map((destinataire) => destinataire.animateurId).sort()).toEqual(
-      [SEED.cible, SEED.demandeur].sort()
+      [SEED.cible, SEED.demandeur].sort(),
     );
-    expect(destinataires.map((destinataire) => destinataire.statut).sort()).toEqual(['ENVOYE', 'SANS_EMAIL']);
+    expect(destinataires.map((destinataire) => destinataire.statut).sort()).toEqual([
+      'ENVOYE',
+      'SANS_EMAIL',
+    ]);
   });
 
   test('l’espace d’un animateur ne bouge qu’une fois publié', async () => {

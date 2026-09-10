@@ -1,5 +1,12 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
@@ -22,7 +29,13 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { TableNavigation } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
-import { NO_SORT, keepViewInQueryParams, optionalParam, readSort, sortQueryParams } from '../../core/view-query-params';
+import {
+  NO_SORT,
+  keepViewInQueryParams,
+  optionalParam,
+  readSort,
+  sortQueryParams,
+} from '../../core/view-query-params';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DetailData, DetailDialog } from '../../shared/detail-dialog';
@@ -59,35 +72,43 @@ import { errorMessage } from '../../core/error-message';
     MatTooltipModule,
     BulkActionsBar,
     SortHeaderName,
-    TableFilter
+    TableFilter,
   ],
   templateUrl: './animateurs-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateursPage {
-  protected readonly columns = ['select', 'id', 'nom', 'majorite', 'manager', 'indisponibilites', 'confirmation', 'actions'];
+  protected readonly columns = [
+    'select',
+    'id',
+    'nom',
+    'majorite',
+    'manager',
+    'indisponibilites',
+    'confirmation',
+    'actions',
+  ];
   protected readonly sort = signal<Sort>(NO_SORT);
   /** Quick filter of the table: id, identity and compétences. Applied before the sort. */
   protected readonly filtre = signal('');
   /** True as soon as the table shows something other than the whole referential, unsorted. */
   protected readonly viewChanged = computed(
-    () => this.filtre().trim() !== '' || (this.sort().active !== '' && this.sort().direction !== '')
+    () =>
+      this.filtre().trim() !== '' || (this.sort().active !== '' && this.sort().direction !== ''),
   );
   protected readonly animateursFiltres = computed(() =>
-    this.store
-      .animateurs()
-      .filter((animateur) =>
-        correspondAuFiltre(this.filtre(), [
-          animateur.id,
-          animateur.prenom,
-          animateur.nom,
-          ...Object.keys(animateur.competences ?? {}),
-          // The acknowledgement label travels with the row so the existing
-          // quick filter finds « relancé » or « silencieux » without a control
-          // of its own (issue #293).
-          this.confirmationLabel(animateur)
-        ])
-      )
+    this.store.animateurs().filter((animateur) =>
+      correspondAuFiltre(this.filtre(), [
+        animateur.id,
+        animateur.prenom,
+        animateur.nom,
+        ...Object.keys(animateur.competences ?? {}),
+        // The acknowledgement label travels with the row so the existing
+        // quick filter finds « relancé » or « silencieux » without a control
+        // of its own (issue #293).
+        this.confirmationLabel(animateur),
+      ]),
+    ),
   );
 
   /**
@@ -116,7 +137,7 @@ export class AnimateursPage {
 
   /** Keyed on the filtered, sorted rows, so "tout sélectionner" follows what the table shows. */
   protected readonly selection = new TableSelection<string>(
-    computed(() => this.sortedAnimateurs().map((animateur) => animateur.id))
+    computed(() => this.sortedAnimateurs().map((animateur) => animateur.id)),
   );
 
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -135,7 +156,7 @@ export class AnimateursPage {
       void this.consult(animateur);
       return true;
     },
-    announcer: inject(LiveAnnouncer)
+    announcer: inject(LiveAnnouncer),
   });
 
   private readonly problemes = inject(ProblemesStore);
@@ -157,13 +178,13 @@ export class AnimateursPage {
       this.notifications.notify({
         title: $localize`:@@animateurs.lienCopie:Lien de l'espace animateur copié.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     } catch {
       this.notifications.notify({
         title: $localize`:@@animateurs.lienCopieEchec:Impossible de copier le lien`,
         message: lien,
-        variant: 'warning'
+        variant: 'warning',
       });
     }
   }
@@ -174,7 +195,7 @@ export class AnimateursPage {
       title: $localize`:@@animateurs.regenererJetonTitre:Régénérer le lien de ${animateur.prenom}:prenom: ${animateur.nom}:nom: ?`,
       message: $localize`:@@animateurs.regenererJetonMessage:L'ancien lien (déjà imprimé sur ses plannings PDF) cessera de fonctionner immédiatement.`,
       confirmLabel: $localize`:@@animateurs.regenererJetonConfirm:Régénérer`,
-      danger: true
+      danger: true,
     });
     if (!confirmed) {
       return;
@@ -185,13 +206,13 @@ export class AnimateursPage {
       this.notifications.notify({
         title: $localize`:@@animateurs.jetonRegenere:Nouveau lien généré.`,
         variant: 'success',
-        timeout: 4000
+        timeout: 4000,
       });
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),
-        variant: 'error'
+        variant: 'error',
       });
     }
   }
@@ -210,7 +231,10 @@ export class AnimateursPage {
     for (const animateur of this.store.animateurs()) {
       const jour = (animateur.joursIndisponibles ?? []).find((date) => causesParDate.has(date));
       if (jour) {
-        alertes.set(animateur.id, this.indisponibiliteCritiqueMessage(jour, causesParDate.get(jour)!.message));
+        alertes.set(
+          animateur.id,
+          this.indisponibiliteCritiqueMessage(jour, causesParDate.get(jour)!.message),
+        );
       }
     }
     return alertes;
@@ -223,7 +247,10 @@ export class AnimateursPage {
     void this.crud.reload();
     void this.problemes.reloadFeasibility();
     void this.chargerConfirmations();
-    keepViewInQueryParams(() => ({ ...sortQueryParams(this.sort()), q: optionalParam(this.filtre()) }));
+    keepViewInQueryParams(() => ({
+      ...sortQueryParams(this.sort()),
+      q: optionalParam(this.filtre()),
+    }));
   }
 
   /**
@@ -233,7 +260,9 @@ export class AnimateursPage {
   private async chargerConfirmations(): Promise<void> {
     try {
       const confirmations = await this.animateursApi.confirmations();
-      this.confirmations.set(new Map(confirmations.map((confirmation) => [confirmation.animateurId, confirmation])));
+      this.confirmations.set(
+        new Map(confirmations.map((confirmation) => [confirmation.animateurId, confirmation])),
+      );
     } catch {
       this.confirmations.set(new Map());
     }
@@ -310,10 +339,10 @@ export class AnimateursPage {
     const data: DetailData = {
       title: `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id,
       subtitle: animateur.id,
-      sections: buildAnimateurDetail(animateur, this.store.typologies())
+      sections: buildAnimateurDetail(animateur, this.store.typologies()),
     };
     const result = await firstValueFrom(
-      this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed()
+      this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed(),
     );
     if (result === 'edit') {
       this.edit(animateur);
@@ -333,26 +362,39 @@ export class AnimateursPage {
       data: { animateur },
       width: '44rem',
       maxWidth: '95vw',
-      autoFocus: 'first-tabbable'
+      autoFocus: 'first-tabbable',
     });
   }
 
   protected async remove(animateur: Animateur): Promise<void> {
-    await this.crud.remove('animateurs', animateur.id, $localize`:@@animateurs.entityLabel:Animateur`);
+    await this.crud.remove(
+      'animateurs',
+      animateur.id,
+      $localize`:@@animateurs.entityLabel:Animateur`,
+    );
   }
 
   protected async removeSelection(): Promise<void> {
-    await this.crud.removeMany('animateurs', this.selection.selectedIds(), labelAnimateursPluriel());
+    await this.crud.removeMany(
+      'animateurs',
+      this.selection.selectedIds(),
+      labelAnimateursPluriel(),
+    );
   }
 
   protected editSelection(): void {
     const selectionnes = new Set(this.selection.selectedIds());
-    this.dialog.open<AnimateurBulkEditDialog, AnimateurBulkEditData, boolean>(AnimateurBulkEditDialog, {
-      data: { animateurs: this.store.animateurs().filter((animateur) => selectionnes.has(animateur.id)) },
-      width: '48rem',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable'
-    });
+    this.dialog.open<AnimateurBulkEditDialog, AnimateurBulkEditData, boolean>(
+      AnimateurBulkEditDialog,
+      {
+        data: {
+          animateurs: this.store.animateurs().filter((animateur) => selectionnes.has(animateur.id)),
+        },
+        width: '48rem',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+      },
+    );
   }
 }
 
@@ -363,7 +405,7 @@ export class AnimateursPage {
 const CONFIRMATION_LABELS: Record<StatutConfirmation, () => string> = {
   NON_VU: () => $localize`:@@animateurs.confirmation.nonVu:Silencieux`,
   CONFIRME: () => $localize`:@@animateurs.confirmation.confirme:Confirmé`,
-  RELANCE: () => $localize`:@@animateurs.confirmation.relance:Relancé`
+  RELANCE: () => $localize`:@@animateurs.confirmation.relance:Relancé`,
 };
 
 /**
@@ -388,7 +430,7 @@ function compareByColumn(
   a: Animateur,
   b: Animateur,
   column: string,
-  confirmations: Map<string, ConfirmationView>
+  confirmations: Map<string, ConfirmationView>,
 ): number {
   switch (column) {
     case 'id':
@@ -416,7 +458,10 @@ function compareByColumn(
  * after « Zoé ».
  */
 function compareTexte(left: string, right: string): number {
-  return (left ?? '').localeCompare(right ?? '', intlLocale(), { numeric: true, sensitivity: 'base' });
+  return (left ?? '').localeCompare(right ?? '', intlLocale(), {
+    numeric: true,
+    sensitivity: 'base',
+  });
 }
 
 function nomAffiche(animateur: Animateur): string {
@@ -428,7 +473,10 @@ function rankBooleen(valeur: boolean): number {
   return valeur ? 0 : 1;
 }
 
-function rankConfirmation(animateur: Animateur, confirmations: Map<string, ConfirmationView>): number {
+function rankConfirmation(
+  animateur: Animateur,
+  confirmations: Map<string, ConfirmationView>,
+): number {
   const confirmation = confirmations.get(animateur.id);
   if (!confirmation || !confirmation.affecte) {
     // Nothing was asked of them: last, because there is nothing to chase.
@@ -440,7 +488,7 @@ function rankConfirmation(animateur: Animateur, confirmations: Map<string, Confi
 const CONFIRMATION_RANKS: Record<StatutConfirmation, number> = {
   NON_VU: 0,
   RELANCE: 1,
-  CONFIRME: 2
+  CONFIRME: 2,
 };
 
 function rankMajorite(animateur: Animateur): number {

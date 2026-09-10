@@ -7,13 +7,21 @@ import { distanceMetres, formatDistance } from './distance';
 
 describe('distanceMetres', () => {
   it('is zero between a point and itself', () => {
-    expect(distanceMetres({ latitude: 47.2184, longitude: -1.5536 }, { latitude: 47.2184, longitude: -1.5536 })).toBe(0);
+    expect(
+      distanceMetres(
+        { latitude: 47.2184, longitude: -1.5536 },
+        { latitude: 47.2184, longitude: -1.5536 },
+      ),
+    ).toBe(0);
   });
 
   it('measures a known north-south gap: one minute of latitude is a nautical mile', () => {
     // Exact, not a tolerance: a loose band would not notice the earth radius
     // drifting away from the 6 371 km the solver uses server-side.
-    const metres = distanceMetres({ latitude: 47, longitude: -1.5 }, { latitude: 47 + 1 / 60, longitude: -1.5 });
+    const metres = distanceMetres(
+      { latitude: 47, longitude: -1.5 },
+      { latitude: 47 + 1 / 60, longitude: -1.5 },
+    );
     expect(metres).toBe(1853);
   });
 
@@ -26,22 +34,31 @@ describe('distanceMetres', () => {
   it('agrees to the metre with the known Nantes-Rennes distance', () => {
     const metres = distanceMetres(
       { latitude: 47.2184, longitude: -1.5536 },
-      { latitude: 48.1173, longitude: -1.6778 }
+      { latitude: 48.1173, longitude: -1.6778 },
     );
     expect(metres).toBe(100_385);
   });
 
   it('resolves the 300 m threshold the solver reasons with', () => {
     // ~0.0018 degree of latitude is right around 200 m: clearly under the bar.
-    const proche = distanceMetres({ latitude: 47.2, longitude: -1.55 }, { latitude: 47.2018, longitude: -1.55 });
+    const proche = distanceMetres(
+      { latitude: 47.2, longitude: -1.55 },
+      { latitude: 47.2018, longitude: -1.55 },
+    );
     expect(proche).toBe(200);
     // ~0.005 degree is around 550 m: clearly over it.
-    const loin = distanceMetres({ latitude: 47.2, longitude: -1.55 }, { latitude: 47.205, longitude: -1.55 });
+    const loin = distanceMetres(
+      { latitude: 47.2, longitude: -1.55 },
+      { latitude: 47.205, longitude: -1.55 },
+    );
     expect(loin).toBe(556);
   });
 
   it('crosses the antimeridian without exploding', () => {
-    const metres = distanceMetres({ latitude: 0, longitude: 179.99 }, { latitude: 0, longitude: -179.99 });
+    const metres = distanceMetres(
+      { latitude: 0, longitude: 179.99 },
+      { latitude: 0, longitude: -179.99 },
+    );
     expect(metres).toBe(2224);
   });
 

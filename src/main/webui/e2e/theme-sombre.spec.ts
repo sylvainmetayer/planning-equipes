@@ -127,7 +127,9 @@ test('la bascule passe en sombre et le choix survit au rechargement', async ({ b
   await page.context().close();
 });
 
-test("sans choix explicite, l'interface suit la préférence système à chaud", async ({ browser }) => {
+test("sans choix explicite, l'interface suit la préférence système à chaud", async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
@@ -138,7 +140,9 @@ test("sans choix explicite, l'interface suit la préférence système à chaud",
   // No reload: `color-scheme: light dark` is native, the browser repaints alone.
   await page.emulateMedia({ colorScheme: 'light' });
   await expect
-    .poll(() => fondDeLaPage(page), { message: 'le fond doit suivre la préférence système sans rechargement' })
+    .poll(() => fondDeLaPage(page), {
+      message: 'le fond doit suivre la préférence système sans rechargement',
+    })
     .not.toBe(fondSombre);
 
   await page.context().close();
@@ -186,7 +190,10 @@ test("l'accent de marque reste lisible sur les deux fonds", async ({ browser }) 
   const accentClair = await couleurPeinte(page, 'var(--app-accent)');
   expect(accentClair, 'la moitié claire doit rester la couleur configurée').toEqual([139, 30, 63]);
   const fondClair = await couleurPeinte(page, await fondDeLaPage(page));
-  expect(contraste(accentClair, fondClair), 'accent de marque sur la surface claire').toBeGreaterThan(4.5);
+  expect(
+    contraste(accentClair, fondClair),
+    'accent de marque sur la surface claire',
+  ).toBeGreaterThan(4.5);
 
   // Thème sombre : la jumelle éclaircie, pas la couleur brute — qui y tombait
   // à 2,1:1 avant que `core/branding.ts` ne pose une paire.
@@ -195,7 +202,10 @@ test("l'accent de marque reste lisible sur les deux fonds", async ({ browser }) 
   const accentSombre = await couleurPeinte(page, 'var(--app-accent)');
   expect(accentSombre, 'la moitié sombre doit être une autre couleur').not.toEqual(accentClair);
   const fondSombre = await couleurPeinte(page, await fondDeLaPage(page));
-  expect(contraste(accentSombre, fondSombre), 'accent de marque sur la surface sombre').toBeGreaterThan(4.5);
+  expect(
+    contraste(accentSombre, fondSombre),
+    'accent de marque sur la surface sombre',
+  ).toBeGreaterThan(4.5);
 
   await page.context().close();
 });

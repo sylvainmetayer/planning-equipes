@@ -15,7 +15,7 @@ const VIDE: MentionsLegales = {
   baseLegale: '',
   conservation: '',
   mesureAudience: false,
-  suiviErreurs: false
+  suiviErreurs: false,
 };
 
 function monter(mentions: MentionsLegales) {
@@ -23,8 +23,8 @@ function monter(mentions: MentionsLegales) {
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: ApiService, useValue: { get: vi.fn(async () => mentions) } }
-    ]
+      { provide: ApiService, useValue: { get: vi.fn(async () => mentions) } },
+    ],
   });
   return TestBed.createComponent(PolitiqueConfidentialitePage);
 }
@@ -117,7 +117,11 @@ describe('PolitiqueConfidentialitePage', () => {
     expect(fixture.nativeElement.textContent).toContain('Association Ludique');
 
     TestBed.resetTestingModule();
-    const distinct = monter({ ...VIDE, editeur: 'Association Ludique', responsableTraitement: 'Comité Festival' });
+    const distinct = monter({
+      ...VIDE,
+      editeur: 'Association Ludique',
+      responsableTraitement: 'Comité Festival',
+    });
     await distinct.whenStable();
     expect(distinct.nativeElement.textContent).toContain('Comité Festival');
   });

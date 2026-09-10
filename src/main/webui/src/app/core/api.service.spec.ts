@@ -6,7 +6,7 @@ describe('toError', () => {
   it('uses the server-provided message when the error body carries one', () => {
     const response = new HttpErrorResponse({
       status: 400,
-      error: { message: 'Créneau invalide' }
+      error: { message: 'Créneau invalide' },
     });
     expect(toError(response).message).toBe('Créneau invalide');
   });
@@ -37,7 +37,11 @@ describe('toError — le code du corps', () => {
   it('garde le code MODIFICATION_CONCURRENTE que porte le 409 d’une écriture périmée', () => {
     const response = new HttpErrorResponse({
       status: 409,
-      error: { message: 'Modifiée par une autre session', code: 'MODIFICATION_CONCURRENTE', modifieLe: '2026-09-06T10:00:00Z' }
+      error: {
+        message: 'Modifiée par une autre session',
+        code: 'MODIFICATION_CONCURRENTE',
+        modifieLe: '2026-09-06T10:00:00Z',
+      },
     });
     const error = toError(response) as ApiError;
     expect(error).toBeInstanceOf(ApiError);

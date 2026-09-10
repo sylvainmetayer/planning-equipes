@@ -21,7 +21,7 @@ export const BRANDING_NEUTRE: Branding = {
   accentColor: '',
   mascotUrl: '',
   mascotIconUrl: '',
-  supportEmail: ''
+  supportEmail: '',
 };
 
 /**
@@ -35,7 +35,7 @@ export const BRANDING_NEUTRE: Branding = {
  */
 export const BRANDING = new InjectionToken<Branding>('BRANDING', {
   providedIn: 'root',
-  factory: () => BRANDING_NEUTRE
+  factory: () => BRANDING_NEUTRE,
 });
 
 /**
@@ -57,7 +57,7 @@ export async function loadBranding(): Promise<Branding> {
       accentColor: branding.accentColor?.trim() ?? '',
       mascotUrl: branding.mascotUrl?.trim() ?? '',
       mascotIconUrl: branding.mascotIconUrl?.trim() ?? '',
-      supportEmail: branding.supportEmail?.trim() ?? ''
+      supportEmail: branding.supportEmail?.trim() ?? '',
     };
   } catch (error) {
     console.error('Could not load the branding, falling back to a neutral identity.', error);
@@ -112,7 +112,10 @@ export function accentForBothSchemes(accent: string): string {
 export function appliquerBranding(branding: Branding): void {
   document.title = branding.productName;
   if (branding.accentColor) {
-    document.documentElement.style.setProperty('--app-accent', accentForBothSchemes(branding.accentColor));
+    document.documentElement.style.setProperty(
+      '--app-accent',
+      accentForBothSchemes(branding.accentColor),
+    );
   }
 }
 

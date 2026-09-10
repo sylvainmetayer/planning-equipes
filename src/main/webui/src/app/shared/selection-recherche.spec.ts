@@ -22,7 +22,7 @@ interface PickerApi {
 const ANIMATEURS: OptionSelection[] = [
   { id: 'A1', label: 'Émile Zola' },
   { id: 'A2', label: 'Amélie Nothomb' },
-  { id: 'A3', label: 'Marcel Proust' }
+  { id: 'A3', label: 'Marcel Proust' },
 ];
 
 describe('SelectionRecherche', () => {
@@ -87,7 +87,10 @@ describe('SelectionRecherche', () => {
   it('caps the proposition list, so a 150-entry referential never renders whole', () => {
     fixture.componentRef.setInput(
       'options',
-      Array.from({ length: 153 }, (_unused, index) => ({ id: `A${index}`, label: `Animateur ${index}` }))
+      Array.from({ length: 153 }, (_unused, index) => ({
+        id: `A${index}`,
+        label: `Animateur ${index}`,
+      })),
     );
 
     expect(picker.optionsFiltrees()).toHaveLength(50);
@@ -114,11 +117,13 @@ describe('SelectionRecherche', () => {
     // The trailing text is the remove button's icon ligature.
     expect(chips.map((each) => each.textContent!.replace('cancel', '').trim())).toEqual([
       'Émile Zola',
-      'Marcel Proust'
+      'Marcel Proust',
     ]);
     // "Retirer" alone, repeated, tells a screen-reader user nothing.
     expect(
-      Array.from(racine.querySelectorAll('mat-chip-row button')).map((each) => each.getAttribute('aria-label'))
+      Array.from(racine.querySelectorAll('mat-chip-row button')).map((each) =>
+        each.getAttribute('aria-label'),
+      ),
     ).toEqual(['Retirer Émile Zola', 'Retirer Marcel Proust']);
   });
 

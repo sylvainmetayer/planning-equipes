@@ -18,7 +18,9 @@ describe('PlanningApi', () => {
     for (const stub of Object.values(api)) {
       stub.mockReset();
     }
-    TestBed.configureTestingModule({ providers: [PlanningApi, { provide: ApiService, useValue: api }] });
+    TestBed.configureTestingModule({
+      providers: [PlanningApi, { provide: ApiService, useValue: api }],
+    });
     planning = TestBed.inject(PlanningApi);
   });
 
@@ -32,7 +34,7 @@ describe('PlanningApi', () => {
       '/api/planning/persisted/count',
       '/api/planning/scenarios',
       '/api/planning/publication',
-      '/api/planning/snapshots/comparables'
+      '/api/planning/snapshots/comparables',
     ]);
   });
 
@@ -58,10 +60,32 @@ describe('PlanningApi', () => {
     await planning.exportBundle(PLANNING);
     await planning.exportHours(PLANNING);
 
-    expect(api.downloadGet).toHaveBeenNthCalledWith(1, '/api/planning/export-scenario', 'scenario.yaml', 'application/x-yaml');
-    expect(api.downloadGet).toHaveBeenNthCalledWith(2, '/api/planning/export/pdf/global', 'planning-global.pdf', 'application/pdf');
-    expect(api.downloadPost).toHaveBeenNthCalledWith(1, '/api/planning/export/bundle/all', 'planning.zip', PLANNING, 'application/zip');
-    expect(api.downloadPost).toHaveBeenNthCalledWith(2, '/api/planning/hours/export', 'heures-planning.csv', PLANNING, 'text/csv');
+    expect(api.downloadGet).toHaveBeenNthCalledWith(
+      1,
+      '/api/planning/export-scenario',
+      'scenario.yaml',
+      'application/x-yaml',
+    );
+    expect(api.downloadGet).toHaveBeenNthCalledWith(
+      2,
+      '/api/planning/export/pdf/global',
+      'planning-global.pdf',
+      'application/pdf',
+    );
+    expect(api.downloadPost).toHaveBeenNthCalledWith(
+      1,
+      '/api/planning/export/bundle/all',
+      'planning.zip',
+      PLANNING,
+      'application/zip',
+    );
+    expect(api.downloadPost).toHaveBeenNthCalledWith(
+      2,
+      '/api/planning/hours/export',
+      'heures-planning.csv',
+      PLANNING,
+      'text/csv',
+    );
   });
 
   // An animateur id is free text: it travels encoded, or a slash in it would change the route.
@@ -69,7 +93,12 @@ describe('PlanningApi', () => {
     await planning.exportForAnimateur('pdf', 'a/1', 'planning.pdf', PLANNING, 'application/pdf');
     await planning.sendToAnimateur('a/1');
 
-    expect(api.downloadPost).toHaveBeenCalledWith('/api/planning/export/pdf/animateur/a%2F1', 'planning.pdf', PLANNING, 'application/pdf');
+    expect(api.downloadPost).toHaveBeenCalledWith(
+      '/api/planning/export/pdf/animateur/a%2F1',
+      'planning.pdf',
+      PLANNING,
+      'application/pdf',
+    );
     expect(api.post).toHaveBeenCalledWith('/api/planning/envoi/animateur/a%2F1', null);
   });
 });

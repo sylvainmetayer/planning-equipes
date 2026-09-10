@@ -20,7 +20,7 @@ export const SEED = {
   /** The day after, where the free colleague holds the seat a directed échange trades against. */
   creneauAutreJour: 987002,
   jour: '2026-07-10',
-  jourSuivant: '2026-07-11'
+  jourSuivant: '2026-07-11',
 } as const;
 
 /**
@@ -29,18 +29,18 @@ export const SEED = {
  */
 export async function contexteAdmin(
   playwright: Playwright,
-  baseURL: string
+  baseURL: string,
 ): Promise<APIRequestContext> {
   // Pinned on the DEFAUT edition: the suite seeds hard-coded 'DEFAUT' rows,
   // while an unpinned request follows whatever edition the target instance
   // flags as default — which any real deployment may have changed.
   const request = await playwright.request.newContext({
     baseURL,
-    extraHTTPHeaders: { 'X-Edition-Id': 'DEFAUT' }
+    extraHTTPHeaders: { 'X-Edition-Id': 'DEFAUT' },
   });
   const connexion = await request.post('/j_security_check', {
     form: { j_username: 'admin', j_password: MOT_DE_PASSE_ADMIN },
-    maxRedirects: 0
+    maxRedirects: 0,
   });
   expect(connexion.status(), 'form login should answer the landing redirect').toBe(302);
   return request;
@@ -63,7 +63,7 @@ export async function contexteAdmin(
  */
 export async function seedPlanning(
   admin: APIRequestContext,
-  options: { avecCollegueIndisponible?: boolean; avecCollegueLibre?: boolean } = {}
+  options: { avecCollegueIndisponible?: boolean; avecCollegueLibre?: boolean } = {},
 ): Promise<void> {
   const script = [
     // Ses propres lignes seulement : la spec est repartie de la base de
@@ -99,21 +99,21 @@ export async function seedPlanning(
     ...(options.avecCollegueIndisponible
       ? [
           `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.collegueIndisponible}', 'Chloé', 'E2E', '1995-03-03', false);`,
-          `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('DEFAUT', '${SEED.collegueIndisponible}', '${SEED.jour}');`
+          `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('DEFAUT', '${SEED.collegueIndisponible}', '${SEED.jour}');`,
         ]
       : []),
     ...(options.avecCollegueLibre
       ? [
           `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.collegueLibre}', 'Denis', 'E2E', '1988-04-04', false);`,
           `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauAutreJour}, '${SEED.jourSuivant}', '14:00', '16:00');`,
-          `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P3', '${SEED.standCible}', ${SEED.creneauAutreJour}, '${SEED.collegueLibre}');`
+          `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P3', '${SEED.standCible}', ${SEED.creneauAutreJour}, '${SEED.collegueLibre}');`,
         ]
-      : [])
+      : []),
   ].join('\n');
 
   const importReponse = await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
-    data: script
+    data: script,
   });
   expect(importReponse.ok(), await importReponse.text()).toBe(true);
   await publierPlanning(admin);
@@ -130,10 +130,7 @@ export async function seedPlanning(
  */
 export async function publierPlanning(admin: APIRequestContext): Promise<void> {
   const reponse = await admin.post('/api/planning/publication');
-  expect(
-    reponse.ok() || reponse.status() === 409,
-    await reponse.text()
-  ).toBe(true);
+  expect(reponse.ok() || reponse.status() === 409, await reponse.text()).toBe(true);
 }
 
 /* ------------------------- Solver-backed seeding ------------------------- */
@@ -174,7 +171,7 @@ export async function seedReferentielSolveur(
   admin: APIRequestContext,
   animateurs: AnimateurSeed[],
   stands: StandSeed[],
-  creneaux: CreneauSeed[]
+  creneaux: CreneauSeed[],
 ): Promise<void> {
   const prefixes = ['E2E-', 'SOLV-', 'FUZZ-'];
   const statements: string[] = [];
@@ -184,20 +181,20 @@ export async function seedReferentielSolveur(
       `delete from verrouillage_planning where animateur_id like '${prefixe}%' or stand_id like '${prefixe}%';`,
       `delete from contrainte_ad_hoc where id in (select contrainte_id from contrainte_animateur where animateur_id like '${prefixe}%');`,
       `delete from contrainte_ad_hoc where stand_id like '${prefixe}%' or id like '${prefixe}%';`,
-      `delete from poste_affectation where id like '${prefixe}%' or stand_id like '${prefixe}%' or animateur_id like '${prefixe}%';`
+      `delete from poste_affectation where id like '${prefixe}%' or stand_id like '${prefixe}%' or animateur_id like '${prefixe}%';`,
     );
   }
   statements.push(
     `delete from verrouillage_planning where creneau_id >= 987000 and creneau_id < 988000;`,
     `delete from contrainte_ad_hoc where creneau_id >= 987000 and creneau_id < 988000;`,
     `delete from poste_affectation where creneau_id >= 987000 and creneau_id < 988000;`,
-    `delete from creneau where id >= 987000 and id < 988000;`
+    `delete from creneau where id >= 987000 and id < 988000;`,
   );
   for (const prefixe of prefixes) {
     statements.push(
       `delete from animateur where id like '${prefixe}%';`,
       `delete from stand_typologie where stand_id like '${prefixe}%';`,
-      `delete from stand where id like '${prefixe}%';`
+      `delete from stand where id like '${prefixe}%';`,
     );
   }
   for (const stand of stands) {
@@ -205,27 +202,27 @@ export async function seedReferentielSolveur(
       `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${stand.id}', '${stand.nom}', ${stand.effectif}, ${stand.effectif}, ${stand.reserveMajeurs ?? false});`,
       // A stand always carries a typologie (issue #343): without one, the specs
       // that then edit the stand through the API would be refused.
-      `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${stand.id}', 'STRATEGIE');`
+      `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${stand.id}', 'STRATEGIE');`,
     );
   }
   for (const animateur of animateurs) {
     statements.push(
-      `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.dateNaissance}', false, '${animateur.id}@example.org');`
+      `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.dateNaissance}', false, '${animateur.id}@example.org');`,
     );
     for (const jour of animateur.joursIndisponibles ?? []) {
       statements.push(
-        `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('DEFAUT', '${animateur.id}', '${jour}');`
+        `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('DEFAUT', '${animateur.id}', '${jour}');`,
       );
     }
   }
   for (const creneau of creneaux) {
     statements.push(
-      `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${creneau.id}, '${creneau.date}', '${creneau.debut}', '${creneau.fin}');`
+      `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${creneau.id}, '${creneau.date}', '${creneau.debut}', '${creneau.fin}');`,
     );
   }
   const importReponse = await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
-    data: statements.join('\n')
+    data: statements.join('\n'),
   });
   expect(importReponse.ok(), await importReponse.text()).toBe(true);
 }
@@ -273,8 +270,12 @@ export async function lancerSolve(admin: APIRequestContext, seconds: number): Pr
     if (job.status === 'COMPLETED') {
       return job;
     }
-    expect(job.status, job.error ?? 'job in a terminal non-completed state').not.toMatch(/FAILED|CANCELLED/);
-    expect(Date.now() - debut, 'solve should finish well within its budget').toBeLessThan((seconds + 60) * 1000);
+    expect(job.status, job.error ?? 'job in a terminal non-completed state').not.toMatch(
+      /FAILED|CANCELLED/,
+    );
+    expect(Date.now() - debut, 'solve should finish well within its budget').toBeLessThan(
+      (seconds + 60) * 1000,
+    );
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 }
@@ -296,11 +297,14 @@ export async function planningPersiste(admin: APIRequestContext): Promise<Planni
 }
 
 /** Occupant of the single seat of (stand, créneau), `null` when empty/absent. */
-export function occupantDe(planning: PlanningPersiste, standId: string, creneauId: number): string | null {
+export function occupantDe(
+  planning: PlanningPersiste,
+  standId: string,
+  creneauId: number,
+): string | null {
   return (
-    planning.postes.find(
-      (poste) => poste.stand?.id === standId && poste.creneau?.id === creneauId
-    )?.animateur?.id ?? null
+    planning.postes.find((poste) => poste.stand?.id === standId && poste.creneau?.id === creneauId)
+      ?.animateur?.id ?? null
   );
 }
 
@@ -354,14 +358,14 @@ const MAILPIT_URL = process.env['E2E_MAILPIT_URL'] ?? 'http://localhost:8025';
 export async function ouvrirSessionEspace(
   requeteur: APIRequestContext,
   jeton: string,
-  email: string
+  email: string,
 ): Promise<void> {
   const avant = await nombreDeMails(requeteur, email);
   const envoi = await requeteur.post(`/api/espace-animateur/${jeton}/code`);
   expect(envoi.ok(), await envoi.text()).toBe(true);
   const code = await lireCodeMailpit(requeteur, email, avant);
   const session = await requeteur.post(`/api/espace-animateur/${jeton}/session`, {
-    data: { code }
+    data: { code },
   });
   expect(session.status(), await session.text()).toBe(204);
 }
@@ -377,9 +381,12 @@ interface RechercheMailpit {
   messages: { ID: string }[];
 }
 
-async function rechercherMails(requeteur: APIRequestContext, email: string): Promise<RechercheMailpit | null> {
+async function rechercherMails(
+  requeteur: APIRequestContext,
+  email: string,
+): Promise<RechercheMailpit | null> {
   const reponse = await requeteur.get(
-    `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`
+    `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`,
   );
   return reponse.ok() ? ((await reponse.json()) as RechercheMailpit) : null;
 }
@@ -392,7 +399,7 @@ async function nombreDeMails(requeteur: APIRequestContext, email: string): Promi
 async function lireCodeMailpit(
   requeteur: APIRequestContext,
   email: string,
-  mailsAvant: number
+  mailsAvant: number,
 ): Promise<string> {
   for (let essai = 0; essai < 40; essai++) {
     const recherche = await rechercherMails(requeteur, email);

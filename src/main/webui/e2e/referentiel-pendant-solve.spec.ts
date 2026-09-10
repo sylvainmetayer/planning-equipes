@@ -26,7 +26,7 @@ import {
   StandSeed,
   contexteAdmin,
   pageAdmin,
-  seedReferentielSolveur
+  seedReferentielSolveur,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -37,15 +37,15 @@ const ANIMATEURS: AnimateurSeed[] = [
   { id: 'SOLV-G1', prenom: 'Gaby', nom: 'Garde', dateNaissance: '1990-01-01' },
   { id: 'SOLV-G2', prenom: 'Hugo', nom: 'Garde', dateNaissance: '1991-02-02' },
   { id: 'SOLV-G3', prenom: 'Inès', nom: 'Garde', dateNaissance: '1992-03-03' },
-  { id: 'SOLV-G4', prenom: 'Jules', nom: 'Garde', dateNaissance: '1993-04-04' }
+  { id: 'SOLV-G4', prenom: 'Jules', nom: 'Garde', dateNaissance: '1993-04-04' },
 ];
 const STANDS: StandSeed[] = [
   { id: 'SOLV-GS1', nom: 'Stand garde un', effectif: 1 },
-  { id: 'SOLV-GS2', nom: 'Stand garde deux', effectif: 1 }
+  { id: 'SOLV-GS2', nom: 'Stand garde deux', effectif: 1 },
 ];
 const CRENEAUX: CreneauSeed[] = [
   { id: C1, date: '2026-07-20', debut: '10:00', fin: '12:00' },
-  { id: C2, date: '2026-07-21', debut: '10:00', fin: '12:00' }
+  { id: C2, date: '2026-07-21', debut: '10:00', fin: '12:00' },
 ];
 
 /** Long enough that the assertions run while it is still solving. */
@@ -69,7 +69,7 @@ async function demarrerSolve(): Promise<string> {
   const { id } = (await lancement.json()) as { id: string };
   await expect
     .poll(async () => (await admin.get('/api/jobs/active')).status(), {
-      message: 'the solve should be holding the solver'
+      message: 'the solve should be holding the solver',
     })
     .toBe(200);
   return id;
@@ -83,7 +83,7 @@ async function libererLeSolveur(jobId: string | null): Promise<void> {
   await expect
     .poll(async () => (await admin.get('/api/jobs/active')).status(), {
       message: 'the solver should end up free',
-      timeout: 90_000
+      timeout: 90_000,
     })
     .toBe(204);
 }
@@ -97,7 +97,7 @@ async function libererLeSolveur(jobId: string | null): Promise<void> {
 async function tabPerimee(page: Page): Promise<void> {
   await page.route('**/api/jobs/stream*', (route) => route.abort());
   await page.route('**/api/jobs/active*', (route) =>
-    route.fulfill({ status: 204, body: '', headers: { 'content-type': 'application/json' } })
+    route.fulfill({ status: 204, body: '', headers: { 'content-type': 'application/json' } }),
   );
 }
 
@@ -108,7 +108,7 @@ test.describe('écriture du référentiel pendant une résolution', () => {
   });
 
   test("l'écran Stands se verrouille pendant la résolution, et le serveur refuse aussi", async ({
-    browser
+    browser,
   }) => {
     test.slow();
     let jobId: string | null = null;
@@ -132,7 +132,7 @@ test.describe('écriture du référentiel pendant une résolution', () => {
       // 2. And the server refuses on its own — the button is not the guard.
       //    Same session, same edition: what a stale tab or a script would get.
       const refus = await page.request.put('/api/stands/SOLV-GS1', {
-        data: { id: 'SOLV-GS1', nom: 'Renommé pendant le solve', effectifMin: 1, effectifMax: 1 }
+        data: { id: 'SOLV-GS1', nom: 'Renommé pendant le solve', effectifMin: 1, effectifMax: 1 },
       });
       expect(refus.status()).toBe(409);
 
@@ -155,7 +155,9 @@ test.describe('écriture du référentiel pendant une résolution', () => {
     }
   });
 
-  test('le refus arrive lisiblement jusque dans le bandeau de notification', async ({ browser }) => {
+  test('le refus arrive lisiblement jusque dans le bandeau de notification', async ({
+    browser,
+  }) => {
     test.slow();
     let jobId: string | null = null;
     const page = await pageAdmin(browser, admin);
@@ -194,7 +196,7 @@ test.describe('écriture du référentiel pendant une résolution', () => {
   });
 
   test('une résolution terminée rend la main : le renommage passe par l’écran', async ({
-    browser
+    browser,
   }) => {
     test.slow();
     let jobId: string | null = null;

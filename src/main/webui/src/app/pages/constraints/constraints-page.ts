@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -19,7 +26,7 @@ import {
   DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
   ConstraintView,
   ConstraintsView,
-  NiveauContrainte
+  NiveauContrainte,
 } from '../../core/models';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -81,10 +88,10 @@ const POIDS_MAX = 100;
     MatTooltipModule,
     FeasibilityBanner,
     LegalText,
-    StatusMessage
+    StatusMessage,
   ],
   templateUrl: './constraints-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConstraintsPage {
   protected readonly loading = signal(false);
@@ -121,9 +128,12 @@ export class ConstraintsPage {
   protected readonly hardScore = computed(() => this.view()?.hardScore ?? null);
   protected readonly hardIssues = computed(
     () =>
-      this.view()?.contraintes
-        .filter((constraint) => constraint.niveau === 'HARD' && (constraint.matchCount ?? 0) > 0)
-        .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount ?? 0 })) ?? []
+      this.view()
+        ?.contraintes.filter(
+          (constraint) => constraint.niveau === 'HARD' && (constraint.matchCount ?? 0) > 0,
+        )
+        .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount ?? 0 })) ??
+      [],
   );
 
   protected readonly jobs = inject(SolverJobService);
@@ -168,8 +178,10 @@ export class ConstraintsPage {
     const parScore = this.triParScore();
     return Array.from(groups.entries()).map(([categorie, items]) => ({
       categorie,
-      items: parScore ? [...items].sort((a, b) => (b.matchCount ?? 0) - (a.matchCount ?? 0)) : items,
-      dosable: items.some((constraint) => constraint.dosable)
+      items: parScore
+        ? [...items].sort((a, b) => (b.matchCount ?? 0) - (a.matchCount ?? 0))
+        : items,
+      dosable: items.some((constraint) => constraint.dosable),
     }));
   });
 
@@ -260,19 +272,27 @@ export class ConstraintsPage {
     const heuresMineur = this.dureeHebdomadaireMaxMineurHeures();
     const pauseMinutes = this.pauseEntreVacationsMinutes();
     const reposHeures = this.reposQuotidienHeures();
-    if (heures === null || heures <= 0 || heuresMineur === null || heuresMineur <= 0
-        || pauseMinutes === null || pauseMinutes < 0 || reposHeures === null || reposHeures < 0) {
+    if (
+      heures === null ||
+      heures <= 0 ||
+      heuresMineur === null ||
+      heuresMineur <= 0 ||
+      pauseMinutes === null ||
+      pauseMinutes < 0 ||
+      reposHeures === null ||
+      reposHeures < 0
+    ) {
       return;
     }
     if (heures > this.plafondMajeurHeures) {
       this.parametresError.set(
-        $localize`:@@constraints.legal.error.plafondMajeur:La durée hebdomadaire maximale des majeurs ne peut pas dépasser ${this.plafondMajeurHeures}:hours: h (Code du travail art. L3121-20, disposition d'ordre public).`
+        $localize`:@@constraints.legal.error.plafondMajeur:La durée hebdomadaire maximale des majeurs ne peut pas dépasser ${this.plafondMajeurHeures}:hours: h (Code du travail art. L3121-20, disposition d'ordre public).`,
       );
       return;
     }
     if (heuresMineur > this.plafondMineurHeures) {
       this.parametresError.set(
-        $localize`:@@constraints.legal.error.plafondMineur:La durée hebdomadaire maximale des mineurs ne peut pas dépasser ${this.plafondMineurHeures}:hours: h (Code du travail art. L3162-1).`
+        $localize`:@@constraints.legal.error.plafondMineur:La durée hebdomadaire maximale des mineurs ne peut pas dépasser ${this.plafondMineurHeures}:hours: h (Code du travail art. L3162-1).`,
       );
       return;
     }
@@ -285,7 +305,7 @@ export class ConstraintsPage {
         dureeHebdomadaireMaxMineurMinutes: Math.round(heuresMineur * 60),
         pauseMinimaleEntreVacationsMinutes: Math.round(pauseMinutes),
         reposQuotidienMinimalMinutes: Math.round(reposHeures * 60),
-        pauseSurPoste: this.pauseSurPoste()
+        pauseSurPoste: this.pauseSurPoste(),
       });
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
       this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
@@ -316,7 +336,10 @@ export class ConstraintsPage {
    * writes nothing back to it. Left alone it would show « désactivée » for a
    * rule that stayed active.
    */
-  protected async toggleConstraint(constraint: ConstraintView, event: MatSlideToggleChange): Promise<void> {
+  protected async toggleConstraint(
+    constraint: ConstraintView,
+    event: MatSlideToggleChange,
+  ): Promise<void> {
     const actif = event.checked;
     if (!actif && !(await this.legalDisable.allowsDisabling(constraint))) {
       event.source.checked = !actif;
@@ -337,7 +360,9 @@ export class ConstraintsPage {
   }
 
   protected actifLabel(actif: boolean): string {
-    return actif ? $localize`:@@constraints.active:Active` : $localize`:@@constraints.disabled:Désactivée`;
+    return actif
+      ? $localize`:@@constraints.active:Active`
+      : $localize`:@@constraints.disabled:Désactivée`;
   }
 
   /**
@@ -346,7 +371,10 @@ export class ConstraintsPage {
    * never keeps showing a number nobody stored — an empty field, a stray letter
    * or a 0 all fall back to the current weight or to the nearest bound.
    */
-  protected async onPoidsChange(constraint: ConstraintView, field: HTMLInputElement): Promise<void> {
+  protected async onPoidsChange(
+    constraint: ConstraintView,
+    field: HTMLInputElement,
+  ): Promise<void> {
     const saisi = Number(field.value);
     const borne =
       field.value.trim() === '' || Number.isNaN(saisi)
@@ -390,8 +418,8 @@ export class ConstraintsPage {
     this.view.set({
       ...view,
       contraintes: view.contraintes.map((constraint) =>
-        constraint.name === name ? { ...constraint, ...patch } : constraint
-      )
+        constraint.name === name ? { ...constraint, ...patch } : constraint,
+      ),
     });
   }
 
@@ -417,9 +445,9 @@ export class ConstraintsPage {
         constraintName: constraint.name,
         description: constraint.description,
         matchCount: constraint.matchCount ?? constraint.violations.length,
-        violations: constraint.violations
+        violations: constraint.violations,
       },
-      width: '36rem'
+      width: '36rem',
     });
   }
 

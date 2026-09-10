@@ -35,7 +35,7 @@ const MAPPING: AnimateurCsvMapping = {
   manager: null,
   competences: null,
   souhaits: null,
-  joursIndisponibles: null
+  joursIndisponibles: null,
 };
 
 function rapport(applied: boolean): ImportCsvRapport {
@@ -58,7 +58,7 @@ function rapport(applied: boolean): ImportCsvRapport {
         action: 'CREATED',
         reasons: [],
         warnings: [],
-        joursIndisponibles: ['2030-07-18']
+        joursIndisponibles: ['2030-07-18'],
       },
       {
         line: 3,
@@ -67,10 +67,10 @@ function rapport(applied: boolean): ImportCsvRapport {
         action: 'REJECTED',
         reasons: ['Date de naissance illisible'],
         warnings: [],
-        joursIndisponibles: []
-      }
+        joursIndisponibles: [],
+      },
     ],
-    warnings: ["Jours d'indisponibilité : ajout."]
+    warnings: ["Jours d'indisponibilité : ajout."],
   };
 }
 
@@ -78,7 +78,7 @@ describe('ImportAnimateursPage', () => {
   const animateursApi = {
     analyseCsvImport: vi.fn(),
     applyCsvImport: vi.fn(),
-    downloadCsvExample: vi.fn(async () => 'Téléchargement démarré.')
+    downloadCsvExample: vi.fn(async () => 'Téléchargement démarré.'),
   };
   const confirm = { ask: vi.fn(async () => true) };
   const store = { reload: vi.fn(async () => undefined) };
@@ -99,10 +99,11 @@ describe('ImportAnimateursPage', () => {
         { provide: AnimateursApi, useValue: animateursApi },
         { provide: ConfirmService, useValue: confirm },
         { provide: ReferenceDataStore, useValue: store },
-        { provide: NotificationService, useValue: notifications }
-      ]
+        { provide: NotificationService, useValue: notifications },
+      ],
     });
-    page = TestBed.createComponent(ImportAnimateursPage).componentInstance as unknown as PageInternals;
+    page = TestBed.createComponent(ImportAnimateursPage)
+      .componentInstance as unknown as PageInternals;
   });
 
   /** Loading a file goes through the analysis endpoint only — the one that writes nothing. */
@@ -178,7 +179,7 @@ describe('ImportAnimateursPage', () => {
     animateursApi.analyseCsvImport.mockReturnValueOnce(
       new Promise<ImportCsvRapport>((resolve) => {
         repondreA = resolve;
-      })
+      }),
     );
     const analyseA = page.analyser();
     animateursApi.analyseCsvImport.mockResolvedValueOnce({ ...rapport(false), mapping: mappingB });
@@ -234,7 +235,9 @@ describe('ImportAnimateursPage', () => {
   });
 
   it('shows the refusal and drops the report when the server refuses the file', async () => {
-    animateursApi.analyseCsvImport.mockRejectedValueOnce(new Error("Ce format n'est pas accepté : seul le CSV est lu."));
+    animateursApi.analyseCsvImport.mockRejectedValueOnce(
+      new Error("Ce format n'est pas accepté : seul le CSV est lu."),
+    );
     const instance = page as unknown as { contenu: { set: (v: string) => void } };
     instance.contenu.set('PK');
     page.nomFichier.set('roster.xlsx');

@@ -17,13 +17,13 @@ const PROMPTS: PromptMcp[] = [
   {
     nom: 'construire_la_grille_de_creneaux',
     description: 'Poser une grille de créneaux récurrents.',
-    texte: 'Construis la grille de créneaux. 1. diagnostiquer_grille_creneaux…'
+    texte: 'Construis la grille de créneaux. 1. diagnostiquer_grille_creneaux…',
   },
   {
     nom: 'diagnostiquer_contraintes_dures',
     description: 'Diagnostiquer les contraintes dures encore violées.',
-    texte: 'Le dernier planning résolu contient des violations de contraintes dures.'
-  }
+    texte: 'Le dernier planning résolu contient des violations de contraintes dures.',
+  },
 ];
 
 describe('McpPage prompts', () => {
@@ -40,15 +40,15 @@ describe('McpPage prompts', () => {
       }),
       status: vi.fn(async () => ({ configuree: true, header: 'X-MCP-Api-Key' })),
       configResponse: vi.fn(async () => new Response(null, { status: 200 })),
-      regenerateKey: vi.fn()
+      regenerateKey: vi.fn(),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         { provide: McpApi, useValue: mcpApi },
-        { provide: NotificationService, useValue: { notify: vi.fn() } }
-      ]
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+      ],
     });
     fixture = TestBed.createComponent(McpPage);
     await fixture.whenStable();
@@ -63,7 +63,7 @@ describe('McpPage prompts', () => {
     write = vi.fn(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
-      value: { writeText: write }
+      value: { writeText: write },
     });
   });
 
@@ -72,19 +72,23 @@ describe('McpPage prompts', () => {
 
     const blocs = racine().querySelectorAll('.mcp-prompt-bloc');
     expect(blocs).toHaveLength(2);
-    expect(blocs[0].querySelector('.mcp-prompt-nom')?.textContent)
-      .toContain('construire_la_grille_de_creneaux');
-    expect(blocs[0].querySelector('.mcp-prompt-description')?.textContent)
-      .toContain('Poser une grille de créneaux récurrents.');
-    expect(blocs[1].querySelector('.mcp-prompt')?.textContent)
-      .toContain('violations de contraintes dures');
+    expect(blocs[0].querySelector('.mcp-prompt-nom')?.textContent).toContain(
+      'construire_la_grille_de_creneaux',
+    );
+    expect(blocs[0].querySelector('.mcp-prompt-description')?.textContent).toContain(
+      'Poser une grille de créneaux récurrents.',
+    );
+    expect(blocs[1].querySelector('.mcp-prompt')?.textContent).toContain(
+      'violations de contraintes dures',
+    );
   });
 
   it('keeps the order the server gave, which is the order of a real event', async () => {
     await rendre(PROMPTS);
 
-    const noms = Array.from(racine().querySelectorAll('.mcp-prompt-nom'))
-      .map(element => element.textContent?.trim());
+    const noms = Array.from(racine().querySelectorAll('.mcp-prompt-nom')).map((element) =>
+      element.textContent?.trim(),
+    );
     expect(noms).toEqual(['construire_la_grille_de_creneaux', 'diagnostiquer_contraintes_dures']);
   });
 

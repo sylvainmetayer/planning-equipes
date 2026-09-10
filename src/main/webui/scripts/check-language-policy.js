@@ -91,7 +91,10 @@ const { join, relative, resolve } = require('node:path');
 
 const RACINE = join(__dirname, '..');
 const DEPOT = join(RACINE, '../../..');
-const TEST_JAVA = join(DEPOT, 'src/test/java/dev/sylvain/planning/LanguagePolicyStructuralTest.java');
+const TEST_JAVA = join(
+  DEPOT,
+  'src/test/java/dev/sylvain/planning/LanguagePolicyStructuralTest.java',
+);
 const SOURCES = join(RACINE, 'src');
 
 /** Un bloc `mots("""…""")` du test Java, lu comme la source de vérité. */
@@ -101,7 +104,7 @@ function vocabulaire(nom) {
   if (debut < 0) {
     console.error(
       `check-language-policy : le bloc ${nom} est introuvable dans ${relative(DEPOT, TEST_JAVA)}.\n` +
-        "Le glossaire y est lu plutôt que recopié : si sa forme a changé, c'est ici qu'il faut suivre.\n"
+        "Le glossaire y est lu plutôt que recopié : si sa forme a changé, c'est ici qu'il faut suivre.\n",
     );
     process.exit(1);
   }
@@ -113,7 +116,7 @@ const ts = require(join(RACINE, 'node_modules/typescript/lib/typescript.js'));
 
 /** Les noms français explicitement excusés, avec leur raison. */
 const { exceptions: EXCEPTIONS } = JSON.parse(
-  readFileSync(join(__dirname, 'language-policy-exceptions.json'), 'utf8')
+  readFileSync(join(__dirname, 'language-policy-exceptions.json'), 'utf8'),
 );
 
 const GLOSSAIRE = vocabulaire('GLOSSAIRE');
@@ -121,7 +124,11 @@ const LEXIQUE = vocabulaire('LEXIQUE_FR');
 const OUTILS_FR = vocabulaire('OUTILS_FR');
 const OUTILS_EN = vocabulaire('OUTILS_EN');
 
-const sansAccents = (texte) => texte.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const sansAccents = (texte) =>
+  texte
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 
 /**
  * La prose d'un commentaire : ce que le test Java retire avant de compter —
@@ -150,7 +157,9 @@ const prose = (brut) =>
 function estFrancais(texte) {
   let fr = 0;
   let en = 0;
-  for (const brut of prose(texte).toLowerCase().match(/[\p{L}']+/gu) ?? []) {
+  for (const brut of prose(texte)
+    .toLowerCase()
+    .match(/[\p{L}']+/gu) ?? []) {
     const mot = brut.replace(/'/g, '');
     if (OUTILS_FR.has(mot)) fr++;
     if (OUTILS_EN.has(mot)) en++;
@@ -184,7 +193,8 @@ function fichiers(dossier) {
  * <p>Le motif est celui du test Java (`TOKEN`), pour que les deux moitiés du
  * dépôt découpent les noms de la même façon.</p>
  */
-const motsDuNom = (nom) => (nom.match(/[A-Z]?[a-z\u00e0-\u00ff]+|[A-Z]+(?![a-z])|\d+/g) ?? []).map(sansAccents);
+const motsDuNom = (nom) =>
+  (nom.match(/[A-Z]?[a-z\u00e0-\u00ff]+|[A-Z]+(?![a-z])|\d+/g) ?? []).map(sansAccents);
 
 const commentairesFrancais = [];
 const nomsFautifs = [];
@@ -219,7 +229,7 @@ function releverLesLignesModifiees() {
   const diff = execFileSync('git', ['diff', '-U0', `${base}...HEAD`], {
     cwd: DEPOT,
     encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024
+    maxBuffer: 64 * 1024 * 1024,
   });
   const parFichier = new Map();
   let courant = null;
@@ -252,7 +262,9 @@ function dansLePerimetre(fichier, ligne) {
   if (!lignesModifiees) {
     return true;
   }
-  return (lignesModifiees.get(fichier) ?? []).some(([debut, fin]) => ligne >= debut && ligne <= fin);
+  return (lignesModifiees.get(fichier) ?? []).some(
+    ([debut, fin]) => ligne >= debut && ligne <= fin,
+  );
 }
 
 for (const fichier of aVerifier()) {
@@ -281,7 +293,7 @@ for (const fichier of aVerifier()) {
   const relever = (noeud) => {
     for (const plage of [
       ...(ts.getLeadingCommentRanges(source, noeud.getFullStart()) ?? []),
-      ...(ts.getTrailingCommentRanges(source, noeud.getEnd()) ?? [])
+      ...(ts.getTrailingCommentRanges(source, noeud.getEnd()) ?? []),
     ]) {
       plages.set(plage.pos, plage);
     }
@@ -326,8 +338,15 @@ for (const fichier of aVerifier()) {
       ts.isEnumDeclaration(noeud) ||
       ts.isMethodDeclaration(noeud) ||
       ts.isPropertyDeclaration(noeud);
-    if (declare && noeud.name && ts.isIdentifier(noeud.name) && !Object.hasOwn(EXCEPTIONS, noeud.name.text)) {
-      const fautifs = motsDuNom(noeud.name.text).filter((mot) => LEXIQUE.has(mot) && !GLOSSAIRE.has(mot));
+    if (
+      declare &&
+      noeud.name &&
+      ts.isIdentifier(noeud.name) &&
+      !Object.hasOwn(EXCEPTIONS, noeud.name.text)
+    ) {
+      const fautifs = motsDuNom(noeud.name.text).filter(
+        (mot) => LEXIQUE.has(mot) && !GLOSSAIRE.has(mot),
+      );
       if (fautifs.length > 0 && dansLePerimetre(fichier, ligneDe(noeud.name.getStart(fichierTs)))) {
         nomsFautifs.push(`${nom} : ${noeud.name.text} [${fautifs.join(', ')}]`);
       }
@@ -342,7 +361,12 @@ const inventaire = process.argv.includes('--inventaire');
 const nomsVus = new Set();
 for (const fichier of fichiers(SOURCES)) {
   if (fichier.endsWith('.ts')) {
-    const sf = ts.createSourceFile(fichier, readFileSync(fichier, 'utf8'), ts.ScriptTarget.ES2022, true);
+    const sf = ts.createSourceFile(
+      fichier,
+      readFileSync(fichier, 'utf8'),
+      ts.ScriptTarget.ES2022,
+      true,
+    );
     const noter = (noeud) => {
       if (noeud.name && ts.isIdentifier(noeud.name)) nomsVus.add(noeud.name.text);
       ts.forEachChild(noeud, noter);
@@ -360,7 +384,7 @@ if (inventaire) {
   console.log(
     `check-language-policy — inventaire :\n` +
       `  ${commentairesFrancais.length} bloc(s) de commentaire en français, dans ${parFichier(commentairesFrancais)} fichier(s)\n` +
-      `  ${nomsFautifs.length} nom(s) déclaré(s) sur un mot français hors glossaire, dans ${parFichier(nomsFautifs)} fichier(s)`
+      `  ${nomsFautifs.length} nom(s) déclaré(s) sur un mot français hors glossaire, dans ${parFichier(nomsFautifs)} fichier(s)`,
   );
   const mots = new Map();
   nomsFautifs.forEach((entree) => {
@@ -371,7 +395,9 @@ if (inventaire) {
       .forEach((mot) => mots.set(mot, (mots.get(mot) ?? 0) + 1));
   });
   const classement = [...mots].sort((a, b) => b[1] - a[1]).slice(0, 10);
-  console.log(`  mots les plus fréquents : ${classement.map(([m, n]) => `${m} (${n})`).join(', ')}`);
+  console.log(
+    `  mots les plus fréquents : ${classement.map(([m, n]) => `${m} (${n})`).join(', ')}`,
+  );
   process.exit(0);
 }
 
@@ -379,7 +405,9 @@ for (const nom of exceptionsMortes) {
   nomsFautifs.push(`${nom} est excusé dans language-policy-exceptions.json mais n'existe plus`);
 }
 for (const nom of exceptionsSansRaison) {
-  nomsFautifs.push(`${nom} est excusé sans raison écrite — une exception sans motif se lit comme un oubli`);
+  nomsFautifs.push(
+    `${nom} est excusé sans raison écrite — une exception sans motif se lit comme un oubli`,
+  );
 }
 
 const total = commentairesFrancais.length + nomsFautifs.length;
@@ -391,9 +419,11 @@ if (total > 0) {
   console.error(
     '\nLa prose du dépôt est en anglais ; seul le vocabulaire métier du glossaire reste\n' +
       'français. Les libellés affichés ne sont pas concernés : ils sont français, et le\n' +
-      'restent. Glossaire et lexique se modifient dans LanguagePolicyStructuralTest.java.\n'
+      'restent. Glossaire et lexique se modifient dans LanguagePolicyStructuralTest.java.\n',
   );
   process.exit(1);
 }
 
-console.log('check-language-policy : commentaires en anglais, noms déclarés conformes au glossaire.');
+console.log(
+  'check-language-policy : commentaires en anglais, noms déclarés conformes au glossaire.',
+);

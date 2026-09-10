@@ -9,7 +9,7 @@ function planning(): PlanningEvenement {
   return {
     animateurs: [],
     postes: [],
-    score: { hardScore: 0, mediumScore: 0, softScore: -3 }
+    score: { hardScore: 0, mediumScore: 0, softScore: -3 },
   };
 }
 
@@ -27,8 +27,8 @@ describe('AffectationExplanationService', () => {
       providers: [
         provideZonelessChangeDetection(),
         AffectationExplanationService,
-        { provide: ApiService, useValue: api }
-      ]
+        { provide: ApiService, useValue: api },
+      ],
     });
     service = TestBed.inject(AffectationExplanationService);
   });
@@ -49,6 +49,8 @@ describe('AffectationExplanationService', () => {
     expect(api.post.mock.calls[0][0]).toBe('/api/postes/poste%20with%20space/explication');
 
     await service.appliquerReparation('poste-1', 'id&with=chars');
-    expect(api.post.mock.calls[1][0]).toBe('/api/postes/poste-1/affectation?animateurId=id%26with%3Dchars');
+    expect(api.post.mock.calls[1][0]).toBe(
+      '/api/postes/poste-1/affectation?animateurId=id%26with%3Dchars',
+    );
   });
 });

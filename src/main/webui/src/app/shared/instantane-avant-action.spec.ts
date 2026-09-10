@@ -31,8 +31,8 @@ describe('InstantaneAvantAction', () => {
         provideZonelessChangeDetection(),
         { provide: ConfirmService, useValue: confirm },
         { provide: PlanSnapshotStore, useValue: snapshots },
-        { provide: NotificationService, useValue: notifications }
-      ]
+        { provide: NotificationService, useValue: notifications },
+      ],
     });
   });
 
@@ -67,7 +67,9 @@ describe('InstantaneAvantAction', () => {
   it('names the action in the question it asks', async () => {
     await service().proposer('vider la base');
 
-    expect(confirm.ask).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('vider la base') }));
+    expect(confirm.ask).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('vider la base') }),
+    );
   });
 
   // The caller awaits `proposer()` and then wipes the database. If a failed
@@ -87,8 +89,8 @@ describe('InstantaneAvantAction', () => {
     expect(notifications.notify).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({
         variant: 'error',
-        message: expect.stringContaining('Instantané refusé par le serveur.')
-      })
+        message: expect.stringContaining('Instantané refusé par le serveur.'),
+      }),
     );
   });
 
@@ -113,13 +115,15 @@ describe('InstantaneAvantAction', () => {
     snapshots.capturer.mockReturnValue(
       new Promise<void>((resolve) => {
         resolveCapture = resolve;
-      })
+      }),
     );
 
     let finished = false;
-    const running = service().proposer('vider la base').then(() => {
-      finished = true;
-    });
+    const running = service()
+      .proposer('vider la base')
+      .then(() => {
+        finished = true;
+      });
     await Promise.resolve();
     await Promise.resolve();
     await Promise.resolve();

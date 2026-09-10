@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,9 +33,16 @@ import { ImportGrilleAction, ImportGrilleDemande, ImportGrilleRapport } from '..
  */
 @Component({
   selector: 'app-import-grille-stands-page',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, MatTooltipModule, RouterLink],
+  imports: [
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTooltipModule,
+    RouterLink,
+  ],
   templateUrl: './import-grille-stands-page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImportGrilleStandsPage {
   private readonly standsApi = inject(StandsApi);
@@ -48,13 +63,26 @@ export class ImportGrilleStandsPage {
   protected readonly importEnCours = signal(false);
   protected readonly telechargementEnCours = signal(false);
 
-  protected readonly fichierCharge = computed(() => this.contenu() !== '' && this.rapport() !== null);
-  protected readonly colonnesReconnues = computed(() => (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneauId !== null));
-  protected readonly colonnesIgnorees = computed(() => (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneauId === null));
+  protected readonly fichierCharge = computed(
+    () => this.contenu() !== '' && this.rapport() !== null,
+  );
+  protected readonly colonnesReconnues = computed(() =>
+    (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneauId !== null),
+  );
+  protected readonly colonnesIgnorees = computed(() =>
+    (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneauId === null),
+  );
   /** A band a staggered grid holds twice: the column carries its cell to each créneau of it. */
-  protected readonly colonnesPartagees = computed(() => (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneaux > 1));
+  protected readonly colonnesPartagees = computed(() =>
+    (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneaux > 1),
+  );
   protected readonly peutImporter = computed(
-    () => this.fichierCharge() && !this.rapport()?.applied && (this.rapport()?.accepted ?? 0) > 0 && !this.analyseEnCours() && !this.importEnCours()
+    () =>
+      this.fichierCharge() &&
+      !this.rapport()?.applied &&
+      (this.rapport()?.accepted ?? 0) > 0 &&
+      !this.analyseEnCours() &&
+      !this.importEnCours(),
   );
 
   protected classeAction(action: ImportGrilleAction): string {
@@ -126,7 +154,7 @@ export class ImportGrilleStandsPage {
     }
     const confirme = await this.confirm.ask({
       title: $localize`:@@importGrille.confirmer.titre:Confirmer l'import`,
-      message: $localize`:@@importGrille.confirmer.message:Réécrire l'horaire de ${rapport.accepted}:acceptees: stand(s) depuis le fichier ? Les stands absents du fichier ne sont pas touchés.`
+      message: $localize`:@@importGrille.confirmer.message:Réécrire l'horaire de ${rapport.accepted}:acceptees: stand(s) depuis le fichier ? Les stands absents du fichier ne sont pas touchés.`,
     });
     if (!confirme) {
       return;
@@ -142,7 +170,7 @@ export class ImportGrilleStandsPage {
       this.notifications.notify({
         title: $localize`:@@importGrille.succes.titre:Import terminé`,
         message: $localize`:@@importGrille.succes.message:${applique.accepted}:stands: stand(s) réécrit(s) en ${regles}:regles: règle(s) et ${exceptions}:exceptions: exception(s) datée(s).`,
-        variant: 'success'
+        variant: 'success',
       });
     } catch (error) {
       this.erreur.set(errorMessage(error));

@@ -90,12 +90,17 @@ export interface TableauRepos {
 function libelles(animateurs: Animateur[]): Map<string, string> {
   const bruts = new Map<string, string>();
   animateurs.forEach((animateur) =>
-    bruts.set(animateur.id, `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id)
+    bruts.set(
+      animateur.id,
+      `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id,
+    ),
   );
   const compte = new Map<string, number>();
   bruts.forEach((label) => compte.set(label, (compte.get(label) ?? 0) + 1));
   const libelle = new Map<string, string>();
-  bruts.forEach((label, id) => libelle.set(id, (compte.get(label) ?? 0) > 1 ? `${label} (${id})` : label));
+  bruts.forEach((label, id) =>
+    libelle.set(id, (compte.get(label) ?? 0) > 1 ? `${label} (${id})` : label),
+  );
   return libelle;
 }
 
@@ -156,7 +161,7 @@ interface ChargeJour {
 export function buildTableauRepos(
   postes: PosteAffectation[],
   animateurs: Animateur[],
-  contraintes: ContrainteAdHoc[] = []
+  contraintes: ContrainteAdHoc[] = [],
 ): TableauRepos {
   const dates = new Map<number, string | null>();
   const charges = new Map<string, Map<number, ChargeJour>>();
@@ -191,7 +196,7 @@ export function buildTableauRepos(
       label: $localize`:@@heatmap.dayColumn:J${jour}:jour:`,
       titre: date
         ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${jour}:jour: — ${date}:date:`
-        : $localize`:@@calendarDay.dayTitle:Jour ${jour}:jour:`
+        : $localize`:@@calendarDay.dayTitle:Jour ${jour}:jour:`,
     }));
 
   const effectif = tousLesAnimateurs(postes, animateurs);
@@ -205,8 +210,8 @@ export function buildTableauRepos(
         noms.get(animateur.id) ?? animateur.id,
         jours,
         charges.get(animateur.id) ?? new Map(),
-        ecartes.has(animateur.id)
-      )
+        ecartes.has(animateur.id),
+      ),
     )
     // Longest run of consecutive worked days first, then the busiest: the top
     // of the grid is the list of people to look at, not the beginning of the
@@ -215,7 +220,7 @@ export function buildTableauRepos(
       (left, right) =>
         right.serieMax - left.serieMax ||
         right.joursTravailles - left.joursTravailles ||
-        left.nom.localeCompare(right.nom)
+        left.nom.localeCompare(right.nom),
     );
 
   return { jours, lignes };
@@ -226,7 +231,7 @@ function buildLigne(
   nom: string,
   jours: ColonneJour[],
   charges: Map<number, ChargeJour>,
-  ecarteDeToutLEvenement: boolean
+  ecarteDeToutLEvenement: boolean,
 ): LigneRepos {
   let joursTravailles = 0;
   let joursRepos = 0;
@@ -253,7 +258,7 @@ function buildLigne(
         tooltip: declare
           ? $localize`:@@repos.cell.conflit:${nom}:animateur: — ${jour.titre}:jour: : ${charge.postes}:count: vacation(s), ${duree}:duree: — alors que la journée est déclarée indisponible`
           : $localize`:@@repos.cell.travaille:${nom}:animateur: — ${jour.titre}:jour: : ${charge.postes}:count: vacation(s), ${duree}:duree:`,
-        conflit: declare
+        conflit: declare,
       };
     }
     serie = 0;
@@ -266,7 +271,7 @@ function buildLigne(
         minutes: 0,
         label: '',
         tooltip: $localize`:@@repos.cell.indisponible:${nom}:animateur: — ${jour.titre}:jour: : indisponible, la journée n'était pas mobilisable`,
-        conflit: false
+        conflit: false,
       };
     }
     joursRepos += 1;
@@ -277,7 +282,7 @@ function buildLigne(
       minutes: 0,
       label: '',
       tooltip: $localize`:@@repos.cell.repos:${nom}:animateur: — ${jour.titre}:jour: : jour de repos, disponible mais non affecté`,
-      conflit: false
+      conflit: false,
     };
   });
 
@@ -295,7 +300,7 @@ function buildLigne(
     sansRepos,
     resume: sansRepos
       ? $localize`:@@repos.row.resumeSansRepos:${base}:ligne: — attention, aucun jour de repos sur tout l'événement`
-      : base
+      : base,
   };
 }
 
@@ -326,8 +331,13 @@ export function totauxParJour(jours: ColonneJour[], lignes: LigneRepos[]): Total
  * search goes through `correspondAuFiltre`, so it behaves like every other
  * quick filter of the application: accent- and case-insensitive, terms AND-ed.
  */
-export function filtrerLignes(lignes: LigneRepos[], recherche: string, sansReposSeulement: boolean): LigneRepos[] {
+export function filtrerLignes(
+  lignes: LigneRepos[],
+  recherche: string,
+  sansReposSeulement: boolean,
+): LigneRepos[] {
   return lignes.filter(
-    (ligne) => correspondAuFiltre(recherche, [ligne.nom]) && (!sansReposSeulement || ligne.sansRepos)
+    (ligne) =>
+      correspondAuFiltre(recherche, [ligne.nom]) && (!sansReposSeulement || ligne.sansRepos),
   );
 }

@@ -30,7 +30,7 @@ function fakeStorage(options: { broken?: boolean } = {}): Storage {
     key: () => null,
     get length() {
       return data.size;
-    }
+    },
   };
 }
 
@@ -42,7 +42,7 @@ function navigationError(error: unknown, url = '/stands'): NavigationError {
 const CHUNK_FAILURES = [
   'Failed to fetch dynamically imported module: https://demo/chunk-FPNODPH2.js',
   'error loading dynamically imported module',
-  'Importing a module script failed.'
+  'Importing a module script failed.',
 ];
 
 describe('isChunkLoadFailure', () => {
@@ -106,14 +106,20 @@ describe('handleNavigationError', () => {
       navigate,
       fakeStorage(),
       1000,
-      true
+      true,
     );
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/animateurs');
   });
 
   it('does nothing for a navigation error that is not a chunk failure', () => {
     const navigate = vi.fn();
-    handleNavigationError(navigationError(new Error('Cannot match any routes')), navigate, fakeStorage(), 1000, true);
+    handleNavigationError(
+      navigationError(new Error('Cannot match any routes')),
+      navigate,
+      fakeStorage(),
+      1000,
+      true,
+    );
     expect(navigate).not.toHaveBeenCalled();
   });
 
@@ -131,7 +137,13 @@ describe('handleNavigationError', () => {
   // offline page and takes the whole session with it.
   it('leaves an offline browser alone', () => {
     const navigate = vi.fn();
-    handleNavigationError(navigationError(new TypeError(CHUNK_FAILURES[0])), navigate, fakeStorage(), 1000, false);
+    handleNavigationError(
+      navigationError(new TypeError(CHUNK_FAILURES[0])),
+      navigate,
+      fakeStorage(),
+      1000,
+      false,
+    );
     expect(navigate).not.toHaveBeenCalled();
   });
 
@@ -158,7 +170,7 @@ describe('handleNavigationError', () => {
         undefined,
         fakeStorage(),
         1000,
-        true
+        true,
       );
     } finally {
       vi.unstubAllGlobals();
