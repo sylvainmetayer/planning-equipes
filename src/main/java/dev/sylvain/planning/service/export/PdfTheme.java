@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.export;
 
 import java.awt.Color;
 import java.io.IOException;
@@ -37,6 +37,7 @@ import dev.sylvain.planning.config.ConfigBranding;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.ProductName;
 
 /**
  * The visual identity of the PDFs: the palette, the fonts, the images and the

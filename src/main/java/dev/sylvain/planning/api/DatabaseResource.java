@@ -3,7 +3,7 @@ package dev.sylvain.planning.api;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-import dev.sylvain.planning.service.DatabaseDumpService;
+import dev.sylvain.planning.service.export.DatabaseDumpService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;

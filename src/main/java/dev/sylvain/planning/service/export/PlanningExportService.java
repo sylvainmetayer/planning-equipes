@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.export;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,6 +23,8 @@ import dev.sylvain.planning.domain.PosteAffectation;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.ApplicationLinks;
+import dev.sylvain.planning.service.PauseAnalyzer;
 
 /**
  * A single door onto the three exports of a planning: the individual PDF, the
@@ -162,10 +164,11 @@ public class PlanningExportService {
      * a mid-créneau closure are not the same line, and the people on either
      * side never meet.</p>
      *
-     * <p>Package-private so the rule is unit-tested on plain objects rather
-     * than through the bytes of a generated PDF.</p>
+     * <p>Static and public: the espace animateur reuses it from its own
+     * package, and the rule is unit-tested on plain objects rather than
+     * through the bytes of a generated PDF.</p>
      */
-    static Map<String, List<String>> teammatesByPoste(PlanningEvenement planning, String animateurId) {
+    public static Map<String, List<String>> teammatesByPoste(PlanningEvenement planning, String animateurId) {
         Map<String, List<String>> equipeParLigne = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             if (poste.getAnimateur() == null || poste.getCreneau() == null || poste.getStand() == null) {

@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.export.PlanningExportService;
 
 /**
  * Sends <b>one</b> animateur their individual planning — their PDF as an

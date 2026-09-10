@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.export;
 
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
@@ -31,6 +31,7 @@ import dev.sylvain.planning.domain.Stand;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.export.PosteStatistics;
 
 /**
  * The whole planning in a single landscape PDF, for the organiser rather than

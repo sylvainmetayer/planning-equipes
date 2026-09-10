@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.export;
 
 import java.text.Normalizer;
 import java.time.Instant;
@@ -14,6 +14,8 @@ import dev.sylvain.planning.domain.Stand;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.PauseAnalyzer;
+import dev.sylvain.planning.service.ProductName;
 
 /**
  * The planning of one animateur as an iCalendar calendar, so they can add it

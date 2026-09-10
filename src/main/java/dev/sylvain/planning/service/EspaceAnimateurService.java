@@ -22,6 +22,7 @@ import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.export.PlanningExportService;
 
 /**
  * Read views of the espace animateur (issue #165): the animateur's own slice

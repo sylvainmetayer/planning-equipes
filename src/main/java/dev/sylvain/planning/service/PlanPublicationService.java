@@ -26,6 +26,7 @@ import dev.sylvain.planning.service.PublicationTraceRepository.StatutEnvoi;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.export.PlanningExportService;
 
 /**
  * Publishing (issue #245): making the working plan the plan people have been

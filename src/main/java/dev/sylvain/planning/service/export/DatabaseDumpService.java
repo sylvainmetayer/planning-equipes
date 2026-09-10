@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.export;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,6 +18,10 @@ import javax.sql.DataSource;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.ProductName;
 
 /**
  * Exports and re-imports the whole business dataset as a plain SQL script, so a

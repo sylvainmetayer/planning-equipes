@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.export;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -13,6 +13,7 @@ import org.openpdf.text.pdf.PdfPCell;
 
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.export.PdfTheme;
 
 /**
  * What a set of seats amounts to — how many days, stands, timeslots, hours —

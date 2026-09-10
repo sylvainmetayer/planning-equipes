@@ -13,7 +13,7 @@ import dev.sylvain.planning.service.EspaceAccesService;
 import dev.sylvain.planning.service.EspaceAnimateurService;
 import dev.sylvain.planning.service.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.EspaceAnimateurService.EspaceAnimateurView;
-import dev.sylvain.planning.service.PlanningExportService;
+import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.PlanPublieService;
 import io.quarkus.logging.Log;

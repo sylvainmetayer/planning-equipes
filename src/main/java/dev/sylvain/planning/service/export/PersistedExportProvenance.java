@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.export;
 
 import java.time.Instant;
 
@@ -7,6 +7,8 @@ import dev.sylvain.planning.domain.Edition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.PlanSnapshotService;
+import dev.sylvain.planning.service.PlanningPersistenceService;
 
 /**
  * Reads the provenance from the édition the request works in, and from
