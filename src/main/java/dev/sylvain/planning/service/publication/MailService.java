@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.ProductName;
 
 /**
  * The mails an administrator <b>asks for</b>, and only those: sending an

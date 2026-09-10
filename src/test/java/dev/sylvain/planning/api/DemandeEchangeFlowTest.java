@@ -23,7 +23,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import org.junit.jupiter.api.AfterEach;
 
-import dev.sylvain.planning.service.PlanPublicationService;
+import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import io.quarkus.mailer.Mail;

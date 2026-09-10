@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.service.mail.MailTemplates;
 import io.quarkus.mailer.Mail;
+import dev.sylvain.planning.service.ProductName;
 
 /**
  * The mails an administrator <b>asks for</b>, over a {@code MailService} built

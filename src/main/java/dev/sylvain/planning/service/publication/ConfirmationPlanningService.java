@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -14,6 +14,8 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.StatutConfirmation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.ReferenceDataService;
 
 /**
  * « J'ai lu et je serai là » (issue #293): the one thing an animateur answers

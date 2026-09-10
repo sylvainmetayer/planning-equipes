@@ -9,9 +9,9 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.mcp.PublicationMcpTools.DestinatairePublicationView;
 import dev.sylvain.planning.mcp.PublicationMcpTools.DestinataireView;
-import dev.sylvain.planning.service.PlanPublicationService.DestinatairePublication;
-import dev.sylvain.planning.service.PublicationTraceRepository.Destinataire;
-import dev.sylvain.planning.service.PublicationTraceRepository.StatutEnvoi;
+import dev.sylvain.planning.service.publication.PlanPublicationService.DestinatairePublication;
+import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
+import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
 
 /**
  * The publication views are where the privacy rule is easiest to lose: the

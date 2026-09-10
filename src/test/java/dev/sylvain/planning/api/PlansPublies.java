@@ -1,7 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.PlanPublicationService;
+import dev.sylvain.planning.service.publication.PlanPublicationService;
 
 /**
  * Publishes the seeded plan, for the tests that read the espace animateur.

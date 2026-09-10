@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,6 +12,7 @@ import java.util.Optional;
 import dev.sylvain.planning.domain.StatutConfirmation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * The {@code confirmation_planning} rows: who answered the published plan, and

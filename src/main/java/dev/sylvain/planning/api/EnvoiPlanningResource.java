@@ -1,7 +1,7 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.service.PlanningDeliveryService;
-import dev.sylvain.planning.service.PlanningDeliveryService.DeliveryReport;
+import dev.sylvain.planning.service.publication.PlanningDeliveryService;
+import dev.sylvain.planning.service.publication.PlanningDeliveryService.DeliveryReport;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;

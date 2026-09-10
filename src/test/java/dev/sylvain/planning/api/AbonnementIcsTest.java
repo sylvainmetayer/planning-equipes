@@ -20,7 +20,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
-import dev.sylvain.planning.service.PlanPublicationService;
+import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import io.quarkus.mailer.MockMailbox;

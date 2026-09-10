@@ -19,6 +19,8 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.publication.PlanPublieService;
+import dev.sylvain.planning.service.publication.PublicationDiffService;
 
 /**
  * What a solve <b>always</b> does, end to end: snapshot the plan it is about

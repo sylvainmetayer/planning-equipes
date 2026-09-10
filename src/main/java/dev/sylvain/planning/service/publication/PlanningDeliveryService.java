@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import java.util.List;
 
@@ -8,6 +8,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.BusinessError;
 
 /**
  * Sends <b>one</b> animateur their individual planning — their PDF as an

@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * Who was told what, and when (issue #245). One row per person per

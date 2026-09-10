@@ -22,6 +22,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.publication.MailService;
 
 /**
  * The self-service declaration lifecycle (issue #291): an animateur proposes,

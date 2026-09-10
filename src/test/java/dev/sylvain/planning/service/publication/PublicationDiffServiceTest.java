@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
@@ -9,11 +9,11 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
-import dev.sylvain.planning.service.PublicationDiffService.ChangementAnimateur;
-import dev.sylvain.planning.service.PublicationDiffService.ChangementVacation;
-import dev.sylvain.planning.service.PublicationDiffService.Identite;
-import dev.sylvain.planning.service.PublicationDiffService.TypeChangement;
-import dev.sylvain.planning.service.PublicationDiffService.Vacation;
+import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementAnimateur;
+import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementVacation;
+import dev.sylvain.planning.service.publication.PublicationDiffService.Identite;
+import dev.sylvain.planning.service.publication.PublicationDiffService.TypeChangement;
+import dev.sylvain.planning.service.publication.PublicationDiffService.Vacation;
 import org.junit.jupiter.api.Test;
 
 /**

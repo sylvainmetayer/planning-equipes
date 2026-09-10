@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import java.time.LocalTime;
 import java.util.List;
@@ -6,6 +6,8 @@ import java.util.List;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.PlanSnapshotService;
+import dev.sylvain.planning.service.PlanningPersistenceService;
 
 /**
  * The plan the animateurs were sent (issue #245), as opposed to the plan being

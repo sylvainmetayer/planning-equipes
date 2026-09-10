@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -17,16 +17,23 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
-import dev.sylvain.planning.service.PublicationDiffService.ChangementAnimateur;
-import dev.sylvain.planning.service.PublicationDiffService.ChangementVacation;
-import dev.sylvain.planning.service.PublicationDiffService.Identite;
-import dev.sylvain.planning.service.PublicationDiffService.Vacation;
-import dev.sylvain.planning.service.PublicationTraceRepository.Destinataire;
-import dev.sylvain.planning.service.PublicationTraceRepository.StatutEnvoi;
+import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementAnimateur;
+import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementVacation;
+import dev.sylvain.planning.service.publication.PublicationDiffService.Identite;
+import dev.sylvain.planning.service.publication.PublicationDiffService.Vacation;
+import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
+import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.DemandeEchangeService;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.PlanSnapshotService;
+import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.SolverJobService;
 
 /**
  * Publishing (issue #245): making the working plan the plan people have been

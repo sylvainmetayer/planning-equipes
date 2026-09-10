@@ -19,6 +19,7 @@ import javax.sql.DataSource;
 import dev.sylvain.planning.domain.Animateur;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.publication.MailService;
 
 /**
  * Passwordless authentication of the espace animateur (issue #165 follow-up):

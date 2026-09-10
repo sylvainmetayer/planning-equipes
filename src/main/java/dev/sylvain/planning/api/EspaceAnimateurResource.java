@@ -3,7 +3,7 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.ConfirmationPlanningService;
+import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.DeclarationDisponibiliteService;
 import dev.sylvain.planning.service.DeclarationDisponibiliteService.NouvelleDeclaration;
 import dev.sylvain.planning.service.DemandeEchangeService;
@@ -15,7 +15,7 @@ import dev.sylvain.planning.service.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.EspaceAnimateurService.EspaceAnimateurView;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.PlanPublieService;
+import dev.sylvain.planning.service.publication.PlanPublieService;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;

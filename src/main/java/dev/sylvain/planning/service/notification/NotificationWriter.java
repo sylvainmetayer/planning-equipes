@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.service.AdminAddress;
+import dev.sylvain.planning.service.publication.AdminAddress;
 import dev.sylvain.planning.service.ApplicationLinks;
 import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.mail.MailTemplates;

@@ -6,7 +6,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.AnimateurCsvImportReport;
 import dev.sylvain.planning.service.AnimateurCsvImportRequest;
 import dev.sylvain.planning.service.AnimateurCsvImportService;
-import dev.sylvain.planning.service.ConfirmationPlanningService;
+import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
 import dev.sylvain.planning.service.WrittenAnimateur;

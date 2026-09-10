@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.publication;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

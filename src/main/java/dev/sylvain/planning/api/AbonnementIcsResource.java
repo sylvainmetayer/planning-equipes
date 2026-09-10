@@ -2,7 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EditionRequestScope;
-import dev.sylvain.planning.service.PlanPublieService;
+import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
