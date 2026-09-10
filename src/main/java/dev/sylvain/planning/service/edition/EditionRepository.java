@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.edition;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 import dev.sylvain.planning.domain.Edition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.JdbcEditionScope;
 
 /**
  * Direct JDBC access to the {@code edition} table — the editions the whole

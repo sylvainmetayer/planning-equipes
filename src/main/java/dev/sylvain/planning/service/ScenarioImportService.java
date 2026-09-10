@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import dev.sylvain.planning.service.edition.EditionService;
 
 /**
  * Importing a scenario into the referential: the order the sections are applied

@@ -32,6 +32,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.edition.EditionRepository;
 
 /**
  * Runs long solver calls (solve / analyze) outside of the HTTP request thread.

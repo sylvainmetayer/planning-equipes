@@ -19,6 +19,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.edition.EditionService;
 
 /**
  * Deleting a stand or an animateur a persisted plan still references — the twin

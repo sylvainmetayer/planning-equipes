@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.Edition;
 import io.quarkus.arc.Arc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.edition.EditionRepository;
 
 /**
  * Answers the one question every reference-data query needs: <b>which edition

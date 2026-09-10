@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.service.EditionService;
+import dev.sylvain.planning.service.edition.EditionService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

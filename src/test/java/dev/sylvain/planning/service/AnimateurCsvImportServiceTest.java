@@ -19,6 +19,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.service.edition.EditionService;
 
 /**
  * The tabular import, end to end and in its own edition.

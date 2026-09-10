@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import dev.sylvain.planning.service.PlanningDiagnosticService.PlanningDiagnostic;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.edition.EditionRepository;
 
 /**
  * Keeps the latest score analysis — written by every solve, and re-derivable

@@ -1,10 +1,12 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.edition;
 
 import java.util.List;
 
 import dev.sylvain.planning.domain.Edition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
 
 /**
  * CRUD over the editions themselves — create "Année 2026", duplicate "Année

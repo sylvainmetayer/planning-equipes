@@ -29,6 +29,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import dev.sylvain.planning.service.edition.EditionService;
 
 /**
  * A solve the container stops under — a graceful shutdown, a live reload —

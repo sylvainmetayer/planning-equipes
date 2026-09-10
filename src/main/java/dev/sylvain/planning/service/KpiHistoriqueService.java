@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.edition.EditionRepository;
 
 /**
  * KPI history (issue #89): one row per completed solve, kept forever so the

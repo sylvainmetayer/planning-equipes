@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.mcp.CreneauMcpTools.CreneauView;
 import dev.sylvain.planning.mcp.EditionMcpTools.EditionView;
-import dev.sylvain.planning.service.EditionService;
+import dev.sylvain.planning.service.edition.EditionService;
 import io.quarkiverse.mcp.server.ToolManager;
 import io.quarkiverse.mcp.server.ToolManager.ToolArgument;
 import io.quarkiverse.mcp.server.ToolManager.ToolInfo;

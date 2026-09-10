@@ -9,7 +9,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
-import dev.sylvain.planning.service.EditionService;
+import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.ImportImpact;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;

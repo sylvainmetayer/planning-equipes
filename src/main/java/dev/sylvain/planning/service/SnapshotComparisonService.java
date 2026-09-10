@@ -15,6 +15,7 @@ import dev.sylvain.planning.service.PlanSnapshotService.SnapshotDetail;
 import dev.sylvain.planning.service.PlanningKpiService.PlanningKpi;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.edition.EditionRepository;
 
 /**
  * A/B comparator (issue #70): confronts a baseline with a variant — two plan

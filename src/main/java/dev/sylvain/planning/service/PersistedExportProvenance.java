@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Edition;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import dev.sylvain.planning.service.edition.EditionService;
 
 /**
  * Reads the provenance from the édition the request works in, and from

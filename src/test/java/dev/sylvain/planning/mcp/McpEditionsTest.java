@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.service.EditionService;
+import dev.sylvain.planning.service.edition.EditionService;
 
 /**
  * How the {@code edition} argument of an MCP tool is turned into an edition id

@@ -3,7 +3,7 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.service.EditionService;
+import dev.sylvain.planning.service.edition.EditionService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;

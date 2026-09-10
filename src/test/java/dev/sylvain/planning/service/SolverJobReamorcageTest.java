@@ -25,6 +25,7 @@ import dev.sylvain.planning.service.SolverJobService.SolverJob;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import dev.sylvain.planning.service.edition.EditionService;
 
 /**
  * The warm start of issue #174 end to end: where a full solve starts from,

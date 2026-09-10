@@ -30,6 +30,7 @@ import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.CreneauDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
+import dev.sylvain.planning.service.edition.EditionService;
 
 /**
  * The example CSV shipped in {@code src/main/resources/scenarios} is re-read

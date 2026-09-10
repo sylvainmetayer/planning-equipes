@@ -17,6 +17,7 @@ import dev.sylvain.planning.domain.Stand;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import dev.sylvain.planning.service.edition.EditionService;
 
 /**
  * Restoring a snapshot while a solve holds the solver (issue #313): the guard
