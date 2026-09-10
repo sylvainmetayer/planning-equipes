@@ -1,0 +1,10 @@
+# Commits that only reformatted the code (issue #392, C10). `git blame` skips
+# them once told to: git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# The repository merges in rebase: these are the SHA `main` received, not the
+# ones of the branch that introduced them.
+#
+# style: appliquer palantir-java-format à tout le code Java
+11a6bc01
+# style(front): appliquer prettier au TypeScript, au CSS et aux scripts
+d8ed4d3f

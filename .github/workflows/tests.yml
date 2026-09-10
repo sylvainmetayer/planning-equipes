@@ -161,6 +161,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Formatting is not a review topic either: prettier decides for the
+      # TypeScript, the CSS and the scripts (`npm run format` obeys). The
+      # templates are left out on purpose — in an Angular template a blank
+      # between two inline elements is rendering, and a reflow changed one.
+      - name: Format check
+        run: npm run format-check
+
       # Vitest runs in a Node/jsdom environment (no browser needed) and, when
       # not attached to a TTY, executes once and exits instead of watching.
       # `test:coverage` runs exactly the same tests, instrumented. One run

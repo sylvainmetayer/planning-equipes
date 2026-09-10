@@ -16,6 +16,8 @@
     "pretest:coverage": "npm run generate-version",
     "test:coverage": "ng test --coverage --coverage-reporters lcovonly --coverage-reporters html --coverage-reporters text-summary",
     "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.{ts,css,scss}\" \"scripts/**/*.js\" \"e2e/**/*.ts\" \"*.js\" \"*.json\"",
+    "format-check": "prettier --check \"src/**/*.{ts,css,scss}\" \"scripts/**/*.js\" \"e2e/**/*.ts\" \"*.js\" \"*.json\"",
     "i18n-check": "node scripts/generate-version.js && node scripts/check-i18n.js",
     "api-types-check": "node scripts/check-api-types.js",
     "api-paths-check": "node scripts/check-api-paths.js",

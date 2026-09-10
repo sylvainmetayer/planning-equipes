@@ -87,6 +87,15 @@ background command and let the harness notify on completion instead of
 blocking the turn on a foreground wait or a manual sleep/poll loop: both cost
 real wall-clock time for nothing and, over a sleep-poll loop specifically,
 burn tokens on repeated status checks for no benefit over one notification.
+- Formatting is decided by tools, not in review (issue #392, C10). Java:
+  `spotless-maven-plugin` runs palantir-java-format, removes unused imports and
+  orders the rest; `spotless:check` is bound to `validate`, so every
+  `./mvnw test|package|verify` refuses an unformatted file — run
+  `./mvnw spotless:apply`. Frontend: `npm run format` (prettier, the
+  repository's `.prettierrc`) on the TypeScript, CSS and scripts, checked by
+  `npm run format-check` in CI; the HTML templates are excluded, since a blank
+  between two inline elements is rendering there. The two initial
+  reformatting commits are listed in `.git-blame-ignore-revs`.
 - Frontend only (from `src/main/webui`): `npm install`, `npm run build`,
   `npm start` (`ng serve` on 4200, `proxy.conf.json` forwards `/api/*` to
   `:8080`), `npm test` (Vitest unit tests, Node/jsdom, one pass in CI / watch
@@ -581,7 +590,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   Dev-only: `@playwright/test`, `vitest`, `@vitest/coverage-v8`
   (`npm run test:coverage`, run in CI — the report is published as an artifact
   and nothing consumes it: no threshold, no external service), `jsdom`,
-  `prettier`, `typescript`,
+  `prettier` (`npm run format` / `format-check`, the latter run in CI — the
+  formatting of the TypeScript, CSS and scripts is its decision, not a review
+  topic; templates excluded), `typescript`,
   `angular-eslint` + `eslint` + `typescript-eslint` (`npm run lint`, run in CI —
   it is what mechanically defends the conventions of this section: OnPush,
   function-based `input()`/`output()`, `@for` with a `track`, no `any`).

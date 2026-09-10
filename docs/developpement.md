@@ -523,6 +523,26 @@ Toute image doit porter une balise explicite, y compris dans
 `docker-compose.yml` : sans balise ou sous `latest`, Renovate n'a rien à
 proposer et la version installée dépend du jour du `pull`.
 
+## Formatage
+
+Le formatage n'est pas un sujet de revue : un outil décide, on obéit.
+
+- **Java** : `spotless-maven-plugin` applique `palantir-java-format`, retire
+  les imports inutilisés et fixe leur ordre. `spotless:check` est lié à la
+  phase `validate` : tout `./mvnw test`, `package` ou `verify` refuse un
+  fichier non formaté et dit quoi faire — `./mvnw spotless:apply`.
+  `quarkus:dev` n'est pas concerné.
+- **Frontend** : `npm run format` (prettier, avec le `.prettierrc` que le dépôt
+  portait déjà) sur le TypeScript, le CSS et les scripts ; `npm run
+  format-check` en CI. Les gabarits HTML sont exclus à dessein : dans un
+  gabarit Angular, un blanc entre deux éléments inline est du rendu, et le
+  reflux en changeait un.
+- Les deux commits qui ont reformaté l'existant sont listés dans
+  `.git-blame-ignore-revs` ; `git config blame.ignoreRevsFile
+  .git-blame-ignore-revs` pour que `git blame` les saute. Le dépôt merge en
+  rebase : après le merge de la PR qui les a introduits, ce sont les SHA que
+  `main` a reçus qui doivent y figurer.
+
 ## Conventions
 
 Elles vivent dans [`AGENTS.md`](../AGENTS.md), section *Working conventions* :
