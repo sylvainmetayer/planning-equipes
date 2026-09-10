@@ -5,7 +5,6 @@ import java.util.List;
 import dev.sylvain.planning.domain.Edition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 /**
  * CRUD over the editions themselves — create "Année 2026", duplicate "Année
@@ -146,7 +145,7 @@ public class EditionService {
 
     private void requireExisting(String id) {
         if (!repository.exists(id)) {
-            throw new NotFoundException("Edition not found: " + id);
+            throw new BusinessError.NotFound("Edition not found: " + id);
         }
     }
 

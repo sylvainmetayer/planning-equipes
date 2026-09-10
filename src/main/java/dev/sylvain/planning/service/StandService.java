@@ -13,7 +13,6 @@ import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 /** CRUD of the stand referential, plus the two views the rest of the app reads it through. */
 @ApplicationScoped
@@ -110,7 +109,7 @@ public class StandService {
     public Stand update(String id, Stand stand) {
         solverJobs.refuseIfSolving();
         if (!repository.standExists(id)) {
-            throw new NotFoundException("Stand not found: " + id);
+            throw new BusinessError.NotFound("Stand not found: " + id);
         }
         stand.setId(id);
         validate(stand);

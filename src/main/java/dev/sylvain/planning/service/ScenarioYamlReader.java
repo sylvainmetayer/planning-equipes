@@ -224,7 +224,7 @@ public final class ScenarioYamlReader {
      * under {@link #SCENARIOS_DIR}, typically produced by "Exporter les
      * données actuelles en scénario") into the same result the
      * {@code import-scenario} endpoint applies for a built-in scenario name —
-     * without ever touching the classpath. Used by the "Importer un file"
+     * without ever touching the classpath. Used by the "Importer un fichier"
      * button on the Scénarios page.
      *
      * <p>Every failure (malformed YAML, a missing/mistyped section) is

@@ -221,7 +221,15 @@ Single Quarkus service, no separate solver microservice. Package root:
   **skipped** instead of failing, and a green build then proves nothing about
   the diagnostic. A licence restores the comparison with no configuration
   change. See `docs/decisions/0013-diagnostic-par-le-score-director.md` and
-  `docs/migration-timefold-2.md`.
+  `docs/migration-timefold-2.md`. The three move filters
+  (`EligibleAnimateurMoveFilter`, `HoleNeighbourPosteFilter`,
+  `UnassignedPosteFilter`) depend on `core.impl` too — the filter SPI only
+  exists there — with a different net: a bump that reshapes the types does
+  not compile, and one that silently stops asking them shows up in
+  `-Pscenario-tests` as a solve that no longer converges.
+  `TimefoldInternalApiStructuralTest` keeps the inventory: a new file
+  importing `core.impl` fails the build until it names what will catch its
+  next break.
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
   `EditionResource`, `ConstraintResource`, `DatabaseResource`,
   `PlanningExportResource`, `EspaceAnimateurResource` and
@@ -701,7 +709,12 @@ the `quarkus.platform.version` / `timefold.solver.version` properties), the npm
 dependencies of `src/main/webui`, Docker images, GitHub Actions and the
 `mise.toml` toolchain. Keep the config in that
 single file; document behaviour changes in `docs/developpement.md`. Quarkus and
-Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
+Timefold bumps must be validated with `./mvnw verify -DskipITs=false` **and**
+`./mvnw test -Pscenario-tests`: the four files that depend on
+`ai.timefold.solver.core.impl` (listed by `TimefoldInternalApiStructuralTest`)
+are covered by a compile error for the filters and by the contract test for the
+diagnostic, but a filter that still compiles and is no longer asked only shows
+in the scenarios.
 
 ## Working conventions
 

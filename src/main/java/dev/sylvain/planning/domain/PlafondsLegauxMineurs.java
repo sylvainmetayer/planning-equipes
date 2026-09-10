@@ -38,6 +38,15 @@ public final class PlafondsLegauxMineurs {
     /** Art. L3162-3: the break that interrupts a young worker's stretch lasts at least 30 min. */
     public static final int PAUSE_MINIMALE_MINUTES = 30;
 
+    /** Art. L3164-1: 12 consecutive hours of daily rest for a young worker. */
+    public static final int REPOS_QUOTIDIEN_MIN_MINUTES = 12 * 60;
+
+    /** Art. L3164-1: 14 consecutive hours of daily rest under 16. */
+    public static final int REPOS_QUOTIDIEN_MIN_MOINS_DE_16_ANS_MINUTES = 14 * 60;
+
+    /** Art. L3164-2: two consecutive rest days per week for young workers. */
+    public static final int JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE = 2;
+
     /**
      * Minutes of legal breaks a young worker takes <i>on the post</i> inside an
      * uninterrupted stretch of {@code stretchMinutes}, when the organiser has

@@ -18,7 +18,6 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 /**
  * MCP tools mirroring {@code ConstraintResource}: the business catalogue of
@@ -115,7 +114,7 @@ public class ContrainteMcpTools {
         boolean known = ConstraintCatalog.definitions().stream()
                 .anyMatch(definition -> definition.name().equals(nom));
         if (!known) {
-            throw new NotFoundException("Contrainte inconnue : " + nom);
+            throw new BusinessError.NotFound("Contrainte inconnue : " + nom);
         }
     }
 

@@ -5,7 +5,6 @@ import java.util.List;
 import dev.sylvain.planning.domain.Animateur;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 /** CRUD of the animateur referential, plus the espace access token they are reached by. */
 @ApplicationScoped
@@ -56,7 +55,7 @@ public class AnimateurService {
     public Animateur update(String id, Animateur animateur) {
         solverJobs.refuseIfSolving();
         if (!repository.animateurExists(id)) {
-            throw new NotFoundException("Animateur not found: " + id);
+            throw new BusinessError.NotFound("Animateur not found: " + id);
         }
         animateur.setId(id);
         validate(animateur);

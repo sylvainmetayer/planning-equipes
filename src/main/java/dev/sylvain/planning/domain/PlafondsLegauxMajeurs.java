@@ -46,6 +46,15 @@ public final class PlafondsLegauxMajeurs {
                 TRAVAIL_CONTINU_MAX_MINUTES + PAUSE_MINIMALE_MINUTES);
     }
 
+    /** Art. L3131-1: 11 consecutive hours of daily rest for an adult. */
+    public static final int REPOS_QUOTIDIEN_MIN_MINUTES = 11 * 60;
+
+    /**
+     * Art. L3132-2 + L3131-1: 24 consecutive hours of weekly rest, on top of the
+     * 11 h of daily rest — i.e. 35 consecutive hours.
+     */
+    public static final int REPOS_HEBDOMADAIRE_MIN_MINUTES = 35 * 60;
+
     /** Art. L3132-1: no more than six worked days in the same week. */
     public static final int JOURS_TRAVAILLES_MAX_PAR_SEMAINE = 6;
 

@@ -97,6 +97,15 @@ montée de version qui change le comportement fait échouer la comparaison et
 nomme l'écart, au lieu de déformer cinq écrans en silence. Voir
 [`decisions/0013-diagnostic-par-le-score-director.md`](decisions/0013-diagnostic-par-le-score-director.md).
 
+Trois filtres de mouvement (`EligibleAnimateurMoveFilter`,
+`HoleNeighbourPosteFilter`, `UnassignedPosteFilter`) dépendent aussi de
+`core.impl`, parce que la SPI des filtres n'existe que là. Leur filet est
+d'une autre nature : une montée de version qui change les types ne compile
+plus, et une qui cesse de les interroger sans le dire se voit dans
+`-Pscenario-tests`, comme un scénario qui ne converge plus.
+`TimefoldInternalApiStructuralTest` tient l'inventaire des quatre fichiers :
+un cinquième ne passe pas le build tant qu'il ne nomme pas son filet.
+
 ## Deux politiques d'échec sur les mails, séparées structurellement
 
 Un mail qui **accompagne** une opération déjà faite (demande soumise, décision

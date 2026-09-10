@@ -55,33 +55,6 @@ import dev.sylvain.planning.domain.PosteAffectation;
  */
 public final class LegalConstraints {
 
-    /** Art. L3131-1: 11 consecutive hours of daily rest for an adult. */
-    private static final int REPOS_QUOTIDIEN_MIN_MAJEUR_MINUTES = 11 * 60;
-
-    /** Art. L3164-1: 12 consecutive hours of daily rest for a young worker. */
-    private static final int REPOS_QUOTIDIEN_MIN_MINEUR_MINUTES = 12 * 60;
-
-    /** Art. L3164-1: 14 consecutive hours of daily rest under 16. */
-    private static final int REPOS_QUOTIDIEN_MIN_MOINS_DE_16_ANS_MINUTES = 14 * 60;
-
-    /** Art. L3121-16: an adult's uninterrupted work may not exceed 6 h. */
-    private static final int TRAVAIL_CONTINU_MAX_MAJEUR_MINUTES = PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES;
-
-    /** Art. L3121-16: the break that interrupts an adult's working stretch lasts at least 20 min. */
-    private static final int PAUSE_MIN_MAJEUR_MINUTES = PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
-
-    /** Art. L3162-3: the break that interrupts a young worker's stretch lasts at least 30 min. */
-    private static final int PAUSE_MIN_MINEUR_MINUTES = PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES;
-
-    /**
-     * Art. L3132-2 + L3131-1: 24 consecutive hours of weekly rest, on top of the
-     * 11 h of daily rest — i.e. 35 consecutive hours.
-     */
-    private static final int REPOS_HEBDOMADAIRE_MIN_MINUTES = 35 * 60;
-
-    /** Art. L3164-2: two consecutive rest days per week for young workers. */
-    private static final int JOURS_REPOS_CONSECUTIFS_MINEUR = 2;
-
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
                 standReserveAuxMajeurs(constraintFactory),
@@ -108,7 +81,7 @@ public final class LegalConstraints {
      * <p>{@code reserveMajeurs} is a <b>business flag</b>, not in itself a
      * legal statement: the restriction may come from the "travaux réglementés"
      * forbidden to under-18s (art. L4153-8, D4153-15 et suivants
-     * <b>[non vérifié — à faire validate]</b>) or from a purely internal policy
+     * <b>[JUR-1 non vérifié — à faire valider]</b>) or from a purely internal policy
      * (bar stand, adult-only games…). The model does not distinguish the two;
      * see docs/contraintes.md.</p>
      */
@@ -128,7 +101,7 @@ public final class LegalConstraints {
      * this. Supervision duties for minors come either from the Code de l'action
      * sociale et des families (where minors are the audience, not the staff) or
      * from the derogation regime for "travaux réglementés" (art. R4153-40 et
-     * suivants <b>[non vérifié — à faire validate]</b>). This is therefore an
+     * suivants <b>[JUR-2 non vérifié — à faire valider]</b>). This is therefore an
      * organiser <b>safety policy</b>, deliberately kept as a hard constraint
      * but catalogued under "Sécurité (mineurs)", not "Légal (mineurs)", so
      * nobody disables it believing the whole minors' framework is optional.</p>
@@ -295,7 +268,7 @@ public final class LegalConstraints {
      * (derogations by the labour inspectorate, emergency, art. L3121-19). None
      * of those derogations is data the application holds, so the cap is applied
      * unconditionally. The CCN ÉCLAT also retains 10 h of travail effectif per
-     * day <b>[non vérifié — à faire validate sur le text conventionnel]</b>.</p>
+     * day <b>[JUR-3 non vérifié — à faire valider sur le texte conventionnel]</b>.</p>
      *
      * <p>Until this constraint existed, the only daily cap in the referential
      * was the minors' one: on {@code scenario-complet.yaml} an adult could hold
@@ -331,7 +304,7 @@ public final class LegalConstraints {
      * latest</i> at the sixth hour, so a stretch may <i>reach</i> 6 h but not
      * exceed it. A stricter reading — any day reaching 6 h of work requires a
      * 20-minute break to exist, which would make a lone 6 h créneau
-     * non-compliant — is defensible and <b>[à faire validate par un juriste]</b>.
+     * non-compliant — is defensible and <b>[JUR-4 à faire valider par un juriste]</b>.
      * Switching to it means comparing with {@code >=} here.</p>
      *
      * <p>By default the model has no break inside a créneau (see
@@ -364,11 +337,11 @@ public final class LegalConstraints {
                         ConstraintCollectors.toList())
                 .join(ParametresLegaux.class)
                 .filter((animateur, date, postes, parametres) -> !parametres.isPauseSurPoste()
-                        && longestSequenceMinutes(postes, PAUSE_MIN_MAJEUR_MINUTES)
-                                > TRAVAIL_CONTINU_MAX_MAJEUR_MINUTES)
+                        && longestSequenceMinutes(postes, PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES)
+                                > PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, postes, parametres) -> longestSequenceMinutes(postes, PAUSE_MIN_MAJEUR_MINUTES)
-                                - TRAVAIL_CONTINU_MAX_MAJEUR_MINUTES)
+                        (animateur, date, postes, parametres) -> longestSequenceMinutes(postes, PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES)
+                                - PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .asConstraint("travailContinuMaxMajeur");
     }
 
@@ -404,10 +377,10 @@ public final class LegalConstraints {
                         ConstraintCollectors.toList())
                 .join(ParametresLegaux.class)
                 .filter((animateur, date, postes, parametres) -> !parametres.isPauseSurPoste()
-                        && longestSequenceMinutes(postes, PAUSE_MIN_MINEUR_MINUTES)
+                        && longestSequenceMinutes(postes, PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES)
                                 > PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, postes, parametres) -> longestSequenceMinutes(postes, PAUSE_MIN_MINEUR_MINUTES)
+                        (animateur, date, postes, parametres) -> longestSequenceMinutes(postes, PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES)
                                 - PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .asConstraint("travailContinuMaxMineur");
     }
@@ -519,9 +492,9 @@ public final class LegalConstraints {
                         poste -> poste.getCreneau().semaineIso(),
                         ConstraintCollectors.toSet(poste -> poste.getCreneau().getDate()))
                 .filter((animateur, semaine, jours) -> longestRunOfFreeDays(jours)
-                        < JOURS_REPOS_CONSECUTIFS_MINEUR)
+                        < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, semaine, jours) -> JOURS_REPOS_CONSECUTIFS_MINEUR
+                        (animateur, semaine, jours) -> PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE
                                 - longestRunOfFreeDays(jours))
                 .asConstraint("reposHebdomadaireMineur");
     }
@@ -535,7 +508,7 @@ public final class LegalConstraints {
      *
      * <p><b>No derogation is implemented.</b> Art. R3164-2 opens sectoral
      * derogations set by decree; whether event management / animation is among
-     * them is <b>[non vérifié — à faire validate par un juriste]</b>. The most
+     * them is <b>[JUR-5 non vérifié — à faire valider par un juriste]</b>. The most
      * protective default therefore applies — a plain ban — and the derogation
      * is deliberately left uncoded and unconfigurable until instructed. See
      * {@link JoursFeries} for the other scope decisions (Alsace-Moselle,
@@ -585,11 +558,11 @@ public final class LegalConstraints {
         Animateur animateur = poste.getAnimateur();
         LocalDate date = poste.getCreneau().getDate();
         if (animateur.isUnder16On(date)) {
-            return REPOS_QUOTIDIEN_MIN_MOINS_DE_16_ANS_MINUTES;
+            return PlafondsLegauxMineurs.REPOS_QUOTIDIEN_MIN_MOINS_DE_16_ANS_MINUTES;
         }
         return animateur.isMineurOn(date)
-                ? REPOS_QUOTIDIEN_MIN_MINEUR_MINUTES
-                : REPOS_QUOTIDIEN_MIN_MAJEUR_MINUTES;
+                ? PlafondsLegauxMineurs.REPOS_QUOTIDIEN_MIN_MINUTES
+                : PlafondsLegauxMajeurs.REPOS_QUOTIDIEN_MIN_MINUTES;
     }
 
     /** Rest, in minutes, between the end of {@code veille} and the start of {@code lendemain}. */
@@ -606,7 +579,7 @@ public final class LegalConstraints {
      * Daily rest that the law lets adjoin the 24 h of weekly rest, on either
      * side of the week boundary (35 h − 24 h).
      */
-    private static final int REPOS_QUOTIDIEN_ADJOINT_MINUTES = REPOS_HEBDOMADAIRE_MIN_MINUTES - 24 * 60;
+    private static final int REPOS_QUOTIDIEN_ADJOINT_MINUTES = PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - 24 * 60;
 
     /**
      * Minutes missing, summed over the ISO weeks in which the animateur works,
@@ -662,8 +635,8 @@ public final class LegalConstraints {
             }
             meilleur = Math.max(meilleur, creditReposMinutes(
                     occupations.get(occupations.size() - 1)[1], null, debutSemaine, finSemaine));
-            if (meilleur < REPOS_HEBDOMADAIRE_MIN_MINUTES) {
-                deficit += (int) (REPOS_HEBDOMADAIRE_MIN_MINUTES - meilleur);
+            if (meilleur < PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES) {
+                deficit += (int) (PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - meilleur);
             }
         }
         return deficit;
@@ -713,13 +686,13 @@ public final class LegalConstraints {
 
     /** Effective working minutes of an adult's day, see {@link #effectiveWorkMinutes}. */
     private static int effectiveWorkMajeurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
-        return effectiveWorkMinutes(postes, parametres, PAUSE_MIN_MAJEUR_MINUTES,
+        return effectiveWorkMinutes(postes, parametres, PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
                 PlafondsLegauxMajeurs::onPostBreakMinutes);
     }
 
     /** Effective working minutes of a minor's day, see {@link #effectiveWorkMinutes}. */
     private static int effectiveWorkMineurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
-        return effectiveWorkMinutes(postes, parametres, PAUSE_MIN_MINEUR_MINUTES,
+        return effectiveWorkMinutes(postes, parametres, PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
                 PlafondsLegauxMineurs::onPostBreakMinutes);
     }
 
@@ -806,7 +779,7 @@ public final class LegalConstraints {
      * durée maximale hebdomadaire de travail est de quarante-huit heures. »</i>
      * — disposition d'ordre public. Convention collective ÉCLAT (IDCC 1518)
      * art. 5.2 retains the same 48 h high-week ceiling
-     * <b>[non vérifié — à faire validate sur le text conventionnel]</b>. The
+     * <b>[JUR-6 non vérifié — à faire valider sur le texte conventionnel]</b>. The
      * effective value is the admin-configurable
      * {@link ParametresLegaux#getDureeHebdomadaireMaxMinutes()}, which the
      * server refuses to set above 48 h.</p>

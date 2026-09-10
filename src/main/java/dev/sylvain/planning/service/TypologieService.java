@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 /**
  * The {@code typologie} referential — the vocabulary every other referential
@@ -68,7 +67,7 @@ public class TypologieService implements TypologieLibelles {
 
     public TypologieItem update(String id, TypologieItem typologie) {
         if (!repository.typologieExists(id)) {
-            throw new NotFoundException("Typology not found: " + id);
+            throw new BusinessError.NotFound("Typology not found: " + id);
         }
         TypologieItem misAJour = repository.saveTypologie(
                 new TypologieItem(id, typologie.label(), typologie.ninja(), typologie.modifieLe()), false);

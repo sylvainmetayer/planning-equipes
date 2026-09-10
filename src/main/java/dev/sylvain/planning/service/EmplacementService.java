@@ -5,7 +5,6 @@ import java.util.List;
 import dev.sylvain.planning.domain.Emplacement;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 /** CRUD of the emplacement referential — the physical places stands sit in. */
 @ApplicationScoped
@@ -34,7 +33,7 @@ public class EmplacementService {
 
     public Emplacement update(String id, Emplacement emplacement) {
         if (!repository.emplacementExists(id)) {
-            throw new NotFoundException("Emplacement not found: " + id);
+            throw new BusinessError.NotFound("Emplacement not found: " + id);
         }
         emplacement.setId(id);
         validateCoordinates(emplacement);

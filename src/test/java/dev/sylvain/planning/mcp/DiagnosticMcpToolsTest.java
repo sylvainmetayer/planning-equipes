@@ -27,7 +27,6 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.mcp.DiagnosticMcpTools.PausesView;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 /**
  * The read-only diagnostics, and the constraint weight — everything the
@@ -194,7 +193,7 @@ class DiagnosticMcpToolsTest {
     @Test
     void unePonderationSurUneContrainteInconnueEstRefusee() {
         assertThatThrownBy(() -> contrainteTools.modifier_poids_contrainte("contrainteQuiNexistePas", 2, null))
-                .isInstanceOf(NotFoundException.class);
+                .isInstanceOf(BusinessError.NotFound.class);
     }
 
     @Test

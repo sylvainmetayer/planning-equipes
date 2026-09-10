@@ -22,7 +22,6 @@ import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 /**
  * Read views of the espace animateur (issue #165): the animateur's own slice
@@ -224,7 +223,7 @@ public class EspaceAnimateurService {
         boolean connu = referenceDataService.listAnimateurs().stream()
                 .anyMatch(candidat -> candidat.getId().equals(collegueId));
         if (!connu) {
-            throw new NotFoundException("Animateur not found: " + collegueId);
+            throw new BusinessError.NotFound("Animateur not found: " + collegueId);
         }
         return postesOf(planPublieService.planPublie(), collegueId, Map.of());
     }

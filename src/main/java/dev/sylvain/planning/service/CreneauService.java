@@ -8,7 +8,6 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 /**
  * CRUD of the créneau grid, and the découpage that turns the edition's
@@ -52,7 +51,7 @@ public class CreneauService {
     public Creneau update(Long id, Creneau creneau) {
         CreneauValidator.check(creneau);
         if (!repository.creneauExists(id)) {
-            throw new NotFoundException("Timeslot not found: " + id);
+            throw new BusinessError.NotFound("Timeslot not found: " + id);
         }
         creneau.setId(id);
         repository.updateCreneau(creneau);
