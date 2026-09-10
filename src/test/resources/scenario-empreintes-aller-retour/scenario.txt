@@ -1,0 +1,26 @@
+.planning.affectationsPubliees = (vide)
+.planning.animateurs[0]  614a90affd34179e
+.planning.animateurs[1]  94cdeb3fe16428d3
+.planning.animateurs[2]  46885fd00ead2525
+.planning.constraintsDesactivees = (vide)
+.planning.contraintesAdHoc = (vide)
+.planning.dateDebutFestival = 2026-07-08
+.planning.parametresLegaux[0]  98e935f9abd6c3c2
+.planning.parametresQualite[0]  33dd46864ff3cece
+.planning.ponderationsContraintes.constraintWeightMap = (vide)
+.planning.ponderationsScenario{appreciationIncompatible} = 3
+.planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 5
+.planning.postes[0]  e2459245ff7a37e7
+.planning.postes[1]  bf31e8630fd5a27b
+.planning.postes[2]  ead43f5d0e2f9a10
+.planning.score = null
+.planning.verrouillages = (vide)
+.sections.contraintes.desactivees = (vide)
+.sections.contraintes.poids{appreciationIncompatible} = 3
+.sections.contraintes.poids{maxJoursConsecutifsTravailles} = 5
+.sections.decoupageAuto = false
+.sections.edition = null
+.sections.parametresDecoupage = null
+.sections.parametresLegaux = null
+.sections.parametresSolveur = null
+.sections.typologies = (vide)

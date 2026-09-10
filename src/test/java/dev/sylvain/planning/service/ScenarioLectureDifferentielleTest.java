@@ -6,9 +6,8 @@ import static org.assertj.core.api.Assertions.fail;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -23,39 +22,33 @@ import org.junit.jupiter.api.Test;
  * it is written <b>before</b> the switch rather than after: a reference taken
  * from the new reader would only prove the new reader agrees with itself.</p>
  *
- * <p><b>How to read a failure.</b> The message names the elements that differ —
- * {@code .planning.postes[912]}, {@code .sections.parametresLegaux…}. The full
- * form of both sides is written to {@code target/scenario-differentiel/} so the
- * exact field can be diffed; the reference is folded to one digest per element
- * precisely so the repository does not carry 4.4 Mio of it.</p>
- *
- * <p><b>When the reference legitimately changes</b> — a scenario file edited, a
- * domain field added — the failure says which file to regenerate, and the
- * regenerated file is reviewed like any other diff. A reference updated without
- * being read is worth nothing.</p>
+ * <p><b>Read with the default legal parameters, never the database's.</b> The
+ * fallback supplier the application passes reads {@code parametres_legaux}, so
+ * a scenario that pins none would be canonicalised differently depending on
+ * what another test had just written — the first full-suite run of this test
+ * failed on exactly that. A reference that depends on the state of a database
+ * is not a reference. What is pinned here is what the <em>file</em> says, plus
+ * the domain's own defaults.</p>
  */
 class ScenarioLectureDifferentielleTest {
 
-    private static final Path REFERENCES = Path.of("src/test/resources/scenario-empreintes");
-
-    private static final Path SORTIE = Path.of("target/scenario-differentiel");
-
     @Test
     void chaqueScenarioLivreSeLitCommeSaReference() throws IOException {
-        List<Path> scenarios = scenariosLivres();
+        List<java.nio.file.Path> scenarios = ScenariosLivres.all();
         assertThat(scenarios).as("les scénarios livrés doivent être trouvés").hasSizeGreaterThan(5);
 
-        List<String> ecarts = new java.util.ArrayList<>();
-        List<String> ecrites = new java.util.ArrayList<>();
-        for (Path scenario : scenarios) {
-            ecarts.addAll(comparer(scenario, ecrites));
+        ReferenceComparison comparaison = new ReferenceComparison("scenario-empreintes");
+        List<String> ecarts = new ArrayList<>();
+        for (java.nio.file.Path scenario : scenarios) {
+            ecarts.addAll(comparaison.compare(ScenariosLivres.nom(scenario),
+                    ScenarioYamlReader.buildFromScenarioText(Files.readString(scenario), ParametresLegaux::new)));
         }
 
         // All of them at once, not the first one: regenerating one reference at
         // a time would take as many passes as there are scenarios.
-        if (!ecrites.isEmpty()) {
+        if (!comparaison.written().isEmpty()) {
             fail("Références absentes, elles viennent d'être écrites : %s. Relisez-les, puis commitez-les.",
-                    String.join(", ", ecrites));
+                    String.join(", ", comparaison.written()));
         }
 
         assertThat(ecarts)
@@ -64,66 +57,5 @@ class ScenarioLectureDifferentielleTest {
                         sont dans target/scenario-differentiel/. Si l'écart est voulu, régénérez \
                         la référence — et relisez-la avant de la commiter.""")
                 .isEmpty();
-    }
-
-    private List<String> comparer(Path scenario, List<String> ecrites) throws IOException {
-        String nom = scenario.getFileName().toString().replaceAll("\\.ya?ml$", "");
-        ScenarioYamlReader.ScenarioImporte lu =
-                ScenarioYamlReader.buildFromScenarioText(Files.readString(scenario), ParametresLegaux::new);
-
-        List<String> obtenues = FormeCanonique.empreintes(lu);
-        Path reference = REFERENCES.resolve(nom + ".txt");
-
-        if (!Files.exists(reference)) {
-            Files.createDirectories(reference.getParent());
-            Files.write(reference, obtenues);
-            ecrites.add(reference.toString());
-            return List.of();
-        }
-
-        List<String> attendues = Files.readAllLines(reference);
-        if (attendues.equals(obtenues)) {
-            return List.of();
-        }
-
-        writeBothFormsForDiffing(nom, lu, obtenues, attendues);
-        return premieresDifferences(nom, attendues, obtenues);
-    }
-
-    /**
-     * Both full forms on disk, not just the digests: a digest says that an
-     * element moved, never which field inside it did.
-     */
-    private void writeBothFormsForDiffing(String nom, Object lu, List<String> obtenues, List<String> attendues)
-            throws IOException {
-        Files.createDirectories(SORTIE);
-        Files.writeString(SORTIE.resolve(nom + "-obtenu-complet.txt"), FormeCanonique.of(lu));
-        Files.write(SORTIE.resolve(nom + "-obtenu.txt"), obtenues);
-        Files.write(SORTIE.resolve(nom + "-attendu.txt"), attendues);
-    }
-
-    /** At most five, named: a wall of differences says less than the first of them. */
-    private static List<String> premieresDifferences(String nom, List<String> attendues, List<String> obtenues) {
-        List<String> differences = new java.util.ArrayList<>();
-        int commun = Math.min(attendues.size(), obtenues.size());
-        for (int i = 0; i < commun && differences.size() < 5; i++) {
-            if (!attendues.get(i).equals(obtenues.get(i))) {
-                differences.add(nom + " : " + resume(attendues.get(i)) + " ≠ " + resume(obtenues.get(i)));
-            }
-        }
-        if (differences.isEmpty() && attendues.size() != obtenues.size()) {
-            differences.add(nom + " : " + attendues.size() + " éléments attendus, " + obtenues.size() + " obtenus");
-        }
-        return differences;
-    }
-
-    private static String resume(String ligne) {
-        return ligne.length() <= 90 ? ligne : ligne.substring(0, 90) + "…";
-    }
-
-    private static List<Path> scenariosLivres() throws IOException {
-        try (Stream<Path> files = Files.list(Path.of("src/main/resources/scenarios"))) {
-            return files.filter(path -> path.toString().matches(".*\\.ya?ml")).sorted().toList();
-        }
     }
 }
