@@ -565,6 +565,15 @@ du midi ». C'est la seule partie de `ParametresDecoupage` qui atteint le
 solveur : les dix autres champs restent bien de la génération pure, et sa
 javadoc dit maintenant laquelle est laquelle.
 
+**Un scénario est jugé sur les fenêtres qu'il déclare**, pas sur celles de la
+base : `ScenarioYamlReader` les pose sur le planning qu'il construit, et les
+harnais Java purs en font autant. Sans cela, une grille est taillée avec un jeu
+de valeurs et notée avec un autre — sur `festival-realiste-canicule`, une
+fenêtre du soir placée à 17 h-18 h pour tomber dans un trou était notée comme
+19 h-21 h, en plein milieu du bloc de soirée, que rien ne pouvait satisfaire.
+En production la question ne se pose pas : `ReferenceDataService` lit la ligne
+de l'édition.
+
 Une fenêtre est écartée si ses bornes manquent, si elle est vide ou inversée, si
 la durée est nulle, ou si elle est **plus courte que la coupure qu'elle exige** —
 personne ne pourrait la satisfaire, et une règle qu'aucune affectation n'atteint

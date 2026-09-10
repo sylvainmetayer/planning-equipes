@@ -61,6 +61,12 @@ plus : une édition découpée n'a que ses vacations à exporter. Le fichier de
 scénario tenu à la main, « amplitudes + `decoupageAuto` », reste la source de
 vérité pour redécouper — jamais cet export.
 
+Un créneau peut porter `couverturePause: true` : il couvre un service de
+repas, et le stand n'y ouvre que la moitié de son effectif — ce que le
+découpage automatique marque tout seul sur les vacations qu'il génère, et
+qu'une grille écrite à la main peut donc dire aussi. Le drapeau n'est écrit
+que lorsqu'il vaut vrai.
+
 ## Horaires d'un stand
 
 Le sélecteur de jours est **à plat** : `jours` nomme lequel des champs voisins

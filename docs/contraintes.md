@@ -416,6 +416,54 @@ Pour un couple (animateur, date) et chaque fenêtre repas déclarée :
   descendre.
 - **une coupure par fenêtre traversée** : une journée 10 h-23 h en doit deux.
 
+### Une heure, et pourquoi
+
+La coupure vaut **une heure** par défaut (`dureePauseRepasMinutes`), et non les
+45 minutes d'avant. Une fenêtre de deux heures se divise alors en deux
+créneaux entiers — 12-13 ou 13-14 le midi, 19-20 ou 20-21 le soir — qui sont
+l'organisation réelle de l'événement. À 45 minutes, la coupure ne tombait sur
+aucun créneau entier : elle flottait dans la fenêtre.
+
+C'était sans importance tant que cette durée n'était qu'une indication pour le
+découpage. Depuis que `coupureRepasObligatoire` la lit, c'est la règle que les
+gens doivent pouvoir planifier. La migration V71 remonte les éditions restées
+à 45 — celles qui n'ont jamais choisi ; une édition ayant saisi une autre
+valeur n'est pas touchée.
+
+### Ce qu'elle remet à zéro
+
+**Une coupure repas est une pause au sens de [L3121-16]** : elle rompt la
+séquence de travail continu, donc le compteur des six heures repart de zéro.
+Ce n'est pas une règle ajoutée, c'est une conséquence du modèle —
+`longestSequenceMinutes` rompt une séquence sur tout trou d'au moins vingt
+minutes, et une coupure d'une heure en est un. Douze heures d'un bloc coûtent
+six heures de dépassement ; les mêmes coupées de 13 h à 14 h n'en coûtent
+aucune. `RepasConstraintsTest` le verrouille, parce que rien dans le code ne
+l'écrivait et que les deux règles pourraient dériver l'une de l'autre sans
+qu'on le voie.
+
+### La rotation, et ce qu'elle coûte
+
+Offrir le choix entre 12-13 et 13-14 suppose **deux créneaux distincts** à
+midi : c'est la rotation, et elle demande que quelqu'un tienne le stand
+pendant que les autres mangent. Le classeur source y répond par un **effectif
+réduit** : `couverturePause` sur un créneau divise par deux les sièges qu'un
+stand y ouvre. Le découpage automatique pose ce drapeau tout seul ; depuis
+l'issue #438, le format de scénario sait aussi le lire, ce qui permet à une
+grille écrite à la main — le mode `VACATIONS` — de décrire son service de
+midi. Sans lui, une rotation réclame deux équipages complets.
+
+Deux réglages conditionnent qu'une telle grille tienne, et ils se mesurent :
+
+- la **pause minimale entre vacations** doit être à 0 quand les blocs se
+  touchent, sinon on ne peut pas enchaîner 11 h-12 h puis 12 h-13 h et la
+  relève de midi impose une seconde équipe entière ;
+- le **repos quotidien** de 11 h reste dû entre la fin de soirée et le matin
+  suivant. Le plancher de l'écran Besoin **ne le voit pas** — ses bornes
+  l'ignorent, sa javadoc le dit — donc il peut annoncer une marge
+  confortable pendant qu'une partie de l'effectif est en réalité
+  inutilisable.
+
 `coupureRepasAuPlusTot` départage ensuite 12-13 de 13-14 en pénalisant le
 retard sur l'ouverture. La couverture des stands étant dure, c'est son
 arbitrage avec cette préférence qui répartit la rotation du midi.
@@ -514,6 +562,8 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `reposHebdomadaireMinimal` | HARD | Légal (temps de travail) | Chaque animateur bénéficie, dans chaque semaine, d'un repos hebdomadaire de 35 heures consécutives : 24 heures (art. L3132-2) auxquelles s'ajoutent les 11 heures de repos quotidien (art. L3131-1). Un repos à cheval sur le lundi compte en entier pour la semaine où il tombe. |
 | `travailContinuMaxMajeur` | HARD | Légal (temps de travail) | Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause d'au moins 20 minutes consécutives est obligatoire (Code du travail art. L3121-16). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
 | `pauseMinimaleEntreVacations` | HARD | Légal (temps de travail) | Entre deux vacations d'un même animateur le même jour, l'écart doit être d'au moins la pause minimale paramétrée (30 min par défaut). |
+| `coupureRepasObligatoire` | HARD | Organisation (repas) | Qui travaille de part et d'autre d'une fenêtre repas doit disposer, entièrement dans cette fenêtre, d'une coupure libre de la durée paramétrée (60 min par défaut, midi 12 h-14 h et soir 19 h-21 h). Commencer sa journée à l'ouverture de la fenêtre, ou la terminer à sa fermeture, ne doit rien : on a mangé avant, ou on mangera après. Une journée à cheval sur les deux fenêtres doit deux coupures. Ce n'est pas une obligation du Code du travail — la seule pause qu'il impose est celle de 20 minutes à la sixième heure (art. L3121-16), portée par travailContinuMaxMajeur — mais la règle d'organisation de l'événement, tenue en dur par choix. Elle reste active quand l'organisateur déclare la pause prise sur le poste : la pause légale par relais et la coupure repas sont deux choses distinctes. |
+| `coupureRepasAuPlusTot` | SOFT | Préférences | Entre deux coupures repas possibles dans la même fenêtre, préférer la plus tôt : sur une fenêtre 12 h-14 h taillée en deux, 12 h-13 h plutôt que 13 h-14 h. La couverture des stands, elle, est dure : c'est son arbitrage avec cette préférence qui répartit la rotation du midi. |
 | `indisponibiliteForcee` | HARD | Contraintes ad hoc | Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé. |
 | `incompatibiliteAdHoc` | HARD | Contraintes ad hoc | Deux animateurs déclarés incompatibles ne doivent jamais travailler sur le même créneau. |
 | `affectationForcee` | HARD | Contraintes ad hoc | Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé. |
