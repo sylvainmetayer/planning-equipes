@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.scenario;
 
 import java.io.IOException;
 import java.nio.file.Files;

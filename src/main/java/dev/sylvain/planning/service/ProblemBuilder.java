@@ -35,7 +35,7 @@ import dev.sylvain.planning.solver.constraints.AdHocConstraints;
  * and {@code PlanningServiceVerrouillageTest} exercise them without a
  * container.</p>
  */
-final class ProblemBuilder {
+public final class ProblemBuilder {
 
     private final ReferenceData referenceDataService;
 
@@ -527,7 +527,7 @@ final class ProblemBuilder {
      * With a single famille (the default, {@code famille} always 0) this is
      * exactly the historical unfiltered cross product.</p>
      */
-    static List<PosteAffectation> buildPostes(List<Stand> stands, List<Creneau> creneaux) {
+    public static List<PosteAffectation> buildPostes(List<Stand> stands, List<Creneau> creneaux) {
         int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
         Map<String, Integer> familleParStand = spreadStandsByFamily(stands, nombreFamilles);
         List<PosteAffectation> postes = new ArrayList<>();
@@ -549,8 +549,8 @@ final class ProblemBuilder {
                     for (int seat = 0; seat < seats; seat++) {
                         PosteAffectation poste = new PosteAffectation("poste-" + (counter++), stand, creneau);
                         if (!creneauEntierOuvert) {
-                            poste.setHeureDebutEffective(decaler(creneau.getHeureDebut(), segment.debutMinutes()));
-                            poste.setHeureFinEffective(decaler(creneau.getHeureDebut(), segment.finMinutes()));
+                            poste.setHeureDebutEffective(shift(creneau.getHeureDebut(), segment.debutMinutes()));
+                            poste.setHeureFinEffective(shift(creneau.getHeureDebut(), segment.finMinutes()));
                         }
                         postes.add(poste);
                     }
@@ -640,7 +640,7 @@ final class ProblemBuilder {
     }
 
     /** {@code heureDebut} shifted forward by {@code minutes}, wrapping past midnight. */
-    static LocalTime decaler(LocalTime heureDebut, int minutes) {
+    public static LocalTime shift(LocalTime heureDebut, int minutes) {
         return LocalTime.ofSecondOfDay(Math.floorMod(heureDebut.toSecondOfDay() + minutes * 60L, 24 * 3600L));
     }
 }

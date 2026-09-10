@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.scenario;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.PlanningService;
 
 /**
  * Reading a scenario file, with no database and no container: the reader is pure
@@ -50,7 +53,7 @@ class ScenarioYamlReaderTest {
     @Test
     void aFileThatPinsNoLegalParametersFallsBackOnTheEditionsOwn() throws IOException {
         PlanningEvenement planning = ScenarioYamlReader.buildPlanning(
-                ScenarioYamlReader.readScenario(ScenarioYamlReader.cheminScenario(WITHOUT_LEGAL_PARAMETERS)),
+                ScenarioYamlReader.readScenario(ScenarioYamlReader.scenarioPath(WITHOUT_LEGAL_PARAMETERS)),
                 ScenarioYamlReaderTest::ofTheEdition);
 
         assertThat(planning.getParametresLegaux())

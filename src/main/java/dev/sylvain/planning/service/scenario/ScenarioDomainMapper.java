@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.scenario;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -51,10 +51,14 @@ import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
-import dev.sylvain.planning.service.ScenarioYamlReader.ContraintesScenario;
-import dev.sylvain.planning.service.ScenarioYamlReader.ReferenceScenario;
-import dev.sylvain.planning.service.ScenarioYamlReader.ScenarioSections;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ContraintesScenario;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ReferenceScenario;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ScenarioSections;
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.HoraireStandResolver;
+import dev.sylvain.planning.service.ProblemBuilder;
+import dev.sylvain.planning.service.TypologieItem;
 
 /**
  * From the file's shape to the domain: a {@link ScenarioDto}, bound by
@@ -139,8 +143,8 @@ final class ScenarioDomainMapper {
                 int[] segment = segments.get(0);
                 boolean creneauEntierOuvert = segment[0] == 0 && segment[1] == creneau.getDureeMinutes();
                 if (!creneauEntierOuvert) {
-                    poste.setHeureDebutEffective(ProblemBuilder.decaler(creneau.getHeureDebut(), segment[0]));
-                    poste.setHeureFinEffective(ProblemBuilder.decaler(creneau.getHeureDebut(), segment[1]));
+                    poste.setHeureDebutEffective(ProblemBuilder.shift(creneau.getHeureDebut(), segment[0]));
+                    poste.setHeureFinEffective(ProblemBuilder.shift(creneau.getHeureDebut(), segment[1]));
                 }
             }
             postes.add(poste);

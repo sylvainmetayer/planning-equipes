@@ -15,6 +15,7 @@ import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 
 /**
  * Full-scale regression test for the "continu" scenario family: unlike

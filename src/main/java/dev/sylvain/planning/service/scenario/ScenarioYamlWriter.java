@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.scenario;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import dev.sylvain.planning.service.TypologieItem;
 
 /**
  * Writes the YAML text of a scenario file. Pure and static: it takes the data
@@ -32,7 +33,7 @@ import org.yaml.snakeyaml.Yaml;
  * appears, in what order, and which one is left out is decided by the record —
  * see {@link ScenarioDtoAssembler} and {@link ScenarioYaml#writer()}.</p>
  */
-final class ScenarioYamlWriter {
+public final class ScenarioYamlWriter {
 
     private ScenarioYamlWriter() {
     }
@@ -45,7 +46,7 @@ final class ScenarioYamlWriter {
      * @param postes the seat list, or {@code null} to leave the section out
      *               (see {@link PlanningService#exportScenarioYaml()})
      */
-    record ScenarioExport(
+    public record ScenarioExport(
             List<Animateur> animateurs,
             List<Stand> stands,
             List<Creneau> creneaux,
@@ -74,14 +75,14 @@ final class ScenarioYamlWriter {
      * <p>Package-private and static, like {@link ProblemBuilder#buildPostes}, so
      * the tests need no database.</p>
      */
-    static String buildScenarioYaml(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
+    public static String buildScenarioYaml(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
             List<PosteAffectation> postes) {
         return buildScenarioYaml(new ScenarioExport(animateurs, stands, creneaux, postes, List.of(), List.of(),
                 null, null, null, Set.of(), Map.of(), List.of()));
     }
 
     /** Full-fidelity variant: writes every optional section {@link ScenarioExport} carries. */
-    static String buildScenarioYaml(ScenarioExport export) {
+    public static String buildScenarioYaml(ScenarioExport export) {
         Object document = ScenarioYaml.writer().convertValue(ScenarioDtoAssembler.assemble(export), Map.class);
 
         DumperOptions options = new DumperOptions();

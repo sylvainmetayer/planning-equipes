@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.scenario;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -15,6 +15,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
+import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
+import dev.sylvain.planning.service.HoraireStandResolver;
+import dev.sylvain.planning.service.ProblemBuilder;
 
 /**
  * What every bundled scenario reads as <b>after being written back out</b>,

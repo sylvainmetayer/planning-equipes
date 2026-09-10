@@ -8,7 +8,7 @@ import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.ScenarioImportService;
+import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;

@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.scenario;
 
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.solver.ConstraintCatalog;
@@ -7,6 +7,9 @@ import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.ReferenceDataService;
 
 /**
  * Importing a scenario into the referential: the order the sections are applied

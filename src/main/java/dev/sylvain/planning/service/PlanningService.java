@@ -19,6 +19,8 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
+import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
 
 @ApplicationScoped
 public class PlanningService {
@@ -86,7 +88,7 @@ public class PlanningService {
     public PlanningEvenement buildExample(String scenarioName) {
         try {
             return ScenarioYamlReader.buildPlanning(
-                    ScenarioYamlReader.readScenario(ScenarioYamlReader.cheminScenario(scenarioName)),
+                    ScenarioYamlReader.readScenario(ScenarioYamlReader.scenarioPath(scenarioName)),
                     referenceDataService::getParametresLegaux);
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);

@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.scenario;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +32,8 @@ import dev.sylvain.planning.scenario.ScenarioBinder;
 import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.TypologieItem;
 
 /**
  * Reads a scenario file: locates it on the classpath, binds the YAML to the
@@ -55,10 +57,10 @@ public final class ScenarioYamlReader {
     }
 
     /** Classpath folder holding every selectable scenario file. */
-    static final String SCENARIOS_DIR = "scenarios";
+    public static final String SCENARIOS_DIR = "scenarios";
 
     /** Default scenario loaded when the caller does not pick one. */
-    static final String DEFAULT_SCENARIO = "scenario-complet.yaml";
+    public static final String DEFAULT_SCENARIO = "scenario-complet.yaml";
 
     /**
      * Resolves a scenario name to its classpath path. Shared by every scenario
@@ -69,7 +71,7 @@ public final class ScenarioYamlReader {
      * any path component is rejected so callers cannot escape the scenarios
      * folder.
      */
-    static String cheminScenario(String scenarioName) {
+    public static String scenarioPath(String scenarioName) {
         String name = (scenarioName == null || scenarioName.isBlank()) ? DEFAULT_SCENARIO : scenarioName;
         if (name.contains("/") || name.contains("\\") || name.contains("..")) {
             throw new BusinessError.Invalid("Nom de scénario invalide: " + name);
@@ -83,7 +85,7 @@ public final class ScenarioYamlReader {
      * file in that folder and it shows up here (and in the UI dropdown) with no
      * code change. Works both in dev (folder on disk) and from a packaged jar.
      */
-    static List<String> listScenarios() {
+    public static List<String> listScenarios() {
         try {
             java.net.URL dirUrl = ScenarioYamlReader.class.getClassLoader().getResource(SCENARIOS_DIR);
             if (dirUrl == null) {
@@ -128,7 +130,7 @@ public final class ScenarioYamlReader {
     /* ------------------------------ reading ------------------------------- */
 
     /** A bundled scenario file, bound. Shared by every accessor of a named scenario. */
-    static ScenarioDto readScenario(String scenarioPath) throws IOException {
+    public static ScenarioDto readScenario(String scenarioPath) throws IOException {
         InputStream inputStream = ScenarioYamlReader.class.getClassLoader().getResourceAsStream(scenarioPath);
         if (inputStream == null) {
             throw new IOException("Fichier de scénario non trouvé: " + scenarioPath);
@@ -159,7 +161,7 @@ public final class ScenarioYamlReader {
     }
 
     /** The whole problem a scenario describes — see {@link ScenarioDomainMapper#planning}. */
-    static PlanningEvenement buildPlanning(ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
+    public static PlanningEvenement buildPlanning(ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         Objects.requireNonNull(parametresLegauxParDefaut, "parametresLegauxParDefaut");
         return ScenarioDomainMapper.planning(scenario, parametresLegauxParDefaut);
     }
@@ -176,7 +178,7 @@ public final class ScenarioYamlReader {
      * reported as an {@link IllegalArgumentException} carrying a message
      * meant to be shown to the user as-is.</p>
      */
-    static ScenarioImporte buildFromScenarioText(String yamlContent,
+    public static ScenarioImporte buildFromScenarioText(String yamlContent,
             Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         Objects.requireNonNull(parametresLegauxParDefaut, "parametresLegauxParDefaut");
         ScenarioDto scenario = bind(yamlContent);
@@ -210,12 +212,12 @@ public final class ScenarioYamlReader {
      * building postes via {@link ProblemBuilder#buildPostes}, the way
      * {@code ProblemBuilder.buildFromReferenceData} does against the database.
      */
-    static ReferenceScenario loadReferenceScenario(String scenarioName) throws IOException {
-        return ScenarioDomainMapper.reference(readScenario(cheminScenario(scenarioName)));
+    public static ReferenceScenario loadReferenceScenario(String scenarioName) throws IOException {
+        return ScenarioDomainMapper.reference(readScenario(scenarioPath(scenarioName)));
     }
 
     /** {@code creneaux}/{@code stands}/{@code animateurs} sections of a scenario file, parsed and cross-linked. */
-    record ReferenceScenario(LocalDate dateDebut, Map<String, Creneau> creneauxParId, Map<String, Stand> standsById,
+    public record ReferenceScenario(LocalDate dateDebut, Map<String, Creneau> creneauxParId, Map<String, Stand> standsById,
             List<Animateur> animateurs) {
     }
 
@@ -289,9 +291,9 @@ public final class ScenarioYamlReader {
      * planning: the pre-import step that names the target edition, and the
      * cheap read the tests use to assert what a file pins.
      */
-    static ScenarioSections loadScenarioSections(String scenarioName) {
+    public static ScenarioSections loadScenarioSections(String scenarioName) {
         try {
-            return ScenarioDomainMapper.sections(readScenario(cheminScenario(scenarioName)));
+            return ScenarioDomainMapper.sections(readScenario(scenarioPath(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -303,11 +305,11 @@ public final class ScenarioYamlReader {
      * {@link #buildFromScenarioText}, so the two import paths differ
      * only in where the bytes come from.
      */
-    static ScenarioImporte loadScenario(String scenarioName,
+    public static ScenarioImporte loadScenario(String scenarioName,
             Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         Objects.requireNonNull(parametresLegauxParDefaut, "parametresLegauxParDefaut");
         try {
-            ScenarioDto scenario = readScenario(cheminScenario(scenarioName));
+            ScenarioDto scenario = readScenario(scenarioPath(scenarioName));
             return new ScenarioImporte(ScenarioDomainMapper.planning(scenario, parametresLegauxParDefaut),
                     ScenarioDomainMapper.sections(scenario));
         } catch (IOException e) {
@@ -321,7 +323,7 @@ public final class ScenarioYamlReader {
      * confirmation dialog, before anything is written. The whole file is bound
      * on the way, so a file the import would refuse is refused here already.
      */
-    static Optional<EditionCibleDto> loadEditionScenarioText(String yamlContent) {
+    public static Optional<EditionCibleDto> loadEditionScenarioText(String yamlContent) {
         return ScenarioDomainMapper.edition(bind(yamlContent));
     }
 }

@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service;
+package dev.sylvain.planning.service.scenario;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,6 +33,12 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.ProblemBuilder;
+import dev.sylvain.planning.service.ReferenceData;
+import dev.sylvain.planning.service.TypologieItem;
 
 /**
  * Exercises {@link ScenarioYamlWriter#buildScenarioYaml} directly

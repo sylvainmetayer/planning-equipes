@@ -20,6 +20,7 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
 
 /**
  * The joint between the two halves of the scenario format: what the export

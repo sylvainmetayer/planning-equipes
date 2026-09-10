@@ -13,7 +13,7 @@ import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.ImportImpact;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.ScenarioImportService;
+import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;

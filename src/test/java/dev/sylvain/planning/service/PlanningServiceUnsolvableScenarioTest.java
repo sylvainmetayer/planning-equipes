@@ -20,6 +20,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.AnomalyType;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 
 /**
  * {@code scenarios/scenario-avec-erreur-planning.yaml} is the one shipped scenario

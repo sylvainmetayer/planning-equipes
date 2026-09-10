@@ -13,6 +13,7 @@ import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 
 /**
  * Exercises the optional {@code parametresLegaux:} / {@code parametresDecoupage:}
