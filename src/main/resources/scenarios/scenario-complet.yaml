@@ -40,188 +40,341 @@ contraintes:
     # d'organisation" family.
     maxJoursConsecutifsTravailles: 5
 
+# Les blocs de cette grille se touchent : le matin s'arrête à midi, le service
+# de relève enchaîne, l'après-midi reprend à 14 h. Laisser la pause minimale
+# entre vacations à sa valeur par défaut (30 min) interdirait d'enchaîner
+# 10 h-12 h puis 12 h-13 h, et la relève du midi exigerait alors une seconde
+# équipe entière : le pic passe de 59 à 92 personnes pour un effectif de 152,
+# et le solveur laisse des sièges vides. C'est le réglage que l'aide en ligne
+# recommande pour une grille en blocs jointifs.
+parametresLegaux:
+  pauseMinimaleEntreVacationsMinutes: 0
+
 creneaux:
   - id: J1-MATIN
     jour: 1
     date: 2026-07-08
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J1-MIDI1
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J1-MIDI2
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J1-APREM
     jour: 1
     date: 2026-07-08
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J1-SOIREE
     jour: 1
     date: 2026-07-08
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J2-MATIN
     jour: 2
     date: 2026-07-09
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J2-MIDI1
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J2-MIDI2
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J2-APREM
     jour: 2
     date: 2026-07-09
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J2-SOIREE
     jour: 2
     date: 2026-07-09
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J3-MATIN
     jour: 3
     date: 2026-07-10
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J3-MIDI1
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J3-MIDI2
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J3-APREM
     jour: 3
     date: 2026-07-10
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J3-SOIREE
     jour: 3
     date: 2026-07-10
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J4-MATIN
     jour: 4
     date: 2026-07-11
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J4-MIDI1
+    jour: 4
+    date: 2026-07-11
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J4-MIDI2
+    jour: 4
+    date: 2026-07-11
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J4-APREM
     jour: 4
     date: 2026-07-11
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J4-SOIREE
     jour: 4
     date: 2026-07-11
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J5-MATIN
     jour: 5
     date: 2026-07-12
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J5-MIDI1
+    jour: 5
+    date: 2026-07-12
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J5-MIDI2
+    jour: 5
+    date: 2026-07-12
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J5-APREM
     jour: 5
     date: 2026-07-12
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J5-SOIREE
     jour: 5
     date: 2026-07-12
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J6-MATIN
     jour: 6
     date: 2026-07-13
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J6-MIDI1
+    jour: 6
+    date: 2026-07-13
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J6-MIDI2
+    jour: 6
+    date: 2026-07-13
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J6-APREM
     jour: 6
     date: 2026-07-13
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J6-SOIREE
     jour: 6
     date: 2026-07-13
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J7-MATIN
     jour: 7
     date: 2026-07-14
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J7-MIDI1
+    jour: 7
+    date: 2026-07-14
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J7-MIDI2
+    jour: 7
+    date: 2026-07-14
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J7-APREM
     jour: 7
     date: 2026-07-14
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J7-SOIREE
     jour: 7
     date: 2026-07-14
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J8-MATIN
     jour: 8
     date: 2026-07-15
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J8-MIDI1
+    jour: 8
+    date: 2026-07-15
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J8-MIDI2
+    jour: 8
+    date: 2026-07-15
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J8-APREM
     jour: 8
     date: 2026-07-15
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J8-SOIREE
     jour: 8
     date: 2026-07-15
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J9-MATIN
     jour: 9
     date: 2026-07-16
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J9-MIDI1
+    jour: 9
+    date: 2026-07-16
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J9-MIDI2
+    jour: 9
+    date: 2026-07-16
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J9-APREM
     jour: 9
     date: 2026-07-16
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J9-SOIREE
     jour: 9
     date: 2026-07-16
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J10-MATIN
     jour: 10
     date: 2026-07-17
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J10-MIDI1
+    jour: 10
+    date: 2026-07-17
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J10-MIDI2
+    jour: 10
+    date: 2026-07-17
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J10-APREM
     jour: 10
     date: 2026-07-17
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J10-SOIREE
     jour: 10
     date: 2026-07-17
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J11-MATIN
     jour: 11
     date: 2026-07-18
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J11-MIDI1
+    jour: 11
+    date: 2026-07-18
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J11-MIDI2
+    jour: 11
+    date: 2026-07-18
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J11-APREM
     jour: 11
     date: 2026-07-18
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J11-SOIREE
     jour: 11
     date: 2026-07-18
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J12-MATIN
     jour: 12
     date: 2026-07-19
     heureDebut: "11:00"
-    heureFin: "15:00"
+    heureFin: "12:00"
+  - id: J12-MIDI1
+    jour: 12
+    date: 2026-07-19
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J12-MIDI2
+    jour: 12
+    date: 2026-07-19
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
   - id: J12-APREM
     jour: 12
     date: 2026-07-19
-    heureDebut: "15:30"
-    heureFin: "19:30"
+    heureDebut: "14:00"
+    heureFin: "20:00"
   - id: J12-SOIREE
     jour: 12
     date: 2026-07-19
-    heureDebut: "20:00"
+    heureDebut: "21:00"
     heureFin: "00:00"
-
 emplacements:
   - id: PLACE-DRAPEAU
     nom: Place du Drapeau
