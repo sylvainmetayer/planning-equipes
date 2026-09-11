@@ -148,6 +148,22 @@
                     <filterClass>dev.sylvain.planning.solver.HoleNeighbourPosteFilter</filterClass>
                 </entitySelector>
             </ruinRecreateMoveSelector>
+            <!--
+                Relocation through the week (WeekRelocationMoveIteratorFactory):
+                the chain the two selectors above cannot reach. The people free
+                at an empty seat's hour are often the ones already at six days
+                that week, so filling it means giving up one of their other
+                days, whose seats then need colleagues. Ruin-and-recreate stays
+                at the hole's hour and never touches Monday; a change move sees
+                only the first link. This move plays the whole chain at once
+                and leaves the verdict to the score. Measured on the 2026
+                edition: 26 montage seats stayed empty for 1800 s without it,
+                every one fillable by such a chain.
+            -->
+            <moveIteratorFactory>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+                <moveIteratorFactoryClass>dev.sylvain.planning.solver.WeekRelocationMoveIteratorFactory</moveIteratorFactoryClass>
+            </moveIteratorFactory>
         </unionMoveSelector>
         <acceptor>
             <lateAcceptanceSize>400</lateAcceptanceSize>

@@ -242,6 +242,24 @@ calcul finit malgré tout avec des écarts durs, les recours sont, dans
 l'ordre, « Corriger après un changement », un second « Calculer le
 planning », et la désactivation de la règle pour ce calcul.
 
+**Le mur des six jours, et la chaîne qui le franchit.** Un autre trou résiste
+au *ruin and recreate* parce que sa chaîne ne passe pas par l'heure du trou
+mais par un autre jour de la semaine. Sur l'édition 2026, 26 sièges du
+montage du mardi restaient vides après 1800 s alors que 61 personnes étaient
+libres ce jour-là : toutes à six jours dans la semaine. En prendre un mardi,
+c'est en rendre un autre — le lundi, dont les deux demi-journées doivent
+alors aller à deux collègues qui n'en tenaient qu'une. Un mouvement de
+changement ne voit que le premier maillon, neutre en dur ; le second est un
+changement précis parmi un demi-million. `WeekRelocationMoveIteratorFactory`
+joue la chaîne entière comme un seul mouvement : le siège vide à quelqu'un de
+libre à cette heure, et les sièges qu'il tenait un autre jour de la même
+semaine à des collègues libres à ces heures, éligibles au sens de
+`EligibleAnimateurMoveFilter`. Le score juge le reste — heures, repos,
+coupures — et le mouvement se dégrade en simple changement quand il n'y a
+ni trou ni chaîne. Treize de ces chaînes, construites à la main, avaient
+rempli les 26 sièges sans enfreindre une règle ; le solveur les trouve
+désormais seul.
+
 **Ce qu'elle ne retient pas : une grille qui change.** La règle tient des
 lignes stand × créneau. Tout ce qui rebat ces lignes lui retire sa prise : un
 découpage ou une dérivation qui remplace la grille (le plan enregistré part

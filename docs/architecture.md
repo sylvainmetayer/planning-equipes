@@ -99,13 +99,16 @@ nomme l'écart, au lieu de déformer cinq écrans en silence. Voir
 [`decisions/0013-diagnostic-par-le-score-director.md`](decisions/0013-diagnostic-par-le-score-director.md).
 
 Trois filtres de mouvement (`EligibleAnimateurMoveFilter`,
-`HoleNeighbourPosteFilter`, `UnassignedPosteFilter`) dépendent aussi de
-`core.impl`, parce que la SPI des filtres n'existe que là. Leur filet est
-d'une autre nature : une montée de version qui change les types ne compile
-plus, et une qui cesse de les interroger sans le dire se voit dans
-`-Pscenario-tests`, comme un scénario qui ne converge plus.
-`TimefoldInternalApiStructuralTest` tient l'inventaire des quatre fichiers :
-un cinquième ne passe pas le build tant qu'il ne nomme pas son filet.
+`HoleNeighbourPosteFilter`, `UnassignedPosteFilter`) et la fabrique du
+mouvement de relocalisation à travers la semaine
+(`WeekRelocationMoveIteratorFactory`) dépendent aussi de `core.impl`, parce
+que la SPI des filtres et celle des fabriques de mouvements n'existent que
+là ; les mouvements produits, eux, sont ceux de l'API *preview* publique.
+Leur filet est d'une autre nature : une montée de version qui change les
+types ne compile plus, et une qui cesse de les interroger sans le dire se
+voit dans `-Pscenario-tests`, comme un scénario qui ne converge plus.
+`TimefoldInternalApiStructuralTest` tient l'inventaire des cinq fichiers :
+un sixième ne passe pas le build tant qu'il ne nomme pas son filet.
 
 ## Une transaction est un `scope.write`, et une unité de travail passe sa connexion
 

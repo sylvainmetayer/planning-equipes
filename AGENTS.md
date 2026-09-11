@@ -246,9 +246,11 @@ Single Quarkus service, no separate solver microservice. Package root:
   change. See `docs/decisions/0013-diagnostic-par-le-score-director.md` and
   `docs/migration-timefold-2.md`. The three move filters
   (`EligibleAnimateurMoveFilter`, `HoleNeighbourPosteFilter`,
-  `UnassignedPosteFilter`) depend on `core.impl` too — the filter SPI only
-  exists there — with a different net: a bump that reshapes the types does
-  not compile, and one that silently stops asking them shows up in
+  `UnassignedPosteFilter`) and the move factory
+  (`WeekRelocationMoveIteratorFactory`) depend on `core.impl` too — the
+  filter and factory SPIs only exist there, the moves themselves are the
+  public preview API — with a different net: a bump that reshapes the types
+  does not compile, and one that silently stops asking them shows up in
   `-Pscenario-tests` as a solve that no longer converges.
   `TimefoldInternalApiStructuralTest` keeps the inventory: a new file
   importing `core.impl` fails the build until it names what will catch its
@@ -788,11 +790,11 @@ dependencies of `src/main/webui`, Docker images, GitHub Actions and the
 `mise.toml` toolchain. Keep the config in that
 single file; document behaviour changes in `docs/developpement.md`. Quarkus and
 Timefold bumps must be validated with `./mvnw verify -DskipITs=false` **and**
-`./mvnw test -Pscenario-tests`: the four files that depend on
+`./mvnw test -Pscenario-tests`: the five files that depend on
 `ai.timefold.solver.core.impl` (listed by `TimefoldInternalApiStructuralTest`)
-are covered by a compile error for the filters and by the contract test for the
-diagnostic, but a filter that still compiles and is no longer asked only shows
-in the scenarios.
+are covered by a compile error for the filters and the move factory and by the
+contract test for the diagnostic, but a filter that still compiles and is no
+longer asked only shows in the scenarios.
 
 ## Working conventions
 

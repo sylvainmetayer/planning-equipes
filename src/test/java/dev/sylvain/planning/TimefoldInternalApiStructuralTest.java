@@ -57,7 +57,10 @@ class TimefoldInternalApiStructuralTest {
             "dev/sylvain/planning/solver/HoleNeighbourPosteFilter.java",
             "compile error on SelectionFilter; HoleNeighbourPosteFilterTest and -Pscenario-tests for a filter bypassed",
             "dev/sylvain/planning/solver/UnassignedPosteFilter.java",
-            "compile error on SelectionFilter; -Pscenario-tests for a filter bypassed");
+            "compile error on SelectionFilter; -Pscenario-tests for a filter bypassed",
+            "dev/sylvain/planning/solver/WeekRelocationMoveIteratorFactory.java",
+            "compile error on MoveIteratorFactory / ScoreDirector; WeekRelocationMoveIteratorFactoryTest, "
+                    + "and -Pscenario-tests for a move the solver stops drawing");
 
     private static final Pattern MENTION_DE_CORE_IMPL = Pattern.compile("\\bai\\.timefold\\.solver\\.core\\.impl\\.");
 
