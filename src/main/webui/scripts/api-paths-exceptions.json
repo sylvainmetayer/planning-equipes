@@ -1,1 +1,19 @@
-[]
+[
+  "core/affectation-explanation.service.ts",
+  "core/branding.ts",
+  "core/date-mock.service.ts",
+  "core/espace-animateur.service.ts",
+  "core/jour-j.service.ts",
+  "core/observability.ts",
+  "core/plan-snapshot.store.ts",
+  "core/planning-resolution.store.ts",
+  "core/planning-state.service.ts",
+  "core/problemes.store.ts",
+  "core/reference-data.store.ts",
+  "core/reference-usage.service.ts",
+  "core/scenario-import.service.ts",
+  "core/solver-job.service.ts",
+  "core/solver-settings.service.ts",
+  "core/solver-stream.ts",
+  "core/verrouillage.store.ts"
+]

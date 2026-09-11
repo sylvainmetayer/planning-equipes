@@ -476,7 +476,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   a status string and never touching the DOM; `core/api/` — one service per
   resource, owning the `/api/…` paths and the return types, so a page asks for
   the thing and never writes an address — `scripts/check-api-paths.js` fails
-  on any literal outside `core/api/`, and its exception list is empty;
+  on any literal outside `core/api/`, in `pages/`, `shell/`, `shared/` and
+  `core/` alike; its exception list names the `core/` files still carrying
+  one, and can only shrink;
   `scripts/check-api-contract.js` (`npm run api-contract-check`, run in CI)
   confronts every address of `core/api/` — path, verb, query parameters — to
   the OpenAPI contract, and refuses a URL it cannot resolve statically;

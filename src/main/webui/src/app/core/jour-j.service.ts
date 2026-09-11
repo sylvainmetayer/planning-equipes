@@ -15,10 +15,12 @@
 import { Injectable, inject } from '@angular/core';
 import { AbsenceMarquee, ApercuPublication, EtatJourJ, SuggestionsReparation } from './models';
 import { ApiService } from './api.service';
+import { PlanningApi } from './api/planning-api';
 
 @Injectable({ providedIn: 'root' })
 export class JourJService {
   private readonly api = inject(ApiService);
+  private readonly planningApi = inject(PlanningApi);
 
   /**
    * The whole screen in one answer. `date`/`heure` default server-side to today
@@ -66,7 +68,7 @@ export class JourJService {
    * button, it never sends anything itself.
    */
   apercuPublication(): Promise<ApercuPublication> {
-    return this.api.get<ApercuPublication>('/api/planning/publication');
+    return this.planningApi.publicationPreview();
   }
 }
 

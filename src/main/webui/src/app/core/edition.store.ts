@@ -8,7 +8,7 @@
 // tabs can work on two editions at the same time.
 
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { ApiService } from './api.service';
+import { EditionsApi } from './api/editions-api';
 import { Edition } from './models';
 import {
   clearStoredEditionId,
@@ -34,12 +34,12 @@ export class EditionStore {
     this.editions().filter((edition) => edition.id !== this.courant()?.id),
   );
 
-  private readonly api = inject(ApiService);
+  private readonly editionsApi = inject(EditionsApi);
 
   async reload(): Promise<void> {
     const [editions, courant] = await Promise.all([
-      this.api.get<Edition[]>('/api/editions'),
-      this.api.get<Edition>('/api/editions/courant'),
+      this.editionsApi.list(),
+      this.editionsApi.current(),
     ]);
     this._editions.set(editions);
     this._courant.set(courant);

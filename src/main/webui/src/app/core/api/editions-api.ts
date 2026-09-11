@@ -1,4 +1,4 @@
-// The `/api/editions/*` writes — the reads go through `edition.store.ts`.
+// The `/api/editions/*` reads and writes; `edition.store.ts` holds the state.
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
@@ -7,6 +7,16 @@ import { Edition } from '../models';
 @Injectable({ providedIn: 'root' })
 export class EditionsApi {
   private readonly api = inject(ApiService);
+
+  /** Every edition, for the switcher and the Éditions page. */
+  list(): Promise<Edition[]> {
+    return this.api.get<Edition[]>('/api/editions');
+  }
+
+  /** The edition this browser works on, as the server resolved it. */
+  current(): Promise<Edition> {
+    return this.api.get<Edition>('/api/editions/courant');
+  }
 
   /** A new edition, empty or duplicated from `source` — the variant of an edition is another edition. */
   create(target: unknown, source: string | null): Promise<Edition> {

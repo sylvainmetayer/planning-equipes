@@ -13,6 +13,8 @@
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
+import { AnalysesApi } from './api/analyses-api';
+import { ConstraintsApi } from './api/constraints-api';
 import { CauseInfaisabilite, ConstraintsView, FeasibilityReport, RapportPauses } from './models';
 import { compterProblemes, construireProblemes } from './problemes';
 import { errorMessage } from './error-message';
@@ -149,6 +151,8 @@ export class ProblemesStore {
   });
 
   private readonly api = inject(ApiService);
+  private readonly constraintsApi = inject(ConstraintsApi);
+  private readonly analysesApi = inject(AnalysesApi);
 
   /**
    * The Contraintes screen has just diagnosed the constraints itself: it
@@ -182,9 +186,9 @@ export class ProblemesStore {
     this._loading.set(true);
     const [feasibility, constraints, pauses] = await Promise.all([
       this.api.get<FeasibilityReport>('/api/feasibility').catch((error: unknown) => error as Error),
-      this.api.get<ConstraintsView>('/api/constraints').catch((error: unknown) => error as Error),
+      this.constraintsApi.catalogue().catch((error: unknown) => error as Error),
       // Without the breaks the list is merely shorter: never a failure of the screen.
-      this.api.get<RapportPauses>('/api/pauses').catch(() => null),
+      this.analysesApi.breaks().catch(() => null),
     ]);
     this._report.set(feasibility instanceof Error ? null : feasibility);
     this._constraints.set(constraints instanceof Error ? null : constraints);
