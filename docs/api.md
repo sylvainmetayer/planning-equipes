@@ -1463,8 +1463,8 @@ compétences et les typologies proposées référencent leurs `id` par clé
 utilisée aussi. `ninja` désigne la typologie des profils polyvalents, au plus
 une à la fois — la poser sur une autre retire le drapeau de la précédente.
 
-**Un stand porte toujours au moins une typologie** (#343) : `POST` et `PUT
-/api/stands` répondent `400` sur `typologiesProposees` vide, en nommant le
+**Un stand porte toujours au moins une typologie** (#343) : `POST /api/stands`
+et `PUT /api/stands/{id}` répondent `400` sur `typologiesProposees` vide, en nommant le
 stand — sans typologie, seuls les polyvalents pourraient le tenir. Le contrôle
 est à l'écriture seulement : une ligne ancienne sans typologie se lit et se
 solve encore, et se voit refuser à sa prochaine sauvegarde, jusqu'à ce qu'on

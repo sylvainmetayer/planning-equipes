@@ -52,19 +52,58 @@ class DocumentationStructuralTest {
     @Test
     void everyEndpointCitedInApiMdExists() throws IOException {
         Set<String> declarees = declaredRoutes();
-        Pattern citation = Pattern.compile("`(GET|POST|PUT|DELETE|PATCH) (/api/[^`?\\s]+)");
-        Matcher matcher = citation.matcher(Files.readString(API_MD, StandardCharsets.UTF_8));
         Set<String> inexistantes = new TreeSet<>();
-        while (matcher.find()) {
-            String route = matcher.group(1) + " " + normalise(matcher.group(2));
-            if (!declarees.contains(route)) {
-                inexistantes.add(matcher.group(1) + " " + matcher.group(2));
+        for (String[] citation : citations(Files.readString(API_MD, StandardCharsets.UTF_8))) {
+            if (!declarees.contains(citation[0] + " " + normalise(citation[1]))) {
+                inexistantes.add(citation[0] + " " + citation[1]);
             }
         }
         assertThat(inexistantes)
                 .as("endpoints cited in docs/api.md that no resource declares — a typo, a renamed route, "
                         + "or shorthand like `PUT /api/stands` for `PUT /api/stands/{id}`")
                 .isEmpty();
+    }
+
+    /**
+     * Every « verb path » the document cites, whatever the markdown around it:
+     * one inline span, the verb and the path in two spans, a table row, a
+     * fenced block, or a citation cut by a line break. Backticks, pipes and
+     * newlines are flattened first — the first version of this check wanted
+     * both in one span, and `PUT` … `/api/stands`, split over two lines, was
+     * exactly the shorthand it existed to catch.
+     */
+    static List<String[]> citations(String markdown) {
+        String flat = markdown.replaceAll("[`|\\r\\n]", " ");
+        Pattern citation = Pattern.compile("\\b(GET|POST|PUT|DELETE|PATCH)\\s+(/api/[^\\s?,;)]+)");
+        Matcher matcher = citation.matcher(flat);
+        List<String[]> found = new ArrayList<>();
+        while (matcher.find()) {
+            String path = matcher.group(2);
+            while (path.endsWith(".") || path.endsWith(":")) {
+                path = path.substring(0, path.length() - 1);
+            }
+            found.add(new String[] {matcher.group(1), path});
+        }
+        return found;
+    }
+
+    @Test
+    void aCitationSplitOverTwoSpansOrTwoLinesIsStillRead() {
+        String markdown = """
+                `POST` et `PUT
+                /api/stands` répondent `400`.
+
+                | `GET` | `/api/animateurs/import-csv/exemple` | Rend le CSV |
+
+                ```
+                DELETE /api/creneaux/{id}
+                ```
+                """;
+
+        assertThat(citations(markdown))
+                .extracting(c -> c[0] + " " + c[1])
+                .containsExactly(
+                        "PUT /api/stands", "GET /api/animateurs/import-csv/exemple", "DELETE /api/creneaux/{id}");
     }
 
     /**
