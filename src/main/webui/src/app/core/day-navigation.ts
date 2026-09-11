@@ -3,11 +3,15 @@
 // a selected key, the day it resolves to, previous/next, first/last, and
 // what the `jour` query param should carry (issue #392, B9). Once, here.
 
-import { Signal, WritableSignal, computed, signal } from '@angular/core';
+import { Signal, computed, signal } from '@angular/core';
 
 export interface DayNavigation<J, K extends string | number> {
-  /** The key the user asked for; null until they did, or when the URL named none. */
-  readonly selected: WritableSignal<K | null>;
+  /**
+   * The key the user asked for; null until they did, or when the URL named
+   * none. Read-only: a write would change the day without `select()`, hence
+   * without the `onSelect` hook — the state the hook exists to prevent.
+   */
+  readonly selected: Signal<K | null>;
   /**
    * The day actually displayed. Resolved rather than corrected by an effect:
    * a `jour` from the URL naming a day the plan no longer holds falls back to
