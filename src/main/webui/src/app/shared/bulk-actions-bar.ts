@@ -27,6 +27,14 @@ import { MatIconModule } from '@angular/material/icon';
           <ng-container i18n="@@bulk.editSelection">Modifier la sélection</ng-container>
         </button>
       }
+      @if (reminder()) {
+        <!-- Never greyed out by the solver lock: a reminder writes nothing the
+             solver reads, and the day before the event is when it is needed. -->
+        <button matButton type="button" (click)="remind.emit()">
+          <mat-icon>notifications_active</mat-icon>
+          <ng-container i18n="@@bulk.remindSelection">Relancer maintenant</ng-container>
+        </button>
+      }
       <button
         matButton
         type="button"
@@ -52,8 +60,12 @@ export class BulkActionsBar {
   readonly editable = input(true);
   /** True when a text filter is narrowing the table the selection was made in. */
   readonly filtre = input(false);
+  /** True on the one page whose rows can be reminded of their planning (animateurs, issue #504). */
+  readonly reminder = input(false);
 
   readonly edit = output<void>();
+  /** « Relancer maintenant » — emitted only when {@link reminder} showed the button. */
+  readonly remind = output<void>();
   readonly remove = output<void>();
   readonly clear = output<void>();
 

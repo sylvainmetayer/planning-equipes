@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
+import dev.sylvain.planning.service.publication.RelanceManuelleService;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportReport;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportRequest;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportService;
@@ -28,7 +29,8 @@ import java.util.List;
 
 /**
  * CRUD of the animateurs, plus the rotation of their espace access token, the
- * read of who acknowledged the published planning, and the tabular import.
+ * read of who acknowledged the published planning — and the hand that reminds
+ * the silent ones —, and the tabular import.
  */
 @Path("/animateurs")
 @Produces(MediaType.APPLICATION_JSON)
@@ -40,6 +42,9 @@ public class AnimateurResource {
 
     @Inject
     ConfirmationPlanningService confirmationService;
+
+    @Inject
+    RelanceManuelleService relanceService;
 
     @Inject
     AnimateurCsvImportService csvImport;
@@ -66,6 +71,30 @@ public class AnimateurResource {
     @Path("/confirmations")
     public List<ConfirmationPlanningService.ConfirmationView> confirmations() {
         return confirmationService.byAnimateur();
+    }
+
+    /**
+     * The same answers in three numbers (issue #504) — confirmed, reminded,
+     * silent — next to the date of the publication they answer, for the head
+     * of the Animateurs page and for « État de l'édition ».
+     */
+    @GET
+    @Path("/confirmations/synthese")
+    public ConfirmationPlanningService.SyntheseConfirmations syntheseConfirmations() {
+        return confirmationService.synthese();
+    }
+
+    /**
+     * « Relancer maintenant » (issue #504): reminds the listed animateurs of
+     * their unconfirmed planning, by hand and outside the nightly run. Same
+     * message as the night, same rule — nobody is reminded twice about the
+     * same publication — so the report says who was written to and who was
+     * left alone, and why. {@code 400} while nothing was ever published.
+     */
+    @POST
+    @Path("/relances")
+    public RelanceManuelleService.RapportRelance relancer(RelanceDemande demande) {
+        return relanceService.relancer(demande == null ? null : demande.animateurIds());
     }
 
     /**
@@ -234,4 +263,7 @@ public class AnimateurResource {
      * reader to keep in mind is a direct API caller.</p>
      */
     public record AnimateurToken(String token) {}
+
+    /** Body of a manual reminder: the ids to write to, nothing else — {@code {"animateurIds": […]}}. */
+    public record RelanceDemande(List<String> animateurIds) {}
 }

@@ -447,6 +447,9 @@ normal sur une page rafraîchie. Confirmer avant toute publication répond `409`
 
 `GET /api/animateurs/confirmations` — une ligne par animateur, `NON_VU`
 compris, pour la colonne de la page Animateurs.
+`GET /api/animateurs/confirmations/synthese` — les mêmes réponses en trois
+nombres (confirmés, relancés, silencieux), comptés parmi les personnes qui ont
+un poste sur le plan publié, avec la date de cette publication.
 
 Trois statuts, et l'absence de ligne en base **vaut** `NON_VU` : la remise à
 zéro est une suppression, il n'y a donc jamais deux façons d'écrire « cette
@@ -456,7 +459,7 @@ personne n'a pas répondu ».
 | --- | --- |
 | `NON_VU` | Rien n'est revenu — personne n'a encore été interrogé, ou le plan a bougé depuis |
 | `CONFIRME` | Le bouton a été cliqué, avec la date |
-| `RELANCE` | La relance automatique est partie et reste sans réponse |
+| `RELANCE` | Une relance est partie — de nuit ou à la main — et reste sans réponse |
 
 `affecte` distingue quelqu'un qui n'a **aucun poste** dans le plan publié : il
 n'est pas silencieux, on ne lui a rien demandé. La colonne ne le compte pas
@@ -467,6 +470,25 @@ réellement changé** (`PublicationDiffService`). Quelqu'un qu'on prévient
 seulement d'une décision d'échange lit les mêmes journées qu'avant : lui
 redemander de confirmer transformerait le bouton en réflexe plutôt qu'en
 réponse.
+
+**Une personne ne reçoit jamais deux fois la même relance, de nuit ou à la
+main.** `POST /api/animateurs/relances` (corps `{ "animateurIds": […] }`)
+envoie le rappel de confirmation sans attendre la nuit — même texte, même
+gabarit — et **réserve la même clé** que le job nocturne
+(`animateurId|date de publication`) dans le journal des envois planifiés,
+avant de faire partir le courriel. Conséquence dans les deux sens : quelqu'un
+relancé à la main n'est pas relancé par la nuit suivante, et quelqu'un que la
+nuit a déjà écrit est rendu dans `dejaRelancesPourCettePublication` plutôt
+qu'écrit une seconde fois. Seule une republication qui bouge son emploi du
+temps change la clé, et légitime une nouvelle relance. Le compte rendu ne
+porte que des ids, un par liste — `envoyes`, `dejaConfirmes`, `sansEmail`,
+`dejaRelancesPourCettePublication`, `echecs`, `sansPoste` — et un envoi
+échoué est **compté**, pas avalé : le geste est explicite, contrairement à
+la notification de nuit. La clé reste prise après un échec ; le chemin de
+retour est le renvoi individuel du planning, qui porte le même lien
+d'espace. Refusé `400` tant que rien n'a jamais été publié, ou si un id ne
+désigne personne — alors rien ne part, pas même aux ids valides qui le
+précédaient.
 
 ## Historique des actions
 

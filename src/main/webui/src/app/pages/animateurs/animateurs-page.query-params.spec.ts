@@ -10,6 +10,7 @@ import { Sort } from '@angular/material/sort';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
+import { AnimateursApi } from '../../core/api/animateurs-api';
 import { Animateur } from '../../core/models';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -31,10 +32,32 @@ function animateur(id: string, prenom: string, nom: string): Animateur {
 type PageInternals = {
   filtre: WritableSignal<string>;
   sort: WritableSignal<Sort>;
+  accuses: WritableSignal<'tous' | 'jamais' | 'silence'>;
+  silenceJours: WritableSignal<number>;
   viewChanged: Signal<boolean>;
   animateursFiltres: Signal<Animateur[]>;
   reinitialiserVue(): void;
 };
+
+/** Alice holds a seat and never answered; Bob holds one and confirmed. */
+const CONFIRMATIONS = [
+  {
+    animateurId: 'alice',
+    nomAffiche: 'Alice Martin',
+    statut: 'NON_VU',
+    affecte: true,
+    confirmeLe: null,
+    relanceLe: null,
+  },
+  {
+    animateurId: 'bob',
+    nomAffiche: 'Bob Durand',
+    statut: 'CONFIRME',
+    affecte: true,
+    confirmeLe: '2026-07-02T10:00:00Z',
+    relanceLe: null,
+  },
+];
 
 function setUp(queryParams: Record<string, string>) {
   const replaceState = vi.fn();
@@ -44,6 +67,19 @@ function setUp(queryParams: Record<string, string>) {
       {
         provide: ApiService,
         useValue: { get: vi.fn(async () => ({ causes: [], totalCauses: 0, message: '' })) },
+      },
+      {
+        provide: AnimateursApi,
+        useValue: {
+          confirmations: vi.fn(async () => CONFIRMATIONS),
+          syntheseConfirmations: vi.fn(async () => ({
+            confirmes: 1,
+            relances: 0,
+            silencieux: 1,
+            dernierePublicationLe: '2020-01-01T10:00:00Z',
+            jamaisPublie: false,
+          })),
+        },
       },
       { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
       {
@@ -102,7 +138,12 @@ describe('AnimateursPage query-param sync', () => {
   });
 
   it('clears every param once the view is reset', async () => {
-    const { fixture, replaceState, page } = setUp({ q: 'durand', sort: 'majorite', dir: 'asc' });
+    const { fixture, replaceState, page } = setUp({
+      q: 'durand',
+      sort: 'majorite',
+      dir: 'asc',
+      silence: '3',
+    });
     await fixture.whenStable();
     expect(page.viewChanged()).toBe(true);
     replaceState.mockClear();
@@ -111,6 +152,51 @@ describe('AnimateursPage query-param sync', () => {
     await fixture.whenStable();
 
     expect(page.viewChanged()).toBe(false);
+    expect(page.accuses()).toBe('tous');
     expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
+  });
+
+  // The acknowledgement filters (issue #504) are view state like the rest:
+  // a link carrying them opens on the same rows, and the reset clears them.
+
+  it('seeds « jamais confirmés » from the URL and keeps only the unanswered', async () => {
+    const { fixture, page } = setUp({ confirmation: 'jamais' });
+    await fixture.whenStable();
+
+    expect(page.accuses()).toBe('jamais');
+    expect(page.viewChanged()).toBe(true);
+    expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice']);
+  });
+
+  it('seeds « silencieux depuis N jours » from the URL, N included', async () => {
+    const { fixture, page } = setUp({ silence: '7' });
+    await fixture.whenStable();
+
+    expect(page.accuses()).toBe('silence');
+    expect(page.silenceJours()).toBe(7);
+    // Published years ago in the fixture: Alice has been silent for far longer than 7 days.
+    expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice']);
+  });
+
+  it('writes the chosen mode back to the URL, and only the param that mode uses', async () => {
+    const { fixture, replaceState, page } = setUp({});
+    await fixture.whenStable();
+
+    page.accuses.set('jamais');
+    await fixture.whenStable();
+    expect(replaceState).toHaveBeenLastCalledWith('/animateurs?confirmation=jamais');
+
+    page.accuses.set('silence');
+    page.silenceJours.set(5);
+    await fixture.whenStable();
+    expect(replaceState).toHaveBeenLastCalledWith('/animateurs?silence=5');
+  });
+
+  it('ignores a silence that is not a number of days', async () => {
+    const { fixture, page } = setUp({ silence: 'beaucoup' });
+    await fixture.whenStable();
+
+    expect(page.accuses()).toBe('tous');
+    expect(page.animateursFiltres()).toHaveLength(2);
   });
 });

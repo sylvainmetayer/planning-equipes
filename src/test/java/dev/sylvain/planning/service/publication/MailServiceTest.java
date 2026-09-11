@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.mail.MailTemplates;
+import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
 import io.quarkus.mailer.Mail;
 import java.util.ArrayList;
 import java.util.List;
@@ -107,6 +108,42 @@ class MailServiceTest {
         assertThatThrownBy(() -> service.sendIndividualPlanning(
                         "alice@example.org", "Alice", null, new byte[] {1}, "planning.pdf"))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    /**
+     * The manual reminder is an explicit click, not a nightly best effort: a
+     * failure must reach the organiser, who is then told who was missed.
+     */
+    @Test
+    void aFailedManualReminderPropagates() {
+        service.mailer = mails -> {
+            throw new IllegalStateException("SMTP down");
+        };
+
+        assertThatThrownBy(() -> service.sendRelanceConfirmation("alice@example.org", "Alice", null))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    /**
+     * The hand writes exactly what the night writes: the mail is held to the
+     * shared rendering of {@link RelanceConfirmationMail}, as the night's
+     * draft is in {@code RelanceConfirmationMailTest}.
+     */
+    @Test
+    void theManualReminderIsTheSharedRenderingWithTheEspaceLink() {
+        String lien = "https://planning.example.org/animateur/jeton-1";
+        service.sendRelanceConfirmation("alice@example.org", "Alice", lien);
+        MailContent partage = RelanceConfirmationMail.render(service.templates, ProductName.neutral(), "Alice", lien);
+
+        assertThat(envoyes).hasSize(1);
+        Mail mail = envoyes.get(0);
+        assertThat(mail.getTo()).containsExactly("alice@example.org");
+        assertThat(mail.getSubject()).isEqualTo(partage.subject()).contains("confirmez-vous votre planning ?");
+        assertThat(mail.getText())
+                .isEqualTo(partage.text())
+                .contains("Bonjour Alice,")
+                .contains(lien);
+        assertThat(mail.getHtml()).isEqualTo(partage.html());
     }
 
     /** The test mail of the Débogage screen exists to reveal a broken SMTP. */

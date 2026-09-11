@@ -43,6 +43,7 @@ public final class CatalogueActions {
         action("ANIMATEURS_IMPORTES", "Animateurs importés depuis un fichier", Entite.ANIMATEUR);
         action("ANIMATEUR_COMPETENCES_GRILLE", "Grille des compétences enregistrée", Entite.ANIMATEUR);
         action("COMPETENCES_IMPORTEES", "Grille des compétences importée depuis un fichier", Entite.ANIMATEUR);
+        action("ANIMATEURS_RELANCES", "Animateurs relancés à la main", Entite.ANIMATEUR);
 
         /* -------------------------- Stands -------------------------- */
         action("STAND_CREE", "Stand ajouté", Entite.STAND);
@@ -182,6 +183,7 @@ public final class CatalogueActions {
         route("AnimateurResource#importCsvAnimateurs", "ANIMATEURS_IMPORTES");
         route("AnimateurResource#saveCompetencesGrid", "ANIMATEUR_COMPETENCES_GRILLE");
         route("AnimateurResource#importCompetencesGrid", "COMPETENCES_IMPORTEES");
+        route("AnimateurResource#relancer", "ANIMATEURS_RELANCES");
 
         route("StandResource#createStand", "STAND_CREE");
         route("StandResource#updateStand", "STAND_MODIFIE");
@@ -344,6 +346,7 @@ public final class CatalogueActions {
         outil("supprimer_instantane", "INSTANTANE_SUPPRIME");
         outil("publier_planning", "PLANNING_PUBLIE");
         outil("envoyer_planning_animateur", "PLANNING_ENVOYE");
+        outil("relancer_animateurs", "ANIMATEURS_RELANCES");
         outil("supprimer_kpi_historique", "KPI_SUPPRIME");
 
         outil("importer_scenario", "SCENARIO_IMPORTE");

@@ -1,4 +1,18 @@
-/* Animateurs page: the competence rows of the form dialog. */
+/* Animateurs page: the acknowledgement synthesis and filters of the bar, the
+   competence rows of the form dialog. */
+
+.confirmations-synthese {
+  margin: 0 1rem 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.accuses-filter {
+  width: 15rem;
+}
+
+.accuses-jours {
+  width: 6rem;
+}
 
 .competence-row {
   display: flex;

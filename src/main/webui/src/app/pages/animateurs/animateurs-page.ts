@@ -8,22 +8,32 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { AnimateursApi } from '../../core/api/animateurs-api';
 import { intlLocale } from '../../core/locale';
-import { Animateur, ConfirmationView, StatutConfirmation } from '../../core/models';
+import {
+  Animateur,
+  ConfirmationView,
+  StatutConfirmation,
+  SyntheseConfirmations,
+} from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { labelAnimateursPluriel } from '../../core/entity-labels';
 import { ProblemesStore } from '../../core/problemes.store';
+import { libelleDernierePublication } from '../../core/publication';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -46,6 +56,13 @@ import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk
 import { buildAnimateurDetail } from './animateur-detail';
 import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog';
 import { errorMessage } from '../../core/error-message';
+import {
+  ModeAccuses,
+  SILENCE_JOURS_DEFAUT,
+  readModeAccuses,
+  keptByAcknowledgement,
+} from './confirmation-filter';
+import { resumeRelance } from './relance-resume';
 
 /**
  * Animateurs CRUD. Minor/adult status is never stored: it is derived from the
@@ -60,6 +77,11 @@ import { errorMessage } from '../../core/error-message';
  * animateurs share (appréciation, souhaits, manager, indisponibilités). The
  * appréciation has no column of its own — it is a list per row, unreadable in
  * a cell — and is read in the detail dialog, edited in the form.
+ *
+ * The acknowledgement column (issue #293) grew two URL-borne filters and one
+ * bulk action (issue #504): « jamais confirmés », « silencieux depuis N
+ * jours », and « Relancer maintenant », which mails the selected people the
+ * same reminder the night would — once per publication, whichever hand.
  */
 @Component({
   selector: 'app-animateurs-page',
@@ -67,7 +89,11 @@ import { errorMessage } from '../../core/error-message';
     MatCardModule,
     MatButtonModule,
     MatCheckboxModule,
+    MatFormFieldModule,
     MatIconModule,
+    MatInputModule,
+    MatSelectModule,
+    FormsModule,
     MatTableModule,
     MatSortModule,
     MatTooltipModule,
@@ -95,25 +121,44 @@ export class AnimateursPage {
   protected readonly sort = signal<Sort>(NO_SORT);
   /** Quick filter of the table: id, identity and compétences. Applied before the sort. */
   protected readonly filtre = signal('');
+  /** The « Accusés » select: everybody, the never-confirmed, or the silent for N days (issue #504). */
+  protected readonly accuses = signal<ModeAccuses>('tous');
+  /** N of « silencieux depuis N jours »; kept, and in the URL, only while that mode is on. */
+  protected readonly silenceJours = signal(SILENCE_JOURS_DEFAUT);
   /** True as soon as the table shows something other than the whole referential, unsorted. */
   protected readonly viewChanged = computed(
     () =>
-      this.filtre().trim() !== '' || (this.sort().active !== '' && this.sort().direction !== ''),
+      this.filtre().trim() !== '' ||
+      this.accuses() !== 'tous' ||
+      (this.sort().active !== '' && this.sort().direction !== ''),
   );
-  protected readonly animateursFiltres = computed(() =>
-    this.store.animateurs().filter((animateur) =>
-      correspondAuFiltre(this.filtre(), [
-        animateur.id,
-        animateur.prenom,
-        animateur.nom,
-        ...Object.keys(animateur.competences ?? {}),
-        // The acknowledgement label travels with the row so the existing
-        // quick filter finds « relancé » or « silencieux » without a control
-        // of its own (issue #293).
-        this.confirmationLabel(animateur),
-      ]),
-    ),
-  );
+  protected readonly animateursFiltres = computed(() => {
+    const mode = this.accuses();
+    const jours = this.silenceJours();
+    const confirmations = this.confirmations();
+    const lastPublishedAt = this.synthese()?.dernierePublicationLe ?? null;
+    const maintenant = new Date();
+    return this.store.animateurs().filter(
+      (animateur) =>
+        keptByAcknowledgement(
+          mode,
+          jours,
+          confirmations.get(animateur.id),
+          lastPublishedAt,
+          maintenant,
+        ) &&
+        correspondAuFiltre(this.filtre(), [
+          animateur.id,
+          animateur.prenom,
+          animateur.nom,
+          ...Object.keys(animateur.competences ?? {}),
+          // The acknowledgement label travels with the row so the existing
+          // quick filter finds « relancé » or « silencieux » without a control
+          // of its own (issue #293).
+          this.confirmationLabel(animateur),
+        ]),
+    );
+  });
 
   /**
    * Acknowledgement of the published planning, by animateur id (issue #293).
@@ -122,6 +167,22 @@ export class AnimateursPage {
    * reference-data store that only reloads on a CRUD write.
    */
   protected readonly confirmations = signal<Map<string, ConfirmationView>>(new Map());
+
+  /** The same answers in three numbers, for the head of the page; `null` until read, or when unreadable. */
+  protected readonly synthese = signal<SyntheseConfirmations | null>(null);
+
+  /** « Confirmés 12 · Relancés 3 · Silencieux 5 — Dernière publication le … », or nothing to say yet. */
+  protected readonly syntheseLabel = computed(() => {
+    const synthese = this.synthese();
+    if (!synthese) {
+      return '';
+    }
+    const publication = libelleDernierePublication(synthese, intlLocale());
+    if (synthese.jamaisPublie) {
+      return publication;
+    }
+    return $localize`:@@animateurs.synthese:Confirmés ${synthese.confirmes}:confirmes: · Relancés ${synthese.relances}:relances: · Silencieux ${synthese.silencieux}:silencieux: — ${publication}:publication:`;
+  });
 
   protected readonly sortedAnimateurs = computed(() => {
     const animateurs = this.animateursFiltres();
@@ -248,12 +309,17 @@ export class AnimateursPage {
     const params = this.route.snapshot.queryParamMap;
     this.sort.set(readSort(params));
     this.filtre.set(params.get('q') ?? '');
+    const accuses = readModeAccuses(params.get('confirmation'), params.get('silence'));
+    this.accuses.set(accuses.mode);
+    this.silenceJours.set(accuses.jours);
     void this.crud.reload();
     void this.problemes.reloadFeasibility();
     void this.chargerConfirmations();
     keepViewInQueryParams(() => ({
       ...sortQueryParams(this.sort()),
       q: optionalParam(this.filtre()),
+      confirmation: this.accuses() === 'jamais' ? 'jamais' : null,
+      silence: this.accuses() === 'silence' ? String(this.silenceJours()) : null,
     }));
   }
 
@@ -263,12 +329,61 @@ export class AnimateursPage {
    */
   private async chargerConfirmations(): Promise<void> {
     try {
-      const confirmations = await this.animateursApi.confirmations();
+      const [confirmations, synthese] = await Promise.all([
+        this.animateursApi.confirmations(),
+        this.animateursApi.syntheseConfirmations(),
+      ]);
       this.confirmations.set(
         new Map(confirmations.map((confirmation) => [confirmation.animateurId, confirmation])),
       );
+      this.synthese.set(synthese);
     } catch {
       this.confirmations.set(new Map());
+      this.synthese.set(null);
+    }
+  }
+
+  /** A blank or non-positive N keeps the last one: the control never empties the filter. */
+  protected changerSilenceJours(valeur: number | string | null): void {
+    const jours = Number(valeur);
+    if (Number.isInteger(jours) && jours > 0) {
+      this.silenceJours.set(jours);
+    }
+  }
+
+  /**
+   * « Relancer maintenant » (issue #504): the same reminder the night sends,
+   * to the ticked rows, after a confirmation that says mails will leave. The
+   * report names who was left alone and why; the answers are reloaded so the
+   * column shows « Relancé » at once.
+   */
+  protected async remindSelection(): Promise<void> {
+    const ids = this.selection.selectedIds();
+    const confirmed = await this.confirmDialog.ask({
+      title: $localize`:@@animateurs.relancer.titre:Relancer ${ids.length}:count: animateur(s) maintenant ?`,
+      message: $localize`:@@animateurs.relancer.message:Chacun recevra un e-mail lui demandant de confirmer son planning. Personne n'est relancé deux fois pour une même publication.`,
+      confirmLabel: $localize`:@@animateurs.relancer.confirm:Envoyer`,
+    });
+    if (!confirmed) {
+      return;
+    }
+    try {
+      const rapport = await this.animateursApi.remind(ids);
+      const noms = new Map(this.store.animateurs().map((each) => [each.id, nomAffiche(each)]));
+      const resume = resumeRelance(rapport, (id) => noms.get(id) || id);
+      this.notifications.notify({
+        title: resume.titre,
+        message: resume.details ?? '',
+        variant: resume.variant,
+      });
+      this.selection.clear();
+      await this.chargerConfirmations();
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@crud.error:Erreur`,
+        message: errorMessage(error),
+        variant: 'error',
+      });
     }
   }
 
@@ -280,7 +395,7 @@ export class AnimateursPage {
    * `main.ts` has loaded the translations.
    */
   protected confirmationAide(): string {
-    return $localize`:@@animateurs.confirmation.aide:Ce que l'animateur a répondu.\n• Relancé : un rappel automatique, sans autre relance.\n• — : aucun poste au planning publié.\nRepublier ne remet à « silencieux » que ceux dont le planning a changé.`;
+    return $localize`:@@animateurs.confirmation.aide:Ce que l'animateur a répondu.\n• Relancé : un seul rappel, de nuit ou à la main.\n• — : aucun poste au planning publié.\nRepublier ne remet à « silencieux » que ceux dont le planning a changé.`;
   }
 
   /** Wording of the acknowledgement column, and the text its quick filter matches on. */
@@ -314,6 +429,8 @@ export class AnimateursPage {
   protected reinitialiserVue(): void {
     this.filtre.set('');
     this.sort.set(NO_SORT);
+    this.accuses.set('tous');
+    this.silenceJours.set(SILENCE_JOURS_DEFAUT);
   }
 
   private indisponibiliteCritiqueMessage(jour: string, cause: string): string {

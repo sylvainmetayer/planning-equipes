@@ -4,15 +4,14 @@
 # `models.ts`, by the Angular pages and by anything else talking to this API:
 # renaming a record component or an accessor renames the key with it, and the
 # compiler says nothing at all.
-#
 # If the test fails, DO NOT regenerate this file. Each moved line is a break
 # for every client already reading the old key. Move it once, deliberately,
 # together with the clients that read it.
-#
 # Generated shape: <package>.<Type> = key, key, key (keys sorted).
 api.AdminLoginLimiter$Echecs = dernier, nombre
 api.AnimateurResource$AnimateurToken = token
 api.AnimateurResource$RapportSaisieGrilleCompetences = animateurs
+api.AnimateurResource$RelanceDemande = animateurIds
 api.AnimateurResource$SaisieGrilleCompetences = animateurs
 api.AuthResource$StatutSession = authentifie, nom
 api.BackupResource$ActiveRequest = active
@@ -146,10 +145,12 @@ service.espace.JourJService$EtatJourJ = absences, animateurs, animateursDeServic
 service.espace.JourJService$PosteAPourvoir = creneauId, heureDebut, heureFin, posteId, standId, standNom, verrouille
 service.publication.ConfirmationPlanningService$AccuseReception = confirmeLe, statut
 service.publication.ConfirmationPlanningService$ConfirmationView = affecte, animateurId, confirmeLe, nomAffiche, relanceLe, statut
+service.publication.ConfirmationPlanningService$SyntheseConfirmations = confirmes, dernierePublicationLe, jamaisPublie, relances, silencieux
 service.publication.PlanPublicationService$ApercuPublication = dernierePublicationLe, destinataires, jamaisPublie, nombreConcernes, planVide, solveEnCours
 service.publication.PlanPublicationService$DestinatairePublication = animateurId, changements, demandes, email, nomAffiche, premiereDiffusion
 service.publication.PlanPublicationService$RapportPublication = echecs, envoyes, publieLe, sansEmail, snapshotId
 service.publication.PublicationTraceRepository$Destinataire = animateurId, changements, email, envoyeLe, nomAffiche, snapshotId, statut
+service.publication.RelanceManuelleService$RapportRelance = dejaConfirmes, dejaRelancesPourCettePublication, echecs, envoyes, sansEmail, sansPoste
 service.referentiel.AnimateurCsvImportReport = accepted, applied, columns, created, deleted, mapping, rejected, rows, separator, total, updated, warnings
 service.referentiel.AnimateurCsvImportReport$ImportedRow = action, animateurId, joursIndisponibles, label, line, reasons, warnings
 service.referentiel.AnimateurCsvImportRequest = content, fileName, mapping, replaceAnimateurs, replaceJoursIndisponibles

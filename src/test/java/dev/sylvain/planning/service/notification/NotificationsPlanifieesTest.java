@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.AlerteService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
+import dev.sylvain.planning.service.publication.RelanceManuelleService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
@@ -65,6 +66,9 @@ class NotificationsPlanifieesTest {
 
     @Inject
     RelanceConfirmationJob relanceConfirmation;
+
+    @Inject
+    RelanceManuelleService relanceManuelle;
 
     @Inject
     AlerteService alerteService;
@@ -231,6 +235,37 @@ class NotificationsPlanifieesTest {
 
         assertThat(relanceConfirmation.run(actives(), plusTard)).isZero();
         assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
+    }
+
+    /**
+     * The one-reminder rule holds across hands (issue #504): reminded by the
+     * organiser in the afternoon, Alice is left alone by the night — the two
+     * claim the same key, and the hand claimed it first.
+     */
+    @Test
+    void someoneRemindedByHandIsNotRemindedAgainByTheNight() {
+        RelanceManuelleService.RapportRelance rapport = relanceManuelle.relancer(List.of("PLAN-A"));
+        assertThat(rapport.envoyes()).containsExactly("PLAN-A");
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+
+        java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
+        assertThat(relanceConfirmation.run(actives(), plusTard)).isZero();
+        assertThat(relanceConfirmation.run(actives(), plusTard.plusSeconds(3600)))
+                .isZero();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+    }
+
+    /** And the other way round: once the night wrote, the hand is refused. */
+    @Test
+    void someoneRemindedByTheNightIsRefusedToTheHand() {
+        java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
+        assertThat(relanceConfirmation.run(actives(), plusTard)).isEqualTo(1);
+
+        RelanceManuelleService.RapportRelance rapport = relanceManuelle.relancer(List.of("PLAN-A"));
+
+        assertThat(rapport.envoyes()).isEmpty();
+        assertThat(rapport.dejaRelancesPourCettePublication()).containsExactly("PLAN-A");
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
     }
 
     /* -------------------------------- Helpers ------------------------------ */

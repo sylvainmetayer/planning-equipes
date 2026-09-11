@@ -162,6 +162,23 @@ public class MailService {
     }
 
     /**
+     * Reminds one animateur, by hand, that their published planning is still
+     * waiting for their « J'ai lu et je serai là » (issue #504).
+     *
+     * <p>The same words as the nightly reminder — {@link RelanceConfirmationMail}
+     * renders both — but not the same policy: the night is best-effort and
+     * swallows a failed send, while this one is an organiser clicking
+     * « Relancer maintenant » the day before the event, so a failure
+     * <b>propagates</b> and {@link RelanceManuelleService} reports it by id.
+     * That difference in policy is exactly why it lives here and not as a
+     * {@code Notification}.</p>
+     */
+    public void sendRelanceConfirmation(String emailAnimateur, String prenom, String lienEspace) {
+        MailContent content = RelanceConfirmationMail.render(templates, productName, prenom, lienEspace);
+        mailer.send(templates.toMail(emailAnimateur, content));
+    }
+
+    /**
      * Sends a test mail to the admin address. The whole point of the Débogage
      * button is to surface a broken SMTP setup, so this propagates like the
      * two above.

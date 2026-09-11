@@ -1,6 +1,8 @@
 package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
+import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
 import dev.sylvain.planning.service.publication.PlanPublicationService.DestinatairePublication;
@@ -9,6 +11,8 @@ import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PlanningDeliveryService;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
+import dev.sylvain.planning.service.publication.RelanceManuelleService;
+import dev.sylvain.planning.service.publication.RelanceManuelleService.RapportRelance;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
@@ -27,12 +31,13 @@ import java.util.List;
  * voient-ils autre chose que ça ? » — {@code etat_planning} dates the last
  * solve, nothing dated the last publication.</p>
  *
- * <h2>These two tools send mail</h2>
+ * <h2>Three tools here send mail</h2>
  *
- * <p>They are the only ones in this package that reach outside the
- * application, and they say so: {@code openWorldHint = true}, where every
- * other tool declares false. A client that gates the tools which leave the
- * building has something to gate on.</p>
+ * <p>{@code publier_planning}, {@code envoyer_planning_animateur} and
+ * {@code relancer_animateurs} are the only ones in this package that reach
+ * outside the application, and they say so: {@code openWorldHint = true},
+ * where every other tool declares false. A client that gates the tools which
+ * leave the building has something to gate on.</p>
  *
  * <h2>What comes back</h2>
  *
@@ -59,6 +64,12 @@ public class PublicationMcpTools {
 
     @Inject
     PlanningDeliveryService deliveryService;
+
+    @Inject
+    RelanceManuelleService relanceService;
+
+    @Inject
+    ConfirmationPlanningService confirmationService;
 
     @Tool(
             description = "État de la publication du planning : quand la dernière publication est partie, si "
@@ -161,6 +172,55 @@ public class PublicationMcpTools {
                 compteRendu.echecs().isEmpty() ? null : "L'envoi à l'animateur " + animateurId + " a échoué");
     }
 
+    @Tool(
+            description = "Relance maintenant les animateurs désignés qui n'ont pas accusé réception de leur "
+                    + "planning publié, sans attendre la relance automatique de nuit. ENVOIE UN COURRIEL à chacun "
+                    + "d'eux. Même message que la nuit, même règle : personne ne reçoit deux fois la relance d'une "
+                    + "même publication, par la nuit ou à la main — les personnes déjà relancées, déjà confirmées, "
+                    + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites. "
+                    + "Refusé si rien n'a jamais été publié ou si un id est inconnu. Consulter synthese_confirmations "
+                    + "ou lister_animateurs d'abord.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = false,
+                            openWorldHint = true))
+    RapportRelanceView relancer_animateurs(
+            @ToolArg(description = "Ids des animateurs à relancer") List<String> animateurIds,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        RapportRelance rapport = relanceService.relancer(animateurIds);
+        return new RapportRelanceView(
+                rapport.envoyes(),
+                rapport.dejaConfirmes(),
+                rapport.sansEmail(),
+                rapport.dejaRelancesPourCettePublication(),
+                rapport.echecs(),
+                rapport.sansPoste());
+    }
+
+    @Tool(
+            description = "Accusés de réception du planning publié en trois nombres — confirmés, relancés, "
+                    + "silencieux — parmi les animateurs qui ont un poste sur ce planning, avec la date de la "
+                    + "dernière publication. N'envoie rien. jamaisPublie vrai veut dire que la question n'a encore "
+                    + "été posée à personne.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    SyntheseConfirmationsView synthese_confirmations(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        SyntheseConfirmations synthese = confirmationService.synthese();
+        return new SyntheseConfirmationsView(
+                synthese.confirmes(),
+                synthese.relances(),
+                synthese.silencieux(),
+                synthese.dernierePublicationLe(),
+                synthese.jamaisPublie());
+    }
+
     /* -------------------------------- Views -------------------------------- */
 
     static List<DestinataireView> toViews(List<Destinataire> trace) {
@@ -228,4 +288,28 @@ public class PublicationMcpTools {
     public record RapportPublicationView(long snapshotId, Instant publieLe, int envoyes, int sansAdresse, int echecs) {}
 
     public record EnvoiView(boolean envoye, String echec) {}
+
+    /**
+     * Who a manual reminder reached, by id, and who it left alone and why —
+     * the REST report already carries ids only, so nothing is withheld here.
+     *
+     * @param dejaRelancesPourCettePublication refused by the one-reminder
+     *                                         rule: the night or an earlier
+     *                                         hand already wrote to them about
+     *                                         this publication
+     */
+    public record RapportRelanceView(
+            List<String> envoyes,
+            List<String> dejaConfirmes,
+            List<String> sansEmail,
+            List<String> dejaRelancesPourCettePublication,
+            List<String> echecs,
+            List<String> sansPoste) {}
+
+    /**
+     * @param dernierePublicationLe the publication the answers are about;
+     *                              {@code null} when nothing was ever published
+     */
+    public record SyntheseConfirmationsView(
+            int confirmes, int relances, int silencieux, Instant dernierePublicationLe, boolean jamaisPublie) {}
 }

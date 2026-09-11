@@ -10,8 +10,11 @@ import {
   ImportCompetencesRapport,
   ImportCsvDemande,
   ImportCsvRapport,
+  RapportRelance,
   RapportSaisieCompetences,
+  RelanceDemande,
   SaisieAnimateurCompetences,
+  SyntheseConfirmations,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -26,6 +29,17 @@ export class AnimateursApi {
   /** Who confirmed their planning, and when. */
   confirmations(): Promise<ConfirmationView[]> {
     return this.api.get<ConfirmationView[]>('/api/animateurs/confirmations');
+  }
+
+  /** The same answers in three numbers, next to the date of the last publication. */
+  syntheseConfirmations(): Promise<SyntheseConfirmations> {
+    return this.api.get<SyntheseConfirmations>('/api/animateurs/confirmations/synthese');
+  }
+
+  /** « Relancer maintenant »: sends the confirmation reminder to these animateurs, outside the nightly run. */
+  remind(animateurIds: string[]): Promise<RapportRelance> {
+    const demande: RelanceDemande = { animateurIds };
+    return this.api.post<RapportRelance>('/api/animateurs/relances', demande);
   }
 
   downloadCsvExample(): Promise<string> {

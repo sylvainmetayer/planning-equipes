@@ -317,7 +317,7 @@ Single Quarkus service, no separate solver microservice. Package root:
      interceptor.
   3. every tool declares the four MCP hints, and only the tools that **send
      mail** (`publier_planning`, `envoyer_planning_animateur`,
-     `configurer_collecte_disponibilites`) may declare
+     `configurer_collecte_disponibilites`, `relancer_animateurs`) may declare
      `openWorldHint = true` — they are enumerated in
      `McpAnnotationsStructurelleTest`, which also derives the other hints from
      the tool's own name.

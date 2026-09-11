@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.mcp.PublicationMcpTools.DestinatairePublicationView;
 import dev.sylvain.planning.mcp.PublicationMcpTools.DestinataireView;
+import dev.sylvain.planning.mcp.PublicationMcpTools.RapportRelanceView;
+import dev.sylvain.planning.mcp.PublicationMcpTools.SyntheseConfirmationsView;
 import dev.sylvain.planning.service.publication.PlanPublicationService.DestinatairePublication;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.Destinataire;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
@@ -81,6 +83,12 @@ class PublicationMcpToolsTest {
                 .extracting(composant -> composant.getName().toLowerCase())
                 .doesNotContain("nom", "nomaffiche", "email");
         assertThat(DestinataireView.class.getRecordComponents())
+                .extracting(composant -> composant.getName().toLowerCase())
+                .doesNotContain("nom", "nomaffiche", "email");
+        assertThat(RapportRelanceView.class.getRecordComponents())
+                .extracting(composant -> composant.getName().toLowerCase())
+                .doesNotContain("nom", "nomaffiche", "email");
+        assertThat(SyntheseConfirmationsView.class.getRecordComponents())
                 .extracting(composant -> composant.getName().toLowerCase())
                 .doesNotContain("nom", "nomaffiche", "email");
     }

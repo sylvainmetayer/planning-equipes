@@ -100,6 +100,7 @@ class McpAnnotationsStructurelleTest {
             "refuser_",
             "publier_",
             "envoyer_",
+            "relancer_",
             "compacter_");
 
     /**
@@ -114,8 +115,11 @@ class McpAnnotationsStructurelleTest {
      * carries {@code destructiveHint}, which its name is checked against
      * above.</p>
      */
-    private static final List<String> SORTIE_EXTERIEURE =
-            List.of("publier_planning", "envoyer_planning_animateur", "configurer_collecte_disponibilites");
+    private static final List<String> SORTIE_EXTERIEURE = List.of(
+            "publier_planning",
+            "envoyer_planning_animateur",
+            "configurer_collecte_disponibilites",
+            "relancer_animateurs");
 
     @Test
     void chaqueOutilDeclareSesAnnotations() throws Exception {

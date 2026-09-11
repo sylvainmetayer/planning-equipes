@@ -38,9 +38,14 @@ export function raisonIndisponible(apercu: ApercuPublication | null): string {
   return '';
 }
 
-/** « Jamais publié » or the date of the last publication, as a plain fact. */
+/**
+ * « Jamais publié » or the date of the last publication, as a plain fact.
+ * Takes anything carrying the date — the publication preview of the Solveur
+ * page, the confirmation synthesis of the Animateurs page — so both screens
+ * word it the same way.
+ */
 export function libelleDernierePublication(
-  apercu: ApercuPublication | null,
+  apercu: Pick<ApercuPublication, 'dernierePublicationLe'> | null,
   locale: string,
 ): string {
   if (!apercu || !apercu.dernierePublicationLe) {

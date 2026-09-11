@@ -191,7 +191,7 @@ plus rien dire.
 | `readOnlyHint` | vrai pour les outils qui ne font que lire |
 | `destructiveHint` | vrai pour les suppressions, les imports, une restauration d'instantané — et pour les résolutions, qui remplacent le planning persisté |
 | `idempotentHint` | vrai quand rappeler l'outil avec les mêmes arguments ne change plus rien |
-| `openWorldHint` | vrai pour les **trois outils qui envoient du courriel** (`publier_planning`, `envoyer_planning_animateur`, `configurer_collecte_disponibilites` quand elle prévient les animateurs) ; faux partout ailleurs, aucun autre outil ne sort de la base de l'application |
+| `openWorldHint` | vrai pour les **quatre outils qui envoient du courriel** (`publier_planning`, `envoyer_planning_animateur`, `relancer_animateurs`, `configurer_collecte_disponibilites` quand elle prévient les animateurs) ; faux partout ailleurs, aucun autre outil ne sort de la base de l'application |
 
 `McpAnnotationsStructurelleTest` tient les deux bouts. Le `openWorldHint = false`
 sert de marqueur — un bloc oublié garde la valeur par défaut et échoue — et les
@@ -200,16 +200,16 @@ hints attendus sont dérivés du **nom** de l'outil, si bien qu'un
 le test ne sait pas classer échoue également : un nouvel outil ne passe pas
 sans que quelqu'un ait dit ce qu'il fait.
 
-Les trois outils qui envoient du courriel sont **énumérés** dans ce test, jamais
+Les quatre outils qui envoient du courriel sont **énumérés** dans ce test, jamais
 déduits d'un nom : un envoi sortant est une décision que quelqu'un prend, et
 inscrire un outil dans cette liste *est* cette décision, relue. Ils ne perdent
 pas pour autant le filet du bloc oublié, puisque leur `destructiveHint` reste
 confronté à leur nom.
 
-## Trois outils font sortir un courriel
+## Quatre outils font sortir un courriel
 
 Ce sont les seuls, et ce sont les seuls à s'annoncer `openWorldHint = true` :
-`publier_planning`, `envoyer_planning_animateur`, et
+`publier_planning`, `envoyer_planning_animateur`, `relancer_animateurs`, et
 `configurer_collecte_disponibilites` lorsqu'elle coche l'invitation. Un client
 qui veut faire confirmer ce qui quitte l'application a de quoi le repérer.
 
@@ -225,6 +225,22 @@ envoyer, comme l'écran.
 un envoi qui échoue à mi-chemin laisse un planning publié cohérent et une trace
 qui dit qui a été manqué. C'est cette trace que relit
 `lister_destinataires_publication`, par id.
+
+**Qui n'a pas répondu, et les relancer.** `synthese_confirmations` compte, parmi
+les animateurs qui ont un poste sur le planning publié, les confirmés, les
+relancés et les silencieux, et date la publication à laquelle ils répondent —
+`jamaisPublie` vrai veut dire que la question n'a encore été posée à personne.
+`relancer_animateurs` envoie aux ids désignés le rappel « confirmez-vous votre
+planning ? », le même que la relance automatique de nuit, sans l'attendre. La
+règle est celle de la nuit : **une seule relance par personne et par
+publication**, quelle que soit la main qui l'envoie — l'outil réserve la même
+clé que le job nocturne, donc quelqu'un relancé par l'assistant ne l'est pas
+une seconde fois la nuit suivante, et quelqu'un que la nuit a déjà écrit
+revient dans `dejaRelancesPourCettePublication` au lieu de recevoir un second
+message. Le compte rendu ne porte que des ids : `envoyes`, `dejaConfirmes`,
+`sansEmail`, `dejaRelancesPourCettePublication`, `echecs` (un envoi qui a
+échoué est compté, pas avalé) et `sansPoste`. Refusé si rien n'a jamais été
+publié ou si un id est inconnu — rien ne part alors, pas même aux ids valides.
 
 ## Décider ce que les animateurs ont demandé
 

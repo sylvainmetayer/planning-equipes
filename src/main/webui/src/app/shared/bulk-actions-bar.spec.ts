@@ -84,6 +84,24 @@ describe('BulkActionsBar', () => {
     expect(bouton('Supprimer la sélection')).toBeDefined();
   });
 
+  it('offers « Relancer maintenant » only to the page that asked for it', () => {
+    rendre({});
+    expect(boutons().some((each) => each.textContent!.includes('Relancer maintenant'))).toBe(false);
+
+    fixture.componentRef.setInput('reminder', true);
+    fixture.detectChanges();
+    const emis: string[] = [];
+    fixture.componentInstance.remind.subscribe(() => emis.push('remind'));
+    bouton('Relancer maintenant').click();
+    expect(emis).toEqual(['remind']);
+  });
+
+  it('never greys out the reminder for the solver: it writes nothing the solver reads', () => {
+    rendre({ reminder: true, disabled: true });
+
+    expect(bouton('Relancer maintenant').disabled).toBe(false);
+  });
+
   it('emits one event per action', () => {
     rendre({ editable: true });
     const emis: string[] = [];

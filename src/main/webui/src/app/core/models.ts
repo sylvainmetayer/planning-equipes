@@ -1983,6 +1983,39 @@ export interface AccuseReception {
 }
 
 /**
+ * The edition's answers in three numbers (`/api/animateurs/confirmations/synthese`),
+ * counted among the people holding a seat in the published plan, next to the
+ * date of the publication they answer. All zero and meaningless while
+ * `jamaisPublie`.
+ */
+export interface SyntheseConfirmations {
+  confirmes: number;
+  relances: number;
+  silencieux: number;
+  dernierePublicationLe: string | null;
+  jamaisPublie: boolean;
+}
+
+/** Body of « Relancer maintenant » (`POST /api/animateurs/relances`): the ids to write to. */
+export interface RelanceDemande {
+  animateurIds: string[];
+}
+
+/**
+ * Who a manual reminder reached, by id, and who it left alone and why: the
+ * one-reminder rule (`dejaRelancesPourCettePublication`) holds across the
+ * night and the hand.
+ */
+export interface RapportRelance {
+  envoyes: string[];
+  dejaConfirmes: string[];
+  sansEmail: string[];
+  dejaRelancesPourCettePublication: string[];
+  echecs: string[];
+  sansPoste: string[];
+}
+
+/**
  * The foire window as the admin sets it, on the model of the collection window
  * of issue #291: an optional start and end bounding an explicit switch.
  */

@@ -64,7 +64,7 @@ test.describe('Accusé de réception : la colonne s’explique', () => {
     // Les trois règles qui ne se devinent pas doivent y figurer.
     const explication = (await aide.getAttribute('aria-label')) ?? '';
     expect(explication).toContain('Relancé');
-    expect(explication).toContain('sans autre relance');
+    expect(explication).toContain('un seul rappel, de nuit ou à la main');
     expect(explication).toContain('aucun poste au planning publié');
     expect(explication).toContain('que ceux dont le planning a changé');
 
@@ -96,7 +96,7 @@ test.describe('Accusé de réception : la colonne s’explique', () => {
     // div, décrit au lecteur d'écran par l'`aria-label` vérifié plus haut. On
     // vérifie donc ce qu'une personne voit — le texte, dans la surcouche.
     await expect(
-      page.locator('.cdk-overlay-container').getByText('sans autre relance'),
+      page.locator('.cdk-overlay-container').getByText('un seul rappel, de nuit ou à la main'),
     ).toBeVisible();
 
     await page.close();

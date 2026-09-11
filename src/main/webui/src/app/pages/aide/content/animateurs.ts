@@ -140,6 +140,10 @@ export function buildAnimateurSideSections(): HelpSection[] {
               text: $localize`:@@aide.rappels.def.relance:Passé le délai, les silencieux reçoivent un rappel de confirmation et passent à « Relancé ». Ils n'en recevront pas d'autre : relancer quelqu'un tous les soirs ne le fait pas répondre plus vite, ça le fait filtrer vos messages. À vous de reprendre la main sur les derniers.`,
             },
             {
+              term: $localize`:@@aide.rappels.term.relanceManuelle:Relancer à la main, sans attendre la nuit`,
+              text: $localize`:@@aide.rappels.def.relanceManuelle:La veille de l'événement, une nuit de plus est une nuit de trop. Sur la page Animateurs, le filtre « Accusés » isole les personnes jamais confirmées ou silencieuses depuis N jours ; sélectionnez-les et « Relancer maintenant » leur envoie le même rappel que la nuit. La règle ne change pas : une seule relance par personne et par publication, que la nuit ou vous l'ayez envoyée — le compte rendu nomme ceux qu'elle a laissés de côté et pourquoi. La synthèse en tête de page compte les confirmés, les relancés et les silencieux du planning publié.`,
+            },
+            {
               term: $localize`:@@aide.rappels.term.echanges:Les demandes d'échange qui dorment`,
               text: $localize`:@@aide.rappels.def.echanges:Une demande qui attend votre décision depuis plus longtemps que le délai fixé remonte sur la page Notifications, et une seule fois — même si elle vieillit encore. L'ancienneté se compte à partir de l'accord du collègue : une demande qui attend encore sa réponse n'attend pas après vous.`,
             },

@@ -4028,6 +4028,48 @@
           }
         }
       },
+      "RapportRelance" : {
+        "required" : [ "envoyes", "dejaConfirmes", "sansEmail", "dejaRelancesPourCettePublication", "echecs", "sansPoste" ],
+        "type" : "object",
+        "properties" : {
+          "envoyes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "dejaConfirmes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "sansEmail" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "dejaRelancesPourCettePublication" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "echecs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "sansPoste" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
       "RapportSaisieGrille" : {
         "type" : "object",
         "properties" : {
@@ -4129,6 +4171,17 @@
           },
           "nomComplet" : {
             "type" : "string"
+          }
+        }
+      },
+      "RelanceDemande" : {
+        "type" : "object",
+        "properties" : {
+          "animateurIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -4830,6 +4883,30 @@
           }
         }
       },
+      "SyntheseConfirmations" : {
+        "required" : [ "confirmes", "relances", "silencieux", "jamaisPublie" ],
+        "type" : "object",
+        "properties" : {
+          "confirmes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "relances" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "silencieux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "dernierePublicationLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "jamaisPublie" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "TypeAvertissement" : {
         "type" : "string",
         "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT" ]
@@ -5237,6 +5314,24 @@
         "tags" : [ "Animateur Resource" ]
       }
     },
+    "/api/animateurs/confirmations/synthese" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SyntheseConfirmations"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Synthese Confirmations",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
     "/api/animateurs/import-csv" : {
       "post" : {
         "requestBody" : {
@@ -5310,6 +5405,37 @@
           }
         },
         "summary" : "Exemple Csv Animateurs",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
+    "/api/animateurs/relances" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RelanceDemande"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportRelance"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Relancer",
         "tags" : [ "Animateur Resource" ]
       }
     },

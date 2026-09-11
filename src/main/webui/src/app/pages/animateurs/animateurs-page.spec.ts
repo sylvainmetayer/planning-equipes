@@ -69,6 +69,14 @@ function report(causes: CauseInfaisabilite[]): FeasibilityReport {
 /** Reaches the protected computed the template binds to. */
 type PageInternals = { alerteParAnimateurId: Signal<Map<string, string>> };
 
+const SYNTHESE_VIDE = {
+  confirmes: 0,
+  relances: 0,
+  silencieux: 0,
+  dernierePublicationLe: null,
+  jamaisPublie: true,
+};
+
 describe('AnimateursPage alert badges', () => {
   let referenceData: ReferenceDataStore;
   let problemes: ProblemesStore;
@@ -76,6 +84,7 @@ describe('AnimateursPage alert badges', () => {
   const animateursApi = {
     regenerateToken: vi.fn(async () => undefined),
     confirmations: vi.fn(async () => []),
+    syntheseConfirmations: vi.fn(async () => SYNTHESE_VIDE),
   };
 
   beforeEach(() => {
@@ -170,6 +179,8 @@ describe('AnimateursPage table', () => {
   let animateursApi: {
     regenerateToken: ReturnType<typeof vi.fn>;
     confirmations: ReturnType<typeof vi.fn>;
+    syntheseConfirmations: ReturnType<typeof vi.fn>;
+    remind: ReturnType<typeof vi.fn>;
   };
   const editingLocked = signal(false);
 
@@ -241,6 +252,15 @@ describe('AnimateursPage table', () => {
     animateursApi = {
       regenerateToken: vi.fn(async () => undefined),
       confirmations: vi.fn(async () => []),
+      syntheseConfirmations: vi.fn(async () => SYNTHESE_VIDE),
+      remind: vi.fn(async () => ({
+        envoyes: [],
+        dejaConfirmes: [],
+        sansEmail: [],
+        dejaRelancesPourCettePublication: [],
+        echecs: [],
+        sansPoste: [],
+      })),
     };
     TestBed.configureTestingModule({
       providers: [
@@ -394,6 +414,74 @@ describe('AnimateursPage table', () => {
       'confirme',
       'sansPoste',
     ]);
+  });
+
+  // « Relancer maintenant » (issue #504): mails leave, so the gesture is
+  // confirmed first, and the report names who was written to and who was not.
+
+  it('reminds the ticked rows only after an explicit confirmation, and reports by name', async () => {
+    animateursApi.remind.mockResolvedValue({
+      envoyes: ['alice'],
+      dejaConfirmes: ['bob'],
+      sansEmail: [],
+      dejaRelancesPourCettePublication: [],
+      echecs: [],
+      sansPoste: [],
+    });
+    await rendre([
+      personne('alice', { prenom: 'Alice', nom: 'Martin' }),
+      personne('bob', { prenom: 'Bob', nom: 'Durand' }),
+    ]);
+    (racine().querySelector('thead mat-checkbox input') as HTMLInputElement).click();
+    await fixture.whenStable();
+
+    const relancer = Array.from(racine().querySelectorAll('app-bulk-actions-bar button')).find(
+      (each) => each.textContent!.includes('Relancer maintenant'),
+    ) as HTMLButtonElement;
+    relancer.click();
+    await fixture.whenStable();
+    // Refused: no mail leaves on a click that was not confirmed.
+    expect(animateursApi.remind).not.toHaveBeenCalled();
+    expect(confirm.ask.mock.calls[0][0].title).toContain('2');
+
+    confirm.ask.mockResolvedValue(true);
+    relancer.click();
+    await fixture.whenStable();
+    expect(animateursApi.remind).toHaveBeenCalledExactlyOnceWith(['alice', 'bob']);
+    const dernier = notify.mock.calls.at(-1)![0];
+    expect(dernier.variant).toBe('success');
+    expect(dernier.title).toBe('1 relance(s) envoyée(s)');
+    expect(dernier.message).toBe('Déjà confirmés : Bob Durand');
+    // The answers are reloaded so the column shows « Relancé » at once.
+    expect(animateursApi.confirmations).toHaveBeenCalledTimes(2);
+    expect(racine().querySelector('app-bulk-actions-bar')).toBeNull();
+  });
+
+  it('heads the page with the three counts and the last publication', async () => {
+    animateursApi.syntheseConfirmations.mockResolvedValue({
+      confirmes: 12,
+      relances: 3,
+      silencieux: 5,
+      dernierePublicationLe: '2026-07-01T10:00:00Z',
+      jamaisPublie: false,
+    });
+    await rendre([personne('alice')]);
+    await fixture.whenStable();
+
+    const synthese = racine().querySelector('.confirmations-synthese')!.textContent!;
+    expect(synthese).toContain('Confirmés 12');
+    expect(synthese).toContain('Relancés 3');
+    expect(synthese).toContain('Silencieux 5');
+    expect(synthese).toContain('Dernière publication le');
+  });
+
+  it('says the planning was never published rather than counting nobody', async () => {
+    await rendre([personne('alice')]);
+    await fixture.whenStable();
+
+    expect(racine().querySelector('.confirmations-synthese')!.textContent!.trim()).toBe(
+      'Jamais publié',
+    );
   });
 
   it('opens the acknowledgement tooltip without sorting the column it sits in', async () => {

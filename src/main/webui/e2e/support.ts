@@ -412,7 +412,8 @@ async function rechercherMails(
   return reponse.ok() ? ((await reponse.json()) as RechercheMailpit) : null;
 }
 
-async function nombreDeMails(requeteur: APIRequestContext, email: string): Promise<number> {
+/** How many mails Mailpit holds for `email` — read before and after a send that must happen once. */
+export async function nombreDeMails(requeteur: APIRequestContext, email: string): Promise<number> {
   return (await rechercherMails(requeteur, email))?.messages_count ?? 0;
 }
 

@@ -5,11 +5,31 @@
       Le statut mineur/majeur est déduit de la date de naissance ; un animateur est disponible sauf si un jour est listé.
     </mat-card-subtitle>
   </mat-card-header>
+  @if (syntheseLabel(); as synthese) {
+    <!-- The three counts of the acknowledgement column, and the publication
+         they answer: what the organiser reads before deciding whom to chase. -->
+    <p class="confirmations-synthese" role="status">{{ synthese }}</p>
+  }
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="accuses-filter">
+      <mat-label i18n="@@animateurs.accuses.label">Accusés</mat-label>
+      <mat-select [ngModel]="accuses()" (ngModelChange)="accuses.set($event)">
+        <mat-option value="tous" i18n="@@animateurs.accuses.tous">Tous</mat-option>
+        <mat-option value="jamais" i18n="@@animateurs.accuses.jamais">Jamais confirmés</mat-option>
+        <mat-option value="silence" i18n="@@animateurs.accuses.silence">Silencieux depuis N jours</mat-option>
+      </mat-select>
+    </mat-form-field>
+    @if (accuses() === 'silence') {
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="accuses-jours">
+        <mat-label i18n="@@animateurs.accuses.jours">Jours</mat-label>
+        <input matInput type="number" min="1" step="1" name="silenceJours"
+               [ngModel]="silenceJours()" (ngModelChange)="changerSilenceJours($event)" />
+      </mat-form-field>
+    }
     <app-table-filter [(value)]="filtre" [matches]="animateursFiltres().length" [total]="store.animateurs().length"
                       (enterTable)="navigation.focusCurrent()" />
     @if (viewChanged()) {
@@ -22,8 +42,9 @@
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
-                            [filtre]="!!filtre()"
-                            (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
+                            [filtre]="!!filtre() || accuses() !== 'tous'" [reminder]="true"
+                            (edit)="editSelection()" (remove)="removeSelection()" (remind)="remindSelection()"
+                            (clear)="selection.clear()" />
     }
     <table mat-table [dataSource]="sortedAnimateurs()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
       <caption class="visually-hidden" i18n="@@animateurs.table.caption">Animateurs du référentiel : identité, statut, indisponibilités, accusé de réception et actions</caption>

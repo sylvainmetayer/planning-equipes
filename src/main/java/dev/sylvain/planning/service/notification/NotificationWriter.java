@@ -6,6 +6,7 @@ import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
 import dev.sylvain.planning.service.publication.AdminAddress;
+import dev.sylvain.planning.service.publication.RelanceConfirmationMail;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.format.DateTimeFormatter;
@@ -107,18 +108,19 @@ public class NotificationWriter {
                         "lienEspace", n.lienEspace())));
     }
 
-    /** One reminder, never a series: the RELANCE status is what makes it the last. */
+    /**
+     * One reminder, never a series: the RELANCE status is what makes it the last.
+     *
+     * <p>Worded by {@link RelanceConfirmationMail}, shared with the manual
+     * reminder of {@code MailService}: the night and the hand send the same
+     * text, only their failure policies differ.</p>
+     */
     private Optional<MailDraft> relanceConfirmation(Notification.RelanceConfirmation n) {
         if (withoutRecipient(n.email())) {
             return Optional.empty();
         }
-        return Optional.of(draft(
-                n.email(),
-                "mail/relance-confirmation",
-                productName.subject("confirmez-vous votre planning ?"),
-                MailTemplates.values(
-                        "prenom", blankToNull(n.prenom()),
-                        "lienEspace", n.lienEspace())));
+        MailContent content = RelanceConfirmationMail.render(templates, productName, n.prenom(), n.lienEspace());
+        return Optional.of(new MailDraft(n.email(), content.subject(), content.text(), content.html()));
     }
 
     /**

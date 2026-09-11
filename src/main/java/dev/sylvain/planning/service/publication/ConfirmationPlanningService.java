@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
@@ -57,6 +58,24 @@ public class ConfirmationPlanningService {
 
     /** What the espace reads back after the click: its own new state, and nothing about anybody else. */
     public record AccuseReception(String statut, Instant confirmeLe) {}
+
+    /**
+     * The edition's answers in three numbers (issue #504), counted among the
+     * people who hold a seat in the published plan — the only ones the
+     * question is asked of — next to the date they were asked.
+     *
+     * <p>Read by the head of the Animateurs page and by « État de l'édition »;
+     * it is one read, not the whole table summed on the client, so both
+     * screens show the same figures at the same moment.</p>
+     *
+     * @param dernierePublicationLe when the plan the answers are about left,
+     *                              {@code null} while nothing was ever published
+     * @param jamaisPublie          true before the first publication: the three
+     *                              counts are then all zero, and mean nothing
+     */
+    @Schema(requiredProperties = {"confirmes", "relances", "silencieux", "jamaisPublie"})
+    public record SyntheseConfirmations(
+            int confirmes, int relances, int silencieux, Instant dernierePublicationLe, boolean jamaisPublie) {}
 
     /**
      * Records the animateur's own click. Idempotent: clicking twice keeps the
@@ -114,6 +133,28 @@ public class ConfirmationPlanningService {
         }
         vues.sort(Comparator.comparing(ConfirmationView::nomAffiche, String.CASE_INSENSITIVE_ORDER));
         return List.copyOf(vues);
+    }
+
+    /** The three counts of the head of the page, over the people the published plan gives a seat to. */
+    public SyntheseConfirmations synthese() {
+        PlanSnapshotService.SnapshotMeta publication = planPublieService.lastPublication();
+        if (publication == null) {
+            return new SyntheseConfirmations(0, 0, 0, null, true);
+        }
+        Map<String, ConfirmationPlanningRepository.Confirmation> stockees = repository.byAnimateur();
+        int confirmes = 0;
+        int relances = 0;
+        int silencieux = 0;
+        for (String animateurId : assignedAnimateurs()) {
+            ConfirmationPlanningRepository.Confirmation stored = stockees.get(animateurId);
+            StatutConfirmation statut = stored == null ? StatutConfirmation.NON_VU : stored.statut();
+            switch (statut) {
+                case CONFIRME -> confirmes++;
+                case RELANCE -> relances++;
+                case NON_VU -> silencieux++;
+            }
+        }
+        return new SyntheseConfirmations(confirmes, relances, silencieux, publication.publieLe(), false);
     }
 
     /**
