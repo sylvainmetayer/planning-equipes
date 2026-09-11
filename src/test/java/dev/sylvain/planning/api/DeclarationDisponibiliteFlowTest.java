@@ -195,9 +195,17 @@ class DeclarationDisponibiliteFlowTest {
         assertThat(alice.getJoursIndisponibles()).containsExactlyInAnyOrder(JOUR_UN, JOUR_DEUX);
         assertThat(alice.getSouhaits()).containsExactlyInAnyOrder("DEC-T1", "DEC-T2");
 
-        // Applied through AnimateurService like the CRUD does, so the marker the
-        // staleness indicator reads really moved.
+        // Applied through the façade like the screen does, so the marker the
+        // staleness indicator reads really moved…
         assertThat(changeTracker.lastModifiedAt()).isAfter(avantApplication);
+        // …and the history says which fields: the bare write left « champs » empty.
+        given().when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .body(
+                        "find { it.action == 'DECLARATION_APPLIQUEE' && it.entiteId == '" + id + "' }.champs",
+                        hasItems("joursIndisponibles", "souhaits"));
 
         // A decided declaration cannot be decided twice.
         given().contentType(ContentType.JSON)

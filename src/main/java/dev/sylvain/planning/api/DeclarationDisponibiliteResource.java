@@ -117,7 +117,7 @@ public class DeclarationDisponibiliteResource {
     @POST
     @Path("/{id}/application")
     public Response apply(@PathParam("id") String id) {
-        return Response.ok(view(declarationService.apply(id))).build();
+        return Response.ok(view(declarationService.apply(id).declaration())).build();
     }
 
     /** Refuses one pending declaration; the referential is untouched. */

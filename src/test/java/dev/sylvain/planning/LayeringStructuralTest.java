@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -137,15 +138,32 @@ class LayeringStructuralTest {
      */
     @Test
     void referentialWritesOutsideTheFacadeGoThroughTheJournaledPath() throws IOException {
-        Pattern ecritureNue = Pattern.compile("referenceDataService\\.(create|update)(Animateur|Stand|Creneau)\\(");
+        // Any receiver — a façade field is not always called referenceDataService
+        // — and the services one layer below, which DeclarationDisponibiliteService
+        // used to call directly. Matched on the whole source: palantir wraps a
+        // long call as `referenceDataService\n.updateAnimateur(`, which a line
+        // by line scan cannot see.
+        Pattern facadeNue = Pattern.compile("\\.\\s*(create|update)(Animateur|Stand|Creneau)\\s*\\(");
+        Pattern serviceNu =
+                Pattern.compile("\\b(animateurService|standService|creneauService)\\s*\\.\\s*(create|update)\\s*\\(");
         List<String> offenders = new ArrayList<>();
         try (Stream<Path> files = Files.walk(SOURCES)) {
             for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
-                int line = 0;
-                for (String content : Files.readAllLines(file, StandardCharsets.UTF_8)) {
-                    line++;
-                    if (ecritureNue.matcher(content).find()) {
-                        offenders.add(SOURCES.relativize(file) + ":" + line + " — " + content.trim());
+                String relatif = SOURCES.relativize(file).toString();
+                if (relatif.startsWith("service/referentiel/")) {
+                    continue;
+                }
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                for (Pattern pattern : List.of(facadeNue, serviceNu)) {
+                    Matcher matcher = pattern.matcher(source);
+                    while (matcher.find()) {
+                        int line = (int) source.substring(0, matcher.start())
+                                        .chars()
+                                        .filter(c -> c == '\n')
+                                        .count()
+                                + 1;
+                        offenders.add(
+                                relatif + ":" + line + " — " + matcher.group().trim());
                     }
                 }
             }

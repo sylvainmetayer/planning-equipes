@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.ConfigurationAppliquee;
+import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.DeclarationAppliquee;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
 import io.quarkiverse.mcp.server.Tool;
@@ -106,17 +107,20 @@ public class DisponibiliteMcpTools {
     @Tool(
             description = "Applique une déclaration en attente sur la fiche de l'animateur : jours indisponibles "
                     + "et souhaits déclarés y remplacent ceux qui s'y trouvaient. Tout ou rien, comme dans l'interface. "
-                    + "Les données de référence sont marquées modifiées : le planning déjà résolu devient périmé.",
+                    + "Les données de référence sont marquées modifiées : le planning déjà résolu devient périmé. "
+                    + "Rend les avertissements de cohérence en codes, comme modifier_animateur.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    DeclarationMcpView appliquer_declaration_disponibilite(
+    DeclarationAppliqueeMcpView appliquer_declaration_disponibilite(
             @ToolArg(description = "Id de la déclaration") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return view(declarationService.apply(id));
+        DeclarationAppliquee appliquee = declarationService.apply(id);
+        return new DeclarationAppliqueeMcpView(
+                view(appliquee.declaration()), WarningCodes.of(appliquee.avertissements()));
     }
 
     @Tool(
@@ -177,6 +181,9 @@ public class DisponibiliteMcpTools {
      * @param joursActuels  what the fiche says today, to compare with what was
      *                      declared before applying anything
      */
+    /** The applied declaration and the coherence warnings, in codes (see {@link WarningCodes}). */
+    public record DeclarationAppliqueeMcpView(DeclarationMcpView declaration, List<String> avertissements) {}
+
     public record DeclarationMcpView(
             String id,
             String animateurId,

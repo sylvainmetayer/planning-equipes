@@ -231,9 +231,12 @@ qui dit qui a été manqué. C'est cette trace que relit
 Les déclarations de disponibilité et les demandes d'échange arrivent de
 l'espace animateur et attendent une décision. Les outils les listent, les
 chiffrent et les tranchent côté organisation — `appliquer_declaration_disponibilite`
-écrit la déclaration sur la fiche par le même chemin que l'écran de saisie, donc
-les données de référence sont marquées modifiées et `etat_planning` signale que
-le planning résolu est périmé.
+écrit la déclaration sur la fiche par le même `write*` que l'écran de saisie, donc
+les données de référence sont marquées modifiées, `etat_planning` signale que
+le planning résolu est périmé, la ligne du journal porte les champs remplacés
+(`joursIndisponibles`, `souhaits`), et l'outil rend les avertissements de
+cohérence en codes, comme `modifier_animateur` — une indisponibilité sur un
+jour sans créneau est le cas type d'une déclaration appliquée.
 
 `accepter_demande_echange` est, avec `affecter_poste`, l'un des deux seuls
 outils qui écrivent dans le planning résolu sans passer par le solveur : il

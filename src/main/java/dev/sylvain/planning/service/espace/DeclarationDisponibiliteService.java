@@ -7,10 +7,11 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
 import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.publication.MailService;
-import dev.sylvain.planning.service.referentiel.AnimateurService;
+import dev.sylvain.planning.service.referentiel.Avertissement;
 import dev.sylvain.planning.service.referentiel.JoursEvenement;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieService;
+import dev.sylvain.planning.service.referentiel.WrittenAnimateur;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -81,9 +82,6 @@ public class DeclarationDisponibiliteService {
 
     @Inject
     ReferenceDataService referenceDataService;
-
-    @Inject
-    AnimateurService animateurService;
 
     @Inject
     TypologieService typologieService;
@@ -321,7 +319,7 @@ public class DeclarationDisponibiliteService {
      * claimed decision whose write then fails — and it is the better failure:
      * it surfaces as a 500 the admin sees, on a declaration they can read.</p>
      */
-    public DeclarationDisponibilite apply(String id) {
+    public DeclarationAppliquee apply(String id) {
         DeclarationDisponibilite declaration = pendingOrFail(id);
         Animateur animateur = referenceDataService.listAnimateurs().stream()
                 .filter(candidat -> candidat.getId().equals(declaration.getAnimateurId()))
@@ -339,9 +337,17 @@ public class DeclarationDisponibiliteService {
 
         animateur.setJoursIndisponibles(new TreeSet<>(declaration.getJoursIndisponibles()));
         animateur.setSouhaits(new LinkedHashSet<>(declaration.getSouhaits()));
-        animateurService.update(animateur.getId(), animateur);
-        return decidee;
+        // Through the façade, like the screen and the MCP tools: it re-reads the
+        // fiche, notes for the history the fields that moved, and returns the
+        // warnings — an unavailability on a day without créneau is the typical
+        // case of an applied declaration. The bare write left the history line
+        // with an empty « champs » column (#392, A6).
+        WrittenAnimateur ecrit = referenceDataService.writeAnimateur(animateur.getId(), animateur);
+        return new DeclarationAppliquee(decidee, ecrit.avertissements());
     }
+
+    /** The decided declaration, and what the coherence check said of the fiche as written. */
+    public record DeclarationAppliquee(DeclarationDisponibilite declaration, List<Avertissement> avertissements) {}
 
     /**
      * Refuses one pending declaration. The referential is untouched; the
