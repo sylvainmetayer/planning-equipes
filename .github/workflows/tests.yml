@@ -152,6 +152,12 @@ jobs:
         working-directory: .
         run: bash .github/scripts/check-commits.sh "origin/${{ github.base_ref }}"
 
+      # Same job, same reason: the SHA a reformatting had on its branch is not
+      # the one main received, and `git blame` ignores an unknown one silently.
+      - name: Check that every ignored revision is an ancestor
+        working-directory: .
+        run: bash .github/scripts/check-blame-ignore-revs.sh
+
       - name: Install dependencies
         run: npm ci
 

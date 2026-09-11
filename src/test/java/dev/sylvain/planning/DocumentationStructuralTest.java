@@ -193,6 +193,33 @@ class DocumentationStructuralTest {
                 : normalised;
     }
 
+    /* ------------------------ .git-blame-ignore-revs ---------------------- */
+
+    /**
+     * Every revision listed is a full SHA. `git blame` refuses a short one
+     * loudly, and ignores an unknown full one silently — which is how a
+     * branch SHA, replaced by the rebase that merged it, would put the
+     * reformatting back on every line's blame without a word (#467). This
+     * holds the form; `.github/scripts/check-blame-ignore-revs.sh`, run
+     * where the clone has its history, holds that each one is an ancestor.
+     */
+    @Test
+    void everyIgnoredRevisionIsAFullSha() throws IOException {
+        List<String> malformees = new ArrayList<>();
+        for (String line : Files.readAllLines(Path.of(".git-blame-ignore-revs"), StandardCharsets.UTF_8)) {
+            String nue = line.trim();
+            if (nue.isEmpty() || nue.startsWith("#")) {
+                continue;
+            }
+            if (!nue.matches("[0-9a-f]{40}")) {
+                malformees.add(nue);
+            }
+        }
+        assertThat(malformees)
+                .as("lines of .git-blame-ignore-revs that are not a full 40-character SHA")
+                .isEmpty();
+    }
+
     /* ------------------------------ AGENTS.md ----------------------------- */
 
     /**
