@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.CoupureRepas;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PauseSurPoste;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -231,7 +232,7 @@ public class PauseAnalyzer {
         // 2. Each stand-day: the rotation, one break after the other.
         Map<String, List<Demande>> parStandJour = new LinkedHashMap<>();
         for (Journee journee : journees) {
-            for (Sequence sequence : journee.sequences) {
+            for (SequenceDemandes sequence : journee.sequences) {
                 for (Demande demande : sequence.demandes) {
                     String cle = demande.tenu.getStand().getId() + "|" + journee.date;
                     parStandJour
@@ -393,29 +394,16 @@ public class PauseAnalyzer {
         int pauseMinimale =
                 mineur ? PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES : PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
 
-        List<Sequence> sequences = sequences(postesDuJour, pauseMinimale);
-        for (Sequence sequence : sequences) {
-            long minutes = Duration.between(sequence.debut, sequence.fin).toMinutes();
-            int pauses = minutes <= travailContinuMax
-                    ? 0
-                    : Math.ceilDiv((int) minutes - travailContinuMax, travailContinuMax + pauseMinimale);
-            LocalDateTime finPrecedente = sequence.debut;
-            for (int k = 1; k <= pauses; k++) {
-                // Latest start: the stretch reaches the legal mark then. Earliest
-                // start: what remains after this break — and the breaks still
-                // to come — must itself stay within the mark.
-                LocalDateTime limite =
-                        sequence.debut.plusMinutes((long) k * travailContinuMax + (long) (k - 1) * pauseMinimale);
-                int restantes = pauses - k;
-                LocalDateTime auPlusTot = sequence.fin.minusMinutes(
-                        (long) (restantes + 1) * travailContinuMax + (long) (restantes + 1) * pauseMinimale);
-                PosteAffectation tenu = sequence.posteA(limite);
-                LocalDateTime plancher = maxOf(maxOf(auPlusTot, debut(tenu)), finPrecedente);
-                Demande demande = new Demande(
-                        animateur, tenu, plancher.isAfter(limite) ? limite : plancher, limite, pauseMinimale);
-                sequence.demandes.add(demande);
-                finPrecedente = limite.plusMinutes(pauseMinimale);
+        // The stretches and the breaks they owe come from the domain: the
+        // solver's pauseSurPosteSansRelais reads the very same ones, so the
+        // screen and the score never disagree on what is due.
+        List<SequenceDemandes> sequences = new ArrayList<>();
+        for (PauseSurPoste.Sequence sequence : PauseSurPoste.sequences(postesDuJour, pauseMinimale)) {
+            List<Demande> demandes = new ArrayList<>();
+            for (PauseSurPoste due : PauseSurPoste.dues(sequence, travailContinuMax, pauseMinimale)) {
+                demandes.add(new Demande(animateur, due.tenu(), due.auPlusTot(), due.auPlusTard(), due.dureeMinutes()));
             }
+            sequences.add(new SequenceDemandes(sequence, demandes));
         }
         int jour = postesDuJour.stream()
                 .mapToInt(poste -> poste.getCreneau().getJour())
@@ -424,11 +412,6 @@ public class PauseAnalyzer {
         return new Journee(animateur, date, jour, mineur, sequences, coupuresRepas(postesDuJour, fenetres));
     }
 
-    /**
-     * The meal breaks this day owes, in window order. Only the windows the day
-     * straddles produce a line: a day that starts after the window opens, or
-     * ends when it closes, owes nothing — see {@link CoupureRepas}.
-     */
     private static List<CoupureRepasView> coupuresRepas(
             List<PosteAffectation> postesDuJour, List<FenetreRepas> fenetres) {
         List<CoupureRepasView> vues = new ArrayList<>();
@@ -483,7 +466,7 @@ public class PauseAnalyzer {
 
     private static JourneeAnimateurView toView(Journee journee, List<PosteAffectation> tousLesPostes) {
         List<SequenceView> vues = new ArrayList<>();
-        for (Sequence sequence : journee.sequences) {
+        for (SequenceDemandes sequence : journee.sequences) {
             List<PauseDueView> dues = new ArrayList<>();
             for (Demande demande : sequence.demandes) {
                 LocalDateTime fin = demande.debut.plusMinutes(demande.dureeMinutes);
@@ -501,15 +484,15 @@ public class PauseAnalyzer {
             }
             dues.sort(Comparator.comparing(PauseDueView::heureLimite));
             vues.add(new SequenceView(
-                    sequence.debut.toLocalTime(),
-                    sequence.fin.toLocalTime(),
-                    (int) Duration.between(sequence.debut, sequence.fin).toMinutes(),
+                    sequence.sequence.debut().toLocalTime(),
+                    sequence.sequence.fin().toLocalTime(),
+                    sequence.sequence.minutes(),
                     List.copyOf(dues)));
         }
         List<PausePlanifieeView> planifiees = new ArrayList<>();
         for (int i = 1; i < journee.sequences.size(); i++) {
-            LocalDateTime debut = journee.sequences.get(i - 1).fin;
-            LocalDateTime fin = journee.sequences.get(i).debut;
+            LocalDateTime debut = journee.sequences.get(i - 1).sequence.fin();
+            LocalDateTime fin = journee.sequences.get(i).sequence.debut();
             planifiees.add(new PausePlanifieeView(debut.toLocalTime(), fin.toLocalTime(), (int)
                     Duration.between(debut, fin).toMinutes()));
         }
@@ -524,32 +507,6 @@ public class PauseAnalyzer {
                 journee.coupuresRepas);
     }
 
-    private static LocalDateTime maxOf(LocalDateTime a, LocalDateTime b) {
-        return a.isAfter(b) ? a : b;
-    }
-
-    /** The stretches of one day: seats closer than the legal break form one. */
-    private static List<Sequence> sequences(List<PosteAffectation> postes, int pauseMinimale) {
-        List<PosteAffectation> tries = postes.stream()
-                .sorted(Comparator.comparing(PauseAnalyzer::debut))
-                .toList();
-        List<Sequence> sequences = new ArrayList<>();
-        Sequence courante = null;
-        for (PosteAffectation poste : tries) {
-            LocalDateTime debut = debut(poste);
-            LocalDateTime fin = fin(poste);
-            if (courante == null || Duration.between(courante.fin, debut).toMinutes() >= pauseMinimale) {
-                courante = new Sequence(debut, fin);
-                sequences.add(courante);
-            } else if (fin.isAfter(courante.fin)) {
-                courante.fin = fin;
-            }
-            courante.postes.add(poste);
-        }
-        return sequences;
-    }
-
-    /** Colleagues holding a seat on the same stand for the whole break, the animateur excluded. */
     private static List<RelaisView> relais(
             List<PosteAffectation> postes, PosteAffectation tenu, LocalDateTime debutPause, LocalDateTime finPause) {
         String animateurId = tenu.getAnimateur().getId();
@@ -557,8 +514,8 @@ public class PauseAnalyzer {
         for (PosteAffectation autre : postes) {
             if (autre.getStand().getId().equals(tenu.getStand().getId())
                     && !autre.getAnimateur().getId().equals(animateurId)
-                    && !debut(autre).isAfter(debutPause)
-                    && !fin(autre).isBefore(finPause)) {
+                    && !PauseSurPoste.debut(autre).isAfter(debutPause)
+                    && !PauseSurPoste.fin(autre).isBefore(finPause)) {
                 parId.putIfAbsent(
                         autre.getAnimateur().getId(),
                         new RelaisView(
@@ -594,22 +551,16 @@ public class PauseAnalyzer {
                 + repas;
     }
 
-    private static LocalDateTime debut(PosteAffectation poste) {
-        return LocalDateTime.of(poste.getCreneau().getDate(), poste.heureDebutEffectif());
-    }
-
-    private static LocalDateTime fin(PosteAffectation poste) {
-        return debut(poste).plusMinutes(poste.getDureeEffectiveMinutes());
-    }
-
-    /** One animateur's day, before the rotation places its breaks. */
     private record Journee(
             Animateur animateur,
             LocalDate date,
             int jour,
             boolean mineur,
-            List<Sequence> sequences,
+            List<SequenceDemandes> sequences,
             List<CoupureRepasView> coupuresRepas) {}
+
+    /** A stretch of the day and the breaks it owes, as the rotation places them. */
+    private record SequenceDemandes(PauseSurPoste.Sequence sequence, List<Demande> demandes) {}
 
     /**
      * One break to place: its window, the seat it falls in, and — once the
@@ -640,40 +591,4 @@ public class PauseAnalyzer {
     }
 
     /** A stretch under construction: mutable end, the seats it is made of, and the breaks it owes. */
-    private static final class Sequence {
-        private final LocalDateTime debut;
-        private LocalDateTime fin;
-        private final List<PosteAffectation> postes = new ArrayList<>();
-        private final List<Demande> demandes = new ArrayList<>();
-
-        private Sequence(LocalDateTime debut, LocalDateTime fin) {
-            this.debut = debut;
-            this.fin = fin;
-        }
-
-        /**
-         * The seat held at that instant: the one covering it. A stretch merges
-         * seats separated by less than the legal break, so the instant can fall
-         * in such a sub-legal gap — the next seat to start is then the one the
-         * person is about to hold, and the one the break belongs to. Falls back
-         * on the last seat before the instant, then on the first of the stretch.
-         */
-        private PosteAffectation posteA(LocalDateTime instant) {
-            PosteAffectation avant = null;
-            PosteAffectation apres = null;
-            for (PosteAffectation poste : postes) {
-                LocalDateTime debut = PauseAnalyzer.debut(poste);
-                LocalDateTime fin = PauseAnalyzer.fin(poste);
-                if (!debut.isAfter(instant) && fin.isAfter(instant)) {
-                    return poste;
-                }
-                if (!debut.isAfter(instant)) {
-                    avant = poste;
-                } else if (apres == null || debut.isBefore(PauseAnalyzer.debut(apres))) {
-                    apres = poste;
-                }
-            }
-            return apres != null ? apres : avant != null ? avant : postes.get(0);
-        }
-    }
 }

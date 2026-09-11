@@ -7,7 +7,7 @@ Trois niveaux, alignés sur le `HardMediumSoftScore` de Timefold : **dur**
 > **Ne jamais reclasser une contrainte dure en medium ou soft sans validation
 > explicite**, en particulier tout ce qui touche au cadre légal des mineurs.
 
-**La liste des 42 contraintes, leur niveau, leur catégorie, leur description
+**La liste des 43 contraintes, leur niveau, leur catégorie, leur description
 métier et l'article de loi qui les fonde vivent dans `ConstraintCatalog`** — et
 sont servies par `GET /api/constraints`, affichées sur la page Contraintes. Ce
 document ne les recopie pas : il porte les mécanismes et les arbitrages.
@@ -165,7 +165,7 @@ respectée ou le planning est invalide, son poids ne change que la vitesse de
 convergence. **Repondérer une règle légale ne la rend ni plus ni moins
 obligatoire.**
 
-Le contrôle, lui, est le **même pour les 42 règles** : un champ « Poids » de 1
+Le contrôle, lui, est le **même pour les 43 règles** : un champ « Poids » de 1
 à 100. Deux contrôles différents selon la famille laissaient croire à deux
 mécanismes ; il n'y en a qu'un, seul le sens de la valeur change.
 
@@ -482,6 +482,27 @@ Deux réglages conditionnent qu'une telle grille tienne, et ils se mesurent :
   confortable pendant qu'une partie de l'effectif est en réalité
   inutilisable.
 
+### La pause sur le poste demande un relais
+
+Déclarer la pause légale « prise sur le poste » éteint `travailContinuMax*` :
+les vingt minutes se prennent par relais, un collègue du même stand tenant
+le poste pendant ce temps. Rien ne vérifiait que ce collègue existe. Sur
+l'édition 2026, un plan à zéro écart dur portait **18 pauses dues sans
+personne pour relayer** : une relève de midi ou de soir enchaînée à un
+après-midi entier sur un stand à une place — sept heures seul, une pause due
+à 19 h que personne ne peut couvrir. L'écran Pauses et la page Problèmes le
+signalaient après coup ; le solveur ne l'évitait jamais.
+
+`pauseSurPosteSansRelais` (MEDIUM, « Qualité d'organisation ») coûte un point
+par pause due sans relais à son heure limite : le siège tenu à cet instant
+n'a, sur son stand, aucun autre animateur couvrant toute la pause. Dosée
+comme les autres règles d'organisation : la réponse la moins chère est le
+plus souvent de donner la relève à quelqu'un d'autre, pour que personne
+n'enchaîne sept heures seul, et le score la trouve. Les pauses dues sortent
+de `PauseSurPoste`, que l'écran Pauses lit aussi : les deux ne peuvent pas
+diverger sur ce qui est dû. Muette quand la pause n'est pas déclarée sur le
+poste : la règle légale exige alors un vrai trou, et le juge.
+
 `coupureRepasAuPlusTot` départage ensuite 12-13 de 13-14 en pénalisant le
 retard sur l'ouverture. La couverture des stands étant dure, c'est son
 arbitrage avec cette préférence qui répartit la rotation du midi.
@@ -601,6 +622,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `souhaitsIncompatibles` | MEDIUM | Qualité d'organisation | Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de l'animateur. |
 | `limiterTypologiesDistinctesParAnimateur` | MEDIUM | Qualité d'organisation | Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu sur l'ensemble du planning. |
 | `maxJoursConsecutifsTravailles` | MEDIUM | Qualité d'organisation | Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour de repos : moins est possible, plus ne devrait pas l'être. |
+| `pauseSurPosteSansRelais` | MEDIUM | Qualité d'organisation | Quand la pause légale est déclarée prise sur le poste, quelqu'un doit tenir le stand pendant qu'elle est prise. Chaque pause due à la sixième heure (quatre heures et demie pour un mineur) qui tombe sur un stand où personne d'autre n'est présent coûte : la personne est seule et personne ne peut la relayer. Le solveur préfère alors ne pas enchaîner sept heures seul, ou mettre un collègue là. Muette quand la pause n'est pas déclarée sur le poste : travailContinuMaxMajeur et travailContinuMaxMineur exigent alors un vrai trou. |
 | `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |
 | `equilibrerCreneauxPenibles` | SOFT | Préférences | Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium). |
 | `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |

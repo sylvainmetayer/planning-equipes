@@ -348,6 +348,17 @@ public final class ConstraintCatalog {
                     "Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour "
                             + "de repos : moins est possible, plus ne devrait pas l'être."),
             new ConstraintDefinition(
+                    "pauseSurPosteSansRelais",
+                    Niveau.MEDIUM,
+                    "Qualité d'organisation",
+                    "Quand la pause légale est déclarée prise sur le poste, quelqu'un doit tenir le stand "
+                            + "pendant qu'elle est prise. Chaque pause due à la sixième heure (quatre heures et "
+                            + "demie pour un mineur) qui tombe sur un stand où personne d'autre n'est présent "
+                            + "coûte : la personne est seule et personne ne peut la relayer. Le solveur préfère "
+                            + "alors ne pas enchaîner sept heures seul, ou mettre un collègue là. Muette quand la "
+                            + "pause n'est pas déclarée sur le poste : travailContinuMaxMajeur et "
+                            + "travailContinuMaxMineur exigent alors un vrai trou."),
+            new ConstraintDefinition(
                     "favoriserMixiteDesNiveaux",
                     Niveau.SOFT,
                     "Préférences",

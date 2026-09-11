@@ -10,7 +10,9 @@ import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauEffort;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PauseSurPoste;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.math.BigDecimal;
@@ -48,6 +50,7 @@ public final class QualiteConstraints {
             souhaitsIncompatibles(constraintFactory),
             limiterTypologiesDistinctesParAnimateur(constraintFactory),
             maxJoursConsecutifsTravailles(constraintFactory),
+            pauseSurPosteSansRelais(constraintFactory),
             stabiliteDuPlanPublie(constraintFactory)
         };
     }
@@ -433,6 +436,55 @@ public final class QualiteConstraints {
      * set of distinct worked {@code jour} values is exactly a longest run of
      * consecutive calendar days, without any date arithmetic.</p>
      */
+    /**
+     * A break declared taken on the post needs somebody to hold the post.
+     *
+     * <p>Under {@code pauseSurPoste} the six-hour rule of art. L3121-16
+     * ({@code travailContinuMax*}) goes quiet: the twenty minutes are taken by
+     * relay, a colleague on the same stand covering while the person steps
+     * out. Nothing checked that the colleague exists. On the 2026 edition, a
+     * plan at zero hard carried 18 breaks due on single-seat stands with nobody
+     * else there — seven-hour stretches made of a meal-relief seat followed by
+     * a full afternoon alone. The Pauses screen and the Problèmes page showed
+     * them after the fact; the solver never avoided them.</p>
+     *
+     * <p>One point per break due with no relay at its latest start: the seat
+     * held then, on that stand, has no other animateur covering the whole
+     * break. Medium, dosed like the other organisation rules: the cheapest
+     * answer is usually to give the relief seat to somebody else so nobody
+     * chains seven hours alone, and the score finds it. The breaks come from
+     * {@link PauseSurPoste}, which the Pauses screen reads too, so the two
+     * never disagree on what is due. Quiet when the break is not declared on
+     * the post: the legal rule then requires a real hole, and judges it.</p>
+     */
+    private Constraint pauseSurPosteSansRelais(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "pauseSurPosteSansRelais")
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getDate() != null
+                        && poste.getStand() != null
+                        && poste.heureDebutEffectif() != null)
+                .groupBy(
+                        PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().getDate(),
+                        ConstraintCollectors.toList())
+                .join(ParametresLegaux.class)
+                .filter((animateur, date, postes, parametres) -> parametres.isPauseSurPoste())
+                .map((animateur, date, postes, parametres) -> PauseSurPoste.dues(postes))
+                .flattenLast(dues -> dues)
+                .ifNotExists(
+                        PosteAffectation.class,
+                        Joiners.equal(
+                                due -> due.stand().getId(),
+                                poste -> poste.getStand() == null
+                                        ? null
+                                        : poste.getStand().getId()),
+                        Joiners.filtering(PauseSurPoste::relayableBy))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .asConstraint("pauseSurPosteSansRelais");
+    }
+
     private Constraint maxJoursConsecutifsTravailles(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "maxJoursConsecutifsTravailles")
