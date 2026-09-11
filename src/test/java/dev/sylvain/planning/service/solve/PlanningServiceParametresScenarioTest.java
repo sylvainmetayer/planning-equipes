@@ -77,8 +77,11 @@ class PlanningServiceParametresScenarioTest {
                 .isEqualTo(ParametresDecoupage.DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT);
         // Regression: an unquoted HH:MM:SS scalar is read by SnakeYAML as a
         // sexagesimal Number (43830 = 12*3600 + 30*60), not a String — a naive
-        // (String) cast throws ClassCastException instead of parsing it.
-        assertThat(decoupage.getFenetreRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
+        // (String) cast throws ClassCastException instead of parsing it. The
+        // file still writes the window under parametresDecoupage, its home
+        // before the meal break moved: the deprecated key lands on the legal
+        // parameters.
+        assertThat(legaux.getCoupureRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
         // Slicing into offset families: the setting that makes a dense scenario
         // feasible (see the coverage-deficit investigation (kept out of the public repository: it is based on a real
         // event dataset)) must be pinnable in the

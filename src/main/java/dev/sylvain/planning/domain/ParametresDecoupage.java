@@ -1,21 +1,16 @@
 package dev.sylvain.planning.domain;
 
-import java.time.LocalTime;
-
 /**
  * Admin-configurable parameters for {@code VacationGeneratorService}, which
  * slices a day-long "amplitude" (opening window) into shorter, overlapping
- * work vacations. Ten of the thirteen fields are generation-time only: they
- * drive what {@link Creneau} rows get created, not how the solver scores them.
+ * work vacations. Every field is generation-time only: it drives what
+ * {@link Creneau} rows get created, not how the solver scores them.
  *
- * <p><b>The three meal fields are the exception</b>: {@code dureePauseRepasMinutes}
- * and the two meal windows are projected into {@link FenetreRepas} facts and
- * read at solve time by {@code coupureRepasObligatoire} (issue #438). They were
- * generation-time only until then, and that is exactly what made a ten-hour
- * unbroken day invisible: a grid entered as {@link ModeGrilleCreneaux#VACATIONS}
- * is never sliced, so nothing ever looked at the meal windows at all. The
- * values stay stored here, where the organiser enters them — a second table
- * would only create a second truth about "the midday window".</p>
+ * <p>The meal break — its length and its two windows — is <em>not</em> here
+ * any more. The découpage still places the midday and evening reliefs on
+ * them, but reads them from {@link ParametresLegaux}: they are a rule of the
+ * event the solver judges on every grid, sliced or not, and they belong with
+ * the other rules the organiser sets (issue #438).</p>
  */
 public class ParametresDecoupage {
 
@@ -52,21 +47,6 @@ public class ParametresDecoupage {
     public static final int DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT = 6 * 60;
 
     public static final int DUREE_CHEVAUCHEMENT_MINUTES_PAR_DEFAUT = 30;
-    /**
-     * The meal break a day straddling a meal window must find, entirely inside
-     * it. One hour, so a two-hour window offers exactly two slots — 12-13 or
-     * 13-14 at midday, 19-20 or 20-21 in the evening — which is how the event
-     * is actually run. It was 45 minutes while this was a slicing hint only;
-     * since {@code coupureRepasObligatoire} reads it (issue #438) a duration
-     * that divides no window into whole slots is a rule nobody can plan
-     * around. See migration V71.
-     */
-    public static final int DUREE_PAUSE_REPAS_MINUTES_PAR_DEFAUT = 60;
-
-    public static final LocalTime FENETRE_REPAS_MIDI_DEBUT_PAR_DEFAUT = LocalTime.of(12, 0);
-    public static final LocalTime FENETRE_REPAS_MIDI_FIN_PAR_DEFAUT = LocalTime.of(14, 0);
-    public static final LocalTime FENETRE_REPAS_SOIR_DEBUT_PAR_DEFAUT = LocalTime.of(19, 0);
-    public static final LocalTime FENETRE_REPAS_SOIR_FIN_PAR_DEFAUT = LocalTime.of(21, 0);
     /** No staggering by default: every stand shares the same relay grid, exactly the historical behaviour. */
     public static final int NOMBRE_FAMILLES_DECALAGE_PAR_DEFAUT = 1;
 
@@ -78,13 +58,8 @@ public class ParametresDecoupage {
     private int dureeVacationMinMinutes = DUREE_VACATION_MIN_MINUTES_PAR_DEFAUT;
     private int dureeVacationMaxMinutes = DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT;
     private int dureeChevauchementMinutes = DUREE_CHEVAUCHEMENT_MINUTES_PAR_DEFAUT;
-    private int dureePauseRepasMinutes = DUREE_PAUSE_REPAS_MINUTES_PAR_DEFAUT;
     private int nombreFamillesDecalage = NOMBRE_FAMILLES_DECALAGE_PAR_DEFAUT;
     private int dureeDecalageMaxMinutes = DUREE_DECALAGE_MAX_MINUTES_PAR_DEFAUT;
-    private LocalTime fenetreRepasMidiDebut = FENETRE_REPAS_MIDI_DEBUT_PAR_DEFAUT;
-    private LocalTime fenetreRepasMidiFin = FENETRE_REPAS_MIDI_FIN_PAR_DEFAUT;
-    private LocalTime fenetreRepasSoirDebut = FENETRE_REPAS_SOIR_DEBUT_PAR_DEFAUT;
-    private LocalTime fenetreRepasSoirFin = FENETRE_REPAS_SOIR_FIN_PAR_DEFAUT;
     private PauseCoverageStrategy strategieCouverturePendantPause = PauseCoverageStrategy.FERMETURE;
     private ModeGrilleCreneaux modeGrille = MODE_GRILLE_PAR_DEFAUT;
 
@@ -135,46 +110,6 @@ public class ParametresDecoupage {
 
     public void setDureeChevauchementMinutes(int dureeChevauchementMinutes) {
         this.dureeChevauchementMinutes = dureeChevauchementMinutes;
-    }
-
-    public int getDureePauseRepasMinutes() {
-        return dureePauseRepasMinutes;
-    }
-
-    public void setDureePauseRepasMinutes(int dureePauseRepasMinutes) {
-        this.dureePauseRepasMinutes = dureePauseRepasMinutes;
-    }
-
-    public LocalTime getFenetreRepasMidiDebut() {
-        return fenetreRepasMidiDebut;
-    }
-
-    public void setFenetreRepasMidiDebut(LocalTime fenetreRepasMidiDebut) {
-        this.fenetreRepasMidiDebut = fenetreRepasMidiDebut;
-    }
-
-    public LocalTime getFenetreRepasMidiFin() {
-        return fenetreRepasMidiFin;
-    }
-
-    public void setFenetreRepasMidiFin(LocalTime fenetreRepasMidiFin) {
-        this.fenetreRepasMidiFin = fenetreRepasMidiFin;
-    }
-
-    public LocalTime getFenetreRepasSoirDebut() {
-        return fenetreRepasSoirDebut;
-    }
-
-    public void setFenetreRepasSoirDebut(LocalTime fenetreRepasSoirDebut) {
-        this.fenetreRepasSoirDebut = fenetreRepasSoirDebut;
-    }
-
-    public LocalTime getFenetreRepasSoirFin() {
-        return fenetreRepasSoirFin;
-    }
-
-    public void setFenetreRepasSoirFin(LocalTime fenetreRepasSoirFin) {
-        this.fenetreRepasSoirFin = fenetreRepasSoirFin;
     }
 
     public PauseCoverageStrategy getStrategieCouverturePendantPause() {

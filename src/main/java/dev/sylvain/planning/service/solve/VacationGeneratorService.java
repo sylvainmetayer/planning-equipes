@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.solve;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresDecoupage;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -60,12 +61,13 @@ public final class VacationGeneratorService {
      * see {@code docs/domaine.md}. Poste generation then assigns each stand to
      * exactly one famille, so it only ever sees that variant's créneaux.</p>
      */
-    public static List<Creneau> generateVacations(List<Creneau> amplitudes, ParametresDecoupage parametres) {
+    public static List<Creneau> generateVacations(
+            List<Creneau> amplitudes, ParametresDecoupage parametres, ParametresLegaux legaux) {
         int nombreFamilles = Math.max(1, parametres.getNombreFamillesDecalage());
         List<Creneau> vacations = new ArrayList<>();
         for (Creneau amplitude : amplitudes) {
             for (int famille = 0; famille < nombreFamilles; famille++) {
-                List<Creneau> tranche = sliceAmplitude(amplitude, parametres, famille, nombreFamilles);
+                List<Creneau> tranche = sliceAmplitude(amplitude, parametres, legaux, famille, nombreFamilles);
                 for (Creneau vacation : tranche) {
                     vacation.setFamille(famille);
                 }
@@ -76,13 +78,17 @@ public final class VacationGeneratorService {
     }
 
     private static List<Creneau> sliceAmplitude(
-            Creneau amplitude, ParametresDecoupage parametres, int famille, int nombreFamilles) {
+            Creneau amplitude,
+            ParametresDecoupage parametres,
+            ParametresLegaux legaux,
+            int famille,
+            int nombreFamilles) {
         int duree = amplitude.getDureeMinutes();
-        List<int[]> segmentsBruts = sliceIntoMinutes(
-                duree, parametres, mealFenetresInMinutes(amplitude, parametres), famille, nombreFamilles);
+        List<int[]> segmentsBruts =
+                sliceIntoMinutes(duree, parametres, mealFenetresInMinutes(amplitude, legaux), famille, nombreFamilles);
         List<Segment> segments = new ArrayList<>();
         for (int[] segment : segmentsBruts) {
-            segments.addAll(applyLegalPauseIfNeeded(segment, amplitude, parametres));
+            segments.addAll(applyLegalPauseIfNeeded(segment, amplitude, parametres, legaux));
         }
         List<Creneau> result = new ArrayList<>();
         for (Segment segment : segments) {
@@ -242,12 +248,12 @@ public final class VacationGeneratorService {
      * {@code couverturePause}.</p>
      */
     private static List<Segment> applyLegalPauseIfNeeded(
-            int[] segment, Creneau amplitude, ParametresDecoupage parametres) {
+            int[] segment, Creneau amplitude, ParametresDecoupage parametres, ParametresLegaux legaux) {
         int longueur = segment[1] - segment[0];
-        List<int[]> fenetresRepas = mealFenetresInMinutes(amplitude, parametres);
+        List<int[]> fenetresRepas = mealFenetresInMinutes(amplitude, legaux);
         boolean depasseSeuilLegal = longueur > SEUIL_PAUSE_LEGALE_MINUTES;
         if (!depasseSeuilLegal
-                && !containsWholeMealFenetre(segment, untruncatedMealFenetresInMinutes(amplitude, parametres))) {
+                && !containsWholeMealFenetre(segment, untruncatedMealFenetresInMinutes(amplitude, legaux))) {
             return List.of(new Segment(segment[0], segment[1], false));
         }
         int milieu = segment[0] + longueur / 2;
@@ -258,7 +264,7 @@ public final class VacationGeneratorService {
             int finFenetre = Math.min(fenetre[1], segment[1]);
             if (debutFenetre <= finFenetre) {
                 pauseDebut = clamp(milieu, debutFenetre, finFenetre);
-                dureePause = Math.min(parametres.getDureePauseRepasMinutes(), finFenetre - debutFenetre);
+                dureePause = Math.min(legaux.getCoupureRepasMinutes(), finFenetre - debutFenetre);
                 break;
             }
         }
@@ -314,22 +320,22 @@ public final class VacationGeneratorService {
         return false;
     }
 
-    private static List<int[]> mealFenetresInMinutes(Creneau amplitude, ParametresDecoupage parametres) {
+    private static List<int[]> mealFenetresInMinutes(Creneau amplitude, ParametresLegaux legaux) {
         List<int[]> fenetres = new ArrayList<>();
         int duree = amplitude.getDureeMinutes();
         addFenetreIfWithinAmplitude(
                 fenetres,
                 amplitude.getHeureDebut(),
                 duree,
-                parametres.getFenetreRepasMidiDebut(),
-                parametres.getFenetreRepasMidiFin(),
+                legaux.getCoupureRepasMidiDebut(),
+                legaux.getCoupureRepasMidiFin(),
                 true);
         addFenetreIfWithinAmplitude(
                 fenetres,
                 amplitude.getHeureDebut(),
                 duree,
-                parametres.getFenetreRepasSoirDebut(),
-                parametres.getFenetreRepasSoirFin(),
+                legaux.getCoupureRepasSoirDebut(),
+                legaux.getCoupureRepasSoirFin(),
                 true);
         return fenetres;
     }
@@ -341,22 +347,22 @@ public final class VacationGeneratorService {
      * closing time never registers as "fully contained". Still dropped
      * entirely when it doesn't start within the amplitude at all.
      */
-    private static List<int[]> untruncatedMealFenetresInMinutes(Creneau amplitude, ParametresDecoupage parametres) {
+    private static List<int[]> untruncatedMealFenetresInMinutes(Creneau amplitude, ParametresLegaux legaux) {
         List<int[]> fenetres = new ArrayList<>();
         int duree = amplitude.getDureeMinutes();
         addFenetreIfWithinAmplitude(
                 fenetres,
                 amplitude.getHeureDebut(),
                 duree,
-                parametres.getFenetreRepasMidiDebut(),
-                parametres.getFenetreRepasMidiFin(),
+                legaux.getCoupureRepasMidiDebut(),
+                legaux.getCoupureRepasMidiFin(),
                 false);
         addFenetreIfWithinAmplitude(
                 fenetres,
                 amplitude.getHeureDebut(),
                 duree,
-                parametres.getFenetreRepasSoirDebut(),
-                parametres.getFenetreRepasSoirFin(),
+                legaux.getCoupureRepasSoirDebut(),
+                legaux.getCoupureRepasSoirFin(),
                 false);
         return fenetres;
     }

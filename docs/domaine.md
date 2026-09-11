@@ -558,12 +558,17 @@ fenêtre qu'elle juge, donc une journée à cheval sur midi *et* sur le soir
 produit **une violation par fenêtre**, chacune nommant ses propres horaires,
 plutôt qu'un agrégat sur lequel personne ne peut agir.
 
-Les valeurs restent stockées où l'organisateur les saisit, dans
-`ParametresDecoupage` (`parametres_decoupage`) ; `FenetreRepas.from(...)` les
-projette. Une seconde table ne créerait qu'une seconde vérité sur « la fenêtre
-du midi ». C'est la seule partie de `ParametresDecoupage` qui atteint le
-solveur : les dix autres champs restent bien de la génération pure, et sa
-javadoc dit maintenant laquelle est laquelle.
+Les valeurs vivent avec les paramètres légaux, dans `ParametresLegaux`
+(`parametres_legaux`, colonnes `coupure_repas_*`) ; `FenetreRepas.from(...)`
+les projette. Elles ont d'abord été des paramètres de découpage — c'est là que
+l'organisateur les réglait, et là que personne ne les cherchait. La coupure
+repas n'est pas une obligation légale mais la règle que l'organisation se
+donne, jugée par le solveur sur toute grille : elle se règle donc avec les
+autres règles, et le découpage la lit à cet endroit pour placer ses relèves.
+`ParametresDecoupage` ne porte plus que de la génération pure. Un scénario
+l'écrit sous `parametresLegaux` (`coupureRepasMinutes`,
+`coupureRepasMidiDebut`…) ; les anciennes clés sous `parametresDecoupage`
+restent lues, dépréciées, pour qu'aucun fichier ne cesse de s'importer.
 
 **Un scénario est jugé sur les fenêtres qu'il déclare**, pas sur celles de la
 base : `ScenarioYamlReader` les pose sur le planning qu'il construit, et les

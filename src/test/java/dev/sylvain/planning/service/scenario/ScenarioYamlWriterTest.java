@@ -249,14 +249,18 @@ class ScenarioYamlWriterTest {
                 .containsEntry("dureeResolutionSecondes", 1800);
         assertThat((Map<String, Object>) parsed.get("parametresLegaux"))
                 .containsEntry("dureeHebdomadaireMaxMinutes", 40 * 60)
-                .containsEntry("pauseMinimaleEntreVacationsMinutes", 45);
+                .containsEntry("pauseMinimaleEntreVacationsMinutes", 45)
+                // The meal break travels with the legal parameters; times stay
+                // strings, like everywhere else in the file.
+                .containsEntry("coupureRepasMinutes", 60)
+                .containsEntry("coupureRepasMidiDebut", "12:00");
         assertThat((Map<String, Object>) parsed.get("parametresDecoupage"))
                 .containsEntry("nombreFamillesDecalage", 5)
                 .containsEntry("dureeDecalageMaxMinutes", 120)
                 .containsEntry("strategieCouverturePendantPause", "EFFECTIF_REDUIT")
                 .containsEntry("modeGrille", "AMPLITUDES")
-                // Times stay strings, like everywhere else in the file.
-                .containsEntry("fenetreRepasMidiDebut", "12:00");
+                // The meal keys left this section; the deprecated ones are never written.
+                .doesNotContainKeys("dureePauseRepasMinutes", "fenetreRepasMidiDebut");
         assertThat((List<Map<String, Object>>) parsed.get("typologies"))
                 .singleElement()
                 .satisfies(typologie -> assertThat(typologie)

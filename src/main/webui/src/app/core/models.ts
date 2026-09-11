@@ -902,6 +902,17 @@ export interface ParametresLegaux {
    * vacations. Default false: the organiser declares it.
    */
   pauseSurPoste: boolean;
+  /**
+   * The meal break: how long it lasts, and the midday and evening windows it
+   * must fall in — the rule `coupureRepasObligatoire` judges (issue #438).
+   * Not a legal obligation, but the rule the organisation sets itself, so it
+   * travels with the parameters the organiser looks for here. Times as HH:MM.
+   */
+  coupureRepasMinutes: number;
+  coupureRepasMidiDebut: string;
+  coupureRepasMidiFin: string;
+  coupureRepasSoirDebut: string;
+  coupureRepasSoirFin: string;
 }
 
 export type StrategieCouverturePendantPause = 'FERMETURE' | 'RELEVE' | 'EFFECTIF_REDUIT';
@@ -1012,11 +1023,6 @@ export interface ParametresDecoupage {
   dureeVacationMinMinutes: number;
   dureeVacationMaxMinutes: number;
   dureeChevauchementMinutes: number;
-  dureePauseRepasMinutes: number;
-  fenetreRepasMidiDebut: string;
-  fenetreRepasMidiFin: string;
-  fenetreRepasSoirDebut: string;
-  fenetreRepasSoirFin: string;
   strategieCouverturePendantPause: StrategieCouverturePendantPause;
   /** How the edition's créneaux read: amplitudes still to slice, or final vacations. */
   modeGrille: ModeGrilleCreneaux;

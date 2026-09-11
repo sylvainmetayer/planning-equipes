@@ -2,6 +2,7 @@ package dev.sylvain.planning.scenario.dto;
 
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
+import java.time.LocalTime;
 
 /**
  * Mirrors only the fields PlanningService#parseParametresLegaux actually
@@ -14,4 +15,9 @@ public record ParametresLegauxDto(
         @Positive Integer dureeHebdomadaireMaxMinutes,
         @PositiveOrZero Integer pauseMinimaleEntreVacationsMinutes,
         @PositiveOrZero Integer reposQuotidienMinimalMinutes,
-        Boolean pauseSurPoste) {}
+        Boolean pauseSurPoste,
+        @PositiveOrZero Integer coupureRepasMinutes,
+        LocalTime coupureRepasMidiDebut,
+        LocalTime coupureRepasMidiFin,
+        LocalTime coupureRepasSoirDebut,
+        LocalTime coupureRepasSoirFin) {}

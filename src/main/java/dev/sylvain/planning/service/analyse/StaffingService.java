@@ -62,6 +62,6 @@ public class StaffingService {
         if (referenceDataService.getContraintesDesactivees().contains("coupureRepasObligatoire")) {
             return List.of();
         }
-        return FenetreRepas.from(referenceDataService.getParametresDecoupage());
+        return FenetreRepas.from(referenceDataService.getParametresLegaux());
     }
 }

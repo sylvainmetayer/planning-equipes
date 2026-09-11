@@ -44,6 +44,39 @@
       <p class="legal-guide">
         <a routerLink="/aide" fragment="parametrer-pour-un-planning-complet" i18n="@@constraints.legal.guide">Comment régler ces paramètres pour un planning complet : voir l'aide.</a>
       </p>
+      <fieldset class="form-grid legal-coupure">
+        <legend i18n="@@constraints.legal.coupure.legend">Coupure repas</legend>
+        <p class="legal-toggle-hint" i18n="@@constraints.legal.coupure.hint">
+          Due à qui travaille de part et d'autre d'une fenêtre : une coupure libre de cette durée, entièrement dans
+          la fenêtre. Règle de l'organisation, pas du Code du travail, tenue en dur par le solveur.
+        </p>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@constraints.legal.coupure.duree">Durée de la coupure (minutes)</mat-label>
+          <input matInput type="number" min="0" name="coupureRepasMinutes"
+                 [ngModel]="coupureRepasMinutes()" (ngModelChange)="coupureRepasMinutes.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@constraints.legal.coupure.midiDebut">Fenêtre du midi — début</mat-label>
+          <input matInput type="time" name="coupureRepasMidiDebut"
+                 [ngModel]="coupureRepasMidiDebut()" (ngModelChange)="coupureRepasMidiDebut.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@constraints.legal.coupure.midiFin">Fenêtre du midi — fin</mat-label>
+          <input matInput type="time" name="coupureRepasMidiFin"
+                 [ngModel]="coupureRepasMidiFin()" (ngModelChange)="coupureRepasMidiFin.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@constraints.legal.coupure.soirDebut">Fenêtre du soir — début</mat-label>
+          <input matInput type="time" name="coupureRepasSoirDebut"
+                 [ngModel]="coupureRepasSoirDebut()" (ngModelChange)="coupureRepasSoirDebut.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@constraints.legal.coupure.soirFin">Fenêtre du soir — fin</mat-label>
+          <input matInput type="time" name="coupureRepasSoirFin"
+                 [ngModel]="coupureRepasSoirFin()" (ngModelChange)="coupureRepasSoirFin.set($event)" />
+          <mat-hint i18n="@@constraints.legal.coupure.soirHint">Vide, ou plus courte que la coupure : pas de règle le soir.</mat-hint>
+        </mat-form-field>
+      </fieldset>
       <div class="legal-toggle">
         <mat-slide-toggle name="pauseSurPoste" [checked]="pauseSurPoste()" (change)="pauseSurPoste.set($event.checked)"
                           i18n="@@constraints.legal.field.pauseSurPoste">Pause légale prise sur le poste, par relais entre collègues</mat-slide-toggle>

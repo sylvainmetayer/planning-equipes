@@ -75,6 +75,16 @@ public class ParametresMcpTools {
                                     + "comme un trou entre deux vacations (L3121-16 / L3162-3)",
                             required = false)
                     Boolean pauseSurPoste,
+            @ToolArg(description = "Durée de la coupure repas, en minutes", required = false)
+                    Integer coupureRepasMinutes,
+            @ToolArg(description = "Début de la fenêtre de la coupure repas du midi (HH:MM)", required = false)
+                    String coupureRepasMidiDebut,
+            @ToolArg(description = "Fin de la fenêtre de la coupure repas du midi (HH:MM)", required = false)
+                    String coupureRepasMidiFin,
+            @ToolArg(description = "Début de la fenêtre de la coupure repas du soir (HH:MM)", required = false)
+                    String coupureRepasSoirDebut,
+            @ToolArg(description = "Fin de la fenêtre de la coupure repas du soir (HH:MM)", required = false)
+                    String coupureRepasSoirFin,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
         if (dureeHebdomadaireMaxMinutes != null) {
@@ -91,6 +101,21 @@ public class ParametresMcpTools {
         }
         if (pauseSurPoste != null) {
             parametres.setPauseSurPoste(pauseSurPoste);
+        }
+        if (coupureRepasMinutes != null) {
+            parametres.setCoupureRepasMinutes(coupureRepasMinutes);
+        }
+        if (coupureRepasMidiDebut != null) {
+            parametres.setCoupureRepasMidiDebut(McpArgs.heure(coupureRepasMidiDebut, "coupureRepasMidiDebut"));
+        }
+        if (coupureRepasMidiFin != null) {
+            parametres.setCoupureRepasMidiFin(McpArgs.heure(coupureRepasMidiFin, "coupureRepasMidiFin"));
+        }
+        if (coupureRepasSoirDebut != null) {
+            parametres.setCoupureRepasSoirDebut(McpArgs.heure(coupureRepasSoirDebut, "coupureRepasSoirDebut"));
+        }
+        if (coupureRepasSoirFin != null) {
+            parametres.setCoupureRepasSoirFin(McpArgs.heure(coupureRepasSoirFin, "coupureRepasSoirFin"));
         }
         return toView(referenceDataService.updateParametresLegaux(parametres));
     }
@@ -128,19 +153,9 @@ public class ParametresMcpTools {
                     Integer dureeVacationMaxMinutes,
             @ToolArg(description = "Chevauchement entre deux vacations successives, en minutes", required = false)
                     Integer dureeChevauchementMinutes,
-            @ToolArg(description = "Durée de la pause repas, en minutes", required = false)
-                    Integer dureePauseRepasMinutes,
             @ToolArg(description = "Nombre de familles de décalage", required = false) Integer nombreFamillesDecalage,
             @ToolArg(description = "Décalage maximal entre familles, en minutes", required = false)
                     Integer dureeDecalageMaxMinutes,
-            @ToolArg(description = "Début de la fenêtre repas du midi (HH:MM)", required = false)
-                    String fenetreRepasMidiDebut,
-            @ToolArg(description = "Fin de la fenêtre repas du midi (HH:MM)", required = false)
-                    String fenetreRepasMidiFin,
-            @ToolArg(description = "Début de la fenêtre repas du soir (HH:MM)", required = false)
-                    String fenetreRepasSoirDebut,
-            @ToolArg(description = "Fin de la fenêtre repas du soir (HH:MM)", required = false)
-                    String fenetreRepasSoirFin,
             @ToolArg(description = "Couverture pendant la pause : FERMETURE ou RELEVE", required = false)
                     String strategieCouverturePendantPause,
             @ToolArg(
@@ -163,26 +178,11 @@ public class ParametresMcpTools {
         if (dureeChevauchementMinutes != null) {
             parametres.setDureeChevauchementMinutes(dureeChevauchementMinutes);
         }
-        if (dureePauseRepasMinutes != null) {
-            parametres.setDureePauseRepasMinutes(dureePauseRepasMinutes);
-        }
         if (nombreFamillesDecalage != null) {
             parametres.setNombreFamillesDecalage(nombreFamillesDecalage);
         }
         if (dureeDecalageMaxMinutes != null) {
             parametres.setDureeDecalageMaxMinutes(dureeDecalageMaxMinutes);
-        }
-        if (fenetreRepasMidiDebut != null) {
-            parametres.setFenetreRepasMidiDebut(McpArgs.heure(fenetreRepasMidiDebut, "fenetreRepasMidiDebut"));
-        }
-        if (fenetreRepasMidiFin != null) {
-            parametres.setFenetreRepasMidiFin(McpArgs.heure(fenetreRepasMidiFin, "fenetreRepasMidiFin"));
-        }
-        if (fenetreRepasSoirDebut != null) {
-            parametres.setFenetreRepasSoirDebut(McpArgs.heure(fenetreRepasSoirDebut, "fenetreRepasSoirDebut"));
-        }
-        if (fenetreRepasSoirFin != null) {
-            parametres.setFenetreRepasSoirFin(McpArgs.heure(fenetreRepasSoirFin, "fenetreRepasSoirFin"));
         }
         if (strategieCouverturePendantPause != null) {
             parametres.setStrategieCouverturePendantPause(McpArgs.enumeration(
@@ -381,7 +381,12 @@ public class ParametresMcpTools {
                 parametres.getDureeHebdomadaireMaxMineurMinutes(),
                 parametres.getPauseMinimaleEntreVacationsMinutes(),
                 parametres.getReposQuotidienMinimalMinutes(),
-                parametres.isPauseSurPoste());
+                parametres.isPauseSurPoste(),
+                parametres.getCoupureRepasMinutes(),
+                parametres.getCoupureRepasMidiDebut(),
+                parametres.getCoupureRepasMidiFin(),
+                parametres.getCoupureRepasSoirDebut(),
+                parametres.getCoupureRepasSoirFin());
     }
 
     static ParametresDecoupageView toView(ParametresDecoupage parametres) {
@@ -390,13 +395,8 @@ public class ParametresMcpTools {
                 parametres.getDureeVacationMinMinutes(),
                 parametres.getDureeVacationMaxMinutes(),
                 parametres.getDureeChevauchementMinutes(),
-                parametres.getDureePauseRepasMinutes(),
                 parametres.getNombreFamillesDecalage(),
                 parametres.getDureeDecalageMaxMinutes(),
-                parametres.getFenetreRepasMidiDebut(),
-                parametres.getFenetreRepasMidiFin(),
-                parametres.getFenetreRepasSoirDebut(),
-                parametres.getFenetreRepasSoirFin(),
                 parametres.getStrategieCouverturePendantPause(),
                 parametres.getModeGrille());
     }
@@ -424,20 +424,20 @@ public class ParametresMcpTools {
             int dureeHebdomadaireMaxMineurMinutes,
             int pauseMinimaleEntreVacationsMinutes,
             int reposQuotidienMinimalMinutes,
-            boolean pauseSurPoste) {}
+            boolean pauseSurPoste,
+            int coupureRepasMinutes,
+            LocalTime coupureRepasMidiDebut,
+            LocalTime coupureRepasMidiFin,
+            LocalTime coupureRepasSoirDebut,
+            LocalTime coupureRepasSoirFin) {}
 
     public record ParametresDecoupageView(
             int dureeVacationCibleMinutes,
             int dureeVacationMinMinutes,
             int dureeVacationMaxMinutes,
             int dureeChevauchementMinutes,
-            int dureePauseRepasMinutes,
             int nombreFamillesDecalage,
             int dureeDecalageMaxMinutes,
-            LocalTime fenetreRepasMidiDebut,
-            LocalTime fenetreRepasMidiFin,
-            LocalTime fenetreRepasSoirDebut,
-            LocalTime fenetreRepasSoirFin,
             PauseCoverageStrategy strategieCouverturePendantPause,
             ModeGrilleCreneaux modeGrille) {}
 

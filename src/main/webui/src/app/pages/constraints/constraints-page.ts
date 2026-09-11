@@ -28,6 +28,7 @@ import {
   ConstraintView,
   ConstraintsView,
   NiveauContrainte,
+  ParametresLegaux,
 } from '../../core/models';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -118,6 +119,12 @@ export class ConstraintsPage {
   protected readonly articleReposQuotidien = urlLegifrance('L3131-1');
   protected readonly articlePause = urlLegifrance('L3121-16');
   protected readonly dureeHebdomadaireMaxMineurHeures = signal<number | null>(null);
+  /** The meal break the organisation sets itself (issue #438): its length, and the two windows as HH:MM. */
+  protected readonly coupureRepasMinutes = signal<number | null>(null);
+  protected readonly coupureRepasMidiDebut = signal('');
+  protected readonly coupureRepasMidiFin = signal('');
+  protected readonly coupureRepasSoirDebut = signal('');
+  protected readonly coupureRepasSoirFin = signal('');
 
   /** Ordre public ceilings, mirrored from the server-side validation. */
   protected readonly plafondMajeurHeures = DUREE_HEBDOMADAIRE_MAX_HEURES;
@@ -254,11 +261,20 @@ export class ConstraintsPage {
       this.pauseEntreVacationsMinutes.set(parametres.pauseMinimaleEntreVacationsMinutes);
       this.reposQuotidienHeures.set(parametres.reposQuotidienMinimalMinutes / 60);
       this.pauseSurPoste.set(parametres.pauseSurPoste);
+      this.lireCoupureRepas(parametres);
     } catch (error) {
       this.parametresError.set(errorPrefix(error));
     } finally {
       this.parametresLoading.set(false);
     }
+  }
+
+  private lireCoupureRepas(parametres: ParametresLegaux): void {
+    this.coupureRepasMinutes.set(parametres.coupureRepasMinutes);
+    this.coupureRepasMidiDebut.set(parametres.coupureRepasMidiDebut ?? '');
+    this.coupureRepasMidiFin.set(parametres.coupureRepasMidiFin ?? '');
+    this.coupureRepasSoirDebut.set(parametres.coupureRepasSoirDebut ?? '');
+    this.coupureRepasSoirFin.set(parametres.coupureRepasSoirFin ?? '');
   }
 
   /**
@@ -276,6 +292,7 @@ export class ConstraintsPage {
     const heuresMineur = this.dureeHebdomadaireMaxMineurHeures();
     const pauseMinutes = this.pauseEntreVacationsMinutes();
     const reposHeures = this.reposQuotidienHeures();
+    const coupureMinutes = this.coupureRepasMinutes();
     if (
       heures === null ||
       heures <= 0 ||
@@ -284,7 +301,9 @@ export class ConstraintsPage {
       pauseMinutes === null ||
       pauseMinutes < 0 ||
       reposHeures === null ||
-      reposHeures < 0
+      reposHeures < 0 ||
+      coupureMinutes === null ||
+      coupureMinutes < 0
     ) {
       return;
     }
@@ -310,12 +329,18 @@ export class ConstraintsPage {
         pauseMinimaleEntreVacationsMinutes: Math.round(pauseMinutes),
         reposQuotidienMinimalMinutes: Math.round(reposHeures * 60),
         pauseSurPoste: this.pauseSurPoste(),
+        coupureRepasMinutes: Math.round(coupureMinutes),
+        coupureRepasMidiDebut: this.coupureRepasMidiDebut(),
+        coupureRepasMidiFin: this.coupureRepasMidiFin(),
+        coupureRepasSoirDebut: this.coupureRepasSoirDebut(),
+        coupureRepasSoirFin: this.coupureRepasSoirFin(),
       });
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
       this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
       this.pauseEntreVacationsMinutes.set(parametres.pauseMinimaleEntreVacationsMinutes);
       this.reposQuotidienHeures.set(parametres.reposQuotidienMinimalMinutes / 60);
       this.pauseSurPoste.set(parametres.pauseSurPoste);
+      this.lireCoupureRepas(parametres);
       this.parametresSaved.set(true);
     } catch (error) {
       this.parametresError.set(errorPrefix(error));

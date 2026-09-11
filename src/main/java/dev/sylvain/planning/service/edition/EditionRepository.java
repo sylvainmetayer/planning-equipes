@@ -71,12 +71,12 @@ public class EditionRepository {
                     "parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
                             + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes, "
-                            + "pause_sur_poste"),
+                            + "pause_sur_poste, coupure_repas_minutes, coupure_repas_midi_debut, "
+                            + "coupure_repas_midi_fin, coupure_repas_soir_debut, coupure_repas_soir_fin"),
             new TableToCopy(
                     "parametres_decoupage",
                     "duree_vacation_cible_minutes, duree_vacation_min_minutes, duree_vacation_max_minutes, "
-                            + "duree_chevauchement_minutes, duree_pause_repas_minutes, fenetre_repas_midi_debut, "
-                            + "fenetre_repas_midi_fin, fenetre_repas_soir_debut, fenetre_repas_soir_fin, "
+                            + "duree_chevauchement_minutes, "
                             + "strategie_couverture_pendant_pause, nombre_familles_decalage, "
                             + "duree_decalage_max_minutes, mode_grille"),
             new TableToCopy("parametres_solveur", "duree_resolution_secondes"));

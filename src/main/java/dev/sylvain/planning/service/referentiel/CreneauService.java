@@ -135,7 +135,8 @@ public class CreneauService {
         if (amplitudes.isEmpty()) {
             throw new BusinessError.Invalid("Aucune amplitude à découper : l'édition n'a aucun créneau");
         }
-        return VacationGeneratorService.generateVacations(amplitudes, parametres.getDecoupage());
+        return VacationGeneratorService.generateVacations(
+                amplitudes, parametres.getDecoupage(), parametres.getLegaux());
     }
 
     /**

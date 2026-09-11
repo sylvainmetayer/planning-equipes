@@ -1,163 +1,163 @@
 .planning.affectationsPubliees = (vide)
-.planning.animateurs[0]  d555167049c74af2
-.planning.animateurs[1]  7fc40934849d0795
-.planning.animateurs[2]  4b18745ac8fb25e7
-.planning.animateurs[3]  bf4df278a5cfd167
-.planning.animateurs[4]  852dc3697b9a8263
-.planning.animateurs[5]  b64504e8ad15849e
-.planning.animateurs[6]  708ff47b0bd19c5a
-.planning.animateurs[7]  37106e2748e452ab
-.planning.animateurs[8]  52dcb5c2228fedf9
-.planning.animateurs[9]  87a3dd59d77537bd
-.planning.animateurs[10]  56bba5d9f3e5f49c
-.planning.animateurs[11]  012768fa375fc80d
-.planning.animateurs[12]  7fe52ffe935ceb66
-.planning.animateurs[13]  6945c5929f0b727d
-.planning.animateurs[14]  ced4e984d7f36962
-.planning.animateurs[15]  bfe30940c50b7e65
-.planning.animateurs[16]  fc3a7e4f6fba75c4
-.planning.animateurs[17]  c37e6e6ab5f61682
-.planning.animateurs[18]  b57ca5046db9b2bf
-.planning.animateurs[19]  bc7734abab00c8bf
-.planning.animateurs[20]  6d37080f311f8d5e
-.planning.animateurs[21]  db4fcfb1bc348906
-.planning.animateurs[22]  6de63d043868161b
-.planning.animateurs[23]  2fa91223f6c57f9b
-.planning.animateurs[24]  5a2180b210e34d83
-.planning.animateurs[25]  d9f2cf9be93a99a3
-.planning.animateurs[26]  15868f99a069c869
-.planning.animateurs[27]  a1f2c1c4a8e86c0c
-.planning.animateurs[28]  bf996d3dd9b59e26
-.planning.animateurs[29]  aa7230e817946b94
-.planning.animateurs[30]  c234854a0562c204
-.planning.animateurs[31]  fec58bec7b821832
-.planning.animateurs[32]  a86bb2ceb72d9127
-.planning.animateurs[33]  714b2042c9ff7450
-.planning.animateurs[34]  4ff8af9d609c3297
-.planning.animateurs[35]  547164c780e81e24
-.planning.animateurs[36]  5e340c48f86c4980
-.planning.animateurs[37]  731961af65e2b14d
-.planning.animateurs[38]  9eb2716ffbcd779d
-.planning.animateurs[39]  724a93244bb4f25d
-.planning.animateurs[40]  fc9028f8e5015cd9
-.planning.animateurs[41]  ed5dc06c23b3b397
-.planning.animateurs[42]  4f6bbe6c7aff7f4a
-.planning.animateurs[43]  4789ebc709b521cb
-.planning.animateurs[44]  91434741a03e8857
-.planning.animateurs[45]  8d2bc1a385df9e27
-.planning.animateurs[46]  34473cbb0d9fc542
-.planning.animateurs[47]  01378284188401e6
-.planning.animateurs[48]  294ca71852ea3bd6
-.planning.animateurs[49]  8706d3e451ea11dc
-.planning.animateurs[50]  068cb390435de25a
-.planning.animateurs[51]  3db901fdd4c1cf90
-.planning.animateurs[52]  fbc8bb6d17f97e54
-.planning.animateurs[53]  ab728fb8ad306f50
-.planning.animateurs[54]  588ed90bc15cc779
-.planning.animateurs[55]  82c219bede01f1c2
-.planning.animateurs[56]  8016c84083325493
-.planning.animateurs[57]  3d76b03efe1d7c6d
-.planning.animateurs[58]  839ff1653b657c9f
-.planning.animateurs[59]  7e4af8facdf9c073
-.planning.animateurs[60]  c15993a43af60d02
-.planning.animateurs[61]  ef838e70de4a14d2
-.planning.animateurs[62]  b35a5eed8607956b
-.planning.animateurs[63]  76d09b0ef8527f1d
-.planning.animateurs[64]  232c14010c85d763
-.planning.animateurs[65]  6d3775e97a17af05
-.planning.animateurs[66]  871258d138b1ecff
-.planning.animateurs[67]  c687f27019eef129
-.planning.animateurs[68]  ae9b4b45b2e30d45
-.planning.animateurs[69]  b4a1a818c205a038
-.planning.animateurs[70]  3a7b6370254b3b0c
-.planning.animateurs[71]  11f1070b63fa6132
-.planning.animateurs[72]  9a7672fee2098ba1
-.planning.animateurs[73]  fe0f27778a735b44
-.planning.animateurs[74]  46e23cc0f0d99cb4
-.planning.animateurs[75]  cad149b316396382
-.planning.animateurs[76]  759a2b1314cc5b3f
-.planning.animateurs[77]  474579e7c2be46bb
-.planning.animateurs[78]  299e4ad64477e519
-.planning.animateurs[79]  08f22381ae5ae752
-.planning.animateurs[80]  435e80ed84ffaf43
-.planning.animateurs[81]  fbc87f81120880a2
-.planning.animateurs[82]  f923384c1ded50bf
-.planning.animateurs[83]  a50d545ebe96374c
-.planning.animateurs[84]  14c7c79ee7982486
-.planning.animateurs[85]  ea183c24de1a51ea
-.planning.animateurs[86]  a10cad9f45ddb199
-.planning.animateurs[87]  7751ba31796418dc
-.planning.animateurs[88]  21b0b38bbbeb8a3d
-.planning.animateurs[89]  5838404072b38bea
-.planning.animateurs[90]  1af6843e04ecc139
-.planning.animateurs[91]  cb6db6ada20250bf
-.planning.animateurs[92]  d733cab73e432ab1
-.planning.animateurs[93]  82f5adf079dee204
-.planning.animateurs[94]  2d5b24f51cdf7453
-.planning.animateurs[95]  4babd58b681cefd0
-.planning.animateurs[96]  7bffa27ae1a1f8fc
-.planning.animateurs[97]  739d136ad4bd2f7a
-.planning.animateurs[98]  7cb24628d1806f40
-.planning.animateurs[99]  917e5912b25dd202
-.planning.animateurs[100]  48c1e1e3a5147d92
-.planning.animateurs[101]  9592aacf34b604f9
-.planning.animateurs[102]  456a9a4ecdb7fb25
-.planning.animateurs[103]  c3014df5ed260ab8
-.planning.animateurs[104]  a5131c41e58f4d36
-.planning.animateurs[105]  816b24ba83d4aeff
-.planning.animateurs[106]  48bf8ca52a938c09
-.planning.animateurs[107]  7139367c09ce223f
-.planning.animateurs[108]  4695e8bfae95e130
-.planning.animateurs[109]  f2091613e09b23d4
-.planning.animateurs[110]  c5848fca33547c40
-.planning.animateurs[111]  e945d2ac0c4548f2
-.planning.animateurs[112]  553bd983e1c4211d
-.planning.animateurs[113]  b04ca8f632bdac1e
-.planning.animateurs[114]  5c117e0a0e8f3e6c
-.planning.animateurs[115]  6e92d20599ea938f
-.planning.animateurs[116]  377d759bd3e38131
-.planning.animateurs[117]  c1ab9ada491a6473
-.planning.animateurs[118]  d21ace468bbcff3c
-.planning.animateurs[119]  8418541b87d1747e
-.planning.animateurs[120]  51fe1c2411ee1260
-.planning.animateurs[121]  e0f8f82287da36f1
-.planning.animateurs[122]  522d2d5e17535385
-.planning.animateurs[123]  844d90aac0a5433c
-.planning.animateurs[124]  357a957828c3bb01
-.planning.animateurs[125]  ff1c81cede7345d1
-.planning.animateurs[126]  f1e6dbc114a89593
-.planning.animateurs[127]  2958f2fbdaa4668a
-.planning.animateurs[128]  61384cae91e9e04c
-.planning.animateurs[129]  4686c92b722f72b1
-.planning.animateurs[130]  12cfe77d56556001
-.planning.animateurs[131]  8abd20cac9095bbc
-.planning.animateurs[132]  9eeb8580ca7a9c4b
-.planning.animateurs[133]  6ae470bc8c02f8c0
-.planning.animateurs[134]  a9ee2ce7a9fae892
-.planning.animateurs[135]  3c2719cd73f170d8
-.planning.animateurs[136]  7df5f79503bb8911
-.planning.animateurs[137]  28db8023a00d9502
-.planning.animateurs[138]  ce3df2c3fe23ee9f
-.planning.animateurs[139]  c6168dddde635fa9
-.planning.animateurs[140]  3c4ebc5512f99180
-.planning.animateurs[141]  4b91ab5a5d622601
-.planning.animateurs[142]  1f7266602eaf093d
-.planning.animateurs[143]  599fbc42fa1490cf
-.planning.animateurs[144]  9459ea187c2fd1bd
-.planning.animateurs[145]  c93a8d94ed6267cd
-.planning.animateurs[146]  71500da0bf4b5c42
-.planning.animateurs[147]  880e1bda45f35061
-.planning.animateurs[148]  139c9e0e01a71bf0
-.planning.animateurs[149]  ccaef13965c2a1f9
-.planning.animateurs[150]  47825ec637cb98c4
-.planning.animateurs[151]  1df325bff9c9138f
-.planning.animateurs[152]  c8af6b911bb0f19f
+.planning.animateurs[0]  f1ff53c00177cffe
+.planning.animateurs[1]  bd696bdcbf7d2646
+.planning.animateurs[2]  503fc3d67739c6ee
+.planning.animateurs[3]  615195d1747228ab
+.planning.animateurs[4]  41ba1a779ada997e
+.planning.animateurs[5]  f8670aa9fb10cbef
+.planning.animateurs[6]  e5cbe16bab6b2b92
+.planning.animateurs[7]  9e22e73793952a17
+.planning.animateurs[8]  215c4cde44c2c545
+.planning.animateurs[9]  0218579c581197c4
+.planning.animateurs[10]  99ca34acc5ea4faa
+.planning.animateurs[11]  8b95644fecfadbdf
+.planning.animateurs[12]  1c8966011dc122de
+.planning.animateurs[13]  aa375513c2fbbd52
+.planning.animateurs[14]  636eb53db8a0559c
+.planning.animateurs[15]  6c00d49119c98a06
+.planning.animateurs[16]  cf32bd93bdf5bb1d
+.planning.animateurs[17]  aa3802c67c7a63d2
+.planning.animateurs[18]  8f6a44cbdfdd8a59
+.planning.animateurs[19]  9e6351e8efaac931
+.planning.animateurs[20]  54f00ab0fb8fa9f1
+.planning.animateurs[21]  7da1461bef147724
+.planning.animateurs[22]  bc3e88ababdaed89
+.planning.animateurs[23]  da4c89df03ee7213
+.planning.animateurs[24]  5bd2738662d73bb7
+.planning.animateurs[25]  548826839a8023be
+.planning.animateurs[26]  6abf1b1094a6d782
+.planning.animateurs[27]  e2dd6e25fd22fcec
+.planning.animateurs[28]  6a4b8f2f10d7208c
+.planning.animateurs[29]  daacfb049b37b66f
+.planning.animateurs[30]  33f9318e42eea85f
+.planning.animateurs[31]  94d22e4baa8d1f21
+.planning.animateurs[32]  729c5216b86ea009
+.planning.animateurs[33]  dfd01c6bd2c56e54
+.planning.animateurs[34]  efef0c93a0417fe2
+.planning.animateurs[35]  d39eaed2f6d4a5f4
+.planning.animateurs[36]  da6b4b744aa29cba
+.planning.animateurs[37]  466ed16111ab5627
+.planning.animateurs[38]  19a65356fb2101d8
+.planning.animateurs[39]  e14d59a318dac90e
+.planning.animateurs[40]  f426b04e6ada61df
+.planning.animateurs[41]  e0fd04247e4118a7
+.planning.animateurs[42]  b514c935c02c16ad
+.planning.animateurs[43]  0a88da2c3a4e7a4f
+.planning.animateurs[44]  0231484a1d366eb5
+.planning.animateurs[45]  74851f5b4f5591d7
+.planning.animateurs[46]  b2168acd2082e812
+.planning.animateurs[47]  b089f737ab283e49
+.planning.animateurs[48]  b0ade92888348042
+.planning.animateurs[49]  1eaef0f0aec1656f
+.planning.animateurs[50]  11e2e5ce3f8e527b
+.planning.animateurs[51]  56fa01b03ad50dab
+.planning.animateurs[52]  4803f816e2986880
+.planning.animateurs[53]  0b6e3b7121cc60f6
+.planning.animateurs[54]  8f63534457b1c7e0
+.planning.animateurs[55]  dc82e485f7aed5fe
+.planning.animateurs[56]  08a1cff8d4dacd2e
+.planning.animateurs[57]  fcfcdf3626de4778
+.planning.animateurs[58]  cb84768add1493d4
+.planning.animateurs[59]  1ee84fa2d47887ec
+.planning.animateurs[60]  6955bb83b3f53d1b
+.planning.animateurs[61]  835001e98fa16db5
+.planning.animateurs[62]  86176401f46a11f7
+.planning.animateurs[63]  0ec542a3a2aec0da
+.planning.animateurs[64]  59273f23e7718c84
+.planning.animateurs[65]  e75d2229219c941e
+.planning.animateurs[66]  2ca717cc2c0ec38b
+.planning.animateurs[67]  43db3da45e743ffd
+.planning.animateurs[68]  75a6df9b84d57a36
+.planning.animateurs[69]  8684cac5ad649eff
+.planning.animateurs[70]  d561d5f78e538bc7
+.planning.animateurs[71]  6a8c3d2bcea85094
+.planning.animateurs[72]  e09f9fb0d082930c
+.planning.animateurs[73]  c69087e8b8889dbf
+.planning.animateurs[74]  d96115a55f06fc2d
+.planning.animateurs[75]  4b989b8bafe3da91
+.planning.animateurs[76]  5f9bd60b25dd4a2a
+.planning.animateurs[77]  00d28f5499d2864d
+.planning.animateurs[78]  4b975be7b056a7e1
+.planning.animateurs[79]  a0177a4a6e566b0c
+.planning.animateurs[80]  06d6bff9340e583e
+.planning.animateurs[81]  2a49e10f6b2563c8
+.planning.animateurs[82]  8efd023a6cd6f779
+.planning.animateurs[83]  94d6a7ddbdca7788
+.planning.animateurs[84]  f0213dc3dd52e137
+.planning.animateurs[85]  fe9357cbe87ee068
+.planning.animateurs[86]  26e095faefc382b8
+.planning.animateurs[87]  6564ed21a8c0ef26
+.planning.animateurs[88]  97c4859c6d066cec
+.planning.animateurs[89]  bf6b770ead7dbf3d
+.planning.animateurs[90]  b9b0aba4fa6a2834
+.planning.animateurs[91]  7dd070e03230bf01
+.planning.animateurs[92]  874b1b439659c279
+.planning.animateurs[93]  637882ddfd66c28a
+.planning.animateurs[94]  7ebee26c958feac2
+.planning.animateurs[95]  f577e8e2959e8871
+.planning.animateurs[96]  26a6f57d49437e0b
+.planning.animateurs[97]  42e18cf3f4b736d6
+.planning.animateurs[98]  bfe243e869c2262c
+.planning.animateurs[99]  90197cf99e601cfc
+.planning.animateurs[100]  bbfc181ce3647287
+.planning.animateurs[101]  c21d52e99dd1976b
+.planning.animateurs[102]  bb30a51544e16d41
+.planning.animateurs[103]  68a4733f1a5ce9e6
+.planning.animateurs[104]  97f52c4edb709d74
+.planning.animateurs[105]  b564fa25bd31ff8b
+.planning.animateurs[106]  06f9eff76c1d3a22
+.planning.animateurs[107]  29cde26a4bfb7c2b
+.planning.animateurs[108]  afc50f96f8c96f1c
+.planning.animateurs[109]  288b7ded8a40128d
+.planning.animateurs[110]  c2e304afa12d3944
+.planning.animateurs[111]  065074e701e17a49
+.planning.animateurs[112]  2e5ce7eb1d7d3450
+.planning.animateurs[113]  c1ef36c90fa6d8bb
+.planning.animateurs[114]  a2962f94f7fbb56d
+.planning.animateurs[115]  b79a594fa7759a0b
+.planning.animateurs[116]  348d8a3fdbe1dc3f
+.planning.animateurs[117]  7c6bdc7a967b3a8f
+.planning.animateurs[118]  b4001a4f15c467ec
+.planning.animateurs[119]  942f56e81a099ab3
+.planning.animateurs[120]  f32dc8b1f8c0208e
+.planning.animateurs[121]  0efbd8c4156fe8c8
+.planning.animateurs[122]  67ce4fed2d8da8ed
+.planning.animateurs[123]  d263b2532e010980
+.planning.animateurs[124]  a01d9c1d14a4a6a8
+.planning.animateurs[125]  91d24404478e7d18
+.planning.animateurs[126]  80a836e92924824a
+.planning.animateurs[127]  a2cd4351e0338d47
+.planning.animateurs[128]  3927314944427648
+.planning.animateurs[129]  25fe30037a042be3
+.planning.animateurs[130]  7083fcf5d4566135
+.planning.animateurs[131]  dc455fcabbd2f504
+.planning.animateurs[132]  a2e1f8a80f6cc4e0
+.planning.animateurs[133]  a11bada525aead86
+.planning.animateurs[134]  ec33ecda8eafddd0
+.planning.animateurs[135]  fea9521ab9099c4b
+.planning.animateurs[136]  488b9de601eba285
+.planning.animateurs[137]  d63d3d80a3d332fc
+.planning.animateurs[138]  a244339bfcdb06d0
+.planning.animateurs[139]  8761d6ed32fe08c1
+.planning.animateurs[140]  a7ba01230861de8e
+.planning.animateurs[141]  ac51c94bee3d2417
+.planning.animateurs[142]  049c776b996fe67a
+.planning.animateurs[143]  8e91c1984640bb0f
+.planning.animateurs[144]  4a2928c13f0c1f90
+.planning.animateurs[145]  b29d430f6985a74d
+.planning.animateurs[146]  22bfd1d64175a828
+.planning.animateurs[147]  8884a4c107dd3db7
+.planning.animateurs[148]  356e7079a0f41005
+.planning.animateurs[149]  ca3ae531b31d7671
+.planning.animateurs[150]  f29d6eb9e815c85d
+.planning.animateurs[151]  05515f9f79e84ba4
+.planning.animateurs[152]  acc6c14832f1358e
 .planning.constraintsDesactivees = (vide)
 .planning.contraintesAdHoc = (vide)
 .planning.dateDebutFestival = 2026-09-01
 .planning.fenetresRepas[0]  c42588e8fd4e1c44
 .planning.fenetresRepas[1]  7ddcb9631db68c60
-.planning.parametresLegaux[0]  98e935f9abd6c3c2
+.planning.parametresLegaux[0]  53290aebbd32e5e6
 .planning.parametresQualite[0]  33dd46864ff3cece
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 3
@@ -2165,18 +2165,22 @@
 .sections.edition = null
 .sections.parametresDecoupage.dureeChevauchementMinutes = 15
 .sections.parametresDecoupage.dureeDecalageMaxMinutes = 120
-.sections.parametresDecoupage.dureePauseRepasMinutes = 60
 .sections.parametresDecoupage.dureeVacationCibleMinutes = 330
 .sections.parametresDecoupage.dureeVacationMaxMinutes = 360
 .sections.parametresDecoupage.dureeVacationMinMinutes = 180
-.sections.parametresDecoupage.fenetreRepasMidiDebut = 12:00
-.sections.parametresDecoupage.fenetreRepasMidiFin = 14:00
-.sections.parametresDecoupage.fenetreRepasSoirDebut = 17:00
-.sections.parametresDecoupage.fenetreRepasSoirFin = 18:00
 .sections.parametresDecoupage.modeGrille = AMPLITUDES
 .sections.parametresDecoupage.nombreFamillesDecalage = 5
 .sections.parametresDecoupage.strategieCouverturePendantPause = EFFECTIF_REDUIT
-.sections.parametresLegaux = null
+.sections.parametresLegaux.coupureRepasMidiDebut = 12:00
+.sections.parametresLegaux.coupureRepasMidiFin = 14:00
+.sections.parametresLegaux.coupureRepasMinutes = 60
+.sections.parametresLegaux.coupureRepasSoirDebut = 17:00
+.sections.parametresLegaux.coupureRepasSoirFin = 18:00
+.sections.parametresLegaux.dureeHebdomadaireMaxMineurMinutes = 2100
+.sections.parametresLegaux.dureeHebdomadaireMaxMinutes = 2880
+.sections.parametresLegaux.pauseMinimaleEntreVacationsMinutes = 30
+.sections.parametresLegaux.pauseSurPoste = false
+.sections.parametresLegaux.reposQuotidienMinimalMinutes = 660
 .sections.parametresSolveur.dureeResolutionSecondes = 1800
 .sections.parametresSolveur.mailFinResolution = false
 .sections.typologies[0]  03b2cb133d7188b6

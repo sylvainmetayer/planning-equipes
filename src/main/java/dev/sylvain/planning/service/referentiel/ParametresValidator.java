@@ -55,6 +55,22 @@ final class ParametresValidator {
         if (parametres.getReposQuotidienMinimalMinutes() < 0) {
             throw new BusinessError.Invalid("reposQuotidienMinimalMinutes must not be negative");
         }
+        if (parametres.getCoupureRepasMinutes() < 0) {
+            throw new BusinessError.Invalid("coupureRepasMinutes must not be negative");
+        }
+        checkFenetre(parametres.getCoupureRepasMidiDebut(), parametres.getCoupureRepasMidiFin(), "coupureRepasMidi");
+        checkFenetre(parametres.getCoupureRepasSoirDebut(), parametres.getCoupureRepasSoirFin(), "coupureRepasSoir");
+    }
+
+    /**
+     * A window is a pair or nothing: one bound without the other is a typo, not
+     * a choice. An empty or reversed window is accepted — {@code FenetreRepas}
+     * drops it, which is how an event without an evening service says so.
+     */
+    private static void checkFenetre(java.time.LocalTime debut, java.time.LocalTime fin, String champ) {
+        if ((debut == null) != (fin == null)) {
+            throw new BusinessError.Invalid(champ + " needs both its bounds, or neither");
+        }
     }
 
     static void checkDecoupage(ParametresDecoupage parametres) {
@@ -66,8 +82,8 @@ final class ParametresValidator {
         if (parametres.getDureeVacationMinMinutes() > parametres.getDureeVacationMaxMinutes()) {
             throw new BusinessError.Invalid("dureeVacationMinMinutes cannot be greater than dureeVacationMaxMinutes");
         }
-        if (parametres.getDureeChevauchementMinutes() < 0 || parametres.getDureePauseRepasMinutes() < 0) {
-            throw new BusinessError.Invalid("overlap and meal-break durations must not be negative");
+        if (parametres.getDureeChevauchementMinutes() < 0) {
+            throw new BusinessError.Invalid("overlap duration must not be negative");
         }
     }
 

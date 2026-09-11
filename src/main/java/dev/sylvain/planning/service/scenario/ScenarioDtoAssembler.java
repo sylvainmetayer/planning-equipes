@@ -307,7 +307,12 @@ final class ScenarioDtoAssembler {
                         parametres.getDureeHebdomadaireMaxMinutes(),
                         parametres.getPauseMinimaleEntreVacationsMinutes(),
                         parametres.getReposQuotidienMinimalMinutes(),
-                        parametres.isPauseSurPoste());
+                        parametres.isPauseSurPoste(),
+                        parametres.getCoupureRepasMinutes(),
+                        parametres.getCoupureRepasMidiDebut(),
+                        parametres.getCoupureRepasMidiFin(),
+                        parametres.getCoupureRepasSoirDebut(),
+                        parametres.getCoupureRepasSoirFin());
     }
 
     private static ParametresDecoupageDto parametresDecoupage(ParametresDecoupage parametres) {
@@ -318,11 +323,12 @@ final class ScenarioDtoAssembler {
                         parametres.getDureeVacationMinMinutes(),
                         parametres.getDureeVacationMaxMinutes(),
                         parametres.getDureeChevauchementMinutes(),
-                        parametres.getDureePauseRepasMinutes(),
-                        parametres.getFenetreRepasMidiDebut(),
-                        parametres.getFenetreRepasMidiFin(),
-                        parametres.getFenetreRepasSoirDebut(),
-                        parametres.getFenetreRepasSoirFin(),
+                        // The deprecated meal keys: never written any more.
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
                         parametres.getStrategieCouverturePendantPause(),
                         parametres.getNombreFamillesDecalage(),
                         parametres.getDureeDecalageMaxMinutes(),

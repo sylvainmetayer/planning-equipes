@@ -22,6 +22,10 @@ festival:
   dateDebut: 2026-09-01
 parametresSolveur:
   dureeResolutionSecondes: 1800
+parametresLegaux:
+  coupureRepasMinutes: 60
+  coupureRepasSoirDebut: '17:00'
+  coupureRepasSoirFin: '18:00'
 parametresDecoupage:
   nombreFamillesDecalage: 5
   dureeDecalageMaxMinutes: 120
@@ -29,9 +33,6 @@ parametresDecoupage:
   dureeVacationCibleMinutes: 330
   dureeVacationMinMinutes: 180
   dureeVacationMaxMinutes: 360
-  dureePauseRepasMinutes: 60
-  fenetreRepasSoirDebut: '17:00'
-  fenetreRepasSoirFin: '18:00'
   strategieCouverturePendantPause: EFFECTIF_REDUIT
 decoupageAuto: {}
 

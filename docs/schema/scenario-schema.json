@@ -373,6 +373,23 @@
     "ParametresLegauxDto" : {
       "type" : "object",
       "properties" : {
+        "coupureRepasMidiDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "coupureRepasMidiFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "coupureRepasMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0
+        },
+        "coupureRepasSoirDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "coupureRepasSoirFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
         "dureeHebdomadaireMaxMinutes" : {
           "type" : "integer",
           "format" : "int32",

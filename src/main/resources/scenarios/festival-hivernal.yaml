@@ -12,16 +12,16 @@ parametresLegaux:
   pauseMinimaleEntreVacationsMinutes: 0
   reposQuotidienMinimalMinutes: 660
   pauseSurPoste: true
+  coupureRepasMinutes: 60
+  coupureRepasMidiDebut: '12:00'
+  coupureRepasMidiFin: '14:00'
+  coupureRepasSoirDebut: '20:00'
+  coupureRepasSoirFin: '21:00'
 parametresDecoupage:
   dureeVacationCibleMinutes: 330
   dureeVacationMinMinutes: 180
   dureeVacationMaxMinutes: 360
   dureeChevauchementMinutes: 15
-  dureePauseRepasMinutes: 60
-  fenetreRepasMidiDebut: '12:00'
-  fenetreRepasMidiFin: '14:00'
-  fenetreRepasSoirDebut: '20:00'
-  fenetreRepasSoirFin: '21:00'
   strategieCouverturePendantPause: EFFECTIF_REDUIT
   nombreFamillesDecalage: 5
   dureeDecalageMaxMinutes: 120

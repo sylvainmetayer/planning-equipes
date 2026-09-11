@@ -108,7 +108,7 @@ class CoupureRepasTest {
 
     @Test
     void lesDeuxFenetresParDefautSontExploitables() {
-        assertThat(FenetreRepas.from(new ParametresDecoupage()))
+        assertThat(FenetreRepas.from(new ParametresLegaux()))
                 .extracting(FenetreRepas::libelle)
                 .containsExactly(FenetreRepas.MIDI, FenetreRepas.SOIR);
     }
@@ -116,10 +116,10 @@ class CoupureRepasTest {
     /** Nobody could ever satisfy a window shorter than the break it demands; it founds no rule. */
     @Test
     void uneFenetrePlusCourteQueSaCoupureEstEcartee() {
-        ParametresDecoupage parametres = new ParametresDecoupage();
-        parametres.setDureePauseRepasMinutes(60);
-        parametres.setFenetreRepasMidiDebut(LocalTime.of(12, 0));
-        parametres.setFenetreRepasMidiFin(LocalTime.of(12, 30));
+        ParametresLegaux parametres = new ParametresLegaux();
+        parametres.setCoupureRepasMinutes(60);
+        parametres.setCoupureRepasMidiDebut(LocalTime.of(12, 0));
+        parametres.setCoupureRepasMidiFin(LocalTime.of(12, 30));
 
         assertThat(FenetreRepas.from(parametres))
                 .extracting(FenetreRepas::libelle)
@@ -128,8 +128,8 @@ class CoupureRepasTest {
 
     @Test
     void uneDureeNulleEteintLesDeuxFenetres() {
-        ParametresDecoupage parametres = new ParametresDecoupage();
-        parametres.setDureePauseRepasMinutes(0);
+        ParametresLegaux parametres = new ParametresLegaux();
+        parametres.setCoupureRepasMinutes(0);
 
         assertThat(FenetreRepas.from(parametres)).isEmpty();
     }

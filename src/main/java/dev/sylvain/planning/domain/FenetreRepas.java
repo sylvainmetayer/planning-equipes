@@ -20,12 +20,12 @@ import java.util.List;
  * joins the window it is judging, so a day straddling midday <i>and</i> evening
  * produces one violation per window, each naming its own hours.</p>
  *
- * <p>The values are the ones the organiser already enters on the Découpage
- * screen ({@link ParametresDecoupage}). They were, until issue #438,
- * generation-time only; {@link #from(ParametresDecoupage)} is what turns the
- * three that matter into facts the solver reads, whatever the
- * {@link ModeGrilleCreneaux} — a grid entered as vacations is never sliced, and
- * used to escape the rule entirely.</p>
+ * <p>The values are the ones the organiser enters with the legal parameters
+ * ({@link ParametresLegaux}), where the meal break lives since it became a
+ * rule of the event rather than a slicing hint. {@link #from(ParametresLegaux)}
+ * turns them into facts the solver reads, whatever the
+ * {@link ModeGrilleCreneaux} — a grid entered as vacations is never sliced,
+ * and used to escape the rule entirely (issue #438).</p>
  *
  * @param libelle       « midi » / « soir », for the violation lines and the
  *                      Pauses screen; never a key, only a label
@@ -48,7 +48,7 @@ public record FenetreRepas(String libelle, LocalTime debut, LocalTime fin, int d
      * permanently above zero hard for a reason that is a data entry mistake,
      * not a planning one.</p>
      */
-    public static List<FenetreRepas> from(ParametresDecoupage parametres) {
+    public static List<FenetreRepas> from(ParametresLegaux parametres) {
         if (parametres == null) {
             return List.of();
         }
@@ -56,15 +56,15 @@ public record FenetreRepas(String libelle, LocalTime debut, LocalTime fin, int d
         add(
                 fenetres,
                 MIDI,
-                parametres.getFenetreRepasMidiDebut(),
-                parametres.getFenetreRepasMidiFin(),
-                parametres.getDureePauseRepasMinutes());
+                parametres.getCoupureRepasMidiDebut(),
+                parametres.getCoupureRepasMidiFin(),
+                parametres.getCoupureRepasMinutes());
         add(
                 fenetres,
                 SOIR,
-                parametres.getFenetreRepasSoirDebut(),
-                parametres.getFenetreRepasSoirFin(),
-                parametres.getDureePauseRepasMinutes());
+                parametres.getCoupureRepasSoirDebut(),
+                parametres.getCoupureRepasSoirFin(),
+                parametres.getCoupureRepasMinutes());
         return List.copyOf(fenetres);
     }
 

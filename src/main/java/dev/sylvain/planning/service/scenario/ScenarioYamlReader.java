@@ -238,12 +238,11 @@ public final class ScenarioYamlReader {
      *                            own defaults, never to the live value, so the
      *                            scenario stays reproducible on its own
      * @param parametresDecoupage what the découpage consumes, read separately and
-     *                            applied by the scenario-import endpoint. Ten of its
-     *                            thirteen fields stop there; the three meal ones are
+     *                            applied by the scenario-import endpoint; none of
+     *                            it reaches the solver. The meal break used to be
+     *                            here and now sits with {@code parametresLegaux},
      *                            projected into {@link dev.sylvain.planning.domain.FenetreRepas}
-     *                            facts and do reach the solver (issue #438), so a
-     *                            planning built from a file carries the windows that
-     *                            file declares
+     *                            facts (issue #438); its old keys are still read
      * @param parametresSolveur   lets a large scenario pin the termination duration
      *                            it actually needs ({@code scenario-complet.yaml}
      *                            takes ~8 min to reach a good score) rather than

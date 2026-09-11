@@ -97,35 +97,7 @@
         </mat-form-field>
         </fieldset>
         <fieldset class="decoupage-groupe form-grid">
-        <legend i18n="@@decoupage.groupe.repas">Pauses repas</legend>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.dureePauseRepas">Durée de la pause repas (min)</mat-label>
-          <input matInput type="number" min="0" name="dureePauseRepasMinutes"
-                 [ngModel]="p.dureePauseRepasMinutes" (ngModelChange)="patchParametre({ dureePauseRepasMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.dureePauseRepas">Vraie pause dans la journée de l'animateur, pas une vacation.</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.repasMidiDebut">Fenêtre repas midi — début</mat-label>
-          <input matInput type="time" name="fenetreRepasMidiDebut"
-                 [ngModel]="p.fenetreRepasMidiDebut" (ngModelChange)="patchParametre({ fenetreRepasMidiDebut: $event })" />
-          <mat-hint i18n="@@decoupage.hint.repasMidi">Fenêtre dans laquelle la pause de midi doit tomber.</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.repasMidiFin">Fenêtre repas midi — fin</mat-label>
-          <input matInput type="time" name="fenetreRepasMidiFin"
-                 [ngModel]="p.fenetreRepasMidiFin" (ngModelChange)="patchParametre({ fenetreRepasMidiFin: $event })" />
-        </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.repasSoirDebut">Fenêtre repas soir — début</mat-label>
-          <input matInput type="time" name="fenetreRepasSoirDebut"
-                 [ngModel]="p.fenetreRepasSoirDebut" (ngModelChange)="patchParametre({ fenetreRepasSoirDebut: $event })" />
-          <mat-hint i18n="@@decoupage.hint.repasSoir">Idem le soir ; vide si le stand ferme avant.</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.repasSoirFin">Fenêtre repas soir — fin</mat-label>
-          <input matInput type="time" name="fenetreRepasSoirFin"
-                 [ngModel]="p.fenetreRepasSoirFin" (ngModelChange)="patchParametre({ fenetreRepasSoirFin: $event })" />
-        </mat-form-field>
+        <legend i18n="@@decoupage.groupe.couverture">Couverture pendant la pause</legend>
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.strategie">Couverture pendant une pause interne résiduelle</mat-label>
           <mat-select name="strategieCouverturePendantPause"

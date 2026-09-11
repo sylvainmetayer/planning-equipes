@@ -40,6 +40,6 @@ public class PauseResource {
         return pauseAnalyzer.analyze(
                 persistenceService.loadPersistedPlanning(),
                 referenceDataService.getParametresLegaux(),
-                FenetreRepas.from(referenceDataService.getParametresDecoupage()));
+                FenetreRepas.from(referenceDataService.getParametresLegaux()));
     }
 }

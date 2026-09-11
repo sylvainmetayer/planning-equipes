@@ -160,6 +160,11 @@ describe('ConstraintsPage', () => {
         pauseMinimaleEntreVacationsMinutes: 0,
         reposQuotidienMinimalMinutes: 9 * 60,
         pauseSurPoste: true,
+        coupureRepasMinutes: 60,
+        coupureRepasMidiDebut: '12:00:00',
+        coupureRepasMidiFin: '14:00:00',
+        coupureRepasSoirDebut: '19:00:00',
+        coupureRepasSoirFin: '21:00:00',
       });
       const page = TestBed.createComponent(ConstraintsPage)
         .componentInstance as unknown as PageInternals;
@@ -176,6 +181,11 @@ describe('ConstraintsPage', () => {
         pauseMinimaleEntreVacationsMinutes: 0,
         reposQuotidienMinimalMinutes: 9 * 60,
         pauseSurPoste: false,
+        coupureRepasMinutes: 60,
+        coupureRepasMidiDebut: '12:00:00',
+        coupureRepasMidiFin: '14:00:00',
+        coupureRepasSoirDebut: '19:00:00',
+        coupureRepasSoirFin: '21:00:00',
       });
     });
 

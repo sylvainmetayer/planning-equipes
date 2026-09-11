@@ -228,7 +228,7 @@ public class DiagnosticMcpTools {
         PauseAnalyzer.RapportPauses rapport = pauseAnalyzer.analyze(
                 persistenceService.loadPersistedPlanning(),
                 referenceDataService.getParametresLegaux(),
-                FenetreRepas.from(referenceDataService.getParametresDecoupage()));
+                FenetreRepas.from(referenceDataService.getParametresLegaux()));
         LocalDate jour = McpArgs.date(date, "date");
         boolean sansRelais = Boolean.TRUE.equals(sansRelaisSeulement);
         boolean planifieesVisibles = standId == null && !sansRelais;

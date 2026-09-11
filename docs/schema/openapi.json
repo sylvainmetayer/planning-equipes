@@ -2955,10 +2955,6 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "dureePauseRepasMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "nombreFamillesDecalage" : {
             "type" : "integer",
             "format" : "int32"
@@ -2966,18 +2962,6 @@
           "dureeDecalageMaxMinutes" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "fenetreRepasMidiDebut" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "fenetreRepasMidiFin" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "fenetreRepasSoirDebut" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "fenetreRepasSoirFin" : {
-            "$ref" : "#/components/schemas/LocalTime"
           },
           "strategieCouverturePendantPause" : {
             "$ref" : "#/components/schemas/PauseCoverageStrategy"
@@ -3008,6 +2992,22 @@
           },
           "pauseSurPoste" : {
             "type" : "boolean"
+          },
+          "coupureRepasMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "coupureRepasMidiDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "coupureRepasMidiFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "coupureRepasSoirDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "coupureRepasSoirFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
           }
         }
       },

@@ -436,7 +436,7 @@ Pour un couple (animateur, date) et chaque fenêtre repas déclarée :
 
 ### Une heure, et pourquoi
 
-La coupure vaut **une heure** par défaut (`dureePauseRepasMinutes`), et non les
+La coupure vaut **une heure** par défaut (`coupureRepasMinutes`), et non les
 45 minutes d'avant. Une fenêtre de deux heures se divise alors en deux
 créneaux entiers — 12-13 ou 13-14 le midi, 19-20 ou 20-21 le soir — qui sont
 l'organisation réelle de l'événement. À 45 minutes, la coupure ne tombait sur
@@ -529,8 +529,9 @@ c'est exactement ainsi qu'une journée 10 h-20 h passait inaperçue.
 lorsqu'une grille AMPLITUDES était découpée en vacations ; une grille saisie
 en VACATIONS n'est jamais découpée, donc personne ne les regardait. Elles
 voyagent désormais en faits de problème (`FenetreRepas`, projeté depuis
-`ParametresDecoupage`), quel que soit le mode. Le stockage n'a pas bougé : une
-seconde table ne créerait qu'une seconde vérité sur « la fenêtre du midi ».
+`ParametresLegaux`), quel que soit le mode. La coupure — durée et fenêtres —
+se règle avec les paramètres légaux, où l'organisateur la cherche, et le
+découpage la lit là pour placer ses relèves.
 
 ### Ce que ça peut rendre infaisable
 

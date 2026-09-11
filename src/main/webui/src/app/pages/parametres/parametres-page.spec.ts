@@ -198,11 +198,6 @@ describe('ParametresPage rendering', () => {
     dureeVacationMinMinutes: 120,
     dureeVacationMaxMinutes: 480,
     dureeChevauchementMinutes: 15,
-    dureePauseRepasMinutes: 45,
-    fenetreRepasMidiDebut: '11:30',
-    fenetreRepasMidiFin: '14:00',
-    fenetreRepasSoirDebut: '18:30',
-    fenetreRepasSoirFin: '21:00',
     nombreFamillesDecalage: 1,
     dureeDecalageMaxMinutes: 60,
   };
@@ -384,7 +379,6 @@ describe('ParametresPage rendering', () => {
     expect(champ('dureeVacationCibleMinutes').value).toBe('240');
     expect(apercu()).toContain("des vacations d'environ 4 h");
     expect(apercu()).toContain('jamais plus de 8 h');
-    expect(apercu()).toContain('pause repas de 45 min');
     // One grid: the "grilles décalées" clause is noise and must stay out.
     expect(apercu()).not.toContain('grilles décalées');
   });
@@ -406,16 +400,16 @@ describe('ParametresPage rendering', () => {
   it('saves the edited settings and says so', async () => {
     await rendre();
 
-    saisir('dureePauseRepasMinutes', '60');
+    saisir('dureeChevauchementMinutes', '20');
     await fixture.whenStable();
     racine().querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
     expect(creneauxApi.saveSlicingParameters).toHaveBeenCalledOnce();
     const [corps] = creneauxApi.saveSlicingParameters.mock.calls[0] as unknown as [
-      { dureePauseRepasMinutes: number },
+      { dureeChevauchementMinutes: number },
     ];
-    expect(corps.dureePauseRepasMinutes).toBe(60);
+    expect(corps.dureeChevauchementMinutes).toBe(20);
     expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
   });
 

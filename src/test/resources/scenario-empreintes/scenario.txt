@@ -1,13 +1,13 @@
 .planning.affectationsPubliees = (vide)
-.planning.animateurs[0]  614a90affd34179e
-.planning.animateurs[1]  94cdeb3fe16428d3
-.planning.animateurs[2]  46885fd00ead2525
+.planning.animateurs[0]  596ff8a7eb895c40
+.planning.animateurs[1]  e69863ebcd8e14da
+.planning.animateurs[2]  cb7f7f2e6c89258a
 .planning.constraintsDesactivees = (vide)
 .planning.contraintesAdHoc = (vide)
 .planning.dateDebutFestival = 2026-07-08
 .planning.fenetresRepas[0]  c42588e8fd4e1c44
 .planning.fenetresRepas[1]  ab651a6748181af8
-.planning.parametresLegaux[0]  98e935f9abd6c3c2
+.planning.parametresLegaux[0]  0226e181d262722a
 .planning.parametresQualite[0]  33dd46864ff3cece
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 3

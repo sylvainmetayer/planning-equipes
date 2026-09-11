@@ -24,16 +24,16 @@ festival:
 parametresLegaux:
   pauseMinimaleEntreVacationsMinutes: 0
 
+  coupureRepasMinutes: 60
+  coupureRepasMidiDebut: 12:00:00
+  coupureRepasMidiFin: 14:00:00
+  coupureRepasSoirDebut: 19:00:00
+  coupureRepasSoirFin: 21:00:00
 parametresDecoupage:
   dureeChevauchementMinutes: 30
-  dureePauseRepasMinutes: 60
   dureeVacationCibleMinutes: 180
   dureeVacationMaxMinutes: 360
   dureeVacationMinMinutes: 250
-  fenetreRepasMidiDebut: 12:00:00
-  fenetreRepasMidiFin: 14:00:00
-  fenetreRepasSoirDebut: 19:00:00
-  fenetreRepasSoirFin: 21:00:00
   strategieCouverturePendantPause: RELEVE
 
 # Constraint dosage this scenario was verified with. The deployment default is

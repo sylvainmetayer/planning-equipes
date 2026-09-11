@@ -11,6 +11,7 @@
 #
 # Generated shape: <package>.<Type> = key, key, key (keys sorted).
 
+
 api.AdminLoginLimiter$Echecs = dernier, nombre
 api.AnimateurResource$AnimateurToken = token
 api.AuthResource$StatutSession = authentifie, nom
@@ -70,8 +71,8 @@ domain.FenetreRepas = debut, dureeMinutes, fin, libelle
 domain.HoraireStand = dateDebut, dateFin, dates, fenetres, id, jours, joursSemaine, mode, motif
 domain.IndisponibiliteStand = date, heureDebut, heureFin, id, motif
 domain.OuvertureStand = date, effectif, heureDebut, heureFin, id, motif
-domain.ParametresDecoupage = dureeChevauchementMinutes, dureeDecalageMaxMinutes, dureePauseRepasMinutes, dureeVacationCibleMinutes, dureeVacationMaxMinutes, dureeVacationMinMinutes, fenetreRepasMidiDebut, fenetreRepasMidiFin, fenetreRepasSoirDebut, fenetreRepasSoirFin, modeGrille, nombreFamillesDecalage, strategieCouverturePendantPause
-domain.ParametresLegaux = dureeHebdomadaireMaxMineurMinutes, dureeHebdomadaireMaxMinutes, pauseMinimaleEntreVacationsMinutes, pauseSurPoste, reposQuotidienMinimalMinutes
+domain.ParametresDecoupage = dureeChevauchementMinutes, dureeDecalageMaxMinutes, dureeVacationCibleMinutes, dureeVacationMaxMinutes, dureeVacationMinMinutes, modeGrille, nombreFamillesDecalage, strategieCouverturePendantPause
+domain.ParametresLegaux = coupureRepasMidiDebut, coupureRepasMidiFin, coupureRepasMinutes, coupureRepasSoirDebut, coupureRepasSoirFin, dureeHebdomadaireMaxMineurMinutes, dureeHebdomadaireMaxMinutes, pauseMinimaleEntreVacationsMinutes, pauseSurPoste, reposQuotidienMinimalMinutes
 domain.ParametresNotifications = actives, ancienneteEchangeJours, delaiRelanceHeures, heureRappelVeille
 domain.ParametresQualite = maxEmplacementsDistinctsParJour
 domain.ParametresSolveur = dureeResolutionSecondes, mailFinResolution

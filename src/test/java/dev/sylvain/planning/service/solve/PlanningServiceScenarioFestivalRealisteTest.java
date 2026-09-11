@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresDecoupage;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -126,8 +127,15 @@ class PlanningServiceScenarioFestivalRealisteTest {
                 .loadScenarioSections(scenario)
                 .parametresDecoupage()
                 .orElseGet(ParametresDecoupage::new);
+        // The file's legal parameters carry the meal break the découpage cuts
+        // around and the solver judges on; a plain-Java harness hands them
+        // over itself, as production reads them from the edition.
+        ParametresLegaux parametresLegaux = planningService
+                .loadScenarioSections(scenario)
+                .parametresLegaux()
+                .orElseGet(ParametresLegaux::new);
         List<Creneau> vacations = VacationGeneratorService.generateVacations(
-                List.copyOf(reference.creneauxParId().values()), parametresDecoupage);
+                List.copyOf(reference.creneauxParId().values()), parametresDecoupage, parametresLegaux);
         List<Stand> stands = List.copyOf(reference.standsById().values());
         HoraireStandResolver.apply(stands, vacations);
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, vacations);
@@ -138,14 +146,11 @@ class PlanningServiceScenarioFestivalRealisteTest {
         // around the windows the file declares and scored against the defaults —
         // and this fixture's evening window sits at 17:00-18:00 precisely so it
         // falls in the gap between the afternoon and the evening block.
-        problem.setFenetresRepas(FenetreRepas.from(parametresDecoupage));
+        problem.setFenetresRepas(FenetreRepas.from(parametresLegaux));
         // And its legal parameters, for the same reason: production reads them
         // from the edition, so a file that declares a minimum gap of zero —
         // what a grid of touching vacations needs — must be heard here too.
-        planningService
-                .loadScenarioSections(scenario)
-                .parametresLegaux()
-                .ifPresent(legaux -> problem.setParametresLegaux(List.of(legaux)));
+        problem.setParametresLegaux(List.of(parametresLegaux));
 
         PlanningEvenement solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
 

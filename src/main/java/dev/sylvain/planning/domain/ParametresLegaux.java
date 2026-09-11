@@ -1,10 +1,20 @@
 package dev.sylvain.planning.domain;
 
+import java.time.LocalTime;
+
 /**
  * Global, admin-configurable legal parameters, loaded as a problem fact into
  * every {@link PlanningEvenement} (single instance, same pattern as
  * {@link ContrainteAdHoc}) so {@code LegalConstraints} can read them without
  * any static/global state.
+ *
+ * <p>The meal break travels with them although it is not a legal obligation:
+ * it is the rule the organisation sets itself, judged by
+ * {@code coupureRepasObligatoire} on the {@link FenetreRepas} facts projected
+ * from these five fields, and used by the découpage to place the midday and
+ * evening reliefs. It used to live with the découpage parameters, which is
+ * where nobody looked for it, and where a grid entered as vacations never
+ * read it at all (issue #438).</p>
  */
 public class ParametresLegaux {
 
@@ -62,11 +72,29 @@ public class ParametresLegaux {
      */
     public static final boolean PAUSE_SUR_POSTE_PAR_DEFAUT = false;
 
+    /**
+     * How long the meal break lasts, uninterrupted: one hour, so that a
+     * two-hour window splits into two whole slots — 12-13 or 13-14 — that the
+     * organiser can plan rather than endure (issue #438).
+     */
+    public static final int COUPURE_REPAS_MINUTES_PAR_DEFAUT = 60;
+
+    public static final LocalTime COUPURE_REPAS_MIDI_DEBUT_PAR_DEFAUT = LocalTime.of(12, 0);
+    public static final LocalTime COUPURE_REPAS_MIDI_FIN_PAR_DEFAUT = LocalTime.of(14, 0);
+    public static final LocalTime COUPURE_REPAS_SOIR_DEBUT_PAR_DEFAUT = LocalTime.of(19, 0);
+    public static final LocalTime COUPURE_REPAS_SOIR_FIN_PAR_DEFAUT = LocalTime.of(21, 0);
+
     private int dureeHebdomadaireMaxMinutes = DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT;
     private int dureeHebdomadaireMaxMineurMinutes = DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT;
     private int pauseMinimaleEntreVacationsMinutes = PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT;
     private int reposQuotidienMinimalMinutes = REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT;
     private boolean pauseSurPoste = PAUSE_SUR_POSTE_PAR_DEFAUT;
+
+    private int coupureRepasMinutes = COUPURE_REPAS_MINUTES_PAR_DEFAUT;
+    private LocalTime coupureRepasMidiDebut = COUPURE_REPAS_MIDI_DEBUT_PAR_DEFAUT;
+    private LocalTime coupureRepasMidiFin = COUPURE_REPAS_MIDI_FIN_PAR_DEFAUT;
+    private LocalTime coupureRepasSoirDebut = COUPURE_REPAS_SOIR_DEBUT_PAR_DEFAUT;
+    private LocalTime coupureRepasSoirFin = COUPURE_REPAS_SOIR_FIN_PAR_DEFAUT;
 
     public ParametresLegaux() {}
 
@@ -124,5 +152,45 @@ public class ParametresLegaux {
 
     public void setPauseSurPoste(boolean pauseSurPoste) {
         this.pauseSurPoste = pauseSurPoste;
+    }
+
+    public int getCoupureRepasMinutes() {
+        return coupureRepasMinutes;
+    }
+
+    public void setCoupureRepasMinutes(int coupureRepasMinutes) {
+        this.coupureRepasMinutes = coupureRepasMinutes;
+    }
+
+    public LocalTime getCoupureRepasMidiDebut() {
+        return coupureRepasMidiDebut;
+    }
+
+    public void setCoupureRepasMidiDebut(LocalTime coupureRepasMidiDebut) {
+        this.coupureRepasMidiDebut = coupureRepasMidiDebut;
+    }
+
+    public LocalTime getCoupureRepasMidiFin() {
+        return coupureRepasMidiFin;
+    }
+
+    public void setCoupureRepasMidiFin(LocalTime coupureRepasMidiFin) {
+        this.coupureRepasMidiFin = coupureRepasMidiFin;
+    }
+
+    public LocalTime getCoupureRepasSoirDebut() {
+        return coupureRepasSoirDebut;
+    }
+
+    public void setCoupureRepasSoirDebut(LocalTime coupureRepasSoirDebut) {
+        this.coupureRepasSoirDebut = coupureRepasSoirDebut;
+    }
+
+    public LocalTime getCoupureRepasSoirFin() {
+        return coupureRepasSoirFin;
+    }
+
+    public void setCoupureRepasSoirFin(LocalTime coupureRepasSoirFin) {
+        this.coupureRepasSoirFin = coupureRepasSoirFin;
     }
 }

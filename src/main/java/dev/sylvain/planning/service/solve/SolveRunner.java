@@ -111,7 +111,7 @@ final class SolveRunner {
             problem.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
         }
         if (problem.getFenetresRepas() == null || problem.getFenetresRepas().isEmpty()) {
-            problem.setFenetresRepas(FenetreRepas.from(referenceDataService.getParametresDecoupage()));
+            problem.setFenetresRepas(FenetreRepas.from(referenceDataService.getParametresLegaux()));
         }
         if (problem.getConstraintsDesactivees() == null
                 || problem.getConstraintsDesactivees().isEmpty()) {

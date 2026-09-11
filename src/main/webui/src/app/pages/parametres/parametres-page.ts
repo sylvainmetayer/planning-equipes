@@ -343,7 +343,7 @@ export class ParametresPage {
       p.nombreFamillesDecalage > 1
         ? $localize`:@@decoupage.apercu.familles:, réparties sur ${p.nombreFamillesDecalage}:count: grilles décalées`
         : '';
-    return $localize`:@@decoupage.apercu:Avec ces réglages : des vacations d'environ ${heures(p.dureeVacationCibleMinutes)}:cible: h (jamais plus de ${heures(p.dureeVacationMaxMinutes)}:max: h), un relais de ${p.dureeChevauchementMinutes}:chevauchement: min et une pause repas de ${p.dureePauseRepasMinutes}:repas: min${families}:familles:.`;
+    return $localize`:@@decoupage.apercu:Avec ces réglages : des vacations d'environ ${heures(p.dureeVacationCibleMinutes)}:cible: h (jamais plus de ${heures(p.dureeVacationMaxMinutes)}:max: h) et un relais de ${p.dureeChevauchementMinutes}:chevauchement: min${families}:familles:.`;
   });
 
   /**

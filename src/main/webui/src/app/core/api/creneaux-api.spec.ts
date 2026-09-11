@@ -51,7 +51,7 @@ describe('CreneauxApi', () => {
   });
 
   it('writes the whole slicing settings on one path and the grid mode alone on another', async () => {
-    const parametres = { dureePauseRepasMinutes: 60 } as ParametresDecoupage;
+    const parametres = { dureeChevauchementMinutes: 20 } as ParametresDecoupage;
 
     await creneaux.saveSlicingParameters(parametres);
     await creneaux.setGridMode('VACATIONS');
