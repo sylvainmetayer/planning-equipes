@@ -20,6 +20,8 @@ import {
   effectifFenetreInvalide,
   effectifOuvertureInvalide,
   fenetreVide,
+  horairesCopiedFrom,
+  windowsBeyondMaximumCount,
   normaliserEffectif,
   ouvertureVide,
   toDraft,
@@ -480,5 +482,118 @@ describe('normaliserHoraire', () => {
     expect(normalise.fenetres).toEqual(
       horaire().fenetres.map((fenetre) => ({ ...fenetre, effectif: null })),
     );
+  });
+});
+
+describe('horairesCopiedFrom — la journée type d’un stand reprise dans un autre', () => {
+  function modele(): Stand {
+    return {
+      id: 'PAVILLON',
+      nom: 'Pavillon',
+      typologiesProposees: ['STRATEGIE'],
+      effectifMin: 1,
+      effectifMax: 4,
+      reserveMajeurs: false,
+      horaires: [
+        { ...horaire({ id: 7, fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }] }) },
+      ],
+      ouvertures: [
+        {
+          id: 11,
+          date: '2026-07-10',
+          heureDebut: '10:00',
+          heureFin: '12:00',
+          motif: 'Inauguration',
+          effectif: 2,
+        },
+      ],
+      indisponibilites: [
+        { id: 12, date: '2026-07-11', heureDebut: '18:00', heureFin: null, motif: 'Concert' },
+      ],
+    } as Stand;
+  }
+
+  it('copies the three lists, window effectifs included', () => {
+    const copie = horairesCopiedFrom(modele());
+
+    expect(copie.horaires).toHaveLength(1);
+    expect(copie.horaires[0].fenetres).toEqual([
+      { heureDebut: '14:00', heureFin: null, effectif: 3 },
+    ]);
+    expect(copie.ouvertures[0]).toMatchObject({
+      date: '2026-07-10',
+      effectif: 2,
+      motif: 'Inauguration',
+    });
+    expect(copie.indisponibilites[0]).toMatchObject({ date: '2026-07-11', motif: 'Concert' });
+  });
+
+  // A rule or an exception belongs to the stand it was read from: sent with
+  // the source's id, the target would claim rows that are not its own.
+  it('resets every id: these are new rows of the target stand', () => {
+    const copie = horairesCopiedFrom(modele());
+
+    expect(copie.horaires[0].id).toBeNull();
+    expect(copie.ouvertures[0].id).toBeNull();
+    expect(copie.indisponibilites[0].id).toBeNull();
+  });
+
+  it('never aliases the source: editing the copy must not write through', () => {
+    const source = modele();
+    const copie = horairesCopiedFrom(source);
+
+    copie.horaires[0].fenetres[0].heureDebut = '09:00';
+    copie.ouvertures[0].motif = 'changé';
+
+    expect(source.horaires[0].fenetres[0].heureDebut).toBe('14:00');
+    expect(source.ouvertures[0].motif).toBe('Inauguration');
+  });
+
+  it('copies an empty schedule as an empty schedule', () => {
+    expect(
+      horairesCopiedFrom({ ...modele(), horaires: [], ouvertures: [], indisponibilites: [] }),
+    ).toEqual({
+      horaires: [],
+      ouvertures: [],
+      indisponibilites: [],
+    });
+  });
+});
+
+describe('windowsBeyondMaximumCount', () => {
+  it('counts the windows of the rules and of the dated openings above the maximum', () => {
+    const horaires = {
+      horaires: [
+        horaire({
+          fenetres: [
+            { heureDebut: '10:00', heureFin: null, effectif: 5 },
+            { heureDebut: '14:00', heureFin: null, effectif: 2 },
+          ],
+        }),
+      ],
+      ouvertures: [{ ...ouvertureVide(), date: '2026-07-10', heureDebut: '10:00', effectif: 3 }],
+    };
+
+    expect(windowsBeyondMaximumCount(horaires, 2)).toBe(2);
+    expect(windowsBeyondMaximumCount(horaires, 5)).toBe(0);
+  });
+
+  it('ignores a window without effectif, which takes the stand minimum', () => {
+    const horaires = {
+      horaires: [horaire()],
+      ouvertures: [{ ...ouvertureVide(), date: '2026-07-10', heureDebut: '10:00' }],
+    };
+
+    expect(windowsBeyondMaximumCount(horaires, 1)).toBe(0);
+  });
+
+  // A zero or a fraction is refused for another reason, with its own sentence.
+  it('does not count a window whose effectif is invalid on its own', () => {
+    const horaires = {
+      horaires: [horaire({ fenetres: [{ heureDebut: '10:00', heureFin: null, effectif: 0 }] })],
+      ouvertures: [],
+    };
+
+    expect(windowsBeyondMaximumCount(horaires, 1)).toBe(0);
   });
 });

@@ -31,7 +31,9 @@ import {
   conflitOuvertureFermeture,
   effectifInvalide,
   effectifOuvertureInvalide,
+  horairesCopiedFrom,
   indisponibiliteInvalide,
+  windowsBeyondMaximumCount,
   ouvertureInvalide,
   ouvertureVide,
   patchDansListe,
@@ -59,6 +61,11 @@ export interface StandFormData {
  *
  * The recurring rules are edited by {@link HoraireReglesEditor}, shared with
  * the bulk edit: a rule opens folded, its windows typed as one line.
+ *
+ * « Copier les horaires de » takes the whole schedule of another stand into
+ * the draft — rules, dated exceptions, window effectifs — without saving:
+ * most stands follow one of a few typical days, and the preview shows the
+ * copy before the form is submitted.
  */
 @Component({
   selector: 'app-stand-form-dialog',
@@ -160,6 +167,51 @@ export class StandFormDialog {
   protected decrireJour(jour: JourResolu): string {
     return decrireJour(jour);
   }
+
+  /** Stands whose schedule can be copied into this one: every other stand of the edition. */
+  protected readonly standsModeles = computed(() =>
+    this.store.stands().filter((stand) => stand.id !== this.editingId()),
+  );
+
+  /** The stand last copied from, or `null` — what the status line and the warning below are about. */
+  protected readonly standSource = signal<Stand | null>(null);
+
+  /** Replaces the draft's schedule with `standId`'s, nothing saved: the preview says what came in. */
+  protected copyHorairesFrom(standId: string | null): void {
+    const source = this.standsModeles().find((stand) => stand.id === standId) ?? null;
+    this.standSource.set(source);
+    if (source !== null) {
+      this.patch(horairesCopiedFrom(source));
+    }
+  }
+
+  protected readonly copieMessage = computed(() => {
+    const source = this.standSource();
+    if (source === null) {
+      return null;
+    }
+    const nom = source.nom || source.id;
+    const regles = (source.horaires ?? []).length;
+    const exceptions = (source.ouvertures ?? []).length + (source.indisponibilites ?? []).length;
+    return $localize`:@@stands.copieHoraires.faite:Horaires de « ${nom}:nom: » copiés : ${regles}:regles: règle(s), ${exceptions}:exceptions: exception(s) datée(s). Enregistrez pour les conserver.`;
+  });
+
+  /**
+   * A copied window asking for more seats than this stand holds — the server
+   * refuses it, and the rule editor already blocks the submit; this names the
+   * cause at the moment of the copy, next to the way out.
+   */
+  protected readonly copieAvertissement = computed(() => {
+    if (this.standSource() === null) {
+      return null;
+    }
+    const effectifMax = this.effectifMaxDeclare();
+    const fenetres = windowsBeyondMaximumCount(this.draft(), effectifMax);
+    if (fenetres === 0) {
+      return null;
+    }
+    return $localize`:@@stands.copieHoraires.effectifDepasse:${fenetres}:fenetres: fenêtre(s) copiée(s) dépasse(nt) l'effectif maximum de ce stand (${effectifMax}:effectifMax:) : relevez-le, ou baissez leur effectif.`;
+  });
 
   /** Day label of the preview strip: `08/07`, short enough for a dozen cells in a row. */
   protected libelleJour(date: string): string {

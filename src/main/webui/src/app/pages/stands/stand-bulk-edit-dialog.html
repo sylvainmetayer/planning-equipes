@@ -110,7 +110,7 @@
 <div class="bulk-field-group span-2 horaires-section">
   <h3 i18n="@@stands.bulk.horaires.title">Horaires récurrents</h3>
   <p class="empty-hint" i18n="@@stands.bulk.horaires.hint">
-    Les règles s'appliquent à toute la sélection ; les fermetures et ouvertures ponctuelles de chaque stand ne sont pas touchées.
+    Les règles s'appliquent à toute la sélection ; les fermetures et ouvertures ponctuelles de chaque stand ne bougent qu'en copiant un stand modèle.
   </p>
   <mat-form-field appearance="outline">
     <mat-label i18n="@@stands.bulk.horaires.mode">Que faire des horaires</mat-label>
@@ -124,6 +124,23 @@
   @if (patch().horaires.mode === 'AJOUTER' || patch().horaires.mode === 'REMPLACER') {
     <app-horaire-regles-editor prefixe="bulk" [horaires]="patch().horaires.horaires"
                                [disabled]="editingLocked()" (horairesChange)="remplacerHoraires($event)" />
+  }
+  @if (patch().horaires.mode === 'DEPUIS_STAND') {
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@stands.bulk.horaires.standModele">Stand modèle</mat-label>
+      <mat-select name="standModele" [disabled]="editingLocked()"
+                  [ngModel]="patch().horaires.source?.id ?? null" (ngModelChange)="choisirStandModele($event)">
+        @for (stand of store.stands(); track stand.id) {
+          <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    @if (resumeStandModele(); as resume) {
+      <p class="empty-hint" role="status">{{ resume }}</p>
+    }
+    @if (standsBeyondMaximum().length) {
+      <p class="form-warning" role="status">{{ effectifDepasseMessage() }}</p>
+    }
   }
 </div>
 </fieldset>

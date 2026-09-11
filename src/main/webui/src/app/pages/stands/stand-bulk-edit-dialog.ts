@@ -23,6 +23,7 @@ import {
   patchStandEstVide,
   patchStandVide,
   standsAvecEffectifInvalide,
+  standsWithWindowBeyondMaximum,
 } from './stand-bulk-edit';
 
 export interface StandBulkEditData {
@@ -37,8 +38,10 @@ export interface StandBulkEditData {
  *
  * Recurring horaires are in scope — they are exactly the kind of thing a whole
  * set of stands shares ("open from 14:00 to closing, every day" covers thirty of
- * them on the reference event). Dated exceptions stay out: those are
- * per-stand, per-day data by nature.
+ * them on the reference event). Dated exceptions are per-stand, per-day data
+ * by nature, so the rule modes leave them alone; the one mode that touches
+ * them is `DEPUIS_STAND`, which hands every selected stand the whole schedule
+ * of a model stand — a typical day is its exceptions too.
  */
 @Component({
   selector: 'app-stand-bulk-edit-dialog',
@@ -80,6 +83,32 @@ export class StandBulkEditDialog {
     return $localize`:@@stands.bulk.effectifInvalide:Effectif maximum inférieur au minimum pour : ${noms}:stands:`;
   });
 
+  /**
+   * Stands a copied window would push past their `effectifMax`: the server
+   * refuses those one by one, so the batch is not blocked — the maximum is
+   * usually raised in the same edit — but the dialog says which ones first.
+   */
+  protected readonly standsBeyondMaximum = computed(() =>
+    standsWithWindowBeyondMaximum(this.data.stands, this.patch(), this.store.emplacements()),
+  );
+  protected readonly effectifDepasseMessage = computed(() => {
+    const noms = this.standsBeyondMaximum()
+      .map((stand) => stand.nom || stand.id)
+      .join(', ');
+    return $localize`:@@stands.bulk.horaires.effectifDepasse:Une fenêtre copiée dépasse l'effectif maximum de : ${noms}:stands: — relevez-le, ou ces stands seront refusés.`;
+  });
+
+  /** What the model stand brings, so the choice is checked before it is applied. */
+  protected readonly resumeStandModele = computed(() => {
+    const source = this.patch().horaires.source;
+    if (source === null) {
+      return null;
+    }
+    const regles = (source.horaires ?? []).length;
+    const exceptions = (source.ouvertures ?? []).length + (source.indisponibilites ?? []).length;
+    return $localize`:@@stands.bulk.horaires.resumeModele:${regles}:regles: règle(s) et ${exceptions}:exceptions: exception(s) datée(s) remplaceront les horaires de chaque stand coché.`;
+  });
+
   protected readonly modesBooleen: { value: ModeBooleen; label: string }[] = [
     { value: 'INCHANGE', label: $localize`:@@bulk.mode.inchange:Ne pas modifier` },
     { value: 'OUI', label: $localize`:@@common.oui:Oui` },
@@ -106,18 +135,29 @@ export class StandBulkEditDialog {
     { value: 'AJOUTER', label: $localize`:@@bulk.mode.ajouter:Ajouter` },
     { value: 'REMPLACER', label: $localize`:@@bulk.mode.remplacer:Remplacer` },
     { value: 'EFFACER', label: $localize`:@@bulk.mode.effacer:Effacer` },
+    {
+      value: 'DEPUIS_STAND',
+      label: $localize`:@@bulk.mode.depuisStand:Remplacer par ceux d'un stand`,
+    },
   ];
   /** First problem among the rules being applied, or `null` — same check as the single-stand form. */
   protected readonly erreurHoraires = computed(() => {
     const patch = this.patch().horaires;
-    if (patch.mode === 'INCHANGE' || patch.mode === 'EFFACER') {
-      return null;
+    if (patch.mode === 'AJOUTER' || patch.mode === 'REMPLACER') {
+      return premiereErreurHoraire(patch.horaires);
     }
-    return premiereErreurHoraire(patch.horaires);
+    // EFFACER and DEPUIS_STAND carry no typed rule; a copied one was already saved once.
+    return null;
   });
 
   protected updateModeHoraires(mode: ModeHoraires): void {
     this.update({ horaires: { ...this.patch().horaires, mode } });
+  }
+
+  /** The model stand of `DEPUIS_STAND`, resolved against the store — the selection may well contain it. */
+  protected choisirStandModele(standId: string | null): void {
+    const source = this.store.stands().find((stand) => stand.id === standId) ?? null;
+    this.update({ horaires: { ...this.patch().horaires, source } });
   }
 
   /** The rules as the shared editor hands them back — the whole list, every time. */

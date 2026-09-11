@@ -181,6 +181,52 @@ export function brouillonInvalide(draft: StandDraft): boolean {
   );
 }
 
+/* ----------------------- copy from another stand ----------------------- */
+//
+// Most stands of an event follow two or three typical days (the pavilion, the
+// late-night stand, the publisher's stand). Copying the whole schedule of one
+// stand into another spares retyping it rule by rule.
+
+/** The three schedule lists of a stand, as the draft holds them. */
+export type HorairesDraft = Pick<StandDraft, 'horaires' | 'ouvertures' | 'indisponibilites'>;
+
+/**
+ * The whole schedule of `source` — recurring rules, dated openings and dated
+ * closures, window effectifs included — as a patch of the draft. Every id is
+ * reset: a rule or an exception belongs to the stand it was read from, and
+ * these are new rows of the stand being edited. Deep-copied, like `toDraft`,
+ * so editing the draft never writes through to the store's objects.
+ */
+export function horairesCopiedFrom(source: Stand): HorairesDraft {
+  const copie = toDraft(source);
+  return {
+    horaires: copie.horaires.map((horaire) => ({ ...horaire, id: null })),
+    ouvertures: copie.ouvertures.map((ouverture) => ({ ...ouverture, id: null })),
+    indisponibilites: copie.indisponibilites.map((indispo) => ({ ...indispo, id: null })),
+  };
+}
+
+/**
+ * How many windows — of a rule or of a dated opening — ask for more seats than
+ * `effectifMax`, counting only windows that would be fine on a bigger stand:
+ * a zero or a fraction is a different mistake, with its own sentence. The
+ * server refuses such a window, so a copied schedule that carries one is
+ * announced before the save is attempted.
+ */
+export function windowsBeyondMaximumCount(
+  horaires: Pick<HorairesDraft, 'horaires' | 'ouvertures'>,
+  effectifMax: number,
+): number {
+  const effectifs = [
+    ...horaires.horaires.flatMap((horaire) => horaire.fenetres.map((fenetre) => fenetre.effectif)),
+    ...horaires.ouvertures.map((ouverture) => ouverture.effectif),
+  ];
+  return effectifs.filter(
+    (effectif) =>
+      !effectifFenetreInvalide(effectif) && effectifFenetreInvalide(effectif, effectifMax),
+  ).length;
+}
+
 /* --------------------------- entity <-> draft --------------------------- */
 
 export function toDraft(stand: Stand | null): StandDraft {

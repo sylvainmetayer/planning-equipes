@@ -159,3 +159,18 @@
   color: var(--mat-sys-on-surface);
   padding: 0;
 }
+
+/* « Copier les horaires de… » of the stand form: one field above the rule
+   editor, its status line and its capacity warning on their own rows. */
+.stand-copie-horaires {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.stand-copie-statut {
+  margin: 0 0 0.75rem;
+}
+
+.stand-copie-avertissement {
+  margin-top: 0.25rem;
+}

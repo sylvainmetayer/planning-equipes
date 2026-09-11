@@ -8,7 +8,13 @@ import {
   appliquerModeListe,
 } from '../../core/bulk-edit';
 import { Emplacement, HoraireStand, NiveauEffort, Stand } from '../../core/models';
-import { HoraireDraft, normaliserHoraire } from './stand-draft';
+import {
+  HoraireDraft,
+  HorairesDraft,
+  horairesCopiedFrom,
+  windowsBeyondMaximumCount,
+  normaliserHoraire,
+} from './stand-draft';
 
 /** `DEFINIR` ties every selected stand to one emplacement, `EFFACER` unties them all. */
 export type ModeEmplacement = 'INCHANGE' | 'DEFINIR' | 'EFFACER';
@@ -22,8 +28,20 @@ export type ModeEmplacement = 'INCHANGE' | 'DEFINIR' | 'EFFACER';
  * `AJOUTER` appends the rules to whatever each stand already has; `REMPLACER`
  * discards each stand's own rules first; `EFFACER` drops them all, which returns
  * every stand to its dated exceptions (or to open-all-day if it has none).
+ *
+ * `DEPUIS_STAND` is the typical-day gesture: every selected stand takes the
+ * whole schedule of one model stand — rules **and** dated exceptions, window
+ * effectifs included — where the three modes above only touch the rules.
  */
-export type ModeHoraires = 'INCHANGE' | 'AJOUTER' | 'REMPLACER' | 'EFFACER';
+export type ModeHoraires = 'INCHANGE' | 'AJOUTER' | 'REMPLACER' | 'EFFACER' | 'DEPUIS_STAND';
+
+/** The horaires part of a patch: the typed rules, or the stand to copy from. */
+export interface PatchHoraires {
+  mode: ModeHoraires;
+  horaires: HoraireDraft[];
+  /** The model stand of `DEPUIS_STAND`; `null` until one is chosen, which leaves the patch inert. */
+  source: Stand | null;
+}
 
 export interface StandBulkPatch {
   emplacement: { mode: ModeEmplacement; emplacementId: string | null };
@@ -34,7 +52,7 @@ export interface StandBulkPatch {
   reserveMajeurs: ModeBooleen;
   premium: ModeBooleen;
   niveauEffort: 'INCHANGE' | NiveauEffort;
-  horaires: { mode: ModeHoraires; horaires: HoraireDraft[] };
+  horaires: PatchHoraires;
 }
 
 export function patchStandVide(): StandBulkPatch {
@@ -46,7 +64,7 @@ export function patchStandVide(): StandBulkPatch {
     reserveMajeurs: 'INCHANGE',
     premium: 'INCHANGE',
     niveauEffort: 'INCHANGE',
-    horaires: { mode: 'INCHANGE', horaires: [] },
+    horaires: { mode: 'INCHANGE', horaires: [], source: null },
   };
 }
 
@@ -58,9 +76,7 @@ export function patchStandEstVide(patch: StandBulkPatch): boolean {
   const typologiesInactives =
     patch.typologies.mode === 'AUCUN' ||
     (patch.typologies.typologies.length === 0 && patch.typologies.mode !== 'REMPLACER');
-  const horairesInactifs =
-    patch.horaires.mode === 'INCHANGE' ||
-    (patch.horaires.mode !== 'EFFACER' && patch.horaires.horaires.length === 0);
+  const horairesInactifs = patchHorairesIsEmpty(patch.horaires);
   return (
     emplacementInactif &&
     typologiesInactives &&
@@ -73,6 +89,21 @@ export function patchStandEstVide(patch: StandBulkPatch): boolean {
   );
 }
 
+/** True while the horaires part would change nothing: no rule typed, or no model stand chosen. */
+function patchHorairesIsEmpty(patch: PatchHoraires): boolean {
+  switch (patch.mode) {
+    case 'INCHANGE':
+      return true;
+    case 'EFFACER':
+      return false;
+    case 'DEPUIS_STAND':
+      return patch.source === null;
+    case 'AJOUTER':
+    case 'REMPLACER':
+      return patch.horaires.length === 0;
+  }
+}
+
 export function appliquerPatchStand(
   stand: Stand,
   patch: StandBulkPatch,
@@ -80,6 +111,7 @@ export function appliquerPatchStand(
 ): Stand {
   return {
     ...stand,
+    ...applyExceptions(patch.horaires),
     emplacement: appliquerEmplacement(stand.emplacement ?? null, patch.emplacement, emplacements),
     typologiesProposees: appliquerModeListe(
       stand.typologiesProposees ?? [],
@@ -92,7 +124,7 @@ export function appliquerPatchStand(
     premium: appliquerModeBooleen(Boolean(stand.premium), patch.premium),
     niveauEffort:
       patch.niveauEffort === 'INCHANGE' ? (stand.niveauEffort ?? 'NORMAL') : patch.niveauEffort,
-    horaires: appliquerHoraires(stand.horaires ?? [], patch.horaires),
+    horaires: applyHoraires(stand.horaires ?? [], patch.horaires),
   };
 }
 
@@ -101,10 +133,7 @@ export function appliquerPatchStand(
  * per stand, so handing the same objects to fifty payloads would send fifty
  * stands the id of one of them.
  */
-function appliquerHoraires(
-  actuels: readonly HoraireStand[],
-  patch: StandBulkPatch['horaires'],
-): HoraireStand[] {
+function applyHoraires(actuels: readonly HoraireStand[], patch: PatchHoraires): HoraireStand[] {
   switch (patch.mode) {
     case 'INCHANGE':
       return [...actuels];
@@ -114,7 +143,26 @@ function appliquerHoraires(
       return patch.horaires.map(copierHoraire);
     case 'AJOUTER':
       return [...actuels, ...patch.horaires.map(copierHoraire)];
+    case 'DEPUIS_STAND':
+      return patch.source === null
+        ? [...actuels]
+        : (patch.source.horaires ?? []).map(copierHoraire);
   }
+}
+
+/**
+ * The dated exceptions of the model stand, ids reset, in `DEPUIS_STAND` mode
+ * — copying a typical day means its openings and closures too. Every other
+ * mode leaves each stand's own exceptions alone, hence the empty patch.
+ */
+function applyExceptions(
+  patch: PatchHoraires,
+): Pick<Stand, 'ouvertures' | 'indisponibilites'> | Record<string, never> {
+  if (patch.mode !== 'DEPUIS_STAND' || patch.source === null) {
+    return {};
+  }
+  const { ouvertures, indisponibilites } = horairesCopiedFrom(patch.source);
+  return { ouvertures, indisponibilites };
 }
 
 function copierHoraire(horaire: HoraireDraft): HoraireStand {
@@ -147,6 +195,27 @@ export function standsAvecEffectifInvalide(
   return stands.filter((stand) => {
     const resultat = appliquerPatchStand(stand, patch, emplacements);
     return Number(resultat.effectifMax) < Number(resultat.effectifMin);
+  });
+}
+
+/**
+ * Stands the patch would leave with a window asking for more seats than their
+ * `effectifMax` — the server refuses each such stand, so the dialog says which
+ * ones before the batch is sent. Not blocking: raising the maximum in the same
+ * bulk edit is the usual fix, and this reads the patched value.
+ */
+export function standsWithWindowBeyondMaximum(
+  stands: readonly Stand[],
+  patch: StandBulkPatch,
+  emplacements: readonly Emplacement[],
+): Stand[] {
+  return stands.filter((stand) => {
+    const resultat = appliquerPatchStand(stand, patch, emplacements);
+    const horaires: Pick<HorairesDraft, 'horaires' | 'ouvertures'> = {
+      horaires: resultat.horaires,
+      ouvertures: resultat.ouvertures ?? [],
+    };
+    return windowsBeyondMaximumCount(horaires, Number(resultat.effectifMax)) > 0;
   });
 }
 

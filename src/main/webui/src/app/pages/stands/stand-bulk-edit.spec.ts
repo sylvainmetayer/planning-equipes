@@ -6,6 +6,7 @@ import {
   patchStandEstVide,
   patchStandVide,
   standsAvecEffectifInvalide,
+  standsWithWindowBeyondMaximum,
 } from './stand-bulk-edit';
 
 const kiosque: Emplacement = { id: 'kiosque', nom: 'Kiosque', latitude: 47.2, longitude: -1.55 };
@@ -42,6 +43,18 @@ describe('patchStandEstVide', () => {
     expect(
       patchStandEstVide(patch({ emplacement: { mode: 'DEFINIR', emplacementId: null } })),
     ).toBe(true);
+  });
+
+  // "Replace with another stand's" without naming which one changes nothing.
+  it('reste vide tant qu’aucun stand modèle n’est choisi', () => {
+    expect(
+      patchStandEstVide(patch({ horaires: { mode: 'DEPUIS_STAND', horaires: [], source: null } })),
+    ).toBe(true);
+    expect(
+      patchStandEstVide(
+        patch({ horaires: { mode: 'DEPUIS_STAND', horaires: [], source: standModele() } }),
+      ),
+    ).toBe(false);
   });
 
   it('n’est plus vide dès qu’un champ est renseigné', () => {
@@ -137,7 +150,7 @@ describe('appliquerPatchStand', () => {
 
     const resultat = appliquerPatchStand(
       avecHoraire,
-      patch({ horaires: { mode: 'REMPLACER', horaires: [regleQuotidienne()] } }),
+      patch({ horaires: { mode: 'REMPLACER', horaires: [regleQuotidienne()], source: null } }),
       emplacements,
     );
 
@@ -154,7 +167,7 @@ describe('appliquerPatchStand', () => {
 
     const resultat = appliquerPatchStand(
       avecHoraire,
-      patch({ horaires: { mode: 'AJOUTER', horaires: [regleQuotidienne()] } }),
+      patch({ horaires: { mode: 'AJOUTER', horaires: [regleQuotidienne()], source: null } }),
       emplacements,
     );
 
@@ -171,7 +184,7 @@ describe('appliquerPatchStand', () => {
 
     const resultat = appliquerPatchStand(
       avecTout,
-      patch({ horaires: { mode: 'EFFACER', horaires: [] } }),
+      patch({ horaires: { mode: 'EFFACER', horaires: [], source: null } }),
       emplacements,
     );
 
@@ -194,7 +207,7 @@ describe('appliquerPatchStand', () => {
 
     const resultat = appliquerPatchStand(
       stand(),
-      patch({ horaires: { mode: 'REMPLACER', horaires: [quittee] } }),
+      patch({ horaires: { mode: 'REMPLACER', horaires: [quittee], source: null } }),
       emplacements,
     );
 
@@ -207,13 +220,150 @@ describe('appliquerPatchStand', () => {
    */
   it('ne partage pas les objets de règle entre deux stands', () => {
     const modele = regleQuotidienne();
-    const patchCommun = patch({ horaires: { mode: 'REMPLACER', horaires: [modele] } });
+    const patchCommun = patch({
+      horaires: { mode: 'REMPLACER', horaires: [modele], source: null },
+    });
 
     const premier = appliquerPatchStand(stand({ id: 'A' }), patchCommun, emplacements);
     const second = appliquerPatchStand(stand({ id: 'B' }), patchCommun, emplacements);
 
     expect(premier.horaires[0]).not.toBe(second.horaires[0]);
     expect(premier.horaires[0].fenetres[0]).not.toBe(second.horaires[0].fenetres[0]);
+  });
+});
+
+/** The typical day copied by `DEPUIS_STAND`: one rule, one dated opening, one dated closure. */
+function standModele(): Stand {
+  return stand({
+    id: 'PAVILLON',
+    nom: 'Pavillon',
+    effectifMax: 4,
+    horaires: [
+      {
+        ...regleQuotidienne(),
+        id: 7,
+        fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }],
+      },
+    ],
+    ouvertures: [
+      {
+        id: 11,
+        date: '2026-07-10',
+        heureDebut: '10:00',
+        heureFin: '12:00',
+        motif: 'Inauguration',
+        effectif: 2,
+      },
+    ],
+    indisponibilites: [
+      { id: 12, date: '2026-07-11', heureDebut: '18:00', heureFin: null, motif: 'Concert' },
+    ],
+  });
+}
+
+function depuisStand(source: Stand | null = standModele()): StandBulkPatch {
+  return patch({ horaires: { mode: 'DEPUIS_STAND', horaires: [], source } });
+}
+
+describe('appliquerPatchStand — DEPUIS_STAND, la journée type d’un stand sur la sélection', () => {
+  const emplacements = [kiosque, mairie];
+
+  it('remplace règles, ouvertures et fermetures datées par celles du stand modèle', () => {
+    const target = stand({
+      horaires: [{ ...regleQuotidienne(), id: 3 }],
+      indisponibilites: [
+        { id: 1, date: '2026-08-01', heureDebut: '14:00', heureFin: null, motif: null },
+      ],
+    });
+
+    const resultat = appliquerPatchStand(target, depuisStand(), emplacements);
+
+    expect(resultat.horaires).toHaveLength(1);
+    expect(resultat.horaires[0].fenetres).toEqual([
+      { heureDebut: '14:00', heureFin: null, effectif: 3 },
+    ]);
+    expect(resultat.ouvertures).toHaveLength(1);
+    expect(resultat.ouvertures[0]).toMatchObject({ date: '2026-07-10', effectif: 2 });
+    expect(resultat.indisponibilites).toHaveLength(1);
+    expect(resultat.indisponibilites[0]).toMatchObject({ date: '2026-07-11', motif: 'Concert' });
+  });
+
+  // The model's rows belong to the model: the target gets rows of its own.
+  it('remet chaque id à zéro', () => {
+    const resultat = appliquerPatchStand(stand(), depuisStand(), emplacements);
+
+    expect(resultat.horaires[0].id).toBeNull();
+    expect(resultat.ouvertures[0].id).toBeNull();
+    expect(resultat.indisponibilites[0].id).toBeNull();
+  });
+
+  it('ne touche à rien tant qu’aucun stand modèle n’est choisi', () => {
+    const target = stand({
+      horaires: [regleQuotidienne()],
+      ouvertures: [
+        {
+          id: 2,
+          date: '2026-08-02',
+          heureDebut: '10:00',
+          heureFin: null,
+          motif: null,
+          effectif: null,
+        },
+      ],
+    });
+
+    const resultat = appliquerPatchStand(target, depuisStand(null), emplacements);
+
+    expect(resultat).toEqual(target);
+  });
+
+  it('laisse les autres champs du stand target tels quels', () => {
+    const target = stand({ effectifMin: 2, effectifMax: 5, premium: true, emplacement: mairie });
+
+    const resultat = appliquerPatchStand(target, depuisStand(), emplacements);
+
+    expect(resultat).toMatchObject({
+      effectifMin: 2,
+      effectifMax: 5,
+      premium: true,
+      emplacement: mairie,
+    });
+  });
+
+  it('ne partage pas les objets copiés entre deux stands', () => {
+    const commun = depuisStand();
+
+    const premier = appliquerPatchStand(stand({ id: 'A' }), commun, emplacements);
+    const second = appliquerPatchStand(stand({ id: 'B' }), commun, emplacements);
+
+    expect(premier.horaires[0]).not.toBe(second.horaires[0]);
+    expect(premier.ouvertures[0]).not.toBe(second.ouvertures[0]);
+    expect(premier.indisponibilites[0]).not.toBe(second.indisponibilites[0]);
+  });
+});
+
+describe('standsWithWindowBeyondMaximum', () => {
+  it('nomme les stands dont une fenêtre copiée dépasse l’effectif maximum', () => {
+    const stands = [stand({ id: 'petit', effectifMax: 2 }), stand({ id: 'grand', effectifMax: 6 })];
+
+    const depasses = standsWithWindowBeyondMaximum(stands, depuisStand(), []);
+
+    expect(depasses.map((s) => s.id)).toEqual(['petit']);
+  });
+
+  // The usual remedy is applied in the same dialog: read on the patched value.
+  it('lit l’effectif maximum tel que le patch le laisse', () => {
+    const stands = [stand({ id: 'petit', effectifMax: 2 })];
+
+    expect(standsWithWindowBeyondMaximum(stands, { ...depuisStand(), effectifMax: 3 }, [])).toEqual(
+      [],
+    );
+  });
+
+  it('ne signale rien hors du mode DEPUIS_STAND', () => {
+    const stands = [stand({ id: 'petit', effectifMax: 2 })];
+
+    expect(standsWithWindowBeyondMaximum(stands, patch({ premium: 'OUI' }), [])).toEqual([]);
   });
 });
 

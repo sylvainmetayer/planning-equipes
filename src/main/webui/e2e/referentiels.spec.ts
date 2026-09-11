@@ -1,9 +1,18 @@
 // Reference-data CRUD through the real UI, focused on the animateur record —
 // the one the foire au planning extended (email, espace link) — plus the
-// lightest referential (typologies) for the create/delete round trip.
+// lightest referential (typologies) for the create/delete round trip, and the
+// copy of a stand's schedule into another (from its form) and into a whole
+// selection (from the bulk edit).
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { contexteAdmin, dialogueOuvert, pageAdmin, seedPlanning } from './support';
+import {
+  SEED,
+  contexteAdmin,
+  dialogueOuvert,
+  ouvrirSelect,
+  pageAdmin,
+  seedPlanning,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
@@ -15,6 +24,7 @@ test.beforeAll(async ({ playwright }, testInfo) => {
   // Idempotence across runs: drop what this spec creates through the UI.
   await admin.delete('/api/animateurs/E2E-UI').catch(() => undefined);
   await admin.delete('/api/typologies/E2E-TYPO').catch(() => undefined);
+  await admin.delete(`/api/stands/${STAND_MODELE}`).catch(() => undefined);
 });
 
 test.afterAll(async () => {
@@ -126,6 +136,138 @@ test.describe('typologies', () => {
     await ligne.getByRole('button', { name: 'Supprimer' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
     await expect(page.getByRole('row', { name: /E2E-TYPO/ })).toHaveCount(0);
+    await page.context().close();
+  });
+});
+
+/** The stand whose typical day the two tests below copy. */
+const STAND_MODELE = 'E2E-HOR';
+
+/** One stand of the edition as `GET /api/stands` returns it — only what the assertions read. */
+interface StandLu {
+  id: string;
+  horaires: { id: number | null; fenetres: { heureDebut: string }[] }[];
+  ouvertures: { id: number | null; date: string; heureDebut: string }[];
+}
+
+async function lireStand(id: string): Promise<StandLu> {
+  const reponse = await admin.get('/api/stands');
+  expect(reponse.ok()).toBe(true);
+  const stand = ((await reponse.json()) as StandLu[]).find((each) => each.id === id);
+  expect(stand, `stand ${id} absent`).toBeDefined();
+  return stand as StandLu;
+}
+
+test.describe('horaires de stand', () => {
+  test.beforeAll(async () => {
+    // The model: open from 10:00 every day, and a dated opening on the seeded
+    // day that narrows it to 11:00-12:00 — one row of each kind, so the copy
+    // of the rules and of the exceptions are both observable, without an
+    // effectif the one-seat seeded stands could not hold.
+    const modele = await admin.post('/api/stands', {
+      data: {
+        id: STAND_MODELE,
+        nom: 'Stand modèle E2E',
+        typologiesProposees: ['STRATEGIE'],
+        effectifMin: 1,
+        effectifMax: 1,
+        reserveMajeurs: false,
+        horaires: [{ mode: 'OUVERTURE', jours: 'TOUS', fenetres: [{ heureDebut: '10:00:00' }] }],
+        ouvertures: [
+          { date: SEED.jour, heureDebut: '11:00:00', heureFin: '12:00:00', motif: 'Inauguration' },
+        ],
+      },
+    });
+    expect(modele.ok(), await modele.text()).toBe(true);
+  });
+
+  test.afterAll(async () => {
+    await admin.delete(`/api/stands/${STAND_MODELE}`).catch(() => undefined);
+  });
+
+  test('la fiche copie les horaires d’un autre stand, l’aperçu puis la page Ouvertures les reflètent', async ({
+    browser,
+  }) => {
+    const page = await pageAdmin(browser, admin);
+    await page.goto('/stands');
+    await page.getByLabel('Filtrer').fill(SEED.standCible);
+    const ligne = page.getByRole('row', { name: new RegExp(SEED.standCible) });
+    await expect(ligne).toBeVisible();
+    await ligne.getByRole('button', { name: 'Modifier' }).click();
+    const formulaire = page
+      .getByRole('dialog')
+      .filter({ hasText: `Modifier le stand ${SEED.standCible}` });
+    await expect(formulaire).toBeVisible();
+    // The preview cell of the seeded day — open all day so far: no rule, no exception.
+    const jourSeme = formulaire.locator('.apercu-jour').filter({ hasText: '10/07' });
+    await expect(jourSeme).toContainText('Ouvert toute la journée');
+
+    await ouvrirSelect(page, 'Copier les horaires de');
+    await page.getByRole('option', { name: 'Stand modèle E2E' }).click();
+
+    // The draft took the copy — the rule on its line, the exception winning
+    // on its day in the preview — and nothing is written yet.
+    await expect(formulaire.getByLabel('Fenêtres de la journée')).toHaveValue('10:00-');
+    await expect(jourSeme).toContainText('Ouvert 11:00 → 12:00');
+    await expect(formulaire.getByText(/Horaires de « Stand modèle E2E » copiés/)).toBeVisible();
+    expect((await lireStand(SEED.standCible)).horaires).toHaveLength(0);
+
+    await formulaire.getByRole('button', { name: 'Modifier le stand' }).click();
+    await expect(formulaire).toBeHidden();
+
+    // Saved as new rows of the target stand, not as the model's.
+    const modele = await lireStand(STAND_MODELE);
+    const cible = await lireStand(SEED.standCible);
+    expect(cible.horaires).toHaveLength(1);
+    expect(cible.horaires[0].fenetres[0].heureDebut).toMatch(/^10:00/);
+    expect(cible.horaires[0].id).not.toBe(modele.horaires[0].id);
+    expect(cible.ouvertures).toHaveLength(1);
+    expect(cible.ouvertures[0].date).toBe(SEED.jour);
+    expect(cible.ouvertures[0].id).not.toBe(modele.ouvertures[0].id);
+
+    // The Ouvertures page reads the store afresh: the seeded day now opens at 11:00.
+    await page.goto('/ouvertures');
+    await expect(page.getByRole('button', { name: 'Actualiser' })).toBeVisible();
+    const ligneOuvertures = page.getByRole('row', { name: /Stand E2E deux/ });
+    await expect(ligneOuvertures).toBeVisible();
+    await expect(ligneOuvertures).toContainText('11:00');
+    await page.context().close();
+  });
+
+  test('la modification en masse applique les horaires d’un stand modèle à la sélection', async ({
+    browser,
+  }) => {
+    const page = await pageAdmin(browser, admin);
+    await page.goto('/stands');
+    // The two seeded stands, and only them: the filter is what the "select all" ticks.
+    await page.getByLabel('Filtrer').fill('E2E-S');
+    await expect(page.getByRole('row', { name: /E2E-S/ })).toHaveCount(2);
+    await page.getByRole('checkbox', { name: 'Tout sélectionner' }).check();
+    await page.getByRole('button', { name: 'Modifier la sélection' }).click();
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Modifier 2 stands' });
+    await expect(dialog).toBeVisible();
+
+    await ouvrirSelect(page, 'Que faire des horaires');
+    await page.getByRole('option', { name: "Remplacer par ceux d'un stand" }).click();
+    // Naming no model stand yet changes nothing: the submit stays disabled.
+    const appliquer = dialog.getByRole('button', { name: 'Appliquer à la sélection' });
+    await expect(appliquer).toBeDisabled();
+    await ouvrirSelect(page, 'Stand modèle');
+    await page.getByRole('option', { name: 'Stand modèle E2E' }).click();
+    await expect(dialog.getByText(/1 règle\(s\) et 1 exception\(s\) datée\(s\)/)).toBeVisible();
+    await expect(appliquer).toBeEnabled();
+    await appliquer.click();
+    await expect(dialog).toBeHidden();
+
+    for (const id of [SEED.standDemandeur, SEED.standCible]) {
+      const stand = await lireStand(id);
+      expect(stand.horaires, id).toHaveLength(1);
+      expect(stand.horaires[0].fenetres[0].heureDebut).toMatch(/^10:00/);
+      expect(stand.ouvertures, id).toHaveLength(1);
+      expect(stand.ouvertures[0].date).toBe(SEED.jour);
+    }
+    // The model itself was not in the selection and keeps its own rows.
+    expect((await lireStand(STAND_MODELE)).horaires).toHaveLength(1);
     await page.context().close();
   });
 });

@@ -55,9 +55,12 @@ let erreursConsole: unknown[][] = [];
  * holds a wider list: a bulk edit must write the selected rows, never every
  * stand of the edition, and the two can only be told apart if they differ.
  */
-function mount(stands: Stand[], options: { editingLocked?: boolean; saveMany?: number } = {}) {
+function mount(
+  stands: Stand[],
+  options: { editingLocked?: boolean; saveMany?: number; modeles?: Stand[] } = {},
+) {
   const saveMany = vi.fn(async () => options.saveMany ?? stands.length);
-  const tousLesStands = [...stands, stand('hors-selection')];
+  const allStands = [...stands, stand('hors-selection'), ...(options.modeles ?? [])];
   const close = vi.fn();
   TestBed.configureTestingModule({
     providers: [
@@ -68,7 +71,7 @@ function mount(stands: Stand[], options: { editingLocked?: boolean; saveMany?: n
           typologies: signal(TYPOLOGIES),
           creneaux: signal([]),
           emplacements: signal(EMPLACEMENTS),
-          stands: signal(tousLesStands),
+          stands: signal(allStands),
         },
       },
       {
@@ -263,14 +266,14 @@ describe('StandBulkEditDialog', () => {
     // modifier" would invite rules that the chosen mode then discards.
     expect(boutonAjouterHoraire(fixture)).toBeUndefined();
 
-    await fill(fixture, { horaires: { mode: 'AJOUTER', horaires: [] } });
+    await fill(fixture, { horaires: { mode: 'AJOUTER', horaires: [], source: null } });
     expect(boutonAjouterHoraire(fixture)).toBeDefined();
   });
 
   it('adds horaire rules under the AJOUTER mode, uniquely named per row', async () => {
     const { fixture } = mount([stand('s1')]);
     await fixture.whenStable();
-    await fill(fixture, { horaires: { mode: 'AJOUTER', horaires: [] } });
+    await fill(fixture, { horaires: { mode: 'AJOUTER', horaires: [], source: null } });
 
     const add = boutonAjouterHoraire(fixture)!;
     add.click();
@@ -287,7 +290,7 @@ describe('StandBulkEditDialog', () => {
   it('applies a rule typed on the compact line to every selected stand', async () => {
     const { fixture, saveMany } = mount([stand('s1'), stand('s2')]);
     await fixture.whenStable();
-    await fill(fixture, { horaires: { mode: 'REMPLACER', horaires: [] } });
+    await fill(fixture, { horaires: { mode: 'REMPLACER', horaires: [], source: null } });
     boutonAjouterHoraire(fixture)!.click();
     await fixture.whenStable();
 
@@ -318,6 +321,7 @@ describe('StandBulkEditDialog', () => {
     await fill(fixture, {
       horaires: {
         mode: 'REMPLACER',
+        source: null,
         horaires: [
           {
             id: null,
@@ -344,10 +348,117 @@ describe('StandBulkEditDialog', () => {
   it('allows EFFACER, which carries no rule to validate', async () => {
     const { fixture } = mount([stand('s1')]);
     await fixture.whenStable();
-    await fill(fixture, { horaires: { mode: 'EFFACER', horaires: [] } });
+    await fill(fixture, { horaires: { mode: 'EFFACER', horaires: [], source: null } });
 
     expect(root(fixture).querySelectorAll('.field-error')).toHaveLength(0);
     expect(submit(fixture).disabled).toBe(false);
+  });
+
+  /** The typical day of the DEPUIS_STAND tests: one rule asking for three seats, one dated opening. */
+  function pavillon(): Stand {
+    return stand('PAVILLON', {
+      nom: 'Pavillon',
+      effectifMax: 4,
+      horaires: [
+        {
+          id: 7,
+          mode: 'OUVERTURE',
+          jours: 'TOUS',
+          joursSemaine: [],
+          dateDebut: null,
+          dateFin: null,
+          dates: [],
+          fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }],
+          motif: null,
+        },
+      ],
+      ouvertures: [
+        {
+          id: 11,
+          date: '2026-07-10',
+          heureDebut: '10:00',
+          heureFin: '12:00',
+          motif: null,
+          effectif: null,
+        },
+      ],
+    });
+  }
+
+  function selectStandModele(fixture: ComponentFixture<StandBulkEditDialog>): Element | null {
+    return root(fixture).querySelector('mat-select[name="standModele"]');
+  }
+
+  it('offers the model stand selector under DEPUIS_STAND only, and stays disabled until one is chosen', async () => {
+    const { fixture } = mount([stand('s1')], { modeles: [pavillon()] });
+    await fixture.whenStable();
+    expect(selectStandModele(fixture)).toBeNull();
+
+    await fill(fixture, { horaires: { mode: 'DEPUIS_STAND', horaires: [], source: null } });
+
+    expect(selectStandModele(fixture)).not.toBeNull();
+    expect(nomAccessible(root(fixture), selectStandModele(fixture)!)).toBe('Stand modèle');
+    // No rule editor: the model stand is the rules.
+    expect(boutonAjouterHoraire(fixture)).toBeUndefined();
+    // Naming no model changes nothing, like "Définir" without an emplacement.
+    expect(submit(fixture).disabled).toBe(true);
+
+    (
+      fixture.componentInstance as unknown as { choisirStandModele(id: string | null): void }
+    ).choisirStandModele('PAVILLON');
+    await fixture.whenStable();
+
+    expect(submit(fixture).disabled).toBe(false);
+    expect(root(fixture).textContent).toContain('1 règle(s) et 1 exception(s) datée(s)');
+  });
+
+  it('hands every selected stand the whole schedule of the model stand, exceptions included', async () => {
+    const { fixture, saveMany } = mount(
+      [stand('s1', { effectifMax: 4 }), stand('s2', { effectifMax: 4 })],
+      {
+        modeles: [pavillon()],
+      },
+    );
+    await fixture.whenStable();
+    await fill(fixture, { horaires: { mode: 'DEPUIS_STAND', horaires: [], source: pavillon() } });
+
+    root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    const [, payloads] = saveMany.mock.calls[0] as unknown as [string, Stand[]];
+    expect(payloads.map((each) => each.id)).toEqual(['s1', 's2']);
+    for (const each of payloads) {
+      expect(each.horaires).toHaveLength(1);
+      expect(each.horaires[0].id).toBeNull();
+      expect(each.horaires[0].fenetres).toEqual([
+        { heureDebut: '14:00', heureFin: null, effectif: 3 },
+      ]);
+      expect(each.ouvertures).toHaveLength(1);
+      expect(each.ouvertures[0].id).toBeNull();
+      expect(each.ouvertures[0].date).toBe('2026-07-10');
+    }
+  });
+
+  it('warns, without blocking, on the stands a copied window would push past their maximum', async () => {
+    const { fixture } = mount(
+      [
+        stand('s1', { nom: 'Loup-Garou', effectifMax: 2 }),
+        stand('s2', { nom: 'Dixit', effectifMax: 4 }),
+      ],
+      { modeles: [pavillon()] },
+    );
+    await fixture.whenStable();
+    await fill(fixture, { horaires: { mode: 'DEPUIS_STAND', horaires: [], source: pavillon() } });
+
+    const avertissement = root(fixture).querySelector('.form-warning');
+    expect(avertissement).not.toBeNull();
+    expect(avertissement!.textContent).toContain('Loup-Garou');
+    expect(avertissement!.textContent).not.toContain('Dixit');
+    // The server refuses those one by one; the usual fix is in the same dialog.
+    expect(submit(fixture).disabled).toBe(false);
+
+    await fill(fixture, { effectifMax: 3 });
+    expect(root(fixture).querySelector('.form-warning')).toBeNull();
   });
 
   it('disables the whole form and says why while a solve is running', async () => {

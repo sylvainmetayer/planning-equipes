@@ -81,7 +81,7 @@ function taper(champ: HTMLInputElement, valeur: string): void {
   champ.dispatchEvent(new Event('input'));
 }
 
-function mount(donnee: Stand | null, options: { editingLocked?: boolean } = {}) {
+function mount(donnee: Stand | null, options: { editingLocked?: boolean; stands?: Stand[] } = {}) {
   const save = vi.fn(async () => true);
   const close = vi.fn();
   TestBed.configureTestingModule({
@@ -93,7 +93,7 @@ function mount(donnee: Stand | null, options: { editingLocked?: boolean } = {}) 
           typologies: signal(TYPOLOGIES),
           creneaux: signal(CRENEAUX),
           emplacements: signal(EMPLACEMENTS),
-          stands: signal([]),
+          stands: signal(options.stands ?? []),
         },
       },
       {
@@ -702,6 +702,119 @@ describe('StandFormDialog', () => {
       true,
     );
     expect(submit(fixture).disabled).toBe(true);
+  });
+
+  /** The stand whose typical day the tests below copy: one rule with a named effectif, one dated opening. */
+  function pavillon(): Stand {
+    return stand({
+      id: 'PAVILLON',
+      nom: 'Pavillon',
+      effectifMax: 4,
+      horaires: [
+        regle({ id: 7, fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }] }),
+      ],
+      ouvertures: [
+        {
+          id: 11,
+          date: '2026-07-15',
+          heureDebut: '10:00',
+          heureFin: '12:00',
+          motif: null,
+          effectif: null,
+        },
+      ],
+    });
+  }
+
+  function copyFrom(fixture: ComponentFixture<StandFormDialog>, standId: string): void {
+    (
+      fixture.componentInstance as unknown as { copyHorairesFrom(id: string | null): void }
+    ).copyHorairesFrom(standId);
+  }
+
+  function apercu(fixture: ComponentFixture<StandFormDialog>): string[] {
+    return Array.from(root(fixture).querySelectorAll('.apercu-jour .apercu-detail')).map((cell) =>
+      cell.textContent!.trim(),
+    );
+  }
+
+  it('offers to copy the schedule of every other stand, never of the one being edited', async () => {
+    const { fixture } = mount(stand({ id: 's1' }), { stands: [stand({ id: 's1' }), pavillon()] });
+    await fixture.whenStable();
+
+    const select = root(fixture).querySelector('mat-select[name="copyHorairesFrom"]')!;
+    expect(select).not.toBeNull();
+    expect(nomAccessible(root(fixture), select)).toBe('Copier les horaires de…');
+    const modeles = (
+      fixture.componentInstance as unknown as { standsModeles(): Stand[] }
+    ).standsModeles();
+    expect(modeles.map((each) => each.id)).toEqual(['PAVILLON']);
+  });
+
+  it('hides the copy field when there is no other stand to copy from', async () => {
+    const { fixture } = mount(stand({ id: 's1' }), { stands: [stand({ id: 's1' })] });
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelector('mat-select[name="copyHorairesFrom"]')).toBeNull();
+  });
+
+  it('replaces the draft schedule with the chosen stand’s and refreshes the preview, without saving', async () => {
+    const { fixture, save } = mount(
+      stand({
+        id: 's1',
+        effectifMax: 4,
+        horaires: [regle({ id: 3, fenetres: [{ heureDebut: '09:00', heureFin: '11:00' }] })],
+      }),
+      { stands: [pavillon()] },
+    );
+    await fixture.whenStable();
+    expect(apercu(fixture)).toEqual(['Ouvert 09:00 → 11:00', 'Ouvert 09:00 → 11:00']);
+
+    copyFrom(fixture, 'PAVILLON');
+    await fixture.whenStable();
+
+    // The rule replaced the stand's own; the dated opening wins on its day.
+    expect(apercu(fixture)).toEqual(['Ouvert 14:00 → fermeture ×3', 'Ouvert 10:00 → 12:00']);
+    expect(ligne(fixture).value).toBe('14:00-@3');
+    expect(root(fixture).querySelector('.stand-copie-statut')!.textContent).toContain(
+      'Horaires de « Pavillon » copiés : 1 règle(s), 1 exception(s) datée(s)',
+    );
+    expect(save).not.toHaveBeenCalled();
+    expect(submit(fixture).disabled).toBe(false);
+
+    root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+    const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
+    // New rows of this stand: no id travels from the model.
+    expect(payload.horaires[0].id).toBeNull();
+    expect(payload.horaires[0].fenetres).toEqual([
+      { heureDebut: '14:00', heureFin: null, effectif: 3 },
+    ]);
+    expect(payload.ouvertures[0].id).toBeNull();
+  });
+
+  it('warns when a copied window asks for more than this stand holds, until the maximum is raised', async () => {
+    const { fixture } = mount(stand({ id: 's1', effectifMin: 1, effectifMax: 2 }), {
+      stands: [pavillon()],
+    });
+    await fixture.whenStable();
+
+    copyFrom(fixture, 'PAVILLON');
+    await fixture.whenStable();
+
+    const avertissement = root(fixture).querySelector('.stand-copie-avertissement')!;
+    expect(avertissement).not.toBeNull();
+    expect(avertissement.textContent).toContain('1 fenêtre(s)');
+    expect(avertissement.textContent).toContain('(2)');
+    // The rule editor's own check blocks the submit, as the server would refuse it.
+    expect(submit(fixture).disabled).toBe(true);
+
+    const max = root(fixture).querySelector<HTMLInputElement>('input[name="effectifMax"]')!;
+    taper(max, '3');
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelector('.stand-copie-avertissement')).toBeNull();
+    expect(submit(fixture).disabled).toBe(false);
   });
 
   it('disables the whole form and says why while a solve is running', async () => {
