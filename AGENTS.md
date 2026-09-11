@@ -473,7 +473,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed), `/calendar`, `/day-calendar`, `/constraints`,
-  `/problemes`, `/echanges`, `/hours`, `/repos` (« Jours de repos » — the
+  `/problemes`, `/echanges`, `/hours`, `/equite` (« Équité » — one line per
+  assigned animateur: evening, week-end and holiday hours, demanding seats,
+  variety, honoured wishes, rest days, each with its distance to the median),
+  `/repos` (« Jours de repos » — the
   animateur x day grid: who works, who rests, who was unavailable),
   `/staffing`, `/jour-j` (« Mode jour J » —
   the day-of screen: mark somebody absent, repair the seats they held),
