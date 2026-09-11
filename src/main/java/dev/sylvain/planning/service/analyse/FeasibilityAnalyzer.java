@@ -120,7 +120,11 @@ public class FeasibilityAnalyzer {
                 .max()
                 .orElse(0);
         int totalCauses = causes.size();
-        boolean feasible = totalCauses == 0;
+        // Nothing is feasible without an animateur (issue #416): an edition
+        // whose stands are all closed has no shortfall to list, and a report
+        // saying « réalisable » there would be read as a green light.
+        boolean sansAnimateur = animateursSurs.isEmpty();
+        boolean feasible = totalCauses == 0 && !sansAnimateur;
         List<CauseInfaisabilite> topCauses = List.copyOf(causes.subList(0, Math.min(MAX_CAUSES, totalCauses)));
 
         return new FeasibilityReport(
@@ -128,7 +132,9 @@ public class FeasibilityAnalyzer {
                 manqueAnimateurs,
                 topCauses,
                 totalCauses,
-                buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
+                sansAnimateur
+                        ? buildMessageWithoutAnimateur(totalCauses)
+                        : buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
     }
 
     private List<CauseInfaisabilite> creneauxSousEffectif(
@@ -191,13 +197,29 @@ public class FeasibilityAnalyzer {
         return causes;
     }
 
+    /**
+     * Said first and by name, rather than left to be inferred from one
+     * CRITIQUE cause per timeslot: the per-timeslot causes describe the seats,
+     * where the thing to fix is the empty animateur list.
+     */
+    private static String buildMessageWithoutAnimateur(int totalCauses) {
+        String message =
+                "Aucun animateur n'est saisi : rien n'est réalisable tant que la liste des animateurs est vide."
+                        + " Renseignez les animateurs avant de lancer une résolution";
+        return totalCauses == 0 ? message + "." : message + " — " + causesPhrase(totalCauses) + " sur les créneaux.";
+    }
+
+    private static String causesPhrase(int totalCauses) {
+        return totalCauses > 1
+                ? totalCauses + " causes bloquantes ont été détectées"
+                : "1 cause bloquante a été détectée";
+    }
+
     private String buildMessage(boolean feasible, int manque, int totalCauses, List<CauseInfaisabilite> topCauses) {
         if (feasible) {
             return "Le planning est réalisable : il y a assez d'animateurs disponibles pour couvrir chaque créneau.";
         }
-        String causesPhrase = totalCauses > 1
-                ? totalCauses + " causes bloquantes ont été détectées"
-                : "1 cause bloquante a été détectée";
+        String causesPhrase = causesPhrase(totalCauses);
         if (manque <= 0) {
             return "Ce planning n'est pas réalisable avec les données actuelles : " + causesPhrase + ". Par exemple : "
                     + topCauses.getFirst().message();

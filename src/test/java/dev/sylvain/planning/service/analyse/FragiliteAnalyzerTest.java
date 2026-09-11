@@ -34,12 +34,40 @@ class FragiliteAnalyzerTest {
 
     @Test
     void anEmptyPlanReportsNothingAndSaysWhy() {
-        RapportFragilite rapport = analyzer.analyze(new PlanningEvenement(null, List.of(), List.of()));
+        Animateur alice = animateur("alice", "STRATEGIE");
+
+        RapportFragilite rapport = analyzer.analyze(new PlanningEvenement(null, List.of(alice), List.of()));
 
         assertThat(rapport.animateurs()).isEmpty();
         assertThat(rapport.competencesRares()).isEmpty();
         assertThat(rapport.groupesAnalyses()).isZero();
+        assertThat(rapport.aucunAnimateur()).isFalse();
         assertThat(rapport.message()).contains("Aucun planning persisté");
+    }
+
+    @Test
+    void anEditionWithoutAnyAnimateurSaysSoInsteadOfInvitingASolve() {
+        // A solve cannot even run without an animateur, so « lancez une
+        // résolution » would send the reader in a circle (issue #416).
+        RapportFragilite rapport = analyzer.analyze(new PlanningEvenement(null, List.of(), List.of()));
+
+        assertThat(rapport.aucunAnimateur()).isTrue();
+        assertThat(rapport.message()).contains("Aucun animateur n'est saisi");
+    }
+
+    @Test
+    void aStalePlanWhoseAnimateursAreAllGoneIsNotReportedAsNothingToWorryAbout() {
+        Stand stand = stand("S1", 1, "STRATEGIE");
+        Creneau matin = creneau(1, LocalTime.of(9, 0), LocalTime.of(12, 0));
+        // A seat the persisted plan still holds, whose tenant is gone.
+        List<PosteAffectation> postes = seats(stand, matin, (Animateur) null);
+
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(), postes));
+
+        assertThat(rapport.groupesAnalyses()).isEqualTo(1);
+        assertThat(rapport.animateursIrremplacables()).isZero();
+        assertThat(rapport.aucunAnimateur()).isTrue();
+        assertThat(rapport.message()).doesNotContain("irremplaçable").contains("Aucun animateur n'est saisi");
     }
 
     @Test

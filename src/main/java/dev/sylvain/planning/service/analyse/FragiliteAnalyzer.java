@@ -203,10 +203,17 @@ public class FragiliteAnalyzer {
      *                               {@code groupesAnalyses} — one stand nobody
      *                               can hold, open on forty timeslots, weighs
      *                               forty here.
+     * @param aucunAnimateur         the edition holds no animateur at all
+     *                               (issue #416): nothing is feasible then,
+     *                               and the figures above — all zero, or a
+     *                               stale plan's seats with nobody on them —
+     *                               would otherwise read as « nothing to worry
+     *                               about ». {@code message} says so.
      */
     @Schema(
             requiredProperties = {
                 "animateursIrremplacables",
+                "aucunAnimateur",
                 "groupesAnalyses",
                 "groupesDejaSousEffectif",
                 "groupesSansSpecialiste",
@@ -222,6 +229,7 @@ public class FragiliteAnalyzer {
             int groupesDejaSousEffectif,
             int animateursIrremplacables,
             boolean ninjaConfigure,
+            boolean aucunAnimateur,
             String message) {}
 
     /**
@@ -359,7 +367,15 @@ public class FragiliteAnalyzer {
                 dejaSousEffectif,
                 animateursIrremplacables,
                 ninjaConfigure,
-                buildMessage(groupes.size(), lignes, animateursIrremplacables, rares.size(), groupesSansSpecialiste));
+                animateurs.isEmpty(),
+                animateurs.isEmpty()
+                        ? MESSAGE_SANS_ANIMATEUR
+                        : buildMessage(
+                                groupes.size(),
+                                lignes,
+                                animateursIrremplacables,
+                                rares.size(),
+                                groupesSansSpecialiste));
     }
 
     private List<AnimateurFragilite> animateurLines(
@@ -601,6 +617,14 @@ public class FragiliteAnalyzer {
     private static List<String> typologies(Stand stand) {
         return stand.getTypologiesProposees().stream().sorted().toList();
     }
+
+    /**
+     * Before the « no persisted plan » sentence: a solve cannot even run
+     * without an animateur, so inviting one would send the reader in a circle.
+     */
+    private static final String MESSAGE_SANS_ANIMATEUR =
+            "Aucun animateur n'est saisi : rien n'est réalisable sans animateur, et la fragilité du planning ne "
+                    + "peut pas être mesurée. Renseignez la liste des animateurs avant de lancer une résolution.";
 
     private String buildMessage(
             int groupes,

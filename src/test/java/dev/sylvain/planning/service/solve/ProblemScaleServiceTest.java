@@ -45,6 +45,19 @@ class ProblemScaleServiceTest {
     }
 
     @Test
+    void theSeatsAreCountedWithoutAnyAnimateurAndNothingIsAvailableThen() {
+        Creneau matin = creneau(1, LUNDI, 9, 12);
+        PosteAffectation seat = new PosteAffectation("P1", STAND, matin);
+
+        ProblemScale volumetrie = ProblemScale.of(List.of(seat), List.of(), 0, new ParametresLegaux());
+
+        assertThat(volumetrie.animateurCount()).isZero();
+        assertThat(volumetrie.posteCount()).isEqualTo(1);
+        assertThat(volumetrie.hoursToFill()).isCloseTo(3.0, within(0.001));
+        assertThat(volumetrie.hoursAvailable()).isZero();
+    }
+
+    @Test
     void hoursAvailableAreTheDailyCeilingOfEachDayTheAnimateurCanCome() {
         List<Creneau> troisJours = List.of(
                 creneau(1, LUNDI, 9, 12), creneau(2, LUNDI.plusDays(1), 9, 12), creneau(3, LUNDI.plusDays(2), 9, 12));

@@ -58,6 +58,7 @@ function rapport(partial: Partial<RapportFragilite>): RapportFragilite {
     groupesDejaSousEffectif: 0,
     animateursIrremplacables: 0,
     ninjaConfigure: false,
+    aucunAnimateur: false,
     message: '',
     ...partial,
   };

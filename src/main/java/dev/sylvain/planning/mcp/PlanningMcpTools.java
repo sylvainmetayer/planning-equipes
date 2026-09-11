@@ -86,11 +86,12 @@ public class PlanningMcpTools {
     ProblemScaleService problemScaleService;
 
     @Tool(
-            description = "Volumétrie réelle du problème que construirait la prochaine résolution : nombre "
-                    + "d'animateurs, de postes à pourvoir et de contraintes ad hoc, heures à pourvoir (somme des durées "
-                    + "effectives des postes) et heures offertes (plafond légal de ce que les animateurs peuvent travailler "
-                    + "sur l'événement, jours d'indisponibilité déduits). Tout à zéro si les données de référence ne sont "
-                    + "pas chargées.",
+            description =
+                    "Volumétrie réelle du problème que construirait la prochaine résolution : nombre "
+                            + "d'animateurs, de postes à pourvoir et de contraintes ad hoc, heures à pourvoir (somme des durées "
+                            + "effectives des postes) et heures offertes (plafond légal de ce que les animateurs peuvent travailler "
+                            + "sur l'événement, jours d'indisponibilité déduits). Les postes ne dépendent que des stands et des créneaux : "
+                            + "ils sont comptés avant la saisie d'aucun animateur, et tout est à zéro sans stand ou sans créneau.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,

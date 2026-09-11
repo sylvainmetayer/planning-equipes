@@ -117,6 +117,7 @@ function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
     dureeQuotidienneMaxMinutes: 600,
     joursTravaillesMaxParSemaine: 6,
     parCompetence: competence(),
+    referentielsManquants: [],
     ...overrides,
   };
 }
@@ -141,6 +142,7 @@ type PageInternals = {
   reserveLabel: Signal<string>;
   siegesNonAttribuesLabel: Signal<string>;
   siegesReservesLabel: Signal<string>;
+  referentielsManquantsLabel: Signal<string>;
   /** Private to the component; reachable here because `private` is compile-time only. */
   staffing: { reload(): boolean };
 };
@@ -251,6 +253,56 @@ describe('StaffingPage', () => {
       expect(page.heuresParSemaine()).toBe(0);
       expect(page.heuresSemaineCritique()).toBe(0);
       expect(page.semaineCritiqueLabel()).toBe('');
+    });
+
+    it('names the missing stands rather than blaming the créneaux', async () => {
+      analysesApi.staffing.mockResolvedValue(
+        summary({ parJour: [], referentielsManquants: ['STANDS', 'ANIMATEURS'] }),
+      );
+
+      const page = createPage();
+      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+
+      expect(page.referentielsManquantsLabel()).toContain('Aucun stand');
+      expect(page.referentielsManquantsLabel()).not.toContain('Aucun créneau');
+    });
+
+    it('names the missing créneaux, and both when both are missing', async () => {
+      analysesApi.staffing.mockResolvedValue(
+        summary({ parJour: [], referentielsManquants: ['CRENEAUX'] }),
+      );
+      const page = createPage();
+      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      expect(page.referentielsManquantsLabel()).toContain('Aucun créneau');
+      expect(page.referentielsManquantsLabel()).not.toContain('Aucun stand');
+
+      analysesApi.staffing.mockResolvedValue(
+        summary({ parJour: [], referentielsManquants: ['STANDS', 'CRENEAUX', 'ANIMATEURS'] }),
+      );
+      const empty = createPage();
+      await vi.waitFor(() => expect(empty.summary()).not.toBeNull());
+      expect(empty.referentielsManquantsLabel()).toContain('Aucun stand');
+      expect(empty.referentielsManquantsLabel()).toContain('Aucun créneau');
+    });
+
+    it('keeps the bounds and the day table when only the animateurs are missing', async () => {
+      // The subject of the screen (issue #416): the seats depend on the stands
+      // and the créneaux only, so nothing is missing from the bounds — the
+      // bottleneck card is what says the comparison is.
+      analysesApi.staffing.mockResolvedValue(
+        summary({
+          referentielsManquants: ['ANIMATEURS'],
+          parCompetence: competence({ animateursTotal: 0, parTypologie: [] }),
+        }),
+      );
+
+      const page = createPage();
+      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+
+      expect(page.referentielsManquantsLabel()).toBe('');
+      expect(page.summary()!.minimumTotal).toBe(22);
+      expect(page.summary()!.parJour).toHaveLength(1);
+      expect(page.competence()!.animateursTotal).toBe(0);
     });
 
     it('reports no hours per week and no break while nothing is loaded', () => {

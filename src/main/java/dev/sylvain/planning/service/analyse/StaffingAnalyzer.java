@@ -28,7 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * How many animateurs the current stands/créneaux need at a minimum, computed
  * from the very seats a solve would have to fill — the
  * {@link PosteAffectation} list of
- * {@code PlanningService#buildFromReferenceData()} — and not from a
+ * {@code PlanningService#buildSeatsFromReferenceData()} — and not from a
  * stands × créneaux product.
  *
  * <p>That distinction is the whole point of this class. The estimate used to
@@ -189,6 +189,18 @@ public class StaffingAnalyzer {
     }
 
     /**
+     * A referential the edition has not filled in yet, named so the screen can
+     * say which one is missing instead of showing a zero (issue #416). The
+     * seats need the first two only: without an animateur the bounds are
+     * still proven, and only the comparison against a pool is left out.
+     */
+    public enum ReferentielManquant {
+        STANDS,
+        CRENEAUX,
+        ANIMATEURS
+    }
+
+    /**
      * One event day. {@code heures} are person-hours (seats × duration),
      * {@code sieges} the number of postes generated that day, and
      * {@code minimumJour} the distinct animateurs the day provably needs: the
@@ -273,6 +285,7 @@ public class StaffingAnalyzer {
                 "pauseMinimaleMinutes",
                 "picAvecPause",
                 "picSimultane",
+                "referentielsManquants",
                 "rotationTotal",
                 "totalDemandeHeures"
             })
@@ -298,7 +311,8 @@ public class StaffingAnalyzer {
             int dureeHebdomadaireMaxMinutes,
             int dureeQuotidienneMaxMinutes,
             int joursTravaillesMaxParSemaine,
-            CompetenceStaffing parCompetence) {}
+            CompetenceStaffing parCompetence,
+            List<ReferentielManquant> referentielsManquants) {}
 
     /**
      * One game category: the same bounds as {@link StaffingSummary}, computed
@@ -391,14 +405,31 @@ public class StaffingAnalyzer {
     private record BesoinJour(LocalDate date, double heures, int picSimultane, int picAvecPause, int minimum) {}
 
     /**
-     * @param animateurs  the animateurs the referential holds, only ever
-     *                    counted — never named. An empty list still yields
-     *                    every bound; only the bottleneck comparison and the
-     *                    availability projection are left out, since there is
-     *                    nothing to compare against yet.
-     * @param typologies  the game category referential, which is what tells
-     *                    the ninja one apart. Never a hard-coded list: those
-     *                    categories are CRUD data.
+     * Which referentials the edition is still missing, from the three lists
+     * every caller of the seat-only build holds. In one place, so REST and
+     * MCP cannot disagree on what « missing » means.
+     */
+    public static List<ReferentielManquant> referentielsManquants(
+            List<Stand> stands, List<Creneau> creneaux, List<Animateur> animateurs) {
+        List<ReferentielManquant> manquants = new ArrayList<>();
+        if (stands == null || stands.isEmpty()) {
+            manquants.add(ReferentielManquant.STANDS);
+        }
+        if (creneaux == null || creneaux.isEmpty()) {
+            manquants.add(ReferentielManquant.CRENEAUX);
+        }
+        if (animateurs == null || animateurs.isEmpty()) {
+            manquants.add(ReferentielManquant.ANIMATEURS);
+        }
+        return List.copyOf(manquants);
+    }
+
+    /**
+     * On seats already built, with no stand or timeslot list in sight: an
+     * empty seat list cannot tell a missing stand from a missing timeslot, so
+     * only the animateurs are reported missing here. The callers reading the
+     * edition go through {@link #analyze(List, List, List, int, int, List)}
+     * with {@link #referentielsManquants}.
      */
     public StaffingSummary analyze(
             List<PosteAffectation> postes,
@@ -406,6 +437,37 @@ public class StaffingAnalyzer {
             List<TypologieItem> typologies,
             int dureeHebdomadaireMaxMinutes,
             int pauseMinimaleMinutes) {
+        return analyze(
+                postes,
+                animateurs,
+                typologies,
+                dureeHebdomadaireMaxMinutes,
+                pauseMinimaleMinutes,
+                animateurs == null || animateurs.isEmpty() ? List.of(ReferentielManquant.ANIMATEURS) : List.of());
+    }
+
+    /**
+     * @param animateurs            the animateurs the referential holds, only
+     *                              ever counted — never named. An empty list
+     *                              still yields every bound; only the
+     *                              bottleneck comparison and the availability
+     *                              projection are left out, since there is
+     *                              nothing to compare against yet.
+     * @param typologies            the game category referential, which is
+     *                              what tells the ninja one apart. Never a
+     *                              hard-coded list: those categories are CRUD
+     *                              data.
+     * @param referentielsManquants what the edition has not filled in yet,
+     *                              carried through so the screen names it
+     *                              rather than showing a zero.
+     */
+    public StaffingSummary analyze(
+            List<PosteAffectation> postes,
+            List<Animateur> animateurs,
+            List<TypologieItem> typologies,
+            int dureeHebdomadaireMaxMinutes,
+            int pauseMinimaleMinutes,
+            List<ReferentielManquant> referentielsManquants) {
         List<Siege> sieges = sieges(postes);
         Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, pauseMinimaleMinutes);
         Bornes bornes = bornes(besoins, dureeHebdomadaireMaxMinutes);
@@ -468,7 +530,8 @@ public class StaffingAnalyzer {
                 dureeHebdomadaireMaxMinutes,
                 PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES,
                 PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE,
-                bottleneckPerCategory(sieges, connus, typologies, dureeHebdomadaireMaxMinutes, pauseMinimaleMinutes));
+                bottleneckPerCategory(sieges, connus, typologies, dureeHebdomadaireMaxMinutes, pauseMinimaleMinutes),
+                referentielsManquants == null ? List.of() : List.copyOf(referentielsManquants));
     }
 
     /**

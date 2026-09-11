@@ -70,6 +70,29 @@ public final class ProblemBuilder {
     }
 
     /**
+     * The seats alone — resolved stands × timeslots, paired exactly as
+     * {@link #buildPostes} pairs them — with no lock, no animateur and no
+     * problem around them: what the read-only screens reason on (the staffing
+     * need, the volumétrie). They used to call {@link #buildFromReferenceData()}
+     * and swallow its refusal, which turned « no animateur entered yet » into
+     * « zero seat » on a screen whose whole point is to be read before any
+     * animateur exists (issue #416). The seats depend on the stands and the
+     * timeslots only, so nothing is refused here: an edition missing either
+     * simply has none, and the caller reads which one from the lists.
+     *
+     * <p>Writes nothing — the stagger families are recorded by the builds that
+     * solve, never by a read (see {@link #recordStandFamilies}).</p>
+     */
+    public Seats buildSeatsFromReferenceData() {
+        List<Stand> stands = referenceDataService.listSolvedStands();
+        List<Creneau> creneaux = referenceDataService.listCreneaux();
+        return new Seats(stands, creneaux, buildPostes(stands, creneaux));
+    }
+
+    /** The seats of the edition, and the two lists they were built from. */
+    public record Seats(List<Stand> stands, List<Creneau> creneaux, List<PosteAffectation> postes) {}
+
+    /**
      * The build itself, on lists already read from the referential. Locks, ad
      * hoc constraints and legal parameters are still read from here.
      */
@@ -607,9 +630,10 @@ public final class ProblemBuilder {
      * Writes down the families this solve pairs the stands on (issue #390), so
      * every later build keeps them.
      *
-     * <p>Only from a build that <b>solves</b>: the same builder serves
-     * {@code GET /api/planning/volumetrie}, {@code GET /api/staffing} and two
-     * read-only MCP tools, and a read has no business writing. And only on a
+     * <p>Only from a build that <b>solves</b>: {@code GET /api/planning/volumetrie},
+     * {@code GET /api/staffing} and two read-only MCP tools go through
+     * {@link #buildSeatsFromReferenceData()}, which never comes here — a read
+     * has no business writing. And only on a
      * staggered grid: on a single-family one the assignment says nothing —
      * freezing every stand at family 0 would starve the other families the day
      * a staggered grid arrives without replacing this one.</p>

@@ -1,8 +1,5 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.domain.ParametresLegaux;
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
@@ -10,13 +7,12 @@ import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.LigneStand;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
-import dev.sylvain.planning.service.analyse.StaffingAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
+import dev.sylvain.planning.service.analyse.StaffingService;
 import dev.sylvain.planning.service.referentiel.ImportImpact;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.solve.PlanningService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -46,10 +42,7 @@ public class DiagnosticMcpTools {
     ReferenceDataService referenceDataService;
 
     @Inject
-    PlanningService planningService;
-
-    @Inject
-    StaffingAnalyzer staffingAnalyzer;
+    StaffingService staffingService;
 
     @Inject
     KpiHistoriqueService kpiHistoriqueService;
@@ -61,8 +54,9 @@ public class DiagnosticMcpTools {
     PlanningPersistenceService persistenceService;
 
     /**
-     * Built exactly like {@code StaffingResource}: on the seats a real solve
-     * would have to fill, not on stands × créneaux. Counting them in the
+     * The same computation as {@code GET /api/staffing}, through the same
+     * {@link StaffingService}: on the seats a real solve would have to fill,
+     * not on stands × créneaux. Counting them in the
      * caller drifted from the real problem, badly — recurring horaires,
      * familles de relais and the reduced effectif during meal windows all
      * change the count.
@@ -74,7 +68,9 @@ public class DiagnosticMcpTools {
                     + "et par semaine, plus le goulot par typologie : les mêmes bornes sur les sièges d'une seule typologie, "
                     + "face aux animateurs qui la déclarent. Calcul en Java pur, aucune résolution lancée. Le résultat est "
                     + "un plancher optimiste — il ignore compétences et repos quotidien ; minimumAvecIndisponibilites y "
-                    + "ajoute, à part, une projection sur les indisponibilités déjà déclarées.",
+                    + "ajoute, à part, une projection sur les indisponibilités déjà déclarées. Répond avant la saisie "
+                    + "d'aucun animateur : les sièges ne dépendent que des stands et des créneaux, et "
+                    + "referentielsManquants nomme ce qui n'est pas encore saisi.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -83,20 +79,7 @@ public class DiagnosticMcpTools {
                             openWorldHint = false))
     StaffingSummary analyser_effectifs(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        ParametresLegaux parametres = referenceDataService.getParametresLegaux();
-        List<PosteAffectation> postes;
-        try {
-            PlanningEvenement evenement = planningService.buildFromReferenceData();
-            postes = evenement.getPostes();
-        } catch (IllegalStateException e) {
-            postes = List.of();
-        }
-        return staffingAnalyzer.analyze(
-                postes,
-                referenceDataService.listAnimateurs(),
-                referenceDataService.listTypologies(),
-                parametres.getDureeHebdomadaireMaxMinutes(),
-                parametres.getPauseMinimaleEntreVacationsMinutes());
+        return staffingService.analyzeEdition();
     }
 
     @Tool(

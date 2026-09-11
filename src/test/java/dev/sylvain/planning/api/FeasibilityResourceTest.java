@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -53,7 +54,7 @@ class FeasibilityResourceTest {
      * coverage requirement.
      */
     @Test
-    void creneauSansAucunAnimateurRemonteEnCauseCritique() {
+    void aTimeslotWithNobodyInTheRosterIsCriticalAndTheReportNamesTheEmptyRoster() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
         given().contentType("application/json")
@@ -98,7 +99,10 @@ class FeasibilityResourceTest {
                 .body("causes[0].demande", equalTo(2))
                 .body("causes[0].capacite", equalTo(0))
                 .body("causes[0].manque", equalTo(2))
-                .body("totalCauses", equalTo(1));
+                .body("totalCauses", equalTo(1))
+                // Said by name (issue #416): the cause describes the seats, the
+                // thing to fix is the empty roster.
+                .body("message", containsString("Aucun animateur n'est saisi"));
 
         // Leave a coherent dataset behind for the other test classes.
         seedScenario();

@@ -3482,7 +3482,7 @@
         }
       },
       "RapportFragilite" : {
-        "required" : [ "animateursIrremplacables", "groupesAnalyses", "groupesDejaSousEffectif", "groupesSansSpecialiste", "ninjaConfigure", "totalCompetencesRares" ],
+        "required" : [ "animateursIrremplacables", "aucunAnimateur", "groupesAnalyses", "groupesDejaSousEffectif", "groupesSansSpecialiste", "ninjaConfigure", "totalCompetencesRares" ],
         "type" : "object",
         "properties" : {
           "animateurs" : {
@@ -3518,6 +3518,9 @@
             "format" : "int32"
           },
           "ninjaConfigure" : {
+            "type" : "boolean"
+          },
+          "aucunAnimateur" : {
             "type" : "boolean"
           },
           "message" : {
@@ -3740,6 +3743,10 @@
             "format" : "int32"
           }
         }
+      },
+      "ReferentielManquant" : {
+        "type" : "string",
+        "enum" : [ "STANDS", "CRENEAUX", "ANIMATEURS" ]
       },
       "RelaisView" : {
         "type" : "object",
@@ -3994,7 +4001,7 @@
         "enum" : [ "DEFAUT", "REGLE", "EXCEPTION" ]
       },
       "StaffingSummary" : {
-        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "minimumMajeurs", "minimumMineurs", "minimumTotal", "nombreSemaines", "pauseMinimaleMinutes", "picAvecPause", "picSimultane", "rotationTotal", "totalDemandeHeures" ],
+        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "minimumMajeurs", "minimumMineurs", "minimumTotal", "nombreSemaines", "pauseMinimaleMinutes", "picAvecPause", "picSimultane", "referentielsManquants", "rotationTotal", "totalDemandeHeures" ],
         "type" : "object",
         "properties" : {
           "parJour" : {
@@ -4083,6 +4090,12 @@
           },
           "parCompetence" : {
             "$ref" : "#/components/schemas/CompetenceStaffing"
+          },
+          "referentielsManquants" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ReferentielManquant"
+            }
           }
         }
       },

@@ -89,8 +89,12 @@
         une fois de vrais animateurs saisis, vérifiez la faisabilité réelle sur la page « Contraintes ».</ng-container>
       </p>
 
-      @if (resume.parJour.length === 0) {
-        <p class="empty-hint" i18n="@@creneaux.empty">Aucun créneau pour le moment.</p>
+      @if (referentielsManquantsLabel(); as manquants) {
+        <p class="empty-hint">{{ manquants }}</p>
+      } @else if (resume.parJour.length === 0) {
+        <p class="empty-hint" i18n="@@staffing.noSeat">
+          Aucun siège à pourvoir : aucun stand n'est ouvert sur les créneaux de la grille active.
+        </p>
       } @else {
         <div class="table-wrapper">
           <table mat-table [dataSource]="resume.parJour">
@@ -147,13 +151,13 @@
     <mat-card-content>
       @if (goulot.animateursTotal === 0) {
         <!--
-          Checked before the empty table: without a single animateur the problem cannot be
-          built at all, so there is no seat to break down — saying "no seat is attached to a
+          Checked before the empty table: the bounds above are proven without a single
+          animateur, but there is nobody to compare them to — saying "no seat is attached to a
           single typologie" there would blame the stands for a missing staff list.
         -->
         <p class="empty-hint" i18n="@@staffing.competence.noAnimateurs">
-          Aucun animateur saisi pour le moment : le besoin ne peut pas être calculé, et le goulot par compétence
-          encore moins. Renseignez la liste des animateurs.
+          Aucun animateur saisi pour le moment : le goulot par compétence ne peut pas être calculé. Renseignez la
+          liste des animateurs.
         </p>
       } @else if (goulot.parTypologie.length === 0) {
         <p class="empty-hint" i18n="@@staffing.competence.empty">

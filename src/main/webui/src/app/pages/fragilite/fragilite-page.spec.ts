@@ -22,6 +22,7 @@ function rapport(partial: Partial<RapportFragilite> = {}): RapportFragilite {
     groupesDejaSousEffectif: 0,
     animateursIrremplacables: 0,
     ninjaConfigure: true,
+    aucunAnimateur: false,
     message: 'Douze groupes analysés.',
     ...partial,
   };
@@ -89,6 +90,20 @@ describe('FragilitePage loading', () => {
     await vi.waitFor(() => expect(page.chargement()).toBe(false));
     expect(text()).toContain('Douze groupes analysés.');
     expect(analysesApi.fragility).toHaveBeenCalledOnce();
+  });
+
+  it('says no animateur is entered instead of inviting a solve nothing could run', async () => {
+    // A stale plan whose animateurs are all gone still has groups to analyse,
+    // and its server message would otherwise read as nothing to worry about.
+    analysesApi.fragility.mockResolvedValue(
+      rapport({ aucunAnimateur: true, message: "Aucun animateur n'est saisi." }),
+    );
+    const page = createPage();
+    await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
+
+    expect(text()).toContain('Aucun animateur saisi');
+    expect(text()).not.toContain('Aucun planning persisté');
+    expect(text()).not.toContain('animateurs affectés');
   });
 
   it('shows the failure as a sentence, not a blank card', async () => {

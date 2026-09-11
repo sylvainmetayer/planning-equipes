@@ -141,6 +141,11 @@ public class PlanningService {
         return problemBuilder.buildFromReferenceData();
     }
 
+    /** @see ProblemBuilder#buildSeatsFromReferenceData() */
+    public ProblemBuilder.Seats buildSeatsFromReferenceData() {
+        return problemBuilder.buildSeatsFromReferenceData();
+    }
+
     /** @see ProblemBuilder#buildFromReferenceData(Reamorcage) */
     public ProblemBuilder.ProblemeReamorce buildFromReferenceData(Reamorcage reamorcage) {
         return problemBuilder.buildFromReferenceData(reamorcage);

@@ -205,6 +205,53 @@ class PlanningResourceTest {
     }
 
     @Test
+    void volumetrieCountsTheSeatsBeforeAnyAnimateurIsEntered() {
+        // Seats depend on the stands and the créneaux only (issue #416): the
+        // card must not read « nothing loaded » on an edition whose roster is
+        // simply not typed in yet.
+        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().contentType("application/json")
+                .body("""
+                        {
+                          "id":"STAND-VOLUMETRIE",
+                          "nom":"Stand sans animateur",
+                          "typologiesProposees":["STRATEGIE"],
+                          "effectifMin":2,
+                          "effectifMax":3,
+                          "reserveMajeurs":false
+                        }
+                        """)
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200);
+        given().contentType("application/json")
+                .body("""
+                        {
+                          "jour":1,
+                          "date":"2026-08-01",
+                          "heureDebut":"10:00:00",
+                          "heureFin":"12:00:00"
+                        }
+                        """)
+                .when()
+                .post("/api/creneaux")
+                .then()
+                .statusCode(200);
+
+        given().when()
+                .get("/api/planning/volumetrie")
+                .then()
+                .statusCode(200)
+                .body("animateurCount", equalTo(0))
+                .body("posteCount", equalTo(2))
+                .body("hoursToFill", equalTo(4f))
+                .body("hoursAvailable", equalTo(0f));
+
+        given().when().post("/api/planning/reset").then().statusCode(200);
+    }
+
+    @Test
     void resetEmptiesTheDatabase() {
         // Seed some data first so the reset has something to wipe. Uses the tiny
         // scenario so the solve (which persists the assignments) stays fast.

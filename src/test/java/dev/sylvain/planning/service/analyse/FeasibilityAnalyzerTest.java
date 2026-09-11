@@ -279,13 +279,41 @@ class FeasibilityAnalyzerTest {
     }
 
     @Test
-    void emptyInputsAreFeasibleByDefault() {
+    void nothingIsFeasibleWithoutAnyAnimateurEvenWithNothingToStaff() {
+        // Nothing to list — no seat is short of anybody — yet « réalisable »
+        // would be read as a green light on an edition that cannot be solved.
         FeasibilityReport report = analyzer.analyze(List.of(), List.of(), List.of());
 
-        assertThat(report.feasible()).isTrue();
+        assertThat(report.feasible()).isFalse();
         assertThat(report.manqueAnimateurs()).isZero();
         assertThat(report.causes()).isEmpty();
         assertThat(report.totalCauses()).isZero();
+        assertThat(report.message()).contains("Aucun animateur n'est saisi");
+    }
+
+    @Test
+    void anEmptyRosterWithSeatsToFillIsNamedFirstAndTheTimeslotsStayListed() {
+        Stand stand = stand("stand-1", 2, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        FeasibilityReport report = analyzer.analyze(List.of(), List.of(stand), List.of(creneau));
+
+        assertThat(report.feasible()).isFalse();
+        assertThat(report.causes()).singleElement().satisfies(cause -> {
+            assertThat(cause.severite()).isEqualTo(SeveriteInfaisabilite.CRITIQUE);
+            assertThat(cause.manque()).isEqualTo(2);
+        });
+        assertThat(report.message())
+                .startsWith("Aucun animateur n'est saisi")
+                .contains("1 cause bloquante a été détectée");
+    }
+
+    @Test
+    void nothingToStaffWithAnAnimateurIsFeasible() {
+        FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")), List.of(), List.of());
+
+        assertThat(report.feasible()).isTrue();
+        assertThat(report.causes()).isEmpty();
     }
 
     @Test

@@ -136,7 +136,13 @@ sur un produit stands × créneaux :
 Le rapport des deux dernières est un taux de remplissage. C'est un plafond,
 pas une prévision : compétences, repos entre vacations et règle de pause en
 retranchent encore, si bien qu'un taux proche de 1 annonce déjà un planning
-infaisable. Tout à zéro tant que l'édition n'a pas de données de référence.
+infaisable. Les postes ne dépendent que des stands et des créneaux : ils sont
+comptés avant la saisie d'aucun animateur (`hoursAvailable` vaut alors zéro),
+et tout est à zéro sans stand ou sans créneau. Même règle pour
+`GET /api/staffing` (et `analyser_effectifs`), dont `referentielsManquants`
+nomme ce qui n'est pas encore saisi, et à l'inverse pour `GET /api/feasibility`
+et `GET /api/fragilite` : sans aucun animateur, rien n'est réalisable, et les
+deux rapports le disent explicitement plutôt que de ne détecter aucun problème.
 
 ### File d'attente
 

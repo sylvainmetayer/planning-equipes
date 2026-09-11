@@ -125,6 +125,29 @@ export class StaffingPage {
   );
 
   /**
+   * Which of the two referentials the seats are built from is still empty,
+   * named — the server used to answer an all-zero summary for a missing stand,
+   * a missing créneau and a missing animateur alike, and the screen blamed the
+   * créneaux every time. A missing animateur is not listed here: the bounds
+   * above are proven without one, and the bottleneck card says it.
+   */
+  protected readonly referentielsManquantsLabel = computed(() => {
+    const manquants = this.summary()?.referentielsManquants ?? [];
+    const phrases: string[] = [];
+    if (manquants.includes('STANDS')) {
+      phrases.push(
+        $localize`:@@staffing.noStands:Aucun stand saisi pour le moment : sans stand, il n'y a aucun siège à pourvoir.`,
+      );
+    }
+    if (manquants.includes('CRENEAUX')) {
+      phrases.push(
+        $localize`:@@staffing.noCreneaux:Aucun créneau saisi pour le moment : sans créneau, il n'y a aucun siège à pourvoir.`,
+      );
+    }
+    return phrases.join(' ');
+  });
+
+  /**
    * How the shared polyvalent reserve reads against the shortfalls — an
    * indication, never a recruitment figure: a polyvalent covers any typologie
    * but only one seat at a time.

@@ -394,6 +394,8 @@ export interface RapportFragilite {
   groupesDejaSousEffectif: number;
   animateursIrremplacables: number;
   ninjaConfigure: boolean;
+  /** The edition holds no animateur at all: nothing is feasible, and `message` says so. */
+  aucunAnimateur: boolean;
   message: string;
 }
 
@@ -1192,6 +1194,13 @@ export type BorneStaffing =
   'PIC_SIMULTANE' | 'PIC_AVEC_PAUSE' | 'CHARGE_HORAIRE' | 'ROTATION_JOURS';
 
 /**
+ * A referential the edition has not filled in yet, as `GET /api/staffing`
+ * names it. The seats need the first two only: without an animateur the
+ * bounds are still proven, and only the comparison against a pool is missing.
+ */
+export type ReferentielManquant = 'STANDS' | 'CRENEAUX' | 'ANIMATEURS';
+
+/**
  * One game category of `GET /api/staffing`: the same bounds, computed on
  * the seats that provably require it, against the animateurs who declare it.
  */
@@ -1294,6 +1303,8 @@ export interface StaffingSummary {
   /** Art. L3132-1: six days. Same, and what the rotation bound divides by. */
   joursTravaillesMaxParSemaine: number;
   parCompetence: CompetenceStaffing;
+  /** What is not entered yet, so the screen names it instead of showing a zero. */
+  referentielsManquants: ReferentielManquant[];
 }
 
 /**

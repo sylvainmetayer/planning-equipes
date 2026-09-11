@@ -14,6 +14,7 @@ import dev.sylvain.planning.mcp.StandMcpTools.StandsView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.CompetenceStaffing;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.ReferentielManquant;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -101,33 +102,39 @@ class DiagnosticMcpToolsTest {
     }
 
     @Test
-    void withStandsButNoAnimateurYetTheBoundsAreAbsentRatherThanUncompared() {
+    void withStandsButNoAnimateurYetTheBoundsAreProvenAndOnlyTheComparisonIsMissing() {
         // The real path of a fresh edition: stands and créneaux imported, staff
-        // list not filled in yet. The problem cannot even be built then, so
-        // there is no seat to break down — and it is animateursTotal, not an
-        // empty category list, that says why.
+        // list not filled in yet. The seats depend on the stands and the
+        // créneaux only, so the bounds are the same as with the full roster
+        // (issue #416) — and it is animateursTotal, not an empty category
+        // list, that says the comparison is missing.
         loadScenario();
+        StaffingSummary avecAnimateurs = diagnosticTools.analyser_effectifs(null);
         referenceDataService.listAnimateurs().stream()
                 .map(Animateur::getId)
                 .forEach(referenceDataService::deleteAnimateur);
 
         StaffingSummary effectifs = diagnosticTools.analyser_effectifs(null);
 
-        assertThat(effectifs.parJour()).isEmpty();
-        assertThat(effectifs.minimumTotal()).isZero();
+        assertThat(effectifs.parJour()).isNotEmpty();
+        assertThat(effectifs.minimumTotal()).isPositive().isEqualTo(avecAnimateurs.minimumTotal());
+        assertThat(effectifs.referentielsManquants()).containsExactly(ReferentielManquant.ANIMATEURS);
         assertThat(effectifs.parCompetence().animateursTotal()).isZero();
-        assertThat(effectifs.parCompetence().parTypologie()).isEmpty();
+        assertThat(effectifs.parCompetence().parTypologie()).isNotEmpty();
         assertThat(effectifs.parCompetence().manqueTotal()).isZero();
     }
 
     @Test
-    void lanalyseDeffectifsRepondSurUneEditionVideAuLieuDechouer() {
+    void theStaffingAnalysisAnswersOnAnEmptyEditionAndNamesEverythingMissing() {
         scenarioTools.reinitialiser_donnees(null);
 
         StaffingSummary effectifs = diagnosticTools.analyser_effectifs(null);
 
         assertThat(effectifs.parJour()).isEmpty();
         assertThat(effectifs.minimumTotal()).isZero();
+        assertThat(effectifs.referentielsManquants())
+                .containsExactly(
+                        ReferentielManquant.STANDS, ReferentielManquant.CRENEAUX, ReferentielManquant.ANIMATEURS);
     }
 
     @Test

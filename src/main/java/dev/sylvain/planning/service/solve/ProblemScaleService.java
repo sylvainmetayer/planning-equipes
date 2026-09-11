@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.referentiel.JoursEvenement;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
@@ -22,12 +23,15 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * « Volumétrie du problème » card of the Solveur screen and of the MCP tool
  * of the same name.
  *
- * <p>Computed on the very problem {@link PlanningService#buildFromReferenceData()}
+ * <p>Computed on the very seats {@link PlanningService#buildSeatsFromReferenceData()}
  * builds for a solve ({@code postes.size()} is Timefold's entity count,
  * {@code animateurs.size()} its value count), so it never drifts from what the
- * solver logs report, unlike a stands × créneaux guess would. All-zero rather
- * than an error when the reference data is not loaded yet: this feeds a
- * read-only card, not a solve.</p>
+ * solver logs report, unlike a stands × créneaux guess would. Seats only, not
+ * the whole problem: that one refuses an edition without animateur, and the
+ * seat count is known as soon as the stands and timeslots are (issue #416) —
+ * an edition with no animateur yet reports its seats and zero hours
+ * available, and one with no stand or no timeslot simply reports zero. Never
+ * an error: this feeds a read-only card, not a solve.</p>
  *
  * <p>The two hour figures put the counts in perspective. <b>Hours to fill</b>
  * is the sum of every seat's effective duration — a seat narrowed by a stand
@@ -45,6 +49,9 @@ public class ProblemScaleService {
 
     @Inject
     PlanningService planningService;
+
+    @Inject
+    ReferenceData referenceDataService;
 
     /**
      * @param animateurCount       Timefold's value count
@@ -64,25 +71,36 @@ public class ProblemScaleService {
     public record ProblemScale(
             int animateurCount, int posteCount, int contrainteAdHocCount, double hoursToFill, double hoursAvailable) {
 
-        static final ProblemScale VIDE = new ProblemScale(0, 0, 0, 0, 0);
+        /** The figures of a problem built by hand — the plain-Java harness of the tests. */
+        public static ProblemScale of(PlanningEvenement evenement) {
+            return of(
+                    evenement.getPostes(),
+                    evenement.getAnimateurs(),
+                    evenement.getContraintesAdHoc().size(),
+                    parametresLegaux(evenement));
+        }
 
         /**
-         * The figures of {@code evenement}, as {@link #compute()} reports them.
-         * The event's days are those its seats fall on: a day with a timeslot
-         * but nothing to staff needs nobody, and counting it would only inflate
-         * the ceiling the seats are compared against.
+         * The figures {@link #compute()} reports. The event's days are those
+         * the seats fall on: a day with a timeslot but nothing to staff needs
+         * nobody, and counting it would only inflate the ceiling the seats are
+         * compared against.
          */
-        public static ProblemScale of(PlanningEvenement evenement) {
-            JoursEvenement jours = JoursEvenement.of(evenement.getPostes().stream()
+        public static ProblemScale of(
+                List<PosteAffectation> postes,
+                List<Animateur> animateurs,
+                int contrainteAdHocCount,
+                ParametresLegaux legaux) {
+            JoursEvenement jours = JoursEvenement.of(postes.stream()
                     .map(PosteAffectation::getCreneau)
                     .filter(java.util.Objects::nonNull)
                     .toList());
             return new ProblemScale(
-                    evenement.getAnimateurs().size(),
-                    evenement.getPostes().size(),
-                    evenement.getContraintesAdHoc().size(),
-                    hoursToFill(evenement.getPostes()),
-                    hoursAvailable(evenement.getAnimateurs(), jours, parametresLegaux(evenement)));
+                    animateurs.size(),
+                    postes.size(),
+                    contrainteAdHocCount,
+                    hoursToFill(postes),
+                    hoursAvailable(animateurs, jours, legaux));
         }
 
         private static ParametresLegaux parametresLegaux(PlanningEvenement evenement) {
@@ -147,12 +165,13 @@ public class ProblemScaleService {
         }
     }
 
-    /** The figures of the current edition; all zero when it has no reference data yet. */
+    /** The figures of the current edition; zero wherever the referential is still empty. */
     public ProblemScale compute() {
-        try {
-            return ProblemScale.of(planningService.buildFromReferenceData());
-        } catch (IllegalStateException e) {
-            return ProblemScale.VIDE;
-        }
+        ProblemBuilder.Seats seats = planningService.buildSeatsFromReferenceData();
+        return ProblemScale.of(
+                seats.postes(),
+                referenceDataService.listAnimateurs(),
+                referenceDataService.snapshotContraintes().size(),
+                referenceDataService.getParametresLegaux());
     }
 }
