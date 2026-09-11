@@ -8,7 +8,7 @@
 
 Le bouton de résolution repartait toujours de zéro, et rien ne le disait.
 Mesuré sur l'édition réelle 2026 (3 499 postes, 153 animateurs, 600 s par
-solve, graine fixe, [#174](https://github.com/sylvainmetayer/planning-equipes/issues/174)) :
+solve, graine fixe, #174) :
 
 | | hard | medium | soft |
 | --- | --- | --- | --- |

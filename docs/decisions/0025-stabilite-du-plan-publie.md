@@ -185,5 +185,5 @@ franchit minuit voisine bien avec le matin suivant.
 
 **Ce que le banc ne dit pas.** Une mesure par case, sur une fixture
 anonymisée : les ordres de grandeur sont fiables, pas les unités. Le réel
-(edition-1708) a un pic 14 h-19 h plus tendu ; à
+(`reel-1708`) a un pic 14 h-19 h plus tendu ; à
 recalibrer là-bas sur un cas réel, le poids par édition est fait pour ça.

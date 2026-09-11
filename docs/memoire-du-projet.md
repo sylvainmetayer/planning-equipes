@@ -272,7 +272,7 @@ contrainte ne le contourne.
 ## 3. D'où viennent les 39 contraintes
 
 Les contraintes légales ne sont pas nées d'une intuition mais d'un **audit daté
-du référentiel contre le Code du travail** ([`audit-conformite-rh.md`](audit-conformite-rh.md)),
+du référentiel contre le Code du travail** (audit interne, hors dépôt),
 qui a relevé une dizaine de manquements numérotés. La forme de cet audit — un constat, le
 texte légal qui le fonde, une gravité — est ce qui a permis de les traiter un
 par un, chaque commit citant son constat et son article.

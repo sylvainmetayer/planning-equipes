@@ -37,11 +37,11 @@ class MailTemplatesTest {
 
     @Test
     void bothPartsSayTheSameThingAndTheHtmlOneWearsTheLayout() {
-        MailTemplates templates = MailTemplates.standalone(new ProductName("Planning Équipes"), BRANDED);
+        MailTemplates templates = MailTemplates.standalone(new ProductName("Planning Machin"), BRANDED);
 
         MailContent content = templates.render(
                 "mail/code-acces",
-                "Planning Équipes — votre code d'accès",
+                "Planning Machin — votre code d'accès",
                 MailTemplates.values("prenom", "Alice", "code", "123456"));
 
         assertThat(content.text())
@@ -50,12 +50,12 @@ class MailTemplatesTest {
                 .doesNotContain("<");
         assertThat(content.html())
                 // The subject is a value, so the layout escapes it like any other.
-                .contains("<title>Planning Équipes — votre code d&#39;accès</title>")
+                .contains("<title>Planning Machin — votre code d&#39;accès</title>")
                 .contains("Bonjour Alice,")
                 .contains("123456")
                 .contains("cid:" + MailTemplates.LOGO_CID)
                 .contains("border-top:4px solid #aa0000")
-                .contains("Les Bénévoles du Jeu — Planning Équipes");
+                .contains("Les Bénévoles du Jeu — Planning Machin");
     }
 
     @Test
