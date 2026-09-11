@@ -17,6 +17,15 @@ base="${1:-origin/main}"
 prefixes='^(feat|fix|refactor|docs|test|chore|build|ci|perf|style|revert)(\([^)]+\))?!?: '
 status=0
 
+# Fails closed. `git rev-list` in a process substitution has its exit code
+# ignored by `set -e`, so an unknown base — the base branch of a stacked PR
+# deleted between its creation and the run — used to print « 0 checked, all
+# conform » and exit 0 without having read a single commit.
+if ! git rev-parse --verify --quiet "$base^{commit}" >/dev/null; then
+  echo "check-commits: base « $base » is not a commit this clone knows"; exit 1
+fi
+count="$(git rev-list --count --no-merges "$base"..HEAD)"
+
 while IFS= read -r sha; do
   subject="$(git log -1 --format=%s "$sha")"
   short="$(git log -1 --format=%h "$sha")"
@@ -41,6 +50,6 @@ while IFS= read -r sha; do
 done < <(git rev-list --no-merges "$base"..HEAD)
 
 if [ "$status" -eq 0 ]; then
-  echo "commit messages: $(git rev-list --count --no-merges "$base"..HEAD) checked, all conform"
+  echo "commit messages: $count checked, all conform"
 fi
 exit "$status"
