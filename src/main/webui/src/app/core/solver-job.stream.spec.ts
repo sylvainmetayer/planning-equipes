@@ -374,6 +374,26 @@ describe('SolverJobService — server-sent events', () => {
     expect(FakeEventSource.open).toHaveLength(0);
   });
 
+  // The pendant of the two stop() tests above: a session that expires stops
+  // the service, and the shell of the re-login starts it again. The reopening
+  // hinges on one flag, `wanted`, reset by `close()` alone — if that reset
+  // went missing, `open()` would return at once and the application would
+  // fall back on the poll alone, transitions up to thirty seconds late,
+  // without a single red test.
+  it('opens a fresh, live stream when a new shell starts the service after a stop', async () => {
+    service.start();
+    await vi.advanceTimersByTimeAsync(0);
+    service.stop();
+    expect(FakeEventSource.open).toHaveLength(0);
+
+    service.start();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(FakeEventSource.open).toHaveLength(1);
+    FakeEventSource.last.emitState(job({ id: 'job-2' }));
+    expect(service.activeJob()?.id).toBe('job-2');
+  });
+
   it('cancels a reconnection that stop() interrupts mid-backoff', async () => {
     service.start();
     await vi.advanceTimersByTimeAsync(0);
