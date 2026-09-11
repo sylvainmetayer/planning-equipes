@@ -10,7 +10,12 @@
 // whole schedule.
 
 import { formatHeure } from '../../core/time-of-day';
-import { CelluleCreneauOuverture, RapportOuvertures, SaisieStandGrille } from '../../core/models';
+import {
+  CelluleCreneauOuverture,
+  RapportOuvertures,
+  SaisieStandGrille,
+  SegmentCellule,
+} from '../../core/models';
 
 /** A cell's address: the stand, and the créneau column. */
 export interface AdresseCellule {
@@ -94,6 +99,77 @@ export function cellulesPartielles(rapport: RapportOuvertures): Set<string> {
   return partielles;
 }
 
+/** The stretches behind every partial cell, keyed `standId#creneauId`: what a save keeps, and what « Aligner » would extend. */
+export function segmentsPartiels(rapport: RapportOuvertures): Map<string, SegmentCellule[]> {
+  const segments = new Map<string, SegmentCellule[]>();
+  for (const ligne of rapport.stands) {
+    for (const jour of ligne.jours) {
+      for (const cellule of jour.creneaux) {
+        if (cellule.partiel) {
+          segments.set(key(ligne.standId, cellule.creneauId), cellule.segments);
+        }
+      }
+    }
+  }
+  return segments;
+}
+
+/** What flattening every partial cell onto its créneau would add: the stands, the cells, and the minutes of opening. */
+export interface Aplatissement {
+  stands: string[];
+  cases: number;
+  minutes: number;
+}
+
+/**
+ * The cost of « Aligner » before it is paid: each partial cell extended to
+ * its whole créneau at its highest headcount, minus what its stretches already
+ * cover. The number the confirmation shows, so nobody aligns 52 cells to find
+ * out afterwards that the week grew by 74 hours.
+ */
+export function aplatissement(
+  segments: ReadonlyMap<string, SegmentCellule[]>,
+  colonnesGrille: readonly ColonneGrille[],
+): Aplatissement {
+  const durationByCreneau = new Map(
+    colonnesGrille.map((colonne) => [
+      colonne.creneauId,
+      minutesBetween(colonne.heureDebut, colonne.heureFin),
+    ]),
+  );
+  const stands = new Set<string>();
+  let cases = 0;
+  let minutes = 0;
+  for (const [clef, stretches] of segments) {
+    const [standId, creneauId] = clef.split('#');
+    const duree = durationByCreneau.get(Number(creneauId));
+    if (duree === undefined || stretches.length === 0) {
+      continue;
+    }
+    stands.add(standId);
+    cases++;
+    const peak = Math.max(...stretches.map((segment) => segment.effectif));
+    const couvert = stretches.reduce(
+      (total, segment) =>
+        total + segment.effectif * minutesBetween(segment.heureDebut, segment.heureFin),
+      0,
+    );
+    minutes += peak * duree - couvert;
+  }
+  return { stands: Array.from(stands), cases, minutes };
+}
+
+/** Minutes from one wall-clock hour to the next, a `00:00` end counting as midnight. */
+function minutesBetween(heureDebut: string, heureFin: string): number {
+  const debut = minutesOfDay(heureDebut);
+  const fin = minutesOfDay(heureFin);
+  return fin > debut ? fin - debut : fin + 24 * 60 - debut;
+}
+
+function minutesOfDay(heure: string): number {
+  return Number(heure.slice(0, 2)) * 60 + Number(heure.slice(3, 5));
+}
+
 export function key(standId: string, creneauId: number): string {
   return `${standId}#${creneauId}`;
 }
@@ -149,13 +225,16 @@ export function standsModifies(cellules: Cellules, reference: Cellules): string[
 /**
  * The body of the save: every cell of every modified stand, the inert ones
  * left out — the server ignores them too, and sending them would say this
- * stand states something about another family's créneau.
+ * stand states something about another family's créneau. `aplatir` is the
+ * explicit request to extend partial cells to their créneau; without it a
+ * cell saved unchanged keeps its stretches.
  */
 export function saisie(
   cellules: Cellules,
   standIds: readonly string[],
   inertes: ReadonlySet<string> = new Set(),
   modifieLeParStand: ReadonlyMap<string, string | null> = new Map(),
+  aplatir = false,
 ): SaisieStandGrille[] {
   return standIds.map((standId) => ({
     standId,
@@ -163,6 +242,7 @@ export function saisie(
     cellules: Array.from(cellules.get(standId) ?? [])
       .filter(([creneauId]) => !inertes.has(key(standId, creneauId)))
       .map(([creneauId, effectif]) => ({ creneauId, effectif })),
+    aplatir,
   }));
 }
 

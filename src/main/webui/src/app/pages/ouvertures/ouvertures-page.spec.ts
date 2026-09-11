@@ -40,6 +40,12 @@ function rapport(): RapportOuvertures {
     effectif,
     partiel,
     horsFamille,
+    // A partial cell of the fixture is open one hour out of two, at its headcount.
+    segments: partiel
+      ? [{ heureDebut: '10:00', heureFin: '11:00', effectif: effectif ?? 1 }]
+      : effectif === null
+        ? []
+        : [{ heureDebut: '10:00', heureFin: '12:00', effectif }],
   });
   const jourStand = (date: string, creneaux: ReturnType<typeof cellule>[]) => ({
     date,
@@ -323,23 +329,83 @@ describe('OuverturesPage — saisie', () => {
           { creneauId: 3, effectif: 2 },
           { creneauId: 4, effectif: 4 },
         ],
+        aplatir: false,
       },
     ]);
     expect(get).toHaveBeenCalledTimes(2);
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
   });
 
-  it('asks before flattening a stand the server reported partial, and writes nothing when refused', async () => {
+  it('saves a partial cell left as shown without asking, and asks when that cell itself was retyped', async () => {
     const { fixture, put, ask } = mount({ vue: 'saisie', confirme: false });
     await fixture.whenStable();
 
+    // The partial cell of B reads "1" and says what it holds.
+    expect(champ(fixture, 'B', 1).getAttribute('title')).toContain('10:00-11:00 : 1');
+
+    // Typing next to it: the partial cell travels unchanged, nothing to confirm.
     taper(champ(fixture, 'B', 2), '3');
     await fixture.whenStable();
     bouton(fixture, 'Enregistrer').click();
     await fixture.whenStable();
+    expect(ask).not.toHaveBeenCalled();
+    expect(put).toHaveBeenCalledOnce();
+    expect((put.mock.calls[0] as unknown as [{ aplatir: boolean }[]])[0][0].aplatir).toBe(false);
 
+    // Retyping the partial cell itself asks, and a refusal writes nothing.
+    taper(champ(fixture, 'B', 1), '2');
+    await fixture.whenStable();
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
     expect(ask).toHaveBeenCalledOnce();
     expect((ask.mock.calls[0] as unknown as [{ message: string }])[0].message).toContain('B');
+    expect(put).toHaveBeenCalledOnce();
+  });
+
+  it('aligns every partial stand in one click, pricing it first and sending aplatir', async () => {
+    const { fixture, put, ask } = mount({ vue: 'saisie' });
+    await fixture.whenStable();
+
+    const aligner = bouton(fixture, 'Aligner les fenêtres partielles');
+    // Only stand B has a partial cell: counted, and the only one sent.
+    expect(aligner.textContent).toContain('(1)');
+    expect(aligner.disabled).toBe(false);
+    aligner.click();
+    await fixture.whenStable();
+
+    expect(ask).toHaveBeenCalledOnce();
+    const message = (ask.mock.calls[0] as unknown as [{ message: string }])[0].message;
+    // One cell, one hour out of two at headcount 1: one hour of opening added.
+    expect(message).toContain('1 stand(s), 1 case(s)');
+    expect(message).toContain('1 h');
+    expect(message).toContain('B');
+    expect(put).toHaveBeenCalledWith([
+      {
+        standId: 'B',
+        modifieLe: '2026-09-06T10:00:00Z',
+        cellules: [
+          { creneauId: 1, effectif: 1 },
+          { creneauId: 2, effectif: null },
+          { creneauId: 3, effectif: null },
+          { creneauId: 4, effectif: null },
+        ],
+        aplatir: true,
+      },
+    ]);
+  });
+
+  it('refuses to align while cells are modified, and writes nothing when the alignment is refused', async () => {
+    const { fixture, put } = mount({ vue: 'saisie', confirme: false });
+    await fixture.whenStable();
+
+    taper(champ(fixture, 'A', 2), '5');
+    await fixture.whenStable();
+    expect(bouton(fixture, 'Aligner les fenêtres partielles').disabled).toBe(true);
+
+    bouton(fixture, 'Annuler les modifications').click();
+    await fixture.whenStable();
+    bouton(fixture, 'Aligner les fenêtres partielles').click();
+    await fixture.whenStable();
     expect(put).not.toHaveBeenCalled();
   });
 

@@ -40,8 +40,9 @@ import java.util.TreeMap;
  *       listed</em>, not a reason to refuse the file: a workbook often carries a
  *       band the edition does not have. A créneau the file has no column for
  *       keeps each stand's current cell — the import only overrides what the
- *       file states, so an opening covering part of such a créneau comes back
- *       widened to the whole of it, which the report warns about.</li>
+ *       file states, and a cell kept unchanged keeps its segments even when
+ *       they cover part of the créneau only
+ *       ({@link GrilleHorairesStands#apply}).</li>
  *   <li><b>Rows</b> name a stand by its id, else by its exact name; a name two
  *       stands share, or a stand the edition does not have, rejects the row.
  *       A stand is not created here: it needs typologies the matrix does not
@@ -128,14 +129,13 @@ public class StandGrilleImportService {
             }
         }
         csv.append('\n').append(bandes).append('\n');
-        Map<String, Map<Long, CelluleActuelle>> cellules = cellulesActuelles(edition);
+        Map<String, Map<Long, Integer>> cellules = cellulesActuelles(edition);
         for (Stand stand : stands.list()) {
             csv.append(csv(stand.getId()));
-            Map<Long, CelluleActuelle> ligne = cellules.getOrDefault(stand.getId(), Map.of());
+            Map<Long, Integer> ligne = cellules.getOrDefault(stand.getId(), Map.of());
             for (List<Creneau> duJour : parJour.values()) {
                 for (Creneau creneau : duJour) {
-                    CelluleActuelle actuelle = ligne.get(creneau.getId());
-                    Integer effectif = actuelle == null ? null : actuelle.effectif();
+                    Integer effectif = ligne.get(creneau.getId());
                     csv.append(';').append(effectif == null ? "" : effectif);
                 }
             }
@@ -284,7 +284,8 @@ public class StandGrilleImportService {
         }
 
         // Each row names one stand of the edition, or none.
-        List<Stand> tous = stands.list();
+        // Resolved: a kept cell keeps its segments, which only the effective windows say.
+        List<Stand> tous = stands.listSolved();
         Map<String, Stand> parId = new LinkedHashMap<>();
         Map<String, List<Stand>> parNom = new HashMap<>();
         for (Stand stand : tous) {
@@ -292,11 +293,7 @@ public class StandGrilleImportService {
             parNom.computeIfAbsent(normalise(stand.getNom()), key -> new ArrayList<>())
                     .add(stand);
         }
-        Map<String, Map<Long, CelluleActuelle>> actuelles = cellulesActuelles(edition);
-        // Stands whose kept cells — those the file has no column for — hold an
-        // opening covering only part of a créneau: rewritten from a headcount
-        // alone, it comes back covering the whole of it.
-        List<String> elargis = new ArrayList<>();
+        Map<String, Map<Long, Integer>> actuelles = cellulesActuelles(edition);
         List<ImportedGrilleRow> rows = new ArrayList<>();
         List<Stand> aEcrire = new ArrayList<>();
         Map<String, Integer> dejaVus = new HashMap<>();
@@ -335,9 +332,7 @@ public class StandGrilleImportService {
                         null));
                 continue;
             }
-            Map<Long, CelluleActuelle> avant = actuelles.getOrDefault(stand.getId(), Map.of());
-            Map<Long, Integer> cellules = new TreeMap<>();
-            avant.forEach((creneauId, cellule) -> cellules.put(creneauId, cellule.effectif()));
+            Map<Long, Integer> cellules = new TreeMap<>(actuelles.getOrDefault(stand.getId(), Map.of()));
             int ouvertes = 0;
             for (int index = 0; index < matrice.colonnes().size(); index++) {
                 GrilleCsv.Colonne colonne = matrice.colonnes().get(index);
@@ -376,13 +371,6 @@ public class StandGrilleImportService {
             List<SaisieCellule> saisie = new ArrayList<>();
             for (Creneau creneau : edition) {
                 saisie.add(new SaisieCellule(creneau.getId(), cellules.get(creneau.getId())));
-                CelluleActuelle actuelle = avant.get(creneau.getId());
-                if (!dejaPris.contains(creneau.getId())
-                        && actuelle != null
-                        && actuelle.partiel()
-                        && !elargis.contains(stand.getId())) {
-                    elargis.add(stand.getId());
-                }
             }
             try {
                 GrilleHorairesStands.LigneGrille grille = GrilleHorairesStands.apply(stand, edition, saisie);
@@ -414,38 +402,28 @@ public class StandGrilleImportService {
                         null));
             }
         }
-        if (!elargis.isEmpty()) {
-            warnings.add(elargis.size() + " stand(s) n'ouvrent qu'une partie d'un créneau sans colonne dans le "
-                    + "fichier (" + citer(elargis) + ") : l'import réécrit tout leur horaire depuis des effectifs, "
-                    + "et ces ouvertures seront élargies au créneau entier. Donnez une colonne à ces créneaux pour "
-                    + "dire ce qu'ils doivent devenir.");
-        }
         return new Analyse(matrice.separator(), columns, creneauxAbsents, rows, warnings, aEcrire);
     }
 
     /**
      * What every stand currently does on every créneau, read off the same report
-     * the entry grid reads — {@code partiel} kept, because a headcount alone
-     * does not say that the stand only covers part of the créneau.
+     * the entry grid reads: the headcount, {@code null} when closed.
      */
-    private Map<String, Map<Long, CelluleActuelle>> cellulesActuelles(List<Creneau> edition) {
-        Map<String, Map<Long, CelluleActuelle>> cellules = new HashMap<>();
+    private Map<String, Map<Long, Integer>> cellulesActuelles(List<Creneau> edition) {
+        Map<String, Map<Long, Integer>> cellules = new HashMap<>();
         OuvertureStandsAnalyzer.RapportOuvertures rapport =
                 OuvertureStandsAnalyzer.analyze(stands.listSolved(), edition);
         for (OuvertureStandsAnalyzer.LigneStand ligne : rapport.stands()) {
-            Map<Long, CelluleActuelle> parCreneau = new HashMap<>();
+            Map<Long, Integer> parCreneau = new HashMap<>();
             for (OuvertureStandsAnalyzer.CelluleJour jour : ligne.jours()) {
                 for (OuvertureStandsAnalyzer.CelluleCreneau cellule : jour.creneaux()) {
-                    parCreneau.put(cellule.creneauId(), new CelluleActuelle(cellule.effectif(), cellule.partiel()));
+                    parCreneau.put(cellule.creneauId(), cellule.effectif());
                 }
             }
             cellules.put(ligne.standId(), parCreneau);
         }
         return cellules;
     }
-
-    /** A stand's current cell on one créneau: its headcount, and whether it only covers part of it. */
-    private record CelluleActuelle(Integer effectif, boolean partiel) {}
 
     private static Stand resolve(String texte, Map<String, Stand> parId, Map<String, List<Stand>> parNom) {
         Stand parIdentifiant = parId.get(texte.trim());
@@ -483,13 +461,6 @@ public class StandGrilleImportService {
     /** Thousands spaced out, the way the animateur import writes its own caps. */
     private static String grouped(int value) {
         return String.valueOf(value).replaceAll("(?<=\\d)(?=(\\d{3})+$)", " ");
-    }
-
-    /** The first few of a list, and how many are left: a warning names examples, never forty ids. */
-    private static String citer(List<String> ids) {
-        int cites = Math.min(3, ids.size());
-        String debut = String.join(", ", ids.subList(0, cites));
-        return ids.size() > cites ? debut + " et " + (ids.size() - cites) + " autre(s)" : debut;
     }
 
     /** A field a spreadsheet reads back as one: quoted as soon as it carries the separator, a quote or a newline. */

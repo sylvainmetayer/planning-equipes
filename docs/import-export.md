@@ -400,12 +400,11 @@ Deux points valent d'être connus avant de verser un fichier. Une colonne se
 pose sur **tous** les créneaux de sa date et de ses heures, pas sur le premier :
 une grille décalée en familles en porte un par famille, et n'en servir qu'un
 laissait les stands des autres inchangés alors que le rapport les disait
-écrits. Et parce qu'un créneau sans colonne garde sa case, un stand qui n'ouvre
-qu'une partie d'un tel créneau ressort **élargi au créneau entier** : l'horaire
-est réécrit depuis des effectifs, qui ne savent pas dire « seulement de 14 h à
-15 h ». Le rapport nomme les stands concernés ; donnez une colonne à ces
-créneaux pour dire ce qu'ils doivent devenir. Une bande dont la minute n'a
-qu'un chiffre (`9:5`) est refusée plutôt que complétée, comme à la saisie.
+écrits. Et un créneau sans colonne garde sa case **avec ses segments** : un
+stand qui n'y ouvre que de 14 h à 15 h, ou à deux effectifs successifs, en
+ressort tel quel, comme à l'enregistrement depuis la grille de saisie. Une
+bande dont la minute n'a qu'un chiffre (`9:5`) est refusée plutôt que
+complétée, comme à la saisie.
 
 Le fichier d'exemple écrit ses bandes **`10h00-12h00`**, pas `10:00-12:00`, et
 c'est délibéré : Excel retype `13:00-16:00` en la date `30/11/1999 13:16:00`, et

@@ -27,6 +27,7 @@ import {
   CelluleJourOuverture,
   LigneStandOuverture,
   RapportOuvertures,
+  SegmentCellule,
 } from '../../core/models';
 import {
   anomaliesParStand,
@@ -42,6 +43,7 @@ import {
   AdresseCellule,
   Cellules,
   ColonneGrille,
+  aplatissement,
   cellulesDepuis,
   cellulesInertes,
   cellulesPartielles,
@@ -57,6 +59,7 @@ import {
   readCell,
   recopierJour,
   saisie,
+  segmentsPartiels,
   standsModifies,
 } from './grille-horaires';
 
@@ -129,6 +132,14 @@ export class OuverturesPage {
   /** The cells as the server last reported them: what "modified" is measured against. */
   private readonly reference = signal<Cellules>(new Map());
   private readonly partielles = signal<ReadonlySet<string>>(new Set());
+  /** What each partial cell really holds: the stretches a save keeps as long as the cell is not retyped. */
+  private readonly segments = signal<ReadonlyMap<string, SegmentCellule[]>>(new Map());
+  /** The stands with at least one partial cell, in report order: what « Aligner » sends. */
+  protected readonly standsPartiels = computed(() =>
+    (this.rapport()?.stands ?? [])
+      .map((ligne) => ligne.standId)
+      .filter((standId) => this.hasPartialCells(standId)),
+  );
   /** Cells of another stagger family's créneau: shown, never typed, never sent. */
   private readonly inertes = signal<ReadonlySet<string>>(new Set());
   /** The last cell focused: where a paste lands, and which day a row copy takes. */
@@ -170,6 +181,7 @@ export class OuverturesPage {
       this.reference.set(cellules);
       this.cellules.set(cellules);
       this.partielles.set(cellulesPartielles(rapport));
+      this.segments.set(segmentsPartiels(rapport));
       this.inertes.set(cellulesInertes(rapport));
     } catch (error) {
       this.crud.reportError(error);
@@ -195,8 +207,24 @@ export class OuverturesPage {
     this.view.set(view);
   }
 
-  protected infobullePartielle(): string {
-    return $localize`:@@ouvertures.saisie.partielle:Les fenêtres de ce stand ne suivent pas les bornes de ce créneau ; enregistrer les alignera sur le créneau.`;
+  /** A partial cell says what it holds, and that saving it as shown keeps it. */
+  protected infobullePartielle(standId: string, creneauId: number): string {
+    const detail = (this.segments().get(key(standId, creneauId)) ?? [])
+      .map(
+        (segment) =>
+          `${this.heure(segment.heureDebut)}-${this.heure(segment.heureFin)} : ${segment.effectif}`,
+      )
+      .join(', ');
+    return $localize`:@@ouvertures.saisie.partielle:Cette case porte plusieurs valeurs (${detail}:segments:). Enregistrée telle quelle, elle les garde ; modifiée, la valeur tapée s'applique à tout le créneau.`;
+  }
+
+  protected infobulleAligner(): string {
+    return $localize`:@@ouvertures.saisie.alignerTooltip:Étend chaque case à plusieurs valeurs à son créneau entier, à sa valeur la plus haute. Enregistrez ou annulez d'abord vos modifications.`;
+  }
+
+  private hasPartialCells(standId: string): boolean {
+    const prefixe = standId + '#';
+    return Array.from(this.partielles()).some((clef) => clef.startsWith(prefixe));
   }
 
   protected valeur(standId: string, creneauId: number): string {
@@ -352,9 +380,9 @@ export class OuverturesPage {
   }
 
   /**
-   * Sends the modified stands, each with its whole schedule. Cells the server
-   * reported partial are named first: a save flattens them onto the créneau,
-   * and that is worth a look before it happens.
+   * Sends the modified stands, each with its whole schedule. A partial cell
+   * saved as shown keeps its stretches; one that was retyped is named first,
+   * because the value typed will then cover the whole créneau.
    */
   protected async enregistrer(): Promise<void> {
     const modifies = this.standsModifies();
@@ -362,22 +390,56 @@ export class OuverturesPage {
       return;
     }
     const aplatis = modifies.filter((standId) =>
-      Array.from(this.partielles()).some((clef) => clef.startsWith(standId + '#')),
+      Array.from(this.partielles()).some((clef) => {
+        const [stand, creneauId] = clef.split('#');
+        return stand === standId && this.estModifiee(standId, Number(creneauId));
+      }),
     );
     if (aplatis.length > 0) {
       const confirme = await this.confirm.ask({
-        title: $localize`:@@ouvertures.saisie.aplatirTitle:Aligner des fenêtres sur les créneaux ?`,
-        message: $localize`:@@ouvertures.saisie.aplatirMessage:${aplatis.join(', ')}:stands: : des fenêtres ne suivaient pas les bornes des créneaux ; enregistrer les aligne sur les créneaux.`,
+        title: $localize`:@@ouvertures.saisie.aplatirTitle:Remplacer des cases à plusieurs valeurs ?`,
+        message: $localize`:@@ouvertures.saisie.aplatirMessage:${aplatis.join(', ')}:stands: : des cases qui portaient plusieurs valeurs ont été modifiées ; la valeur tapée s'appliquera à tout le créneau.`,
         confirmLabel: $localize`:@@ouvertures.saisie.aplatirLabel:Enregistrer`,
       });
       if (!confirme) {
         return;
       }
     }
+    await this.send(modifies, false);
+  }
+
+  /**
+   * Every stand the server reported partial, sent back with `aplatir`: the
+   * one gesture that extends a partial cell to its whole créneau. The
+   * confirmation prices it first — stands, cells, hours of opening added —
+   * because on the reference event that is 12 stands and 74 hours. Refused
+   * while cells are modified: the reload after the save would drop them.
+   */
+  protected async alignerPartiels(): Promise<void> {
+    const partiels = this.standsPartiels();
+    if (partiels.length === 0 || this.standsModifies().length > 0 || this.enregistrement()) {
+      return;
+    }
+    const cout = aplatissement(this.segments(), this.colonnes());
+    const heures = Math.round(cout.minutes / 6) / 10;
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@ouvertures.saisie.alignerTitle:Aligner les fenêtres sur les créneaux ?`,
+      message: $localize`:@@ouvertures.saisie.alignerMessage:${partiels.length}:stands: stand(s), ${cout.cases}:cases: case(s) : chaque case sera étendue à son créneau entier, à sa valeur la plus haute, soit ${heures}:heures: h d'ouverture en plus (${partiels.join(', ')}:liste:).`,
+      confirmLabel: $localize`:@@ouvertures.saisie.alignerLabel:Aligner`,
+      danger: true,
+    });
+    if (!confirme) {
+      return;
+    }
+    await this.send(partiels, true);
+  }
+
+  /** The save itself: the named stands, each with all its cells, then a reload and a line on what was written. */
+  private async send(standIds: readonly string[], aplatir: boolean): Promise<void> {
     this.enregistrement.set(true);
     try {
       const rapport = await this.standsApi.saveOpeningsGrid(
-        saisie(this.cellules(), modifies, this.inertes(), this.modifieLeParStand()),
+        saisie(this.cellules(), standIds, this.inertes(), this.modifieLeParStand(), aplatir),
       );
       const regles = rapport.stands.reduce((total, ligne) => total + ligne.regles, 0);
       const exceptions = rapport.stands.reduce((total, ligne) => total + ligne.exceptions, 0);

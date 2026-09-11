@@ -30,6 +30,15 @@
         <mat-icon>undo</mat-icon>
         <ng-container i18n="@@ouvertures.saisie.annuler">Annuler les modifications</ng-container>
       </button>
+      <button matButton type="button" class="saisie-aligner" [matTooltip]="infobulleAligner()"
+              [disabled]="editingLocked() || enregistrement() || standsModifies().length > 0 || standsPartiels().length === 0"
+              (click)="alignerPartiels()">
+        <mat-icon>auto_fix_high</mat-icon>
+        <ng-container i18n="@@ouvertures.saisie.aligner">Aligner les fenêtres partielles</ng-container>
+        @if (standsPartiels().length > 0) {
+          <span class="saisie-compteur">({{ standsPartiels().length }})</span>
+        }
+      </button>
     }
     <button matButton type="button" [disabled]="chargement() || standsModifies().length > 0" (click)="recharger()">
       <mat-icon>refresh</mat-icon>
@@ -86,7 +95,7 @@
 
       @if (view() === 'SAISIR') {
         <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
-          Une case par stand et par créneau : l'effectif, vide pour fermé. Flèches, Entrée et collage depuis un tableur. À l'enregistrement, l'horaire du stand est réécrit depuis la grille.
+          Une case par stand et par créneau : l'effectif, vide pour fermé. Flèches, Entrée et collage depuis un tableur. Une case en pointillés porte plusieurs valeurs et les garde tant qu'on ne la modifie pas.
         </p>
         @if (editingLocked()) {
           <p class="locked-hint" i18n="@@ouvertures.saisie.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
@@ -136,7 +145,7 @@
                       <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"
                              [attr.data-cellule]="identifiant(ligne.standId, colonne.creneauId)"
                              [attr.aria-label]="(ligne.nom || ligne.standId) + ' · ' + libelleJour(colonne.date) + ' ' + libelleColonne(colonne)"
-                             [attr.title]="estInerte(ligne.standId, colonne.creneauId) ? infobulleInerte() : (estPartielle(ligne.standId, colonne.creneauId) ? infobullePartielle() : null)"
+                             [attr.title]="estInerte(ligne.standId, colonne.creneauId) ? infobulleInerte() : (estPartielle(ligne.standId, colonne.creneauId) ? infobullePartielle(ligne.standId, colonne.creneauId) : null)"
                              [disabled]="editingLocked() || estInerte(ligne.standId, colonne.creneauId)"
                              [value]="valeur(ligne.standId, colonne.creneauId)"
                              (input)="saisir(ligne.standId, colonne.creneauId, $any($event.target).value)"

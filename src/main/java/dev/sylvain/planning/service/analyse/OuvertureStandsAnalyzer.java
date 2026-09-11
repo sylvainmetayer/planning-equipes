@@ -96,21 +96,37 @@ public final class OuvertureStandsAnalyzer {
             int nombreCreneaux,
             List<ColonneCreneau> creneaux) {}
 
+    /** One open stretch of a cell, in wall-clock hours, with the headcount it asks for. */
+    @Schema(requiredProperties = {"effectif", "heureDebut", "heureFin"})
+    public record SegmentCellule(LocalTime heureDebut, LocalTime heureFin, int effectif) {}
+
     /**
      * What one stand does on one créneau, as the entry grid shows it: the
      * headcount when the stand is open on the whole créneau at one headcount,
      * {@code null} when closed. {@code partiel} flags a stand open on part of
      * the créneau only, or at a headcount that changes during it — a shape
-     * the grid cannot hold, and which a save from the grid would flatten to
-     * the créneau; {@code effectif} is then the highest one.
+     * the grid cannot hold in one integer; {@code effectif} is then the
+     * highest one, and {@code segments} says what the cell really holds. A
+     * save keeps those segments as long as the cell is not retyped
+     * ({@link dev.sylvain.planning.service.referentiel.GrilleHorairesStands}).
      */
     /**
      * @param horsFamille the créneau belongs to another stagger family than the
      *                    stand's, so the stand never receives a seat on it —
      *                    the cell is shown inert rather than editable
+     * @param segments    the open stretches of the cell, empty when closed;
+     *                    one stretch spanning the créneau when the cell is not
+     *                    partial
      */
-    @Schema(requiredProperties = {"horsFamille", "partiel"})
-    public record CelluleCreneau(Long creneauId, Integer effectif, boolean partiel, boolean horsFamille) {}
+    @Schema(requiredProperties = {"horsFamille", "partiel", "segments"})
+    public record CelluleCreneau(
+            Long creneauId, Integer effectif, boolean partiel, boolean horsFamille, List<SegmentCellule> segments) {
+
+        /** A cell that is not partial: one stretch, or none. */
+        public CelluleCreneau(Long creneauId, Integer effectif, boolean partiel, boolean horsFamille) {
+            this(creneauId, effectif, partiel, horsFamille, List.of());
+        }
+    }
 
     /** An open stretch, in wall-clock hours, after clamping to the créneaux. */
     public record FenetreEffective(LocalTime heureDebut, LocalTime heureFin) {}
@@ -314,7 +330,14 @@ public final class OuvertureStandsAnalyzer {
         boolean entier = segments.size() == 1
                 && segments.get(0).debutMinutes() == 0
                 && segments.get(0).finMinutes() == creneau.getDureeMinutes();
-        return new CelluleCreneau(colonne.id(), effectif, !entier, false);
+        int debut = creneau.getHeureDebut().toSecondOfDay() / 60;
+        List<SegmentCellule> lus = segments.stream()
+                .map(segment -> new SegmentCellule(
+                        minuteToTime(debut + segment.debutMinutes()),
+                        minuteToTime(debut + segment.finMinutes()),
+                        segment.effectif()))
+                .toList();
+        return new CelluleCreneau(colonne.id(), effectif, !entier, false, lus);
     }
 
     /**

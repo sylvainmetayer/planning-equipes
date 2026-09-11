@@ -180,7 +180,9 @@ public class StandService {
     public List<GrilleHorairesStands.LigneGrille> saisirGrille(List<GrilleHorairesStands.SaisieStand> saisies) {
         solverJobs.refuseIfSolving();
         List<Creneau> edition = creneaux.list();
-        List<Stand> tous = list();
+        // Resolved, not raw: a partial cell saved unchanged keeps the segments
+        // the stand actually has there, which only the effective windows say.
+        List<Stand> tous = listSolved();
         Map<String, Stand> parId = new LinkedHashMap<>();
         tous.forEach(stand -> parId.put(stand.getId(), stand));
         Map<String, Integer> familles = ProblemBuilder.standFamilies(tous, edition);
@@ -215,7 +217,7 @@ public class StandService {
             List<GrilleHorairesStands.SaisieCellule> retenues = cellules.stream()
                     .filter(cellule -> idsFamille.contains(cellule.creneauId()))
                     .toList();
-            lignes.add(GrilleHorairesStands.apply(stand, siens, retenues));
+            lignes.add(GrilleHorairesStands.apply(stand, siens, retenues, saisie.aplatir()));
             // The precondition the grid read, not the row's own stamp: without
             // this the screen that rewrites the most would be the only one
             // able to overwrite another session in silence (issue #362).

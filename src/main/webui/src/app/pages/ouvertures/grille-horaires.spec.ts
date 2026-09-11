@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { RapportOuvertures } from '../../core/models';
 import {
   Cellules,
+  ColonneGrille,
+  aplatissement,
   cellulesDepuis,
   cellulesInertes,
   cellulesPartielles,
-  countCopied,
   collerBloc,
   colonnes,
+  countCopied,
   deplacement,
   ecrireCellule,
   jourDeReference,
@@ -15,6 +17,7 @@ import {
   readCell,
   recopierJour,
   saisie,
+  segmentsPartiels,
   standsModifies,
   valeursLigne,
 } from './grille-horaires';
@@ -49,6 +52,7 @@ function rapport(): RapportOuvertures {
     effectif,
     partiel,
     horsFamille,
+    segments: [],
   });
   const jourStand = (date: string, creneaux: ReturnType<typeof cellule>[]) => ({
     date,
@@ -176,6 +180,7 @@ describe('standsModifies et saisie', () => {
           { creneauId: 4, effectif: null },
           { creneauId: 5, effectif: null },
         ],
+        aplatir: false,
       },
     ]);
   });
@@ -351,5 +356,102 @@ describe('recopierJour', () => {
       '2026-07-09',
     );
     expect(jourDeReference(cellules, 'B', [])).toBeNull();
+  });
+});
+
+describe('segmentsPartiels et aplatissement', () => {
+  const colonnes: ColonneGrille[] = [
+    { date: '2026-07-08', creneauId: 1, heureDebut: '14:00', heureFin: '20:00', rang: 0 },
+    { date: '2026-07-08', creneauId: 2, heureDebut: '20:00', heureFin: '00:00', rang: 1 },
+  ];
+
+  it('prices flattening as the créneau at the highest headcount minus what the stretches cover', () => {
+    const segments = new Map([
+      // 4 from 14:00 to 19:00, then 2: flattening puts 4 on the last hour, +2 h.
+      [
+        'DIV#1',
+        [
+          { heureDebut: '14:00', heureFin: '19:00', effectif: 4 },
+          { heureDebut: '19:00', heureFin: '20:00', effectif: 2 },
+        ],
+      ],
+      // 3 until 21:00 then 5 till midnight: +2 on one hour, +2 h — and midnight counts as 24:00.
+      [
+        'DIV#2',
+        [
+          { heureDebut: '20:00', heureFin: '21:00', effectif: 3 },
+          { heureDebut: '21:00', heureFin: '00:00', effectif: 5 },
+        ],
+      ],
+      // Open one hour out of six at 1: +5 h.
+      ['FLIP7#1', [{ heureDebut: '14:00', heureFin: '15:00', effectif: 1 }]],
+    ]);
+
+    expect(aplatissement(segments, colonnes)).toEqual({
+      stands: ['DIV', 'FLIP7'],
+      cases: 3,
+      minutes: 9 * 60,
+    });
+  });
+
+  it('ignores a cell whose créneau is not a column, and prices nothing when nothing is partial', () => {
+    expect(
+      aplatissement(
+        new Map([['X#99', [{ heureDebut: '10:00', heureFin: '11:00', effectif: 1 }]]]),
+        colonnes,
+      ),
+    ).toEqual({ stands: [], cases: 0, minutes: 0 });
+    expect(aplatissement(new Map(), colonnes)).toEqual({ stands: [], cases: 0, minutes: 0 });
+  });
+
+  it('collects the stretches of the partial cells only, and sends aplatir with the body', () => {
+    const rapport = {
+      jours: [],
+      stands: [
+        {
+          standId: 'A',
+          nom: 'A',
+          effectifMin: 1,
+          minutesOuvertes: 0,
+          postes: 0,
+          modifieLe: null,
+          jours: [
+            {
+              date: '2026-07-08',
+              etat: 'OUVERT_PARTIEL',
+              source: 'REGLE',
+              fenetres: [],
+              minutesOuvertes: 0,
+              minutesAmplitude: 0,
+              postes: 0,
+              creneaux: [
+                {
+                  creneauId: 1,
+                  effectif: 4,
+                  partiel: true,
+                  horsFamille: false,
+                  segments: [{ heureDebut: '14:00', heureFin: '19:00', effectif: 4 }],
+                },
+                {
+                  creneauId: 2,
+                  effectif: 2,
+                  partiel: false,
+                  horsFamille: false,
+                  segments: [{ heureDebut: '20:00', heureFin: '00:00', effectif: 2 }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      standsJamaisOuverts: 0,
+      postesTotal: 0,
+      anomalies: [],
+    } as unknown as RapportOuvertures;
+
+    expect(Array.from(segmentsPartiels(rapport).keys())).toEqual(['A#1']);
+    const corps = saisie(cellulesDepuis(rapport), ['A'], new Set(), new Map(), true);
+    expect(corps[0].aplatir).toBe(true);
+    expect(saisie(cellulesDepuis(rapport), ['A'])[0].aplatir).toBe(false);
   });
 });

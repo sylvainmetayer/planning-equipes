@@ -180,17 +180,69 @@ class GrilleHorairesStandsTest {
     }
 
     @Test
-    void uneFenetreQuiNeSuivaitPasLesCreneauxEstAligneeSurEux() {
+    void uneCasePartielleSauveeTelleQuelleGardeSesSegments() {
+        List<Creneau> creneaux = grille(1);
+        Stand stand = stand("VARIABLE", 2, 4);
+        // 4 people from 14:00 to 19:00, then 2 until 20:00: the workbook's own shape.
+        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
+        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
+        RapportOuvertures avant = relire(stand, creneaux);
+        CelluleCreneau lue = cellulesLues(avant, 0).get(3);
+        assertThat(lue.partiel()).isTrue();
+        assertThat(lue.effectif()).isEqualTo(4);
+
+        // The grid sends the cell back as it showed it: 4.
+        GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, null, null, null, 4, null));
+        RapportOuvertures apres = relire(stand, creneaux);
+
+        CelluleCreneau gardee = cellulesLues(apres, 0).get(3);
+        assertThat(gardee.partiel()).isTrue();
+        assertThat(gardee.effectif()).isEqualTo(4);
+        assertThat(gardee.segments())
+                .extracting(segment -> segment.heureDebut() + "-" + segment.heureFin() + "@" + segment.effectif())
+                .containsExactly("14:00-19:00@4", "19:00-20:00@2");
+        assertThat(stand.getEffectifMin()).isEqualTo(2);
+        assertThat(stand.getEffectifMax()).isEqualTo(4);
+    }
+
+    @Test
+    void uneCasePartielleRetapeeAutrementEstAligneeSurLeCreneau() {
+        List<Creneau> creneaux = grille(1);
+        Stand stand = stand("VARIABLE", 2, 4);
+        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
+        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
+        relire(stand, creneaux);
+
+        GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, null, null, null, 3, null));
+        RapportOuvertures apres = relire(stand, creneaux);
+
+        CelluleCreneau alignee = cellulesLues(apres, 0).get(3);
+        assertThat(alignee.partiel()).isFalse();
+        assertThat(alignee.effectif()).isEqualTo(3);
+        assertThat(alignee.segments())
+                .extracting(segment -> segment.heureDebut() + "-" + segment.heureFin() + "@" + segment.effectif())
+                .containsExactly("14:00-20:00@3");
+    }
+
+    @Test
+    void aplatirAligneUneCasePartielleMemeInchangee() {
         List<Creneau> creneaux = grille(2);
         Stand stand = stand("DECALE", 1, 1);
         stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(11, 0), null));
         RapportOuvertures avant = relire(stand, creneaux);
         assertThat(cellulesLues(avant, 0).get(0).partiel()).isTrue();
 
+        // Saved as shown, the hour-long opening survives.
         GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, 1, null, null, null, null));
-        RapportOuvertures apres = relire(stand, creneaux);
+        RapportOuvertures conserve = relire(stand, creneaux);
+        assertThat(cellulesLues(conserve, 0).get(0).partiel()).isTrue();
+        assertThat(conserve.stands().get(0).jours().get(0).minutesOuvertes()).isEqualTo(60);
 
-        assertThat(cellulesLues(apres, 0).get(0)).isEqualTo(new CelluleCreneau(1L, 1, false, false));
+        // Asked to flatten, it covers the whole créneau.
+        GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, 1, null, null, null, null), true);
+        RapportOuvertures apres = relire(stand, creneaux);
+        assertThat(cellulesLues(apres, 0).get(0).partiel()).isFalse();
+        assertThat(cellulesLues(apres, 0).get(0).effectif()).isEqualTo(1);
         assertThat(apres.stands().get(0).jours().get(0).minutesOuvertes()).isEqualTo(120);
     }
 

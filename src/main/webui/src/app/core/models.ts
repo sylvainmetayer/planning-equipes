@@ -234,16 +234,27 @@ export interface JourAmplitude {
   creneaux: ColonneCreneau[];
 }
 
+/** One open stretch of a cell, in wall-clock hours, with the headcount it asks for. */
+export interface SegmentCellule {
+  heureDebut: string;
+  heureFin: string;
+  effectif: number;
+}
+
 /**
  * What one stand does on one créneau, as the entry grid shows it: the
  * configured headcount, `null` when closed. `partiel` flags windows that do
- * not follow the créneau's edges — a shape the grid cannot hold, and which a
- * save from the grid aligns on the créneau.
+ * not follow the créneau's edges, or a headcount that changes during it — a
+ * shape one integer cannot hold; `effectif` is then the highest one and
+ * `segments` says what the cell really holds. A save keeps those segments as
+ * long as the cell is not retyped.
  */
 export interface CelluleCreneauOuverture {
   creneauId: number;
   effectif: number | null;
   partiel: boolean;
+  /** The open stretches of the cell, empty when closed; one spanning the créneau when not partial. */
+  segments: SegmentCellule[];
   /**
    * The créneau belongs to another stagger family than the stand's, so the
    * stand never receives a seat on it: the cell is shown inert, and neither
@@ -306,6 +317,8 @@ export interface SaisieStandGrille {
   /** The stand's `modifieLe` as the grid read it, sent back as the write's precondition (issue #362). */
   modifieLe: string | null;
   cellules: { creneauId: number; effectif: number | null }[];
+  /** `true` to extend every partial cell to its whole créneau; `false` keeps the segments of a cell saved unchanged. */
+  aplatir: boolean;
 }
 
 /** What the save did to one stand: the rules and exceptions it now holds, and the bounds derived from the cells. */

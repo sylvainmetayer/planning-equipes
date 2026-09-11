@@ -1908,7 +1908,19 @@ Un stand envoyé voit ses règles et ses exceptions **remplacées en totalité**
 par ses cases : les créneaux consécutifs à même effectif deviennent une fenêtre
 datée, la fenêtre qui atteint la fin du jour est laissée ouverte (« jusqu'à la
 fermeture »), un jour sans aucune case est une fermeture explicite — rien dire
-d'un jour voudrait dire ouvert. Le compactage (ci-dessus) ramène ensuite les
+d'un jour voudrait dire ouvert.
+
+**La grille ne détruit jamais ce qu'elle ne sait pas afficher.** Une case ne
+porte qu'un entier, mais un stand peut n'ouvrir qu'une partie d'un créneau, ou
+y changer d'effectif (4 personnes de 14 h à 19 h puis 2 jusqu'à 20 h : la forme
+même des colonnes du classeur de référence). Le rapport marque la case
+`partiel`, `effectif` en est la valeur la plus haute et `segments` dit ce
+qu'elle porte vraiment. Renvoyée **avec la même valeur**, la case garde ses
+segments ; retapée autrement, la valeur tapée couvre tout le créneau. Aplatir
+toutes les cases partielles d'un stand est une demande explicite,
+`stands[].aplatir: true`, jamais l'effet de bord de l'enregistrement d'un
+voisin — sur l'événement de référence, ce sont 52 cases de 12 stands et 74 h
+d'ouverture en plus. Le compactage (ci-dessus) ramène ensuite les
 jours répétés en règles quand il peut prouver l'équivalence, et laisse le reste
 daté : la réponse le dit stand par stand (`regles`, `exceptions`, `compacte`,
 `raison`). Les bornes suivent les cases : `effectifMin` est la plus petite
@@ -1955,9 +1967,9 @@ forme en `h` telle quelle.
   dit combien ; une colonne sans créneau est **ignorée et listée**
   (`columns[].reason`), pas un motif de refus. Un créneau sans colonne
   (`creneauxAbsents`) **garde la case actuelle** de chaque stand importé :
-  l'import ne réécrit que ce que le fichier dit. Un stand qui n'ouvre qu'une
-  partie d'un tel créneau en ressort élargi au créneau entier, un
-  `warnings[]` le nommant.
+  l'import ne réécrit que ce que le fichier dit, et une case gardée garde
+  aussi ses segments quand elle n'ouvre qu'une partie du créneau (même règle
+  que la grille de saisie, ci-dessus).
 - Une ligne nomme un stand par son identifiant, sinon par son nom exact (casse
   et accents indifférents) ; un nom porté par deux stands, ou un stand inconnu,
   rejette la ligne — l'import ne crée pas de stand. Une case vide, `-` ou `0`

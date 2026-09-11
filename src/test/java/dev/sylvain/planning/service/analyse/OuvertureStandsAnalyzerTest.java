@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.Anomaly;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.AnomalyType;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.CelluleCreneau;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.CelluleJour;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.EtatOuverture;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.LigneStand;
@@ -47,6 +48,11 @@ class OuvertureStandsAnalyzerTest {
         stand.setOuvertures(new ArrayList<>());
         stand.setHoraires(new ArrayList<>());
         return stand;
+    }
+
+    /** The cell without its segments, for the assertions that read the grid as integers. */
+    private static CelluleCreneau withoutSegments(CelluleCreneau cellule) {
+        return new CelluleCreneau(cellule.creneauId(), cellule.effectif(), cellule.partiel(), cellule.horsFamille());
     }
 
     private static RapportOuvertures analyze(List<Stand> stands, List<Creneau> creneaux) {
@@ -98,6 +104,30 @@ class OuvertureStandsAnalyzerTest {
     }
 
     @Test
+    void uneCellulePartielleExposeSesSegmentsEtSonEffectifLePlusHaut() {
+        Stand stand = stand("VARIABLE");
+        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
+        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
+
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
+
+        CelluleCreneau partielle =
+                rapport.stands().get(0).jours().get(0).creneaux().get(0);
+        assertThat(partielle.partiel()).isTrue();
+        assertThat(partielle.effectif()).isEqualTo(4);
+        assertThat(partielle.segments())
+                .extracting(segment -> segment.heureDebut() + "-" + segment.heureFin() + "@" + segment.effectif())
+                .containsExactly("14:00-19:00@4", "19:00-20:00@2");
+        // The next day has no window: open by default, one stretch over the créneau.
+        CelluleCreneau entiere =
+                rapport.stands().get(0).jours().get(1).creneaux().get(0);
+        assertThat(entiere.partiel()).isFalse();
+        assertThat(entiere.segments())
+                .extracting(segment -> segment.heureDebut() + "-" + segment.heureFin() + "@" + segment.effectif())
+                .containsExactly("10:00-20:00@1");
+    }
+
+    @Test
     void uneExceptionDateeEstAttribueeALException() {
         Stand stand = stand("EXCEPTION");
         stand.setHoraires(
@@ -138,10 +168,12 @@ class OuvertureStandsAnalyzerTest {
         List<OuvertureStandsAnalyzer.CelluleCreneau> cellules =
                 rapport.stands().get(0).jours().get(0).creneaux();
         assertThat(cellules)
+                .map(OuvertureStandsAnalyzerTest::withoutSegments)
                 .containsExactly(
                         new OuvertureStandsAnalyzer.CelluleCreneau(1L, 2, false, false),
                         new OuvertureStandsAnalyzer.CelluleCreneau(3L, 4, true, false));
         assertThat(rapport.stands().get(0).jours().get(1).creneaux())
+                .map(OuvertureStandsAnalyzerTest::withoutSegments)
                 .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 2, false, false));
     }
 
@@ -157,6 +189,7 @@ class OuvertureStandsAnalyzerTest {
                 .extracting(colonne -> colonne.id())
                 .containsExactly(1L, null);
         assertThat(rapport.stands().get(0).jours().get(0).creneaux())
+                .map(OuvertureStandsAnalyzerTest::withoutSegments)
                 .containsExactly(
                         new OuvertureStandsAnalyzer.CelluleCreneau(1L, 1, false, false),
                         new OuvertureStandsAnalyzer.CelluleCreneau(null, 1, false, false));
@@ -170,8 +203,10 @@ class OuvertureStandsAnalyzerTest {
         RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
         assertThat(rapport.stands().get(0).jours().get(0).creneaux())
+                .map(OuvertureStandsAnalyzerTest::withoutSegments)
                 .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(1L, null, false, false));
         assertThat(rapport.stands().get(0).jours().get(1).creneaux())
+                .map(OuvertureStandsAnalyzerTest::withoutSegments)
                 .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 1, false, false));
     }
 

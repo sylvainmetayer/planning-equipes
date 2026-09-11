@@ -642,7 +642,7 @@
         }
       },
       "CelluleCreneau" : {
-        "required" : [ "horsFamille", "partiel" ],
+        "required" : [ "horsFamille", "partiel", "segments" ],
         "type" : "object",
         "properties" : {
           "creneauId" : {
@@ -658,6 +658,12 @@
           },
           "horsFamille" : {
             "type" : "boolean"
+          },
+          "segments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SegmentCellule"
+            }
           }
         }
       },
@@ -3925,6 +3931,9 @@
             "items" : {
               "$ref" : "#/components/schemas/SaisieCellule"
             }
+          },
+          "aplatir" : {
+            "type" : "boolean"
           }
         }
       },
@@ -3946,6 +3955,22 @@
       "SeatStatus" : {
         "type" : "string",
         "enum" : [ "NO_PLAN", "NO_SEAT", "EVALUATED" ]
+      },
+      "SegmentCellule" : {
+        "type" : "object",
+        "required" : [ "effectif", "heureDebut", "heureFin" ],
+        "properties" : {
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "effectif" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
       },
       "SemaineStaffing" : {
         "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "heures", "jours", "joursPersonne", "joursTravaillables", "rotationTotal" ],
