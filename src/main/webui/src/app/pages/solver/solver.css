@@ -28,3 +28,16 @@
   max-width: 100%;
   margin-bottom: 1rem;
 }
+
+/* #461 hosted the queue and the recap in two components. Each host wraps a
+   single <mat-card-content>, which Material now sees as :first-child and
+   :last-child of its parent and pads 16px top and bottom — in the pile of the
+   card, as bare children, they had neither. Same box as before. */
+app-solver-queue > .mat-mdc-card-content:first-child,
+app-solve-recap > .mat-mdc-card-content:first-child {
+  padding-top: 0;
+}
+app-solver-queue > .mat-mdc-card-content:last-child,
+app-solve-recap > .mat-mdc-card-content:last-child {
+  padding-bottom: 0;
+}
