@@ -14,13 +14,16 @@ import java.util.List;
  * <p>Adds no SQL of its own — it goes through {@link CreneauService} and
  * {@link StandService}, which already carry the edition predicate.</p>
  *
- * <p><b>Not reachable from MCP.</b> The MCP tools keep calling the plain
- * {@code create}/{@code update} of {@link ReferenceDataService}, which returns
- * the entity alone. The messages themselves name an animateur by their id
- * only — nom/prénom/dateNaissance never leave over that transport (issue #107),
- * and they have no business in the browser's notification log either
- * ({@code docs/rgpd.md} §7) — but wiring these warnings to a transport that has
- * no operator to read them is a separate decision, not made here.</p>
+ * <p><b>Reached from MCP too, since #449</b>, through the {@code write*} of
+ * {@link ReferenceDataService} that every writing tool now calls. What the
+ * assistant reads is decided by {@code mcp/WarningCodes}: the <em>type</em>
+ * of each warning, never its sentence — a message on an animateur dates
+ * their majority, that is their birth date shifted by eighteen years, the
+ * field the MCP views withhold (issue #107). The messages themselves name an
+ * animateur by their id only, and have no business in the browser's
+ * notification log either ({@code docs/rgpd.md} §7). A new warning is written
+ * with that in mind: the code is the contract, the sentence is for the
+ * screen.</p>
  */
 @ApplicationScoped
 public class CoherenceService {
