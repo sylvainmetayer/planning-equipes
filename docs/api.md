@@ -561,6 +561,30 @@ portent. C'est ce qui répond à « *lesquelles* de mes exceptions » quand une
 règle ad hoc affiche douze correspondances. Liste vide quand le plan les honore
 toutes — et quand rien n'a jamais été analysé.
 
+### Le plancher : signalé par règle, jamais appliqué
+
+Chaque entrée non dure porte `postesEvalues` — le nombre d'éléments que la
+règle a évalués sur la dernière analyse, **au grain de la règle** (sièges
+pourvus, groupes stand × créneau, paires consécutives…), pas un nombre de
+postes malgré le nom, gardé pour rester lisible côté écran — et, quand la
+règle a matché au moins 95 % de ces éléments, un objet `plancher` :
+`ratio` (0,95 et au-delà), `motif` (code de la donnée absente, `null` quand
+aucune ne l'explique), `libelle` (la phrase à afficher, en français comme
+les descriptions) et `lien` (route Angular de l'écran de saisie, `null`
+sans donnée à saisir). `null` pour une règle dure, pour une règle sans
+lecture par élément, et tant que rien n'a été analysé.
+
+La vue porte aussi `scoreHorsPlancher`, `plancherMedium` et
+`plancherSoft` : le score brut moins, niveau par niveau, ce que coûtent les
+règles signalées — même format que `scoreGlobal`, égal à lui quand rien
+n'est un plancher — et les deux parts constantes, **signées comme le
+score** (`-5000` pour cinq mille points que rien ne rattrapera). Sur un
+`PlanningKpi`, `scoreMediumHorsPlancher` et `plancherMedium` suivent la
+règle de `violationsParContrainte` : `null` quand la mesure n'existait pas,
+jamais zéro. Un plancher ne change **rien** à `actif` ni à `poids` : il est
+signalé, pas décidé — voir
+[`contraintes.md`](contraintes.md#le-plancher--une-règle-qui-pénalise-tout-faute-de-donnée).
+
 ### Rafraîchir l'analyse ne relance pas de solveur
 
 `POST /api/constraints/diagnostic` recalcule le score, règle par règle, du

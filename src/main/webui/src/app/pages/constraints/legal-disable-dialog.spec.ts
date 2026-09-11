@@ -25,6 +25,8 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     score: null,
     matchCount: null,
     violations: [],
+    postesEvalues: null,
+    plancher: null,
     ...overrides,
   };
 }

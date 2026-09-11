@@ -7,6 +7,9 @@
     @if (impactLabel()) {
       <p class="calendar-meta solver-impact-publication">{{ impactLabel() }}</p>
     }
+    @if (!comparison() && horsPlancherLabel()) {
+      <p class="calendar-meta solver-hors-plancher">{{ horsPlancherLabel() }}</p>
+    }
   </mat-card-content>
 }
 @if (comparison(); as comparaison) {
@@ -14,6 +17,9 @@
     <p class="calendar-meta" i18n="@@solver.previousPlan.comparison">
       Avant : {{ comparaison.avant }} → après : {{ comparaison.apres }}
     </p>
+    @if (horsPlancherLabel()) {
+      <p class="calendar-meta solver-hors-plancher">{{ horsPlancherLabel() }}</p>
+    }
     @if (previousPlan()?.degraded) {
       <p class="plan-degrade" i18n="@@solver.previousPlan.degraded">
         Cette résolution a dégradé le plan enregistré.

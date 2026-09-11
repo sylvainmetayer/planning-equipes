@@ -184,6 +184,54 @@ granularité ».
 `equilibrerCreneauxPenibles` applique la même technique, mais sur le seul
 sous-ensemble des postes épuisants ou premium.
 
+### Le plancher : une règle qui pénalise tout faute de donnée
+
+Mesuré sur le jeu réaliste (`docs/memoire-du-projet.md`, §2.g) : **68 % du
+score medium était une constante**, deux règles matchant l'intégralité de ce
+qu'elles évaluent parce que la donnée qu'elles mesurent n'existait pas au
+référentiel — aucun souhait déclaré, aucun animateur au niveau référent. Les
+règles étaient correctes ; un organisateur qui lit `-6 675 medium` ne peut
+pas savoir que `-5 000` ne bougeront jamais.
+
+Depuis, chaque analyse lit chaque règle non dure comme un **ratio** :
+`écarts ÷ éléments évalués`, où le dénominateur est le grain de la règle —
+sièges pourvus pour `souhaitsIncompatibles`, groupes stand × créneau pour
+`standComplexeAvecReferent`, paires consécutives pour
+`eviterChangementEmplacementEloigne`, animateur × jour pour
+`limiterEmplacementsParJour`… La table est `ConstraintFloorRules`, à côté du
+catalogue, et elle est **exhaustive par test** : une règle medium ou soft
+ajoutée au catalogue sans ligne dans cette table fait échouer
+`ConstraintFloorRulesTest`. Trois règles n'ont pas de lecture par élément
+(`equilibrerCharge`, `equilibrerCreneauxPenibles` : une seule correspondance
+agrégée ; `affiniteAdHoc` : une récompense) et ne sont jamais un plancher.
+
+**Au-dessus de 95 %** (`FLOOR_THRESHOLD`, pas 100 % : une poignée de sièges
+échappe toujours, et une règle qui en pénalise 98 % est tout aussi
+constante), la règle est signalée : badge « mesure une donnée absente » sur
+la page Contraintes, ratio, et la donnée nommée avec un lien vers l'écran de
+saisie quand le référentiel n'en contient effectivement aucune — souhaits,
+appréciations, référents, ou aucune appréciation au-dessus de débutant. Un
+plancher que rien de tel n'explique est signalé quand même, sans lien : une
+règle qui matche tout pour une autre raison — un stand premium que personne
+ne peut légalement tenir seul — est tout aussi constante.
+
+Ne sont **pas** des planchers, et ne sont pas signalés : les cas où la
+donnée absente rend la règle *inerte* — zéro stand premium, zéro
+emplacement, zéro mineur, zéro stand épuisant. La règle ne matche alors
+rien, elle ne coûte rien, et « satisfaite » est exact.
+
+Le **score hors plancher** — le score brut moins, niveau par niveau, ce que
+coûtent les règles signalées — est la part qu'une résolution peut faire
+bouger : il s'affiche à côté du score brut sur Contraintes, sur le
+récapitulatif du Solveur, dans le Comparateur A/B et l'Autopsie (`kpi`
+d'un instantané ; absent, jamais zéro, sur un instantané pris avant la
+mesure). Le plancher est signé comme le score dont il vient.
+
+**Rien n'est désactivé.** Une règle au plancher reste active : c'est
+l'organisateur qui saisit la donnée, baisse le poids, ou éteint la règle en
+connaissance de cause — voir
+[`decisions/0031`](decisions/0031-signaler-le-plancher-sans-le-decider.md).
+
 ## Stabilité du plan publié
 
 `stabiliteDuPlanPublie` (MEDIUM, « Qualité d'organisation », dosable) répond à

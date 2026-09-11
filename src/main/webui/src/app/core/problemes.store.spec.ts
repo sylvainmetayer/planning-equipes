@@ -40,6 +40,9 @@ function constraintsView(): ConstraintsView {
     faisabilite: null,
     hardScore: -2,
     contraintesAdHocEnCause: [],
+    scoreHorsPlancher: '-2hard/0medium/0soft',
+    plancherMedium: 0,
+    plancherSoft: 0,
     contraintes: [
       {
         name: 'dureeHebdomadaireMax',
@@ -54,6 +57,8 @@ function constraintsView(): ConstraintsView {
         score: '-2hard/0medium/0soft',
         matchCount: 2,
         violations: ['Alice : 52 h'],
+        postesEvalues: null,
+        plancher: null,
       },
     ],
   };

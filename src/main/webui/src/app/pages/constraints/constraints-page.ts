@@ -17,6 +17,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { intlLocale } from '../../core/locale';
 import { ConstraintView, ConstraintsView, NiveauContrainte } from '../../core/models';
@@ -76,6 +77,7 @@ const POIDS_MAX = 100;
     MatProgressBarModule,
     MatSlideToggleModule,
     MatTooltipModule,
+    RouterLink,
     FeasibilityBanner,
     LegalText,
     StatusMessage,
@@ -131,11 +133,40 @@ export class ConstraintsPage {
     return $localize`:@@constraints.summary.latest:Dernière analyse ${analysedAt}:date: — score ${score}:score:, ${postesNonPourvus}:count: poste(s) non pourvu(s).`;
   });
 
+  /**
+   * The score with the floors taken out, shown next to the raw one only when
+   * they differ: a rule that penalises everything for lack of data costs a
+   * constant no solve will move, and that constant is what makes
+   * « -6 675 medium » unreadable. Empty when nothing is a floor.
+   */
+  protected readonly horsPlancherLabel = computed(() => {
+    const view = this.view();
+    if (!view?.scoreHorsPlancher || view.scoreHorsPlancher === view.scoreGlobal) {
+      return '';
+    }
+    const score = view.scoreHorsPlancher;
+    const count = view.contraintes.filter((constraint) => constraint.plancher !== null).length;
+    return $localize`:@@constraints.summary.horsPlancher:Hors plancher : ${score}:score: — ${count}:count: règle(s) mesurent une donnée absente.`;
+  });
+
   /** Sort key of the constraint cards: by score, the "what costs most" question. */
   protected readonly triParScore = signal(false);
 
+  /** The other sort: floors first, by share of what they evaluated — "what will never move". */
+  protected readonly sortByFloor = signal(false);
+
   protected basculerTri(): void {
     this.triParScore.update((actif) => !actif);
+    if (this.triParScore()) {
+      this.sortByFloor.set(false);
+    }
+  }
+
+  protected basculerTriPlancher(): void {
+    this.sortByFloor.update((actif) => !actif);
+    if (this.sortByFloor()) {
+      this.triParScore.set(false);
+    }
   }
 
   protected readonly groups = computed<ConstraintGroup[]>(() => {
@@ -147,11 +178,18 @@ export class ConstraintsPage {
       groups.set(constraint.categorie, items);
     });
     const parScore = this.triParScore();
+    const byFloor = this.sortByFloor();
     return Array.from(groups.entries()).map(([categorie, items]) => ({
       categorie,
-      items: parScore
-        ? [...items].sort((a, b) => (b.matchCount ?? 0) - (a.matchCount ?? 0))
-        : items,
+      items: byFloor
+        ? [...items].sort(
+            (a, b) =>
+              (b.plancher?.ratio ?? -1) - (a.plancher?.ratio ?? -1) ||
+              (b.matchCount ?? 0) - (a.matchCount ?? 0),
+          )
+        : parScore
+          ? [...items].sort((a, b) => (b.matchCount ?? 0) - (a.matchCount ?? 0))
+          : items,
       dosable: items.some((constraint) => constraint.dosable),
     }));
   });
@@ -344,6 +382,21 @@ export class ConstraintsPage {
       },
       width: '36rem',
     });
+  }
+
+  /**
+   * The share of what the rule evaluated that it matched, at the rule's own
+   * grain — seats for a per-seat rule, stand × créneau groups, pairs — which
+   * is why the sentence says « éléments » rather than « postes ».
+   */
+  protected plancherRatioLabel(constraint: ConstraintView): string {
+    const plancher = constraint.plancher;
+    if (!plancher) {
+      return '';
+    }
+    const pourcent = Math.round(plancher.ratio * 100);
+    const count = constraint.postesEvalues ?? 0;
+    return $localize`:@@constraints.plancher.ratio:${pourcent}:pct: % des ${count}:count: éléments évalués sont en écart.`;
   }
 
   protected resultLabel(constraint: ConstraintView): string {

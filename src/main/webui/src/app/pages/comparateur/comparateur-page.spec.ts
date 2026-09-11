@@ -51,6 +51,8 @@ function kpi(overrides: Partial<PlanningKpi> = {}): PlanningKpi {
     tauxModificationsManuelles: 0.035,
     dureeSolveSecondes: 600,
     violationsParContrainte: {},
+    scoreMediumHorsPlancher: null,
+    plancherMedium: null,
     ...overrides,
   };
 }

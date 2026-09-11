@@ -44,6 +44,8 @@ function kpi(overrides: Partial<PlanningKpi> = {}): PlanningKpi {
     tauxModificationsManuelles: 0.035,
     dureeSolveSecondes: 600,
     violationsParContrainte: {},
+    scoreMediumHorsPlancher: null,
+    plancherMedium: null,
     ...overrides,
   };
 }
@@ -70,6 +72,7 @@ type PageInternals = {
   dateLabel: (entry: KpiHistoriqueEntry) => string;
   editionLabel: (entry: KpiHistoriqueEntry) => string;
   scoreLabel: (entry: KpiHistoriqueEntry) => string;
+  scoreHorsPlancherLabel: (entry: KpiHistoriqueEntry) => string;
   couvertureLabel: (entry: KpiHistoriqueEntry) => string;
   fairnessLabel: (entry: KpiHistoriqueEntry) => string;
   modificationsLabel: (entry: KpiHistoriqueEntry) => string;
@@ -246,6 +249,21 @@ describe('KpiPage', () => {
         '0hard/-12soft',
       );
       expect(page.scoreLabel(entry({ kpi: kpi({ score: null }) }))).toBe('—');
+    });
+
+    // A row written before the floor existed says so with a dash: an
+    // unmeasured floor is not a floor of zero.
+    it('renders the medium score net of its floor, and a dash when unmeasured', () => {
+      const page = createPage();
+
+      expect(
+        page.scoreHorsPlancherLabel(
+          entry({ kpi: kpi({ scoreMedium: -6675, scoreMediumHorsPlancher: -1675 }) }),
+        ),
+      ).toBe('-1675 medium');
+      expect(
+        page.scoreHorsPlancherLabel(entry({ kpi: kpi({ scoreMediumHorsPlancher: null }) })),
+      ).toBe('—');
     });
 
     it('renders no date at all for a row without a capture timestamp', () => {

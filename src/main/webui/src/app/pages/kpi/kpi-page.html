@@ -35,6 +35,18 @@
           <th mat-header-cell *matHeaderCellDef i18n="@@kpi.column.score">Score</th>
           <td mat-cell *matCellDef="let entry">{{ scoreLabel(entry) }}</td>
         </ng-container>
+        <ng-container matColumnDef="scoreHorsPlancher">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            i18n-matTooltip="@@kpi.scoreHorsPlancher.tooltip"
+            matTooltip="Score medium sans les règles qui pénalisent tout faute de donnée : la part qu'une résolution peut faire bouger."
+            i18n="@@kpi.column.scoreHorsPlancher"
+          >
+            Medium hors plancher
+          </th>
+          <td mat-cell *matCellDef="let entry">{{ scoreHorsPlancherLabel(entry) }}</td>
+        </ng-container>
         <ng-container matColumnDef="couverture">
           <th mat-header-cell *matHeaderCellDef i18n="@@kpi.column.couverture">Couverture</th>
           <td mat-cell *matCellDef="let entry">{{ couvertureLabel(entry) }}</td>

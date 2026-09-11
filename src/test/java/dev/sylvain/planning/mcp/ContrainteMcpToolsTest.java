@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.mcp.ContrainteMcpTools.ContrainteView;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintFloor;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import java.util.List;
@@ -33,14 +34,35 @@ class ContrainteMcpToolsTest {
     }
 
     @Test
-    void fusionneLeDiagnosticDeLaDerniereAnalyse() {
+    void mergesTheDiagnosticOfTheLastAnalysis() {
         ConstraintDiagnostic diagnostic = new ConstraintDiagnostic(
-                "posteDoitEtrePourvu", "-3hard/0medium/0soft", 3, List.of("poste P1 non pourvu"));
+                "posteDoitEtrePourvu", "-3hard/0medium/0soft", 3, List.of("poste P1 non pourvu"), null, null);
 
         ContrainteView view = ContrainteMcpTools.toView(DEFINITION, diagnostic, Set.of(), Map.of());
 
         assertThat(view.score()).isEqualTo("-3hard/0medium/0soft");
         assertThat(view.nombreCorrespondances()).isEqualTo(3);
+        assertThat(view.ratioPlancher()).isNull();
+        assertThat(view.motifPlancher()).isNull();
+    }
+
+    /** The floor travels over MCP as the ratio and the sentence, never as the route: an assistant has no screen. */
+    @Test
+    void exposesTheFloorRatioAndItsWording() {
+        ConstraintDefinition souhaits = new ConstraintDefinition(
+                "souhaitsIncompatibles", ConstraintCatalog.Niveau.MEDIUM, "Qualité d'organisation", "description");
+        ConstraintDiagnostic diagnostic = new ConstraintDiagnostic(
+                "souhaitsIncompatibles",
+                "0hard/-12medium/0soft",
+                12,
+                List.of(),
+                12,
+                new ConstraintFloor(1.0, "SOUHAITS", "Aucun souhait déclaré.", "/animateurs"));
+
+        ContrainteView view = ContrainteMcpTools.toView(souhaits, diagnostic, Set.of(), Map.of());
+
+        assertThat(view.ratioPlancher()).isEqualTo(1.0);
+        assertThat(view.motifPlancher()).isEqualTo("Aucun souhait déclaré.");
     }
 
     @Test

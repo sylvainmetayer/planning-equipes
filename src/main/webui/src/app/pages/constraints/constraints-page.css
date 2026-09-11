@@ -111,6 +111,35 @@
   margin: 0;
 }
 
+/* A rule read as a floor (issue #495): its own colour, distinct from the three
+   levels, because the badge says something about the data, not about the rule. */
+.constraint-badge-plancher {
+  --mdc-chip-elevated-container-color: var(--mat-sys-primary-container);
+  --mdc-chip-label-text-color: var(--mat-sys-on-primary-container);
+}
+
+.constraint-plancher {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0.5rem 0 0;
+}
+
+.constraint-plancher-ratio {
+  display: block;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface);
+}
+
+.constraint-plancher-lien {
+  display: inline-block;
+  margin-top: 0.25rem;
+  color: var(--mat-sys-primary);
+}
+
+.constraint-hors-plancher {
+  flex-basis: 100%;
+}
+
 .constraint-result-empty {
   color: var(--mat-sys-on-surface-variant);
 }

@@ -20,8 +20,14 @@
       <mat-slide-toggle [checked]="triParScore()" (change)="basculerTri()" i18n="@@constraints.sortByScore">
         Trier par score
       </mat-slide-toggle>
+      <mat-slide-toggle [checked]="sortByFloor()" (change)="basculerTriPlancher()" i18n="@@constraints.sortByPlancher">
+        Trier par plancher
+      </mat-slide-toggle>
       @if (summary()) {
         <span class="calendar-meta">{{ summary() }}</span>
+      }
+      @if (horsPlancherLabel()) {
+        <span class="calendar-meta constraint-hors-plancher">{{ horsPlancherLabel() }}</span>
       }
     </div>
     @if (loading()) {
@@ -65,6 +71,11 @@
                   <mat-chip [class]="badgeClass(constraint.niveau)" [highlighted]="constraint.niveau === 'HARD'">
                     {{ niveauLabel(constraint.niveau) }}
                   </mat-chip>
+                  @if (constraint.plancher) {
+                    <mat-chip class="constraint-badge constraint-badge-plancher" highlighted i18n="@@constraints.plancher.badge">
+                      Mesure une donnée absente
+                    </mat-chip>
+                  }
                 </mat-chip-set>
               </div>
               <p class="constraint-description"><app-legal-text [text]="constraint.description" /></p>
@@ -92,6 +103,15 @@
                 </mat-form-field>
               </div>
               <p [class]="resultClass(constraint)">{{ resultLabel(constraint) }}</p>
+              @if (constraint.plancher; as plancher) {
+                <p class="constraint-plancher">
+                  <span class="constraint-plancher-ratio">{{ plancherRatioLabel(constraint) }}</span>
+                  {{ plancher.libelle }}
+                  @if (plancher.lien) {
+                    <a [routerLink]="plancher.lien" class="constraint-plancher-lien" i18n="@@constraints.plancher.lien">Saisir la donnée</a>
+                  }
+                </p>
+              }
               @if (constraint.violations.length > 0) {
                 <button matButton (click)="showViolations(constraint)" i18n="@@constraints.showViolations">
                   Voir le détail ({{ constraint.violations.length }})

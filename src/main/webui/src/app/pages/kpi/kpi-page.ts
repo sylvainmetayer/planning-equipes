@@ -45,6 +45,7 @@ export class KpiPage {
     'creeLe',
     'edition',
     'score',
+    'scoreHorsPlancher',
     'couverture',
     'fairness',
     'modifications',
@@ -112,6 +113,16 @@ export class KpiPage {
 
   protected scoreLabel(entry: KpiHistoriqueEntry): string {
     return entry.kpi.score ?? '—';
+  }
+
+  /**
+   * The medium score net of its floor (issue #495), and a dash for a row
+   * written before the floor was measured — unmeasured is not zero.
+   */
+  protected scoreHorsPlancherLabel(entry: KpiHistoriqueEntry): string {
+    return entry.kpi.scoreMediumHorsPlancher === null
+      ? '—'
+      : `${entry.kpi.scoreMediumHorsPlancher} medium`;
   }
 
   protected couvertureLabel(entry: KpiHistoriqueEntry): string {

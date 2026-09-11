@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintFloor;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -93,7 +94,10 @@ public class ConstraintResource {
                 analysis == null ? null : analysis.diagnostic().faisabilite(),
                 analysis == null ? null : analysis.diagnostic().hardScore(),
                 constraints,
-                analysis == null ? List.of() : analysis.diagnostic().contraintesAdHocEnCause());
+                analysis == null ? List.of() : analysis.diagnostic().contraintesAdHocEnCause(),
+                analysis == null ? null : analysis.diagnostic().scoreHorsPlancher(),
+                analysis == null ? null : analysis.diagnostic().plancherMedium(),
+                analysis == null ? null : analysis.diagnostic().plancherSoft());
     }
 
     /**
@@ -159,7 +163,9 @@ public class ConstraintResource {
                 poids.getOrDefault(definition.name(), 1),
                 diagnostic == null ? null : diagnostic.score(),
                 diagnostic == null ? null : diagnostic.matchCount(),
-                diagnostic == null ? List.of() : diagnostic.violations());
+                diagnostic == null ? List.of() : diagnostic.violations(),
+                diagnostic == null ? null : diagnostic.postesEvalues(),
+                diagnostic == null ? null : diagnostic.plancher());
     }
 
     /**
@@ -189,6 +195,18 @@ public class ConstraintResource {
      *                    constraints enforced at {@code Niveau.HARD} — always
      *                    empty for medium/soft ones (see
      *                    {@code ConstraintCatalog.NOMS_DURS})
+     * @param postesEvalues how many items the rule evaluated on that run, at
+     *                    the rule's own grain (seats, stand × créneau groups,
+     *                    consecutive pairs…) — the denominator of
+     *                    {@code plancher.ratio}; {@code null} for a hard rule,
+     *                    for a rule whose match count is not per item, and
+     *                    when never analysed
+     * @param plancher    set when the rule matched at least 95 % of what it
+     *                    evaluated (issue #495): its points are a constant no
+     *                    solve will move — a floor — and the reading names the
+     *                    missing referential data when one explains it, with
+     *                    the screen to enter it. Reported, never acted on:
+     *                    the rule stays active
      */
     @Schema(requiredProperties = {"actif", "dosable", "legale", "poids", "protegee"})
     public record ConstraintView(
@@ -203,7 +221,9 @@ public class ConstraintResource {
             int poids,
             String score,
             Integer matchCount,
-            List<String> violations) {}
+            List<String> violations,
+            Integer postesEvalues,
+            ConstraintFloor plancher) {}
 
     /**
      * @param actif whether the constraint is applied on the next solve
@@ -234,6 +254,15 @@ public class ConstraintResource {
      *                  exceptions to arbitrate (issue #84). Empty when the
      *                  plan honours all of them, and when nothing was ever
      *                  analysed.
+     * @param scoreHorsPlancher the score with the floors taken out — the raw
+     *                  score minus, level by level, what the constraints
+     *                  flagged with a {@code plancher} cost. Same format as
+     *                  {@code scoreGlobal}, equal to it when nothing is a
+     *                  floor: the part of the score a solve can move, the one
+     *                  to compare between two runs
+     * @param plancherMedium the constant part of the medium score, signed like
+     *                  the score ({@code -5000} for five thousand points no
+     *                  solve will recover); {@code plancherSoft} likewise
      */
     public record ConstraintsView(
             Instant analysedAt,
@@ -242,5 +271,8 @@ public class ConstraintResource {
             FeasibilityReport faisabilite,
             Integer hardScore,
             List<ConstraintView> contraintes,
-            List<ContributionAdHoc> contraintesAdHocEnCause) {}
+            List<ContributionAdHoc> contraintesAdHocEnCause,
+            String scoreHorsPlancher,
+            Integer plancherMedium,
+            Integer plancherSoft) {}
 }

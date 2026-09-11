@@ -65,6 +65,16 @@ export function construireLignesMetriques(
     variante.scoreMedium,
     'plus',
   );
+  // Net of its floor (issue #495): the part of the medium score a solve can
+  // move, hence the one to compare. Absent on a snapshot captured before the
+  // floor was measured — a dash, never a zero.
+  add(
+    'scoreMediumHorsPlancher',
+    $localize`:@@comparateur.metric.scoreMediumHorsPlancher:Score medium hors plancher`,
+    base.scoreMediumHorsPlancher,
+    variante.scoreMediumHorsPlancher,
+    'plus',
+  );
   add(
     'scoreSoft',
     $localize`:@@comparateur.metric.scoreSoft:Score soft`,

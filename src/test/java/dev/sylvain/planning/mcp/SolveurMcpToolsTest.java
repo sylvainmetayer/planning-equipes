@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 class SolveurMcpToolsTest {
 
     @Test
-    void neRemonteQueLesContraintesHardEffectivementViolees() {
+    void reportsOnlyTheHardConstraintsActuallyViolated() {
         SolveurMcpTools tools = new SolveurMcpTools();
         tools.analysisStore = new ConstraintAnalysisStore();
 
@@ -26,13 +26,23 @@ class SolveurMcpToolsTest {
                 "posteDoitEtrePourvu",
                 "-2hard/0medium/0soft",
                 2,
-                List.of("poste P1 non pourvu", "poste P2 non pourvu"));
+                List.of("poste P1 non pourvu", "poste P2 non pourvu"),
+                null,
+                null);
         ConstraintDiagnostic hardRespecte =
-                new ConstraintDiagnostic("animateurDisponible", "0hard/0medium/0soft", 0, List.of());
+                new ConstraintDiagnostic("animateurDisponible", "0hard/0medium/0soft", 0, List.of(), null, null);
         ConstraintDiagnostic mediumViole =
-                new ConstraintDiagnostic("equilibrerCharge", "0hard/-5medium/0soft", 5, List.of());
+                new ConstraintDiagnostic("equilibrerCharge", "0hard/-5medium/0soft", 5, List.of(), null, null);
         tools.analysisStore.record(new PlanningDiagnostic(
-                "-2hard/-5medium/0soft", 2, List.of(hardViole, hardRespecte, mediumViole), null, -2, List.of()));
+                "-2hard/-5medium/0soft",
+                2,
+                List.of(hardViole, hardRespecte, mediumViole),
+                null,
+                -2,
+                List.of(),
+                "-2hard/-5medium/0soft",
+                0,
+                0));
 
         List<ViolationHardView> violations = tools.expliquer_echec_contraintes_dures(null);
 

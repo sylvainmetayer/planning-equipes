@@ -1005,6 +1005,25 @@
           }
         }
       },
+      "ConstraintFloor" : {
+        "type" : "object",
+        "required" : [ "ratio" ],
+        "properties" : {
+          "ratio" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "libelle" : {
+            "type" : "string"
+          },
+          "lien" : {
+            "type" : "string"
+          }
+        }
+      },
       "ConstraintPoidsUpdate" : {
         "type" : "object",
         "properties" : {
@@ -1075,6 +1094,13 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "postesEvalues" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "plancher" : {
+            "$ref" : "#/components/schemas/ConstraintFloor"
           }
         }
       },
@@ -1109,6 +1135,17 @@
             "items" : {
               "$ref" : "#/components/schemas/ContributionAdHoc"
             }
+          },
+          "scoreHorsPlancher" : {
+            "type" : "string"
+          },
+          "plancherMedium" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "plancherSoft" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -3404,6 +3441,14 @@
               "type" : "integer",
               "format" : "int32"
             }
+          },
+          "scoreMediumHorsPlancher" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "plancherMedium" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },

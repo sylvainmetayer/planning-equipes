@@ -38,9 +38,10 @@ public class ContrainteMcpTools {
     PlanningService planningService;
 
     @Tool(
-            description =
-                    "Liste le catalogue métier des contraintes du solveur : niveau (HARD/MEDIUM/SOFT), "
-                            + "description, si elle est active, et son score/nombre de correspondances lors de la dernière analyse.",
+            description = "Liste le catalogue métier des contraintes du solveur : niveau (HARD/MEDIUM/SOFT), "
+                    + "description, si elle est active, et son score/nombre de correspondances lors de la dernière analyse. "
+                    + "Une règle qui a pénalisé la quasi-totalité de ce qu'elle évalue porte ratioPlancher et "
+                    + "motifPlancher : ses points sont une constante que la donnée absente au référentiel explique.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -159,10 +160,24 @@ public class ContrainteMcpTools {
                 !desactivees.contains(definition.name()),
                 poids.getOrDefault(definition.name(), 1),
                 diagnostic == null ? null : diagnostic.score(),
-                diagnostic == null ? null : diagnostic.matchCount());
+                diagnostic == null ? null : diagnostic.matchCount(),
+                diagnostic == null || diagnostic.plancher() == null
+                        ? null
+                        : diagnostic.plancher().ratio(),
+                diagnostic == null || diagnostic.plancher() == null
+                        ? null
+                        : diagnostic.plancher().libelle());
     }
 
-    /** @param poids what one match of this constraint is worth on the next solve */
+    /**
+     * @param poids          what one match of this constraint is worth on the next solve
+     * @param ratioPlancher  share of what the rule evaluated that it matched, only
+     *                       when that share reads as a floor (95 % and above, issue
+     *                       #495): those points are a constant no solve will move
+     * @param motifPlancher  the sentence naming the missing referential data behind
+     *                       that floor, or saying none was identified; {@code null}
+     *                       with {@code ratioPlancher}
+     */
     public record ContrainteView(
             String nom,
             String niveau,
@@ -171,5 +186,7 @@ public class ContrainteMcpTools {
             boolean actif,
             int poids,
             String score,
-            Integer nombreCorrespondances) {}
+            Integer nombreCorrespondances,
+            Double ratioPlancher,
+            String motifPlancher) {}
 }

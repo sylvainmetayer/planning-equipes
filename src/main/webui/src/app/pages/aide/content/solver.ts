@@ -212,7 +212,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.mediumFloor:Attention aux points de medium qui ne mesurent rien : une contrainte qui pénalise chaque poste faute de donnée saisie — aucun souhait déclaré, aucun animateur de niveau référent — produit un plancher constant, parfois plus de 80 % du total. Comparez des scores entre deux résolutions du même jeu de données, pas la valeur absolue.`,
+          text: $localize`:@@aide.results.mediumFloor:Attention aux points de medium qui ne mesurent rien : une contrainte qui pénalise chaque poste faute de donnée saisie — aucun souhait déclaré, aucun animateur de niveau référent — produit un plancher constant, parfois plus de 80 % du total. L'application le détecte : sur la page Contraintes, une règle qui pénalise au moins 95 % de ce qu'elle évalue porte le badge « mesure une donnée absente », nomme cette donnée et renvoie vers l'écran où la saisir ; le score hors plancher s'affiche à côté du score brut, sur la page Solveur, dans le Comparateur A/B et dans l'Autopsie. Rien n'est désactivé à votre place : la règle reste active, et c'est à vous de saisir la donnée — ou de baisser le poids de la règle. Comparez des scores entre deux résolutions du même jeu de données, pas la valeur absolue.`,
         },
         {
           kind: 'paragraph',

@@ -35,6 +35,8 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     score: null,
     matchCount: null,
     violations: [],
+    postesEvalues: null,
+    plancher: null,
     ...overrides,
   };
 }
@@ -66,6 +68,9 @@ function view(contraintes: ConstraintView[]): ConstraintsView {
     faisabilite: null,
     hardScore: null,
     contraintesAdHocEnCause: [],
+    scoreHorsPlancher: null,
+    plancherMedium: null,
+    plancherSoft: null,
     contraintes,
   };
 }
@@ -77,7 +82,28 @@ type PageInternals = {
   toggleConstraint: (constraint: ConstraintView, event: MatSlideToggleChange) => Promise<void>;
   setPoids: (constraint: ConstraintView, poids: number) => Promise<void>;
   onPoidsChange: (constraint: ConstraintView, field: HTMLInputElement) => Promise<void>;
+  horsPlancherLabel: () => string;
+  plancherRatioLabel: (constraint: ConstraintView) => string;
+  triParScore: () => boolean;
+  sortByFloor: () => boolean;
+  basculerTri: () => void;
+  basculerTriPlancher: () => void;
+  groups: () => { categorie: string; items: ConstraintView[] }[];
 };
+
+/** A rule that penalised every seat for lack of data (issue #495). */
+const AT_FLOOR = contrainte({
+  name: 'souhaitsIncompatibles',
+  score: '0hard/-12medium/0soft',
+  matchCount: 12,
+  postesEvalues: 12,
+  plancher: {
+    ratio: 1,
+    motif: 'SOUHAITS',
+    libelle: 'Aucun souhait déclaré sur les fiches animateur.',
+    lien: '/animateurs',
+  },
+});
 
 describe('ConstraintsPage', () => {
   const constraintsApi = {
@@ -263,6 +289,71 @@ describe('ConstraintsPage', () => {
 
       expect(page.view()?.contraintes[0].poids).toBe(2);
       expect(page.error()).toContain('refusé');
+    });
+  });
+
+  // The floor (issue #495) is a reading, not a decision: the page says what
+  // it costs and puts the floored rules first, and switches nothing off.
+  describe('a rule that measures missing data', () => {
+    it("says what share of its items the rule matched, at the rule's own grain", async () => {
+      const page = await createPage([AT_FLOOR]);
+
+      expect(page.plancherRatioLabel(AT_FLOOR)).toBe(
+        '100 % des 12 éléments évalués sont en écart.',
+      );
+      expect(page.plancherRatioLabel(contrainte())).toBe('');
+    });
+
+    it('shows the score net of the floor only when it differs from the raw one', async () => {
+      const page = await createPage([AT_FLOOR]);
+      page.view.set({
+        ...page.view()!,
+        analysedAt: '2026-07-01T10:00:00Z',
+        scoreGlobal: '0hard/-6675medium/-120soft',
+        scoreHorsPlancher: '0hard/-1675medium/-120soft',
+      });
+      expect(page.horsPlancherLabel()).toBe(
+        'Hors plancher : 0hard/-1675medium/-120soft — 1 règle(s) mesurent une donnée absente.',
+      );
+
+      page.view.set({
+        ...page.view()!,
+        scoreHorsPlancher: '0hard/-6675medium/-120soft',
+      });
+      expect(page.horsPlancherLabel()).toBe('');
+    });
+
+    it('puts the floored rules first when sorting by floor, and the two sorts exclude each other', async () => {
+      const page = await createPage([
+        contrainte({ name: 'equilibrerCharge', matchCount: 40 }),
+        AT_FLOOR,
+      ]);
+      expect(page.groups()[0].items.map((c) => c.name)).toEqual([
+        'equilibrerCharge',
+        'souhaitsIncompatibles',
+      ]);
+
+      page.basculerTriPlancher();
+      expect(page.groups()[0].items.map((c) => c.name)).toEqual([
+        'souhaitsIncompatibles',
+        'equilibrerCharge',
+      ]);
+
+      page.basculerTri();
+      expect(page.triParScore()).toBe(true);
+      expect(page.sortByFloor()).toBe(false);
+      expect(page.groups()[0].items.map((c) => c.name)).toEqual([
+        'equilibrerCharge',
+        'souhaitsIncompatibles',
+      ]);
+    });
+
+    it('leaves the rule active: a floor is reported, never decided', async () => {
+      const page = await createPage([AT_FLOOR]);
+
+      expect(page.view()?.contraintes[0].actif).toBe(true);
+      expect(constraintsApi.setActive).not.toHaveBeenCalled();
+      expect(constraintsApi.setWeight).not.toHaveBeenCalled();
     });
   });
 

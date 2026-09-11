@@ -21,7 +21,7 @@ class PlanningKpiServiceTest {
     }
 
     @Test
-    void agregeCouvertureVolumetrieEtDispersionDesHeures() {
+    void aggregatesCoverageVolumetryAndHoursDispersion() {
         List<AffectationKpi> affectations = List.of(
                 seat("S1", "1", "A1", 120),
                 seat("S1", "2", "A1", 120),
@@ -29,7 +29,7 @@ class PlanningKpiServiceTest {
                 seat("S2", "2", null, null));
 
         PlanningKpi kpi = PlanningKpiService.compute(
-                affectations, "0hard/-3medium/-120soft", Map.of("posteDoitEtrePourvu", 1), 4, 60L);
+                affectations, "0hard/-3medium/-120soft", Map.of("posteDoitEtrePourvu", 1), 4, 60L, -2);
 
         assertThat(kpi.postesTotal()).isEqualTo(4);
         assertThat(kpi.postesPourvus()).isEqualTo(3);
@@ -50,15 +50,31 @@ class PlanningKpiServiceTest {
         assertThat(kpi.tauxModificationsManuelles()).isEqualTo(1.0);
         assertThat(kpi.dureeSolveSecondes()).isEqualTo(60L);
         assertThat(kpi.violationsParContrainte()).containsEntry("posteDoitEtrePourvu", 1);
+        // -3 medium of which -2 is a floor: -1 is what a solve can still move.
+        assertThat(kpi.plancherMedium()).isEqualTo(-2);
+        assertThat(kpi.scoreMediumHorsPlancher()).isEqualTo(-1);
+    }
+
+    /**
+     * A floor nobody measured is not a floor of zero: the net score stays
+     * unknown rather than pretending the whole medium score is in play.
+     */
+    @Test
+    void anUnmeasuredFloorLeavesTheNetScoreUnknown() {
+        PlanningKpi kpi = PlanningKpiService.compute(List.of(), "0hard/-3medium/0soft", Map.of(), null, null, null);
+
+        assertThat(kpi.scoreMedium()).isEqualTo(-3);
+        assertThat(kpi.plancherMedium()).isNull();
+        assertThat(kpi.scoreMediumHorsPlancher()).isNull();
     }
 
     @Test
-    void uneDureeInconnueLeveLeDrapeauHeuresIncompletesSansCasserLeReste() {
+    void anUnknownDurationRaisesTheIncompleteHoursFlagWithoutBreakingTheRest() {
         // A staffed seat whose créneau no longer exists: its hours cannot be
         // counted, which the flag must say instead of silently under-counting.
         List<AffectationKpi> affectations = List.of(seat("S1", "1", "A1", 120), seat("S1", "99", "A2", null));
 
-        PlanningKpi kpi = PlanningKpiService.compute(affectations, null, Map.of(), null, null);
+        PlanningKpi kpi = PlanningKpiService.compute(affectations, null, Map.of(), null, null, null);
 
         assertThat(kpi.heuresIncompletes()).isTrue();
         assertThat(kpi.postesPourvus()).isEqualTo(2);
@@ -69,8 +85,8 @@ class PlanningKpiServiceTest {
     }
 
     @Test
-    void unPlanVideResteCalculableSansDivisionParZero() {
-        PlanningKpi kpi = PlanningKpiService.compute(List.of(), null, Map.of(), 2, null);
+    void anEmptyPlanStaysComputableWithoutDivisionByZero() {
+        PlanningKpi kpi = PlanningKpiService.compute(List.of(), null, Map.of(), 2, null, null);
 
         assertThat(kpi.postesTotal()).isZero();
         assertThat(kpi.heuresMoyenne()).isNull();

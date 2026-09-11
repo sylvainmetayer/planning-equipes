@@ -2,7 +2,9 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -82,9 +84,66 @@ class ConstraintDiagnosticResourceTest {
     }
 
     /**
+     * The floor reading of issue #495, end to end. {@code scenario.yml}
+     * declares no wish on any animateur, so {@code souhaitsIncompatibles}
+     * penalises every filled seat whatever the solver does: the view names the
+     * missing data and the screen to enter it, and carries a score net of that
+     * constant next to the raw one. A rule whose single match is an aggregate
+     * ({@code equilibrerCharge}) has no such reading — and nothing here is
+     * switched off: the rule stays active.
+     */
+    @Test
+    void aRulePenalisingEverySeatForLackOfDataIsReportedAsAFloor() throws InterruptedException {
+        importScenario();
+        solve();
+
+        JsonPath diagnostic = given().header(HEADER, EDITION)
+                .when()
+                .post("/api/constraints/diagnostic")
+                .then()
+                .statusCode(200)
+                .body("scoreHorsPlancher", notNullValue())
+                .body("plancherMedium", lessThan(0))
+                .body("plancherSoft", notNullValue())
+                .extract()
+                .jsonPath();
+
+        String souhaits = "contraintes.find { it.name == 'souhaitsIncompatibles' }";
+        assertThat(diagnostic.getInt(souhaits + ".postesEvalues")).isPositive();
+        assertThat(diagnostic.getDouble(souhaits + ".plancher.ratio")).isGreaterThanOrEqualTo(0.95);
+        assertThat(diagnostic.getString(souhaits + ".plancher.motif")).isEqualTo("SOUHAITS");
+        assertThat(diagnostic.getString(souhaits + ".plancher.libelle")).contains("souhait");
+        assertThat(diagnostic.getString(souhaits + ".plancher.lien")).isEqualTo("/animateurs");
+        assertThat(diagnostic.getBoolean(souhaits + ".actif")).isTrue();
+
+        String equilibre = "contraintes.find { it.name == 'equilibrerCharge' }";
+        assertThat(diagnostic.getString(equilibre + ".postesEvalues")).isNull();
+        assertThat(diagnostic.getString(equilibre + ".plancher")).isNull();
+
+        // Raw score minus the floor, level by level: the medium part moves by
+        // exactly what the flagged rules cost, hard and the format stay.
+        assertThat(diagnostic.getString("scoreHorsPlancher")).isNotEqualTo(diagnostic.getString("scoreGlobal"));
+        assertThat(mediumOf(diagnostic.getString("scoreHorsPlancher")))
+                .isEqualTo(mediumOf(diagnostic.getString("scoreGlobal")) - diagnostic.getInt("plancherMedium"));
+
+        // Same reading from the catalogue route, which serves the stored analysis.
+        given().header(HEADER, EDITION)
+                .when()
+                .get("/api/constraints")
+                .then()
+                .statusCode(200)
+                .body(souhaits + ".plancher.motif", equalTo("SOUHAITS"))
+                .body("plancherMedium", lessThan(0));
+    }
+
+    private static int mediumOf(String score) {
+        return Integer.parseInt(score.replaceAll(".*hard/(-?\\d+)medium.*", "$1"));
+    }
+
+    /**
      * Nothing solved yet: the screen says "no analysis" rather than being
      * refused — that empty state is what it has always shown before the first
-     * solve.
+     * solve. No plan, no floor either: the net score is absent, not zero.
      */
     @Test
     void diagnosticWithoutAPersistedPlanReturnsTheEmptyView() {
@@ -95,7 +154,11 @@ class ConstraintDiagnosticResourceTest {
                 .statusCode(200)
                 .body("analysedAt", nullValue())
                 .body("scoreGlobal", nullValue())
-                .body("contraintes.size()", greaterThan(0));
+                .body("scoreHorsPlancher", nullValue())
+                .body("plancherMedium", nullValue())
+                .body("contraintes.size()", greaterThan(0))
+                .body("contraintes.findAll { it.plancher != null }.size()", equalTo(0))
+                .body("contraintes.findAll { it.postesEvalues != null }.size()", equalTo(0));
     }
 
     private void importScenario() {

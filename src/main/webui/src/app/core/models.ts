@@ -755,6 +755,17 @@ export interface PlanningDiagnostic {
   faisabilite: FeasibilityReport | null;
   hardScore: number;
   contraintesAdHocEnCause: ContributionAdHoc[];
+  /**
+   * The score with the floors taken out — the raw score minus, level by
+   * level, what the rules read as a floor cost (see
+   * {@link PlancherContrainte}). Same format as `score`, equal to it when
+   * nothing is a floor: the part a solve can actually move. Null when the
+   * plan carries no score.
+   */
+  scoreHorsPlancher: string | null;
+  /** Constant part of the medium score, signed like it (−5000 for a floor of five thousand points). */
+  plancherMedium: number;
+  plancherSoft: number;
 }
 
 /**
@@ -868,6 +879,34 @@ export interface ConstraintView {
   matchCount: number | null;
   /** One human-readable line per match, only populated for HARD constraints. */
   violations: string[];
+  /**
+   * How many items the rule evaluated on the last analysis, at its own grain
+   * (seats, stand × créneau groups, consecutive pairs…) — the denominator of
+   * `plancher.ratio`. Null for a hard rule, for a rule whose match count is
+   * not per item, and when never analysed.
+   */
+  postesEvalues: number | null;
+  /**
+   * Set when the rule matched at least 95 % of what it evaluated: its points
+   * are a floor no solve will move, usually because a referential data is
+   * missing altogether. Reported, never acted on — the rule stays active.
+   */
+  plancher: PlancherContrainte | null;
+}
+
+/**
+ * A rule read as a floor: what share of its items it matched, and which
+ * referential data — when one — explains it, with the screen to enter it.
+ */
+export interface PlancherContrainte {
+  /** matches ÷ evaluated items, 0.95 and above. */
+  ratio: number;
+  /** Code of the missing data (`SOUHAITS`, `REFERENTS`…), null when none explains the floor. */
+  motif: string | null;
+  /** The sentence to show, in the server's language like the rule descriptions. */
+  libelle: string;
+  /** Angular route of the entry screen, null when there is no data to enter. */
+  lien: string | null;
 }
 
 export interface ConstraintsView {
@@ -880,6 +919,10 @@ export interface ConstraintsView {
   contraintes: ConstraintView[];
   /** Empty when the plan honours every exception, and when nothing was ever analysed. */
   contraintesAdHocEnCause: ContributionAdHoc[];
+  /** See {@link PlanningDiagnostic.scoreHorsPlancher}; null when never analysed. */
+  scoreHorsPlancher: string | null;
+  plancherMedium: number | null;
+  plancherSoft: number | null;
 }
 
 /**
@@ -2267,6 +2310,14 @@ export interface PlanningKpi {
   tauxModificationsManuelles: number | null;
   dureeSolveSecondes: number | null;
   violationsParContrainte: Record<string, number>;
+  /**
+   * The medium score minus its floor — what a solve can actually move, the
+   * figure to compare between two runs. Null when the floor was not measured
+   * (a snapshot captured before it existed), like `violationsParContrainte`.
+   */
+  scoreMediumHorsPlancher: number | null;
+  /** Constant part of the medium score, signed like it; null when not measured. */
+  plancherMedium: number | null;
 }
 
 /** One row of `GET /api/kpi/historique` (issue #89) — survives its edition's deletion. */

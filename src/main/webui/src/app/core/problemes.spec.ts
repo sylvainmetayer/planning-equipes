@@ -53,6 +53,8 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     score: '-2hard/0medium/0soft',
     matchCount: 2,
     violations: ['Alice : 52 h semaine 2026-W28'],
+    postesEvalues: null,
+    plancher: null,
     ...overrides,
   };
 }

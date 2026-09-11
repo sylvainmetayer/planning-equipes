@@ -23,6 +23,8 @@ function kpi(overrides: Partial<PlanningKpi> = {}): PlanningKpi {
     tauxModificationsManuelles: 0,
     dureeSolveSecondes: 60,
     violationsParContrainte: {},
+    scoreMediumHorsPlancher: null,
+    plancherMedium: null,
     ...overrides,
   };
 }
@@ -43,6 +45,27 @@ describe('construireLignesMetriques', () => {
 
     expect(medium.delta).toBe(2);
     expect(medium.tendance).toBe('amelioration');
+  });
+
+  it('le score medium hors plancher se compare comme le score medium, et reste inconnu sans mesure', () => {
+    // A -5,000 floor on both sides: only the remainder moves, and that is what
+    // is compared. A snapshot taken before the measure has no gap and no trend.
+    const net = ligne(
+      kpi({ scoreMedium: -6675, scoreMediumHorsPlancher: -1675 }),
+      kpi({ scoreMedium: -5900, scoreMediumHorsPlancher: -900 }),
+      'scoreMediumHorsPlancher',
+    );
+    expect(net.delta).toBe(775);
+    expect(net.tendance).toBe('amelioration');
+
+    const nonMesure = ligne(
+      kpi({ scoreMediumHorsPlancher: null }),
+      kpi({ scoreMediumHorsPlancher: -900 }),
+      'scoreMediumHorsPlancher',
+    );
+    expect(nonMesure.base).toBe('—');
+    expect(nonMesure.delta).toBeNull();
+    expect(nonMesure.tendance).toBeNull();
   });
 
   it('un score qui s’éloigne de zéro est une dégradation', () => {

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 class SnapshotComparisonServiceTest {
 
     private static PlanningKpi kpiWithViolations(Map<String, Integer> violations) {
-        return PlanningKpiService.compute(List.of(), "0hard/0medium/0soft", violations, null, null);
+        return PlanningKpiService.compute(List.of(), "0hard/0medium/0soft", violations, null, null, null);
     }
 
     @Test
@@ -59,12 +59,16 @@ class SnapshotComparisonServiceTest {
     }
 
     @Test
-    void unKpiSansCarteDeViolationsNeCassePasLeDiff() throws Exception {
+    void aKpiWithoutAViolationMapDoesNotBreakTheDiff() throws Exception {
         // Exactly how the case arises in production: a KPI payload stored by an
         // older format, read back into today's record — the map is missing, so
         // the field lands null rather than empty.
         PlanningKpi sansCarte = new ObjectMapper().readValue("{\"postesTotal\":0}", PlanningKpi.class);
         assertThat(sansCarte.violationsParContrainte()).isNull();
+        // Same for the floor (issue #495): a row written before it was measured
+        // reads back as "not measured", never as a floor of zero.
+        assertThat(sansCarte.plancherMedium()).isNull();
+        assertThat(sansCarte.scoreMediumHorsPlancher()).isNull();
 
         assertThat(SnapshotComparisonService.diffViolations(sansCarte, sansCarte))
                 .isEmpty();

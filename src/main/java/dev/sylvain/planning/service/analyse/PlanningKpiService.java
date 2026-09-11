@@ -57,6 +57,15 @@ public class PlanningKpiService {
      * @param heuresIncompletes true when some staffed seats referenced a
      *                          créneau the referential no longer holds, so the
      *                          hour metrics under-count them
+     * @param scoreMediumHorsPlancher the medium score minus its floor (issue
+     *                          #495) — what a solve can actually move, the
+     *                          figure to compare between two runs. {@code null}
+     *                          when the floor was not measured: a snapshot
+     *                          captured before it existed, or a plan without a
+     *                          stored analysis — same rule as
+     *                          {@code violationsParContrainte}
+     * @param plancherMedium    the constant part of the medium score, signed
+     *                          like it; {@code null} when not measured
      */
     @Schema(
             requiredProperties = {
@@ -86,7 +95,9 @@ public class PlanningKpiService {
             Integer modificationsManuelles,
             Double tauxModificationsManuelles,
             Long dureeSolveSecondes,
-            Map<String, Integer> violationsParContrainte) {}
+            Map<String, Integer> violationsParContrainte,
+            Integer scoreMediumHorsPlancher,
+            Integer plancherMedium) {}
 
     /** One staffed-or-empty seat reduced to what the KPI need: who, for how long. */
     record AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes) {}
@@ -118,7 +129,8 @@ public class PlanningKpiService {
                 diagnostic == null ? null : diagnostic.score(),
                 violationsByContrainte(diagnostic),
                 modifications,
-                dureeSolveSecondes);
+                dureeSolveSecondes,
+                diagnostic == null ? null : diagnostic.plancherMedium());
     }
 
     /**
@@ -128,8 +140,8 @@ public class PlanningKpiService {
      * must already be running in that edition (see
      * {@code SnapshotComparisonService}) — and score details are limited to
      * what the snapshot's meta carries. Violations are left empty rather than
-     * zeroed: nothing measured them, and an unmeasured constraint is not a
-     * respected one.
+     * zeroed, and the floor is left unmeasured: nothing measured them, and an
+     * unmeasured constraint is not a respected one.
      */
     public PlanningKpi computeFromSnapshot(List<AffectationSnapshot> affectations, String score) {
         Map<String, Creneau> creneauxParId = new HashMap<>();
@@ -144,7 +156,7 @@ public class PlanningKpiService {
                     affectation.animateurId(),
                     dureeMinutes(affectation, creneauxParId.get(affectation.creneauId()))));
         }
-        return compute(reduites, score, Map.of(), null, null);
+        return compute(reduites, score, Map.of(), null, null, null);
     }
 
     /**
@@ -178,13 +190,18 @@ public class PlanningKpiService {
     /**
      * The aggregation itself, static and free of any I/O so it can be
      * unit-tested without a database.
+     *
+     * @param plancherMedium the constant part of the medium score the analysis
+     *                       measured, {@code null} when it did not — the
+     *                       score net of it is then not invented either
      */
     public static PlanningKpi compute(
             List<AffectationKpi> affectations,
             String score,
             Map<String, Integer> violationsParContrainte,
             Integer modificationsManuelles,
-            Long dureeSolveSecondes) {
+            Long dureeSolveSecondes,
+            Integer plancherMedium) {
         Set<String> stands = new LinkedHashSet<>();
         Set<String> creneaux = new LinkedHashSet<>();
         Map<String, Double> heuresParAnimateur = new LinkedHashMap<>();
@@ -226,7 +243,9 @@ public class PlanningKpiService {
                 modificationsManuelles,
                 taux,
                 dureeSolveSecondes,
-                violationsParContrainte == null ? Map.of() : violationsParContrainte);
+                violationsParContrainte == null ? Map.of() : violationsParContrainte,
+                niveaux == null || plancherMedium == null ? null : niveaux[1] - plancherMedium,
+                plancherMedium);
     }
 
     private record Dispersion(double total, double moyenne, double ecartType, double min, double max) {}

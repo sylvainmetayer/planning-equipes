@@ -18,6 +18,7 @@ type RecapInternals = {
   reamorcageLabel: Signal<string>;
   impactLabel: Signal<string>;
   comparison: Signal<{ avant: string; apres: string } | null>;
+  horsPlancherLabel: Signal<string>;
   restoring: Signal<boolean>;
   restore: () => Promise<void>;
 };
@@ -160,6 +161,45 @@ describe('SolveRecap', () => {
 
       expect(recap.comparison()).toBeNull();
       expect(text()).not.toContain('Avant :');
+    });
+  });
+
+  // The score net of its floors (issue #495): said next to the raw one, and
+  // only when a floor exists — repeating an equal figure would be noise.
+  describe('the score net of its floors', () => {
+    it('says what the run is worth once the constant is taken out', () => {
+      const recap = createRecap({
+        lastRunAt: '2026-08-01T12:00:00Z',
+        score: '0hard/-6675medium/-564soft',
+        scoreHorsPlancher: '0hard/-1675medium/-564soft',
+      });
+
+      expect(recap.horsPlancherLabel()).toContain('Hors plancher : 0hard/-1675medium/-564soft');
+      expect(text()).toContain('Hors plancher');
+    });
+
+    it('stays silent when nothing is a floor, or when the score is unknown', () => {
+      const recap = createRecap({
+        lastRunAt: '2026-08-01T12:00:00Z',
+        score: '0hard/-6675medium/-564soft',
+        scoreHorsPlancher: '0hard/-6675medium/-564soft',
+      });
+      expect(recap.horsPlancherLabel()).toBe('');
+      expect(text()).not.toContain('Hors plancher');
+
+      fixture.componentRef.setInput('scoreHorsPlancher', null);
+      expect(recap.horsPlancherLabel()).toBe('');
+    });
+
+    it('sits under the before/after comparison when there is one, and is said once', () => {
+      createRecap({
+        lastRunAt: '2026-08-01T12:00:00Z',
+        previousPlan: { snapshotId: 12, score: '0hard/-7000medium/-920soft', degraded: false },
+        score: '0hard/-6675medium/-564soft',
+        scoreHorsPlancher: '0hard/-1675medium/-564soft',
+      });
+
+      expect(text().split('Hors plancher').length - 1).toBe(1);
     });
   });
 

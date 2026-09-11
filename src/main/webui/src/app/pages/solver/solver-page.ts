@@ -117,6 +117,8 @@ export class SolverPage {
   protected readonly hardScore = signal<number | null>(null);
   /** Full score of the last solve, the half of the comparison of issue #274 that this page produced. */
   protected readonly score = signal<string | null>(null);
+  /** The same score net of its floors (issue #495), for the recap. */
+  protected readonly scoreHorsPlancher = signal<string | null>(null);
   protected readonly hardIssues = signal<HardIssue[]>([]);
   /** Raised by the diffusion panel while it builds a document; named as the lock reason below. */
   protected readonly exportBusy = signal(false);
@@ -498,6 +500,7 @@ export class SolverPage {
     this.feasibility.set(diagnostic.faisabilite);
     this.hardScore.set(diagnostic.hardScore);
     this.score.set(diagnostic.score);
+    this.scoreHorsPlancher.set(diagnostic.scoreHorsPlancher ?? null);
     const hardIssues = diagnostic.contraintes
       .filter((constraint) => hardPart(constraint.score) < 0)
       .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount }));

@@ -49,6 +49,11 @@ export class SolveRecap {
   readonly previousPlan = input<PreviousPlan | null>(null);
   /** Full score of the last solve, the other half of the comparison. */
   readonly score = input<string | null>(null);
+  /**
+   * The same score with its floors taken out (issue #495): what the solve
+   * could actually move. Shown only when it differs from the raw one.
+   */
+  readonly scoreHorsPlancher = input<string | null>(null);
 
   /** The previous plan is persisted again: says how many seats came back. */
   readonly restored = output<string>();
@@ -86,6 +91,20 @@ export class SolveRecap {
       return $localize`:@@solver.impact.aucun:Personne ne change d'emploi du temps par rapport au plan publié le ${quand}:date:.`;
     }
     return $localize`:@@solver.impact.personnes:${impact.personnes}:count: personne(s) changeraient d'emploi du temps par rapport au plan publié le ${quand}:date:.`;
+  });
+
+  /**
+   * Said next to the raw score, and only when a floor exists: a raw
+   * « -6 675 medium » of which -5 000 no solve will ever recover reads as a
+   * bad plan, where « -1 675 hors plancher » is what the run is worth.
+   */
+  protected readonly horsPlancherLabel = computed(() => {
+    const brut = this.score();
+    const net = this.scoreHorsPlancher();
+    if (!brut || !net || net === brut) {
+      return '';
+    }
+    return $localize`:@@solver.scoreHorsPlancher:Hors plancher : ${net}:score: — le reste est une constante que des données absentes expliquent (voir Contraintes).`;
   });
 
   /** The comparison is only worth showing when both scores are known. */
