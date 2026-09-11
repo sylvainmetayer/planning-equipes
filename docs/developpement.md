@@ -105,6 +105,17 @@ nommer un bouton n'a d'intérêt que si le lecteur retrouve ces mots-là à
 l'écran. La comparaison ne porte que sur les citations d'au moins deux mots,
 pour ne pas confondre une tournure ordinaire avec un libellé.
 
+Aucun de ces quatre écarts ne regarde le **texte** : réécrire une source
+française sous le même id laisse l'anglais dire l'ancienne version, et le
+contrôle reste vert. `npm run i18n-check-modifies -- origin/main` ferme ce
+trou en cliquet : les sources de la base sont extraites dans un worktree
+jetable (une quarantaine de secondes), et tout id dont le français a changé
+— hors espaces, apostrophes, casse et ponctuation finale — sans que sa
+traduction bouge est signalé. C'est le contrôle qui permet une passe de
+simplification des textes sans livrer une IHM anglaise périmée. Il tourne en
+CI sur chaque pull request, contre sa branche de base. Si la traduction était
+déjà juste, la relire et la retoucher est précisément ce qu'il demande.
+
 ## Accessibilité
 
 Ces conventions valent sur les 26 écrans : les tenir coûte peu à l'écriture,

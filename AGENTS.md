@@ -19,7 +19,10 @@ build): French is the source language written directly in templates/components
 id lives in `public/i18n/messages.en.json` — a new user-visible string needs
 both — and `npm run i18n-check` (job `frontend` of the Tests workflow) fails
 the build when they drift: a missing id, an orphan key, or a placeholder
-renamed between source and translation. Never call `$localize` at module scope
+renamed between source and translation — and `npm run i18n-check-modifies --
+origin/main` (same job, a ratchet against the base branch) fails on a French
+source rewritten under its id while its English string stayed put, which none
+of the three catches. Never call `$localize` at module scope
 (only from a method, a `computed()`, or a constructor): it must run after
 `main.ts` has loaded translations, not at import time. See
 `docs/developpement.md` for the full workflow. Code comments and non-domain identifiers stay in English.

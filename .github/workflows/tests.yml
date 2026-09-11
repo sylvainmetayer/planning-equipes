@@ -192,6 +192,16 @@ jobs:
       - name: Check the English catalogue against the source strings
         run: npm run i18n-check
 
+      # Le contrôle ci-dessus compare des identifiants et des placeholders,
+      # jamais le texte : une source française réécrite sous le même id laisse
+      # l'anglais dire l'ancienne version, et tout reste vert. Ici, la branche
+      # est comparée à sa base (extraction des sources de la base dans un
+      # worktree jetable, d'où le fetch-depth: 0) : un id dont le français a
+      # changé sans que l'anglais bouge est signalé. Un cliquet, comme la
+      # politique linguistique : il porte sur ce que la branche réécrit.
+      - name: Check that a rewritten French source moved its English too
+        run: npm run i18n-check-modifies -- "origin/${{ github.base_ref || 'main' }}"
+
       # `models.ts` est écrit à la main et rien ne le confrontait au serveur :
       # six types avaient dérivé, le serveur envoyant des champs que le front
       # ne déclarait pas. Rien n'échoue à l'exécution — JSON.parse ignore ce
