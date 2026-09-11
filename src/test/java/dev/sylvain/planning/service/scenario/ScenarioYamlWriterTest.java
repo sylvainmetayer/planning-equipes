@@ -353,8 +353,51 @@ class ScenarioYamlWriterTest {
                     assertThat(contrainte)
                             .containsEntry("id", "INCOMPAT-1")
                             .containsEntry("type", "INCOMPATIBILITE")
+                            .containsEntry("creneauId", "1")
                             .containsEntry("standId", "STAND-A")
                             .containsEntry("raison", "Ne travaillent pas ensemble");
+                    assertThat((List<String>) contrainte.get("animateurs")).containsExactly("A1");
+                });
+    }
+
+    /**
+     * A constraint scoped to a créneau the export does not carry loses the
+     * scope, and keeps everything else. The guard's inverse would re-export a
+     * one-créneau INDISPONIBILITE_FORCEE as covering the whole event: a hard
+     * constraint silently widened, which no shipped scenario could reveal —
+     * none declares an ad hoc constraint.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void aConstraintScopedToAnUnknownCreneauKeepsEverythingButTheScope() {
+        ContrainteAdHoc indisponibilite = new ContrainteAdHoc("INDISPO-1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+        indisponibilite.getAnimateursConcernes().add(animateur);
+        indisponibilite.setCreneau(creneau);
+        indisponibilite.setStand(stand);
+
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
+                List.of(animateur),
+                List.of(stand),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null,
+                Set.of(),
+                Map.of(),
+                List.of(indisponibilite)));
+        Map<String, Object> parsed = new Yaml().load(yaml);
+
+        assertThat((List<Map<String, Object>>) parsed.get("contraintesAdHoc"))
+                .singleElement()
+                .satisfies(contrainte -> {
+                    assertThat(contrainte)
+                            .containsEntry("id", "INDISPO-1")
+                            .containsEntry("type", "INDISPONIBILITE_FORCEE")
+                            .containsEntry("standId", "STAND-A")
+                            .doesNotContainKey("creneauId");
                     assertThat((List<String>) contrainte.get("animateurs")).containsExactly("A1");
                 });
     }
