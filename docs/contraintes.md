@@ -503,6 +503,16 @@ de `PauseSurPoste`, que l'écran Pauses lit aussi : les deux ne peuvent pas
 diverger sur ce qui est dû. Muette quand la pause n'est pas déclarée sur le
 poste : la règle légale exige alors un vrai trou, et le juge.
 
+### Le dosage et la faisabilité
+
+Un poids fort sur une règle MEDIUM se paie sur la phase de faisabilité, qui
+accepte ses mouvements sur le score entier. Mesuré sur `festival-hivernal` :
+`pauseSurPosteSansRelais` au poids 1, zéro écart dur en 67 s ; au poids 5, la
+même grille finit ses 900 s à **−67 dur**. Le poids 5 est pourtant celui qui
+efface tout relais manquant — mais depuis un plan déjà faisable, à chaud. La
+règle d'usage : atteindre zéro dur au dosage par défaut, puis doser et relancer
+à chaud ; jamais un poids fort dans un départ à froid.
+
 `coupureRepasAuPlusTot` départage ensuite 12-13 de 13-14 en pénalisant le
 retard sur l'ouverture. La couverture des stands étant dure, c'est son
 arbitrage avec cette préférence qui répartit la rotation du midi.

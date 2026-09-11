@@ -1,0 +1,5010 @@
+# Festival hivernal : édition anonymisée d'un événement réel de quinze jours, grille écrite en
+# vacations (rotation 12-13 / 13-14, relèves du soir portées par les fenêtres des stands),
+# 153 animateurs, 65 stands. Noms, lieux, dates et catégories de jeu sont fictifs ; horaires,
+# effectifs, compétences et paramètres sont ceux de l'original. Joué par
+# PlanningServiceScenarioFestivalHivernalTest, qui exige zéro écart dur.
+festival:
+  dateDebut: '2027-02-01'
+parametresSolveur:
+  dureeResolutionSecondes: 1800
+parametresLegaux:
+  dureeHebdomadaireMaxMinutes: 2880
+  pauseMinimaleEntreVacationsMinutes: 0
+  reposQuotidienMinimalMinutes: 660
+  pauseSurPoste: true
+parametresDecoupage:
+  dureeVacationCibleMinutes: 330
+  dureeVacationMinMinutes: 180
+  dureeVacationMaxMinutes: 360
+  dureeChevauchementMinutes: 15
+  dureePauseRepasMinutes: 60
+  fenetreRepasMidiDebut: '12:00'
+  fenetreRepasMidiFin: '14:00'
+  fenetreRepasSoirDebut: '20:00'
+  fenetreRepasSoirFin: '21:00'
+  strategieCouverturePendantPause: EFFECTIF_REDUIT
+  nombreFamillesDecalage: 5
+  dureeDecalageMaxMinutes: 120
+  modeGrille: VACATIONS
+typologies:
+- id: ESCAPE
+  label: Escape game
+  ninja: false
+- id: RETRO
+  label: Rétrogaming
+  ninja: false
+- id: ROLE
+  label: Jeux de rôle
+  ninja: false
+- id: CARTES
+  label: Jeux de cartes
+  ninja: false
+- id: STRATEGIE
+  label: Stratégie
+  ninja: false
+- id: CASSE_TETE
+  label: Casse-têtes
+  ninja: false
+- id: MANUTENTION
+  label: Manutention (montage / démontage)
+  ninja: false
+- id: FIGURINES
+  label: Figurines
+  ninja: false
+- id: CONCOURS
+  label: Concours
+  ninja: false
+- id: SIGNES
+  label: Accueil en langue des signes
+  ninja: false
+- id: PETITE_ENFANCE
+  label: Petite enfance
+  ninja: false
+- id: JOKER
+  label: Joker
+  ninja: true
+- id: BOIS
+  label: Jeux en bois
+  ninja: false
+- id: PLATEAU
+  label: Jeux de plateau
+  ninja: false
+- id: PLEIN_AIR
+  label: Plein air
+  ninja: false
+creneaux:
+- id: C01
+  jour: 1
+  date: '2027-02-01'
+  heureDebut: '09:00'
+  heureFin: '12:00'
+- id: C02
+  jour: 1
+  date: '2027-02-01'
+  heureDebut: '13:00'
+  heureFin: '16:00'
+- id: C03
+  jour: 2
+  date: '2027-02-02'
+  heureDebut: '09:00'
+  heureFin: '12:00'
+- id: C04
+  jour: 2
+  date: '2027-02-02'
+  heureDebut: '13:00'
+  heureFin: '16:00'
+- id: C05
+  jour: 3
+  date: '2027-02-03'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C06
+  jour: 3
+  date: '2027-02-03'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C07
+  jour: 3
+  date: '2027-02-03'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C08
+  jour: 3
+  date: '2027-02-03'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C09
+  jour: 4
+  date: '2027-02-04'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C10
+  jour: 4
+  date: '2027-02-04'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C11
+  jour: 4
+  date: '2027-02-04'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C12
+  jour: 4
+  date: '2027-02-04'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C13
+  jour: 4
+  date: '2027-02-04'
+  heureDebut: '20:00'
+  heureFin: '21:00'
+- id: C14
+  jour: 5
+  date: '2027-02-05'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C15
+  jour: 5
+  date: '2027-02-05'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C16
+  jour: 5
+  date: '2027-02-05'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C17
+  jour: 5
+  date: '2027-02-05'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C18
+  jour: 5
+  date: '2027-02-05'
+  heureDebut: '20:00'
+  heureFin: '00:00'
+- id: C19
+  jour: 6
+  date: '2027-02-06'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C20
+  jour: 6
+  date: '2027-02-06'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C21
+  jour: 6
+  date: '2027-02-06'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C22
+  jour: 6
+  date: '2027-02-06'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C23
+  jour: 6
+  date: '2027-02-06'
+  heureDebut: '20:00'
+  heureFin: '00:00'
+- id: C24
+  jour: 7
+  date: '2027-02-07'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C25
+  jour: 7
+  date: '2027-02-07'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C26
+  jour: 7
+  date: '2027-02-07'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C27
+  jour: 7
+  date: '2027-02-07'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C28
+  jour: 7
+  date: '2027-02-07'
+  heureDebut: '20:00'
+  heureFin: '00:00'
+- id: C29
+  jour: 8
+  date: '2027-02-08'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C30
+  jour: 8
+  date: '2027-02-08'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C31
+  jour: 8
+  date: '2027-02-08'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C32
+  jour: 8
+  date: '2027-02-08'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C33
+  jour: 9
+  date: '2027-02-09'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C34
+  jour: 9
+  date: '2027-02-09'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C35
+  jour: 9
+  date: '2027-02-09'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C36
+  jour: 9
+  date: '2027-02-09'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C37
+  jour: 10
+  date: '2027-02-10'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C38
+  jour: 10
+  date: '2027-02-10'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C39
+  jour: 10
+  date: '2027-02-10'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C40
+  jour: 10
+  date: '2027-02-10'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C41
+  jour: 11
+  date: '2027-02-11'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C42
+  jour: 11
+  date: '2027-02-11'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C43
+  jour: 11
+  date: '2027-02-11'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C44
+  jour: 11
+  date: '2027-02-11'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C45
+  jour: 12
+  date: '2027-02-12'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C46
+  jour: 12
+  date: '2027-02-12'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C47
+  jour: 12
+  date: '2027-02-12'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C48
+  jour: 12
+  date: '2027-02-12'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C49
+  jour: 12
+  date: '2027-02-12'
+  heureDebut: '20:00'
+  heureFin: '00:00'
+- id: C50
+  jour: 13
+  date: '2027-02-13'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C51
+  jour: 13
+  date: '2027-02-13'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C52
+  jour: 13
+  date: '2027-02-13'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C53
+  jour: 13
+  date: '2027-02-13'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C54
+  jour: 13
+  date: '2027-02-13'
+  heureDebut: '20:00'
+  heureFin: '00:00'
+- id: C55
+  jour: 14
+  date: '2027-02-14'
+  heureDebut: '10:00'
+  heureFin: '12:00'
+- id: C56
+  jour: 14
+  date: '2027-02-14'
+  heureDebut: '12:00'
+  heureFin: '13:00'
+- id: C57
+  jour: 14
+  date: '2027-02-14'
+  heureDebut: '13:00'
+  heureFin: '14:00'
+- id: C58
+  jour: 14
+  date: '2027-02-14'
+  heureDebut: '14:00'
+  heureFin: '20:00'
+- id: C59
+  jour: 15
+  date: '2027-02-15'
+  heureDebut: '09:00'
+  heureFin: '12:00'
+- id: C60
+  jour: 15
+  date: '2027-02-15'
+  heureDebut: '13:00'
+  heureFin: '16:00'
+- id: C61
+  jour: 16
+  date: '2027-02-16'
+  heureDebut: '09:00'
+  heureFin: '12:00'
+- id: C62
+  jour: 16
+  date: '2027-02-16'
+  heureDebut: '13:00'
+  heureFin: '16:00'
+emplacements:
+- id: RUE-PRINCIPALE-HAUT
+  nom: Rue principale (haut)
+  latitude: 45.8857
+  longitude: 2.1786
+- id: SQUARE-DU-LAVOIR
+  nom: Square du lavoir
+  latitude: 45.8863
+  longitude: 2.1774
+- id: ANCIENNE-GARE
+  nom: Ancienne gare
+  latitude: 45.8847
+  longitude: 2.1742
+- id: MOULIN
+  nom: Moulin
+  latitude: 45.8894
+  longitude: 2.1742
+- id: FERME-PEDAGOGIQUE
+  nom: Ferme pédagogique
+  latitude: 45.8885
+  longitude: 2.1702
+- id: ESPLANADE
+  nom: Esplanade
+  latitude: 45.888
+  longitude: 2.1715
+- id: GYMNASE-MUNICIPAL
+  nom: Gymnase municipal
+  latitude: 45.8701
+  longitude: 2.1507
+- id: SALLE-POLYVALENTE
+  nom: Salle polyvalente
+  latitude: 45.8826
+  longitude: 2.1811
+- id: FOYER-RURAL
+  nom: Foyer rural
+  latitude: 45.8804
+  longitude: 2.1693
+- id: CHAPITEAU-NORD
+  nom: Chapiteau nord
+  latitude: 45.8842
+  longitude: 2.1748
+- id: SALLE-DES-FETES
+  nom: Salle des fêtes
+  latitude: 45.8834
+  longitude: 2.1797
+- id: PREAU-DU-COLLEGE
+  nom: Préau du collège
+  latitude: 45.883
+  longitude: 2.177
+- id: PARC-DE-LA-FONTAINE
+  nom: Parc de la fontaine
+  latitude: 45.8759
+  longitude: 2.1654
+- id: BOULODROME
+  nom: Boulodrome
+  latitude: 45.8833
+  longitude: 2.1755
+- id: MEDIATHEQUE
+  nom: Médiathèque
+  latitude: 45.8829
+  longitude: 2.1752
+- id: RUE-PRINCIPALE-BAS
+  nom: Rue principale (bas)
+  latitude: 45.882
+  longitude: 2.1721
+- id: PLACE-DE-LA-MAIRIE
+  nom: Place de la Mairie
+  latitude: 45.8844
+  longitude: 2.1782
+- id: CHAPITEAU-SUD
+  nom: Chapiteau sud
+  latitude: 45.8837
+  longitude: 2.1733
+- id: THEATRE-DE-VERDURE
+  nom: Théâtre de verdure
+  latitude: 45.8851
+  longitude: 2.1755
+- id: MAISON-DES-ASSOCIATIONS
+  nom: Maison des associations
+  latitude: 45.8814
+  longitude: 2.1774
+- id: COUR-DE-L-ECOLE
+  nom: Cour de l'école
+  latitude: 45.8869
+  longitude: 2.1731
+- id: JARDIN-PUBLIC
+  nom: Jardin public
+  latitude: 45.8838
+  longitude: 2.1763
+- id: HALLE-DU-MARCHE
+  nom: Halle du marché
+  latitude: 45.8874
+  longitude: 2.1722
+stands:
+- id: GRANDE-HALLE-OBSERVATOIRE-FABULEUX
+  nom: Grande halle - Observatoire Fabuleux
+  emplacementId: RUE-PRINCIPALE-BAS
+  typologiesProposees:
+  - RETRO
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: GRANDE-HALLE-MARCHE-ANCIEN
+  nom: Grande halle - Marché Ancien
+  emplacementId: ESPLANADE
+  typologiesProposees:
+  - RETRO
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+- id: GRANDE-HALLE-LABYRINTHE-NOCTURNE
+  nom: Grande halle - Labyrinthe Nocturne
+  emplacementId: FERME-PEDAGOGIQUE
+  typologiesProposees:
+  - RETRO
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-07'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 2
+    - heureDebut: '19:00'
+      effectif: 1
+- id: GRANDE-HALLE-GRENIER-ROYAL
+  nom: Grande halle - Grenier Royal
+  emplacementId: ANCIENNE-GARE
+  typologiesProposees:
+  - RETRO
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+- id: GRANDE-HALLE-PAVILLON-JOYEUX
+  nom: Grande halle - Pavillon Joyeux
+  emplacementId: BOULODROME
+  typologiesProposees:
+  - RETRO
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+- id: GRANDE-HALLE-TRESOR-SAUVAGE
+  nom: Grande halle - Trésor Sauvage
+  emplacementId: ESPLANADE
+  typologiesProposees:
+  - RETRO
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: GRANDE-HALLE-TOUR-ROYAL
+  nom: Grande halle - Tour Royal
+  emplacementId: RUE-PRINCIPALE-BAS
+  typologiesProposees:
+  - CONCOURS
+  effectifMin: 1
+  effectifMax: 3
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+- id: GRANDE-HALLE-REFUGE-ANCIEN
+  nom: Grande halle - Refuge Ancien
+  emplacementId: MOULIN
+  typologiesProposees:
+  - RETRO
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: GRANDE-HALLE-PONT-MALIN
+  nom: Grande halle - Pont Malin
+  emplacementId: FOYER-RURAL
+  typologiesProposees:
+  - PLATEAU
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+- id: SOUS-BOIS-DRAGON-ROYAL
+  nom: Sous-bois - Dragon Royal
+  emplacementId: SALLE-POLYVALENTE
+  typologiesProposees:
+  - PLEIN_AIR
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 2
+    - heureDebut: '19:00'
+      heureFin: '21:00'
+      effectif: 1
+- id: DEMONTAGE-DU-VILLAGE
+  nom: Démontage du village
+  typologiesProposees:
+  - SIGNES
+  effectifMin: 95
+  effectifMax: 109
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: EPUISANT
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-15'
+    - '2027-02-16'
+    fenetres:
+    - heureDebut: '09:00'
+      heureFin: '12:00'
+    - heureDebut: '13:00'
+      heureFin: '16:00'
+  emplacementId: null
+- id: COUR-CABINET-PERDU
+  nom: Cour - Cabinet Perdu
+  emplacementId: GYMNASE-MUNICIPAL
+  typologiesProposees:
+  - PLEIN_AIR
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-06'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+- id: CHAPITEAU-REPAIRE-FABULEUX
+  nom: Chapiteau - Repaire Fabuleux
+  emplacementId: PARC-DE-LA-FONTAINE
+  typologiesProposees:
+  - PLEIN_AIR
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-05'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 2
+    - heureDebut: '21:00'
+      effectif: 2
+- id: MONTAGE-DU-VILLAGE
+  nom: Montage du village
+  typologiesProposees:
+  - SIGNES
+  effectifMin: 105
+  effectifMax: 111
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: EPUISANT
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-01'
+    - '2027-02-02'
+    fenetres:
+    - heureDebut: '09:00'
+      heureFin: '12:00'
+    - heureDebut: '13:00'
+      heureFin: '16:00'
+  emplacementId: null
+- id: PARVIS-COMPTOIR-SAUVAGE
+  nom: Parvis - Comptoir Sauvage
+  emplacementId: HALLE-DU-MARCHE
+  typologiesProposees:
+  - RETRO
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: PARVIS-PASSAGE-SILENCIEUX
+  nom: Parvis - Passage Silencieux
+  emplacementId: ESPLANADE
+  typologiesProposees:
+  - RETRO
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: PARVIS-ATELIER-SAUVAGE
+  nom: Parvis - Atelier Sauvage
+  emplacementId: JARDIN-PUBLIC
+  typologiesProposees:
+  - RETRO
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: PARVIS-ATELIER-BLEU
+  nom: Parvis - Atelier Bleu
+  emplacementId: RUE-PRINCIPALE-HAUT
+  typologiesProposees:
+  - ROLE
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: PARVIS-SENTIER-MALIN
+  nom: Parvis - Sentier Malin
+  emplacementId: SQUARE-DU-LAVOIR
+  typologiesProposees:
+  - ROLE
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: PARVIS-COMPTOIR-SECRET
+  nom: Parvis - Comptoir Secret
+  emplacementId: SALLE-DES-FETES
+  typologiesProposees:
+  - ROLE
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: PARVIS-KIOSQUE-PERDU
+  nom: Parvis - Kiosque Perdu
+  emplacementId: PLACE-DE-LA-MAIRIE
+  typologiesProposees:
+  - CARTES
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: PARVIS-JARDIN-MALIN
+  nom: Parvis - Jardin Malin
+  emplacementId: ESPLANADE
+  typologiesProposees:
+  - RETRO
+  effectifMin: 3
+  effectifMax: 3
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+- id: PARVIS-TRESOR-NOCTURNE
+  nom: Parvis - Trésor Nocturne
+  emplacementId: MEDIATHEQUE
+  typologiesProposees:
+  - MANUTENTION
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: PARVIS-OBSERVATOIRE-JOYEUX
+  nom: Parvis - Observatoire Joyeux
+  emplacementId: COUR-DE-L-ECOLE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: PARVIS-MOULIN-FABULEUX
+  nom: Parvis - Moulin Fabuleux
+  emplacementId: MEDIATHEQUE
+  typologiesProposees:
+  - JOKER
+  effectifMin: 3
+  effectifMax: 3
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+- id: ALLEE-SUD-PHARE-PERDU
+  nom: Allée sud - Phare Perdu
+  emplacementId: MAISON-DES-ASSOCIATIONS
+  typologiesProposees:
+  - PLEIN_AIR
+  effectifMin: 2
+  effectifMax: 10
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-10'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 10
+    - heureDebut: '12:00'
+      heureFin: '13:00'
+      effectif: 5
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: GALERIE-VOLCAN-DORE
+  nom: Galerie - Volcan Doré
+  emplacementId: CHAPITEAU-NORD
+  typologiesProposees:
+  - PLEIN_AIR
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 1
+    - heureDebut: '20:00'
+      heureFin: '21:00'
+      effectif: 1
+- id: GALERIE-PASSAGE-PERDU
+  nom: Galerie - Passage Perdu
+  emplacementId: CHAPITEAU-NORD
+  typologiesProposees:
+  - PLEIN_AIR
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-11'
+    - '2027-02-12'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 1
+    - heureDebut: '20:00'
+      heureFin: '21:00'
+      effectif: 1
+- id: ALLEE-NORD-REFUGE-CURIEUX
+  nom: Allée nord - Refuge Curieux
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-06'
+    - '2027-02-08'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-07'
+    - '2027-02-09'
+    - '2027-02-12'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-MARCHE-RUSE
+  nom: Allée nord - Marché Rusé
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 1
+  effectifMax: 3
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 3
+    - heureDebut: '12:00'
+      heureFin: '13:00'
+      effectif: 2
+    - heureDebut: '13:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+- id: ALLEE-NORD-HANGAR-SILENCIEUX
+  nom: Allée nord - Hangar Silencieux
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-06'
+    - '2027-02-09'
+    - '2027-02-12'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-PASSAGE-RUSE
+  nom: Allée nord - Passage Rusé
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-09'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-08'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-VOLCAN-ANCIEN
+  nom: Allée nord - Volcan Ancien
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 1
+  effectifMax: 4
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-06'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 4
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-07'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 4
+- id: ALLEE-NORD-SENTIER-PERDU
+  nom: Allée nord - Sentier Perdu
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-COMPTOIR-MALIN
+  nom: Allée nord - Comptoir Malin
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 1
+  effectifMax: 3
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 3
+    - heureDebut: '12:00'
+      heureFin: '13:00'
+      effectif: 2
+    - heureDebut: '13:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+- id: ALLEE-NORD-REFUGE-ROYAL
+  nom: Allée nord - Refuge Royal
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 3
+  effectifMax: 3
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+- id: ALLEE-NORD-TOUR-FABULEUX
+  nom: Allée nord - Tour Fabuleux
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 1
+  effectifMax: 3
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 3
+    - heureDebut: '12:00'
+      heureFin: '13:00'
+      effectif: 2
+    - heureDebut: '13:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+- id: ALLEE-NORD-VOLCAN-CURIEUX
+  nom: Allée nord - Volcan Curieux
+  emplacementId: CHAPITEAU-SUD
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-PASSAGE-ROYAL
+  nom: Allée nord - Passage Royal
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - ESCAPE
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '13:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '13:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 2
+    - heureDebut: '19:00'
+      effectif: 1
+- id: ALLEE-NORD-HANGAR-BLEU
+  nom: Allée nord - Hangar Bleu
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-BAZAR-SECRET
+  nom: Allée nord - Bazar Secret
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - PETITE_ENFANCE
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '13:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-BAZAR-PERDU
+  nom: Allée nord - Bazar Perdu
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - RETRO
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-REPAIRE-ANCIEN
+  nom: Allée nord - Repaire Ancien
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-OBSERVATOIRE-ROYAL
+  nom: Allée nord - Observatoire Royal
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 2
+    - heureDebut: '19:00'
+      heureFin: '21:00'
+      effectif: 1
+    - heureDebut: '21:00'
+      effectif: 2
+- id: ALLEE-NORD-CABINET-SAUVAGE
+  nom: Allée nord - Cabinet Sauvage
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-COMPTOIR-NOCTURNE
+  nom: Allée nord - Comptoir Nocturne
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 4
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-06'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 4
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-11'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 4
+- id: ALLEE-NORD-PASSAGE-VOLANT
+  nom: Allée nord - Passage Volant
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+- id: ALLEE-NORD-MOULIN-JOYEUX
+  nom: Allée nord - Moulin Joyeux
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-07'
+    - '2027-02-09'
+    - '2027-02-11'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-08'
+    - '2027-02-10'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-CARROUSEL-JOYEUX
+  nom: Allée nord - Carrousel Joyeux
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '13:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 1
+    - heureDebut: '20:00'
+      effectif: 1
+- id: ALLEE-NORD-SENTIER-MINUSCULE
+  nom: Allée nord - Sentier Minuscule
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-09'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-SENTIER-FABULEUX
+  nom: Allée nord - Sentier Fabuleux
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+- id: ALLEE-NORD-ATELIER-JOYEUX
+  nom: Allée nord - Atelier Joyeux
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 1
+    - heureDebut: '20:00'
+      effectif: 1
+- id: ALLEE-NORD-TUNNEL-VOLANT
+  nom: Allée nord - Tunnel Volant
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-SENTIER-ROYAL
+  nom: Allée nord - Sentier Royal
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 1
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 1
+- id: ALLEE-NORD-LABYRINTHE-SILENCIEUX
+  nom: Allée nord - Labyrinthe Silencieux
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 6
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-09'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 6
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-08'
+    - '2027-02-10'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 3
+    - heureDebut: '12:00'
+      heureFin: '13:00'
+      effectif: 2
+    - heureDebut: '13:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 6
+- id: ALLEE-NORD-TOUR-MAGIQUE
+  nom: Allée nord - Tour Magique
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 4
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-09'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 4
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-08'
+    - '2027-02-10'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 4
+- id: ALLEE-NORD-MARCHE-GEANT
+  nom: Allée nord - Marché Géant
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-08'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-GRENIER-JOYEUX
+  nom: Allée nord - Grenier Joyeux
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 2
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-MOULIN-VOLANT
+  nom: Allée nord - Moulin Volant
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-07'
+    - '2027-02-09'
+    - '2027-02-12'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-08'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+- id: ALLEE-NORD-CABINET-DORE
+  nom: Allée nord - Cabinet Doré
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - FIGURINES
+  effectifMin: 1
+  effectifMax: 3
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-07'
+    - '2027-02-09'
+    - '2027-02-11'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-08'
+    - '2027-02-10'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+- id: ALLEE-NORD-ATELIER-RAPIDE
+  nom: Allée nord - Atelier Rapide
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - STRATEGIE
+  effectifMin: 2
+  effectifMax: 5
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 0
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 4
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 2
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 4
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 4
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 2
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 4
+    - heureDebut: '19:00'
+      heureFin: '20:00'
+      effectif: 2
+    - heureDebut: '20:00'
+      heureFin: '21:00'
+      effectif: 3
+    - heureDebut: '21:00'
+      effectif: 5
+- id: ALLEE-NORD-OBSERVATOIRE-MINUSCULE
+  nom: Allée nord - Observatoire Minuscule
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 2
+  effectifMax: 4
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 1
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 4
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 2
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 3
+- id: ALLEE-NORD-CABINET-RAPIDE
+  nom: Allée nord - Cabinet Rapide
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - BOIS
+  effectifMin: 2
+  effectifMax: 5
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 2
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 4
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 4
+    - heureDebut: '19:00'
+      heureFin: '20:00'
+      effectif: 2
+    - heureDebut: '20:00'
+      heureFin: '21:00'
+      effectif: 3
+    - heureDebut: '21:00'
+      effectif: 5
+- id: ALLEE-NORD-PHARE-MALIN
+  nom: Allée nord - Phare Malin
+  emplacementId: THEATRE-DE-VERDURE
+  typologiesProposees:
+  - PLEIN_AIR
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: false
+  niveauEffort: NORMAL
+  famille: 3
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-12'
+    - '2027-02-13'
+    fenetres:
+    - heureDebut: '14:00'
+      heureFin: '19:00'
+      effectif: 2
+    - heureDebut: '19:00'
+      heureFin: '21:00'
+      effectif: 1
+    - heureDebut: '21:00'
+      effectif: 2
+- id: ALLEE-NORD-MOULIN-CURIEUX
+  nom: Allée nord - Moulin Curieux
+  emplacementId: PREAU-DU-COLLEGE
+  typologiesProposees:
+  - CASSE_TETE
+  effectifMin: 1
+  effectifMax: 2
+  reserveMajeurs: false
+  premium: true
+  niveauEffort: NORMAL
+  famille: 4
+  indisponibilites: []
+  ouvertures: []
+  horaires:
+  - mode: FERMETURE
+    jours: TOUS
+    fenetres:
+    - heureDebut: '09:00'
+  - mode: OUVERTURE
+    jours: DATES
+    dates:
+    - '2027-02-03'
+    - '2027-02-04'
+    - '2027-02-05'
+    - '2027-02-06'
+    - '2027-02-07'
+    - '2027-02-08'
+    - '2027-02-09'
+    - '2027-02-10'
+    - '2027-02-11'
+    - '2027-02-12'
+    - '2027-02-13'
+    - '2027-02-14'
+    fenetres:
+    - heureDebut: '10:00'
+      heureFin: '12:00'
+      effectif: 2
+    - heureDebut: '12:00'
+      heureFin: '14:00'
+      effectif: 1
+    - heureDebut: '14:00'
+      heureFin: '20:00'
+      effectif: 2
+animateurs:
+- id: A1
+  prenom: Animateur
+  nom: '001'
+  dateNaissance: '1986-03-18'
+  manager: false
+  email: animateur001@example.org
+  competences:
+    STRATEGIE: DEBUTANT
+    SIGNES: AUTONOME
+    JOKER: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A2
+  prenom: Animateur
+  nom: '002'
+  dateNaissance: '1971-05-02'
+  manager: false
+  email: animateur002@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A3
+  prenom: Animateur
+  nom: '003'
+  dateNaissance: '1994-10-15'
+  manager: false
+  email: animateur003@example.org
+  competences:
+    STRATEGIE: AUTONOME
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A4
+  prenom: Animateur
+  nom: '004'
+  dateNaissance: '1966-04-21'
+  manager: false
+  email: animateur004@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A5
+  prenom: Animateur
+  nom: '005'
+  dateNaissance: '1987-08-29'
+  manager: false
+  email: animateur005@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A6
+  prenom: Animateur
+  nom: '006'
+  dateNaissance: '2000-12-11'
+  manager: false
+  email: animateur006@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A7
+  prenom: Animateur
+  nom: '007'
+  dateNaissance: '1976-01-15'
+  manager: false
+  email: animateur007@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A8
+  prenom: Animateur
+  nom: '008'
+  dateNaissance: '2002-10-17'
+  manager: false
+  email: animateur008@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A9
+  prenom: Animateur
+  nom: '009'
+  dateNaissance: '1994-04-20'
+  manager: false
+  email: animateur009@example.org
+  competences:
+    MANUTENTION: DEBUTANT
+    SIGNES: REFERENT
+    RETRO: AUTONOME
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A10
+  prenom: Animateur
+  nom: '010'
+  dateNaissance: '1966-08-28'
+  manager: false
+  email: animateur010@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A11
+  prenom: Animateur
+  nom: '011'
+  dateNaissance: '1988-03-06'
+  manager: false
+  email: animateur011@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A12
+  prenom: Animateur
+  nom: '012'
+  dateNaissance: '1984-03-07'
+  manager: false
+  email: animateur012@example.org
+  competences:
+    SIGNES: AUTONOME
+    PLEIN_AIR: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A13
+  prenom: Animateur
+  nom: '013'
+  dateNaissance: '1975-05-11'
+  manager: false
+  email: animateur013@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A14
+  prenom: Animateur
+  nom: '014'
+  dateNaissance: '2001-07-31'
+  manager: false
+  email: animateur014@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A15
+  prenom: Animateur
+  nom: '015'
+  dateNaissance: '2000-06-19'
+  manager: false
+  email: animateur015@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A16
+  prenom: Animateur
+  nom: '016'
+  dateNaissance: '1978-10-05'
+  manager: false
+  email: animateur016@example.org
+  competences:
+    SIGNES: AUTONOME
+    ESCAPE: AUTONOME
+    RETRO: DEBUTANT
+    JOKER: DEBUTANT
+    PETITE_ENFANCE: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A17
+  prenom: Animateur
+  nom: '017'
+  dateNaissance: '2000-03-11'
+  manager: false
+  email: animateur017@example.org
+  competences:
+    SIGNES: AUTONOME
+    ESCAPE: REFERENT
+    RETRO: DEBUTANT
+    CASSE_TETE: DEBUTANT
+    FIGURINES: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A18
+  prenom: Animateur
+  nom: '018'
+  dateNaissance: '1992-02-01'
+  manager: false
+  email: animateur018@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A19
+  prenom: Animateur
+  nom: '019'
+  dateNaissance: '1981-04-16'
+  manager: false
+  email: animateur019@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A20
+  prenom: Animateur
+  nom: '020'
+  dateNaissance: '1969-05-16'
+  manager: false
+  email: animateur020@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A21
+  prenom: Animateur
+  nom: '021'
+  dateNaissance: '1998-04-09'
+  manager: false
+  email: animateur021@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A22
+  prenom: Animateur
+  nom: '022'
+  dateNaissance: '1967-02-27'
+  manager: false
+  email: animateur022@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A23
+  prenom: Animateur
+  nom: '023'
+  dateNaissance: '1988-12-28'
+  manager: false
+  email: animateur023@example.org
+  competences:
+    SIGNES: AUTONOME
+    CONCOURS: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A24
+  prenom: Animateur
+  nom: '024'
+  dateNaissance: '1973-12-23'
+  manager: false
+  email: animateur024@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A25
+  prenom: Animateur
+  nom: '025'
+  dateNaissance: '1990-04-06'
+  manager: false
+  email: animateur025@example.org
+  competences:
+    PLATEAU: AUTONOME
+    SIGNES: AUTONOME
+    RETRO: DEBUTANT
+    JOKER: DEBUTANT
+    FIGURINES: DEBUTANT
+    CONCOURS: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A26
+  prenom: Animateur
+  nom: '026'
+  dateNaissance: '1965-11-22'
+  manager: false
+  email: animateur026@example.org
+  competences:
+    STRATEGIE: DEBUTANT
+    SIGNES: AUTONOME
+    JOKER: AUTONOME
+    CASSE_TETE: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A27
+  prenom: Animateur
+  nom: '027'
+  dateNaissance: '1967-01-24'
+  manager: false
+  email: animateur027@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A28
+  prenom: Animateur
+  nom: '028'
+  dateNaissance: '2003-07-25'
+  manager: false
+  email: animateur028@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A29
+  prenom: Animateur
+  nom: '029'
+  dateNaissance: '1990-03-28'
+  manager: false
+  email: animateur029@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A30
+  prenom: Animateur
+  nom: '030'
+  dateNaissance: '1991-06-23'
+  manager: false
+  email: animateur030@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A31
+  prenom: Animateur
+  nom: '031'
+  dateNaissance: '1969-09-24'
+  manager: false
+  email: animateur031@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A32
+  prenom: Animateur
+  nom: '032'
+  dateNaissance: '1991-07-11'
+  manager: false
+  email: animateur032@example.org
+  competences:
+    SIGNES: REFERENT
+    RETRO: AUTONOME
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A33
+  prenom: Animateur
+  nom: '033'
+  dateNaissance: '1994-09-12'
+  manager: false
+  email: animateur033@example.org
+  competences:
+    PLATEAU: REFERENT
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A34
+  prenom: Animateur
+  nom: '034'
+  dateNaissance: '1989-02-04'
+  manager: false
+  email: animateur034@example.org
+  competences:
+    ROLE: AUTONOME
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A35
+  prenom: Animateur
+  nom: '035'
+  dateNaissance: '1989-04-30'
+  manager: false
+  email: animateur035@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A36
+  prenom: Animateur
+  nom: '036'
+  dateNaissance: '2004-05-17'
+  manager: false
+  email: animateur036@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+    CONCOURS: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A37
+  prenom: Animateur
+  nom: '037'
+  dateNaissance: '1969-02-12'
+  manager: false
+  email: animateur037@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A38
+  prenom: Animateur
+  nom: '038'
+  dateNaissance: '1965-07-01'
+  manager: false
+  email: animateur038@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A39
+  prenom: Animateur
+  nom: '039'
+  dateNaissance: '1987-11-21'
+  manager: false
+  email: animateur039@example.org
+  competences:
+    STRATEGIE: DEBUTANT
+    MANUTENTION: REFERENT
+    SIGNES: AUTONOME
+    RETRO: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A40
+  prenom: Animateur
+  nom: '040'
+  dateNaissance: '1998-03-18'
+  manager: false
+  email: animateur040@example.org
+  competences:
+    SIGNES: AUTONOME
+    ESCAPE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A41
+  prenom: Animateur
+  nom: '041'
+  dateNaissance: '1992-06-13'
+  manager: false
+  email: animateur041@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A42
+  prenom: Animateur
+  nom: '042'
+  dateNaissance: '1990-12-19'
+  manager: false
+  email: animateur042@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A43
+  prenom: Animateur
+  nom: '043'
+  dateNaissance: '2003-12-06'
+  manager: false
+  email: animateur043@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A44
+  prenom: Animateur
+  nom: '044'
+  dateNaissance: '1974-09-29'
+  manager: false
+  email: animateur044@example.org
+  competences:
+    SIGNES: AUTONOME
+    PETITE_ENFANCE: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A45
+  prenom: Animateur
+  nom: '045'
+  dateNaissance: '1967-09-01'
+  manager: false
+  email: animateur045@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A46
+  prenom: Animateur
+  nom: '046'
+  dateNaissance: '1999-06-09'
+  manager: false
+  email: animateur046@example.org
+  competences:
+    BOIS: REFERENT
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A47
+  prenom: Animateur
+  nom: '047'
+  dateNaissance: '1970-10-16'
+  manager: false
+  email: animateur047@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    CONCOURS: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A48
+  prenom: Animateur
+  nom: '048'
+  dateNaissance: '1968-05-06'
+  manager: false
+  email: animateur048@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A49
+  prenom: Animateur
+  nom: '049'
+  dateNaissance: '1998-12-02'
+  manager: false
+  email: animateur049@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: REFERENT
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A50
+  prenom: Animateur
+  nom: '050'
+  dateNaissance: '1974-08-26'
+  manager: false
+  email: animateur050@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A51
+  prenom: Animateur
+  nom: '051'
+  dateNaissance: '1976-06-21'
+  manager: false
+  email: animateur051@example.org
+  competences:
+    SIGNES: REFERENT
+    CARTES: AUTONOME
+    FIGURINES: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A52
+  prenom: Animateur
+  nom: '052'
+  dateNaissance: '1977-09-02'
+  manager: false
+  email: animateur052@example.org
+  competences:
+    SIGNES: REFERENT
+    RETRO: AUTONOME
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A53
+  prenom: Animateur
+  nom: '053'
+  dateNaissance: '1997-02-26'
+  manager: false
+  email: animateur053@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A54
+  prenom: Animateur
+  nom: '054'
+  dateNaissance: '1978-01-20'
+  manager: false
+  email: animateur054@example.org
+  competences:
+    STRATEGIE: AUTONOME
+    MANUTENTION: DEBUTANT
+    SIGNES: AUTONOME
+    JOKER: DEBUTANT
+    FIGURINES: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A55
+  prenom: Animateur
+  nom: '055'
+  dateNaissance: '1983-11-07'
+  manager: false
+  email: animateur055@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A56
+  prenom: Animateur
+  nom: '056'
+  dateNaissance: '1998-04-07'
+  manager: false
+  email: animateur056@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A57
+  prenom: Animateur
+  nom: '057'
+  dateNaissance: '1997-01-07'
+  manager: false
+  email: animateur057@example.org
+  competences:
+    ROLE: AUTONOME
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A58
+  prenom: Animateur
+  nom: '058'
+  dateNaissance: '1977-04-18'
+  manager: false
+  email: animateur058@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A59
+  prenom: Animateur
+  nom: '059'
+  dateNaissance: '1977-08-14'
+  manager: false
+  email: animateur059@example.org
+  competences:
+    SIGNES: REFERENT
+    RETRO: AUTONOME
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A60
+  prenom: Animateur
+  nom: '060'
+  dateNaissance: '2000-07-18'
+  manager: false
+  email: animateur060@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A61
+  prenom: Animateur
+  nom: '061'
+  dateNaissance: '1987-05-01'
+  manager: false
+  email: animateur061@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A62
+  prenom: Animateur
+  nom: '062'
+  dateNaissance: '2002-09-08'
+  manager: false
+  email: animateur062@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+    CASSE_TETE: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A63
+  prenom: Animateur
+  nom: '063'
+  dateNaissance: '1997-11-21'
+  manager: false
+  email: animateur063@example.org
+  competences:
+    ROLE: REFERENT
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A64
+  prenom: Animateur
+  nom: '064'
+  dateNaissance: '1984-03-21'
+  manager: false
+  email: animateur064@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+  joursIndisponibles:
+  - '2027-02-08'
+  souhaits: []
+- id: A65
+  prenom: Animateur
+  nom: '065'
+  dateNaissance: '2004-05-27'
+  manager: false
+  email: animateur065@example.org
+  competences:
+    SIGNES: AUTONOME
+    PLEIN_AIR: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A66
+  prenom: Animateur
+  nom: '066'
+  dateNaissance: '1973-09-14'
+  manager: false
+  email: animateur066@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A67
+  prenom: Animateur
+  nom: '067'
+  dateNaissance: '2003-08-05'
+  manager: false
+  email: animateur067@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: DEBUTANT
+    CASSE_TETE: AUTONOME
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A68
+  prenom: Animateur
+  nom: '068'
+  dateNaissance: '1976-08-06'
+  manager: false
+  email: animateur068@example.org
+  competences:
+    BOIS: AUTONOME
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A69
+  prenom: Animateur
+  nom: '069'
+  dateNaissance: '1982-09-26'
+  manager: false
+  email: animateur069@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A70
+  prenom: Animateur
+  nom: '070'
+  dateNaissance: '1997-06-25'
+  manager: false
+  email: animateur070@example.org
+  competences:
+    SIGNES: AUTONOME
+    ESCAPE: DEBUTANT
+    RETRO: AUTONOME
+    JOKER: DEBUTANT
+    CONCOURS: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A71
+  prenom: Animateur
+  nom: '071'
+  dateNaissance: '1998-07-05'
+  manager: false
+  email: animateur071@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: REFERENT
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A72
+  prenom: Animateur
+  nom: '072'
+  dateNaissance: '1984-04-09'
+  manager: false
+  email: animateur072@example.org
+  competences:
+    BOIS: AUTONOME
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A73
+  prenom: Animateur
+  nom: '073'
+  dateNaissance: '1977-05-11'
+  manager: false
+  email: animateur073@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A74
+  prenom: Animateur
+  nom: '074'
+  dateNaissance: '1995-03-28'
+  manager: false
+  email: animateur074@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A75
+  prenom: Animateur
+  nom: '075'
+  dateNaissance: '1978-08-13'
+  manager: false
+  email: animateur075@example.org
+  competences:
+    SIGNES: AUTONOME
+    CARTES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A76
+  prenom: Animateur
+  nom: '076'
+  dateNaissance: '1988-11-09'
+  manager: false
+  email: animateur076@example.org
+  competences:
+    SIGNES: REFERENT
+    RETRO: DEBUTANT
+    CARTES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A77
+  prenom: Animateur
+  nom: '077'
+  dateNaissance: '1996-03-28'
+  manager: false
+  email: animateur077@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles:
+  - '2027-02-10'
+  souhaits: []
+- id: A78
+  prenom: Animateur
+  nom: '078'
+  dateNaissance: '1992-02-02'
+  manager: false
+  email: animateur078@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A79
+  prenom: Animateur
+  nom: '079'
+  dateNaissance: '1978-11-19'
+  manager: false
+  email: animateur079@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A80
+  prenom: Animateur
+  nom: '080'
+  dateNaissance: '1995-12-03'
+  manager: false
+  email: animateur080@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A81
+  prenom: Animateur
+  nom: '081'
+  dateNaissance: '1993-06-11'
+  manager: false
+  email: animateur081@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: REFERENT
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A82
+  prenom: Animateur
+  nom: '082'
+  dateNaissance: '1999-12-06'
+  manager: false
+  email: animateur082@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+    FIGURINES: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A83
+  prenom: Animateur
+  nom: '083'
+  dateNaissance: '1995-10-29'
+  manager: false
+  email: animateur083@example.org
+  competences:
+    MANUTENTION: AUTONOME
+    SIGNES: AUTONOME
+    RETRO: DEBUTANT
+    JOKER: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A84
+  prenom: Animateur
+  nom: '084'
+  dateNaissance: '1991-09-24'
+  manager: false
+  email: animateur084@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A85
+  prenom: Animateur
+  nom: '085'
+  dateNaissance: '1998-06-10'
+  manager: false
+  email: animateur085@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A86
+  prenom: Animateur
+  nom: '086'
+  dateNaissance: '2003-10-14'
+  manager: false
+  email: animateur086@example.org
+  competences:
+    STRATEGIE: AUTONOME
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A87
+  prenom: Animateur
+  nom: '087'
+  dateNaissance: '1972-03-30'
+  manager: false
+  email: animateur087@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A88
+  prenom: Animateur
+  nom: '088'
+  dateNaissance: '1995-12-07'
+  manager: false
+  email: animateur088@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A89
+  prenom: Animateur
+  nom: '089'
+  dateNaissance: '1994-03-22'
+  manager: false
+  email: animateur089@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A90
+  prenom: Animateur
+  nom: '090'
+  dateNaissance: '1967-02-08'
+  manager: false
+  email: animateur090@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A91
+  prenom: Animateur
+  nom: '091'
+  dateNaissance: '1986-04-20'
+  manager: false
+  email: animateur091@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A92
+  prenom: Animateur
+  nom: '092'
+  dateNaissance: '1980-03-14'
+  manager: false
+  email: animateur092@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A93
+  prenom: Animateur
+  nom: '093'
+  dateNaissance: '1971-02-10'
+  manager: false
+  email: animateur093@example.org
+  competences:
+    ROLE: DEBUTANT
+    SIGNES: AUTONOME
+    ESCAPE: DEBUTANT
+    RETRO: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A94
+  prenom: Animateur
+  nom: '094'
+  dateNaissance: '1981-01-01'
+  manager: false
+  email: animateur094@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A95
+  prenom: Animateur
+  nom: '095'
+  dateNaissance: '1995-09-26'
+  manager: false
+  email: animateur095@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A96
+  prenom: Animateur
+  nom: '096'
+  dateNaissance: '1967-08-01'
+  manager: false
+  email: animateur096@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A97
+  prenom: Animateur
+  nom: '097'
+  dateNaissance: '1974-04-08'
+  manager: false
+  email: animateur097@example.org
+  competences:
+    SIGNES: AUTONOME
+    JOKER: DEBUTANT
+    FIGURINES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A98
+  prenom: Animateur
+  nom: '098'
+  dateNaissance: '1968-06-27'
+  manager: false
+  email: animateur098@example.org
+  competences:
+    STRATEGIE: AUTONOME
+    BOIS: DEBUTANT
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A99
+  prenom: Animateur
+  nom: '099'
+  dateNaissance: '1976-04-10'
+  manager: false
+  email: animateur099@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A100
+  prenom: Animateur
+  nom: '100'
+  dateNaissance: '1967-10-24'
+  manager: false
+  email: animateur100@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A101
+  prenom: Animateur
+  nom: '101'
+  dateNaissance: '2003-04-04'
+  manager: false
+  email: animateur101@example.org
+  competences:
+    BOIS: AUTONOME
+    SIGNES: REFERENT
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A102
+  prenom: Animateur
+  nom: '102'
+  dateNaissance: '1968-12-19'
+  manager: false
+  email: animateur102@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A103
+  prenom: Animateur
+  nom: '103'
+  dateNaissance: '1980-02-20'
+  manager: false
+  email: animateur103@example.org
+  competences:
+    STRATEGIE: DEBUTANT
+    SIGNES: AUTONOME
+    PETITE_ENFANCE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A104
+  prenom: Animateur
+  nom: '104'
+  dateNaissance: '1976-05-06'
+  manager: false
+  email: animateur104@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A105
+  prenom: Animateur
+  nom: '105'
+  dateNaissance: '1965-09-17'
+  manager: false
+  email: animateur105@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A106
+  prenom: Animateur
+  nom: '106'
+  dateNaissance: '1991-12-22'
+  manager: false
+  email: animateur106@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A107
+  prenom: Animateur
+  nom: '107'
+  dateNaissance: '1967-09-24'
+  manager: false
+  email: animateur107@example.org
+  competences:
+    BOIS: AUTONOME
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A108
+  prenom: Animateur
+  nom: '108'
+  dateNaissance: '1995-07-20'
+  manager: false
+  email: animateur108@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A109
+  prenom: Animateur
+  nom: '109'
+  dateNaissance: '1995-04-05'
+  manager: false
+  email: animateur109@example.org
+  competences:
+    STRATEGIE: REFERENT
+    SIGNES: AUTONOME
+    JOKER: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A110
+  prenom: Animateur
+  nom: '110'
+  dateNaissance: '1977-10-03'
+  manager: false
+  email: animateur110@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A111
+  prenom: Animateur
+  nom: '111'
+  dateNaissance: '1991-02-23'
+  manager: false
+  email: animateur111@example.org
+  competences:
+    SIGNES: AUTONOME
+    ESCAPE: DEBUTANT
+    CASSE_TETE: DEBUTANT
+    CONCOURS: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A112
+  prenom: Animateur
+  nom: '112'
+  dateNaissance: '1976-04-21'
+  manager: false
+  email: animateur112@example.org
+  competences:
+    STRATEGIE: AUTONOME
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A113
+  prenom: Animateur
+  nom: '113'
+  dateNaissance: '1967-04-04'
+  manager: false
+  email: animateur113@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A114
+  prenom: Animateur
+  nom: '114'
+  dateNaissance: '1968-10-03'
+  manager: false
+  email: animateur114@example.org
+  competences:
+    PLATEAU: DEBUTANT
+    SIGNES: AUTONOME
+    PLEIN_AIR: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A115
+  prenom: Animateur
+  nom: '115'
+  dateNaissance: '1997-01-09'
+  manager: false
+  email: animateur115@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A116
+  prenom: Animateur
+  nom: '116'
+  dateNaissance: '1988-05-17'
+  manager: false
+  email: animateur116@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A117
+  prenom: Animateur
+  nom: '117'
+  dateNaissance: '1967-03-04'
+  manager: false
+  email: animateur117@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A118
+  prenom: Animateur
+  nom: '118'
+  dateNaissance: '1972-02-27'
+  manager: false
+  email: animateur118@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A119
+  prenom: Animateur
+  nom: '119'
+  dateNaissance: '2000-12-01'
+  manager: false
+  email: animateur119@example.org
+  competences:
+    STRATEGIE: DEBUTANT
+    MANUTENTION: DEBUTANT
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A120
+  prenom: Animateur
+  nom: '120'
+  dateNaissance: '1983-09-20'
+  manager: false
+  email: animateur120@example.org
+  competences:
+    ROLE: AUTONOME
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A121
+  prenom: Animateur
+  nom: '121'
+  dateNaissance: '1991-11-22'
+  manager: false
+  email: animateur121@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A122
+  prenom: Animateur
+  nom: '122'
+  dateNaissance: '1999-05-18'
+  manager: false
+  email: animateur122@example.org
+  competences:
+    SIGNES: AUTONOME
+    ESCAPE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A123
+  prenom: Animateur
+  nom: '123'
+  dateNaissance: '1998-10-12'
+  manager: false
+  email: animateur123@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A124
+  prenom: Animateur
+  nom: '124'
+  dateNaissance: '1971-03-06'
+  manager: false
+  email: animateur124@example.org
+  competences:
+    ROLE: AUTONOME
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A125
+  prenom: Animateur
+  nom: '125'
+  dateNaissance: '1990-09-11'
+  manager: false
+  email: animateur125@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A126
+  prenom: Animateur
+  nom: '126'
+  dateNaissance: '2004-02-16'
+  manager: false
+  email: animateur126@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+    FIGURINES: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A127
+  prenom: Animateur
+  nom: '127'
+  dateNaissance: '2002-06-18'
+  manager: false
+  email: animateur127@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+    JOKER: DEBUTANT
+    CASSE_TETE: DEBUTANT
+    FIGURINES: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A128
+  prenom: Animateur
+  nom: '128'
+  dateNaissance: '1975-12-14'
+  manager: false
+  email: animateur128@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A129
+  prenom: Animateur
+  nom: '129'
+  dateNaissance: '1998-07-31'
+  manager: false
+  email: animateur129@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A130
+  prenom: Animateur
+  nom: '130'
+  dateNaissance: '1972-10-24'
+  manager: false
+  email: animateur130@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A131
+  prenom: Animateur
+  nom: '131'
+  dateNaissance: '2001-03-16'
+  manager: false
+  email: animateur131@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A132
+  prenom: Animateur
+  nom: '132'
+  dateNaissance: '1999-06-09'
+  manager: false
+  email: animateur132@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A133
+  prenom: Animateur
+  nom: '133'
+  dateNaissance: '1990-10-14'
+  manager: false
+  email: animateur133@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A134
+  prenom: Animateur
+  nom: '134'
+  dateNaissance: '1984-03-10'
+  manager: false
+  email: animateur134@example.org
+  competences:
+    STRATEGIE: DEBUTANT
+    SIGNES: REFERENT
+    RETRO: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A135
+  prenom: Animateur
+  nom: '135'
+  dateNaissance: '1976-01-19'
+  manager: false
+  email: animateur135@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A136
+  prenom: Animateur
+  nom: '136'
+  dateNaissance: '1988-12-07'
+  manager: false
+  email: animateur136@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A137
+  prenom: Animateur
+  nom: '137'
+  dateNaissance: '1970-07-19'
+  manager: false
+  email: animateur137@example.org
+  competences:
+    ROLE: REFERENT
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A138
+  prenom: Animateur
+  nom: '138'
+  dateNaissance: '1978-01-02'
+  manager: false
+  email: animateur138@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A139
+  prenom: Animateur
+  nom: '139'
+  dateNaissance: '2003-05-19'
+  manager: false
+  email: animateur139@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: REFERENT
+    PETITE_ENFANCE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A140
+  prenom: Animateur
+  nom: '140'
+  dateNaissance: '2000-02-17'
+  manager: false
+  email: animateur140@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A141
+  prenom: Animateur
+  nom: '141'
+  dateNaissance: '1991-10-03'
+  manager: false
+  email: animateur141@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A142
+  prenom: Animateur
+  nom: '142'
+  dateNaissance: '1981-06-21'
+  manager: false
+  email: animateur142@example.org
+  competences:
+    STRATEGIE: DEBUTANT
+    SIGNES: REFERENT
+    RETRO: AUTONOME
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A143
+  prenom: Animateur
+  nom: '143'
+  dateNaissance: '1996-01-19'
+  manager: false
+  email: animateur143@example.org
+  competences:
+    ROLE: AUTONOME
+    SIGNES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A144
+  prenom: Animateur
+  nom: '144'
+  dateNaissance: '2001-06-05'
+  manager: false
+  email: animateur144@example.org
+  competences:
+    SIGNES: REFERENT
+    CASSE_TETE: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A145
+  prenom: Animateur
+  nom: '145'
+  dateNaissance: '1973-05-16'
+  manager: false
+  email: animateur145@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A146
+  prenom: Animateur
+  nom: '146'
+  dateNaissance: '1979-03-12'
+  manager: false
+  email: animateur146@example.org
+  competences:
+    ROLE: DEBUTANT
+    SIGNES: AUTONOME
+    RETRO: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A147
+  prenom: Animateur
+  nom: '147'
+  dateNaissance: '1970-10-07'
+  manager: false
+  email: animateur147@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+    PETITE_ENFANCE: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []
+- id: A148
+  prenom: Animateur
+  nom: '148'
+  dateNaissance: '2004-11-05'
+  manager: false
+  email: animateur148@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A149
+  prenom: Animateur
+  nom: '149'
+  dateNaissance: '1979-11-08'
+  manager: false
+  email: animateur149@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A150
+  prenom: Animateur
+  nom: '150'
+  dateNaissance: '1990-10-04'
+  manager: false
+  email: animateur150@example.org
+  competences:
+    SIGNES: AUTONOME
+    CASSE_TETE: REFERENT
+  joursIndisponibles: []
+  souhaits: []
+- id: A151
+  prenom: Animateur
+  nom: '151'
+  dateNaissance: '1989-09-13'
+  manager: false
+  email: animateur151@example.org
+  competences:
+    SIGNES: AUTONOME
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A152
+  prenom: Animateur
+  nom: '152'
+  dateNaissance: '1967-12-23'
+  manager: false
+  email: animateur152@example.org
+  competences:
+    MANUTENTION: DEBUTANT
+    SIGNES: AUTONOME
+    CASSE_TETE: DEBUTANT
+    FIGURINES: AUTONOME
+  joursIndisponibles: []
+  souhaits: []
+- id: A153
+  prenom: Animateur
+  nom: '153'
+  dateNaissance: '1971-08-21'
+  manager: false
+  email: animateur153@example.org
+  competences:
+    SIGNES: AUTONOME
+    RETRO: DEBUTANT
+    JOKER: REFERENT
+    CASSE_TETE: DEBUTANT
+    PLEIN_AIR: DEBUTANT
+  joursIndisponibles: []
+  souhaits: []

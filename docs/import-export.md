@@ -448,6 +448,38 @@ Trois détails avant de les régénérer :
   par l'en-tête que le script y écrit : régénérer sans repasser `--date-debut`
   ramène les dates de la source.
 
+### `festival-hivernal.yaml`, la même édition en vacations
+
+Troisième fixture dérivée du réel, exportée depuis une édition saisie **en
+vacations** — la grille telle que l'organisateur l'écrit : rotation de midi
+12-13 / 13-14, relèves du soir portées par les fenêtres d'ouverture des
+stands, pauses déclarées sur le poste. Jouée par
+`PlanningServiceScenarioFestivalHivernalTest`. Elle n'épingle aucun poids de
+contrainte, à dessein : voir « Le dosage et la faisabilité » dans
+[`contraintes.md`](contraintes.md).
+
+Son anonymisation va plus loin que celle des deux autres, à dessein :
+
+- **les animateurs sont renumérotés dans un ordre tiré au sort**, nommés
+  « Animateur NNN », domiciliés sur `example.org`, avec des **dates de
+  naissance aléatoires d'adultes** — la source n'a aucun mineur, le problème
+  ne change donc pas ;
+- **les lieux sont translatés sur une commune de la Creuse** tirée au sort
+  (Felletin), les écarts de longitude remis à l'échelle du cosinus de la
+  latitude pour que la contrainte de distance voie les mêmes mètres ; ils sont
+  renommés d'après des lieux génériques ;
+- **le calendrier avance de trente semaines** : le lundi 06/07/2026 devient le
+  lundi 01/02/2027, les jours de la semaine et l'ancrage des semaines ISO
+  tiennent, aucun jour férié n'est traversé ;
+- **stands et typologies sont renommés** de façon aléatoire mais cohérente :
+  une zone par préfixe d'origine, un nom de jeu tiré une fois, et chaque
+  référence — compétences, souhaits, stands, sièges — remappée.
+
+Le script vit hors du dépôt (il lit l'export d'une édition réelle) ; ce qui
+compte est écrit ici et dans l'en-tête du fichier. La convergence se relit
+sur le test, pas sur la fixture d'origine : l'ordre des animateurs ayant
+changé, la trajectoire de recherche n'est pas celle de l'édition source.
+
 `exemple-animateurs.csv` (voir plus haut) **ne dérive pas** de la fixture :
 ses personnes sont inventées, seuls ses typologies et ses jours
 d'indisponibilité sont pris dans `festival-realiste.yaml`. Une régénération
