@@ -254,6 +254,21 @@ describe('ProblemesStore', () => {
     });
   });
 
+  describe('shareConstraints', () => {
+    it('feeds the legal alert with what the Contraintes screen hands over', () => {
+      const view = constraintsView();
+
+      store.shareConstraints({
+        ...view,
+        contraintes: [{ ...view.contraintes[0], actif: false }],
+      });
+      expect(store.alerteReglesLegales()).toContain('dureeHebdomadaireMax');
+
+      store.shareConstraints(view);
+      expect(store.alerteReglesLegales()).toBe('');
+    });
+  });
+
   describe('badge indexes', () => {
     it('are empty while nothing is loaded', () => {
       expect(store.causeParStandId().size).toBe(0);

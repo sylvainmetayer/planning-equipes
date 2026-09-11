@@ -246,6 +246,22 @@ describe('ConstraintsPage', () => {
       expect(page.error()).toContain('refusé');
     });
 
+    // The « legal rules disabled » banner of this very screen reads the store,
+    // not the page: a toggle that stayed in the page left the banner empty
+    // after disabling a protected rule, and full after putting it back.
+    it('hands every toggle to the shared store, so the banner follows the switch', async () => {
+      const problemes = TestBed.inject(ProblemesStore);
+      const page = await createPage([REGLE_LEGALE]);
+
+      await page.toggleConstraint(REGLE_LEGALE, bascule(false));
+
+      expect(problemes.shareConstraints).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          contraintes: [expect.objectContaining({ name: REGLE_LEGALE.name, actif: false })],
+        }),
+      );
+    });
+
     /** Putting a legal rule back needs no ceremony. */
     it('never asks when a rule is switched back on', async () => {
       const page = await createPage([{ ...REGLE_LEGALE, actif: false }]);

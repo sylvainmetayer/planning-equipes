@@ -414,12 +414,17 @@ export class ConstraintsPage {
     this.patchConstraint(name, { actif });
   }
 
+  /**
+   * Every write of the view goes through `apply()`: the shared « legal rules
+   * disabled » alert reads the store's copy, and a toggle that only rewrote
+   * the page's own signal left the alert on the state before the click.
+   */
   private patchConstraint(name: string, patch: Partial<ConstraintView>): void {
     const view = this.view();
     if (!view) {
       return;
     }
-    this.view.set({
+    this.apply({
       ...view,
       contraintes: view.contraintes.map((constraint) =>
         constraint.name === name ? { ...constraint, ...patch } : constraint,
