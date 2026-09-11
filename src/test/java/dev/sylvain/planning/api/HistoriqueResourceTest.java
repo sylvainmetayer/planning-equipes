@@ -97,7 +97,10 @@ class HistoriqueResourceTest {
                 .when()
                 .put("/api/animateurs/HIST-INCONNU")
                 .then()
-                .statusCode(404);
+                .statusCode(404)
+                // The contract of a refusal: a status and one sentence, the one
+                // the screen shows. A 404 used to come back empty (#447).
+                .body("message", equalTo("Animateur inconnu : HIST-INCONNU"));
 
         given().when()
                 .get("/api/historique")
