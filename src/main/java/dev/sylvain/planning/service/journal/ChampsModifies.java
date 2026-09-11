@@ -2,8 +2,13 @@ package dev.sylvain.planning.service.journal;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreDateeStand;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,10 +65,50 @@ public final class ChampsModifies {
                 stand -> stand.getEmplacement() == null
                         ? null
                         : stand.getEmplacement().getId());
-        map.put("indisponibilites", Stand::getIndisponibilites);
-        map.put("ouvertures", Stand::getOuvertures);
-        map.put("horaires", Stand::getHoraires);
+        // By value, not by Objects.equals: HoraireStand has no equals (on
+        // purpose, see the class) and FenetreDateeStand compares ids only. The
+        // before-image is re-read from the base while the after-image is the
+        // caller's instance, so identity said « changed » on every rename of a
+        // stand carrying a rule, and « unchanged » on a dated closure moved
+        // under the same id.
+        map.put(
+                "indisponibilites",
+                stand -> stand.getIndisponibilites().stream()
+                        .map(ChampsModifies::valeur)
+                        .toList());
+        map.put(
+                "ouvertures",
+                stand -> stand.getOuvertures().stream()
+                        .map(ChampsModifies::valeur)
+                        .toList());
+        map.put(
+                "horaires",
+                stand ->
+                        stand.getHoraires().stream().map(ChampsModifies::valeur).toList());
     });
+
+    /** What the fiche shows of a dated window; the id is storage, not content. */
+    private static List<Object> valeur(FenetreDateeStand fenetre) {
+        return Arrays.asList(
+                fenetre.getDate(),
+                fenetre.getHeureDebut(),
+                fenetre.getHeureFin(),
+                fenetre.getMotif(),
+                fenetre instanceof OuvertureStand ouverture ? ouverture.getEffectif() : null);
+    }
+
+    /** A rule as typed; {@link FenetreHoraire} compares by value already. */
+    private static List<Object> valeur(HoraireStand horaire) {
+        return Arrays.asList(
+                horaire.getMode(),
+                horaire.getJours(),
+                horaire.getJoursSemaine(),
+                horaire.getDateDebut(),
+                horaire.getDateFin(),
+                horaire.getDates(),
+                horaire.getFenetres(),
+                horaire.getMotif());
+    }
 
     /**
      * {@code jour} is deliberately absent: it is derived from the edition's
