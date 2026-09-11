@@ -167,6 +167,26 @@ class PlanningServiceScenarioFromTextTest {
                 .hasMessageContaining("A9");
     }
 
+    /**
+     * The import refuses what the validator refuses. A stand without
+     * {@code effectifMin} used to fail on a {@code NullPointerException}; the
+     * DTO reader would have let it through with 0, that is one seat per
+     * créneau instead of the N the file forgot to say.
+     */
+    @Test
+    void refuseUnStandSansEffectif() {
+        PlanningService service = service();
+        String sansMin = scenarioYamlText("scenario-contraintes.yaml").replace("    effectifMin: 1\n", "");
+        String sansMax = scenarioYamlText("scenario-contraintes.yaml").replace("    effectifMax: 2\n", "");
+
+        assertThatThrownBy(() -> service.buildFromScenarioText(sansMin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("stands.effectifMin");
+        assertThatThrownBy(() -> service.buildFromScenarioText(sansMax))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("stands.effectifMax");
+    }
+
     @Test
     void appliqueLaSectionDecoupageAutoDuFichierQuandPresente() {
         PlanningService service = service();

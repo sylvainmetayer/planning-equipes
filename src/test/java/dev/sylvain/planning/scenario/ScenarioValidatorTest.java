@@ -97,6 +97,20 @@ class ScenarioValidatorTest {
     }
 
     /**
+     * The two effectifs are boxed on purpose: a primitive read an absent key as
+     * 0, and a stand nobody sized was staffed with one seat, silently, all
+     * festival long. Absent is a violation, named by its entry.
+     */
+    @Test
+    void unStandSansEffectifEstSignale() throws IOException {
+        assertThat(ScenarioValidator.validate(MINIMAL.replace("    effectifMin: 1\n", "")))
+                .anySatisfy(erreur -> assertThat(erreur).startsWith("stands[0].effectifMin:"));
+
+        assertThat(ScenarioValidator.validate(MINIMAL.replace("    effectifMax: 2\n", "")))
+                .anySatisfy(erreur -> assertThat(erreur).startsWith("stands[0].effectifMax:"));
+    }
+
+    /**
      * A duration the domain refuses is caught here too, before import: the
      * scenario sections are validated recursively via {@code @Valid}.
      */

@@ -488,7 +488,7 @@
           }
         }
       },
-      "required" : [ "id", "nom", "typologiesProposees" ]
+      "required" : [ "effectifMax", "effectifMin", "id", "nom", "typologiesProposees" ]
     },
     "TypeContrainteAdHoc" : {
       "type" : "string",

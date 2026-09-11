@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 
@@ -15,8 +16,13 @@ public record StandDto(
         @NotEmpty(message = "un stand est toujours rattaché à au moins une typologie de jeu")
         List<String> typologiesProposees,
 
-        @PositiveOrZero int effectifMin,
-        @PositiveOrZero int effectifMax,
+        /**
+         * Boxed on purpose: a primitive would read an absent key as 0, and a
+         * stand nobody sized would be staffed with one seat all festival long
+         * without a word. The two are required, as the reader always did.
+         */
+        @NotNull @PositiveOrZero Integer effectifMin,
+        @NotNull @PositiveOrZero Integer effectifMax,
         Boolean reserveMajeurs,
         Boolean premium,
         NiveauEffort niveauEffort,

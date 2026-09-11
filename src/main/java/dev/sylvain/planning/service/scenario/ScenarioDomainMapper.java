@@ -214,8 +214,8 @@ final class ScenarioDomainMapper {
                 dto.id(),
                 dto.nom(),
                 new HashSet<>(dto.typologiesProposees()),
-                dto.effectifMin(),
-                dto.effectifMax(),
+                required(dto.effectifMin(), "stands.effectifMin"),
+                required(dto.effectifMax(), "stands.effectifMax"),
                 Boolean.TRUE.equals(dto.reserveMajeurs()),
                 Boolean.TRUE.equals(dto.premium()));
         stand.setNiveauEffort(dto.niveauEffort() == null ? NiveauEffort.NORMAL : dto.niveauEffort());
