@@ -77,18 +77,12 @@ type PageInternals = {
   toggleConstraint: (constraint: ConstraintView, event: MatSlideToggleChange) => Promise<void>;
   setPoids: (constraint: ConstraintView, poids: number) => Promise<void>;
   onPoidsChange: (constraint: ConstraintView, field: HTMLInputElement) => Promise<void>;
-  pauseSurPoste: { (): boolean; set: (value: boolean) => void };
-  pauseEntreVacationsMinutes: { (): number | null; set: (value: number | null) => void };
-  reposQuotidienHeures: { (): number | null; set: (value: number | null) => void };
-  saveParametresLegaux: () => Promise<void>;
 };
 
 describe('ConstraintsPage', () => {
   const constraintsApi = {
     catalogue: vi.fn(),
     diagnose: vi.fn(),
-    legalParameters: vi.fn(),
-    saveLegalParameters: vi.fn(),
     setActive: vi.fn(),
     setWeight: vi.fn(),
   };
@@ -100,14 +94,6 @@ describe('ConstraintsPage', () => {
     }
     legalDisable.allowsDisabling.mockReset();
     constraintsApi.catalogue.mockResolvedValue(view([]));
-    constraintsApi.legalParameters.mockResolvedValue({
-      dureeHebdomadaireMaxMinutes: 48 * 60,
-      dureeHebdomadaireMaxMineurMinutes: 35 * 60,
-      pauseMinimaleEntreVacationsMinutes: 30,
-      reposQuotidienMinimalMinutes: 660,
-      pauseSurPoste: false,
-    });
-    constraintsApi.saveLegalParameters.mockImplementation(async (body: unknown) => body);
     constraintsApi.setActive.mockImplementation(async (_name: string, actif: boolean) => ({
       actif,
     }));
@@ -151,55 +137,6 @@ describe('ConstraintsPage', () => {
     await vi.waitFor(() => expect(page.view()?.contraintes).toHaveLength(contraintes.length));
     return page;
   }
-
-  describe('legal parameters form', () => {
-    it('loads every field and sends them all back, so a save never resets one it did not show', async () => {
-      constraintsApi.legalParameters.mockResolvedValue({
-        dureeHebdomadaireMaxMinutes: 48 * 60,
-        dureeHebdomadaireMaxMineurMinutes: 35 * 60,
-        pauseMinimaleEntreVacationsMinutes: 0,
-        reposQuotidienMinimalMinutes: 9 * 60,
-        pauseSurPoste: true,
-        coupureRepasMinutes: 60,
-        coupureRepasMidiDebut: '12:00:00',
-        coupureRepasMidiFin: '14:00:00',
-        coupureRepasSoirDebut: '19:00:00',
-        coupureRepasSoirFin: '21:00:00',
-      });
-      const page = TestBed.createComponent(ConstraintsPage)
-        .componentInstance as unknown as PageInternals;
-      await vi.waitFor(() => expect(page.pauseSurPoste()).toBe(true));
-      expect(page.pauseEntreVacationsMinutes()).toBe(0);
-      expect(page.reposQuotidienHeures()).toBe(9);
-
-      page.pauseSurPoste.set(false);
-      await page.saveParametresLegaux();
-
-      expect(constraintsApi.saveLegalParameters).toHaveBeenCalledWith({
-        dureeHebdomadaireMaxMinutes: 48 * 60,
-        dureeHebdomadaireMaxMineurMinutes: 35 * 60,
-        pauseMinimaleEntreVacationsMinutes: 0,
-        reposQuotidienMinimalMinutes: 9 * 60,
-        pauseSurPoste: false,
-        coupureRepasMinutes: 60,
-        coupureRepasMidiDebut: '12:00:00',
-        coupureRepasMidiFin: '14:00:00',
-        coupureRepasSoirDebut: '19:00:00',
-        coupureRepasSoirFin: '21:00:00',
-      });
-    });
-
-    it('refuses to save while a field it holds is still unknown', async () => {
-      constraintsApi.legalParameters.mockReturnValue(new Promise(() => undefined));
-      const page = TestBed.createComponent(ConstraintsPage)
-        .componentInstance as unknown as PageInternals;
-      await vi.waitFor(() => expect(page.view()).not.toBeNull());
-
-      await page.saveParametresLegaux();
-
-      expect(constraintsApi.saveLegalParameters).not.toHaveBeenCalled();
-    });
-  });
 
   describe('switching a rule off', () => {
     it('asks nothing for an ordinary rule and saves it', async () => {

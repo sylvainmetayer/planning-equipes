@@ -664,13 +664,16 @@ describe('CreneauxPage rendering', () => {
     expect(creneauxApi.generateSlicing).toHaveBeenCalledOnce();
   });
 
-  it('points at the Paramètres page for the slicing settings', async () => {
+  it('carries the slicing settings next to the generation, read-only on a grid of final vacations', async () => {
+    brancher(creneauxApi, [], { parametres: { modeGrille: 'VACATIONS' } });
     await rendre([creneau({ id: 1, jour: 1 })]);
 
-    const lien = Array.from(racine().querySelectorAll('a')).find((each) =>
-      each.textContent!.includes('découpage'),
-    )!;
-    expect(lien.getAttribute('href')).toBe('/parametres');
+    const carte = racine().querySelector('app-parametres-decoupage')!;
+    expect(carte.textContent).toContain('Paramètres de découpage');
+    expect(carte.textContent).toContain('vacations finales');
+    expect(
+      (carte.querySelector('input[name="dureeVacationCibleMinutes"]') as HTMLInputElement).disabled,
+    ).toBe(true);
   });
 
   describe('the grid as a whole', () => {

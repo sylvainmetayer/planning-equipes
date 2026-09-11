@@ -6,7 +6,6 @@ export interface NavLink {
   label: string;
   icon: string;
   /** Shows the unread notification count as a mat-badge on this link only. */
-  badge?: 'notifications';
   /**
    * Served by the backend rather than by the Angular router (the Quarkus Dev
    * UI): rendered as a plain anchor opening a new tab, since routing to it
@@ -38,17 +37,6 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
       title: $localize`:@@nav.group.planning:Planning`,
       links: [
         { path: '/', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
-        {
-          path: '/notifications',
-          label: $localize`:@@nav.link.notifications:Notifications`,
-          icon: 'notifications',
-          badge: 'notifications',
-        },
-        {
-          path: '/problemes',
-          label: $localize`:@@nav.link.problemes:Problèmes`,
-          icon: 'report_problem',
-        },
         { path: '/echanges', label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz' },
         {
           path: '/disponibilites',
@@ -56,22 +44,25 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           icon: 'event_available',
         },
         {
-          path: '/constraints',
-          label: $localize`:@@nav.link.constraints:Contraintes`,
-          icon: 'fact_check',
-        },
-        {
           path: '/ad-hoc-constraints',
           label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
           icon: 'rule',
+        },
+        {
+          path: '/problemes',
+          label: $localize`:@@nav.link.problemes:Problèmes`,
+          icon: 'report_problem',
+        },
+        {
+          path: '/constraints',
+          label: $localize`:@@nav.link.constraints:Contraintes`,
+          icon: 'fact_check',
         },
         {
           path: '/instantanes',
           label: $localize`:@@nav.link.snapshots:Instantanés`,
           icon: 'history',
         },
-        { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
-        { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' },
       ],
     },
     {
@@ -87,6 +78,16 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           path: '/staffing',
           label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
           icon: 'engineering',
+        },
+        {
+          path: '/kpi',
+          label: $localize`:@@nav.link.kpi:Autopsie du planning`,
+          icon: 'query_stats',
+        },
+        {
+          path: '/comparateur',
+          label: $localize`:@@nav.link.comparateur:Comparateur A/B`,
+          icon: 'compare_arrows',
         },
       ],
     },
@@ -160,32 +161,25 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           icon: 'map',
         },
         { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
-        {
-          path: '/kpi',
-          label: $localize`:@@nav.link.kpi:Autopsie du planning`,
-          icon: 'query_stats',
-        },
-        {
-          path: '/comparateur',
-          label: $localize`:@@nav.link.comparateur:Comparateur A/B`,
-          icon: 'compare_arrows',
-        },
       ],
     },
     {
       id: 'tools',
       title: $localize`:@@nav.group.tools:Outils`,
       links: [
+        { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' },
         {
           path: '/parametres',
           label: $localize`:@@nav.link.parametres:Paramètres`,
           icon: 'settings',
         },
+        { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
         {
           path: '/historique',
           label: $localize`:@@nav.link.historique:Historique`,
           icon: 'manage_search',
         },
+
         { path: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' },
         { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
         {

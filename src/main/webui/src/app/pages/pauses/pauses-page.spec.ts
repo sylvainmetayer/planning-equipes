@@ -177,7 +177,7 @@ describe('PausesPage', () => {
 
     const alerte = (fixture.nativeElement as HTMLElement).querySelector('.pauses-alerte');
     expect(alerte?.textContent).toContain("n'est pas déclarée");
-    expect(alerte?.querySelector('a')?.getAttribute('href')).toBe('/constraints');
+    expect(alerte?.querySelector('a')?.getAttribute('href')).toBe('/parametres');
   });
 
   it('says so when nothing is persisted, and when nothing is to organise', async () => {

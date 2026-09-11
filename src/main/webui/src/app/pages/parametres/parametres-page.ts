@@ -14,18 +14,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { AdminApi } from '../../core/api/admin-api';
 import { PlanningApi } from '../../core/api/planning-api';
-import { CreneauxApi } from '../../core/api/creneaux-api';
 import { BRANDING, slugMarque } from '../../core/branding';
 import { EditionStore } from '../../core/edition.store';
-import { EtatSauvegarde, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
+import { EtatSauvegarde, ImportScenarioResult } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -41,6 +38,7 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
+import { ParametresLegauxCard } from './parametres-legaux';
 import { ParametresNotificationsPanel } from './parametres-notifications';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 
@@ -55,11 +53,11 @@ export const REPLACE_KEYWORD = 'REMPLACER';
  * The single settings page, split in two sections mirroring the data model:
  *
  * - "Paramètres de l'édition" — everything scoped by the `X-Edition-Id`
- *   partition: scenario imports (they write the current edition only, and the
- *   confirmation names it), the découpage parameters (the generation itself
- *   lives with the créneaux it replaces), the ninja typologie, plus pointers
- *   to the parameters that stay on their own screen (solver duration, foire
- *   aux échanges, constraint toggles).
+ *   partition: the legal parameters, scenario imports (they write the current
+ *   edition only, and the confirmation names it), the ninja typologie, plus
+ *   pointers to the parameters that stay on their own screen (solver
+ *   duration, foire aux échanges, constraint toggles, découpage settings next
+ *   to the generation that reads them).
  * - "Paramètres globaux" — the SQL dump import/export and the automatic
  *   backup: both take the WHOLE database, every edition included, so neither
  *   belongs to any edition.
@@ -77,19 +75,18 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     MatButtonModule,
     MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
     MatSelectModule,
     MatTooltipModule,
     MatSlideToggleModule,
     RouterLink,
     FeasibilityBanner,
     OutputPanel,
+    ParametresLegauxCard,
     ParametresNotificationsPanel,
     StatusMessage,
   ],
   templateUrl: './parametres-page.html',
-  styleUrls: ['./parametres.css', '../../../styles/decoupage.css'],
+  styleUrl: './parametres.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -116,7 +113,7 @@ export class ParametresPage {
   /** The server-side solver lock: also covers a solve/analysis from another browser. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
   /**
-   * Edition-scoped writes (scenario import, découpage parameters, ninja
+   * Edition-scoped writes (scenario import, legal parameters, ninja
    * typologie) follow the per-edition lock: a solve running on ANOTHER
    * edition leaves them available.
    */
@@ -134,7 +131,6 @@ export class ParametresPage {
 
   private readonly adminApi = inject(AdminApi);
   private readonly planningApi = inject(PlanningApi);
-  private readonly creneauxApi = inject(CreneauxApi);
   private readonly scenarioImport = inject(ScenarioImportService);
   private readonly crud = inject(ReferenceCrudService);
   private readonly planningState = inject(PlanningStateService);
@@ -155,7 +151,6 @@ export class ParametresPage {
     void this.loadScenarioList();
     void this.problemes.reloadFeasibility();
     void this.crud.reload();
-    void this.chargerParametresDecoupage();
     void this.chargerReglagesNotification();
     void this.chargerSauvegarde();
   }
@@ -234,7 +229,6 @@ export class ParametresPage {
         this.output.set('');
         return;
       }
-      await this.chargerParametresDecoupage();
       this.output.set(
         this.recapImport(
           outcome.result,
@@ -289,7 +283,6 @@ export class ParametresPage {
         this.output.set('');
         return;
       }
-      await this.chargerParametresDecoupage();
       this.output.set(
         this.recapImport(
           outcome.result,
@@ -319,72 +312,6 @@ export class ParametresPage {
           $localize`:@@parametres.recap.basculer:Vous consultez « ${courante.nom}:courante: » : basculez d'édition (bandeau du haut) pour voir les données importées.`
         : '';
     return destination + ailleurs;
-  }
-
-  /* --------------------------- Découpage parameters -------------------------- */
-
-  protected readonly parametresDecoupage = signal<ParametresDecoupage | null>(null);
-  protected readonly parametresDecoupageLoading = signal(false);
-
-  /**
-   * What the current settings would produce, in one sentence, recomputed as
-   * they are typed. The generation itself lives on the Créneaux page: this
-   * only answers "am I about to cut 4-hour or 8-hour vacations?" before the
-   * user commits to it.
-   */
-  protected readonly apercuParametres = computed(() => {
-    const p = this.parametresDecoupage();
-    if (!p) {
-      return '';
-    }
-    const heures = (minutes: number) =>
-      (minutes / 60).toFixed(1).replace('.0', '').replace('.', ',');
-    const families =
-      p.nombreFamillesDecalage > 1
-        ? $localize`:@@decoupage.apercu.familles:, réparties sur ${p.nombreFamillesDecalage}:count: grilles décalées`
-        : '';
-    return $localize`:@@decoupage.apercu:Avec ces réglages : des vacations d'environ ${heures(p.dureeVacationCibleMinutes)}:cible: h (jamais plus de ${heures(p.dureeVacationMaxMinutes)}:max: h) et un relais de ${p.dureeChevauchementMinutes}:chevauchement: min${families}:familles:.`;
-  });
-
-  /**
-   * Immutable field update: the « Avec ces réglages » preview is a computed
-   * over the `parametresDecoupage` signal, and a zoneless app never notices
-   * an in-place mutation. Replacing the object is what makes it live while
-   * typing.
-   */
-  protected patchParametre(patch: Partial<ParametresDecoupage>): void {
-    this.parametresDecoupage.update((p) => (p ? { ...p, ...patch } : p));
-  }
-
-  private async chargerParametresDecoupage(): Promise<void> {
-    this.parametresDecoupageLoading.set(true);
-    try {
-      this.parametresDecoupage.set(await this.creneauxApi.slicingParameters());
-    } catch (error) {
-      this.crud.reportError(error);
-    } finally {
-      this.parametresDecoupageLoading.set(false);
-    }
-  }
-
-  protected async sauvegarderParametresDecoupage(): Promise<void> {
-    const parametres = this.parametresDecoupage();
-    if (!parametres) {
-      return;
-    }
-    this.parametresDecoupageLoading.set(true);
-    try {
-      this.parametresDecoupage.set(await this.creneauxApi.saveSlicingParameters(parametres));
-      this.notifications.notify({
-        title: $localize`:@@decoupage.parametresSaved:Paramètres de découpage enregistrés.`,
-        variant: 'success',
-        timeout: 4000,
-      });
-    } catch (error) {
-      this.crud.reportError(error);
-    } finally {
-      this.parametresDecoupageLoading.set(false);
-    }
   }
 
   /* ------------------------------ Ninja typologie ---------------------------- */
@@ -524,7 +451,6 @@ export class ParametresPage {
     try {
       const summary = await this.adminApi.importDatabase(await file.text());
       await this.scenarioImport.rechargerApresImport();
-      await this.chargerParametresDecoupage();
       this.output.set(summary.message);
     } catch (error) {
       this.output.set(errorPrefix(error));
@@ -550,8 +476,8 @@ export class ParametresPage {
   // A seed or bulk import invalidates whatever planning was displayed, and
   // moves both the resolution stamp and the "data edited since the last
   // solve" stamp the toolbar warnings are computed from. A scenario may also
-  // have pinned its own solver duration or découpage parameters (see
-  // import-scenario), so those are refreshed too — harmless when unchanged.
+  // have pinned its own solver duration (see import-scenario), so that is
+  // refreshed too — harmless when unchanged.
   // The feasibility diagnostic is recomputed from the new dataset for the
   // same reason: it is about to drive the decision to launch a solve.
 }

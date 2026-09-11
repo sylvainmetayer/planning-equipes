@@ -97,3 +97,24 @@
 .parametres-sauvegardes td:first-child {
   font-family: var(--mat-sys-body-medium-font, monospace);
 }
+
+/* Paramètres légaux and Coupure repas: every field carries a hint, and most
+   of them wrap on two lines, so the rows need the vertical air the generic
+   form-grid does not give (row-gap 0, one subscript line reserved). The guide
+   link and the on-post switch span the whole width instead of sitting in a
+   grid cell next to a field. */
+.parametres-legaux-form {
+  row-gap: 1rem;
+}
+
+.parametres-legaux-form .legal-guide,
+.parametres-legaux-form .legal-toggle {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.parametres-legaux-form .legal-toggle-hint {
+  margin: 0.25rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}

@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { AdminApi } from '../../core/api/admin-api';
 import { PlanningApi } from '../../core/api/planning-api';
-import { CreneauxApi } from '../../core/api/creneaux-api';
+import { ConstraintsApi } from '../../core/api/constraints-api';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
@@ -38,6 +38,20 @@ type PageInternals = {
   setNinja: (id: string | null) => Promise<void>;
 };
 
+/** What the legal card reads on entry — the page under test only has to host it. */
+const LEGAUX = {
+  dureeHebdomadaireMaxMinutes: 48 * 60,
+  dureeHebdomadaireMaxMineurMinutes: 35 * 60,
+  pauseMinimaleEntreVacationsMinutes: 30,
+  reposQuotidienMinimalMinutes: 660,
+  pauseSurPoste: false,
+  coupureRepasMinutes: 60,
+  coupureRepasMidiDebut: '12:00:00',
+  coupureRepasMidiFin: '14:00:00',
+  coupureRepasSoirDebut: '19:00:00',
+  coupureRepasSoirFin: '21:00:00',
+};
+
 describe('ParametresPage ninja picker', () => {
   let referenceData: ReferenceDataStore;
   const crud = {
@@ -53,7 +67,7 @@ describe('ParametresPage ninja picker', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        // The constructor loads the scenario list and the découpage
+        // The constructor loads the scenario list, the legal card its
         // parameters; both answers are irrelevant to the picker under test.
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
         {
@@ -64,7 +78,7 @@ describe('ParametresPage ninja picker', () => {
           },
         },
         { provide: PlanningApi, useValue: { scenarioNames: vi.fn(async () => []) } },
-        { provide: CreneauxApi, useValue: { slicingParameters: vi.fn(async () => []) } },
+        { provide: ConstraintsApi, useValue: { legalParameters: vi.fn(async () => LEGAUX) } },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: EditionStore, useValue: { courant: () => null } },
         {
@@ -182,25 +196,13 @@ describe('ParametresPage rendering', () => {
     scenarioNames: ReturnType<typeof vi.fn>;
     exportScenario: ReturnType<typeof vi.fn>;
   };
-  let creneauxApi: {
-    slicingParameters: ReturnType<typeof vi.fn>;
-    saveSlicingParameters: ReturnType<typeof vi.fn>;
-  };
+  let constraintsApi: { legalParameters: ReturnType<typeof vi.fn> };
   let recopie: { demander: ReturnType<typeof vi.fn> };
   let instantane: { proposer: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
   let setMailFinResolution: ReturnType<typeof vi.fn>;
   const mailFinResolution = signal(false);
   const editingLocked = signal(false);
-
-  const PARAMETRES = {
-    dureeVacationCibleMinutes: 240,
-    dureeVacationMinMinutes: 120,
-    dureeVacationMaxMinutes: 480,
-    dureeChevauchementMinutes: 15,
-    nombreFamillesDecalage: 1,
-    dureeDecalageMaxMinutes: 60,
-  };
 
   const SAUVEGARDE: EtatSauvegarde = {
     configured: true,
@@ -238,15 +240,12 @@ describe('ParametresPage rendering', () => {
     mailFinResolution.set(false);
     notify = vi.fn();
     setMailFinResolution = vi.fn(async (actif: boolean) => mailFinResolution.set(actif));
+    constraintsApi = { legalParameters: vi.fn(async () => LEGAUX) };
     recopie = { demander: vi.fn(async () => true) };
     instantane = { proposer: vi.fn(async () => undefined) };
     planningApi = {
       scenarioNames: vi.fn(async () => ['festival.yaml', 'festival-canicule.yaml']),
       exportScenario: vi.fn(async () => 'Téléchargement démarré.'),
-    };
-    creneauxApi = {
-      slicingParameters: vi.fn(async () => ({ ...PARAMETRES })),
-      saveSlicingParameters: vi.fn(async (body: unknown) => body),
     };
     api = { get: vi.fn(async () => []) };
     adminApi = {
@@ -269,7 +268,7 @@ describe('ParametresPage rendering', () => {
         { provide: ApiService, useValue: api },
         { provide: AdminApi, useValue: adminApi },
         { provide: PlanningApi, useValue: planningApi },
-        { provide: CreneauxApi, useValue: creneauxApi },
+        { provide: ConstraintsApi, useValue: constraintsApi },
         {
           provide: ReferenceCrudService,
           useValue: {
@@ -322,16 +321,6 @@ describe('ParametresPage rendering', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function champ(name: string): HTMLInputElement {
-    return racine().querySelector(`input[name="${name}"]`) as HTMLInputElement;
-  }
-
-  function saisir(name: string, valeur: string): void {
-    const input = champ(name);
-    input.value = valeur;
-    input.dispatchEvent(new Event('input'));
-  }
-
   function bouton(libelle: string): HTMLButtonElement {
     const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
       each.textContent!.includes(libelle),
@@ -340,9 +329,14 @@ describe('ParametresPage rendering', () => {
     return trouve as HTMLButtonElement;
   }
 
-  /** The end-of-solve mail switch — Material renders it as a `role="switch"` button. */
+  /**
+   * The end-of-solve mail switch — Material renders it as a `role="switch"`
+   * button; found in its own card, since the legal card carries a switch too.
+   */
   function interrupteur(): HTMLButtonElement {
-    return racine().querySelector('mat-slide-toggle button[role="switch"]') as HTMLButtonElement;
+    return carte('Prévenir par e-mail').querySelector(
+      'mat-slide-toggle button[role="switch"]',
+    ) as HTMLButtonElement;
   }
 
   /** One card of the page, found by its heading — several now carry a switch. */
@@ -365,54 +359,6 @@ describe('ParametresPage rendering', () => {
     return created;
   }
 
-  /** The découpage preview sentence, rebuilt on every keystroke. */
-  function apercu(): string {
-    return racine()
-      .querySelector('form app-status-message')!
-      .textContent!.replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  it('fills the découpage form from the server and summarises it in one sentence', async () => {
-    await rendre();
-
-    expect(champ('dureeVacationCibleMinutes').value).toBe('240');
-    expect(apercu()).toContain("des vacations d'environ 4 h");
-    expect(apercu()).toContain('jamais plus de 8 h');
-    // One grid: the "grilles décalées" clause is noise and must stay out.
-    expect(apercu()).not.toContain('grilles décalées');
-  });
-
-  it('updates the summary while the settings are typed, before anything is saved', async () => {
-    await rendre();
-
-    saisir('dureeVacationCibleMinutes', '480');
-    saisir('nombreFamillesDecalage', '3');
-    await fixture.whenStable();
-
-    // The preview is a computed over an immutable signal: an in-place mutation
-    // would leave this sentence stale in a zoneless app.
-    expect(apercu()).toContain('environ 8 h');
-    expect(apercu()).toContain('réparties sur 3 grilles décalées');
-    expect(creneauxApi.saveSlicingParameters).not.toHaveBeenCalled();
-  });
-
-  it('saves the edited settings and says so', async () => {
-    await rendre();
-
-    saisir('dureeChevauchementMinutes', '20');
-    await fixture.whenStable();
-    racine().querySelector('form')!.dispatchEvent(new Event('submit'));
-    await fixture.whenStable();
-
-    expect(creneauxApi.saveSlicingParameters).toHaveBeenCalledOnce();
-    const [corps] = creneauxApi.saveSlicingParameters.mock.calls[0] as unknown as [
-      { dureeChevauchementMinutes: number },
-    ];
-    expect(corps.dureeChevauchementMinutes).toBe(20);
-    expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
-  });
-
   it('lists the scenarios and preselects one, so the load button always has a target', async () => {
     await rendre();
 
@@ -429,7 +375,6 @@ describe('ParametresPage rendering', () => {
 
     expect(bouton('Charger le scénario sélectionné').disabled).toBe(true);
     expect(bouton('Importer un fichier').disabled).toBe(true);
-    expect(bouton('Enregistrer les paramètres').disabled).toBe(true);
     expect(bouton('Importer un dump SQL').disabled).toBe(true);
   });
 

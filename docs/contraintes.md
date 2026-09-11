@@ -539,7 +539,7 @@ Sur une grille dont **un seul créneau couvre toute la fenêtre** — une vacati
 10 h-20 h d'un bloc — son titulaire ne peut pas s'absenter, et le siège doit
 être pourvu (`posteDoitEtrePourvu`, dure aussi). Aucune affectation n'atteint
 alors zéro dur. La réponse est de retailler la grille, ou d'éteindre la règle
-depuis l'écran Contraintes. Une fenêtre **plus courte que la coupure qu'elle
+depuis l'écran Contraintes (ses valeurs se règlent sur l'écran Paramètres). Une fenêtre **plus courte que la coupure qu'elle
 exige** est en revanche écartée d'office (`FenetreRepas.depuis`) : personne ne
 pourrait la satisfaire, et sanctionner une saisie n'est pas le rôle du score.
 

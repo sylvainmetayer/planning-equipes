@@ -65,7 +65,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/graphe', sheet: 'graphe-corps' },
   { path: '/ad-hoc-constraints' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
-  { path: '/parametres', marker: 'Paramètres de découpage', sheet: 'scenario-select' },
+  { path: '/parametres', marker: 'Paramètres légaux', sheet: 'scenario-select' },
   { path: '/mcp-client', marker: 'Se connecter au serveur MCP', sheet: 'mcp-pre' },
   { path: '/debug', marker: 'Validateur YAML', sheet: 'debug-date-du-jour' },
 ];

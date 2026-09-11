@@ -52,6 +52,7 @@ import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 import { CreneauDerivationData, CreneauDerivationDialog } from './creneau-derivation-dialog';
 import { CreneauSerieData, CreneauSerieDialog } from './creneau-serie-dialog';
+import { ParametresDecoupageCard } from './parametres-decoupage';
 import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
 
 /**
@@ -84,6 +85,7 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
     MatTooltipModule,
     RouterLink,
     BulkActionsBar,
+    ParametresDecoupageCard,
   ],
   templateUrl: './creneaux-page.html',
   styleUrls: [

@@ -5,6 +5,8 @@
 
 <h2 class="section-title" i18n="@@parametres.section.edition">Paramètres de l'édition</h2>
 
+<app-parametres-legaux />
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h3 mat-card-title i18n="@@dataSetup.scenarios.title">Scénarios</h3>
@@ -57,93 +59,6 @@
       (change)="onScenarioFileSelected($event)"
     />
   </mat-card-actions>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h3 mat-card-title i18n="@@decoupage.parametres.title">Paramètres de découpage</h3>
-    <mat-card-subtitle i18n="@@parametres.decoupage.subtitle">
-      Règles de découpe des amplitudes en vacations de travail.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    @if (parametresDecoupage(); as p) {
-      <form (ngSubmit)="sauvegarderParametresDecoupage()">
-        <fieldset class="decoupage-groupe form-grid">
-        <legend i18n="@@decoupage.groupe.vacations">Durée des vacations</legend>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.dureeCible">Durée cible d'une vacation (min)</mat-label>
-          <input matInput type="number" min="1" name="dureeVacationCibleMinutes"
-                 [ngModel]="p.dureeVacationCibleMinutes" (ngModelChange)="patchParametre({ dureeVacationCibleMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.dureeCible">Longueur visée ; ajustée si l'amplitude du jour ne tombe pas juste.</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.dureeMin">Durée minimale (min)</mat-label>
-          <input matInput type="number" min="1" name="dureeVacationMinMinutes"
-                 [ngModel]="p.dureeVacationMinMinutes" (ngModelChange)="patchParametre({ dureeVacationMinMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.dureeMin">En dessous, le reliquat est absorbé par les vacations voisines.</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.dureeMax">Durée maximale (min)</mat-label>
-          <input matInput type="number" min="1" name="dureeVacationMaxMinutes"
-                 [ngModel]="p.dureeVacationMaxMinutes" (ngModelChange)="patchParametre({ dureeVacationMaxMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.dureeMax">Au-delà, le Code du travail impose une pause : le générateur coupe.</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.chevauchement">Chevauchement de relais (min)</mat-label>
-          <input matInput type="number" min="0" name="dureeChevauchementMinutes"
-                 [ngModel]="p.dureeChevauchementMinutes" (ngModelChange)="patchParametre({ dureeChevauchementMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.chevauchement">Présence commune des deux équipes au relais ; 0 = passation sèche.</mat-hint>
-        </mat-form-field>
-        </fieldset>
-        <fieldset class="decoupage-groupe form-grid">
-        <legend i18n="@@decoupage.groupe.couverture">Couverture pendant la pause</legend>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.strategie">Couverture pendant une pause interne résiduelle</mat-label>
-          <mat-select name="strategieCouverturePendantPause"
-                      [ngModel]="p.strategieCouverturePendantPause" (ngModelChange)="patchParametre({ strategieCouverturePendantPause: $event })">
-            <mat-option value="FERMETURE" i18n="@@decoupage.strategie.fermeture">Fermeture du stand</mat-option>
-            <mat-option value="RELEVE" i18n="@@decoupage.strategie.releve">Poste de relève supplémentaire</mat-option>
-            <mat-option value="EFFECTIF_REDUIT" i18n="@@decoupage.strategie.effectifReduit">Effectif réduit de moitié</mat-option>
-          </mat-select>
-          <mat-hint i18n="@@decoupage.hint.strategie">Sort du stand quand une pause laisse un trou.</mat-hint>
-        </mat-form-field>
-        </fieldset>
-        <fieldset class="decoupage-groupe form-grid">
-        <legend i18n="@@decoupage.groupe.familles">Familles de relais</legend>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.nombreFamillesDecalage">Nombre de grilles de relais décalées</mat-label>
-          <input matInput type="number" min="1" name="nombreFamillesDecalage"
-                 [ngModel]="p.nombreFamillesDecalage" (ngModelChange)="patchParametre({ nombreFamillesDecalage: $event })" />
-          <mat-hint i18n="@@decoupage.field.nombreFamillesDecalage.hint">1 = désactivé, chaque stand partage la même grille</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label i18n="@@decoupage.field.dureeDecalageMax">Étalement du décalage (min)</mat-label>
-          <input matInput type="number" min="0" name="dureeDecalageMaxMinutes"
-                 [ngModel]="p.dureeDecalageMaxMinutes" (ngModelChange)="patchParametre({ dureeDecalageMaxMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.field.dureeDecalageMax.hint">Ignoré si le nombre de grilles est 1</mat-hint>
-        </mat-form-field>
-        </fieldset>
-        <app-status-message [text]="apercuParametres()" tone="info" />
-        <div class="card-actions">
-          <button matButton="filled" type="submit" [disabled]="parametresDecoupageLoading() || editionLocked()">
-            @if (parametresDecoupageLoading()) {
-              <mat-progress-spinner diameter="18" mode="indeterminate" />
-            } @else {
-              <mat-icon>save</mat-icon>
-            }
-            <ng-container i18n="@@decoupage.parametres.save">Enregistrer les paramètres</ng-container>
-          </button>
-          <a matButton routerLink="/creneaux">
-            <mat-icon>content_cut</mat-icon>
-            <ng-container i18n="@@parametres.decoupage.versCreneaux"
-              >Prévisualiser et générer le découpage (page Créneaux)</ng-container
-            >
-          </a>
-        </div>
-      </form>
-    }
-  </mat-card-content>
 </mat-card>
 
 <mat-card appearance="outlined" class="page-card">

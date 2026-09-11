@@ -199,6 +199,8 @@
   </mat-card-content>
 </mat-card>
 
+<app-parametres-decoupage [inactif]="mode() === 'VACATIONS'" [verrouille]="editingLocked()" />
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h2 mat-card-title i18n="@@decoupage.generer.title">Générer le découpage</h2>
@@ -229,10 +231,6 @@
         }
         <ng-container i18n="@@decoupage.generer.submit">Générer les vacations (remplace les créneaux)</ng-container>
       </button>
-      <a matButton routerLink="/parametres">
-        <mat-icon>settings</mat-icon>
-        <ng-container i18n="@@creneaux.decoupage.versParametres">Régler les paramètres de découpage</ng-container>
-      </a>
     </div>
 
     @if (resumeDecoupage().length > 0) {

@@ -63,9 +63,7 @@ test.describe('espace animateur', () => {
   test("le code reçu par e-mail ouvre l'espace depuis l'écran d'accès", async ({ page }) => {
     await page.goto(`/animateur/${jeton}`);
     await page.getByRole('button', { name: 'Recevoir mon code par e-mail' }).click();
-    await expect(
-      page.getByText('Code envoyé à E•••@example.org', { exact: false }),
-    ).toBeVisible();
+    await expect(page.getByText('Code envoyé à E•••@example.org', { exact: false })).toBeVisible();
     // The code lands in Mailpit — typed here as the animateur would type it.
     const code = await dernierCodeMailpit(page.request, EMAIL_ALICE);
     await page.getByLabel('Code reçu').fill(code);
