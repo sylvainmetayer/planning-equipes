@@ -104,7 +104,7 @@ export class JourJPage {
    * understand, before tapping, that they are changing the plan and that
    * nothing revalidates the whole of it until the next solve.
    */
-  protected readonly avertissement = $localize`:@@jourJ.wip.message:Cet écran est en cours de développement, et contrairement aux autres écrans à l'essai, il agit : marquer un absent écrit de vraies indisponibilités et vide de vrais sièges du planning enregistré. Ses impacts ne sont pas encore garantis — aucune résolution ne revérifie l'ensemble avant la prochaine que vous lancerez.`;
+  protected readonly avertissement = $localize`:@@jourJ.wip.message:Écran en cours de développement, et il agit : marquer un absent écrit de vraies indisponibilités et vide de vrais sièges du planning enregistré. Ses effets ne sont pas encore garantis.`;
 
   protected readonly resume = computed(() => resumeDuJour(this.etat()));
   protected readonly rappel = computed(() => rappelPublication(this.apercu()));

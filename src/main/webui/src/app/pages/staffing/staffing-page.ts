@@ -117,7 +117,7 @@ export class StaffingPage {
     }
     const projete = summary.minimumAvecIndisponibilites;
     const minimum = summary.minimumTotal;
-    return $localize`:@@staffing.projection.description:Avec les indisponibilités déjà déclarées, il faudrait un vivier de ${projete}:projete: personnes pour couvrir un besoin de ${minimum}:minimum: : la journée la plus tendue ne dispose pas de tout l'effectif. C'est une projection — elle suppose que les recrues à venir seront indisponibles aussi souvent que les personnes déjà connues — et non une borne prouvée.`;
+    return $localize`:@@staffing.projection.description:Avec les indisponibilités déclarées, il faudrait ${projete}:projete: personnes pour un besoin de ${minimum}:minimum: — une projection, pas une borne : les recrues à venir sont supposées aussi souvent indisponibles.`;
   });
 
   protected readonly competence = computed<CompetenceStaffing | null>(
@@ -163,7 +163,7 @@ export class StaffingPage {
     if (manqueRenforts > 0) {
       // The reserve cannot be offered against its own shortage: the pool that
       // just came up short IS the pool of reinforcements.
-      return $localize`:@@staffing.competence.shortfallOnReserve:${manque}:manque: places de plus que de spécialistes, cumulées sur les typologies ci-dessous, dont ${manqueRenforts}:renforts: sur la typologie polyvalente elle-même : ce vivier étant celui des renforts, rien ne peut absorber ce manque-là.`;
+      return $localize`:@@staffing.competence.shortfallOnReserve:${manque}:manque: places de plus que de spécialistes sur les typologies ci-dessous, dont ${manqueRenforts}:renforts: sur la typologie polyvalente elle-même : ce vivier est celui des renforts, rien ne peut absorber celui-là.`;
     }
     if (manque === 0) {
       return polyvalents === 0
@@ -173,7 +173,7 @@ export class StaffingPage {
     if (!competence.typologieNinjaDefinie) {
       // A reserve of zero because no typologie carries the ninja flag is not a
       // shortage of backup: there is no such notion in this référentiel.
-      return $localize`:@@staffing.competence.shortfallWithoutNinja:${manque}:manque: places de plus que de spécialistes, cumulées sur les typologies ci-dessous. Aucune typologie n'est marquée « polyvalente » dans le référentiel : il n'existe pas de renfort à mobiliser pour les absorber.`;
+      return $localize`:@@staffing.competence.shortfallWithoutNinja:${manque}:manque: places de plus que de spécialistes sur les typologies ci-dessous. Aucune typologie n'est marquée « polyvalente » : il n'existe aucun renfort pour les absorber.`;
     }
     if (manque <= polyvalents) {
       return $localize`:@@staffing.competence.absorbable:${manque}:manque: places de plus que de spécialistes, cumulées sur les typologies ci-dessous. Les ${polyvalents}:reserve: polyvalents peuvent y répondre en renfort, mais chacun ne couvre qu'un siège à la fois.`;
@@ -196,7 +196,7 @@ export class StaffingPage {
     const sieges = competence?.siegesReservesAuxPolyvalents ?? 0;
     return competence?.typologieNinjaDefinie
       ? $localize`:@@staffing.competence.polyvalentsOnly:${sieges}:count: sièges appartiennent à des stands ne proposant aucune typologie : seuls les polyvalents peuvent les tenir, ils sont donc comptés dans la ligne de la typologie polyvalente.`
-      : $localize`:@@staffing.competence.nobodyEligible:${sieges}:count: sièges appartiennent à des stands ne proposant aucune typologie, et aucune typologie n'est marquée « polyvalente » : personne dans le référentiel n'est habilité à les tenir. Renseignez la typologie de ces stands.`;
+      : $localize`:@@staffing.competence.nobodyEligible:${sieges}:count: sièges appartiennent à des stands sans typologie, et aucune typologie n'est marquée « polyvalente » : personne ne peut les tenir. Renseignez la typologie de ces stands.`;
   });
 
   /**
@@ -204,7 +204,7 @@ export class StaffingPage {
    * `aria-hidden`, which drops the tooltip's `aria-describedby` — the label
    * has to be carried explicitly. Same trap as the shell's icon buttons.
    */
-  protected readonly ninjaTooltip = $localize`:@@staffing.competence.ninjaTooltip:Typologie des polyvalents : ses titulaires peuvent tenir n'importe quel stand, mais ne comptent comme spécialistes que dans les compétences qu'ils déclarent — ailleurs, ils sont un renfort.`;
+  protected readonly ninjaTooltip = $localize`:@@staffing.competence.ninjaTooltip:Typologie des polyvalents : ils peuvent tenir n'importe quel stand, mais ne comptent comme spécialistes que dans les compétences qu'ils déclarent.`;
 
   protected jourCritiqueLabel(jour: JourStaffing): string {
     const date = jour.date;

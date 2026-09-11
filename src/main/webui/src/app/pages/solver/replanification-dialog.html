@@ -1,14 +1,11 @@
 <h2 mat-dialog-title i18n="@@solver.incremental.dialog.title">Replanifier (incrémental)</h2>
 <mat-dialog-content>
   <p i18n="@@solver.incremental.dialog.hint">
-    La replanification repart du planning enregistré : tout ce qui reste valable est figé, et seuls les postes qu'un
-    changement tardif a invalidés — animateur supprimé, indisponibilité saisie depuis la résolution — sont recalculés,
-    avec les postes restés vides. C'est pourquoi elle tient en quelques dizaines de secondes là où une résolution
-    complète prend plusieurs minutes.
+    Le planning enregistré est figé : seuls les postes invalidés par un changement tardif et les postes vides sont
+    recalculés, en quelques dizaines de secondes.
   </p>
   <p i18n="@@solver.incremental.dialog.perimetre">
-    Vous pouvez rouvrir davantage : désignez ci-dessous ce qui doit être refait de toute façon. Tout le reste du
-    planning est garanti inchangé. Laissez vide pour vous en tenir aux seules conséquences des changements.
+    Pour rouvrir davantage, désignez ci-dessous ce qui doit être refait ; tout le reste est garanti inchangé.
   </p>
   <div class="replanification-perimetre">
     <mat-form-field appearance="outline">

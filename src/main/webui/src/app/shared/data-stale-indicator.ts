@@ -39,6 +39,6 @@ export class DataStaleIndicator {
 
   protected readonly tooltip = computed(
     () =>
-      $localize`:@@dataStale.tooltip:Des données de référence ont été modifiées depuis le dernier calcul du planning. Le résultat affiché peut ne plus être à jour ; relancez le solveur si besoin.`,
+      $localize`:@@dataStale.tooltip:Des données de référence ont changé depuis le dernier calcul : le planning affiché peut ne plus être à jour.`,
   );
 }

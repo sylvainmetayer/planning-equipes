@@ -4,32 +4,24 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@mcp.connexion.title">Se connecter au serveur MCP</h2>
     <mat-card-subtitle i18n="@@mcp.connexion.subtitle">
-      L'application expose un serveur MCP (Model Context Protocol) qui permet à un assistant IA —
-      Claude, un IDE, un agent — de consulter et piloter le planning en langage naturel : lister les
-      référentiels, lancer une résolution, expliquer un score.
+      Un assistant IA (Claude, un IDE, un agent) consulte et pilote le planning en langage naturel par le
+      protocole MCP.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <p i18n="@@mcp.connexion.endpoint">
-      Le point d'entrée est <code>{{ origin }}/mcp</code> (transport HTTP streamable). Chaque requête
-      doit présenter la clé API partagée dans l'en-tête <code>{{ enTeteCle() }}</code> — c'est la valeur
-      de la variable serveur <code>PLANNING_MCP_API_KEY</code> ; tant qu'elle n'est pas configurée côté
-      serveur, le MCP répond 401 à tout le monde.
+      Point d'entrée : <code>{{ origin }}/mcp</code>. Clé API dans l'en-tête <code>{{ enTeteCle() }}</code>
+      (variable serveur PLANNING_MCP_API_KEY).
     </p>
     <p i18n="@@mcp.confidentialite">
-      Confidentialité des animateurs : le serveur MCP ne renvoie jamais leurs données personnelles —
-      ni nom, ni prénom, ni date de naissance, ni e-mail. Seuls circulent l'identifiant et les
-      attributs de planification (statut majeur/mineur, manager, compétences et leur niveau,
-      souhaits, indisponibilités). Ces données personnelles ne sont donc pas modifiables par MCP
-      non plus : un animateur ne s'y met à jour que sur ses compétences, ses souhaits, ses
-      indisponibilités et son statut manager. Un assistant qui ne lit jamais un nom ne peut pas le
-      divulguer.
+      Le serveur MCP ne lit ni ne modifie les données personnelles des animateurs (nom, prénom, date de
+      naissance, e-mail) : seuls l'identifiant et les attributs de planification circulent.
     </p>
     @if (statut(); as etat) {
       @if (!etat.configuree) {
         <app-status-message
           i18n-text="@@mcp.cle.absente"
-          text="Aucune clé n'est configurée sur ce serveur : la variable PLANNING_MCP_API_KEY est vide, et le MCP répond donc 401 à tout le monde. Inutile de paramétrer un client tant que l'exploitant ne l'a pas renseignée et redémarré l'application."
+          text="Aucune clé configurée (variable PLANNING_MCP_API_KEY vide) : le MCP répond 401 à tout le monde tant que l'exploitant ne l'a pas renseignée et redémarré l'application."
           tone="warning"
         />
       } @else {
@@ -51,9 +43,8 @@
         @if (formulaireOuvert()) {
           <form class="mcp-cle-form" (submit)="reveler($event)">
             <p i18n="@@mcp.cle.pourquoi">
-              La clé donne un accès complet en écriture aux référentiels et au solveur, et elle survit à la
-              session depuis laquelle elle a été copiée : confirmez le mot de passe administrateur pour
-              l'afficher.
+              La clé donne un accès complet en écriture et survit à votre session : confirmez le mot de passe
+              administrateur pour l'afficher.
             </p>
             <mat-form-field appearance="outline">
               <mat-label i18n="@@mcp.cle.motDePasse">Mot de passe administrateur</mat-label>
@@ -88,8 +79,7 @@
               </button>
             </div>
             <p class="mcp-cle-note" i18n="@@mcp.cle.ephemere">
-              La clé disparaît de cet écran au bout de deux minutes, et dès que vous quittez la page — il
-              faudra alors ressaisir le mot de passe. Copier la clé relance le délai.
+              La clé disparaît au bout de deux minutes ou en quittant la page ; copier la clé relance le délai.
             </p>
           </div>
         }
@@ -115,32 +105,27 @@
     <mat-card-content>
       <app-status-message
         i18n-text="@@mcp.pangolin.warning"
-        text="Cette instance répond derrière un proxy d'accès Pangolin : en plus de la clé API, chaque requête MCP doit présenter un jeton d'accès du proxy, à créer dans Pangolin puis à paramétrer dans le client."
+        text="Derrière un proxy Pangolin, chaque requête MCP doit aussi présenter un jeton d'accès du proxy, créé dans Pangolin et paramétré dans le client."
         tone="warning"
       />
       <p i18n="@@mcp.pangolin.headers">
-        Les en-têtes standard attendus par Pangolin sont <code>P-Access-Token-Id</code> (l'identifiant
-        du jeton) et <code>P-Access-Token</code> (le jeton lui-même) — la configuration ci-dessus les
-        inclut déjà. Un client incapable d'ajouter des en-têtes peut passer le jeton en query string :
-        <code>?p_token=&lt;id&gt;.&lt;jeton&gt;</code>.
+        En-têtes attendus : <code>P-Access-Token-Id</code> et <code>P-Access-Token</code> (déjà dans la
+        configuration), ou en query string ?p_token=&lt;id&gt;.&lt;jeton&gt;.
       </p>
       @if (pangolinAccessTokenId() || pangolinAccessToken()) {
         <p i18n="@@mcp.pangolin.jeton.revele">
-          Le jeton Pangolin configuré côté serveur est révélé : la configuration ci-dessus contient sa
-          vraie valeur plutôt qu'un espace réservé.
+          La configuration ci-dessus contient la vraie valeur du jeton Pangolin configuré côté serveur.
         </p>
       } @else {
         <p i18n="@@mcp.pangolin.jeton.manuel">
-          Si le jeton Pangolin est configuré côté serveur (<code>PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID</code>
-          / <code>PLANNING_MCP_PANGOLIN_ACCESS_TOKEN</code>), le bouton « Révéler la clé d'API » ci-dessus le
-          révèle en même temps qu'elle. Sinon, il faut coller sa valeur à la main dans la configuration.
+          Si le jeton est configuré côté serveur (PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID et
+          PLANNING_MCP_PANGOLIN_ACCESS_TOKEN), « Révéler la clé d'API » le révèle aussi ; sinon, collez-le à la
+          main.
         </p>
       }
       <p i18n="@@mcp.pangolin.authorization">
-        Utilisez bien l'en-tête dédié <code>X-MCP-Api-Key</code> pour la clé API plutôt que
-        <code>Authorization: Bearer</code> : un proxy d'accès consomme fréquemment
-        <code>Authorization</code> pour son propre compte, et la clé n'arriverait jamais à
-        l'application.
+        Passez la clé API dans l'en-tête <code>X-MCP-Api-Key</code>, pas dans <code>Authorization</code>,
+        que le proxy consomme souvent pour lui-même.
       </p>
     </mat-card-content>
   </mat-card>
@@ -151,9 +136,8 @@
     <mat-card-header>
       <h2 mat-card-title i18n="@@mcp.prompts.title">Prompts prêts à l'emploi</h2>
       <mat-card-subtitle i18n="@@mcp.prompts.subtitle">
-        Ce sont les prompts que le serveur annonce lui-même : un client qui gère les prompts MCP les
-        propose directement, sans copier-coller. Pour les autres, collez le texte dans votre assistant.
-        Ils sont rédigés en français, comme le reste du métier.
+        Prompts annoncés par le serveur : un client qui gère les prompts MCP les propose directement ;
+        sinon, collez le texte dans votre assistant.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>

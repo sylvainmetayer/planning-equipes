@@ -196,7 +196,7 @@ export class OuverturesPage {
   }
 
   protected infobullePartielle(): string {
-    return $localize`:@@ouvertures.saisie.partielle:Les fenêtres de ce stand ne suivent pas les bornes de ce créneau ; enregistrer depuis la grille les alignera sur le créneau.`;
+    return $localize`:@@ouvertures.saisie.partielle:Les fenêtres de ce stand ne suivent pas les bornes de ce créneau ; enregistrer les alignera sur le créneau.`;
   }
 
   protected valeur(standId: string, creneauId: number): string {
@@ -221,7 +221,7 @@ export class OuverturesPage {
   }
 
   protected infobulleInerte(): string {
-    return $localize`:@@ouvertures.saisie.inerte:Ce créneau appartient à une autre famille de relais que ce stand : il n'y tiendra jamais de poste, la case ne se saisit pas.`;
+    return $localize`:@@ouvertures.saisie.inerte:Ce créneau est d'une autre famille de relais que ce stand : il n'y tiendra jamais de poste.`;
   }
 
   protected libelleColonne(colonne: ColonneGrille): string {
@@ -367,7 +367,7 @@ export class OuverturesPage {
     if (aplatis.length > 0) {
       const confirme = await this.confirm.ask({
         title: $localize`:@@ouvertures.saisie.aplatirTitle:Aligner des fenêtres sur les créneaux ?`,
-        message: $localize`:@@ouvertures.saisie.aplatirMessage:${aplatis.join(', ')}:stands: : certaines fenêtres ne suivaient pas les bornes des créneaux. Enregistrer depuis la grille les aligne sur les créneaux.`,
+        message: $localize`:@@ouvertures.saisie.aplatirMessage:${aplatis.join(', ')}:stands: : des fenêtres ne suivaient pas les bornes des créneaux ; enregistrer les aligne sur les créneaux.`,
         confirmLabel: $localize`:@@ouvertures.saisie.aplatirLabel:Enregistrer`,
       });
       if (!confirme) {

@@ -1,9 +1,7 @@
 <div class="page-header">
   <h1 i18n="@@importGrille.titre">Import de la grille des stands (CSV)</h1>
   <p i18n="@@importGrille.intro">
-    Déposez la matrice de vos stands — une ligne par stand, une colonne par jour et par créneau, un effectif par
-    case, vide pour fermé — telle que votre tableur l'exporte. Lisez ce que l'import ferait, puis validez. Rien
-    n'est écrit avant cette validation, et le fichier reste en mémoire : il n'est jamais enregistré sur le serveur.
+    Déposez la matrice de vos stands (une ligne par stand, une colonne par créneau, un effectif par case, vide pour fermé). Rien n'est écrit avant votre validation ; le fichier n'est pas conservé.
   </p>
 </div>
 
@@ -11,18 +9,12 @@
   <mat-card-header>
     <mat-card-title i18n="@@importGrille.fichier.titre">1. Le fichier</mat-card-title>
     <mat-card-subtitle i18n="@@importGrille.fichier.aide">
-      Format CSV uniquement — séparateur virgule, point-virgule ou tabulation, reconnu tout seul. Deux lignes
-      d'en-tête, les dates puis les bandes « 10h00-12h00 », ou une seule « 2026-07-08 10h00-12h00 ». La première
-      colonne nomme le stand par son identifiant ou son nom exact.
+      CSV (virgule, point-virgule ou tabulation) : une première colonne avec l'identifiant ou le nom exact du stand, puis une colonne par créneau « 2026-07-08 10h00-12h00 ».
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <p class="empty-hint" i18n="@@importGrille.fichier.format">
-      Chaque colonne se pose sur le créneau de même date et mêmes heures ; une colonne sans créneau est ignorée et
-      listée. Un stand du fichier voit tout son horaire réécrit depuis ses cases, ramené en règles quand un motif se
-      répète, et ses effectifs minimum et maximum suivent la plus petite et la plus grande case ; un créneau que le
-      fichier ne nomme pas garde sa case actuelle. Les stands absents du fichier ne sont pas touchés, et l'import ne
-      crée pas de stand.
+      L'horaire d'un stand du fichier est réécrit depuis ses cases, ramené en règles quand un motif se répète ; ses effectifs suivent ses cases. Les stands absents du fichier ne sont pas touchés.
     </p>
     <div class="card-actions">
       <button matButton (click)="telechargerExemple()" [disabled]="telechargementEnCours()">
@@ -73,8 +65,7 @@
     <mat-card-header>
       <mat-card-title i18n="@@importGrille.colonnes.titre">2. Les colonnes</mat-card-title>
       <mat-card-subtitle i18n="@@importGrille.colonnes.aide">
-        Chaque colonne du fichier et le créneau de l'édition où elle se pose — tous ceux de la même bande quand la
-        grille est décalée en familles. Une colonne ignorée ne change rien ; un créneau sans colonne garde ses cases.
+        Où chaque colonne du fichier se pose dans la grille de l'édition ; une colonne ignorée ne change rien.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>

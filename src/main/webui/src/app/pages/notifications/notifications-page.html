@@ -3,9 +3,8 @@
     <mat-card-header>
       <h1 mat-card-title i18n="@@notifications.alertes.title">Alertes de l'organisation ({{ alertes().length }})</h1>
       <mat-card-subtitle i18n="@@notifications.alertes.description">
-        Ce que les envois automatiques de nuit ont laissé sur le bureau : un rappel qui n'a pas pu partir faute
-        d'adresse, une demande d'échange qui attend une décision. Elles viennent du serveur et se referment en
-        traitant ce qu'elles signalent, pas en les effaçant — chacune n'est signalée qu'une fois.
+        Ce que les envois automatiques de nuit n'ont pas pu régler — un rappel sans adresse, une demande
+        d'échange en attente ; chaque alerte se referme en traitant ce qu'elle signale.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
@@ -31,8 +30,7 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@notifications.list.title">Notifications ({{ notifications.notifications().length }})</h1>
     <mat-card-subtitle i18n="@@notifications.description">
-      Historique des avertissements et informations remontés par l'application (résolutions, contraintes non
-      respectées, erreurs) : conservé ici même après la disparition du message temporaire.
+      Historique des messages de l'application, conservé après la disparition du message temporaire.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">

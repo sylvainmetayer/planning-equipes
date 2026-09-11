@@ -192,8 +192,8 @@ export class SolverPage {
     const resoluLe = this.resolution.resolution()?.resoluLe;
     const quand = resoluLe ? new Date(resoluLe).toLocaleString(intlLocale()) : '';
     return quand
-      ? $localize`:@@solver.depart.planDate:« Calculer le planning » repart du plan enregistré le ${quand}:date: (${affectations}:count: affectations) et cherche à l'améliorer ; rien n'est figé hormis les verrouillages.`
-      : $localize`:@@solver.depart.plan:« Calculer le planning » repart du plan enregistré (${affectations}:count: affectations) et cherche à l'améliorer ; rien n'est figé hormis les verrouillages.`;
+      ? $localize`:@@solver.depart.planDate:« Calculer le planning » repart du plan enregistré le ${quand}:date: (${affectations}:count: affectations) ; seuls les verrouillages sont figés.`
+      : $localize`:@@solver.depart.plan:« Calculer le planning » repart du plan enregistré (${affectations}:count: affectations) ; seuls les verrouillages sont figés.`;
   });
 
   /** Where the last finished full solve started from, for the recap. */
@@ -351,7 +351,7 @@ export class SolverPage {
       this.output.set(
         enFile
           ? $localize`:@@solver.incremental.planned:Replanification planifiée : elle démarrera d'elle-même sur cette édition dès que la tâche en cours sera terminée.`
-          : $localize`:@@solver.incremental.submitted:Replanification incrémentale en cours : le planning enregistré sert de point de départ, seuls les postes rouverts sont recalculés.`,
+          : $localize`:@@solver.incremental.submitted:Replanification incrémentale en cours : seuls les postes rouverts sont recalculés.`,
       );
     } catch (error) {
       this.output.set(errorPrefix(error));
@@ -390,10 +390,10 @@ export class SolverPage {
   protected async onRecommencerDeZero(): Promise<void> {
     const affectations = this.affectationsEnregistrees() ?? 0;
     const publishedAt = this.publication().preview()?.dernierePublicationLe;
-    const message = $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous de lui. Pour l'améliorer plutôt que le remplacer, utilisez « Calculer le planning ».`;
+    const message = $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous.`;
     const avertissement = publishedAt
       ? ' ' +
-        $localize`:@@solver.aFroid.confirm.publie:Un planning a été publié le ${new Date(publishedAt).toLocaleString(intlLocale())}:date: : repartir de zéro peut bousculer beaucoup de personnes déjà prévenues, là où « Calculer le planning » ne bouge que ce qui en vaut la peine.`
+        $localize`:@@solver.aFroid.confirm.publie:Un planning a été publié le ${new Date(publishedAt).toLocaleString(intlLocale())}:date: : repartir de zéro peut bousculer beaucoup de personnes déjà prévenues.`
       : '';
     const confirme = await this.confirm.ask({
       title: $localize`:@@solver.aFroid.confirm.title:Recommencer de zéro ?`,
@@ -428,8 +428,8 @@ export class SolverPage {
       );
       this.output.set(
         enFile
-          ? $localize`:@@solver.planned:Calcul planifié : il démarrera de lui-même sur cette édition dès que la tâche en cours sera terminée. Vous pouvez fermer cet écran.`
-          : $localize`:@@solver.submitted:Calcul du planning sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`,
+          ? $localize`:@@solver.planned:Calcul planifié : il démarrera de lui-même sur cette édition dès que la tâche en cours sera terminée.`
+          : $localize`:@@solver.submitted:Calcul en cours sur le serveur ; le résultat sera analysé automatiquement. Vous pouvez continuer à naviguer.`,
       );
     } catch (error) {
       this.output.set(errorPrefix(error));

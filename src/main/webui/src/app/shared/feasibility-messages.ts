@@ -9,7 +9,7 @@
  * notification logged to the Notifications page.
  */
 export function hardScoreNegativeMessage(hardScore: number): string {
-  return $localize`:@@feasibility.hardScoreNegative:Ce planning n'est pas totalement réalisable : le solveur n'a pas réussi à ramener le score dur à zéro (score dur ${hardScore}:hardScore:). Essayez d'augmenter l'effectif disponible ou compétent, d'assouplir le découpage des vacations (durée min/max, stratégie de couverture pendant la pause) ou de revoir les disponibilités déclarées, puis relancez une résolution. Le détail des règles encore en défaut (ci-dessous si listées, ou page Contraintes) précise la valeur légale ou métier à respecter.`;
+  return $localize`:@@feasibility.hardScoreNegative:Ce planning n'est pas totalement réalisable (score dur ${hardScore}:hardScore:) : augmentez l'effectif, assouplissez le découpage des vacations ou revoyez les disponibilités, puis relancez une résolution.`;
 }
 
 /**

@@ -26,7 +26,7 @@
     @if (!planDisponible() && !chargement()) {
       <app-status-message
         i18n-text="@@graphe.sansPlan"
-        text="Aucun planning résolu n'est enregistré : les colonnes « Créneaux » et « Animateurs » se lisent sur les affectations persistées et resteront vides. Les emplacements et leurs stands, eux, viennent des données de référence et sont navigables."
+        text="Aucun planning résolu n'est enregistré : les colonnes « Créneaux » et « Animateurs » resteront vides. Les emplacements et leurs stands, issus des données de référence, restent navigables."
         tone="info"
       />
     }

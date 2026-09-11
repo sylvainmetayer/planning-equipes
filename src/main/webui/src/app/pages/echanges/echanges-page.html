@@ -1,11 +1,8 @@
 <div class="page-header">
   <h1 i18n="@@echanges.titre">Échanges de créneaux</h1>
   <p i18n="@@echanges.intro">
-    Les demandes d'échange soumises par les animateurs depuis leur espace. Une demande n'arrive
-    dans la file qu'une fois acceptée par le collègue concerné : vous n'avez pas à demander à
-    chacun s'il est d'accord. Accepter applique l'échange immédiatement au planning enregistré et
-    le verrouille sur son créneau ; refuser ne modifie rien. La régénération du planning reste une
-    action à part, depuis la page Solveur.
+    Les demandes d'échange soumises par les animateurs depuis leur espace, une fois acceptées par
+    le collègue concerné.
   </p>
   <button matButton (click)="reload()" [disabled]="chargement()">
     <mat-icon>refresh</mat-icon>
@@ -21,8 +18,7 @@
     </mat-slide-toggle>
     @if (foireOpen() === false) {
       <span class="echanges-foire-etat" i18n="@@echanges.foireEtatFerme">
-        Fermée : les animateurs consultent leur planning (et le téléchargent), sans pouvoir
-        proposer ni annuler d'échange.
+        Fermée : les animateurs ne peuvent ni proposer ni annuler d'échange.
       </span>
     } @else if (horsFenetre()) {
       <!-- L'interrupteur est sur « ouverte » mais les dates disent le
@@ -53,9 +49,8 @@
       </button>
     </fieldset>
     <p class="echanges-foire-aide" i18n="@@echanges.foireFenetre.aide">
-      Laissez une date vide pour ne pas borner ce côté-là. L'interrupteur reste maître : une période
-      renseignée n'ouvre jamais une foire fermée. Les bornes sont appliquées côté serveur, pas
-      seulement à l'affichage.
+      Une date vide ne borne pas ce côté. L'interrupteur reste maître : une période renseignée
+      n'ouvre jamais une foire fermée.
     </p>
   </div>
 }
@@ -66,8 +61,7 @@
 
 <h2 i18n="@@echanges.enAttenteTitre">En attente de votre décision</h2>
 <p class="echanges-section-hint" i18n="@@echanges.enAttenteHint">
-  Le collègue concerné a déjà donné son accord : les deux animateurs sont d'accord, il ne manque
-  que le vôtre.
+  Le collègue concerné a déjà donné son accord : il ne manque que le vôtre.
 </p>
 @if (enAttente().length === 0) {
   <p class="espace-vide" i18n="@@echanges.aucuneEnAttente">Aucune demande en attente.</p>
@@ -148,8 +142,8 @@
 @if (enAttenteCible().length > 0) {
   <h2 i18n="@@echanges.attenteCibleTitre">En attente de l'accord du collègue</h2>
   <p class="echanges-section-hint" i18n="@@echanges.attenteCibleHint">
-    Soumises mais pas encore acceptées par le collègue concerné : rien à faire pour le moment —
-    vous pouvez toutefois refuser une demande pour la clore sans attendre.
+    Pas encore acceptées par le collègue concerné : rien à faire pour le moment, sauf refuser pour
+    clore sans attendre.
   </p>
   @for (demande of enAttenteCible(); track demande.id) {
     <mat-card class="echanges-demande echanges-demande-decidee" appearance="outlined">

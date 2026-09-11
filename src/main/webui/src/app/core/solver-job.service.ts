@@ -712,7 +712,7 @@ export class SolverJobService {
       const edition = entry.editionNom ?? entry.editionId ?? '?';
       this.notifications.notify({
         title: $localize`:@@job.alreadyRunningTitle:${entry.label}:jobLabel: déjà en cours`,
-        message: $localize`:@@job.alreadyRunningMessage:Démarrage depuis une autre session il y a ${duration}:duration:, sur l'édition « ${edition}:edition: ». Les actions du solveur sont verrouillées jusqu'à la fin ; la saisie n'est bloquée que sur cette édition-là.`,
+        message: $localize`:@@job.alreadyRunningMessage:Démarrée depuis une autre session il y a ${duration}:duration:, sur l'édition « ${edition}:edition: » ; les actions du solveur sont verrouillées jusqu'à la fin.`,
       });
     }
   }

@@ -108,9 +108,8 @@
       <h2 mat-card-title>{{ group.categorie }}</h2>
       @if (group.dosable) {
         <mat-card-subtitle i18n="@@constraints.dosage.description">
-          Ces règles-là ne s'éteignent pas, elles se <strong>dosent</strong> : elles arbitrent du confort contre du
-          confort, et chaque organisateur les classe différemment. Celle dont vous vous moquez descend à 1 et se fait
-          battre par les autres ; celle qui compte monte. Le réglage vaut pour cette édition seulement.
+          Ces règles ne s'éteignent pas, elles se <strong>dosent</strong> : montez le poids de celle qui compte,
+          descendez à 1 celle qui vous indiffère. Réglage propre à cette édition.
         </mat-card-subtitle>
       }
     </mat-card-header>
@@ -148,7 +147,7 @@
                   <mat-label i18n="@@constraints.poids.label">Poids</mat-label>
                   <input matInput type="number" #poids [min]="poidsMin" [max]="poidsMax" step="1"
                          [value]="constraint.poids" [disabled]="jobs.editingLocked()"
-                         matTooltip="Poids de cette règle pour l'édition en cours, de 1 à 100 : plus il est élevé, plus le solveur la privilégie face aux autres règles du même niveau."
+                         matTooltip="Poids de 1 à 100 pour cette édition : plus il est élevé, plus le solveur privilégie la règle face aux autres du même niveau."
                          i18n-matTooltip="@@constraints.poids.tooltip"
                          (change)="onPoidsChange(constraint, poids)" />
                 </mat-form-field>

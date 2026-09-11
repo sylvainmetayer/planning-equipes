@@ -474,7 +474,7 @@ export class CreneauxPage {
   protected async genererDecoupage(): Promise<void> {
     const confirme = await this.confirm.ask({
       title: $localize`:@@decoupage.generer.title:Générer le découpage`,
-      message: $localize`:@@decoupage.generer.confirm:Les créneaux actuels de l'édition (les amplitudes) seront remplacés par les vacations générées, et le planning résolu sera effacé avec eux. Pour re-découper avec d'autres paramètres, il faudra ré-importer le scénario source.`,
+      message: $localize`:@@decoupage.generer.confirm:Les amplitudes actuelles seront remplacées par les vacations générées et le planning résolu sera effacé. Re-découper ensuite demandera de ré-importer le scénario source.`,
       confirmLabel: $localize`:@@decoupage.generer.submitCourt:Générer les vacations`,
       danger: true,
     });

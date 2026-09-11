@@ -5,8 +5,7 @@
     <h1 mat-card-title i18n="@@fragilite.title">Fragilité du planning</h1>
     <mat-card-subtitle i18n="@@fragilite.subtitle">
       Qui est un point de défaillance unique : les postes qui passeraient sous l'effectif minimum si un animateur se
-      désiste, et les stands tenus par une seule personne compétente. Calculé sur le planning persisté, sans lancer le
-      solveur.
+      désiste, et les stands tenus par une seule personne compétente.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -29,8 +28,8 @@
       <p class="empty-hint">{{ erreur() }}</p>
     } @else if (rapport()?.aucunAnimateur) {
       <p class="empty-hint" i18n="@@fragilite.aucunAnimateur">
-        Aucun animateur saisi : rien n'est réalisable sans animateur, et la fragilité du planning ne peut pas être
-        mesurée. Renseignez la liste des animateurs avant de lancer une résolution.
+        Aucun animateur saisi : la fragilité du planning ne peut pas être mesurée. Renseignez la liste des animateurs
+        avant de lancer une résolution.
       </p>
     } @else if (!rapport() || rapport()!.groupesAnalyses === 0) {
       <p class="empty-hint" i18n="@@fragilite.empty">

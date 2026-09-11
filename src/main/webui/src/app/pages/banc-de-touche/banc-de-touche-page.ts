@@ -179,7 +179,7 @@ export class BancDeTouchePage {
    * the screen itself, and which seat it decides to reason about.
    */
   protected messageEssai(): string {
-    return $localize`:@@bancDeTouche.essai:Cet écran est livré à l'essai : il ne modifie rien et pourra être retiré s'il ne s'avère pas utile. Ce qu'il affiche est en revanche exact, puisque chaque motif vient des contraintes elles-mêmes — dites-nous s'il vous sert.`;
+    return $localize`:@@bancDeTouche.essai:Cet écran est livré à l'essai : il ne modifie rien et pourra être retiré s'il ne s'avère pas utile. Dites-nous s'il vous sert.`;
   }
 
   /**
@@ -250,7 +250,7 @@ export class BancDeTouchePage {
       return $localize`:@@bancDeTouche.noPlan:Aucun planning enregistré : lancez une résolution pour que cet écran ait un plan à interroger.`;
     }
     if (banc.statut === 'NO_SEAT') {
-      return $localize`:@@bancDeTouche.noSeat:Aucun siège sur ce créneau dans le planning enregistré : aucun stand n'y est ouvert, ou le créneau a été créé après la dernière résolution. Choisissez un créneau qui porte des sièges, ou relancez une résolution.`;
+      return $localize`:@@bancDeTouche.noSeat:Aucun siège sur ce créneau dans le planning enregistré : aucun stand ouvert, ou créneau créé après la dernière résolution. Choisissez un créneau qui porte des sièges, ou relancez une résolution.`;
     }
     return $localize`:@@bancDeTouche.everyoneOnDuty:Tout le monde est de service sur ce créneau : le banc est vide.`;
   }

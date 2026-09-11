@@ -24,8 +24,8 @@ describe('messageImpactImport', () => {
     expect(message).toContain('4 verrouillage(s)');
     expect(message).toContain('instantané sera enregistré automatiquement');
     expect(message).toContain("3 demande(s) d'échange (dont 2 en attente)");
-    // The reassuring half: what a kept animateur does NOT lose.
-    expect(message).toContain('gardent leur lien d’espace'.replace('’', "'"));
+    // What a deleted animateur takes away with them.
+    expect(message).toContain("demandes d'échange, sessions et codes d'accès");
   });
 
   it('reste utile sans planning résolu ni demandes : pas de lignes vides', () => {

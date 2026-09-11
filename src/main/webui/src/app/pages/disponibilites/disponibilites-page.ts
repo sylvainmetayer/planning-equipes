@@ -150,7 +150,7 @@ export class DisponibilitesPage {
   protected async apply(declaration: DeclarationAdminView): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: $localize`:@@dispo.appliquerTitre:Appliquer la déclaration de ${declaration.animateurNom}:animateur: ?`,
-      message: $localize`:@@dispo.appliquerMessage:Sa fiche dira désormais ce qu'il a déclaré : ${declaration.joursIndisponibles.length}:jours: jour(s) d'indisponibilité et ${declaration.souhaitsLabels.length}:souhaits: souhait(s) remplaceront ce qu'elle contient. Le planning enregistré devra être régénéré.`,
+      message: $localize`:@@dispo.appliquerMessage:${declaration.joursIndisponibles.length}:jours: jour(s) d'indisponibilité et ${declaration.souhaitsLabels.length}:souhaits: souhait(s) remplaceront le contenu de sa fiche. Le planning enregistré devra être régénéré.`,
       confirmLabel: $localize`:@@dispo.appliquerConfirm:Appliquer`,
     });
     if (!confirmed) {

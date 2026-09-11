@@ -84,7 +84,7 @@ export function premiereErreurHoraire(
 /** The one check that spans several rules, or `null`: same scope, same days, opposite modes. */
 export function messageConflitDeMode(horaires: readonly HoraireDraft[]): string | null {
   return conflitDeMode(horaires)
-    ? $localize`:@@stands.horaires.error.conflitMode:Deux horaires de même portée portant sur les mêmes jours ne peuvent pas être l'un une ouverture et l'autre une fermeture. Utilisez une portée plus précise pour celui qui doit primer.`
+    ? $localize`:@@stands.horaires.error.conflitMode:Deux horaires de même portée sur les mêmes jours ne peuvent pas être l'un une ouverture et l'autre une fermeture : précisez la portée de celui qui doit primer.`
     : null;
 }
 

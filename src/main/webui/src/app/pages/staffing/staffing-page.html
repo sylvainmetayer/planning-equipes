@@ -2,12 +2,8 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@staffing.title">Besoin minimum en effectif</h1>
     <mat-card-subtitle i18n="@@staffing.description">
-      Quatre bornes minimales calculées sur les sièges que le solveur devrait réellement pourvoir (horaires des stands
-      résolus, vacations générées comprises), avant la saisie d'aucun animateur — la plus grande des quatre est retenue.
-      Chacune découle d'une règle que le solveur applique vraiment : nul ne tient deux sièges à la fois, ne travaille
-      plus de dix heures par jour, plus que le plafond hebdomadaire, ni plus de six jours dans la même semaine ISO.
-      Aucune ne tient compte des compétences ni des disponibilités réelles : à traiter comme un plancher de recrutement
-      à dépasser, pas comme une cible — voir la note ci-dessous.
+      Combien d'animateurs il faut au minimum pour tenir tous les sièges, avant toute saisie d'animateur : la plus
+      haute de quatre bornes, chacune issue d'une règle du solveur.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -44,9 +40,8 @@
           <mat-icon inline aria-hidden="true">groups</mat-icon>
           <strong i18n="@@staffing.pauseBound.label">Pic avec pause légale : {{ resume.picAvecPause }}</strong>
           <ng-container i18n="@@staffing.pauseBound.description"> — même pic, chaque vacation prolongée des
-          {{ resume.pauseMinimaleMinutes }} minutes de pause obligatoire entre deux vacations d'une même personne.
-          C'est le nombre exact d'animateurs distincts qu'exige la journée la plus chargée : aucune durée de résolution
-          ne descendra en dessous.</ng-container>
+          {{ resume.pauseMinimaleMinutes }} minutes de pause obligatoire entre deux vacations : le nombre
+          d'animateurs distincts qu'exige la journée la plus chargée.</ng-container>
           @if (resume.jourCritique; as critique) {
             {{ jourCritiqueLabel(critique) }}
           }
@@ -55,11 +50,9 @@
           <mat-icon inline aria-hidden="true">schedule</mat-icon>
           <strong i18n="@@staffing.workloadBound.label">Charge horaire / plafond légal : {{ resume.chargeTotal }}</strong>
           <ng-container i18n="@@staffing.workloadBound.description"> —
-          {{ heuresSemaineCritique() | number: '1.0-0' }} heures-personne à couvrir pendant la semaine la plus chargée,
-          pour {{ heuresParSemaine() | number: '1.0-0' }} h au maximum par animateur cette semaine-là. La borne se
-          prouve semaine par semaine, jamais sur le total de l'événement : les heures d'une semaine ne peuvent être
-          couvertes que par les personnes qui travaillent cette semaine-là, et une semaine que l'événement effleure
-          n'offre pas le plafond hebdomadaire entier.</ng-container>
+          {{ heuresSemaineCritique() | number: '1.0-0' }} heures-personne à couvrir la semaine la plus chargée, pour
+          {{ heuresParSemaine() | number: '1.0-0' }} h au plus par animateur : la borne se prouve semaine par semaine,
+          pas sur le total de l'événement.</ng-container>
           @if (resume.semaineCritique) {
             {{ semaineCritiqueLabel() }}
           }
@@ -83,10 +76,8 @@
 
       <p class="empty-hint staffing-caveat">
         <mat-icon inline aria-hidden="true">warning</mat-icon>
-        <ng-container i18n="@@staffing.caveat">Ces minimums restent optimistes : ils supposent une répartition parfaite, sans tenir compte des
-        compétences de chaque animateur, du repos quotidien, ni du fait qu'un planning réel répartit le travail bien en dessous des plafonds légaux — un
-        événement couvert par 153 personnes peut n'avoir qu'un plancher prouvé de 117. Il n'existe pas de marge universelle à appliquer ici :
-        une fois de vrais animateurs saisis, vérifiez la faisabilité réelle sur la page « Contraintes ».</ng-container>
+        <ng-container i18n="@@staffing.caveat">Ces minimums sont optimistes : répartition parfaite, compétences, repos quotidien et
+        disponibilités ignorés. Une fois les animateurs saisis, vérifiez la faisabilité sur la page « Contraintes ».</ng-container>
       </p>
 
       @if (referentielsManquantsLabel(); as manquants) {
@@ -143,9 +134,8 @@
     <mat-card-header>
       <h2 mat-card-title i18n="@@staffing.competence.title">Goulot par compétence</h2>
       <mat-card-subtitle i18n="@@staffing.competence.description">
-        Les mêmes bornes, typologie par typologie : celle dont la borne dépasse ses spécialistes est le goulot. Un
-        polyvalent compte en renfort, jamais comme spécialiste. Les règles d'attribution sont détaillées sur la page
-        « Aide ».
+        Les mêmes bornes, typologie par typologie : celle dont la borne dépasse ses spécialistes est le goulot, un
+        polyvalent ne comptant qu'en renfort.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>

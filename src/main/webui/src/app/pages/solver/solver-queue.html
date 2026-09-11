@@ -4,8 +4,8 @@
       File d'attente ({{ queue().length }})
     </h3>
     <p class="calendar-meta" i18n="@@solver.file.hint">
-      Ces tâches démarrent d'elles-mêmes, dans cet ordre, dès que le solveur se libère. Chacune lit son édition
-      telle qu'elle sera à ce moment-là : vous pouvez continuer à la préparer.
+      Ces tâches démarrent d'elles-mêmes, dans cet ordre, dès que le solveur se libère ; chacune lit son édition
+      telle qu'elle sera alors.
     </p>
     <ol class="solver-file">
       @for (job of queue(); track job.id) {

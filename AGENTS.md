@@ -614,6 +614,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   a page that uses a class only another route loads — the unit tests render
   without CSS and would never see it. Don't restyle what a Material component
   already themes.
+- **A screen answers, it does not explain** (issue #417): a subtitle is one
+  sentence, a `mat-hint` twelve words at most, nothing repeats what the table
+  or the form shows, and the *why* lives in the help page. `npm run i18n-check`
+  refuses a message over 200 characters outside the help and legal pages — a
+  warning that names a legal rule with its article is the one exception, kept
+  whole. The full rule is in `docs/developpement.md` § *Textes des écrans*.
 - Keep the frontend dependency-light. What is actually there, and why: Angular
   + its CLI + Angular Material + `@angular/localize` (the stack proper);
   `@sentry/angular` (error reporting, loaded by a dynamic `import()` only when a

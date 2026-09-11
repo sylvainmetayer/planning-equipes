@@ -15,9 +15,8 @@
     <div class="espace-foire-fermee">
       <mat-icon>lock</mat-icon>
       <p i18n="@@espace.echanges.foireFermee">
-        La foire au planning est fermée : vous pouvez consulter votre planning et vos demandes
-        passées, mais plus en proposer ni en annuler. Rapprochez-vous de l'organisation si un
-        échange reste nécessaire.
+        La foire au planning est fermée : vous ne pouvez plus proposer ni annuler d'échange. Si un
+        échange reste nécessaire, rapprochez-vous de l'organisation.
       </p>
     </div>
   }
@@ -34,13 +33,9 @@
   <mat-card-header>
     <mat-card-title i18n="@@espace.echanges.formTitre">Proposer un échange</mat-card-title>
     <mat-card-subtitle i18n="@@espace.echanges.formSousTitre">
-      Choisissez un de vos créneaux, le ou la collègue avec qui échanger, et un motif. Si vous ne
-      voulez simplement pas de ce créneau et n'avez personne en tête, le bouton « Qui peut me
-      remplacer ? » cherche pour vous les collègues avec qui l'échange tient. Vous pouvez
-      aussi désigner le créneau du collègue que vous voulez récupérer en échange (« je te laisse mon
-      lundi, je prends ton mardi ») — sans ce choix, l'échange se joue sur votre seul créneau.
-      Ajoutez autant de demandes que nécessaire puis soumettez la liste : l'organisation valide (ou
-      non) chaque échange.
+      Choisissez un de vos créneaux, le ou la collègue avec qui échanger et un motif ; sans personne
+      en tête, « Qui peut me remplacer ? » cherche pour vous. L'organisation valide ensuite chaque
+      échange.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -99,8 +94,8 @@
         } @else if (suggestions(); as trouvees) {
           @if (trouvees.suggestions.length === 0) {
             <p class="espace-suggestions-vide" i18n="@@espace.echanges.suggestionsAucune">
-              Aucun échange ne tient sur ce créneau en l'état du planning. Vous pouvez tout de même
-              proposer l'échange à quelqu'un : l'organisation tranchera.
+              Aucun échange ne tient en l'état du planning. Vous pouvez tout de même en proposer
+              un : l'organisation tranchera.
             </p>
           } @else {
             <p class="espace-suggestions-intro" i18n="@@espace.echanges.suggestionsIntro">
@@ -235,8 +230,7 @@
           <p class="espace-demande-motif">{{ demande.motif }}</p>
         }
         <p class="espace-demande-explication" i18n="@@espace.recues.explication">
-          Votre accord envoie la demande à l'organisation, qui tranche — rien n'est échangé sans sa
-          validation. Décliner clôt la demande.
+          Votre accord transmet la demande à l'organisation, qui tranche. Décliner clôt la demande.
         </p>
         @if (foireOpen()) {
           <div class="espace-recue-actions">

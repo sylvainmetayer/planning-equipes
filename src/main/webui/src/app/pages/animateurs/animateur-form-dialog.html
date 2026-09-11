@@ -27,7 +27,7 @@
   <input matInput name="dateNaissance" type="date" required
          [ngModel]="draft().dateNaissance" (ngModelChange)="patch({ dateNaissance: $event })" />
   <mat-hint i18n="@@animateurs.hint.dateNaissance">
-    Détermine le régime légal appliqué (moins de 16 ans / 16-18 ans / majeur), recalculé à la date de chaque créneau.
+    Détermine le régime légal (moins de 16 ans, 16-18 ans, majeur).
   </mat-hint>
 </mat-form-field>
 <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -35,7 +35,7 @@
   <input matInput name="email" type="email" autocomplete="off"
          [ngModel]="draft().email" (ngModelChange)="patch({ email: $event })" />
   <mat-hint i18n="@@animateurs.hint.email">
-    Sert uniquement à notifier l'animateur du résultat de ses demandes d'échange.
+    Adresse des notifications envoyées à l'animateur (code d'accès, échanges, rappels).
   </mat-hint>
 </mat-form-field>
 @if (moinsDe16Ans()) {

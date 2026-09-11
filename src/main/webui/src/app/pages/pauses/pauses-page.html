@@ -4,8 +4,8 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@pauses.title">Pauses</h1>
     <mat-card-subtitle i18n="@@pauses.subtitle">
-      La rotation des pauses légales, jour par jour et stand par stand : qui sort de quelle heure à quelle heure, une
-      personne à la fois par stand, et qui est là pour relayer. Lue sur le planning persisté, sans lancer le solveur.
+      La rotation des pauses légales, jour par jour et stand par stand : qui sort à quelle heure, et qui est là pour
+      relayer.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -37,9 +37,8 @@
         <p class="pauses-alerte" role="status">
           <mat-icon inline>warning</mat-icon>
           <span i18n="@@pauses.nonDeclare">
-            La pause prise sur le poste n'est pas déclarée : ces séquences dépassent la durée légale de travail continu.
-            Déclarez-la dans les
-            <a routerLink="/constraints">paramètres légaux</a>, ou planifiez un trou entre deux vacations.
+            La pause sur le poste n'est pas déclarée : ces séquences dépassent la durée légale de travail continu.
+            Déclarez-la (<a routerLink="/constraints">paramètres légaux</a>) ou espacez les vacations.
           </span>
         </p>
       }

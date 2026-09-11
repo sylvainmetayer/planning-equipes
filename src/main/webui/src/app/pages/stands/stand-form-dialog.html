@@ -61,7 +61,7 @@
     <mat-select name="famille" [disabled]="editingLocked()" [ngModel]="draft().famille"
                 (ngModelChange)="patch({ famille: $event })"
                 i18n-matTooltip="@@stands.famille.tooltip"
-                matTooltip="Sur une grille décalée, chaque stand relaie avec les stands de sa famille. Laissée vide, la moins peuplée est choisie ; un stand ajouté ne déplace jamais les autres.">
+                matTooltip="Sur une grille décalée, le stand relaie avec les stands de sa famille. Vide : la moins peuplée est choisie.">
       <mat-option [value]="null" i18n="@@stands.famille.auto">Automatique (la moins peuplée)</mat-option>
       @for (famille of familles(); track famille) {
         <mat-option [value]="famille" i18n="@@stands.famille.option">Famille {{ famille + 1 }}</mat-option>
@@ -83,15 +83,10 @@
 <fieldset class="span-2 horaires-section stand-section">
   <legend i18n="@@stands.horaires.title">Horaires récurrents</legend>
   <p class="empty-hint" i18n="@@stands.horaires.hint">
-    Le stand est ouvert sur chaque créneau par défaut. Une règle décrit un motif qui se répète : tapez les fenêtres
-    d'une journée en une ligne, « 10:00-12:00, 14:00- » — une fin vide court jusqu'à la fermeture du jour, « @2 »
-    fixe l'effectif d'une fenêtre. Une règle vaut tous les jours et dit quand le stand est ouvert ; « Cas particulier »
-    la restreint à certains jours, ou en fait une fermeture.
+    Ouvert sur chaque créneau par défaut. Une règle vaut tous les jours, en une ligne : « 10:00-12:00, 14:00- ». « Cas particulier » la restreint à certains jours ou en fait une fermeture.
   </p>
   <p class="empty-hint" i18n="@@stands.horaires.hintMasse">
-    Mêmes horaires sur plusieurs stands ? Inutile de les ressaisir ici stand par stand : cochez les stands concernés
-    dans la liste, puis « Modifier la sélection » applique un jeu de règles à tous d'un coup (ajouter, remplacer ou
-    effacer).
+    Mêmes horaires sur plusieurs stands ? Cochez-les dans la liste, puis « Modifier la sélection ».
   </p>
   <app-horaire-regles-editor [horaires]="draft().horaires" [effectifMax]="effectifMaxDeclare()"
                              [disabled]="editingLocked()" (horairesChange)="patch({ horaires: $event })" />
@@ -99,8 +94,7 @@
 <fieldset class="span-2 stand-section">
   <legend i18n="@@stands.indisponibilites.title">Fermetures ponctuelles</legend>
   <p class="empty-hint" i18n="@@stands.indisponibilites.hint">
-    Une exception datée : elle prime sur les règles ci-dessus, pour le seul jour qu'elle nomme, et remplace
-    entièrement ce qu'elles disaient de ce jour-là. Le stand est ouvert le reste de la journée.
+    Une fermeture datée prime sur les règles pour le jour qu'elle nomme ; le stand reste ouvert le reste de la journée.
   </p>
   @for (indispo of draft().indisponibilites; track $index) {
     <div class="indisponibilite-row">
@@ -142,8 +136,7 @@
 <fieldset class="span-2 stand-section">
   <legend i18n="@@stands.ouvertures.title">Ouvertures ponctuelles</legend>
   <p class="empty-hint" i18n="@@stands.ouvertures.hint">
-    L'inverse : ce jour-là, le stand n'est ouvert QUE sur les fenêtres listées. Prime aussi sur les règles. Un même
-    jour ne peut pas porter à la fois une fermeture et une ouverture.
+    Ce jour-là, le stand n'est ouvert que sur les fenêtres listées ; prime aussi sur les règles.
   </p>
   @for (ouverture of draft().ouvertures; track $index) {
     <div class="indisponibilite-row">

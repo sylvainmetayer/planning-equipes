@@ -183,7 +183,7 @@ export class CreneauSerieDialog {
       case 'FENETRE_ILLISIBLE':
         return $localize`:@@creneaux.serie.error.fenetreIllisible:« ${morceau ?? ''}:morceau: » n'est pas une fenêtre : écrivez « début-fin », les heures comme 09:00 ou 9h30.`;
       case 'FIN_REQUISE':
-        return $localize`:@@creneaux.serie.error.finRequise:La fenêtre qui commence à ${morceau ?? ''}:debut: n'a pas de fin : un créneau est l'amplitude du jour elle-même, il n'a pas de fermeture dont hériter.`;
+        return $localize`:@@creneaux.serie.error.finRequise:La fenêtre qui commence à ${morceau ?? ''}:debut: n'a pas de fin : un créneau n'a pas de fermeture dont hériter.`;
       case 'EFFECTIF_REFUSE':
         return $localize`:@@creneaux.serie.error.effectifRefuse:« ${morceau ?? ''}:morceau: » : un créneau ne porte pas d'effectif, c'est chaque stand qui dit le sien.`;
       case 'PLAGE_REQUISE':

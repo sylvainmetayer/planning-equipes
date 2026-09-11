@@ -64,9 +64,9 @@ test.describe('Accusé de réception : la colonne s’explique', () => {
     // Les trois règles qui ne se devinent pas doivent y figurer.
     const explication = (await aide.getAttribute('aria-label')) ?? '';
     expect(explication).toContain('Relancé');
-    expect(explication).toContain("Il n'y en aura pas d'autre");
-    expect(explication).toContain('on ne lui a rien demandé');
-    expect(explication).toContain('que les personnes dont le planning a réellement changé');
+    expect(explication).toContain('sans autre relance');
+    expect(explication).toContain('aucun poste au planning publié');
+    expect(explication).toContain('que ceux dont le planning a changé');
 
     // Atteignable au clavier : l'infobulle doit s'ouvrir sur une tabulation.
     //
@@ -96,7 +96,7 @@ test.describe('Accusé de réception : la colonne s’explique', () => {
     // div, décrit au lecteur d'écran par l'`aria-label` vérifié plus haut. On
     // vérifie donc ce qu'une personne voit — le texte, dans la surcouche.
     await expect(
-      page.locator('.cdk-overlay-container').getByText("Il n'y en aura pas d'autre"),
+      page.locator('.cdk-overlay-container').getByText('sans autre relance'),
     ).toBeVisible();
 
     await page.close();

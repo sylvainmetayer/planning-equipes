@@ -4,9 +4,8 @@
   <mat-card class="espace-dispo-intro" appearance="outlined">
     <mat-card-content>
       <p i18n="@@espace.dispo.intro">
-        Dites à l'organisation les jours où vous ne pouvez pas venir, et les types de jeux que vous
-        aimeriez animer. Ce que vous envoyez est une <strong>proposition</strong> : l'organisation la
-        relit avant de l'appliquer.
+        Indiquez les jours où vous ne pouvez pas venir et les types de jeux que vous aimeriez animer.
+        L'organisation relit votre déclaration avant de l'appliquer.
       </p>
       @if (declaration.collecteOuverte) {
         <p class="espace-dispo-fenetre">
@@ -35,8 +34,7 @@
         <p class="espace-dispo-fermee">
           <mat-icon inline>lock</mat-icon>
           <span i18n="@@espace.dispo.fermee"
-            >La collecte est fermée : vous ne pouvez plus envoyer de déclaration. Prévenez
-            directement l'organisation en cas d'empêchement.</span
+            >La collecte est fermée. En cas d'empêchement, prévenez directement l'organisation.</span
           >
         </p>
       }

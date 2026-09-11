@@ -177,7 +177,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
     }
     const confirme = await this.confirm.ask({
       title: $localize`:@@stands.compactage.confirmTitle:Compacter les horaires ?`,
-      message: $localize`:@@stands.compactage.confirmMessage:${apercu.standsCompactes}:stands: stand(s) verront leurs ${apercu.fenetresAvant}:avant: plages datées remplacées par ${apercu.fenetresApres}:apres: règles et exceptions. Les stands dont les règles ne reproduiraient pas exactement les mêmes ouvertures sont laissés inchangés.`,
+      message: $localize`:@@stands.compactage.confirmMessage:${apercu.standsCompactes}:stands: stand(s) : ${apercu.fenetresAvant}:avant: plages datées remplacées par ${apercu.fenetresApres}:apres: règles et exceptions. Un stand dont les règles changeraient ses ouvertures est laissé inchangé.`,
       confirmLabel: $localize`:@@stands.compactage.confirmLabel:Compacter`,
     });
     if (!confirme) {

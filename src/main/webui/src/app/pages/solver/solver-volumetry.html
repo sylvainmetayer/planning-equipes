@@ -34,11 +34,8 @@
     </div>
     @if (fillRatio(); as taux) {
       <p class="solver-volumetry-formula" i18n="@@solver.volumetry.hours">
-        Soit {{ hoursToFill() | number: '1.0-0' }} heures à pourvoir pour un plafond légal de
-        {{ hoursAvailable() | number: '1.0-0' }} heures que les animateurs peuvent travailler, jours
-        d'indisponibilité déduits — un taux de remplissage de {{ taux | number: '1.2-2' }}. Ce plafond ignore les
-        compétences, le repos entre vacations et la règle de pause : un taux proche de 1 est déjà un planning
-        infaisable.
+        Taux de remplissage : {{ taux | number: '1.2-2' }} (heures à pourvoir sur heures offertes, indisponibilités
+        déduites). Compétences, repos et pauses non comptés : un taux proche de 1 est déjà infaisable.
       </p>
     }
     <p class="solver-volumetry-formula">
@@ -48,7 +45,7 @@
       @if (problemScale() > 0) {
         <strong i18n="@@solver.volumetry.formulaLabel">
           &nbsp;— soit un espace de recherche d'environ 10^{{ problemScale() }} affectations théoriques
-          (« problem scale » ≈ {{ problemScale() }} au sens Timefold), avant élimination des affectations impossibles.
+          (« problem scale » ≈ {{ problemScale() }}), avant élimination des affectations impossibles.
         </strong>
       }
     </p>

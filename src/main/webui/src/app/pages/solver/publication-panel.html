@@ -2,12 +2,7 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@solver.diffusion.title">Diffusion du planning</h2>
     <mat-card-subtitle i18n="@@solver.diffusion.hint">
-      Ce qui sort de l'application une fois le planning satisfaisant : les documents à imprimer ou à archiver, et
-      la publication du planning. Publier, c'est envoyer leur planning à jour aux seules personnes dont l'emploi du
-      temps a changé depuis la dernière fois, en leur disant ce qui change — et c'est ce plan publié que chaque
-      animateur voit dans son espace. Ces actions lisent le planning enregistré de l'édition affichée ; elles ne sont
-      indisponibles que pendant une résolution sur cette édition-là, puisqu'elle est en train de le réécrire. Une
-      résolution lancée sur une autre édition ne les bloque pas.
+      Documents à imprimer ou à archiver, et envoi du planning enregistré aux seules personnes dont l'emploi du temps a changé.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -17,7 +12,7 @@
     </button>
     <button matButton="tonal" [disabled]="exportBusy() || editingLocked()"
             i18n-matTooltip="@@solver.exportGlobal.tooltip"
-            matTooltip="Le planning complet dans un seul PDF, pour l'organisateur : toutes les affectations, présentées journée par journée puis stand par stand."
+            matTooltip="Toutes les affectations dans un seul PDF, journée par journée puis stand par stand."
             (click)="exportGlobalPdf()">
       <mat-icon>picture_as_pdf</mat-icon>
       <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
@@ -25,7 +20,7 @@
     <button matButton="tonal"
             [disabled]="busy() || editingLocked() || !publishable()"
             i18n-matTooltip="@@publication.bouton.tooltip"
-            matTooltip="Envoyer leur planning à jour aux seules personnes dont l'emploi du temps a changé depuis la dernière publication, en leur disant ce qui change."
+            matTooltip="Prévient uniquement les personnes dont l'emploi du temps a changé depuis la dernière publication, en leur disant ce qui change."
             (click)="publish()">
       <mat-icon>forward_to_inbox</mat-icon>
       <span>{{ publishLabel() }}</span>
@@ -40,8 +35,8 @@
            fabricated percentage would be a lie. -->
       <p class="publication-envoi" aria-live="polite">
         <ng-container i18n="@@publication.envoiEnCours">
-          Envoi en cours vers {{ recipientsInFlight() }} personne(s). Cela peut prendre plusieurs
-          dizaines de secondes ; laissez cet écran ouvert, un seul envoi part à la fois.
+          Envoi en cours vers {{ recipientsInFlight() }} personne(s) ; cela peut prendre plusieurs dizaines de
+          secondes. Laissez cet écran ouvert.
         </ng-container>
       </p>
       <mat-progress-bar mode="indeterminate"
@@ -56,8 +51,8 @@
     </p>
     @if (preview()?.jamaisPublie) {
       <p class="publication-note" i18n="@@publication.premiere">
-        Rien n'a encore été communiqué sur cette édition : tant que vous n'avez pas publié, l'espace de chaque
-        animateur reste vide. La première publication concerne donc tout le monde.
+        Tant que rien n'est publié, l'espace de chaque animateur reste vide ; la première publication concerne
+        tout le monde.
       </p>
     }
     @if (unavailableReason(); as raison) {

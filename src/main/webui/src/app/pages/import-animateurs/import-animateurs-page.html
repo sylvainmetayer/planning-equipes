@@ -1,10 +1,8 @@
 <div class="page-header">
   <h1 i18n="@@importCsv.titre">Import des animateurs (CSV)</h1>
   <p i18n="@@importCsv.intro">
-    Déposez le tableur de vos bénévoles, exporté en CSV, dites quelle colonne est quel champ,
-    lisez ce que l'import ferait, puis validez. Rien n'est écrit avant cette validation : tant que
-    vous n'avez pas cliqué sur « Importer », cet écran ne fait que lire votre fichier. Le fichier
-    reste en mémoire, il n'est jamais enregistré sur le serveur.
+    Déposez le CSV de vos bénévoles, associez ses colonnes aux champs et lisez l'aperçu : rien
+    n'est écrit avant « Importer », et le fichier n'est jamais enregistré sur le serveur.
   </p>
 </div>
 
@@ -12,18 +10,14 @@
   <mat-card-header>
     <mat-card-title i18n="@@importCsv.fichier.titre">1. Le fichier</mat-card-title>
     <mat-card-subtitle i18n="@@importCsv.fichier.aide">
-      Format CSV uniquement — séparateur virgule, point-virgule ou tabulation, reconnu tout seul.
-      Un classeur .xlsx doit d'abord être ré-enregistré en CSV depuis votre tableur — mais ne
-      rouvrez pas un CSV déjà prêt dans ce tableur : il réécrit les dates avec l'année sur deux
-      chiffres (« 12/09/26 »). Une telle date est lue quand même, et l'aperçu dit comment elle a
-      été comprise : vérifiez-la avant d'importer.
+      Format CSV uniquement. Ne rouvrez pas le CSV dans un tableur : il réécrit les années sur deux
+      chiffres (« 12/09/26 ») et l'aperçu dit alors comment une telle date a été lue.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <p class="empty-hint" i18n="@@importCsv.fichier.format">
-      La date de naissance est obligatoire pour créer une fiche : tout le régime mineur / majeur en
-      dépend. Les compétences, les souhaits et les jours d'indisponibilité peuvent tenir plusieurs
-      valeurs dans une même cellule, séparées par « | ». Une compétence s'écrit « typologie » ou
+      La date de naissance est obligatoire pour créer une fiche. Plusieurs valeurs dans une même
+      cellule sont séparées par « | » ; une compétence s'écrit « typologie » ou
       « typologie:REFERENT ».
     </p>
     <div class="card-actions">
@@ -74,8 +68,8 @@
     <mat-card-header>
       <mat-card-title i18n="@@importCsv.mapping.titre">2. Les colonnes</mat-card-title>
       <mat-card-subtitle i18n="@@importCsv.mapping.aide">
-        Une correspondance est proposée à partir des en-têtes ; corrigez-la librement. Un champ
-        laissé sur « — » n'est pas dans le fichier : il ne touchera pas les fiches déjà en base.
+        Correspondance proposée d'après les en-têtes, à corriger librement. Un champ laissé sur
+        « — » ne touchera pas les fiches déjà en base.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
@@ -114,9 +108,8 @@
         >
       </mat-checkbox>
       <p class="empty-hint" i18n="@@importCsv.options.remplacerAnimateursAide">
-        Décoché (par défaut), l'import ajoute et met à jour, sans jamais supprimer personne. Coché,
-        il refuse de s'exécuter tant qu'une ligne est rejetée — sinon il supprimerait justement les
-        personnes que ces lignes n'ont pas su décrire.
+        Décoché, l'import ajoute et met à jour sans jamais supprimer personne. Coché, il refuse de
+        s'exécuter tant qu'une ligne est rejetée.
       </p>
       @if (remplacementBloque()) {
         <p class="field-error" i18n="@@importCsv.options.remplacementBloque">
@@ -134,8 +127,8 @@
         >
       </mat-checkbox>
       <p class="empty-hint" i18n="@@importCsv.options.remplacerJoursAide">
-        Décoché (par défaut), les jours du fichier s'ajoutent à ceux déjà enregistrés : un import de
-        rattrapage n'efface pas ce que les animateurs ont déclaré eux-mêmes.
+        Décoché, les jours du fichier s'ajoutent à ceux déjà enregistrés, y compris ceux que les
+        animateurs ont déclarés eux-mêmes.
       </p>
     </mat-card-content>
   </mat-card>

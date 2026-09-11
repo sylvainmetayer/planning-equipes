@@ -6,9 +6,7 @@
   <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
 }
 <p class="empty-hint span-2" i18n="@@creneaux.serie.hint">
-  Une règle crée tous les créneaux d'une journée type sur les jours choisis — « 09:00-12:00, 14:00-18:00 » tous les
-  jours du 6 au 19 juillet, ou du lundi au vendredi. Les créneaux existants ne sont pas touchés : la série s'ajoute.
-  Prévisualisez d'abord : le serveur dit ce que la règle ajouterait et ce que la grille deviendrait.
+  Une règle crée les créneaux d'une journée type sur les jours choisis ; les créneaux existants ne sont pas touchés, la série s'ajoute.
 </p>
 <mat-form-field appearance="outline" class="span-2">
   <mat-label i18n="@@creneaux.serie.fenetres">Créneaux d'une journée</mat-label>
@@ -81,7 +79,7 @@
       </p>
     }
     @if (bloquee()) {
-      <p class="field-error" role="alert" i18n="@@creneaux.serie.bloquee">Cette règle ajouterait {{ erreursIntroduites().length }} erreur(s) à la grille — un doublon, le plus souvent : corrigez-la avant de créer. Les anomalies déjà présentes ne bloquent pas.</p>
+      <p class="field-error" role="alert" i18n="@@creneaux.serie.bloquee">Cette règle ajouterait {{ erreursIntroduites().length }} erreur(s) à la grille, le plus souvent un doublon : corrigez-la avant de créer.</p>
     }
     @if (anomalies().length > 0) {
       <ul class="ouvertures-anomalies serie-anomalies">

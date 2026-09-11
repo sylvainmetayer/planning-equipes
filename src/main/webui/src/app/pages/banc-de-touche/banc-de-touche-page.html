@@ -1,7 +1,7 @@
 <app-work-in-progress-banner
   [message]="messageEssai()"
   i18n-marche="@@bancDeTouche.wip.marche"
-  marche="les motifs affichés sont ceux des contraintes que le solveur applique vraiment, lus sur le plan enregistré — ce qui est écrit là est exact"
+  marche="les motifs affichés sont ceux des contraintes que le solveur applique, lus sur le plan enregistré"
   i18n-manque="@@bancDeTouche.wip.manque"
   manque="agir depuis cet écran, et le choix du siège évalué quand un créneau en compte plusieurs de libres"
 />
@@ -10,10 +10,8 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@bancDeTouche.title">Banc de touche</h1>
     <mat-card-subtitle i18n="@@bancDeTouche.description">
-      Pour un créneau donné, qui n'est affecté nulle part — et, pour chacun, la règle qui l'empêcherait de prendre le
-      siège évalué. Chaque motif est une contrainte réellement appliquée par le solveur, avec son libellé du catalogue :
-      cet écran n'en réécrit aucune. Tous les motifs applicables sont affichés, pas seulement le plus bloquant. En
-      lecture seule : affecter quelqu'un passe par l'assistant de réparation.
+      Pour un créneau, qui n'est affecté nulle part et quelle règle du solveur l'empêcherait de prendre le siège
+      évalué. Lecture seule : affecter quelqu'un passe par l'assistant de réparation.
     </mat-card-subtitle>
   </mat-card-header>
 

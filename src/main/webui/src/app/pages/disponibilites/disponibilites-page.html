@@ -1,11 +1,8 @@
 <div class="page-header">
   <h1 i18n="@@dispo.titre">Disponibilités déclarées</h1>
   <p i18n="@@dispo.intro">
-    Les jours d'indisponibilité et les souhaits que les animateurs déclarent eux-mêmes depuis leur
-    espace, pendant la fenêtre de collecte que vous ouvrez. Une déclaration ne modifie rien tant
-    que vous ne l'avez pas appliquée : apply écrit la proposition entière sur la fiche de
-    l'animateur, refuser ne touche à rien. Un animateur n'a jamais qu'une proposition en attente —
-    la dernière qu'il a envoyée.
+    Les jours d'indisponibilité et les souhaits que les animateurs déclarent depuis leur espace
+    pendant la fenêtre de collecte.
   </p>
   <button matButton (click)="reload()" [disabled]="chargement()">
     <mat-icon>refresh</mat-icon>
@@ -24,7 +21,7 @@
           >
         } @else {
           <ng-container i18n="@@dispo.fenetre.fermee"
-            >Fermée : les déclarations sont refusées côté serveur, pas seulement masquées.</ng-container
+            >Fermée : les animateurs ne peuvent plus déclarer.</ng-container
           >
         }
       </mat-card-subtitle>
@@ -46,8 +43,7 @@
         >
       </mat-checkbox>
       <p class="dispo-admin-commentaire" i18n="@@dispo.fenetre.prevenirAide">
-        À cocher au premier tour. Inutile — et lassant — quand vous rouvrez la fenêtre après une
-        correction.
+        Inutile quand vous rouvrez la fenêtre après une correction.
       </p>
       <div class="dispo-admin-actions">
         <button

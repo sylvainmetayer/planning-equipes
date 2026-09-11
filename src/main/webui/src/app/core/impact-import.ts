@@ -16,7 +16,7 @@ export function messageImpactImport(
   avecInstantane = true,
 ): string {
   const lignes: string[] = [
-    $localize`:@@dataSetup.impact.base:Cette action va ${intitule}:action: : les stands et animateurs sont remplacés par ceux du fichier, et ceux qui n'y figurent pas sont supprimés — avec leurs demandes d'échange, sessions et codes d'accès. Les animateurs conservés gardent leur lien d'espace et leur e-mail.`,
+    $localize`:@@dataSetup.impact.base:Cette action va ${intitule}:action: : les stands et animateurs absents du fichier sont supprimés, avec leurs demandes d'échange, sessions et codes d'accès.`,
   ];
   if (impact) {
     lignes.push(

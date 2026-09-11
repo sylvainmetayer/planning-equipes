@@ -3,10 +3,8 @@
     <mat-card-header>
       <h3 mat-card-title i18n="@@parametres.notifications.title">Rappels et relances automatiques</h3>
       <mat-card-subtitle i18n="@@parametres.notifications.subtitle">
-        Chaque nuit, l'application peut rappeler aux animateurs qu'ils sont attendus le lendemain, relancer ceux
-        qui n'ont pas accusé réception de leur planning, et signaler les demandes d'échange qui attendent une
-        décision. Rien ne part tant que cette édition n'est pas explicitement activée ci-dessous : une édition
-        passée porte les mêmes animateurs, et personne ne veut écrire aux bénévoles de l'an dernier.
+        Chaque nuit : rappel de la veille, relance des plannings non accusés et signalement des échanges en
+        attente ; rien ne part tant que l'édition n'est pas activée ci-dessous.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
@@ -29,8 +27,7 @@
             (change)="majHeure($any($event.target).value)"
           />
           <mat-hint i18n="@@parametres.notifications.heureAide">
-            Le rappel liste les postes du lendemain, tels qu'ils ont été publiés. Au plus tard 23h00 : la tâche
-            s'exécute une fois par heure, et un rappel réglé plus tard ne partirait jamais.
+            Au plus tard 23h00 : un rappel réglé plus tard ne partirait jamais.
           </mat-hint>
         </mat-form-field>
 
@@ -45,7 +42,7 @@
             (change)="majDelaiRelance($any($event.target).value)"
           />
           <mat-hint i18n="@@parametres.notifications.delaiRelanceAide">
-            Compté depuis la publication. Une seule relance par personne et par planning publié.
+            Depuis la publication ; une seule relance par personne et par planning.
           </mat-hint>
         </mat-form-field>
 

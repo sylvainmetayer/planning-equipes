@@ -10,7 +10,7 @@
     </button>
     <button matButton type="button" [disabled]="editingLocked() || compactageEnCours()"
             i18n-matTooltip="@@stands.compactage.tooltip"
-            matTooltip="Réécrit les plages datées répétées en règles d'horaire équivalentes. Un aperçu est affiché avant d'écrire, et un stand dont les règles ne reproduiraient pas exactement les mêmes ouvertures est laissé inchangé."
+            matTooltip="Réécrit les plages datées répétées en règles d'horaire équivalentes, avec un aperçu avant d'écrire."
             (click)="compacterHoraires()">
       <mat-icon>compress</mat-icon>
       <ng-container i18n="@@stands.compactage.action">Compacter les horaires</ng-container>
@@ -23,7 +23,7 @@
     </a>
     <a matButton routerLink="/import-grille-stands"
        i18n-matTooltip="@@stands.importGrille.tooltip"
-       matTooltip="Verser la matrice du classeur — stands en lignes, jours et créneaux en colonnes — depuis un fichier CSV, avec un aperçu ligne par ligne.">
+       matTooltip="Charger un fichier CSV — stands en lignes, jours et créneaux en colonnes — avec un aperçu avant d'écrire.">
       <mat-icon>upload_file</mat-icon>
       <ng-container i18n="@@stands.importGrille.action">Importer la grille</ng-container>
     </a>

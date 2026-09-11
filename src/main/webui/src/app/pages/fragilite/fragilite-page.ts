@@ -135,7 +135,7 @@ export class FragilitePage {
    * out, and goes away if it earns nothing.
    */
   protected messageEssai(): string {
-    return $localize`:@@fragilite.essai:Cet écran est livré à l'essai : il pourra être retiré s'il ne s'avère pas utile. Ce qu'il affiche est en revanche exact — dites-nous s'il vous sert.`;
+    return $localize`:@@fragilite.essai:Cet écran est livré à l'essai : il pourra être retiré s'il ne s'avère pas utile. Dites-nous s'il vous sert.`;
   }
 
   protected libelleSeverite(severite: SeveriteFragilite): string {

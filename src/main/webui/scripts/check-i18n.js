@@ -23,6 +23,12 @@
 //                -> the English guide sends a reader looking for a button that
 //                   reads differently on screen. Naming a control is only
 //                   worth it if the reader finds that exact wording.
+//   long         a message over 200 characters outside the user guides, the
+//                legal pages and the messages that name a legal rule with its
+//                article
+//                -> a screen that explains instead of answering: the prose
+//                   that the pass of issue #417 removed comes back one hint
+//                   at a time unless something refuses it.
 //   périmé       the French source was rewritten under the same id and the
 //                English string was not touched (`--modifies` only)
 //                -> the English screen still says the previous version, and
@@ -63,6 +69,27 @@ function extraire(webui = WEBUI) {
   } finally {
     rmSync(sortie, { recursive: true, force: true });
   }
+}
+
+/**
+ * The ceiling on a screen message, in characters once whitespace is collapsed.
+ * Beyond it a message is documentation, and documentation has two homes — the
+ * help page and the espace's help — where length is not the question. The
+ * legal pages are text by nature, and a warning that names a rule with its
+ * article is kept whole: shortening it is what would cost the tool its
+ * defensibility. The liability wording of the legal-disable dialog
+ * (`constraints.legalDisable.*`) is legal text too, only spoken on a screen.
+ */
+const PLAFOND = 200;
+const HORS_PLAFOND =
+  /^(aide|espace\.aide|mentions|cgu|confidentialite|legalText|constraints\.legalDisable)\./;
+const CITE_UN_ARTICLE = /\b(art(?:icle|\.)\s*[LRD]\.?\s?\d|[LRD]\d{4}-\d)/i;
+
+function messagesTropLongs(source) {
+  return Object.keys(source)
+    .filter((id) => !HORS_PLAFOND.test(id))
+    .filter((id) => !CITE_UN_ARTICLE.test(source[id]))
+    .filter((id) => source[id].replace(/\s+/g, ' ').trim().length > PLAFOND);
 }
 
 /** The base named after `--modifies`, or null when the ratchet is not asked for. */
@@ -204,17 +231,19 @@ const divergents = Object.keys(source)
   .filter((id) => placeholders(source[id]).join('|') !== placeholders(anglais[id]).join('|'));
 
 const libelles = libellesDivergents(source, anglais);
+const longs = messagesTropLongs(source);
 
 if (
   manquants.length === 0 &&
   orphelins.length === 0 &&
   divergents.length === 0 &&
   libelles.size === 0 &&
+  longs.length === 0 &&
   perimes.length === 0
 ) {
   const cliquet = base === null ? '' : `, aucune traduction périmée par rapport à ${base}`;
   console.log(
-    `i18n-check : ${Object.keys(source).length}/${Object.keys(source).length} messages traduits, placeholders cohérents, libellés cités alignés sur l'écran${cliquet}.`,
+    `i18n-check : ${Object.keys(source).length}/${Object.keys(source).length} messages traduits, placeholders cohérents, libellés cités alignés sur l'écran, aucun message au-dessus de ${PLAFOND} caractères hors aide et légal${cliquet}.`,
   );
   process.exit(0);
 }
@@ -253,6 +282,15 @@ if (libelles.size > 0) {
             `      à l'écran (en) : ${ecart.attendus.map((attendu) => JSON.stringify(attendu)).join(' | ')}`,
         )
         .join('\n'),
+  );
+}
+
+if (longs.length > 0) {
+  lister(
+    `Messages de plus de ${PLAFOND} caractères hors aide, pages légales et règles citées avec leur article — à resserrer, ou à déplacer vers l'aide`,
+    longs,
+    (id) =>
+      `      ${source[id].replace(/\s+/g, ' ').trim().length} caractères : ${JSON.stringify(source[id].replace(/\s+/g, ' ').trim().slice(0, 90))}…`,
   );
 }
 

@@ -2,8 +2,8 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@nav.link.debug">Débogage</h1>
     <mat-card-subtitle i18n="@@debug.description">
-      Diagnostic brut de la dernière résolution ou analyse : score global, postes non pourvus, faisabilité
-      et score/nombre de correspondances par contrainte (sans animateurs/créneaux/postes).
+      Diagnostic brut de la dernière résolution : score, postes non pourvus, faisabilité et détail par
+      contrainte.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -44,13 +44,12 @@
       </button>
     </div>
     <p class="debug-version" i18n="@@debug.mailTest.hint">
-      Vérifie la chaîne d'envoi d'e-mails de bout en bout, en envoyant un vrai message à l'adresse
-      administrateur configurée :
+      Envoie un vrai message à l'adresse administrateur configurée :
     </p>
     @if (mailAdmin() === null) {
       <app-status-message
         i18n-text="@@debug.mailTest.absent"
-        text="Aucune adresse e-mail administrateur n'est configurée (variable MAIL_ADMIN) : ce test et les notifications de nouvelles demandes d'échange sont désactivés."
+        text="Aucune adresse administrateur n'est configurée (variable MAIL_ADMIN) : ce test et les notifications d'échange sont désactivés."
         tone="warning"
       />
     }
@@ -95,10 +94,8 @@
     <mat-card-header>
       <h2 mat-card-title i18n="@@debug.dateDuJour.title">Date du jour (mock)</h2>
       <mat-card-subtitle i18n="@@debug.dateDuJour.description">
-        Fige la date que le serveur considère comme « aujourd'hui », pour pouvoir essayer le mode
-        jour J hors de la période de l'événement. Seule la date est remplacée : l'heure reste
-        réelle, et rien d'autre ne s'en trouve modifié — ni l'âge des mineurs, ni l'horodatage de
-        ce qui est enregistré. Laissez le champ vide pour revenir à l'horloge de la machine.
+        Fige la date que le serveur considère comme « aujourd'hui », pour essayer le mode jour J hors
+        de l'événement ; laissez le champ vide pour revenir à l'horloge de la machine.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
@@ -160,8 +157,8 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@debug.api.title">Documentation de l'API</h2>
     <mat-card-subtitle i18n="@@debug.api.subtitle">
-      La description OpenAPI de l'API REST, et l'explorateur qui permet de l'essayer endpoint par endpoint.
-      Ces deux adresses exigent une session administrateur, comme le reste de l'API.
+      Description OpenAPI de l'API REST et explorateur pour l'essayer ; les deux exigent une session
+      administrateur.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">

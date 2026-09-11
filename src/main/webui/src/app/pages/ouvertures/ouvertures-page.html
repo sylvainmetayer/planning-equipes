@@ -2,8 +2,7 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@ouvertures.title">Ouvertures des stands</h1>
     <mat-card-subtitle i18n="@@ouvertures.subtitle">
-      Ce que le solveur lira réellement : règles d'horaire étendues, exceptions datées appliquées, fenêtres bornées à
-      chaque créneau de l'édition. Une case par stand et par jour.
+      Ce que le solveur lira : les ouvertures de chaque stand, règles et exceptions résolues, sur chaque créneau de l'édition.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -42,8 +41,7 @@
       <p class="empty-hint" i18n="@@ouvertures.loading">Calcul des ouvertures…</p>
     } @else if (!rapport() || rapport()!.jours.length === 0) {
       <p class="empty-hint" i18n="@@ouvertures.empty">
-        Aucun créneau dans l'édition : créez des créneaux pour voir les ouvertures — un par un, en série, ou dérivés
-        des horaires des stands, depuis la page Créneaux.
+        Aucun créneau dans l'édition : créez-en depuis la page Créneaux pour voir les ouvertures.
       </p>
       <a matButton routerLink="/creneaux">
         <mat-icon>calendar_month</mat-icon>
@@ -88,10 +86,7 @@
 
       @if (view() === 'SAISIR') {
         <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
-          Une case par stand et par créneau : l'effectif à tenir, vide pour fermé. Flèches et Entrée pour circuler,
-          collage d'un bloc copié depuis un tableur, et un bouton par jour ou par ligne pour recopier. Rien n'est
-          écrit avant « Enregistrer » ; un stand enregistré voit tout son horaire réécrit depuis la grille, et ses
-          effectifs minimum et maximum suivent ses cases.
+          Une case par stand et par créneau : l'effectif, vide pour fermé. Flèches, Entrée et collage depuis un tableur. À l'enregistrement, l'horaire du stand est réécrit depuis la grille.
         </p>
         @if (editingLocked()) {
           <p class="locked-hint" i18n="@@ouvertures.saisie.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
@@ -223,8 +218,7 @@
       @if (rapport()!.anomalies.length > 0) {
         <h3 i18n="@@ouvertures.anomalies.title">Anomalies détectées</h3>
         <p class="empty-hint" i18n="@@ouvertures.anomalies.hint">
-          Ces points ne bloquent pas une résolution, mais chacun est le symptôme habituel d'une saisie qui ne fait pas
-          ce qu'on croit.
+          Ces points ne bloquent pas la résolution, mais signalent souvent une saisie qui ne fait pas ce qu'on croit.
         </p>
         <ul class="ouvertures-anomalies">
           @for (anomalie of rapport()!.anomalies; track $index) {

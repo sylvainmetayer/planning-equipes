@@ -9,9 +9,8 @@
   <mat-card-header>
     <h3 mat-card-title i18n="@@dataSetup.scenarios.title">Scénarios</h3>
     <mat-card-subtitle i18n="@@dataSetup.scenarios.description">
-      L'import remplace les données de l'édition actuelle, et d'elle seule — l'édition visée est
-      rappelée au moment de confirmer. Ces actions sont verrouillées pendant qu'un solveur s'exécute
-      sur cette édition ; une résolution en cours sur une autre édition ne les bloque pas.
+      L'import remplace les données de l'édition actuelle, et d'elle seule ; l'édition visée est
+      rappelée au moment de confirmer.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -64,8 +63,7 @@
   <mat-card-header>
     <h3 mat-card-title i18n="@@decoupage.parametres.title">Paramètres de découpage</h3>
     <mat-card-subtitle i18n="@@parametres.decoupage.subtitle">
-      Règles de découpe des amplitudes en vacations de travail. La génération elle-même se lance
-      depuis la page Créneaux, avec sa prévisualisation.
+      Règles de découpe des amplitudes en vacations de travail.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -77,25 +75,25 @@
           <mat-label i18n="@@decoupage.field.dureeCible">Durée cible d'une vacation (min)</mat-label>
           <input matInput type="number" min="1" name="dureeVacationCibleMinutes"
                  [ngModel]="p.dureeVacationCibleMinutes" (ngModelChange)="patchParametre({ dureeVacationCibleMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.dureeCible">Longueur visée pour une vacation ; le générateur s'en écarte si l'amplitude du jour ne tombe pas juste.</mat-hint>
+          <mat-hint i18n="@@decoupage.hint.dureeCible">Longueur visée ; ajustée si l'amplitude du jour ne tombe pas juste.</mat-hint>
         </mat-form-field>
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.dureeMin">Durée minimale (min)</mat-label>
           <input matInput type="number" min="1" name="dureeVacationMinMinutes"
                  [ngModel]="p.dureeVacationMinMinutes" (ngModelChange)="patchParametre({ dureeVacationMinMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.dureeMin">En dessous, aucune vacation n'est créée : le reliquat est absorbé par les vacations voisines.</mat-hint>
+          <mat-hint i18n="@@decoupage.hint.dureeMin">En dessous, le reliquat est absorbé par les vacations voisines.</mat-hint>
         </mat-form-field>
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.dureeMax">Durée maximale (min)</mat-label>
           <input matInput type="number" min="1" name="dureeVacationMaxMinutes"
                  [ngModel]="p.dureeVacationMaxMinutes" (ngModelChange)="patchParametre({ dureeVacationMaxMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.dureeMax">Plafond dur : au-delà, le Code du travail impose une pause, donc le générateur coupe.</mat-hint>
+          <mat-hint i18n="@@decoupage.hint.dureeMax">Au-delà, le Code du travail impose une pause : le générateur coupe.</mat-hint>
         </mat-form-field>
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.chevauchement">Chevauchement de relais (min)</mat-label>
           <input matInput type="number" min="0" name="dureeChevauchementMinutes"
                  [ngModel]="p.dureeChevauchementMinutes" (ngModelChange)="patchParametre({ dureeChevauchementMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.chevauchement">Temps pendant lequel les deux équipes sont présentes pour se passer le relais. 0 = passation sèche.</mat-hint>
+          <mat-hint i18n="@@decoupage.hint.chevauchement">Présence commune des deux équipes au relais ; 0 = passation sèche.</mat-hint>
         </mat-form-field>
         </fieldset>
         <fieldset class="decoupage-groupe form-grid">
@@ -104,7 +102,7 @@
           <mat-label i18n="@@decoupage.field.dureePauseRepas">Durée de la pause repas (min)</mat-label>
           <input matInput type="number" min="0" name="dureePauseRepasMinutes"
                  [ngModel]="p.dureePauseRepasMinutes" (ngModelChange)="patchParametre({ dureePauseRepasMinutes: $event })" />
-          <mat-hint i18n="@@decoupage.hint.dureePauseRepas">Trou réservé dans la journée d'un animateur : il devient une vraie pause, pas une vacation.</mat-hint>
+          <mat-hint i18n="@@decoupage.hint.dureePauseRepas">Vraie pause dans la journée de l'animateur, pas une vacation.</mat-hint>
         </mat-form-field>
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.repasMidiDebut">Fenêtre repas midi — début</mat-label>
@@ -121,7 +119,7 @@
           <mat-label i18n="@@decoupage.field.repasSoirDebut">Fenêtre repas soir — début</mat-label>
           <input matInput type="time" name="fenetreRepasSoirDebut"
                  [ngModel]="p.fenetreRepasSoirDebut" (ngModelChange)="patchParametre({ fenetreRepasSoirDebut: $event })" />
-          <mat-hint i18n="@@decoupage.hint.repasSoir">Idem pour le soir ; laissez la fenêtre vide si le stand ferme avant.</mat-hint>
+          <mat-hint i18n="@@decoupage.hint.repasSoir">Idem le soir ; vide si le stand ferme avant.</mat-hint>
         </mat-form-field>
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.repasSoirFin">Fenêtre repas soir — fin</mat-label>
@@ -136,7 +134,7 @@
             <mat-option value="RELEVE" i18n="@@decoupage.strategie.releve">Poste de relève supplémentaire</mat-option>
             <mat-option value="EFFECTIF_REDUIT" i18n="@@decoupage.strategie.effectifReduit">Effectif réduit de moitié</mat-option>
           </mat-select>
-          <mat-hint i18n="@@decoupage.hint.strategie">Ce que devient le stand quand une pause laisse un trou : fermé, doublé par une relève, ou tenu à effectif réduit.</mat-hint>
+          <mat-hint i18n="@@decoupage.hint.strategie">Sort du stand quand une pause laisse un trou.</mat-hint>
         </mat-form-field>
         </fieldset>
         <fieldset class="decoupage-groupe form-grid">
@@ -208,8 +206,7 @@
   <mat-card-header>
     <h3 mat-card-title i18n="@@parametres.mailFin.title">Prévenir par e-mail à la fin d'une résolution</h3>
     <mat-card-subtitle i18n="@@parametres.mailFin.subtitle">
-      Une résolution complète dure plusieurs minutes : au lieu de rester devant l'écran, recevez un message dès
-      qu'elle se termine, avec l'édition concernée, le score obtenu et si le planning est faisable en l'état.
+      Recevez un e-mail à la fin de chaque résolution, avec l'édition, le score et la faisabilité du planning.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -226,8 +223,7 @@
       <p class="calendar-meta" i18n="@@parametres.mailFin.destinataire">Destinataire : {{ adresse }}</p>
     } @else {
       <p class="locked-hint" i18n="@@parametres.mailFin.sansAdresse">
-        Aucune adresse administrateur n'est configurée sur ce serveur (variable MAIL_ADMIN) : tant qu'elle manque,
-        aucun e-mail ne peut partir et le réglage reste sans effet.
+        Aucune adresse administrateur n'est configurée (variable MAIL_ADMIN) : aucun e-mail ne peut partir.
       </p>
     }
   </mat-card-content>
@@ -269,11 +265,8 @@
   <mat-card-header>
     <h3 mat-card-title i18n="@@parametres.sauvegarde.title">Sauvegarde automatique</h3>
     <mat-card-subtitle i18n="@@parametres.sauvegarde.subtitle">
-      Chaque nuit, toute la base de données est copiée dans un fichier de sauvegarde, sur un disque
-      décidé par l'hébergeur. C'est le filet en cas de fausse manipulation : une suppression massive,
-      un import qui écrase tout. Les copies les plus anciennes sont effacées au fur et à mesure.
-      La restauration, elle, n'est pas une opération de cet écran : elle se fait sur la base PostgreSQL,
-      par l'exploitant.
+      Chaque nuit, toute la base est copiée dans un fichier de sauvegarde ; la restauration se fait sur la
+      base PostgreSQL, par l'exploitant.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -301,8 +294,8 @@
         </dl>
 
         <p class="calendar-meta" i18n="@@parametres.sauvegarde.reglage">
-          L'emplacement et le nombre de copies sont réglés par l'hébergeur (variables BACKUP_DIR et
-          BACKUP_RETENTION) : ils dépendent du disque qui les porte, pas de cet écran.
+          Emplacement et nombre de copies sont réglés par l'hébergeur (variables BACKUP_DIR et
+          BACKUP_RETENTION).
         </p>
 
         @if (etat.lastRun.attemptedAt) {
@@ -347,8 +340,7 @@
         }
       } @else {
         <p class="locked-hint" i18n="@@parametres.sauvegarde.nonConfiguree">
-          Aucun emplacement de sauvegarde n'est configuré sur ce serveur (variable BACKUP_DIR) : tant
-          qu'il manque, rien n'est planifié et la base n'est sauvegardée que manuellement.
+          Aucun emplacement de sauvegarde n'est configuré (variable BACKUP_DIR) : rien n'est planifié.
         </p>
       }
     }
@@ -359,9 +351,7 @@
   <mat-card-header>
     <h3 mat-card-title i18n="@@dataTransfer.sql.title">Export SQL</h3>
     <mat-card-subtitle i18n="@@dataTransfer.sql.description">
-      Exporte ou rejoue toute la base de données sous forme de script SQL — toutes les éditions,
-      pas seulement l'actuelle, et l'import écrase tout. Utile pour partager un jeu de données qui
-      bloque le solveur.
+      Exporte ou rejoue toute la base en script SQL — toutes les éditions, et l'import écrase tout.
     </mat-card-subtitle>
   </mat-card-header>
   @if (solverBusy()) {

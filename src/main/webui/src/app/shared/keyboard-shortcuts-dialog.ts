@@ -24,8 +24,7 @@ interface RaccourciGeneral {
     <h2 mat-dialog-title i18n="@@shortcuts.title">Raccourcis clavier</h2>
     <mat-dialog-content>
       <p class="raccourcis-intro" i18n="@@shortcuts.intro">
-        Les raccourcis à une touche ne se déclenchent jamais pendant que vous saisissez du texte :
-        ils reprennent dès que le focus quitte le champ.
+        Les raccourcis à une touche sont inactifs pendant la saisie d'un texte.
       </p>
 
       <h3 class="raccourcis-titre" i18n="@@shortcuts.general.title">Général</h3>
@@ -40,9 +39,8 @@ interface RaccourciGeneral {
 
       <h3 class="raccourcis-titre" i18n="@@shortcuts.table.title">Dans un tableau de données de référence</h3>
       <p class="raccourcis-intro" i18n="@@shortcuts.table.intro">
-        Pour entrer dans le tableau : « / » place le curseur dans le filtre de la page, puis Flèche
-        bas saute sur la ligne courante. Tab y entre aussi, sur une seule ligne, et en ressort vers
-        les boutons de cette ligne : le tableau ne retient jamais le focus.
+        Pour entrer dans le tableau : « / » place le curseur dans le filtre, puis Flèche bas saute
+        sur la ligne courante. Tab y entre aussi et en ressort vers les boutons de la ligne.
       </p>
       <dl class="raccourcis-liste">
         @for (raccourci of tableau; track raccourci.touches) {

@@ -19,9 +19,8 @@ import { MatIconModule } from '@angular/material/icon';
             <p>{{ message() }}</p>
           } @else {
             <p i18n="@@workInProgress.message">
-              Cette fonctionnalité est en cours de développement : son comportement et les données
-              saisies ici peuvent encore évoluer, et le résultat du solveur peut ne pas en tenir
-              compte.
+              Fonctionnalité en cours de développement : son comportement peut encore évoluer et le
+              solveur peut ne pas en tenir compte.
             </p>
           }
           @if (marche()) {

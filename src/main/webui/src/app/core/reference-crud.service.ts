@@ -332,7 +332,7 @@ export class ReferenceCrudService {
     const suite =
       concurrentes > 0
         ? ' ' +
-          $localize`:@@crud.bulkConcurrent:${concurrentes}:count: ligne(s) avaient été modifiées par une autre session : la liste vient d'être rechargée, refaites la sélection pour repartir de leur version actuelle.`
+          $localize`:@@crud.bulkConcurrent:${concurrentes}:count: ligne(s) modifiées par une autre session : la liste a été rechargée, refaites la sélection.`
         : '';
     this.notifications.notify({
       title: failureTitle(result.echecs.length),

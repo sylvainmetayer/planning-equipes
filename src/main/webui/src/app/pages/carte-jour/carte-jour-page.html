@@ -2,9 +2,8 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@nav.link.carteJour">Carte de la journée</h1>
     <mat-card-subtitle i18n="@@carteJour.subtitle">
-      Une journée rejouée sur la carte des emplacements : déplacez le curseur et voyez, heure par heure, quels
-      stands sont ouverts, lesquels sont pourvus et lesquels restent sans personne. Lecture seule, à partir du
-      planning enregistré — rien n'est recalculé.
+      Une journée rejouée sur la carte des emplacements : déplacez le curseur pour voir, heure par heure, quels
+      stands sont ouverts, pourvus ou sans personne.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -96,9 +95,8 @@
           <li><span class="carte-jour-pastille etat-sansStand"></span><ng-container i18n="@@carteJour.legend.sansStand">Aucun stand rattaché ce jour-là</ng-container></li>
         </ul>
         <p class="empty-hint" i18n="@@carteJour.hint">
-          Le chiffre d'une pastille est le nombre de stands ouverts à cet endroit. La couleur reprend le plus
-          préoccupant d'entre eux. Un clic sur une pastille ou sur une ligne de la liste met l'emplacement en
-          évidence.
+          Le chiffre d'une pastille est le nombre de stands ouverts à cet endroit, sa couleur celle du plus
+          préoccupant. Un clic sur une pastille ou une ligne de la liste met l'emplacement en évidence.
         </p>
 
         <app-carte-jour-map

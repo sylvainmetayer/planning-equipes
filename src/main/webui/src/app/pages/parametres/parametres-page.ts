@@ -238,7 +238,7 @@ export class ParametresPage {
       this.output.set(
         this.recapImport(
           outcome.result,
-          $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`,
+          $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé : les données de référence sont peuplées.`,
         ),
       );
     } catch (error) {
@@ -293,7 +293,7 @@ export class ParametresPage {
       this.output.set(
         this.recapImport(
           outcome.result,
-          $localize`:@@dataSetup.scenarioFileImported:Scénario ${file.name}:fileName: importé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`,
+          $localize`:@@dataSetup.scenarioFileImported:Scénario ${file.name}:fileName: importé : les données de référence sont peuplées.`,
         ),
       );
     } catch (error) {
@@ -316,7 +316,7 @@ export class ParametresPage {
     const ailleurs =
       courante && courante.id !== result.editionId
         ? ' ' +
-          $localize`:@@parametres.recap.basculer:Vous consultez actuellement « ${courante.nom}:courante: » : basculez d'édition (bandeau en haut de l'écran) pour voir les données importées.`
+          $localize`:@@parametres.recap.basculer:Vous consultez « ${courante.nom}:courante: » : basculez d'édition (bandeau du haut) pour voir les données importées.`
         : '';
     return destination + ailleurs;
   }
@@ -403,7 +403,7 @@ export class ParametresPage {
     ) {
       return '';
     }
-    return $localize`:@@typologies.ninjaManquant:Aucune typologie « ninja » n'est désignée. Sans elle, aucun animateur n'est polyvalent : personne ne peut être affecté en dehors de ses compétences, et la contrainte « préserver un polyvalent libre par créneau » (votre marge de manœuvre en cas d'absence de dernière minute) ne protège plus rien. Choisissez la typologie qui joue ce rôle dans le sélecteur ci-dessous.`;
+    return $localize`:@@typologies.ninjaManquant:Aucune typologie « ninja » n'est désignée : aucun animateur n'est polyvalent, et la contrainte « préserver un polyvalent libre par créneau » ne protège plus rien.`;
   });
 
   /** Id of the typologie currently flagged ninja — at most one, `null` when none. */
@@ -509,7 +509,7 @@ export class ParametresPage {
     // the truth of the scope instead.
     const confirmed = await this.recopie.demander({
       title: $localize`:@@dataTransfer.replaySqlTitle:Rejouer ce dump SQL ?`,
-      message: $localize`:@@dataTransfer.replaySqlPromptMessage:${file.name}:fileName: remplace la base de données entière : toutes les éditions sont écrasées, pas seulement l'édition courante. L'opération est irréversible.`,
+      message: $localize`:@@dataTransfer.replaySqlPromptMessage:${file.name}:fileName: remplace la base entière : toutes les éditions sont écrasées. L'opération est irréversible.`,
       valeurAttendue: REPLACE_KEYWORD,
       confirmLabel: $localize`:@@dataTransfer.replaySqlAction:Remplacer la base`,
     });

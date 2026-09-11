@@ -116,6 +116,31 @@ simplification des textes sans livrer une IHM anglaise périmée. Il tourne en
 CI sur chaque pull request, contre sa branche de base. Si la traduction était
 déjà juste, la relire et la retoucher est précisément ce qu'il demande.
 
+## Textes des écrans : la règle
+
+Un écran répond à une question ; il ne l'explique pas. La passe de
+simplification a retiré près de la moitié de la prose des écrans, et ces
+règles sont ce qui l'empêche de revenir hint par hint :
+
+- **Sous-titre d'écran** : une phrase, qui dit ce que l'écran répond — pas
+  comment il le calcule, ni ses réserves.
+- **`mat-hint`** : douze mots au plus. Au-delà, c'est une infobulle ou l'Aide.
+- **Ne jamais répéter en texte** ce que le tableau, le formulaire ou les
+  boutons montrent déjà.
+- **Le « pourquoi » vit dans l'Aide** (`pages/aide/content/*`, et l'aide de
+  l'espace animateur), ancrée depuis l'écran ; l'écran garde le « quoi ».
+- **Plafond : aucun message de plus de 200 caractères** hors Aide, aide de
+  l'espace, pages légales et avertissement de responsabilité du dialogue de
+  désactivation d'une règle légale. `npm run i18n-check` le refuse. Une seule
+  exception, reconnue au texte : un message qui nomme une règle avec son
+  article (« art. L3132-1 », « L4153-3 ») est gardé entier — c'est lui qui
+  rend l'outil défendable, et le raccourcir serait une régression.
+- **Une confirmation** dit ce qui se passe et ce qui est perdu, en une ou
+  deux phrases. Un message court qui se lit bien n'est pas réécrit.
+
+Réécrire une source française sous son id impose de réécrire l'anglais du
+même id : c'est le cliquet `i18n-check-modifies` décrit plus haut.
+
 ## Accessibilité
 
 Ces conventions valent sur les 26 écrans : les tenir coûte peu à l'écriture,

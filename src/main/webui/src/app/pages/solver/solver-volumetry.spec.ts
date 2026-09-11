@@ -76,7 +76,7 @@ describe('SolverVolumetry', () => {
     const card = createCard();
 
     expect(card.fillRatio()).toBeCloseTo(0.75);
-    expect(text()).toContain('taux de remplissage de 0.75');
+    expect(text()).toContain('Taux de remplissage : 0.75');
   });
 
   it('gives the problem scale as postes times log10 of the animateurs', () => {

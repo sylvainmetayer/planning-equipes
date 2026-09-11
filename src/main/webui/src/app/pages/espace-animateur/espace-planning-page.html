@@ -67,8 +67,8 @@
       }
     </div>
     <p class="espace-agenda-aide" i18n="@@espace.planning.agendaAide">
-      L'abonnement se met à jour tout seul à chaque nouvelle publication. Le PDF et le fichier ICS,
-      eux, sont une photo prise aujourd'hui : ils ne changeront plus.
+      L'abonnement suit chaque nouvelle publication ; le PDF et le fichier ICS sont une photo prise
+      aujourd'hui.
     </p>
     @if (urlAbonnement(); as url) {
       <button matButton type="button"
@@ -83,9 +83,9 @@
         @if (abonnementDeplie()) {
           <div class="espace-abonnement">
             <p class="espace-abonnement-aide" i18n="@@espace.planning.abonnementAide">
-              Voici l'adresse que votre agenda interroge. Certaines applications — Google Agenda en
-              premier — demandent de la coller plutôt que de cliquer sur le bouton. Elle est
-              personnelle : qui l'obtient voit votre planning.
+              Certaines applications, Google Agenda en premier, demandent de coller cette adresse
+              plutôt que de cliquer sur le bouton. Elle est personnelle : qui l'obtient voit votre
+              planning.
             </p>
             <code class="espace-abonnement-url">{{ url }}</code>
             <button matButton="outlined" type="button" (click)="copierAbonnement()">
@@ -100,8 +100,8 @@
             @if (rotationADemander()) {
               <div class="espace-abonnement-revocation">
                 <p i18n="@@espace.planning.abonnementRevoquerAide">
-                  Une nouvelle adresse sera créée et l'ancienne cessera immédiatement de fonctionner.
-                  Les agendas déjà abonnés devront être réabonnés avec la nouvelle adresse.
+                  L'ancienne adresse cessera immédiatement de fonctionner : les agendas déjà abonnés
+                  devront l'être à nouveau avec la nouvelle.
                 </p>
                 <button matButton="filled" type="button" [disabled]="rotationEnCours()"
                         (click)="regenererAbonnement()">

@@ -6,9 +6,7 @@
   <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
 }
 <p class="empty-hint span-2" i18n="@@creneaux.derivation.hint">
-  Chaque heure où un stand ouvre ou ferme devient une coupure, et chaque tranche entre deux coupures où au moins un
-  stand est ouvert devient un créneau : la grille découle des horaires déjà saisis, sans être tapée une seconde
-  fois. Seuls les jours qu'un stand déclare « ouvert sur ces fenêtres » comptent. Prévisualisez d'abord.
+  Chaque heure où un stand ouvre ou ferme devient une coupure, chaque tranche où au moins un stand est ouvert devient un créneau. Seuls les jours déclarés « ouvert sur ces fenêtres » comptent.
 </p>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@creneaux.derivation.dateDebut">Du</mat-label>
@@ -68,7 +66,7 @@
       </p>
     }
     @if (bloquee()) {
-      <p class="field-error" role="alert" i18n="@@creneaux.derivation.bloquee">La grille obtenue porterait une erreur (un doublon avec la grille actuelle, le plus souvent) : cochez « Remplacer », ou corrigez avant d'écrire.</p>
+      <p class="field-error" role="alert" i18n="@@creneaux.derivation.bloquee">La grille obtenue porterait une erreur (souvent un doublon) : cochez « Remplacer », ou corrigez avant d'écrire.</p>
     }
     @if (anomalies().length > 0) {
       <ul class="ouvertures-anomalies serie-anomalies">

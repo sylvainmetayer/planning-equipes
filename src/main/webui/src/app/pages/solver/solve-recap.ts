@@ -85,7 +85,7 @@ export class SolveRecap {
     if (impact.personnes === 0) {
       return $localize`:@@solver.impact.aucun:Personne ne change d'emploi du temps par rapport au plan publié le ${quand}:date:.`;
     }
-    return $localize`:@@solver.impact.personnes:${impact.personnes}:count: personne(s) changeraient d'emploi du temps par rapport au plan publié le ${quand}:date: — c'est ce que la publication leur dirait.`;
+    return $localize`:@@solver.impact.personnes:${impact.personnes}:count: personne(s) changeraient d'emploi du temps par rapport au plan publié le ${quand}:date:.`;
   });
 
   /** The comparison is only worth showing when both scores are known. */
