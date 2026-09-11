@@ -58,15 +58,15 @@ export default defineConfig({
     // The UI's source language; the specs assert on French labels.
     locale: 'fr-FR',
     trace: 'retain-on-failure',
-    ...videoDemandee
+    ...videoDemandee,
   },
   projects: [
     {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        ...chromiumInstalle
-      }
+        ...chromiumInstalle,
+      },
     },
     {
       /*
@@ -79,8 +79,8 @@ export default defineConfig({
       testMatch: /espace-animateur\.spec\.ts/,
       use: {
         ...devices['Pixel 7'],
-        ...chromiumInstalle
-      }
-    }
-  ]
+        ...chromiumInstalle,
+      },
+    },
+  ],
 });
