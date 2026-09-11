@@ -31,6 +31,7 @@ import dev.sylvain.planning.service.solve.ProblemBuilder;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -282,6 +283,43 @@ class ScenarioYamlWriterTest {
                 ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), List.of());
 
         assertThat(new Yaml().<Map<String, Object>>load(yaml)).doesNotContainKey("contraintes");
+    }
+
+    /**
+     * The order of the keys is the order of the file, and the file is diffed
+     * by people: since #445 it is the declaration order of the DTO
+     * components, and nothing else pinned it — the differential tests
+     * compare meaning after a re-read, the schema is alphabetical. Moving
+     * one component would move one line per stand in every export.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void keysComeOutInTheOrderTheFileHasAlwaysHad() {
+        animateur.setCompetences(Map.of("STRATEGIE", NiveauCompetence.REFERENT));
+        stand.setIndisponibilites(List.of(new IndisponibiliteStand(
+                1L, LocalDate.of(2026, 8, 14), LocalTime.of(14, 0), LocalTime.of(16, 0), "Pause")));
+        List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(creneau));
+
+        String yaml =
+                ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), postes);
+        Map<String, Object> parsed = new Yaml().load(yaml);
+
+        assertThat(new ArrayList<>(parsed.keySet()))
+                .containsExactly("festival", "creneaux", "stands", "animateurs", "postes");
+        Map<String, Object> standYaml = ((List<Map<String, Object>>) parsed.get("stands")).get(0);
+        assertThat(new ArrayList<>(standYaml.keySet()))
+                .containsExactly(
+                        "id",
+                        "nom",
+                        "typologiesProposees",
+                        "effectifMin",
+                        "effectifMax",
+                        "reserveMajeurs",
+                        "premium",
+                        "niveauEffort",
+                        "indisponibilites",
+                        "ouvertures",
+                        "horaires");
     }
 
     /** The hand-entered constraints travel with the scenario, animateurs and scope included. */
