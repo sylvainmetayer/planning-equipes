@@ -35,7 +35,7 @@ public class PlanningExportResource {
      * ({@code GET /api/planning/persisted}).
      */
     @GET
-    @jakarta.ws.rs.Path("/pdf/global")
+    @Path("/pdf/global")
     @Produces("application/pdf")
     public Response exportGlobalPdf() {
         byte[] content = planningExportService.exportGlobalPdf(persistenceService.loadPersistedPlanning());

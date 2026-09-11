@@ -72,41 +72,76 @@ class DocumentationStructuralTest {
      * {@code @Path} joined to the method's, placeholders neutralised.
      */
     private static Set<String> declaredRoutes() throws IOException {
-        Pattern classPath = Pattern.compile("^@Path\\(\"([^\"]*)\"\\)", Pattern.MULTILINE);
-        Pattern verbe = Pattern.compile("^\\s*@(GET|POST|PUT|DELETE|PATCH)\\b");
-        Pattern methodPath = Pattern.compile("^\\s*@Path\\(\"([^\"]*)\"\\)");
-        Pattern declaration = Pattern.compile("^\\s*(public|protected|private)?\\s*[\\w.<>,\\[\\] ]+\\s+\\w+\\s*\\(");
         Set<String> routes = new TreeSet<>();
         try (Stream<Path> files = Files.list(RESOURCES)) {
             for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
-                String source = Files.readString(file, StandardCharsets.UTF_8);
-                Matcher racine = classPath.matcher(source);
-                if (!racine.find()) {
-                    continue;
-                }
-                String base = racine.group(1);
-                String verb = null;
-                String chemin = "";
-                for (String line : source.split("\n")) {
-                    Matcher v = verbe.matcher(line);
-                    if (v.find()) {
-                        verb = v.group(1);
-                        continue;
-                    }
-                    Matcher p = methodPath.matcher(line);
-                    if (p.find() && !line.startsWith("@Path")) {
-                        chemin = p.group(1);
-                        continue;
-                    }
-                    if (verb != null && declaration.matcher(line).find()) {
-                        routes.add(verb + " " + normalise(ROOT + "/" + base + "/" + chemin));
-                        verb = null;
-                        chemin = "";
-                    }
-                }
+                routes.addAll(routesOf(Files.readString(file, StandardCharsets.UTF_8)));
             }
         }
         return routes;
+    }
+
+    /**
+     * The class-level annotation sits in column 0, a method's is indented;
+     * both may be written fully qualified ({@code @jakarta.ws.rs.Path}), which
+     * a resource does when it also imports {@code java.nio.file.Path}. Missing
+     * that form once registered {@code GET /api/planning/export}, a route that
+     * does not exist, and lost {@code /pdf/global}, which does.
+     */
+    static Set<String> routesOf(String source) {
+        Pattern classPath = Pattern.compile("^@(?:jakarta\\.ws\\.rs\\.)?Path\\(\"([^\"]*)\"\\)", Pattern.MULTILINE);
+        Pattern verbe = Pattern.compile("^\\s*@(?:jakarta\\.ws\\.rs\\.)?(GET|POST|PUT|DELETE|PATCH)\\b");
+        Pattern methodPath = Pattern.compile("^\\s+@(?:jakarta\\.ws\\.rs\\.)?Path\\(\"([^\"]*)\"\\)");
+        Pattern declaration = Pattern.compile("^\\s*(public|protected|private)?\\s*[\\w.<>,\\[\\] ]+\\s+\\w+\\s*\\(");
+        Set<String> routes = new TreeSet<>();
+        Matcher racine = classPath.matcher(source);
+        if (!racine.find()) {
+            return routes;
+        }
+        String base = racine.group(1);
+        String verb = null;
+        String chemin = "";
+        for (String line : source.split("\n")) {
+            Matcher v = verbe.matcher(line);
+            if (v.find()) {
+                verb = v.group(1);
+                continue;
+            }
+            Matcher p = methodPath.matcher(line);
+            if (p.find()) {
+                chemin = p.group(1);
+                continue;
+            }
+            if (verb != null && declaration.matcher(line).find()) {
+                routes.add(verb + " " + normalise(ROOT + "/" + base + "/" + chemin));
+                verb = null;
+                chemin = "";
+            }
+        }
+        return routes;
+    }
+
+    @Test
+    void aFullyQualifiedPathAnnotationDeclaresItsRoute() {
+        String source = """
+                @Path("/planning/export")
+                public class PlanningExportResource {
+                    @GET
+                    @jakarta.ws.rs.Path("/pdf/global")
+                    public Response pdfGlobal() {
+                        return null;
+                    }
+
+                    @jakarta.ws.rs.GET
+                    @Path("/ics/all")
+                    public Response icsAll() {
+                        return null;
+                    }
+                }
+                """;
+
+        assertThat(routesOf(source))
+                .containsExactly("GET /api/planning/export/ics/all", "GET /api/planning/export/pdf/global");
     }
 
     /** Placeholders neutralised, slashes collapsed, no trailing slash: what makes two spellings the same route. */
