@@ -43,6 +43,19 @@
                (openedChange)="drawerOpen.set($event)">
     <nav i18n-aria-label="@@shell.navLabel" aria-label="Navigation principale">
       <div class="nav-toolbar">
+        <!-- A toggle button, pressed when the menu shows everything: the name
+             says the state and the action, the attribute says it to a screen
+             reader. Hidden entries stay reachable by URL, palette and help. -->
+        <button type="button" class="nav-toolbar-action" (click)="toggleNavMode()"
+                [attr.aria-label]="navModeLabel()" [attr.aria-pressed]="navMode.mode() === 'avance'"
+                [attr.data-nav-mode]="navMode.mode()">
+          <mat-icon>{{ navMode.mode() === 'avance' ? 'tune' : 'filter_list' }}</mat-icon>
+          @if (navMode.mode() === 'avance') {
+            <span i18n="@@shell.navMode.labelAvance">Menu avancé</span>
+          } @else {
+            <span i18n="@@shell.navMode.labelSimple">Menu simple</span>
+          }
+        </button>
         <button type="button" class="nav-toolbar-action" (click)="toggleAllGroups()">
           <mat-icon>{{ allCollapsed() ? 'unfold_more' : 'unfold_less' }}</mat-icon>
           @if (allCollapsed()) {
@@ -52,7 +65,7 @@
           }
         </button>
       </div>
-      @for (group of navGroups; track group.id) {
+      @for (group of visibleGroups(); track group.id) {
         <mat-nav-list>
           <button
             type="button"

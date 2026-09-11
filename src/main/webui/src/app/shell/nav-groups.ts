@@ -1,6 +1,8 @@
 // The navigation drawer's content: one entry per route, mirroring the page
 // split exactly. Data, kept apart from the shell that renders it.
 
+import { NavMode } from '../core/nav-mode';
+
 export interface NavLink {
   path: string;
   label: string;
@@ -12,6 +14,13 @@ export interface NavLink {
    * would only produce a client-side 404.
    */
   externe?: boolean;
+  /**
+   * Only needed for a deep diagnostic: hidden while the menu is in its
+   * `simple` mode (`core/nav-mode`), which is the default. The route, the
+   * command palette and the links of the help still reach it — this is a
+   * matter of what the drawer lists, never of rights.
+   */
+  avance?: boolean;
 }
 
 export interface NavGroup {
@@ -19,6 +28,29 @@ export interface NavGroup {
   id: string;
   title: string;
   links: NavLink[];
+}
+
+/**
+ * The groups the drawer lists under a mode: every entry in `avance`; in
+ * `simple`, the entries not flagged `avance` — plus the one carrying the route
+ * currently displayed, so a link from the help or the palette to a hidden
+ * screen shows where the reader landed, for the time of the visit. A group
+ * left with no entry disappears with them.
+ */
+export function visibleNavGroups(
+  groups: readonly NavGroup[],
+  mode: NavMode,
+  currentPath: string,
+): NavGroup[] {
+  if (mode === 'avance') {
+    return [...groups];
+  }
+  return groups
+    .map((group) => ({
+      ...group,
+      links: group.links.filter((link) => !link.avance || link.path === currentPath),
+    }))
+    .filter((group) => group.links.length > 0);
 }
 
 /**
@@ -66,6 +98,7 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           path: '/instantanes',
           label: $localize`:@@nav.link.snapshots:Instantanés`,
           icon: 'history',
+          avance: true,
         },
       ],
     },
@@ -112,11 +145,13 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           path: '/kpi',
           label: $localize`:@@nav.link.kpi:Autopsie du planning`,
           icon: 'query_stats',
+          avance: true,
         },
         {
           path: '/comparateur',
           label: $localize`:@@nav.link.comparateur:Comparateur A/B`,
           icon: 'compare_arrows',
+          avance: true,
         },
       ],
     },
@@ -190,7 +225,7 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           icon: 'map',
         },
         { path: '/pauses', label: $localize`:@@nav.link.pauses:Pauses`, icon: 'free_breakfast' },
-        { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
+        { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub', avance: true },
       ],
     },
     {
@@ -208,10 +243,21 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           path: '/historique',
           label: $localize`:@@nav.link.historique:Historique`,
           icon: 'manage_search',
+          avance: true,
         },
 
-        { path: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' },
-        { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
+        {
+          path: '/mcp-client',
+          label: $localize`:@@nav.link.mcp:MCP`,
+          icon: 'smart_toy',
+          avance: true,
+        },
+        {
+          path: '/debug',
+          label: $localize`:@@nav.link.debug:Débogage`,
+          icon: 'bug_report',
+          avance: true,
+        },
         {
           path: '/mentions-legales',
           label: $localize`:@@nav.link.mentionsLegales:Mentions légales`,

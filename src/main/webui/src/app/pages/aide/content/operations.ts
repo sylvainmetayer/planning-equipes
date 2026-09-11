@@ -186,6 +186,10 @@ export function buildOperationsSections(): HelpSection[] {
           text: $localize`:@@aide.shortcuts.go:Pour aller directement sur un écran, tapez « g » puis la lettre de la destination — « g » puis « a » pour les animateurs. Les pages qui n'ont pas de lettre restent atteignables par la palette, qui les liste toutes.`,
         },
         {
+          kind: 'paragraph',
+          text: $localize`:@@aide.shortcuts.menuMode:Le menu latéral s'ouvre en mode simple : les écrans de diagnostic approfondi — graphe, autopsie, comparateur A/B, instantanés, historique, MCP, débogage — n'y figurent pas. « Menu simple », en tête du menu, bascule vers le menu avancé qui affiche tout, et ce navigateur retient le choix. Un écran masqué reste atteignable par la palette, par un lien de l'aide ou par son adresse : il apparaît alors dans le menu le temps de la visite.`,
+        },
+        {
           kind: 'definitions',
           items: buildRaccourcisNavigation().map((raccourci) => ({
             term: `g ${raccourci.touche}`,

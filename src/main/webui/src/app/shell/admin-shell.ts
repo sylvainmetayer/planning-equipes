@@ -38,6 +38,7 @@ import { KeyboardShortcutsService } from '../core/keyboard-shortcuts.service';
 import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
 import { ThemeService } from '../core/theme.service';
+import { NavModeService } from '../core/nav-mode.service';
 import { ThemePreference } from '../core/theme-preference';
 import { APP_CONFIG } from '../core/app-config';
 import { SolverJobService } from '../core/solver-job.service';
@@ -49,7 +50,7 @@ import { SolverRunningIndicator } from '../shared/solver-running-indicator';
 import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
 import { BRANDING } from '../core/branding';
 import { MascotDialog } from './mascot-dialog';
-import { NavGroup, buildNavGroups } from './nav-groups';
+import { NavGroup, buildNavGroups, visibleNavGroups } from './nav-groups';
 
 /**
  * Admin shell: Material toolbar, navigation drawer listing every admin page,
@@ -91,12 +92,23 @@ export class AdminShell {
   protected readonly navGroups = buildNavGroups(
     inject(APP_CONFIG, { optional: true })?.devMode ?? false,
   );
+  /**
+   * The path on screen, without its query string: what decides whether an
+   * entry hidden by the simple menu is shown anyway, because the reader is
+   * on it. Updated on every navigation, like the announcement below.
+   */
+  private readonly cheminCourant = signal(pathOf(inject(Router).url));
+  /** What the drawer lists: see `visibleNavGroups`. */
+  protected readonly visibleGroups = computed(() =>
+    visibleNavGroups(this.navGroups, this.navMode.mode(), this.cheminCourant()),
+  );
   protected readonly jobs = inject(SolverJobService);
   private readonly branding = inject(BRANDING);
   protected readonly resolution = inject(PlanningResolutionStore);
   protected readonly editions = inject(EditionStore);
   protected readonly notifications = inject(NotificationService);
   protected readonly theme = inject(ThemeService);
+  protected readonly navMode = inject(NavModeService);
   protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly router = inject(Router);
@@ -172,7 +184,10 @@ export class AdminShell {
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => queueMicrotask(() => this.annoncerNavigation()));
+      .subscribe((event) => {
+        this.cheminCourant.set(pathOf((event as NavigationEnd).urlAfterRedirects));
+        queueMicrotask(() => this.annoncerNavigation());
+      });
     // Global keyboard shortcuts (issue #314), armed for the admin session only:
     // /login and the espace animateur render outside this shell and have
     // neither a palette nor any of these destinations.
@@ -384,6 +399,28 @@ export class AdminShell {
     }
   }
 
+  /**
+   * The accessible name carries the current state *and* what activating will
+   * do, like the theme button: the control has two states, and "menu" alone
+   * would leave a screen-reader user unable to tell which one they are in.
+   */
+  protected readonly navModeLabel = computed(() =>
+    this.navMode.mode() === 'avance'
+      ? $localize`:@@shell.navMode.avance:Menu avancé, tous les écrans. Revenir au menu simple.`
+      : $localize`:@@shell.navMode.simple:Menu simple, sans les écrans de diagnostic. Afficher le menu avancé.`,
+  );
+
+  /** Switches simple ↔ avancé, and announces the state the name no longer re-reads. */
+  protected toggleNavMode(): void {
+    const next = this.navMode.toggle();
+    this.announcer.announce(
+      next === 'avance'
+        ? $localize`:@@shell.navMode.announce.avance:Menu avancé.`
+        : $localize`:@@shell.navMode.announce.simple:Menu simple.`,
+      'polite',
+    );
+  }
+
   private readonly adminApi = inject(AdminApi);
 
   /**
@@ -398,4 +435,10 @@ export class AdminShell {
       window.location.assign('/login');
     }
   }
+}
+
+/** The path of a router URL, without query string or fragment. */
+function pathOf(url: string): string {
+  const fin = url.search(/[?#]/);
+  return fin === -1 ? url : url.slice(0, fin);
 }

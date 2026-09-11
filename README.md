@@ -59,7 +59,9 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 
 1. Ouvrir <http://localhost:8080> et se connecter (compte `admin`, mot de passe
    `admin` par défaut en local — variable `ADMIN_PASSWORD`) — la page
-   **Solveur** s'affiche ; le menu latéral donne accès à chaque écran.
+   **Solveur** s'affiche ; le menu latéral donne accès à chaque écran (en
+   mode simple par défaut : « Menu simple », en tête du menu, bascule vers le
+   menu avancé qui liste aussi les écrans de diagnostic approfondi).
 2. Sur **Paramètres**, choisir un scénario puis **Charger le scénario
    sélectionné** pour remplir l'édition courante (les référentiels sont ensuite
    modifiables depuis **Stands**, **Emplacements**, **Animateurs**,

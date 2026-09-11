@@ -28,16 +28,20 @@ import { AdminShell } from './admin-shell';
 
 const NAV_STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
 const THEME_STORAGE_KEY = 'planning-equipes.theme';
+const NAV_MODE_STORAGE_KEY = 'planning-equipes.nav.mode';
 
 interface NavGroupShape {
   id: string;
   title: string;
-  links: { path: string; label: string }[];
+  links: { path: string; label: string; avance?: boolean }[];
 }
 
 /** Reaches the protected members the template binds to. */
 type ShellInternals = {
   navGroups: NavGroupShape[];
+  visibleGroups: Signal<NavGroupShape[]>;
+  navModeLabel: Signal<string>;
+  toggleNavMode: () => void;
   drawerMode: Signal<'over' | 'side'>;
   drawerOpen: WritableSignal<boolean>;
   collapsedGroups: Signal<ReadonlySet<string>>;
@@ -108,6 +112,7 @@ describe('AdminShell', () => {
     );
     localStorage.removeItem(NAV_STORAGE_KEY);
     localStorage.removeItem(THEME_STORAGE_KEY);
+    localStorage.removeItem(NAV_MODE_STORAGE_KEY);
     document.documentElement.style.colorScheme = '';
     for (const stub of [
       breakpoints.observe,
@@ -163,6 +168,7 @@ describe('AdminShell', () => {
   afterEach(() => {
     localStorage.removeItem(NAV_STORAGE_KEY);
     localStorage.removeItem(THEME_STORAGE_KEY);
+    localStorage.removeItem(NAV_MODE_STORAGE_KEY);
     document.documentElement.style.colorScheme = '';
   });
 
@@ -433,6 +439,78 @@ describe('AdminShell', () => {
       expect(JSON.parse(localStorage.getItem(NAV_STORAGE_KEY) ?? '[]')).toHaveLength(
         shell.navGroups.length,
       );
+    });
+  });
+
+  describe('the simple / advanced menu', () => {
+    const paths = (groups: NavGroupShape[]): string[] =>
+      groups.flatMap((group) => group.links.map((link) => link.path));
+
+    it('hides the expert entries by default, and nothing else', () => {
+      const shell = createShell();
+
+      const hidden = shell.navGroups
+        .flatMap((group) => group.links)
+        .filter((link) => link.avance)
+        .map((link) => link.path);
+      expect(hidden).toEqual(
+        expect.arrayContaining(['/debug', '/mcp-client', '/historique', '/comparateur', '/kpi']),
+      );
+      const visible = paths(shell.visibleGroups());
+      for (const path of hidden) {
+        expect(visible).not.toContain(path);
+      }
+      expect(visible.length + hidden.length).toBe(paths(shell.navGroups).length);
+      expect(shell.navModeLabel()).toContain('Menu simple');
+    });
+
+    it('lists everything once switched to advanced, and remembers it across visits', () => {
+      const shell = createShell();
+
+      shell.toggleNavMode();
+
+      expect(paths(shell.visibleGroups())).toEqual(paths(shell.navGroups));
+      expect(localStorage.getItem(NAV_MODE_STORAGE_KEY)).toBe('avance');
+      expect(announcer.announce).toHaveBeenCalledWith('Menu avancé.', 'polite');
+      expect(shell.navModeLabel()).toContain('Menu avancé');
+    });
+
+    it('starts advanced when the previous visit chose so', () => {
+      localStorage.setItem(NAV_MODE_STORAGE_KEY, 'avance');
+
+      const shell = createShell();
+
+      expect(paths(shell.visibleGroups())).toEqual(paths(shell.navGroups));
+    });
+
+    // A link of the help or of the palette to a hidden screen still lands
+    // there; the drawer then shows where the reader is, and only that.
+    it('shows a hidden entry for the time of the visit when its route is on screen', () => {
+      const shell = createShell();
+      const router = TestBed.inject(Router);
+
+      (router.events as Subject<unknown>).next(
+        new NavigationEnd(1, '/debug?focus=date-du-jour', '/debug?focus=date-du-jour'),
+      );
+
+      const visible = paths(shell.visibleGroups());
+      expect(visible).toContain('/debug');
+      expect(visible).not.toContain('/mcp-client');
+
+      (router.events as Subject<unknown>).next(new NavigationEnd(2, '/stands', '/stands'));
+
+      expect(paths(shell.visibleGroups())).not.toContain('/debug');
+    });
+
+    // Folding is about groups, whatever the mode lists: the count stays the
+    // count of groups, or "tout replier" would flip depending on the mode.
+    it('keeps folding every group, hidden entries or not', () => {
+      const shell = createShell();
+
+      shell.toggleAllGroups();
+
+      expect(shell.allCollapsed()).toBe(true);
+      expect(shell.visibleGroups().length).toBeGreaterThan(0);
     });
   });
 

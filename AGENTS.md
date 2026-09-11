@@ -450,9 +450,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   brand toolbar, the OpenStreetMap tiles of `/emplacements`, and the
   server-side PDFs — see `docs/architecture.md`.
 - Shell: `app/app.ts` is a bare `<router-outlet/>`; the admin chrome
-  (`mat-toolbar` + `mat-sidenav`, navigation grouped in Planning / Reference
-  data / Views, the solver `app-job-monitor`, the logout button) lives in
+  (`mat-toolbar` + `mat-sidenav`, navigation grouped in Planning / Pendant
+  l'événement / Aide à la décision / Reference data / Views / Tools, the
+  solver `app-job-monitor`, the logout button) lives in
   `app/shell/admin-shell.ts`, a layout route wrapping every admin page. The
+  drawer has two modes, `simple` (the default) and `avance`: an entry flagged
+  `avance` in `shell/nav-groups.ts` is listed only in the second, or while its
+  route is the one on screen — the list of expert screens is that flag, never
+  a second list, and the mode is a chrome preference (`core/nav-mode`), so it
+  changes nothing about what a URL, the palette or a help link can reach. The
   standalone routes `/login` and `/animateur/:jeton` (espace animateur, issue
   #165) render outside it — no admin navigation, no polling. The espace has
   four child routes of its own: `/animateur/:jeton` (« Mon planning »),
@@ -567,7 +573,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   *this* person's screen is neither shareable nor worth a param, and a param
   would be gone on the next plain navigation, which is the visit the preference
   has to survive. Those go to localStorage, through `core/nav-collapse` (the
-  drawer's folded groups) or `core/panel-collapse` (a page panel, e.g. the
+  drawer's folded groups), `core/nav-mode` (simple / avancé) or
+  `core/panel-collapse` (a page panel, e.g. the
   solver's score curve). The default of a control is
   the *absence* of its param, reading is tolerant (an unknown value falls back
   to the default rather than failing the page), writing replaces the history

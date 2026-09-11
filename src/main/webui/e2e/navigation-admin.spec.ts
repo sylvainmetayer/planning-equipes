@@ -170,3 +170,44 @@ test("la bascule de langue passe l'interface en anglais", async ({ browser }) =>
   await expect(page.getByRole('link', { name: 'Staff', exact: true })).toBeVisible();
   await page.context().close();
 });
+
+/**
+ * The drawer opens in its simple mode: the expert screens are not listed, and
+ * a menu shorter by a third is the point. The toggle at the top of the drawer
+ * shows them, the choice survives a reload, and a screen reached by its
+ * address is listed for the time of the visit — the entry says where the
+ * reader landed, without switching the mode under them.
+ */
+test('le menu simple masque les écrans de diagnostic, et les montre sur demande', async ({
+  browser,
+}) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/stands');
+  const navigation = page.getByRole('navigation', { name: 'Navigation principale' });
+  await expect(navigation.getByRole('link', { name: 'Stands', exact: true })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
+  await expect(navigation.getByRole('link', { name: 'Historique' })).toHaveCount(0);
+
+  const bascule = navigation.getByRole('button', { name: /Menu simple/ });
+  await expect(bascule).toHaveAttribute('aria-pressed', 'false');
+  await bascule.click();
+  await expect(navigation.getByRole('link', { name: 'Débogage' })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Historique' })).toBeVisible();
+  await expect(navigation.getByRole('button', { name: /Menu avancé/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  await page.reload();
+  await expect(navigation.getByRole('link', { name: 'Débogage' })).toBeVisible();
+
+  await navigation.getByRole('button', { name: /Menu avancé/ }).click();
+  await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
+
+  // Reached by its address anyway: the route is open whatever the menu lists.
+  await page.goto('/debug');
+  await expect(page.locator('#contenu')).toContainText('Validateur YAML');
+  await expect(navigation.getByRole('link', { name: 'Débogage' })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Historique' })).toHaveCount(0);
+  await page.context().close();
+});
