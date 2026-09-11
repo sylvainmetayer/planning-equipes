@@ -44,7 +44,7 @@ peut consulter une édition différente de celle qui vient d'être écrite.
 « Exporter les données actuelles en scénario » écrit **toutes** les sections que
 l'import sait relire — pas seulement les entités, mais aussi `typologies`,
 `emplacements`, `parametresLegaux`, `parametresDecoupage`, `parametresSolveur`,
-`contraintes`, `contraintesAdHoc`, et `decoupageAuto` le cas échéant.
+`contraintes` et `contraintesAdHoc`.
 
 C'est la raison d'être de l'export : **réimporter le fichier reproduit
 exactement le même problème**. Un fichier sans ces sections retombait
@@ -52,13 +52,14 @@ silencieusement sur les réglages de l'instance qui l'importe — sa durée de
 résolution, ses durées de vacation, ses plafonds légaux — et le « même »
 scénario rejoué ailleurs résolvait un autre problème.
 
-Deux formes en sortent :
-
-- une grille saisie à la main exporte ses `creneaux` **et** les `postes` qu'ils
-  impliquent ;
-- une grille issue d'un découpage exporte les **amplitudes sources** et
-  `decoupageAuto`, **sans** `postes` : l'import rejoue le découpage et régénère
-  les sièges, seule façon de garder des ids cohérents.
+**Les créneaux sortent toujours tels qu'ils sont, avec leur liste de sièges
+(`postes`).** Il a existé une seconde forme — une édition découpée exportant
+ses amplitudes sources et `decoupageAuto`, sans `postes`, pour que l'import
+rejoue le découpage — et cette page l'a décrite longtemps après que #172 l'a
+retirée. Une fois le découpage joué, les amplitudes qu'il a consommées n'existent
+plus : une édition découpée n'a que ses vacations à exporter. Le fichier de
+scénario tenu à la main, « amplitudes + `decoupageAuto` », reste la source de
+vérité pour redécouper — jamais cet export.
 
 ## Horaires d'un stand
 
