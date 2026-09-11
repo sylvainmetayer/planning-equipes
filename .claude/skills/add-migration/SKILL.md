@@ -38,7 +38,18 @@ corresponding class in
 whether `ReferenceDataService` / `ReferenceDataRepository` or the relevant
 `api/` resource need the new field exposed.
 
-## 5. Verify
+## 5. Freeze its fingerprint
+
+`FlywayMigrationsFrozenTest` refuses every migration whose line is missing
+from `src/test/resources/migrations-empreintes.txt`, and every applied one
+whose content changed. Run it once: it prints the line to add, copy it into
+the file.
+
+```
+./mvnw test -Dtest=FlywayMigrationsFrozenTest
+```
+
+## 6. Verify
 
 ```
 ./mvnw test

@@ -347,7 +347,10 @@ Single Quarkus service, no separate solver microservice. Package root:
   acting would let two runs both read "not yet".
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
-  never edit an applied migration.
+  never edit an applied migration. `FlywayMigrationsFrozenTest` holds both
+  halves: a new file needs its line in
+  `src/test/resources/migrations-empreintes.txt` (the failure prints it), and
+  an applied file whose fingerprint moved is refused.
 - **Every referential row carries `modifie_le`** (issue #362), and every write
   of one carries its own precondition: the `ON CONFLICT DO UPDATE` clause
   compares the caller's `modifieLe` with the stored one and returns no row when
