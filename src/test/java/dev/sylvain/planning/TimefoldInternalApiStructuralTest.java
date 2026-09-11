@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
@@ -58,14 +59,24 @@ class TimefoldInternalApiStructuralTest {
             "dev/sylvain/planning/solver/UnassignedPosteFilter.java",
             "compile error on SelectionFilter; -Pscenario-tests for a filter bypassed");
 
+    private static final Pattern MENTION_DE_CORE_IMPL = Pattern.compile("\\bai\\.timefold\\.solver\\.core\\.impl\\.");
+
     @Test
     void everyDependencyOnTimefoldInternalsIsDocumentedWithItsNet() throws IOException {
         Map<String, String> dependants = new TreeMap<>();
         try (Stream<Path> files = Files.walk(SOURCES)) {
             for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
-                String source = Files.readString(file, StandardCharsets.UTF_8);
-                if (source.contains("import ai.timefold.solver.core.impl.")) {
-                    dependants.put(SOURCES.relativize(file).toString(), "");
+                // An import, a static import or a fully qualified name in the
+                // code: the inventory has to see the three forms, or the
+                // dependency slips back in as `ai.timefold.solver.core.impl.X`
+                // written in full. A javadoc citing the package is not one.
+                for (String content : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                    String nu = content.trim();
+                    boolean commentaire = nu.startsWith("//") || nu.startsWith("*") || nu.startsWith("/*");
+                    if (!commentaire && MENTION_DE_CORE_IMPL.matcher(content).find()) {
+                        dependants.put(SOURCES.relativize(file).toString(), "");
+                        break;
+                    }
                 }
             }
         }

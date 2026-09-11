@@ -55,6 +55,8 @@ class LayeringStructuralTest {
      */
     private static final Pattern MENTION_DE_LA_COUCHE_REST = Pattern.compile("\\bdev\\.sylvain\\.planning\\.api\\.");
 
+    private static final Pattern MENTION_DE_JAX_RS = Pattern.compile("\\bjakarta\\.ws\\.rs\\.");
+
     @Test
     void noMcpToolImportsTheRestLayer() throws IOException {
         List<String> offenders = new ArrayList<>();
@@ -103,8 +105,14 @@ class LayeringStructuralTest {
                 int line = 0;
                 for (String content : Files.readAllLines(file, StandardCharsets.UTF_8)) {
                     line++;
-                    if (content.startsWith("import jakarta.ws.rs.")) {
-                        offenders.add(relatif + ":" + line + " — " + content.trim());
+                    // The same three forms as MENTION_DE_LA_COUCHE_REST: an import,
+                    // a static import, a fully qualified name in the code. Only
+                    // the first was checked, and the third is exactly how a
+                    // `throw new jakarta.ws.rs.NotFoundException(…)` would come back.
+                    String nu = content.trim();
+                    boolean commentaire = nu.startsWith("//") || nu.startsWith("*") || nu.startsWith("/*");
+                    if (!commentaire && MENTION_DE_JAX_RS.matcher(content).find()) {
+                        offenders.add(relatif + ":" + line + " — " + nu);
                     }
                 }
             }
