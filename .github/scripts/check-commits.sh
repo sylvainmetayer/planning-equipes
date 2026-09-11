@@ -47,6 +47,9 @@ while IFS= read -r sha; do
   fi
   # Trailers are the `Key: value` lines of the last paragraph; git parses them.
   while IFS= read -r trailer; do
+    # A paragraph made of one URL is parsed by git as a trailer of key
+    # « https »; a link to a measure or an issue is not a trailer.
+    if [[ "$trailer" == *://* ]]; then continue; fi
     key="${trailer%%:*}"
     case "$key" in
       Signed-off-by|Co-Authored-By|Co-authored-by) ;;
