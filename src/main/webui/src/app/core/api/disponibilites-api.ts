@@ -25,10 +25,10 @@ export class DisponibilitesApi {
     return this.api.put<ConfigurationCollecte>('/api/disponibilites/configuration', configuration);
   }
 
-  /** `application` or `refus` of one declaration, with the administrator's word. */
+  /** `application` or `refus` of one declaration, with the administrator's word; the type is the route's. */
   decide(
     declarationId: number | string,
-    action: string,
+    action: 'application' | 'refus',
     commentaire: string | null,
   ): Promise<DeclarationAdminView> {
     return this.api.post<DeclarationAdminView>(`/api/disponibilites/${declarationId}/${action}`, {

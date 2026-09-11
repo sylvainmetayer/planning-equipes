@@ -29,10 +29,14 @@ export class EchangesApi {
     return this.api.get<EchangeSimulation>(`/api/echanges/${demandeId}/impact`);
   }
 
-  /** `accepter` or `refuser`, with the administrator's word for the animateurs. */
+  /**
+   * `acceptation` or `refus`, with the administrator's word for the
+   * animateurs. The two are the last segment of the route, so the type is
+   * the contract: a third word would compile and answer 404.
+   */
   decide(
     demandeId: number | string,
-    action: string,
+    action: 'acceptation' | 'refus',
     commentaire: string | null,
   ): Promise<DemandeEchangeView> {
     return this.api.post<DemandeEchangeView>(`/api/echanges/${demandeId}/${action}`, {
