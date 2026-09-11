@@ -15,7 +15,7 @@ Ce que le code du 10 septembre 2026 contient, compté par script (`origin/main` 
 |---|---|
 | `dataSource.getConnection()` directs, hors `JdbcEditionScope` | **78** dans 19 fichiers : 48 en lecture, 30 en écriture |
 | … dont avec un `setAutoCommit(false)` à la main | 0 — toutes les écritures directes sont une instruction en autocommit |
-| Appels à `scope.write` / `scope.writeAndReturn` | **37** dans 17 fichiers |
+| Appels à `scope.write` / `scope.writeAndReturn` | **36** dans 17 fichiers (25 `write`, 11 `writeAndReturn` — un `grep -rnE "scope\.(write|writeAndReturn)\("` ; le `zip.write(` de `PlanningExportService` n'en est pas un) |
 | Méthodes prenant une `Connection` (hors scope) | **41** dans 14 fichiers, 1 seule publique (`TypologieService.validateIds`) |
 | … qui doublent une jumelle sans `Connection` | **8** (`create` × 3 services, `saveStand`, `saveEmplacement`, `saveTypologie`, `typologieExists`, `validateIds`) |
 | … qui n'existent qu'avec une `Connection` | **33** : les étapes internes d'une unité de travail (`PlanningPersistenceService` en porte 9, `AnimateurRepository` et `StandRepository` 4 chacun) |
