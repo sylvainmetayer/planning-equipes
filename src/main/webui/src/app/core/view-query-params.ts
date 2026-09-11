@@ -199,3 +199,19 @@ function queryString(params: Params): string {
   }
   return morceaux.join('&');
 }
+
+/**
+ * Drops one key from the address bar, without a navigation: a param that
+ * asks for a one-off gesture (`?edit=<id>` opening a fiche) has been obeyed
+ * and must not be obeyed again on the next reload. Silent where the page is
+ * rendered without a `Location` (a plain spec).
+ */
+export function forgetQueryParam(key: string): void {
+  const location = inject(Location, { optional: true });
+  if (!location) {
+    return;
+  }
+  const [chemin, courante = ''] = location.path().split('?');
+  const query = queryString(merged(courante, { [key]: null }));
+  location.replaceState(query ? chemin + '?' + query : chemin || '/');
+}

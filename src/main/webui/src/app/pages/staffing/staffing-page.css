@@ -46,3 +46,11 @@
 .staffing-ok {
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* The screen that acts on a bottleneck, one word next to the shortfall. */
+.staffing-lien {
+  margin-left: 0.5rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--app-accent);
+  white-space: nowrap;
+}

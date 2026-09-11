@@ -216,6 +216,9 @@
                     <mat-icon inline aria-hidden="true">priority_high</mat-icon>
                     {{ row.manque }}
                   </strong>
+                  <!-- Who holds this game category: the list to lengthen. -->
+                  <a class="staffing-lien" routerLink="/animateurs" [queryParams]="{ typologie: row.typologie }"
+                     i18n="@@staffing.lien.animateurs">Animateurs compétents</a>
                 } @else {
                   <span class="staffing-ok">0</span>
                 }

@@ -7,7 +7,8 @@
 // the Notifications page.
 
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
+import { NotificationSnack, NotificationSnackData } from '../shared/notification-snack';
 import { FeasibilityReport } from './models';
 import { editionScopedKey } from './edition-courante';
 import { hardScoreNegativeMessage } from '../shared/feasibility-messages';
@@ -48,6 +49,18 @@ export interface NotifyOptions {
   desktop?: boolean;
   /** Logs the notification without popping a snack bar (e.g. a banner already shows it inline). */
   silent?: boolean;
+  /**
+   * The screen that acts on what the message says, as the snack bar's action
+   * in place of « Fermer »: a warning naming a fiche offers the fiche.
+   */
+  lien?: LienNotification;
+}
+
+/** An in-app destination a notification offers: a route and what to open there. */
+export interface LienNotification {
+  route: string;
+  queryParams?: Record<string, string>;
+  libelle: string;
 }
 
 export interface AppNotification {
@@ -97,18 +110,25 @@ export class NotificationService {
     timeout = SNACK_TIMEOUT_MS,
     desktop = false,
     silent = false,
+    lien,
   }: NotifyOptions): void {
     if (!silent) {
-      this.snackBar.open(
-        message ? `${title} — ${message}` : title,
-        $localize`:@@notification.close:Fermer`,
-        {
-          duration: timeout > 0 ? timeout : undefined,
-          panelClass: `snack-${variant}`,
-          horizontalPosition: 'right',
-          verticalPosition: 'bottom',
-        },
-      );
+      const text = message ? `${title} — ${message}` : title;
+      const config: MatSnackBarConfig = {
+        duration: timeout > 0 ? timeout : undefined,
+        panelClass: `snack-${variant}`,
+        horizontalPosition: 'right',
+        verticalPosition: 'bottom',
+      };
+      if (lien) {
+        // Two actions — the link and « Fermer » — which the plain bar cannot hold.
+        this.snackBar.openFromComponent(NotificationSnack, {
+          ...config,
+          data: { message: text, lien } satisfies NotificationSnackData,
+        });
+      } else {
+        this.snackBar.open(text, $localize`:@@notification.close:Fermer`, config);
+      }
     }
     this.push(severityOf(variant), title, messageJournal ?? message);
     if (desktop) {

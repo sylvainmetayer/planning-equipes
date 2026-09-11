@@ -8,6 +8,7 @@ import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { Sort } from '@angular/material/sort';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { AnimateursApi } from '../../core/api/animateurs-api';
@@ -18,12 +19,17 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { AnimateursPage } from './animateurs-page';
 import { seedStore } from '../../core/testing/seed-store';
 
-function animateur(id: string, prenom: string, nom: string): Animateur {
+function animateur(
+  id: string,
+  prenom: string,
+  nom: string,
+  competences: Record<string, string> = {},
+): Animateur {
   return {
     id,
     prenom,
     nom,
-    competences: {},
+    competences,
     souhaits: [],
     joursIndisponibles: [],
   } as unknown as Animateur;
@@ -36,6 +42,9 @@ type PageInternals = {
   silenceJours: WritableSignal<number>;
   viewChanged: Signal<boolean>;
   animateursFiltres: Signal<Animateur[]>;
+  typologiesFiltrees: Signal<string[]>;
+  typologieLabel: Signal<string>;
+  clearTypologie(): void;
   resetView(): void;
 };
 
@@ -59,8 +68,9 @@ const CONFIRMATIONS = [
   },
 ];
 
-function setUp(queryParams: Record<string, string>) {
+function setUp(queryParams: Record<string, string>, path = '/animateurs') {
   const replaceState = vi.fn();
+  const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -86,8 +96,8 @@ function setUp(queryParams: Record<string, string>) {
         provide: SolverJobService,
         useValue: { solverBusy: () => false, editingLocked: () => false },
       },
-      { provide: MatDialog, useValue: { open: vi.fn() } },
-      { provide: Location, useValue: { path: () => '/animateurs', replaceState } },
+      { provide: MatDialog, useValue: dialog },
+      { provide: Location, useValue: { path: () => path, replaceState } },
       {
         provide: ActivatedRoute,
         useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
@@ -96,11 +106,17 @@ function setUp(queryParams: Record<string, string>) {
   });
   const store = TestBed.inject(ReferenceDataStore);
   seedStore(store, 'animateurs', [
-    animateur('alice', 'Alice', 'Martin'),
+    animateur('alice', 'Alice', 'Martin', { ESCAPE: 'CONFIRME' }),
     animateur('bob', 'Bob', 'Durand'),
   ]);
+  seedStore(store, 'typologies', [{ id: 'ESCAPE', label: 'Escape game' }] as never);
   const fixture = TestBed.createComponent(AnimateursPage);
-  return { fixture, replaceState, page: fixture.componentInstance as unknown as PageInternals };
+  return {
+    fixture,
+    replaceState,
+    dialog,
+    page: fixture.componentInstance as unknown as PageInternals,
+  };
 }
 
 describe('AnimateursPage query-param sync', () => {
@@ -135,6 +151,62 @@ describe('AnimateursPage query-param sync', () => {
     await fixture.whenStable();
 
     expect(replaceState).toHaveBeenCalledWith('/animateurs?sort=majorite&dir=asc&q=durand');
+  });
+
+  /**
+   * The links from a symptom (issue #489): a staffing bottleneck or a scarce
+   * competence names a game category, and lands here on the people holding it.
+   */
+  describe('the typologie filter', () => {
+    it('keeps only the animateurs holding an appreciation on one of the typologies named', () => {
+      const { page } = setUp({ typologie: 'ESCAPE,QUIZ' });
+
+      expect(page.typologiesFiltrees()).toEqual(['ESCAPE', 'QUIZ']);
+      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice']);
+      expect(page.viewChanged()).toBe(true);
+    });
+
+    it('names the typologies by their label, the id when the référentiel has none', () => {
+      const { page } = setUp({ typologie: 'ESCAPE,QUIZ' });
+
+      expect(page.typologieLabel()).toBe('Escape game, QUIZ');
+    });
+
+    it('writes the filter to the URL, and drops it with the chip', async () => {
+      const { fixture, page, replaceState } = setUp({ typologie: 'ESCAPE' });
+      await fixture.whenStable();
+      expect(replaceState).toHaveBeenLastCalledWith('/animateurs?typologie=ESCAPE');
+
+      page.clearTypologie();
+      await fixture.whenStable();
+
+      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);
+      expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
+    });
+  });
+
+  /**
+   * `?edit=<id>`: a link from a problem or a warning opens the fiche it names,
+   * once the référentiel is in. Obeyed once — the param leaves the URL, so a
+   * refresh shows the list, not the dialog again.
+   */
+  describe('the edit deep link', () => {
+    it('opens the fiche named in the URL once the référentiel is loaded, and forgets the param', async () => {
+      const { fixture, dialog, replaceState } = setUp({ edit: 'bob' }, '/animateurs?edit=bob');
+      await fixture.whenStable();
+
+      expect(dialog.open).toHaveBeenCalledOnce();
+      const [, config] = dialog.open.mock.calls[0] as unknown as [unknown, { data: unknown }];
+      expect(config.data).toEqual({ animateur: expect.objectContaining({ id: 'bob' }) });
+      expect(replaceState).toHaveBeenCalledWith('/animateurs');
+    });
+
+    it('opens nothing for an id the référentiel does not hold', async () => {
+      const { fixture, dialog } = setUp({ edit: 'nobody' }, '/animateurs?edit=nobody');
+      await fixture.whenStable();
+
+      expect(dialog.open).not.toHaveBeenCalled();
+    });
   });
 
   it('clears every param once the view is reset', async () => {

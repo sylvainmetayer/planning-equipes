@@ -4,11 +4,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import { DetailData, DetailDialog } from '../shared/detail-dialog';
 import { ReferenceCrudService } from './reference-crud.service';
+import { ActivatedRoute } from '@angular/router';
 import { ReferenceDataStore } from './reference-data.store';
 import { SolverJobService } from './solver-job.service';
 import { TableNavigation } from './table-navigation';
 import { TableSelection } from './table-selection';
 import { correspondAuFiltre } from './text-filter';
+import { forgetQueryParam } from './view-query-params';
 
 /** What `correspondAuFiltre` knows how to compare. */
 type ChampFiltrable = string | number | null | undefined;
@@ -129,7 +131,20 @@ export abstract class ReferenceTablePage<T> {
       },
       announcer: inject(LiveAnnouncer),
     });
-    void this.crud.reload();
+    const chargement = this.crud.reload();
+    // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
+    // with the fiche to open. Read once from the snapshot and forgotten
+    // afterwards — obeyed on arrival, never again on a reload.
+    const edit = inject(ActivatedRoute, { optional: true })?.snapshot.queryParamMap.get('edit');
+    if (edit) {
+      forgetQueryParam('edit');
+      void chargement.then(() => {
+        const ligne = config.rows(this.store).find((candidat) => config.id(candidat) === edit);
+        if (ligne) {
+          this.edit(ligne);
+        }
+      });
+    }
   }
 
   /**

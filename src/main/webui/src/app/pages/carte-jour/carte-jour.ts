@@ -32,6 +32,8 @@ export type EtatEmplacement = EtatStand | 'sansStand';
 
 /** One seat of one stand, reduced to the window it covers and whether it is filled. */
 export interface FenetrePoste {
+  /** The timeslot the seat belongs to: what opens the bench on it. */
+  creneauId: number;
   debutMinutes: number;
   /** Exclusive: a seat ending at 12:00 does not cover 12:00. */
   finMinutes: number;
@@ -69,6 +71,8 @@ export interface StandInstant {
   standId: string;
   nom: string;
   etat: EtatStand;
+  /** The timeslot of the first seat covering the instant; null when the stand is closed then. */
+  creneauId: number | null;
   /** Seats covering the instant, and how many of them are filled. */
   sieges: number;
   pourvus: number;
@@ -166,6 +170,7 @@ export function buildJourneesCarte(postes: PosteAffectation[]): JourneeCarte[] {
     const heureDebut = formatHeure(poste.heureDebutEffective ?? creneau.heureDebut);
     const heureFin = formatHeure(poste.heureFinEffective ?? creneau.heureFin);
     standJour.postes.push({
+      creneauId: creneau.id,
       debutMinutes: minutesOfDay(heureDebut),
       finMinutes: endMinutesOfDay(heureFin),
       heureDebut,
@@ -222,6 +227,7 @@ export function etatStandInstant(stand: StandJour, minutes: number): StandInstan
     standId: stand.standId,
     nom: stand.nom,
     etat,
+    creneauId: couvrants[0]?.creneauId ?? null,
     sieges,
     pourvus,
     horaire,

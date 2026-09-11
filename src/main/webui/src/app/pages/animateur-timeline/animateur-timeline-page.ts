@@ -13,7 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { indexerPauses, pausesDe, SegmentPause, segmentsPause } from '../../core/pauses-index';
@@ -122,6 +122,7 @@ export interface TimelineDay {
   imports: [
     MatCardModule,
     MatButtonModule,
+    RouterLink,
     MatFormFieldModule,
     MatSelectModule,
     MatIconModule,

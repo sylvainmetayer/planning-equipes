@@ -138,7 +138,10 @@
                       </span>
                     }
                     @for (libre of stand.postesLibres; track libre.id) {
-                      <span class="siege-libre" [attr.data-poste-id]="libre.id" [title]="glisserTooltip">{{ siegeLibreLabel }}</span>
+                      <!-- A link as well as a drop target: the bench says who could take the seat, and why the others cannot. -->
+                      <a class="siege-libre" [attr.data-poste-id]="libre.id" [title]="bancTooltip"
+                         routerLink="/diagnostic"
+                         [queryParams]="{ onglet: 'banc', creneau: slot.creneauId, stand: stand.standId }">{{ siegeLibreLabel }}</a>
                     }
                   </div>
                 }

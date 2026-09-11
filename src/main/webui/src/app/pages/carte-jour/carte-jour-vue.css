@@ -222,3 +222,11 @@
     transition: none;
   }
 }
+
+/* The bench, one word after a stand with an empty seat. */
+.carte-jour-banc {
+  margin-left: 0.5rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--app-accent);
+  white-space: nowrap;
+}

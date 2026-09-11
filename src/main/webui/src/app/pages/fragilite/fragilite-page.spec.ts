@@ -6,7 +6,8 @@
 import { Location } from '@angular/common';
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { AnimateurFragilite, CompetenceRare } from '../../core/models';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { RapportFragilite } from '../../core/models';
@@ -189,5 +190,96 @@ describe('FragilitePage loading', () => {
     page.recharger();
     await vi.waitFor(() => expect(page.erreur()).toBe(''));
     expect(text()).toContain('Douze groupes analysés.');
+  });
+});
+
+/**
+ * The links out of a fragile row (issue #489): an irreplaceable person leads
+ * to their timeline, a scarce competence to the animateurs holding it.
+ */
+describe('FragilitePage contextual links', () => {
+  const analysesApi = { fragility: vi.fn() };
+
+  function animateur(partial: Partial<AnimateurFragilite> = {}): AnimateurFragilite {
+    return {
+      animateurId: 'a1',
+      nom: 'Alice Martin',
+      ninja: false,
+      affectations: 3,
+      postesEffondres: 3,
+      postesIrremplacables: 1,
+      competencesRares: 1,
+      severite: 'CRITIQUE',
+      postes: [],
+      postesNonDetailles: 0,
+      ...partial,
+    };
+  }
+
+  function competence(partial: Partial<CompetenceRare> = {}): CompetenceRare {
+    return {
+      standId: 'S1',
+      standNom: 'Escape game',
+      creneauId: 1,
+      date: '2026-07-08',
+      jour: 1,
+      heureDebut: '10:00:00',
+      heureFin: '12:00:00',
+      typologies: ['ESCAPE', 'QUIZ'],
+      specialistes: 1,
+      animateurId: 'a1',
+      nom: 'Alice Martin',
+      renforts: 0,
+      pourvu: true,
+      severite: 'CRITIQUE',
+      ...partial,
+    };
+  }
+
+  beforeEach(() => {
+    analysesApi.fragility.mockReset();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: AnalysesApi, useValue: analysesApi },
+      ],
+    });
+  });
+
+  async function liens(vue: string): Promise<string[]> {
+    await TestBed.inject(Router).navigateByUrl(vue ? `/?vue=${vue}` : '/');
+    const fixture = TestBed.createComponent(FragilitePage);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
+        'a.fragilite-lien',
+      ),
+    ).map((lien) => lien.getAttribute('href') ?? '');
+  }
+
+  it('leads from an irreplaceable person to their timeline', async () => {
+    analysesApi.fragility.mockResolvedValue(
+      rapport({ animateurs: [animateur()], animateursIrremplacables: 1 }),
+    );
+
+    expect(await liens('')).toEqual(['/timeline?animateur=a1']);
+  });
+
+  it('leads from a scarce competence to the animateurs holding its typologies', async () => {
+    analysesApi.fragility.mockResolvedValue(
+      rapport({ competencesRares: [competence()], totalCompetencesRares: 1 }),
+    );
+
+    expect(await liens('COMPETENCES')).toEqual(['/animateurs?typologie=ESCAPE,QUIZ']);
+  });
+
+  it('offers no animateurs link for a stand carrying no typologie', async () => {
+    analysesApi.fragility.mockResolvedValue(
+      rapport({ competencesRares: [competence({ typologies: [] })], totalCompetencesRares: 1 }),
+    );
+
+    expect(await liens('COMPETENCES')).toEqual([]);
   });
 });

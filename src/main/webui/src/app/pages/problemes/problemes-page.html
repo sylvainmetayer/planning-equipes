@@ -75,6 +75,18 @@
           }
         </ul>
       }
+      @if (probleme.references.length > 0) {
+        <ul class="probleme-details">
+          @for (violation of probleme.references; track $index) {
+            <li>
+              {{ violation.texte }}
+              @for (lien of violation.liens; track lien.libelle) {
+                <a class="probleme-violation-lien" [routerLink]="lien.route" [queryParams]="lien.queryParams ?? {}">{{ lien.libelle }}</a>
+              }
+            </li>
+          }
+        </ul>
+      }
     </mat-card-content>
   </mat-card>
 } @empty {

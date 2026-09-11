@@ -99,6 +99,13 @@ export class ReferenceCrudService {
           messageJournal: detailler(avertissements.filter(estJournalisable)),
           variant: 'warning',
           timeout: 0,
+          // The dates to check live on the record just saved: one click
+          // reopens it, instead of a search through the list behind the snack.
+          lien: {
+            route: `/${resource}`,
+            queryParams: { edit: String(identifiant) },
+            libelle: $localize`:@@crud.voirFiche:Voir la fiche`,
+          },
         });
         return true;
       }

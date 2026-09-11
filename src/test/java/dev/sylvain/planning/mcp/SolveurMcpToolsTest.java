@@ -28,11 +28,12 @@ class SolveurMcpToolsTest {
                 2,
                 List.of("poste P1 non pourvu", "poste P2 non pourvu"),
                 null,
-                null);
-        ConstraintDiagnostic hardRespecte =
-                new ConstraintDiagnostic("animateurDisponible", "0hard/0medium/0soft", 0, List.of(), null, null);
-        ConstraintDiagnostic mediumViole =
-                new ConstraintDiagnostic("equilibrerCharge", "0hard/-5medium/0soft", 5, List.of(), null, null);
+                null,
+                List.of());
+        ConstraintDiagnostic hardRespecte = new ConstraintDiagnostic(
+                "animateurDisponible", "0hard/0medium/0soft", 0, List.of(), null, null, List.of());
+        ConstraintDiagnostic mediumViole = new ConstraintDiagnostic(
+                "equilibrerCharge", "0hard/-5medium/0soft", 5, List.of(), null, null, List.of());
         tools.analysisStore.record(new PlanningDiagnostic(
                 "-2hard/-5medium/0soft",
                 2,

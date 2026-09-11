@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compterProblemes, construireProblemes } from './problemes';
+import { compterProblemes, construireProblemes, liensDeCause } from './problemes';
 import type {
   CauseInfaisabilite,
   ConstraintView,
@@ -55,6 +55,7 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     violations: ['Alice : 52 h semaine 2026-W28'],
     postesEvalues: null,
     plancher: null,
+    references: [],
     ...overrides,
   };
 }
@@ -213,6 +214,44 @@ describe('construireProblemes', () => {
     expect(probleme.details[0]).toContain('12:30');
     expect(probleme.details[1]).toContain('tir, quilles');
     expect(probleme.details[2]).toContain('2');
+  });
+
+  it('opens the créneau a cause names, then each stand up to three, then the openings', () => {
+    const liens = liensDeCause(cause({ creneauId: '12', standIds: ['a', 'b', 'c', 'd'] }));
+    expect(liens.map((lien) => [lien.route, lien.queryParams?.['edit']])).toEqual([
+      ['/creneaux', '12'],
+      ['/stands', 'a'],
+      ['/stands', 'b'],
+      ['/stands', 'c'],
+      ['/ouvertures', undefined],
+      ['/diagnostic', undefined],
+    ]);
+  });
+
+  it('links each match of a HARD rule to the fiches it names, in place of the bare lines', () => {
+    const [probleme] = construireProblemes(null, [
+      contrainte({
+        violations: ['Alice : 52 h'],
+        references: [{ texte: 'Alice : 52 h', animateurId: 'alice', standId: null, creneauId: 7 }],
+      }),
+    ]);
+    // The sentence now lives with its links, not a second time among the details.
+    expect(probleme.details).toEqual([]);
+    expect(probleme.references.map((reference) => reference.texte)).toEqual(['Alice : 52 h']);
+    expect(
+      probleme.references[0].liens.map((lien) => [lien.route, lien.queryParams?.['edit']]),
+    ).toEqual([
+      ['/animateurs', 'alice'],
+      ['/creneaux', '7'],
+    ]);
+  });
+
+  it('falls back on the bare lines when an older analysis carries no reference', () => {
+    const [probleme] = construireProblemes(null, [
+      contrainte({ violations: ['Alice : 52 h'], references: [] }),
+    ]);
+    expect(probleme.details).toEqual(['Alice : 52 h']);
+    expect(probleme.references).toEqual([]);
   });
 
   it('lists the violation lines of a HARD constraint, and the match count otherwise', () => {

@@ -87,7 +87,15 @@
                 @if (marqueur.stands.length > 0) {
                   <ul class="carte-jour-stands">
                     @for (stand of marqueur.stands; track stand.standId) {
-                      <li [class]="'etat-' + stand.etat">{{ stand.resume }}</li>
+                      <li [class]="'etat-' + stand.etat">
+                        {{ stand.resume }}
+                        @if ((stand.etat === 'decouvert' || stand.etat === 'partiel') && stand.creneauId !== null) {
+                          <!-- A seat nobody holds: the bench says who could take it. -->
+                          <a class="carte-jour-banc" routerLink="/diagnostic"
+                             [queryParams]="{ onglet: 'banc', creneau: stand.creneauId, stand: stand.standId }"
+                             i18n="@@carteJour.banc">Banc de touche</a>
+                        }
+                      </li>
                     }
                   </ul>
                 }

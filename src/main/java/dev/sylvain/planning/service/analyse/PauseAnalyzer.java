@@ -69,6 +69,8 @@ public class PauseAnalyzer {
      * @param dureeMinutes    20 for an adult, 30 for a minor
      * @param standId         stand the animateur holds during the break
      * @param standNom        its name
+     * @param creneauId       the timeslot of the seat held during the break —
+     *                        what a screen needs to open the bench on it
      * @param relais          colleagues holding a seat on that stand for the
      *                        whole break, in name order
      * @param relaisDisponible false when nobody else is on the stand: the
@@ -87,6 +89,7 @@ public class PauseAnalyzer {
             int dureeMinutes,
             String standId,
             String standNom,
+            Long creneauId,
             List<RelaisView> relais,
             boolean relaisDisponible,
             boolean simultanee) {}
@@ -478,6 +481,9 @@ public class PauseAnalyzer {
                         demande.dureeMinutes,
                         demande.tenu.getStand().getId(),
                         demande.tenu.getStand().getNom(),
+                        demande.tenu.getCreneau() == null
+                                ? null
+                                : demande.tenu.getCreneau().getId(),
                         relais,
                         !relais.isEmpty(),
                         demande.simultanee));

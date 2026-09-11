@@ -26,6 +26,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { PlanningApi } from '../../core/api/planning-api';
 import { errorMessage } from '../../core/error-message';
@@ -120,6 +121,7 @@ interface DayCard {
     MatCheckboxModule,
     MatIconModule,
     MatTooltipModule,
+    RouterLink,
   ],
   templateUrl: './calendar-day-vue.html',
   styleUrls: ['../../../styles/calendar-day.css', '../../../styles/calendar-month.css'],
@@ -222,6 +224,7 @@ export class CalendarDayView {
 
   protected readonly verrouilleTooltip = $localize`:@@verrouillages.indicator:Verrouillé : ces affectations ne bougeront plus à la prochaine résolution`;
   protected readonly siegeLibreLabel = $localize`:@@calendarDay.siegeLibre:siège libre`;
+  protected readonly bancTooltip = $localize`:@@calendarDay.siegeLibre.banc:Qui pourrait prendre ce siège : ouvrir le banc de touche sur ce créneau et ce stand`;
   protected readonly glisserTooltip = $localize`:@@calendarDay.glisser:Glisser vers un autre stand : sur un siège libre pour y déplacer la personne, sur une personne pour échanger leurs sièges. Refusé si une règle dure serait cassée.`;
 
   /* ----------------------------- Glisser-déposer (#308) ----------------------------- */

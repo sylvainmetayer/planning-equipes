@@ -4,6 +4,7 @@ import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityRepor
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintFloor;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
+import dev.sylvain.planning.service.analyse.ViolationFormatter;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
@@ -165,7 +166,8 @@ public class ConstraintResource {
                 diagnostic == null ? null : diagnostic.matchCount(),
                 diagnostic == null ? List.of() : diagnostic.violations(),
                 diagnostic == null ? null : diagnostic.postesEvalues(),
-                diagnostic == null ? null : diagnostic.plancher());
+                diagnostic == null ? null : diagnostic.plancher(),
+                diagnostic == null ? List.of() : diagnostic.references());
     }
 
     /**
@@ -207,6 +209,9 @@ public class ConstraintResource {
      *                    missing referential data when one explains it, with
      *                    the screen to enter it. Reported, never acted on:
      *                    the rule stays active
+     * @param references      the same lines with the ids they name (animateur,
+     *                    stand, créneau), so the screen can open the fiche in
+     *                    question instead of making the reader retype a name
      */
     @Schema(requiredProperties = {"actif", "dosable", "legale", "poids", "protegee"})
     public record ConstraintView(
@@ -223,7 +228,8 @@ public class ConstraintResource {
             Integer matchCount,
             List<String> violations,
             Integer postesEvalues,
-            ConstraintFloor plancher) {}
+            ConstraintFloor plancher,
+            List<ViolationFormatter.ViolationReference> references) {}
 
     /**
      * @param actif whether the constraint is applied on the next solve

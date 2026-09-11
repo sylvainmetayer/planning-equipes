@@ -146,6 +146,11 @@ describe('etatStandInstant', () => {
     expect(instant.horaire).toBe('10:00 – 12:00');
   });
 
+  it('names the créneau covering the instant, so the bench can be opened on it, and none once closed', () => {
+    expect(etatStandInstant(journee.stands[0], 11 * 60).creneauId).toBe(1);
+    expect(etatStandInstant(journee.stands[0], 12 * 60).creneauId).toBeNull();
+  });
+
   it('is closed before it opens and at the very minute it closes', () => {
     expect(etatStandInstant(journee.stands[0], 9 * 60 + 59).etat).toBe('ferme');
     expect(etatStandInstant(journee.stands[0], 10 * 60).etat).toBe('partiel');

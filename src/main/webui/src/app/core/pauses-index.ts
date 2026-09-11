@@ -42,7 +42,10 @@ export function pausesDe(
 export interface SegmentPause {
   heureDebut: string;
   heureFin: string;
+  standId: string;
   standNom: string;
+  /** The timeslot of the seat held during the break; null on an older payload. */
+  creneauId: number | null;
   offsetPercent: number;
   widthPercent: number;
   /** Nobody else on the stand during the break: the mark to show first. */
@@ -77,7 +80,9 @@ export function segmentsPause(
     segments.push({
       heureDebut: formatHeure(pause.debut),
       heureFin: formatHeure(pause.fin),
+      standId: pause.standId,
       standNom: pause.standNom,
+      creneauId: pause.creneauId ?? null,
       offsetPercent: ((Math.max(debut, debutMinutes) - debutMinutes) / amplitude) * 100,
       widthPercent:
         ((Math.min(fin, debutMinutes + amplitude) - Math.max(debut, debutMinutes)) / amplitude) *

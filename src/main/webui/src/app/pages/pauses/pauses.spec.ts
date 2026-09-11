@@ -140,6 +140,27 @@ describe('groupesDuJour', () => {
     expect(jeux.lignes[0].sequenceMinutes).toBe(630);
   });
 
+  it('carries the créneau of each break for the bench link, null when the server named none', () => {
+    const groupes = groupesDuJour(
+      rapport([
+        journee({
+          sequences: [
+            {
+              debut: '13:00:00',
+              fin: '20:00:00',
+              minutes: 420,
+              pausesDues: [pause({ creneauId: 41 }), pause({ debut: '19:30:00', fin: '19:50:00' })],
+            },
+          ],
+        }),
+      ]),
+      '2026-07-10',
+    );
+
+    expect(groupes[0].lignes.map((ligne) => ligne.creneauId)).toEqual([41, null]);
+    expect(groupes[0].lignes[0].standId).toBe('JEUX');
+  });
+
   it('puts the stands short of a relay first and counts them', () => {
     const groupes = groupesDuJour(
       rapport([

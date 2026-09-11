@@ -15,10 +15,11 @@ import {
   CauseInfaisabilite,
   ConstraintView,
   ContributionAdHoc,
+  ViolationReference,
   FeasibilityReport,
   NiveauContrainte,
-  TypeCauseInfaisabilite,
   RapportPauses,
+  TypeCauseInfaisabilite,
 } from './models';
 import { formatHeure } from './time-of-day';
 
@@ -42,6 +43,14 @@ export interface Probleme {
    * the answer is almost always to edit one of them: without the link the user
    * has to memorise an id and go hunting for it in another screen.
    */
+  liens: LienProbleme[];
+  /** The matches of a rule in default, each with the fiche it names — read by the Problèmes page next to `details`. */
+  references: LinkedViolation[];
+}
+
+/** One match of a rule in default: its sentence, and the fiches it names as links. */
+export interface LinkedViolation {
+  texte: string;
   liens: LienProbleme[];
 }
 
@@ -114,18 +123,55 @@ export function typeCauseLabel(type: TypeCauseInfaisabilite): string {
     : $localize`:@@problemes.cause.creneauSousEffectif:Créneau en sous-effectif`;
 }
 
-/** Créneau and stands named by a cause, as printable lines. */
+/** A cause naming a dozen stands gets a dozen links nobody clicks: three, then the list. */
+const MAX_LIENS_STANDS = 3;
+
+/** The fiches a hard-constraint match names, each as a link opening it for editing. */
+export function linksOfViolation(violation: ViolationReference): LienProbleme[] {
+  const liens: LienProbleme[] = [];
+  if (violation.animateurId) {
+    liens.push({
+      route: '/animateurs',
+      queryParams: { edit: violation.animateurId },
+      libelle: $localize`:@@problemes.lien.animateur:Fiche animateur`,
+    });
+  }
+  if (violation.standId) {
+    liens.push({
+      route: '/stands',
+      queryParams: { edit: violation.standId },
+      libelle: $localize`:@@problemes.lien.standFiche:Fiche stand`,
+    });
+  }
+  if (violation.creneauId !== null && violation.creneauId !== undefined) {
+    liens.push({
+      route: '/creneaux',
+      queryParams: { edit: String(violation.creneauId) },
+      libelle: $localize`:@@problemes.lien.creneauFiche:Fiche créneau`,
+    });
+  }
+  return liens;
+}
+
 /** Screens a feasibility cause can be acted upon from, in the order one would try them. */
 export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
   const liens: LienProbleme[] = [];
   if (cause.creneauId !== null && cause.creneauId !== undefined) {
+    // Straight to the fiche, open for editing: the reader came to fix it.
     liens.push({
       route: '/creneaux',
-      libelle: $localize`:@@problemes.lien.creneaux:Voir les créneaux`,
+      queryParams: { edit: String(cause.creneauId) },
+      libelle: $localize`:@@problemes.lien.creneaux:Voir le créneau`,
+    });
+  }
+  for (const standId of cause.standIds.slice(0, MAX_LIENS_STANDS)) {
+    liens.push({
+      route: '/stands',
+      queryParams: { edit: standId },
+      libelle: $localize`:@@problemes.lien.stand:Voir le stand ${standId}:stand:`,
     });
   }
   if (cause.standIds.length > 0) {
-    liens.push({ route: '/stands', libelle: $localize`:@@problemes.lien.stands:Voir les stands` });
     liens.push({
       route: '/ouvertures',
       libelle: $localize`:@@problemes.lien.ouvertures:Vérifier les ouvertures`,
@@ -221,6 +267,7 @@ export function construireProblemes(
       titre: $localize`:@@problemes.pauses.titre:Pauses sans relais`,
       message: $localize`:@@problemes.pauses.message:${pauses.relaisManquants}:count: pause(s) légale(s) tombent sur un stand où personne d'autre n'est présent : la personne est seule, personne ne peut la relayer. Prévoyez un relais extérieur, ou renforcez le stand.`,
       details: detailsDePauses(pauses),
+      references: [],
       liens: [
         {
           route: '/journee',
@@ -239,6 +286,7 @@ export function construireProblemes(
       titre: typeCauseLabel(cause.type),
       message: cause.message,
       details: detailsDeCause(cause),
+      references: [],
       liens: liensDeCause(cause),
     });
   });
@@ -253,12 +301,20 @@ export function construireProblemes(
       const enCause = contraintesAdHocEnCause.filter((contribution) =>
         contribution.contraintes.includes(contrainte.name),
       );
+      // Each match with the fiches it names, when the server said which;
+      // the bare sentences otherwise (an older analysis), the count failing that.
+      const references: LinkedViolation[] = (contrainte.references ?? []).map((violation) => ({
+        texte: violation.texte,
+        liens: linksOfViolation(violation),
+      }));
       const lignes =
-        contrainte.violations.length > 0
-          ? contrainte.violations
-          : [
-              $localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`,
-            ];
+        references.length > 0
+          ? []
+          : contrainte.violations.length > 0
+            ? contrainte.violations
+            : [
+                $localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`,
+              ];
       const liens: LienProbleme[] = [
         // A violated rule is acted upon on the constraints screen: that is where
         // its weight is explained and where it can be relaxed.
@@ -277,6 +333,7 @@ export function construireProblemes(
         titre: contrainte.name,
         message: contrainte.description,
         details: [...relatedDetails(enCause), ...lignes],
+        references,
         liens,
       });
     });

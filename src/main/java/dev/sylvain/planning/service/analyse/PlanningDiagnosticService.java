@@ -117,6 +117,8 @@ public final class PlanningDiagnosticService {
             String name = ca.constraintName();
             boolean hard = ConstraintCatalog.NOMS_DURS.contains(name);
             List<String> violations = hard ? formatViolations(ca.matches()) : List.of();
+            List<ViolationFormatter.ViolationReference> references =
+                    hard ? referenceViolations(ca.matches()) : List.of();
             if (hard) {
                 collectContributionsAdHoc(name, ca.matches(), contributionsAdHoc);
             }
@@ -134,7 +136,7 @@ public final class PlanningDiagnosticService {
                 plancherSoft += ca.score().softScore();
             }
             constraintDiagnostics.add(new ConstraintDiagnostic(
-                    name, String.valueOf(ca.score()), ca.matchCount(), violations, evaluated, floor));
+                    name, String.valueOf(ca.score()), ca.matchCount(), violations, evaluated, floor, references));
         }
         constraintDiagnostics.sort((a, b) -> Integer.compare(b.matchCount, a.matchCount));
         HardMediumSoftScore floorScore = HardMediumSoftScore.of(0, plancherMedium, plancherSoft);
@@ -284,6 +286,18 @@ public final class PlanningDiagnosticService {
                 .toList();
     }
 
+    /**
+     * The same lines as {@link #formatViolations}, each with the ids it names:
+     * what lets a screen open the fiche in question (see
+     * {@link ViolationFormatter#references}). Same cap, same order.
+     */
+    public static List<ViolationFormatter.ViolationReference> referenceViolations(List<MatchFacts> matches) {
+        return matches.stream()
+                .limit(MAX_VIOLATIONS_PAR_CONTRAINTE)
+                .map(match -> ViolationFormatter.references(match.facts()))
+                .toList();
+    }
+
     private static List<Stand> distinctStands(PlanningEvenement solved) {
         Map<String, Stand> byId = new LinkedHashMap<>();
         for (PosteAffectation poste : solved.getPostes()) {
@@ -325,7 +339,8 @@ public final class PlanningDiagnosticService {
             int matchCount,
             List<String> violations,
             Integer postesEvalues,
-            ConstraintFloor plancher) {}
+            ConstraintFloor plancher,
+            List<ViolationFormatter.ViolationReference> references) {}
 
     /**
      * A constraint read as a floor (issue #495): what share of its items it

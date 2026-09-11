@@ -15,6 +15,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -42,6 +43,7 @@ import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import {
   NO_SORT,
+  forgetQueryParam,
   keepViewInQueryParams,
   optionalParam,
   readSort,
@@ -90,6 +92,7 @@ import { resumeRelance } from './relance-resume';
     MatButtonModule,
     MatCheckboxModule,
     MatFormFieldModule,
+    MatChipsModule,
     MatIconModule,
     MatInputModule,
     MatSelectModule,
@@ -126,10 +129,31 @@ export class AnimateursPage {
   /** N of « silencieux depuis N jours »; kept, and in the URL, only while that mode is on. */
   protected readonly silenceJours = signal(SILENCE_JOURS_DEFAUT);
   /** True as soon as the table shows something other than the whole referential, unsorted. */
+  /**
+   * Typologie ids, comma-separated, the list is narrowed to: only the
+   * animateurs holding an appreciation on one of them. Set by the links that
+   * name a game category nobody masters (the staffing bottleneck, a scarce
+   * competence of the fragility screen) — the `typologie` query param.
+   */
+  protected readonly typologie = signal('');
+  protected readonly typologiesFiltrees = computed(() =>
+    this.typologie()
+      .split(',')
+      .map((id) => id.trim())
+      .filter((id) => id !== ''),
+  );
+  protected readonly typologieLabel = computed(() => {
+    const ids = this.typologiesFiltrees();
+    const libelles = this.store.typologies();
+    return ids
+      .map((id) => libelles.find((typologie) => typologie.id === id)?.label ?? id)
+      .join(', ');
+  });
   protected readonly viewChanged = computed(
     () =>
       this.filtre().trim() !== '' ||
       this.accuses() !== 'tous' ||
+      this.typologiesFiltrees().length > 0 ||
       (this.sort().active !== '' && this.sort().direction !== ''),
   );
   protected readonly animateursFiltres = computed(() => {
@@ -147,6 +171,7 @@ export class AnimateursPage {
           lastPublishedAt,
           maintenant,
         ) &&
+        this.matchesTypologieFilter(animateur) &&
         correspondAuFiltre(this.filtre(), [
           animateur.id,
           animateur.prenom,
@@ -312,7 +337,8 @@ export class AnimateursPage {
     const accuses = readModeAccuses(params.get('confirmation'), params.get('silence'));
     this.accuses.set(accuses.mode);
     this.silenceJours.set(accuses.jours);
-    void this.crud.reload();
+    this.typologie.set(params.get('typologie') ?? '');
+    const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
     void this.chargerConfirmations();
     keepViewInQueryParams(() => ({
@@ -320,7 +346,20 @@ export class AnimateursPage {
       q: optionalParam(this.filtre()),
       confirmation: this.accuses() === 'jamais' ? 'jamais' : null,
       silence: this.accuses() === 'silence' ? String(this.silenceJours()) : null,
+      typologie: optionalParam(this.typologie()),
     }));
+    // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
+    // with the fiche to open. Obeyed once, on arrival, then forgotten.
+    const edit = params.get('edit');
+    if (edit) {
+      forgetQueryParam('edit');
+      void chargement.then(() => {
+        const animateur = this.store.animateurs().find((candidat) => candidat.id === edit);
+        if (animateur) {
+          this.openDialog(animateur);
+        }
+      });
+    }
   }
 
   /**
@@ -443,12 +482,23 @@ export class AnimateursPage {
     return null;
   }
 
+  /** The chip's cross: the list widens back to everyone, the rest of the view untouched. */
+  protected clearTypologie(): void {
+    this.typologie.set('');
+  }
+
   /** Back to the whole referential, in the order the store holds it. */
   protected resetView(): void {
     this.filtre.set('');
+    this.typologie.set('');
     this.sort.set(NO_SORT);
     this.accuses.set('tous');
     this.silenceJours.set(SILENCE_JOURS_DEFAUT);
+  }
+
+  private matchesTypologieFilter(animateur: Animateur): boolean {
+    const ids = this.typologiesFiltrees();
+    return ids.length === 0 || ids.some((id) => id in (animateur.competences ?? {}));
   }
 
   private indisponibiliteCritiqueMessage(jour: string, cause: string): string {

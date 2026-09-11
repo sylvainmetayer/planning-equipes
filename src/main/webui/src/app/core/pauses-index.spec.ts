@@ -88,6 +88,19 @@ describe('indexerPauses / pausesDe', () => {
 });
 
 describe('segmentsPause', () => {
+  it('keeps the stand and the créneau of a break, so a relay-less one can open the bench', () => {
+    const segments = segmentsPause(
+      [pause({ creneauId: 41 }), pause({ debut: '19:30:00', fin: '19:50:00' })],
+      13 * 60,
+      420,
+    );
+
+    expect(segments.map((segment) => [segment.standId, segment.creneauId])).toEqual([
+      ['JEUX', 41],
+      ['JEUX', null],
+    ]);
+  });
+
   it('places a break on the track as a share of it', () => {
     // Track 13:00 → 20:00 (420 min): 18:40 is at 340/420, twenty minutes are 20/420.
     const [segment] = segmentsPause([pause()], 13 * 60, 420);

@@ -58,6 +58,8 @@ class PauseAnalyzerTest {
         assertThat(sequence.minutes()).isEqualTo(420);
         PauseDueView pause = sequence.pausesDues().getFirst();
         assertThat(pause.heureLimite()).isEqualTo(LocalTime.of(19, 0));
+        // The seat held at the deadline names its timeslot: the bench opens on it.
+        assertThat(pause.creneauId()).isEqualTo(2L);
         assertThat(pause.dureeMinutes()).isEqualTo(20);
         assertThat(pause.standId()).isEqualTo("JEUX");
         assertThat(pause.relaisDisponible()).isTrue();

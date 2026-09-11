@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { NotificationSnack } from '../shared/notification-snack';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationService } from './notification.service';
 
@@ -76,6 +77,54 @@ describe('NotificationService', () => {
     TestBed.resetTestingModule();
     const { service: relu } = configure();
     expect(relu.notifications()[0].message).toBe('off day 2027-08-15');
+  });
+
+  /**
+   * A warning naming a fiche offers the fiche (issue #489): the bar then
+   * carries two actions — the link and « Fermer » — which the plain bar
+   * cannot hold, so it is the two-action component that opens, with the
+   * sentence and the link as its data. Without a link the plain bar stays.
+   */
+  it('notify() with a lien opens the two-action snack with the link as its data', () => {
+    const openFromComponent = vi.fn();
+    const open = vi.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        NotificationService,
+        { provide: MatSnackBar, useValue: { open, openFromComponent } },
+      ],
+    });
+    const service = TestBed.inject(NotificationService);
+    const lien = { route: '/animateurs', queryParams: { edit: 'A1' }, libelle: 'Voir la fiche' };
+
+    service.notify({ title: 'Saved', message: 'dates to check', lien, timeout: 0 });
+
+    expect(open).not.toHaveBeenCalled();
+    expect(openFromComponent).toHaveBeenCalledWith(
+      NotificationSnack,
+      expect.objectContaining({
+        data: { message: 'Saved — dates to check', lien },
+        duration: undefined,
+      }),
+    );
+    expect(service.notifications()[0].title).toBe('Saved');
+  });
+
+  it('notify() without a lien keeps the plain bar and its « Fermer » action', () => {
+    const openFromComponent = vi.fn();
+    const open = vi.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        NotificationService,
+        { provide: MatSnackBar, useValue: { open, openFromComponent } },
+      ],
+    });
+    TestBed.inject(NotificationService).notify({ title: 'Saved' });
+
+    expect(open).toHaveBeenCalledWith('Saved', 'Fermer', expect.anything());
+    expect(openFromComponent).not.toHaveBeenCalled();
   });
 
   it('silent notify() logs without showing a snack bar', () => {

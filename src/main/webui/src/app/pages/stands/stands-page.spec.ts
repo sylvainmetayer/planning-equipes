@@ -12,7 +12,7 @@ import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { StandsApi } from '../../core/api/stands-api';
@@ -146,6 +146,40 @@ describe('StandsPage', () => {
     seedStore(referenceData, 'stands', stands);
     return TestBed.createComponent(StandsPage).componentInstance as unknown as PageInternals;
   }
+
+  /**
+   * `?edit=<id>` (issue #489): a problem or a warning names a stand, and its
+   * link lands here with the fiche already open. The référentiel is loaded
+   * first — the row has to exist before its form can be filled.
+   */
+  describe('the edit deep link', () => {
+    /** The page reads the snapshot of the route it is created under: navigate first, create after. */
+    async function arriveWith(edit: string): Promise<void> {
+      await TestBed.inject(Router).navigateByUrl(`/?edit=${edit}`);
+    }
+
+    it('opens the form of the stand named in the URL once the référentiel is in', async () => {
+      await arriveWith('S1');
+      createPage([stand({ id: 'S1', nom: 'Escape' })]);
+      await Promise.resolve();
+
+      expect(dialog.open).toHaveBeenCalledOnce();
+      const [component, config] = dialog.open.mock.calls[0] as unknown as [
+        unknown,
+        { data: { stand: Stand } },
+      ];
+      expect(component).toBe(StandFormDialog);
+      expect(config.data.stand.id).toBe('S1');
+    });
+
+    it('opens nothing for a stand the référentiel does not hold', async () => {
+      await arriveWith('S9');
+      createPage([stand({ id: 'S1' })]);
+      await Promise.resolve();
+
+      expect(dialog.open).not.toHaveBeenCalled();
+    });
+  });
 
   it('loads the referential on entry rather than showing whatever the previous page left', () => {
     createPage();

@@ -113,6 +113,14 @@ class PlanningServiceDiagnosticViolationsTest {
                 .orElseThrow();
         assertThat(posteDoitEtrePourvu.matchCount()).isEqualTo(1);
         assertThat(posteDoitEtrePourvu.violations()).containsExactly("Stand tir à l'arc — 2026-07-16 12:30-15:30");
+        // The same line with the ids it names, so a screen can open the stand
+        // or the timeslot instead of making the reader retype a name.
+        assertThat(posteDoitEtrePourvu.references()).hasSize(1);
+        assertThat(posteDoitEtrePourvu.references().getFirst().texte())
+                .isEqualTo("Stand tir à l'arc — 2026-07-16 12:30-15:30");
+        assertThat(posteDoitEtrePourvu.references().getFirst().standId()).isEqualTo("STAND-1");
+        assertThat(posteDoitEtrePourvu.references().getFirst().creneauId()).isEqualTo(1L);
+        assertThat(posteDoitEtrePourvu.references().getFirst().animateurId()).isNull();
 
         // A soft/medium constraint, if it matches at all here, must not carry a
         // per-match dump — that's reserved for hard constraints (see

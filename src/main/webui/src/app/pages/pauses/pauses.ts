@@ -39,6 +39,8 @@ export interface LignePause {
   simultanee: boolean;
   standId: string;
   standNom: string;
+  /** The timeslot of the seat held during the break; null on an older payload. */
+  creneauId: number | null;
   relais: RelaisView[];
   relaisDisponible: boolean;
 }
@@ -115,6 +117,7 @@ function lignesDe(journee: JourneeAnimateurPauses): LignePause[] {
         simultanee: pause.simultanee,
         dureeMinutes: pause.dureeMinutes,
         standId: pause.standId,
+        creneauId: pause.creneauId ?? null,
         standNom: pause.standNom,
         relais: pause.relais,
         relaisDisponible: pause.relaisDisponible,

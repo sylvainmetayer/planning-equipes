@@ -156,3 +156,11 @@
 .pauses-planifiee-duree {
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* The bench, one word after a break nobody relays. */
+.pauses-banc {
+  margin-left: 0.5rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--app-accent);
+  white-space: nowrap;
+}

@@ -8,6 +8,7 @@
 
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import {
@@ -159,6 +160,7 @@ describe('StaffingPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: AnalysesApi, useValue: analysesApi },
       ],
     });
@@ -545,6 +547,38 @@ describe('StaffingPage', () => {
 
       expect(page.reserveLabel()).toContain('rien ne peut absorber');
       expect(page.reserveLabel()).not.toContain('peuvent y répondre');
+    });
+  });
+
+  /**
+   * A bottleneck names a game category nobody holds enough of; the link goes
+   * to the people holding it — the list to lengthen (issue #489). A row with
+   * no shortfall offers none: there is nothing to act on.
+   */
+  describe('the link from a bottleneck to the competent animateurs', () => {
+    it('leads to the animateurs holding the typologie in shortfall, and only for those rows', async () => {
+      analysesApi.staffing.mockResolvedValue(
+        summary({
+          parCompetence: competence({
+            parTypologie: [
+              typologie({ typologie: 'ESCAPE', manque: 2 }),
+              typologie({ typologie: 'QUIZ', label: 'Quiz', manque: 0 }),
+            ],
+          }),
+        }),
+      );
+      const fixture = TestBed.createComponent(StaffingPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const liens = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
+          'a.staffing-lien',
+        ),
+      );
+      expect(liens.map((lien) => lien.getAttribute('href'))).toEqual([
+        '/animateurs?typologie=ESCAPE',
+      ]);
     });
   });
 });

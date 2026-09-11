@@ -14,7 +14,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { Sort } from '@angular/material/sort';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { NotificationService } from '../../core/notification.service';
@@ -220,6 +220,31 @@ describe('CreneauxPage', () => {
     seedStore(referenceData, 'creneaux', creneaux);
     return TestBed.createComponent(CreneauxPage).componentInstance as unknown as PageInternals;
   }
+
+  /** `?edit=<id>` (issue #489): a cause names a créneau, and its link lands here with the form open. */
+  describe('the edit deep link', () => {
+    it('opens the form of the créneau named in the URL once the référentiel is in', async () => {
+      // The page reads the snapshot of the route it is created under: navigate first, create after.
+      await TestBed.inject(Router).navigateByUrl('/?edit=12');
+      createPage([creneau({ id: 12, jour: 1 }), creneau({ id: 13, jour: 1 })]);
+      await Promise.resolve();
+
+      expect(dialog.open).toHaveBeenCalledOnce();
+      const [, config] = dialog.open.mock.calls[0] as unknown as [
+        unknown,
+        { data: { creneau: Creneau } },
+      ];
+      expect(config.data.creneau.id).toBe(12);
+    });
+
+    it('opens nothing for a créneau the référentiel does not hold', async () => {
+      await TestBed.inject(Router).navigateByUrl('/?edit=99');
+      createPage([creneau({ id: 12, jour: 1 })]);
+      await Promise.resolve();
+
+      expect(dialog.open).not.toHaveBeenCalled();
+    });
+  });
 
   it('loads the referential and the diagnostic on entry', () => {
     createPage();

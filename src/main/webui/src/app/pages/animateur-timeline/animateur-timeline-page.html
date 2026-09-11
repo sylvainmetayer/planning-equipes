@@ -149,6 +149,12 @@
               <li class="timeline-pause-item" [class.timeline-pause-item-alerte]="pause.withoutRelais || pause.simultanee">
                 <mat-icon inline aria-hidden="true">free_breakfast</mat-icon>
                 {{ pause.label }}
+                @if (pause.withoutRelais && pause.creneauId !== null) {
+                  <!-- Who could come and relay: the bench on that timeslot. -->
+                  <a class="timeline-banc" routerLink="/diagnostic"
+                     [queryParams]="{ onglet: 'banc', creneau: pause.creneauId, stand: pause.standId }"
+                     i18n="@@timeline.banc">Banc de touche</a>
+                }
               </li>
             }
           </ul>

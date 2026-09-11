@@ -33,6 +33,16 @@
     }
     <app-table-filter [(value)]="filtre" [matches]="animateursFiltres().length" [total]="store.animateurs().length"
                       (enterTable)="navigation.focusCurrent()" />
+    @if (typologiesFiltrees().length > 0) {
+      <mat-chip-set class="animateurs-typologie-filtre" aria-label="Typologie filtrée" i18n-aria-label="@@animateurs.filtreTypologie.label">
+        <mat-chip (removed)="clearTypologie()" [removable]="true">
+          <ng-container i18n="@@animateurs.filtreTypologie">Typologie : {{ typologieLabel() }}</ng-container>
+          <button matChipRemove i18n-aria-label="@@animateurs.filtreTypologie.clear" aria-label="Retirer le filtre par typologie">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip>
+      </mat-chip-set>
+    }
     @if (viewChanged()) {
       <button matButton type="button" (click)="resetView()">
         <mat-icon>filter_alt_off</mat-icon>

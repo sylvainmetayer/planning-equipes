@@ -279,6 +279,12 @@ describe('CalendarDayView rendering', () => {
 
     const libres = Array.from(root(fixture).querySelectorAll<HTMLElement>('.siege-libre'));
     expect(libres.map((chip) => chip.dataset['posteId'])).toEqual(['p2', 'p3']);
+    // Each free seat is also the question « who could take it? », asked of the
+    // bench on that créneau and that stand (issue #489).
+    expect(libres.map((chip) => chip.getAttribute('href'))).toEqual([
+      '/diagnostic?onglet=banc&creneau=1&stand=Loup-Garou',
+      '/diagnostic?onglet=banc&creneau=1&stand=Loup-Garou',
+    ]);
     // The seat id sits on the draggable wrapper, which contains the name: a
     // drop resolves it with closest(), from wherever the pointer landed.
     expect(

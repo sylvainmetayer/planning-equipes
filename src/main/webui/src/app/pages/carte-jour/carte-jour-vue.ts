@@ -16,6 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSliderModule } from '@angular/material/slider';
+import { RouterLink } from '@angular/router';
 import { Emplacement, PlanningEvenement } from '../../core/models';
 import { CarteJourMap } from './carte-jour-map';
 import { JourneeCarte, buildJourneesCarte, formatMinutes, instantCarte } from './carte-jour';
@@ -42,7 +43,14 @@ const CADENCE_MS = 700;
  */
 @Component({
   selector: 'app-carte-jour-vue',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatSliderModule, CarteJourMap],
+  imports: [
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatSliderModule,
+    RouterLink,
+    CarteJourMap,
+  ],
   templateUrl: './carte-jour-vue.html',
   styleUrl: './carte-jour-vue.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
@@ -156,13 +164,13 @@ export class CarteJourView {
         return;
       }
       untracked(() => {
-        this.arreter();
+        this.stopReplay();
         this.minutesSelectionnees.set(null);
       });
     });
     // The replay must not outlive the view: a view left with the cursor
     // running would keep ticking on a component nobody is looking at.
-    inject(DestroyRef).onDestroy(() => this.arreter());
+    inject(DestroyRef).onDestroy(() => this.stopReplay());
   }
 
   protected deplacerCurseur(minutes: number): void {
@@ -185,7 +193,7 @@ export class CarteJourView {
    */
   protected basculerLecture(): void {
     if (this.lecture()) {
-      this.arreter();
+      this.stopReplay();
       return;
     }
     const jour = this.jourCourant();
@@ -205,13 +213,13 @@ export class CarteJourView {
     const suivant = this.minutes() + PAS_MINUTES;
     if (!jour || suivant >= jour.finMinutes) {
       this.minutesSelectionnees.set(jour?.finMinutes ?? null);
-      this.arreter();
+      this.stopReplay();
       return;
     }
     this.minutesSelectionnees.set(suivant);
   }
 
-  private arreter(): void {
+  private stopReplay(): void {
     if (this.minuterie !== undefined) {
       clearInterval(this.minuterie);
       this.minuterie = undefined;
@@ -221,7 +229,7 @@ export class CarteJourView {
 
   /** Back to the day's opening and to no picked place; the page's reset calls it. */
   reinitialiser(): void {
-    this.arreter();
+    this.stopReplay();
     this.minutesSelectionnees.set(null);
     this.selection.set(null);
   }

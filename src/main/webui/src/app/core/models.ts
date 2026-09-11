@@ -845,6 +845,14 @@ export interface SuggestionsReparation {
   suggestions: SuggestionReparation[];
 }
 
+/** One hard-constraint match, as a sentence and as the objects it names; any id may be null. */
+export interface ViolationReference {
+  texte: string;
+  animateurId: string | null;
+  standId: string | null;
+  creneauId: number | null;
+}
+
 export interface ConstraintView {
   name: string;
   niveau: NiveauContrainte;
@@ -892,6 +900,8 @@ export interface ConstraintView {
    * missing altogether. Reported, never acted on — the rule stays active.
    */
   plancher: PlancherContrainte | null;
+  /** The same lines with the ids they name, so a screen can open the fiche in question. */
+  references: ViolationReference[];
 }
 
 /**
@@ -1827,6 +1837,8 @@ export interface PauseDueView {
   dureeMinutes: number;
   standId: string;
   standNom: string;
+  /** The timeslot of the seat held during the break: what opens the bench on it. Absent on an older payload. */
+  creneauId?: number | null;
   relais: RelaisView[];
   /** False when nobody else is on the stand for the whole break. */
   relaisDisponible: boolean;

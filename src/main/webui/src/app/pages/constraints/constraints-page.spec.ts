@@ -37,6 +37,7 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     violations: [],
     postesEvalues: null,
     plancher: null,
+    references: [],
     ...overrides,
   };
 }

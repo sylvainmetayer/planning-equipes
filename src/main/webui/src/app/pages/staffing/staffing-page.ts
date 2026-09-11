@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import {
   CompetenceStaffing,
@@ -48,6 +49,7 @@ import { errorText, retainedValue } from '../../core/resource-state';
 @Component({
   selector: 'app-staffing-page',
   imports: [
+    RouterLink,
     MatCardModule,
     MatIconModule,
     MatProgressBarModule,

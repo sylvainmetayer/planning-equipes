@@ -1116,6 +1116,12 @@
           },
           "plancher" : {
             "$ref" : "#/components/schemas/ConstraintFloor"
+          },
+          "references" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ViolationReference"
+            }
           }
         }
       },
@@ -3355,6 +3361,10 @@
           "standNom" : {
             "type" : "string"
           },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
           "relais" : {
             "type" : "array",
             "items" : {
@@ -5045,6 +5055,24 @@
           },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "ViolationReference" : {
+        "type" : "object",
+        "properties" : {
+          "texte" : {
+            "type" : "string"
+          },
+          "animateurId" : {
+            "type" : "string"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },

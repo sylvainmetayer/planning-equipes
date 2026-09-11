@@ -36,7 +36,13 @@ class ContrainteMcpToolsTest {
     @Test
     void mergesTheDiagnosticOfTheLastAnalysis() {
         ConstraintDiagnostic diagnostic = new ConstraintDiagnostic(
-                "posteDoitEtrePourvu", "-3hard/0medium/0soft", 3, List.of("poste P1 non pourvu"), null, null);
+                "posteDoitEtrePourvu",
+                "-3hard/0medium/0soft",
+                3,
+                List.of("poste P1 non pourvu"),
+                null,
+                null,
+                List.of());
 
         ContrainteView view = ContrainteMcpTools.toView(DEFINITION, diagnostic, Set.of(), Map.of());
 
@@ -57,7 +63,8 @@ class ContrainteMcpToolsTest {
                 12,
                 List.of(),
                 12,
-                new ConstraintFloor(1.0, "SOUHAITS", "Aucun souhait déclaré.", "/animateurs"));
+                new ConstraintFloor(1.0, "SOUHAITS", "Aucun souhait déclaré.", "/animateurs"),
+                List.of());
 
         ContrainteView view = ContrainteMcpTools.toView(souhaits, diagnostic, Set.of(), Map.of());
 

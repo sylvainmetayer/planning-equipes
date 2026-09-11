@@ -59,6 +59,7 @@ function constraintsView(): ConstraintsView {
         violations: ['Alice : 52 h'],
         postesEvalues: null,
         plancher: null,
+        references: [],
       },
     ],
   };

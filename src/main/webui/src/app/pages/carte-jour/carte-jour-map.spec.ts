@@ -35,6 +35,7 @@ function stand(): StandInstant {
     sieges: 0,
     pourvus: 0,
     horaire: '',
+    creneauId: null,
     emplacementNom: 'Place du Drapeau',
     resume: 'Stand — fermé à cette heure-là',
   };

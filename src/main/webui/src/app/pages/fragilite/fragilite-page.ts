@@ -17,7 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { AnimateurFragilite, CompetenceRare, SeveriteFragilite } from '../../core/models';
 import { errorText, retainedValue } from '../../core/resource-state';
@@ -56,6 +56,7 @@ import {
   imports: [
     FormsModule,
     MatButtonModule,
+    RouterLink,
     MatButtonToggleModule,
     MatCardModule,
     MatFormFieldModule,

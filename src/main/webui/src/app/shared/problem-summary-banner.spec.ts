@@ -11,7 +11,16 @@ import { NiveauProbleme, Probleme } from '../core/problemes';
 import { ProblemSummaryBanner } from './problem-summary-banner';
 
 function probleme(id: string, niveau: NiveauProbleme): Probleme {
-  return { id, niveau, source: 'CONTRAINTE', titre: id, message: '', details: [], liens: [] };
+  return {
+    id,
+    niveau,
+    source: 'CONTRAINTE',
+    titre: id,
+    message: '',
+    details: [],
+    references: [],
+    liens: [],
+  };
 }
 
 let fixture: ComponentFixture<ProblemSummaryBanner>;
