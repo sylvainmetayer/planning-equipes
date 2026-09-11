@@ -13,8 +13,8 @@ Ce que le code du 10 septembre 2026 contient, compté par script (`origin/main` 
 
 | Quoi | Combien |
 |---|---|
-| `dataSource.getConnection()` directs, hors `JdbcEditionScope` | **78** dans 19 fichiers : 48 en lecture, 30 en écriture |
-| … dont avec un `setAutoCommit(false)` à la main | 0 — toutes les écritures directes sont une instruction en autocommit |
+| `dataSource.getConnection()` directs, hors `JdbcEditionScope` | **78** dans 19 fichiers : 47 en lecture, 31 en écriture (classement par script, vérifié à l'œil sur les sites litigieux ; `DatabaseDumpService.exportDump` concatène des `DELETE` sans les exécuter, c'est une lecture) |
+| … dont avec un `setAutoCommit(false)` à la main | 0 — chaque écriture directe est une seule instruction en autocommit, sauf `DemandeEchangeService.markAsCommunicated`, qui en exécute N en batch : un échec sur la 2e laisse la 1re marquée, là où un cadre annoté annulerait les N |
 | Appels à `scope.write` / `scope.writeAndReturn` | **36** dans 17 fichiers (25 `write`, 11 `writeAndReturn` — un `grep -rnE "scope\.(write|writeAndReturn)\("` ; le `zip.write(` de `PlanningExportService` n'en est pas un) |
 | Méthodes prenant une `Connection` (hors scope) | **41** dans 14 fichiers, 1 seule publique (`TypologieService.validateIds`) |
 | … qui doublent une jumelle sans `Connection` | **8** (`create` × 3 services, `saveStand`, `saveEmplacement`, `saveTypologie`, `typologieExists`, `validateIds`) |
