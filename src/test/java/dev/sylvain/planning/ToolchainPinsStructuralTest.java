@@ -92,7 +92,8 @@ class ToolchainPinsStructuralTest {
             ecarts.add("Dockerfile maven image says " + imageMaven + ", mise.toml says " + maven);
         }
 
-        // PostgreSQL: the tests, the deployments and the pg_dump client in the image.
+        // PostgreSQL: the tests, the deployments, the E2E service container and
+        // the pg_dump client in the image.
         String postgresTests =
                 first(read(PROPERTIES), "devservices\\.image-name=postgres:(\\d+)", "application.properties");
         for (Path compose : COMPOSES) {
@@ -107,6 +108,12 @@ class ToolchainPinsStructuralTest {
                 "Dockerfile postgresql-client",
                 first(dockerfile, "postgresql-client-(\\d+)", "Dockerfile"),
                 postgresTests);
+        // The Playwright suite runs against a service container of its own,
+        // backup and restore paths included — which depend on the server and
+        // the pg_dump/psql of the image agreeing. It was the one pin left out.
+        forEachWorkflowPin(
+                "image: postgres:(\\d+)",
+                (file, value) -> expect(ecarts, file + " postgres service", value, postgresTests));
 
         assertThat(ecarts).as("""
                         toolchain pins that disagree with mise.toml (java %s, node %s, maven %s). \
