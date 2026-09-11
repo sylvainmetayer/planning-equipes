@@ -93,9 +93,11 @@ burn tokens on repeated status checks for no benefit over one notification.
   `./mvnw test|package|verify` refuses an unformatted file — run
   `./mvnw spotless:apply`. Frontend: `npm run format` (prettier, the
   repository's `.prettierrc`) on the TypeScript, CSS and scripts, checked by
-  `npm run format-check` in CI; the HTML templates are excluded, since a blank
-  between two inline elements is rendering there. The two initial
-  reformatting commits are listed in `.git-blame-ignore-revs`.
+  `npm run format-check` in CI; the HTML templates are excluded — the
+  `.html` files by `.prettierignore`, the inline `template:` literals by
+  `embeddedLanguageFormatting: off` — since a blank between two inline
+  elements is rendering there. The two initial reformatting commits are
+  listed in `.git-blame-ignore-revs`.
 - Frontend only (from `src/main/webui`): `npm install`, `npm run build`,
   `npm start` (`ng serve` on 4200, `proxy.conf.json` forwards `/api/*` to
   `:8080`), `npm test` (Vitest unit tests, Node/jsdom, one pass in CI / watch

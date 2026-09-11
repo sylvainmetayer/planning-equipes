@@ -48,9 +48,7 @@ export interface PromptDialogData {
       </mat-form-field>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button matButton (click)="dialogRef.close(null)" i18n="@@promptDialog.cancel">
-        Annuler
-      </button>
+      <button matButton (click)="dialogRef.close(null)" i18n="@@promptDialog.cancel">Annuler</button>
       <button
         matButton="filled"
         [color]="data.danger ? 'warn' : 'primary'"

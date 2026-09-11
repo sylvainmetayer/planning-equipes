@@ -38,9 +38,7 @@ interface RaccourciGeneral {
         }
       </dl>
 
-      <h3 class="raccourcis-titre" i18n="@@shortcuts.table.title">
-        Dans un tableau de données de référence
-      </h3>
+      <h3 class="raccourcis-titre" i18n="@@shortcuts.table.title">Dans un tableau de données de référence</h3>
       <p class="raccourcis-intro" i18n="@@shortcuts.table.intro">
         Pour entrer dans le tableau : « / » place le curseur dans le filtre de la page, puis Flèche
         bas saute sur la ligne courante. Tab y entre aussi, sur une seule ligne, et en ressort vers
