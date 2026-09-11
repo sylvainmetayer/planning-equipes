@@ -19,15 +19,6 @@ public final class WriteStamp {
 
     private WriteStamp() {}
 
-    /** Executes the write and returns the single {@code modifie_le} it returned. */
-    public static Instant written(PreparedStatement ps) throws SQLException {
-        Instant written = writtenOrRefused(ps);
-        if (written == null) {
-            throw new SQLException("The write returned no row");
-        }
-        return written;
-    }
-
     /**
      * Same, but {@code null} when the statement's own precondition rejected the
      * row: the write and its check are one statement (issue #362), so "no row
