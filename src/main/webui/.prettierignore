@@ -1,0 +1,5 @@
+# The Angular templates are excluded on purpose: a blank between two inline
+# elements is rendering, and prettier moves them. `npm run format` never
+# passed them, but nothing stopped an editor's format-on-save or a bare
+# `prettier --write .` from rewriting all 71 of them (see AGENTS.md).
+*.html
