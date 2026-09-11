@@ -227,13 +227,12 @@ public class StandMcpTools {
     }
 
     /**
-     * Creates the typologies the stand cites but the referential lacks, and
-     * only those. Opt-in because {@code validateStand} rejecting an unknown
-     * typologie is a feature: it is what turns "NIJNA" into an error instead
-     * of into a second, near-identical entry nobody notices until the solver
-     * finds no competent animateur for it.
+     * The typologies the stand names and the referential does not hold — to
+     * be written with it, in the same transaction, when allowed. Opt-in
+     * because refusing an unknown typologie is a feature: it is what turns
+     * "NIJNA" into an error instead of into a second, near-identical entry
+     * nobody notices until the solver finds no competent animateur for it.
      */
-    /** The typologies the stand names and the referential does not hold — to be written with it, when allowed. */
     private List<TypologieItem> missingTypologies(List<String> typologies, boolean autorise) {
         if (typologies == null || typologies.isEmpty() || !autorise) {
             return List.of();
