@@ -160,7 +160,7 @@ describe('AnimateurFormDialog', () => {
   });
 
   it('does not warn on an unparseable or empty birth date', async () => {
-    const { fixture } = monter(animateur({ dateNaissance: null }));
+    const { fixture } = monter(animateur({ dateNaissance: '' }));
     await fixture.whenStable();
 
     expect(racine(fixture).querySelector('.form-warning')).toBeNull();
@@ -267,6 +267,7 @@ describe('AnimateurFormDialog', () => {
     saisir(fixture, 'id', '  a42  ');
     saisir(fixture, 'prenom', '  Marcel  ');
     saisir(fixture, 'nom', '  Proust  ');
+    saisir(fixture, 'dateNaissance', '1871-07-10');
     await fixture.whenStable();
     submit(fixture);
     await fixture.whenStable();
@@ -275,7 +276,7 @@ describe('AnimateurFormDialog', () => {
       id: 'a42',
       prenom: 'Marcel',
       nom: 'Proust',
-      dateNaissance: null,
+      dateNaissance: '1871-07-10',
       manager: false,
       email: null,
       competences: {},
@@ -285,6 +286,36 @@ describe('AnimateurFormDialog', () => {
       modifieLe: null,
     });
     expect(close).toHaveBeenCalledWith(true);
+  });
+
+  // The server refuses a fiche without these three (issue #432), naming every
+  // missing field at once; the form does not let the click happen until they
+  // are there, and a blank name counts as missing.
+  it('holds the submit until prénom, nom and date de naissance are filled', async () => {
+    const { fixture, save } = monter(null);
+    await fixture.whenStable();
+    const bouton = () =>
+      racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement;
+
+    for (const name of ['prenom', 'nom', 'dateNaissance']) {
+      expect(champ(fixture, name).required, `${name} required`).toBe(true);
+    }
+    expect(bouton().disabled).toBe(true);
+
+    saisir(fixture, 'id', 'a42');
+    saisir(fixture, 'prenom', '   ');
+    saisir(fixture, 'nom', 'Proust');
+    saisir(fixture, 'dateNaissance', '1871-07-10');
+    await fixture.whenStable();
+    expect(bouton().disabled).toBe(true);
+    // Ctrl+Enter reaches `save()` through the form itself: it must hold too.
+    submit(fixture);
+    await fixture.whenStable();
+    expect(save).not.toHaveBeenCalled();
+
+    saisir(fixture, 'prenom', 'Marcel');
+    await fixture.whenStable();
+    expect(bouton().disabled).toBe(false);
   });
 
   it('keeps the dialog open when the save is refused, and closes on cancel', async () => {

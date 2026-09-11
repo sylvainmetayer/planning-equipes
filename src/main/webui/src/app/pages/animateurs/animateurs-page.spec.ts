@@ -292,7 +292,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('says the majority is unknown rather than guessing it without a birth date', async () => {
-    await rendre([personne('alice', { dateNaissance: null })]);
+    await rendre([personne('alice', { dateNaissance: '' })]);
 
     expect(lignes()[0][3]).toBe('—');
   });
@@ -300,7 +300,7 @@ describe('AnimateursPage table', () => {
   it('sorts on the majority column, both ways', async () => {
     await rendre([
       personne('mineur', { dateNaissance: '2015-01-01' }),
-      personne('inconnu', { dateNaissance: null }),
+      personne('inconnu', { dateNaissance: '' }),
       personne('majeur', { dateNaissance: '1990-01-01' }),
     ]);
 

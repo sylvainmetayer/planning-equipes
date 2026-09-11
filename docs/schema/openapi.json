@@ -133,6 +133,7 @@
         }
       },
       "Animateur" : {
+        "required" : [ "id", "prenom", "nom", "dateNaissance" ],
         "type" : "object",
         "properties" : {
           "id" : {

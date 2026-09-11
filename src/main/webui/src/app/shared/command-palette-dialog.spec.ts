@@ -11,7 +11,7 @@ function animateur(id: string, prenom: string, nom: string): Animateur {
     id,
     prenom,
     nom,
-    dateNaissance: null,
+    dateNaissance: '1990-01-01',
     manager: false,
     competences: {},
     souhaits: [],

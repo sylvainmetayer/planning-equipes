@@ -40,7 +40,8 @@ export interface Animateur {
    */
   modifieLe?: string | null;
 
-  dateNaissance: string | null;
+  /** ISO date; required on both directions of the API — the legal regime is derived from it. */
+  dateNaissance: string;
   /** Manages other animateurs; every animateur (manager or not) is paid. */
   manager: boolean;
   /** Administrator's appreciation, after formation — shown as "Appréciation" in the UI. */

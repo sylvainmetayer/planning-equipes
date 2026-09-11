@@ -95,6 +95,20 @@ export class AnimateurFormDialog {
   );
 
   /**
+   * The three fields the server refuses a fiche without (issue #432): a blank
+   * name is as missing as no name, and the birth date is what the whole
+   * minor/adult regime is derived from. The submit button waits for them, so
+   * the refusal is read here rather than in a snack bar — the server still
+   * checks, and its message is shown as is when it does refuse.
+   */
+  protected readonly identityComplete = computed(() => {
+    const draft = this.draft();
+    return (
+      draft.prenom.trim().length > 0 && draft.nom.trim().length > 0 && draft.dateNaissance !== ''
+    );
+  });
+
+  /**
    * True when the birth date puts the animateur under 16 <i>today</i>. Only a
    * data-entry hint: the rules themselves re-derive the age bracket at each
    * créneau's date (see `Animateur.estMoinsDe16AnsLe`), and nothing about the
@@ -118,6 +132,9 @@ export class AnimateurFormDialog {
   }
 
   protected async save(): Promise<void> {
+    if (!this.identityComplete()) {
+      return;
+    }
     const draft = this.draft();
     const competences: Record<string, NiveauCompetence> = {};
     draft.competences.forEach((row) => {
@@ -129,7 +146,7 @@ export class AnimateurFormDialog {
       id: draft.id.trim(),
       prenom: draft.prenom.trim(),
       nom: draft.nom.trim(),
-      dateNaissance: draft.dateNaissance || null,
+      dateNaissance: draft.dateNaissance,
       manager: draft.manager,
       email: draft.email.trim() || null,
       competences,

@@ -41,7 +41,7 @@ describe('buildAnimateurDetail', () => {
 
   it('says "inconnu" rather than guessing when there is no birth date', () => {
     const sections = buildAnimateurDetail(
-      animateur({ dateNaissance: null }),
+      animateur({ dateNaissance: '' }),
       [],
       new Date(2026, 6, 8),
     );

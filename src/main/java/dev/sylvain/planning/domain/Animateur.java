@@ -8,7 +8,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+/**
+ * An animateur of the referential. The four required properties are what
+ * every fiche carries on both directions of the API: the id names the row,
+ * and prénom, nom and date de naissance are refused when missing by
+ * {@code AnimateurService} — the date because the whole minor/adult regime is
+ * derived from it, see {@link #isMineurOn} and {@link #isMajeurOn}.
+ */
+@Schema(requiredProperties = {"id", "prenom", "nom", "dateNaissance"})
 public class Animateur {
 
     private String id;

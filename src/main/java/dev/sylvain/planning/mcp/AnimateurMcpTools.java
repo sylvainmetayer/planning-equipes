@@ -83,10 +83,9 @@ public class AnimateurMcpTools {
     }
 
     @Tool(
-            description = "Crée un animateur. Les données personnelles (nom, prénom, date de naissance) sont "
-                    + "facultatives et ne sont jamais relues par MCP ; la date de naissance reste toutefois la seule "
-                    + "source du statut mineur/majeur utilisé par les contraintes légales, un animateur créé sans elle "
-                    + "sera donc traité comme majeur.",
+            description = "Crée un animateur. Prénom, nom et date de naissance sont obligatoires (refus 400 nommant "
+                    + "chaque champ manquant) : la date de naissance est la seule source du statut mineur/majeur "
+                    + "utilisé par les contraintes légales. Ces données personnelles ne sont jamais relues par MCP.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -97,11 +96,13 @@ public class AnimateurMcpTools {
             @ToolArg(description = "Id de l'animateur (unique)") String id,
             @ToolArg(
                             description =
-                                    "Date de naissance (AAAA-MM-JJ), nécessaire pour les contraintes légales sur les mineurs",
-                            required = false)
+                                    "Date de naissance (AAAA-MM-JJ), obligatoire : seule source du statut mineur/majeur des contraintes légales",
+                            required = true)
                     String dateNaissance,
-            @ToolArg(description = "Prénom (donnée personnelle, jamais renvoyée)", required = false) String prenom,
-            @ToolArg(description = "Nom (donnée personnelle, jamais renvoyée)", required = false) String nom,
+            @ToolArg(description = "Prénom, obligatoire (donnée personnelle, jamais renvoyée)", required = true)
+                    String prenom,
+            @ToolArg(description = "Nom, obligatoire (donnée personnelle, jamais renvoyée)", required = true)
+                    String nom,
             @ToolArg(description = "Statut manager", required = false) Boolean manager,
             @ToolArg(description = "Compétences : id de typologie -> DEBUTANT|AUTONOME|REFERENT", required = false)
                     Map<String, String> competences,

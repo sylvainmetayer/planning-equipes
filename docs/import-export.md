@@ -257,6 +257,12 @@ négociable : tout le régime mineur / majeur s'en déduit à la date de chaque
 créneau, et la colonne est `NOT NULL`. Une ligne qui met à jour une fiche
 existante peut l'omettre — la fiche en a déjà une.
 
+Le formulaire et l'outil MCP `creer_animateur` sont plus exigeants : prénom,
+nom **et** date de naissance, chacun refusé s'il est vide, tous nommés dans le
+même message. Une fiche importée sur son seul nom (ou son seul identifiant)
+reste valide, mais sa prochaine modification depuis l'écran ou par MCP est
+refusée tant que le prénom manque — le message dit lequel.
+
 Les cellules sont aussi bornées par la **largeur des colonnes de la base** :
 64 caractères pour l'identifiant, 128 pour le prénom et pour le nom, 255 pour
 l'adresse. Une valeur plus longue **rejette la ligne** en donnant sa longueur —

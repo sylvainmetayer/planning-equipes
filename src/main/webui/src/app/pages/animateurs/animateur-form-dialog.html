@@ -12,11 +12,11 @@
 </mat-form-field>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@animateurs.field.prenom">Prénom</mat-label>
-  <input matInput name="prenom" [ngModel]="draft().prenom" (ngModelChange)="patch({ prenom: $event })" />
+  <input matInput name="prenom" required [ngModel]="draft().prenom" (ngModelChange)="patch({ prenom: $event })" />
 </mat-form-field>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@stands.field.nom">Nom</mat-label>
-  <input matInput name="nom" [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
+  <input matInput name="nom" required [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
 </mat-form-field>
 <!-- `subscriptSizing="dynamic"` sur les deux champs qui portent une aide de
      plusieurs lignes : la zone de sous-titre d'un `mat-form-field` ne réserve
@@ -24,7 +24,7 @@
      case « Manager » et le bloc « Appréciation » de la ligne suivante. -->
 <mat-form-field appearance="outline" subscriptSizing="dynamic">
   <mat-label i18n="@@animateurs.field.dateNaissance">Date de naissance</mat-label>
-  <input matInput name="dateNaissance" type="date"
+  <input matInput name="dateNaissance" type="date" required
          [ngModel]="draft().dateNaissance" (ngModelChange)="patch({ dateNaissance: $event })" />
   <mat-hint i18n="@@animateurs.hint.dateNaissance">
     Détermine le régime légal appliqué (moins de 16 ans / 16-18 ans / majeur), recalculé à la date de chaque créneau.
@@ -138,7 +138,7 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
-  <button matButton="filled" type="submit" [disabled]="editingLocked()">
+  <button matButton="filled" type="submit" [disabled]="editingLocked() || !identityComplete()">
     <mat-icon>save</mat-icon>
     {{ submitLabel() }}
   </button>

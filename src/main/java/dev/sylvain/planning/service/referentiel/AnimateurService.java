@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.TokenOwner;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 
 /** CRUD of the animateur referential, plus the espace access token they are reached by. */
@@ -84,14 +85,54 @@ public class AnimateurService {
         changeTracker.markModified();
     }
 
-    /** Competences and wishes are both typologie ids, checked against the same referential. */
+    /**
+     * The identity first, then the typologie ids. Competences and wishes are
+     * both typologie ids, checked against the same referential.
+     */
     private void validate(Animateur animateur) {
+        requireIdentity(animateur);
         if (animateur.getCompetences() != null) {
             typologies.validateIds(animateur.getCompetences().keySet());
         }
         if (animateur.getSouhaits() != null) {
             typologies.validateIds(animateur.getSouhaits());
         }
+    }
+
+    /**
+     * Refuses a fiche without a prénom, a nom or a date de naissance, naming
+     * every missing field in one sentence — the convention of the CSV import,
+     * so the caller fixes the fiche once rather than field by field.
+     *
+     * <p>Not just a column constraint moved up: a blank name yields a fiche
+     * nobody can recognise on a planning, and without a date de naissance
+     * {@link Animateur#isMineurOn} and {@link Animateur#isMajeurOn} are
+     * <b>both</b> false — the animateur silently escapes the minor regime and
+     * the adult one alike. Shared by REST and MCP because both write through
+     * here; the CSV import carries its own equivalent per row.</p>
+     */
+    static void requireIdentity(Animateur animateur) {
+        List<String> missing = new ArrayList<>();
+        if (animateur.getPrenom() == null || animateur.getPrenom().isBlank()) {
+            missing.add("le prénom");
+        }
+        if (animateur.getNom() == null || animateur.getNom().isBlank()) {
+            missing.add("le nom");
+        }
+        boolean birthDateMissing = animateur.getDateNaissance() == null;
+        if (birthDateMissing) {
+            missing.add("la date de naissance");
+        }
+        if (missing.isEmpty()) {
+            return;
+        }
+        String fields = missing.size() == 1
+                ? missing.getFirst()
+                : String.join(", ", missing.subList(0, missing.size() - 1)) + " et " + missing.getLast();
+        String verb = missing.size() == 1 ? " est obligatoire" : " sont obligatoires";
+        String why =
+                birthDateMissing ? " ; sans date de naissance, tout le régime mineur / majeur est indéterminé" : "";
+        throw new BusinessError.Invalid("Fiche incomplète : " + fields + verb + why + ".");
     }
 
     /** See {@link AnimateurRepository#resolveAnimateurToken}. */

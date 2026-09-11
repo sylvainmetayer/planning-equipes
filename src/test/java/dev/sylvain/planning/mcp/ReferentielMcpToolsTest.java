@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.mcp.AnimateurMcpTools.AnimateurView;
 import dev.sylvain.planning.mcp.CreneauMcpTools.CreneauView;
 import dev.sylvain.planning.mcp.StandMcpTools.StandView;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
@@ -118,6 +119,54 @@ class ReferentielMcpToolsTest {
         } finally {
             animateurTools.supprimer_animateur("A-MCP-J", null);
             creneauTools.supprimer_creneau(creneau.id(), null);
+        }
+    }
+
+    /**
+     * The same refusal as {@code POST /api/animateurs}, from the same service
+     * check: an assistant that omits the date de naissance gets a 400-class
+     * error naming it, and no fiche is written — a nameless or dateless
+     * animateur used to reach the database and die on its {@code NOT NULL}.
+     */
+    @Test
+    void creatingAnAnimateurWithoutBirthDateIsRefusedNamingTheDate() {
+        assertThatThrownBy(() -> animateurTools.creer_animateur(
+                        "A-MCP-SANS-DATE", null, "Ada", "Lovelace", null, null, null, null, null))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("date de naissance");
+
+        assertThat(referenceDataService.listAnimateurs())
+                .extracting(Animateur::getId)
+                .doesNotContain("A-MCP-SANS-DATE");
+    }
+
+    @Test
+    void creatingAnAnimateurWithBlankNamesIsRefusedOnceNamingEveryMissingField() {
+        assertThatThrownBy(() -> animateurTools.creer_animateur(
+                        "A-MCP-SANS-NOM", "1990-01-01", " ", "", null, null, null, null, null))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("prénom")
+                .hasMessageContaining("nom")
+                .hasMessageNotContaining("date de naissance");
+    }
+
+    /**
+     * {@code modifier_animateur} takes no prénom/nom at all — MCP cannot read
+     * them, so it cannot send them back — and the merge keeps the stored ones:
+     * the identity check the edit goes through sees a complete fiche.
+     */
+    @Test
+    void editingThroughMcpKeepsTheStoredIdentityAndPassesTheCheck() {
+        referenceDataService.createAnimateur(
+                new Animateur("A-MCP-ID", "Grace", "Hopper", LocalDate.of(1990, 12, 9), false));
+        try {
+            AnimateurView modifie = animateurTools
+                    .modifier_animateur("A-MCP-ID", true, null, null, null, null, null)
+                    .animateur();
+
+            assertThat(modifie.manager()).isTrue();
+        } finally {
+            animateurTools.supprimer_animateur("A-MCP-ID", null);
         }
     }
 
