@@ -1,55 +1,13 @@
 <mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@nav.link.railJour">Rail de la journée</h1>
-    <mat-card-subtitle i18n="@@railJour.subtitle">
-      Une journée, une ligne par animateur : les vacations placées dans le temps, et les lignes vides de celles et ceux qui restent mobilisables.
-    </mat-card-subtitle>
-  </mat-card-header>
   <mat-card-content>
     <div class="rail-toolbar">
-      <button matIconButton type="button" [disabled]="estPremierJour()" (click)="decalerJour(-1)"
-              [attr.aria-label]="jourPrecedentLabel" [title]="jourPrecedentLabel">
-        <mat-icon>chevron_left</mat-icon>
-      </button>
-      <mat-form-field appearance="outline" class="rail-jour-select">
-        <mat-label i18n="@@railJour.day.label">Journée</mat-label>
-        <mat-select [value]="jourCourant()?.jour ?? null" (valueChange)="selectionnerJour($event)">
-          @for (jour of jours(); track jour.jour) {
-            <mat-option [value]="jour.jour">{{ jour.title }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <button matIconButton type="button" [disabled]="estDernierJour()" (click)="decalerJour(1)"
-              [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
-        <mat-icon>chevron_right</mat-icon>
-      </button>
       <mat-button-toggle-group [value]="view()" (change)="view.set($event.value)"
                                aria-label="Lignes affichées" i18n-aria-label="@@railJour.view.label">
         <mat-button-toggle value="tous" i18n="@@railJour.view.all">Tous</mat-button-toggle>
         <mat-button-toggle value="libres" i18n="@@railJour.view.free">Mobilisables</mat-button-toggle>
         <mat-button-toggle value="affectes" i18n="@@railJour.view.assigned">Affectés</mat-button-toggle>
       </mat-button-toggle-group>
-      @if (viewChanged()) {
-        <button matButton type="button" (click)="reinitialiserVue()">
-          <mat-icon>filter_alt_off</mat-icon>
-          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
-        </button>
-      }
-      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
-        <mat-icon>refresh</mat-icon>
-        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
-      </button>
     </div>
-
-    <app-table-filter
-      [(value)]="filtre"
-      label="Filtrer par nom"
-      i18n-label="@@railJour.filter.label"
-      placeholder="Nom, prénom…"
-      i18n-placeholder="@@railJour.filter.placeholder"
-      [matches]="lignesAffichees().length"
-      [total]="lignes().length"
-    />
 
     @if (jourCourant()) {
       <p class="rail-compteurs" role="status">{{ compteursLabel() }}</p>
@@ -80,17 +38,10 @@
       <mat-icon inline aria-hidden="true">science</mat-icon>
       <span i18n="@@commun.essai.glisserDeposer">Le glisser-déposer des affectations est en cours de test sur cet écran. Vérifiez le planning après un déplacement, et signalez ce qui vous surprend.</span>
     </p>
-
-    @if (loading()) {
-      <mat-progress-bar mode="indeterminate" />
-    }
-    @if (error()) {
-      <p class="empty-hint">{{ error() }}</p>
-    }
   </mat-card-content>
 </mat-card>
 
-@if (!error() && !loading()) {
+@if (planning()) {
   <mat-card appearance="outlined" class="page-card">
     <mat-card-content>
       @if (!jourCourant()) {
@@ -175,7 +126,7 @@
                     @for (pause of ligne.pauses; track pause.heureDebut) {
                       <span
                         class="rail-pause"
-                        [class.rail-pause-alerte]="pause.sansRelais || pause.simultanee"
+                        [class.rail-pause-alerte]="pause.withoutRelais || pause.simultanee"
                         [style.left.%]="pause.offsetPercent"
                         [style.width.%]="pause.widthPercent"
                         [title]="pause.label"

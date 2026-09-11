@@ -1,0 +1,9 @@
+/* The Diagnostic page: one row of tabs; each tab brings its own stylesheet. */
+
+.diagnostic-onglets {
+  flex-wrap: wrap;
+}
+
+.diagnostic-onglets .mat-icon {
+  margin-right: 0.35rem;
+}

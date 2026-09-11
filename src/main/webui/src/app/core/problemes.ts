@@ -65,6 +65,8 @@ function detailsDePauses(pauses: RapportPauses): string[] {
 /** A route the problem can be acted upon from. */
 export interface LienProbleme {
   route: string;
+  /** The rendering, the tab or the object the screen should open on — pre-filtered, never bare, when the target reads them. */
+  queryParams?: Record<string, string>;
   libelle: string;
 }
 
@@ -131,7 +133,8 @@ export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
   }
   if (cause.manque > 0) {
     liens.push({
-      route: '/staffing',
+      route: '/diagnostic',
+      queryParams: { onglet: 'besoin' },
       libelle: $localize`:@@problemes.lien.staffing:Besoin en animateurs`,
     });
   }
@@ -177,7 +180,7 @@ export function detailsDeCause(cause: CauseInfaisabilite): string[] {
 }
 
 /** One line naming the exceptions a rule failed on, with how much each accounts for. */
-function detailsEnCause(contributions: ContributionAdHoc[]): string[] {
+function relatedDetails(contributions: ContributionAdHoc[]): string[] {
   if (contributions.length === 0) {
     return [];
   }
@@ -218,7 +221,13 @@ export function construireProblemes(
       titre: $localize`:@@problemes.pauses.titre:Pauses sans relais`,
       message: $localize`:@@problemes.pauses.message:${pauses.relaisManquants}:count: pause(s) légale(s) tombent sur un stand où personne d'autre n'est présent : la personne est seule, personne ne peut la relayer. Prévoyez un relais extérieur, ou renforcez le stand.`,
       details: detailsDePauses(pauses),
-      liens: [{ route: '/pauses', libelle: $localize`:@@problemes.lien.pauses:Voir les pauses` }],
+      liens: [
+        {
+          route: '/journee',
+          queryParams: { vue: 'pauses' },
+          libelle: $localize`:@@problemes.lien.pauses:Voir les pauses`,
+        },
+      ],
     });
   }
 
@@ -267,7 +276,7 @@ export function construireProblemes(
         source: 'CONTRAINTE',
         titre: contrainte.name,
         message: contrainte.description,
-        details: [...detailsEnCause(enCause), ...lignes],
+        details: [...relatedDetails(enCause), ...lignes],
         liens,
       });
     });

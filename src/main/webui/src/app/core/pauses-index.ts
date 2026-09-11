@@ -46,7 +46,7 @@ export interface SegmentPause {
   offsetPercent: number;
   widthPercent: number;
   /** Nobody else on the stand during the break: the mark to show first. */
-  sansRelais: boolean;
+  withoutRelais: boolean;
   /** Out at the same time as a colleague's break. */
   simultanee: boolean;
   label: string;
@@ -82,7 +82,7 @@ export function segmentsPause(
       widthPercent:
         ((Math.min(fin, debutMinutes + amplitude) - Math.max(debut, debutMinutes)) / amplitude) *
         100,
-      sansRelais: !pause.relaisDisponible,
+      withoutRelais: !pause.relaisDisponible,
       simultanee: pause.simultanee,
       label: libellePause(pause),
     });

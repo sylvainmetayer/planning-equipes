@@ -1,9 +1,10 @@
 import {
+  computed,
+  inject,
+  input,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  computed,
-  inject,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -44,6 +45,12 @@ import { LegalText } from '../../shared/legal-text';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProblemesPage {
+  /**
+   * False when the Diagnostic page hosts this screen as one of its tabs: the
+   * page then carries the title, and a second heading would only repeat it.
+   */
+  readonly entete = input(true);
+
   protected readonly store = inject(ProblemesStore);
   protected readonly jobs = inject(SolverJobService);
 

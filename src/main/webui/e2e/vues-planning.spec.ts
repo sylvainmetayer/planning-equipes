@@ -31,7 +31,7 @@ test('le besoin en effectif se calcule sur les stands et créneaux ensemencés',
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/staffing');
+  await page.goto('/diagnostic?onglet=besoin');
   await expect(page.locator('#contenu')).toContainText('Minimum retenu');
   await expect(page.locator('#contenu')).toContainText('Pic simultané');
   await page.context().close();

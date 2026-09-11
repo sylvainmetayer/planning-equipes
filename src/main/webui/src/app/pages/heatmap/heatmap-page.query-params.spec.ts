@@ -17,7 +17,7 @@ type PageInternals = {
   animateurFilter: WritableSignal<string>;
   viewChanged: Signal<boolean>;
   setView(view: HeatmapView): void;
-  reinitialiserVue(): void;
+  resetView(): void;
 };
 
 function setUp(queryParams: Record<string, string>) {
@@ -81,7 +81,7 @@ describe('HeatmapPage query-param sync', () => {
     expect(page.viewChanged()).toBe(true);
     replaceState.mockClear();
 
-    page.reinitialiserVue();
+    page.resetView();
     await fixture.whenStable();
 
     expect(page.viewChanged()).toBe(false);

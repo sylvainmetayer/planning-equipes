@@ -34,7 +34,7 @@
     <app-table-filter [(value)]="filtre" [matches]="animateursFiltres().length" [total]="store.animateurs().length"
                       (enterTable)="navigation.focusCurrent()" />
     @if (viewChanged()) {
-      <button matButton type="button" (click)="reinitialiserVue()">
+      <button matButton type="button" (click)="resetView()">
         <mat-icon>filter_alt_off</mat-icon>
         <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
       </button>

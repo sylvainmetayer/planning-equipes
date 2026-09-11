@@ -1,32 +1,8 @@
 <app-work-in-progress-banner [message]="messageEssai()" />
 
 <mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@pauses.title">Pauses</h1>
-    <mat-card-subtitle i18n="@@pauses.subtitle">
-      La rotation des pauses légales, jour par jour et stand par stand : qui sort à quelle heure, et qui est là pour
-      relayer.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
-      <mat-icon>refresh</mat-icon>
-      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
-    </button>
-    @if (viewChanged()) {
-      <button matButton type="button" (click)="reinitialiser()">
-        <mat-icon>filter_alt_off</mat-icon>
-        <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
-      </button>
-    }
-  </mat-card-actions>
   <mat-card-content>
-    @if (chargement() && !rapport()) {
-      <mat-progress-bar mode="indeterminate" />
-      <p class="empty-hint" i18n="@@pauses.loading">Lecture des pauses du planning…</p>
-    } @else if (erreur()) {
-      <p class="empty-hint">{{ erreur() }}</p>
-    } @else if (!rapport() || rapport()!.journeesAnalysees === 0) {
+    @if (!rapport() || rapport()!.journeesAnalysees === 0) {
       <p class="empty-hint" i18n="@@pauses.empty">
         Aucun planning persisté : lancez une résolution, puis revenez ici pour savoir où tombent les pauses.
       </p>
@@ -49,27 +25,7 @@
         </p>
       } @else {
         <div class="pauses-controles">
-          <button matIconButton type="button" [disabled]="estPremierJour()" (click)="decalerJour(-1)"
-                  [attr.aria-label]="jourPrecedentLabel" [title]="jourPrecedentLabel">
-            <mat-icon>chevron_left</mat-icon>
-          </button>
-          <mat-form-field appearance="outline" class="pauses-jour">
-            <mat-label i18n="@@pauses.day.label">Journée</mat-label>
-            <mat-select [value]="jourCourant()?.date ?? null" (valueChange)="selectionnerJour($event)">
-              @for (jour of jours(); track jour.date) {
-                <mat-option [value]="jour.date">{{ jour.title }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <button matIconButton type="button" [disabled]="estDernierJour()" (click)="decalerJour(1)"
-                  [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
-            <mat-icon>chevron_right</mat-icon>
-          </button>
-          <mat-form-field appearance="outline" class="pauses-recherche">
-            <mat-label i18n="@@pauses.recherche">Filtrer par nom ou stand</mat-label>
-            <input matInput name="recherche" [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
-          </mat-form-field>
-          <mat-checkbox [checked]="sansRelaisSeulement()" (change)="sansRelaisSeulement.set($event.checked)"
+          <mat-checkbox [checked]="withoutRelaisOnly()" (change)="withoutRelaisOnly.set($event.checked)"
                         i18n="@@pauses.filter.sansRelais">Seulement sans relais</mat-checkbox>
           <mat-checkbox [checked]="coupuresManquantesSeulement()"
                         (change)="coupuresManquantesSeulement.set($event.checked)"

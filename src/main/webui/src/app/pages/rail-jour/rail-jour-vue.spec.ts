@@ -6,15 +6,20 @@
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { AnalysesApi } from '../../core/api/analyses-api';
-import { PlanningStateService } from '../../core/planning-state.service';
-import { Animateur, Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
-import { RailJourPage } from './rail-jour-page';
+import {
+  Animateur,
+  Creneau,
+  PlanningEvenement,
+  RapportPauses,
+  PosteAffectation,
+  Stand,
+} from '../../core/models';
+import { RailJourView } from './rail-jour-vue';
 
 function stand(id: string): Stand {
   return {
@@ -82,39 +87,36 @@ function planningDeuxJours(): PlanningEvenement {
   };
 }
 
-describe('RailJourPage', () => {
-  let fixture: ComponentFixture<RailJourPage>;
-  let loadForDisplay: () => Promise<PlanningEvenement>;
+describe('RailJourView', () => {
+  let fixture: ComponentFixture<RailJourView>;
 
+  /** Renders the view as the Journée page feeds it: the plan and the day as inputs, the breaks too. */
   async function rendre(
     evenement: PlanningEvenement,
-    queryParams: Record<string, string> = {},
-    analyses: { breaks?: () => unknown } = {},
+    entrees: { jour?: number; filtre?: string; stand?: string; animateur?: string } = {},
+    pauses: RapportPauses | null = null,
   ): Promise<void> {
-    loadForDisplay = vi.fn(async () => evenement);
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
-        },
-        {
-          provide: AnalysesApi,
-          useValue: {
-            typologies: vi.fn(async () => []),
-            breaks: vi.fn(async () => analyses.breaks?.() ?? null),
-          },
-        },
-        { provide: PlanningStateService, useValue: { loadForDisplay } },
+        provideRouter([]),
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
       ],
     });
-    fixture = TestBed.createComponent(RailJourPage);
+    fixture = TestBed.createComponent(RailJourView);
+    fixture.componentRef.setInput('planning', evenement);
+    fixture.componentRef.setInput('pauses', pauses);
+    for (const [cle, valeur] of Object.entries(entrees)) {
+      fixture.componentRef.setInput(cle, valeur);
+    }
+    await fixture.whenStable();
+  }
+
+  async function changerJour(jour: number): Promise<void> {
+    fixture.componentRef.setInput('jour', jour);
     await fixture.whenStable();
   }
 
@@ -167,28 +169,41 @@ describe('RailJourPage', () => {
     expect(racine().querySelector('.rail-track')!.getAttribute('aria-hidden')).toBe('true');
   });
 
-  async function jourSuivant(): Promise<void> {
-    (racine().querySelector('[aria-label="Jour suivant"]') as HTMLElement).click();
-    await fixture.whenStable();
-  }
-
-  it('opens on the first day and steps to the next one', async () => {
+  it('opens on the first day and follows the day the page hands it', async () => {
     await rendre(planningDeuxJours());
     expect(racine().querySelectorAll('.rail-bloc')).toHaveLength(1);
 
-    await jourSuivant();
+    await changerJour(2);
 
     // Day 2: Alice and Bob work, Chloé's unavailability does not cover it.
     expect(racine().querySelectorAll('.rail-bloc')).toHaveLength(2);
     expect(racine().querySelectorAll('.rail-cell-indisponible')).toHaveLength(0);
   });
 
-  it('restores the day named by the URL, and falls back when it no longer exists', async () => {
-    await rendre(planningDeuxJours(), { jour: '2' });
+  it('falls back on the first day when the day it is handed no longer exists', async () => {
+    await rendre(planningDeuxJours(), { jour: 2 });
     expect(racine().querySelectorAll('.rail-bloc')).toHaveLength(2);
 
-    await rendre(planningDeuxJours(), { jour: '99' });
+    await rendre(planningDeuxJours(), { jour: 99 });
     expect(racine().querySelectorAll('.rail-bloc')).toHaveLength(1);
+  });
+
+  it('keeps only the lines the shared filters name: a stand, a person, a name', async () => {
+    await rendre(planningDeuxJours(), { stand: 'Tir' });
+    expect(noms()).toEqual(['Alice']);
+
+    await rendre(planningDeuxJours(), { animateur: 'Bob' });
+    expect(noms()).toEqual(['Bob']);
+
+    await rendre(planningDeuxJours(), { filtre: 'chlo' });
+    expect(noms()).toEqual(['Chloe']);
+  });
+
+  it('reads the lines param of an older link, and ignores what it does not know', () => {
+    expect(RailJourView.readLignes('libres')).toBe('libres');
+    expect(RailJourView.readLignes('affectes')).toBe('affectes');
+    expect(RailJourView.readLignes('tout-le-monde')).toBe('tous');
+    expect(RailJourView.readLignes(null)).toBe('tous');
   });
 
   it('narrows to the animateurs still callable', async () => {
@@ -217,15 +232,15 @@ describe('RailJourPage', () => {
     expect(cellule(2).getAttribute('tabindex')).toBe('0');
   });
 
-  // Same reason as the carte: the `onSelect` hook that puts the focus back on
-  // the first line is optional, and nothing else asserted it.
+  // The reset of the focus on a day change is a `linkedSignal` on the day
+  // input: dropping it compiles, and nothing else asserted it.
   it('puts the tab stop back on the first line when the day changes', async () => {
     await rendre(planningDeuxJours());
     cellule(0).dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
     await fixture.whenStable();
     expect(cellule(2).getAttribute('tabindex')).toBe('0');
 
-    await jourSuivant();
+    await changerJour(2);
 
     expect(cellule(0).getAttribute('tabindex')).toBe('0');
     expect(racine().querySelectorAll('.rail-cell[tabindex="0"]')).toHaveLength(1);
@@ -294,10 +309,12 @@ describe('RailJourPage', () => {
   });
 
   describe('pauses', () => {
-    const rapport = {
+    const rapport: RapportPauses = {
       pauseSurPoste: true,
       journeesAnalysees: 1,
       pausesDues: 1,
+      coupuresRepasDues: 0,
+      coupuresRepasManquantes: 0,
       relaisManquants: 1,
       message: '',
       journees: [
@@ -334,7 +351,7 @@ describe('RailJourPage', () => {
     };
 
     it('draws each break on its line, the relay-less one in the alert style, and names it in the summary', async () => {
-      await rendre(planningDeuxJours(), {}, { breaks: () => rapport });
+      await rendre(planningDeuxJours(), {}, rapport);
 
       const segment = racine().querySelector('.rail-pause');
       expect(segment).not.toBeNull();
@@ -344,50 +361,11 @@ describe('RailJourPage', () => {
       expect(racine().querySelector('.rail-swatch-pause-alerte')).not.toBeNull();
     });
 
-    it('still draws the rail when the breaks cannot be read', async () => {
-      await rendre(
-        planningDeuxJours(),
-        {},
-        {
-          breaks: () => {
-            throw new Error('HTTP 500');
-          },
-        },
-      );
+    it('still draws the rail when the page could not read the breaks', async () => {
+      await rendre(planningDeuxJours(), {}, null);
 
       expect(noms()).toHaveLength(3);
       expect(racine().querySelector('.rail-pause')).toBeNull();
-      expect(racine().querySelector('.empty-hint')?.textContent ?? '').not.toContain('HTTP 500');
-    });
-
-    it('shows the error and no rail when the plan itself cannot be read', async () => {
-      loadForDisplay = vi.fn(async () => {
-        throw new Error('plan indisponible');
-      });
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          provideZonelessChangeDetection(),
-          { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-          {
-            provide: ActivatedRoute,
-            useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
-          },
-          {
-            provide: AnalysesApi,
-            useValue: { typologies: vi.fn(async () => []), breaks: vi.fn(async () => null) },
-          },
-          { provide: PlanningStateService, useValue: { loadForDisplay } },
-          { provide: SolverJobService, useValue: { editingLocked: () => false } },
-          { provide: NotificationService, useValue: { notify: vi.fn() } },
-          { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
-        ],
-      });
-      fixture = TestBed.createComponent(RailJourPage);
-      await fixture.whenStable();
-
-      expect(noms()).toHaveLength(0);
-      expect(racine().textContent).toContain('plan indisponible');
     });
   });
 });

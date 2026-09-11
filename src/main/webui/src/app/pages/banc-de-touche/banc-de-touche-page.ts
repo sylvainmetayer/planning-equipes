@@ -1,10 +1,11 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
   computed,
   inject,
+  input,
   resource,
   signal,
+  ChangeDetectionStrategy,
+  Component,
   ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -61,6 +62,12 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BancDeTouchePage {
+  /**
+   * False when the Diagnostic page hosts this screen as one of its tabs: the
+   * page then carries the title, and a second heading would only repeat it.
+   */
+  readonly entete = input(true);
+
   private readonly analysesApi = inject(AnalysesApi);
   private readonly store = inject(ReferenceDataStore);
   private readonly route = inject(ActivatedRoute);

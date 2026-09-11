@@ -178,7 +178,7 @@ describe('ProblemesStore', () => {
       await store.reload();
       expect(store.pauses()?.relaisManquants).toBe(1);
       expect(store.problemes().map((probleme) => probleme.source)).toEqual(['PAUSES']);
-      expect(store.problemes()[0].liens[0].route).toBe('/pauses');
+      expect(store.problemes()[0].liens[0].route).toBe('/journee');
       expect(store.alertePausesSansRelais()).toContain('1 pause(s) légale(s) sans relais');
       expect(store.error()).toBe('');
     });

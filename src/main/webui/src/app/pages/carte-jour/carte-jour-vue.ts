@@ -3,23 +3,20 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
+  input,
+  linkedSignal,
+  model,
   signal,
+  untracked,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AnalysesApi } from '../../core/api/analyses-api';
-import { errorPrefix } from '../../core/error-message';
 import { Emplacement, PlanningEvenement } from '../../core/models';
-import { PlanningStateService } from '../../core/planning-state.service';
-import { dayNavigation, dayNumberParam } from '../../core/day-navigation';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { CarteJourMap } from './carte-jour-map';
 import { JourneeCarte, buildJourneesCarte, formatMinutes, instantCarte } from './carte-jour';
@@ -34,67 +31,64 @@ const CADENCE_MS = 700;
  * time cursor, and the stands of that instant coloured by what the persisted
  * plan says is happening there.
  *
- * Same read-only source and pure-builder pattern as the other views
- * (`planningState.loadForDisplay()` + `buildJourneesCarte()`): no dedicated
- * endpoint, and never a solve. What "open" means is defined once, in
+ * One rendering of the Journée page (`pages/journee`), which owns the day and
+ * the data: this view is handed the plan and the emplacement referential,
+ * draws them through the pure `buildJourneesCarte()`, and keeps only the
+ * cursor as view state of its own. What "open" means is defined once, in
  * `carte-jour.ts`, and nothing here re-decides it.
+ *
+ * <p>Rendered by the page inside a `@defer` block, and that matters beyond
+ * style: `leaflet` (through `CarteJourMap`) must not reach the initial bundle
+ * nor the chunk of the three other renderings of the day.</p>
  */
 @Component({
-  selector: 'app-carte-jour-page',
-  imports: [
-    MatButtonModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatProgressBarModule,
-    MatSelectModule,
-    MatSliderModule,
-    RouterLink,
-    CarteJourMap,
-  ],
-  templateUrl: './carte-jour-page.html',
-  styleUrl: './carte-jour-page.css',
+  selector: 'app-carte-jour-vue',
+  imports: [MatButtonModule, MatCardModule, MatIconModule, MatSliderModule, CarteJourMap],
+  templateUrl: './carte-jour-vue.html',
+  styleUrl: './carte-jour-vue.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CarteJourPage {
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
-  protected readonly planning = signal<PlanningEvenement | null>(null);
+export class CarteJourView {
+  readonly planning = input<PlanningEvenement | null>(null);
   /** Emplacement referential: the coordinates, and the places holding no stand today. */
-  protected readonly emplacements = signal<Emplacement[]>([]);
-  /** Cursor position in minutes since midnight; null means "the day's opening hour". */
-  protected readonly minutesSelectionnees = signal<number | null>(null);
-  /** Emplacement the list highlights and the map rings; null when none is chosen. */
-  protected readonly selection = signal<string | null>(null);
+  readonly emplacements = input<Emplacement[]>([]);
+  /** The day number the page selected; the first day of the plan when null. */
+  readonly jour = input<number | null>(null);
+  /** The page's stand filter: its emplacement is the one highlighted, until a click picks another. */
+  readonly stand = input('');
+  /** Cursor position in minutes since midnight; null means "the day's opening hour". The `t` query param. */
+  readonly minutesSelectionnees = model<number | null>(null, { alias: 't' });
   protected readonly lecture = signal(false);
 
-  private readonly analysesApi = inject(AnalysesApi);
-  private readonly planningState = inject(PlanningStateService);
-  private readonly route = inject(ActivatedRoute);
   private minuterie?: ReturnType<typeof setInterval>;
 
   protected readonly jours = computed<JourneeCarte[]>(() =>
     buildJourneesCarte(this.planning()?.postes ?? []),
   );
 
-  /**
-   * Day shown: the one asked for, else the first of the event. A new day has
-   * its own opening hour: the replay stops, the cursor goes back to it, and
-   * the picked place is dropped.
-   */
-  private readonly navigation = dayNavigation(this.jours, (jour) => jour.jour, {
-    initial: dayNumberParam(this.route.snapshot.queryParamMap.get('jour')),
-    onSelect: () => {
-      this.arreter();
-      this.minutesSelectionnees.set(null);
-      this.selection.set(null);
-    },
+  /** Day shown: the one the page selected, else the first of the plan. */
+  protected readonly jourCourant = computed<JourneeCarte | null>(() => {
+    const jours = this.jours();
+    return jours.find((candidat) => candidat.jour === this.jour()) ?? jours[0] ?? null;
   });
-  protected readonly jourCourant = this.navigation.current;
-  protected readonly estPremierJour = this.navigation.isFirst;
-  protected readonly estDernierJour = this.navigation.isLast;
+
+  /**
+   * Emplacement the list highlights and the map rings; null when none is
+   * chosen. Starts on the place of the stand the page filters on, and a click
+   * then picks another — or the same one again, to drop it.
+   */
+  protected readonly selection = linkedSignal<string | null>(() => {
+    const stand = this.stand();
+    if (!stand) {
+      return null;
+    }
+    return (
+      this.jourCourant()?.stands.find((candidat) => candidat.standId === stand)?.emplacement?.id ??
+      null
+    );
+  });
 
   /**
    * The instant the cursor points at, always inside the day. Clamped on read
@@ -145,13 +139,6 @@ export class CarteJourPage {
       $localize`:@@carteJour.map.ariaLabel:Carte des emplacements à ${this.instant().heure}:heure:. La liste sous la carte en donne l'équivalent lisible.`,
   );
 
-  /** True as soon as the cursor left the day's opening, or a place was picked. */
-  protected readonly viewChanged = computed(
-    () => this.minutes() !== (this.jourCourant()?.debutMinutes ?? 0) || this.selection() !== null,
-  );
-
-  protected readonly jourPrecedentLabel = $localize`:@@carteJour.previousDay:Jour précédent`;
-  protected readonly jourSuivantLabel = $localize`:@@carteJour.nextDay:Jour suivant`;
   protected readonly reculerLabel = $localize`:@@carteJour.stepBack:Reculer d'un quart d'heure`;
   protected readonly avancerLabel = $localize`:@@carteJour.stepForward:Avancer d'un quart d'heure`;
   protected readonly lireLabel = $localize`:@@carteJour.play:Dérouler la journée`;
@@ -159,52 +146,31 @@ export class CarteJourPage {
   protected readonly curseurLabel = $localize`:@@carteJour.cursor.label:Heure de la journée`;
 
   constructor() {
-    const params = this.route.snapshot.queryParamMap;
-    // Tolerant on purpose: an absent, empty, hand-edited or obsolete `t` falls
-    // back to the day's opening rather than failing the page. The day's own
-    // bounds finish the job, in `minutes()`.
-    const brut = params.get('t');
-    const minute = brut === null || brut.trim() === '' ? Number.NaN : Number(brut);
-    this.minutesSelectionnees.set(Number.isFinite(minute) && minute >= 0 ? minute : null);
-    void this.refresh();
+    // Its own key only (`t`): the page writes the day and the view next to it.
     keepViewInQueryParams(() => {
       const courant = this.jourCourant();
       return {
-        jour: this.navigation.queryParam(),
         t: courant && this.minutes() !== courant.debutMinutes ? String(this.minutes()) : null,
       };
     });
-    // The replay must not outlive the page: a page left with the cursor
+    // A new day has its own opening hour: the replay stops and the cursor goes
+    // back to it. Skipped for the day the view opens on, whose cursor comes
+    // from the URL.
+    let premier = true;
+    effect(() => {
+      this.jour();
+      if (premier) {
+        premier = false;
+        return;
+      }
+      untracked(() => {
+        this.arreter();
+        this.minutesSelectionnees.set(null);
+      });
+    });
+    // The replay must not outlive the view: a view left with the cursor
     // running would keep ticking on a component nobody is looking at.
     inject(DestroyRef).onDestroy(() => this.arreter());
-  }
-
-  protected async refresh(): Promise<void> {
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const [planning, emplacements] = await Promise.all([
-        this.planningState.loadForDisplay(),
-        // Coordinates and empty places only: a missing referential degrades the
-        // map to what the plan itself carries rather than failing the page.
-        this.analysesApi.emplacements().catch(() => []),
-      ]);
-      this.planning.set(planning);
-      this.emplacements.set(emplacements);
-    } catch (error) {
-      this.planning.set(null);
-      this.error.set(errorPrefix(error));
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  protected selectionnerJour(jour: number): void {
-    this.navigation.select(jour);
-  }
-
-  protected decalerJour(delta: number): void {
-    this.navigation.step(delta);
   }
 
   protected deplacerCurseur(minutes: number): void {
@@ -261,11 +227,17 @@ export class CarteJourPage {
     this.lecture.set(false);
   }
 
-  protected reinitialiserVue(): void {
+  /** Back to the day's opening and to no picked place; the page's reset calls it. */
+  reinitialiser(): void {
     this.arreter();
     this.minutesSelectionnees.set(null);
     this.selection.set(null);
   }
+
+  /** True as soon as the cursor left the day's opening, or a place was picked. */
+  readonly modifiee = computed(
+    () => this.minutes() !== (this.jourCourant()?.debutMinutes ?? 0) || this.selection() !== null,
+  );
 
   /** Label of the slider's value bubble. Arrow-function field: the template must not rebuild it each pass. */
   protected readonly formatCurseur = (minutes: number): string => formatMinutes(minutes);

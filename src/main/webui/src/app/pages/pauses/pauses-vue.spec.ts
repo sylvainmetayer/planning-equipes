@@ -1,15 +1,14 @@
 // What `pauses.spec.ts` cannot see: that the report reaches the screen grouped
-// by stand, that the day selector moves and lands in the URL, that the two
-// empty states and the missing-declaration warning show up.
+// by stand, that the view follows the day the Journée page hands it, that the
+// two empty states and the missing-declaration warning show up.
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Location } from '@angular/common';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AnalysesApi } from '../../core/api/analyses-api';
+import { provideRouter } from '@angular/router';
+import { describe, expect, it } from 'vitest';
 import { RapportPauses } from '../../core/models';
-import { PausesPage } from './pauses-page';
+import { PausesView } from './pauses-vue';
 
 function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
   return {
@@ -84,40 +83,30 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
   };
 }
 
-describe('PausesPage', () => {
-  const analysesApi = { breaks: vi.fn() };
-
-  beforeEach(() => {
-    analysesApi.breaks.mockReset();
-  });
-
+describe('PausesView', () => {
+  /** Renders the view as the Journée page feeds it: the report, the day and the filters as inputs. */
   async function mount(
-    data: RapportPauses | (() => Promise<RapportPauses>),
-    queryParams: Record<string, string> = {},
-  ): Promise<ComponentFixture<PausesPage>> {
+    data: RapportPauses | null,
+    entrees: { date?: string; recherche?: string; stand?: string; animateur?: string } = {},
+  ): Promise<ComponentFixture<PausesView>> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [
-        provideZonelessChangeDetection(),
-        provideRouter([]),
-        { provide: AnalysesApi, useValue: analysesApi },
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
-        },
-      ],
+      providers: [provideZonelessChangeDetection(), provideRouter([])],
     });
-    analysesApi.breaks.mockImplementation(typeof data === 'function' ? data : async () => data);
-    const fixture = TestBed.createComponent(PausesPage);
+    const fixture = TestBed.createComponent(PausesView);
+    fixture.componentRef.setInput('rapport', data);
+    for (const [cle, valeur] of Object.entries(entrees)) {
+      fixture.componentRef.setInput(cle, valeur);
+    }
     await fixture.whenStable();
     return fixture;
   }
 
-  function text(fixture: ComponentFixture<PausesPage>): string {
+  function text(fixture: ComponentFixture<PausesView>): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
-  function titresStands(fixture: ComponentFixture<PausesPage>): string[] {
+  function titresStands(fixture: ComponentFixture<PausesView>): string[] {
     return Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('.pauses-stand-titre'),
     ).map((titre) => titre.textContent!.replace(/\s+/g, ' ').trim());
@@ -126,7 +115,6 @@ describe('PausesPage', () => {
   it('shows the first day grouped by stand, with the deadline and the relay', async () => {
     const fixture = await mount(rapport());
 
-    expect(analysesApi.breaks).toHaveBeenCalledOnce();
     expect(titresStands(fixture)[0]).toContain('Village des jeux');
     const contenu = text(fixture);
     expect(contenu).toContain('Alice Martin');
@@ -141,13 +129,10 @@ describe('PausesPage', () => {
     expect(contenu).not.toContain('Carol Petit');
   });
 
-  it('moves to the next day, flags the missing relay and the minor, and lands the day in the URL', async () => {
+  it('follows the day the page hands it, and flags the missing relay and the minor', async () => {
     const fixture = await mount(rapport());
 
-    const suivant = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      'button[title="Jour suivant"]',
-    )!;
-    suivant.click();
+    fixture.componentRef.setInput('date', '2026-07-11');
     await fixture.whenStable();
 
     const contenu = text(fixture);
@@ -157,19 +142,17 @@ describe('PausesPage', () => {
     expect(contenu).toContain("Personne d'autre sur le stand");
     expect(contenu).toContain("en même temps qu'une autre pause");
     expect(titresStands(fixture)[0]).toContain('1 sans relais');
-    expect(suivant.disabled).toBe(true);
-    // The day lands in the address, so the view can be shared and reloaded.
-    expect(TestBed.inject(Location).path()).toContain('jour=2026-07-11');
-  });
-
-  it('opens on the day named in the URL', async () => {
-    expect(text(await mount(rapport(), { jour: '2026-07-11' }))).toContain('Carol Petit');
   });
 
   it('falls back on the first day for a day the report does not know', async () => {
-    const fixture = await mount(rapport(), { jour: '2030-01-01' });
+    const fixture = await mount(rapport(), { date: '2030-01-01' });
     expect(text(fixture)).toContain('Alice Martin');
-    expect(TestBed.inject(Location).path()).not.toContain('jour=');
+  });
+
+  it('keeps only what the shared filters name: a stand, a person, a text', async () => {
+    expect(text(await mount(rapport(), { stand: 'REF' }))).not.toContain('Village des jeux');
+    expect(text(await mount(rapport(), { animateur: 'bob' }))).not.toContain('Alice Martin');
+    expect(text(await mount(rapport(), { recherche: 'alice' }))).toContain('Alice Martin');
   });
 
   it('warns when the on-post break is not declared, with a link to the legal parameters', async () => {
@@ -199,30 +182,26 @@ describe('PausesPage', () => {
     expect(rien.nativeElement.querySelector('.pauses-alerte')).toBeNull();
   });
 
-  it('resets the filters with one button, and leaves the day alone', async () => {
-    const fixture = await mount(rapport(), { jour: '2026-07-11', q: 'carol', vue: 'sans-relais' });
-    const page = fixture.componentInstance as unknown as {
-      reinitialiser(): void;
-      recherche(): string;
-      sansRelaisSeulement(): boolean;
-      viewChanged(): boolean;
-    };
-    expect(page.viewChanged()).toBe(true);
+  it('resets its two switches in one call, writes them to the URL, and leaves the day alone', async () => {
+    const fixture = await mount(rapport(), { date: '2026-07-11' });
+    const view = fixture.componentInstance;
+    view.withoutRelaisOnly.set(true);
+    await fixture.whenStable();
+    expect(view.modifiee()).toBe(true);
+    // Its own key, next to the page's: `relais`, never the `vue` the page owns.
+    expect(TestBed.inject(Location).path()).toContain('relais=sans');
 
-    page.reinitialiser();
+    view.reinitialiser();
+    TestBed.tick();
     await fixture.whenStable();
 
-    expect(page.recherche()).toBe('');
-    expect(page.sansRelaisSeulement()).toBe(false);
-    expect(page.viewChanged()).toBe(false);
+    expect(view.withoutRelaisOnly()).toBe(false);
+    expect(view.modifiee()).toBe(false);
+    expect(TestBed.inject(Location).path()).not.toContain('relais=');
     expect(text(fixture)).toContain('Carol Petit');
   });
 
-  it('shows the error instead of an empty screen when the request fails', async () => {
-    const fixture = await mount(async () => {
-      throw new Error('boom');
-    });
-
-    expect(text(fixture)).toContain('boom');
+  it('says what to do when the page could not read the report', async () => {
+    expect(text(await mount(null))).toContain('Aucun planning persisté');
   });
 });

@@ -1,10 +1,11 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
   computed,
   inject,
+  input,
   resource,
   signal,
+  ChangeDetectionStrategy,
+  Component,
   ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -31,7 +32,7 @@ import {
   iconeSeverite,
   libelleJour,
   lireFiltre,
-  lireVue,
+  readView,
   synthese,
   VueFragilite,
 } from './fragilite';
@@ -67,6 +68,12 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FragilitePage {
+  /**
+   * False when the Diagnostic page hosts this screen as one of its tabs: the
+   * page then carries the title, and a second heading would only repeat it.
+   */
+  readonly entete = input(true);
+
   private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
 
@@ -99,7 +106,7 @@ export class FragilitePage {
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
-    this.view.set(lireVue(params.get('vue')));
+    this.view.set(readView(params.get('vue')));
     this.filtre.set(lireFiltre(params.get('filtre')));
     this.recherche.set(params.get('q') ?? '');
     keepViewInQueryParams(() => ({

@@ -85,8 +85,8 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           icon: 'lock',
         },
         {
-          path: '/problemes',
-          label: $localize`:@@nav.link.problemes:Problèmes`,
+          path: '/diagnostic',
+          label: $localize`:@@nav.link.diagnostic:Diagnostic`,
           icon: 'report_problem',
         },
         {
@@ -126,23 +126,6 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           path: '/ouvertures',
           label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
           icon: 'storefront',
-        },
-        {
-          path: '/staffing',
-          label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
-          icon: 'engineering',
-        },
-        {
-          path: '/fragilite',
-          label: $localize`:@@nav.link.fragilite:Fragilité du planning`,
-          icon: 'personal_injury',
-          avance: true,
-        },
-        {
-          path: '/banc-de-touche',
-          label: $localize`:@@nav.link.bancDeTouche:Banc de touche`,
-          icon: 'airline_seat_recline_normal',
-          avance: true,
         },
         {
           path: '/kpi',
@@ -205,11 +188,7 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           label: $localize`:@@nav.link.calendar:Calendrier des affectations`,
           icon: 'calendar_month',
         },
-        {
-          path: '/day-calendar',
-          label: $localize`:@@nav.link.dayCalendar:Calendrier journalier`,
-          icon: 'view_day',
-        },
+        { path: '/journee', label: $localize`:@@nav.link.journee:Journée`, icon: 'view_day' },
         { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
         {
           path: '/equite',
@@ -233,24 +212,6 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           path: '/timeline',
           label: $localize`:@@nav.link.timeline:Timeline animateur`,
           icon: 'timeline',
-          avance: true,
-        },
-        {
-          path: '/rail-jour',
-          label: $localize`:@@nav.link.railJour:Rail de la journée`,
-          icon: 'view_timeline',
-          avance: true,
-        },
-        {
-          path: '/carte-jour',
-          label: $localize`:@@nav.link.carteJour:Carte de la journée`,
-          icon: 'map',
-          avance: true,
-        },
-        {
-          path: '/pauses',
-          label: $localize`:@@nav.link.pauses:Pauses`,
-          icon: 'free_breakfast',
           avance: true,
         },
         { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub', avance: true },

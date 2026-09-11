@@ -16,10 +16,10 @@ import { AffectationExplanationService } from '../../core/affectation-explanatio
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ApiService } from '../../core/api.service';
-import { PlanningStateService } from '../../core/planning-state.service';
+import { provideRouter } from '@angular/router';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Animateur, Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
-import { CalendarDayPage } from './calendar-day-page';
+import { CalendarDayView } from './calendar-day-vue';
 
 function stand(id: string, typologiesProposees: string[] = ['ambiance']): Stand {
   return {
@@ -75,7 +75,9 @@ function planning(postes: PosteAffectation[]): PlanningEvenement {
 
 interface Options {
   planning?: PlanningEvenement | null;
-  loadRejects?: Error;
+  jour?: number;
+  stand?: string;
+  animateur?: string;
   countRejects?: boolean;
   verrous?: Partial<{
     estJourVerrouille: (date: string | null) => boolean;
@@ -90,13 +92,8 @@ function mount(options: Options = {}) {
   // the double has to honour that contract too.
   const open = vi.fn((...args: unknown[]) => {
     void args;
-    return { afterClosed: () => of(undefined) };
+    return { afterClosed: () => of<unknown>(undefined) };
   });
-  const loadForDisplay = options.loadRejects
-    ? vi.fn(async () => {
-        throw options.loadRejects;
-      })
-    : vi.fn(async () => options.planning ?? planning([]));
   const get = vi.fn(async () => {
     if (options.countRejects) {
       throw new Error('hors service');
@@ -106,8 +103,8 @@ function mount(options: Options = {}) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
+      provideRouter([]),
       { provide: ApiService, useValue: { get } },
-      { provide: PlanningStateService, useValue: { loadForDisplay } },
       { provide: SolverJobService, useValue: { editingLocked: () => false } },
       { provide: NotificationService, useValue: { notify: vi.fn() } },
       { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
@@ -124,19 +121,26 @@ function mount(options: Options = {}) {
       { provide: MatDialog, useValue: { open } },
     ],
   });
-  return { fixture: TestBed.createComponent(CalendarDayPage), open, loadForDisplay };
+  const fixture = TestBed.createComponent(CalendarDayView);
+  fixture.componentRef.setInput('planning', options.planning ?? planning([]));
+  for (const key of ['jour', 'stand', 'animateur'] as const) {
+    if (options[key] !== undefined) {
+      fixture.componentRef.setInput(key, options[key]);
+    }
+  }
+  return { fixture, open };
 }
 
-function root(fixture: ComponentFixture<CalendarDayPage>): HTMLElement {
+function root(fixture: ComponentFixture<CalendarDayView>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
 
-function text(fixture: ComponentFixture<CalendarDayPage>): string {
+function text(fixture: ComponentFixture<CalendarDayView>): string {
   return root(fixture).textContent!.replace(/\s+/g, ' ').trim();
 }
 
 /** The stand lines currently on screen, with the markers that make them stand out. */
-function lignes(fixture: ComponentFixture<CalendarDayPage>) {
+function lignes(fixture: ComponentFixture<CalendarDayView>) {
   return Array.from(root(fixture).querySelectorAll('.day-stand')).map((ligne) => ({
     texte: ligne.textContent!.replace(/\s+/g, ' ').trim(),
     sousEffectif: ligne.classList.contains('understaffed-slot'),
@@ -151,7 +155,7 @@ function lignes(fixture: ComponentFixture<CalendarDayPage>) {
 const AMBIANCE = stand('Loup-Garou');
 const C1 = creneau({ id: 1 });
 
-describe('CalendarDayPage rendering', () => {
+describe('CalendarDayView rendering', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('invites the user to solve when there is nothing to show', async () => {
@@ -163,30 +167,63 @@ describe('CalendarDayPage rendering', () => {
     expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(0);
   });
 
-  it('renders one card per event day, titled and dated', async () => {
-    const { fixture } = mount({
-      planning: planning([
-        poste(
-          'p1',
-          AMBIANCE,
-          creneau({ id: 1, jour: 1, date: '2026-07-14' }),
-          animateur('a1', 'Camille'),
-        ),
-        poste(
-          'p2',
-          AMBIANCE,
-          creneau({ id: 2, jour: 2, date: '2026-07-15' }),
-          animateur('a1', 'Camille'),
-        ),
-      ]),
-    });
+  it('renders the one day the page hands it, titled and dated, the first by default', async () => {
+    const deuxJours = planning([
+      poste(
+        'p1',
+        AMBIANCE,
+        creneau({ id: 1, jour: 1, date: '2026-07-14' }),
+        animateur('a1', 'Camille'),
+      ),
+      poste(
+        'p2',
+        AMBIANCE,
+        creneau({ id: 2, jour: 2, date: '2026-07-15' }),
+        animateur('a1', 'Camille'),
+      ),
+    ]);
+    const { fixture } = mount({ planning: deuxJours });
     await fixture.whenStable();
 
-    const cartes = Array.from(root(fixture).querySelectorAll('.day-card h2'));
-    expect(cartes.map((each) => each.textContent!.replace(/\s+/g, ' ').trim())).toEqual([
-      'Jour 1 — 2026-07-14',
-      'Jour 2 — 2026-07-15',
-    ]);
+    const titres = () =>
+      Array.from(root(fixture).querySelectorAll('.day-card h2')).map((each) =>
+        each.textContent!.replace(/\s+/g, ' ').trim(),
+      );
+    expect(titres()).toEqual(['Jour 1 — 2026-07-14']);
+
+    fixture.componentRef.setInput('jour', 2);
+    await fixture.whenStable();
+    expect(titres()).toEqual(['Jour 2 — 2026-07-15']);
+  });
+
+  it('keeps only the lines the shared filters name: a stand, a person', async () => {
+    const { fixture } = mount({
+      planning: planning([
+        poste('p1', AMBIANCE, C1, animateur('a1', 'Camille')),
+        poste('p2', stand('Dixit'), C1, animateur('a2', 'Alex')),
+      ]),
+      stand: 'Dixit',
+    });
+    await fixture.whenStable();
+    expect(
+      lignes(fixture)
+        .map((ligne) => ligne.texte)
+        .join(' '),
+    ).not.toContain('Loup-Garou');
+
+    fixture.componentRef.setInput('stand', '');
+    fixture.componentRef.setInput('animateur', 'a1');
+    await fixture.whenStable();
+    expect(
+      lignes(fixture)
+        .map((ligne) => ligne.texte)
+        .join(' '),
+    ).toContain('Loup-Garou');
+    expect(
+      lignes(fixture)
+        .map((ligne) => ligne.texte)
+        .join(' '),
+    ).not.toContain('Dixit');
   });
 
   it('lists the animateurs of a line, comma-separated, each one clickable', async () => {
@@ -388,7 +425,7 @@ describe('CalendarDayPage rendering', () => {
     await fixture.whenStable();
     expect(lignes(fixture)).toHaveLength(2);
 
-    filtrerProblemes(fixture, true);
+    filterProblemes(fixture, true);
     await fixture.whenStable();
 
     const restantes = lignes(fixture);
@@ -404,14 +441,15 @@ describe('CalendarDayPage rendering', () => {
     await fixture.whenStable();
     expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(1);
 
-    filtrerProblemes(fixture, true);
+    filterProblemes(fixture, true);
     await fixture.whenStable();
 
     expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(0);
-    expect(text(fixture)).toContain('Aucune donnée de planning disponible');
+    // The plan is not empty, the filters are: the wording says so.
+    expect(text(fixture)).toContain('Aucune ligne ne correspond aux filtres');
   });
 
-  function filtrerProblemes(fixture: ComponentFixture<CalendarDayPage>, actif: boolean): void {
+  function filterProblemes(fixture: ComponentFixture<CalendarDayView>, actif: boolean): void {
     (
       fixture.componentInstance as unknown as { seulementProblemes: { set(value: boolean): void } }
     ).seulementProblemes.set(actif);
@@ -448,28 +486,18 @@ describe('CalendarDayPage rendering', () => {
     expect(root(fixture).querySelector('.calendar-meta')!.textContent).toContain('n/d');
   });
 
-  it('shows the failure instead of an empty calendar when the planning cannot be loaded', async () => {
-    const { fixture } = mount({ loadRejects: new Error('planning illisible') });
+  it('asks the page to re-read the plan once the repair assistant wrote to it', async () => {
+    const camille = animateur('a1', 'Camille');
+    const { fixture, open } = mount({ planning: planning([poste('p1', AMBIANCE, C1, camille)]) });
+    open.mockReturnValue({ afterClosed: () => of({ applique: true }) });
+    await fixture.whenStable();
+    const rechargements = vi.fn();
+    fixture.componentInstance.rechargement.subscribe(rechargements);
+
+    (root(fixture).querySelector('.affectation-link') as HTMLButtonElement).click();
     await fixture.whenStable();
 
-    const erreur = root(fixture).querySelector('.calendar-empty')!;
-    expect(erreur.textContent).toContain('planning illisible');
-    // The "run a solve" hint would be misleading here: the data exists, it failed.
-    expect(root(fixture).querySelector('.empty-hint')).toBeNull();
-  });
-
-  it('reloads the planning on the refresh button', async () => {
-    const { fixture, loadForDisplay } = mount({ planning: planning([]) });
-    await fixture.whenStable();
-    expect(loadForDisplay).toHaveBeenCalledOnce();
-
-    const rafraichir = Array.from(root(fixture).querySelectorAll('button')).find((each) =>
-      each.textContent?.includes('Actualiser'),
-    )!;
-    rafraichir.click();
-    await fixture.whenStable();
-
-    expect(loadForDisplay).toHaveBeenCalledTimes(2);
+    expect(rechargements).toHaveBeenCalledOnce();
   });
 
   it('explains its four markers in a legend', async () => {

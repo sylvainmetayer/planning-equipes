@@ -1,0 +1,44 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@diagnostic.title">Diagnostic</h1>
+    <mat-card-subtitle i18n="@@diagnostic.subtitle">
+      Pourquoi le planning ne tient pas, et ce qui se passerait si : problèmes, besoin, fragilité, banc de touche.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-button-toggle-group class="diagnostic-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                             aria-label="Onglet du diagnostic" i18n-aria-label="@@diagnostic.onglet.label">
+      <mat-button-toggle value="problemes">
+        <mat-icon>report_problem</mat-icon>
+        <ng-container i18n="@@diagnostic.onglet.problemes">Problèmes</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="besoin">
+        <mat-icon>engineering</mat-icon>
+        <ng-container i18n="@@diagnostic.onglet.besoin">Besoin en animateurs</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="fragilite">
+        <mat-icon>personal_injury</mat-icon>
+        <ng-container i18n="@@diagnostic.onglet.fragilite">Fragilité</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="banc">
+        <mat-icon>airline_seat_recline_normal</mat-icon>
+        <ng-container i18n="@@diagnostic.onglet.banc">Banc de touche</ng-container>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </mat-card-content>
+</mat-card>
+
+@switch (onglet()) {
+  @case ('besoin') {
+    <app-staffing-page [entete]="false" />
+  }
+  @case ('fragilite') {
+    <app-fragilite-page [entete]="false" />
+  }
+  @case ('banc') {
+    <app-banc-de-touche-page [entete]="false" />
+  }
+  @default {
+    <app-problemes-page [entete]="false" />
+  }
+}

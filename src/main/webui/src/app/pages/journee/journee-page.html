@@ -1,0 +1,147 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@journee.title">Journée</h1>
+    <mat-card-subtitle i18n="@@journee.subtitle">
+      Une journée du planning, sous quatre rendus : par stand, par animateur, sur la carte, ou par ses pauses.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="journee-toolbar">
+      <button matIconButton type="button" [disabled]="isPremierJour()" (click)="decalerJour(-1)"
+              [attr.aria-label]="jourPrecedentLabel" [title]="jourPrecedentLabel">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <mat-form-field appearance="outline" class="journee-jour">
+        <mat-label i18n="@@journee.day.label">Journée</mat-label>
+        <mat-select [value]="jourCourant()?.key ?? null" (valueChange)="selectJour($event)">
+          @for (jour of jours(); track jour.key) {
+            <mat-option [value]="jour.key">{{ jour.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button matIconButton type="button" [disabled]="isDernierJour()" (click)="decalerJour(1)"
+              [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <mat-button-toggle-group class="journee-vues" [value]="view()" (change)="changeView($event.value)"
+                               aria-label="Rendu de la journée" i18n-aria-label="@@journee.vue.label">
+        <mat-button-toggle value="calendrier">
+          <mat-icon>view_day</mat-icon>
+          <ng-container i18n="@@journee.vue.calendrier">Calendrier</ng-container>
+        </mat-button-toggle>
+        <mat-button-toggle value="rail">
+          <mat-icon>view_timeline</mat-icon>
+          <ng-container i18n="@@journee.vue.rail">Rail</ng-container>
+        </mat-button-toggle>
+        <mat-button-toggle value="carte">
+          <mat-icon>map</mat-icon>
+          <ng-container i18n="@@journee.vue.carte">Carte</ng-container>
+        </mat-button-toggle>
+        <mat-button-toggle value="pauses">
+          <mat-icon>free_breakfast</mat-icon>
+          <ng-container i18n="@@journee.vue.pauses">Pauses</ng-container>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+      @if (viewChanged()) {
+        <button matButton type="button" (click)="resetView()">
+          <mat-icon>filter_alt_off</mat-icon>
+          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+        </button>
+      }
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+    </div>
+
+    <div class="journee-filtres">
+      <mat-form-field appearance="outline" class="journee-filtre">
+        <mat-label i18n="@@journee.filter.stand">Stand</mat-label>
+        <mat-select [value]="stand()" (valueChange)="stand.set($event)">
+          <mat-option value="" i18n="@@journee.filter.tous">Tous</mat-option>
+          @for (option of stands(); track option.id) {
+            <mat-option [value]="option.id">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="journee-filtre">
+        <mat-label i18n="@@journee.filter.animateur">Animateur</mat-label>
+        <mat-select [value]="animateur()" (valueChange)="animateur.set($event)">
+          <mat-option value="" i18n="@@journee.filter.tous">Tous</mat-option>
+          @for (option of animateurs(); track option.id) {
+            <mat-option [value]="option.id">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <app-table-filter
+        [(value)]="filtre"
+        label="Filtrer par nom"
+        i18n-label="@@journee.filter.label"
+        placeholder="Nom, stand…"
+        i18n-placeholder="@@journee.filter.placeholder"
+      />
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="empty-hint">{{ error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading()) {
+  @switch (view()) {
+    @case ('rail') {
+      <app-rail-jour-vue
+        [planning]="planning()"
+        [typologies]="typologies()"
+        [pauses]="pauses()"
+        [jour]="jourCourant()?.jour ?? null"
+        [filtre]="filtre()"
+        [stand]="stand()"
+        [animateur]="animateur()"
+        [(view)]="lignesRail"
+        (rechargement)="recharger()"
+      />
+    }
+    @case ('carte') {
+      <!-- Deferred, and that is not a style choice: Leaflet's 150 kB chunk is
+           loaded here and nowhere else, never with the three other renderings. -->
+      @defer (on immediate) {
+        <app-carte-jour-vue
+          [planning]="planning()"
+          [emplacements]="emplacements()"
+          [jour]="jourCourant()?.jour ?? null"
+          [stand]="stand()"
+          [(t)]="instantCarte"
+        />
+      } @placeholder {
+        <mat-progress-bar mode="indeterminate" />
+      }
+    }
+    @case ('pauses') {
+      <app-pauses-vue
+        [rapport]="pauses()"
+        [date]="jourCourant()?.date ?? null"
+        [recherche]="filtre()"
+        [stand]="stand()"
+        [animateur]="animateur()"
+        [(withoutRelaisOnly)]="withoutRelais"
+        [(coupuresManquantesSeulement)]="coupuresManquantes"
+      />
+    }
+    @default {
+      <app-calendar-day-vue
+        [planning]="planning()"
+        [jour]="jourCourant()?.jour ?? null"
+        [filtre]="filtre()"
+        [stand]="stand()"
+        [animateur]="animateur()"
+        [(seulementProblemes)]="seulementProblemes"
+        (rechargement)="recharger()"
+      />
+    }
+  }
+}

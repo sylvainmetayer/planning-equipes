@@ -8,11 +8,11 @@ import { compterProblemes, Probleme } from '../core/problemes';
 /**
  * Compact aggregate of everything wrong with the current dataset and the last
  * analysed solve — how many problems, split by severity — plus a way in to the
- * Problèmes page, which lists them all.
+ * Diagnostic page, whose first tab lists them all.
  *
  * Silent unless at least one problem is blocking, like `app-feasibility-banner`:
  * warnings and minor issues alone are not worth interrupting the nominal path
- * for, and are still visible on the Problèmes page.
+ * for, and are still visible on the Diagnostic page.
  */
 @Component({
   selector: 'app-problem-summary-banner',
@@ -23,7 +23,7 @@ import { compterProblemes, Probleme } from '../core/problemes';
         <mat-card-content>
           <mat-icon>error</mat-icon>
           <p>{{ texte }}</p>
-          <a matButton="tonal" routerLink="/problemes" i18n="@@problemes.summary.link"
+          <a matButton="tonal" routerLink="/diagnostic" i18n="@@problemes.summary.link"
             >Voir les problèmes</a
           >
         </mat-card-content>

@@ -7,13 +7,15 @@
 />
 
 <mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@bancDeTouche.title">Banc de touche</h1>
-    <mat-card-subtitle i18n="@@bancDeTouche.description">
-      Pour un créneau, qui n'est affecté nulle part et quelle règle du solveur l'empêcherait de prendre le siège
-      évalué. Lecture seule : affecter quelqu'un passe par l'assistant de réparation.
-    </mat-card-subtitle>
-  </mat-card-header>
+  @if (entete()) {
+    <mat-card-header>
+      <h1 mat-card-title i18n="@@bancDeTouche.title">Banc de touche</h1>
+      <mat-card-subtitle i18n="@@bancDeTouche.description">
+        Pour un créneau, qui n'est affecté nulle part et quelle règle du solveur l'empêcherait de prendre le siège
+        évalué. Lecture seule : affecter quelqu'un passe par l'assistant de réparation.
+      </mat-card-subtitle>
+    </mat-card-header>
+  }
 
   <mat-card-content>
     <!-- No créneau carries a seat: an empty selector would say nothing, so the

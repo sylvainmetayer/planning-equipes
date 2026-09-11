@@ -59,7 +59,7 @@ describe('ProblemSummaryBanner', () => {
     const racine = rendre([probleme('a', 'BLOQUANT')]);
 
     const lien = racine.querySelector('a') as HTMLAnchorElement;
-    expect(lien.getAttribute('href')).toBe('/problemes');
+    expect(lien.getAttribute('href')).toBe('/diagnostic');
     expect(lien.textContent!.trim()).toBe('Voir les problèmes');
   });
 

@@ -14,9 +14,8 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { provideRouter } from '@angular/router';
+import { describe, expect, it } from 'vitest';
 import {
   Creneau,
   Emplacement,
@@ -24,10 +23,9 @@ import {
   PosteAffectation,
   Stand,
 } from '../../core/models';
-import { PlanningStateService } from '../../core/planning-state.service';
-import { MarqueurJour } from './carte-jour';
+import { MarqueurJour, readInstant } from './carte-jour';
 import { CarteJourMap } from './carte-jour-map';
-import { CarteJourPage } from './carte-jour-page';
+import { CarteJourView } from './carte-jour-vue';
 
 @Component({
   selector: 'app-carte-jour-map',
@@ -121,35 +119,29 @@ function planningDeuxJours(): PlanningEvenement {
   };
 }
 
-describe('CarteJourPage', () => {
-  let fixture: ComponentFixture<CarteJourPage>;
+describe('CarteJourView', () => {
+  let fixture: ComponentFixture<CarteJourView>;
 
+  /** Renders the view as the Journée page feeds it: the plan, the day and the emplacements as inputs. */
   async function rendre(
     evenement: PlanningEvenement,
-    queryParams: Record<string, string> = {},
+    entrees: { jour?: number; t?: number | null; stand?: string } = {},
     emplacements: Emplacement[] = [PLACE],
   ): Promise<void> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [
-        provideZonelessChangeDetection(),
-        { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
-        },
-        { provide: ApiService, useValue: { get: vi.fn(async () => emplacements) } },
-        {
-          provide: PlanningStateService,
-          useValue: { loadForDisplay: vi.fn(async () => evenement) },
-        },
-      ],
+      providers: [provideZonelessChangeDetection(), provideRouter([])],
     });
-    TestBed.overrideComponent(CarteJourPage, {
+    TestBed.overrideComponent(CarteJourView, {
       remove: { imports: [CarteJourMap] },
       add: { imports: [CarteJourMapStub] },
     });
-    fixture = TestBed.createComponent(CarteJourPage);
+    fixture = TestBed.createComponent(CarteJourView);
+    fixture.componentRef.setInput('planning', evenement);
+    fixture.componentRef.setInput('emplacements', emplacements);
+    for (const [cle, valeur] of Object.entries(entrees)) {
+      fixture.componentRef.setInput(cle, valeur);
+    }
     await fixture.whenStable();
   }
 
@@ -203,21 +195,31 @@ describe('CarteJourPage', () => {
     );
   });
 
-  it('restores the day and the instant named by the URL', async () => {
-    await rendre(planningDeuxJours(), { jour: '2', t: '900' });
+  it('shows the day and the instant the page hands it', async () => {
+    await rendre(planningDeuxJours(), { jour: 2, t: 900 });
 
     expect(heure()).toBe('15:00');
     expect(compteurs()).toContain('1 stand(s) ouvert(s) sur 1');
   });
 
-  it('falls back on the defaults rather than failing on an unusable URL', async () => {
-    await rendre(planningDeuxJours(), { jour: '99', t: 'midi' });
+  it('falls back on the defaults rather than failing on an unusable link', async () => {
+    await rendre(planningDeuxJours(), { jour: 99, t: readInstant('midi') });
 
     expect(heure()).toBe('10:00');
+    expect(readInstant('')).toBeNull();
+    expect(readInstant('-5')).toBeNull();
+    expect(readInstant('900')).toBe(900);
+  });
+
+  it('rings the place of the stand the page filters on, until a click picks another', async () => {
+    await rendre(planningDeuxJours(), { stand: 'Tir' });
+
+    const place = racine().querySelector('.carte-jour-emplacement.selection');
+    expect(place?.textContent).toContain('Place du Drapeau');
   });
 
   it('clamps an instant that falls outside the chosen day', async () => {
-    await rendre(planningDeuxJours(), { t: '1380' });
+    await rendre(planningDeuxJours(), { t: 1380 });
 
     // Day 1 runs 10:00-16:00; 23:00 lands on its last minute, not off the scale.
     expect(heure()).toBe('16:00');
@@ -228,19 +230,16 @@ describe('CarteJourPage', () => {
     await curseur(15 * 60);
     expect(heure()).toBe('15:00');
 
-    const reinitialiser = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes('Réinitialiser la vue'),
-    ) as HTMLElement;
-    reinitialiser.click();
+    // The button lives on the Journée page, which calls this on every rendering.
+    fixture.componentInstance.reinitialiser();
     await fixture.whenStable();
 
     expect(heure()).toBe('10:00');
   });
 
-  // The one place where the three day-navigation pages differ is the hook
-  // they pass to `dayNavigation`, and it is optional: dropping it compiles
-  // and leaves every test green, while a day change would keep the clock
-  // running on yesterday's minute. Pinned here, per page.
+  // The effect on the day input is optional: dropping it compiles and leaves
+  // every other test green, while a day change would keep the clock running
+  // on yesterday's minute. Pinned here.
   it('stops the replay and returns to the opening hour when the day changes', async () => {
     await rendre(planningDeuxJours());
     await curseur(15 * 60);
@@ -249,7 +248,7 @@ describe('CarteJourPage', () => {
     await fixture.whenStable();
     expect(lecture.getAttribute('aria-pressed')).toBe('true');
 
-    (racine().querySelector('[aria-label="Jour suivant"]') as HTMLElement).click();
+    fixture.componentRef.setInput('jour', 2);
     await fixture.whenStable();
 
     expect(lecture.getAttribute('aria-pressed')).toBe('false');

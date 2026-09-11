@@ -154,7 +154,7 @@ test.describe('glisser-déposer', () => {
     const avant = await occupants();
     const page = await pageAdmin(browser, admin);
     try {
-      await page.goto('/day-calendar');
+      await ouvrirLaJournee(page, 'calendrier');
       const ligneUn = page.locator('.day-stand', { hasText: 'Stand Glisse un' });
       const ligneDeux = page.locator('.day-stand', { hasText: 'Stand Glisse deux' });
       await expect(ligneUn).toBeVisible();
@@ -189,7 +189,7 @@ test.describe('glisser-déposer', () => {
 
     const page = await pageAdmin(browser, admin);
     try {
-      await page.goto('/day-calendar');
+      await ouvrirLaJournee(page, 'calendrier');
       const ligneUn = page.locator('.day-stand', { hasText: 'Stand Glisse un' });
       const ligneTrois = page.locator('.day-stand', { hasText: 'Stand Glisse trois' });
       await expect(ligneTrois.locator('.siege-libre')).toBeVisible();
@@ -214,7 +214,7 @@ test.describe('glisser-déposer', () => {
     const avant = await occupants();
     const page = await pageAdmin(browser, admin);
     try {
-      await ouvrirLeRailDuJour(page);
+      await ouvrirLaJournee(page, 'rail');
       const ligneA = page.locator('.rail-ligne', { hasText: 'Anna Glisse' });
       const ligneB = page.locator('.rail-ligne', { hasText: 'Boris Glisse' });
       await expect(ligneA.locator('.rail-bloc')).toBeVisible();
@@ -245,7 +245,7 @@ test.describe('glisser-déposer', () => {
     expect(avant['SOLV-DD-S3']).toBeNull();
     const page = await pageAdmin(browser, admin);
     try {
-      await ouvrirLeRailDuJour(page);
+      await ouvrirLaJournee(page, 'rail');
       const ligneA = page.locator('.rail-ligne', { hasText: 'Anna Glisse' });
       const ligneC = page.locator('.rail-ligne', { hasText: 'Cléo Glisse' });
       await expect(ligneA.locator('.rail-bloc')).toBeVisible();
@@ -260,10 +260,10 @@ test.describe('glisser-déposer', () => {
   });
 });
 
-/** The rail opens on the event's first day, which other specs' créneaux may own: pick this spec's date. */
-async function ouvrirLeRailDuJour(page: Page): Promise<void> {
-  await page.goto('/rail-jour');
-  await page.getByLabel('Journée').click();
+/** The page opens on the event's first day, which other specs' créneaux may own: pick this spec's date. */
+async function ouvrirLaJournee(page: Page, vue: 'calendrier' | 'rail'): Promise<void> {
+  await page.goto(`/journee?vue=${vue}`);
+  await page.getByRole('combobox', { name: 'Journée' }).click();
   await page.getByRole('option', { name: /2026-07-22/ }).click();
   // The select's backdrop outlives the click by an animation frame, and a
   // mousedown landing on it would start no drag at all.

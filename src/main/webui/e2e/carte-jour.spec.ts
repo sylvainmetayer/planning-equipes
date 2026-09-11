@@ -96,7 +96,7 @@ test.afterAll(async () => {
  * database is shared, and another spec's seeding may well own day 1.
  */
 async function ouvrirJourDeLaFixture(page: Page): Promise<void> {
-  await page.goto('/carte-jour');
+  await page.goto('/journee?vue=carte');
   await page.getByRole('combobox', { name: 'Journée' }).click();
   await page.getByRole('option', { name: new RegExp(SEED.jour) }).click();
   await expect(page.locator('[data-test="carte-jour-heure"]')).toHaveText('09:00');
@@ -119,7 +119,7 @@ test("la carte de la journée change d'état quand le curseur se déplace", asyn
   const contenu = page.locator('#contenu');
   // The day opens at 09:00 — its first opening, rounded to the hour.
   await ouvrirJourDeLaFixture(page);
-  await expect(contenu).toContainText('Carte de la journée');
+  await expect(contenu).toContainText('Emplacements à cette heure-là');
 
   // 10:00: the morning stand and the unlocated one are open and staffed, the
   // evening one is closed — but only one of the two has a place on the map.

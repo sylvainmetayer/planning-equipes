@@ -248,7 +248,7 @@ export class HeatmapPage {
   }
 
   /** Back to the view this page opens on: coverage by stand, no search. */
-  protected reinitialiserVue(): void {
+  protected resetView(): void {
     this.view.set('stand');
     this.animateurFilter.set('');
   }

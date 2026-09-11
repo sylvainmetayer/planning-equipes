@@ -10,24 +10,26 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
+  input,
+  model,
+  output,
   signal,
+  untracked,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { PlanningApi } from '../../core/api/planning-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
-import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { cibleDepot, resumeDeplacement } from '../../shared/deplacement';
 import { VerrouillageStore } from '../../core/verrouillage.store';
@@ -36,7 +38,8 @@ import {
   aUneAppreciationPour,
   ouvrirExplication,
 } from '../../shared/affectation-explanation-dialog';
-import { errorPrefix } from '../../core/error-message';
+import { correspondAuFiltre } from '../../core/text-filter';
+import { keepViewInQueryParams } from '../../core/view-query-params';
 
 interface AssignedEntry {
   poste: PosteAffectation;
@@ -96,11 +99,18 @@ interface DayCard {
 }
 
 /**
- * Read-only calendar grouped by event day. Also displays how many
- * assignments are currently persisted in database.
+ * The day, stand by stand: each créneau of the day, and on each stand the
+ * animateurs holding its seats. Also displays how many assignments are
+ * currently persisted in database.
+ *
+ * One rendering of the Journée page (`pages/journee`), which owns the day,
+ * the shared filters and the plan: this view draws the day it is handed
+ * through the pure `buildDays()`, and keeps only its own switch — problem
+ * lines only. A drop or a repair that rewrote the plan asks the page to
+ * re-read it rather than fetching by itself.
  */
 @Component({
-  selector: 'app-calendar-day-page',
+  selector: 'app-calendar-day-vue',
   imports: [
     CdkDrag,
     CdkDragHandle,
@@ -108,73 +118,94 @@ interface DayCard {
     CdkDropListGroup,
     FormsModule,
     MatCardModule,
-    MatButtonModule,
     MatCheckboxModule,
     MatIconModule,
-    MatProgressBarModule,
     MatTooltipModule,
   ],
-  templateUrl: './calendar-day-page.html',
+  templateUrl: './calendar-day-vue.html',
   styleUrls: ['../../../styles/calendar-day.css', '../../../styles/calendar-month.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CalendarDayPage {
-  /** Bounds the repair-assistant callback to this page's life: it is lazy and rebuilt on every visit. */
+export class CalendarDayView {
+  readonly planning = input<PlanningEvenement | null>(null);
+  /** The day number the page selected; the first day of the plan when null. */
+  readonly jour = input<number | null>(null);
+  /** The page's shared filters: a text, a stand id, an animateur id — each empty when unset. */
+  readonly filtre = input('');
+  readonly stand = input('');
+  readonly animateur = input('');
+  /**
+   * Narrows the day to the stand lines that need attention — the view state
+   * this rendering owns (`problemes`). An event day holds dozens of lines of
+   * which two are wrong; scrolling all of them to find those two is the actual
+   * daily task this screen exists for.
+   */
+  readonly seulementProblemes = model(false);
+  /** The plan moved under this view (a drop, a repair): the page re-reads it. */
+  readonly rechargement = output<void>();
+
+  /** Bounds the repair-assistant callback to this view's life: it is lazy and rebuilt on every visit. */
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
   protected readonly persistedCount = signal<string>('?');
-  protected readonly planning = signal<PlanningEvenement | null>(null);
   protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
   protected readonly pourquoiLuiLabel = $localize`:@@affectationExplanation.tooltip:Pourquoi lui ?`;
 
   protected readonly verrous = inject(VerrouillageStore);
 
   private readonly planningApi = inject(PlanningApi);
-  private readonly planningState = inject(PlanningStateService);
   private readonly dialog = inject(MatDialog);
   private readonly explications = inject(AffectationExplanationService);
   private readonly notifications = inject(NotificationService);
   /** A drop is a write to the plan: locked, like every other, while a solve is rewriting it. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
-  /**
-   * Narrows the day cards to the stand lines that need attention. An event
-   * day holds dozens of lines of which two are wrong; scrolling all of them to
-   * find those two is the actual daily task this screen exists for.
-   */
-  protected readonly seulementProblemes = signal(false);
-
   private readonly toutesLesJournees = computed<DayCard[]>(() =>
     buildDays(this.planning()?.postes ?? []),
   );
 
+  /** The one day on screen: the day the page selected, else the first of the plan. */
+  private readonly journee = computed<DayCard | null>(() => {
+    const jours = this.toutesLesJournees();
+    return jours.find((day) => day.jour === this.jour()) ?? jours[0] ?? null;
+  });
+
   protected readonly days = computed<DayCard[]>(() => {
-    if (!this.seulementProblemes()) {
-      return this.toutesLesJournees();
+    const day = this.journee();
+    if (!day) {
+      return [];
     }
-    return this.toutesLesJournees()
-      .map((day) => ({
-        ...day,
-        slots: day.slots
-          .map((slot) => ({
-            ...slot,
-            stands: slot.stands.filter(
-              (stand) =>
-                this.isUnderstaffed(stand) ||
-                this.hasAppreciationMismatch(stand) ||
-                stand.entries.length === 0,
-            ),
-          }))
-          .filter((slot) => slot.stands.length > 0),
-      }))
-      .filter((day) => day.slots.length > 0);
+    const filtre = this.filtre();
+    const stand = this.stand();
+    const animateur = this.animateur();
+    const problemes = this.seulementProblemes();
+    const garde = (ligne: StandLine): boolean =>
+      (!stand || ligne.standId === stand) &&
+      (!animateur || ligne.entries.some((entry) => entry.poste.animateur?.id === animateur)) &&
+      correspondAuFiltre(filtre, [ligne.standNom, ...ligne.entries.map((entry) => entry.label)]) &&
+      (!problemes ||
+        this.isUnderstaffed(ligne) ||
+        this.hasAppreciationMismatch(ligne) ||
+        ligne.entries.length === 0);
+    if (!filtre.trim() && !stand && !animateur && !problemes) {
+      return [day];
+    }
+    const slots = day.slots
+      .map((slot) => ({ ...slot, stands: slot.stands.filter(garde) }))
+      .filter((slot) => slot.stands.length > 0);
+    return slots.length === 0 ? [] : [{ ...day, slots }];
   });
 
   constructor() {
-    void this.refresh();
+    // Its own key only (`problemes`): the page writes the day, the view and
+    // the shared filters next to it.
+    keepViewInQueryParams(() => ({ problemes: this.seulementProblemes() ? '1' : null }));
+    // The count is read with the plan, and again each time the page re-reads it.
+    effect(() => {
+      this.planning();
+      untracked(() => void this.refreshPersistedCount());
+    });
     // Fire-and-forget: the padlocks are an indicator, never a reason to fail
     // the calendar the user came to read.
     void this.verrous.reload().catch(() => undefined);
@@ -257,10 +288,9 @@ export class CalendarDayPage {
         ...resumeDeplacement(simulation, (id) => this.nomDe(id)),
         variant: 'success',
       });
-      // The persisted plan moved under the cached one: drop the cache, then
-      // re-read — the same care openExplanation takes after a repair.
-      this.planningState.set(null);
-      await this.refresh();
+      // The persisted plan moved under the cached one: the page drops the
+      // cache and re-reads — the same care openExplanation takes after a repair.
+      this.rechargement.emit();
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@calendarDay.depotRefuse:Déplacement refusé`,
@@ -269,8 +299,7 @@ export class CalendarDayPage {
       });
       // The refusal may be « this seat moved under you »: re-read, so the
       // second attempt is made on what is actually there.
-      this.planningState.set(null);
-      await this.refresh();
+      this.rechargement.emit();
     }
   }
 
@@ -279,20 +308,6 @@ export class CalendarDayPage {
     return animateur
       ? `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateurId
       : animateurId;
-  }
-
-  protected async refresh(): Promise<void> {
-    this.loading.set(true);
-    this.error.set('');
-    await this.refreshPersistedCount();
-    try {
-      this.planning.set(await this.planningState.loadForDisplay());
-    } catch (error) {
-      this.planning.set(null);
-      this.error.set(errorPrefix(error));
-    } finally {
-      this.loading.set(false);
-    }
   }
 
   private async refreshPersistedCount(): Promise<void> {
@@ -349,8 +364,7 @@ export class CalendarDayPage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((reparation) => {
         if (reparation) {
-          this.planningState.set(null);
-          void this.refresh();
+          this.rechargement.emit();
         }
       });
   }

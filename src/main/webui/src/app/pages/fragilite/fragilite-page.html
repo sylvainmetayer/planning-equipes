@@ -1,13 +1,15 @@
 <app-work-in-progress-banner [message]="messageEssai()" />
 
 <mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@fragilite.title">Fragilité du planning</h1>
-    <mat-card-subtitle i18n="@@fragilite.subtitle">
-      Qui est un point de défaillance unique : les postes qui passeraient sous l'effectif minimum si un animateur se
-      désiste, et les stands tenus par une seule personne compétente.
-    </mat-card-subtitle>
-  </mat-card-header>
+  @if (entete()) {
+    <mat-card-header>
+      <h1 mat-card-title i18n="@@fragilite.title">Fragilité du planning</h1>
+      <mat-card-subtitle i18n="@@fragilite.subtitle">
+        Qui est un point de défaillance unique : les postes qui passeraient sous l'effectif minimum si un animateur se
+        désiste, et les stands tenus par une seule personne compétente.
+      </mat-card-subtitle>
+    </mat-card-header>
+  }
   <mat-card-actions class="card-actions">
     <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
       <mat-icon>refresh</mat-icon>

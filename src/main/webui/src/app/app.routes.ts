@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { RedirectFunction, Routes } from '@angular/router';
 import type { CompetencesPage } from './pages/competences/competences-page';
 
 /**
@@ -9,6 +9,55 @@ import type { CompetencesPage } from './pages/competences/competences-page';
  * and the espace animateur (issue #165) render standalone, without any admin
  * chrome or polling.
  */
+/**
+ * The four day screens and the four diagnostic screens became one page each:
+ * their addresses redirect and carry their query params along, renamed where
+ * the new page owns the key (`vue` was the rail's own selector, it now names
+ * the rendering; `jour` is understood by the page for the bookmarks that carry
+ * it). A bookmark, a link of the help or a link printed elsewhere still lands
+ * on the screen it named.
+ */
+/** How a former screen's query param travels: its key renamed, and its values translated when they changed too. */
+type ParamRename = string | { key: string; values: Record<string, string> };
+
+function redirectToJournee(
+  vue: string,
+  renames: Record<string, ParamRename> = {},
+): RedirectFunction {
+  return ({ queryParams }) => {
+    const params = new URLSearchParams();
+    params.set('vue', vue);
+    for (const [key, value] of Object.entries(queryParams)) {
+      if (value === undefined || value === null) {
+        continue;
+      }
+      const rename = renames[key];
+      const renamedKey = typeof rename === 'string' ? rename : (rename?.key ?? key);
+      const renamedValue =
+        typeof rename === 'object'
+          ? (rename.values[String(value)] ?? String(value))
+          : String(value);
+      if (renamedKey !== 'vue') {
+        params.set(renamedKey, renamedValue);
+      }
+    }
+    return `/journee?${params.toString()}`;
+  };
+}
+
+function redirectToDiagnostic(onglet: string): RedirectFunction {
+  return ({ queryParams }) => {
+    const params = new URLSearchParams();
+    params.set('onglet', onglet);
+    for (const [key, valeur] of Object.entries(queryParams)) {
+      if (key !== 'onglet' && valeur !== undefined && valeur !== null) {
+        params.set(key, String(valeur));
+      }
+    }
+    return `/diagnostic?${params.toString()}`;
+  };
+}
+
 const adminRoutes: Routes = [
   {
     path: '',
@@ -32,10 +81,15 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/jour-j/jour-j-page').then((m) => m.JourJPage),
   },
   {
-    path: 'problemes',
-    title: () => $localize`:@@route.problemes:Problèmes`,
-    loadComponent: () => import('./pages/problemes/problemes-page').then((m) => m.ProblemesPage),
+    path: 'diagnostic',
+    title: () => $localize`:@@route.diagnostic:Diagnostic`,
+    loadComponent: () => import('./pages/diagnostic/diagnostic-page').then((m) => m.DiagnosticPage),
   },
+  // The four screens the Diagnostic page gathers, kept for the bookmarks.
+  { path: 'problemes', redirectTo: redirectToDiagnostic('problemes') },
+  { path: 'staffing', redirectTo: redirectToDiagnostic('besoin') },
+  { path: 'fragilite', redirectTo: redirectToDiagnostic('fragilite') },
+  { path: 'banc-de-touche', redirectTo: redirectToDiagnostic('banc') },
   {
     path: 'echanges',
     title: () => $localize`:@@route.echanges:Échanges`,
@@ -173,10 +227,22 @@ const adminRoutes: Routes = [
       import('./pages/calendar-month/calendar-month-page').then((m) => m.CalendarMonthPage),
   },
   {
-    path: 'day-calendar',
-    title: () => $localize`:@@route.dayCalendar:Calendrier journalier`,
-    loadComponent: () =>
-      import('./pages/calendar-day/calendar-day-page').then((m) => m.CalendarDayPage),
+    path: 'journee',
+    title: () => $localize`:@@route.journee:Journée`,
+    loadComponent: () => import('./pages/journee/journee-page').then((m) => m.JourneePage),
+  },
+  // The four screens the Journée page gathers, kept for the bookmarks. The
+  // rail's `vue` (which lines) and the breaks' `vue` (only those without a
+  // relay) are renamed to the keys the views own now.
+  { path: 'day-calendar', redirectTo: redirectToJournee('calendrier') },
+  { path: 'rail-jour', redirectTo: redirectToJournee('rail', { vue: 'lignes' }) },
+  { path: 'carte-jour', redirectTo: redirectToJournee('carte') },
+  {
+    path: 'pauses',
+    redirectTo: redirectToJournee('pauses', {
+      vue: { key: 'relais', values: { 'sans-relais': 'sans' } },
+      jour: 'date',
+    }),
   },
   {
     path: 'constraints',
@@ -200,27 +266,6 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/repos/repos-page').then((m) => m.ReposPage),
   },
   {
-    path: 'staffing',
-    title: () => $localize`:@@route.staffing:Besoin en animateurs`,
-    loadComponent: () => import('./pages/staffing/staffing-page').then((m) => m.StaffingPage),
-  },
-  {
-    path: 'fragilite',
-    title: () => $localize`:@@route.fragilite:Fragilité du planning`,
-    loadComponent: () => import('./pages/fragilite/fragilite-page').then((m) => m.FragilitePage),
-  },
-  {
-    path: 'pauses',
-    title: () => $localize`:@@route.pauses:Pauses`,
-    loadComponent: () => import('./pages/pauses/pauses-page').then((m) => m.PausesPage),
-  },
-  {
-    path: 'banc-de-touche',
-    title: () => $localize`:@@route.bancDeTouche:Banc de touche`,
-    loadComponent: () =>
-      import('./pages/banc-de-touche/banc-de-touche-page').then((m) => m.BancDeTouchePage),
-  },
-  {
     path: 'ouvertures',
     title: () => $localize`:@@route.ouvertures:Ouvertures des stands`,
     loadComponent: () => import('./pages/ouvertures/ouvertures-page').then((m) => m.OuverturesPage),
@@ -237,19 +282,6 @@ const adminRoutes: Routes = [
       import('./pages/animateur-timeline/animateur-timeline-page').then(
         (m) => m.AnimateurTimelinePage,
       ),
-  },
-  {
-    path: 'rail-jour',
-    title: () => $localize`:@@route.railJour:Rail de la journée`,
-    loadComponent: () => import('./pages/rail-jour/rail-jour-page').then((m) => m.RailJourPage),
-  },
-  {
-    // Lazy like every other route, and that matters here beyond the rule:
-    // `leaflet` must not reach the initial bundle, so nothing outside this
-    // chunk and the /emplacements one may import it.
-    path: 'carte-jour',
-    title: () => $localize`:@@route.carteJour:Carte de la journée`,
-    loadComponent: () => import('./pages/carte-jour/carte-jour-page').then((m) => m.CarteJourPage),
   },
   { path: '**', redirectTo: '' },
 ];

@@ -11,31 +11,25 @@ import {
   ElementRef,
   computed,
   inject,
-  signal,
+  input,
+  linkedSignal,
+  model,
+  output,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
-import { ActivatedRoute } from '@angular/router';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
-import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
-import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { resumeDeplacement } from '../../shared/deplacement';
 import { PlanningEvenement, TypologieItem, RapportPauses } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
-import { errorPrefix } from '../../core/error-message';
-import { dayNavigation, dayNumberParam } from '../../core/day-navigation';
-import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
-import { TableFilter } from '../../shared/table-filter';
+import { keepViewInQueryParams } from '../../core/view-query-params';
 import { RailBloc, RailJour, RailLigne, buildRailJours, compterStatuts } from './rail-jour';
 
 /** Which lines the rail keeps: everyone, only the mobilisable ones, only the working ones. */
@@ -50,17 +44,19 @@ interface RailLegendItem {
 
 /**
  * Day "rail" (issue #305): one line per animateur of the edition, time on the
- * x axis, vacations as positioned blocks. The dual of `calendar-day-page.ts`,
- * which lists the same day stand by stand — here the gaps, the daily spans and
- * the back-to-back chains show at a glance, and so do the people not working
- * at all, which is what a day of tension needs.
+ * x axis, vacations as positioned blocks. The dual of the day calendar, which
+ * lists the same day stand by stand — here the gaps, the daily spans and the
+ * back-to-back chains show at a glance, and so do the people not working at
+ * all, which is what a day of tension needs.
  *
- * Same read-only source and pure-builder pattern as the other views
- * (`planningState.loadForDisplay()` + `buildRailJours()`): no dedicated
- * endpoint, and never a solve.
+ * One rendering of the Journée page (`pages/journee`), which owns the day, the
+ * shared filters and the data: this view reads the plan and the breaks it is
+ * handed, draws them through the pure `buildRailJours()`, and only keeps what
+ * is its own — which lines it shows. A drop that rewrote the plan asks the
+ * page to re-read it rather than fetching by itself.
  */
 @Component({
-  selector: 'app-rail-jour-page',
+  selector: 'app-rail-jour-vue',
   imports: [
     CdkDrag,
     CdkDragHandle,
@@ -69,32 +65,31 @@ interface RailLegendItem {
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatProgressBarModule,
-    MatSelectModule,
-    TableFilter,
   ],
-  templateUrl: './rail-jour-page.html',
-  styleUrl: './rail-jour-page.css',
+  templateUrl: './rail-jour-vue.html',
+  styleUrl: './rail-jour-vue.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RailJourPage {
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
-  protected readonly planning = signal<PlanningEvenement | null>(null);
+export class RailJourView {
+  readonly planning = input<PlanningEvenement | null>(null);
   /** Typologie referential, only used to turn ids into legend labels. */
-  protected readonly typologies = signal<TypologieItem[]>([]);
+  readonly typologies = input<TypologieItem[]>([]);
   /** The breaks of the plan; null when the request failed — the rail still draws. */
-  protected readonly pauses = signal<RapportPauses | null>(null);
-  protected readonly filtre = signal('');
-  protected readonly view = signal<RailVue>('tous');
+  readonly pauses = input<RapportPauses | null>(null);
+  /** The day number the page selected; the first day of the plan when null. */
+  readonly jour = input<number | null>(null);
+  /** The page's shared filters: a name, a stand, an animateur — each empty when unset. */
+  readonly filtre = input('');
+  readonly stand = input('');
+  readonly animateur = input('');
+  /** Which lines the rail keeps — the one piece of view state this rendering owns. */
+  readonly view = model<RailVue>('tous');
+  /** The plan moved under this view (a drop): the page re-reads it. */
+  readonly rechargement = output<void>();
 
-  private readonly analysesApi = inject(AnalysesApi);
-  private readonly planningState = inject(PlanningStateService);
-  private readonly route = inject(ActivatedRoute);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly jours = computed<RailJour[]>(() => {
@@ -112,25 +107,30 @@ export class RailJourPage {
     );
   });
 
-  /** Day the rail shows: the one asked for, else the first of the event. A new day puts the focus back on its first line. */
-  private readonly navigation = dayNavigation(this.jours, (jour) => jour.jour, {
-    initial: dayNumberParam(this.route.snapshot.queryParamMap.get('jour')),
-    onSelect: () => this.ligneFocus.set(0),
+  /** Day the rail shows: the one the page selected, else the first of the plan. */
+  protected readonly jourCourant = computed<RailJour | null>(() => {
+    const jours = this.jours();
+    return jours.find((candidat) => candidat.jour === this.jour()) ?? jours[0] ?? null;
   });
-  protected readonly jourCourant = this.navigation.current;
-  protected readonly estPremierJour = this.navigation.isFirst;
-  protected readonly estDernierJour = this.navigation.isLast;
 
   protected readonly lignes = computed<RailLigne[]>(() => this.jourCourant()?.lignes ?? []);
 
   protected readonly lignesAffichees = computed<RailLigne[]>(() => {
     const view = this.view();
     const filtre = this.filtre();
+    const stand = this.stand();
+    const animateur = this.animateur();
     return this.lignes().filter((ligne) => {
       if (view === 'libres' && ligne.statut !== 'libre') {
         return false;
       }
       if (view === 'affectes' && ligne.statut !== 'affecte') {
+        return false;
+      }
+      if (animateur && ligne.animateurId !== animateur) {
+        return false;
+      }
+      if (stand && !ligne.blocs.some((bloc) => bloc.standId === stand)) {
         return false;
       }
       return correspondAuFiltre(filtre, [ligne.nom]);
@@ -188,18 +188,17 @@ export class RailJourPage {
     return `${100 / heures}% 100%`;
   });
 
-  /** True as soon as the filters differ from the ones this page opens on — the day itself is navigation, not a filter. */
-  protected readonly viewChanged = computed(
-    () => this.view() !== 'tous' || this.filtre().trim() !== '',
-  );
-
   /**
    * The line the grid hands the focus to (roving tabindex): one stop for the
    * whole rail on Tab, then the arrows walk the lines. Clamped on read against
    * the displayed lines — filtering out the line it pointed at would otherwise
    * leave no cell in the tab order at all.
    */
-  private readonly ligneFocus = signal(0);
+  private readonly ligneFocus = linkedSignal<number | null, number>({
+    // A new day puts the focus back on its first line.
+    source: this.jour,
+    computation: () => 0,
+  });
 
   protected readonly ligneCourante = computed(() => {
     const lignes = this.lignesAffichees();
@@ -250,8 +249,7 @@ export class RailJourPage {
         ...resumeDeplacement(simulation, (id) => this.nomDe(id)),
         variant: 'success',
       });
-      this.planningState.set(null);
-      await this.refresh();
+      this.rechargement.emit();
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@railJour.depotRefuse:Déplacement refusé`,
@@ -259,8 +257,7 @@ export class RailJourPage {
         variant: 'error',
       });
       // The refusal may be « this seat moved under you »: re-read the day.
-      this.planningState.set(null);
-      await this.refresh();
+      this.rechargement.emit();
     }
   }
 
@@ -270,55 +267,16 @@ export class RailJourPage {
   protected readonly libreLabel = $localize`:@@railJour.statut.libre:Libre`;
   protected readonly indisponibleLabel = $localize`:@@railJour.statut.indisponible:Indisponible`;
   protected readonly chevauchementLabel = $localize`:@@railJour.chevauchement:Vacations qui se chevauchent : cet animateur est attendu à deux endroits en même temps`;
-  protected readonly jourPrecedentLabel = $localize`:@@railJour.previousDay:Jour précédent`;
-  protected readonly jourSuivantLabel = $localize`:@@railJour.nextDay:Jour suivant`;
 
   constructor() {
-    const params = this.route.snapshot.queryParamMap;
-    this.filtre.set(params.get('q') ?? '');
-    const view = params.get('vue');
-    this.view.set(view === 'libres' || view === 'affectes' ? view : 'tous');
-    void this.refresh();
-    keepViewInQueryParams(() => ({
-      jour: this.navigation.queryParam(),
-      q: optionalParam(this.filtre()),
-      vue: this.view() === 'tous' ? null : this.view(),
-    }));
+    // Its own key only (`lignes`): the page writes the day, the view and the
+    // shared filters next to it, and each writer leaves the others' keys alone.
+    keepViewInQueryParams(() => ({ lignes: this.view() === 'tous' ? null : this.view() }));
   }
 
-  protected async refresh(): Promise<void> {
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const [planning, typologies, pauses] = await Promise.all([
-        this.planningState.loadForDisplay(),
-        // Labels only: a missing referential degrades the legend to raw ids
-        // rather than failing the rail.
-        this.analysesApi.typologies().catch(() => []),
-        this.analysesApi.breaks().catch(() => null),
-      ]);
-      this.planning.set(planning);
-      this.typologies.set(typologies);
-      this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
-    } catch (error) {
-      this.planning.set(null);
-      this.error.set(errorPrefix(error));
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  protected selectionnerJour(jour: number): void {
-    this.navigation.select(jour);
-  }
-
-  protected decalerJour(delta: number): void {
-    this.navigation.step(delta);
-  }
-
-  protected reinitialiserVue(): void {
-    this.view.set('tous');
-    this.filtre.set('');
+  /** Reads the `lignes` query param the page hands over at construction. */
+  static readLignes(value: string | null): RailVue {
+    return value === 'libres' || value === 'affectes' ? value : 'tous';
   }
 
   /** Keeps the roving tabindex on the line the user actually reached, mouse or keyboard. */

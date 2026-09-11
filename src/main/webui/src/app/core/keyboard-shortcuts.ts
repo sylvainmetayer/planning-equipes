@@ -72,8 +72,9 @@ interface DefinitionRoute {
  *
  * <p>The letters read from the French label wherever that letter was free, and
  * fall back to a distinctive one where it was not — `g g` is the home page
- * (the Solveur), `g r` is « Réglages » (Paramètres, `p` being taken by
- * Problèmes), `g m` and `g j` are the *mensuel* and *journalier* calendars,
+ * (the Solveur), `g r` is « Réglages » (Paramètres, `p` being taken by the
+ * Diagnostic and its *problèmes*), `g m` is the *mensuel* calendar and `g j`
+ * the *journée*,
  * `g x` is Échanges (the crossing arrows of a swap, `e` being taken by
  * Emplacements). Pages without a letter are still reachable — through the
  * palette, which lists every route.</p>
@@ -93,8 +94,8 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       },
     ],
     [
-      '/problemes',
-      { label: $localize`:@@nav.link.problemes:Problèmes`, icon: 'report_problem', touche: 'p' },
+      '/diagnostic',
+      { label: $localize`:@@nav.link.diagnostic:Diagnostic`, icon: 'report_problem', touche: 'p' },
     ],
     [
       '/echanges',
@@ -121,26 +122,6 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
         label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
         icon: 'storefront',
         touche: 'o',
-      },
-    ],
-    [
-      '/staffing',
-      {
-        label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
-        icon: 'engineering',
-        touche: 'b',
-      },
-    ],
-    [
-      '/fragilite',
-      { label: $localize`:@@nav.link.fragilite:Fragilité du planning`, icon: 'personal_injury' },
-    ],
-    ['/pauses', { label: $localize`:@@nav.link.pauses:Pauses`, icon: 'free_breakfast' }],
-    [
-      '/banc-de-touche',
-      {
-        label: $localize`:@@nav.link.bancDeTouche:Banc de touche`,
-        icon: 'airline_seat_recline_normal',
       },
     ],
     ['/jour-j', { label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' }],
@@ -184,24 +165,12 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
         touche: 'm',
       },
     ],
-    [
-      '/day-calendar',
-      {
-        label: $localize`:@@nav.link.dayCalendar:Calendrier journalier`,
-        icon: 'view_day',
-        touche: 'j',
-      },
-    ],
+    ['/journee', { label: $localize`:@@nav.link.journee:Journée`, icon: 'view_day', touche: 'j' }],
     ['/hours', { label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule', touche: 'h' }],
     ['/equite', { label: $localize`:@@nav.link.equite:Équité`, icon: 'balance' }],
     ['/repos', { label: $localize`:@@nav.link.repos:Jours de repos`, icon: 'weekend' }],
     ['/heatmap', { label: $localize`:@@nav.link.heatmap:Heatmap de charge`, icon: 'grid_view' }],
     ['/timeline', { label: $localize`:@@nav.link.timeline:Timeline animateur`, icon: 'timeline' }],
-    [
-      '/rail-jour',
-      { label: $localize`:@@nav.link.railJour:Rail de la journée`, icon: 'view_timeline' },
-    ],
-    ['/carte-jour', { label: $localize`:@@nav.link.carteJour:Carte de la journée`, icon: 'map' }],
     ['/graphe', { label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' }],
     [
       '/kpi',

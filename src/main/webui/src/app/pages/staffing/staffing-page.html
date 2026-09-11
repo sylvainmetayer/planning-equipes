@@ -1,11 +1,13 @@
 <mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@staffing.title">Besoin minimum en effectif</h1>
-    <mat-card-subtitle i18n="@@staffing.description">
-      Combien d'animateurs il faut au minimum pour tenir tous les sièges, avant toute saisie d'animateur : la plus
-      haute de quatre bornes, chacune issue d'une règle du solveur.
-    </mat-card-subtitle>
-  </mat-card-header>
+  @if (entete()) {
+    <mat-card-header>
+      <h1 mat-card-title i18n="@@staffing.title">Besoin minimum en effectif</h1>
+      <mat-card-subtitle i18n="@@staffing.description">
+        Combien d'animateurs il faut au minimum pour tenir tous les sièges, avant toute saisie d'animateur : la plus
+        haute de quatre bornes, chacune issue d'une règle du solveur.
+      </mat-card-subtitle>
+    </mat-card-header>
+  }
   <mat-card-content>
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />

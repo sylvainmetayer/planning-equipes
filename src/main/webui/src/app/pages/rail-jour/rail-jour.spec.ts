@@ -533,7 +533,7 @@ describe('buildRailJours', () => {
       const ligne = jour.lignes[0];
 
       expect(ligne.pauses).toHaveLength(1);
-      expect(ligne.pauses[0].sansRelais).toBe(true);
+      expect(ligne.pauses[0].withoutRelais).toBe(true);
       // Scale 13:00 → 20:00, whole hours: 19:00 sits at 6/7 of the track.
       expect(ligne.pauses[0].offsetPercent).toBeCloseTo((6 / 7) * 100, 5);
       expect(ligne.resume).toContain("Pause 19:00 – 19:20 sur Tir — personne d'autre sur le stand");

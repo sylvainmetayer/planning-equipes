@@ -1,10 +1,11 @@
 import { DecimalPipe } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
-  Component,
   computed,
   inject,
+  input,
   resource,
+  ChangeDetectionStrategy,
+  Component,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
@@ -61,6 +62,12 @@ import { errorText, retainedValue } from '../../core/resource-state';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffingPage {
+  /**
+   * False when the Diagnostic page hosts this screen as one of its tabs: the
+   * page then carries the title, and a second heading would only repeat it.
+   */
+  readonly entete = input(true);
+
   protected readonly columns = [
     'jour',
     'standsOuverts',

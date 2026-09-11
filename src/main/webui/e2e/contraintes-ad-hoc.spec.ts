@@ -132,7 +132,7 @@ test('une contradiction déjà en base est signalée avant toute résolution', a
   expect(contradiction?.contrainteIds).toContain(INDISPO);
 
   const page = await pageAdmin(browser, admin);
-  await page.goto('/problemes');
+  await page.goto('/diagnostic');
   await expect(page.locator('#contenu')).toContainText(INDISPO);
   await expect(page.locator('#contenu')).toContainText(FORCEE);
 

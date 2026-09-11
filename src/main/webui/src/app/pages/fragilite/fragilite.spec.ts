@@ -8,7 +8,7 @@ import {
   iconeSeverite,
   libelleJour,
   lireFiltre,
-  lireVue,
+  readView,
   synthese,
 } from './fragilite';
 
@@ -64,11 +64,11 @@ function rapport(partial: Partial<RapportFragilite>): RapportFragilite {
   };
 }
 
-describe('lireVue / lireFiltre', () => {
+describe('readView / lireFiltre', () => {
   it('tombe sur la vue par défaut pour toute valeur inconnue', () => {
-    expect(lireVue(null)).toBe('ANIMATEURS');
-    expect(lireVue('n_importe_quoi')).toBe('ANIMATEURS');
-    expect(lireVue('COMPETENCES')).toBe('COMPETENCES');
+    expect(readView(null)).toBe('ANIMATEURS');
+    expect(readView('n_importe_quoi')).toBe('ANIMATEURS');
+    expect(readView('COMPETENCES')).toBe('COMPETENCES');
   });
 
   it('tombe sur le filtre par défaut pour toute valeur inconnue', () => {

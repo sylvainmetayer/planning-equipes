@@ -298,10 +298,21 @@ describe('parametrer-pour-un-planning-complet', () => {
       '/ouvertures',
       '/creneaux',
       '/constraints',
-      '/staffing',
-      '/problemes',
-      '/fragilite',
-      '/pauses',
+      '/diagnostic',
+      '/diagnostic',
+      '/diagnostic',
+      '/journee',
+    ]);
+    // Four screens became two pages: a link names which tab or rendering.
+    expect(section.links.map((link) => link.queryParams)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { onglet: 'besoin' },
+      undefined,
+      { onglet: 'fragilite' },
+      { vue: 'pauses' },
     ]);
   });
 

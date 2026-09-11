@@ -1,51 +1,4 @@
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@nav.link.carteJour">Carte de la journée</h1>
-    <mat-card-subtitle i18n="@@carteJour.subtitle">
-      Une journée rejouée sur la carte des emplacements : déplacez le curseur pour voir, heure par heure, quels
-      stands sont ouverts, pourvus ou sans personne.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="carte-jour-toolbar">
-      <button matIconButton type="button" [disabled]="estPremierJour()" (click)="decalerJour(-1)"
-              [attr.aria-label]="jourPrecedentLabel" [title]="jourPrecedentLabel">
-        <mat-icon>chevron_left</mat-icon>
-      </button>
-      <mat-form-field appearance="outline" class="carte-jour-select">
-        <mat-label i18n="@@carteJour.day.label">Journée</mat-label>
-        <mat-select [value]="jourCourant()?.jour ?? null" (valueChange)="selectionnerJour($event)">
-          @for (jour of jours(); track jour.jour) {
-            <mat-option [value]="jour.jour">{{ jour.title }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <button matIconButton type="button" [disabled]="estDernierJour()" (click)="decalerJour(1)"
-              [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
-        <mat-icon>chevron_right</mat-icon>
-      </button>
-      @if (viewChanged()) {
-        <button matButton type="button" (click)="reinitialiserVue()">
-          <mat-icon>filter_alt_off</mat-icon>
-          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
-        </button>
-      }
-      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
-        <mat-icon>refresh</mat-icon>
-        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
-      </button>
-    </div>
-
-    @if (loading()) {
-      <mat-progress-bar mode="indeterminate" />
-    }
-    @if (error()) {
-      <p class="empty-hint">{{ error() }}</p>
-    }
-  </mat-card-content>
-</mat-card>
-
-@if (!error() && !loading()) {
+@if (planning()) {
   @if (jourCourant(); as jour) {
     <mat-card appearance="outlined" class="page-card">
       <mat-card-content>
@@ -160,10 +113,6 @@
           Aucun planning enregistré pour le moment : il n'y a donc aucune journée à rejouer. Lancez une
           résolution depuis la page Solveur, puis revenez ici.
         </p>
-        <a matButton="tonal" routerLink="/">
-          <mat-icon>play_arrow</mat-icon>
-          <ng-container i18n="@@carteJour.empty.action">Aller à la page Solveur</ng-container>
-        </a>
       </mat-card-content>
     </mat-card>
   }

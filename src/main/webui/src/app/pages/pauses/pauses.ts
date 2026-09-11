@@ -87,13 +87,13 @@ export interface SynthesePauses {
 
 /** The days the report covers, chronological — the selector's options. */
 export function joursDuRapport(rapport: RapportPauses | null): JourPauses[] {
-  const parDate = new Map<string, number>();
+  const byDate = new Map<string, number>();
   for (const journee of rapport?.journees ?? []) {
-    if (!parDate.has(journee.date)) {
-      parDate.set(journee.date, journee.jour);
+    if (!byDate.has(journee.date)) {
+      byDate.set(journee.date, journee.jour);
     }
   }
-  return Array.from(parDate.entries())
+  return Array.from(byDate.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, jour]) => ({ date, jour, title: `J${jour} — ${date}` }));
 }
@@ -142,7 +142,7 @@ export function groupesDuJour(
   rapport: RapportPauses | null,
   date: string | null,
   recherche = '',
-  sansRelaisSeulement = false,
+  withoutRelaisOnly = false,
 ): GroupeStand[] {
   if (!rapport || !date) {
     return [];
@@ -153,7 +153,7 @@ export function groupesDuJour(
       continue;
     }
     for (const ligne of lignesDe(journee)) {
-      if (sansRelaisSeulement && ligne.relaisDisponible) {
+      if (withoutRelaisOnly && ligne.relaisDisponible) {
         continue;
       }
       if (recherche.trim() !== '' && !correspond(ligne, recherche)) {

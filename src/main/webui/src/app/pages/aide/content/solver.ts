@@ -173,10 +173,22 @@ export function buildSolverSections(): HelpSection[] {
         { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
-        { route: '/staffing', label: $localize`:@@nav.link.staffing:Besoin en animateurs` },
-        { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
-        { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
-        { route: '/pauses', label: $localize`:@@nav.link.pauses:Pauses` },
+        {
+          route: '/diagnostic',
+          queryParams: { onglet: 'besoin' },
+          label: $localize`:@@aide.link.staffing:Besoin en animateurs`,
+        },
+        { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
+        {
+          route: '/diagnostic',
+          queryParams: { onglet: 'fragilite' },
+          label: $localize`:@@aide.link.fragilite:Fragilité du planning`,
+        },
+        {
+          route: '/journee',
+          queryParams: { vue: 'pauses' },
+          label: $localize`:@@aide.link.pauses:Pauses`,
+        },
       ],
     },
     {
@@ -249,9 +261,12 @@ export function buildSolverSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
+        { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
         { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
-        { route: '/day-calendar', label: $localize`:@@nav.link.dayCalendar:Calendrier journalier` },
+        {
+          route: '/journee',
+          label: $localize`:@@aide.link.dayCalendar:Calendrier journalier`,
+        },
         { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` },
       ],
     },
@@ -308,8 +323,12 @@ export function buildSolverSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
-        { route: '/staffing', label: $localize`:@@nav.link.staffing:Besoin en animateurs` },
+        { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
+        {
+          route: '/diagnostic',
+          queryParams: { onglet: 'besoin' },
+          label: $localize`:@@aide.link.staffing:Besoin en animateurs`,
+        },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         {
           route: '/ad-hoc-constraints',
@@ -397,7 +416,7 @@ export function buildSolverSections(): HelpSection[] {
           route: '/ad-hoc-constraints',
           label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
         },
-        { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
+        { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
         { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
       ],
     },

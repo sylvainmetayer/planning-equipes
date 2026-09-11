@@ -447,3 +447,15 @@ function marqueur(point: PointEmplacement, stands: StandInstant[]): MarqueurJour
           : $localize`:@@carteJour.marqueur.ouvert:${point.nom}:emplacement: : ${ouverts}:ouverts: stand(s) ouvert(s) sur ${total}:total:, ${pourvus}:pourvus: place(s) pourvue(s) sur ${sieges}:sieges:`,
   };
 }
+
+/**
+ * The `t` query param — the minute of the day under the cursor — read with no
+ * trust: an absent, empty, hand-edited or obsolete value falls back to the
+ * day's opening rather than failing the page. The day's own bounds finish the
+ * job. Here and not on the view: the page reads it before the view exists,
+ * and a static reference to the view would drag Leaflet into the page's chunk.
+ */
+export function readInstant(raw: string | null): number | null {
+  const minute = raw === null || raw.trim() === '' ? Number.NaN : Number(raw);
+  return Number.isFinite(minute) && minute >= 0 ? minute : null;
+}

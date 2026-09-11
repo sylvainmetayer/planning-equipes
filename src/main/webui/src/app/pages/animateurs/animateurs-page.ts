@@ -444,7 +444,7 @@ export class AnimateursPage {
   }
 
   /** Back to the whole referential, in the order the store holds it. */
-  protected reinitialiserVue(): void {
+  protected resetView(): void {
     this.filtre.set('');
     this.sort.set(NO_SORT);
     this.accuses.set('tous');

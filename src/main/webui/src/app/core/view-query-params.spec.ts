@@ -148,4 +148,30 @@ describe('keepViewInQueryParams', () => {
 
     expect(location.path()).not.toContain('q=');
   });
+
+  // A page made of several components has several writers on one address: the
+  // Journée writes the day and the rendering, the rail its line filter. Each
+  // touches only the keys it names, or the second would erase the first on
+  // every keystroke.
+  it("laisse intactes les clés qu'un autre écrivain a posées", () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideRouter([]), provideLocationMocks()],
+    });
+    const location = TestBed.inject(Location);
+    location.replaceState('/journee?vue=rail&date=2026-07-22');
+    const lignes = signal<string | null>('libres');
+
+    TestBed.runInInjectionContext(() => keepViewInQueryParams(() => ({ lignes: lignes() })));
+    TestBed.tick();
+
+    expect(location.path()).toContain('vue=rail');
+    expect(location.path()).toContain('date=2026-07-22');
+    expect(location.path()).toContain('lignes=libres');
+
+    lignes.set(null);
+    TestBed.tick();
+
+    expect(location.path()).toContain('vue=rail');
+    expect(location.path()).not.toContain('lignes=');
+  });
 });

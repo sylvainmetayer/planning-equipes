@@ -149,7 +149,7 @@ export class HoursPage {
   }
 
   /** Back to the order the report came in. */
-  protected reinitialiserVue(): void {
+  protected resetView(): void {
     this.sort.set(NO_SORT);
   }
 

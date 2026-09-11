@@ -99,7 +99,11 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
-        { route: '/staffing', label: $localize`:@@nav.link.staffing:Besoin en animateurs` },
+        {
+          route: '/diagnostic',
+          queryParams: { onglet: 'besoin' },
+          label: $localize`:@@aide.link.staffing:Besoin en animateurs`,
+        },
       ],
     },
     {

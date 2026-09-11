@@ -472,26 +472,35 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/import-animateurs`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
-  renamed), `/calendar`, `/day-calendar`, `/constraints`,
-  `/problemes`, `/echanges`, `/hours`, `/equite` (« Équité » — one line per
-  assigned animateur: evening, week-end and holiday hours, demanding seats,
-  variety, honoured wishes, rest days, each with its distance to the median),
-  `/repos` (« Jours de repos » — the
-  animateur x day grid: who works, who rests, who was unavailable),
-  `/staffing`, `/jour-j` (« Mode jour J » —
-  the day-of screen: mark somebody absent, repair the seats they held),
-  `/banc-de-touche`, `/carte-jour` (« Carte de la journée » — the day replayed
-  on the emplacement map, one time cursor), `/rail-jour` (« Rail de la
-  journée »), `/timeline` (« Timeline animateur »), `/heatmap` (« Heatmap de
-  charge »), `/fragilite` (« Fragilité du planning »), `/kpi`, `/comparateur`
+  renamed), `/calendar`, `/journee` (« Journée » — one day under four
+  renderings chosen by `?vue=calendrier|rail|carte|pauses`: the calendar stand
+  by stand, the rail animateur by animateur, the day replayed on the
+  emplacement map with one time cursor, the breaks; one day selector and the
+  same `stand`, `animateur` and `q` filters in the URL, the plan and the breaks
+  read once by the page and handed to the rendering on screen — the views under
+  `pages/calendar-day`, `pages/rail-jour`, `pages/carte-jour` and
+  `pages/pauses` are its components, not routes), `/constraints`,
+  `/diagnostic` (« Diagnostic » — the four analyses as tabs chosen by
+  `?onglet=problemes|besoin|fragilite|banc`: the problems, the staffing need,
+  the fragility, the bench; the tab components under `pages/problemes`,
+  `pages/staffing`, `pages/fragilite` and `pages/banc-de-touche` keep their own
+  view state in the URL next to the page's key), `/echanges`, `/hours`, `/equite` (« Équité » — one line per assigned animateur: evening, week-end and holiday hours, demanding seats, variety, honoured wishes, rest days, each with its distance to the median),
+  `/repos` (« Jours de repos » — the animateur x day grid: who works, who
+  rests, who was unavailable), `/jour-j` (« Mode jour J » — the day-of screen:
+  mark somebody absent, repair the seats they held), `/timeline` (« Timeline
+  animateur »), `/heatmap` (« Heatmap de charge »), `/kpi`, `/comparateur`
   (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
   `/verrouillages`, `/ouvertures` (« Ouvertures des stands »),
-  `/import-grille-stands`, `/pauses`, `/disponibilites` (what the animateurs
+  `/import-grille-stands`, `/disponibilites` (what the animateurs
   declared), `/editions`, `/historique` (« Historique des actions »), the
   three public legal pages `/mentions-legales`, `/conditions-utilisation`,
   `/politique-confidentialite`, and `/aide` (`/solver`,
   `/exports`, `/data-transfer`, `/data-setup`, `/decoupage` and
-  `/validateur-yaml` are legacy redirects, kept for old bookmarks/links).
+  `/validateur-yaml` are legacy redirects, kept for old bookmarks/links, and so
+  are the eight former screens `/day-calendar`, `/rail-jour`, `/carte-jour`,
+  `/pauses`, `/problemes`, `/staffing`, `/fragilite` and `/banc-de-touche`,
+  whose redirects carry their query params along, renamed where the page now
+  owns the key).
   Adding a functional block means adding a route and a `app/pages/<block>/`
   folder, never a new section inside an existing page.
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place
@@ -585,8 +594,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   to the default rather than failing the page), writing replaces the history
   entry through `Location.replaceState` and **never navigates** — a router
   navigation per keystroke costs the filter field its focus — and
-  every such screen carries a one-action reset. See
-  `docs/decisions/0012-etat-de-vue-dans-l-url.md`.
+  every such screen carries a one-action reset. A page made of several
+  components — the Journée and its renderings, the Diagnostic and its tabs —
+  has several writers on one URL, and **a writer owns only the keys it
+  names**: `keepViewInQueryParams` starts from the query string as it stands
+  and replaces its own keys, so the page's `vue` and a view's `lignes` never
+  erase each other. See `docs/decisions/0012-etat-de-vue-dans-l-url.md`.
 - The "a solver is running" state is never stored in the browser
   (`localStorage` / `sessionStorage`): `SolverJobService` reads it from the
   server, so a solve started from another browser or a private window also
@@ -640,9 +653,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   + its CLI + Angular Material + `@angular/localize` (the stack proper);
   `@sentry/angular` (error reporting, loaded by a dynamic `import()` only when a
   DSN is configured — see `core/observability.ts`); `leaflet` + `@types/leaflet`
-  (the maps, reached only by the lazy `/emplacements`, `/graphe` and
-  `/carte-jour` routes — it is a 150 kB chunk of its own and **must stay out of
-  the initial bundle**, so nothing eagerly loaded may import it; the tile
+  (the maps, reached only by the lazy `/emplacements` and `/graphe` routes and
+  by the `@defer` block of `/journee` around its map rendering — it is a
+  150 kB chunk of its own and **must stay out of the initial bundle** and out
+  of the chunk of the three other renderings of the day, so nothing eagerly
+  loaded may import it and the map view is never referenced outside that
+  `@defer`; the tile
   layer, the attribution and the bundled icon paths are shared by
   `shared/leaflet-base.ts`).
   Dev-only: `@playwright/test`, `vitest`, `@vitest/coverage-v8`

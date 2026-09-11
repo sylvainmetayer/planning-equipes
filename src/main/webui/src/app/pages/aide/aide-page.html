@@ -60,7 +60,7 @@
           <span class="aide-links-label" i18n="@@aide.links.label">Écrans concernés :</span>
           @for (link of section.links; track link.label) {
             @if (link.route) {
-              <a matButton [routerLink]="link.route">{{ link.label }}</a>
+              <a matButton [routerLink]="link.route" [queryParams]="link.queryParams ?? {}">{{ link.label }}</a>
             } @else {
               <a matButton [href]="link.href" target="_blank" rel="noopener">{{ link.label }}</a>
             }

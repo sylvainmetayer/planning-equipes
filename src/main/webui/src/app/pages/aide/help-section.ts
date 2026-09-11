@@ -11,6 +11,8 @@ import { HelpBlock } from '../../shared/help-blocks';
  */
 export interface HelpLink {
   route?: string;
+  /** With `route`: the rendering or the tab of a page gathering several screens (`?vue=`, `?onglet=`). */
+  queryParams?: Record<string, string>;
   href?: string;
   label: string;
 }

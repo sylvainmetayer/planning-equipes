@@ -27,7 +27,7 @@ type PageInternals = {
   sort: WritableSignal<Sort>;
   viewChanged: Signal<boolean>;
   sortedAnimateurs: Signal<HeuresAnimateur[]>;
-  reinitialiserVue(): void;
+  resetView(): void;
 };
 
 function setUp(queryParams: Record<string, string>) {
@@ -101,7 +101,7 @@ describe('HoursPage query-param sync', () => {
     expect(page.viewChanged()).toBe(true);
     replaceState.mockClear();
 
-    page.reinitialiserVue();
+    page.resetView();
     await fixture.whenStable();
 
     expect(replaceState).toHaveBeenLastCalledWith('/hours');

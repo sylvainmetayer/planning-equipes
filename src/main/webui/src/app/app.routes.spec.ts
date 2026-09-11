@@ -1,7 +1,14 @@
 import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
-import { ResolveFn, Routes, TitleStrategy, provideRouter } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  RedirectFunction,
+  ResolveFn,
+  Routes,
+  TitleStrategy,
+  provideRouter,
+} from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { describe, expect, it } from 'vitest';
 
@@ -62,7 +69,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(49);
+    expect(titrees).toHaveLength(43);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -90,5 +97,34 @@ describe('app.routes', () => {
     await harness.navigateByUrl('/essai');
 
     expect(TestBed.inject(Title).getTitle()).toBe('Titre résolu — Produit');
+  });
+
+  /**
+   * The former addresses of the day's renderings redirect to the page, query
+   * params included: the key renamed when the rendering owns another one, and
+   * the value translated when it changed along with the key.
+   */
+  describe('les anciennes adresses des rendus de la journée', () => {
+    function redirection(path: string, queryParams: Record<string, string>): string {
+      const route = toutesLesRoutes(routes).find((candidate) => candidate.path === path);
+      const redirectTo = route?.redirectTo as RedirectFunction;
+      return redirectTo({ queryParams } as unknown as ActivatedRouteSnapshot) as string;
+    }
+
+    it('garde les filtres et renomme la clé du rail', () => {
+      expect(redirection('rail-jour', { vue: 'libres', stand: 'S1' })).toBe(
+        '/journee?vue=rail&lignes=libres&stand=S1',
+      );
+    });
+
+    it('traduit la vue « sans relais » des pauses en son filtre, et le jour en date', () => {
+      expect(redirection('pauses', { vue: 'sans-relais', jour: 'J2' })).toBe(
+        '/journee?vue=pauses&relais=sans&date=J2',
+      );
+    });
+
+    it('mène au calendrier sans paramètre superflu', () => {
+      expect(redirection('day-calendar', {})).toBe('/journee?vue=calendrier');
+    });
   });
 });

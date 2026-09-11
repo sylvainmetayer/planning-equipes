@@ -36,7 +36,7 @@ type PageInternals = {
   silenceJours: WritableSignal<number>;
   viewChanged: Signal<boolean>;
   animateursFiltres: Signal<Animateur[]>;
-  reinitialiserVue(): void;
+  resetView(): void;
 };
 
 /** Alice holds a seat and never answered; Bob holds one and confirmed. */
@@ -148,7 +148,7 @@ describe('AnimateursPage query-param sync', () => {
     expect(page.viewChanged()).toBe(true);
     replaceState.mockClear();
 
-    page.reinitialiserVue();
+    page.resetView();
     await fixture.whenStable();
 
     expect(page.viewChanged()).toBe(false);

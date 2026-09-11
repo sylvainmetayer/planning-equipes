@@ -166,7 +166,7 @@ export class ReposPage {
   }
 
   /** Back to the view this page opens on: everybody, no search. */
-  protected reinitialiserVue(): void {
+  protected resetView(): void {
     this.filtre.set('');
     this.sansReposSeulement.set(false);
   }

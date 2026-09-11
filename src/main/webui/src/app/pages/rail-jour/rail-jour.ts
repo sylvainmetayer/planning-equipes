@@ -42,6 +42,7 @@ export type RailStatut = 'affecte' | 'libre' | 'indisponible';
 /** One vacation of one animateur, positioned within the day's rail. */
 export interface RailBloc {
   posteId: string;
+  standId: string;
   standNom: string;
   heureDebut: string;
   heureFin: string;
@@ -145,6 +146,7 @@ function tousLesAnimateurs(postes: PosteAffectation[], animateurs: Animateur[]):
 
 interface Span {
   posteId: string;
+  standId: string;
   standNom: string;
   typologie: string | null;
   colorClass: string;
@@ -232,6 +234,7 @@ function spanDuPoste(poste: PosteAffectation): Span {
   const typologie = typologiePrincipale(standTypologies(poste.stand));
   return {
     posteId: poste.id,
+    standId: poste.stand?.id ?? '',
     standNom,
     typologie,
     colorClass: typologieColorClass(typologie),
@@ -410,6 +413,7 @@ function buildRailLigne(
     finPrecedente = Math.max(finPrecedente, span.finMinutes);
     return {
       posteId: span.posteId,
+      standId: span.standId,
       standNom: span.standNom,
       heureDebut: span.heureDebut,
       heureFin: span.heureFin,

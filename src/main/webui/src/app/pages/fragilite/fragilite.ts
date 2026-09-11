@@ -17,7 +17,7 @@ import { correspondAuFiltre } from '../../core/text-filter';
 /** Which of the two questions the screen is showing. */
 export type VueFragilite = 'ANIMATEURS' | 'COMPETENCES';
 
-export function lireVue(valeur: string | null): VueFragilite {
+export function readView(valeur: string | null): VueFragilite {
   return valeur === 'COMPETENCES' ? 'COMPETENCES' : 'ANIMATEURS';
 }
 

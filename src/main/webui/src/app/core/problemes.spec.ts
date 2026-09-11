@@ -189,7 +189,9 @@ describe('construireProblemes', () => {
     expect(problemes[0].details).toEqual([
       '2026-07-10 · Alice Martin · 19:00 – 19:20 · Village des jeux',
     ]);
-    expect(problemes[0].liens).toEqual([{ route: '/pauses', libelle: 'Voir les pauses' }]);
+    expect(problemes[0].liens).toEqual([
+      { route: '/journee', queryParams: { vue: 'pauses' }, libelle: 'Voir les pauses' },
+    ]);
     expect(construireProblemes(null, [], [], { ...pauses, relaisManquants: 0 })).toEqual([]);
     expect(construireProblemes(null, [], [], null)).toEqual([]);
   });

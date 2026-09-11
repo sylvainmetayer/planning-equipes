@@ -1,16 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@nav.link.dayCalendar">Calendrier journalier</h1>
-    <mat-card-subtitle i18n="@@calendarDay.subtitle">
-      Créneaux regroupés par jour d'événement, avec les animateurs affectés à chaque stand.
-    </mat-card-subtitle>
-  </mat-card-header>
   <mat-card-content>
     <div class="calendar-toolbar">
-      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
-        <mat-icon>refresh</mat-icon>
-        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
-      </button>
       <span class="calendar-meta" i18n="@@calendarDay.persistedCount">
         Affectations enregistrées en base : <strong>{{ persistedCount() }}</strong>
       </span>
@@ -35,19 +25,17 @@
       <span i18n="@@commun.essai.glisserDeposer">Le glisser-déposer des affectations est en cours de test sur cet écran. Vérifiez le planning après un déplacement, et signalez ce qui vous surprend.</span>
     </p>
 
-    @if (loading()) {
-      <mat-progress-bar mode="indeterminate" />
-    }
-    @if (error()) {
-      <p class="calendar-empty">{{ error() }}</p>
-    }
   </mat-card-content>
 </mat-card>
 
-@if (!error() && !loading() && days().length === 0) {
+@if (days().length === 0) {
   <mat-card appearance="outlined" class="page-card">
     <mat-card-content>
-      <p class="empty-hint" i18n="@@calendarDay.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
+      @if (planning()?.postes?.length) {
+        <p class="empty-hint" i18n="@@calendarDay.aucuneLigne">Aucune ligne ne correspond aux filtres pour cette journée.</p>
+      } @else {
+        <p class="empty-hint" i18n="@@calendarDay.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
+      }
     </mat-card-content>
   </mat-card>
 } @else {

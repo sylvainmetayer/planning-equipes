@@ -96,7 +96,7 @@ describe('segmentsPause', () => {
     expect(segment.widthPercent).toBeCloseTo((20 / 420) * 100, 5);
     expect(segment.heureDebut).toBe('18:40');
     expect(segment.heureFin).toBe('19:00');
-    expect(segment.sansRelais).toBe(false);
+    expect(segment.withoutRelais).toBe(false);
     expect(segment.label).toBe('Pause 18:40 – 19:00 sur Village des jeux');
   });
 
@@ -110,9 +110,9 @@ describe('segmentsPause', () => {
       420,
     );
 
-    expect(seul.sansRelais).toBe(true);
+    expect(seul.withoutRelais).toBe(true);
     expect(seul.label).toContain("personne d'autre sur le stand");
-    expect(ensemble.sansRelais).toBe(false);
+    expect(ensemble.withoutRelais).toBe(false);
     expect(ensemble.simultanee).toBe(true);
     expect(ensemble.label).toContain("en même temps qu'une autre pause");
   });

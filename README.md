@@ -73,8 +73,9 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
    s'affiche à la fin — y compris dans les autres navigateurs ouverts sur
    l'application, qui voient le calcul en cours et son temps écoulé.
 4. Consulter le résultat dans **Calendrier des affectations** (vue mensuelle) ou
-   **Calendrier journalier** (vue par jour), ce qui bloque dans **Problèmes**,
-   et le respect des règles dans **Contraintes**.
+   **Journée** (une journée sous quatre rendus : par stand, par animateur, sur
+   la carte, par ses pauses), ce qui bloque dans **Diagnostic**, et le respect
+   des règles dans **Contraintes**.
 5. Exporter le planning : le PDF global de l'organisateur ou l'archive complète
    des plannings individuels (PDF + ICS) depuis la page **Solveur**, ou le
    planning d'un seul animateur depuis la page **Timeline animateur**.
@@ -214,12 +215,12 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Fonctionnalité | En une phrase |
 | --- | --- |
 | Historique des actions | Ce qui a été fait dans l'édition et par qui : chaque écriture, chaque export, chaque envoi, qu'il vienne d'un écran, d'un assistant ou d'une tâche de nuit — avec les champs qu'une modification a réellement changés. Aucun nom n'y est conservé : les identités sont retrouvées à l'affichage, et les lignes trop anciennes sortent d'elles-mêmes |
-| Problèmes | Vue unique des blocages, triés par gravité : causes d'infaisabilité détectées sans résolution, et règles encore en défaut après la dernière analyse. Quand une règle a buté sur des exceptions saisies à la main, elles sont nommées une par une, et les pauses légales que personne ne peut relayer |
+| Diagnostic — Problèmes | Premier onglet de la page Diagnostic : vue unique des blocages, triés par gravité : causes d'infaisabilité détectées sans résolution, et règles encore en défaut après la dernière analyse. Quand une règle a buté sur des exceptions saisies à la main, elles sont nommées une par une, et les pauses légales que personne ne peut relayer |
 | Ouvertures des stands | Grille stand × jour de ce que le planning retiendra réellement, et les trois erreurs de saisie d'horaires habituelles — à vérifier avant de lancer un calcul ; la même grille se retourne en saisie, un effectif par stand et par créneau comme dans un tableur |
-| Besoin en animateurs | Effectif minimum estimé à partir des seuls stands et créneaux : dit si le problème est un manque de monde plutôt qu'un manque de temps de calcul, et sur quelle typologie de jeu le vivier de compétents est trop mince |
+| Diagnostic — Besoin en animateurs | Effectif minimum estimé à partir des seuls stands et créneaux : dit si le problème est un manque de monde plutôt qu'un manque de temps de calcul, et sur quelle typologie de jeu le vivier de compétents est trop mince |
 | Volumétrie du problème | Avant de lancer, la taille de ce qui va être calculé : animateurs, postes à pourvoir, créneaux, ajustements manuels, et surtout les **heures à pourvoir face au plafond légal** de ce que l'équipe peut travailler, jours d'indisponibilité déduits. Un taux de remplissage proche de 1 annonce un planning infaisable avant qu'une minute de calcul soit dépensée |
-| Fragilité du planning | Qui est un point de défaillance unique : pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et surtout ceux que personne d'autre ne pourrait reprendre — plus les stands tenus par une seule personne compétente. Le tableau qui dit où recruter ou former |
-| Banc de touche | Pour un créneau, qui n'est de service nulle part et quelle règle l'empêcherait de tenir la place restée libre — indisponibilité, repos légal, plafond d'heures, appréciation manquante — toutes les raisons applicables à la fois |
+| Diagnostic — Fragilité du planning | Qui est un point de défaillance unique : pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et surtout ceux que personne d'autre ne pourrait reprendre — plus les stands tenus par une seule personne compétente. Le tableau qui dit où recruter ou former |
+| Diagnostic — Banc de touche | Pour un créneau, qui n'est de service nulle part et quelle règle l'empêcherait de tenir la place restée libre — indisponibilité, repos légal, plafond d'heures, appréciation manquante — toutes les raisons applicables à la fois |
 | Catalogue des contraintes | Toutes les règles, leur niveau, et le résultat de la dernière analyse — activables ou désactivables une par une pour diagnostiquer, et **dosables** : l'importance des règles de qualité d'organisation se règle par édition, selon ce qui compte pour l'organisateur |
 | Contraintes-plancher | Une règle qui pénalise la quasi-totalité de ce qu'elle évalue mesure une donnée absente du référentiel — aucun souhait déclaré, aucun référent — et ses points sont un plancher qu'aucune résolution ne fera bouger : la page Contraintes le signale, nomme la donnée et mène à sa saisie, et le score hors plancher s'affiche à côté du score brut, jusque dans le Comparateur et l'Autopsie. Rien n'est désactivé à la place de l'organisateur |
 | Garde-fou sur les règles légales | Désactiver une règle qui fonde le planning en droit (mineurs, temps de travail) ou la sécurité des mineurs demande une confirmation, qui rappelle que l'organisateur reste l'employeur et le responsable du planning diffusé ; l'écran montre en permanence ce qui est désactivé |
@@ -255,15 +256,15 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Fonctionnalité | En une phrase |
 | --- | --- |
 | Calendrier des affectations | Vue mensuelle avec filtres par animateur et par stand, et détail au clic sur une journée |
-| Calendrier journalier | Une journée, stand par stand et créneau par créneau — et le glisser-déposer d'un nom vers un autre stand pour corriger à la main : déplacement sur un siège libre, échange sur une personne, refusé si une règle dure serait cassée |
+| Journée — Calendrier | Une seule page « Journée » pour quatre rendus du même jour, sous le même sélecteur de date et les mêmes filtres (stand, animateur), portés par l'adresse. Le premier rendu : la journée stand par stand et créneau par créneau — et le glisser-déposer d'un nom vers un autre stand pour corriger à la main : déplacement sur un siège libre, échange sur une personne, refusé si une règle dure serait cassée |
 | Heures | Heures planifiées par animateur, semaine ISO par semaine ISO, avec le total de l'événement |
 | Équité | Une ligne par animateur affecté : heures totales et par semaine, heures de soirée (à partir d'une heure réglable dans les paramètres légaux), de week-end et de jour férié, postes pénibles, stands, typologies et emplacements distincts, part des souhaits et des appréciations satisfaits, jours travaillés, de repos et plus longue série — chaque valeur avec son écart à la médiane, une synthèse par colonne (médiane, min, max, écart-type), un tri, un filtre, un export CSV, et la mention des colonnes que le solveur mesure ; pour arbitrer avant de publier et répondre après |
 | Heatmap de charge | Jour croisé avec le stand (trous de couverture) ou avec l'animateur (surcharges) |
 | Timeline animateur | Le planning d'une personne : amplitude, vacations, trous entre elles, pauses légales telles que la rotation les pose — en rouge quand personne ne peut la relayer — et coéquipiers présents sur le même stand |
 | Jours de repos | Une ligne par animateur et une colonne par journée : qui travaille, qui se repose, qui était indisponible, et qui n'a aucune journée libre sur tout l'événement |
-| Pauses | Où tombent les pauses légales, jour par jour et stand par stand : qui sort au plus tard à quelle heure, pour combien de temps, et qui est là pour relayer — et, à côté, la coupure repas due par chaque journée à cheval sur une fenêtre repas, avec ce qui manque quand la grille ne lui laisse pas de place. Chaque animateur retrouve ses pauses sur son espace, son PDF et son calendrier |
-| Rail de la journée | Une journée vue par personne : une ligne par animateur, vacations placées dans le temps, pauses légales posées dessus (en rouge sans relais), lignes vides pour qui reste mobilisable ; une vacation se glisse vers une autre personne, qui la prend ou échange la sienne |
-| Carte de la journée | La même journée sur la carte des emplacements : un curseur temporel, et chaque lieu coloré selon que ses stands y sont ouverts et pourvus, ouverts avec des places vides, ou ouverts sans personne |
+| Journée — Pauses | Où tombent les pauses légales, jour par jour et stand par stand : qui sort au plus tard à quelle heure, pour combien de temps, et qui est là pour relayer — et, à côté, la coupure repas due par chaque journée à cheval sur une fenêtre repas, avec ce qui manque quand la grille ne lui laisse pas de place. Chaque animateur retrouve ses pauses sur son espace, son PDF et son calendrier |
+| Journée — Rail | La même journée vue par personne : une ligne par animateur, vacations placées dans le temps, pauses légales posées dessus (en rouge sans relais), lignes vides pour qui reste mobilisable ; une vacation se glisse vers une autre personne, qui la prend ou échange la sienne |
+| Journée — Carte | La même journée sur la carte des emplacements : un curseur temporel, et chaque lieu coloré selon que ses stands y sont ouverts et pourvus, ouverts avec des places vides, ou ouverts sans personne |
 | Graphe | Navigation descendante des lieux vers les stands puis vers les personnes |
 | Notifications | Journal des alertes de l'édition — résolutions terminées, contraintes en défaut, erreurs de saisie — consultable après coup |
 

@@ -80,14 +80,43 @@ export function optionalParam(value: string | null | undefined): string | null {
  * of step with — so both usages the URL exists for keep working. A page that
  * ever needs to *observe* its query params has to make this a navigation again,
  * and pay the re-render. See `docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md`.
+ *
+ * **A writer owns the keys it names, and only those.** A page made of several
+ * components — the Journée and its four views, the Diagnostic and its tabs —
+ * has several writers on one URL: the container mirrors the day and the tab,
+ * each view its own cursor or filter. Every write therefore starts from the
+ * query string as it stands and replaces its own keys, so two writers never
+ * erase each other. A key nobody names any more (a bookmark from an older
+ * version) simply stays: reading is tolerant, and a stale param harms nothing.
  */
 export function keepViewInQueryParams(queryParams: () => Params): void {
   const location = inject(Location);
   effect(() => {
-    const chemin = location.path().split('?')[0];
-    const query = queryString(queryParams());
-    location.replaceState(query ? chemin + '?' + query : chemin);
+    const [chemin, courante = ''] = location.path().split('?');
+    const query = queryString(merged(courante, queryParams()));
+    // `'/'` rather than `''` for a bare root: the History API reads an empty
+    // URL as "the current one", query string included, and the key being
+    // cleared would then survive its own clearing.
+    location.replaceState(query ? chemin + '?' + query : chemin || '/');
   });
+}
+
+/** The current query string with `params` written over it: every key named by `params` replaced, the others kept. */
+function merged(courante: string, params: Params): Params {
+  const result: Params = {};
+  for (const morceau of courante.split('&')) {
+    if (!morceau) {
+      continue;
+    }
+    const egal = morceau.indexOf('=');
+    const key = decodeURIComponent(egal === -1 ? morceau : morceau.slice(0, egal));
+    const valeur = egal === -1 ? '' : decodeURIComponent(morceau.slice(egal + 1));
+    if (!(key in params)) {
+      result[key] =
+        Array.isArray(result[key]) || key in result ? [result[key], valeur].flat() : valeur;
+    }
+  }
+  return { ...result, ...params };
 }
 
 /**

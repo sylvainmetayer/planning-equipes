@@ -59,7 +59,9 @@ async function semer(): Promise<void> {
 
 /** The banc for one créneau, named in the URL so the test never depends on which one is first. */
 async function ouvrirBanc(page: Page, creneauId: number): Promise<void> {
-  await page.goto(`/banc-de-touche?creneau=${creneauId}`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/diagnostic?onglet=banc&creneau=${creneauId}`, {
+    waitUntil: 'domcontentloaded',
+  });
   await expect(page.locator('#contenu')).toContainText('Banc de touche');
 }
 
@@ -81,7 +83,7 @@ test("un créneau sans siège dans le plan s'explique au lieu d'échouer", async
 /**
  * The screen ships on trial, and says so: it reads and changes nothing, so the
  * banner is the read-only wording, not the one the jour-J screen uses. It is
- * reached from « Aide à la décision », next to the staffing screen it extends.
+ * a tab of the Diagnostic page, reached from « Planning ».
  */
 test("l'écran s'annonce comme livré à l'essai", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
@@ -90,7 +92,7 @@ test("l'écran s'annonce comme livré à l'essai", async ({ browser }) => {
 
   await expect(page.locator('#contenu')).toContainText("Cet écran est livré à l'essai");
   await expect(
-    page.locator('#nav-group-decision-support').getByRole('link', { name: 'Banc de touche' }),
+    page.locator('#nav-group-planning').getByRole('link', { name: 'Diagnostic' }),
   ).toBeVisible();
   await page.context().close();
 });
