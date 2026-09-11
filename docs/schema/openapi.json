@@ -2991,8 +2991,8 @@
         }
       },
       "PauseAnimateurView" : {
-        "type" : "object",
         "required" : [ "dureeMinutes", "relaisDisponible" ],
+        "type" : "object",
         "properties" : {
           "date" : {
             "$ref" : "#/components/schemas/LocalDate"
