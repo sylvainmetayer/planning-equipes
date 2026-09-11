@@ -4,10 +4,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { ConfirmationView, ImportCsvRapport } from '../models';
-
-/** What the CSV import screen sends: the file's text and the choices made on it. */
-export type ImportCsvDemande = object;
+import { ConfirmationView, ImportCsvDemande, ImportCsvRapport } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class AnimateursApi {
