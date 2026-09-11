@@ -12,13 +12,16 @@
  * visited first: exactly the bug nothing else can see, since the unit tests
  * render without CSS and the eye only checks the route it is on.
  *
- * Two rules, over the whole tree:
+ * Three rules, over the whole tree:
  *   1. every class used by a page — its template, and the templates of every
  *      component it reaches through its imports (dialogs included) — is
  *      defined in a global partial, in the page's own stylesheets, or in the
  *      shell that hosts it;
  *   2. a class defined in a page's stylesheet is used by no component outside
- *      that page (or outside another page that attaches the same file).
+ *      that page (or outside another page that attaches the same file);
+ *   3. every stylesheet under `src/` is reached — imported by `styles.css` or
+ *      named by a `styleUrl` — since a sheet nobody loads takes its classes
+ *      out of the first two rules along with the screen's styling.
  *
  * Static `class="…"`, `[class.x]` and the `[ngClass]` object keys are read
  * from the templates; the string literals of a component's TypeScript are
@@ -163,15 +166,29 @@ function main() {
         .filter(Boolean),
     ),
   ].map((file) => ({ file, shell: null }));
-  const globalClasses = classesOf(join(ROOT, 'styles.css'));
+  const reached = new Set();
+  const classesAndReach = (sheet) => {
+    const seen = new Set();
+    const classes = classesOf(sheet, seen);
+    for (const f of seen) reached.add(f);
+    return classes;
+  };
+  const globalClasses = classesAndReach(join(ROOT, 'styles.css'));
   const allDefined = new Set(globalClasses);
   const sheetClasses = new Map();
   for (const c of byFile.values()) {
     for (const s of c.styles) {
-      if (!sheetClasses.has(s)) sheetClasses.set(s, classesOf(s));
+      if (!sheetClasses.has(s)) sheetClasses.set(s, classesAndReach(s));
       for (const k of sheetClasses.get(s)) allDefined.add(k);
     }
   }
+  // rule 3: every stylesheet is loaded by something. A route sheet whose
+  // `styleUrl` was dropped leaves the screen unstyled and its classes out of
+  // `allDefined` at the same time — rules 1 and 2 go blind exactly when they
+  // should shout, since a class nobody defines is never "out of scope".
+  const orphans = walk(ROOT, [])
+    .filter((f) => f.endsWith('.css') && !reached.has(f))
+    .map((f) => `${relative(ROOT, f)} is loaded by nothing: neither styles.css nor a styleUrl`);
   for (const c of byFile.values()) {
     c.used = new Set(
       [...classesUsed(c.template), ...tokensInCode(c.ts, allDefined)].filter(isOurs),
@@ -256,6 +273,7 @@ function main() {
       }
     }
   }
+  failures.push(...orphans);
   if (failures.length) {
     console.error('check-css-scope : ' + failures.length + ' classe(s) hors de portée :');
     for (const f of [...new Set(failures)].sort()) console.error('  ' + f);
