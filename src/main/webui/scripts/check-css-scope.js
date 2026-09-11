@@ -23,10 +23,12 @@
  *      named by a `styleUrl` — since a sheet nobody loads takes its classes
  *      out of the first two rules along with the screen's styling.
  *
- * Static `class="…"`, `[class.x]` and the `[ngClass]` object keys are read
- * from the templates; the string literals of a component's TypeScript are
- * read too, so a class built in code (`'etat-' + etat`) is caught by its
- * prefix at least. Material's own classes are not ours to define.
+ * Static `class="…"`, `[class.x]`, the literals of `[class]="…"` and the
+ * `[ngClass]` object keys are read from the templates; the string literals
+ * of a component's TypeScript, and of the non-component modules of its
+ * folder, are read too, so a class built in code (`'etat-' + etat`) is
+ * caught by its prefix at least. Material's own classes are not ours to
+ * define.
  *
  *   node scripts/check-css-scope.js
  */
@@ -63,13 +65,20 @@ function classesOf(cssPath, seen = new Set()) {
   return classes;
 }
 
-/** Class names a template uses: static attributes, `[class.x]`, `[ngClass]` keys. */
+/** Class names a template uses: static attributes, `[class.x]`, the literals of `[class]="…"`, `[ngClass]` keys. */
 function classesUsed(template) {
   const used = new Set();
   for (const m of template.matchAll(/(?<![[(\w])class="([^"]*)"/g)) {
     for (const c of m[1].split(/\s+/)) if (c && !c.includes('{{')) used.add(c);
   }
   for (const m of template.matchAll(/\[class\.([\w-]+)\]/g)) used.add(m[1]);
+  // `[class]="'heatmap-legend'"`, `[class]="'pastille ' + etat"`: the quoted
+  // words of the expression. A class built entirely in code is caught below.
+  for (const m of template.matchAll(/\[class\]="([^"]*)"/g)) {
+    for (const q of m[1].matchAll(/'([^']*)'/g)) {
+      for (const c of q[1].split(/\s+/)) if (/^[a-zA-Z][\w-]*$/.test(c)) used.add(c);
+    }
+  }
   for (const m of template.matchAll(/\[ngClass\]="\{([^}]*)\}"/g)) {
     for (const k of m[1].matchAll(/'?([a-zA-Z][\w-]*)'?\s*:/g)) used.add(k[1]);
   }
@@ -81,6 +90,9 @@ function tokensInCode(ts, known) {
   const used = new Set();
   const code = ts.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
   for (const m of code.matchAll(/(['"`])((?:\\.|(?!\1)[^\\\n])*)\1/g)) {
+    // A path is not a class: `import('./pages/login/login-page')` names the
+    // file, not `.login-page`.
+    if (m[2].includes('/')) continue;
     for (const t of m[2].matchAll(/[a-zA-Z][\w-]*/g)) if (known.has(t[0])) used.add(t[0]);
   }
   return used;
@@ -189,9 +201,29 @@ function main() {
   const orphans = walk(ROOT, [])
     .filter((f) => f.endsWith('.css') && !reached.has(f))
     .map((f) => `${relative(ROOT, f)} is loaded by nothing: neither styles.css nor a styleUrl`);
+  // The classes a page builds in code often live in a sibling module that is
+  // not a component (`ouvertures.ts`, `carte-jour-map.ts`): every non-spec
+  // .ts of the component's folder is read for its string literals too.
+  const codeOfDir = new Map();
+  const siblingCode = (dir) => {
+    if (!codeOfDir.has(dir)) {
+      codeOfDir.set(
+        dir,
+        readdirSync(dir)
+          .filter((n) => n.endsWith('.ts') && !n.endsWith('.spec.ts') && !byFile.has(join(dir, n)))
+          .map((n) => readFileSync(join(dir, n), 'utf8'))
+          .join('\n'),
+      );
+    }
+    return codeOfDir.get(dir);
+  };
   for (const c of byFile.values()) {
     c.used = new Set(
-      [...classesUsed(c.template), ...tokensInCode(c.ts, allDefined)].filter(isOurs),
+      [
+        ...classesUsed(c.template),
+        ...tokensInCode(c.ts, allDefined),
+        ...tokensInCode(siblingCode(dirname(c.file)), allDefined),
+      ].filter(isOurs),
     );
   }
 
