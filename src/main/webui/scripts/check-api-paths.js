@@ -40,8 +40,13 @@ const EXEMPT = new Set(
   ].map((p) => join(ROOT, p)),
 );
 
-/** A string starting with /api/, quoted or after a `${…}` in a template — a comment mentioning a path is not a call. */
-const LITERAL = /(['"`]|\})\/api\//;
+/**
+ * A string starting with /api, quoted or after a `${…}` in a template — a
+ * comment mentioning a path is not a call. The prefix alone, not `/api/`: a
+ * page declaring `const RACINE = '/api'` and calling `${RACINE}/stands` had
+ * moved nothing and passed.
+ */
+const LITERAL = /(['"`]|\})\/api\b/;
 
 function walk(dir, out) {
   for (const name of readdirSync(dir)) {
