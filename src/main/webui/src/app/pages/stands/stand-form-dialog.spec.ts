@@ -546,6 +546,42 @@ describe('StandFormDialog', () => {
     expect(payload.horaires[0].fenetres.map((fenetre) => fenetre.effectif)).toEqual([3, 2]);
   });
 
+  it('shows the stand minimum as the placeholder of an effectif left empty, and follows it as typed', async () => {
+    const { fixture } = mount(
+      stand({
+        id: 's7b',
+        effectifMin: 2,
+        effectifMax: 4,
+        horaires: [regle({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] })],
+        ouvertures: [
+          {
+            id: null,
+            date: '2026-07-14',
+            heureDebut: '14:00',
+            heureFin: null,
+            motif: null,
+            effectif: null,
+          },
+        ],
+      }),
+    );
+    await fixture.whenStable();
+
+    cliquer(fixture, 'Détailler fenêtre par fenêtre');
+    await fixture.whenStable();
+    const champs = () =>
+      Array.from(
+        root(fixture).querySelectorAll<HTMLInputElement>('.fenetre-effectif input[type="number"]'),
+      );
+    // One per window, one per dated opening: both read the same minimum.
+    expect(champs()).toHaveLength(2);
+    expect(champs().map((champ) => champ.placeholder)).toEqual(['2', '2']);
+
+    taper(root(fixture).querySelector<HTMLInputElement>('input[name="effectifMin"]')!, '3');
+    await fixture.whenStable();
+    expect(champs().map((champ) => champ.placeholder)).toEqual(['3', '3']);
+  });
+
   it('refuses a zero effectif on a window, says why and blocks the submit', async () => {
     const { fixture } = mount(
       stand({

@@ -132,6 +132,15 @@ export class StandFormDialog {
   /** The stand's declared capacity, as the rule editor checks the windows against. */
   protected readonly effectifMaxDeclare = computed(() => Number(this.draft().effectifMax));
 
+  /** The stand's minimum, what a window or a dated opening left without an effectif asks for. */
+  protected readonly effectifMinDeclare = computed(() => Number(this.draft().effectifMin));
+
+  /** That minimum as the empty effectif fields' placeholder, empty while the minimum itself is not a number. */
+  protected readonly effectifPlaceholder = computed(() => {
+    const minimum = this.effectifMinDeclare();
+    return Number.isFinite(minimum) && minimum > 0 ? String(minimum) : '';
+  });
+
   /** Days the preview covers: the edition's créneaux — what the solver builds from. */
   protected readonly datesEvenement = computed(() => datesEvenement(this.store.creneaux()));
 

@@ -101,9 +101,10 @@
                      [ngModel]="fenetre.heureFin"
                      (ngModelChange)="patchFenetre(indexHoraire, $index, { heureFin: $event })" />
             </mat-form-field>
-            <mat-form-field appearance="outline" class="fenetre-effectif">
+            <mat-form-field appearance="outline" class="fenetre-effectif" [floatLabel]="effectifPlaceholder() ? 'always' : 'auto'">
               <mat-label i18n="@@stands.horaires.effectif">Effectif (vide = celui du stand)</mat-label>
               <input matInput type="number" min="1" step="1" [name]="nom('fenetreEffectif') + indexHoraire + '-' + $index"
+                     [placeholder]="effectifPlaceholder()"
                      [ngModel]="fenetre.effectif ?? null"
                      (ngModelChange)="patchFenetre(indexHoraire, $index, { effectif: $event })" />
             </mat-form-field>

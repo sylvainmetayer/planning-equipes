@@ -70,10 +70,22 @@ export class HoraireReglesEditor {
   readonly horaires = input.required<readonly HoraireDraft[]>();
   /** The stand's declared capacity, when one stand is edited: a window may not ask for more. */
   readonly effectifMax = input<number | undefined>(undefined);
+  /**
+   * The stand's minimum, when one stand is edited: what a window left without
+   * an effectif actually asks for, shown as the empty field's placeholder so
+   * « vide = celui du stand » names a number rather than a rule.
+   */
+  readonly effectifMin = input<number | undefined>(undefined);
   readonly disabled = input(false);
   /** Prefix of the control names, so two editors in one form never share a name. */
   readonly prefixe = input('');
   readonly horairesChange = output<HoraireDraft[]>();
+
+  /** The number the placeholder shows, or nothing when no single stand is being edited. */
+  protected readonly effectifPlaceholder = computed(() => {
+    const minimum = this.effectifMin();
+    return minimum !== undefined && Number.isFinite(minimum) && minimum > 0 ? String(minimum) : '';
+  });
 
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);

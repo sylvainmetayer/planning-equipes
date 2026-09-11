@@ -88,7 +88,7 @@
   <p class="empty-hint" i18n="@@stands.horaires.hintMasse">
     Mêmes horaires sur plusieurs stands ? Cochez-les dans la liste, puis « Modifier la sélection ».
   </p>
-  <app-horaire-regles-editor [horaires]="draft().horaires" [effectifMax]="effectifMaxDeclare()"
+  <app-horaire-regles-editor [horaires]="draft().horaires" [effectifMax]="effectifMaxDeclare()" [effectifMin]="effectifMinDeclare()"
                              [disabled]="editingLocked()" (horairesChange)="patch({ horaires: $event })" />
 </fieldset>
 <fieldset class="span-2 stand-section">
@@ -155,9 +155,10 @@
         <input matInput type="time" [name]="'ouvertureHeureFin' + $index"
                [ngModel]="ouverture.heureFin" (ngModelChange)="patchOuverture($index, { heureFin: $event })" />
       </mat-form-field>
-      <mat-form-field appearance="outline" class="fenetre-effectif">
+      <mat-form-field appearance="outline" class="fenetre-effectif" [floatLabel]="effectifPlaceholder() ? 'always' : 'auto'">
         <mat-label i18n="@@stands.ouvertures.effectif">Effectif (vide = celui du stand)</mat-label>
         <input matInput type="number" min="1" step="1" [name]="'ouvertureEffectif' + $index"
+               [placeholder]="effectifPlaceholder()"
                [ngModel]="ouverture.effectif ?? null" (ngModelChange)="patchOuverture($index, { effectif: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
