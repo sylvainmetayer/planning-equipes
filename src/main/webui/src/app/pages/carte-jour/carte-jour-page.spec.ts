@@ -237,6 +237,25 @@ describe('CarteJourPage', () => {
     expect(heure()).toBe('10:00');
   });
 
+  // The one place where the three day-navigation pages differ is the hook
+  // they pass to `dayNavigation`, and it is optional: dropping it compiles
+  // and leaves every test green, while a day change would keep the clock
+  // running on yesterday's minute. Pinned here, per page.
+  it('stops the replay and returns to the opening hour when the day changes', async () => {
+    await rendre(planningDeuxJours());
+    await curseur(15 * 60);
+    const lecture = racine().querySelector('[data-test="carte-jour-lecture"]') as HTMLElement;
+    lecture.click();
+    await fixture.whenStable();
+    expect(lecture.getAttribute('aria-pressed')).toBe('true');
+
+    (racine().querySelector('[aria-label="Jour suivant"]') as HTMLElement).click();
+    await fixture.whenStable();
+
+    expect(lecture.getAttribute('aria-pressed')).toBe('false');
+    expect(heure()).toBe('14:00');
+  });
+
   it('lists a stand with no located emplacement instead of dropping it silently', async () => {
     await rendre(planningDeuxJours());
 

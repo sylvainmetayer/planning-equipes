@@ -217,6 +217,20 @@ describe('RailJourPage', () => {
     expect(cellule(2).getAttribute('tabindex')).toBe('0');
   });
 
+  // Same reason as the carte: the `onSelect` hook that puts the focus back on
+  // the first line is optional, and nothing else asserted it.
+  it('puts the tab stop back on the first line when the day changes', async () => {
+    await rendre(planningDeuxJours());
+    cellule(0).dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    await fixture.whenStable();
+    expect(cellule(2).getAttribute('tabindex')).toBe('0');
+
+    await jourSuivant();
+
+    expect(cellule(0).getAttribute('tabindex')).toBe('0');
+    expect(racine().querySelectorAll('.rail-cell[tabindex="0"]')).toHaveLength(1);
+  });
+
   it('keeps a tab stop when the filter drops the focused line', async () => {
     await rendre(planningDeuxJours());
     cellule(2).dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
