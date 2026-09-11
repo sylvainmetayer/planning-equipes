@@ -299,7 +299,9 @@ class PlanningResourceTest {
                 .asString();
 
         assertThat(yaml)
-                .contains("festival:", "creneaux:", "stands:", "animateurs:", "postes:")
+                .contains("festival:", "creneaux:", "stands:", "animateurs:")
+                // No seat list: the import rebuilds it from the stands and créneaux.
+                .doesNotContain("postes:")
                 .contains("STAND-STRAT", "A1");
     }
 

@@ -42,8 +42,11 @@ public final class ScenarioYamlWriter {
      * positional parameters, since {@link #buildScenarioYaml} is called both
      * from {@link PlanningService#exportScenarioYaml()} and from its unit tests.
      *
-     * @param postes the seat list, or {@code null} to leave the section out
-     *               (see {@link PlanningService#exportScenarioYaml()})
+     * @param postes an explicit seat list to pin in the file, or {@code null}
+     *               to leave the section out. Production exports always pass
+     *               {@code null}: the import regenerates the seats from the
+     *               stands and créneaux (see {@link PlanningService#exportScenarioYaml()}).
+     *               Only tests write one, to exercise how a pinned list reads back
      */
     public record ScenarioExport(
             List<Animateur> animateurs,

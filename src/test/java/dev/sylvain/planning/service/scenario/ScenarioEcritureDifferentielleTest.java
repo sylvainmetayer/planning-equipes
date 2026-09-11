@@ -7,7 +7,6 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
-import dev.sylvain.planning.service.solve.ProblemBuilder;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -84,7 +83,8 @@ class ScenarioEcritureDifferentielleTest {
                 referentiel.animateurs(),
                 stands,
                 creneaux,
-                ProblemBuilder.buildPostes(stands, creneaux),
+                // As the production export: no seat list, the import rebuilds it.
+                null,
                 lu.sections().typologies(),
                 emplacements(stands),
                 lu.sections().parametresLegaux().orElse(null),

@@ -52,11 +52,17 @@ silencieusement sur les réglages de l'instance qui l'importe — sa durée de
 résolution, ses durées de vacation, ses plafonds légaux — et le « même »
 scénario rejoué ailleurs résolvait un autre problème.
 
-**Les créneaux sortent toujours tels qu'ils sont, avec leur liste de sièges
-(`postes`).** Il a existé une seconde forme — une édition découpée exportant
-ses amplitudes sources et `decoupageAuto`, sans `postes`, pour que l'import
-rejoue le découpage — et cette page l'a décrite longtemps après que #172 l'a
-retirée. Une fois le découpage joué, les amplitudes qu'il a consommées n'existent
+**Les créneaux sortent toujours tels qu'ils sont, et la liste de sièges
+(`postes`) n'en sort pas.** Absente, elle est regénérée à l'import à partir des
+stands et des créneaux, par le constructeur même qu'utilise une résolution : le
+fichier ne perd rien. Écrite, elle répétait ce que `effectifMin` et les
+fenêtres d'ouverture disaient déjà — dix mille lignes sur une édition réelle —
+et figeait la grille contre toute modification ultérieure d'un stand. Une
+édition ne peut de toute façon pas produire un staffing qui s'écarte de la
+règle, seul cas où la section a un sens (voir plus bas). Il a existé une
+seconde forme — une édition découpée exportant ses amplitudes sources et
+`decoupageAuto`, pour que l'import rejoue le découpage — et cette page l'a
+décrite longtemps après que #172 l'a retirée. Une fois le découpage joué, les amplitudes qu'il a consommées n'existent
 plus : une édition découpée n'a que ses vacations à exporter. Le fichier de
 scénario tenu à la main, « amplitudes + `decoupageAuto` », reste la source de
 vérité pour redécouper — jamais cet export.

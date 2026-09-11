@@ -5,7 +5,6 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
@@ -171,14 +170,22 @@ public class PlanningService {
      * lengths, its relay families), so the "same" scenario replayed elsewhere
      * solved a different problem.</p>
      *
-     * <p><b>The créneaux are always written as they are, with their seat list.</b>
-     * There used to be a second shape — a découpé edition exporting its source
-     * amplitudes plus {@code decoupageAuto} and no {@code postes}, so the import
-     * re-ran the découpage — and this javadoc still described it long after
-     * issue #172 removed it. Once the découpage has run, the amplitudes it
-     * consumed are gone: a découpé edition has nothing but its vacations left to
-     * export. The hand-maintained "amplitudes + {@code decoupageAuto}" scenario
-     * file stays the source of truth for re-slicing, never this export.</p>
+     * <p><b>The créneaux are always written as they are, and the seat list is
+     * not.</b> Absent, the {@code postes} section is regenerated on import from
+     * the stands and créneaux — by the very builder a solve uses — so the file
+     * loses nothing. Written, it repeated what {@code effectifMin} and the
+     * opening windows already said, ten thousand lines of it on a real edition,
+     * and froze the grid against any later change of a stand: a file carrying
+     * its seats describes a problem it no longer states. An edition cannot
+     * produce a seat list that departs from the rule anyway, which is the only
+     * case the section exists for. There used to be a second shape — a découpé
+     * edition exporting its source amplitudes plus {@code decoupageAuto}, so the
+     * import re-ran the découpage — and this javadoc still described it long
+     * after issue #172 removed it. Once the découpage has run, the amplitudes
+     * it consumed are gone: a découpé edition has nothing but its vacations
+     * left to export. The hand-maintained "amplitudes + {@code decoupageAuto}"
+     * scenario file stays the source of truth for re-slicing, never this
+     * export.</p>
      */
     public String exportScenarioYaml() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
@@ -197,13 +204,15 @@ public class PlanningService {
         // découpage ran, the amplitudes it consumed are gone, so a découpé
         // edition exports its vacations plainly — the hand-maintained
         // "amplitudes + decoupageAuto:" scenario file stays the source of
-        // truth for re-slicing, never this export.
-        List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, creneaux);
+        // truth for re-slicing, never this export. No seat list: absent, the
+        // import rebuilds it from the stands and créneaux with the same
+        // builder a solve uses, so writing it only repeated the stands and
+        // pinned the grid against their next change.
         return ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
                 animateurs,
                 stands,
                 creneaux,
-                postes,
+                null,
                 referenceDataService.listTypologies(),
                 referenceDataService.listEmplacements(),
                 referenceDataService.getParametresLegaux(),
