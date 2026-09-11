@@ -244,7 +244,10 @@ class NotificationsPlanifieesTest {
         Animateur alice = new Animateur("PLAN-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("PLAN-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Stand stand = new Stand("PLAN-S1", "Stand planifie un", Set.of(), 1, 2, false);
-        Creneau creneau = new Creneau(9701L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        // Persisted with an explicit id the sequence never hands out: a small one
+        // is reached by the suite's own inserts, and the next createCreneau of
+        // whichever test gets there dies on creneau_pkey.
+        Creneau creneau = new Creneau(970_100_001L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
 
         PosteAffectation posteAlice = new PosteAffectation("PLAN-P1", stand, creneau);
         posteAlice.setAnimateur(alice);
