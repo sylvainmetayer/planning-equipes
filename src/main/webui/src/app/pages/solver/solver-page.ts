@@ -146,12 +146,6 @@ export class SolverPage {
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
   /**
-   * The narrower, per-edition lock — what the diffusion actions wait on. See
-   * `docs/decisions/0001-cloisonnement-par-edition.md`, §5.
-   */
-  protected readonly editingLocked = inject(SolverJobService).editingLocked;
-
-  /**
    * The two solve buttons say what the click will actually do. While the
    * solver is busy they plan the run instead of being greyed out — the whole
    * point being to prepare the next edition without waiting in front of the
