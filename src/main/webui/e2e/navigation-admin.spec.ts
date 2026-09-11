@@ -22,42 +22,71 @@ test.afterAll(async () => {
 /**
  * One entry per admin route (`app.routes.ts`). `marker` is a stable French
  * label of the page; routes without one just have to render *something* in
- * the shell's main region.
+ * the shell's main region. `sheet` is a class the route's own stylesheet
+ * defines: since #468 a page's CSS travels with its lazy chunk, and nothing
+ * but a browser can tell that the chunk brought it — the unit tests render
+ * without CSS, and a `styleUrl` pointing at the wrong file, or a missing
+ * `ViewEncapsulation.None`, left the whole CI green.
  */
-const ROUTES: { path: string; marker?: string }[] = [
-  { path: '/', marker: 'Calculer le planning' },
-  { path: '/notifications' },
-  { path: '/problemes' },
-  { path: '/constraints' },
-  { path: '/echanges', marker: 'Échanges de créneaux' },
-  { path: '/instantanes' },
-  { path: '/aide', marker: "Aide à l'utilisation" },
-  { path: '/editions', marker: 'Nouvelle édition' },
+const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
+  { path: '/', marker: 'Calculer le planning', sheet: 'solver-volumetry' },
+  { path: '/notifications', sheet: 'notification-jour' },
+  { path: '/problemes', sheet: 'probleme-counts' },
+  { path: '/constraints', sheet: 'constraint-grid' },
+  { path: '/echanges', marker: 'Échanges de créneaux', sheet: 'espace-demande-horsgroupe' },
+  { path: '/instantanes', sheet: 'snapshot-auto-chip' },
+  { path: '/aide', marker: "Aide à l'utilisation", sheet: 'aide-search' },
+  { path: '/editions', marker: 'Nouvelle édition', sheet: 'edition-nom-input' },
   { path: '/stands', marker: 'Stands (' },
   { path: '/emplacements' },
-  { path: '/animateurs', marker: 'Animateurs (' },
-  { path: '/creneaux', marker: 'Créneaux (' },
+  { path: '/animateurs', marker: 'Animateurs (', sheet: 'competence-row' },
+  { path: '/creneaux', marker: 'Créneaux (', sheet: 'creneau-probleme' },
   { path: '/typologies', marker: 'Typologies (' },
-  { path: '/import-animateurs', marker: 'Import des animateurs' },
-  { path: '/calendar', marker: 'Calendrier des affectations' },
-  { path: '/day-calendar' },
-  { path: '/hours', marker: 'Heures planifiées par animateur' },
-  { path: '/ouvertures', marker: 'Ouvertures des stands' },
-  { path: '/staffing', marker: 'Besoin minimum en effectif' },
-  { path: '/banc-de-touche', marker: 'Banc de touche' },
-  { path: '/fragilite', marker: 'Fragilité du planning' },
-  { path: '/jour-j', marker: 'Mode jour J' },
-  { path: '/repos', marker: 'Jours de repos' },
-  { path: '/heatmap' },
-  { path: '/timeline', marker: 'Timeline animateur' },
-  { path: '/rail-jour', marker: 'Rail de la journée' },
-  { path: '/carte-jour', marker: 'Carte de la journée' },
+  { path: '/import-animateurs', marker: 'Import des animateurs', sheet: 'import-compteurs' },
+  { path: '/import-grille-stands', sheet: 'import-compteurs' },
+  { path: '/calendar', marker: 'Calendrier des affectations', sheet: 'calendar-nav' },
+  { path: '/day-calendar', sheet: 'day-calendar-grid' },
+  { path: '/hours', marker: 'Heures planifiées par animateur', sheet: 'hours-total-row' },
+  { path: '/ouvertures', marker: 'Ouvertures des stands', sheet: 'ouvertures-synthese' },
+  { path: '/staffing', marker: 'Besoin minimum en effectif', sheet: 'staffing-summary' },
+  { path: '/banc-de-touche', marker: 'Banc de touche', sheet: 'banc-controls' },
+  { path: '/fragilite', marker: 'Fragilité du planning', sheet: 'fragilite-message' },
+  { path: '/jour-j', marker: 'Mode jour J', sheet: 'jour-j-entete' },
+  { path: '/repos', marker: 'Jours de repos', sheet: 'repos-toolbar' },
+  { path: '/heatmap', sheet: 'heatmap-toolbar' },
+  { path: '/timeline', marker: 'Timeline animateur', sheet: 'timeline-toolbar' },
+  { path: '/rail-jour', marker: 'Rail de la journée', sheet: 'rail-toolbar' },
+  { path: '/carte-jour', marker: 'Carte de la journée', sheet: 'carte-jour-toolbar' },
+  { path: '/comparateur', sheet: 'comparateur-selection' },
+  { path: '/historique', sheet: 'historique-controles' },
+  { path: '/pauses', sheet: 'pauses-message' },
+  { path: '/disponibilites', sheet: 'espace-dispo-intro' },
+  { path: '/kpi' },
+  { path: '/graphe', sheet: 'graphe-corps' },
   { path: '/ad-hoc-constraints' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
-  { path: '/parametres', marker: 'Paramètres de découpage' },
-  { path: '/mcp-client', marker: 'Se connecter au serveur MCP' },
-  { path: '/debug', marker: 'Validateur YAML' },
+  { path: '/parametres', marker: 'Paramètres de découpage', sheet: 'scenario-select' },
+  { path: '/mcp-client', marker: 'Se connecter au serveur MCP', sheet: 'mcp-pre' },
+  { path: '/debug', marker: 'Validateur YAML', sheet: 'debug-date-du-jour' },
 ];
+
+/** True when a loaded stylesheet has a rule naming `.${classe}` — the route's chunk brought its CSS. */
+async function feuilleChargee(
+  page: import('@playwright/test').Page,
+  classe: string,
+): Promise<boolean> {
+  return page.evaluate((selecteur) => {
+    return Array.from(document.styleSheets).some((feuille) => {
+      try {
+        return Array.from(feuille.cssRules).some(
+          (regle) => regle instanceof CSSStyleRule && regle.selectorText.includes(selecteur),
+        );
+      } catch {
+        return false;
+      }
+    });
+  }, `.${classe}`);
+}
 
 test('chaque page du menu admin se charge et affiche son contenu', async ({ browser }) => {
   test.slow();
@@ -73,8 +102,23 @@ test('chaque page du menu admin se charge et affiche son contenu', async ({ brow
     } else {
       await expect(contenu, `page ${route.path}`).toContainText(/\S/);
     }
+    if (route.sheet) {
+      expect(await feuilleChargee(page, route.sheet), `feuille de ${route.path}`).toBe(true);
+    }
   }
   await page.context().close();
+});
+
+/**
+ * The public legal pages render outside the admin shell, on their own route
+ * sheet; no other spec visits them.
+ */
+test('les pages légales publiques se chargent avec leur feuille', async ({ page }) => {
+  for (const path of ['/conditions-utilisation', '/politique-confidentialite']) {
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('main, .mentions-page').first(), `page ${path}`).toContainText(/\S/);
+    expect(await feuilleChargee(page, 'mentions-page-toolbar'), `feuille de ${path}`).toBe(true);
+  }
 });
 
 /**
