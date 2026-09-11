@@ -36,18 +36,21 @@ public class EmplacementService {
         return emplacement;
     }
 
-    /** {@link #create(Emplacement)} inside a caller's transaction: written with the rest, or not at all. */
+    /**
+     * {@link #create(Emplacement)} inside a caller's transaction: written with
+     * the rest, or not at all. The caller marks the referential modified once
+     * its transaction is committed (see {@code TypologieService}).
+     */
     Emplacement create(Connection connection, Emplacement emplacement) throws SQLException {
         emplacement.setId(Ids.required(emplacement.getId(), "emplacement id"));
         validateCoordinates(emplacement);
         repository.saveEmplacement(connection, emplacement, true);
-        changeTracker.markModified();
         return emplacement;
     }
 
     public Emplacement update(String id, Emplacement emplacement) {
         if (!repository.emplacementExists(id)) {
-            throw new BusinessError.NotFound("Emplacement not found: " + id);
+            throw new BusinessError.NotFound("Emplacement inconnu : " + id);
         }
         emplacement.setId(id);
         validateCoordinates(emplacement);

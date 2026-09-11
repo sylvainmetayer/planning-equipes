@@ -270,7 +270,7 @@ public class EspaceAnimateurService {
         boolean connu = referenceDataService.listAnimateurs().stream()
                 .anyMatch(candidat -> candidat.getId().equals(collegueId));
         if (!connu) {
-            throw new BusinessError.NotFound("Animateur not found: " + collegueId);
+            throw new BusinessError.NotFound("Animateur inconnu : " + collegueId);
         }
         return postesOf(planPublieService.planPublie(), collegueId, Map.of());
     }

@@ -55,7 +55,7 @@ public class CreneauService {
     public Creneau update(Long id, Creneau creneau) {
         CreneauValidator.check(creneau);
         if (!repository.creneauExists(id)) {
-            throw new BusinessError.NotFound("Timeslot not found: " + id);
+            throw new BusinessError.NotFound("Créneau inconnu : " + id);
         }
         creneau.setId(id);
         repository.updateCreneau(creneau);

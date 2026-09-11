@@ -97,7 +97,7 @@ public class StandService {
         }
         assignFamily(stand);
         repository.saveStand(connection, stand, true);
-        changeTracker.markModified();
+        // Marked by the caller once committed, see TypologieService.create.
         return stand;
     }
 
@@ -138,7 +138,7 @@ public class StandService {
     public Stand update(String id, Stand stand) {
         solverJobs.refuseIfSolving();
         if (!repository.standExists(id)) {
-            throw new BusinessError.NotFound("Stand not found: " + id);
+            throw new BusinessError.NotFound("Stand inconnu : " + id);
         }
         stand.setId(id);
         validate(stand);

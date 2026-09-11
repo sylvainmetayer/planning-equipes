@@ -60,7 +60,7 @@ public class AnimateurService {
     public Animateur update(String id, Animateur animateur) {
         solverJobs.refuseIfSolving();
         if (!repository.animateurExists(id)) {
-            throw new BusinessError.NotFound("Animateur not found: " + id);
+            throw new BusinessError.NotFound("Animateur inconnu : " + id);
         }
         animateur.setId(id);
         validate(animateur);

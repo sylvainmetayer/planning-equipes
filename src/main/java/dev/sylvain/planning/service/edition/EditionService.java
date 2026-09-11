@@ -143,7 +143,7 @@ public class EditionService {
 
     private void requireExisting(String id) {
         if (!repository.exists(id)) {
-            throw new BusinessError.NotFound("Edition not found: " + id);
+            throw new BusinessError.NotFound("Édition inconnue : " + id);
         }
     }
 

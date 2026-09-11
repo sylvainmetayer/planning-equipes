@@ -59,15 +59,18 @@ public class TypologieService implements TypologieLibelles {
         return cree;
     }
 
-    /** {@link #create(TypologieItem)} inside a caller's transaction: written with the rest, or not at all. */
+    /**
+     * {@link #create(TypologieItem)} inside a caller's transaction: written
+     * with the rest, or not at all. The caller marks the referential modified
+     * once its transaction is committed — marking it here would survive a
+     * rollback, and the Solveur screen would announce data that never changed.
+     */
     TypologieItem create(Connection connection, TypologieItem typologie) throws SQLException {
-        TypologieItem cree = repository.saveTypologie(
+        return repository.saveTypologie(
                 connection,
                 new TypologieItem(
                         Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null),
                 true);
-        changeTracker.markModified();
-        return cree;
     }
 
     /**
@@ -87,7 +90,7 @@ public class TypologieService implements TypologieLibelles {
 
     public TypologieItem update(String id, TypologieItem typologie) {
         if (!repository.typologieExists(id)) {
-            throw new BusinessError.NotFound("Typology not found: " + id);
+            throw new BusinessError.NotFound("Typologie inconnue : " + id);
         }
         TypologieItem misAJour = repository.saveTypologie(
                 new TypologieItem(id, typologie.label(), typologie.ninja(), typologie.modifieLe()), false);
