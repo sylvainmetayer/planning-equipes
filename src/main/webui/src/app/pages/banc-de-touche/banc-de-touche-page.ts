@@ -20,7 +20,7 @@ import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { BancDeTouche, CreneauSiege } from '../../core/models';
-import { errorText } from '../../core/resource-state';
+import { errorText, retainedValue } from '../../core/resource-state';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import {
   creneauxUtiles,
@@ -98,8 +98,13 @@ export class BancDeTouchePage {
     params: () => ({ creneauId: this.creneauId(), standId: this.standId() }),
     loader: ({ params }) => this.analysesApi.bench(params.creneauId, params.standId),
   });
+  // Retained across a re-key: unlike `reload()`, a change of `params` resets
+  // the resource's value to undefined for the whole round trip, and the créneau
+  // selector is built from the answer — the screen would lose its selectors and
+  // its table on every click. Only a refusal clears it.
+  private readonly bancRetenu = retainedValue(this.bench);
   protected readonly banc = computed<BancDeTouche | null>(() =>
-    this.bench.hasValue() ? this.bench.value() : null,
+    this.bench.status() === 'error' ? null : this.bancRetenu(),
   );
   protected readonly chargement = computed(
     () => this.referentiel.isLoading() || this.bench.isLoading(),

@@ -44,6 +44,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
 type PageInternals = {
   banc: Signal<BancDeTouche | null>;
   chargement: Signal<boolean>;
+  creneaux: Signal<CreneauSiege[]>;
   erreur: Signal<string>;
   creneauAffiche: Signal<number | null>;
   changerCreneau: (creneauId: number) => void;
@@ -113,6 +114,25 @@ describe('BancDeTouchePage', () => {
 
     page.changerStand('quilles');
     await vi.waitFor(() => expect(analysesApi.bench).toHaveBeenLastCalledWith(7, 'quilles'));
+  });
+
+  it('keeps the selectors and the table on screen while another créneau loads', async () => {
+    analysesApi.bench.mockResolvedValueOnce(banc(5));
+    const page = createPage();
+    await vi.waitFor(() => expect(page.banc()?.creneauId).toBe(5));
+
+    const next = deferred<BancDeTouche>();
+    analysesApi.bench.mockReturnValueOnce(next.promise);
+    page.changerCreneau(7);
+    await vi.waitFor(() => expect(page.chargement()).toBe(true));
+
+    // A re-key resets the resource's value; the page must not follow it, or
+    // the créneau selector — built from the answer — is unmounted mid-click.
+    expect(page.banc()?.creneauId).toBe(5);
+    expect(page.creneaux()).toHaveLength(2);
+
+    next.resolve(banc(7));
+    await vi.waitFor(() => expect(page.banc()?.creneauId).toBe(7));
   });
 
   it('never lets an older answer overwrite a newer request', async () => {
