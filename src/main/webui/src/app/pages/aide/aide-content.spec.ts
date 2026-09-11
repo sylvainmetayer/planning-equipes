@@ -66,7 +66,7 @@ describe('buildHelpSections', () => {
     // The fair is open by default (`V42__foire_ouverture.sql`), so the step is
     // a check, not an action: a reader must not go looking for a switch to flip.
     expect(text).toContain('foire au planning est ouverte');
-    expect(text).not.toContain('10. Ouvrir la foire');
+    expect(text).not.toContain('Ouvrir la foire');
     // The cycle does not end at the export: it ends at a schedule people have
     // received and acknowledged.
     expect(text).toContain('Publier');
@@ -83,10 +83,10 @@ describe('buildHelpSections', () => {
     // `indexOf` returns -1 for a label that moved, which is below every real
     // index: without these two assertions the ordering one would pass on a
     // section that no longer holds either step.
-    expect(text).toContain('2. Saisir les référentiels');
-    expect(text).toContain('3. Ouvrir la collecte');
-    expect(text.indexOf('2. Saisir les référentiels')).toBeLessThan(
-      text.indexOf('3. Ouvrir la collecte'),
+    expect(text).toContain('Saisir les référentiels');
+    expect(text).toContain('Ouvrir la collecte');
+    expect(text.indexOf('Saisir les référentiels')).toBeLessThan(
+      text.indexOf('Ouvrir la collecte'),
     );
   });
 
@@ -284,16 +284,12 @@ describe('parametrer-pour-un-planning-complet', () => {
     expect(text).toContain('pause minimale entre vacations');
     expect(text).toContain('Pause légale prise sur le poste');
     expect(text).toContain("lu d'un tenant");
-    const etapes = section.blocks.find((block) => block.kind === 'list')!;
-    expect(etapes.kind === 'list' && etapes.items.map((item) => item.slice(0, 2))).toEqual([
-      '1.',
-      '2.',
-      '3.',
-      '4.',
-      '5.',
-    ]);
-    expect(etapes.kind === 'list' && etapes.items[0]).toContain('Besoin en animateurs');
-    expect(etapes.kind === 'list' && etapes.items[4]).toContain('Pauses');
+    // A real ordered list: the numbering is the browser's, not the text's,
+    // and a screen reader announces it as such.
+    const etapes = section.blocks.find((block) => block.kind === 'steps')!;
+    expect(etapes.kind === 'steps' && etapes.items).toHaveLength(5);
+    expect(etapes.kind === 'steps' && etapes.items[0]).toMatch(/^Besoin en animateurs/);
+    expect(etapes.kind === 'steps' && etapes.items[4]).toMatch(/^Fragilité, puis Pauses/);
   });
 
   it('links every screen the guide names, and only real routes', () => {

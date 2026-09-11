@@ -150,13 +150,13 @@ export function buildSolverSections(): HelpSection[] {
           ],
         },
         {
-          kind: 'list',
+          kind: 'steps',
           items: [
-            $localize`:@@aide.setup.step1:1. Besoin en animateurs : les quatre bornes disent le plancher. Si l'effectif est sous le plancher, aucun réglage n'y changera rien ; si le plancher dépasse l'effectif de peu, revoyez la grille et la pause entre vacations avant tout.`,
-            $localize`:@@aide.setup.step2:2. Ouvertures des stands, puis faisabilité : le besoin lu fenêtre par fenêtre, et la capacité jour par jour, sans calcul.`,
-            $localize`:@@aide.setup.step3:3. Une résolution courte, puis la page Problèmes : les écarts restants disent laquelle des règles tient les sièges vides.`,
-            $localize`:@@aide.setup.step4:4. Une résolution longue, une fois la configuration stable — en ne changeant qu'une chose à la fois entre deux essais.`,
-            $localize`:@@aide.setup.step5:5. Fragilité, puis Pauses : qui est irremplaçable, et quels relais organiser avant de publier.`,
+            $localize`:@@aide.setup.step1:Besoin en animateurs : les quatre bornes disent le plancher. Si l'effectif est sous le plancher, aucun réglage n'y changera rien ; si le plancher dépasse l'effectif de peu, revoyez la grille et la pause entre vacations avant tout.`,
+            $localize`:@@aide.setup.step2:Ouvertures des stands, puis faisabilité : le besoin lu fenêtre par fenêtre, et la capacité jour par jour, sans calcul.`,
+            $localize`:@@aide.setup.step3:Une résolution courte, puis la page Problèmes : les écarts restants disent laquelle des règles tient les sièges vides.`,
+            $localize`:@@aide.setup.step4:Une résolution longue, une fois la configuration stable — en ne changeant qu'une chose à la fois entre deux essais.`,
+            $localize`:@@aide.setup.step5:Fragilité, puis Pauses : qui est irremplaçable, et quels relais organiser avant de publier.`,
           ],
         },
         {
