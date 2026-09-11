@@ -13,7 +13,10 @@
     <mat-card-title i18n="@@importCsv.fichier.titre">1. Le fichier</mat-card-title>
     <mat-card-subtitle i18n="@@importCsv.fichier.aide">
       Format CSV uniquement — séparateur virgule, point-virgule ou tabulation, reconnu tout seul.
-      Un classeur .xlsx doit d'abord être ré-enregistré en CSV depuis votre tableur.
+      Un classeur .xlsx doit d'abord être ré-enregistré en CSV depuis votre tableur — mais ne
+      rouvrez pas un CSV déjà prêt dans ce tableur : il réécrit les dates avec l'année sur deux
+      chiffres (« 12/09/26 »). Une telle date est lue quand même, et l'aperçu dit comment elle a
+      été comprise : vérifiez-la avant d'importer.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>

@@ -159,38 +159,41 @@ dédié, `/import-animateurs` ; endpoints dans [`api.md`](api.md#import-csv-des-
 
 ### Un fichier d'exemple est livré avec l'application
 
-`src/main/resources/scenarios/festival-realiste-animateurs.csv` — à côté du
-scénario dont il dérive, et téléchargeable depuis l'écran d'import (bouton
-« Télécharger un fichier d'exemple », servi par
-`GET /api/animateurs/import-csv/exemple`). Il porte les **153 animateurs** du
-scénario anonymisé `festival-realiste.yaml`, sur les **neuf colonnes** que
-l'import lit, séparateur `;`, en-têtes reconnus tout seuls par la
-correspondance proposée. Il montre ce qu'une cellule multi-valeurs contient :
-compétences avec et sans niveau (`DIV:REFERENT|LOGISTIQUE|NINJA:DEBUTANT`),
-souhaits, jours d'indisponibilité.
+`src/main/resources/scenarios/exemple-animateurs.csv` — téléchargeable depuis
+l'écran d'import (bouton « Télécharger un fichier d'exemple », servi par
+`GET /api/animateurs/import-csv/exemple`). Il porte **une douzaine de
+personnes fictives** sur les **neuf colonnes** que l'import lit, séparateur
+`;`, en-têtes reconnus tout seuls par la correspondance proposée. Il est
+pédagogique avant d'être volumineux : trois mineurs pendant l'événement (16 et
+17 ans, dont une qui devient majeure quatre jours après la fin), un manager,
+des compétences avec et sans niveau (`JEUX:DEBUTANT|ENF`,
+`DIV|REF:REFERENT|TROPH`), des souhaits, des jours d'indisponibilité sur
+plusieurs lignes, une adresse e-mail sur certaines lignes seulement — chaque
+règle du format y a une ligne qui la montre.
 
 Ses dates sont écrites **`AAAA-MM-JJ`**, et c'est la même précaution que pour
 les bandes de la grille des stands : ouvert puis réenregistré dans un tableur,
-`12/09/2026` revient `12/09/26`, une année sur deux chiffres que l'import
-refuse — la ligne est alors rejetée pour une raison que personne n'a écrite.
-La forme ISO, elle, ressort intacte d'Excel comme de LibreOffice. Les deux
-formats restent lus à l'import, et le message d'erreur nomme cette cause quand
-il voit une année à deux chiffres.
+`12/09/2026` revient `12/09/26`, l'année sur deux chiffres, alors que la forme
+ISO ressort intacte d'Excel comme de LibreOffice. L'import lit tout de même
+une telle date (voir [ci-dessous](#lannée-sur-deux-chiffres-est-lue-et-dite)),
+mais un fichier qui n'en porte aucune n'a rien à faire vérifier.
 
 Il n'existe **qu'à cet endroit** : l'écran le récupère par l'API plutôt que
 par une copie dans le bundle, et `AnimateurCsvExempleTest` réimporte cette
 ressource-là par le vrai lecteur CSV. Le test vérifie qu'elle passe avec
 **zéro ligne rejetée**, que son en-tête se mappe seul sur les neuf champs, et
-que fiche par fiche elle décrit bien les animateurs du YAML — régénérer la
-fixture anonymisée sans régénérer le CSV rend le test rouge, au lieu de
-laisser dériver un exemple que personne ne relit.
+qu'elle enseigne bien ce qu'elle prétend : un mineur aux dates de l'événement,
+un majeur, un manager, les trois niveaux de compétence, des souhaits, des
+jours d'indisponibilité multiples.
 
 Ses jours d'indisponibilité et ses typologies sont ceux de `festival-realiste`
 (dates du 1<sup>er</sup> au 16 septembre 2026, typologies `DIV`, `ENF`,
-`LOGISTIQUE`…). Déposé dans une édition qui a d'autres dates ou d'autres
-typologies, il se fait donc rejeter des lignes : c'est un modèle de **forme**,
-pas un jeu de données à reprendre. Ses dates de naissance, toutes identiques,
-et ses noms « Animateur A1 » viennent de l'anonymisation de la fixture.
+`LOGISTIQUE`…), parce que l'import refuse une ligne qui nomme autre chose et
+que ce scénario est le référentiel de démonstration versionné. Déposé dans une
+édition qui a d'autres dates ou d'autres typologies, il se fait donc rejeter
+des lignes : c'est un modèle de **forme**, pas un jeu de données à reprendre.
+Ses personnes n'existent pas ; le test le verrouille aussi, aucune ligne n'est
+tirée de la fixture anonymisée.
 
 ### CSV, et seulement CSV
 
@@ -236,6 +239,46 @@ dans une même cellule, séparées par `|`, `;`, `,` ou un retour à la ligne �
 `typologie` ou `typologie:REFERENT`. Les dates se lisent en `JJ/MM/AAAA` comme
 en `AAAA-MM-JJ`.
 
+### L'année sur deux chiffres est lue, et dite
+
+Un tableur retape toute cellule qui ressemble à une date et la réenregistre
+dans sa forme courte : `2000-01-01` en ressort `01/01/00`. Refuser la ligne
+renvoyait l'organisateur vers un fichier d'exemple que le même tableur
+réécrirait au prochain enregistrement — un message qui disait d'où repartir,
+pas quoi faire. L'import **lit** donc `J/M/AA`, `J-M-AA` et `J.M.AA` (jour et
+mois dans l'ordre français, comme les formes à quatre chiffres), avec un pivot
+explicite : l'année est **la plus récente possible** parmi celles qui se
+terminent par ces deux chiffres, jusqu'à un plafond qui dépend de ce que la
+date désigne.
+
+| Date | Plafond | Lecture (aujourd'hui 2026-09-11, événement en septembre 2026) |
+| --- | --- | --- |
+| Date de naissance `01-01-00` | aujourd'hui | 2000-01-01 |
+| Date de naissance `5/3/95` | aujourd'hui | 1995-03-05 |
+| Date de naissance `12.09.26` | aujourd'hui | 2026-09-12 — puis refusée comme invraisemblable, en citant cette lecture |
+| Date de naissance `12/09/27` | aujourd'hui | 1927-09-12 |
+| Jour d'indisponibilité `5/9/26` | dernier jour de l'événement | 2026-09-05 |
+
+Le plafond d'un jour d'indisponibilité est le **dernier jour de l'événement**,
+pas aujourd'hui : un événement se prépare l'année d'avant, et lu contre
+aujourd'hui `18/07/27` tomberait en 1927, refusé « hors des dates de
+l'événement » pour une raison que personne n'a écrite. Une date de naissance,
+elle, est dans le passé par construction. La résolution reste stricte dans
+tous les dialectes : `31/02/26` n'est pas une date, et le message d'erreur dit
+alors quoi faire — ne pas rouvrir le CSV dans un tableur, ou l'ouvrir par
+l'assistant d'import du tableur en forçant la colonne des dates au type
+« Texte ».
+
+Chaque ligne dont une date de naissance ou un jour d'indisponibilité a été lu
+sur deux chiffres porte un **avertissement** dans le rapport, avec la date
+telle qu'elle a été comprise : « Date de naissance « 01-01-00 » lue comme le
+2000-01-01 (année sur deux chiffres, réécrite par un tableur) : vérifiez-la
+avant d'importer. » L'aperçu (`POST /api/animateurs/import-csv/analyse`, pure
+lecture) est l'endroit où cette interprétation passe sous un œil humain avant
+l'écriture — c'est ce qui rend acceptable de lire une date ambiguë plutôt que
+de la refuser. Le contrôle de vraisemblance (future, ou plus de 120 ans) reste
+en place sur la date lue.
+
 ### Sur quoi une ligne reconnaît une fiche existante
 
 Trois clés, dans cet ordre : la colonne `id` quand le fichier en porte une,
@@ -252,16 +295,15 @@ renvoyé vers une ligne qui n'a rien importé.
 
 ### Ce qu'une ligne doit porter
 
-Un nom (ou un identifiant), et une **date de naissance**. La seconde n'est pas
-négociable : tout le régime mineur / majeur s'en déduit à la date de chaque
-créneau, et la colonne est `NOT NULL`. Une ligne qui met à jour une fiche
-existante peut l'omettre — la fiche en a déjà une.
-
-Le formulaire et l'outil MCP `creer_animateur` sont plus exigeants : prénom,
-nom **et** date de naissance, chacun refusé s'il est vide, tous nommés dans le
-même message. Une fiche importée sur son seul nom (ou son seul identifiant)
-reste valide, mais sa prochaine modification depuis l'écran ou par MCP est
-refusée tant que le prénom manque — le message dit lequel.
+Un **prénom**, un **nom** et une **date de naissance** — les trois que le
+formulaire de la fiche et l'outil MCP `creer_animateur` refusent d'omettre, et
+que l'import applique **ligne par ligne**, en nommant la colonne qui manque :
+le CSV n'est pas une porte dérobée vers une fiche que l'écran refuserait. La
+date n'est pas négociable pour une raison qui lui est propre : tout le régime
+mineur / majeur s'en déduit à la date de chaque créneau, et la colonne est
+`NOT NULL`. Une ligne qui met à jour une fiche existante — reconnue par son
+identifiant ou son adresse — peut laisser l'un des trois vide : la fiche le
+porte déjà, et le garde.
 
 Les cellules sont aussi bornées par la **largeur des colonnes de la base** :
 64 caractères pour l'identifiant, 128 pour le prénom et pour le nom, 255 pour
@@ -394,21 +436,12 @@ Trois détails avant de les régénérer :
   par l'en-tête que le script y écrit : régénérer sans repasser `--date-debut`
   ramène les dates de la source.
 
-`festival-realiste-animateurs.csv` **dérive de `festival-realiste.yaml`** (voir
-plus haut). Une régénération de la fixture qui change un animateur, une
-compétence ou les dates de l'événement fait échouer `AnimateurCsvExempleTest` :
-c'est voulu, et le CSV est alors à régénérer avec elle. La règle est
-mécanique : une ligne par animateur du YAML **dans l'ordre du fichier**,
-`identifiant;prénom;nom;date de naissance;email;manager;compétences;souhaits;jours indisponibles`,
-dates en `AAAA-MM-JJ`, `manager` en `oui`/`non`, compétences jointes par `|`
-avec le niveau suffixé (`DIV:REFERENT`) sauf `AUTONOME` qui s'écrit nu. Seules
-les colonnes `souhaits` et `jours indisponibles` n'existent pas dans la fixture
-— elles y sont ajoutées pour montrer la cellule multi-valeurs, sur une
-minorité de lignes (33 et 25 sur 153), avec des typologies déclarées par le
-scénario et des dates prises dans ses créneaux. Le test n'en vérifie que ces
-propriétés-là, pas les valeurs : elles sont libres, et il suffit qu'au moins
-une ligne porte deux compétences, deux souhaits et deux jours pour que
-l'exemple illustre encore le séparateur `|`.
+`exemple-animateurs.csv` (voir plus haut) **ne dérive pas** de la fixture :
+ses personnes sont inventées, seuls ses typologies et ses jours
+d'indisponibilité sont pris dans `festival-realiste.yaml`. Une régénération
+qui renomme une typologie ou déplace les dates de l'événement fait donc
+échouer `AnimateurCsvExempleTest` : c'est voulu, et le CSV est alors à
+retoucher à la main — douze lignes, pas cent cinquante-trois.
 
 Les sources restent hors dépôt : `docs/reel-*.yaml` et
 `scenarios/reel-*.yaml` sont dans `.gitignore`, elles portent des données

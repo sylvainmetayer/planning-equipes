@@ -115,8 +115,9 @@ public class AnimateurResource {
 
     /**
      * The example roster the import screen offers for download: the nine
-     * columns this import reads, filled with the anonymised animateurs of the
-     * {@code festival-realiste} scenario.
+     * columns this import reads, filled with a dozen fictional people — a
+     * minor during the event, a manager, competences with their levels — on
+     * the typologies and dates of the {@code festival-realiste} scenario.
      *
      * <p>Served from the classpath rather than copied into the front-end
      * bundle, so there is exactly one file to keep true — and a test re-imports

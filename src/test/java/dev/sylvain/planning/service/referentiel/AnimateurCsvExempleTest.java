@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
@@ -45,14 +44,14 @@ import org.junit.jupiter.api.Test;
  *   <li><b>It imports clean.</b> Not "mostly": <i>zero</i> rejected rows. A
  *       single rejection means the header, a separator, a level or a date in
  *       the file has stopped matching what the code accepts.</li>
- *   <li><b>It still describes the scenario it claims to.</b> Identity,
- *       birth date, address and competences are compared, animateur by
- *       animateur, with {@code festival-realiste.yaml} — so regenerating the
- *       anonymised fixture without regenerating the CSV is caught here rather
- *       than by a reader.</li>
+ *   <li><b>It teaches what it claims to.</b> A minor on the event's dates, an
+ *       adult, a manager, the three competence levels, wishes and off days —
+ *       the file is a dozen rows precisely so that each rule of the format
+ *       has a row showing it, and a row dropped in a hurry would silently
+ *       take a lesson away.</li>
  *   <li><b>Its referential holds.</b> Every typologie it names is declared by
- *       that scenario, and every off day falls on one of its créneau dates —
- *       the two things the import refuses a row for.</li>
+ *       the {@code festival-realiste} scenario, and every off day falls on one
+ *       of its créneau dates — the two things the import refuses a row for.</li>
  * </ul>
  */
 @QuarkusTest
@@ -62,7 +61,9 @@ class AnimateurCsvExempleTest {
 
     private static final String SCENARIO = "scenarios/festival-realiste.yaml";
 
-    private static final String EXEMPLE = "scenarios/festival-realiste-animateurs.csv";
+    private static final String EXEMPLE = AnimateurCsvImportService.EXEMPLE_RESSOURCE;
+
+    private static final String FICHIER = AnimateurCsvImportService.EXEMPLE_FICHIER;
 
     /** The nine columns the example is expected to hand to the import, in file order. */
     private static final List<String> ENTETE = List.of(
@@ -91,7 +92,7 @@ class AnimateurCsvExempleTest {
     private ScenarioDto scenario;
 
     @BeforeEach
-    void creerLEditionDuScenario() throws IOException {
+    void createTheScenarioEdition() throws IOException {
         scenario = readScenario();
         editions.create(new Edition(EDITION, "Exemple CSV", false, null));
         editionContext.executeIn(EDITION, () -> {
@@ -108,7 +109,7 @@ class AnimateurCsvExempleTest {
     }
 
     @AfterEach
-    void supprimerLEdition() {
+    void deleteTheEdition() {
         editions.delete(EDITION);
     }
 
@@ -120,18 +121,17 @@ class AnimateurCsvExempleTest {
      * teaching the wrong format.
      */
     @Test
-    void lExempleSImporteSansUneSeuleLigneRejetee() {
-        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.apply(demandeExemple()));
+    void exampleImportsWithoutASingleRejectedRow() {
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.apply(exampleRequest()));
 
         assertThat(rapport.rejected()).isZero();
-        assertThat(rapport.rows())
-                .allSatisfy(ligne -> assertThat(ligne.reasons()).isEmpty());
-        assertThat(rapport.total()).isEqualTo(scenario.animateurs().size());
-        assertThat(rapport.accepted()).isEqualTo(scenario.animateurs().size());
-        assertThat(rapport.created()).isEqualTo(scenario.animateurs().size());
+        assertThat(rapport.rows()).allSatisfy(ligne -> {
+            assertThat(ligne.reasons()).isEmpty();
+            assertThat(ligne.warnings()).isEmpty();
+        });
+        assertThat(rapport.total()).isEqualTo(rapport.accepted()).isEqualTo(rapport.created());
         assertThat(rapport.deleted()).isZero();
-        assertThat(inEdition(() -> referenceData.listAnimateurs()))
-                .hasSize(scenario.animateurs().size());
+        assertThat(inEdition(() -> referenceData.listAnimateurs())).hasSize(rapport.total());
     }
 
     /**
@@ -140,7 +140,7 @@ class AnimateurCsvExempleTest {
      * nine manual corrections nobody should have to make.
      */
     @Test
-    void lEnTeteDeLExempleSeMappeToutSeulSurLesNeufChamps() {
+    void exampleHeaderMapsOnItsOwnOntoTheNineFields() {
         CsvParser.Table table = CsvParser.parse(exemple());
 
         assertThat(table.separator()).isEqualTo(';');
@@ -160,57 +160,38 @@ class AnimateurCsvExempleTest {
     }
 
     /**
-     * The file says it carries the animateurs of {@code festival-realiste}.
-     * Compared fiche by fiche, so regenerating the anonymised scenario without
-     * regenerating this CSV is a red test and not a silent lie.
+     * What the file is for: each rule of the format has a row showing it.
+     * The minor is asserted through {@link Animateur#isMineurOn} on the
+     * event's own dates — the regime is derived there, never stored — and
+     * aged 16 or 17, the bracket whose legal rules the product carries; a
+     * child would show a rule the roster never hits.
      */
     @Test
-    void lExempleDecritExactementLesAnimateursDuScenario() {
-        inEdition(() -> csvImport.apply(demandeExemple()));
-
-        Map<String, Animateur> importes = inEdition(() -> referenceData.listAnimateurs()).stream()
-                .collect(Collectors.toMap(Animateur::getId, animateur -> animateur));
-        assertThat(importes.keySet())
-                .containsExactlyInAnyOrderElementsOf(
-                        scenario.animateurs().stream().map(AnimateurDto::id).toList());
-        for (AnimateurDto attendu : scenario.animateurs()) {
-            Animateur obtenu = importes.get(attendu.id());
-            assertThat(obtenu.getPrenom()).isEqualTo(attendu.prenom());
-            assertThat(obtenu.getNom()).isEqualTo(attendu.nom());
-            assertThat(obtenu.getDateNaissance()).isEqualTo(attendu.dateNaissance());
-            assertThat(obtenu.getEmail()).isEqualTo(attendu.email());
-            assertThat(obtenu.isManager()).isEqualTo(Boolean.TRUE.equals(attendu.manager()));
-            assertThat(obtenu.getCompetences()).isEqualTo(attendu.competences());
-        }
-    }
-
-    /**
-     * The two referential checks a row is refused on, asserted on the file
-     * itself rather than only through the count above: an unknown typologie or
-     * a day outside the créneaux would otherwise be caught by
-     * {@code lExempleSImporteSansUneSeuleLigneRejetee} without saying which of
-     * the two broke.
-     *
-     * <p>Also pinned: the example really exercises the multi-valued cells the
-     * screen's help text describes — several competences, several wishes and
-     * several off days separated by {@code |} — otherwise it would illustrate
-     * a format it never uses.</p>
-     */
-    @Test
-    void lesTypologiesEtLesJoursDeLExempleAppartiennentAuScenario() {
-        Set<String> typologies =
-                scenario.typologies().stream().map(TypologieDto::id).collect(Collectors.toSet());
+    void exampleTeachesAMinorAnAdultAManagerLevelsWishesAndOffDays() {
         Set<LocalDate> joursEvenement =
                 scenario.creneaux().stream().map(CreneauDto::date).collect(Collectors.toSet());
 
-        inEdition(() -> csvImport.apply(demandeExemple()));
+        inEdition(() -> csvImport.apply(exampleRequest()));
         List<Animateur> importes = inEdition(() -> referenceData.listAnimateurs());
 
-        assertThat(importes).allSatisfy(animateur -> {
-            assertThat(typologies).containsAll(animateur.getCompetences().keySet());
-            assertThat(typologies).containsAll(animateur.getSouhaits());
-            assertThat(joursEvenement).containsAll(animateur.getJoursIndisponibles());
-        });
+        assertThat(importes).hasSizeBetween(10, 15);
+        assertThat(importes)
+                .anySatisfy(animateur -> assertThat(joursEvenement)
+                        .allSatisfy(jour -> assertThat(animateur.isMineurOn(jour) && !animateur.isUnder16On(jour))
+                                .as("%s is 16 or 17 on %s", animateur.getId(), jour)
+                                .isTrue()));
+        assertThat(importes)
+                .anySatisfy(animateur -> assertThat(joursEvenement)
+                        .allSatisfy(
+                                jour -> assertThat(animateur.isMajeurOn(jour)).isTrue()));
+        assertThat(importes)
+                .anySatisfy(animateur -> assertThat(animateur.isManager()).isTrue());
+        assertThat(importes)
+                .anySatisfy(animateur -> assertThat(animateur.isManager()).isFalse());
+        assertThat(importes.stream()
+                        .flatMap(animateur -> animateur.getCompetences().values().stream())
+                        .collect(Collectors.toSet()))
+                .containsExactlyInAnyOrder(NiveauCompetence.values());
         assertThat(importes)
                 .anySatisfy(animateur -> assertThat(animateur.getCompetences())
                         .hasSizeGreaterThan(1)
@@ -220,20 +201,65 @@ class AnimateurCsvExempleTest {
         assertThat(importes)
                 .anySatisfy(animateur ->
                         assertThat(animateur.getJoursIndisponibles()).hasSizeGreaterThan(1));
+        assertThat(importes)
+                .anySatisfy(animateur -> assertThat(animateur.getEmail()).contains("@"));
+        assertThat(importes)
+                .anySatisfy(animateur -> assertThat(animateur.getEmail()).isNull());
+    }
+
+    /**
+     * The two referential checks a row is refused on, asserted on the file
+     * itself rather than only through the count above: an unknown typologie or
+     * a day outside the créneaux would otherwise be caught by
+     * {@link #exampleImportsWithoutASingleRejectedRow()} without saying which
+     * of the two broke.
+     */
+    @Test
+    void exampleTypologiesAndDaysBelongToTheScenario() {
+        Set<String> typologies =
+                scenario.typologies().stream().map(TypologieDto::id).collect(Collectors.toSet());
+        Set<LocalDate> joursEvenement =
+                scenario.creneaux().stream().map(CreneauDto::date).collect(Collectors.toSet());
+
+        inEdition(() -> csvImport.apply(exampleRequest()));
+        List<Animateur> importes = inEdition(() -> referenceData.listAnimateurs());
+
+        assertThat(importes).allSatisfy(animateur -> {
+            assertThat(typologies).containsAll(animateur.getCompetences().keySet());
+            assertThat(typologies).containsAll(animateur.getSouhaits());
+            assertThat(joursEvenement).containsAll(animateur.getJoursIndisponibles());
+        });
+    }
+
+    /**
+     * The example is fictional and says so: none of its rows is one of the
+     * anonymised fixture's, whose birth dates are all identical and whose
+     * names are « Animateur A1 » — the wrong thing to teach a roster with.
+     */
+    @Test
+    void exampleIsNotAnExtractOfTheAnonymisedFixture() {
+        inEdition(() -> csvImport.apply(exampleRequest()));
+        List<Animateur> importes = inEdition(() -> referenceData.listAnimateurs());
+
+        Set<String> fixtureIds =
+                scenario.animateurs().stream().map(AnimateurDto::id).collect(Collectors.toSet());
+        assertThat(importes).noneSatisfy(animateur -> assertThat(fixtureIds).contains(animateur.getId()));
+        assertThat(importes.stream().map(Animateur::getDateNaissance).distinct())
+                .hasSizeGreaterThan(5);
     }
 
     /**
      * Its dates are ISO, and that is not a matter of taste: opened in a
      * spreadsheet and saved again, {@code 12/09/2026} comes back
-     * {@code 12/09/26}, a year the import cannot read — the row is then
-     * rejected for a reason its author never wrote. {@code 2026-09-12} is
-     * given back unchanged by Excel as by LibreOffice.
+     * {@code 12/09/26} — read since, but with a warning per row asking the
+     * operator to check, which a file that ships clean should never trigger.
+     * {@code 2026-09-12} is given back unchanged by Excel as by LibreOffice.
      */
     @Test
-    void lesDatesDeLExempleSontEnIsoPourSurvivreAUnTableur() {
+    void exampleDatesAreIsoToSurviveASpreadsheet() {
         String exemple = exemple();
 
-        assertThat(exemple).doesNotContainPattern("\\d{2}/\\d{2}/\\d{4}");
+        assertThat(exemple).doesNotContainPattern("(?<!\\d)\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2,4}(?!\\d)");
         assertThat(exemple).containsPattern("\\d{4}-\\d{2}-\\d{2}");
     }
 
@@ -244,24 +270,25 @@ class AnimateurCsvExempleTest {
      * legacy code page, so an accented name would arrive mangled; the mark is
      * what tells it otherwise. It costs nothing on the way back —
      * {@code CsvParser} strips it before reading the header, which
-     * {@link #leFichierServiSeReimporteAvecSaMarque()} proves.
+     * {@link #servedFileReimportsWithItsMark()} proves.
      */
     @Test
-    void lEndpointDeTelechargementSertLaMemeRessource() {
+    void downloadEndpointServesTheSameResource() {
         String servi = given().when()
                 .get("/api/animateurs/import-csv/exemple")
                 .then()
                 .statusCode(200)
-                .header("Content-Disposition", "attachment; filename=\"festival-realiste-animateurs.csv\"")
+                .header("Content-Disposition", "attachment; filename=\"" + FICHIER + "\"")
                 .extract()
                 .asString();
 
+        assertThat(FICHIER).isEqualTo("exemple-animateurs.csv");
         assertThat(servi).isEqualTo("\uFEFF" + exemple());
     }
 
     /** Downloaded and sent straight back, untouched: still not one rejected row. */
     @Test
-    void leFichierServiSeReimporteAvecSaMarque() {
+    void servedFileReimportsWithItsMark() {
         String servi = given().when()
                 .get("/api/animateurs/import-csv/exemple")
                 .then()
@@ -269,12 +296,12 @@ class AnimateurCsvExempleTest {
                 .extract()
                 .asString();
 
-        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(
-                new AnimateurCsvImportRequest("festival-realiste-animateurs.csv", servi, null, false, false)));
+        AnimateurCsvImportReport rapport =
+                inEdition(() -> csvImport.preview(new AnimateurCsvImportRequest(FICHIER, servi, null, false, false)));
 
         assertThat(servi).startsWith("\uFEFF");
         assertThat(rapport.rejected()).isZero();
-        assertThat(rapport.total()).isEqualTo(scenario.animateurs().size());
+        assertThat(rapport.total()).isEqualTo(CsvParser.parse(exemple()).rows().size());
     }
 
     /* ------------------------------- Helpers ------------------------------- */
@@ -283,8 +310,8 @@ class AnimateurCsvExempleTest {
         return editionContext.executeIn(EDITION, travail);
     }
 
-    private static AnimateurCsvImportRequest demandeExemple() {
-        return new AnimateurCsvImportRequest("festival-realiste-animateurs.csv", exemple(), null, false, false);
+    private static AnimateurCsvImportRequest exampleRequest() {
+        return new AnimateurCsvImportRequest(FICHIER, exemple(), null, false, false);
     }
 
     /** Read from the classpath, exactly as the endpoint reads it. */

@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.referentiel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -17,6 +18,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -229,6 +231,123 @@ class AnimateurCsvImportServiceTest {
                 .orElseThrow()
                 .reasons()
                 .toString();
+    }
+
+    private static AnimateurCsvImportReport.ImportedRow ligne(AnimateurCsvImportReport rapport, int ligne) {
+        return rapport.rows().stream()
+                .filter(row -> row.line() == ligne)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    /**
+     * The rule the fiche form and the MCP tool apply — no fiche without a
+     * first name, a last name and a birth date — holds per row here, so the
+     * CSV is not a way around it. Read on the fiche as it would stand, not on
+     * the cell: a row matched by its id whose fiche already carries both
+     * names keeps them, exactly like the birth date.
+     */
+    @Test
+    void aRowLeavingAFicheWithoutAFirstOrLastNameIsRejectedUnlessTheFicheHasThem() {
+        Animateur existant = new Animateur();
+        existant.setId("amelie");
+        existant.setPrenom("Amélie");
+        existant.setNom("Durand");
+        existant.setDateNaissance(LocalDate.of(1990, 3, 12));
+        inEdition(() -> referenceData.createAnimateur(existant));
+        String csv = """
+                identifiant;prenom;nom;date de naissance;email
+                amelie;;;;amelie@example.org
+                bruno;;;04/06/1988;bruno@example.org
+                ;Carla;;01/01/1990;
+                ;;Santos;01/01/1990;
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(ligne(rapport, 2).action()).isEqualTo(AnimateurCsvImportReport.ImportAction.UPDATED);
+        assertThat(ligne(rapport, 2).reasons()).isEmpty();
+        assertThat(motif(rapport, 3)).contains("Prénom absent").contains("Nom absent");
+        assertThat(motif(rapport, 4)).contains("Nom absent").doesNotContain("Prénom absent");
+        assertThat(motif(rapport, 5)).contains("Prénom absent").doesNotContain("Nom absent");
+        assertThat(rapport.rejected()).isEqualTo(3);
+    }
+
+    /**
+     * The date a spreadsheet rewrote is read, and the preview says how: the
+     * row is accepted with the birth date resolved on the nearest past year,
+     * and its warning quotes both the cell and the reading — that sentence is
+     * the only thing standing between a silent 1930 and the operator.
+     */
+    @Test
+    void twoDigitBirthYearIsReadAndSaidBackInThePreview() {
+        String csv = """
+                prenom;nom;date de naissance
+                Amélie;Durand;01-01-00
+                Bruno;Lefèvre;5/3/95
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(rapport.rejected()).isZero();
+        assertThat(ligne(rapport, 2).warnings())
+                .containsExactly("Date de naissance « 01-01-00 » lue comme le 2000-01-01 "
+                        + "(année sur deux chiffres, réécrite par un tableur) : vérifiez-la avant d'importer.");
+        assertThat(ligne(rapport, 3).warnings()).singleElement().asString().contains("lue comme le 1995-03-05");
+        assertThat(inEdition(() -> referenceData.listAnimateurs())).isEmpty();
+    }
+
+    /**
+     * An off day resolves under the event's last day, not today's: the test
+     * edition runs in 2030, and {@code 18/07/30} must land on its first day
+     * rather than in 1930 and be refused as outside the event.
+     */
+    @Test
+    void twoDigitOffDayYearResolvesOnTheEventAndIsSaidBack() {
+        String csv = """
+                prenom;nom;date de naissance;jours indisponibles
+                Amélie;Durand;12/03/1990;18/07/30|2030-07-19
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(rapport.rejected()).isZero();
+        AnimateurCsvImportReport.ImportedRow amelie = ligne(rapport, 2);
+        assertThat(amelie.joursIndisponibles()).containsExactly(JOUR1, JOUR2);
+        assertThat(amelie.warnings())
+                .containsExactly("Jour d'indisponibilité « 18/07/30 » lu comme le 2030-07-18 "
+                        + "(année sur deux chiffres, réécrite par un tableur) : vérifiez-le avant d'importer.");
+    }
+
+    /**
+     * Read, then checked: a two-digit year resolving to a birth date in the
+     * future is still refused, and the refusal quotes the reading — a cell
+     * refused as implausible must say which date it was taken for. The hint
+     * on an unreadable short date says what to do, not where to restart from.
+     */
+    @Test
+    void implausibleOrUnreadableTwoDigitDatesAreRefusedWithTheReadingAndTheWayOut() {
+        // Two digits never reach further back than 99 years, so the only
+        // implausible reading is a day still to come in the current year —
+        // which does not exist on New Year's Eve.
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        assumeTrue(tomorrow.getYear() == LocalDate.now().getYear());
+        String csv = """
+                prenom;nom;date de naissance
+                Carla;Moreau;%s
+                Diego;Santos;31/02/99
+                """.formatted(tomorrow.format(DateTimeFormatter.ofPattern("d/M/uu")));
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(rapport.rejected()).isEqualTo(2);
+        assertThat(motif(rapport, 2))
+                .contains("Date de naissance invraisemblable")
+                .contains("lue comme le " + tomorrow);
+        assertThat(motif(rapport, 3))
+                .contains("Date de naissance illisible")
+                .contains("Ne rouvrez pas le CSV dans un tableur")
+                .doesNotContain("fichier d'exemple");
     }
 
     @Test

@@ -16,10 +16,14 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.format.SignStyle;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -54,11 +58,13 @@ import java.util.stream.Collectors;
  *
  * <h2>What a row must carry</h2>
  *
- * <p>A name (or an id), and a <b>birth date</b>. The second one is not
- * negotiable: minor / adult is derived from it at each créneau's date, so a
- * roster imported without it would put children under the adult regime without
- * a word. A row updating an existing fiche may leave it out — the fiche
- * already has one.</p>
+ * <p>A <b>first name</b>, a <b>last name</b> and a <b>birth date</b> — the
+ * same three the fiche form and the MCP tool refuse to do without, so a CSV
+ * is not the back door to a fiche the screen would not accept. The birth date
+ * is not negotiable for a reason of its own: minor / adult is derived from it
+ * at each créneau's date, so a roster imported without it would put children
+ * under the adult regime without a word. A row updating an existing fiche may
+ * leave any of the three out — the fiche already has them.</p>
  *
  * <h2>Off days</h2>
  *
@@ -72,6 +78,17 @@ import java.util.stream.Collectors;
  * On a fiche that already exists, the file's days are <b>added</b> unless the
  * operator asked for a replacement: a catch-up import must not erase what the
  * animateurs declared themselves.</p>
+ *
+ * <h2>Dates a spreadsheet rewrote</h2>
+ *
+ * <p>Excel and LibreOffice retype every cell that looks like a date and
+ * write it back in their own short form on save: {@code 2000-01-01} leaves
+ * as {@code 01/01/00}. Refusing the row sent the operator back to a file that
+ * would suffer the same fate on the next round trip, so a two-digit year is
+ * <b>read</b> — resolved to the most recent year it can name, see
+ * {@link #parseDate} — and every row read that way carries a warning stating
+ * the date as understood. The preview is where that interpretation passes
+ * under a human eye before anything is written.</p>
  */
 @ApplicationScoped
 public class AnimateurCsvImportService {
@@ -87,8 +104,11 @@ public class AnimateurCsvImportService {
     static final int MAX_ROWS = 5_000;
 
     /**
-     * The example roster shipped with the application, on the classpath next
-     * to the scenario it is derived from.
+     * The example roster shipped with the application: a dozen fictional
+     * people showing every column — a minor during the event, a manager,
+     * competences with and without a level, wishes, off days. Its typologies
+     * and its off days are those of the {@code festival-realiste} scenario it
+     * sits next to, since the import refuses a row naming anything else.
      *
      * <p>One file, one place: the screen offers it for download through this
      * service rather than a copy of it living in the front-end bundle, and
@@ -97,10 +117,10 @@ public class AnimateurCsvImportService {
      * illustrates is worse than no example at all, so the guard is a test that
      * reads it, not a comment asking to keep it up to date.</p>
      */
-    static final String EXEMPLE_RESSOURCE = "scenarios/festival-realiste-animateurs.csv";
+    static final String EXEMPLE_RESSOURCE = "scenarios/exemple-animateurs.csv";
 
     /** The name the browser saves the example under. */
-    public static final String EXEMPLE_FICHIER = "festival-realiste-animateurs.csv";
+    public static final String EXEMPLE_FICHIER = "exemple-animateurs.csv";
 
     /**
      * The widths {@code animateur} is declared with — {@code id VARCHAR(64)},
@@ -129,14 +149,24 @@ public class AnimateurCsvImportService {
     /** Inside one cell — never a slash, which a date needs. */
     private static final String VALUE_SEPARATORS = "[|;,\\r\\n]";
 
+    /** {@code AAAA-MM-JJ} and the three separators a French spreadsheet writes a date with, year on four digits. */
     private static final List<DateTimeFormatter> DATE_FORMATS = List.of(
             DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT),
             DateTimeFormatter.ofPattern("d/M/uuuu").withResolverStyle(ResolverStyle.STRICT),
             DateTimeFormatter.ofPattern("d-M-uuuu").withResolverStyle(ResolverStyle.STRICT),
             DateTimeFormatter.ofPattern("d.M.uuuu").withResolverStyle(ResolverStyle.STRICT));
 
-    /** {@code 12/09/26} and the like: a spreadsheet shortened the year, and the date is no longer readable. */
-    private static final Pattern ANNEE_COURTE = Pattern.compile("^\\s*\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2}\\s*$");
+    /** {@code 12/09/26} and the like: the trace a spreadsheet leaves on a date it retyped. */
+    private static final Pattern SHORT_YEAR = Pattern.compile("^\\s*\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2}\\s*$");
+
+    /** The same three separators, for the two-digit dialects built per call in {@link #shortYearFormats}. */
+    private static final List<Character> SHORT_YEAR_SEPARATORS = List.of('/', '-', '.');
+
+    /** How far back a two-digit year may reach — the century a birth date can plausibly span. */
+    private static final int SHORT_YEAR_SPAN = 99;
+
+    /** The parenthesis every message about a two-digit year carries, so the cause is named once and the same way. */
+    private static final String SHORT_YEAR_READING = " (année sur deux chiffres, réécrite par un tableur)";
 
     private static final Set<String> TRUE_CELLS = Set.of("1", "x", "o", "oui", "vrai", "true", "y", "yes");
 
@@ -168,8 +198,7 @@ public class AnimateurCsvImportService {
 
     /**
      * The example CSV, read from the classpath — the columns this import
-     * accepts, filled with the anonymised roster of the {@code
-     * festival-realiste} scenario.
+     * accepts, filled with a short fictional roster, see {@link #EXEMPLE_RESSOURCE}.
      */
     public String exemple() {
         try (InputStream flux = Thread.currentThread().getContextClassLoader().getResourceAsStream(EXEMPLE_RESSOURCE)) {
@@ -360,6 +389,7 @@ public class AnimateurCsvImportService {
             Set<LocalDate> joursEvenement) {
         List<Animateur> existants = animateurs.listAnimateurs();
         Index index = new Index(existants, pendingDeclarations());
+        Dates dates = new Dates(LocalDate.now(), joursEvenement);
 
         List<AnimateurCsvImportReport.ImportedRow> rows = new ArrayList<>();
         List<Animateur> toWrite = new ArrayList<>();
@@ -370,7 +400,7 @@ public class AnimateurCsvImportService {
         int updated = 0;
 
         for (CsvParser.Row row : table.rows()) {
-            RowOutcome outcome = analyseRow(row, table, mapping, request, index, joursEvenement, seen);
+            RowOutcome outcome = analyseRow(row, table, mapping, request, index, dates, seen);
             rows.add(outcome.reported());
             if (outcome.animateur() != null) {
                 toWrite.add(outcome.animateur());
@@ -496,13 +526,26 @@ public class AnimateurCsvImportService {
     /** One analysed row: what the report shows, and the fiche to write (null when refused). */
     private record RowOutcome(AnimateurCsvImportReport.ImportedRow reported, Animateur animateur) {}
 
+    /**
+     * The two calendars a row's dates are read against: today for a birth
+     * date, the event's days for an off day. Each is the ceiling its
+     * two-digit years resolve under — a birth date lies in the past, an off
+     * day lies on the event, which may be next year.
+     */
+    private record Dates(LocalDate today, Set<LocalDate> joursEvenement) {
+
+        LocalDate lastEventDay() {
+            return Collections.max(joursEvenement);
+        }
+    }
+
     private RowOutcome analyseRow(
             CsvParser.Row row,
             CsvParser.Table table,
             AnimateurCsvMapping mapping,
             AnimateurCsvImportRequest request,
             Index index,
-            Set<LocalDate> joursEvenement,
+            Dates dates,
             Map<String, Integer> seen) {
         List<String> reasons = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
@@ -529,10 +572,16 @@ public class AnimateurCsvImportService {
             // the e-mail: a row carrying nothing but an address would otherwise
             // create a nameless fiche.
             reasons.add("La ligne ne nomme personne : prénom, nom et identifiant sont vides.");
+        } else {
+            // The fiche as it would stand after the row, not the cell: a row
+            // matched by id or e-mail may leave the names blank when the fiche
+            // already carries them, exactly as it may leave the birth date.
+            checkPresent("Prénom absent", effective(prenom, existant == null ? null : existant.getPrenom()), reasons);
+            checkPresent("Nom absent", effective(nom, existant == null ? null : existant.getNom()), reasons);
         }
 
         int motifsAvantDate = reasons.size();
-        LocalDate dateNaissance = readBirthDate(row, mapping, existant, reasons);
+        LocalDate dateNaissance = readBirthDate(row, mapping, existant, dates.today(), reasons, warnings);
         if (dateNaissance == null && reasons.size() == motifsAvantDate) {
             reasons.add(
                     "Date de naissance absente : elle est obligatoire, tout le régime " + "mineur / majeur en dépend.");
@@ -547,7 +596,7 @@ public class AnimateurCsvImportService {
         souhaits.addAll(values(cell(row, mapping.souhaits())));
         checkTypologies(competences, souhaits, reasons);
 
-        Set<LocalDate> jours = readJours(row, mapping, request, existant, joursEvenement, reasons);
+        Set<LocalDate> jours = readJours(row, mapping, request, existant, dates, reasons, warnings);
         if (existant != null && index.enAttente.contains(existant.getId())) {
             warnings.add("Cet animateur a une déclaration de disponibilités en attente : la décision "
                     + "de l'administrateur remplacera les jours importés.");
@@ -629,6 +678,21 @@ public class AnimateurCsvImportService {
         }
     }
 
+    /** The value the fiche ends up with: the cell when filled, otherwise what the fiche already had. */
+    private static String effective(String cell, String existing) {
+        return !cell.isEmpty() || existing == null ? cell : existing;
+    }
+
+    /**
+     * The same refusal the fiche form and {@code creer_animateur} give a
+     * nameless fiche, per row: a fiche must name the person it describes.
+     */
+    private static void checkPresent(String probleme, String valeur, List<String> reasons) {
+        if (valeur == null || valeur.isBlank()) {
+            reasons.add(probleme + " : il est obligatoire, une fiche doit nommer la personne qu'elle décrit.");
+        }
+    }
+
     private static String label(String prenom, String nom, String idCell, String email) {
         String complet = (prenom + " " + nom).trim();
         if (!complet.isEmpty()) {
@@ -679,23 +743,39 @@ public class AnimateurCsvImportService {
      * créneau's date, so a fiche without one would silently be treated as an
      * adult by the legal constraints. A row that cannot supply one — and whose
      * fiche does not already carry one — is refused.
+     *
+     * <p>A two-digit year is read under today's ceiling and said back in the
+     * row's warnings: {@code 01/01/00} lands on 2000 and the operator is told
+     * so before the write. The plausibility check runs on the date as read,
+     * and its refusal quotes that reading too — a cell refused as « in the
+     * future » must say which date it was taken for.</p>
      */
     private static LocalDate readBirthDate(
-            CsvParser.Row row, AnimateurCsvMapping mapping, Animateur existant, List<String> reasons) {
+            CsvParser.Row row,
+            AnimateurCsvMapping mapping,
+            Animateur existant,
+            LocalDate today,
+            List<String> reasons,
+            List<String> warnings) {
         String dateCell = cell(row, mapping.dateNaissance());
         if (dateCell.isEmpty()) {
             return existant != null ? existant.getDateNaissance() : null;
         }
-        LocalDate parsed = parseDate(dateCell);
+        LocalDate parsed = parseDate(dateCell, today);
         if (parsed == null) {
             reasons.add("Date de naissance illisible : « " + dateCell
-                    + " » (formats acceptés : JJ/MM/AAAA ou AAAA-MM-JJ)." + indiceAnneeCourte(dateCell));
+                    + " » (formats acceptés : JJ/MM/AAAA ou AAAA-MM-JJ)." + shortYearHint(dateCell));
             return existant != null ? existant.getDateNaissance() : null;
         }
-        LocalDate today = LocalDate.now();
+        boolean shortYear = hasShortYear(dateCell);
         if (parsed.isAfter(today) || parsed.isBefore(today.minusYears(120))) {
-            reasons.add("Date de naissance invraisemblable : « " + dateCell + " ».");
+            reasons.add("Date de naissance invraisemblable : « " + dateCell + " »"
+                    + (shortYear ? ", lue comme le " + parsed + SHORT_YEAR_READING : "") + ".");
             return existant != null ? existant.getDateNaissance() : null;
+        }
+        if (shortYear) {
+            warnings.add("Date de naissance « " + dateCell + " » lue comme le " + parsed + SHORT_YEAR_READING
+                    + " : vérifiez-la avant d'importer.");
         }
         return parsed;
     }
@@ -764,29 +844,40 @@ public class AnimateurCsvImportService {
      * Off days after the import — which is what the report shows, not what the
      * cell said. Unmapped column: the fiche keeps what it had, whatever the
      * replacement option says; there is nothing to replace it with.
+     *
+     * <p>A two-digit year here resolves under the <b>event's last day</b>,
+     * not today's: an off day names a day of the event, and the event is
+     * often next year — read against today, {@code 18/07/27} would land in
+     * 1927 and be refused as outside the event for a reason nobody wrote.</p>
      */
     private static Set<LocalDate> readJours(
             CsvParser.Row row,
             AnimateurCsvMapping mapping,
             AnimateurCsvImportRequest request,
             Animateur existant,
-            Set<LocalDate> joursEvenement,
-            List<String> reasons) {
+            Dates dates,
+            List<String> reasons,
+            List<String> warnings) {
         Set<LocalDate> connus = existant != null ? existant.getJoursIndisponibles() : Set.of();
         if (mapping.joursIndisponibles() == null) {
             return new TreeSet<>(connus);
         }
         Set<LocalDate> jours = request.replaceJoursIndisponibles() ? new TreeSet<>() : new TreeSet<>(connus);
         for (String valeur : values(cell(row, mapping.joursIndisponibles()))) {
-            LocalDate jour = parseDate(valeur);
+            LocalDate jour = parseDate(valeur, dates.lastEventDay());
             if (jour == null) {
                 reasons.add("Jour d'indisponibilité illisible : « " + valeur
-                        + " » (formats acceptés : JJ/MM/AAAA ou AAAA-MM-JJ)." + indiceAnneeCourte(valeur));
-            } else if (!joursEvenement.contains(jour)) {
+                        + " » (formats acceptés : JJ/MM/AAAA ou AAAA-MM-JJ)." + shortYearHint(valeur));
+            } else if (!dates.joursEvenement().contains(jour)) {
                 reasons.add("Jour d'indisponibilité hors des dates de l'événement : " + jour
+                        + (hasShortYear(valeur) ? " (« " + valeur + " »" + SHORT_YEAR_READING + ")" : "")
                         + " — l'espace animateur ne peut pas l'afficher, et la première déclaration "
                         + "acceptée l'effacerait.");
             } else {
+                if (hasShortYear(valeur)) {
+                    warnings.add("Jour d'indisponibilité « " + valeur + " » lu comme le " + jour + SHORT_YEAR_READING
+                            + " : vérifiez-le avant d'importer.");
+                }
                 jours.add(jour);
             }
         }
@@ -814,28 +905,56 @@ public class AnimateurCsvImportService {
                 .toList();
     }
 
-    /** {@code AAAA-MM-JJ} and the three separators a French spreadsheet writes a date with. */
+    /** {@code 12/09/26}, {@code 1-1-00}: two digits of year, the mark a spreadsheet leaves on a date cell. */
+    static boolean hasShortYear(String value) {
+        return SHORT_YEAR.matcher(value == null ? "" : value).matches();
+    }
+
     /**
-     * The sentence to add when a date looks like one a spreadsheet shortened.
+     * The sentence to add when a date looks like one a spreadsheet shortened
+     * and still could not be read — {@code 31/02/26}.
      *
-     * <p>Excel and LibreOffice retype a date cell and write it back in their
-     * own format, often on two digits: the file then arrives with rows nobody
-     * can explain. The example ships its dates in {@code AAAA-MM-JJ}, which
-     * both tools give back unchanged.</p>
+     * <p>It says what to do, not where to restart from: the previous wording
+     * sent the operator back to the example file, whose dates the same
+     * spreadsheet would rewrite on the next save. The way out is to not
+     * reopen the CSV in a spreadsheet at all, or to open it through its
+     * import assistant with the date column typed as text.</p>
      */
-    private static String indiceAnneeCourte(String cellule) {
-        return ANNEE_COURTE.matcher(cellule == null ? "" : cellule).matches()
-                ? " L'année n'a que deux chiffres : un tableur a réécrit la date en l'ouvrant. Repartez du fichier "
-                        + "d'exemple, dont les dates sont en AAAA-MM-JJ, une forme que les tableurs rendent intacte."
+    private static String shortYearHint(String cellule) {
+        return hasShortYear(cellule)
+                ? " L'année n'a que deux chiffres : un tableur a réécrit la date en l'ouvrant. "
+                        + "Ne rouvrez pas le CSV dans un tableur, ou ouvrez-le par son assistant d'import "
+                        + "en forçant la colonne des dates au type « Texte »."
                 : "";
     }
 
-    static LocalDate parseDate(String value) {
+    /**
+     * Reads a date in {@code AAAA-MM-JJ} or in the three French dialects
+     * ({@code J/M/AAAA}, {@code J-M-AAAA}, {@code J.M.AAAA}), the year on four
+     * digits — or on two, which is the form a spreadsheet gives back.
+     *
+     * <p>Two digits do not name a year, so the pivot is explicit: the year is
+     * the <b>most recent one at or before {@code latest}</b> ending with
+     * those digits. With {@code latest} on 2026-09-11, {@code 00} is 2000,
+     * {@code 95} is 1995, {@code 26} is 2026 — the whole current year, so
+     * {@code 12.09.26} reads as 2026-09-12 even though that is tomorrow; the
+     * plausibility check of the caller says no to it, with the reading in
+     * hand — and {@code 27} is 1927. Which day is the ceiling is the caller's
+     * business: today for a birth date, the event's last day for an off day.
+     * The resolution stays {@link ResolverStyle#STRICT} in every dialect, so
+     * {@code 31/02/26} is not a date.</p>
+     *
+     * @param latest the latest day the date may plausibly fall on; a
+     *               two-digit year resolves in the century ending with it
+     * @return the date, or null when no dialect reads the cell
+     */
+    static LocalDate parseDate(String value, LocalDate latest) {
         String cleaned = value == null ? "" : value.trim();
         if (cleaned.isEmpty()) {
             return null;
         }
-        for (DateTimeFormatter format : DATE_FORMATS) {
+        List<DateTimeFormatter> dialects = hasShortYear(cleaned) ? shortYearFormats(latest) : DATE_FORMATS;
+        for (DateTimeFormatter format : dialects) {
             try {
                 return LocalDate.parse(cleaned, format);
             } catch (DateTimeParseException ignored) {
@@ -843,6 +962,25 @@ public class AnimateurCsvImportService {
             }
         }
         return null;
+    }
+
+    /**
+     * {@code d/M/uu}, {@code d-M-uu} and {@code d.M.uu}, the two digits
+     * resolved in the hundred years ending with {@code latest}'s — the
+     * pattern letters cannot say that, {@code uu} pivots on a fixed 2000.
+     */
+    private static List<DateTimeFormatter> shortYearFormats(LocalDate latest) {
+        int baseYear = latest.getYear() - SHORT_YEAR_SPAN;
+        return SHORT_YEAR_SEPARATORS.stream()
+                .map(separator -> new DateTimeFormatterBuilder()
+                        .appendValue(ChronoField.DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
+                        .appendLiteral(separator)
+                        .appendValue(ChronoField.MONTH_OF_YEAR, 1, 2, SignStyle.NOT_NEGATIVE)
+                        .appendLiteral(separator)
+                        .appendValueReduced(ChronoField.YEAR, 2, 2, baseYear)
+                        .toFormatter()
+                        .withResolverStyle(ResolverStyle.STRICT))
+                .toList();
     }
 
     /** Case- and accent-insensitive first name + last name, the last-resort identity key. */

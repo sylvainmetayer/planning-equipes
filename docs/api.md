@@ -1837,12 +1837,19 @@ Refus qui portent sur le fichier entier, avant toute écriture :
 | Une résolution tient le solveur de l'édition | `409`, comme toute écriture de référentiel |
 
 L'endpoint `/exemple` sert
-`src/main/resources/scenarios/festival-realiste-animateurs.csv` tel quel,
-sous le nom `festival-realiste-animateurs.csv` : les neuf colonnes lues,
-remplies avec les 153 animateurs du scénario anonymisé du même nom. C'est ce
-que le bouton « Télécharger un fichier d'exemple » de l'écran d'import
-récupère — servi depuis le classpath plutôt que copié dans le bundle, pour
-qu'il n'existe qu'un seul fichier à garder juste.
+`src/main/resources/scenarios/exemple-animateurs.csv` tel quel, sous le nom
+`exemple-animateurs.csv` : les neuf colonnes lues, remplies d'une douzaine de
+personnes fictives sur les typologies et les dates du scénario
+`festival-realiste`. C'est ce que le bouton « Télécharger un fichier
+d'exemple » de l'écran d'import récupère — servi depuis le classpath plutôt
+que copié dans le bundle, pour qu'il n'existe qu'un seul fichier à garder
+juste.
+
+Une date de naissance ou un jour d'indisponibilité dont l'année tient sur deux
+chiffres — ce qu'un tableur laisse derrière lui — est lu plutôt que refusé, et
+la ligne porte alors un `warnings[]` disant la date telle qu'elle a été
+comprise. C'est à l'aperçu de la faire lire ; le pivot et le plafond de
+lecture sont dans [`import-export.md`](import-export.md#lannée-sur-deux-chiffres-est-lue-et-dite).
 
 Le fichier n'est **jamais écrit sur disque**. Règles métier détaillées dans
 [`import-export.md`](import-export.md#import-csv-des-animateurs).
