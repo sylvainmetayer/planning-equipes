@@ -153,7 +153,17 @@ export class BancDeTouchePage {
     this.creneauId.set(creneauId);
   }
 
+  /**
+   * Changing the stand keeps the créneau on screen. After a cold open the
+   * chosen créneau is still null — the server picked one — and a request
+   * sent with null would let the server pick again: the same créneau today,
+   * another one the day a solve published in between staffs an earlier slot.
+   * Both signals move in one tick, so the resource sends one request.
+   */
   protected changerStand(standId: string): void {
+    if (this.creneauId() === null) {
+      this.creneauId.set(this.creneauAffiche());
+    }
     this.standId.set(standId);
   }
 

@@ -116,6 +116,17 @@ describe('BancDeTouchePage', () => {
     await vi.waitFor(() => expect(analysesApi.bench).toHaveBeenLastCalledWith(7, 'quilles'));
   });
 
+  it('asks for the créneau on screen, not the default, when only the stand changes', async () => {
+    analysesApi.bench.mockResolvedValue(banc(5));
+    const page = createPage();
+    await vi.waitFor(() => expect(page.creneauAffiche()).toBe(5));
+
+    page.changerStand('quilles');
+    await vi.waitFor(() => expect(analysesApi.bench).toHaveBeenCalledTimes(2));
+
+    expect(analysesApi.bench).toHaveBeenLastCalledWith(5, 'quilles');
+  });
+
   it('keeps the selectors and the table on screen while another créneau loads', async () => {
     analysesApi.bench.mockResolvedValueOnce(banc(5));
     const page = createPage();
