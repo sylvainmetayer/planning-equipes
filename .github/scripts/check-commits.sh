@@ -38,6 +38,13 @@ while IFS= read -r sha; do
   if [[ "$subject" == *. ]]; then
     echo "$short: subject ends with a period — « $subject »"; status=1
   fi
+  # `git interpret-trailers --parse` reads the last paragraph only, and reads
+  # nothing when that paragraph mixes prose and trailers: the one trailer this
+  # repository forbids survived in both forms (1 of 40 on main). Scanned in the
+  # whole body, then — a line is a line.
+  if git log -1 --format=%b "$sha" | grep -qiE '^Claude-Session:'; then
+    echo "$short: carries a Claude-Session trailer, which AGENTS.md forbids"; status=1
+  fi
   # Trailers are the `Key: value` lines of the last paragraph; git parses them.
   while IFS= read -r trailer; do
     key="${trailer%%:*}"
