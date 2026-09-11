@@ -21,6 +21,7 @@
     "i18n-check": "node scripts/generate-version.js && node scripts/check-i18n.js",
     "api-types-check": "node scripts/check-api-types.js",
     "api-paths-check": "node scripts/check-api-paths.js",
+    "api-contract-check": "node scripts/check-api-contract.js",
     "css-scope-check": "node scripts/check-css-scope.js",
     "stores-check": "node scripts/check-readonly-stores.js",
     "api-schema": "node scripts/refresh-api-schema.js",

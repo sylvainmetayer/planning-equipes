@@ -204,6 +204,13 @@ jobs:
       - name: Check that no page writes an API path itself
         run: npm run api-paths-check
 
+      # Et que les adresses de `core/api/` existent : chemin, verbe et
+      # paramètres de requête confrontés au contrat OpenAPI. Les specs de page
+      # assertaient l'URL exacte avant B3 ; huit services sur onze n'avaient
+      # rien pris le relais.
+      - name: Check the addresses of core/api against the OpenAPI contract
+        run: npm run api-contract-check
+
       # A class used by a screen is defined in a stylesheet that screen loads:
       # global partial, its own `styleUrl`, or its shell's. The unit tests
       # render without CSS, so nothing else would see a page styled only when

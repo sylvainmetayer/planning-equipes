@@ -474,6 +474,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   resource, owning the `/api/…` paths and the return types, so a page asks for
   the thing and never writes an address — `scripts/check-api-paths.js` fails
   on any literal outside `core/api/`, and its exception list is empty;
+  `scripts/check-api-contract.js` (`npm run api-contract-check`, run in CI)
+  confronts every address of `core/api/` — path, verb, query parameters — to
+  the OpenAPI contract, and refuses a URL it cannot resolve statically;
   `models.ts`; `date-utils.ts`, week starts Monday; `planning-state.service.ts`;
   `reference-data.store.ts`; `reference-crud.service.ts` — save/delete, single
   or in bulk, plus snack-bar feedback shared by the five reference pages;
