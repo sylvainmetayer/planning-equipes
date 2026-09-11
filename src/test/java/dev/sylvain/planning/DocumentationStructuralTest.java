@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -201,21 +203,89 @@ class DocumentationStructuralTest {
     @Test
     void everyFrontendRouteIsListedInAgentsMd() throws IOException {
         String agents = Files.readString(AGENTS_MD, StandardCharsets.UTF_8);
-        Matcher matcher =
-                Pattern.compile("path: '([^']*)'").matcher(Files.readString(ROUTES_TS, StandardCharsets.UTF_8));
         List<String> absentes = new ArrayList<>();
-        while (matcher.find()) {
-            String path = matcher.group(1);
-            if (path.isEmpty() || path.equals("**")) {
-                continue;
-            }
-            if (!agents.contains("`/" + path + "`")) {
-                absentes.add("/" + path);
+        for (String route : frontendRoutes(Files.readString(ROUTES_TS, StandardCharsets.UTF_8))) {
+            if (!agents.contains("`" + route + "`")) {
+                absentes.add(route);
             }
         }
         assertThat(absentes)
                 .as("routes of app.routes.ts that AGENTS.md does not list as `/route`")
                 .isEmpty();
+    }
+
+    /**
+     * Every `path:` of the routes file, a child prefixed by its parent. Read
+     * flat, the four screens of the espace animateur asked for `/echanges`,
+     * `/disponibilites` and `/aide` — which the admin routes of the same
+     * name already satisfied — and were never listed. The file is
+     * prettier-formatted: `children: [` opens at one indentation, its `]`
+     * closes at the same one.
+     */
+    static List<String> frontendRoutes(String routesTs) {
+        Pattern path = Pattern.compile("path: '([^']*)'");
+        List<String> routes = new ArrayList<>();
+        Deque<String> parents = new ArrayDeque<>();
+        Deque<Integer> indents = new ArrayDeque<>();
+        String dernier = null;
+        for (String line : routesTs.split("\n")) {
+            int indent = line.length() - line.stripLeading().length();
+            if (!indents.isEmpty() && line.trim().startsWith("]") && indent == indents.peek()) {
+                indents.pop();
+                parents.pop();
+            }
+            Matcher matcher = path.matcher(line);
+            if (matcher.find()) {
+                dernier = matcher.group(1);
+                if (dernier.equals("**")) {
+                    continue;
+                }
+                StringBuilder route = new StringBuilder();
+                for (var it = parents.descendingIterator(); it.hasNext(); ) {
+                    String parent = it.next();
+                    if (!parent.isEmpty()) {
+                        route.append('/').append(parent);
+                    }
+                }
+                if (!dernier.isEmpty()) {
+                    route.append('/').append(dernier);
+                }
+                // A parent with an '' child is one route, listed once.
+                if (!route.isEmpty() && !routes.contains(route.toString())) {
+                    routes.add(route.toString());
+                }
+            }
+            if (line.contains("children: [")) {
+                indents.push(indent);
+                parents.push(dernier);
+            }
+        }
+        return routes;
+    }
+
+    @Test
+    void aChildRouteIsListedUnderItsParent() {
+        String routes = """
+                export const routes = [
+                  {
+                    path: 'animateur/:jeton',
+                    children: [
+                      { path: '', loadComponent: () => a },
+                      { path: 'echanges', loadComponent: () => b },
+                    ],
+                  },
+                  {
+                    path: '',
+                    children: [
+                      { path: 'echanges', loadComponent: () => c },
+                      { path: '**', redirectTo: '' },
+                    ],
+                  },
+                ];
+                """;
+
+        assertThat(frontendRoutes(routes))
+                .containsExactly("/animateur/:jeton", "/animateur/:jeton/echanges", "/echanges");
     }
 
     /* --------------------------- contraintes.md --------------------------- */

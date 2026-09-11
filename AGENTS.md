@@ -442,7 +442,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   data / Views, the solver `app-job-monitor`, the logout button) lives in
   `app/shell/admin-shell.ts`, a layout route wrapping every admin page. The
   standalone routes `/login` and `/animateur/:jeton` (espace animateur, issue
-  #165) render outside it — no admin navigation, no polling.
+  #165) render outside it — no admin navigation, no polling. The espace has
+  four child routes of its own: `/animateur/:jeton` (« Mon planning »),
+  `/animateur/:jeton/echanges`, `/animateur/:jeton/disponibilites` and
+  `/animateur/:jeton/aide`.
 - **One route = one page = one block.** Admin routes (children of the shell):
   `/` (default, the solver page),
   `/debug`, `/mcp-client`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
