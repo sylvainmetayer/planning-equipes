@@ -344,6 +344,41 @@ describe('SolverJobService', () => {
 
       expect(service.now()).toBeGreaterThan(before);
     });
+
+    // The service is root-provided: a shell destroyed by an expired session
+    // stops it, and the clock a running job started must not outlive that.
+    it('stops the clock when the loop is stopped, even with a job still running', async () => {
+      api.getResponse = vi.fn(async () => ({ status: 200, body: job() }));
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      service.stop();
+      const atStop = service.now();
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(service.now()).toBe(atStop);
+    });
+
+    it('does not let a poll landing after the stop start the clock again', async () => {
+      let answer: () => void = () => undefined;
+      api.getResponse = vi.fn(
+        () =>
+          new Promise<{ status: number; body: JobView | null }>((resolve) => {
+            answer = () => resolve({ status: 200, body: job() });
+          }),
+      );
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      service.stop();
+      answer();
+      await vi.advanceTimersByTimeAsync(0);
+      const atStop = service.now();
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(service.now()).toBe(atStop);
+    });
   });
 
   describe('polling loop', () => {

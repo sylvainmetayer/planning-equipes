@@ -302,6 +302,11 @@ export class SolverJobService {
     // worse: `EventSource` reconnects by itself, so an expired session would
     // keep reopening a stream the server answers with a 401, forever.
     this.stream.close();
+    // And the one-second clock, which a running job had started: on a
+    // root-provided service it would tick on the login page for as long as
+    // the tab lives. Reading `started` inside keeps a sync() still in flight
+    // from starting it again after this point.
+    this.updateTicker();
   }
 
   /**
@@ -651,7 +656,7 @@ export class SolverJobService {
    * re-rendering whatever page is open, forever, for nothing.
    */
   private updateTicker(): void {
-    const running = this.activeJob() !== null;
+    const running = this.started && this.activeJob() !== null;
     if (running && this.tickHandle === null) {
       this._now.set(Date.now());
       this.tickHandle = setInterval(() => this._now.set(Date.now()), 1000);
