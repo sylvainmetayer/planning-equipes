@@ -40,6 +40,15 @@
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)[\\s\\S]*?devservices\\.image-name\\s*=\\s*[^\\s:]+:(?<currentValue>\\S+)"
       ],
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "The Node.js Quinoa downloads to build the frontend, pinned to a patch in application.properties: no manager reads it, and ToolchainPinsStructuralTest only compares the major with mise.toml, so the patch drifted from the one the CI runner installs",
+      "managerFilePatterns": ["src/main/resources/application.properties"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)[\\s\\S]*?package-manager-install\\.node-version\\s*=\\s*(?<currentValue>\\S+)"
+      ],
+      "versioningTemplate": "node"
     }
   ],
   "packageRules": [

@@ -30,7 +30,9 @@ import org.junit.jupiter.api.Test;
  * {@code node = "24"} and lets mise pick the patch, while Quinoa needs an
  * exact {@code 24.18.0}. Agreeing on the major is what keeps a build local
  * and a build in CI from producing a different bundle; the patch is the
- * dependency bot's business.</p>
+ * dependency bot's business — through the {@code customManager} of
+ * {@code renovate.json} on that line, since no manager reads a
+ * {@code .properties} on its own.</p>
  */
 class ToolchainPinsStructuralTest {
 
