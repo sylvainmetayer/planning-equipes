@@ -278,7 +278,7 @@ export class AdminShell {
     () => this.collapsedGroups().size >= this.navGroups.length,
   );
 
-  /** One control for the five groups: folding them one by one is five clicks. */
+  /** One control for every group: folding them one by one is one click per group. */
   protected toggleAllGroups(): void {
     const next = this.allCollapsed()
       ? new Set<string>()

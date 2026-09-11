@@ -171,7 +171,7 @@ export class BancDeTouchePage {
    * rather than hunting.
    */
   /**
-   * Why this screen sits under « En cours de développement ». Not the shared
+   * Why this screen still announces itself as on trial. Not the shared
    * default sentence: nothing is entered here and the solver reads nothing back
    * from it — same situation as the fragility screen. What is provisional is
    * the screen itself, and which seat it decides to reason about.

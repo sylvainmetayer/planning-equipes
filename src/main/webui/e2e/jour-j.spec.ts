@@ -22,15 +22,21 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test('le mode jour J est rangé parmi les écrans en cours de développement', async ({ browser }) => {
+test("le mode jour J est rangé dans le groupe « Pendant l'événement »", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/');
 
-  const groupe = page.locator('#nav-group-work-in-progress');
+  const groupe = page.locator('#nav-group-pendant-evenement');
   await expect(groupe.getByRole('link', { name: 'Mode jour J' })).toBeVisible();
+  await expect(groupe.getByRole('link', { name: 'Échanges' })).toBeVisible();
   // Et nulle part ailleurs : un écran qui écrit ne doit pas se lire comme
   // acquis depuis le groupe Planning.
   await expect(page.getByRole('link', { name: 'Mode jour J' })).toHaveCount(1);
+  // Le groupe « En cours de développement » n'existe plus : ces écrans sont
+  // livrés, et un organisateur n'ouvre pas un écran étiqueté « en cours ».
+  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).not.toContainText(
+    'En cours de développement',
+  );
   await page.context().close();
 });
 

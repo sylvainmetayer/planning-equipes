@@ -79,9 +79,9 @@ test("un créneau sans siège dans le plan s'explique au lieu d'échouer", async
 });
 
 /**
- * The screen ships under « En cours de développement », and says so: it reads
- * and changes nothing, so the banner is the read-only wording, not the one the
- * jour-J screen uses.
+ * The screen ships on trial, and says so: it reads and changes nothing, so the
+ * banner is the read-only wording, not the one the jour-J screen uses. It is
+ * reached from « Aide à la décision », next to the staffing screen it extends.
  */
 test("l'écran s'annonce comme livré à l'essai", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
@@ -89,9 +89,9 @@ test("l'écran s'annonce comme livré à l'essai", async ({ browser }) => {
   await ouvrirBanc(page, SEED.creneauId);
 
   await expect(page.locator('#contenu')).toContainText("Cet écran est livré à l'essai");
-  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toContainText(
-    'En cours de développement',
-  );
+  await expect(
+    page.locator('#nav-group-decision-support').getByRole('link', { name: 'Banc de touche' }),
+  ).toBeVisible();
   await page.context().close();
 });
 

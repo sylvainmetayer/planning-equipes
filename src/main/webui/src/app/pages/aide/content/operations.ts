@@ -14,7 +14,7 @@ export function buildOperationsSections(): HelpSection[] {
       id: 'jour-j',
       icon: 'emergency',
       title: $localize`:@@aide.jourJ.title:Mode jour J`,
-      summary: $localize`:@@aide.jourJ.summary:En cours de développement. Quelqu'un ne s'est pas présenté : le marquer absent, trouver un remplaçant, appliquer — sans relancer de calcul.`,
+      summary: $localize`:@@aide.jourJ.summary:Quelqu'un ne s'est pas présenté : le marquer absent, trouver un remplaçant, appliquer — sans relancer de calcul.`,
       blocks: [
         {
           kind: 'paragraph',
@@ -113,7 +113,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.banc:Banc de touche`,
-              text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, la règle qui l'empêcherait de prendre la place restée libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La vue est en lecture seule ; pour agir, passez par l'assistant de réparation du calendrier journalier. Elle lit le planning enregistré et ne propose donc que les créneaux qu'il pourvoit : un créneau où aucun stand n'est ouvert n'y figure pas, et tant qu'aucune résolution n'a tourné l'écran le dit au lieu de rester vide. Il est livré à l'essai, sous « En cours de développement » : il pourra être retiré s'il ne s'avère pas utile.`,
+              text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, la règle qui l'empêcherait de prendre la place restée libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La vue est en lecture seule ; pour agir, passez par l'assistant de réparation du calendrier journalier. Elle lit le planning enregistré et ne propose donc que les créneaux qu'il pourvoit : un créneau où aucun stand n'est ouvert n'y figure pas, et tant qu'aucune résolution n'a tourné l'écran le dit au lieu de rester vide.`,
             },
             {
               term: $localize`:@@aide.views.term.hours:Heures et besoin en animateurs`,
@@ -121,7 +121,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
-              text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde vue liste les stands tenus par une seule personne compétente pour leurs typologies, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts : ils peuvent dépanner partout, mais un stand qu'ils sont seuls à pouvoir tenir n'a toujours aucun spécialiste. Rien n'est recalculé par le solveur : l'écran lit le planning enregistré. Il est livré à l'essai, sous « En cours de développement » : il pourra être retiré s'il ne s'avère pas utile.`,
+              text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde vue liste les stands tenus par une seule personne compétente pour leurs typologies, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts : ils peuvent dépanner partout, mais un stand qu'ils sont seuls à pouvoir tenir n'a toujours aucun spécialiste. Rien n'est recalculé par le solveur : l'écran lit le planning enregistré.`,
             },
             {
               term: $localize`:@@aide.views.term.pauses:Pauses`,

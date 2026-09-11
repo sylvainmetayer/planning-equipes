@@ -129,7 +129,7 @@ export class FragilitePage {
   protected readonly heure = heure;
 
   /**
-   * Why this screen sits under « En cours de développement ». Not the shared
+   * Why this screen still announces itself as on trial. Not the shared
    * default sentence: nothing is entered here and the solver reads nothing back
    * from it. What is provisional is the screen itself — it ships to be tried
    * out, and goes away if it earns nothing.

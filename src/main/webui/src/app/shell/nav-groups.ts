@@ -37,7 +37,6 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
       title: $localize`:@@nav.group.planning:Planning`,
       links: [
         { path: '/', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
-        { path: '/echanges', label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz' },
         {
           path: '/disponibilites',
           label: $localize`:@@nav.link.disponibilites:Disponibilités`,
@@ -47,6 +46,11 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           path: '/ad-hoc-constraints',
           label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
           icon: 'rule',
+        },
+        {
+          path: '/verrouillages',
+          label: $localize`:@@nav.link.verrouillages:Verrouillages`,
+          icon: 'lock',
         },
         {
           path: '/problemes',
@@ -66,6 +70,20 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
       ],
     },
     {
+      // What happens once the plan is out: the animateurs trading seats among
+      // themselves, and the day itself. Kept apart from « Planning » because
+      // these two screens act on the published plan, not on the next solve.
+      id: 'pendant-evenement',
+      title: $localize`:@@nav.group.pendantEvenement:Pendant l'événement`,
+      links: [
+        { path: '/echanges', label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz' },
+        // The only one of these that *writes*: it records real forced
+        // unavailabilities and empties real seats of the persisted plan. Its
+        // banner says so rather than borrowing the default wording.
+        { path: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' },
+      ],
+    },
+    {
       id: 'decision-support',
       title: $localize`:@@nav.group.decisionSupport:Aide à la décision`,
       links: [
@@ -78,6 +96,16 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           path: '/staffing',
           label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
           icon: 'engineering',
+        },
+        {
+          path: '/fragilite',
+          label: $localize`:@@nav.link.fragilite:Fragilité du planning`,
+          icon: 'personal_injury',
+        },
+        {
+          path: '/banc-de-touche',
+          label: $localize`:@@nav.link.bancDeTouche:Banc de touche`,
+          icon: 'airline_seat_recline_normal',
         },
         {
           path: '/kpi',
@@ -160,6 +188,7 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           label: $localize`:@@nav.link.carteJour:Carte de la journée`,
           icon: 'map',
         },
+        { path: '/pauses', label: $localize`:@@nav.link.pauses:Pauses`, icon: 'free_breakfast' },
         { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
       ],
     },
@@ -209,34 +238,6 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
               },
             ]
           : []),
-      ],
-    },
-    {
-      // Pages backed by features that are not finished yet: each one shows an
-      // `app-work-in-progress-banner` telling the user so.
-      id: 'work-in-progress',
-      title: $localize`:@@nav.group.workInProgress:En cours de développement`,
-      links: [
-        {
-          path: '/verrouillages',
-          label: $localize`:@@nav.link.verrouillages:Verrouillages`,
-          icon: 'lock',
-        },
-        {
-          path: '/fragilite',
-          label: $localize`:@@nav.link.fragilite:Fragilité du planning`,
-          icon: 'personal_injury',
-        },
-        { path: '/pauses', label: $localize`:@@nav.link.pauses:Pauses`, icon: 'free_breakfast' },
-        {
-          path: '/banc-de-touche',
-          label: $localize`:@@nav.link.bancDeTouche:Banc de touche`,
-          icon: 'airline_seat_recline_normal',
-        },
-        // The only one of this group that *writes*: it records real forced
-        // unavailabilities and empties real seats of the persisted plan. Its
-        // banner says so rather than borrowing the default wording.
-        { path: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' },
       ],
     },
   ];
