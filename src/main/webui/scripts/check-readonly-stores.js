@@ -16,19 +16,37 @@
  *
  *   node scripts/check-readonly-stores.js
  */
-const { readdirSync, readFileSync } = require('node:fs');
-const { join } = require('node:path');
+const { readdirSync, readFileSync, statSync } = require('node:fs');
+const { join, relative } = require('node:path');
 
 const CORE = join(__dirname, '..', 'src', 'app', 'core');
+/**
+ * A writable signal exposed by a class member, in the four forms the language
+ * allows: `x = signal(…)`, `x = linkedSignal(…)` (writable too), an annotated
+ * `x: WritableSignal<…> = signal(…)`, and `x: WritableSignal<…>;` assigned in
+ * the constructor. The first version of this check read the first form only.
+ */
 const PUBLIC_SIGNAL =
-  /^ {2}(?:readonly |protected |protected readonly |public |public readonly )?\w+ = signal[<(]/;
-const PRIVATE_SIGNAL = /^ {2}private readonly _(\w+) = signal[<(]/gm;
+  /^ {2}(?:readonly |protected |protected readonly |public |public readonly )?\w+(?:\s*:\s*WritableSignal<[^;=]*>\s*;|(?:\s*:\s*WritableSignal<[^;=]*>)?\s*=\s*(?:signal|linkedSignal)[<(])/;
+const PRIVATE_SIGNAL =
+  /^ {2}private readonly _(\w+)(?:\s*:\s*WritableSignal<[^;=]*>)?\s*=\s*(?:signal|linkedSignal)[<(]/gm;
+
+/** Every .ts of core/ and its sub-folders: core/api/ holds eleven @Injectable classes, the likeliest home of a cache. */
+function walk(dir, out) {
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) walk(path, out);
+    else if (name.endsWith('.ts') && !name.endsWith('.spec.ts')) out.push(path);
+  }
+  return out;
+}
 
 const offenders = [];
 const unpaired = [];
 let stores = 0;
-for (const name of readdirSync(CORE).filter((n) => n.endsWith('.ts') && !n.endsWith('.spec.ts'))) {
-  const source = readFileSync(join(CORE, name), 'utf8');
+for (const file of walk(CORE, []).sort()) {
+  const name = relative(CORE, file);
+  const source = readFileSync(file, 'utf8');
   // Stores and services only: a base component keeps its own page state.
   if (!source.includes('@Injectable(')) continue;
   source.split('\n').forEach((line, index) => {
