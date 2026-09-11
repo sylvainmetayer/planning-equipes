@@ -1594,7 +1594,13 @@ dialogue tient encore les valeurs qu'il a ouvertes et renverrait le même
 horodatage périmé. La **grille des ouvertures** porte la même précondition,
 une par stand (`stands[].modifieLe`, la valeur que la grille a lue) : c'est
 l'écriture qui réécrit le plus, elle ne pouvait pas être la seule à écraser en
-silence. Les outils MCP `modifier_*` acceptent le même
+silence. La **grille des compétences** (`PUT /api/animateurs/competences/grille`)
+la porte aussi, une par fiche (`animateurs[].modifieLe`), mais répond
+différemment : les lignes sont indépendantes, la réponse est un `200` avec un
+compte rendu par ligne — `WRITTEN`, `STALE` (le 409 de la fiche, ligne par
+ligne, avec son `modifieLe` courant) ou `REJECTED` avec son motif — et une
+ligne périmée n'annule pas les autres, qui sont écrites. L'IHM offre pour les
+lignes `STALE` le même choix que pour une fiche. Les outils MCP `modifier_*` acceptent le même
 horodatage en argument facultatif, lu dans la vue de `consulter_*` ; omis, la
 fusion qu'ils font relit la ligne juste avant d'écrire, ce qui revient au
 même. L'import de scénario et l'import CSV ne le portent pas : ils remplacent

@@ -4,7 +4,15 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { ConfirmationView, ImportCsvDemande, ImportCsvRapport } from '../models';
+import {
+  ConfirmationView,
+  ImportCompetencesDemande,
+  ImportCompetencesRapport,
+  ImportCsvDemande,
+  ImportCsvRapport,
+  RapportSaisieCompetences,
+  SaisieAnimateurCompetences,
+} from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class AnimateursApi {
@@ -35,5 +43,36 @@ export class AnimateursApi {
 
   applyCsvImport(demande: ImportCsvDemande): Promise<ImportCsvRapport> {
     return this.api.post<ImportCsvRapport>('/api/animateurs/import-csv', demande);
+  }
+
+  /** The competences grid as edited — only the animateurs that changed travel, each with their whole map. */
+  saveCompetencesGrid(animateurs: SaisieAnimateurCompetences[]): Promise<RapportSaisieCompetences> {
+    return this.api.put<RapportSaisieCompetences>('/api/animateurs/competences/grille', {
+      animateurs,
+    });
+  }
+
+  /** The grid as a CSV of ids and levels, in the format the import reads back. */
+  downloadCompetencesGrid(): Promise<string> {
+    return this.api.downloadGet(
+      '/api/animateurs/competences/export',
+      'grille-competences.csv',
+      'text/csv',
+    );
+  }
+
+  /** What the competences import would do, without writing anything. */
+  analyseCompetencesImport(demande: ImportCompetencesDemande): Promise<ImportCompetencesRapport> {
+    return this.api.post<ImportCompetencesRapport>(
+      '/api/animateurs/competences/import-grille/analyse',
+      demande,
+    );
+  }
+
+  applyCompetencesImport(demande: ImportCompetencesDemande): Promise<ImportCompetencesRapport> {
+    return this.api.post<ImportCompetencesRapport>(
+      '/api/animateurs/competences/import-grille',
+      demande,
+    );
   }
 }

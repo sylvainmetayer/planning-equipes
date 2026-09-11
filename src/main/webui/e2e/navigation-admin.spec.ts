@@ -40,6 +40,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/stands', marker: 'Stands (' },
   { path: '/emplacements' },
   { path: '/animateurs', marker: 'Animateurs (', sheet: 'competence-row' },
+  { path: '/competences', marker: 'Compétences', sheet: 'competences-legende' },
   { path: '/creneaux', marker: 'Créneaux (', sheet: 'creneau-probleme' },
   { path: '/typologies', marker: 'Typologies (' },
   { path: '/import-animateurs', marker: 'Import des animateurs', sheet: 'import-compteurs' },

@@ -41,6 +41,8 @@ public final class CatalogueActions {
         action("ANIMATEUR_SUPPRIME", "Animateur supprimé", Entite.ANIMATEUR);
         action("ANIMATEUR_JETON_REGENERE", "Lien d'espace régénéré", Entite.ANIMATEUR);
         action("ANIMATEURS_IMPORTES", "Animateurs importés depuis un fichier", Entite.ANIMATEUR);
+        action("ANIMATEUR_COMPETENCES_GRILLE", "Grille des compétences enregistrée", Entite.ANIMATEUR);
+        action("COMPETENCES_IMPORTEES", "Grille des compétences importée depuis un fichier", Entite.ANIMATEUR);
 
         /* -------------------------- Stands -------------------------- */
         action("STAND_CREE", "Stand ajouté", Entite.STAND);
@@ -178,6 +180,8 @@ public final class CatalogueActions {
         route("AnimateurResource#deleteAnimateur", "ANIMATEUR_SUPPRIME");
         route("AnimateurResource#regenerateAnimateurToken", "ANIMATEUR_JETON_REGENERE");
         route("AnimateurResource#importCsvAnimateurs", "ANIMATEURS_IMPORTES");
+        route("AnimateurResource#saveCompetencesGrid", "ANIMATEUR_COMPETENCES_GRILLE");
+        route("AnimateurResource#importCompetencesGrid", "COMPETENCES_IMPORTEES");
 
         route("StandResource#createStand", "STAND_CREE");
         route("StandResource#updateStand", "STAND_MODIFIE");
@@ -380,6 +384,7 @@ public final class CatalogueActions {
         untracked("AffectationExplanationResource#suggererReparations", "suggestions, n'écrit rien");
         untracked("AffectationExplanationResource#simulateDeplacement", "simulation, n'écrit rien");
         untracked("AnimateurResource#analyseCsvAnimateurs", "analyse préalable d'un fichier, n'écrit rien");
+        untracked("AnimateurResource#analyseCompetencesGrid", "analyse préalable d'un fichier, n'écrit rien");
         untracked("StandResource#analyseGrille", "analyse préalable d'un fichier, n'écrit rien");
         untracked("CreneauResource#previewRecurrence", "prévisualisation, n'écrit rien");
         untracked("CreneauResource#previewDerivation", "prévisualisation, n'écrit rien");

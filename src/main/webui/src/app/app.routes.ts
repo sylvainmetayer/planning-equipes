@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import type { CompetencesPage } from './pages/competences/competences-page';
 
 /**
  * One route per functional block; every page is lazy-loaded. A `title` names
@@ -116,6 +117,14 @@ const adminRoutes: Routes = [
     path: 'animateurs',
     title: () => $localize`:@@route.animateurs:Animateurs`,
     loadComponent: () => import('./pages/animateurs/animateurs-page').then((m) => m.AnimateursPage),
+  },
+  {
+    path: 'competences',
+    title: () => $localize`:@@route.competences:Compétences`,
+    loadComponent: () =>
+      import('./pages/competences/competences-page').then((m) => m.CompetencesPage),
+    // Unsaved cells would silently survive, invisible, until the next reload: the page asks first.
+    canDeactivate: [(page: CompetencesPage) => page.canLeave()],
   },
   {
     path: 'creneaux',

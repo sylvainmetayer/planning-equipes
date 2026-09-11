@@ -5,6 +5,10 @@ import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportReport;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportRequest;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportService;
+import dev.sylvain.planning.service.referentiel.CompetencesGrilleImportReport;
+import dev.sylvain.planning.service.referentiel.CompetencesGrilleImportRequest;
+import dev.sylvain.planning.service.referentiel.CompetencesGrilleService;
+import dev.sylvain.planning.service.referentiel.GrilleCompetences;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
 import dev.sylvain.planning.service.referentiel.WrittenAnimateur;
@@ -39,6 +43,9 @@ public class AnimateurResource {
 
     @Inject
     AnimateurCsvImportService csvImport;
+
+    @Inject
+    CompetencesGrilleService competencesGrille;
 
     @GET
     public List<Animateur> listAnimateurs() {
@@ -158,6 +165,62 @@ public class AnimateurResource {
     @Path("/import-csv")
     public AnimateurCsvImportReport importCsvAnimateurs(AnimateurCsvImportRequest request) {
         return csvImport.apply(request);
+    }
+
+    /* ---------------------------- Competences grid ---------------------------- */
+
+    /** The grid as submitted: only the animateurs that were edited, each with their whole map of appreciations. */
+    public record SaisieGrilleCompetences(List<GrilleCompetences.SaisieCompetences> animateurs) {}
+
+    /** One line per row submitted, in the order submitted — written, stale or refused. */
+    public record RapportSaisieGrilleCompetences(List<GrilleCompetences.LigneCompetences> animateurs) {}
+
+    /**
+     * Writes the appreciations typed in the grid, one fiche per row with its own
+     * precondition (issue #362). Always {@code 200} once the request is
+     * admissible: the rows are independent and each line of the body says how
+     * its row ended, {@code STALE} being the per-row form of the {@code 409}
+     * a fiche save answers. {@code 409} as a whole only while a solve runs.
+     */
+    @PUT
+    @Path("/competences/grille")
+    public RapportSaisieGrilleCompetences saveCompetencesGrid(SaisieGrilleCompetences saisie) {
+        return new RapportSaisieGrilleCompetences(competencesGrille.saveGrid(
+                saisie == null || saisie.animateurs() == null ? List.of() : saisie.animateurs()));
+    }
+
+    /**
+     * The grid as a CSV — ids of animateurs in rows, ids of typologies in
+     * columns, a level or nothing per cell. No prénom, no nom: the id is what
+     * the import needs, and a file naming nobody travels lighter.
+     */
+    @GET
+    @Path("/competences/export")
+    @Produces("text/csv")
+    public Response exportCompetencesGrid() {
+        return CsvDownload.attachment(competencesGrille.exportCsv(), CompetencesGrilleService.EXPORT_FICHIER);
+    }
+
+    /**
+     * What the competences matrix would do, without doing any of it: the
+     * typologie each column landed on, one line of report per animateur row.
+     * A pure read — no transaction is opened.
+     */
+    @POST
+    @Path("/competences/import-grille/analyse")
+    public CompetencesGrilleImportReport analyseCompetencesGrid(CompetencesGrilleImportRequest request) {
+        return competencesGrille.preview(request);
+    }
+
+    /**
+     * Applies the same request the preview was computed from — file included,
+     * re-read and re-checked — and writes the accepted fiches in one
+     * transaction. {@code 409} while a solve runs.
+     */
+    @POST
+    @Path("/competences/import-grille")
+    public CompetencesGrilleImportReport importCompetencesGrid(CompetencesGrilleImportRequest request) {
+        return competencesGrille.apply(request);
     }
 
     /**

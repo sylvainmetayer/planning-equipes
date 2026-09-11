@@ -46,6 +46,13 @@
     "ImportCsvDemande": "AnimateurCsvImportRequest",
     "ImportCsvLigne": "ImportedRow",
     "ImportGrilleLigne": "ImportedGrilleRow",
+    "SaisieAnimateurCompetences": "SaisieCompetences",
+    "LigneSaisieCompetences": "LigneCompetences",
+    "RapportSaisieCompetences": "RapportSaisieGrilleCompetences",
+    "ImportCompetencesColonne": "ImportedCompetencesColumn",
+    "ImportCompetencesLigne": "ImportedCompetencesRow",
+    "ImportCompetencesRapport": "CompetencesGrilleImportReport",
+    "ImportCompetencesDemande": "CompetencesGrilleImportRequest",
     "Scale": "ProblemScale"
   },
   "horsContrat": {

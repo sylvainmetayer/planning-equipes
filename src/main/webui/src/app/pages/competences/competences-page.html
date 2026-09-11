@@ -1,0 +1,268 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@competences.title">Compétences</h1>
+    <mat-card-subtitle i18n="@@competences.subtitle">
+      L'appréciation de chaque animateur sur chaque typologie, saisie en grille ; les souhaits déclarés y sont visibles en regard.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" type="button" class="competences-enregistrer"
+            [disabled]="editingLocked() || enregistrement() || animateursModifies().length === 0" (click)="save()">
+      <mat-icon>save</mat-icon>
+      <ng-container i18n="@@competences.enregistrer">Enregistrer</ng-container>
+      @if (animateursModifies().length > 0) {
+        <span class="competences-compteur">({{ animateursModifies().length }})</span>
+      }
+    </button>
+    <button matButton type="button" [disabled]="animateursModifies().length === 0" (click)="discard()">
+      <mat-icon>undo</mat-icon>
+      <ng-container i18n="@@competences.annuler">Annuler les modifications</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="chargement() || animateursModifies().length > 0" (click)="recharger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="downloadPending()" (click)="exporter()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@competences.exporter">Exporter en CSV</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="importOuvert()" (click)="openImport()">
+      <mat-icon>upload_file</mat-icon>
+      <ng-container i18n="@@competences.importer.ouvrir">Importer un CSV</ng-container>
+    </button>
+  </mat-card-actions>
+  <mat-card-content>
+    @if (chargement() && lignes().length === 0) {
+      <p class="empty-hint" i18n="@@competences.loading">Chargement des animateurs…</p>
+    } @else if (typologies().length === 0) {
+      <p class="empty-hint" i18n="@@competences.sansTypologie">
+        Aucune typologie dans l'édition : créez-en depuis la page Typologies pour saisir des compétences.
+      </p>
+      <a matButton routerLink="/typologies">
+        <mat-icon>category</mat-icon>
+        <ng-container i18n="@@competences.versTypologies">Aller aux typologies</ng-container>
+      </a>
+    } @else {
+      <div class="competences-controles">
+        <app-table-filter [(value)]="filtre" [matches]="lignes().length" [total]="totalAnimateurs()"
+                          (enterTable)="focusCurrent()"
+                          i18n-label="@@competences.filtre.label" label="Filtrer par nom"
+                          i18n-placeholder="@@competences.filtre.placeholder" placeholder="Nom, prénom, identifiant…" />
+        <mat-form-field appearance="outline" class="competences-typologies">
+          <mat-label i18n="@@competences.filtre.typologies">Typologies affichées</mat-label>
+          <mat-select multiple [value]="typologiesChoisies()" (selectionChange)="choisirTypologies($event.value)">
+            @for (typologie of typologies(); track typologie.id) {
+              <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        @if (filteredView()) {
+          <button matButton type="button" (click)="resetView()">
+            <mat-icon>filter_alt_off</mat-icon>
+            <ng-container i18n="@@competences.filtre.reinitialiser">Réinitialiser la vue</ng-container>
+          </button>
+        }
+      </div>
+
+      <div class="competences-legende">
+        <span><i class="pastille niveau-debutant">{{ lettreNiveau('DEBUTANT') }}</i>{{ libelleNiveau('DEBUTANT') }}</span>
+        <span><i class="pastille niveau-autonome">{{ lettreNiveau('AUTONOME') }}</i>{{ libelleNiveau('AUTONOME') }}</span>
+        <span><i class="pastille niveau-referent">{{ lettreNiveau('REFERENT') }}</i>{{ libelleNiveau('REFERENT') }}</span>
+        <span><i class="pastille cellule-souhait"></i><ng-container i18n="@@competences.legende.souhait">Typologie souhaitée par l'animateur</ng-container></span>
+        <span><mat-icon class="legende-icone">all_inclusive</mat-icon><ng-container i18n="@@competences.legende.ninja">Typologie ninja : la détenir rend polyvalent</ng-container></span>
+        <span class="legende-clavier" i18n="@@competences.legende.clavier">Clic ou touches 0 à 3 dans une case, flèches pour se déplacer</span>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="competences-grille">
+          <caption class="visually-hidden" i18n="@@competences.table.caption">Compétences : une ligne par animateur, une colonne par typologie, l'appréciation dans chaque case</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="colonne-animateur" i18n="@@competences.colonne.animateur">Animateur</th>
+              @for (typologie of colonnes(); track typologie.id) {
+                <th scope="col" class="colonne-typologie" [class.colonne-ninja]="typologie.ninja"
+                    [matTooltip]="typologie.id">
+                  @if (typologie.ninja) {
+                    <mat-icon class="ninja-icone" aria-hidden="true">all_inclusive</mat-icon>
+                  }
+                  <span>{{ typologie.label || typologie.id }}</span>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (animateur of lignes(); track animateur.id) {
+              <tr [class.ligne-modifiee]="animateursModifies().includes(animateur.id)">
+                <th scope="row" class="colonne-animateur">
+                  <span class="animateur-nom">{{ animateur.prenom }} {{ animateur.nom }}</span>
+                  <span class="animateur-id">{{ animateur.id }}</span>
+                </th>
+                @for (typologie of colonnes(); track typologie.id) {
+                  <td class="cellule-competence-cadre" [class.colonne-ninja]="typologie.ninja">
+                    <button type="button"
+                            [class]="'cellule-competence ' + classeNiveau(niveau(animateur.id, typologie.id))"
+                            [class.cellule-modifiee]="isChanged(animateur.id, typologie.id)"
+                            [class.cellule-souhait]="isWished(animateur.id, typologie.id)"
+                            [attr.data-cellule]="identifiant(animateur.id, typologie.id)"
+                            [attr.data-niveau]="niveau(animateur.id, typologie.id) ?? ''"
+                            [attr.aria-label]="libelleCellule(animateur, typologie)"
+                            [attr.tabindex]="tabindex(animateur.id, typologie.id)"
+                            [disabled]="editingLocked()"
+                            (click)="cycler(animateur.id, typologie.id)"
+                            (focus)="focaliser(animateur.id, typologie.id)"
+                            (keydown)="onKey($event, animateur.id, typologie.id)">
+                      {{ lettreNiveau(niveau(animateur.id, typologie.id)) }}
+                    </button>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="colonnes().length + 1" class="empty-hint" i18n="@@competences.aucuneLigne">
+                  Aucun animateur ne correspond à ce filtre.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (importOuvert()) {
+  <mat-card appearance="outlined" class="page-card competences-import">
+    <mat-card-header>
+      <mat-card-title i18n="@@competences.import.titre">Importer une grille (CSV)</mat-card-title>
+      <mat-card-subtitle i18n="@@competences.import.aide">
+        Le format de l'export : une colonne « animateur » avec l'identifiant, puis une colonne par typologie ; une case vide laisse l'appréciation telle quelle.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="card-actions">
+        <button matButton="filled" type="button" (click)="chooseFile()" [disabled]="analysisPending() || importPending()">
+          <mat-icon>upload_file</mat-icon>
+          <span i18n="@@importCsv.fichier.choisir">Choisir un fichier CSV</span>
+        </button>
+        @if (fileName()) {
+          <button matButton type="button" (click)="reinitialiserImport()" [disabled]="importPending()">
+            <mat-icon>close</mat-icon>
+            <span i18n="@@importCsv.fichier.oublier">Oublier ce fichier</span>
+          </button>
+        }
+        <button matButton type="button" (click)="fermerImport()" [disabled]="importPending()">
+          <mat-icon>expand_less</mat-icon>
+          <span i18n="@@competences.import.fermer">Fermer l'import</span>
+        </button>
+        <a matButton routerLink="/aide" fragment="competences">
+          <mat-icon>help_outline</mat-icon>
+          <span i18n="@@importCsv.fichier.aideDetaillee">Tous les détails dans l'aide</span>
+        </a>
+      </div>
+      <input #csvInput type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain" hidden (change)="onFileChosen($event)" />
+      @if (fileName()) {
+        <p class="empty-hint">
+          <span i18n="@@importCsv.fichier.nom">Fichier chargé :</span> {{ fileName() }}
+          @if (rapportImport(); as vue) {
+            <span i18n="@@competences.import.detail">&nbsp;— séparateur « {{ vue.separator }} », {{ vue.columns.length - colonnesIgnorees().length }} colonne(s) reconnue(s), {{ vue.total }} ligne(s).</span>
+          }
+        </p>
+      }
+      @if (analysisPending() || importPending()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+      @if (erreurImport()) {
+        <p class="field-error" role="alert">{{ erreurImport() }}</p>
+      }
+
+      @if (rapportImport(); as vue) {
+        @if (colonnesIgnorees().length > 0) {
+          <ul class="import-colonnes-ignorees">
+            @for (colonne of colonnesIgnorees(); track colonne.index) {
+              <li><strong>{{ colonne.label }}</strong> — {{ colonne.reason }}</li>
+            }
+          </ul>
+        }
+        @for (avertissement of vue.warnings; track avertissement) {
+          <p class="empty-hint">{{ avertissement }}</p>
+        }
+        <h3>
+          @if (vue.applied) {
+            <ng-container i18n="@@competences.import.titreApplique">Ce qui a été importé</ng-container>
+          } @else {
+            <ng-container i18n="@@competences.import.titrePreview">Ce que l'import ferait</ng-container>
+          }
+        </h3>
+        <p class="empty-hint">
+          @if (vue.applied) {
+            <ng-container i18n="@@importCsv.rapport.sousTitreApplique">Import effectué en une seule transaction : ces chiffres sont ceux de la base.</ng-container>
+          } @else {
+            <ng-container i18n="@@importCsv.rapport.sousTitrePreview">Aucune écriture n'a eu lieu. Rien ne part en base tant que vous n'avez pas cliqué sur « Importer ».</ng-container>
+          }
+        </p>
+        <ul class="import-compteurs">
+          <li><span i18n="@@competences.import.acceptees">Fiches mises à jour</span> : <strong>{{ vue.accepted }}</strong> / {{ vue.total }}</li>
+          <li><span i18n="@@competences.import.inchangees">Fiches inchangées</span> : <strong>{{ vue.unchanged }}</strong></li>
+          <li><span i18n="@@importGrille.rapport.rejetees">Lignes rejetées</span> : <strong>{{ vue.rejected }}</strong></li>
+        </ul>
+        @if (vue.rows.length === 0) {
+          <p class="empty-hint" i18n="@@competences.import.vide">Le fichier ne porte aucune ligne d'animateur sous son en-tête.</p>
+        } @else {
+          <div class="table-wrapper">
+            <table class="import-rapport">
+              <thead>
+                <tr>
+                  <th scope="col" i18n="@@importCsv.rapport.colonneLigne">Ligne</th>
+                  <th scope="col" i18n="@@competences.colonne.animateur">Animateur</th>
+                  <th scope="col" i18n="@@importCsv.rapport.colonneAction">Résultat</th>
+                  <th scope="col" i18n="@@importCsv.rapport.colonneDetail">Détail</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ligne of vue.rows; track ligne.line) {
+                  <tr [class]="classeAction(ligne.action)" [attr.data-ligne]="ligne.line">
+                    <td>{{ ligne.line }}</td>
+                    <td>{{ ligne.label }}</td>
+                    <td>
+                      <mat-icon aria-hidden="true">{{ iconeAction(ligne.action) }}</mat-icon>
+                      @switch (ligne.action) {
+                        @case ('UPDATED') {
+                          <span i18n="@@competences.import.action.maj">Mise à jour</span>
+                        }
+                        @case ('UNCHANGED') {
+                          <span i18n="@@competences.import.action.inchangee">Inchangée</span>
+                        }
+                        @default {
+                          <span i18n="@@importCsv.action.rejet">Rejetée</span>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (ligne.action === 'UPDATED') {
+                        <span i18n="@@competences.import.detailMaj">{{ ligne.cellules }} appréciation(s) ajoutée(s) ou changée(s)</span>
+                      } @else if (ligne.action === 'REJECTED') {
+                        <ul class="competences-import-motifs">
+                          @for (motif of ligne.reasons; track motif) {
+                            <li>{{ motif }}</li>
+                          }
+                        </ul>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        @if (!vue.applied) {
+          <div class="card-actions">
+            <button matButton="filled" type="button" (click)="importer()" [disabled]="!peutImporter()">
+              <mat-icon>publish</mat-icon>
+              <span i18n="@@importGrille.importer">Importer</span>
+            </button>
+          </div>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+}

@@ -103,6 +103,32 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
     },
     {
+      id: 'competences',
+      icon: 'grid_on',
+      title: $localize`:@@aide.competences.title:Grille des compétences`,
+      summary: $localize`:@@aide.competences.summary:Saisir l'appréciation de chaque animateur sur chaque typologie en une seule grille, au clavier, en regard de ses souhaits — et l'échanger en CSV sans rien retirer.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.competences.grille:La fiche animateur permet de saisir les appréciations une personne à la fois ; l'écran « Compétences » les montre toutes d'un coup, animateurs en lignes et typologies en colonnes. Une case porte le niveau — vide, débutant, autonome ou référent — et se change d'un clic (les niveaux défilent) ou d'une touche : 0 vide la case, 1, 2 et 3 posent le niveau ; les flèches, Entrée, Début et Fin déplacent la sélection comme dans un tableur, et la flèche bas depuis le filtre entre dans la grille. Rien n'est écrit avant « Enregistrer » : les cases changées sont encadrées et le bouton compte les fiches concernées ; « Annuler les modifications » remet la grille telle qu'elle a été lue, et quitter la page avec des cases non enregistrées demande confirmation. Un petit cœur dans une case signale que l'animateur a déclaré souhaiter cette typologie : l'appréciation se saisit en regard du souhait, sans que l'un décide de l'autre. La colonne de la typologie ninja est repérée — la détenir rend polyvalent — et suit la règle habituelle. Le filtre par nom et le choix des typologies affichées restent dans l'adresse de la page, donc dans un lien partagé.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.competences.concurrence:L'enregistrement écrit une fiche par ligne modifiée, chacune avec son propre garde de modification concurrente : si une autre session a modifié une fiche après l'ouverture de la grille, cette ligne seule est refusée, les autres sont écrites, et l'écran demande — comme pour une fiche — de recharger ou d'écraser en connaissance de cause. Fermer la question laisse la ligne telle que saisie, non envoyée. Pendant une résolution, la saisie est verrouillée : le solveur réécrirait les fiches à l'arrivée.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.competences.csv:« Exporter en CSV » rend la grille telle qu'elle est : une colonne « animateur » avec l'identifiant — jamais le nom —, puis une colonne par typologie nommée par son identifiant, et dans chaque case DEBUTANT, AUTONOME, REFERENT ou rien. « Importer un CSV » lit ce même format, après un aperçu ligne par ligne comme les autres imports : rien n'est écrit avant « Importer », puis tout d'un seul tenant. Une ligne nomme un animateur par son identifiant — inconnu, elle est rejetée, l'import ne crée pas de fiche ; une colonne qui ne nomme aucune typologie est ignorée et listée ; un niveau illisible rejette sa ligne. Le point qui compte : une case vide du fichier laisse l'appréciation telle qu'elle est. L'import ajoute et met à jour, il ne retire jamais — retirer une appréciation reste un geste de la grille à l'écran. Un fichier exporté puis réimporté sans changement n'écrit donc rien, et le dit.`,
+        },
+      ],
+      links: [
+        { route: '/competences', label: $localize`:@@nav.link.competences:Compétences` },
+        { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
+        { route: '/typologies', label: $localize`:@@nav.link.typologies:Typologies` },
+        { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
+      ],
+    },
+    {
       id: 'import-csv-animateurs',
       icon: 'upload_file',
       title: $localize`:@@aide.importCsv.title:Import CSV des animateurs`,

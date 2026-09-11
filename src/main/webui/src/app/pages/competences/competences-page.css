@@ -1,0 +1,223 @@
+/* "Compétences": the animateur × typologie grid, its filters, its legend and
+   the import report. Only what Material does not cover — chiefly the cell, a
+   button carrying the level as a letter and a colour, and the animateur's wish
+   as a marker distinct from the colour. */
+
+.competences-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.competences-typologies {
+  flex: 1 1 14rem;
+  max-width: 24rem;
+}
+
+.competences-compteur {
+  margin-left: 0.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.competences-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.competences-legende .pastille {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.2rem;
+  margin-right: 0.35rem;
+  vertical-align: -3px;
+  border-radius: 0.2rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  font-style: normal;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.competences-legende .legende-icone {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.35rem;
+  vertical-align: -3px;
+}
+
+.competences-legende .legende-clavier {
+  margin-left: auto;
+}
+
+.competences-grille {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.competences-grille th,
+.competences-grille td {
+  border: 1px solid var(--mat-sys-outline-variant);
+  padding: 0.15rem 0.3rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* The name stays in view while scrolling sideways: on a hundred and fifty
+   animateurs and twelve typologies, a cell without its row means nothing. */
+.competences-grille .colonne-animateur {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+  text-align: left;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.competences-grille thead th {
+  background: var(--mat-sys-surface-container);
+  font-weight: 600;
+  vertical-align: bottom;
+}
+
+.competences-grille .colonne-typologie {
+  max-width: 7rem;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.competences-grille .ninja-icone {
+  display: block;
+  margin: 0 auto 0.1rem;
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--app-accent);
+}
+
+/* The ninja column: holding it makes an animateur versatile, which earns a
+   marker down the whole column and not only on the header. */
+.competences-grille .colonne-ninja {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.competences-grille .animateur-nom,
+.competences-grille .animateur-id {
+  display: block;
+  line-height: 1.15;
+}
+
+.competences-grille .animateur-id {
+  font-size: 0.7rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.competences-grille .ligne-modifiee .colonne-animateur {
+  font-weight: 600;
+}
+
+.competences-grille .cellule-competence-cadre {
+  padding: 0.1rem;
+}
+
+/* A cell: a bare button carrying the level as a letter and a background. The
+   thick border says "changed, not saved"; the heart says the wish. */
+.cellule-competence {
+  position: relative;
+  box-sizing: border-box;
+  width: 2.6rem;
+  min-height: 1.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--mat-sys-on-surface);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cellule-competence:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: -1px;
+}
+
+.cellule-competence:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cellule-competence.cellule-modifiee {
+  border: 2px solid var(--mat-sys-primary);
+}
+
+.cellule-competence.cellule-souhait::after {
+  content: '\2665';
+  position: absolute;
+  right: 0.15rem;
+  top: 0;
+  font-size: 0.65rem;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--mat-sys-error);
+}
+
+.competences-legende .pastille.cellule-souhait::after {
+  content: '\2665';
+  color: var(--mat-sys-error);
+}
+
+.niveau-aucun {
+  background: transparent;
+}
+
+.niveau-debutant {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+}
+
+.niveau-autonome {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.niveau-referent {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.competences-import {
+  margin-top: 1rem;
+}
+
+.competences-import-motifs {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.import-ligne-inchangee td:first-child {
+  font-variant-numeric: tabular-nums;
+}
+
+.import-ligne-inchangee {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@media (max-width: 60rem) {
+  .competences-grille .colonne-animateur {
+    max-width: 9rem;
+  }
+
+  .competences-legende .legende-clavier {
+    margin-left: 0;
+  }
+}

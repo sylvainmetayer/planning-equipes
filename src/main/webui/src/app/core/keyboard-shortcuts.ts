@@ -153,6 +153,7 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       '/animateurs',
       { label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups', touche: 'a' },
     ],
+    ['/competences', { label: $localize`:@@nav.link.competences:Compétences`, icon: 'grid_on' }],
     [
       '/creneaux',
       { label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule', touche: 'c' },

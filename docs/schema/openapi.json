@@ -867,6 +867,63 @@
           }
         }
       },
+      "CompetencesGrilleImportReport" : {
+        "required" : [ "accepted", "applied", "rejected", "total", "unchanged" ],
+        "type" : "object",
+        "properties" : {
+          "applied" : {
+            "type" : "boolean"
+          },
+          "separator" : {
+            "type" : "string"
+          },
+          "columns" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ImportedCompetencesColumn"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "accepted" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "unchanged" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "rejected" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "rows" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ImportedCompetencesRow"
+            }
+          },
+          "warnings" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "CompetencesGrilleImportRequest" : {
+        "type" : "object",
+        "properties" : {
+          "fileName" : {
+            "type" : "string"
+          },
+          "content" : {
+            "type" : "string"
+          }
+        }
+      },
       "ConfigView" : {
         "required" : [ "devMode" ],
         "type" : "object",
@@ -2200,6 +2257,10 @@
         "type" : "string",
         "enum" : [ "CREATED", "UPDATED", "REJECTED" ]
       },
+      "ImportCompetencesAction" : {
+        "type" : "string",
+        "enum" : [ "UPDATED", "UNCHANGED", "REJECTED" ]
+      },
       "ImportGrilleAction" : {
         "type" : "string",
         "enum" : [ "UPDATED", "REJECTED" ]
@@ -2285,6 +2346,54 @@
           },
           "reason" : {
             "type" : "string"
+          }
+        }
+      },
+      "ImportedCompetencesColumn" : {
+        "type" : "object",
+        "required" : [ "index" ],
+        "properties" : {
+          "index" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "typologieId" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ImportedCompetencesRow" : {
+        "type" : "object",
+        "required" : [ "action", "cellules", "line" ],
+        "properties" : {
+          "line" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "animateurId" : {
+            "type" : "string"
+          },
+          "action" : {
+            "$ref" : "#/components/schemas/ImportCompetencesAction"
+          },
+          "reasons" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "cellules" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -2633,6 +2742,24 @@
           },
           "raison" : {
             "type" : "string"
+          }
+        }
+      },
+      "LigneCompetences" : {
+        "required" : [ "animateurId", "resultat" ],
+        "type" : "object",
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "resultat" : {
+            "$ref" : "#/components/schemas/ResultatLigne"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -3741,6 +3868,17 @@
           }
         }
       },
+      "RapportSaisieGrilleCompetences" : {
+        "type" : "object",
+        "properties" : {
+          "animateurs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LigneCompetences"
+            }
+          }
+        }
+      },
       "Reamorcage" : {
         "type" : "string",
         "enum" : [ "AUTO", "PLAN_COURANT", "AUCUN" ]
@@ -3873,6 +4011,10 @@
           }
         }
       },
+      "ResultatLigne" : {
+        "type" : "string",
+        "enum" : [ "WRITTEN", "STALE", "REJECTED" ]
+      },
       "SaisieCellule" : {
         "required" : [ "creneauId" ],
         "type" : "object",
@@ -3893,6 +4035,24 @@
           }
         }
       },
+      "SaisieCompetences" : {
+        "required" : [ "animateurId", "competences" ],
+        "type" : "object",
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "competences" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/NiveauCompetence"
+            }
+          }
+        }
+      },
       "SaisieGrille" : {
         "type" : "object",
         "properties" : {
@@ -3900,6 +4060,17 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/SaisieStand"
+            }
+          }
+        }
+      },
+      "SaisieGrilleCompetences" : {
+        "type" : "object",
+        "properties" : {
+          "animateurs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SaisieCompetences"
             }
           }
         }
@@ -4742,6 +4913,113 @@
           }
         },
         "summary" : "Create Animateur",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
+    "/api/animateurs/competences/export" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Export Competences Grid",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
+    "/api/animateurs/competences/grille" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaisieGrilleCompetences"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportSaisieGrilleCompetences"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Save Competences Grid",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
+    "/api/animateurs/competences/import-grille" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CompetencesGrilleImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CompetencesGrilleImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Import Competences Grid",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
+    "/api/animateurs/competences/import-grille/analyse" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CompetencesGrilleImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CompetencesGrilleImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Analyse Competences Grid",
         "tags" : [ "Animateur Resource" ]
       }
     },

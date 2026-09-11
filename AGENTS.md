@@ -467,7 +467,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - **One route = one page = one block.** Admin routes (children of the shell):
   `/` (default, the solver page),
   `/debug`, `/mcp-client`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
-  `/animateurs`, `/import-animateurs`, `/creneaux`, `/typologies`,
+  `/animateurs`, `/competences` (« Compétences » — the animateur × typologie
+  grid of appreciations, saved row by row, exported and imported as a CSV),
+  `/import-animateurs`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed), `/calendar`, `/day-calendar`, `/constraints`,

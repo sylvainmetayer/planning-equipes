@@ -2515,6 +2515,73 @@ export interface ImportGrilleDemande {
   content: string;
 }
 
+/* ------------- Competence grid (`/api/animateurs/competences`) ------------- */
+
+/**
+ * One row of a grid save: the animateur's whole map of appreciations — a
+ * typologie left out is an appreciation removed, as the fiche form does — and
+ * the stamp the grid read, sent back as this row's own precondition (issue #362).
+ */
+export interface SaisieAnimateurCompetences {
+  animateurId: string;
+  modifieLe: string | null;
+  competences: Record<string, NiveauCompetence>;
+}
+
+/** How one saved row ended: written, refused because the fiche moved since the read, or refused otherwise. */
+export type ResultatLigneCompetences = 'WRITTEN' | 'STALE' | 'REJECTED';
+
+export interface LigneSaisieCompetences {
+  animateurId: string;
+  resultat: ResultatLigneCompetences;
+  message: string | null;
+  /** The stamp written, or on a `STALE` row the fiche's current one. */
+  modifieLe: string | null;
+}
+
+/** One line per row sent, in the order sent — the rows are independent. */
+export interface RapportSaisieCompetences {
+  animateurs: LigneSaisieCompetences[];
+}
+
+export type ImportCompetencesAction = 'UPDATED' | 'UNCHANGED' | 'REJECTED';
+
+/** One column of the file: the header read, and the typologie it names — or why it names none. */
+export interface ImportCompetencesColonne {
+  index: number;
+  label: string;
+  typologieId: string | null;
+  reason: string | null;
+}
+
+export interface ImportCompetencesLigne {
+  line: number;
+  label: string;
+  animateurId: string | null;
+  action: ImportCompetencesAction;
+  reasons: string[];
+  /** Appreciations the row adds or changes. */
+  cellules: number;
+}
+
+/** What the matrix would do, animateur by animateur — the same shape once applied. */
+export interface ImportCompetencesRapport {
+  applied: boolean;
+  separator: string;
+  columns: ImportCompetencesColonne[];
+  total: number;
+  accepted: number;
+  unchanged: number;
+  rejected: number;
+  rows: ImportCompetencesLigne[];
+  warnings: string[];
+}
+
+export interface ImportCompetencesDemande {
+  fileName: string;
+  content: string;
+}
+
 /** Body of both calls — the file travels again, so the write re-validates it. */
 export interface ImportCsvDemande {
   fileName: string;

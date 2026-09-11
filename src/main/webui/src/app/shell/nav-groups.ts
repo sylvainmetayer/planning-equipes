@@ -173,6 +173,11 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           label: $localize`:@@nav.link.animateurs:Animateurs`,
           icon: 'groups',
         },
+        {
+          path: '/competences',
+          label: $localize`:@@nav.link.competences:Compétences`,
+          icon: 'grid_on',
+        },
         { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
         {
           path: '/typologies',

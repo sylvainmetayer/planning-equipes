@@ -53,6 +53,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0027](0027-pas-de-compilation-native.md) | Pas de compilation native | Accepté · issue #392 |
 | [0028](0028-transactions-declaratives-narayana.md) | Transactions déclaratives (`@Transactional`, Narayana) pour les unités de travail composées | **Proposé** · mesuré, non tranché · issue #448 |
 | [0029](0029-retrait-des-familles-de-relais.md) | Les familles de relais sont retirées | Accepté · remplace 0026 |
+| [0030](0030-grille-competences-import-additif.md) | La grille des compétences transpose 0021 : identité par identifiant, case vide inchangée, jamais de suppression | Accepté · transpose 0021 et 0022 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
