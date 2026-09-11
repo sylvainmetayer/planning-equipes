@@ -242,7 +242,11 @@ function main() {
     const scope = new Set(globalClasses);
     const sheets = new Set();
     for (const f of members) for (const s of byFile.get(f).styles) sheets.add(s);
-    if (page.shell) for (const s of byFile.get(page.shell).styles) sheets.add(s);
+    // A shell sheet reaches its pages only when the shell renders it
+    // unencapsulated: emulated, Angular rewrites its selectors to the shell's
+    // own template, and a page using one of its classes gets nothing.
+    if (page.shell)
+      for (const s of byFile.get(page.shell).styles) if (!emulated.has(s)) sheets.add(s);
     for (const s of sheets) {
       for (const k of sheetClasses.get(s)) scope.add(k);
       if (!usersOfSheet.has(s)) usersOfSheet.set(s, new Set());
@@ -254,6 +258,27 @@ function main() {
           failures.push(
             `${relative(APP, page.file)} : ${relative(APP, f)} uses .${c}, defined only in a stylesheet this page does not load`,
           );
+        }
+      }
+    }
+  }
+  // A class only an emulated sheet defines, used outside the component that
+  // owns the sheet, is styled nowhere: the leak the commit that re-scoped the
+  // `.etat-*` classes fixed by hand, on the four templates it happened to see.
+  const definedUnencapsulated = new Set(globalClasses);
+  for (const [sheet, classes] of sheetClasses)
+    if (!emulated.has(sheet)) for (const c of classes) definedUnencapsulated.add(c);
+  for (const owner of byFile.values()) {
+    for (const sheet of owner.styles) {
+      if (!emulated.has(sheet)) continue;
+      for (const c of sheetClasses.get(sheet) ?? []) {
+        if (definedUnencapsulated.has(c)) continue;
+        for (const comp of byFile.values()) {
+          if (comp.file !== owner.file && comp.used.has(c)) {
+            failures.push(
+              `${relative(ROOT, sheet)} defines .${c} under emulated encapsulation, which ${relative(APP, comp.file)} uses: styled nowhere`,
+            );
+          }
         }
       }
     }
