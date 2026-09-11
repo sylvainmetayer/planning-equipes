@@ -232,6 +232,10 @@ public class ReferenceDataService implements ReferenceData {
                     }
                     return stands.create(connection, stand);
                 });
+        // After the commit, and once: marking inside the unit of work survived
+        // a rollback, so a stand refused on its third write left the Solveur
+        // screen announcing modified reference data that had not moved.
+        changeTracker.markModified();
         return new WrittenStand(ecrit, coherence.onStand(null, ecrit));
     }
 

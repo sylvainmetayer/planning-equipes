@@ -8,12 +8,14 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.mcp.AnimateurMcpTools.AnimateurView;
 import dev.sylvain.planning.mcp.CreneauMcpTools.CreneauView;
 import dev.sylvain.planning.mcp.StandMcpTools.StandView;
+import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +47,9 @@ class ReferentielMcpToolsTest {
 
     @Inject
     ReferenceDataService referenceDataService;
+
+    @Inject
+    ReferenceDataChangeTracker changeTracker;
 
     @Inject
     JournalActionService journal;
@@ -221,6 +226,7 @@ class ReferentielMcpToolsTest {
      */
     @Test
     void creerUnStandCompletNeLaisseRienDerriereLuiQuandLeStandEstRefuse() {
+        Instant marqueAvant = changeTracker.lastModifiedAt();
         // effectifMin above effectifMax: refused by StandValidator, after the
         // typologie and the emplacement would already have been written.
         assertThatThrownBy(() -> standTools.creer_stand_complet(
@@ -253,6 +259,10 @@ class ReferentielMcpToolsTest {
         assertThat(referenceDataService.listEmplacements())
                 .extracting(Emplacement::getId)
                 .doesNotContain("EMP-ATOMIQUE");
+        // And nothing in memory either: a rolled-back write used to mark the
+        // referential modified, and the Solveur screen then warned about
+        // reference data that had not moved.
+        assertThat(changeTracker.lastModifiedAt()).isEqualTo(marqueAvant);
     }
 
     @Test
