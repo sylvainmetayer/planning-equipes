@@ -55,6 +55,7 @@ class McpAnnotationsStructurelleTest {
             "statut_",
             "resultats_",
             "heures_",
+            "equite_",
             "etat_",
             "synthese_",
             "suggerer_",

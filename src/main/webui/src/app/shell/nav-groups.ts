@@ -212,6 +212,12 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
         },
         { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
         {
+          path: '/equite',
+          label: $localize`:@@nav.link.equite:Équité`,
+          icon: 'balance',
+          avance: true,
+        },
+        {
           path: '/repos',
           label: $localize`:@@nav.link.repos:Jours de repos`,
           icon: 'weekend',

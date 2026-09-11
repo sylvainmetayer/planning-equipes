@@ -84,6 +84,17 @@ public class ParametresLegaux {
     public static final LocalTime COUPURE_REPAS_SOIR_DEBUT_PAR_DEFAUT = LocalTime.of(19, 0);
     public static final LocalTime COUPURE_REPAS_SOIR_FIN_PAR_DEFAUT = LocalTime.of(21, 0);
 
+    /**
+     * When the evening starts, for the equity read-out ({@code EquiteService}):
+     * the minutes a poste covers past this hour are its evening hours, the
+     * figure the organiser compares across the roster — « three nocturnes for
+     * me, none for him » is the complaint the Équité screen exists to settle
+     * before publication. A rule of the organisation, not of the law: a
+     * minor's legal night stays in {@link Creneau}. Default 20:00, the earliest
+     * legal night.
+     */
+    public static final LocalTime HEURE_DEBUT_SOIREE_PAR_DEFAUT = LocalTime.of(20, 0);
+
     private int dureeHebdomadaireMaxMinutes = DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT;
     private int dureeHebdomadaireMaxMineurMinutes = DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT;
     private int pauseMinimaleEntreVacationsMinutes = PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT;
@@ -95,6 +106,7 @@ public class ParametresLegaux {
     private LocalTime coupureRepasMidiFin = COUPURE_REPAS_MIDI_FIN_PAR_DEFAUT;
     private LocalTime coupureRepasSoirDebut = COUPURE_REPAS_SOIR_DEBUT_PAR_DEFAUT;
     private LocalTime coupureRepasSoirFin = COUPURE_REPAS_SOIR_FIN_PAR_DEFAUT;
+    private LocalTime heureDebutSoiree = HEURE_DEBUT_SOIREE_PAR_DEFAUT;
 
     public ParametresLegaux() {}
 
@@ -192,5 +204,13 @@ public class ParametresLegaux {
 
     public void setCoupureRepasSoirFin(LocalTime coupureRepasSoirFin) {
         this.coupureRepasSoirFin = coupureRepasSoirFin;
+    }
+
+    public LocalTime getHeureDebutSoiree() {
+        return heureDebutSoiree;
+    }
+
+    public void setHeureDebutSoiree(LocalTime heureDebutSoiree) {
+        this.heureDebutSoiree = heureDebutSoiree;
     }
 }

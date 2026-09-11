@@ -351,8 +351,9 @@ public class McpPrompts {
                 avant diffusion, pas après.
                 3. consulter_parametres_legaux, puis analyser_pauses avec sansRelaisSeulement : une \
                 pause que personne ne peut relayer est une pause qui n'aura pas lieu.
-                4. heures_travaillees : y a-t-il des semaines au-dessus du plafond, ou des écarts \
-                d'heures que personne n'a arbitrés ? L'équité se lit ici, pas dans le score.
+                4. heures_travaillees, puis equite_planning : y a-t-il des semaines au-dessus du \
+                plafond, ou des écarts que personne n'a arbitrés — heures de soirée, de week-end, \
+                postes pénibles, souhaits jamais satisfaits ? L'équité se lit ici, pas dans le score.
                 5. lister_destinataires_publication : qui recevra quoi. Signale les personnes sans \
                 adresse connue — elles devront être prévenues autrement — et rappelle que le \
                 courriel porte le planning individuel, donc des données personnelles.

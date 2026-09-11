@@ -749,6 +749,21 @@
           }
         }
       },
+      "ColonneSolveur" : {
+        "required" : [ "colonne", "contrainte", "active" ],
+        "type" : "object",
+        "properties" : {
+          "colonne" : {
+            "type" : "string"
+          },
+          "contrainte" : {
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "ComparaisonSnapshots" : {
         "required" : [ "editionsDifferentes", "volumetriesDifferentes" ],
         "type" : "object",
@@ -2800,6 +2815,81 @@
           }
         }
       },
+      "LigneEquite" : {
+        "required" : [ "animateurId", "heuresTotal", "heuresSoiree", "heuresWeekEnd", "heuresJourFerie", "postes", "postesPenibles", "standsDistincts", "typologiesDistinctes", "emplacementsDistinctsParJourMax", "tauxSouhaits", "tauxAppreciation", "joursTravailles", "joursRepos", "plusLongueSerie" ],
+        "type" : "object",
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "heuresTotal" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresParSemaine" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "number",
+              "format" : "double"
+            }
+          },
+          "heuresSoiree" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresWeekEnd" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresJourFerie" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "postes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "postesPenibles" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "standsDistincts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "typologiesDistinctes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "emplacementsDistinctsParJourMax" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "tauxSouhaits" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "tauxAppreciation" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "joursTravailles" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "joursRepos" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "plusLongueSerie" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "LigneGrille" : {
         "required" : [ "compacte", "effectifMax", "effectifMin", "exceptions", "regles" ],
         "type" : "object",
@@ -3158,6 +3248,9 @@
             "$ref" : "#/components/schemas/LocalTime"
           },
           "coupureRepasSoirFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureDebutSoiree" : {
             "$ref" : "#/components/schemas/LocalTime"
           }
         }
@@ -3706,6 +3799,39 @@
           },
           "controle" : {
             "$ref" : "#/components/schemas/RapportGrille"
+          }
+        }
+      },
+      "RapportEquite" : {
+        "required" : [ "heureDebutSoiree", "semaines", "lignes", "syntheses", "colonnesSolveur" ],
+        "type" : "object",
+        "properties" : {
+          "heureDebutSoiree" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "semaines" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "lignes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LigneEquite"
+            }
+          },
+          "syntheses" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/SyntheseColonne"
+            }
+          },
+          "colonnesSolveur" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ColonneSolveur"
+            }
           }
         }
       },
@@ -4679,6 +4805,28 @@
             "items" : {
               "$ref" : "#/components/schemas/SuggestionReparation"
             }
+          }
+        }
+      },
+      "SyntheseColonne" : {
+        "type" : "object",
+        "required" : [ "mediane", "min", "max", "ecartType" ],
+        "properties" : {
+          "mediane" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "min" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "max" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "ecartType" : {
+            "type" : "number",
+            "format" : "double"
           }
         }
       },
@@ -7963,6 +8111,38 @@
         },
         "summary" : "Send To One Animateur",
         "tags" : [ "Envoi Planning Resource" ]
+      }
+    },
+    "/api/planning/equite" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportEquite"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Rapport",
+        "tags" : [ "Equite Resource" ]
+      }
+    },
+    "/api/planning/equite/export" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Export Csv",
+        "tags" : [ "Equite Resource" ]
       }
     },
     "/api/planning/export-scenario" : {

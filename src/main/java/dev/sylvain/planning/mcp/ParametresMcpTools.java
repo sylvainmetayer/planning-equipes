@@ -85,6 +85,11 @@ public class ParametresMcpTools {
                     String coupureRepasSoirDebut,
             @ToolArg(description = "Fin de la fenêtre de la coupure repas du soir (HH:MM)", required = false)
                     String coupureRepasSoirFin,
+            @ToolArg(
+                            description = "Heure à partir de laquelle un poste compte des heures de soirée "
+                                    + "dans le tableau d'équité (HH:MM)",
+                            required = false)
+                    String heureDebutSoiree,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
         if (dureeHebdomadaireMaxMinutes != null) {
@@ -116,6 +121,9 @@ public class ParametresMcpTools {
         }
         if (coupureRepasSoirFin != null) {
             parametres.setCoupureRepasSoirFin(McpArgs.heure(coupureRepasSoirFin, "coupureRepasSoirFin"));
+        }
+        if (heureDebutSoiree != null) {
+            parametres.setHeureDebutSoiree(McpArgs.heure(heureDebutSoiree, "heureDebutSoiree"));
         }
         return toView(referenceDataService.updateParametresLegaux(parametres));
     }
@@ -377,7 +385,8 @@ public class ParametresMcpTools {
                 parametres.getCoupureRepasMidiDebut(),
                 parametres.getCoupureRepasMidiFin(),
                 parametres.getCoupureRepasSoirDebut(),
-                parametres.getCoupureRepasSoirFin());
+                parametres.getCoupureRepasSoirFin(),
+                parametres.getHeureDebutSoiree());
     }
 
     static ParametresDecoupageView toView(ParametresDecoupage parametres) {
@@ -418,7 +427,8 @@ public class ParametresMcpTools {
             LocalTime coupureRepasMidiDebut,
             LocalTime coupureRepasMidiFin,
             LocalTime coupureRepasSoirDebut,
-            LocalTime coupureRepasSoirFin) {}
+            LocalTime coupureRepasSoirFin,
+            LocalTime heureDebutSoiree) {}
 
     public record ParametresDecoupageView(
             int dureeVacationCibleMinutes,

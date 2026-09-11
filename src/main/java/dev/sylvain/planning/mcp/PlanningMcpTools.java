@@ -3,6 +3,11 @@ package dev.sylvain.planning.mcp;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.analyse.EquiteService;
+import dev.sylvain.planning.service.analyse.EquiteService.ColonneSolveur;
+import dev.sylvain.planning.service.analyse.EquiteService.LigneEquite;
+import dev.sylvain.planning.service.analyse.EquiteService.RapportEquite;
+import dev.sylvain.planning.service.analyse.EquiteService.SyntheseColonne;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.PlanningHoursService;
@@ -78,6 +83,9 @@ public class PlanningMcpTools {
 
     @Inject
     PlanningHoursService heuresPlanningService;
+
+    @Inject
+    EquiteService equiteService;
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
@@ -273,6 +281,24 @@ public class PlanningMcpTools {
         return new HeuresView(
                 rapport.semaines(),
                 rapport.animateurs().stream().map(PlanningMcpTools::toView).toList());
+    }
+
+    @Tool(
+            description =
+                    "Tableau d'équité du dernier planning persisté : par animateur affecté, heures totales "
+                            + "et par semaine ISO, heures de soirée (après l'heure paramétrée), de week-end et de jour férié, "
+                            + "postes et postes pénibles, stands, typologies et emplacements distincts, part des postes sur une "
+                            + "typologie souhaitée ou appréciée, jours travaillés, de repos et plus longue série ; par colonne, "
+                            + "médiane, min, max et écart-type, et si le solveur la mesure. Les animateurs sont désignés par id seul.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    EquiteView equite_planning(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return toView(equiteService.rapport());
     }
 
     @Tool(
@@ -496,6 +522,35 @@ public class PlanningMcpTools {
         return new HeuresAnimateurView(ligne.animateurId(), ligne.heuresParSemaine(), ligne.total());
     }
 
+    static EquiteView toView(RapportEquite rapport) {
+        return new EquiteView(
+                rapport.heureDebutSoiree(),
+                rapport.semaines(),
+                rapport.lignes().stream().map(PlanningMcpTools::toView).toList(),
+                rapport.syntheses(),
+                rapport.colonnesSolveur());
+    }
+
+    private static LigneEquiteView toView(LigneEquite ligne) {
+        return new LigneEquiteView(
+                ligne.animateurId(),
+                ligne.heuresTotal(),
+                ligne.heuresParSemaine(),
+                ligne.heuresSoiree(),
+                ligne.heuresWeekEnd(),
+                ligne.heuresJourFerie(),
+                ligne.postes(),
+                ligne.postesPenibles(),
+                ligne.standsDistincts(),
+                ligne.typologiesDistinctes(),
+                ligne.emplacementsDistinctsParJourMax(),
+                ligne.tauxSouhaits(),
+                ligne.tauxAppreciation(),
+                ligne.joursTravailles(),
+                ligne.joursRepos(),
+                ligne.plusLongueSerie());
+    }
+
     /** @param resolu false when nothing has ever been solved */
     public record EtatPlanningView(
             boolean resolu, Instant resoluLe, int affectationsPersistees, Instant derniereModificationDonnees) {}
@@ -547,6 +602,32 @@ public class PlanningMcpTools {
     public record HeuresView(List<String> semaines, List<HeuresAnimateurView> animateurs) {}
 
     public record HeuresAnimateurView(String animateurId, Map<String, Double> heuresParSemaine, double total) {}
+
+    /** The equity table, the same shape as the REST one minus the names. */
+    public record EquiteView(
+            LocalTime heureDebutSoiree,
+            List<String> semaines,
+            List<LigneEquiteView> lignes,
+            Map<String, SyntheseColonne> syntheses,
+            List<ColonneSolveur> colonnesSolveur) {}
+
+    public record LigneEquiteView(
+            String animateurId,
+            double heuresTotal,
+            Map<String, Double> heuresParSemaine,
+            double heuresSoiree,
+            double heuresWeekEnd,
+            double heuresJourFerie,
+            int postes,
+            int postesPenibles,
+            int standsDistincts,
+            int typologiesDistinctes,
+            int emplacementsDistinctsParJourMax,
+            double tauxSouhaits,
+            double tauxAppreciation,
+            int joursTravailles,
+            int joursRepos,
+            int plusLongueSerie) {}
 
     public record ExplicationView(
             String posteId,

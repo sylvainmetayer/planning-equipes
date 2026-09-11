@@ -582,9 +582,24 @@ la paire qu'attend un tableur français. Avec un point, la cellule y était lue
 comme du texte : la colonne s'alignait à gauche et `=SOMME()` répondait zéro,
 ce qui est pire qu'un total faux, parce que ça ressemble à une réponse.
 
-## Les trois CSV sortent avec une marque d'octets
+## Export de l'équité
 
-`heures-planning.csv`, l'exemple des animateurs et le modèle de la grille des
+`GET /api/planning/equite/export` rend `equite-planning.csv`, le tableau de
+l'écran Équité lu sur le planning persisté : une ligne par animateur affecté,
+les colonnes dans l'ordre de l'écran — `heuresTotal`, une colonne par semaine
+ISO, puis `heuresSoiree`, `heuresWeekEnd`, `heuresJourFerie`, `postes`,
+`postesPenibles`, `standsDistincts`, `typologiesDistinctes`,
+`emplacementsDistinctsParJourMax`, `tauxSouhaits`, `tauxAppreciation`,
+`joursTravailles`, `joursRepos`, `plusLongueSerie`. Mêmes conventions que les
+heures : `;` entre les champs, virgule décimale ; les taux sont des rapports
+(`0,75`), qu'un tableur met en pourcentage d'un clic. La synthèse (médiane,
+min, max, écart-type) n'y figure pas : elle se recalcule dans le tableur, et
+l'écran la montre.
+
+## Les quatre CSV sortent avec une marque d'octets
+
+`heures-planning.csv`, `equite-planning.csv`, l'exemple des animateurs et le
+modèle de la grille des
 stands partent tous par `CsvDownload.attachment`, qui préfixe le contenu d'un
 **BOM UTF-8**. Excel ignore le `charset=utf-8` de la réponse dès que le fichier
 est sur le disque — l'en-tête voyageait avec le téléchargement, pas avec le

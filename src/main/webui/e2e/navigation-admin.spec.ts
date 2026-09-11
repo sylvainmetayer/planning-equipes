@@ -48,6 +48,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/calendar', marker: 'Calendrier des affectations', sheet: 'calendar-nav' },
   { path: '/day-calendar', sheet: 'day-calendar-grid' },
   { path: '/hours', marker: 'Heures planifiées par animateur', sheet: 'hours-total-row' },
+  { path: '/equite', marker: 'Équité par animateur', sheet: 'equite-synthese-row' },
   { path: '/ouvertures', marker: 'Ouvertures des stands', sheet: 'ouvertures-synthese' },
   { path: '/staffing', marker: 'Besoin minimum en effectif', sheet: 'staffing-summary' },
   { path: '/banc-de-touche', marker: 'Banc de touche', sheet: 'banc-controls' },

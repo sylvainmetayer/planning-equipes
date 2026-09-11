@@ -193,6 +193,7 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       },
     ],
     ['/hours', { label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule', touche: 'h' }],
+    ['/equite', { label: $localize`:@@nav.link.equite:Équité`, icon: 'balance' }],
     ['/repos', { label: $localize`:@@nav.link.repos:Jours de repos`, icon: 'weekend' }],
     ['/heatmap', { label: $localize`:@@nav.link.heatmap:Heatmap de charge`, icon: 'grid_view' }],
     ['/timeline', { label: $localize`:@@nav.link.timeline:Timeline animateur`, icon: 'timeline' }],

@@ -18,7 +18,8 @@ import {
 
 /**
  * The legal parameters of the edition — the two weekly ceilings, the daily
- * rest, the gap between vacations, the on-post break — and, as the card right
+ * rest, the gap between vacations, the on-post break, the hour the evening
+ * starts at for the Équité screen — and, as the card right
  * below, the meal break: one record, two cards of the Paramètres page, either
  * save button sending the whole record. They used to sit on the Contraintes
  * page, next to the rules that read them; that is where nobody looked for
@@ -58,6 +59,8 @@ export class ParametresLegauxCard {
   protected readonly coupureRepasMidiFin = signal('');
   protected readonly coupureRepasSoirDebut = signal('');
   protected readonly coupureRepasSoirFin = signal('');
+  /** When the evening starts for the Équité screen (HH:MM), the organisation's rule (issue #497). */
+  protected readonly heureDebutSoiree = signal('');
 
   /** Ordre public ceilings, mirrored from the server-side validation. */
   protected readonly ceilingAdultHours = DUREE_HEBDOMADAIRE_MAX_HEURES;
@@ -97,6 +100,7 @@ export class ParametresLegauxCard {
     this.coupureRepasMidiFin.set(parametres.coupureRepasMidiFin ?? '');
     this.coupureRepasSoirDebut.set(parametres.coupureRepasSoirDebut ?? '');
     this.coupureRepasSoirFin.set(parametres.coupureRepasSoirFin ?? '');
+    this.heureDebutSoiree.set(parametres.heureDebutSoiree ?? '');
   }
 
   /**
@@ -125,7 +129,8 @@ export class ParametresLegauxCard {
       reposHeures === null ||
       reposHeures < 0 ||
       coupureMinutes === null ||
-      coupureMinutes < 0
+      coupureMinutes < 0 ||
+      this.heureDebutSoiree() === ''
     ) {
       return;
     }
@@ -157,6 +162,7 @@ export class ParametresLegauxCard {
           coupureRepasMidiFin: this.coupureRepasMidiFin(),
           coupureRepasSoirDebut: this.coupureRepasSoirDebut(),
           coupureRepasSoirFin: this.coupureRepasSoirFin(),
+          heureDebutSoiree: this.heureDebutSoiree(),
         }),
       );
       this.parametresSaved.set(true);

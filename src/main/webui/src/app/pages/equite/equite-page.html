@@ -1,0 +1,130 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@equite.title">Équité par animateur</h1>
+    <mat-card-subtitle i18n="@@equite.subtitle">
+      Une ligne par animateur affecté du planning enregistré, chaque valeur avec son écart à la médiane ; la soirée
+      commence à {{ heureSoiree() }}.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions equite-toolbar">
+    <button matButton="tonal" type="button" [disabled]="chargement()" (click)="recharger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+    <button matButton="filled" type="button" [disabled]="exportBusy() || lignes().length === 0" (click)="onExportCsv()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@equite.exportCsv">Exporter en CSV</ng-container>
+    </button>
+    <a matButton routerLink="/parametres">
+      <mat-icon>settings</mat-icon>
+      <ng-container i18n="@@equite.parametres.link">Régler l'heure de soirée</ng-container>
+    </a>
+    @if (viewChanged()) {
+      <button matButton type="button" (click)="resetView()">
+        <mat-icon>filter_alt_off</mat-icon>
+        <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+      </button>
+    }
+  </mat-card-actions>
+  <mat-card-content class="table-wrapper">
+    <app-table-filter
+      [(value)]="filtre"
+      label="Filtrer par nom"
+      i18n-label="@@equite.filter.label"
+      placeholder="Nom, prénom, identifiant…"
+      i18n-placeholder="@@equite.filter.placeholder"
+      [matches]="lignesFiltrees().length"
+      [total]="lignes().length"
+    />
+
+    @if (chargement() && !rapport()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (erreur()) {
+      <p class="empty-hint">{{ erreur() }}</p>
+    }
+
+    @if (rapport(); as report) {
+      <p class="empty-hint" i18n="@@equite.legend">
+        Vert : au-dessus de la médiane, rouge : en dessous. L'icône d'en-tête marque une colonne que le solveur mesure.
+      </p>
+      @if (report.lignes.length === 0) {
+        <p class="empty-hint" i18n="@@equite.empty">Aucun animateur affecté : le planning enregistré est vide.</p>
+      } @else {
+        <table mat-table [dataSource]="lignesAffichees()" matSort [matSortActive]="sort().active"
+               [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
+          <caption class="visually-hidden" i18n="@@equite.table.caption">Équité par animateur : heures, soirées, week-ends, jours fériés, postes pénibles, diversité, souhaits, repos, avec l'écart à la médiane et la synthèse de chaque colonne</caption>
+          @for (col of colonnes(); track col) {
+            <ng-container [matColumnDef]="col">
+              @if (col === colonneAnimateur) {
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ libelleColonne(col) }}</th>
+                <td mat-cell *matCellDef="let ligne" class="equite-cell-animateur">
+                  <a class="equite-lien-timeline" routerLink="/timeline" [queryParams]="{ animateur: ligne.animateurId }">{{ ligne.nom }}</a>
+                </td>
+                <td mat-footer-cell *matFooterCellDef i18n="@@equite.synthese.label">Synthèse ({{ lignesAffichees().length }} affichés sur {{ lignes().length }})</td>
+              } @else {
+                <th mat-header-cell *matHeaderCellDef mat-sort-header [matTooltip]="tooltipColonne(col)">
+                  {{ libelleColonne(col) }}
+                  @if (measuredBySolver(col)) {
+                    <mat-icon inline class="equite-solveur-icon">tune</mat-icon>
+                  }
+                </th>
+                <td mat-cell *matCellDef="let ligne" class="equite-cell">
+                  @switch (formatColonne(col)) {
+                    @case ('heures') {
+                      <span class="equite-valeur">{{ valeurColonne(ligne, col) | number: '1.1-1' }} h</span>
+                    }
+                    @case ('taux') {
+                      <span class="equite-valeur">{{ valeurColonne(ligne, col) | percent: '1.0-0' }}</span>
+                    }
+                    @default {
+                      <span class="equite-valeur">{{ valeurColonne(ligne, col) }}</span>
+                    }
+                  }
+                  @if (gap(ligne, col); as ecartValeur) {
+                    <span class="equite-ecart" [class]="gapClass(ecartValeur)"
+                          i18n-title="@@equite.ecart.title" title="Écart à la médiane">
+                      @switch (formatColonne(col)) {
+                        @case ('taux') {
+                          {{ ecartValeur > 0 ? '+' : '' }}{{ ecartValeur * 100 | number: '1.0-0' }} pt
+                        }
+                        @default {
+                          {{ ecartValeur > 0 ? '+' : '' }}{{ ecartValeur | number: '1.0-1' }}
+                        }
+                      }
+                    </span>
+                  }
+                </td>
+                <td mat-footer-cell *matFooterCellDef class="equite-cell">
+                  @if (synthese(col); as bilan) {
+                    <span class="equite-synthese" i18n="@@equite.synthese.cell">méd. {{ bilan.mediane | number: '1.0-1' }} · min {{ bilan.min | number: '1.0-1' }} · max {{ bilan.max | number: '1.0-1' }} · σ {{ bilan.ecartType | number: '1.0-2' }}</span>
+                  }
+                </td>
+              }
+            </ng-container>
+          }
+          <tr mat-header-row *matHeaderRowDef="colonnes()"></tr>
+          <tr mat-row *matRowDef="let ligne; columns: colonnes()"></tr>
+          <tr mat-footer-row *matFooterRowDef="colonnes(); sticky: true" class="equite-synthese-row"></tr>
+        </table>
+        @if (lignesAffichees().length === 0) {
+          <p class="empty-hint" i18n="@@equite.filter.empty">Aucun animateur ne correspond au filtre.</p>
+        }
+        <ul class="equite-solveur-legende">
+          @for (colonne of report.colonnesSolveur; track colonne.colonne) {
+            <li [class.equite-solveur-inactif]="!colonne.active">
+              <strong>{{ libelleColonne(colonne.colonne) }}</strong> — <code>{{ colonne.contrainte }}</code>
+              @if (colonne.active) {
+                <ng-container i18n="@@equite.solveur.legende.active">(règle active)</ng-container>
+              } @else {
+                <ng-container i18n="@@equite.solveur.legende.inactive">(règle désactivée)</ng-container>
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+  </mat-card-content>
+</mat-card>
+
+<app-output-panel [text]="output()" />

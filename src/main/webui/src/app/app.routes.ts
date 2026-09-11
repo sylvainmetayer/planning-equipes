@@ -190,6 +190,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/hours/hours-page').then((m) => m.HoursPage),
   },
   {
+    path: 'equite',
+    title: () => $localize`:@@route.equite:Équité`,
+    loadComponent: () => import('./pages/equite/equite-page').then((m) => m.EquitePage),
+  },
+  {
     path: 'repos',
     title: () => $localize`:@@route.repos:Jours de repos`,
     loadComponent: () => import('./pages/repos/repos-page').then((m) => m.ReposPage),

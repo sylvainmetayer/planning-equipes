@@ -42,7 +42,8 @@ public class ParametresRepository {
                         SELECT duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes,
                         pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes,
                         pause_sur_poste, coupure_repas_minutes, coupure_repas_midi_debut,
-                        coupure_repas_midi_fin, coupure_repas_soir_debut, coupure_repas_soir_fin
+                        coupure_repas_midi_fin, coupure_repas_soir_debut, coupure_repas_soir_fin,
+                        heure_debut_soiree
                         FROM parametres_legaux
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -58,6 +59,7 @@ public class ParametresRepository {
                 parametres.setCoupureRepasMidiFin(rs.getObject("coupure_repas_midi_fin", LocalTime.class));
                 parametres.setCoupureRepasSoirDebut(rs.getObject("coupure_repas_soir_debut", LocalTime.class));
                 parametres.setCoupureRepasSoirFin(rs.getObject("coupure_repas_soir_fin", LocalTime.class));
+                parametres.setHeureDebutSoiree(rs.getObject("heure_debut_soiree", LocalTime.class));
                 return parametres;
             }
             return new ParametresLegaux();
@@ -73,8 +75,8 @@ public class ParametresRepository {
                         duree_hebdomadaire_max_mineur_minutes, pause_minimale_entre_vacations_minutes,
                         repos_quotidien_minimal_minutes, pause_sur_poste, coupure_repas_minutes,
                         coupure_repas_midi_debut, coupure_repas_midi_fin, coupure_repas_soir_debut,
-                        coupure_repas_soir_fin)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        coupure_repas_soir_fin, heure_debut_soiree)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET duree_hebdomadaire_max_minutes = EXCLUDED.duree_hebdomadaire_max_minutes,
                         duree_hebdomadaire_max_mineur_minutes = EXCLUDED.duree_hebdomadaire_max_mineur_minutes,
@@ -85,7 +87,8 @@ public class ParametresRepository {
                         coupure_repas_midi_debut = EXCLUDED.coupure_repas_midi_debut,
                         coupure_repas_midi_fin = EXCLUDED.coupure_repas_midi_fin,
                         coupure_repas_soir_debut = EXCLUDED.coupure_repas_soir_debut,
-                        coupure_repas_soir_fin = EXCLUDED.coupure_repas_soir_fin""")) {
+                        coupure_repas_soir_fin = EXCLUDED.coupure_repas_soir_fin,
+                        heure_debut_soiree = EXCLUDED.heure_debut_soiree""")) {
             ps.setInt(2, parametres.getDureeHebdomadaireMaxMinutes());
             ps.setInt(3, parametres.getDureeHebdomadaireMaxMineurMinutes());
             ps.setInt(4, parametres.getPauseMinimaleEntreVacationsMinutes());
@@ -96,6 +99,7 @@ public class ParametresRepository {
             ps.setObject(9, parametres.getCoupureRepasMidiFin());
             ps.setObject(10, parametres.getCoupureRepasSoirDebut());
             ps.setObject(11, parametres.getCoupureRepasSoirFin());
+            ps.setObject(12, parametres.getHeureDebutSoiree());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save legal parameters", e);

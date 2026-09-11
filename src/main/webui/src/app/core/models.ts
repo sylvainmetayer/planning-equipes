@@ -962,6 +962,12 @@ export interface ParametresLegaux {
   coupureRepasMidiFin: string;
   coupureRepasSoirDebut: string;
   coupureRepasSoirFin: string;
+  /**
+   * When the evening starts for the Équité screen (HH:MM): the minutes of a
+   * poste past this hour are its evening hours. The organisation's rule, not
+   * the law's — a minor's legal night is not settable.
+   */
+  heureDebutSoiree: string;
 }
 
 export type StrategieCouverturePendantPause = 'FERMETURE' | 'RELEVE' | 'EFFECTIF_REDUIT';
@@ -1479,6 +1485,56 @@ export interface HeuresAnimateur {
 export interface HeuresRapport {
   semaines: string[];
   animateurs: HeuresAnimateur[];
+}
+
+/**
+ * One row of `/api/planning/equite`: what one assigned animateur was given,
+ * read from the persisted plan. Hours are decimal hours, rates are ratios in
+ * `[0, 1]` (seats on a wished / appreciated game category over all seats).
+ */
+export interface LigneEquite {
+  animateurId: string;
+  nom: string;
+  heuresTotal: number;
+  heuresParSemaine: Record<string, number>;
+  heuresSoiree: number;
+  heuresWeekEnd: number;
+  heuresJourFerie: number;
+  postes: number;
+  postesPenibles: number;
+  standsDistincts: number;
+  typologiesDistinctes: number;
+  emplacementsDistinctsParJourMax: number;
+  tauxSouhaits: number;
+  tauxAppreciation: number;
+  joursTravailles: number;
+  joursRepos: number;
+  plusLongueSerie: number;
+}
+
+/** Median, min, max and standard deviation of one column over the rows. */
+export interface SyntheseColonne {
+  mediane: number;
+  min: number;
+  max: number;
+  ecartType: number;
+}
+
+/** A column a solver rule measures: the row's field, the rule, and whether it is switched on. */
+export interface ColonneSolveur {
+  colonne: string;
+  contrainte: string;
+  active: boolean;
+}
+
+export interface RapportEquite {
+  /** The evening the rows were read under, HH:MM:SS. */
+  heureDebutSoiree: string;
+  semaines: string[];
+  lignes: LigneEquite[];
+  /** Keyed by the row's field name, the ISO weeks by their own name; empty when there is no row. */
+  syntheses: Record<string, SyntheseColonne>;
+  colonnesSolveur: ColonneSolveur[];
 }
 
 export interface ResetSummary {

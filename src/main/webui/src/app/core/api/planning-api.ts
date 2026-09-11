@@ -13,6 +13,7 @@ import {
   CompteRenduEnvoi,
   HeuresRapport,
   PersistenceStatus,
+  RapportEquite,
   PlanSnapshot,
   PlanningEvenement,
   RapportPublication,
@@ -104,6 +105,15 @@ export class PlanningApi {
       planning,
       'text/csv',
     );
+  }
+
+  /** The equity table of the persisted plan, under today's legal parameters — a read-out, never a solve. */
+  equityReport(): Promise<RapportEquite> {
+    return this.api.get<RapportEquite>('/api/planning/equite');
+  }
+
+  exportEquity(): Promise<string> {
+    return this.api.downloadGet('/api/planning/equite/export', 'equite-planning.csv', 'text/csv');
   }
 
   /** Empties the current edition: stands, créneaux, animateurs, seats, ad hoc constraints. */

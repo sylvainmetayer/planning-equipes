@@ -60,6 +60,12 @@ final class ParametresValidator {
         }
         checkFenetre(parametres.getCoupureRepasMidiDebut(), parametres.getCoupureRepasMidiFin(), "coupureRepasMidi");
         checkFenetre(parametres.getCoupureRepasSoirDebut(), parametres.getCoupureRepasSoirFin(), "coupureRepasSoir");
+        // Required, not defaulted: an evening that starts « never » would empty
+        // a column of the Équité screen without a word, and the reader would
+        // take the zeros for a fair plan.
+        if (parametres.getHeureDebutSoiree() == null) {
+            throw new BusinessError.Invalid("heureDebutSoiree is required (HH:MM)");
+        }
     }
 
     /**

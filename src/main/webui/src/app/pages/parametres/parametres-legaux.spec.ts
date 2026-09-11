@@ -12,6 +12,7 @@ import { ParametresLegauxCard } from './parametres-legaux';
 /** Reaches the protected members the template binds to. */
 type CardInternals = {
   pauseSurPoste: { (): boolean; set: (value: boolean) => void };
+  heureDebutSoiree: { (): string; set: (value: string) => void };
   gapBetweenVacationsMinutes: () => number | null;
   reposQuotidienHeures: () => number | null;
   parametresLoading: () => boolean;
@@ -54,6 +55,7 @@ describe('ParametresLegauxCard', () => {
       coupureRepasMidiFin: '14:00:00',
       coupureRepasSoirDebut: '19:00:00',
       coupureRepasSoirFin: '21:00:00',
+      heureDebutSoiree: '20:00:00',
     });
     const card = createCard();
     await vi.waitFor(() => expect(card.pauseSurPoste()).toBe(true));
@@ -74,7 +76,37 @@ describe('ParametresLegauxCard', () => {
       coupureRepasMidiFin: '14:00:00',
       coupureRepasSoirDebut: '19:00:00',
       coupureRepasSoirFin: '21:00:00',
+      heureDebutSoiree: '20:00:00',
     });
+  });
+
+  it('sends the evening hour it was given back, and refuses to save without one', async () => {
+    constraintsApi.legalParameters.mockResolvedValue({
+      dureeHebdomadaireMaxMinutes: 48 * 60,
+      dureeHebdomadaireMaxMineurMinutes: 35 * 60,
+      pauseMinimaleEntreVacationsMinutes: 30,
+      reposQuotidienMinimalMinutes: 11 * 60,
+      pauseSurPoste: false,
+      coupureRepasMinutes: 60,
+      coupureRepasMidiDebut: '12:00:00',
+      coupureRepasMidiFin: '14:00:00',
+      coupureRepasSoirDebut: '19:00:00',
+      coupureRepasSoirFin: '21:00:00',
+      heureDebutSoiree: '20:00:00',
+    });
+    const card = createCard();
+    await vi.waitFor(() => expect(card.heureDebutSoiree()).toBe('20:00:00'));
+
+    card.heureDebutSoiree.set('22:00');
+    await card.saveParametresLegaux();
+    expect(constraintsApi.saveLegalParameters).toHaveBeenCalledWith(
+      expect.objectContaining({ heureDebutSoiree: '22:00' }),
+    );
+
+    constraintsApi.saveLegalParameters.mockClear();
+    card.heureDebutSoiree.set('');
+    await card.saveParametresLegaux();
+    expect(constraintsApi.saveLegalParameters).not.toHaveBeenCalled();
   });
 
   it('refuses to save while a field it holds is still unknown', async () => {

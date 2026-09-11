@@ -325,6 +325,21 @@ qu'en l'absence de filtre par stand ou par relais : ils appartiennent à la
 journée, pas à un stand. La déclaration `pauseSurPoste` se lit et se règle par
 `consulter_parametres_legaux` / `modifier_parametres_legaux`.
 
+## L'équité se lit par id
+
+`equite_planning` rend le tableau de l'écran Équité sur le planning persisté :
+une ligne par animateur affecté — heures totales et par semaine ISO, heures de
+soirée (après l'heure `heureDebutSoiree` des paramètres légaux), de week-end et
+de jour férié, postes et postes pénibles, stands, typologies et emplacements
+distincts, part des postes sur une typologie souhaitée ou appréciée, jours
+travaillés, jours de repos, plus longue série — et, par colonne, la médiane, le
+minimum, le maximum et l'écart-type. `colonnesSolveur` dit quelles colonnes une
+règle du solveur mesure et si cette règle est active : une colonne que le
+solveur ne pèse pas est une information pour l'assistant, pas un défaut de la
+résolution. Là où l'écran et l'export CSV nomment les personnes, l'outil ne
+rend que des ids. L'heure de début de soirée se lit et se règle par
+`consulter_parametres_legaux` / `modifier_parametres_legaux`.
+
 ## Le mode de la grille se déclare une fois
 
 `valider_creneaux`, `previsualiser_creneaux_recurrents` et

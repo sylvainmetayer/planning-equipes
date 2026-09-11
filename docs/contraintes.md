@@ -255,6 +255,11 @@ l'organisateur qui saisit la donnée, baisse le poids, ou éteint la règle en
 connaissance de cause — voir
 [`decisions/0031`](decisions/0031-signaler-le-plancher-sans-le-decider.md).
 
+Ce que ces règles mesurent se lit sur l'écran Équité (`GET /api/planning/equite`),
+qui dit colonne par colonne si une règle du solveur la pèse et si elle est
+active : les heures de soirée, de week-end ou de jour férié n'y sont mesurées
+par aucune règle, et l'écran le dit plutôt que de le laisser croire.
+
 ## Stabilité du plan publié
 
 `stabiliteDuPlanPublie` (MEDIUM, « Qualité d'organisation », dosable) répond à
