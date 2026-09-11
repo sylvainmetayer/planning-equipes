@@ -139,8 +139,8 @@ describe('KpiPage', () => {
       analysesApi.kpiHistory.mockResolvedValue([entry()]);
       page.recharger();
 
-      await vi.waitFor(() => expect(page.error()).toBe(''));
-      expect(page.entries()).toHaveLength(1);
+      await vi.waitFor(() => expect(page.entries()).toHaveLength(1));
+      expect(page.error()).toBe('');
     });
 
     // The rows already fetched stay on screen: a failed refresh must not look
@@ -277,6 +277,31 @@ describe('KpiPage', () => {
 
       expect(analysesApi.deleteKpiEntry).toHaveBeenCalledExactlyOnceWith(42);
       await vi.waitFor(() => expect(analysesApi.kpiHistory).toHaveBeenCalledOnce());
+    });
+
+    // `Resource.reload()` does nothing while a request is in flight, and the
+    // Supprimer button is not disabled during a refresh: the row stayed on
+    // screen, repainted by the answer to a request older than the deletion.
+    it('asks the server again after a deletion confirmed during a refresh', async () => {
+      const page = createPage();
+      await vi.waitFor(() => expect(page.chargement()).toBe(false));
+      const inFlight = deferred<KpiHistoriqueEntry[]>();
+      analysesApi.kpiHistory
+        .mockReturnValueOnce(inFlight.promise)
+        .mockResolvedValue([entry({ id: 1 })]);
+      page.recharger();
+      // The request has to have left: two refreshes in one tick are one request.
+      await vi.waitFor(() => expect(analysesApi.kpiHistory).toHaveBeenCalledTimes(2));
+      expect(page.chargement()).toBe(true);
+
+      await page.supprimer(entry({ id: 2 }));
+
+      await vi.waitFor(() => expect(analysesApi.kpiHistory).toHaveBeenCalledTimes(3));
+      await vi.waitFor(() => expect(page.entries().map((row) => row.id)).toEqual([1]));
+      // The older answer lands last: it is older than the deletion, and stays out.
+      inFlight.resolve([entry({ id: 1 }), entry({ id: 2 })]);
+      await vi.waitFor(() => expect(page.chargement()).toBe(false));
+      expect(page.entries().map((row) => row.id)).toEqual([1]);
     });
 
     it('warns that the deletion is permanent', async () => {

@@ -55,7 +55,19 @@ export class KpiPage {
   private readonly analysesApi = inject(AnalysesApi);
   private readonly confirm = inject(ConfirmService);
 
-  private readonly history = resource({ loader: () => this.analysesApi.kpiHistory() });
+  /**
+   * Bumped by every refresh. Re-keying the resource rather than calling
+   * `reload()`: `reload()` is a no-op while a request is in flight — a first
+   * load or a refresh alike — and the deletion confirmed during a refresh
+   * then never asked the server again, leaving the deleted row on screen.
+   * A re-key clears the previous failure the moment the refresh starts,
+   * where a reload kept it until the answer; the rows stay either way.
+   */
+  private readonly version = signal(0);
+  private readonly history = resource({
+    params: () => ({ version: this.version() }),
+    loader: () => this.analysesApi.kpiHistory(),
+  });
   // The list is kept across a failed refresh, unlike the report of /heures
   // which is dropped: this is history the server already holds, and losing
   // the screen to a network blip helps nobody. The error sits next to it, and
@@ -70,7 +82,7 @@ export class KpiPage {
 
   protected recharger(): void {
     this.actionError.set('');
-    this.history.reload();
+    this.version.update((version) => version + 1);
   }
 
   protected async supprimer(entry: KpiHistoriqueEntry): Promise<void> {
