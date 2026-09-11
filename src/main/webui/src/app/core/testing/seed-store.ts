@@ -1,7 +1,8 @@
 // A fixture seam for the specs, and for nothing else.
 //
 // The stores of `core/` expose read-only signals: a page reads, the store
-// writes, and `readonly-stores.spec.ts` keeps it so. A spec that wants a store
+// writes, and `scripts/check-readonly-stores.js` (`npm run stores-check`)
+// keeps it so. A spec that wants a store
 // holding three animateurs used to write the signal straight; it now goes
 // through here, which reaches the private writable signal behind the
 // read-only view. Typed on the value, so a wrong fixture still fails to
