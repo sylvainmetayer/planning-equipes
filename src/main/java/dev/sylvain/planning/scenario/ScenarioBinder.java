@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -116,10 +117,39 @@ public final class ScenarioBinder {
         if (e.getCause() instanceof MismatchedInputException wrongType) {
             // Without this, Jackson hands back its reference chain, which reads
             // like a stack trace and names Java classes to somebody writing YAML.
-            return "Valeur inattendue dans le scénario, sous " + path(wrongType.getPath(), false) + " : "
-                    + firstLine(wrongType);
+            String forme = formeAttendue(wrongType.getTargetType());
+            String chemin = path(wrongType.getPath(), false);
+            if (forme != null) {
+                return "La section « " + chemin + " » doit être " + forme + " dans le fichier de scénario.";
+            }
+            return "Valeur inattendue dans le scénario, sous " + chemin + " : " + firstLine(wrongType);
         }
         return e.getCause() == null ? e.getMessage() : firstLine(e.getCause());
+    }
+
+    /**
+     * What the file should have written where it wrote something else, in
+     * the author's words: a list, a block of fields, a number. {@code null}
+     * for the types the sentence cannot name better than Jackson does.
+     */
+    private static String formeAttendue(Class<?> cible) {
+        if (cible == null) {
+            return null;
+        }
+        if (Collection.class.isAssignableFrom(cible)) {
+            return "une liste";
+        }
+        if (Map.class.isAssignableFrom(cible)
+                || (cible.isRecord() && cible.getPackageName().equals(ScenarioDto.class.getPackageName()))) {
+            return "un bloc de champs (clé: valeur)";
+        }
+        if (Number.class.isAssignableFrom(cible) || cible == int.class || cible == long.class) {
+            return "un nombre";
+        }
+        if (cible == Boolean.class || cible == boolean.class) {
+            return "true ou false";
+        }
+        return null;
     }
 
     /**

@@ -81,6 +81,47 @@ class ScenarioBinderTest {
                 .hasMessageContaining("mapping attendu");
     }
 
+    private static final String MINIMAL = """
+            festival:
+              dateDebut: 2026-07-08
+            creneaux:
+              - id: J1
+                date: 2026-07-08
+                heureDebut: "09:00"
+                heureFin: "13:00"
+            stands:
+              - id: S1
+                nom: Stand 1
+                typologiesProposees: [STRATEGIE]
+                effectifMin: 1
+                effectifMax: 2
+                ouvertures:
+                  - date: 2026-07-08
+                    heureDebut: "10:00"
+                    heureFin: "12:00"
+            animateurs: []
+            """;
+
+    /**
+     * A section written as a scalar names the section and the shape it
+     * should have — the sentence the hand-written reader used to give, which
+     * #452 had replaced by Jackson's « Cannot deserialize value of type
+     * `java.util.ArrayList<…>` ».
+     */
+    @Test
+    void uneSectionMalFormeeNommeLaCleEtLaFormeAttendue() {
+        assertThatThrownBy(() -> ScenarioBinder.bind(
+                        MINIMAL.replaceFirst("(?s)creneaux:.*?stands:", "creneaux: pas-une-liste\nstands:")))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("« creneaux » doit être une liste")
+                .satisfies(e -> assertThat(e.getMessage()).doesNotContain("java."));
+
+        assertThatThrownBy(() -> ScenarioBinder.bind(
+                        MINIMAL.replace("festival:\n  dateDebut: 2026-07-08", "festival: pas-un-bloc")))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("« festival » doit être un bloc de champs");
+    }
+
     /**
      * A year typed where a date was expected is refused, not read as an epoch.
      *
