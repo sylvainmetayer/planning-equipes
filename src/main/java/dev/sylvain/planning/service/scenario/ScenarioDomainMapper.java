@@ -16,6 +16,7 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.ContrainteAdHocDto;
@@ -46,6 +47,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -331,6 +333,17 @@ final class ScenarioDomainMapper {
             String id = dto.id();
             if (id == null || id.isBlank()) {
                 throw new BusinessError.Invalid("Chaque contrainte ad hoc doit porter un id non vide.");
+            }
+            if (dto.type() == null) {
+                // The column is NOT NULL: letting it through would fail in SQL,
+                // after the parameter sections were already written.
+                throw new BusinessError.Invalid("La contrainte ad hoc " + id + " ne dit pas son type ("
+                        + String.join(
+                                ", ",
+                                Arrays.stream(TypeContrainteAdHoc.values())
+                                        .map(Enum::name)
+                                        .toList())
+                        + ").");
             }
             ContrainteAdHoc contrainte = new ContrainteAdHoc(id, dto.type());
             if (dto.animateurs() != null) {

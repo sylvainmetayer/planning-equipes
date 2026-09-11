@@ -168,6 +168,22 @@ class PlanningServiceScenarioFromTextTest {
     }
 
     /**
+     * The old reader failed on {@code valueOf(null)}; the DTO one built a
+     * constraint of type null that the NOT NULL column refused in SQL, after
+     * the parameter sections had been written — a partial import and a 500.
+     */
+    @Test
+    void refuseUneContrainteAdHocSansType() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario-contraintes.yaml").replace("    type: INCOMPATIBILITE\n", "");
+
+        assertThatThrownBy(() -> service.buildFromScenarioText(yaml))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("INCOMPAT-1")
+                .hasMessageContaining("type");
+    }
+
+    /**
      * The import refuses what the validator refuses. A stand without
      * {@code effectifMin} used to fail on a {@code NullPointerException}; the
      * DTO reader would have let it through with 0, that is one seat per
