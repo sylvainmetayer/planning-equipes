@@ -262,14 +262,19 @@ public class Creneau {
         return ProfilOuverture.of(this, stand).segments();
     }
 
-    /** True when at least part of this slot is open for {@code stand} (open-by-default). */
+    /**
+     * True when at least part of this slot is open for {@code stand}
+     * (open-by-default). Asked of the profile directly: building the minute
+     * projection for a boolean allocated a list per (créneau, stand) pair on
+     * the feasibility path, then threw it away.
+     */
     public boolean isStandOpen(Stand stand) {
-        return !segmentsOuvertsMinutes(stand).isEmpty();
+        return ProfilOuverture.of(this, stand).ouvert();
     }
 
     /** True when {@code stand} is closed for this slot's entire duration. */
     public boolean isStandFullyClosed(Stand stand) {
-        return getDureeMinutes() > 0 && segmentsOuvertsMinutes(stand).isEmpty();
+        return getDureeMinutes() > 0 && !ProfilOuverture.of(this, stand).ouvert();
     }
 
     /**
