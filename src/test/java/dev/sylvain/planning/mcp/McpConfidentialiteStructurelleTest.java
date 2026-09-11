@@ -3,6 +3,7 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.referentiel.Avertissement;
 import io.quarkiverse.mcp.server.Tool;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -60,6 +61,14 @@ class McpConfidentialiteStructurelleTest {
         assertThat(classe)
                 .as("l'outil %s ne doit pas exposer la classe de domaine Animateur", outil)
                 .isNotEqualTo(Animateur.class);
+        // A warning travels as a code, never as its sentence: the message of
+        // MINEUR_PENDANT_EVENEMENT dates the majority, that is the birth date
+        // shifted by eighteen years — the very field these views withhold.
+        // The rule was a convention applied by hand in three helpers; a tool
+        // returning List<Avertissement> compiled and passed every test.
+        assertThat(classe)
+                .as("l'outil %s ne doit pas exposer un Avertissement en phrase : passer par WarningCodes", outil)
+                .isNotEqualTo(Avertissement.class);
         if (!classe.isRecord()) {
             return;
         }
