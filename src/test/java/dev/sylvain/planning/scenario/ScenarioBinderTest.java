@@ -122,6 +122,23 @@ class ScenarioBinderTest {
                 .hasMessageContaining("« festival » doit être un bloc de champs");
     }
 
+    /** An empty {@code heureFin} means « until closing », as the hand-written reader read it. */
+    @Test
+    void uneHeureDeFinVideVeutDireJusquALaFermeture() {
+        ScenarioDto scenario = ScenarioBinder.bind(MINIMAL.replace("heureFin: \"12:00\"", "heureFin: \"\""));
+
+        assertThat(scenario.stands().get(0).ouvertures().get(0).heureFin()).isNull();
+    }
+
+    /** A bad hour deep in a stand says where it is: sixty-five stands is a lot to reread. */
+    @Test
+    void uneHeureInvalideNommeSonChemin() {
+        assertThatThrownBy(() -> ScenarioBinder.bind(MINIMAL.replace("heureFin: \"12:00\"", "heureFin: \"25:00\"")))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("stands[0].ouvertures[0].heureFin")
+                .hasMessageContaining("25:00");
+    }
+
     /**
      * A year typed where a date was expected is refused, not read as an epoch.
      *

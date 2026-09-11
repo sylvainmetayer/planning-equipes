@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -114,6 +116,12 @@ public final class ScenarioBinder {
                     + path(unknown.getPath(), true) + ". Vérifiez l'orthographe : un champ qu'on ne "
                     + "connaît pas n'est pas appliqué.";
         }
+        if (e.getCause() instanceof InvalidFormatException wrongValue) {
+            // Raised by the two deserialisers below, with a sentence of their
+            // own; Jackson attached the path on the way up.
+            return "Valeur inattendue dans le scénario, sous " + path(wrongValue.getPath(), false) + " : "
+                    + wrongValue.getOriginalMessage();
+        }
         if (e.getCause() instanceof MismatchedInputException wrongType) {
             // Without this, Jackson hands back its reference chain, which reads
             // like a stack trace and names Java classes to somebody writing YAML.
@@ -199,9 +207,17 @@ public final class ScenarioBinder {
                 return null;
             }
             if (value instanceof Number) {
-                throw new IllegalArgumentException("une date doit s'écrire 2026-08-17, pas « " + value + " »");
+                throw InvalidFormatException.from(
+                        parser, "une date doit s'écrire 2026-08-17, pas « " + value + " »", value, LocalDate.class);
             }
-            return LocalDate.parse(value.toString());
+            try {
+                return LocalDate.parse(value.toString());
+            } catch (DateTimeParseException e) {
+                // A Jackson exception rather than a bare one: Jackson attaches
+                // the path to it, so the author learns which stand, which day.
+                throw InvalidFormatException.from(
+                        parser, "« " + value + " » n'est pas une date (attendu 2026-08-17)", value, LocalDate.class);
+            }
         }
     }
 
@@ -214,13 +230,22 @@ public final class ScenarioBinder {
         @Override
         public LocalTime deserialize(JsonParser parser, DeserializationContext context) throws IOException {
             Object value = parser.readValueAs(Object.class);
-            if (value == null) {
+            // An empty heureFin is « until closing », the way the hand-written
+            // reader always read it (FenetreHoraire); refusing it broke files
+            // edited by hand that the application used to open.
+            if (value == null || value.toString().isEmpty()) {
                 return null;
             }
             if (value instanceof Number) {
-                throw new IllegalArgumentException("une heure doit s'écrire 9:30, pas « " + value + " »");
+                throw InvalidFormatException.from(
+                        parser, "une heure doit s'écrire 9:30, pas « " + value + " »", value, LocalTime.class);
             }
-            return LocalTime.parse(value.toString(), HEURE);
+            try {
+                return LocalTime.parse(value.toString(), HEURE);
+            } catch (DateTimeParseException e) {
+                throw InvalidFormatException.from(
+                        parser, "« " + value + " » n'est pas une heure (attendu 9:30)", value, LocalTime.class);
+            }
         }
     }
 }
