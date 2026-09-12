@@ -1087,6 +1087,57 @@ export interface RapportRecurrence {
   controle: RapportGrille;
 }
 
+/* ------------------------------ Day templates (ADR 0032) ------------------------------ */
+
+/** One vacation of a day template; `couverturePause` means a meal relay, as on a créneau. */
+export interface VacationType {
+  heureDebut: string;
+  heureFin: string;
+  couverturePause: boolean;
+}
+
+/** A named day template — « Jour normal », « Nocturne » — the vacations of one kind of day. */
+export interface JourneeType {
+  id?: number | null;
+  nom: string;
+  vacations: VacationType[];
+  /** The store's write stamp, sent back as the precondition of an edit (issue #362). */
+  modifieLe?: string | null;
+}
+
+/** One date governed by one template. */
+export interface AffectationJourneeType {
+  date: string;
+  journeeTypeId: number;
+}
+
+/** Templates, calendar, and the dates whose créneaux no longer match their template. */
+export interface EtatJourneesTypes {
+  journeesTypes: JourneeType[];
+  calendrier: AffectationJourneeType[];
+  datesEnEcart: string[];
+}
+
+/** What applying the calendar does or would do, and the verdict on the resulting grid. */
+export interface RapportApplicationJourneesTypes {
+  conserves: number;
+  misAJour: number;
+  crees: number;
+  supprimes: number;
+  creneauxSupprimes: Creneau[];
+  supprimesAvecPostes: Creneau[];
+  postesSupprimes: number;
+  datesEnEcart: string[];
+  aucunChangement: boolean;
+  controle: RapportGrille;
+}
+
+/** The templates a grid implies, and the calendar mapping its dates onto them. */
+export interface ReconnaissanceJourneesTypes {
+  journeesTypes: JourneeType[];
+  calendrier: AffectationJourneeType[];
+}
+
 export interface ParametresDecoupage {
   dureeVacationCibleMinutes: number;
   dureeVacationMinMinutes: number;

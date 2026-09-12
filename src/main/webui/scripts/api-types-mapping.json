@@ -57,7 +57,10 @@
     "ImportCompetencesRapport": "CompetencesGrilleImportReport",
     "ImportCompetencesDemande": "CompetencesGrilleImportRequest",
     "Scale": "ProblemScale",
-    "EtatEdition": "EtatEditionView"
+    "EtatEdition": "EtatEditionView",
+    "AffectationJourneeType": "Affectation",
+    "RapportApplicationJourneesTypes": "RapportApplication",
+    "ReconnaissanceJourneesTypes": "Reconnaissance"
   },
   "horsContrat": {
     "ConstraintDiagnostic": "ConstraintResource réemballe le diagnostic dans ses propres vues ; ce type-ci est la forme du front, sans schéma équivalent.",

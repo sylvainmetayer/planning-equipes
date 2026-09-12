@@ -4,12 +4,14 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.ScenarioYaml;
+import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +62,41 @@ public final class ScenarioYamlWriter {
             ParametresSolveur parametresSolveur,
             Set<String> contraintesDesactivees,
             Map<String, Integer> poidsContraintes,
-            List<ContrainteAdHoc> contraintesAdHoc) {}
+            List<ContrainteAdHoc> contraintesAdHoc,
+            List<JourneeType> journeesTypes,
+            List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes) {
+
+        /** Without day templates — the tests that predate them, and an edition that has none. */
+        public ScenarioExport(
+                List<Animateur> animateurs,
+                List<Stand> stands,
+                List<Creneau> creneaux,
+                List<PosteAffectation> postes,
+                List<TypologieItem> typologies,
+                List<Emplacement> emplacements,
+                ParametresLegaux parametresLegaux,
+                ParametresDecoupage parametresDecoupage,
+                ParametresSolveur parametresSolveur,
+                Set<String> contraintesDesactivees,
+                Map<String, Integer> poidsContraintes,
+                List<ContrainteAdHoc> contraintesAdHoc) {
+            this(
+                    animateurs,
+                    stands,
+                    creneaux,
+                    postes,
+                    typologies,
+                    emplacements,
+                    parametresLegaux,
+                    parametresDecoupage,
+                    parametresSolveur,
+                    contraintesDesactivees,
+                    poidsContraintes,
+                    contraintesAdHoc,
+                    List.of(),
+                    List.of());
+        }
+    }
 
     /**
      * <b>Visible for testing only</b> — no production caller, and none should

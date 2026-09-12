@@ -65,6 +65,12 @@ public class EditionRepository {
                     "stand_horaire",
                     "id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif"),
             new TableToCopy("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin, effectif"),
+            // Day templates (V75): ids copied verbatim like stand_horaire's — one
+            // global sequence, so a copied id never meets a generated one.
+            new TableToCopy("journee_type", "id, nom"),
+            new TableToCopy(
+                    "journee_type_vacation", "id, journee_type_id, position, heure_debut, heure_fin, couverture_pause"),
+            new TableToCopy("journee_type_date", "date_jour, journee_type_id"),
             new TableToCopy("constraint_toggle", "nom"),
             new TableToCopy("ponderation_contrainte", "nom, poids"),
             new TableToCopy(

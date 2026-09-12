@@ -1,6 +1,8 @@
 <h1 class="page-title" i18n="@@nav.link.creneaux">Créneaux</h1>
 
-<mat-card appearance="outlined" class="page-card">
+<app-journees-types [verrouille]="editingLocked()" (applique)="apresJourneesTypes()" />
+
+<mat-card appearance="outlined" class="page-card creneaux-liste-card">
   <mat-card-header>
     <h2 mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ creneauxAffiches().length }})</h2>
     <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; les fermetures se déclarent depuis la fiche du stand.</mat-card-subtitle>

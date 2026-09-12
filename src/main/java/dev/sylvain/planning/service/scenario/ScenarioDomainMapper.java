@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
@@ -19,6 +20,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.ContrainteAdHocDto;
 import dev.sylvain.planning.scenario.dto.ContraintesDto;
@@ -28,6 +30,7 @@ import dev.sylvain.planning.scenario.dto.EmplacementDto;
 import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
 import dev.sylvain.planning.scenario.dto.HoraireStandDto;
 import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
+import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
 import dev.sylvain.planning.scenario.dto.ParametresDecoupageDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
@@ -36,8 +39,10 @@ import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
+import dev.sylvain.planning.scenario.dto.VacationTypeDto;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ContraintesScenario;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ReferenceScenario;
@@ -414,7 +419,40 @@ final class ScenarioDomainMapper {
                 scenario.decoupageAuto() != null,
                 typologies(scenario.typologies()),
                 edition(scenario),
-                contraintes(scenario.contraintes()));
+                contraintes(scenario.contraintes()),
+                journeesTypes(scenario.journeesTypes()));
+    }
+
+    /**
+     * The {@code journeesTypes:} section: each template gets a provisional
+     * negative id — the file has none — that its own dates name, and the
+     * repository reassigns both when it writes them.
+     */
+    static Optional<ScenarioYamlReader.JourneesTypesScenario> journeesTypes(List<JourneeTypeDto> dtos) {
+        if (dtos == null) {
+            return Optional.empty();
+        }
+        List<JourneeType> journeesTypes = new ArrayList<>();
+        List<JourneesTypesMaterialisation.Affectation> calendrier = new ArrayList<>();
+        long provisoire = -1;
+        for (JourneeTypeDto dto : dtos) {
+            List<VacationType> vacations = new ArrayList<>();
+            for (VacationTypeDto vacation : required(dto.vacations(), "journeesTypes.vacations")) {
+                vacations.add(new VacationType(
+                        required(vacation.heureDebut(), "journeesTypes.vacations.heureDebut"),
+                        required(vacation.heureFin(), "journeesTypes.vacations.heureFin"),
+                        Boolean.TRUE.equals(vacation.couverturePause())));
+            }
+            JourneeType journeeType = new JourneeType(provisoire, required(dto.nom(), "journeesTypes.nom"), vacations);
+            journeesTypes.add(journeeType);
+            if (dto.dates() != null) {
+                for (LocalDate date : dto.dates()) {
+                    calendrier.add(new JourneesTypesMaterialisation.Affectation(date, provisoire));
+                }
+            }
+            provisoire--;
+        }
+        return Optional.of(new ScenarioYamlReader.JourneesTypesScenario(journeesTypes, calendrier));
     }
 
     /** The {@code edition:} section, when the file names its target. */

@@ -78,11 +78,13 @@ public class ScenarioImportService {
             if (sections.decoupageAuto()) {
                 referenceDataService.applyAutomaticDecoupage(importe.planning());
                 applyTypologies(sections);
+                applyJourneesTypes(sections);
                 applyContraintes(sections);
                 return true;
             }
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
+            applyJourneesTypes(sections);
             applyContraintes(sections);
             return false;
         });
@@ -118,6 +120,17 @@ public class ScenarioImportService {
      * <b>after</b> the planning itself has been imported: see this class's
      * javadoc for why the order is not negotiable.
      */
+    /**
+     * The file's own day templates, when it names them, replace the ones the
+     * planning import recognised from its créneaux; absent, the recognised ones
+     * stand — the screen and the file then describe the same edition.
+     */
+    private void applyJourneesTypes(ScenarioYamlReader.ScenarioSections sections) {
+        sections.journeesTypes()
+                .ifPresent(section ->
+                        referenceDataService.importJourneesTypes(section.journeesTypes(), section.calendrier()));
+    }
+
     private void applyTypologies(ScenarioYamlReader.ScenarioSections sections) {
         sections.typologies().forEach(referenceDataService::importTypologie);
     }

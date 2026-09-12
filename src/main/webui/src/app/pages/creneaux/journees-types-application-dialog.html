@@ -1,0 +1,56 @@
+<h2 mat-dialog-title i18n="@@journeesTypes.application.title">Appliquer le calendrier des journées types</h2>
+<mat-dialog-content>
+  @if (apercu.aucunChangement) {
+    <p class="empty-hint" i18n="@@journeesTypes.application.rien">La grille correspond déjà au calendrier : rien à changer.</p>
+  } @else {
+    <ul class="journees-types-bilan">
+      <li><strong>{{ apercu.conserves }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.conserves">créneau(x) conservé(s), avec leurs sièges</ng-container></li>
+      <li><strong>{{ apercu.misAJour }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.misAJour">relais repas mis à jour</ng-container></li>
+      <li><strong>{{ apercu.crees }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.crees">créneau(x) créé(s)</ng-container></li>
+      <li [class.journees-types-suppression]="apercu.supprimes > 0"><strong>{{ apercu.supprimes }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.supprimes">créneau(x) supprimé(s)</ng-container></li>
+    </ul>
+    @if (apercu.postesSupprimes > 0) {
+      <p class="field-error" role="alert" i18n="@@journeesTypes.application.postes">
+        {{ apercu.supprimesAvecPostes.length }} de ces créneaux portent {{ apercu.postesSupprimes }} siège(s) du planning enregistré : ils seront effacés.
+      </p>
+      <ul class="journees-types-supprimes">
+        @for (creneau of apercu.supprimesAvecPostes; track creneau.id) {
+          <li>{{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}</li>
+        }
+      </ul>
+    }
+    <p class="empty-hint" i18n="@@journeesTypes.application.mode">La grille sera ensuite déclarée en vacations finales.</p>
+    @if (bilan(); as bilan) {
+      <p class="serie-bilan">
+        <span [class.serie-bilan-erreur]="bilan.erreurs > 0" i18n="@@creneaux.serie.bilan.erreurs">{{ bilan.erreurs }} erreur(s)</span>
+        <span i18n="@@creneaux.serie.bilan.avertissements">{{ bilan.avertissements }} avertissement(s)</span>
+        <span i18n="@@creneaux.serie.bilan.ouvertures">{{ bilan.ouvertures }} anomalie(s) d'ouverture</span>
+      </p>
+    }
+    @if (anomalies().length > 0) {
+      <ul class="ouvertures-anomalies serie-anomalies">
+        @for (anomalie of anomalies(); track $index) {
+          <li [class.anomalie-avertissement]="anomalie.severite === 'AVERTISSEMENT'">
+            <mat-icon>{{ gridAnomalyIcon(anomalie) }}</mat-icon>
+            @if (anomalie.date) {
+              <span class="anomalie-date">{{ anomalie.date }}</span>
+            }
+            <span>{{ anomalie.message }}</span>
+          </li>
+        }
+      </ul>
+    }
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="button" [class.danger-action]="destructif"
+          [disabled]="apercu.aucunChangement || application() || editingLocked()" (click)="appliquer()">
+    @if (application()) {
+      <mat-progress-spinner diameter="18" mode="indeterminate" />
+    } @else {
+      <mat-icon>event_available</mat-icon>
+    }
+    <ng-container i18n="@@journeesTypes.application.submit">Appliquer</ng-container>
+  </button>
+</mat-dialog-actions>

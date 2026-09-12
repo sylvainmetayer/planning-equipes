@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -58,4 +59,14 @@ public interface ReferenceData {
     ParametresDecoupage getParametresDecoupage();
 
     ParametresSolveur getParametresSolveur();
+
+    /** The day templates (ADR 0032); none by default, for the readers that predate them. */
+    default List<JourneeType> listJourneesTypes() {
+        return List.of();
+    }
+
+    /** Which date each template governs; empty when the edition assigns none. */
+    default List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes() {
+        return List.of();
+    }
 }

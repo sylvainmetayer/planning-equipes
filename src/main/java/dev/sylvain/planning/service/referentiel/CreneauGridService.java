@@ -280,7 +280,7 @@ public class CreneauGridService {
             }
             if (mode == ModeGrilleCreneaux.VACATIONS
                     && creneau.isCouverturePause()
-                    && !dansUneFenetreRepas(creneau, fenetresRepas)) {
+                    && !insideMealWindow(creneau, fenetresRepas)) {
                 anomalies.add(new GridAnomaly(
                         SeveriteGrille.AVERTISSEMENT,
                         GridAnomalyType.RELAIS_REPAS_HORS_FENETRE,
@@ -300,7 +300,7 @@ public class CreneauGridService {
      * slot running past midnight is never inside one — the windows are
      * wall-clock, within the day.
      */
-    private static boolean dansUneFenetreRepas(Creneau creneau, List<FenetreRepas> fenetres) {
+    private static boolean insideMealWindow(Creneau creneau, List<FenetreRepas> fenetres) {
         int debut = creneau.getHeureDebut().toSecondOfDay() / 60;
         int fin = creneau.getHeureFin().toSecondOfDay() / 60;
         if (fin <= debut) {

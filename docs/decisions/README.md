@@ -55,6 +55,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0029](0029-retrait-des-familles-de-relais.md) | Les familles de relais sont retirées | Accepté · remplace 0026 |
 | [0030](0030-grille-competences-import-additif.md) | La grille des compétences transpose 0021 : identité par identifiant, case vide inchangée, jamais de suppression | Accepté · transpose 0021 et 0022 |
 | [0031](0031-signaler-le-plancher-sans-le-decider.md) | Une règle qui pénalise tout faute de donnée est signalée comme plancher, jamais désactivée | Accepté |
+| [0032](0032-journees-types-nommees-vacations-fixes.md) | Des journées types nommées génèrent les créneaux par différence ; les créneaux restent la vérité | Accepté |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

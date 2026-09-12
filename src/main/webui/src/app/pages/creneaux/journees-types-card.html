@@ -1,0 +1,156 @@
+<mat-card appearance="outlined" class="page-card journees-types-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@journeesTypes.title">Journées types</h2>
+    <mat-card-subtitle i18n="@@journeesTypes.hint">
+      Chaque sorte de journée décrite une fois — ses vacations — puis posée sur des dates. Appliquer écrit les créneaux ; rien ne change avant.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (chargement() && !etat()) {
+      <p class="empty-hint" i18n="@@journeesTypes.chargement">Chargement des journées types…</p>
+    }
+    <div class="journees-types-colonnes">
+      <section class="journees-types-liste" aria-labelledby="journees-types-liste-titre">
+        <h3 id="journees-types-liste-titre" i18n="@@journeesTypes.liste.title">Journées</h3>
+        @if (journeesTypes().length === 0) {
+          <p class="empty-hint" i18n="@@journeesTypes.liste.vide">Aucune journée type. Créez-en une, ou reconnaissez-les depuis les créneaux existants.</p>
+        }
+        <ul class="journees-types-items">
+          @for (journeeType of journeesTypes(); track journeeType.id) {
+            <li class="journee-type-item">
+              <div class="journee-type-entete">
+                <strong>{{ journeeType.nom }}</strong>
+                <span class="journee-type-actions">
+                  <button matIconButton type="button" [disabled]="verrouille()" (click)="ouvrir(journeeType)"
+                          i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button matIconButton type="button" class="danger-action" [disabled]="verrouille() || ecriture()" (click)="supprimer(journeeType)"
+                          i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </span>
+              </div>
+              <p class="journee-type-vacations">
+                @for (vacation of journeeType.vacations; track $index) {
+                  <span class="vacation-chip" [class.vacation-chip-relais]="vacation.couverturePause">
+                    {{ libelleVacation(vacation) }}
+                    @if (vacation.couverturePause) {
+                      <mat-icon inline i18n-aria-label="@@creneaux.field.couverturePause" aria-label="Relais repas (effectif divisé par deux)">restaurant</mat-icon>
+                    }
+                  </span>
+                }
+              </p>
+            </li>
+          }
+        </ul>
+        <div class="card-actions">
+          <button matButton="filled" type="button" [disabled]="verrouille()" (click)="ouvrir(null)">
+            <mat-icon>add</mat-icon>
+            <ng-container i18n="@@journeesTypes.creer">Nouvelle journée type</ng-container>
+          </button>
+          <button matButton type="button" [disabled]="verrouille() || ecriture()" (click)="reconnaitre()"
+                  i18n-matTooltip="@@journeesTypes.reconnaitre.tooltip"
+                  matTooltip="Lit les journées types que les créneaux actuels impliquent : chaque date aux mêmes vacations est la même journée.">
+            <mat-icon>auto_fix_high</mat-icon>
+            <ng-container i18n="@@journeesTypes.reconnaitre.action">Reconnaître depuis les créneaux</ng-container>
+          </button>
+        </div>
+      </section>
+
+      <section class="journees-types-calendrier" aria-labelledby="journees-types-calendrier-titre">
+        <h3 id="journees-types-calendrier-titre">
+          <ng-container i18n="@@journeesTypes.calendrier.title">Calendrier</ng-container>
+          @if (bornes(); as bornes) {
+            <span class="journees-types-bornes" i18n="@@journeesTypes.calendrier.bornes">du {{ bornes.du }} au {{ bornes.au }}</span>
+          }
+        </h3>
+        <form class="journees-types-ajout" (ngSubmit)="ajouterDates()">
+          <mat-form-field appearance="outline" class="champ-date">
+            <mat-label i18n="@@creneaux.serie.dateDebut">Du</mat-label>
+            <input matInput type="date" name="du" [disabled]="verrouille()" [ngModel]="du()" (ngModelChange)="du.set($event)" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="champ-date">
+            <mat-label i18n="@@creneaux.serie.dateFin">Au</mat-label>
+            <input matInput type="date" name="au" [disabled]="verrouille()" [ngModel]="au()" (ngModelChange)="au.set($event)" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="champ-journee">
+            <mat-label i18n="@@journeesTypes.calendrier.journee">Journée type</mat-label>
+            <mat-select name="journeeType" [disabled]="verrouille() || journeesTypes().length === 0"
+                        [ngModel]="journeeTypeChoisie()" (ngModelChange)="journeeTypeChoisie.set($event)">
+              @for (journeeType of journeesTypes(); track journeeType.id) {
+                <mat-option [value]="journeeType.id">{{ journeeType.nom }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button matButton type="submit" [disabled]="!peutAjouter()">
+            <mat-icon>date_range</mat-icon>
+            <ng-container i18n="@@journeesTypes.calendrier.ajouter">Ajouter {{ datesAAjouter().length }} date(s)</ng-container>
+          </button>
+        </form>
+        @if (lignes().length === 0) {
+          <p class="empty-hint" i18n="@@journeesTypes.calendrier.vide">Aucune date. Les dates posées ici sont celles de l'édition.</p>
+        } @else {
+          <div class="table-wrapper">
+            <table class="journees-types-table">
+              <caption class="visually-hidden" i18n="@@journeesTypes.calendrier.caption">Calendrier des journées types : une ligne par date, la journée type qui la gouverne, et l'écart avec les créneaux écrits</caption>
+              <thead>
+                <tr>
+                  <th scope="col" i18n="@@creneaux.column.date">Date</th>
+                  <th scope="col" i18n="@@journeesTypes.calendrier.journee">Journée type</th>
+                  <th scope="col" i18n="@@journeesTypes.calendrier.etat">État</th>
+                  <th scope="col" i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ligne of lignes(); track ligne.date) {
+                  <tr [class.ligne-en-ecart]="ligne.enEcart">
+                    <td><span class="journee-jour-semaine">{{ ligne.jourSemaine }}</span> {{ ligne.libelle }}</td>
+                    <td>
+                      <mat-select class="select-journee" [disabled]="verrouille() || ecriture()" [ngModel]="ligne.journeeTypeId"
+                                  (ngModelChange)="changerJourneeType(ligne.date, $event)"
+                                  i18n-aria-label="@@journeesTypes.calendrier.journee" aria-label="Journée type">
+                        @for (journeeType of journeesTypes(); track journeeType.id) {
+                          <mat-option [value]="journeeType.id">{{ journeeType.nom }}</mat-option>
+                        }
+                      </mat-select>
+                    </td>
+                    <td>
+                      @if (ligne.enEcart) {
+                        <span class="journee-ecart" i18n="@@journeesTypes.calendrier.ecart">En écart avec les créneaux</span>
+                      } @else {
+                        <span class="journee-conforme" i18n="@@journeesTypes.calendrier.conforme">Appliquée</span>
+                      }
+                    </td>
+                    <td class="row-actions">
+                      <button matIconButton type="button" [disabled]="verrouille() || ecriture()" (click)="retirer(ligne.date)"
+                              i18n-matTooltip="@@journeesTypes.calendrier.retirer" matTooltip="Retirer cette date du calendrier (ses créneaux restent)"
+                              i18n-aria-label="@@journeesTypes.calendrier.retirer" aria-label="Retirer cette date du calendrier (ses créneaux restent)">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        <div class="card-actions">
+          <button matButton="filled" type="button" [disabled]="!peutAppliquer()" (click)="appliquer()"
+                  i18n-matTooltip="@@journeesTypes.appliquer.tooltip"
+                  matTooltip="Écrit les créneaux du calendrier : un créneau identique garde ses sièges, un créneau en trop sur une date gouvernée est supprimé. Aperçu avant d'écrire.">
+            @if (ecriture()) {
+              <mat-progress-spinner diameter="18" mode="indeterminate" />
+            } @else {
+              <mat-icon>event_available</mat-icon>
+            }
+            <ng-container i18n="@@journeesTypes.appliquer.action">Appliquer le calendrier</ng-container>
+          </button>
+          @if (datesEnEcart().size > 0) {
+            <span class="journees-types-ecarts" i18n="@@journeesTypes.ecarts">{{ datesEnEcart().size }} date(s) en écart avec leur journée type</span>
+          }
+        </div>
+      </section>
+    </div>
+  </mat-card-content>
+</mat-card>

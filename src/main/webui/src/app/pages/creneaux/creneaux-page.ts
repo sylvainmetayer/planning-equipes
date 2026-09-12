@@ -54,6 +54,7 @@ import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 import { CreneauDerivationData, CreneauDerivationDialog } from './creneau-derivation-dialog';
 import { CreneauSerieData, CreneauSerieDialog } from './creneau-serie-dialog';
 import { ParametresDecoupageCard } from './parametres-decoupage';
+import { JourneesTypesCard } from './journees-types-card';
 import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
 
 /**
@@ -87,6 +88,7 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
     RouterLink,
     BulkActionsBar,
     ParametresDecoupageCard,
+    JourneesTypesCard,
   ],
   templateUrl: './creneaux-page.html',
   styleUrls: [
@@ -379,6 +381,25 @@ export class CreneauxPage {
       variant: 'success',
       timeout: 6000,
     });
+  }
+
+  /**
+   * The calendar of day templates was applied: the grid, its verdict, the
+   * persisted plan and the declared mode may all have moved, and the card
+   * already told the user what happened.
+   */
+  protected async apresJourneesTypes(): Promise<void> {
+    await Promise.all([
+      this.crud.reload(),
+      this.resolution.reload(),
+      this.problemes.reloadFeasibility(),
+    ]);
+    try {
+      this.parametresDecoupage.set(await this.creneauxApi.slicingParameters());
+    } catch (error) {
+      this.crud.reportError(error);
+    }
+    await this.rechargerVerdict();
   }
 
   protected openCreate(): void {

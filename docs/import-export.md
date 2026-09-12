@@ -166,6 +166,16 @@ La section `typologies` permet de fixer un vrai libellé — elle est appliquée
 plus une typologie porte `ninja: true` ; la déclarer retire le drapeau de la
 précédente. L'export réécrit la section entière, drapeau compris.
 
+La section `journeesTypes` (optionnelle) porte les journées types de
+l'édition — nom, vacations avec `couverturePause` pour un relais repas, et
+les dates que chacune gouverne. Elle est appliquée **après** les créneaux et
+remplace journées types et calendrier ; elle n'écrit aucun créneau, un
+fichier cohérent avec lui-même listant sous `creneaux` ce que ses journées
+types disent. Absente, l'import **reconnaît** les journées types que les
+créneaux impliquent, pour qu'une édition importée se lise comme une édition
+tapée ([ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md)).
+L'export écrit la section dès qu'une journée type existe.
+
 ## Import CSV des animateurs
 
 Le seul import **partiel** du produit : il ne touche que les animateurs, une

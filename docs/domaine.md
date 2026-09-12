@@ -54,6 +54,35 @@ Trois conséquences, et aucune n'est un défaut à corriger plus tard :
   grille *est* l'événement — mais un avertissement déjà affiché ne se
   réévalue pas tout seul : il décrit l'instant de l'écriture.
 
+### Les journées types génèrent les créneaux, elles ne les remplacent pas
+
+Une édition qui tape ses vacations décrit chaque sorte de journée une fois —
+« Jour normal », « Nocturne », « Montage » — par son nom et ses vacations,
+puis pose ces journées types sur un **calendrier** de dates
+([ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md)). C'est
+le premier objet qui porte des dates indépendamment des créneaux : les dates
+de l'édition se saisissent là, avant le premier créneau.
+
+Le calendrier est un **générateur**, jamais la vérité. **Appliquer** le
+matérialise par différence sur la clé `(date, début, fin)`, celle que le
+contrôle de grille appelle déjà un doublon : un créneau identique garde son
+id, ses sièges et ses verrous ; seul son drapeau de relais repas peut être
+mis à jour en place ; un créneau manquant est créé ; un créneau que la
+journée type ne nomme pas, sur une date gouvernée, est supprimé avec ses
+sièges, après un aperçu chiffré. Une date que le calendrier n'affecte pas
+n'est jamais touchée. Tout l'aval — postes, verrous, `JoursEvenement` —
+continue de lire les créneaux, et l'application déclare la grille en
+vacations.
+
+Une journée type modifiée après coup ne propage rien : ses dates passent
+**en écart**, et l'organisateur réapplique. La **reconnaissance** lit les
+journées types qu'une grille implique — chaque date aux mêmes vacations et
+mêmes drapeaux est la même journée — et remplace journées types et
+calendrier ; elle suit tout remplacement de la grille (import de scénario,
+découpage), si bien qu'une édition importée et une édition tapée se lisent
+pareil sur l'écran Créneaux. La logique est pure
+(`JourneesTypesMaterialisation`), le service ne fait que la persister.
+
 Cette dérivation est écrite une fois (`service/referentiel/JoursEvenement`) et lue à la
 fois par la collecte des disponibilités et par les avertissements de saisie
 (voir [`api.md`](api.md#avertissements-de-saisie)).

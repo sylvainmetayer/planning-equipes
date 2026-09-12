@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -22,6 +23,7 @@ import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
 import dev.sylvain.planning.scenario.dto.FestivalDto;
 import dev.sylvain.planning.scenario.dto.HoraireStandDto;
 import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
+import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
 import dev.sylvain.planning.scenario.dto.ParametresDecoupageDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
@@ -30,6 +32,8 @@ import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
+import dev.sylvain.planning.scenario.dto.VacationTypeDto;
+import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -77,6 +81,7 @@ final class ScenarioDtoAssembler {
                 contraintes(export),
                 nullWhenEmpty(typologies(export.typologies())),
                 creneaux(creneaux),
+                nullWhenEmpty(journeesTypes(export.journeesTypes(), export.calendrierJourneesTypes())),
                 nullWhenEmpty(emplacements(export.emplacements())),
                 stands(export.stands()),
                 animateurs(export.animateurs()),
@@ -114,6 +119,32 @@ final class ScenarioDtoAssembler {
                         // créneaux out of ten would be noise in a file people
                         // read.
                         creneau.isCouverturePause() ? Boolean.TRUE : null))
+                .toList();
+    }
+
+    /** Each template with the dates the calendar gives it, in calendar order — what the import reads back. */
+    private static List<JourneeTypeDto> journeesTypes(
+            List<JourneeType> journeesTypes, List<JourneesTypesMaterialisation.Affectation> calendrier) {
+        if (journeesTypes == null) {
+            return List.of();
+        }
+        return journeesTypes.stream()
+                .map(journeeType -> new JourneeTypeDto(
+                        journeeType.getNom(),
+                        journeeType.getVacations().stream()
+                                .map(vacation -> new VacationTypeDto(
+                                        vacation.heureDebut(),
+                                        vacation.heureFin(),
+                                        vacation.couverturePause() ? Boolean.TRUE : null))
+                                .toList(),
+                        calendrier == null
+                                ? List.of()
+                                : calendrier.stream()
+                                        .filter(affectation ->
+                                                affectation.journeeTypeId().equals(journeeType.getId()))
+                                        .map(JourneesTypesMaterialisation.Affectation::date)
+                                        .sorted()
+                                        .toList()))
                 .toList();
     }
 

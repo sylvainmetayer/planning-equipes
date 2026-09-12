@@ -390,6 +390,24 @@ défaut, ou à la place de la grille avec `remplacer=true` (le planning résolu
 part avec elle, comme pour `generer_decoupage`). Le prompt
 `construire_la_grille_de_creneaux` la propose avant la récurrence.
 
+## Les journées types se définissent en une ligne
+
+`definir_journee_type` crée ou remplace une journée type par son nom, ses
+vacations sur une ligne — « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R,
+14:00-20:00 », `R` marquant un relais repas aux sièges divisés par deux —
+et `affecter_journee_type` la pose sur une plage ou des dates ; les autres
+dates du calendrier sont conservées, `retirer_dates_journee_type` en
+retire. Rien de tout cela n'écrit un créneau :
+`previsualiser_application_journees_types` dit ce qu'appliquer changerait
+(conservés, mis à jour, créés, supprimés avec les sièges qu'ils portent) et
+`materialiser_journees_types` l'écrit, puis déclare la grille en `VACATIONS`.
+Une date sans journée type n'est pas touchée. `reconnaitre_journees_types`
+fait le chemin inverse depuis les créneaux, et remplace journées types et
+calendrier (`apercu=true` pour voir sans écrire). `lister_journees_types`
+rend aussi les dates **en écart**, celles dont les créneaux ne suivent plus
+leur journée type. Voir
+[ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md).
+
 ## Hors périmètre, volontairement
 
 | Ce qui n'a pas d'outil | Pourquoi |

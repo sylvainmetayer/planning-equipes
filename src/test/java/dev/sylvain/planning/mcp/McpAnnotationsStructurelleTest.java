@@ -76,6 +76,11 @@ class McpAnnotationsStructurelleTest {
             "deverrouiller",
             "generer_decoupage",
             "generer_creneaux_depuis_stands",
+            // Applying a day-template calendar removes the créneaux a governed
+            // date no longer names, seats included; recognising replaces every
+            // template and the whole calendar (ADR 0032).
+            "materialiser_journees_types",
+            "reconnaitre_journees_types",
             "lancer_solveur",
             "resoudre_incremental");
 
@@ -93,6 +98,7 @@ class McpAnnotationsStructurelleTest {
             "capturer_",
             "arreter_",
             "affecter_",
+            "retirer_",
             "deplacer_",
             "configurer_",
             "appliquer_",

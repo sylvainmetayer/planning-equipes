@@ -27,6 +27,7 @@ public record ScenarioDto(
         @Valid ContraintesDto contraintes,
         List<@Valid TypologieDto> typologies,
         @NotNull List<@Valid CreneauDto> creneaux,
+        List<@Valid JourneeTypeDto> journeesTypes,
         List<@Valid EmplacementDto> emplacements,
         @NotNull List<@Valid StandDto> stands,
         @NotNull List<@Valid AnimateurDto> animateurs,

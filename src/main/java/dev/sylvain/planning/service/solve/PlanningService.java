@@ -220,7 +220,9 @@ public class PlanningService {
                 referenceDataService.getParametresSolveur(),
                 referenceDataService.getContraintesDesactivees(),
                 referenceDataService.getConstraintWeights(),
-                referenceDataService.snapshotContraintes()));
+                referenceDataService.snapshotContraintes(),
+                referenceDataService.listJourneesTypes(),
+                referenceDataService.calendrierJourneesTypes()));
     }
 
     // --- Scenario reading: façade over ScenarioYamlReader -------------------

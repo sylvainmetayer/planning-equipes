@@ -17,6 +17,7 @@ import { Sort } from '@angular/material/sort';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreneauxApi } from '../../core/api/creneaux-api';
+import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -198,6 +199,13 @@ describe('CreneauxPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: CreneauxApi, useValue: creneauxApi },
+        // The day-templates card reads its own state; an empty one keeps it quiet here.
+        {
+          provide: JourneesTypesApi,
+          useValue: {
+            etat: vi.fn(async () => ({ journeesTypes: [], calendrier: [], datesEnEcart: [] })),
+          },
+        },
         { provide: ReferenceCrudService, useValue: crud },
         {
           provide: SolverJobService,
@@ -567,7 +575,7 @@ describe('CreneauxPage rendering', () => {
       creneau({ id: 2, jour: 2, heureDebut: '14:00', heureFin: '19:00' }),
     ]);
 
-    expect(racine().querySelector('h2')!.textContent!).toContain('Créneaux (2)');
+    expect(racine().querySelector('.creneaux-liste-card h2')!.textContent!).toContain('Créneaux (2)');
     expect(lignes().map((row) => [row[1], row[3]])).toEqual([
       ['J1', '10:00–12:00'],
       ['J2', '14:00–19:00'],
@@ -586,7 +594,7 @@ describe('CreneauxPage rendering', () => {
   it('says the referential is empty rather than showing a bare table', async () => {
     await rendre([]);
 
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
+    expect(racine().querySelector('.creneaux-liste-card .empty-hint')!.textContent!.trim()).toBe(
       'Aucun créneau pour le moment.',
     );
   });

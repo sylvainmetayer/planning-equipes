@@ -1,0 +1,47 @@
+<h2 mat-dialog-title>{{ formTitle }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content class="form-grid">
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@journeesTypes.field.nom">Nom</mat-label>
+  <input matInput name="nom" required maxlength="80" placeholder="Jour normal" autocomplete="off"
+         [ngModel]="nom()" (ngModelChange)="nom.set($event)" />
+</mat-form-field>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@journeesTypes.field.vacations">Vacations de la journée</mat-label>
+  <input matInput name="vacations" required placeholder="09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00"
+         autocomplete="off" spellcheck="false"
+         [ngModel]="ligne()" (ngModelChange)="ligne.set($event)" />
+  <mat-hint i18n="@@journeesTypes.field.vacations.hint">Une vacation par virgule, « R » après un relais repas (sièges divisés par deux)</mat-hint>
+</mat-form-field>
+@if (erreur(); as message) {
+  <p class="field-error span-2" role="alert">{{ message }}</p>
+} @else if (apercu().length > 0) {
+  <p class="span-2 journee-type-apercu">
+    @for (vacation of apercu(); track $index) {
+      <span class="vacation-chip" [class.vacation-chip-relais]="vacation.couverturePause">
+        {{ libelleVacation(vacation) }}
+        @if (vacation.couverturePause) {
+          <mat-icon inline aria-hidden="true">restaurant</mat-icon>
+        }
+      </span>
+    }
+  </p>
+}
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="submit" [disabled]="invalide() || enregistrement() || editingLocked()">
+    <mat-icon>save</mat-icon>
+    @if (editingId !== null) {
+      <ng-container i18n="@@journeesTypes.form.submit.edit">Modifier la journée type</ng-container>
+    } @else {
+      <ng-container i18n="@@journeesTypes.form.submit.create">Créer la journée type</ng-container>
+    }
+  </button>
+</mat-dialog-actions>
+</form>

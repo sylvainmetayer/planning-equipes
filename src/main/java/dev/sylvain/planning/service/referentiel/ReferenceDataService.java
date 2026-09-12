@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -98,6 +99,9 @@ public class ReferenceDataService implements ReferenceData {
 
     @Inject
     CreneauGridService grille;
+
+    @Inject
+    JourneeTypeService journeesTypes;
 
     @Inject
     JdbcEditionScope scope;
@@ -396,6 +400,78 @@ public class ReferenceDataService implements ReferenceData {
     /** The créneaux a rule produced (or would produce), and the resulting grid's verdict. */
     public record RecurrenceGrille(List<Creneau> creneaux, CreneauGridService.RapportGrille controle) {}
 
+    /* ------------------------------ Day templates ------------------------------ */
+
+    @Override
+    public List<JourneeType> listJourneesTypes() {
+        return journeesTypes.list();
+    }
+
+    @Override
+    public List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes() {
+        return journeesTypes.calendrier();
+    }
+
+    public JourneeType createJourneeType(JourneeType journeeType) {
+        return journeesTypes.create(journeeType);
+    }
+
+    public JourneeType updateJourneeType(long id, JourneeType journeeType) {
+        return journeesTypes.update(id, journeeType);
+    }
+
+    public void deleteJourneeType(long id) {
+        journeesTypes.delete(id);
+    }
+
+    public JourneeTypeService.EtatJourneesTypes etatJourneesTypes() {
+        return journeesTypes.etat();
+    }
+
+    public JourneeTypeService.EtatJourneesTypes setCalendrierJourneesTypes(
+            List<JourneesTypesMaterialisation.Affectation> calendrier) {
+        journeesTypes.setCalendrier(calendrier);
+        return journeesTypes.etat();
+    }
+
+    /** What applying the calendar would do, and the verdict on the grid that would result — nothing written. */
+    public JourneeTypeService.RapportApplication previewJourneesTypes() {
+        JourneeTypeService.Application apercu = journeesTypes.previewApplication();
+        return apercu.rapport().withVerdict(controlerGrille(apercu.grilleResultante(), ModeGrilleCreneaux.VACATIONS));
+    }
+
+    /** Materialises the calendar, then reads the verdict on the grid as it now stands. */
+    public JourneeTypeService.RapportApplication applyJourneesTypes() {
+        JourneeTypeService.Application ecrit = journeesTypes.apply();
+        return ecrit.rapport().withVerdict(controlerGrille(ecrit.grilleResultante(), ModeGrilleCreneaux.VACATIONS));
+    }
+
+    public JourneesTypesMaterialisation.Reconnaissance previewReconnaissanceJourneesTypes() {
+        return journeesTypes.previewReconnaissance();
+    }
+
+    public JourneesTypesMaterialisation.Reconnaissance reconnaitreJourneesTypes() {
+        return journeesTypes.reconnaitre();
+    }
+
+    /** A scenario's own {@code journeesTypes:} section, applied after its créneaux landed. */
+    public void importJourneesTypes(
+            List<JourneeType> journeesTypesImportees, List<JourneesTypesMaterialisation.Affectation> calendrier) {
+        journeesTypes.importer(journeesTypesImportees, calendrier);
+    }
+
+    /**
+     * The templates the grid implies, written when the grid has just been
+     * replaced wholesale — an import, a découpage — so that the screen and a
+     * file describe the same edition (ADR 0032). Silent on an empty grid: there
+     * is nothing to recognise, and the caller did not ask for templates.
+     */
+    private void recogniseJourneesTypesIfAny() {
+        if (!listCreneaux().isEmpty()) {
+            journeesTypes.reconnaitre();
+        }
+    }
+
     /**
      * The grid the stands' own hours imply, and the verdict on it — nothing
      * written. {@code remplacer} says which grid is judged: the derived one
@@ -435,6 +511,9 @@ public class ReferenceDataService implements ReferenceData {
 
     public void generateDecoupage() {
         creneaux.generateDecoupage();
+        // The grid it just wrote is a new set of vacations: the templates are
+        // read back out of it, so the card on Créneaux describes what is there.
+        recogniseJourneesTypesIfAny();
     }
 
     /**
@@ -586,6 +665,7 @@ public class ReferenceDataService implements ReferenceData {
             contraintesAdHoc.checkNoContradiction(planning.getContraintesAdHoc(), creneauxOf(planning));
         }
         imports.importFromPlanning(planning);
+        recogniseJourneesTypesIfAny();
         changeTracker.markModified();
     }
 

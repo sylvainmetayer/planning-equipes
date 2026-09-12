@@ -83,6 +83,18 @@
           }
         }
       },
+      "Affectation" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "journeeTypeId" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
       "AffectationSnapshot" : {
         "type" : "object",
         "properties" : {
@@ -2258,6 +2270,32 @@
           }
         }
       },
+      "EtatJourneesTypes" : {
+        "required" : [ "journeesTypes", "calendrier", "datesEnEcart" ],
+        "type" : "object",
+        "properties" : {
+          "journeesTypes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/JourneeType"
+            }
+          },
+          "calendrier" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Affectation"
+            }
+          },
+          "datesEnEcart" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          }
+        }
+      },
       "EtatOuverture" : {
         "type" : "string",
         "enum" : [ "OUVERT_TOTAL", "OUVERT_PARTIEL", "FERME" ]
@@ -3013,6 +3051,27 @@
             "items" : {
               "$ref" : "#/components/schemas/CoupureRepasView"
             }
+          }
+        }
+      },
+      "JourneeType" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "vacations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VacationType"
+            }
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -4019,6 +4078,58 @@
           }
         }
       },
+      "RapportApplication" : {
+        "required" : [ "conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement" ],
+        "type" : "object",
+        "properties" : {
+          "conserves" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "misAJour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "crees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "supprimes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "creneauxSupprimes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Creneau"
+            }
+          },
+          "supprimesAvecPostes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Creneau"
+            }
+          },
+          "postesSupprimes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "datesEnEcart" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "aucunChangement" : {
+            "type" : "boolean"
+          },
+          "controle" : {
+            "$ref" : "#/components/schemas/RapportGrille"
+          }
+        }
+      },
       "RapportCompactage" : {
         "required" : [ "applique", "fenetresApres", "fenetresAvant", "standsCompactes" ],
         "type" : "object",
@@ -4371,6 +4482,23 @@
       "Reamorcage" : {
         "type" : "string",
         "enum" : [ "AUTO", "PLAN_COURANT", "AUCUN" ]
+      },
+      "Reconnaissance" : {
+        "type" : "object",
+        "properties" : {
+          "journeesTypes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/JourneeType"
+            }
+          },
+          "calendrier" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Affectation"
+            }
+          }
+        }
       },
       "RecurrenceRequest" : {
         "type" : "object",
@@ -5295,6 +5423,20 @@
           "manque" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "VacationType" : {
+        "type" : "object",
+        "properties" : {
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "couverturePause" : {
+            "type" : "boolean"
           }
         }
       },
@@ -8142,6 +8284,222 @@
         },
         "summary" : "Suggestions",
         "tags" : [ "Jour J Resource" ]
+      }
+    },
+    "/api/journees-types" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatJourneesTypes"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Etat",
+        "tags" : [ "Journee Type Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/JourneeType"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JourneeType"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Create",
+        "tags" : [ "Journee Type Resource" ]
+      }
+    },
+    "/api/journees-types/application" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportApplication"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Apply",
+        "tags" : [ "Journee Type Resource" ]
+      }
+    },
+    "/api/journees-types/application/apercu" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportApplication"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Preview Application",
+        "tags" : [ "Journee Type Resource" ]
+      }
+    },
+    "/api/journees-types/calendrier" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/Affectation"
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatJourneesTypes"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set Calendrier",
+        "tags" : [ "Journee Type Resource" ]
+      }
+    },
+    "/api/journees-types/reconnaissance" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Reconnaissance"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Reconnaitre",
+        "tags" : [ "Journee Type Resource" ]
+      }
+    },
+    "/api/journees-types/reconnaissance/apercu" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Reconnaissance"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Preview Reconnaissance",
+        "tags" : [ "Journee Type Resource" ]
+      }
+    },
+    "/api/journees-types/{id}" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/JourneeType"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JourneeType"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update",
+        "tags" : [ "Journee Type Resource" ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Delete",
+        "tags" : [ "Journee Type Resource" ]
       }
     },
     "/api/kpi/historique" : {

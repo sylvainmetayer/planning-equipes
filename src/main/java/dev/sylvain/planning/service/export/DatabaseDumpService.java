@@ -73,6 +73,9 @@ public class DatabaseDumpService {
             "stand_ouverture",
             "stand_horaire",
             "stand_horaire_fenetre",
+            "journee_type",
+            "journee_type_vacation",
+            "journee_type_date",
             "poste_affectation",
             "contrainte_ad_hoc",
             "contrainte_animateur",
@@ -162,6 +165,8 @@ public class DatabaseDumpService {
             "stand_ouverture",
             "stand_horaire",
             "stand_horaire_fenetre",
+            "journee_type",
+            "journee_type_vacation",
             // BIGSERIAL since V48: left unsynced, the first measurement
             // written after an import would collide with an id the dump just
             // replayed.

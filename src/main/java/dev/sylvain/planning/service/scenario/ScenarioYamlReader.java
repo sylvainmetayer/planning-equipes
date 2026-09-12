@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.scenario;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -12,6 +13,7 @@ import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import java.io.IOException;
 import java.io.InputStream;
@@ -275,7 +277,15 @@ public final class ScenarioYamlReader {
             boolean decoupageAuto,
             List<TypologieItem> typologies,
             Optional<EditionCibleDto> edition,
-            Optional<ContraintesScenario> contraintes) {}
+            Optional<ContraintesScenario> contraintes,
+            Optional<JourneesTypesScenario> journeesTypes) {}
+
+    /**
+     * The {@code journeesTypes:} section of a scenario, parsed: the templates
+     * with provisional ids the calendar names, which the repository reassigns.
+     */
+    public record JourneesTypesScenario(
+            List<JourneeType> journeesTypes, List<JourneesTypesMaterialisation.Affectation> calendrier) {}
 
     /**
      * The {@code contraintes:} section of a scenario, parsed.

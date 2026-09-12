@@ -252,6 +252,29 @@
       },
       "required" : [ "date", "heureDebut" ]
     },
+    "JourneeTypeDto" : {
+      "type" : "object",
+      "properties" : {
+        "dates" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/LocalDate"
+          }
+        },
+        "nom" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "vacations" : {
+          "minItems" : 1,
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/VacationTypeDto"
+          }
+        }
+      },
+      "required" : [ "nom", "vacations" ]
+    },
     "LocalDate" : {
       "type" : "string",
       "format" : "date"
@@ -523,6 +546,21 @@
         }
       },
       "required" : [ "id", "label" ]
+    },
+    "VacationTypeDto" : {
+      "type" : "object",
+      "properties" : {
+        "couverturePause" : {
+          "type" : "boolean"
+        },
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        }
+      },
+      "required" : [ "heureDebut", "heureFin" ]
     }
   },
   "type" : "object",
@@ -562,6 +600,12 @@
     },
     "festival" : {
       "$ref" : "#/$defs/FestivalDto"
+    },
+    "journeesTypes" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/JourneeTypeDto"
+      }
     },
     "parametresDecoupage" : {
       "$ref" : "#/$defs/ParametresDecoupageDto"
