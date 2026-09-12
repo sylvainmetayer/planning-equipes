@@ -69,3 +69,6 @@ export class ImportsApi {
     }
   }
 }
+
+/** Which referentials the export writes, and what the archive is called. */
+export const CIBLES_EXPORT_CSV = ['TYPOLOGIES', 'EMPLACEMENTS', 'STANDS', 'ANIMATEURS'] as const;

@@ -206,6 +206,15 @@ L'aperçu (`POST …/import-csv/analyse`) n'écrit rien ; l'écriture
 (`POST …/import-csv`) relit le fichier et refait tous les contrôles. Chaque
 ligne fautive est refusée seule, avec sa raison, sans bloquer les autres.
 
+L'écran **Export CSV** fait le chemin inverse : les référentiels de l'édition
+courante réécrits dans une archive ZIP, un fichier par référentiel et dans la
+forme exacte que ces onglets relisent, chacun à cocher. Le fichier des
+animateurs reprend l'en-tête de `scenarios/exemple-animateurs.csv`, celui que
+la correspondance de colonnes propose d'elle-même ; il ne se réimporte que dans
+une édition qui a déjà ses créneaux, puisque sans dates un jour
+d'indisponibilité importé serait refusé. `ReferentielCsvExportServiceTest`
+repasse chaque export par son propre import et exige zéro ligne refusée.
+
 ## Import CSV des animateurs
 
 Le seul import **partiel** du produit : il ne touche que les animateurs, une

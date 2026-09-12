@@ -70,3 +70,30 @@ table.import-rapport td mat-icon {
   flex-wrap: wrap;
   margin-bottom: 0.5rem;
 }
+
+/* L'écran d'export : une ligne par référentiel, sa case, son fichier, son compte. */
+.export-csv-liste {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.export-csv-liste li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  padding: 0.2rem 0;
+}
+
+.export-csv-fichier {
+  font-family: var(--mat-sys-body-medium-font, monospace);
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.export-csv-total {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface-variant);
+}

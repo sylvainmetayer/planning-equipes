@@ -199,6 +199,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/imports/imports-page').then((m) => m.ImportsPage),
   },
   {
+    path: 'export-csv',
+    title: () => $localize`:@@route.exportCsv:Export CSV`,
+    loadComponent: () => import('./pages/export-csv/export-csv-page').then((m) => m.ExportCsvPage),
+  },
+  {
     path: 'typologies',
     title: () => $localize`:@@route.typologies:Typologies`,
     loadComponent: () => import('./pages/typologies/typologies-page').then((m) => m.TypologiesPage),

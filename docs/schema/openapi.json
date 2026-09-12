@@ -751,10 +751,6 @@
           }
         }
       },
-      "CibleImport" : {
-        "type" : "string",
-        "enum" : [ "TYPOLOGIES", "EMPLACEMENTS", "STANDS" ]
-      },
       "CodeSession" : {
         "type" : "object",
         "properties" : {
@@ -2677,6 +2673,10 @@
             "format" : "int32"
           }
         }
+      },
+      "ImportTarget" : {
+        "type" : "string",
+        "enum" : [ "TYPOLOGIES", "EMPLACEMENTS", "STANDS" ]
       },
       "ImportTargetView" : {
         "required" : [ "existe" ],
@@ -4623,7 +4623,7 @@
             "type" : "boolean"
           },
           "cible" : {
-            "$ref" : "#/components/schemas/CibleImport"
+            "$ref" : "#/components/schemas/ImportTarget"
           },
           "columns" : {
             "type" : "array",
@@ -10053,6 +10053,67 @@
           }
         },
         "summary" : "File Scenario Target",
+        "tags" : [ "Reference Data Resource" ]
+      }
+    },
+    "/api/reference-data/export-csv" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "animateurs",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "emplacements",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "stands",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "typologies",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/zip" : { }
+            }
+          }
+        },
+        "summary" : "Export Csv",
+        "tags" : [ "Reference Data Resource" ]
+      }
+    },
+    "/api/reference-data/export-csv/volumes" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "integer",
+                    "format" : "int32"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Volumes Export Csv",
         "tags" : [ "Reference Data Resource" ]
       }
     },

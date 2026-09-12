@@ -59,6 +59,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     sheet: 'import-compteurs',
   },
   { path: '/imports?onglet=grille-stands', sheet: 'import-compteurs' },
+  { path: '/export-csv', marker: 'Export CSV', sheet: 'export-csv-liste' },
   { path: '/calendar', marker: 'Calendrier des affectations', sheet: 'calendar-nav' },
   // Same for the day and its four renderings.
   { path: '/journee', marker: 'Journée', sheet: 'journee-toolbar' },

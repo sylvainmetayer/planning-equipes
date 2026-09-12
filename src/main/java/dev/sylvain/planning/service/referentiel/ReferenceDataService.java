@@ -107,6 +107,9 @@ public class ReferenceDataService implements ReferenceData {
     ReferentielCsvImportService referentielCsvImport;
 
     @Inject
+    ReferentielCsvExportService referentielCsvExport;
+
+    @Inject
     JdbcEditionScope scope;
 
     /* ------------------------------ Animateurs ----------------------------- */
@@ -402,6 +405,16 @@ public class ReferenceDataService implements ReferenceData {
 
     /** The créneaux a rule produced (or would produce), and the resulting grid's verdict. */
     public record RecurrenceGrille(List<Creneau> creneaux, CreneauGridService.RapportGrille controle) {}
+
+    /* ----------------------- Referential CSV exports ----------------------- */
+
+    public java.util.Map<ReferentielCsvExportService.ExportTarget, Integer> volumesExportCsv() {
+        return referentielCsvExport.counts();
+    }
+
+    public byte[] exportCsvReferentiels(java.util.Set<ReferentielCsvExportService.ExportTarget> cibles) {
+        return referentielCsvExport.zip(cibles);
+    }
 
     /* ----------------------- Referential CSV imports ----------------------- */
 

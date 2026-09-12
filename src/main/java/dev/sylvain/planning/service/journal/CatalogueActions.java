@@ -436,6 +436,8 @@ public final class CatalogueActions {
         untracked("TypologieResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
         untracked("EmplacementResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
         untracked("StandResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
+        untracked("ReferenceDataResource#exportCsv", "exporte une copie, n'écrit rien");
+        untracked("ReferenceDataResource#volumesExportCsv", "compte les lignes, n'écrit rien");
         untracked("TypologieResource#exempleCsv", "télécharge un fichier d'exemple");
         untracked("EmplacementResource#exempleCsv", "télécharge un fichier d'exemple");
         untracked("StandResource#exempleCsv", "télécharge un fichier d'exemple");

@@ -151,7 +151,8 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       '/typologies',
       { label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category', touche: 't' },
     ],
-    ['/imports', { label: $localize`:@@nav.link.imports:Imports`, icon: 'table_view' }],
+    ['/imports', { label: $localize`:@@nav.link.imports:Imports`, icon: 'upload_file' }],
+    ['/export-csv', { label: $localize`:@@nav.link.exportCsv:Export CSV`, icon: 'file_download' }],
     [
       '/calendar',
       {

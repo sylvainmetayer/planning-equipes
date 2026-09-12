@@ -7,6 +7,7 @@ import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.ImportImpact;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvExportService;
 import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.inject.Inject;
@@ -18,8 +19,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -208,4 +213,49 @@ public class ReferenceDataResource {
 
     @Schema(requiredProperties = {"valide"})
     public record ScenarioValidationResult(boolean valide, List<String> erreurs) {}
+
+    /* ---------------------------- Export CSV ---------------------------- */
+
+    /** How many rows each referential would write, so the screen can say what it offers. */
+    @GET
+    @Path("/export-csv/volumes")
+    public Map<String, Integer> volumesExportCsv() {
+        Map<String, Integer> volumes = new LinkedHashMap<>();
+        referenceDataService.volumesExportCsv().forEach((cible, total) -> volumes.put(cible.name(), total));
+        return volumes;
+    }
+
+    /**
+     * The chosen referentials as a zip of CSV files, each in the shape its
+     * import tab reads back.
+     *
+     * <p>Every referential is opt-in: the archive holds what was asked for and
+     * nothing else, and asking for nothing is a {@code 400} rather than an
+     * empty download that looks like it worked.</p>
+     */
+    @GET
+    @Path("/export-csv")
+    @Produces("application/zip")
+    public Response exportCsv(
+            @QueryParam("typologies") boolean typologies,
+            @QueryParam("emplacements") boolean emplacements,
+            @QueryParam("stands") boolean stands,
+            @QueryParam("animateurs") boolean animateurs) {
+        Set<ReferentielCsvExportService.ExportTarget> cibles = new LinkedHashSet<>();
+        if (typologies) {
+            cibles.add(ReferentielCsvExportService.ExportTarget.TYPOLOGIES);
+        }
+        if (emplacements) {
+            cibles.add(ReferentielCsvExportService.ExportTarget.EMPLACEMENTS);
+        }
+        if (stands) {
+            cibles.add(ReferentielCsvExportService.ExportTarget.STANDS);
+        }
+        if (animateurs) {
+            cibles.add(ReferentielCsvExportService.ExportTarget.ANIMATEURS);
+        }
+        return Response.ok(referenceDataService.exportCsvReferentiels(cibles))
+                .header("Content-Disposition", "attachment; filename=\"referentiels-csv.zip\"")
+                .build();
+    }
 }

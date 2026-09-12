@@ -2750,6 +2750,12 @@ export interface ImportGrilleDemande {
   content: string;
 }
 
+/** How many rows each referential would write, keyed by its export target. */
+export type VolumesExportCsv = Partial<Record<CibleExportCsv, number>>;
+
+/** The four referentials the CSV export offers, each optional. */
+export type CibleExportCsv = 'TYPOLOGIES' | 'EMPLACEMENTS' | 'STANDS' | 'ANIMATEURS';
+
 /* ------------ Referential CSV imports (typologies, emplacements, stands) ------------ */
 
 /** Which referential a file is read against. */

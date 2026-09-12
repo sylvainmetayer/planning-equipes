@@ -472,7 +472,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/debug`, `/mcp-client`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
   `/animateurs`, `/competences` (« Compétences » — the animateur × typologie
   grid of appreciations, saved row by row, exported and imported as a CSV),
-  `/imports`, `/creneaux`, `/typologies`,
+  `/imports`, `/export-csv`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed), `/calendar`, `/journee` (« Journée » — one day under four

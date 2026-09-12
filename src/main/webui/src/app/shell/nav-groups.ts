@@ -178,7 +178,15 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
         {
           path: '/imports',
           label: $localize`:@@nav.link.imports:Imports`,
-          icon: 'table_view',
+          icon: 'upload_file',
+        },
+        {
+          // `file_export` n'existe pas dans la police Material Icons embarquée
+          // (c'est un nom Material Symbols) : un <mat-icon> sans glyphe affiche
+          // son texte rogné. `file_download` est le miroir de l'import.
+          path: '/export-csv',
+          label: $localize`:@@nav.link.exportCsv:Export CSV`,
+          icon: 'file_download',
         },
       ],
     },
