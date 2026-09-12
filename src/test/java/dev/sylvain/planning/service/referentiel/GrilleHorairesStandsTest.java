@@ -180,27 +180,29 @@ class GrilleHorairesStandsTest {
     }
 
     @Test
-    void uneCasePartielleSauveeTelleQuelleGardeSesSegments() {
+    void uneCaseEnUnMorceauSauveeTelleQuelleGardeSesTranches() {
         List<Creneau> creneaux = grille(1);
         Stand stand = stand("VARIABLE", 2, 4);
         // 4 people from 14:00 to 19:00, then 2 until 20:00: the workbook's own shape.
         stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
         stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
         RapportOuvertures avant = relire(stand, creneaux);
-        CelluleCreneau lue = cellulesLues(avant, 0).get(3);
-        assertThat(lue.partiel()).isTrue();
-        assertThat(lue.effectif()).isEqualTo(4);
+        assertThat(cellulesLues(avant, 0))
+                .extracting(CelluleCreneau::effectif)
+                .containsExactly(null, null, null, 4, 2, null);
 
-        // The grid sends the cell back as it showed it: 4.
+        // A client that reads the créneau in one piece sends it back as it showed: 4.
         GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, null, null, null, 4, null));
         RapportOuvertures apres = relire(stand, creneaux);
 
-        CelluleCreneau gardee = cellulesLues(apres, 0).get(3);
-        assertThat(gardee.partiel()).isTrue();
-        assertThat(gardee.effectif()).isEqualTo(4);
-        assertThat(gardee.segments())
-                .extracting(segment -> segment.heureDebut() + "-" + segment.heureFin() + "@" + segment.effectif())
-                .containsExactly("14:00-19:00@4", "19:00-20:00@2");
+        assertThat(apres.jours().get(0).creneaux())
+                .extracting(colonne -> colonne.heureDebut() + "-" + colonne.heureFin())
+                .containsExactly(
+                        "10:00-12:00", "12:00-13:00", "13:00-14:00", "14:00-19:00", "19:00-20:00", "20:00-00:00");
+        assertThat(cellulesLues(apres, 0))
+                .extracting(CelluleCreneau::effectif)
+                .containsExactly(null, null, null, 4, 2, null);
+        assertThat(cellulesLues(apres, 0)).noneMatch(CelluleCreneau::partiel);
         assertThat(stand.getEffectifMin()).isEqualTo(2);
         assertThat(stand.getEffectifMax()).isEqualTo(4);
     }
@@ -225,25 +227,82 @@ class GrilleHorairesStandsTest {
     }
 
     @Test
-    void aplatirAligneUneCasePartielleMemeInchangee() {
+    void aplatirEtendUneCaseEnUnMorceauAuCreneauEntier() {
         List<Creneau> creneaux = grille(2);
         Stand stand = stand("DECALE", 1, 1);
         stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(11, 0), null));
-        RapportOuvertures avant = relire(stand, creneaux);
-        assertThat(cellulesLues(avant, 0).get(0).partiel()).isTrue();
+        relire(stand, creneaux);
 
-        // Saved as shown, the hour-long opening survives.
+        // Sent in one piece as shown, the hour-long opening survives as its own column.
         GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, 1, null, null, null, null));
         RapportOuvertures conserve = relire(stand, creneaux);
-        assertThat(cellulesLues(conserve, 0).get(0).partiel()).isTrue();
+        assertThat(conserve.jours().get(0).creneaux())
+                .extracting(colonne -> colonne.heureDebut() + "-" + colonne.heureFin())
+                .startsWith("10:00-11:00", "11:00-12:00");
         assertThat(conserve.stands().get(0).jours().get(0).minutesOuvertes()).isEqualTo(60);
 
-        // Asked to flatten, it covers the whole créneau.
+        // Asked to flatten, it covers the whole créneau, and the column with it.
         GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, 1, null, null, null, null), true);
         RapportOuvertures apres = relire(stand, creneaux);
-        assertThat(cellulesLues(apres, 0).get(0).partiel()).isFalse();
+        assertThat(apres.jours().get(0).creneaux())
+                .extracting(colonne -> colonne.heureDebut() + "-" + colonne.heureFin())
+                .startsWith("10:00-12:00", "12:00-13:00");
         assertThat(cellulesLues(apres, 0).get(0).effectif()).isEqualTo(1);
         assertThat(apres.stands().get(0).jours().get(0).minutesOuvertes()).isEqualTo(120);
+    }
+
+    @Test
+    void uneCaseParTrancheEcritSaFenetreEtLeResteDuCreneauGardeLeSien() {
+        List<Creneau> creneaux = grille(1);
+        Stand stand = stand("TRANCHES", 1, 1);
+        // Open all day at 1 (no window that day = open by default).
+        relire(stand, creneaux);
+        Creneau aprem = creneaux.get(3);
+
+        // The créneau 14-20 typed as three columns: 14-17 at 3, 17-19 closed, 19-20 left unsent.
+        List<SaisieCellule> cellules = new ArrayList<>(sameCellsEveryDay(creneaux, 1, 1, 1, null, 1));
+        cellules.removeIf(cellule -> cellule.creneauId() == aprem.getId());
+        cellules.add(new SaisieCellule(aprem.getId(), LocalTime.of(14, 0), LocalTime.of(17, 0), 3));
+        cellules.add(new SaisieCellule(aprem.getId(), LocalTime.of(17, 0), LocalTime.of(19, 0), null));
+        GrilleHorairesStands.apply(stand, creneaux, cellules);
+        RapportOuvertures apres = relire(stand, creneaux);
+
+        // The columns now follow those bounds, and the unsent hour kept its 1.
+        assertThat(apres.jours().get(0).creneaux())
+                .extracting(colonne -> colonne.heureDebut() + "-" + colonne.heureFin())
+                .containsExactly(
+                        "10:00-12:00",
+                        "12:00-13:00",
+                        "13:00-14:00",
+                        "14:00-17:00",
+                        "17:00-19:00",
+                        "19:00-20:00",
+                        "20:00-00:00");
+        assertThat(cellulesLues(apres, 0)).extracting(CelluleCreneau::effectif).containsExactly(1, 1, 1, 3, null, 1, 1);
+        assertThat(cellulesLues(apres, 0)).noneMatch(CelluleCreneau::partiel);
+        assertThat(stand.getEffectifMin()).isEqualTo(1);
+        assertThat(stand.getEffectifMax()).isEqualTo(3);
+    }
+
+    @Test
+    void refuseUneCaseHorsDeSonCreneauOuDeuxCasesQuiSeRecouvrent() {
+        List<Creneau> creneaux = grille(1);
+        Creneau aprem = creneaux.get(3);
+
+        assertThatThrownBy(() -> GrilleHorairesStands.apply(
+                        stand("HORS", 1, 1),
+                        creneaux,
+                        List.of(new SaisieCellule(aprem.getId(), LocalTime.of(13, 0), LocalTime.of(15, 0), 1))))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("sort du créneau");
+        assertThatThrownBy(() -> GrilleHorairesStands.apply(
+                        stand("DOUBLE", 1, 1),
+                        creneaux,
+                        List.of(
+                                new SaisieCellule(aprem.getId(), LocalTime.of(14, 0), LocalTime.of(17, 0), 1),
+                                new SaisieCellule(aprem.getId(), LocalTime.of(16, 0), LocalTime.of(20, 0), 1))))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("se recouvrent");
     }
 
     @Test

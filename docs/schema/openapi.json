@@ -642,12 +642,16 @@
         }
       },
       "CelluleCreneau" : {
-        "required" : [ "horsFamille", "partiel", "segments" ],
+        "required" : [ "horsFamille", "partiel", "segments", "tranche" ],
         "type" : "object",
         "properties" : {
           "creneauId" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "tranche" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "effectif" : {
             "type" : "integer",
@@ -726,12 +730,16 @@
         }
       },
       "ColonneCreneau" : {
-        "required" : [ "couverturePause", "famille" ],
+        "required" : [ "couverturePause", "famille", "tranche" ],
         "type" : "object",
         "properties" : {
           "id" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "tranche" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "heureDebut" : {
             "$ref" : "#/components/schemas/LocalTime"
@@ -3899,6 +3907,12 @@
           "creneauId" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
           },
           "effectif" : {
             "type" : "integer",

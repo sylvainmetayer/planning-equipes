@@ -14,9 +14,12 @@ import {
   ecrireCellule,
   jourDeReference,
   libelleColonne,
+  propagerClefs,
+  propagerScission,
   readCell,
   recopierJour,
   saisie,
+  scinder,
   segmentsPartiels,
   standsModifies,
   valeursLigne,
@@ -36,6 +39,7 @@ function rapport(): RapportOuvertures {
     nombreCreneaux: ids.length,
     creneaux: ids.map((id, rang) => ({
       id,
+      tranche: 0,
       heureDebut: ['10:00', '14:00', '20:00'][rang],
       heureFin: ['12:00', '20:00', '00:00'][rang],
       famille: 0,
@@ -49,6 +53,7 @@ function rapport(): RapportOuvertures {
     horsFamille = false,
   ) => ({
     creneauId,
+    tranche: 0,
     effectif,
     partiel,
     horsFamille,
@@ -100,10 +105,22 @@ function rapport(): RapportOuvertures {
 
 const STANDS = ['A', 'B'];
 
+/** The column id of a créneau of the fixture, each in one piece. */
+function id(creneauId: number): string {
+  return colonnes(rapport()).find((colonne) => colonne.creneauId === creneauId)!.colonneId;
+}
+
 describe('colonnes et cellules', () => {
   it('déroule une colonne par créneau, jour après jour, avec son rang dans le jour', () => {
     const cols = colonnes(rapport());
     expect(cols.map((colonne) => colonne.creneauId)).toEqual([1, 2, 3, 4, 5]);
+    expect(cols.map((colonne) => colonne.colonneId)).toEqual([
+      '1@10:00-12:00',
+      '2@14:00-20:00',
+      '3@20:00-00:00',
+      '4@10:00-12:00',
+      '5@14:00-20:00',
+    ]);
     expect(cols.map((colonne) => colonne.rang)).toEqual([0, 1, 2, 0, 1]);
     expect(cols.map(libelleColonne)).toEqual(['10-12', '14-20', '20-00', '10-12', '14-20']);
   });
@@ -112,7 +129,7 @@ describe('colonnes et cellules', () => {
     const cellules = cellulesDepuis(rapport());
     expect(valeursLigne(cellules, 'A', colonnes(rapport()))).toEqual([2, 4, 4, 2, 4]);
     expect(valeursLigne(cellules, 'B', colonnes(rapport()))).toEqual([1, null, null, null, null]);
-    expect(cellulesPartielles(rapport())).toEqual(new Set(['B#1']));
+    expect(cellulesPartielles(rapport())).toEqual(new Set(['B#1@10:00-12:00']));
   });
 
   // L'API envoie « HH:mm:ss » : tester la forme brute laissait toutes les heures
@@ -122,6 +139,7 @@ describe('colonnes et cellules', () => {
       libelleColonne({
         date: '',
         creneauId: 1,
+        colonneId: '1@13:30-14:30',
         heureDebut: '13:30:00',
         heureFin: '14:30:00',
         rang: 0,
@@ -131,6 +149,7 @@ describe('colonnes et cellules', () => {
       libelleColonne({
         date: '',
         creneauId: 1,
+        colonneId: '1@10:00-12:00',
         heureDebut: '10:00:00',
         heureFin: '12:00:00',
         rang: 0,
@@ -142,7 +161,7 @@ describe('colonnes et cellules', () => {
     const rapportAvecFamille = rapport();
     rapportAvecFamille.stands[1].jours[0].creneaux[0].horsFamille = true;
 
-    expect(cellulesInertes(rapportAvecFamille)).toEqual(new Set(['B#1']));
+    expect(cellulesInertes(rapportAvecFamille)).toEqual(new Set(['B#1@10:00-12:00']));
   });
 });
 
@@ -165,20 +184,20 @@ describe('lireCellule', () => {
 describe('standsModifies et saisie', () => {
   it('ne nomme que les stands dont une case a changé, et envoie toutes leurs cases', () => {
     const reference = cellulesDepuis(rapport());
-    const modifie = ecrireCellule(reference, { standId: 'B', creneauId: 2 }, 3);
+    const modifie = ecrireCellule(reference, { standId: 'B', colonneId: id(2) }, 3);
 
     expect(standsModifies(reference, reference)).toEqual([]);
     expect(standsModifies(modifie, reference)).toEqual(['B']);
-    expect(saisie(modifie, ['B'])).toEqual([
+    expect(saisie(modifie, ['B'], colonnes(rapport()))).toEqual([
       {
         standId: 'B',
         modifieLe: null,
         cellules: [
-          { creneauId: 1, effectif: 1 },
-          { creneauId: 2, effectif: 3 },
-          { creneauId: 3, effectif: null },
-          { creneauId: 4, effectif: null },
-          { creneauId: 5, effectif: null },
+          { creneauId: 1, heureDebut: '10:00', heureFin: '12:00', effectif: 1 },
+          { creneauId: 2, heureDebut: '14:00', heureFin: '20:00', effectif: 3 },
+          { creneauId: 3, heureDebut: '20:00', heureFin: '00:00', effectif: null },
+          { creneauId: 4, heureDebut: '10:00', heureFin: '12:00', effectif: null },
+          { creneauId: 5, heureDebut: '14:00', heureFin: '20:00', effectif: null },
         ],
         aplatir: false,
       },
@@ -188,19 +207,19 @@ describe('standsModifies et saisie', () => {
   it('n’écrit ni ne renvoie une case inerte', () => {
     const reference = cellulesDepuis(rapport());
     const cols = colonnes(rapport());
-    const inertes = new Set(['A#2']);
+    const inertes = new Set(['A#2@14:00-20:00']);
 
     const colle = collerBloc(
       reference,
       '9\t9',
-      { standId: 'A', creneauId: 1 },
+      { standId: 'A', colonneId: id(1) },
       STANDS,
       cols,
       inertes,
     );
     expect(valeursLigne(colle, 'A', cols)).toEqual([9, 4, 4, 2, 4]);
 
-    const envoye = saisie(colle, ['A'], inertes);
+    const envoye = saisie(colle, ['A'], cols, { inertes });
     expect(envoye[0].cellules.map((cellule) => cellule.creneauId)).toEqual([1, 3, 4, 5]);
   });
 
@@ -208,7 +227,7 @@ describe('standsModifies et saisie', () => {
     const cols = colonnes(rapport());
     const depart = cellulesDepuis(rapport());
     const after = recopierJour(
-      ecrireCellule(depart, { standId: 'A', creneauId: 4 }, 7),
+      ecrireCellule(depart, { standId: 'A', colonneId: id(4) }, 7),
       '2026-07-09',
       ['A'],
       cols,
@@ -220,15 +239,15 @@ describe('standsModifies et saisie', () => {
 
   it('ne modifie jamais la carte reçue', () => {
     const reference = cellulesDepuis(rapport());
-    ecrireCellule(reference, { standId: 'A', creneauId: 1 }, 9);
-    expect(reference.get('A')!.get(1)).toBe(2);
+    ecrireCellule(reference, { standId: 'A', colonneId: id(1) }, 9);
+    expect(reference.get('A')!.get(id(1))).toBe(2);
   });
 
   it('revenir à la valeur d’origine efface la modification', () => {
     const reference = cellulesDepuis(rapport());
     const allerRetour = ecrireCellule(
-      ecrireCellule(reference, { standId: 'A', creneauId: 1 }, 9),
-      { standId: 'A', creneauId: 1 },
+      ecrireCellule(reference, { standId: 'A', colonneId: id(1) }, 9),
+      { standId: 'A', colonneId: id(1) },
       2,
     );
     expect(standsModifies(allerRetour, reference)).toEqual([]);
@@ -239,43 +258,45 @@ describe('deplacement', () => {
   const cols = colonnes(rapport());
 
   it('descend sur Entrée et flèche bas, et s’arrête à la dernière ligne', () => {
-    expect(deplacement('Enter', { standId: 'A', creneauId: 2 }, STANDS, cols)).toEqual({
+    expect(deplacement('Enter', { standId: 'A', colonneId: id(2) }, STANDS, cols)).toEqual({
       standId: 'B',
-      creneauId: 2,
+      colonneId: id(2),
     });
-    expect(deplacement('ArrowDown', { standId: 'B', creneauId: 2 }, STANDS, cols)).toEqual({
+    expect(deplacement('ArrowDown', { standId: 'B', colonneId: id(2) }, STANDS, cols)).toEqual({
       standId: 'B',
-      creneauId: 2,
+      colonneId: id(2),
     });
-    expect(deplacement('ArrowUp', { standId: 'B', creneauId: 2 }, STANDS, cols)).toEqual({
+    expect(deplacement('ArrowUp', { standId: 'B', colonneId: id(2) }, STANDS, cols)).toEqual({
       standId: 'A',
-      creneauId: 2,
+      colonneId: id(2),
     });
   });
 
   it('passe d’un jour à l’autre sur les flèches latérales, Home et End', () => {
-    expect(deplacement('ArrowRight', { standId: 'A', creneauId: 3 }, STANDS, cols)).toEqual({
+    expect(deplacement('ArrowRight', { standId: 'A', colonneId: id(3) }, STANDS, cols)).toEqual({
       standId: 'A',
-      creneauId: 4,
+      colonneId: id(4),
     });
-    expect(deplacement('ArrowLeft', { standId: 'A', creneauId: 1 }, STANDS, cols)).toEqual({
+    expect(deplacement('ArrowLeft', { standId: 'A', colonneId: id(1) }, STANDS, cols)).toEqual({
       standId: 'A',
-      creneauId: 1,
+      colonneId: id(1),
     });
-    expect(deplacement('Home', { standId: 'A', creneauId: 5 }, STANDS, cols)).toEqual({
+    expect(deplacement('Home', { standId: 'A', colonneId: id(5) }, STANDS, cols)).toEqual({
       standId: 'A',
-      creneauId: 1,
+      colonneId: id(1),
     });
-    expect(deplacement('End', { standId: 'A', creneauId: 1 }, STANDS, cols)).toEqual({
+    expect(deplacement('End', { standId: 'A', colonneId: id(1) }, STANDS, cols)).toEqual({
       standId: 'A',
-      creneauId: 5,
+      colonneId: id(5),
     });
   });
 
   it('laisse passer les autres touches et une case inconnue', () => {
-    expect(deplacement('a', { standId: 'A', creneauId: 1 }, STANDS, cols)).toBeNull();
-    expect(deplacement('Enter', { standId: 'Z', creneauId: 1 }, STANDS, cols)).toBeNull();
-    expect(deplacement('Enter', { standId: 'A', creneauId: 99 }, STANDS, cols)).toBeNull();
+    expect(deplacement('a', { standId: 'A', colonneId: id(1) }, STANDS, cols)).toBeNull();
+    expect(deplacement('Enter', { standId: 'Z', colonneId: id(1) }, STANDS, cols)).toBeNull();
+    expect(
+      deplacement('Enter', { standId: 'A', colonneId: '99@00:00-01:00' }, STANDS, cols),
+    ).toBeNull();
   });
 });
 
@@ -286,7 +307,7 @@ describe('collerBloc', () => {
     const cellules = collerBloc(
       cellulesDepuis(rapport()),
       '5\t6\n7\t\n',
-      { standId: 'A', creneauId: 2 },
+      { standId: 'A', colonneId: id(2) },
       STANDS,
       cols,
     );
@@ -299,7 +320,7 @@ describe('collerBloc', () => {
     const cellules = collerBloc(
       cellulesDepuis(rapport()),
       'x\t9\t9\t9\n1\n1\n1',
-      { standId: 'B', creneauId: 4 },
+      { standId: 'B', colonneId: id(4) },
       STANDS,
       cols,
     );
@@ -312,7 +333,7 @@ describe('collerBloc', () => {
     const cellules = collerBloc(
       cellulesDepuis(rapport()),
       '0\t-',
-      { standId: 'A', creneauId: 1 },
+      { standId: 'A', colonneId: id(1) },
       STANDS,
       cols,
     );
@@ -326,7 +347,7 @@ describe('recopierJour', () => {
   it('recopie un jour sur les autres, créneau à créneau par ses heures, sans inventer la nocturne', () => {
     const depart: Cellules = ecrireCellule(
       cellulesDepuis(rapport()),
-      { standId: 'A', creneauId: 4 },
+      { standId: 'A', colonneId: id(4) },
       7,
     );
     const cellules = recopierJour(depart, '2026-07-09', ['A'], cols);
@@ -350,26 +371,40 @@ describe('recopierJour', () => {
   it('prend pour référence le premier jour renseigné, ou le premier jour', () => {
     const cellules = cellulesDepuis(rapport());
     expect(jourDeReference(cellules, 'B', cols)).toBe('2026-07-08');
-    const vide = ecrireCellule(cellules, { standId: 'B', creneauId: 1 }, null);
+    const vide = ecrireCellule(cellules, { standId: 'B', colonneId: id(1) }, null);
     expect(jourDeReference(vide, 'B', cols)).toBe('2026-07-08');
-    expect(jourDeReference(ecrireCellule(vide, { standId: 'B', creneauId: 5 }, 2), 'B', cols)).toBe(
-      '2026-07-09',
-    );
+    expect(
+      jourDeReference(ecrireCellule(vide, { standId: 'B', colonneId: id(5) }, 2), 'B', cols),
+    ).toBe('2026-07-09');
     expect(jourDeReference(cellules, 'B', [])).toBeNull();
   });
 });
 
 describe('segmentsPartiels et aplatissement', () => {
-  const colonnes: ColonneGrille[] = [
-    { date: '2026-07-08', creneauId: 1, heureDebut: '14:00', heureFin: '20:00', rang: 0 },
-    { date: '2026-07-08', creneauId: 2, heureDebut: '20:00', heureFin: '00:00', rang: 1 },
+  const grille: ColonneGrille[] = [
+    {
+      date: '2026-07-08',
+      creneauId: 1,
+      colonneId: '1@14:00-20:00',
+      heureDebut: '14:00',
+      heureFin: '20:00',
+      rang: 0,
+    },
+    {
+      date: '2026-07-08',
+      creneauId: 2,
+      colonneId: '2@20:00-00:00',
+      heureDebut: '20:00',
+      heureFin: '00:00',
+      rang: 1,
+    },
   ];
 
   it('prices flattening as the créneau at the highest headcount minus what the stretches cover', () => {
     const segments = new Map([
       // 4 from 14:00 to 19:00, then 2: flattening puts 4 on the last hour, +2 h.
       [
-        'DIV#1',
+        'DIV#1@14:00-20:00',
         [
           { heureDebut: '14:00', heureFin: '19:00', effectif: 4 },
           { heureDebut: '19:00', heureFin: '20:00', effectif: 2 },
@@ -377,17 +412,17 @@ describe('segmentsPartiels et aplatissement', () => {
       ],
       // 3 until 21:00 then 5 till midnight: +2 on one hour, +2 h — and midnight counts as 24:00.
       [
-        'DIV#2',
+        'DIV#2@20:00-00:00',
         [
           { heureDebut: '20:00', heureFin: '21:00', effectif: 3 },
           { heureDebut: '21:00', heureFin: '00:00', effectif: 5 },
         ],
       ],
       // Open one hour out of six at 1: +5 h.
-      ['FLIP7#1', [{ heureDebut: '14:00', heureFin: '15:00', effectif: 1 }]],
+      ['FLIP7#1@14:00-20:00', [{ heureDebut: '14:00', heureFin: '15:00', effectif: 1 }]],
     ]);
 
-    expect(aplatissement(segments, colonnes)).toEqual({
+    expect(aplatissement(segments, grille)).toEqual({
       stands: ['DIV', 'FLIP7'],
       cases: 3,
       minutes: 9 * 60,
@@ -397,16 +432,43 @@ describe('segmentsPartiels et aplatissement', () => {
   it('ignores a cell whose créneau is not a column, and prices nothing when nothing is partial', () => {
     expect(
       aplatissement(
-        new Map([['X#99', [{ heureDebut: '10:00', heureFin: '11:00', effectif: 1 }]]]),
-        colonnes,
+        new Map([['X#99@10:00-12:00', [{ heureDebut: '10:00', heureFin: '11:00', effectif: 1 }]]]),
+        grille,
       ),
     ).toEqual({ stands: [], cases: 0, minutes: 0 });
-    expect(aplatissement(new Map(), colonnes)).toEqual({ stands: [], cases: 0, minutes: 0 });
+    expect(aplatissement(new Map(), grille)).toEqual({ stands: [], cases: 0, minutes: 0 });
   });
 
   it('collects the stretches of the partial cells only, and sends aplatir with the body', () => {
     const rapport = {
-      jours: [],
+      jours: [
+        {
+          date: '2026-07-08',
+          jour: 1,
+          heureDebut: '14:00',
+          heureFin: '00:00',
+          minutes: 600,
+          nombreCreneaux: 2,
+          creneaux: [
+            {
+              id: 1,
+              tranche: 0,
+              heureDebut: '14:00',
+              heureFin: '20:00',
+              famille: 0,
+              couverturePause: false,
+            },
+            {
+              id: 2,
+              tranche: 0,
+              heureDebut: '20:00',
+              heureFin: '00:00',
+              famille: 0,
+              couverturePause: false,
+            },
+          ],
+        },
+      ],
       stands: [
         {
           standId: 'A',
@@ -427,6 +489,7 @@ describe('segmentsPartiels et aplatissement', () => {
               creneaux: [
                 {
                   creneauId: 1,
+                  tranche: 0,
                   effectif: 4,
                   partiel: true,
                   horsFamille: false,
@@ -434,6 +497,7 @@ describe('segmentsPartiels et aplatissement', () => {
                 },
                 {
                   creneauId: 2,
+                  tranche: 0,
                   effectif: 2,
                   partiel: false,
                   horsFamille: false,
@@ -449,9 +513,75 @@ describe('segmentsPartiels et aplatissement', () => {
       anomalies: [],
     } as unknown as RapportOuvertures;
 
-    expect(Array.from(segmentsPartiels(rapport).keys())).toEqual(['A#1']);
-    const corps = saisie(cellulesDepuis(rapport), ['A'], new Set(), new Map(), true);
+    expect(Array.from(segmentsPartiels(rapport).keys())).toEqual(['A#1@14:00-20:00']);
+    const cols = colonnes(rapport);
+    const corps = saisie(cellulesDepuis(rapport), ['A'], cols, { aplatir: true });
     expect(corps[0].aplatir).toBe(true);
-    expect(saisie(cellulesDepuis(rapport), ['A'])[0].aplatir).toBe(false);
+    expect(saisie(cellulesDepuis(rapport), ['A'], cols)[0].aplatir).toBe(false);
+  });
+});
+
+describe('scinder', () => {
+  const cols = colonnes(rapport());
+
+  it('cuts a column in two at an hour strictly inside it, and renumbers the day', () => {
+    const coupees = scinder(cols, '2@14:00-20:00', '19:00')!;
+
+    expect(coupees.map((colonne) => colonne.colonneId)).toEqual([
+      '1@10:00-12:00',
+      '2@14:00-19:00',
+      '2@19:00-20:00',
+      '3@20:00-00:00',
+      '4@10:00-12:00',
+      '5@14:00-20:00',
+    ]);
+    expect(coupees.map((colonne) => colonne.rang)).toEqual([0, 1, 2, 3, 0, 1]);
+    expect(coupees[1].creneauId).toBe(2);
+    expect(coupees[2].heureDebut).toBe('19:00');
+  });
+
+  it('cuts a midnight-crossing column past midnight, and refuses an edge or an outside hour', () => {
+    expect(scinder(cols, '3@20:00-00:00', '23:00')!.map((colonne) => colonne.colonneId)).toContain(
+      '3@23:00-00:00',
+    );
+    expect(scinder(cols, '2@14:00-20:00', '14:00')).toBeNull();
+    expect(scinder(cols, '2@14:00-20:00', '20:00')).toBeNull();
+    expect(scinder(cols, '2@14:00-20:00', '09:00')).toBeNull();
+    expect(scinder(cols, 'inconnue', '15:00')).toBeNull();
+  });
+
+  it('carries every value under the old column onto both new ones, and so with the flags', () => {
+    const cellules = propagerScission(cellulesDepuis(rapport()), '2@14:00-20:00', [
+      '2@14:00-19:00',
+      '2@19:00-20:00',
+    ]);
+    const coupees = scinder(cols, '2@14:00-20:00', '19:00')!;
+    expect(valeursLigne(cellules, 'A', coupees)).toEqual([2, 4, 4, 4, 2, 4]);
+    expect(cellules.get('A')!.has('2@14:00-20:00')).toBe(false);
+    // Nothing is modified by the cut itself.
+    expect(standsModifies(cellules, cellules)).toEqual([]);
+
+    const clefs = propagerClefs(new Map([['B#2@14:00-20:00', 'x']]), '2@14:00-20:00', [
+      '2@14:00-19:00',
+      '2@19:00-20:00',
+    ]);
+    expect(Array.from(clefs.keys())).toEqual(['B#2@14:00-19:00', 'B#2@19:00-20:00']);
+  });
+
+  it('sends a cut column as a cell with its own bounds', () => {
+    const coupees = scinder(cols, '2@14:00-20:00', '19:00')!;
+    const cellules = ecrireCellule(
+      propagerScission(cellulesDepuis(rapport()), '2@14:00-20:00', [
+        '2@14:00-19:00',
+        '2@19:00-20:00',
+      ]),
+      { standId: 'A', colonneId: '2@19:00-20:00' },
+      2,
+    );
+    const corps = saisie(cellules, ['A'], coupees);
+    expect(corps[0].cellules.slice(1, 3)).toEqual([
+      { creneauId: 2, heureDebut: '14:00', heureFin: '19:00', effectif: 4 },
+      { creneauId: 2, heureDebut: '19:00', heureFin: '20:00', effectif: 2 },
+    ]);
   });
 });

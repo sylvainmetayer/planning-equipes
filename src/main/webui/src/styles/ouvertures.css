@@ -291,6 +291,38 @@
   right: 0.1rem;
 }
 
+/* A column can be cut at an hour from its header; the control only shows on
+   hover or focus, sixty headers wearing a scissor icon would be noise. */
+.grille-saisie .entete-creneau {
+  white-space: nowrap;
+}
+
+.grille-saisie .scinder-colonne {
+  --mdc-icon-button-state-layer-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  vertical-align: middle;
+  opacity: 0;
+}
+
+.grille-saisie .entete-creneau:hover .scinder-colonne,
+.grille-saisie .scinder-colonne:focus-visible {
+  opacity: 1;
+}
+
+.grille-saisie .scinder-colonne mat-icon {
+  font-size: 0.85rem;
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.grille-saisie .scission-heure {
+  width: 5.5rem;
+  font: inherit;
+  font-size: 0.72rem;
+}
+
 .grille-saisie .recopier-jour mat-icon,
 .grille-saisie .recopier-ligne mat-icon {
   font-size: 0.95rem;

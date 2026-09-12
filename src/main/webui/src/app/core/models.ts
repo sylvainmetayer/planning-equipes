@@ -214,9 +214,15 @@ export type SourceHoraire = 'DEFAUT' | 'REGLE' | 'EXCEPTION';
 export type TypeAnomalieOuverture =
   'STAND_JAMAIS_OUVERT' | 'FENETRE_SANS_EFFET' | 'SEGMENT_TROP_COURT';
 
-/** One créneau of a day, as a column of the entry grid. */
+/**
+ * One column of the entry grid: a tranche of a créneau — the whole créneau
+ * when no stand cuts it, else one stretch between two boundaries a stand's
+ * windows draw inside it. `id` is the créneau's, `heureDebut`/`heureFin` the
+ * column's own bounds, `tranche` its rank inside the créneau.
+ */
 export interface ColonneCreneau {
   id: number;
+  tranche: number;
   heureDebut: string;
   heureFin: string;
   famille: number;
@@ -251,6 +257,8 @@ export interface SegmentCellule {
  */
 export interface CelluleCreneauOuverture {
   creneauId: number;
+  /** The column's rank inside its créneau, matching `ColonneCreneau.tranche`. */
+  tranche: number;
   effectif: number | null;
   partiel: boolean;
   /** The open stretches of the cell, empty when closed; one spanning the créneau when not partial. */
@@ -316,8 +324,14 @@ export interface SaisieStandGrille {
   standId: string;
   /** The stand's `modifieLe` as the grid read it, sent back as the write's precondition (issue #362). */
   modifieLe: string | null;
-  cellules: { creneauId: number; effectif: number | null }[];
-  /** `true` to extend every partial cell to its whole créneau; `false` keeps the segments of a cell saved unchanged. */
+  /** One per column: the créneau, the column's bounds inside it (both absent for the créneau in one piece), the headcount. */
+  cellules: {
+    creneauId: number;
+    heureDebut: string | null;
+    heureFin: string | null;
+    effectif: number | null;
+  }[];
+  /** `true` to extend every partial cell to its whole column; `false` keeps the segments of a cell saved unchanged. */
   aplatir: boolean;
 }
 

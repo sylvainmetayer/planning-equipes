@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -71,9 +72,21 @@ public final class GrilleHorairesStands {
      */
     public record SaisieStand(String standId, Instant modifieLe, List<SaisieCellule> cellules, boolean aplatir) {}
 
-    /** The headcount typed under one créneau; {@code null} or absent means closed. */
+    /**
+     * The headcount typed under one column; {@code null} or absent means
+     * closed. A column is a créneau, or a tranche of it: {@code heureDebut}
+     * and {@code heureFin} bound the tranche inside the créneau, both absent
+     * for the créneau in one piece. The minutes of a créneau no cell of the
+     * stand covers keep what the stand already had there.
+     */
     @Schema(requiredProperties = {"creneauId"})
-    public record SaisieCellule(long creneauId, Integer effectif) {}
+    public record SaisieCellule(long creneauId, LocalTime heureDebut, LocalTime heureFin, Integer effectif) {
+
+        /** The créneau in one piece. */
+        public SaisieCellule(long creneauId, Integer effectif) {
+            this(creneauId, null, null, effectif);
+        }
+    }
 
     /** What the conversion did to one stand — the compaction's own line, plus the bounds it derived. */
     @Schema(requiredProperties = {"compacte", "effectifMax", "effectifMin", "exceptions", "regles"})
@@ -106,7 +119,6 @@ public final class GrilleHorairesStands {
      */
     public static LigneGrille apply(
             Stand stand, List<Creneau> creneaux, List<SaisieCellule> cellules, boolean aplatir) {
-        Map<Long, Integer> parCreneau = new HashMap<>();
         Map<Long, Creneau> connus = new HashMap<>();
         for (Creneau creneau : creneaux) {
             if (creneau.getId() != null
@@ -116,8 +128,12 @@ public final class GrilleHorairesStands {
                 connus.put(creneau.getId(), creneau);
             }
         }
+        // The typed cells, as {debut, fin, effectif} in minutes from their
+        // créneau's start (-1 for closed), grouped by créneau.
+        Map<Long, List<int[]>> parCreneau = new HashMap<>();
         for (SaisieCellule cellule : cellules) {
-            if (!connus.containsKey(cellule.creneauId())) {
+            Creneau creneau = connus.get(cellule.creneauId());
+            if (creneau == null) {
                 throw new BusinessError.Invalid(
                         "Créneau inconnu dans la grille du stand " + stand.getId() + " : " + cellule.creneauId());
             }
@@ -125,35 +141,52 @@ public final class GrilleHorairesStands {
                 throw new BusinessError.Invalid("Effectif " + cellule.effectif() + " sur le stand " + stand.getId()
                         + " : laissez la case vide pour fermer le stand sur ce créneau");
             }
-            if (cellule.effectif() != null) {
-                parCreneau.put(cellule.creneauId(), cellule.effectif());
+            int[] bornes = bornesDeCellule(stand, creneau, cellule);
+            List<int[]> duCreneau = parCreneau.computeIfAbsent(creneau.getId(), key -> new ArrayList<>());
+            for (int[] autre : duCreneau) {
+                if (bornes[0] < autre[1] && autre[0] < bornes[1]) {
+                    throw new BusinessError.Invalid("Deux cases du stand " + stand.getId() + " se recouvrent sur le "
+                            + "créneau " + creneau.getId() + " (" + creneau.getDate() + ").");
+                }
             }
+            duCreneau.add(new int[] {bornes[0], bornes[1], cellule.effectif() == null ? -1 : cellule.effectif()});
         }
 
-        // What each cell becomes, in minutes from its day's midnight: the whole
-        // créneau at the typed headcount, or — for a partial cell whose value
-        // did not change — the segments the stand already had there. Read
-        // before the rewrite below empties the effective windows.
+        // What each créneau becomes, in minutes from its day's midnight: each
+        // typed cell as the whole column at its headcount — or, for a partial
+        // cell whose value did not change, the segments the stand already had
+        // there — and the minutes no cell covers as they were. Read before the
+        // rewrite below empties the effective windows.
         Map<Long, List<int[]>> segmentsParCreneau = new HashMap<>();
-        for (Creneau creneau : connus.values()) {
-            Integer effectif = parCreneau.get(creneau.getId());
-            if (effectif == null) {
-                continue;
+        parCreneau.forEach((creneauId, cases) -> {
+            Creneau creneau = connus.get(creneauId);
+            int debutCreneau = creneau.getHeureDebut().toSecondOfDay() / 60;
+            List<Creneau.SegmentOuvert> actuels = creneau.segmentsOuverts(stand);
+            List<int[]> segments = new ArrayList<>();
+            cases.sort(Comparator.comparingInt(borne -> borne[0]));
+            int curseur = 0;
+            for (int[] borne : cases) {
+                if (borne[0] > curseur) {
+                    segments.addAll(clipped(actuels, curseur, borne[0], debutCreneau));
+                }
+                curseur = borne[1];
+                if (borne[2] < 0) {
+                    continue;
+                }
+                List<int[]> dedans = clipped(actuels, borne[0], borne[1], debutCreneau);
+                if (!aplatir && conserve(dedans, borne[0] + debutCreneau, borne[1] + debutCreneau, borne[2])) {
+                    segments.addAll(dedans);
+                } else {
+                    segments.add(new int[] {debutCreneau + borne[0], debutCreneau + borne[1], borne[2]});
+                }
             }
-            int debut = creneau.getHeureDebut().toSecondOfDay() / 60;
-            List<Creneau.SegmentOuvert> actuels = aplatir ? List.of() : creneau.segmentsOuverts(stand);
-            if (conserve(creneau, actuels, effectif)) {
-                segmentsParCreneau.put(
-                        creneau.getId(),
-                        actuels.stream()
-                                .map(segment -> new int[] {
-                                    debut + segment.debutMinutes(), debut + segment.finMinutes(), segment.effectif()
-                                })
-                                .toList());
-            } else {
-                segmentsParCreneau.put(creneau.getId(), List.of(new int[] {debut, finMinutes(creneau), effectif}));
+            if (curseur < creneau.getDureeMinutes()) {
+                segments.addAll(clipped(actuels, curseur, creneau.getDureeMinutes(), debutCreneau));
             }
-        }
+            if (!segments.isEmpty()) {
+                segmentsParCreneau.put(creneauId, segments);
+            }
+        });
 
         IntSummaryStatistics effectifs = segmentsParCreneau.values().stream()
                 .flatMap(List::stream)
@@ -201,22 +234,52 @@ public final class GrilleHorairesStands {
                 compactage.raison());
     }
 
+    /** A cell's bounds in minutes from its créneau's start: the whole créneau when it names none. */
+    private static int[] bornesDeCellule(Stand stand, Creneau creneau, SaisieCellule cellule) {
+        int duree = creneau.getDureeMinutes();
+        if (cellule.heureDebut() == null && cellule.heureFin() == null) {
+            return new int[] {0, duree};
+        }
+        if (cellule.heureDebut() == null || cellule.heureFin() == null) {
+            throw new BusinessError.Invalid("Une case du stand " + stand.getId() + " nomme une heure de début "
+                    + "sans fin, ou l'inverse, sur le créneau " + creneau.getId() + ".");
+        }
+        int[] bornes = OuvertureStandsAnalyzer.bornesDansCreneau(creneau, cellule.heureDebut(), cellule.heureFin());
+        if (bornes[0] < 0 || bornes[1] > duree || bornes[0] >= bornes[1]) {
+            throw new BusinessError.Invalid("La case " + cellule.heureDebut() + "-" + cellule.heureFin()
+                    + " du stand " + stand.getId() + " sort du créneau " + creneau.getId() + " ("
+                    + creneau.getDate() + " " + creneau.getHeureDebut() + "-" + creneau.getHeureFin() + ").");
+        }
+        return bornes;
+    }
+
+    /** The stand's current segments clipped to {@code [debut, fin)} of the créneau, in minutes from the day's midnight. */
+    private static List<int[]> clipped(List<Creneau.SegmentOuvert> actuels, int debut, int fin, int debutCreneau) {
+        List<int[]> dedans = new ArrayList<>();
+        for (Creneau.SegmentOuvert segment : actuels) {
+            int lo = Math.max(debut, segment.debutMinutes());
+            int hi = Math.min(fin, segment.finMinutes());
+            if (lo < hi) {
+                dedans.add(new int[] {debutCreneau + lo, debutCreneau + hi, segment.effectif()});
+            }
+        }
+        return dedans;
+    }
+
     /**
      * Whether a typed cell leaves the stand's current segments alone: the cell
-     * is partial — open on part of the créneau, or at more than one headcount
+     * is partial — open on part of the column, or at more than one headcount
      * — and the value typed is the one the grid showed for it, its highest
      * headcount. Typing that same number back is not a decision to flatten;
-     * {@code aplatir} is.
+     * {@code aplatir} is. Bounds and segments in minutes from the day's
+     * midnight.
      */
-    private static boolean conserve(Creneau creneau, List<Creneau.SegmentOuvert> actuels, int effectif) {
-        if (actuels.isEmpty()) {
+    private static boolean conserve(List<int[]> dedans, int debut, int fin, int effectif) {
+        if (dedans.isEmpty()) {
             return false;
         }
-        boolean entier = actuels.size() == 1
-                && actuels.get(0).debutMinutes() == 0
-                && actuels.get(0).finMinutes() == creneau.getDureeMinutes();
-        int affiche =
-                actuels.stream().mapToInt(Creneau.SegmentOuvert::effectif).max().orElse(0);
+        boolean entier = dedans.size() == 1 && dedans.get(0)[0] == debut && dedans.get(0)[1] == fin;
+        int affiche = dedans.stream().mapToInt(segment -> segment[2]).max().orElse(0);
         return !entier && affiche == effectif;
     }
 

@@ -396,15 +396,19 @@ créneau est ignorée et listée plutôt que refusée, et un créneau sans colon
 garde la case actuelle du stand. Le bouton « Télécharger la grille actuelle
 comme modèle » rend l'édition telle qu'elle est, réimportable telle quelle.
 
-Deux points valent d'être connus avant de verser un fichier. Une colonne se
-pose sur **tous** les créneaux de sa date et de ses heures, pas sur le premier :
-une grille décalée en familles en porte un par famille, et n'en servir qu'un
-laissait les stands des autres inchangés alors que le rapport les disait
-écrits. Et un créneau sans colonne garde sa case **avec ses segments** : un
-stand qui n'y ouvre que de 14 h à 15 h, ou à deux effectifs successifs, en
-ressort tel quel, comme à l'enregistrement depuis la grille de saisie. Une
-bande dont la minute n'a qu'un chiffre (`9:5`) est refusée plutôt que
-complétée, comme à la saisie.
+Trois points valent d'être connus avant de verser un fichier. Une colonne se
+pose sur **tous** les créneaux de sa date qui la contiennent, pas sur le
+premier : une grille décalée en familles en porte un par famille, et n'en
+servir qu'un laissait les stands des autres inchangés alors que le rapport les
+disait écrits. Une colonne **plus étroite que son créneau** — les sept
+tranches du classeur sous quatre ou cinq créneaux — écrit une fenêtre à ses
+propres bornes et laisse le reste du créneau tel quel : le classeur s'importe
+colonne pour colonne, et la grille de saisie montre ensuite les mêmes colonnes.
+Et un créneau sans colonne garde sa case **avec ses segments** : un stand qui
+n'y ouvre que de 14 h à 15 h, ou à deux effectifs successifs, en ressort tel
+quel, comme à l'enregistrement depuis la grille de saisie. Une bande dont la
+minute n'a qu'un chiffre (`9:5`) est refusée plutôt que complétée, comme à la
+saisie.
 
 Le fichier d'exemple écrit ses bandes **`10h00-12h00`**, pas `10:00-12:00`, et
 c'est délibéré : Excel retype `13:00-16:00` en la date `30/11/1999 13:16:00`, et

@@ -113,7 +113,10 @@ class OuvertureStandsResourceTest {
                 .extract()
                 .jsonPath();
         String standId = avant.getString("stands[0].standId");
-        List<Integer> creneauIds = avant.getList("jours.creneaux.id.flatten()", Integer.class);
+        // A créneau cut into columns repeats its id: one whole cell per créneau here.
+        List<Integer> creneauIds = avant.getList("jours.creneaux.id.flatten()", Integer.class).stream()
+                .distinct()
+                .toList();
         assertThat(creneauIds).hasSizeGreaterThan(1);
 
         // Closed on the first créneau, three people everywhere else.

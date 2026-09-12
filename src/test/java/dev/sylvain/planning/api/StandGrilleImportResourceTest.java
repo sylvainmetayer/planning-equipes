@@ -103,6 +103,49 @@ class StandGrilleImportResourceTest {
         assertThat(apres.getInt("stands[0].jours[0].creneaux[0].effectif")).isEqualTo(7);
     }
 
+    /** The workbook's own columns are narrower than the créneaux: each writes a window at its bounds. */
+    @Test
+    void uneColonnePlusEtroiteQueSonCreneauEcritSaTrancheEtLaisseLeReste() {
+        seedScenario();
+        JsonPath avant = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        String standId = avant.getString("stands[0].standId");
+        String date = avant.getString("jours[0].date");
+        String debut = avant.getString("jours[0].creneaux[0].heureDebut").substring(0, 5);
+        Integer avantEffectif = avant.get("stands[0].jours[0].creneaux[0].effectif");
+        // The first hour of the first créneau only.
+        String finTranche = java.time.LocalTime.parse(debut).plusHours(1).toString();
+        String csv = "stand;" + date + "\n;" + debut + "-" + finTranche + "\n" + standId + ";7\n";
+
+        given().contentType("application/json")
+                .body(request(csv))
+                .when()
+                .post("/api/stands/import-grille")
+                .then()
+                .statusCode(200)
+                .body("applied", equalTo(true))
+                .body("accepted", equalTo(1))
+                .body("columns[0].creneauId", notNullValue())
+                .body("columns[0].reason", org.hamcrest.Matchers.nullValue());
+
+        JsonPath apres = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        // The créneau now shows two columns: the imported hour at 7, the rest as it was.
+        assertThat(apres.getString("jours[0].creneaux[0].heureFin")).startsWith(finTranche);
+        assertThat(apres.getInt("jours[0].creneaux[1].tranche")).isEqualTo(1);
+        assertThat(apres.getInt("stands[0].jours[0].creneaux[0].effectif")).isEqualTo(7);
+        assertThat((Integer) apres.get("stands[0].jours[0].creneaux[1].effectif"))
+                .isEqualTo(avantEffectif);
+    }
+
     @Test
     void unStandInconnuUneCaseIllisibleEtUneColonneSansCreneauSontDits() {
         seedScenario();

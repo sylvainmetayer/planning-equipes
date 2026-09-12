@@ -51,8 +51,14 @@ class OuvertureStandsAnalyzerTest {
     }
 
     /** The cell without its segments, for the assertions that read the grid as integers. */
-    private static CelluleCreneau withoutSegments(CelluleCreneau cellule) {
-        return new CelluleCreneau(cellule.creneauId(), cellule.effectif(), cellule.partiel(), cellule.horsFamille());
+    private static CelluleCreneau sansSegments(CelluleCreneau cellule) {
+        return new CelluleCreneau(
+                cellule.creneauId(),
+                cellule.tranche(),
+                cellule.effectif(),
+                cellule.partiel(),
+                cellule.horsFamille(),
+                List.of());
     }
 
     private static RapportOuvertures analyze(List<Stand> stands, List<Creneau> creneaux) {
@@ -104,27 +110,38 @@ class OuvertureStandsAnalyzerTest {
     }
 
     @Test
-    void uneCellulePartielleExposeSesSegmentsEtSonEffectifLePlusHaut() {
-        Stand stand = stand("VARIABLE");
-        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
-        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
+    void lesColonnesSuiventLesBornesDesFenetresEtAucuneCaseNEstPartielle() {
+        Stand variable = stand("VARIABLE");
+        variable.getOuvertures()
+                .add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
+        variable.getOuvertures()
+                .add(new OuvertureStand(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
+        Stand libre = stand("LIBRE");
 
-        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
+        RapportOuvertures rapport = analyze(List.of(variable, libre), deuxJours());
 
-        CelluleCreneau partielle =
-                rapport.stands().get(0).jours().get(0).creneaux().get(0);
-        assertThat(partielle.partiel()).isTrue();
-        assertThat(partielle.effectif()).isEqualTo(4);
-        assertThat(partielle.segments())
+        // Day 1: the créneau 10-20 cut at 14:00 and 19:00 for everyone; day 2 in one piece.
+        assertThat(rapport.jours().get(0).creneaux())
+                .extracting(colonne ->
+                        colonne.id() + ":" + colonne.tranche() + " " + colonne.heureDebut() + "-" + colonne.heureFin())
+                .containsExactly("1:0 10:00-14:00", "1:1 14:00-19:00", "1:2 19:00-20:00");
+        assertThat(rapport.jours().get(1).creneaux())
+                .extracting(colonne -> colonne.id() + ":" + colonne.tranche())
+                .containsExactly("2:0");
+        assertThat(rapport.jours().get(0).nombreCreneaux()).isEqualTo(1);
+
+        List<CelluleCreneau> cellesDuVariable =
+                rapport.stands().get(0).jours().get(0).creneaux();
+        assertThat(cellesDuVariable).extracting(CelluleCreneau::effectif).containsExactly(null, 4, 2);
+        assertThat(cellesDuVariable).noneMatch(CelluleCreneau::partiel);
+        assertThat(cellesDuVariable.get(1).segments())
                 .extracting(segment -> segment.heureDebut() + "-" + segment.heureFin() + "@" + segment.effectif())
-                .containsExactly("14:00-19:00@4", "19:00-20:00@2");
-        // The next day has no window: open by default, one stretch over the créneau.
-        CelluleCreneau entiere =
-                rapport.stands().get(0).jours().get(1).creneaux().get(0);
-        assertThat(entiere.partiel()).isFalse();
-        assertThat(entiere.segments())
-                .extracting(segment -> segment.heureDebut() + "-" + segment.heureFin() + "@" + segment.effectif())
-                .containsExactly("10:00-20:00@1");
+                .containsExactly("14:00-19:00@4");
+        // The open-by-default stand reads its minimum under every column, whole.
+        List<CelluleCreneau> cellesDuLibre =
+                rapport.stands().get(1).jours().get(0).creneaux();
+        assertThat(cellesDuLibre).extracting(CelluleCreneau::effectif).containsExactly(1, 1, 1);
+        assertThat(cellesDuLibre).noneMatch(CelluleCreneau::partiel);
     }
 
     @Test
@@ -144,9 +161,10 @@ class OuvertureStandsAnalyzerTest {
     }
 
     /**
-     * The entry grid reads one cell per créneau: the configured headcount when
-     * the stand is open on the whole créneau, nothing when closed, and a
-     * partial flag when the windows do not follow the créneau's edges.
+     * The entry grid reads one cell per column: the configured headcount when
+     * the stand is open on the whole column, nothing when closed — and a
+     * window boundary inside a créneau cuts the créneau into columns rather
+     * than leaving a partial cell.
      */
     @Test
     void chaqueJourPorteUneCelluleParCreneau() {
@@ -164,14 +182,16 @@ class OuvertureStandsAnalyzerTest {
 
         assertThat(rapport.jours().get(0).creneaux())
                 .extracting(colonne -> colonne.heureDebut())
-                .containsExactly(LocalTime.of(10, 0), LocalTime.of(20, 0));
+                .containsExactly(LocalTime.of(10, 0), LocalTime.of(20, 0), LocalTime.of(21, 0));
+        // The nocturne opens at 21:00 only: the créneau 20-00 gets two columns, nothing partial.
         List<OuvertureStandsAnalyzer.CelluleCreneau> cellules =
                 rapport.stands().get(0).jours().get(0).creneaux();
         assertThat(cellules)
                 .map(OuvertureStandsAnalyzerTest::withoutSegments)
                 .containsExactly(
                         new OuvertureStandsAnalyzer.CelluleCreneau(1L, 2, false, false),
-                        new OuvertureStandsAnalyzer.CelluleCreneau(3L, 4, true, false));
+                        new OuvertureStandsAnalyzer.CelluleCreneau(3L, 0, null, false, false, List.of()),
+                        new OuvertureStandsAnalyzer.CelluleCreneau(3L, 1, 4, false, false, List.of()));
         assertThat(rapport.stands().get(0).jours().get(1).creneaux())
                 .map(OuvertureStandsAnalyzerTest::withoutSegments)
                 .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 2, false, false));

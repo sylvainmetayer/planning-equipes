@@ -75,15 +75,28 @@ public final class OuvertureStandsAnalyzer {
     public static final int DUREE_MINIMALE_EXPLOITABLE_MINUTES = 15;
 
     /**
-     * One créneau of a day, as a column of the entry grid: what the organiser
-     * types a headcount under, in the order this class sorts them: start time,
-     * then id. The id is
-     * {@code null} for a créneau not written yet — the recurrence preview
-     * validates a grid holding the rows a rule <em>would</em> add.
+     * One column of the entry grid: a <em>tranche</em> of a créneau — the
+     * whole créneau when no stand cuts it, else one stretch between two
+     * boundaries some stand's windows draw inside it (4 people from 14:00 to
+     * 19:00 then 2 until 20:00 gives the créneau 14-20 two columns, 14-19 and
+     * 19-20, for every stand). The columns follow the need, the créneaux stay
+     * the solver's; nothing is stored, the boundaries are read off the
+     * windows on every report. Ordered by créneau (start time, then id) and
+     * tranche. {@code id} is the créneau's, {@code null} for a créneau not
+     * written yet — the recurrence preview validates a grid holding the rows a
+     * rule <em>would</em> add.
+     *
+     * @param tranche the column's rank inside its créneau, from 0
      */
-    @Schema(requiredProperties = {"couverturePause", "famille"})
+    @Schema(requiredProperties = {"couverturePause", "famille", "tranche"})
     public record ColonneCreneau(
-            Long id, LocalTime heureDebut, LocalTime heureFin, int famille, boolean couverturePause) {}
+            Long id, int tranche, LocalTime heureDebut, LocalTime heureFin, int famille, boolean couverturePause) {
+
+        /** A créneau in one piece. */
+        public ColonneCreneau(Long id, LocalTime heureDebut, LocalTime heureFin, int famille, boolean couverturePause) {
+            this(id, 0, heureDebut, heureFin, famille, couverturePause);
+        }
+    }
 
     /** One event day, the amplitude the cells of that column are measured against, and its créneaux. */
     @Schema(requiredProperties = {"jour", "minutes", "nombreCreneaux"})
@@ -111,20 +124,26 @@ public final class OuvertureStandsAnalyzer {
      * ({@link dev.sylvain.planning.service.referentiel.GrilleHorairesStands}).
      */
     /**
+     * @param tranche     the column's rank inside its créneau ({@link ColonneCreneau#tranche()})
      * @param horsFamille the créneau belongs to another stagger family than the
      *                    stand's, so the stand never receives a seat on it —
      *                    the cell is shown inert rather than editable
      * @param segments    the open stretches of the cell, empty when closed;
-     *                    one stretch spanning the créneau when the cell is not
+     *                    one stretch spanning the column when the cell is not
      *                    partial
      */
-    @Schema(requiredProperties = {"horsFamille", "partiel", "segments"})
+    @Schema(requiredProperties = {"horsFamille", "partiel", "segments", "tranche"})
     public record CelluleCreneau(
-            Long creneauId, Integer effectif, boolean partiel, boolean horsFamille, List<SegmentCellule> segments) {
+            Long creneauId,
+            int tranche,
+            Integer effectif,
+            boolean partiel,
+            boolean horsFamille,
+            List<SegmentCellule> segments) {
 
-        /** A cell that is not partial: one stretch, or none. */
+        /** A cell of a créneau in one piece, without its stretches. */
         public CelluleCreneau(Long creneauId, Integer effectif, boolean partiel, boolean horsFamille) {
-            this(creneauId, effectif, partiel, horsFamille, List.of());
+            this(creneauId, 0, effectif, partiel, horsFamille, List.of());
         }
     }
 
@@ -176,6 +195,7 @@ public final class OuvertureStandsAnalyzer {
         Map<String, Integer> familles = ProblemBuilder.standFamilies(stands, creneaux);
         List<JourAmplitude> jours = new ArrayList<>();
         Map<LocalDate, Integer> amplitudeParJour = new LinkedHashMap<>();
+        Map<LocalDate, List<ColonneAvecCreneau>> colonnesParJour = new LinkedHashMap<>();
         creneauxParJour.forEach((date, duJour) -> {
             List<int[]> couverture = merge(
                     duJour.stream().map(OuvertureStandsAnalyzer::intervalle).toList());
@@ -184,16 +204,14 @@ public final class OuvertureStandsAnalyzer {
             amplitudeParJour.put(date, minutes);
             int debut = couverture.get(0)[0];
             int fin = couverture.get(couverture.size() - 1)[1];
-            // Same order as the day's list, which creneauxByDay sorted: the
-            // cells of a row are read back by position.
-            List<ColonneCreneau> colonnes = duJour.stream()
-                    .map(creneau -> new ColonneCreneau(
-                            creneau.getId(),
-                            creneau.getHeureDebut(),
-                            creneau.getHeureFin(),
-                            creneau.getFamille(),
-                            creneau.isCouverturePause()))
-                    .toList();
+            // Same order as the day's list, which creneauxByDay sorted, each
+            // créneau cut into its tranches: the cells of a row are read back
+            // by position.
+            List<ColonneAvecCreneau> colonnes = new ArrayList<>();
+            for (Creneau creneau : duJour) {
+                colonnes.addAll(colonnesDe(creneau, stands, familles));
+            }
+            colonnesParJour.put(date, colonnes);
             jours.add(new JourAmplitude(
                     date,
                     duJour.get(0).getJour(),
@@ -201,7 +219,7 @@ public final class OuvertureStandsAnalyzer {
                     minuteToTime(fin),
                     minutes,
                     duJour.size(),
-                    colonnes));
+                    colonnes.stream().map(ColonneAvecCreneau::colonne).toList()));
         });
 
         // The seats the solver would receive, grouped by stand then by day:
@@ -235,7 +253,7 @@ public final class OuvertureStandsAnalyzer {
                         jour,
                         postes,
                         amplitudeParJour.get(jour.date()),
-                        creneauxParJour.get(jour.date()),
+                        colonnesParJour.get(jour.date()),
                         familles.getOrDefault(stand.getId(), 0));
                 cellules.add(cellule);
                 minutesStand += cellule.minutesOuvertes();
@@ -280,13 +298,12 @@ public final class OuvertureStandsAnalyzer {
             JourAmplitude jour,
             List<PosteAffectation> postes,
             int minutesAmplitude,
-            List<Creneau> duJour,
+            List<ColonneAvecCreneau> colonnes,
             int familleStand) {
         SourceHoraire source = HoraireStandResolver.sourceOfDay(stand, jour.date());
         List<CelluleCreneau> parCreneau = new ArrayList<>();
-        for (int index = 0; index < jour.creneaux().size(); index++) {
-            parCreneau.add(
-                    celluleCreneau(stand, duJour.get(index), jour.creneaux().get(index), familleStand));
+        for (ColonneAvecCreneau colonne : colonnes) {
+            parCreneau.add(celluleCreneau(stand, colonne.creneau(), colonne.colonne(), familleStand));
         }
         if (postes.isEmpty()) {
             return new CelluleJour(
@@ -306,38 +323,101 @@ public final class OuvertureStandsAnalyzer {
                 jour.date(), etat, source, effectives, minutesOuvertes, minutesAmplitude, postes.size(), parCreneau);
     }
 
+    /** A column with the créneau it is a tranche of: the cells are read off the créneau's segments, clipped to the column. */
+    private record ColonneAvecCreneau(Creneau creneau, ColonneCreneau colonne) {}
+
     /**
-     * The grid cell of one créneau, read off the same open segments seat
-     * generation reads ({@link Creneau#segmentsOuverts}): the configured
-     * headcount, not the seats — a break-covering créneau halves the seats,
-     * and the organiser types what the stand needs, not what the solver gets.
+     * The columns of one créneau: its tranches, cut wherever a window of a
+     * stand of its family starts or ends strictly inside it. Every boundary
+     * counts, so a cell is never partial on the family's own stands; a stand
+     * with an odd boundary (10:07) cuts the column for everyone, which is the
+     * price of showing the need as it is rather than flattening it.
+     */
+    private static List<ColonneAvecCreneau> colonnesDe(
+            Creneau creneau, List<Stand> stands, Map<String, Integer> familles) {
+        int duree = creneau.getDureeMinutes();
+        TreeSet<Integer> bornes = new TreeSet<>();
+        bornes.add(0);
+        bornes.add(duree);
+        for (Stand stand : stands) {
+            if (familles.getOrDefault(stand.getId(), 0) != creneau.getFamille()) {
+                continue;
+            }
+            for (Creneau.SegmentOuvert segment : creneau.segmentsOuverts(stand)) {
+                if (segment.debutMinutes() > 0 && segment.debutMinutes() < duree) {
+                    bornes.add(segment.debutMinutes());
+                }
+                if (segment.finMinutes() > 0 && segment.finMinutes() < duree) {
+                    bornes.add(segment.finMinutes());
+                }
+            }
+        }
+        int debutCreneau = creneau.getHeureDebut().toSecondOfDay() / 60;
+        List<Integer> tries = new ArrayList<>(bornes);
+        List<ColonneAvecCreneau> colonnes = new ArrayList<>();
+        for (int index = 0; index + 1 < tries.size(); index++) {
+            colonnes.add(new ColonneAvecCreneau(
+                    creneau,
+                    new ColonneCreneau(
+                            creneau.getId(),
+                            index,
+                            minuteToTime(debutCreneau + tries.get(index)),
+                            minuteToTime(debutCreneau + tries.get(index + 1)),
+                            creneau.getFamille(),
+                            creneau.isCouverturePause())));
+        }
+        return colonnes;
+    }
+
+    /** A column's bounds in minutes from its créneau's start. */
+    public static int[] bornesDansCreneau(Creneau creneau, LocalTime heureDebut, LocalTime heureFin) {
+        int debutCreneau = creneau.getHeureDebut().toSecondOfDay() / 60;
+        int debut = heureDebut.toSecondOfDay() / 60;
+        int fin = heureFin.toSecondOfDay() / 60;
+        if (debut < debutCreneau) {
+            debut += 24 * 60;
+        }
+        if (fin <= debut) {
+            fin += 24 * 60;
+        }
+        return new int[] {debut - debutCreneau, fin - debutCreneau};
+    }
+
+    /**
+     * The grid cell of one column, read off the same open segments seat
+     * generation reads ({@link Creneau#segmentsOuverts}), clipped to the
+     * column: the configured headcount, not the seats — a break-covering
+     * créneau halves the seats, and the organiser types what the stand needs,
+     * not what the solver gets.
      */
     private static CelluleCreneau celluleCreneau(
             Stand stand, Creneau creneau, ColonneCreneau colonne, int familleStand) {
         if (creneau.getFamille() != familleStand) {
             // Another family's créneau: ProblemBuilder#buildPostes never pairs
             // it with this stand, so it holds no seat to read and none to type.
-            return new CelluleCreneau(colonne.id(), null, false, true);
+            return new CelluleCreneau(colonne.id(), colonne.tranche(), null, false, true, List.of());
         }
-        List<Creneau.SegmentOuvert> segments = creneau.segmentsOuverts(stand);
-        if (segments.isEmpty()) {
-            return new CelluleCreneau(colonne.id(), null, false, false);
+        int[] bornes = bornesDansCreneau(creneau, colonne.heureDebut(), colonne.heureFin());
+        int debutCreneau = creneau.getHeureDebut().toSecondOfDay() / 60;
+        List<SegmentCellule> lus = new ArrayList<>();
+        int effectif = 0;
+        int couvert = 0;
+        for (Creneau.SegmentOuvert segment : creneau.segmentsOuverts(stand)) {
+            int debut = Math.max(bornes[0], segment.debutMinutes());
+            int fin = Math.min(bornes[1], segment.finMinutes());
+            if (debut >= fin) {
+                continue;
+            }
+            lus.add(new SegmentCellule(
+                    minuteToTime(debutCreneau + debut), minuteToTime(debutCreneau + fin), segment.effectif()));
+            effectif = Math.max(effectif, segment.effectif());
+            couvert += fin - debut;
         }
-        int effectif = segments.stream()
-                .mapToInt(Creneau.SegmentOuvert::effectif)
-                .max()
-                .orElse(0);
-        boolean entier = segments.size() == 1
-                && segments.get(0).debutMinutes() == 0
-                && segments.get(0).finMinutes() == creneau.getDureeMinutes();
-        int debut = creneau.getHeureDebut().toSecondOfDay() / 60;
-        List<SegmentCellule> lus = segments.stream()
-                .map(segment -> new SegmentCellule(
-                        minuteToTime(debut + segment.debutMinutes()),
-                        minuteToTime(debut + segment.finMinutes()),
-                        segment.effectif()))
-                .toList();
-        return new CelluleCreneau(colonne.id(), effectif, !entier, false, lus);
+        if (lus.isEmpty()) {
+            return new CelluleCreneau(colonne.id(), colonne.tranche(), null, false, false, List.of());
+        }
+        boolean entier = lus.size() == 1 && couvert == bornes[1] - bornes[0];
+        return new CelluleCreneau(colonne.id(), colonne.tranche(), effectif, !entier, false, lus);
     }
 
     /**

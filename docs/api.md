@@ -1885,24 +1885,39 @@ Trois anomalies, dont aucune ne bloque une résolution :
 créneau de son jour) et `SEGMENT_TROP_COURT` — la signature du contournement
 `23:59`.
 
-Chaque jour porte aussi ses créneaux (`jours[].creneaux`), et chaque cellule
-une entrée par créneau (`creneaux[]` : `creneauId`, `effectif`, `partiel`) —
+Chaque jour porte aussi ses **colonnes** (`jours[].creneaux`) : un créneau en
+un morceau, ou ses **tranches** quand une fenêtre d'un stand de sa famille
+commence ou finit à l'intérieur (4 personnes de 14 h à 19 h puis 2 jusqu'à
+20 h coupe le créneau 14-20 en 14-19 et 19-20, pour tous les stands). `id`
+est celui du créneau, `tranche` le rang dans le créneau, `heureDebut` et
+`heureFin` les bornes de la colonne. Rien n'est stocké : les bornes se relisent
+sur les fenêtres à chaque rapport, la grille a les colonnes du classeur et les
+créneaux restent ceux du solveur. Chaque cellule porte une entrée par colonne
+(`creneaux[]` : `creneauId`, `tranche`, `effectif`, `partiel`, `segments`) —
 l'effectif **configuré** que le stand y demande, `null` s'il y est fermé.
-`partiel` signale des fenêtres qui ne suivent pas les bornes du créneau, ou un
-effectif qui change en cours de créneau ; `effectif` est alors le plus haut.
+`partiel` ne subsiste que pour une borne qu'aucune colonne ne suit ; `effectif`
+est alors le plus haut et `segments` dit ce que la case porte.
 
 ### Saisie en grille
 
 `PUT /api/ouvertures-stands/grille` écrit l'horaire des stands sous la forme
-même du classeur de l'organisateur : **un entier par créneau**, vide pour
+même du classeur de l'organisateur : **un entier par colonne**, vide pour
 fermé. Le corps ne porte que les stands modifiés, chacun avec **toutes** ses
-cases :
+cases ; une case nomme son créneau et, pour une tranche, ses bornes dans le
+créneau (`heureDebut`/`heureFin`, absentes pour le créneau en un morceau) :
 
 ```json
 { "stands": [ { "standId": "BOURSE",
                 "cellules": [ { "creneauId": 1, "effectif": 2 },
-                              { "creneauId": 2, "effectif": null } ] } ] }
+                              { "creneauId": 2, "heureDebut": "14:00", "heureFin": "19:00", "effectif": 4 },
+                              { "creneauId": 2, "heureDebut": "19:00", "heureFin": "20:00", "effectif": 2 } ] } ] }
 ```
+
+Une tranche peut être inventée par le client (« scinder » depuis l'en-tête de
+la grille) : enregistrée, elle devient une fenêtre du stand à ces bornes, et le
+rapport suivant la relit comme n'importe quelle colonne. Les minutes d'un
+créneau qu'aucune case du stand ne couvre gardent ce que le stand y avait ;
+deux cases qui se recouvrent, ou une case hors de son créneau, font `400`.
 
 Un stand envoyé voit ses règles et ses exceptions **remplacées en totalité**
 par ses cases : les créneaux consécutifs à même effectif deviennent une fenêtre
@@ -1962,10 +1977,14 @@ d'exemple écrit ses bandes `10h00-12h00` : Excel convertit `13:00-16:00` en la
 date `30/11/1999 13:16:00`, ce qui détruit la bande, alors qu'il laisse la
 forme en `h` telle quelle.
 
-- Une colonne se pose sur **tous** les créneaux de même date et mêmes heures —
-  une grille décalée en familles en porte un par famille, et `columns[].creneaux`
-  dit combien ; une colonne sans créneau est **ignorée et listée**
-  (`columns[].reason`), pas un motif de refus. Un créneau sans colonne
+- Une colonne se pose sur **tous** les créneaux de même date qui contiennent
+  ses heures — une grille décalée en familles en porte un par famille, et
+  `columns[].creneaux` dit combien. Une colonne plus étroite que son créneau
+  (le 19h-20h du classeur sous un créneau 14-20) écrit une fenêtre à ses
+  propres bornes, le reste du créneau restant tel quel ; deux colonnes d'un
+  même créneau ne peuvent pas se recouvrir. Une colonne qu'aucun créneau ne
+  contient est **ignorée et listée** (`columns[].reason`), pas un motif de
+  refus. Un créneau sans colonne
   (`creneauxAbsents`) **garde la case actuelle** de chaque stand importé :
   l'import ne réécrit que ce que le fichier dit, et une case gardée garde
   aussi ses segments quand elle n'ouvre qu'une partie du créneau (même règle

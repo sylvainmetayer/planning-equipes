@@ -1,7 +1,15 @@
 // The entry side of the "Ouvertures des stands" screen: one integer per stand
-// and créneau, typed the way the organiser's own spreadsheet holds it. Pure
+// and column, typed the way the organiser's own spreadsheet holds it. Pure
 // functions, so the moves — a key, a paste, a day copied — are tested without
 // rendering; the component only wires them to the DOM.
+//
+// A column is a créneau, or a tranche of it: the server cuts a créneau
+// wherever a stand's windows draw a boundary inside it (4 people from 14:00
+// to 19:00 then 2 until 20:00 gives 14-19 and 19-20), so the grid has the
+// workbook's columns while the créneaux stay the solver's. A column is
+// identified by its créneau and its bounds, never by a rank: a boundary the
+// user adds in the screen (« scinder ») makes a column that exists nowhere
+// else until a cell under it is saved.
 //
 // The cells are held apart from the report they were read from: the report is
 // what the server says, the cells are what the user is about to say. A stand
@@ -17,31 +25,39 @@ import {
   SegmentCellule,
 } from '../../core/models';
 
-/** A cell's address: the stand, and the créneau column. */
+/** A cell's address: the stand, and the column. */
 export interface AdresseCellule {
   standId: string;
-  creneauId: number;
+  colonneId: string;
 }
 
-/** One column of the grid: a créneau, under the day it belongs to. */
+/** One column of the grid: a tranche of a créneau, under the day it belongs to. */
 export interface ColonneGrille {
   date: string;
   creneauId: number;
+  /** `creneauId@HH:mm-HH:mm`: the créneau and the column's bounds inside it. */
+  colonneId: string;
   heureDebut: string;
   heureFin: string;
-  /** Rank of the créneau within its day, for the header's own row. */
+  /** Rank of the column within its day, for the header's own row. */
   rang: number;
 }
 
-/** `standId` → `creneauId` → headcount, `null` for closed. */
-export type Cellules = Map<string, Map<number, number | null>>;
+/** `standId` → `colonneId` → headcount, `null` for closed. */
+export type Cellules = Map<string, Map<string, number | null>>;
 
-/** The columns in display order: day after day, each day's créneaux in the order the report gives. */
+/** The column's identity: its créneau and its bounds, hours in `HH:mm`. */
+export function colonneId(creneauId: number, heureDebut: string, heureFin: string): string {
+  return `${creneauId}@${formatHeure(heureDebut)}-${formatHeure(heureFin)}`;
+}
+
+/** The columns in display order: day after day, each day's columns in the order the report gives. */
 export function colonnes(rapport: RapportOuvertures): ColonneGrille[] {
   return rapport.jours.flatMap((jour) =>
     jour.creneaux.map((creneau, rang) => ({
       date: jour.date,
       creneauId: creneau.id,
+      colonneId: colonneId(creneau.id, creneau.heureDebut, creneau.heureFin),
       heureDebut: creneau.heureDebut,
       heureFin: creneau.heureFin,
       rang,
@@ -49,64 +65,95 @@ export function colonnes(rapport: RapportOuvertures): ColonneGrille[] {
   );
 }
 
+/**
+ * The column id of every cell of the report, by day, créneau and tranche: a
+ * cell names its créneau and tranche, the day's column list says which
+ * bounds those are.
+ */
+function colonneParCellule(rapport: RapportOuvertures): Map<string, string> {
+  const ids = new Map<string, string>();
+  for (const jour of rapport.jours) {
+    for (const [rang, creneau] of jour.creneaux.entries()) {
+      ids.set(
+        `${jour.date}#${creneau.id}#${creneau.tranche ?? rang}`,
+        colonneId(creneau.id, creneau.heureDebut, creneau.heureFin),
+      );
+    }
+  }
+  return ids;
+}
+
+function idDe(
+  ids: ReadonlyMap<string, string>,
+  date: string,
+  cellule: CelluleCreneauOuverture,
+): string | undefined {
+  return ids.get(`${date}#${cellule.creneauId}#${cellule.tranche ?? 0}`);
+}
+
 /** The cells as the server reports them — the starting point, and the reference a change is measured against. */
 export function cellulesDepuis(rapport: RapportOuvertures): Cellules {
+  const ids = colonneParCellule(rapport);
   const cellules: Cellules = new Map();
   for (const ligne of rapport.stands) {
-    const parCreneau = new Map<number, number | null>();
+    const parColonne = new Map<string, number | null>();
     for (const jour of ligne.jours) {
       for (const cellule of jour.creneaux) {
-        parCreneau.set(cellule.creneauId, cellule.effectif);
+        const id = idDe(ids, jour.date, cellule);
+        if (id !== undefined) {
+          parColonne.set(id, cellule.effectif);
+        }
       }
     }
-    cellules.set(ligne.standId, parCreneau);
+    cellules.set(ligne.standId, parColonne);
   }
   return cellules;
 }
 
 /**
  * The cells of a créneau belonging to another stagger family than the stand's,
- * keyed `standId#creneauId`. The stand never receives a seat there, so the
+ * keyed `standId#colonneId`. The stand never receives a seat there, so the
  * cell is neither typed nor sent — writing it would reopen a day this stand
  * never staffs.
  */
 export function cellulesInertes(rapport: RapportOuvertures): Set<string> {
-  const inertes = new Set<string>();
-  for (const ligne of rapport.stands) {
-    for (const jour of ligne.jours) {
-      for (const cellule of jour.creneaux) {
-        if (cellule.horsFamille) {
-          inertes.add(key(ligne.standId, cellule.creneauId));
-        }
-      }
-    }
-  }
-  return inertes;
+  return cellulesTelles(rapport, (cellule) => cellule.horsFamille);
 }
 
-/** The cells flagged partial by the server, keyed `standId#creneauId`: what a save would flatten. */
+/** The cells flagged partial by the server, keyed `standId#colonneId`: what a save keeps unless retyped. */
 export function cellulesPartielles(rapport: RapportOuvertures): Set<string> {
-  const partielles = new Set<string>();
+  return cellulesTelles(rapport, (cellule) => cellule.partiel);
+}
+
+function cellulesTelles(
+  rapport: RapportOuvertures,
+  telle: (cellule: CelluleCreneauOuverture) => boolean,
+): Set<string> {
+  const ids = colonneParCellule(rapport);
+  const clefs = new Set<string>();
   for (const ligne of rapport.stands) {
     for (const jour of ligne.jours) {
       for (const cellule of jour.creneaux) {
-        if (cellule.partiel) {
-          partielles.add(key(ligne.standId, cellule.creneauId));
+        const id = idDe(ids, jour.date, cellule);
+        if (id !== undefined && telle(cellule)) {
+          clefs.add(key(ligne.standId, id));
         }
       }
     }
   }
-  return partielles;
+  return clefs;
 }
 
-/** The stretches behind every partial cell, keyed `standId#creneauId`: what a save keeps, and what « Aligner » would extend. */
+/** The stretches behind every partial cell, keyed `standId#colonneId`: what a save keeps, and what « Aligner » would extend. */
 export function segmentsPartiels(rapport: RapportOuvertures): Map<string, SegmentCellule[]> {
+  const ids = colonneParCellule(rapport);
   const segments = new Map<string, SegmentCellule[]>();
   for (const ligne of rapport.stands) {
     for (const jour of ligne.jours) {
       for (const cellule of jour.creneaux) {
-        if (cellule.partiel) {
-          segments.set(key(ligne.standId, cellule.creneauId), cellule.segments);
+        const id = idDe(ids, jour.date, cellule);
+        if (id !== undefined && cellule.partiel) {
+          segments.set(key(ligne.standId, id), cellule.segments);
         }
       }
     }
@@ -114,7 +161,7 @@ export function segmentsPartiels(rapport: RapportOuvertures): Map<string, Segmen
   return segments;
 }
 
-/** What flattening every partial cell onto its créneau would add: the stands, the cells, and the minutes of opening. */
+/** What flattening every partial cell onto its column would add: the stands, the cells, and the minutes of opening. */
 export interface Aplatissement {
   stands: string[];
   cases: number;
@@ -123,7 +170,7 @@ export interface Aplatissement {
 
 /**
  * The cost of « Aligner » before it is paid: each partial cell extended to
- * its whole créneau at its highest headcount, minus what its stretches already
+ * its whole column at its highest headcount, minus what its stretches already
  * cover. The number the confirmation shows, so nobody aligns 52 cells to find
  * out afterwards that the week grew by 74 hours.
  */
@@ -131,18 +178,18 @@ export function aplatissement(
   segments: ReadonlyMap<string, SegmentCellule[]>,
   colonnesGrille: readonly ColonneGrille[],
 ): Aplatissement {
-  const durationByCreneau = new Map(
+  const dureeParColonne = new Map(
     colonnesGrille.map((colonne) => [
-      colonne.creneauId,
-      minutesBetween(colonne.heureDebut, colonne.heureFin),
+      colonne.colonneId,
+      minutesEntre(colonne.heureDebut, colonne.heureFin),
     ]),
   );
   const stands = new Set<string>();
   let cases = 0;
   let minutes = 0;
   for (const [clef, stretches] of segments) {
-    const [standId, creneauId] = clef.split('#');
-    const duree = durationByCreneau.get(Number(creneauId));
+    const [standId, id] = clef.split('#');
+    const duree = dureeParColonne.get(id);
     if (duree === undefined || stretches.length === 0) {
       continue;
     }
@@ -160,9 +207,9 @@ export function aplatissement(
 }
 
 /** Minutes from one wall-clock hour to the next, a `00:00` end counting as midnight. */
-function minutesBetween(heureDebut: string, heureFin: string): number {
-  const debut = minutesOfDay(heureDebut);
-  const fin = minutesOfDay(heureFin);
+export function minutesEntre(heureDebut: string, heureFin: string): number {
+  const debut = minutesDuJour(heureDebut);
+  const fin = minutesDuJour(heureFin);
   return fin > debut ? fin - debut : fin + 24 * 60 - debut;
 }
 
@@ -170,8 +217,8 @@ function minutesOfDay(heure: string): number {
   return Number(heure.slice(0, 2)) * 60 + Number(heure.slice(3, 5));
 }
 
-export function key(standId: string, creneauId: number): string {
-  return `${standId}#${creneauId}`;
+export function key(standId: string, colonneId: string): string {
+  return `${standId}#${colonneId}`;
 }
 
 /**
@@ -198,7 +245,7 @@ export function ecrireCellule(
 ): Cellules {
   const copie = new Map(cellules);
   const ligne = new Map(copie.get(adresse.standId) ?? []);
-  ligne.set(adresse.creneauId, valeur);
+  ligne.set(adresse.colonneId, valeur);
   copie.set(adresse.standId, ligne);
   return copie;
 }
@@ -212,8 +259,8 @@ export function standsModifies(cellules: Cellules, reference: Cellules): string[
       modifies.push(standId);
       continue;
     }
-    for (const [creneauId, valeur] of ligne) {
-      if ((origine.get(creneauId) ?? null) !== valeur) {
+    for (const [id, valeur] of ligne) {
+      if ((origine.get(id) ?? null) !== valeur) {
         modifies.push(standId);
         break;
       }
@@ -222,28 +269,139 @@ export function standsModifies(cellules: Cellules, reference: Cellules): string[
   return modifies;
 }
 
+/** What travels with a save besides the cells. */
+export interface OptionsSaisie {
+  /** Cells of another family's créneau: left out, the server ignores them too. */
+  inertes?: ReadonlySet<string>;
+  /** The stamps the grid read, sent back as preconditions (issue #362). */
+  modifieLeParStand?: ReadonlyMap<string, string | null>;
+  /** The explicit request to extend partial cells to their column; without it a cell saved unchanged keeps its stretches. */
+  aplatir?: boolean;
+}
+
 /**
- * The body of the save: every cell of every modified stand, the inert ones
- * left out — the server ignores them too, and sending them would say this
- * stand states something about another family's créneau. `aplatir` is the
- * explicit request to extend partial cells to their créneau; without it a
- * cell saved unchanged keeps its stretches.
+ * The body of the save: every cell of every modified stand, each with its
+ * column's bounds so a column the screen cut itself writes a window at
+ * those bounds, the inert ones left out — the server ignores them too, and
+ * sending them would say this stand states something about another family's
+ * créneau.
  */
 export function saisie(
   cellules: Cellules,
   standIds: readonly string[],
-  inertes: ReadonlySet<string> = new Set(),
-  modifieLeParStand: ReadonlyMap<string, string | null> = new Map(),
-  aplatir = false,
+  colonnesGrille: readonly ColonneGrille[],
+  options: OptionsSaisie = {},
 ): SaisieStandGrille[] {
-  return standIds.map((standId) => ({
-    standId,
-    modifieLe: modifieLeParStand.get(standId) ?? null,
-    cellules: Array.from(cellules.get(standId) ?? [])
-      .filter(([creneauId]) => !inertes.has(key(standId, creneauId)))
-      .map(([creneauId, effectif]) => ({ creneauId, effectif })),
-    aplatir,
-  }));
+  const inertes = options.inertes ?? new Set<string>();
+  return standIds.map((standId) => {
+    const ligne = cellules.get(standId) ?? new Map<string, number | null>();
+    return {
+      standId,
+      modifieLe: options.modifieLeParStand?.get(standId) ?? null,
+      cellules: colonnesGrille
+        .filter(
+          (colonne) =>
+            ligne.has(colonne.colonneId) && !inertes.has(key(standId, colonne.colonneId)),
+        )
+        .map((colonne) => ({
+          creneauId: colonne.creneauId,
+          heureDebut: formatHeure(colonne.heureDebut),
+          heureFin: formatHeure(colonne.heureFin),
+          effectif: ligne.get(colonne.colonneId) ?? null,
+        })),
+      aplatir: options.aplatir ?? false,
+    };
+  });
+}
+
+/**
+ * The columns with one of them cut at `heure`: two columns where there was
+ * one, the hour strictly inside the column's bounds — or `null` when it is
+ * not, a cut on an edge being no cut. The new columns exist in the screen
+ * only; a cell saved under one of them writes a window at its bounds, and
+ * the server then reports the boundary like any other.
+ */
+export function scinder(
+  colonnesGrille: readonly ColonneGrille[],
+  id: string,
+  heure: string,
+): ColonneGrille[] | null {
+  const index = colonnesGrille.findIndex((colonne) => colonne.colonneId === id);
+  if (index < 0 || !/^\d{2}:\d{2}$/.test(heure)) {
+    return null;
+  }
+  const colonne = colonnesGrille[index];
+  const debut = minutesDuJour(colonne.heureDebut);
+  const coupe = minutesDuJour(heure);
+  const fin = debut + minutesEntre(colonne.heureDebut, colonne.heureFin);
+  const coupeAbsolue = coupe < debut ? coupe + 24 * 60 : coupe;
+  if (coupeAbsolue <= debut || coupeAbsolue >= fin) {
+    return null;
+  }
+  const avant: ColonneGrille = {
+    ...colonne,
+    colonneId: colonneId(colonne.creneauId, colonne.heureDebut, heure),
+    heureFin: heure,
+  };
+  const apres: ColonneGrille = {
+    ...colonne,
+    colonneId: colonneId(colonne.creneauId, heure, colonne.heureFin),
+    heureDebut: heure,
+    rang: colonne.rang + 1,
+  };
+  return [
+    ...colonnesGrille.slice(0, index),
+    avant,
+    apres,
+    ...colonnesGrille
+      .slice(index + 1)
+      .map((suivante) =>
+        suivante.date === colonne.date ? { ...suivante, rang: suivante.rang + 1 } : suivante,
+      ),
+  ];
+}
+
+/** The cells after a cut: every stand's value under the old column carried onto both new ones. */
+export function propagerScission(
+  cellules: Cellules,
+  ancienne: string,
+  nouvelles: readonly string[],
+): Cellules {
+  const copie: Cellules = new Map();
+  for (const [standId, ligne] of cellules) {
+    if (!ligne.has(ancienne)) {
+      copie.set(standId, ligne);
+      continue;
+    }
+    const valeur = ligne.get(ancienne) ?? null;
+    const nouvelle = new Map(ligne);
+    nouvelle.delete(ancienne);
+    for (const id of nouvelles) {
+      nouvelle.set(id, valeur);
+    }
+    copie.set(standId, nouvelle);
+  }
+  return copie;
+}
+
+/** The keys of a map renamed after a cut: what was known of the old column holds on both new ones. */
+export function propagerClefs<T>(
+  source: ReadonlyMap<string, T>,
+  ancienne: string,
+  nouvelles: readonly string[],
+): Map<string, T> {
+  const copie = new Map<string, T>();
+  for (const [clef, valeur] of source) {
+    const [standId, id] = clef.split('#');
+    if (id !== ancienne) {
+      copie.set(clef, valeur);
+      continue;
+    }
+    for (const nouvelle of nouvelles) {
+      copie.set(key(standId, nouvelle), valeur);
+    }
+  }
+  return copie;
 }
 
 /**
@@ -258,7 +416,7 @@ export function deplacement(
   colonnesGrille: readonly ColonneGrille[],
 ): AdresseCellule | null {
   const ligne = standIds.indexOf(courante.standId);
-  const colonne = colonnesGrille.findIndex((each) => each.creneauId === courante.creneauId);
+  const colonne = colonnesGrille.findIndex((each) => each.colonneId === courante.colonneId);
   if (ligne < 0 || colonne < 0) {
     return null;
   }
@@ -287,14 +445,14 @@ export function deplacement(
     default:
       return null;
   }
-  return { standId: standIds[cibleLigne], creneauId: colonnesGrille[cibleColonne].creneauId };
+  return { standId: standIds[cibleLigne], colonneId: colonnesGrille[cibleColonne].colonneId };
 }
 
 /**
  * A block pasted from a spreadsheet, laid from `depuis` over the displayed
- * rows and columns: one line per stand, one tab-separated value per créneau.
+ * rows and columns: one line per stand, one tab-separated value per column.
  * Cells past the last row or column are dropped, a value that is not one
- * (`lireCellule`) leaves its cell alone.
+ * (`readCell`) leaves its cell alone.
  */
 export function collerBloc(
   cellules: Cellules,
@@ -305,7 +463,7 @@ export function collerBloc(
   inertes: ReadonlySet<string> = new Set(),
 ): Cellules {
   const ligne0 = standIds.indexOf(depuis.standId);
-  const colonne0 = colonnesGrille.findIndex((each) => each.creneauId === depuis.creneauId);
+  const colonne0 = colonnesGrille.findIndex((each) => each.colonneId === depuis.colonneId);
   if (ligne0 < 0 || colonne0 < 0) {
     return cellules;
   }
@@ -326,8 +484,8 @@ export function collerBloc(
         return;
       }
       const lu = readCell(valeur);
-      if (lu !== undefined && !inertes.has(key(standId, colonne.creneauId))) {
-        resultat = ecrireCellule(resultat, { standId, creneauId: colonne.creneauId }, lu);
+      if (lu !== undefined && !inertes.has(key(standId, colonne.colonneId))) {
+        resultat = ecrireCellule(resultat, { standId, colonneId: colonne.colonneId }, lu);
       }
     });
   });
@@ -336,8 +494,8 @@ export function collerBloc(
 
 /**
  * Copies the cells of `dateSource` onto every other day, for `standIds`. A
- * target créneau takes the value of the source créneau with the same hours;
- * a créneau the source day does not have (a nocturne, say) is left as it is.
+ * target column takes the value of the source column with the same hours;
+ * a column the source day does not have (a nocturne, say) is left as it is.
  */
 export function recopierJour(
   cellules: Cellules,
@@ -350,25 +508,25 @@ export function recopierJour(
   if (source.length === 0) {
     return cellules;
   }
-  const parHeures = new Map(
-    source.map((colonne) => [colonne.heureDebut + '-' + colonne.heureFin, colonne.creneauId]),
-  );
+  const heures = (colonne: ColonneGrille) =>
+    formatHeure(colonne.heureDebut) + '-' + formatHeure(colonne.heureFin);
+  const parHeures = new Map(source.map((colonne) => [heures(colonne), colonne.colonneId]));
   let resultat = cellules;
   for (const target of colonnesGrille) {
     if (target.date === dateSource) {
       continue;
     }
-    const origine = parHeures.get(target.heureDebut + '-' + target.heureFin);
+    const origine = parHeures.get(heures(target));
     if (origine === undefined) {
       continue;
     }
     for (const standId of standIds) {
-      if (inertes.has(key(standId, target.creneauId)) || inertes.has(key(standId, origine))) {
+      if (inertes.has(key(standId, target.colonneId)) || inertes.has(key(standId, origine))) {
         continue;
       }
       const valeur = resultat.get(standId)?.get(origine) ?? null;
-      if ((resultat.get(standId)?.get(target.creneauId) ?? null) !== valeur) {
-        resultat = ecrireCellule(resultat, { standId, creneauId: target.creneauId }, valeur);
+      if ((resultat.get(standId)?.get(target.colonneId) ?? null) !== valeur) {
+        resultat = ecrireCellule(resultat, { standId, colonneId: target.colonneId }, valeur);
       }
     }
   }
@@ -385,8 +543,8 @@ export function countCopied(
   for (const [standId, ligne] of after) {
     for (const colonne of colonnesGrille) {
       if (
-        (ligne.get(colonne.creneauId) ?? null) !==
-        (before.get(standId)?.get(colonne.creneauId) ?? null)
+        (ligne.get(colonne.colonneId) ?? null) !==
+        (before.get(standId)?.get(colonne.colonneId) ?? null)
       ) {
         changees++;
       }
@@ -403,7 +561,7 @@ export function jourDeReference(
 ): string | null {
   const ligne = cellules.get(standId);
   for (const colonne of colonnesGrille) {
-    if ((ligne?.get(colonne.creneauId) ?? null) !== null) {
+    if ((ligne?.get(colonne.colonneId) ?? null) !== null) {
       return colonne.date;
     }
   }
@@ -417,7 +575,7 @@ export function valeursLigne(
   colonnesGrille: readonly ColonneGrille[],
 ): (number | null)[] {
   const ligne = cellules.get(standId);
-  return colonnesGrille.map((colonne) => ligne?.get(colonne.creneauId) ?? null);
+  return colonnesGrille.map((colonne) => ligne?.get(colonne.colonneId) ?? null);
 }
 
 /**
@@ -438,7 +596,7 @@ export function libelleColonne(colonne: ColonneGrille): string {
 
 /** Whether the report knows this cell as partial. */
 export function estPartielle(partielles: ReadonlySet<string>, adresse: AdresseCellule): boolean {
-  return partielles.has(key(adresse.standId, adresse.creneauId));
+  return partielles.has(key(adresse.standId, adresse.colonneId));
 }
 
 export type { CelluleCreneauOuverture };

@@ -95,19 +95,19 @@
 
       @if (view() === 'SAISIR') {
         <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
-          Une case par stand et par créneau : l'effectif, vide pour fermé. Flèches, Entrée et collage depuis un tableur. Une case en pointillés porte plusieurs valeurs et les garde tant qu'on ne la modifie pas.
+          Une case par stand et par colonne : l'effectif, vide pour fermé. Flèches, Entrée et collage depuis un tableur. Les colonnes suivent les fenêtres des stands ; une colonne se scinde depuis son en-tête.
         </p>
         @if (editingLocked()) {
           <p class="locked-hint" i18n="@@ouvertures.saisie.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
         }
         <div class="table-wrapper">
           <table class="ouvertures-grille grille-saisie">
-            <caption class="visually-hidden" i18n="@@ouvertures.saisie.caption">Saisie des ouvertures : une ligne par stand, une colonne par créneau de chaque journée, l'effectif dans chaque case</caption>
+            <caption class="visually-hidden" i18n="@@ouvertures.saisie.caption">Saisie des ouvertures : une ligne par stand, une colonne par créneau ou tranche de créneau de chaque journée, l'effectif dans chaque case</caption>
             <thead>
               <tr>
                 <th scope="col" class="colonne-stand" rowspan="2" i18n="@@ouvertures.colonne.stand">Stand</th>
                 @for (jour of rapport()!.jours; track jour.date) {
-                  <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="jour.creneaux.length">
+                  <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="colonnesDuJour(jour.date).length">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
                     <button matIconButton type="button" class="recopier-jour" [disabled]="editingLocked()"
@@ -120,8 +120,23 @@
                 }
               </tr>
               <tr>
-                @for (colonne of colonnes(); track colonne.creneauId) {
-                  <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0">{{ libelleColonne(colonne) }}</th>
+                @for (colonne of colonnes(); track colonne.colonneId) {
+                  <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0">
+                    @if (scissionEnCours() === colonne.colonneId) {
+                      <input type="time" class="scission-heure" autofocus
+                             i18n-aria-label="@@ouvertures.saisie.scissionHeure" aria-label="Heure de coupe"
+                             (change)="scinder(colonne, $any($event.target).value)"
+                             (keydown.escape)="scissionEnCours.set(null)" />
+                    } @else {
+                      <span class="libelle-colonne">{{ libelleColonne(colonne) }}</span>
+                      <button matIconButton type="button" class="scinder-colonne" [disabled]="editingLocked()"
+                              i18n-matTooltip="@@ouvertures.saisie.scinder" matTooltip="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
+                              i18n-aria-label="@@ouvertures.saisie.scinder" aria-label="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
+                              (click)="scissionEnCours.set(colonne.colonneId)">
+                        <mat-icon>call_split</mat-icon>
+                      </button>
+                    }
+                  </th>
                 }
               </tr>
             </thead>
@@ -137,22 +152,22 @@
                       <mat-icon>content_copy</mat-icon>
                     </button>
                   </th>
-                  @for (colonne of colonnes(); track colonne.creneauId) {
+                  @for (colonne of colonnes(); track colonne.colonneId) {
                     <td class="cellule-saisie" [class.premier-du-jour]="colonne.rang === 0"
-                        [class.cellule-modifiee]="estModifiee(ligne.standId, colonne.creneauId)"
-                        [class.cellule-inerte]="estInerte(ligne.standId, colonne.creneauId)"
-                        [class.cellule-partielle]="estPartielle(ligne.standId, colonne.creneauId)">
+                        [class.cellule-modifiee]="estModifiee(ligne.standId, colonne.colonneId)"
+                        [class.cellule-inerte]="estInerte(ligne.standId, colonne.colonneId)"
+                        [class.cellule-partielle]="estPartielle(ligne.standId, colonne.colonneId)">
                       <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"
-                             [attr.data-cellule]="identifiant(ligne.standId, colonne.creneauId)"
+                             [attr.data-cellule]="identifiant(ligne.standId, colonne.colonneId)"
                              [attr.aria-label]="(ligne.nom || ligne.standId) + ' · ' + libelleJour(colonne.date) + ' ' + libelleColonne(colonne)"
-                             [attr.title]="estInerte(ligne.standId, colonne.creneauId) ? infobulleInerte() : (estPartielle(ligne.standId, colonne.creneauId) ? infobullePartielle(ligne.standId, colonne.creneauId) : null)"
-                             [disabled]="editingLocked() || estInerte(ligne.standId, colonne.creneauId)"
-                             [value]="valeur(ligne.standId, colonne.creneauId)"
-                             (input)="saisir(ligne.standId, colonne.creneauId, $any($event.target).value)"
-                             (focus)="focaliser(ligne.standId, colonne.creneauId)"
-                             (blur)="reafficher($event, ligne.standId, colonne.creneauId)"
-                             (keydown)="auClavier($event, ligne.standId, colonne.creneauId)"
-                             (paste)="auCollage($event, ligne.standId, colonne.creneauId)" />
+                             [attr.title]="estInerte(ligne.standId, colonne.colonneId) ? infobulleInerte() : (estPartielle(ligne.standId, colonne.colonneId) ? infobullePartielle(ligne.standId, colonne.colonneId) : null)"
+                             [disabled]="editingLocked() || estInerte(ligne.standId, colonne.colonneId)"
+                             [value]="valeur(ligne.standId, colonne.colonneId)"
+                             (input)="saisir(ligne.standId, colonne.colonneId, $any($event.target).value)"
+                             (focus)="focaliser(ligne.standId, colonne.colonneId)"
+                             (blur)="reafficher($event, ligne.standId, colonne.colonneId)"
+                             (keydown)="auClavier($event, ligne.standId, colonne.colonneId)"
+                             (paste)="auCollage($event, ligne.standId, colonne.colonneId)" />
                     </td>
                   }
                 </tr>

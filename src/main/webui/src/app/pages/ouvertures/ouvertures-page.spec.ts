@@ -26,8 +26,22 @@ function rapport(): RapportOuvertures {
     minutes: 480,
     nombreCreneaux: 2,
     creneaux: [
-      { id: ids[0], heureDebut: '10:00', heureFin: '12:00', famille: 0, couverturePause: false },
-      { id: ids[1], heureDebut: '14:00', heureFin: '20:00', famille: 0, couverturePause: false },
+      {
+        id: ids[0],
+        tranche: 0,
+        heureDebut: '10:00',
+        heureFin: '12:00',
+        famille: 0,
+        couverturePause: false,
+      },
+      {
+        id: ids[1],
+        tranche: 0,
+        heureDebut: '14:00',
+        heureFin: '20:00',
+        famille: 0,
+        couverturePause: false,
+      },
     ],
   });
   const cellule = (
@@ -37,6 +51,7 @@ function rapport(): RapportOuvertures {
     horsFamille = false,
   ) => ({
     creneauId,
+    tranche: 0,
     effectif,
     partiel,
     horsFamille,
@@ -144,15 +159,21 @@ function root(fixture: ComponentFixture<OuverturesPage>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
 
+/** The column id of a créneau of the fixture: odd ids are 10-12, even ones 14-20. */
+function colonne(creneauId: number): string {
+  return `${creneauId}@${creneauId % 2 === 1 ? '10:00-12:00' : '14:00-20:00'}`;
+}
+
 function champ(
   fixture: ComponentFixture<OuverturesPage>,
   standId: string,
   creneauId: number,
+  colonneId = colonne(creneauId),
 ): HTMLInputElement {
   const input = root(fixture).querySelector<HTMLInputElement>(
-    `[data-cellule="${standId}#${creneauId}"]`,
+    `[data-cellule="${standId}#${colonneId}"]`,
   );
-  expect(input, `case ${standId}#${creneauId}`).not.toBeNull();
+  expect(input, `case ${standId}#${colonneId}`).not.toBeNull();
   return input!;
 }
 
@@ -200,9 +221,9 @@ describe('OuverturesPage — saisie', () => {
       false,
     );
     // The créneau header row reads as hours, the day header spans its créneaux.
-    const entetes = Array.from(root(fixture).querySelectorAll('.entete-creneau')).map((each) =>
-      each.textContent!.trim(),
-    );
+    const entetes = Array.from(
+      root(fixture).querySelectorAll('.entete-creneau .libelle-colonne'),
+    ).map((each) => each.textContent!.trim());
     expect(entetes).toEqual(['10-12', '14-20', '10-12', '14-20']);
     expect(root(fixture).querySelector('.entete-jour-saisie')!.getAttribute('colspan')).toBe('2');
   });
@@ -324,10 +345,10 @@ describe('OuverturesPage — saisie', () => {
         standId: 'A',
         modifieLe: '2026-09-06T10:00:00Z',
         cellules: [
-          { creneauId: 1, effectif: 2 },
-          { creneauId: 2, effectif: 5 },
-          { creneauId: 3, effectif: 2 },
-          { creneauId: 4, effectif: 4 },
+          { creneauId: 1, heureDebut: '10:00', heureFin: '12:00', effectif: 2 },
+          { creneauId: 2, heureDebut: '14:00', heureFin: '20:00', effectif: 5 },
+          { creneauId: 3, heureDebut: '10:00', heureFin: '12:00', effectif: 2 },
+          { creneauId: 4, heureDebut: '14:00', heureFin: '20:00', effectif: 4 },
         ],
         aplatir: false,
       },
@@ -384,10 +405,10 @@ describe('OuverturesPage — saisie', () => {
         standId: 'B',
         modifieLe: '2026-09-06T10:00:00Z',
         cellules: [
-          { creneauId: 1, effectif: 1 },
-          { creneauId: 2, effectif: null },
-          { creneauId: 3, effectif: null },
-          { creneauId: 4, effectif: null },
+          { creneauId: 1, heureDebut: '10:00', heureFin: '12:00', effectif: 1 },
+          { creneauId: 2, heureDebut: '14:00', heureFin: '20:00', effectif: null },
+          { creneauId: 3, heureDebut: '10:00', heureFin: '12:00', effectif: null },
+          { creneauId: 4, heureDebut: '14:00', heureFin: '20:00', effectif: null },
         ],
         aplatir: true,
       },
@@ -430,6 +451,62 @@ describe('OuverturesPage — saisie', () => {
     // Refused: still on the entry view, cells intact.
     expect(root(fixture).querySelector('.grille-saisie')).not.toBeNull();
     expect(champ(fixture, 'B', 2).value).toBe('3');
+  });
+
+  it('cuts a column from its header, carries the values, and saves a cell of the cut with its bounds', async () => {
+    const { fixture, put, notify } = mount({ vue: 'saisie' });
+    await fixture.whenStable();
+
+    // The scissor of the second column of day 1 (14-20) reveals the hour field.
+    const entetes = () =>
+      Array.from(root(fixture).querySelectorAll<HTMLElement>('.entete-creneau'));
+    entetes()[1].querySelector<HTMLButtonElement>('.scinder-colonne')!.click();
+    await fixture.whenStable();
+    const heure = entetes()[1].querySelector<HTMLInputElement>('.scission-heure')!;
+    expect(heure).not.toBeNull();
+
+    // An hour on the edge cuts nothing and says so.
+    heure.value = '20:00';
+    heure.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'warning' }));
+    expect(entetes()).toHaveLength(4);
+
+    entetes()[1].querySelector<HTMLButtonElement>('.scinder-colonne')!.click();
+    await fixture.whenStable();
+    const champHeure = entetes()[1].querySelector<HTMLInputElement>('.scission-heure')!;
+    champHeure.value = '19:00';
+    champHeure.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+
+    // Five columns, the day header spanning three, both halves reading the old value, nothing modified.
+    expect(
+      entetes().map((each) => each.querySelector('.libelle-colonne')!.textContent!.trim()),
+    ).toEqual(['10-12', '14-19', '19-20', '10-12', '14-20']);
+    expect(root(fixture).querySelector('.entete-jour-saisie')!.getAttribute('colspan')).toBe('3');
+    expect(champ(fixture, 'A', 2, '2@14:00-19:00').value).toBe('4');
+    expect(champ(fixture, 'A', 2, '2@19:00-20:00').value).toBe('4');
+    expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
+
+    // Typing under the second half sends that half with its own bounds.
+    taper(champ(fixture, 'A', 2, '2@19:00-20:00'), '2');
+    await fixture.whenStable();
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
+    const [stands] = put.mock.calls[0] as unknown as [
+      {
+        cellules: {
+          creneauId: number;
+          heureDebut: string;
+          heureFin: string;
+          effectif: number | null;
+        }[];
+      }[],
+    ];
+    expect(stands[0].cellules.slice(1, 3)).toEqual([
+      { creneauId: 2, heureDebut: '14:00', heureFin: '19:00', effectif: 4 },
+      { creneauId: 2, heureDebut: '19:00', heureFin: '20:00', effectif: 2 },
+    ]);
   });
 
   it('locks every field and the save while a solve is running, and says so', async () => {

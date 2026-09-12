@@ -45,6 +45,7 @@ import {
   ColonneGrille,
   aplatissement,
   cellulesDepuis,
+  colonneId,
   cellulesInertes,
   cellulesPartielles,
   key,
@@ -56,9 +57,12 @@ import {
   estPartielle,
   jourDeReference,
   libelleColonne,
+  propagerClefs,
+  propagerScission,
   readCell,
   recopierJour,
   saisie,
+  scinder,
   segmentsPartiels,
   standsModifies,
 } from './grille-horaires';
@@ -146,10 +150,13 @@ export class OuverturesPage {
   protected readonly celluleActive = signal<AdresseCellule | null>(null);
   protected readonly enregistrement = signal(false);
 
-  protected readonly colonnes = computed<ColonneGrille[]>(() => {
-    const rapport = this.rapport();
-    return rapport ? colonnes(rapport) : [];
-  });
+  /**
+   * The columns as displayed: the report's, plus the ones cut in this screen
+   * (« scinder »), which exist nowhere else until a cell under them is saved.
+   */
+  protected readonly colonnes = signal<ColonneGrille[]>([]);
+  /** The column whose header shows the hour field of a cut, or none. */
+  protected readonly scissionEnCours = signal<string | null>(null);
   protected readonly standsModifies = computed(() =>
     standsModifies(this.cellules(), this.reference()),
   );
@@ -177,6 +184,9 @@ export class OuverturesPage {
     try {
       const rapport = await this.standsApi.openings();
       this.rapport.set(rapport);
+      this.colonnes.set(colonnes(rapport));
+      this.scissionEnCours.set(null);
+      this.celluleActive.set(null);
       const cellules = cellulesDepuis(rapport);
       this.reference.set(cellules);
       this.cellules.set(cellules);
@@ -208,8 +218,8 @@ export class OuverturesPage {
   }
 
   /** A partial cell says what it holds, and that saving it as shown keeps it. */
-  protected infobullePartielle(standId: string, creneauId: number): string {
-    const detail = (this.segments().get(key(standId, creneauId)) ?? [])
+  protected infobullePartielle(standId: string, colonneId: string): string {
+    const detail = (this.segments().get(key(standId, colonneId)) ?? [])
       .map(
         (segment) =>
           `${this.heure(segment.heureDebut)}-${this.heure(segment.heureFin)} : ${segment.effectif}`,
@@ -227,25 +237,25 @@ export class OuverturesPage {
     return Array.from(this.partielles()).some((clef) => clef.startsWith(prefixe));
   }
 
-  protected valeur(standId: string, creneauId: number): string {
-    const effectif = this.cellules().get(standId)?.get(creneauId) ?? null;
+  protected valeur(standId: string, colonneId: string): string {
+    const effectif = this.cellules().get(standId)?.get(colonneId) ?? null;
     return effectif === null ? '' : String(effectif);
   }
 
-  protected estModifiee(standId: string, creneauId: number): boolean {
+  protected estModifiee(standId: string, colonneId: string): boolean {
     return (
-      (this.cellules().get(standId)?.get(creneauId) ?? null) !==
-      (this.reference().get(standId)?.get(creneauId) ?? null)
+      (this.cellules().get(standId)?.get(colonneId) ?? null) !==
+      (this.reference().get(standId)?.get(colonneId) ?? null)
     );
   }
 
-  protected estPartielle(standId: string, creneauId: number): boolean {
-    return estPartielle(this.partielles(), { standId, creneauId });
+  protected estPartielle(standId: string, colonneId: string): boolean {
+    return estPartielle(this.partielles(), { standId, colonneId });
   }
 
   /** A créneau of another stagger family: this stand never holds a seat there. */
-  protected estInerte(standId: string, creneauId: number): boolean {
-    return this.inertes().has(key(standId, creneauId));
+  protected estInerte(standId: string, colonneId: string): boolean {
+    return this.inertes().has(key(standId, colonneId));
   }
 
   protected infobulleInerte(): string {
@@ -256,18 +266,18 @@ export class OuverturesPage {
     return libelleColonne(colonne);
   }
 
-  protected identifiant(standId: string, creneauId: number): string {
-    return key(standId, creneauId);
+  protected identifiant(standId: string, colonneId: string): string {
+    return key(standId, colonneId);
   }
 
   /** A keystroke in a cell: digits become the headcount, an emptied field closes the stand; anything else is left as typed. */
-  protected saisir(standId: string, creneauId: number, text: string): void {
-    if (this.estInerte(standId, creneauId)) {
+  protected saisir(standId: string, colonneId: string, text: string): void {
+    if (this.estInerte(standId, colonneId)) {
       return;
     }
     const lu = readCell(text);
     if (lu !== undefined) {
-      this.cellules.update((cellules) => ecrireCellule(cellules, { standId, creneauId }, lu));
+      this.cellules.update((cellules) => ecrireCellule(cellules, { standId, colonneId }, lu));
     }
   }
 
@@ -277,12 +287,12 @@ export class OuverturesPage {
    * and without this the field would keep showing it while the grid holds — and
    * would save — the old number.
    */
-  protected reafficher(event: Event, standId: string, creneauId: number): void {
-    (event.target as HTMLInputElement).value = this.valeur(standId, creneauId);
+  protected reafficher(event: Event, standId: string, colonneId: string): void {
+    (event.target as HTMLInputElement).value = this.valeur(standId, colonneId);
   }
 
-  protected focaliser(standId: string, creneauId: number): void {
-    this.celluleActive.set({ standId, creneauId });
+  protected focaliser(standId: string, colonneId: string): void {
+    this.celluleActive.set({ standId, colonneId });
   }
 
   /**
@@ -290,7 +300,7 @@ export class OuverturesPage {
    * does. Left and right only when the caret cannot move inside the field
    * itself, so editing a two-digit value stays possible.
    */
-  protected auClavier(event: KeyboardEvent, standId: string, creneauId: number): void {
+  protected auClavier(event: KeyboardEvent, standId: string, colonneId: string): void {
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
@@ -303,7 +313,7 @@ export class OuverturesPage {
     }
     const target = deplacement(
       event.key,
-      { standId, creneauId },
+      { standId, colonneId },
       this.standIdsAffiches(),
       this.colonnes(),
     );
@@ -312,12 +322,12 @@ export class OuverturesPage {
     }
     event.preventDefault();
     this.hote.nativeElement
-      .querySelector<HTMLInputElement>(`[data-cellule="${key(target.standId, target.creneauId)}"]`)
+      .querySelector<HTMLInputElement>(`[data-cellule="${key(target.standId, target.colonneId)}"]`)
       ?.focus();
   }
 
   /** A block copied from a spreadsheet lands from the cell it is pasted in; a single value pastes as typed. */
-  protected auCollage(event: ClipboardEvent, standId: string, creneauId: number): void {
+  protected auCollage(event: ClipboardEvent, standId: string, colonneId: string): void {
     const text = event.clipboardData?.getData('text') ?? '';
     if (!/[\t\n]/.test(text)) {
       return;
@@ -327,7 +337,7 @@ export class OuverturesPage {
       collerBloc(
         cellules,
         text,
-        { standId, creneauId },
+        { standId, colonneId },
         this.standIdsAffiches(),
         this.colonnes(),
         this.inertes(),
@@ -347,7 +357,7 @@ export class OuverturesPage {
     const active = this.celluleActive();
     const date =
       active?.standId === standId
-        ? (this.colonnes().find((colonne) => colonne.creneauId === active.creneauId)?.date ?? null)
+        ? (this.colonnes().find((colonne) => colonne.colonneId === active.colonneId)?.date ?? null)
         : jourDeReference(this.cellules(), standId, this.colonnes());
     if (date !== null) {
       this.appliquerRecopie((cellules) =>
@@ -375,6 +385,52 @@ export class OuverturesPage {
     }
   }
 
+  /**
+   * Cuts a column at `heure`, in the screen only: two columns where there
+   * was one, every stand's value carried onto both, nothing modified until a
+   * cell under them is typed. Saved, such a cell writes a window at the
+   * column's bounds, and the server reports the boundary from then on. An
+   * hour on the column's edge, or outside it, cuts nothing and says so.
+   */
+  protected scinder(colonne: ColonneGrille, heure: string): void {
+    this.scissionEnCours.set(null);
+    const nouvelles = scinder(this.colonnes(), colonne.colonneId, heure);
+    if (nouvelles === null) {
+      this.notifications.notify({
+        title: $localize`:@@ouvertures.saisie.scissionInvalide:L'heure de coupe doit tomber strictement entre ${libelleColonne(colonne)}:colonne:.`,
+        variant: 'warning',
+        timeout: 6000,
+      });
+      return;
+    }
+    const ids = [
+      colonneId(colonne.creneauId, colonne.heureDebut, heure),
+      colonneId(colonne.creneauId, heure, colonne.heureFin),
+    ];
+    const ancienne = colonne.colonneId;
+    this.colonnes.set(nouvelles);
+    this.cellules.update((cellules) => propagerScission(cellules, ancienne, ids));
+    this.reference.update((cellules) => propagerScission(cellules, ancienne, ids));
+    this.segments.update((segments) => propagerClefs(segments, ancienne, ids));
+    this.partielles.update((partielles) => this.propagerEnsemble(partielles, ancienne, ids));
+    this.inertes.update((inertes) => this.propagerEnsemble(inertes, ancienne, ids));
+    this.celluleActive.set(null);
+  }
+
+  private propagerEnsemble(
+    ensemble: ReadonlySet<string>,
+    ancienne: string,
+    nouvelles: readonly string[],
+  ): Set<string> {
+    const marques = new Map(Array.from(ensemble, (clef) => [clef, true] as const));
+    return new Set(propagerClefs(marques, ancienne, nouvelles).keys());
+  }
+
+  /** The columns of one day, cuts included — what the day header spans. */
+  protected colonnesDuJour(date: string): ColonneGrille[] {
+    return this.colonnes().filter((colonne) => colonne.date === date);
+  }
+
   protected annuler(): void {
     this.cellules.set(this.reference());
   }
@@ -391,8 +447,8 @@ export class OuverturesPage {
     }
     const aplatis = modifies.filter((standId) =>
       Array.from(this.partielles()).some((clef) => {
-        const [stand, creneauId] = clef.split('#');
-        return stand === standId && this.estModifiee(standId, Number(creneauId));
+        const [stand, id] = clef.split('#');
+        return stand === standId && this.estModifiee(standId, id);
       }),
     );
     if (aplatis.length > 0) {
@@ -439,7 +495,11 @@ export class OuverturesPage {
     this.enregistrement.set(true);
     try {
       const rapport = await this.standsApi.saveOpeningsGrid(
-        saisie(this.cellules(), standIds, this.inertes(), this.modifieLeParStand(), aplatir),
+        saisie(this.cellules(), standIds, this.colonnes(), {
+          inertes: this.inertes(),
+          modifieLeParStand: this.modifieLeParStand(),
+          aplatir,
+        }),
       );
       const regles = rapport.stands.reduce((total, ligne) => total + ligne.regles, 0);
       const exceptions = rapport.stands.reduce((total, ligne) => total + ligne.exceptions, 0);
