@@ -19,6 +19,8 @@
     "SaisieStandGrille": "SaisieStand",
     "LigneSaisieGrille": "LigneGrille",
     "PlanningResolution": "PlanningResolutionView",
+    "ChangementsDonnees": "ChangementsView",
+    "CompteEntite": "CompteEntiteView",
     "AnomalieGrille": "GridAnomaly",
     "RegleRecurrence": "RecurrenceRequest",
     "CoupureDerivation": "Coupure",

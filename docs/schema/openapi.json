@@ -707,6 +707,28 @@
           }
         }
       },
+      "ChangementsView" : {
+        "required" : [ "total", "parEntite", "dernieres" ],
+        "type" : "object",
+        "properties" : {
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "parEntite" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CompteEntiteView"
+            }
+          },
+          "dernieres" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EntreeHistoriqueView"
+            }
+          }
+        }
+      },
       "CodeSession" : {
         "type" : "object",
         "properties" : {
@@ -936,6 +958,19 @@
           },
           "content" : {
             "type" : "string"
+          }
+        }
+      },
+      "CompteEntiteView" : {
+        "type" : "object",
+        "required" : [ "entite", "nombre" ],
+        "properties" : {
+          "entite" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -1950,8 +1985,8 @@
         }
       },
       "EntreeHistoriqueView" : {
-        "required" : [ "id" ],
         "type" : "object",
+        "required" : [ "id" ],
         "properties" : {
           "id" : {
             "type" : "integer",
@@ -7772,6 +7807,31 @@
           }
         },
         "summary" : "Actions",
+        "tags" : [ "Historique Resource" ]
+      }
+    },
+    "/api/historique/changements" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "depuis",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ChangementsView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Changements",
         "tags" : [ "Historique Resource" ]
       }
     },

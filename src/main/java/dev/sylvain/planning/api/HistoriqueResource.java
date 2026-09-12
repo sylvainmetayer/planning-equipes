@@ -1,10 +1,12 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.journal.ReferenceDataChanges;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -13,6 +15,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -36,6 +39,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Produces(MediaType.APPLICATION_JSON)
 public class HistoriqueResource {
 
+    /** How many recent lines the summary shows: enough to recognise what happened, not a page of history. */
+    private static final int RECENT_LINES = 5;
+
     @Inject
     JournalActionService journal;
 
@@ -49,6 +55,59 @@ public class HistoriqueResource {
                 .collect(Collectors.toMap(Animateur::getId, Animateur::nomAffiche, (a, b) -> a));
         return entrees.stream().map(entree -> view(entree, noms::get)).toList();
     }
+
+    /**
+     * What changed in the problem since {@code depuis} — the count per
+     * referential family, and the five most recent lines.
+     *
+     * <p>Read by the solver screen under « des données de référence ont été
+     * modifiées depuis cette résolution » to say <em>what</em> moved. The
+     * moment comes from the caller, which already holds the résolution's own:
+     * the history answers « depuis quand ? » for anyone asking, and does not
+     * need to know what a persisted plan is.</p>
+     */
+    @GET
+    @Path("/changements")
+    public ChangementsView changements(@QueryParam("depuis") String depuis) {
+        ReferenceDataChanges changements = journal.changesSince(instant(depuis), RECENT_LINES);
+        Map<String, String> noms = changements.dernieres().isEmpty()
+                ? Map.of()
+                : referenceData.listAnimateurs().stream()
+                        .collect(Collectors.toMap(Animateur::getId, Animateur::nomAffiche, (a, b) -> a));
+        return new ChangementsView(
+                changements.total(),
+                changements.parEntite().stream()
+                        .map(compte -> new CompteEntiteView(compte.entite().name(), compte.nombre()))
+                        .toList(),
+                changements.dernieres().stream()
+                        .map(entree -> view(entree, noms::get))
+                        .toList());
+    }
+
+    private static Instant instant(String depuis) {
+        if (depuis == null || depuis.isBlank()) {
+            throw new BusinessError.Invalid("Le moment « depuis » est obligatoire (attendu une date ISO-8601).");
+        }
+        try {
+            return Instant.parse(depuis);
+        } catch (DateTimeParseException e) {
+            throw new BusinessError.Invalid("Moment illisible : « " + depuis + " » (attendu une date ISO-8601).", e);
+        }
+    }
+
+    /**
+     * The summary the solver screen shows under its staleness hint.
+     *
+     * @param total     how many changes since, all families together
+     * @param parEntite one entry per referential family touched
+     * @param dernieres the most recent lines, newest first
+     */
+    @Schema(requiredProperties = {"total", "parEntite", "dernieres"})
+    public record ChangementsView(int total, List<CompteEntiteView> parEntite, List<EntreeHistoriqueView> dernieres) {}
+
+    /** How many times one family moved; the screen writes « 3 animateurs » from it. */
+    @Schema(requiredProperties = {"entite", "nombre"})
+    public record CompteEntiteView(String entite, int nombre) {}
 
     /** The inventory of actions, so the screen can offer a filter it did not invent. */
     @GET

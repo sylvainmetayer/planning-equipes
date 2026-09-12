@@ -81,6 +81,9 @@
         <p class="calendar-meta data-stale-hint" i18n="@@solver.dataStale">
           Des données de référence ont été modifiées depuis cette résolution ; le résultat affiché peut ne plus être à jour.
         </p>
+        @if (resoluLe(); as depuis) {
+          <app-changements-donnees [depuis]="depuis" />
+        }
       }
     </mat-card-content>
   }

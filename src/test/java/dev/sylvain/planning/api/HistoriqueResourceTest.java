@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.not;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -156,6 +157,61 @@ class HistoriqueResourceTest {
                 .then()
                 .statusCode(200)
                 .body("find { it.entiteId == 'equilibrerCharge' }.action", equalTo("CONTRAINTE_ACTIVEE"));
+    }
+
+    /**
+     * The summary the solver screen shows under « des données de référence ont
+     * été modifiées depuis cette résolution » : how much moved, of what kind,
+     * and the last lines — everything before {@code depuis} left out, and so is
+     * everything that changes no data.
+     */
+    @Test
+    void theChangesSinceAMomentAreCountedPerFamilyAndDated() {
+        String avant = Instant.now().toString();
+
+        given().contentType(ContentType.JSON)
+                .body("""
+                        {"id":"HIST-C1","prenom":"Chloé","nom":"Bernard","dateNaissance":"1990-01-01"}""")
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200);
+        // Reading changes nothing, and an export leaves with a copy of the plan
+        // without moving it: neither belongs in this summary.
+        given().when().get("/api/animateurs").then().statusCode(200);
+
+        given().queryParam("depuis", avant)
+                .when()
+                .get("/api/historique/changements")
+                .then()
+                .statusCode(200)
+                .body("total", greaterThan(0))
+                .body("parEntite.find { it.entite == 'ANIMATEUR' }.nombre", greaterThan(0))
+                .body("dernieres.find { it.entiteId == 'HIST-C1' }.libelle", equalTo("Animateur ajouté"))
+                .body("dernieres.find { it.entiteId == 'HIST-C1' }.entiteNom", equalTo("Chloé Bernard"))
+                .body("dernieres.action", everyItem(not(equalTo("ANIMATEURS_LUS"))));
+
+        // Asked from now on, the same creation is behind us.
+        given().queryParam("depuis", Instant.now().toString())
+                .when()
+                .get("/api/historique/changements")
+                .then()
+                .statusCode(200)
+                .body("total", equalTo(0))
+                .body("parEntite", empty())
+                .body("dernieres", empty());
+
+        given().when().delete("/api/animateurs/HIST-C1").then().statusCode(204);
+    }
+
+    @Test
+    void theChangesRefuseAMomentTheyCannotRead() {
+        given().when().get("/api/historique/changements").then().statusCode(400);
+        given().queryParam("depuis", "hier")
+                .when()
+                .get("/api/historique/changements")
+                .then()
+                .statusCode(400);
     }
 
     @Test

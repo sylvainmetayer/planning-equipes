@@ -2058,6 +2058,27 @@ export interface ConfigurationFoire {
  * identity: `acteurNom` and `entiteNom` are resolved server-side when the list
  * is read, so a fiche deleted since leaves a line that names nobody.
  */
+/**
+ * What changed in the problem since a given moment: `GET
+ * /api/historique/changements`. Only the actions that change what a solve
+ * would be given are counted — a send or an export leaves the plan as valid as
+ * it was.
+ */
+export interface ChangementsDonnees {
+  /** How many changes since, all families together. */
+  total: number;
+  /** One entry per referential family touched, families untouched absent. */
+  parEntite: CompteEntite[];
+  /** The most recent lines, newest first, at most five. */
+  dernieres: EntreeHistorique[];
+}
+
+/** How many times one referential family moved. */
+export interface CompteEntite {
+  entite: string;
+  nombre: number;
+}
+
 export interface EntreeHistorique {
   id: number;
   survenuLe: string;

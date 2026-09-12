@@ -4,6 +4,8 @@ import dev.sylvain.planning.service.journal.ActionJournalisee.Entite;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Every action the application knows how to write down, and how it reads in
@@ -31,54 +33,68 @@ public final class CatalogueActions {
     private static final Map<String, ActionJournalisee> ACTIONS = new LinkedHashMap<>();
 
     private static void action(String code, String libelle, Entite entite) {
-        ACTIONS.put(code, new ActionJournalisee(code, libelle, entite));
+        ACTIONS.put(code, new ActionJournalisee(code, libelle, entite, false));
+    }
+
+    /**
+     * Same, for an action that changes <b>what a solve would be given</b>: a
+     * referential, an ad hoc adjustment, a lock, a parameter, a rule. Those
+     * are the ones that make an already-persisted plan out of date, and the
+     * two factories are what lets the solver screen say <em>what</em> changed
+     * under « des données de référence ont été modifiées » rather than only
+     * that something did. An export, a send, a snapshot or a solve itself
+     * stays on {@link #action}: it moves the plan or leaves with a copy of it,
+     * it does not move the problem.
+     */
+    private static void changesData(String code, String libelle, Entite entite) {
+        ACTIONS.put(code, new ActionJournalisee(code, libelle, entite, true));
     }
 
     static {
         /* ------------------------ Animateurs ------------------------ */
-        action("ANIMATEUR_CREE", "Animateur ajouté", Entite.ANIMATEUR);
-        action("ANIMATEUR_MODIFIE", "Fiche animateur modifiée", Entite.ANIMATEUR);
-        action("ANIMATEUR_SUPPRIME", "Animateur supprimé", Entite.ANIMATEUR);
+        changesData("ANIMATEUR_CREE", "Animateur ajouté", Entite.ANIMATEUR);
+        changesData("ANIMATEUR_MODIFIE", "Fiche animateur modifiée", Entite.ANIMATEUR);
+        changesData("ANIMATEUR_SUPPRIME", "Animateur supprimé", Entite.ANIMATEUR);
         action("ANIMATEUR_JETON_REGENERE", "Lien d'espace régénéré", Entite.ANIMATEUR);
-        action("ANIMATEURS_IMPORTES", "Animateurs importés depuis un fichier", Entite.ANIMATEUR);
-        action("ANIMATEUR_COMPETENCES_GRILLE", "Grille des compétences enregistrée", Entite.ANIMATEUR);
-        action("COMPETENCES_IMPORTEES", "Grille des compétences importée depuis un fichier", Entite.ANIMATEUR);
+        changesData("ANIMATEURS_IMPORTES", "Animateurs importés depuis un fichier", Entite.ANIMATEUR);
+        changesData("ANIMATEUR_COMPETENCES_GRILLE", "Grille des compétences enregistrée", Entite.ANIMATEUR);
+        changesData("COMPETENCES_IMPORTEES", "Grille des compétences importée depuis un fichier", Entite.ANIMATEUR);
         action("ANIMATEURS_RELANCES", "Animateurs relancés à la main", Entite.ANIMATEUR);
 
         /* -------------------------- Stands -------------------------- */
-        action("STAND_CREE", "Stand ajouté", Entite.STAND);
-        action("STAND_MODIFIE", "Stand modifié", Entite.STAND);
-        action("STAND_SUPPRIME", "Stand supprimé", Entite.STAND);
-        action("STAND_HORAIRES_COMPACTES", "Horaires de stands compactés", Entite.STAND);
-        action("STAND_HORAIRE_AJOUTE", "Horaire de stand ajouté", Entite.STAND);
-        action("STAND_HORAIRES_EFFACES", "Horaires de stand effacés", Entite.STAND);
-        action("STAND_PLAGE_AJOUTEE", "Plage d'ouverture ou de fermeture ajoutée", Entite.STAND);
-        action("STAND_PLAGES_EFFACEES", "Plages d'un stand effacées", Entite.STAND);
-        action("STANDS_IMPORTES", "Grille de stands importée", Entite.STAND);
-        action("OUVERTURES_SAISIES", "Grille des ouvertures enregistrée", Entite.STAND);
+        changesData("STAND_CREE", "Stand ajouté", Entite.STAND);
+        changesData("STAND_MODIFIE", "Stand modifié", Entite.STAND);
+        changesData("STAND_SUPPRIME", "Stand supprimé", Entite.STAND);
+        changesData("STAND_HORAIRES_COMPACTES", "Horaires de stands compactés", Entite.STAND);
+        changesData("STAND_HORAIRE_AJOUTE", "Horaire de stand ajouté", Entite.STAND);
+        changesData("STAND_HORAIRES_EFFACES", "Horaires de stand effacés", Entite.STAND);
+        changesData("STAND_PLAGE_AJOUTEE", "Plage d'ouverture ou de fermeture ajoutée", Entite.STAND);
+        changesData("STAND_PLAGES_EFFACEES", "Plages d'un stand effacées", Entite.STAND);
+        changesData("STANDS_IMPORTES", "Grille de stands importée", Entite.STAND);
+        changesData("OUVERTURES_SAISIES", "Grille des ouvertures enregistrée", Entite.STAND);
 
         /* ------------------------ Timeslots ------------------------- */
-        action("CRENEAU_CREE", "Créneau ajouté", Entite.CRENEAU);
-        action("CRENEAU_MODIFIE", "Créneau modifié", Entite.CRENEAU);
-        action("CRENEAU_SUPPRIME", "Créneau supprimé", Entite.CRENEAU);
-        action("CRENEAUX_SUPPRIMES", "Créneaux supprimés en lot", Entite.CRENEAU);
-        action("CRENEAUX_RECURRENTS_CREES", "Créneaux récurrents générés", Entite.CRENEAU);
-        action("CRENEAUX_DERIVES", "Créneaux dérivés des horaires des stands", Entite.CRENEAU);
-        action("DECOUPAGE_GENERE", "Découpage des amplitudes en vacations", Entite.CRENEAU);
+        changesData("CRENEAU_CREE", "Créneau ajouté", Entite.CRENEAU);
+        changesData("CRENEAU_MODIFIE", "Créneau modifié", Entite.CRENEAU);
+        changesData("CRENEAU_SUPPRIME", "Créneau supprimé", Entite.CRENEAU);
+        changesData("CRENEAUX_SUPPRIMES", "Créneaux supprimés en lot", Entite.CRENEAU);
+        changesData("CRENEAUX_RECURRENTS_CREES", "Créneaux récurrents générés", Entite.CRENEAU);
+        changesData("CRENEAUX_DERIVES", "Créneaux dérivés des horaires des stands", Entite.CRENEAU);
+        changesData("DECOUPAGE_GENERE", "Découpage des amplitudes en vacations", Entite.CRENEAU);
 
         /* -------------- Locations and game categories --------------- */
-        action("EMPLACEMENT_CREE", "Emplacement ajouté", Entite.EMPLACEMENT);
-        action("EMPLACEMENT_MODIFIE", "Emplacement modifié", Entite.EMPLACEMENT);
-        action("EMPLACEMENT_SUPPRIME", "Emplacement supprimé", Entite.EMPLACEMENT);
-        action("TYPOLOGIE_CREEE", "Typologie de jeu ajoutée", Entite.TYPOLOGIE);
-        action("TYPOLOGIE_MODIFIEE", "Typologie de jeu modifiée", Entite.TYPOLOGIE);
-        action("TYPOLOGIE_SUPPRIMEE", "Typologie de jeu supprimée", Entite.TYPOLOGIE);
+        changesData("EMPLACEMENT_CREE", "Emplacement ajouté", Entite.EMPLACEMENT);
+        changesData("EMPLACEMENT_MODIFIE", "Emplacement modifié", Entite.EMPLACEMENT);
+        changesData("EMPLACEMENT_SUPPRIME", "Emplacement supprimé", Entite.EMPLACEMENT);
+        changesData("TYPOLOGIE_CREEE", "Typologie de jeu ajoutée", Entite.TYPOLOGIE);
+        changesData("TYPOLOGIE_MODIFIEE", "Typologie de jeu modifiée", Entite.TYPOLOGIE);
+        changesData("TYPOLOGIE_SUPPRIMEE", "Typologie de jeu supprimée", Entite.TYPOLOGIE);
 
         /* --------------- Ad hoc adjustments and locks --------------- */
-        action("AJUSTEMENT_CREE", "Ajustement manuel ajouté", Entite.AJUSTEMENT);
-        action("AJUSTEMENT_SUPPRIME", "Ajustement manuel supprimé", Entite.AJUSTEMENT);
-        action("VERROU_POSE", "Verrouillage posé", Entite.VERROUILLAGE);
-        action("VERROU_RETIRE", "Verrouillage retiré", Entite.VERROUILLAGE);
+        changesData("AJUSTEMENT_CREE", "Ajustement manuel ajouté", Entite.AJUSTEMENT);
+        changesData("AJUSTEMENT_SUPPRIME", "Ajustement manuel supprimé", Entite.AJUSTEMENT);
+        changesData("VERROU_POSE", "Verrouillage posé", Entite.VERROUILLAGE);
+        changesData("VERROU_RETIRE", "Verrouillage retiré", Entite.VERROUILLAGE);
 
         /* ------------------------- Editions ------------------------- */
         action("EDITION_CREEE", "Édition créée", Entite.EDITION);
@@ -92,7 +108,7 @@ public final class CatalogueActions {
         action("SOLVE_INCREMENTAL_LANCE", "Replanification incrémentale lancée", Entite.PLANNING);
         action("SOLVE_ARRETE", "Résolution arrêtée", Entite.PLANNING);
         action("JOB_SUPPRIME", "Tâche de résolution retirée", Entite.PLANNING);
-        action("PLANNING_REINITIALISE", "Données de référence effacées", Entite.PLANNING);
+        changesData("PLANNING_REINITIALISE", "Données de référence effacées", Entite.PLANNING);
         action("AFFECTATION_DEPLACEE", "Affectation déplacée à la main", Entite.PLANNING);
         action("AFFECTATION_POSEE", "Poste attribué à la main", Entite.PLANNING);
         action("ABSENCE_ENREGISTREE", "Absence déclarée en mode jour J", Entite.PLANNING);
@@ -117,26 +133,26 @@ public final class CatalogueActions {
         action("EXPORT_BASE", "Base de données exportée", Entite.SAUVEGARDE);
 
         /* ------------------ Imports and scenarios ------------------- */
-        action("SCENARIO_IMPORTE", "Scénario importé", Entite.PLANNING);
-        action("DONNEES_IMPORTEES", "Données de référence importées", Entite.PLANNING);
-        action("BASE_IMPORTEE", "Base de données restaurée depuis un fichier", Entite.SAUVEGARDE);
+        changesData("SCENARIO_IMPORTE", "Scénario importé", Entite.PLANNING);
+        changesData("DONNEES_IMPORTEES", "Données de référence importées", Entite.PLANNING);
+        changesData("BASE_IMPORTEE", "Base de données restaurée depuis un fichier", Entite.SAUVEGARDE);
 
         /* ------------------------- Settings ------------------------- */
-        action("PARAMETRES_LEGAUX_MODIFIES", "Paramètres légaux modifiés", Entite.PARAMETRES);
-        action("PARAMETRES_DECOUPAGE_MODIFIES", "Paramètres de découpage modifiés", Entite.PARAMETRES);
-        action("MODE_GRILLE_MODIFIE", "Mode de la grille des créneaux changé", Entite.PARAMETRES);
-        action("PARAMETRES_SOLVEUR_MODIFIES", "Paramètres du solveur modifiés", Entite.PARAMETRES);
+        changesData("PARAMETRES_LEGAUX_MODIFIES", "Paramètres légaux modifiés", Entite.PARAMETRES);
+        changesData("PARAMETRES_DECOUPAGE_MODIFIES", "Paramètres de découpage modifiés", Entite.PARAMETRES);
+        changesData("MODE_GRILLE_MODIFIE", "Mode de la grille des créneaux changé", Entite.PARAMETRES);
+        changesData("PARAMETRES_SOLVEUR_MODIFIES", "Paramètres du solveur modifiés", Entite.PARAMETRES);
         action("PARAMETRES_NOTIFICATIONS_MODIFIES", "Paramètres de notifications modifiés", Entite.PARAMETRES);
-        action("CONTRAINTE_ACTIVEE", "Contrainte activée", Entite.PARAMETRES);
-        action("CONTRAINTE_DESACTIVEE", "Contrainte désactivée", Entite.PARAMETRES);
-        action("CONTRAINTE_PONDEREE", "Poids d'une contrainte modifié", Entite.PARAMETRES);
+        changesData("CONTRAINTE_ACTIVEE", "Contrainte activée", Entite.PARAMETRES);
+        changesData("CONTRAINTE_DESACTIVEE", "Contrainte désactivée", Entite.PARAMETRES);
+        changesData("CONTRAINTE_PONDEREE", "Poids d'une contrainte modifié", Entite.PARAMETRES);
         action("SAUVEGARDE_BASCULEE", "Sauvegarde nocturne suspendue ou reprise", Entite.SAUVEGARDE);
         action("DATE_JOUR_J_FORCEE", "Date du jour forcée (débogage)", Entite.PARAMETRES);
         action("CLE_MCP_REVELEE", "Clé MCP révélée", Entite.PARAMETRES);
 
         /* ---------- Availability, swaps, espace animateur ----------- */
         action("COLLECTE_CONFIGUREE", "Fenêtre de collecte des disponibilités configurée", Entite.DISPONIBILITE);
-        action("DECLARATION_APPLIQUEE", "Déclaration de disponibilités appliquée", Entite.DISPONIBILITE);
+        changesData("DECLARATION_APPLIQUEE", "Déclaration de disponibilités appliquée", Entite.DISPONIBILITE);
         action("DECLARATION_REFUSEE", "Déclaration de disponibilités refusée", Entite.DISPONIBILITE);
         action("DECLARATION_SOUMISE", "Disponibilités déclarées depuis l'espace", Entite.DISPONIBILITE);
         action("FOIRE_CONFIGUREE", "Foire au planning configurée", Entite.ECHANGE);
@@ -436,6 +452,19 @@ public final class CatalogueActions {
     /** Every action of the inventory, for the screen's filter and for the tests. */
     public static Map<String, ActionJournalisee> actions() {
         return Map.copyOf(ACTIONS);
+    }
+
+    /**
+     * The codes of every action that changes what a solve would be given — see
+     * {@link #donnees}. Read by the journal to answer « qu'est-ce qui a bougé
+     * depuis cette résolution ? », so an action declared with the wrong
+     * factory does not show there.
+     */
+    public static Set<String> codesChangingData() {
+        return ACTIONS.values().stream()
+                .filter(ActionJournalisee::changesData)
+                .map(ActionJournalisee::code)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     static Map<String, String> routes() {

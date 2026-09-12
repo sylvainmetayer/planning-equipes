@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -120,6 +121,21 @@ public class JournalActionService {
     /** The edition's most recent actions, newest first. */
     public List<EntreeJournal> list(Integer limite) {
         return repository.list(limite == null ? LIMITE_DEFAUT : limite);
+    }
+
+    /**
+     * What changed in the problem since {@code depuis}: the count per
+     * referential family, and the {@code limite} most recent lines.
+     *
+     * <p>Only what {@code CatalogueActions} declares as changing the data a
+     * solve is given — the screens ask this to say <em>what</em> moved under
+     * « des données de référence ont été modifiées depuis cette
+     * résolution », and a mail sent since is not an answer to that.</p>
+     */
+    public ReferenceDataChanges changesSince(Instant depuis, int limite) {
+        Set<String> codes = CatalogueActions.codesChangingData();
+        return ReferenceDataChanges.of(
+                repository.countSince(depuis, codes), repository.listSince(depuis, codes, limite));
     }
 
     /**

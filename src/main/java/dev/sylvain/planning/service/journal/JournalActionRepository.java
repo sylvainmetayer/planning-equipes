@@ -3,13 +3,17 @@ package dev.sylvain.planning.service.journal;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The {@code journal_action} table: append-only, scoped to its edition, read
@@ -70,6 +74,69 @@ public class JournalActionRepository {
                     ORDER BY survenu_le DESC, id DESC
                     LIMIT ?""")) {
                 ps.setInt(2, plafond);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<EntreeJournal> entrees = new ArrayList<>();
+                    while (rs.next()) {
+                        entrees.add(read(rs));
+                    }
+                    return entrees;
+                }
+            }
+        });
+    }
+
+    /**
+     * How many times each of {@code codes} succeeded since {@code depuis}, by
+     * action code. Counted by the database rather than by paging through the
+     * lines: the figure the solver screen shows is exact, whatever the volume.
+     *
+     * <p>The selection travels as one array parameter ({@code = ANY(?)}) like
+     * {@code ReferenceUsageRepository} does, so the statement stays a literal
+     * — an {@code IN} list assembled by hand would be SQL the isolation scan
+     * cannot read.</p>
+     */
+    public Map<String, Integer> countSince(Instant depuis, Collection<String> codes) {
+        if (codes.isEmpty()) {
+            return Map.of();
+        }
+        return scope.read("Failed to count the changes since the last solve", connection -> {
+            Array bound = connection.createArrayOf("varchar", codes.toArray());
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
+                    SELECT action, COUNT(*) AS nombre
+                    FROM journal_action
+                    WHERE edition_id = ? AND survenu_le > ? AND resultat = 'SUCCES' AND action = ANY(?)
+                    GROUP BY action""")) {
+                ps.setTimestamp(2, Timestamp.from(depuis));
+                ps.setArray(3, bound);
+                try (ResultSet rs = ps.executeQuery()) {
+                    Map<String, Integer> comptes = new LinkedHashMap<>();
+                    while (rs.next()) {
+                        comptes.put(rs.getString("action"), rs.getInt("nombre"));
+                    }
+                    return comptes;
+                }
+            }
+        });
+    }
+
+    /** The most recent of those same lines, newest first. */
+    public List<EntreeJournal> listSince(Instant depuis, Collection<String> codes, int limite) {
+        if (codes.isEmpty()) {
+            return List.of();
+        }
+        int plafond = Math.clamp(limite, 1, LIMITE_MAX);
+        return scope.read("Failed to read the changes since the last solve", connection -> {
+            Array bound = connection.createArrayOf("varchar", codes.toArray());
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
+                    SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
+                    champs, resultat, statut
+                    FROM journal_action
+                    WHERE edition_id = ? AND survenu_le > ? AND resultat = 'SUCCES' AND action = ANY(?)
+                    ORDER BY survenu_le DESC, id DESC
+                    LIMIT ?""")) {
+                ps.setTimestamp(2, Timestamp.from(depuis));
+                ps.setArray(3, bound);
+                ps.setInt(4, plafond);
                 try (ResultSet rs = ps.executeQuery()) {
                     List<EntreeJournal> entrees = new ArrayList<>();
                     while (rs.next()) {

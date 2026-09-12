@@ -7,6 +7,7 @@ import { ApiService } from '../api.service';
 import {
   AlerteView,
   BancDeTouche,
+  ChangementsDonnees,
   Emplacement,
   EntreeHistorique,
   KpiHistoriqueEntry,
@@ -52,6 +53,17 @@ export class AnalysesApi {
 
   actionHistory(): Promise<EntreeHistorique[]> {
     return this.api.get<EntreeHistorique[]>('/api/historique');
+  }
+
+  /**
+   * What changed in the problem since `depuis` — how many, of what kind, and
+   * the most recent lines. Read by the solver screen to say what moved under
+   * its « données modifiées depuis cette résolution » hint.
+   */
+  changesSince(depuis: string): Promise<ChangementsDonnees> {
+    return this.api.get<ChangementsDonnees>(
+      `/api/historique/changements?depuis=${encodeURIComponent(depuis)}`,
+    );
   }
 
   alerts(): Promise<AlerteView[]> {

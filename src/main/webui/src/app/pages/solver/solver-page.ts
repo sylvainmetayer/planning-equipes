@@ -32,6 +32,7 @@ import {
   StatistiquesIncremental,
 } from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
+import { ChangementsDonneesPanel } from './changements-donnees';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -104,6 +105,7 @@ function hardPart(score: string): number {
     SolverVolumetry,
     IncrementalResult,
     SolveRecap,
+    ChangementsDonneesPanel,
   ],
   templateUrl: './solver-page.html',
   styleUrls: ['./solver.css', './publication.css', './replanification.css', './score-curve.css'],
@@ -225,6 +227,8 @@ export class SolverPage {
   protected readonly resolution = inject(PlanningResolutionStore);
   /** True once reference data was edited after the last solve: its result may be stale. */
   protected readonly dataStale = computed(() => this.resolution.dataStale());
+  /** When that solve ran: the moment the summary of what changed counts from. */
+  protected readonly resoluLe = computed(() => this.resolution.resolution()?.resoluLe ?? '');
 
   /**
    * Aggregate of the pre-solve capacity causes and of the last analysis' still
