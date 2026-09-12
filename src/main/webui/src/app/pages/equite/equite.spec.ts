@@ -13,6 +13,9 @@ import {
   filterRows,
   formatColonne,
   heureCourte,
+  indicateursFiche,
+  ligneDe,
+  suggestions,
   libelleColonne,
   libelleSolveur,
   sortRows,
@@ -183,5 +186,47 @@ describe('heureCourte', () => {
   it('drops the seconds the server writes, and stays empty without a report', () => {
     expect(heureCourte('20:00:00')).toBe('20:00');
     expect(heureCourte(undefined)).toBe('');
+  });
+});
+
+describe('indicateursFiche', () => {
+  it("turns the table on its side: one line per column, the person's own left out", () => {
+    const fiche = indicateursFiche(RAPPORT, ALICE);
+
+    expect(fiche.map((indicateur) => indicateur.colonne)).toEqual(
+      colonnes(RAPPORT).filter((colonne) => colonne !== 'animateur'),
+    );
+    const total = fiche.find((indicateur) => indicateur.colonne === 'heuresTotal')!;
+    expect(total.libelle).toBe('Heures');
+    expect(total.valeur).toBe(12);
+    expect(total.ecart).toBe(2);
+    expect(total.synthese).toEqual({ mediane: 10, min: 8, max: 12, ecartType: 2 });
+  });
+
+  it('leaves the gap empty for a column the report has no synthesis for', () => {
+    const fiche = indicateursFiche(RAPPORT, ALICE);
+
+    expect(fiche.find((indicateur) => indicateur.colonne === 'postes')!.ecart).toBeNull();
+  });
+
+  it('is empty without a report or without a chosen person', () => {
+    expect(indicateursFiche(null, ALICE)).toEqual([]);
+    expect(indicateursFiche(RAPPORT, null)).toEqual([]);
+  });
+});
+
+describe('ligneDe', () => {
+  it('finds the row of an id, and answers null for one the report does not carry', () => {
+    expect(ligneDe([ALICE, BRUNO], 'E2E-B')).toBe(BRUNO);
+    expect(ligneDe([ALICE, BRUNO], 'E2E-Z')).toBeNull();
+    expect(ligneDe([ALICE, BRUNO], '')).toBeNull();
+  });
+});
+
+describe('suggestions', () => {
+  it('offers what matches, everything while nothing is typed, and never more than the cap', () => {
+    expect(suggestions([ALICE, BRUNO], 'bru')).toEqual([BRUNO]);
+    expect(suggestions([ALICE, BRUNO], '')).toEqual([ALICE, BRUNO]);
+    expect(suggestions([ALICE, BRUNO], '', 1)).toEqual([ALICE]);
   });
 });

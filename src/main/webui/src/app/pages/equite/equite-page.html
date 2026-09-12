@@ -25,17 +25,28 @@
         <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
       </button>
     }
+    <mat-button-toggle-group
+      [ngModel]="vue()"
+      (ngModelChange)="vue.set($event)"
+      i18n-aria-label="@@equite.vue.label"
+      aria-label="Choisir l'affichage"
+    >
+      <mat-button-toggle value="tableau" i18n="@@equite.vue.tableau">Tableau</mat-button-toggle>
+      <mat-button-toggle value="fiche" i18n="@@equite.vue.fiche">Fiche</mat-button-toggle>
+    </mat-button-toggle-group>
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
-    <app-table-filter
-      [(value)]="filtre"
-      label="Filtrer par nom"
-      i18n-label="@@equite.filter.label"
-      placeholder="Nom, prénom, identifiant…"
-      i18n-placeholder="@@equite.filter.placeholder"
-      [matches]="lignesFiltrees().length"
-      [total]="lignes().length"
-    />
+    @if (vue() === 'tableau') {
+      <app-table-filter
+        [(value)]="filtre"
+        label="Filtrer par nom"
+        i18n-label="@@equite.filter.label"
+        placeholder="Nom, prénom, identifiant…"
+        i18n-placeholder="@@equite.filter.placeholder"
+        [matches]="lignesFiltrees().length"
+        [total]="lignes().length"
+      />
+    }
 
     @if (chargement() && !rapport()) {
       <mat-progress-bar mode="indeterminate" />
@@ -50,6 +61,88 @@
       </p>
       @if (report.lignes.length === 0) {
         <p class="empty-hint" i18n="@@equite.empty">Aucun animateur affecté : le planning enregistré est vide.</p>
+      } @else if (vue() === 'fiche') {
+        <mat-form-field appearance="outline" class="equite-recherche">
+          <mat-label i18n="@@equite.fiche.label">Animateur</mat-label>
+          <input
+            matInput
+            [matAutocomplete]="auto"
+            [ngModel]="recherche()"
+            (ngModelChange)="recherche.set($event)"
+            i18n-placeholder="@@equite.fiche.placeholder"
+            placeholder="Nom, prénom, identifiant…"
+          />
+          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="choisir($event.option.value)">
+            @for (ligne of propositions(); track ligne.animateurId) {
+              <mat-option [value]="ligne.animateurId">{{ ligne.nom }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+
+        @if (ligneChoisie(); as choisie) {
+          <h2 class="equite-fiche-nom">
+            <a class="equite-lien-timeline" routerLink="/timeline" [queryParams]="{ animateur: choisie.animateurId }">{{ choisie.nom }}</a>
+          </h2>
+          <table class="equite-fiche">
+            <caption class="visually-hidden" i18n="@@equite.fiche.caption">Équité d'un animateur : un indicateur par ligne, sa valeur, son écart à la médiane et la synthèse de la colonne</caption>
+            <thead>
+              <tr>
+                <th scope="col" i18n="@@equite.fiche.indicateur">Indicateur</th>
+                <th scope="col" i18n="@@equite.fiche.valeur">Valeur</th>
+                <th scope="col" i18n="@@equite.fiche.ecart">Écart à la médiane</th>
+                <th scope="col" i18n="@@equite.fiche.synthese">Sur l'ensemble</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (indicateur of indicateurs(); track indicateur.colonne) {
+                <tr>
+                  <th scope="row">
+                    {{ indicateur.libelle }}
+                    @if (measuredBySolver(indicateur.colonne)) {
+                      <mat-icon inline class="equite-solveur-icon" [matTooltip]="tooltipColonne(indicateur.colonne)">tune</mat-icon>
+                    }
+                  </th>
+                  <td class="equite-cell">
+                    @switch (formatColonne(indicateur.colonne)) {
+                      @case ('heures') {
+                        <span class="equite-valeur">{{ indicateur.valeur | number: '1.1-1' }} h</span>
+                      }
+                      @case ('taux') {
+                        <span class="equite-valeur">{{ indicateur.valeur | percent: '1.0-0' }}</span>
+                      }
+                      @default {
+                        <span class="equite-valeur">{{ indicateur.valeur }}</span>
+                      }
+                    }
+                  </td>
+                  <td class="equite-cell">
+                    @if (indicateur.ecart !== null) {
+                      <span class="equite-ecart" [class]="gapClass(indicateur.ecart)">
+                        @switch (formatColonne(indicateur.colonne)) {
+                          @case ('taux') {
+                            {{ indicateur.ecart > 0 ? '+' : '' }}{{ indicateur.ecart * 100 | number: '1.0-0' }} pt
+                          }
+                          @default {
+                            {{ indicateur.ecart > 0 ? '+' : '' }}{{ indicateur.ecart | number: '1.0-1' }}
+                          }
+                        }
+                      </span>
+                    }
+                  </td>
+                  <td class="equite-cell">
+                    @if (indicateur.synthese; as bilan) {
+                      <span class="equite-synthese" i18n="@@equite.synthese.cell">méd. {{ bilan.mediane | number: '1.0-1' }} · min {{ bilan.min | number: '1.0-1' }} · max {{ bilan.max | number: '1.0-1' }} · σ {{ bilan.ecartType | number: '1.0-2' }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="empty-hint" i18n="@@equite.fiche.aucun">
+            Tapez un nom pour lire la fiche d'un animateur : ses indicateurs l'un sous l'autre, avec leur écart à la médiane.
+          </p>
+        }
       } @else {
         <table mat-table [dataSource]="lignesAffichees()" matSort [matSortActive]="sort().active"
                [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">

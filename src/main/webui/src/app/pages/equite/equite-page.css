@@ -70,3 +70,38 @@
 .equite-solveur-inactif {
   text-decoration: line-through;
 }
+
+/* « Fiche » view: one person, one line per indicator. The table above compares
+   everybody and is wide by necessity; this one is read top to bottom. */
+.equite-recherche {
+  max-width: 24rem;
+  width: 100%;
+}
+
+.equite-fiche-nom {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.equite-fiche {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.equite-fiche th,
+.equite-fiche td {
+  padding: 0.4rem 0.75rem 0.4rem 0;
+  text-align: left;
+  vertical-align: baseline;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.equite-fiche thead th {
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.equite-fiche tbody th {
+  font-weight: 400;
+}

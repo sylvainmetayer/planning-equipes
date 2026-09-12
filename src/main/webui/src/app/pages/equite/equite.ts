@@ -184,3 +184,56 @@ export function libelleSolveur(contrainte: ColonneSolveur | undefined): string {
 export function heureCourte(heure: string | null | undefined): string {
   return heure ? heure.slice(0, 5) : '';
 }
+
+/* --------------------------- The « fiche » view ---------------------------- */
+
+/**
+ * One indicator of a single animateur's fiche: what the table shows in a
+ * column, read the other way round — a line per indicator for one person,
+ * instead of a line per person across twenty-odd columns.
+ */
+export interface IndicateurFiche {
+  colonne: string;
+  libelle: string;
+  valeur: number;
+  /** Distance to the column's median, `null` when the report has no synthesis for it. */
+  ecart: number | null;
+  synthese: SyntheseColonne | undefined;
+}
+
+/** Every column of the report for one row, the person's own column left out. */
+export function indicateursFiche(
+  rapport: RapportEquite | null,
+  ligne: LigneEquite | null,
+): IndicateurFiche[] {
+  if (!rapport || !ligne) {
+    return [];
+  }
+  return colonnes(rapport)
+    .filter((colonne) => colonne !== COLONNE_ANIMATEUR)
+    .map((colonne) => {
+      const valeur = valeurColonne(ligne, colonne);
+      const synthese = rapport.syntheses[colonne];
+      return {
+        colonne,
+        libelle: libelleColonne(colonne),
+        valeur,
+        ecart: medianGap(valeur, synthese),
+        synthese,
+      };
+    });
+}
+
+/** The row of one animateur, `null` when nobody is chosen or the report does not carry them. */
+export function ligneDe(lignes: LigneEquite[], animateurId: string): LigneEquite | null {
+  return lignes.find((ligne) => ligne.animateurId === animateurId) ?? null;
+}
+
+/**
+ * What the autocomplete offers: the rows matching what was typed, capped — a
+ * panel is read, not scrolled through 150 names. An empty search offers the
+ * first ones rather than nothing, so the list opens on a click.
+ */
+export function suggestions(lignes: LigneEquite[], recherche: string, limite = 10): LigneEquite[] {
+  return filterRows(lignes, recherche).slice(0, limite);
+}
