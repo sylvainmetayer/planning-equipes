@@ -213,6 +213,20 @@ export function horairesCopiedFrom(source: Stand): HorairesDraft {
  * server refuses such a window, so a copied schedule that carries one is
  * announced before the save is attempted.
  */
+/**
+ * Whether a stand has a schedule worth copying. A model carrying neither rule
+ * nor dated exception would *erase* the target's own schedule instead of
+ * replacing it — an erasure the bulk dialog already offers under its own name,
+ * and never what someone picking a model out of a list of sixty is asking for.
+ */
+export function hasHorairesToCopy(stand: Stand): boolean {
+  return (
+    (stand.horaires ?? []).length > 0 ||
+    (stand.ouvertures ?? []).length > 0 ||
+    (stand.indisponibilites ?? []).length > 0
+  );
+}
+
 export function windowsBeyondMaximumCount(
   horaires: Pick<HorairesDraft, 'horaires' | 'ouvertures'>,
   effectifMax: number,

@@ -9,6 +9,7 @@ import {
 } from '../../core/bulk-edit';
 import { Emplacement, HoraireStand, NiveauEffort, Stand } from '../../core/models';
 import {
+  hasHorairesToCopy,
   HoraireDraft,
   HorairesDraft,
   horairesCopiedFrom,
@@ -97,7 +98,8 @@ function patchHorairesIsEmpty(patch: PatchHoraires): boolean {
     case 'EFFACER':
       return false;
     case 'DEPUIS_STAND':
-      return patch.source === null;
+      // A model with nothing to copy changes nothing: erasing is a mode of its own.
+      return patch.source === null || !hasHorairesToCopy(patch.source);
     case 'AJOUTER':
     case 'REMPLACER':
       return patch.horaires.length === 0;

@@ -130,7 +130,7 @@
       <mat-label i18n="@@stands.bulk.horaires.standModele">Stand modèle</mat-label>
       <mat-select name="standModele" [disabled]="editingLocked()"
                   [ngModel]="patch().horaires.source?.id ?? null" (ngModelChange)="choisirStandModele($event)">
-        @for (stand of store.stands(); track stand.id) {
+        @for (stand of standsModeles(); track stand.id) {
           <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
         }
       </mat-select>
@@ -138,9 +138,12 @@
     @if (resumeStandModele(); as resume) {
       <p class="empty-hint" role="status">{{ resume }}</p>
     }
-    @if (standsBeyondMaximum().length) {
-      <p class="form-warning" role="status">{{ effectifDepasseMessage() }}</p>
-    }
+  }
+  <!-- Outside the mode, because the copy is not the only way there: lowering the
+       maximum alone puts a window already in place beyond it, and the server
+       refuses those stands one by one. -->
+  @if (standsBeyondMaximum().length) {
+    <p class="form-warning" role="status">{{ effectifDepasseMessage() }}</p>
   }
 </div>
 </fieldset>

@@ -31,6 +31,7 @@ import {
   conflitOuvertureFermeture,
   effectifInvalide,
   effectifOuvertureInvalide,
+  hasHorairesToCopy,
   horairesCopiedFrom,
   indisponibiliteInvalide,
   windowsBeyondMaximumCount,
@@ -169,8 +170,11 @@ export class StandFormDialog {
   }
 
   /** Stands whose schedule can be copied into this one: every other stand of the edition. */
+  /** Only stands carrying a schedule: an empty model would erase the draft's own. */
   protected readonly standsModeles = computed(() =>
-    this.store.stands().filter((stand) => stand.id !== this.editingId()),
+    this.store
+      .stands()
+      .filter((stand) => stand.id !== this.editingId() && hasHorairesToCopy(stand)),
   );
 
   /** The stand last copied from, or `null` — what the status line and the warning below are about. */

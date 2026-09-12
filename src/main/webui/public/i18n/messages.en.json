@@ -695,7 +695,7 @@
   "stands.bulk.horaires.mode": "What to do with the schedule",
   "stands.bulk.horaires.standModele": "Model stand",
   "stands.bulk.horaires.resumeModele": "{$regles} rule(s) and {$exceptions} dated exception(s) will replace the schedule of every ticked stand.",
-  "stands.bulk.horaires.effectifDepasse": "A copied window exceeds the maximum headcount of: {$stands} — raise it, or these stands will be refused.",
+  "stands.bulk.horaires.effectifDepasse": "A window exceeds the maximum headcount of: {$stands} — raise it, or these stands will be refused.",
   "stands.compactage.action": "Compact the schedules",
   "stands.grille.tooltip": "Every stand's schedule as one stand × day × slot grid, one headcount per cell, like a spreadsheet.",
   "stands.grille.action": "Enter as a grid",

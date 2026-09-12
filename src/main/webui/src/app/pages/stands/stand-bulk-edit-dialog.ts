@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ModeBooleen, ModeListe } from '../../core/bulk-edit';
 import { labelStandsPluriel } from '../../core/entity-labels';
-import { HoraireDraft } from './stand-draft';
+import { hasHorairesToCopy, HoraireDraft } from './stand-draft';
 import { HoraireReglesEditor } from './horaire-regles-editor';
 import { effectifDepuisSaisie, premiereErreurHoraire } from './stand-horaires';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -95,8 +95,17 @@ export class StandBulkEditDialog {
     const noms = this.standsBeyondMaximum()
       .map((stand) => stand.nom || stand.id)
       .join(', ');
-    return $localize`:@@stands.bulk.horaires.effectifDepasse:Une fenêtre copiée dépasse l'effectif maximum de : ${noms}:stands: — relevez-le, ou ces stands seront refusés.`;
+    return $localize`:@@stands.bulk.horaires.effectifDepasse:Une fenêtre dépasse l'effectif maximum de : ${noms}:stands: — relevez-le, ou ces stands seront refusés.`;
   });
+
+  /**
+   * The stands offerable as a model: those carrying a schedule. One carrying
+   * none would erase the schedules of the whole selection, which is what the
+   * « Effacer » mode is for.
+   */
+  protected readonly standsModeles = computed(() =>
+    this.store.stands().filter((stand) => hasHorairesToCopy(stand)),
+  );
 
   /** What the model stand brings, so the choice is checked before it is applied. */
   protected readonly resumeStandModele = computed(() => {
@@ -156,7 +165,7 @@ export class StandBulkEditDialog {
 
   /** The model stand of `DEPUIS_STAND`, resolved against the store — the selection may well contain it. */
   protected choisirStandModele(standId: string | null): void {
-    const source = this.store.stands().find((stand) => stand.id === standId) ?? null;
+    const source = this.standsModeles().find((stand) => stand.id === standId) ?? null;
     this.update({ horaires: { ...this.patch().horaires, source } });
   }
 

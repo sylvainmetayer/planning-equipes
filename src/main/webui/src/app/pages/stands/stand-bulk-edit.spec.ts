@@ -46,6 +46,17 @@ describe('patchStandEstVide', () => {
   });
 
   // "Replace with another stand's" without naming which one changes nothing.
+  // A model carrying nothing would erase the schedules of the whole selection,
+  // silently and with no way back: it counts as « nothing to apply », like no
+  // model at all. Erasing has its own mode, chosen on purpose.
+  it('reste vide quand le stand modèle n’a ni règle ni exception', () => {
+    const vide = stand({ id: 'neuf' });
+
+    expect(
+      patchStandEstVide(patch({ horaires: { mode: 'DEPUIS_STAND', horaires: [], source: vide } })),
+    ).toBe(true);
+  });
+
   it('reste vide tant qu’aucun stand modèle n’est choisi', () => {
     expect(
       patchStandEstVide(patch({ horaires: { mode: 'DEPUIS_STAND', horaires: [], source: null } })),
@@ -360,12 +371,28 @@ describe('standsWithWindowBeyondMaximum', () => {
     );
   });
 
-  it('ne signale rien hors du mode DEPUIS_STAND', () => {
-    const stands = [stand({ id: 'petit', effectifMax: 2 })];
+  // The warning does not belong to the copy: lowering the maximum alone puts a
+  // window already in place beyond it, and the server refuses that stand too.
+  it('signale une fenêtre déjà en place que le nouveau maximum dépasse', () => {
+    const stands = [stand({ id: 'petit', horaires: [regleEffectif(5)], effectifMax: 9 })];
+
+    expect(
+      standsWithWindowBeyondMaximum(stands, patch({ effectifMax: 1 }), []).map((each) => each.id),
+    ).toEqual(['petit']);
+  });
+
+  it('ne signale rien quand le maximum couvre les fenêtres en place', () => {
+    const stands = [stand({ id: 'large', horaires: [regleEffectif(5)], effectifMax: 9 })];
 
     expect(standsWithWindowBeyondMaximum(stands, patch({ premium: 'OUI' }), [])).toEqual([]);
   });
 });
+
+/** A daily rule naming a headcount, which is what the maximum is compared to. */
+function regleEffectif(effectif: number): HoraireStand {
+  const regle = regleQuotidienne();
+  return { ...regle, fenetres: [{ ...regle.fenetres[0], effectif }] };
+}
 
 function regleQuotidienne(): HoraireStand {
   return {
