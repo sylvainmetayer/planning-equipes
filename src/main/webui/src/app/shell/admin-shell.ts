@@ -261,7 +261,10 @@ export class AdminShell {
   /** Folded navigation groups, remembered across visits (see `core/nav-collapse`). */
   private readonly navStorage = defaultNavStorage();
   protected readonly collapsedGroups = signal<ReadonlySet<string>>(
-    readCollapsedGroups(this.navStorage),
+    readCollapsedGroups(
+      this.navStorage,
+      this.navGroups.map((group) => group.id),
+    ),
   );
 
   protected isCollapsed(group: NavGroup): boolean {

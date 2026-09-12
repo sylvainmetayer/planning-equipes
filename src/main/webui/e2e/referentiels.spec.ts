@@ -3,7 +3,7 @@
 // lightest referential (typologies) for the create/delete round trip.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, seedPlanning } from './support';
+import { contexteAdmin, dialogueOuvert, pageAdmin, seedPlanning } from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
@@ -31,7 +31,7 @@ test.describe('fiche animateur', () => {
 
     // Create, with the new email field.
     await page.getByRole('button', { name: 'Ajouter' }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Identifiant').fill('E2E-UI');
     await dialog.getByLabel('Prénom').fill('Uma');
     await dialog.getByLabel('Nom', { exact: true }).fill('E2E');
@@ -115,7 +115,7 @@ test.describe('typologies', () => {
     await page.goto('/typologies');
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Identifiant').fill('E2E-TYPO');
     await dialog.getByLabel('Libellé').fill('Typologie E2E');
     await dialog.getByRole('button', { name: /Créer/ }).click();

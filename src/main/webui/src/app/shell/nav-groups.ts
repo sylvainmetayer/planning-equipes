@@ -77,9 +77,10 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
       title: $localize`:@@nav.group.pendantEvenement:Pendant l'événement`,
       links: [
         { path: '/echanges', label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz' },
-        // The only one of these that *writes*: it records real forced
-        // unavailabilities and empties real seats of the persisted plan. Its
-        // banner says so rather than borrowing the default wording.
+        // Both screens write on the published plan — « Échanges » applies or
+        // refuses a trade — but this one is the blunt instrument: it records
+        // real forced unavailabilities and empties real seats. Its banner says
+        // so rather than borrowing the default wording.
         { path: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' },
       ],
     },

@@ -1,5 +1,6 @@
-// Le mode jour J tel qu'il est livré : en cours de développement, et le seul
-// écran de ce groupe qui écrit. Ce que ces tests verrouillent est ce qu'un
+// Le mode jour J tel qu'il est livré : en cours de développement, et celui des
+// deux écrans du groupe qui vide des sièges — « Échanges » écrit aussi, mais en
+// appliquant un accord. Ce que ces tests verrouillent est ce qu'un
 // opérateur voit avant d'agir — le classement dans le menu et l'avertissement —,
 // plus la garde qui empêche une instance déployée de figer sa date.
 //

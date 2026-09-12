@@ -9,7 +9,7 @@
 // ConcurrentModificationGuardTest, far more cheaply than here.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, seedReferentielSolveur } from './support';
+import { contexteAdmin, dialogueOuvert, pageAdmin, seedReferentielSolveur } from './support';
 import { repartirDeLaReference } from './reference';
 
 const STAND_ID = 'SOLV-CC1';
@@ -50,6 +50,7 @@ async function ouvrirPuisSubirUneEcritureAilleurs(page: Page): Promise<void> {
   const ligne = page.getByRole('row', { name: new RegExp(STAND_ID) });
   await expect(ligne).toBeVisible();
   await ligne.getByRole('button', { name: 'Modifier' }).click();
+  await dialogueOuvert(page);
   const formulaire = page.getByRole('dialog').filter({ hasText: `Modifier le stand ${STAND_ID}` });
   await expect(formulaire).toBeVisible();
 
@@ -122,7 +123,7 @@ test.describe('modification concurrente', () => {
         .getByRole('row', { name: new RegExp(STAND_ID) })
         .getByRole('button', { name: 'Modifier' })
         .click();
-      const formulaire = page.getByRole('dialog');
+      const formulaire = await dialogueOuvert(page);
       await formulaire.getByLabel('Nom', { exact: true }).fill('Renommé tranquillement');
       await formulaire.getByRole('button', { name: 'Modifier le stand' }).click();
 

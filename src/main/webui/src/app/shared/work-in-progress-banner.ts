@@ -3,9 +3,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 
 /**
- * Warning shown at the top of the pages grouped under « En cours de
- * développement » in the navigation drawer: the feature is usable but not
- * finished, so its behaviour and its data may still change.
+ * Warning shown at the top of a page that is usable but not finished: its
+ * behaviour and its data may still change.
+ *
+ * It used to double as the marker of a « En cours de développement » drawer
+ * group, which no longer exists — the pages now sit with the screens they
+ * belong to, and this banner is the only thing that says they are unfinished.
+ * Which makes it the single source of that warning, not a reminder of it.
  */
 @Component({
   selector: 'app-work-in-progress-banner',

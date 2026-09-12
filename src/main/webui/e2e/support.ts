@@ -317,33 +317,40 @@ export function postesDe(planning: PlanningPersiste, animateurId: string): strin
 }
 
 /**
- * A browser page carrying the admin session of {@code admin} (its cookies are
- * copied into a fresh context). The caller closes the page's context.
- */
-/**
  * Opens a mat-select by clicking its whole form field: aiming at the select
  * itself trips Playwright's actionability check — the floating `mat-label`
  * sits at the aim point and "intercepts pointer events" — while a click
  * anywhere on the field opens the panel for real users and tests alike.
  */
+export async function ouvrirSelect(page: Page, label: string): Promise<void> {
+  await page.locator('mat-form-field').filter({ hasText: label }).first().click();
+}
+
 /**
  * The dialog just opened, once it is ready to be typed in. Material focuses
  * the first field after the open animation: a `fill()` that lands in between
  * gets its text moved to that field — a spec that filled « Prénom » found the
  * text in « Identifiant », one run in three. Waiting for the focus to settle
  * inside the dialog is what makes the next fill land where it was aimed.
+ *
+ * The focus is awaited on **or** inside the dialog: several dialogues focus
+ * their own container (`autoFocus: 'dialog'`, the confirmation dialogue among
+ * them), where a `:focus` descendant never appears — the wait would then burn
+ * its whole timeout before failing on a dialogue that was ready all along.
  */
 export async function dialogueOuvert(page: Page): Promise<Locator> {
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator(':focus')).toHaveCount(1);
+  await expect
+    .poll(() => dialog.evaluate((element) => element.contains(document.activeElement)))
+    .toBe(true);
   return dialog;
 }
 
-export async function ouvrirSelect(page: Page, label: string): Promise<void> {
-  await page.locator('mat-form-field').filter({ hasText: label }).first().click();
-}
-
+/**
+ * A browser page carrying the admin session of {@code admin} (its cookies are
+ * copied into a fresh context). The caller closes the page's context.
+ */
 export async function pageAdmin(browser: Browser, admin: APIRequestContext): Promise<Page> {
   const contexte = await browser.newContext({ storageState: await admin.storageState() });
   // Same edition pinning as contexteAdmin, browser-side: the SPA reads its

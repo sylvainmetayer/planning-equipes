@@ -26,6 +26,14 @@ describe('nav-collapse', () => {
     expect(readCollapsedGroups(fakeStorage('["views", 3]'))).toEqual(new Set(['views']));
   });
 
+  it('drops a stored id the drawer no longer has', () => {
+    // A release that renames a group leaves its id in the browser. Kept, two
+    // ghosts would make a two-group drawer look entirely folded.
+    const storage = fakeStorage('["views", "en-cours-de-developpement"]');
+    expect(readCollapsedGroups(storage, ['views', 'tools'])).toEqual(new Set(['views']));
+    expect(readCollapsedGroups(storage)).toEqual(new Set(['views', 'en-cours-de-developpement']));
+  });
+
   it('round-trips through storage', () => {
     const storage = fakeStorage();
     writeCollapsedGroups(storage, new Set(['views', 'tools']));

@@ -9,9 +9,16 @@ const STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
  * Reads the folded groups. Anything unreadable (no storage, invalid JSON, a
  * value written by an older version) yields an empty set: every group open is
  * the harmless default.
+ *
+ * `known`, when given, keeps only the ids the drawer still has. A release that
+ * renames or removes a group leaves its id behind in the browser, and a stale
+ * id is not inert: « tout déplier » compares the stored size to the number of
+ * groups, so two ghosts are enough to make a drawer with two folded groups
+ * claim that everything is folded.
  */
 export function readCollapsedGroups(
   storage: Pick<Storage, 'getItem' | 'setItem'> | null,
+  known?: Iterable<string>,
 ): Set<string> {
   if (!storage) {
     return new Set();
@@ -22,9 +29,15 @@ export function readCollapsedGroups(
       return new Set();
     }
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? new Set(parsed.filter((id): id is string => typeof id === 'string'))
-      : new Set();
+    if (!Array.isArray(parsed)) {
+      return new Set();
+    }
+    const ids = parsed.filter((id): id is string => typeof id === 'string');
+    if (known === undefined) {
+      return new Set(ids);
+    }
+    const allowed = new Set(known);
+    return new Set(ids.filter((id) => allowed.has(id)));
   } catch {
     return new Set();
   }
