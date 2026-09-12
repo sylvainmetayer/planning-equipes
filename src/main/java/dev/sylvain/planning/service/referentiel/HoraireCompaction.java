@@ -64,7 +64,15 @@ public final class HoraireCompaction {
     private HoraireCompaction() {}
 
     /** What compaction would do, or did, to one stand. */
-    @Schema(requiredProperties = {"compacte", "ecartMinutes", "exceptionsApres", "fenetresAvant", "reglesApres"})
+    @Schema(
+            requiredProperties = {
+                "compacte",
+                "ecartMinutes",
+                "exceptionsApres",
+                "fenetresAvant",
+                "reglesApres",
+                "reglesElaguees"
+            })
     public record LigneCompactage(
             String standId,
             int fenetresAvant,
@@ -72,7 +80,20 @@ public final class HoraireCompaction {
             int exceptionsApres,
             int ecartMinutes,
             boolean compacte,
-            String raison) {}
+            int reglesElaguees,
+            String raison) {
+
+        LigneCompactage(
+                String standId,
+                int fenetresAvant,
+                int reglesApres,
+                int exceptionsApres,
+                int ecartMinutes,
+                boolean compacte,
+                String raison) {
+            this(standId, fenetresAvant, reglesApres, exceptionsApres, ecartMinutes, compacte, 0, raison);
+        }
+    }
 
     /** Overall outcome, plus one line per stand that was looked at. */
     @Schema(requiredProperties = {"applique", "fenetresApres", "fenetresAvant", "standsCompactes"})
@@ -108,6 +129,7 @@ public final class HoraireCompaction {
             int fenetresAvant =
                     stand.getIndisponibilites().size() + stand.getOuvertures().size();
             LigneCompactage ligne = compactStand(stand, creneaux, datesEvenement, endOfDay, fenetresAvant);
+            ligne = elaguer(stand, creneaux, ligne);
             lignes.add(ligne);
             fenetresAvantTotal += fenetresAvant;
             fenetresApresTotal += ligne.reglesApres() + ligne.exceptionsApres();
@@ -116,6 +138,32 @@ public final class HoraireCompaction {
             }
         }
         return new RapportCompactage(applique, compactes, fenetresAvantTotal, fenetresApresTotal, lignes);
+    }
+
+    /**
+     * Prunes what the rules no longer need — the rule left over from the days
+     * a stand had to shut by hand every date its openings did not name — and
+     * folds the outcome into the stand's line. Runs on every stand, including
+     * the ones compaction left alone because they already had rules: those are
+     * precisely the ones carrying that leftover.
+     */
+    private static LigneCompactage elaguer(Stand stand, List<Creneau> creneaux, LigneCompactage ligne) {
+        HoraireElagage.LigneElagage elagage = HoraireElagage.elaguer(stand, creneaux);
+        if (!elagage.elague()) {
+            return ligne;
+        }
+        int retirees = elagage.reglesAvant() - elagage.reglesApres() + elagage.fermeturesRetirees();
+        String raison = ligne.raison() + " ; " + retirees + " énoncé(s) que plus rien ne porte retiré(s) : un "
+                + "stand qui déclare ses ouvertures est fermé les jours qu'il ne déclare pas";
+        return new LigneCompactage(
+                ligne.standId(),
+                ligne.fenetresAvant(),
+                elagage.reglesApres(),
+                ligne.exceptionsApres() - elagage.fermeturesRetirees(),
+                ligne.ecartMinutes(),
+                true,
+                retirees,
+                raison);
     }
 
     private static LigneCompactage compactStand(

@@ -186,6 +186,12 @@ export interface LigneCompactage {
    */
   ecartMinutes: number;
   compacte: boolean;
+  /**
+   * Closures the pruning took away: the rule that only shut the days the
+   * openings did not name, and the "shut, all day" markers the rules already
+   * imply. Openings are never pruned.
+   */
+  reglesElaguees: number;
   raison: string;
 }
 

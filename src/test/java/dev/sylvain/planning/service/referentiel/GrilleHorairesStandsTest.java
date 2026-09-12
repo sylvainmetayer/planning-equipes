@@ -137,6 +137,12 @@ class GrilleHorairesStandsTest {
                 .isEqualTo(exceptions);
     }
 
+    /**
+     * A day left empty in the grid stays shut, and keeps saying so: compaction
+     * reads the three open days as this stand's pattern and states them "every
+     * day", which covers the empty one too. The pruning that follows only drops
+     * a closure the rules already imply, and this one they do not.
+     */
     @Test
     void unJourFermeResteFermeEtDevientLExceptionDuMotif() {
         List<Creneau> creneaux = grille(4);

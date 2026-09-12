@@ -3116,7 +3116,7 @@
         }
       },
       "LigneCompactage" : {
-        "required" : [ "compacte", "ecartMinutes", "exceptionsApres", "fenetresAvant", "reglesApres" ],
+        "required" : [ "compacte", "ecartMinutes", "exceptionsApres", "fenetresAvant", "reglesApres", "reglesElaguees" ],
         "type" : "object",
         "properties" : {
           "standId" : {
@@ -3140,6 +3140,10 @@
           },
           "compacte" : {
             "type" : "boolean"
+          },
+          "reglesElaguees" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "raison" : {
             "type" : "string"

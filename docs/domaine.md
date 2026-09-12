@@ -179,7 +179,12 @@ La résolution se fait jour calendaire par jour calendaire :
    un arbitrage déterministe pour une donnée arrivée autrement (un scénario
    écrit à la main) : `OUVERTURE` l'emporte, c'est la lecture la plus
    restrictive ;
-3. **sinon** rien, donc ouvert toute la journée.
+3. **sinon**, cela dépend de ce que le stand déclare :
+   - **il déclare des ouvertures quelque part** dans ses règles → le jour est
+     **fermé**. « Ouvert ces douze jours-là » est un horaire, et un jour qui n'y
+     est pas est un jour où le stand n'ouvre pas ;
+   - **ses règles ne font que fermer** → il décrit des exceptions à un stand
+     ouvert, et le défaut historique tient : **ouvert toute la journée**.
 
 Le résultat est toujours **un seul mode par jour** : c'est ce qui préserve
 l'invariant des trois états, et ce qui fait que ni le calcul de segments, ni les
@@ -187,6 +192,20 @@ contraintes, ni les exports n'ont à connaître les règles.
 
 **Si un seul jour de l'événement reste non énoncé, aucune règle ne peut prendre
 `TOUS`** — elle gouvernerait un jour laissé volontairement ouvert par défaut.
+
+> **Ce que la couche 3 a coûté avant d'être lue ainsi** : dire « ouvert ces
+> douze dates, et rien d'autre » demandait une **seconde règle** dont le seul
+> rôle était de fermer les jours que la première ne nommait pas. Faute de
+> pouvoir écrire « fermé toute la journée » sur des jours non listés, elle
+> s'écrivait comme une fermeture partant d'une heure assez tôt pour couvrir
+> tous les créneaux — `09:00` jusqu'à la fermeture sur une édition réelle, où
+> **soixante-cinq stands en portaient une**. C'était du remplissage, et un
+> piège : un créneau ajouté à `08:00` les rouvrait tous en silence.
+> `HoraireElagage` retire ces fermetures devenues muettes, en vérifiant segment
+> par segment qu'aucune ouverture ne bouge — 157 règles deviennent 104 sur
+> cette édition, empreinte identique. Il ne retire **jamais** une ouverture,
+> même sans effet sur la grille du jour : c'est un énoncé qui attend un
+> créneau, pas du poids mort.
 
 > **Limite assumée** : une exception *remplace* la journée au lieu de se
 > soustraire aux règles. « Ouvert 10 h-12 h / 14 h-fermeture tous les jours,

@@ -94,7 +94,8 @@ class OuverturesEditionReelleTest {
      * The point of the whole change, measured on the edition it was measured
      * on: once a stand that declares openings is closed where it declares
      * none, a third of its rules stop carrying anything — and not one minute
-     * of opening moves.
+     * of opening moves. Fifty-three of them are the closure that only shut the
+     * days the openings did not name, one per stand.
      */
     @Test
     void lElagageRetireUnTiersDesReglesSansDeplacerUneOuverture() throws IOException {
@@ -107,9 +108,9 @@ class OuverturesEditionReelleTest {
         int restantes = edition.stands().stream()
                 .mapToInt(stand -> stand.getHoraires().size())
                 .sum();
-        assertThat(restantes).isEqualTo(101);
+        assertThat(restantes).isEqualTo(104);
         assertThat(lignes.stream().filter(HoraireElagage.LigneElagage::elague).count())
-                .isEqualTo(56);
+                .isEqualTo(53);
         HoraireStandResolver.apply(edition.stands(), edition.creneaux());
         assertThat(empreinte(edition)).isEqualTo(avant);
     }

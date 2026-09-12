@@ -207,7 +207,10 @@ public final class GrilleHorairesStands {
             List<Fenetre> fenetres = dayWindows(duJour, segmentsParCreneau);
             if (fenetres.isEmpty()) {
                 // Nothing stated about a day means open all day: a closed day
-                // must say so.
+                // must say so. It says it here whatever the rest of the grid
+                // holds, so the stand means the same thing at every step; the
+                // pruning that follows compaction is what drops the ones the
+                // opening rules already imply.
                 fermetures.add(new IndisponibiliteStand(null, date, LocalTime.MIDNIGHT, null, null));
                 return;
             }
