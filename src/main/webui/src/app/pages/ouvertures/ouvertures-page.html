@@ -163,6 +163,7 @@
                              [attr.title]="estInerte(ligne.standId, colonne.colonneId) ? infobulleInerte() : (estPartielle(ligne.standId, colonne.colonneId) ? infobullePartielle(ligne.standId, colonne.colonneId) : null)"
                              [disabled]="editingLocked() || estInerte(ligne.standId, colonne.colonneId)"
                              [value]="valeur(ligne.standId, colonne.colonneId)"
+                             [placeholder]="valeurEnVigueur(ligne.standId, colonne.colonneId)"
                              (input)="saisir(ligne.standId, colonne.colonneId, $any($event.target).value)"
                              (focus)="focaliser(ligne.standId, colonne.colonneId)"
                              (blur)="reafficher($event, ligne.standId, colonne.colonneId)"

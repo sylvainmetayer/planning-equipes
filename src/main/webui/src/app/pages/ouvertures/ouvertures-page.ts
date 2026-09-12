@@ -242,6 +242,19 @@ export class OuverturesPage {
     return effectif === null ? '' : String(effectif);
   }
 
+  /**
+   * What an emptied cell still shows, greyed: the headcount the stand
+   * currently holds there, so closing a column never hides what is being
+   * closed. Nothing for a cell that is closed on the server too.
+   */
+  protected valeurEnVigueur(standId: string, colonneId: string): string {
+    if ((this.cellules().get(standId)?.get(colonneId) ?? null) !== null) {
+      return '';
+    }
+    const actuelle = this.reference().get(standId)?.get(colonneId) ?? null;
+    return actuelle === null ? '' : String(actuelle);
+  }
+
   protected estModifiee(standId: string, colonneId: string): boolean {
     return (
       (this.cellules().get(standId)?.get(colonneId) ?? null) !==

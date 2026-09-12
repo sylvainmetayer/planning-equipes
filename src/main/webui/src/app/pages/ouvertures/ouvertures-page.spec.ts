@@ -266,6 +266,24 @@ describe('OuverturesPage — saisie', () => {
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(false);
   });
 
+  it('shows the headcount in force as the placeholder of a cell emptied, and nothing on a cell closed on the server', async () => {
+    const { fixture } = mount({ vue: 'saisie' });
+    await fixture.whenStable();
+
+    // Nothing while the cell holds its value, nor on a cell the server reports closed.
+    expect(champ(fixture, 'A', 2).placeholder).toBe('');
+    expect(champ(fixture, 'B', 2).placeholder).toBe('');
+
+    taper(champ(fixture, 'A', 2), '');
+    await fixture.whenStable();
+    expect(champ(fixture, 'A', 2).value).toBe('');
+    expect(champ(fixture, 'A', 2).placeholder).toBe('4');
+
+    taper(champ(fixture, 'A', 2), '3');
+    await fixture.whenStable();
+    expect(champ(fixture, 'A', 2).placeholder).toBe('');
+  });
+
   it('moves the focus down on Enter, right on the arrow past the caret, and leaves a letter alone', async () => {
     const { fixture } = mount({ vue: 'saisie' });
     await fixture.whenStable();

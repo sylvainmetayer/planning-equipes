@@ -357,6 +357,13 @@
   background: var(--mat-sys-surface-container);
 }
 
+/* An emptied cell keeps showing, greyed, the headcount the stand currently
+   holds there: what is being closed stays readable until the save. */
+.grille-saisie .cellule-saisie input::placeholder {
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.6;
+}
+
 /* What changed since the last read, and what a save would flatten: two
    facts, two channels — a tinted field for the first, a dashed border for the
    second, so a partial cell that was also edited shows both. */
