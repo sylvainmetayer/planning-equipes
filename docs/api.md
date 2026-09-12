@@ -447,6 +447,7 @@ normal sur une page rafraîchie. Confirmer avant toute publication répond `409`
 
 `GET /api/animateurs/confirmations` — une ligne par animateur, `NON_VU`
 compris, pour la colonne de la page Animateurs.
+
 `GET /api/animateurs/confirmations/synthese` — les mêmes réponses en trois
 nombres (confirmés, relancés, silencieux), comptés parmi les personnes qui ont
 un poste sur le plan publié, avec la date de cette publication.
@@ -479,15 +480,20 @@ gabarit — et **réserve la même clé** que le job nocturne
 avant de faire partir le courriel. Conséquence dans les deux sens : quelqu'un
 relancé à la main n'est pas relancé par la nuit suivante, et quelqu'un que la
 nuit a déjà écrit est rendu dans `dejaRelancesPourCettePublication` plutôt
-qu'écrit une seconde fois. Seule une republication qui bouge son emploi du
-temps change la clé, et légitime une nouvelle relance. Le compte rendu ne
+qu'écrit une seconde fois. La clé porte la date de la **dernière**
+publication de l'édition : elle change donc pour tout le monde à chaque
+republication, y compris pour ceux à qui rien n'a été renvoyé. C'est le statut
+qui ferme cette porte-là — une personne déjà en `RELANCE` est refusée, et seule
+une republication qui bouge réellement son emploi du temps la remet à `NON_VU`,
+ce qui rouvre la relance. Le compte rendu ne
 porte que des ids, un par liste — `envoyes`, `dejaConfirmes`, `sansEmail`,
 `dejaRelancesPourCettePublication`, `echecs`, `sansPoste` — et un envoi
 échoué est **compté**, pas avalé : le geste est explicite, contrairement à
-la notification de nuit. La clé reste prise après un échec ; le chemin de
-retour est le renvoi individuel du planning, qui porte le même lien
-d'espace. Refusé `400` tant que rien n'a jamais été publié, ou si un id ne
-désigne personne — alors rien ne part, pas même aux ids valides qui le
+la notification de nuit. Un échec **rend la clé** et laisse une alerte sur
+l'écran Notifications : le statut n'a pas bougé, la personne reste silencieuse,
+et réessayer est possible — de la main comme de la nuit. Une fiche sans adresse
+laisse la même trace. Refusé `400` tant que rien n'a jamais été publié, ou si
+un id ne désigne personne — alors rien ne part, pas même aux ids valides qui le
 précédaient.
 
 ## Historique des actions

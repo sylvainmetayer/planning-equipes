@@ -13,8 +13,8 @@ import java.util.List;
 /**
  * The mails an administrator <b>asks for</b>, and only those: sending an
  * animateur their individual planning, sending an espace access code, inviting
- * the animateurs to declare their availability, sending the test mail of the
- * Débogage screen.
+ * the animateurs to declare their availability, reminding the silent ones by
+ * hand from the Animateurs page, sending the test mail of the Débogage screen.
  *
  * <p>What these have in common — and what separates them from every
  * notification of

@@ -76,7 +76,8 @@ public class AnimateurResource {
     /**
      * The same answers in three numbers (issue #504) — confirmed, reminded,
      * silent — next to the date of the publication they answer, for the head
-     * of the Animateurs page and for « État de l'édition ».
+     * of the Animateurs page and for whichever screen needs the counts without
+     * summing the table itself.
      */
     @GET
     @Path("/confirmations/synthese")

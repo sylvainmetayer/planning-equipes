@@ -352,6 +352,21 @@ export class AnimateursPage {
   }
 
   /**
+   * Writes the value actually in force back into the field when it is left.
+   * A rejected entry leaves the signal untouched, so Angular has nothing to
+   * push back through the one-way binding: « 0 » stayed on screen while the
+   * table and the URL went on filtering on the last good number. Done on blur
+   * rather than on every keystroke, so clearing the field to type another
+   * number still works.
+   */
+  protected restoreSilenceJours(champ: HTMLInputElement): void {
+    const actual = String(this.silenceJours());
+    if (champ.value !== actual) {
+      champ.value = actual;
+    }
+  }
+
+  /**
    * « Relancer maintenant » (issue #504): the same reminder the night sends,
    * to the ticked rows, after a confirmation that says mails will leave. The
    * report names who was left alone and why; the answers are reloaded so the
@@ -374,6 +389,9 @@ export class AnimateursPage {
       this.notifications.notify({
         title: resume.titre,
         message: resume.details ?? '',
+        // Names on screen, counts in the journal: that log is persisted and
+        // read back, and this report can name the whole roster.
+        messageJournal: resume.detailsJournal ?? '',
         variant: resume.variant,
       });
       this.selection.clear();

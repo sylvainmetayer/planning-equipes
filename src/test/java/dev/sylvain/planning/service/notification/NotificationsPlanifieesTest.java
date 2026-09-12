@@ -200,6 +200,24 @@ class NotificationsPlanifieesTest {
                 .hasSize(1);
     }
 
+    /**
+     * A claim given back can be taken again. That is the whole point: the
+     * manual reminder claims before sending, and a send that fails releases the
+     * key — held, it would refuse the retry by hand <b>and</b> the night, and
+     * the person would never be reminded at all.
+     */
+    @Test
+    void aReleasedClaimCanBeTakenAgain() {
+        JournalNotificationsRepository.Type type = JournalNotificationsRepository.Type.RELANCE_CONFIRMATION;
+
+        assertThat(journal.claim(type, "PLAN-B|reprise", "PLAN-B")).isTrue();
+        assertThat(journal.claim(type, "PLAN-B|reprise", "PLAN-B")).isFalse();
+
+        journal.release(type, "PLAN-B|reprise");
+
+        assertThat(journal.claim(type, "PLAN-B|reprise", "PLAN-B")).isTrue();
+    }
+
     /* ------------------- #299 — reminding the silent ---------------------- */
 
     @Test

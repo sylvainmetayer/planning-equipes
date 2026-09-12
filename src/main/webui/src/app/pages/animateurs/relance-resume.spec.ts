@@ -48,6 +48,22 @@ describe('resumeRelance', () => {
     expect(resume.details).toBe("Échec de l'envoi : Alice Martin");
   });
 
+  // The journal is persisted in localStorage and read back on the Notifications
+  // page: the same report, counted rather than named.
+  it('keeps names out of the journal, and caps the names it does show', () => {
+    const beaucoup = Array.from({ length: 11 }, (_, index) => `A${index}`);
+    const resume = resumeRelance(
+      rapport({ envoyes: ['A-UMA'], dejaConfirmes: beaucoup }),
+      (id) => id,
+    );
+
+    expect(resume.details).toContain('A0, A1');
+    expect(resume.details).toContain('3');
+    expect(resume.detailsJournal).toBeDefined();
+    expect(resume.detailsJournal).not.toContain('A0');
+    expect(resume.detailsJournal).toContain('11');
+  });
+
   it('falls back on the id for a fiche the table no longer holds', () => {
     const resume = resumeRelance(rapport({ sansEmail: ['zz'] }), nameOf);
 

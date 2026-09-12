@@ -26,8 +26,9 @@
     @if (accuses() === 'silence') {
       <mat-form-field appearance="outline" subscriptSizing="dynamic" class="accuses-jours">
         <mat-label i18n="@@animateurs.accuses.jours">Jours</mat-label>
-        <input matInput type="number" min="1" step="1" name="silenceJours"
-               [ngModel]="silenceJours()" (ngModelChange)="changerSilenceJours($event)" />
+        <input #champJours matInput type="number" min="1" step="1" name="silenceJours"
+               [ngModel]="silenceJours()" (ngModelChange)="changerSilenceJours($event)"
+               (blur)="restoreSilenceJours(champJours)" />
       </mat-form-field>
     }
     <app-table-filter [(value)]="filtre" [matches]="animateursFiltres().length" [total]="store.animateurs().length"

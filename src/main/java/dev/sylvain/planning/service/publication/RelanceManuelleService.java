@@ -34,15 +34,23 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * {@link JournalNotificationsRepository} — {@code animateurId|publieLe} —
  * so a person reminded by hand is not reminded again by the following night,
  * and a person the night already wrote to is refused here. The database
- * arbitrates, not a status read before acting. A republication that moves
- * somebody's schedule changes {@code publieLe}, and with it the key: a fresh
- * reminder is then legitimate, as it is for the night.</p>
+ * arbitrates the race, and the status closes the door the key cannot: {@code
+ * publieLe} is the date of the edition's <b>last</b> publication, so it moves
+ * for everybody at every republication, including people nobody wrote to again
+ * — only those the republication actually moved go back to {@code NON_VU}, and
+ * a fresh key would otherwise buy a second reminder for a planning that was
+ * never re-sent. Someone already at {@code RELANCE} is therefore refused here
+ * too, which is exactly what the night does by writing only to the people it
+ * has no row for.</p>
  *
- * <p>The claim is taken and the status moved <b>before</b> the mail leaves,
- * in the order the nightly job uses. A send that then fails is counted in
- * {@code echecs} and named to the organiser, whose way back is the individual
- * resend of the planning — which carries the same espace link — rather than a
- * second reminder that the rule above would refuse.</p>
+ * <p>The claim is taken <b>before</b> the mail leaves — that is what makes two
+ * concurrent hands impossible — but the status moves only <b>after</b> it has
+ * left, and a failed send gives the key back. Otherwise a momentary SMTP outage
+ * cost the thirty people selected on the eve of the event their reminder for
+ * good: the hand refused them as already reminded, the night skipped them as
+ * already recorded, and the summary counted them as reminded while nothing had
+ * reached them. A failure now leaves an alert on the Notifications screen,
+ * which outlives the nine seconds of a bubble.</p>
  */
 @ApplicationScoped
 public class RelanceManuelleService {
@@ -72,12 +80,13 @@ public class RelanceManuelleService {
      * @param envoyes                          the reminder left
      * @param dejaConfirmes                    already answered: nothing to chase
      * @param sansEmail                        no address on the fiche
-     * @param dejaRelancesPourCettePublication already reminded about this very
-     *                                         publication, by the night or by
-     *                                         hand — the rule « personne ne
-     *                                         reçoit deux fois le même message »
-     * @param echecs                           the send itself failed; the claim
-     *                                         stands, see the class javadoc
+     * @param dejaRelancesPourCettePublication already reminded about this
+     *                                         planning, by the night or by hand
+     *                                         — the rule « personne ne reçoit
+     *                                         deux fois le même message »
+     * @param echecs                           the send itself failed: the claim
+     *                                         is given back and an alert is
+     *                                         left, so a retry is possible
      * @param sansPoste                        no seat in the published plan:
      *                                         nothing was ever asked of them
      */
@@ -149,26 +158,57 @@ public class RelanceManuelleService {
                 dejaConfirmes.add(animateurId);
                 continue;
             }
+            String cle = animateurId + "|" + publieLe;
             if (fiche.getEmail() == null || fiche.getEmail().isBlank()) {
                 sansEmail.add(animateurId);
+                // Same trace as the nightly job leaves for the same case: a
+                // notification bubble lasts nine seconds, the eve of the event
+                // does not.
+                journal.claim(
+                        JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
+                        cle,
+                        animateurId,
+                        "Relance impossible : aucune adresse e-mail sur la fiche.",
+                        JournalNotificationsRepository.Severite.WARNING);
+                continue;
+            }
+            // Already reminded for this planning, whichever hand did it: the
+            // status is what the night reads too, and a republication that
+            // moves somebody is what puts them back to NON_VU.
+            if (StatutConfirmation.RELANCE.name().equals(reponse.statut())) {
+                dejaRelances.add(animateurId);
                 continue;
             }
             // The same key the nightly job claims: whoever wins the insert is
             // the one who writes, and the other hand is refused.
-            String cle = animateurId + "|" + publieLe;
             if (!journal.claim(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle, animateurId)) {
                 dejaRelances.add(animateurId);
                 continue;
             }
-            confirmationService.recordReminder(animateurId, maintenant);
             try {
                 mailService.sendRelanceConfirmation(
                         fiche.getEmail(),
                         fiche.getPrenom(),
                         liens.espaceAnimateur(fiche.getAccessToken()).orElse(null));
+                // Recorded only once the mail has left: the status is what the
+                // screen, the « silent since N days » filter and the summary all
+                // read, and moving it for a send that failed would count a
+                // reminder nobody received.
+                confirmationService.recordReminder(animateurId, maintenant);
                 envoyes.add(animateurId);
             } catch (RuntimeException e) {
                 Log.errorf(e, "Failed to mail the confirmation reminder to animateur %s", animateurId);
+                // The reservation goes back, so a retry is possible at all —
+                // holding it would refuse the hand and the night alike — and the
+                // failure is left on the Notifications screen rather than in a
+                // bubble that disappears.
+                journal.release(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle);
+                journal.claim(
+                        JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
+                        cle,
+                        animateurId,
+                        "Relance non partie : l'envoi du courriel a échoué.",
+                        JournalNotificationsRepository.Severite.ALERTE);
                 echecs.add(animateurId);
             }
         }

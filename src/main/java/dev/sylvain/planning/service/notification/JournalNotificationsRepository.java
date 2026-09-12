@@ -43,7 +43,10 @@ public class JournalNotificationsRepository {
         /** Reminder of a silent animateur (issue #299). Key: {@code animateurId|publicationInstant}. */
         RELANCE_CONFIRMATION,
 
-        /** A reminder that could not leave: no address on the fiche. Same key. */
+        /**
+         * A reminder that could not leave: no address on the fiche, or a send
+         * that failed. Same key.
+         */
         RELANCE_INJOIGNABLE,
 
         /** A swap request has been waiting too long (issue #300). Key: the demande id. */
@@ -96,6 +99,27 @@ public class JournalNotificationsRepository {
                 ps.setString(6, severite == null ? null : severite.name());
                 ps.setString(7, animateurId);
                 return ps.executeUpdate() == 1;
+            }
+        });
+    }
+
+    /**
+     * Gives {@code cle} back, so that the work it reserved can be attempted
+     * again. For the one case where the claim was taken and the send did not
+     * happen: holding the key then would mean nobody ever retries, neither the
+     * hand (refused as already reminded) nor the night (which writes only to
+     * the people it has no row for).
+     *
+     * <p>Not a general-purpose delete: a claim is released by the very call
+     * that took it, in the failure path it opened.</p>
+     */
+    public void release(Type type, String cle) {
+        scope.write("Failed to release a scheduled notification", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection, "DELETE FROM notification_planifiee WHERE edition_id = ? AND type = ? AND cle = ?")) {
+                ps.setString(2, type.name());
+                ps.setString(3, cle);
+                ps.executeUpdate();
             }
         });
     }

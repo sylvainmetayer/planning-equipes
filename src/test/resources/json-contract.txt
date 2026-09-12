@@ -4,9 +4,11 @@
 # `models.ts`, by the Angular pages and by anything else talking to this API:
 # renaming a record component or an accessor renames the key with it, and the
 # compiler says nothing at all.
+#
 # If the test fails, DO NOT regenerate this file. Each moved line is a break
 # for every client already reading the old key. Move it once, deliberately,
 # together with the clients that read it.
+#
 # Generated shape: <package>.<Type> = key, key, key (keys sorted).
 api.AdminLoginLimiter$Echecs = dernier, nombre
 api.AnimateurResource$AnimateurToken = token

@@ -64,9 +64,11 @@ public class ConfirmationPlanningService {
      * people who hold a seat in the published plan — the only ones the
      * question is asked of — next to the date they were asked.
      *
-     * <p>Read by the head of the Animateurs page and by « État de l'édition »;
-     * it is one read, not the whole table summed on the client, so both
-     * screens show the same figures at the same moment.</p>
+     * <p>Read by the head of the Animateurs page: one read rather than the whole
+     * table summed on the client, so the three numbers and the date they are
+     * about come from the same snapshot. Any other screen wanting them — a
+     * checklist of the cycle, say — reads the same route rather than
+     * recomputing.</p>
      *
      * @param dernierePublicationLe when the plan the answers are about left,
      *                              {@code null} while nothing was ever published
