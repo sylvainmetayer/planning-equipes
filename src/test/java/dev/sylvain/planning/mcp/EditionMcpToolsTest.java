@@ -64,7 +64,7 @@ class EditionMcpToolsTest {
         editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
 
         CreneauView cree = creneauTools
-                .creer_creneau("2027-01-04", "09:00", "12:00", EDITION_TEST)
+                .creer_creneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST)
                 .creneau();
 
         assertThat(creneauTools.lister_creneaux(EDITION_TEST))
@@ -87,7 +87,7 @@ class EditionMcpToolsTest {
     @Test
     void uneEditionPeutEtreDesigneeParSonNom() {
         editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
-        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", "Édition de test MCP");
+        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", null, "Édition de test MCP");
 
         assertThat(creneauTools.lister_creneaux(EDITION_TEST)).hasSize(1);
     }
@@ -95,7 +95,7 @@ class EditionMcpToolsTest {
     @Test
     void listerEditionsDonneDeQuoiReconnaitreChacune() {
         editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
-        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", EDITION_TEST);
+        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
 
         List<EditionView> editions = editionTools.lister_editions();
 
@@ -136,7 +136,7 @@ class EditionMcpToolsTest {
         assertThat(vide.resolution().solveEnCours()).isFalse();
         assertThat(vide.publication().jamaisPublie()).isTrue();
 
-        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", EDITION_TEST);
+        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
 
         assertThat(editionTools.etat_edition(EDITION_TEST).referentiels().creneaux())
                 .isEqualTo(1);
@@ -155,12 +155,12 @@ class EditionMcpToolsTest {
     @Test
     void dupliquerUneEditionRecopieSesDonneesSansToucherALoriginale() {
         editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
-        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", EDITION_TEST);
+        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
 
         EditionView copie = editionTools.dupliquer_edition(EDITION_TEST, EDITION_COPIE, "Copie de test MCP");
 
         assertThat(copie.nombreCreneaux()).isEqualTo(1);
-        creneauTools.creer_creneau("2027-01-05", "09:00", "12:00", EDITION_COPIE);
+        creneauTools.creer_creneau("2027-01-05", "09:00", "12:00", null, EDITION_COPIE);
         assertThat(creneauTools.lister_creneaux(EDITION_TEST))
                 .as("la copie vit sa vie : l'originale ne bouge plus")
                 .hasSize(1);

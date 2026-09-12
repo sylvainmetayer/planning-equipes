@@ -19,7 +19,7 @@ import { resumerHoraires } from '../../core/horaire-stand';
 import { NotificationService } from '../../core/notification.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceTablePage } from '../../core/reference-table-page';
-import { Stand } from '../../core/models';
+import { RapportOuvertures, Stand } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { TableFilter } from '../../shared/table-filter';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -81,6 +81,13 @@ export class StandsPage extends ReferenceTablePage<Stand> {
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
 
+  /**
+   * The openings report, for the fiche: a stand's own anomalies are read
+   * there, next to the rules that cause them. `null` until it is in — the
+   * fiche then shows no section rather than a false « aucune ».
+   */
+  private readonly ouvertures = signal<RapportOuvertures | null>(null);
+
   constructor() {
     super({
       rows: (store) => store.stands(),
@@ -95,7 +102,11 @@ export class StandsPage extends ReferenceTablePage<Stand> {
       detail: (stand, store) => ({
         title: stand.nom || stand.id,
         subtitle: stand.id,
-        sections: buildStandDetail(stand, store.typologies()),
+        sections: buildStandDetail(
+          stand,
+          store.typologies(),
+          this.ouvertures()?.anomalies.filter((anomalie) => anomalie.standId === stand.id) ?? null,
+        ),
       }),
       formulaire: (stand, dialog: MatDialog) => {
         dialog.open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {
@@ -110,6 +121,17 @@ export class StandsPage extends ReferenceTablePage<Stand> {
       libellePluriel: labelStandsPluriel,
     });
     void this.problemes.reloadFeasibility();
+    void this.chargerOuvertures();
+  }
+
+  /** Read again after a write: the anomalies follow the schedule that was just saved. */
+  private async chargerOuvertures(): Promise<void> {
+    try {
+      this.ouvertures.set(await this.standsApi.openings());
+    } catch {
+      // The fiche simply omits its openings section; the Ouvertures page reports the failure itself.
+      this.ouvertures.set(null);
+    }
   }
 
   protected typologiesLabel(stand: Stand): string {

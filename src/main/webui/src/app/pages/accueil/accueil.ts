@@ -101,10 +101,14 @@ function collecte(etat: EtatEdition): LigneEtat {
 }
 
 function ouvertures(etat: EtatEdition): LigneEtat {
-  const { anomalies, standsJamaisOuverts, statut } = etat.ouvertures;
+  const { anomalies, fenetresSansEffet, standsJamaisOuverts, statut } = etat.ouvertures;
   let detail: string;
   if (statut === 'A_FAIRE') {
     detail = $localize`:@@accueil.detail.ouvertures.aFaire:Sans stand ni créneau, rien à lire`;
+  } else if (fenetresSansEffet > 0) {
+    // Named apart: a window outside every vacation is the one mistake a
+    // hand-typed grid makes that the openings screen alone would bury.
+    detail = $localize`:@@accueil.detail.ouvertures.fenetres:${anomalies}:count: anomalie(s), dont ${fenetresSansEffet}:fenetres: fenêtre(s) hors de toute vacation, ${standsJamaisOuverts}:fermes: stand(s) jamais ouvert(s)`;
   } else if (anomalies > 0) {
     detail = $localize`:@@accueil.detail.ouvertures.anomalies:${anomalies}:count: anomalie(s), ${standsJamaisOuverts}:fermes: stand(s) jamais ouvert(s)`;
   } else {

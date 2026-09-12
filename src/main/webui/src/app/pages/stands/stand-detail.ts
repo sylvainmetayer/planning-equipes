@@ -5,6 +5,7 @@
 import { DetailRow, DetailSection } from '../../shared/detail-dialog';
 import { decrireFenetre, resumerHoraires } from '../../core/horaire-stand';
 import {
+  AnomalieOuverture,
   HoraireStand,
   IndisponibiliteStand,
   JourSemaine,
@@ -22,6 +23,7 @@ import {
 export function buildStandDetail(
   stand: Stand,
   typologies: readonly TypologieItem[] = [],
+  anomalies: readonly AnomalieOuverture[] | null = null,
 ): DetailSection[] {
   const labels = new Map(
     typologies.map((typologie) => [typologie.id, typologie.label || typologie.id]),
@@ -98,7 +100,35 @@ export function buildStandDetail(
         ),
       ],
     },
+    // What the openings analysis says of this stand, read where the schedule
+    // is typed rather than only on the Ouvertures screen: a window at an hour
+    // the grid does not have produces nothing, and nobody sees it otherwise.
+    // `null` = the report is not in; the section then says nothing rather
+    // than a false « aucune ».
+    ...(anomalies === null ? [] : [sectionAnomalies(anomalies)]),
   ];
+}
+
+function sectionAnomalies(anomalies: readonly AnomalieOuverture[]): DetailSection {
+  return {
+    title: $localize`:@@detail.section.ouvertures:Ouvertures effectives`,
+    rows:
+      anomalies.length === 0
+        ? [
+            {
+              label: $localize`:@@detail.stand.anomalies:Anomalies`,
+              value: $localize`:@@detail.stand.aucuneAnomalie:Aucune : les fenêtres tombent toutes dans une vacation`,
+              muted: true,
+            },
+          ]
+        : anomalies.map((anomalie) => ({
+            label: anomalie.date
+              ? jourCourt(anomalie.date)
+              : $localize`:@@detail.stand.anomalie.edition:Toute l'édition`,
+            value: anomalie.message,
+            alerte: true,
+          })),
+  };
 }
 
 /**

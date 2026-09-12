@@ -2856,6 +2856,8 @@ export interface EtatCollecte {
 
 export interface EtatOuvertures {
   anomalies: number;
+  /** Windows that overlap no créneau of their date: a stand said open at an hour the grid does not have. */
+  fenetresSansEffet: number;
   standsJamaisOuverts: number;
   statut: StatutEtat;
 }

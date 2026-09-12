@@ -40,6 +40,11 @@
   font-style: italic;
 }
 
+/* An anomaly read on the fiche: the same colour as the row problems of the tables. */
+.detail-rows dd.detail-alerte {
+  color: var(--mat-sys-error);
+}
+
 /* A long chip list must wrap inside the dialog rather than widen it. */
 .detail-rows mat-chip-set {
   --mat-chip-container-height: 1.75rem;

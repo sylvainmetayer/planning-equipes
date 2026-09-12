@@ -22,6 +22,8 @@ export interface DetailRow {
   chips?: string[];
   /** Rendered muted, for a value that is a hint rather than data (e.g. "aucun"). */
   muted?: boolean;
+  /** Rendered in the error colour: something the reader should fix, not a value. */
+  alerte?: boolean;
 }
 
 export interface DetailSection {
@@ -53,7 +55,7 @@ export type DetailResult = 'edit' | null;
           <dl class="detail-rows">
             @for (row of section.rows; track row.label) {
               <dt>{{ row.label }}</dt>
-              <dd [class.detail-muted]="row.muted">
+              <dd [class.detail-muted]="row.muted" [class.detail-alerte]="row.alerte">
                 @if (row.chips) {
                   <mat-chip-set>
                     @for (chip of row.chips; track chip) {

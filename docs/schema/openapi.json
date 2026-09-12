@@ -2301,10 +2301,14 @@
         "enum" : [ "OUVERT_TOTAL", "OUVERT_PARTIEL", "FERME" ]
       },
       "EtatOuvertures" : {
-        "required" : [ "anomalies", "standsJamaisOuverts", "statut" ],
+        "required" : [ "anomalies", "fenetresSansEffet", "standsJamaisOuverts", "statut" ],
         "type" : "object",
         "properties" : {
           "anomalies" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "fenetresSansEffet" : {
             "type" : "integer",
             "format" : "int32"
           },

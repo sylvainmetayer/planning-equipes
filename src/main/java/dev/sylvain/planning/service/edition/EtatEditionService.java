@@ -232,6 +232,9 @@ public class EtatEditionService {
     private static EtatOuvertures ouvertures(Facts facts) {
         RapportOuvertures rapport = facts.ouvertures();
         int anomalies = rapport.anomalies().size();
+        int fenetresSansEffet = (int) rapport.anomalies().stream()
+                .filter(anomalie -> anomalie.type() == OuvertureStandsAnalyzer.AnomalyType.FENETRE_SANS_EFFET)
+                .count();
         Statut statut;
         if (facts.stands() == 0 || facts.creneaux() == 0) {
             statut = Statut.A_FAIRE;
@@ -240,7 +243,7 @@ public class EtatEditionService {
         } else {
             statut = Statut.FAIT;
         }
-        return new EtatOuvertures(anomalies, rapport.standsJamaisOuverts(), statut);
+        return new EtatOuvertures(anomalies, fenetresSansEffet, rapport.standsJamaisOuverts(), statut);
     }
 
     /** The roster against the bound the staffing screen retains — the same figure it shows as « Minimum retenu ». */

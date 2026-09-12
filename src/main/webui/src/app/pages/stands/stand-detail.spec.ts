@@ -172,4 +172,35 @@ describe('buildStandDetail', () => {
 
     expect(rowValue(sections, 'Horaires')).toBe('3 exception(s)');
   });
+
+  // The openings analysis, read on the fiche: a window at an hour the grid
+  // does not have is the mistake a hand-typed schedule makes and never sees.
+  it("lists the stand's opening anomalies in the error colour, and says « aucune » once the report is in", () => {
+    const avec = buildStandDetail(
+      stand({}),
+      [],
+      [
+        {
+          type: 'FENETRE_SANS_EFFET',
+          standId: 'S1',
+          standNom: 'Stand',
+          date: '2027-07-12',
+          message: 'Fenêtre 07:00-08:00 hors de tout créneau',
+        },
+      ],
+    );
+    const section = avec.find((s) => s.title === 'Ouvertures effectives')!;
+    expect(section.rows).toEqual([
+      { label: '12/07', value: 'Fenêtre 07:00-08:00 hors de tout créneau', alerte: true },
+    ]);
+
+    const sans = buildStandDetail(stand({}), [], []);
+    expect(sans.find((s) => s.title === 'Ouvertures effectives')!.rows[0]).toMatchObject({
+      muted: true,
+    });
+    // No report yet: no section, rather than a false « aucune ».
+    expect(buildStandDetail(stand({}), []).some((s) => s.title === 'Ouvertures effectives')).toBe(
+      false,
+    );
+  });
 });

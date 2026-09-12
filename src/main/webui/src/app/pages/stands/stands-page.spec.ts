@@ -94,7 +94,16 @@ describe('StandsPage', () => {
     reportError: vi.fn(),
   };
   const api = { get: vi.fn() };
-  const standsApi = { compactSchedules: vi.fn() };
+  const standsApi = {
+    compactSchedules: vi.fn(),
+    openings: vi.fn(async () => ({
+      jours: [],
+      stands: [],
+      standsJamaisOuverts: 0,
+      postesTotal: 0,
+      anomalies: [],
+    })),
+  };
   const confirm = { ask: vi.fn() };
   const notifications = { notify: vi.fn() };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => ({ subscribe: vi.fn() }) })) };
@@ -519,6 +528,13 @@ describe('StandsPage table', () => {
               standsCompactes: 0,
               fenetresAvant: 0,
               fenetresApres: 0,
+            })),
+            openings: vi.fn(async () => ({
+              jours: [],
+              stands: [],
+              standsJamaisOuverts: 0,
+              postesTotal: 0,
+              anomalies: [],
             })),
           },
         },

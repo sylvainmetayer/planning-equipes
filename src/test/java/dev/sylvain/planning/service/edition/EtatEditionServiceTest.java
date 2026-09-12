@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.CauseInfaisabilite;
@@ -391,6 +392,42 @@ class EtatEditionServiceTest {
     }
 
     /* ------------------------------- Fixtures ------------------------------ */
+
+    // A stand said open at an hour the grid does not have produces nothing:
+    // the home page names that case rather than folding it into « anomalies ».
+    @Test
+    void aWindowOutsideEveryCreneauIsCountedOnItsOwnOnTheOpeningsLine() {
+        Stand stand = new Stand("S1", "Stand un", Set.of(), 1, 1, false);
+        stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, LocalTime.of(7, 0), LocalTime.of(8, 0), null)));
+        Creneau creneau = creneau(1L);
+        Facts f = filledFacts();
+        Facts facts = new Facts(
+                f.edition(),
+                1,
+                2,
+                1,
+                false,
+                0,
+                0,
+                OuvertureStandsAnalyzer.analyze(List.of(stand), List.of(creneau)),
+                f.staffing(),
+                f.resolution(),
+                f.diagnostic(),
+                f.lastDataChange(),
+                false,
+                f.faisabilite(),
+                f.publication(),
+                f.confirmations(),
+                f.foireOuverte(),
+                0);
+
+        EtatEditionView.EtatOuvertures ouvertures =
+                EtatEditionService.assemble(facts).ouvertures();
+
+        assertThat(ouvertures.fenetresSansEffet()).isEqualTo(1);
+        assertThat(ouvertures.anomalies()).isGreaterThanOrEqualTo(1);
+        assertThat(ouvertures.statut()).isEqualTo(Statut.ATTENTION);
+    }
 
     private static Facts emptyFacts() {
         return new Facts(

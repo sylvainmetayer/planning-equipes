@@ -99,8 +99,9 @@ class ReferentielMcpToolsTest {
     void uneModificationParMcpNommeSesChampsDansLeJournalEtRendSesAvertissements() {
         referenceDataService.createAnimateur(
                 new Animateur("A-MCP-J", "Grace", "Hopper", LocalDate.of(1990, 12, 9), false));
-        CreneauView creneau =
-                creneauTools.creer_creneau("2026-07-18", "09:00", "13:00", null).creneau();
+        CreneauView creneau = creneauTools
+                .creer_creneau("2026-07-18", "09:00", "13:00", null, null)
+                .creneau();
         try {
             // An off day years outside the event: the one warning a screen
             // would show, and that the assistant used to be denied.
@@ -209,11 +210,12 @@ class ReferentielMcpToolsTest {
 
     @Test
     void creerEtModifierUnCreneau() {
-        CreneauView creneau =
-                creneauTools.creer_creneau("2026-07-18", "09:00", "13:00", null).creneau();
+        CreneauView creneau = creneauTools
+                .creer_creneau("2026-07-18", "09:00", "13:00", null, null)
+                .creneau();
 
         CreneauView modifie = creneauTools
-                .modifier_creneau(creneau.id(), null, "10:00", null, null, null)
+                .modifier_creneau(creneau.id(), null, "10:00", null, null, null, null)
                 .creneau();
         assertThat(modifie.heureDebut()).hasToString("10:00");
         assertThat(modifie.heureFin()).hasToString("13:00");
@@ -426,7 +428,7 @@ class ReferentielMcpToolsTest {
 
     @Test
     void uneDateMalFormeeRemonteUnMessageExploitable() {
-        assertThatThrownBy(() -> creneauTools.creer_creneau("18/07/2026", "09:00", "13:00", null))
+        assertThatThrownBy(() -> creneauTools.creer_creneau("18/07/2026", "09:00", "13:00", null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("AAAA-MM-JJ");
     }

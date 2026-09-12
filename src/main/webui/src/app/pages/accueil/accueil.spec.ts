@@ -18,7 +18,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       declarationsTraitees: 0,
       statut: 'A_FAIRE',
     },
-    ouvertures: { anomalies: 0, standsJamaisOuverts: 0, statut: 'A_FAIRE' },
+    ouvertures: { anomalies: 0, fenetresSansEffet: 0, standsJamaisOuverts: 0, statut: 'A_FAIRE' },
     besoin: { animateurs: 0, minimum: 0, manque: 0, statut: 'A_FAIRE' },
     resolution: {
       resolue: false,
@@ -48,7 +48,7 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
   return etatVide({
     referentiels: { stands: 12, animateurs: 40, creneaux: 30, statut: 'FAIT' },
     collecte: { ouverte: false, declarationsEnAttente: 0, declarationsTraitees: 8, statut: 'FAIT' },
-    ouvertures: { anomalies: 0, standsJamaisOuverts: 0, statut: 'FAIT' },
+    ouvertures: { anomalies: 0, fenetresSansEffet: 0, standsJamaisOuverts: 0, statut: 'FAIT' },
     besoin: { animateurs: 40, minimum: 32, manque: 0, statut: 'FAIT' },
     resolution: {
       resolue: true,
@@ -218,7 +218,12 @@ describe('buildLignes', () => {
         declarationsTraitees: 1,
         statut: 'ATTENTION',
       },
-      ouvertures: { anomalies: 2, standsJamaisOuverts: 1, statut: 'ATTENTION' },
+      ouvertures: {
+        anomalies: 2,
+        fenetresSansEffet: 0,
+        standsJamaisOuverts: 1,
+        statut: 'ATTENTION',
+      },
       besoin: { animateurs: 20, minimum: 32, manque: 12, statut: 'ATTENTION' },
       problemes: { bloquants: 1, avertissements: 4, reglesAnalysees: true, statut: 'ATTENTION' },
       publication: {
@@ -232,6 +237,17 @@ describe('buildLignes', () => {
     const details = new Map(buildLignes(etat).map((ligne) => [ligne.id, ligne.detail]));
     expect(details.get('collecte')).toBe('3 déclaration(s) à appliquer ou refuser');
     expect(details.get('ouvertures')).toBe('2 anomalie(s), 1 stand(s) jamais ouvert(s)');
+    const horsGrille = etatComplet({
+      ouvertures: {
+        anomalies: 3,
+        fenetresSansEffet: 2,
+        standsJamaisOuverts: 0,
+        statut: 'ATTENTION',
+      },
+    });
+    expect(buildLignes(horsGrille).find((ligne) => ligne.id === 'ouvertures')!.detail).toBe(
+      '3 anomalie(s), dont 2 fenêtre(s) hors de toute vacation, 0 stand(s) jamais ouvert(s)',
+    );
     expect(details.get('besoin')).toBe('20 animateurs pour un minimum de 32 : il en manque 12');
     expect(details.get('problemes')).toBe('1 bloquant(s) · 4 avertissement(s)');
     expect(details.get('publication')).toBe('7 personne(s) à prévenir');

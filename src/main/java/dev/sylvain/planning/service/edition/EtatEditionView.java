@@ -52,9 +52,15 @@ public record EtatEditionView(
     @Schema(requiredProperties = {"declarationsEnAttente", "declarationsTraitees", "ouverte", "statut"})
     public record EtatCollecte(boolean ouverte, int declarationsEnAttente, int declarationsTraitees, Statut statut) {}
 
-    /** What the opening-hours analysis found on the stands the solver would read. */
-    @Schema(requiredProperties = {"anomalies", "standsJamaisOuverts", "statut"})
-    public record EtatOuvertures(int anomalies, int standsJamaisOuverts, Statut statut) {}
+    /**
+     * What the opening-hours analysis found on the stands the solver would read.
+     *
+     * @param fenetresSansEffet among the anomalies, the windows that overlap no créneau of their date —
+     *                          a stand said open at an hour the grid does not have, which produces
+     *                          nothing and is worth its own sentence on the home page
+     */
+    @Schema(requiredProperties = {"anomalies", "fenetresSansEffet", "standsJamaisOuverts", "statut"})
+    public record EtatOuvertures(int anomalies, int fenetresSansEffet, int standsJamaisOuverts, Statut statut) {}
 
     /**
      * @param animateurs the roster as entered
