@@ -6,10 +6,10 @@
 
 ## Contexte
 
-Pour l'édition 2027 le FESTIVAL tape ses vacations à la main — « 9-12 / 12-13 /
+Une organisation utilisatrice tape ses vacations à la main — « 9-12 / 12-13 /
 13-14 / 14-20 », les tranches de son classeur — et n'entend pas passer par
-le découpage d'amplitudes : « un changement à la fois, l'outil sera déjà un
-énorme changement ». La saisie se faisait créneau par créneau, ou par une
+le découpage d'amplitudes : adopter l'outil est déjà un changement suffisant
+pour une première édition. La saisie se faisait créneau par créneau, ou par une
 série récurrente sans nom ni mémoire : rien ne disait qu'un mardi est « un
 jour normal » et un samedi « une nocturne », et rien ne portait les dates
 de l'édition avant le premier créneau (les bornes se dérivent des créneaux,
