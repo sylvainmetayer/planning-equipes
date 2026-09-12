@@ -43,7 +43,7 @@ import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import {
   NO_SORT,
-  forgetQueryParam,
+  consumeQueryParam,
   keepViewInQueryParams,
   optionalParam,
   readSort,
@@ -349,17 +349,15 @@ export class AnimateursPage {
       typologie: optionalParam(this.typologie()),
     }));
     // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
-    // with the fiche to open. Obeyed once, on arrival, then forgotten.
-    const edit = params.get('edit');
-    if (edit) {
-      forgetQueryParam('edit');
-      void chargement.then(() => {
-        const animateur = this.store.animateurs().find((candidat) => candidat.id === edit);
-        if (animateur) {
-          this.openDialog(animateur);
-        }
-      });
-    }
+    // with the fiche to open. Followed rather than read once — the link often
+    // points at this very screen — then dropped, so a reload does not reopen it.
+    consumeQueryParam('edit', async (edit) => {
+      await chargement;
+      const animateur = this.store.animateurs().find((candidat) => candidat.id === edit);
+      if (animateur) {
+        this.openDialog(animateur);
+      }
+    });
   }
 
   /**

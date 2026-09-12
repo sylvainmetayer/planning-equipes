@@ -24,8 +24,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { forgetQueryParam } from '../../core/view-query-params';
+import { RouterLink } from '@angular/router';
+import { consumeQueryParam } from '../../core/view-query-params';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -212,17 +212,14 @@ export class CreneauxPage {
     void this.problemes.reloadFeasibility();
     void this.chargerGrille();
     // `?edit=<id>`: a link from a symptom lands here with the créneau to open.
-    // Obeyed once, on arrival, then forgotten — see `reference-table-page.ts`.
-    const edit = inject(ActivatedRoute, { optional: true })?.snapshot.queryParamMap.get('edit');
-    if (edit) {
-      forgetQueryParam('edit');
-      void chargement.then(() => {
-        const creneau = this.store.creneaux().find((candidat) => String(candidat.id) === edit);
-        if (creneau) {
-          this.openDialog(creneau);
-        }
-      });
-    }
+    // Followed, obeyed, then dropped — see `reference-table-page.ts`.
+    consumeQueryParam('edit', async (edit) => {
+      await chargement;
+      const creneau = this.store.creneaux().find((candidat) => String(candidat.id) === edit);
+      if (creneau) {
+        this.openDialog(creneau);
+      }
+    });
   }
 
   /* -------------------------- The grid as a whole -------------------------- */

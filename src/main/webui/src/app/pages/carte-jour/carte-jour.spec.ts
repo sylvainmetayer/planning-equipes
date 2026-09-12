@@ -151,6 +151,17 @@ describe('etatStandInstant', () => {
     expect(etatStandInstant(journee.stands[0], 12 * 60).creneauId).toBeNull();
   });
 
+  // The link exists to fill a seat: it must name the timeslot still short of
+  // somebody, not the first one listed — often the one already held.
+  it('names the créneau still short of somebody when two cover the instant', () => {
+    const deuxCreneaux = buildJourneesCarte([
+      poste(stand('S1'), creneau({ id: 1, heureDebut: '10:00', heureFin: '12:00' }), true),
+      poste(stand('S1'), creneau({ id: 2, heureDebut: '10:30', heureFin: '12:30' }), false),
+    ])[0];
+
+    expect(etatStandInstant(deuxCreneaux.stands[0], 11 * 60).creneauId).toBe(2);
+  });
+
   it('is closed before it opens and at the very minute it closes', () => {
     expect(etatStandInstant(journee.stands[0], 9 * 60 + 59).etat).toBe('ferme');
     expect(etatStandInstant(journee.stands[0], 10 * 60).etat).toBe('partiel');

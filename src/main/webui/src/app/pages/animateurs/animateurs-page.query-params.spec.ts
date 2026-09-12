@@ -7,7 +7,8 @@ import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { Sort } from '@angular/material/sort';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { provideLocationMocks } from '@angular/common/testing';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
@@ -67,6 +68,55 @@ const CONFIRMATIONS = [
     relanceLe: null,
   },
 ];
+
+/**
+ * The same page under a real router: the address is navigated to, so the route
+ * emits its params as it does in the application — which is what a deep link
+ * landing on the current screen depends on.
+ */
+async function setUpRoute(url: string) {
+  const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
+  TestBed.configureTestingModule({
+    providers: [
+      provideZonelessChangeDetection(),
+      provideRouter([{ path: 'animateurs', children: [] }]),
+      provideLocationMocks(),
+      {
+        provide: ApiService,
+        useValue: { get: vi.fn(async () => ({ causes: [], totalCauses: 0, message: '' })) },
+      },
+      {
+        provide: AnimateursApi,
+        useValue: {
+          confirmations: vi.fn(async () => CONFIRMATIONS),
+          syntheseConfirmations: vi.fn(async () => ({
+            confirmes: 1,
+            relances: 0,
+            silencieux: 1,
+            dernierePublicationLe: '2020-01-01T10:00:00Z',
+            jamaisPublie: false,
+          })),
+        },
+      },
+      { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
+      {
+        provide: SolverJobService,
+        useValue: { solverBusy: () => false, editingLocked: () => false },
+      },
+      { provide: MatDialog, useValue: dialog },
+    ],
+  });
+  const store = TestBed.inject(ReferenceDataStore);
+  seedStore(store, 'animateurs', [
+    animateur('alice', 'Alice', 'Martin', { ESCAPE: 'CONFIRME' }),
+    animateur('bob', 'Bob', 'Durand'),
+  ]);
+  seedStore(store, 'typologies', [{ id: 'ESCAPE', label: 'Escape game' }] as never);
+  const router = TestBed.inject(Router);
+  await router.navigateByUrl(url);
+  const fixture = TestBed.createComponent(AnimateursPage);
+  return { fixture, dialog, router, location: TestBed.inject(Location) };
+}
 
 function setUp(queryParams: Record<string, string>, path = '/animateurs') {
   const replaceState = vi.fn();
@@ -189,23 +239,44 @@ describe('AnimateursPage query-param sync', () => {
    * `?edit=<id>`: a link from a problem or a warning opens the fiche it names,
    * once the référentiel is in. Obeyed once — the param leaves the URL, so a
    * refresh shows the list, not the dialog again.
+   *
+   * Driven by a real router here, and that is the point: the link that carries
+   * this param very often points at the screen already displayed, where nothing
+   * is constructed and a param read in a constructor is never seen.
    */
   describe('the edit deep link', () => {
     it('opens the fiche named in the URL once the référentiel is loaded, and forgets the param', async () => {
-      const { fixture, dialog, replaceState } = setUp({ edit: 'bob' }, '/animateurs?edit=bob');
+      const { fixture, dialog, location } = await setUpRoute('/animateurs?edit=bob');
       await fixture.whenStable();
 
       expect(dialog.open).toHaveBeenCalledOnce();
       const [, config] = dialog.open.mock.calls[0] as unknown as [unknown, { data: unknown }];
       expect(config.data).toEqual({ animateur: expect.objectContaining({ id: 'bob' }) });
-      expect(replaceState).toHaveBeenCalledWith('/animateurs');
+      expect(location.path()).not.toContain('edit=');
     });
 
     it('opens nothing for an id the référentiel does not hold', async () => {
-      const { fixture, dialog } = setUp({ edit: 'nobody' }, '/animateurs?edit=nobody');
+      const { fixture, dialog } = await setUpRoute('/animateurs?edit=nobody');
       await fixture.whenStable();
 
       expect(dialog.open).not.toHaveBeenCalled();
+    });
+
+    // The case the feature exists for, and the one a constructor cannot serve:
+    // « Voir la fiche » pressed from the animateurs screen itself, twice in a
+    // row on the same person.
+    it('obeys a link landing on the screen already displayed, again and again', async () => {
+      const { fixture, dialog, router } = await setUpRoute('/animateurs');
+      await fixture.whenStable();
+      expect(dialog.open).not.toHaveBeenCalled();
+
+      await router.navigateByUrl('/animateurs?edit=bob');
+      await fixture.whenStable();
+      expect(dialog.open).toHaveBeenCalledOnce();
+
+      await router.navigateByUrl('/animateurs?edit=bob');
+      await fixture.whenStable();
+      expect(dialog.open).toHaveBeenCalledTimes(2);
     });
   });
 

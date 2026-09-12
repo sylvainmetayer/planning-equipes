@@ -6,8 +6,10 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -35,29 +37,48 @@ public final class ViolationFormatter {
      * kind wins when a match names several.
      */
     static ViolationReference references(List<Object> facts) {
-        String animateurId = null;
-        String standId = null;
-        Long creneauId = null;
+        Set<String> animateurIds = new LinkedHashSet<>();
+        Set<String> standIds = new LinkedHashSet<>();
+        Set<Long> creneauIds = new LinkedHashSet<>();
         for (Object fact : flatten(facts)) {
-            if (fact instanceof Animateur animateur && animateurId == null) {
-                animateurId = animateur.getId();
-            } else if (fact instanceof Stand stand && standId == null) {
-                standId = stand.getId();
-            } else if (fact instanceof Creneau creneau && creneauId == null) {
-                creneauId = creneau.getId();
+            if (fact instanceof Animateur animateur) {
+                add(animateurIds, animateur.getId());
+            } else if (fact instanceof Stand stand) {
+                add(standIds, stand.getId());
+            } else if (fact instanceof Creneau creneau) {
+                add(creneauIds, creneau.getId());
             } else if (fact instanceof PosteAffectation poste) {
-                if (animateurId == null && poste.getAnimateur() != null) {
-                    animateurId = poste.getAnimateur().getId();
+                if (poste.getAnimateur() != null) {
+                    add(animateurIds, poste.getAnimateur().getId());
                 }
-                if (standId == null && poste.getStand() != null) {
-                    standId = poste.getStand().getId();
+                if (poste.getStand() != null) {
+                    add(standIds, poste.getStand().getId());
                 }
-                if (creneauId == null && poste.getCreneau() != null) {
-                    creneauId = poste.getCreneau().getId();
+                if (poste.getCreneau() != null) {
+                    add(creneauIds, poste.getCreneau().getId());
                 }
             }
         }
-        return new ViolationReference(describe(facts), animateurId, standId, creneauId);
+        return new ViolationReference(describe(facts), single(animateurIds), single(standIds), single(creneauIds));
+    }
+
+    /**
+     * The id of a kind the match designates <b>unambiguously</b>, {@code null}
+     * otherwise. « The first of each kind » was wrong on the two shapes a match
+     * commonly has: a rule grouping seats hands over a whole list, whose first
+     * stand is no more the subject than the ninth, and
+     * {@code incompatibiliteAdHoc} names two animateurs, of whom the first is
+     * not « the » one. A link to the wrong fiche is worse than no link: the
+     * reader opens it, finds nothing wrong, and stops trusting the others.
+     */
+    private static <T> T single(Set<T> ids) {
+        return ids.size() == 1 ? ids.iterator().next() : null;
+    }
+
+    private static <T> void add(Set<T> ids, T id) {
+        if (id != null) {
+            ids.add(id);
+        }
     }
 
     /** One match, as a sentence and as the ids the sentence names; any id may be null. */

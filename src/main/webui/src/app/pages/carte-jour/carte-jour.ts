@@ -227,7 +227,11 @@ export function etatStandInstant(stand: StandJour, minutes: number): StandInstan
     standId: stand.standId,
     nom: stand.nom,
     etat,
-    creneauId: couvrants[0]?.creneauId ?? null,
+    // The timeslot the « banc de touche » link asks about: the first one still
+    // short of somebody, since that is the seat the reader is being sent to
+    // fill. On a stand whose seats span two timeslots — the very shape that
+    // makes it half-covered — the first seat is often the one already held.
+    creneauId: (couvrants.find((poste) => !poste.pourvu) ?? couvrants[0])?.creneauId ?? null,
     sieges,
     pourvus,
     horaire,

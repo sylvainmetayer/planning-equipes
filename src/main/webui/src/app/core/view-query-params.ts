@@ -9,7 +9,8 @@
 
 import { Location } from '@angular/common';
 import { effect, inject } from '@angular/core';
-import { convertToParamMap, ParamMap, Params } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, convertToParamMap, ParamMap, Params, Router } from '@angular/router';
 
 /**
  * Same shape as Angular Material's `Sort`, and assignable both ways — spelled
@@ -201,17 +202,67 @@ function queryString(params: Params): string {
 }
 
 /**
- * Drops one key from the address bar, without a navigation: a param that
- * asks for a one-off gesture (`?edit=<id>` opening a fiche) has been obeyed
- * and must not be obeyed again on the next reload. Silent where the page is
- * rendered without a `Location` (a plain spec).
+ * Obeys a param that asks for a one-off gesture — `?edit=<id>` opening a fiche
+ * — then drops it, so a reload does not obey it a second time.
+ *
+ * **Followed, not read once.** A « Voir la fiche » link very often points at
+ * the screen already displayed: the router then reuses the component, nothing
+ * is constructed again, and a param read in a constructor is never seen. That
+ * was the whole feature failing in its commonest case. Subscribing to
+ * `queryParamMap` catches both arrivals, the one that builds the page and the
+ * one that only changes its address.
+ *
+ * **Cleared through the router**, once `obey` has settled. Two reasons for each
+ * half. Through the router, because the router's own state must stop naming the
+ * fiche: cleared behind its back with `replaceState`, the router still believes
+ * the address carries `edit=S1`, so pressing the same link again is « already
+ * there » — no navigation, no event, nothing happens. And after `obey` settles,
+ * because starting a navigation inside the one that is landing cancels it.
+ *
+ * The navigation restates the params the address bar has <b>now</b>, not the
+ * ones the router remembers: this file writes the URL without navigating
+ * (ADR 0018), so the router's memory is behind and a plain
+ * `queryParamsHandling: 'merge'` would erase the filters and the sort along
+ * with the key.
+ *
+ * Silent where the page is rendered without a router (a plain spec).
  */
-export function forgetQueryParam(key: string): void {
+export function consumeQueryParam(key: string, obey: (value: string) => unknown): void {
+  const route = inject(ActivatedRoute, { optional: true });
+  const router = inject(Router, { optional: true });
   const location = inject(Location, { optional: true });
-  if (!location) {
+  // `queryParamMap` is checked, not assumed: a spec that stubs `ActivatedRoute`
+  // with a bare snapshot has none, and a missing param is a page that simply
+  // does nothing — never a page that fails to build.
+  if (!route?.queryParamMap || !router || !location) {
     return;
   }
-  const [chemin, courante = ''] = location.path().split('?');
-  const query = queryString(merged(courante, { [key]: null }));
-  location.replaceState(query ? chemin + '?' + query : chemin || '/');
+  route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+    const valeur = params.get(key);
+    if (!valeur) {
+      return;
+    }
+    void Promise.resolve(obey(valeur)).then(
+      () => oublier(router, route, location, key),
+      () => oublier(router, route, location, key),
+    );
+  });
+}
+
+/** Re-states the address bar minus `key`, through the router so its state follows. */
+function oublier(router: Router, route: ActivatedRoute, location: Location, key: string): void {
+  const [, query = ''] = location.path().split('?');
+  const params: Params = {};
+  for (const morceau of query.split('&')) {
+    if (!morceau) {
+      continue;
+    }
+    const egal = morceau.indexOf('=');
+    const nom = decode(egal === -1 ? morceau : morceau.slice(0, egal));
+    if (nom === key) {
+      continue;
+    }
+    params[nom] = egal === -1 ? '' : decode(morceau.slice(egal + 1));
+  }
+  void router.navigate([], { relativeTo: route, queryParams: params, replaceUrl: true });
 }
