@@ -255,7 +255,7 @@
                           @for (bande of vue.bandes; track bande.id + '@' + bande.heureDebut) {
                             <span class="axe-bande-fond" [style.left.%]="bande.offsetPercent" [style.width.%]="bande.widthPercent"></span>
                           }
-                          @for (fenetre of ligne.horsGrille; track fenetre.heureDebut) {
+                          @for (fenetre of ligne.horsGrille; track $index) {
                             <span class="axe-hors" [style.left.%]="fenetre.offsetPercent" [style.width.%]="fenetre.widthPercent" [title]="fenetre.label"></span>
                           }
                           <!-- Tracked on the index: a day holding two créneaux

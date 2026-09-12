@@ -21,7 +21,7 @@
       <mat-icon>grid_on</mat-icon>
       <ng-container i18n="@@stands.grille.action">Saisir en grille</ng-container>
     </a>
-    <a matButton routerLink="/import-grille-stands"
+    <a matButton routerLink="/imports" [queryParams]="{ onglet: 'grille-stands' }"
        i18n-matTooltip="@@stands.importGrille.tooltip"
        matTooltip="Charger un fichier CSV — stands en lignes, jours et créneaux en colonnes — avec un aperçu avant d'écrire.">
       <mat-icon>upload_file</mat-icon>

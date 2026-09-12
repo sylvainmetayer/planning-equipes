@@ -155,6 +155,38 @@ class ImportScenarioModeGrilleTest {
                 .body("aucunChangement", equalTo(true));
     }
 
+    /**
+     * A file that sets the slicing durations but says nothing of the mode must
+     * not move it: {@link dev.sylvain.planning.domain.ParametresDecoupage} is
+     * born in VACATIONS, so reading the mode back off the mapped object took
+     * that default for a declaration and flipped an edition the file never
+     * talked about — the whole point of the field being optional.
+     */
+    @Test
+    void unFichierMuetSurLeModeLaisseLEditionOuElleEst() {
+        given().header(HEADER, EDITION)
+                .contentType("application/json")
+                .body("{\"modeGrille\":\"AMPLITUDES\"}")
+                .when()
+                .put("/api/parametres-decoupage/mode-grille")
+                .then()
+                .statusCode(200);
+
+        importer("""
+                parametresDecoupage:
+                  dureeVacationCibleMinutes: 180
+
+                """ + ENTETE);
+
+        given().header(HEADER, EDITION)
+                .when()
+                .get("/api/parametres-decoupage")
+                .then()
+                .statusCode(200)
+                .body("modeGrille", equalTo("AMPLITUDES"))
+                .body("dureeVacationCibleMinutes", equalTo(180));
+    }
+
     /** Absent the section, the import recognises the templates the créneaux imply. */
     @Test
     void sansSectionLesJourneesTypesSontReconnuesDepuisLesCreneaux() {

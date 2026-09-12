@@ -30,7 +30,7 @@ function rapport(partial: Partial<RapportImportReferentiel> = {}): RapportImport
         libelle: 'Stand un',
         action: 'CREE',
         raisons: [],
-        details: ['La typologie « INCONNUE  » sera créée, son libellé reprenant son identifiant.'],
+        details: ['La typologie « INCONNUE » sera créée, son libellé reprenant son identifiant.'],
       },
       {
         line: 3,

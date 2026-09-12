@@ -56,6 +56,22 @@ describe('the calendar helpers', () => {
     expect(datesDePlage('', '2027-07-30')).toEqual([]);
   });
 
+  // A `<input type="date">` accepts years up to 275760, and the ISO form of such
+  // a year starts with a `+`, which sorts below every plain date: the walk that
+  // stopped when the current day passed the end never stopped, and filled an
+  // array until the tab died. Nothing is proposed for a range nobody meant.
+  it('proposes nothing for a year no edition has, instead of counting to it', () => {
+    expect(datesDePlage('2027-07-30', '12345-08-02')).toEqual([]);
+    expect(datesDePlage('2027-07-30', '2027-02-31')).toEqual([]);
+    expect(datesDePlage('2027-07-30', 'demain')).toEqual([]);
+  });
+
+  it('proposes a year of dates at most, bounds included', () => {
+    expect(datesDePlage('2027-01-01', '2027-12-31')).toHaveLength(365);
+    expect(datesDePlage('2027-01-01', '2028-01-01')).toHaveLength(366);
+    expect(datesDePlage('2027-01-01', '2028-01-02')).toEqual([]);
+  });
+
   it('assigns dates, moving one already there, and keeps the calendar sorted', () => {
     const calendrier = affecterDates(
       [

@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
@@ -412,6 +413,7 @@ final class ScenarioDomainMapper {
         return new ScenarioSections(
                 parametresLegaux(scenario.parametresLegaux(), scenario.parametresDecoupage()),
                 parametresDecoupage(scenario.parametresDecoupage()),
+                modeGrilleDeclare(scenario.parametresDecoupage()),
                 parametresSolveur(scenario.parametresSolveur()),
                 // Presence, not content: `decoupageAuto: {}`, a bare `decoupageAuto:`
                 // and its historical groupe fields all mean "slice on import";
@@ -533,6 +535,16 @@ final class ScenarioDomainMapper {
         set(dto.strategieCouverturePendantPause(), parametres::setStrategieCouverturePendantPause);
         set(dto.modeGrille(), parametres::setModeGrille);
         return Optional.of(parametres);
+    }
+
+    /**
+     * The mode the file spells out, and nothing else: {@link ParametresDecoupage}
+     * is born with a mode, so reading it back off the mapped object cannot tell
+     * a declaration from that default — and importing the default would move an
+     * edition the file never talked about.
+     */
+    private static Optional<ModeGrilleCreneaux> modeGrilleDeclare(ParametresDecoupageDto dto) {
+        return Optional.ofNullable(dto == null ? null : dto.modeGrille());
     }
 
     private static Optional<ParametresSolveur> parametresSolveur(ParametresSolveurDto dto) {

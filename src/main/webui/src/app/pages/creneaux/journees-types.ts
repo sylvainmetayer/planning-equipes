@@ -75,21 +75,43 @@ export function libelleVacation(vacation: VacationType): string {
   return `${formatHeure(vacation.heureDebut)}–${formatHeure(vacation.heureFin)}`;
 }
 
-/** Every date from `du` to `au` inclusive, ISO; empty when the range is reversed or incomplete. */
+/** A day, in milliseconds UTC, or `null` for anything that is not a plain `AAAA-MM-JJ`. */
+function jourUtc(date: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return null;
+  }
+  const [annee, mois, jour] = date.split('-').map(Number);
+  const instant = Date.UTC(annee, mois - 1, jour);
+  // Date.UTC rolls 2027-02-31 over to March: only a round trip rejects it.
+  return Number.isNaN(instant) || new Date(instant).toISOString().slice(0, 10) !== date
+    ? null
+    : instant;
+}
+
+const JOUR_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * An edition longer than this is a typo, not a range — and the bound is what
+ * keeps the loop finite whatever the two fields hold.
+ */
+const PLAGE_MAX_JOURS = 366;
+
+/**
+ * Every date from `du` to `au` inclusive, ISO; empty when the range is reversed,
+ * incomplete, not a real date, or longer than {@link PLAGE_MAX_JOURS} days. The
+ * `<input type="date">` pair can hand over a five-digit year, whose ISO form
+ * starts with a `+` and so compares below every plain date: walking day by day
+ * until the string passed the end never ended.
+ */
 export function datesDePlage(du: string, au: string): string[] {
-  if (!du || !au || au < du) {
+  const debut = jourUtc(du);
+  const fin = jourUtc(au);
+  if (debut === null || fin === null || fin < debut || fin - debut >= PLAGE_MAX_JOURS * JOUR_MS) {
     return [];
   }
   const dates: string[] = [];
-  const [annee, mois, jour] = du.split('-').map(Number);
-  const courant = new Date(Date.UTC(annee, mois - 1, jour));
-  for (;;) {
-    const iso = courant.toISOString().slice(0, 10);
-    if (iso > au) {
-      break;
-    }
-    dates.push(iso);
-    courant.setUTCDate(courant.getUTCDate() + 1);
+  for (let instant = debut; instant <= fin; instant += JOUR_MS) {
+    dates.push(new Date(instant).toISOString().slice(0, 10));
   }
   return dates;
 }

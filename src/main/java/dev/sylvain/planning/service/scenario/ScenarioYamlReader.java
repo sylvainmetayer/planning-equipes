@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.scenario;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -245,6 +246,11 @@ public final class ScenarioYamlReader {
      *                            here and now sits with {@code parametresLegaux},
      *                            projected into {@link dev.sylvain.planning.domain.FenetreRepas}
      *                            facts (issue #438); its old keys are still read
+     * @param modeGrilleDeclare   the grid mode the file itself declares, kept apart
+     *                            from {@code parametresDecoupage} because that object
+     *                            always carries one: its own Java default would
+     *                            otherwise read as a declaration, and a file silent
+     *                            on the subject would flip the target edition
      * @param parametresSolveur   lets a large scenario pin the termination duration
      *                            it actually needs ({@code scenario-complet.yaml}
      *                            takes ~8 min to reach a good score) rather than
@@ -273,6 +279,7 @@ public final class ScenarioYamlReader {
     public record ScenarioSections(
             Optional<ParametresLegaux> parametresLegaux,
             Optional<ParametresDecoupage> parametresDecoupage,
+            Optional<ModeGrilleCreneaux> modeGrilleDeclare,
             Optional<ParametresSolveur> parametresSolveur,
             boolean decoupageAuto,
             List<TypologieItem> typologies,

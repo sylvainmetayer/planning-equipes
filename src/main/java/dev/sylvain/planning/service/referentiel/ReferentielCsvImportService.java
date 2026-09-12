@@ -277,12 +277,6 @@ public class ReferentielCsvImportService {
                         row.line(), blankAsNull(id), blankAsNull(nom), ActionImport.REFUSE, raisons, List.of()));
                 continue;
             }
-            for (String typologie : typologiesStand) {
-                if (!typologiesConnues.contains(typologie) && aCreer.add(typologie)) {
-                    details.add(
-                            "La typologie « " + typologie + "  » sera créée, son libellé reprenant son identifiant.");
-                }
-            }
             int min = effectifMin != null
                     ? effectifMin
                     : (existant != null ? existant.getEffectifMin() : EFFECTIF_PAR_DEFAUT);
@@ -298,6 +292,15 @@ public class ReferentielCsvImportService {
                         List.of("effectifMax (" + max + ") est inférieur à effectifMin (" + min + ")."),
                         List.of()));
                 continue;
+            }
+            // Only now: a typologie is created on the strength of the stand that
+            // names it, so a row the checks above have refused must not leave one
+            // behind — nothing would reference it.
+            for (String typologie : typologiesStand) {
+                if (!typologiesConnues.contains(typologie) && aCreer.add(typologie)) {
+                    details.add(
+                            "La typologie « " + typologie + " » sera créée, son libellé reprenant son identifiant.");
+                }
             }
             if (existant == null && effectifMin == null && effectifMax == null) {
                 details.add(

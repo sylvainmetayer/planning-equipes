@@ -182,8 +182,9 @@ L'export écrit la section dès qu'une journée type existe.
 
 ## Import CSV des référentiels
 
-Trois référentiels se remplissent d'un fichier de quelques colonnes, sur l'écran
-**Imports** (un onglet chacun) : les **typologies** (`id` et `libelle`
+L'écran **Imports** (`/imports`) réunit les cinq imports CSV du produit, un
+onglet chacun, l'onglet ouvert étant porté par `?onglet=`. Trois référentiels s'y
+remplissent d'un fichier de quelques colonnes : les **typologies** (`id` et `libelle`
 obligatoires, `ninja` facultative), les **emplacements** (`id` et `nom`
 obligatoires, `latitude` et `longitude` facultatives) et les **stands** (`id`,
 `nom` et `typologies` obligatoires, `effectifMin` et `effectifMax`
@@ -204,7 +205,12 @@ Trois règles valent pour les trois :
 
 L'aperçu (`POST …/import-csv/analyse`) n'écrit rien ; l'écriture
 (`POST …/import-csv`) relit le fichier et refait tous les contrôles. Chaque
-ligne fautive est refusée seule, avec sa raison, sans bloquer les autres.
+ligne fautive est refusée seule, avec sa raison, sans bloquer les autres — et
+une ligne refusée ne laisse rien derrière elle, pas même la typologie qu'elle
+citait.
+
+Les deux autres onglets sont les imports historiques, décrits plus bas : les
+**animateurs** et la **grille des stands**.
 
 L'écran **Export CSV** fait le chemin inverse : les référentiels de l'édition
 courante réécrits dans une archive ZIP, un fichier par référentiel et dans la
@@ -217,9 +223,10 @@ repasse chaque export par son propre import et exige zéro ligne refusée.
 
 ## Import CSV des animateurs
 
-Le seul import **partiel** du produit : il ne touche que les animateurs, une
-ligne à la fois, et il ne supprime rien tant qu'on ne le lui demande pas. Écran
-dédié, `/import-animateurs` ; endpoints dans [`api.md`](api.md#import-csv-des-animateurs).
+Un import **partiel** : il ne touche que les animateurs, une ligne à la fois, et
+il ne supprime rien tant qu'on ne le lui demande pas. Quatrième onglet de
+l'écran **Imports**, `/imports?onglet=animateurs` ; endpoints dans
+[`api.md`](api.md#import-csv-des-animateurs).
 
 ### Un fichier d'exemple est livré avec l'application
 
@@ -437,8 +444,8 @@ caractères et 5 000 lignes de données, en plus du plafond de corps HTTP de
 
 ## Import de la grille des stands
 
-Le second import partiel, `/import-grille-stands`, pour la matrice que
-l'organisateur tient déjà dans son classeur : stands en lignes, jours et
+Le cinquième onglet de l'écran **Imports**, `/imports?onglet=grille-stands`,
+pour la matrice que l'organisateur tient déjà dans son classeur : stands en lignes, jours et
 créneaux en colonnes, un effectif par case. Il transpose les règles de l'import
 des animateurs — deux appels, rejoué, en mémoire, sans suppression — et diffère
 sur trois points, écrits dans la

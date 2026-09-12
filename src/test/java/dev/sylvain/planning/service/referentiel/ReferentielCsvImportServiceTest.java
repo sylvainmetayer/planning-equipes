@@ -196,6 +196,33 @@ class ReferentielCsvImportServiceTest {
         assertThat(rapport.getString("rows.find { it.line == 7 }.raisons[0]")).contains("nombre");
     }
 
+    /**
+     * A typologie is created on the strength of the stand that names it, so a
+     * refused stand must not leave one behind: the announcement used to be made
+     * before the headcount check, and the file above created MAUVAISE for a line
+     * nothing would ever reference.
+     */
+    @Test
+    void uneLigneRefuseeNeCreePasLaTypologieQuElleCitait() {
+        poster("/api/stands/import-csv/analyse", "id;nom;typologies;effectifMin;effectifMax\nKO;Refusé;MAUVAISE;4;2\n")
+                .then()
+                .statusCode(200)
+                .body("accepted", equalTo(0))
+                .body("rejected", equalTo(1))
+                .body("typologiesCreees", hasSize(0));
+
+        poster("/api/stands/import-csv", "id;nom;typologies;effectifMin;effectifMax\nKO;Refusé;MAUVAISE;4;2\n")
+                .then()
+                .statusCode(200)
+                .body("created", equalTo(0));
+
+        given().header(HEADER, EDITION)
+                .when()
+                .get("/api/typologies")
+                .then()
+                .body("findAll { it.id == 'MAUVAISE' }", hasSize(0));
+    }
+
     @Test
     void unFichierSansLesColonnesAttenduesEstRefuseEnLesNommant() {
         poster("/api/typologies/import-csv/analyse", "identifiant;nom\nA;B\n")
