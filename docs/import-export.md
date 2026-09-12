@@ -166,6 +166,10 @@ La section `typologies` permet de fixer un vrai libellé — elle est appliquée
 plus une typologie porte `ninja: true` ; la déclarer retire le drapeau de la
 précédente. L'export réécrit la section entière, drapeau compris.
 
+La section `parametresDecoupage` porte aussi `modeGrille` : ce que le fichier
+déclare est appliqué à l'édition d'atterrissage. Une section `decoupageAuto`
+l'emporte ensuite, puisqu'elle produit des vacations.
+
 La section `journeesTypes` (optionnelle) porte les journées types de
 l'édition — nom, vacations avec `couverturePause` pour un relais repas, et
 les dates que chacune gouverne. Elle est appliquée **après** les créneaux et

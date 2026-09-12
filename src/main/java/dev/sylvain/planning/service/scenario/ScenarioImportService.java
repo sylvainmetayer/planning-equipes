@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.scenario;
 
+import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
@@ -73,7 +74,20 @@ public class ScenarioImportService {
         ScenarioYamlReader.ScenarioSections sections = importe.sections();
         return importIntoTarget(sections.edition(), () -> {
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
-            sections.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
+            sections.parametresDecoupage().ifPresent(parametres -> {
+                // Read before the write: updateParametresDecoupage puts the
+                // edition's current mode back onto the object it saves — the
+                // settings form must not revert a choice made on the Créneaux
+                // screen — so the file's own mode has to be taken first.
+                ModeGrilleCreneaux declare = parametres.getModeGrille();
+                referenceDataService.updateParametresDecoupage(parametres);
+                // Then written through the one call that owns it. Parsed and
+                // dropped until now: a file declaring « modeGrille: VACATIONS »
+                // landed in an edition still declared in amplitudes, whose
+                // relay vacations were read as overlaps. A decoupageAuto:
+                // section overrides it right after, which is what it means.
+                referenceDataService.updateModeGrille(declare.name());
+            });
             sections.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
             if (sections.decoupageAuto()) {
                 referenceDataService.applyAutomaticDecoupage(importe.planning());
