@@ -281,6 +281,44 @@ class EtatEditionServiceTest {
     }
 
     @Test
+    void warningsWithoutABlockerAreInformationNotAnAlert() {
+        PlanningDiagnostic diagnostic = diagnostic(
+                "0hard/-1medium/0soft",
+                0,
+                List.of(contrainte(REGLE_MEDIUM, 1), contrainte("equilibreHeures", 4), contrainte(REGLE_DURE, 0)));
+        FeasibilityReport faisabilite = new FeasibilityReport(
+                true, 0, List.of(cause(SeveriteInfaisabilite.ELEVE)), 1, 0, 1, "Une cause élevée.");
+        Facts f = filledFacts();
+        Facts facts = new Facts(
+                f.edition(),
+                f.stands(),
+                f.animateurs(),
+                f.creneaux(),
+                f.collecteOuverte(),
+                f.declarationsEnAttente(),
+                f.declarationsTraitees(),
+                f.ouvertures(),
+                f.staffing(),
+                f.resolution(),
+                diagnostic,
+                f.lastDataChange(),
+                false,
+                faisabilite,
+                f.publication(),
+                f.confirmations(),
+                f.foireOuverte(),
+                f.demandesEnAttente());
+
+        EtatEditionView etat = EtatEditionService.assemble(facts);
+
+        // One elevated cause and one medium rule in default, nothing blocking:
+        // the line reports, it does not alert.
+        assertThat(etat.problemes().bloquants()).isZero();
+        assertThat(etat.problemes().avertissements()).isEqualTo(2);
+        assertThat(etat.problemes().statut()).isEqualTo(Statut.INFO);
+    }
+
+    @Test
     void anOpenCollectionOrAPendingDeclarationAsksForAttention() {
         Facts f = emptyFacts();
         Facts ouverte = new Facts(

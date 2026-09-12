@@ -175,6 +175,18 @@ describe('buildLignes', () => {
     expect(problemes.detail).toContain('non analysées');
   });
 
+  // « 0 bloquant(s) · 8 avertissement(s) » in the colour of a refusal read as a
+  // failure: warnings alone are a report, and the server states them as such.
+  it('reports warnings without a blocker rather than counting a zero', () => {
+    const etat = etatComplet({
+      problemes: { bloquants: 0, avertissements: 8, reglesAnalysees: true, statut: 'INFO' },
+    });
+
+    const problemes = buildLignes(etat).find((ligne) => ligne.id === 'problemes')!;
+    expect(problemes.statut).toBe('INFO');
+    expect(problemes.detail).toBe('8 avertissement(s), rien de bloquant');
+  });
+
   it('reads the score, its floor-free twin, the broken hard rules and the stale data on one line', () => {
     const etat = etatComplet({
       resolution: {
@@ -267,7 +279,7 @@ describe('summarizeLignes', () => {
         foire: { ouverte: false, demandesEnAttente: 0, statut: 'A_FAIRE' },
       }),
     );
-    expect(summarizeLignes(lignes)).toEqual({ faits: 7, attention: 1, aFaire: 1 });
+    expect(summarizeLignes(lignes)).toEqual({ faits: 7, attention: 1, info: 0, aFaire: 1 });
   });
 });
 
@@ -275,9 +287,15 @@ describe('statut rendering', () => {
   it('gives each state a label and an icon of its own', () => {
     expect(statutLabel('A_FAIRE')).toBe('À faire');
     expect(statutLabel('ATTENTION')).toBe('À vérifier');
+    expect(statutLabel('INFO')).toBe('Pour information');
     expect(statutLabel('FAIT')).toBe('Fait');
-    expect(new Set([statutIcon('A_FAIRE'), statutIcon('ATTENTION'), statutIcon('FAIT')]).size).toBe(
-      3,
-    );
+    expect(
+      new Set([
+        statutIcon('A_FAIRE'),
+        statutIcon('ATTENTION'),
+        statutIcon('INFO'),
+        statutIcon('FAIT'),
+      ]).size,
+    ).toBe(4);
   });
 });

@@ -14,7 +14,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * screen links to the pages that hold the names; an assistant reads them
  * through the tools that anonymise them.</p>
  *
- * <p>Every block has at most three states, and the rule deciding each one
+ * <p>Every block carries one of the {@link Statut} states, and the rule deciding each one
  * lives in {@link EtatEditionService#assemble} so it is tested without a
  * container. {@code null} on a nullable field means "not known", never
  * "zero": a score is {@code null} when no analysis of the persisted plan
@@ -33,10 +33,17 @@ public record EtatEditionView(
         EtatConfirmations confirmations,
         EtatFoire foire) {
 
-    /** The three states a line of the checklist can be in. */
+    /**
+     * The states a line of the checklist can be in, from the step still ahead
+     * to the step behind. {@code INFO} sits between {@code ATTENTION} and
+     * {@code FAIT}: there are figures worth reading, but none of them holds
+     * the cycle back, and the screen says so in its own colour rather than in
+     * the one it uses for a refusal.
+     */
     public enum Statut {
         A_FAIRE,
         ATTENTION,
+        INFO,
         FAIT
     }
 

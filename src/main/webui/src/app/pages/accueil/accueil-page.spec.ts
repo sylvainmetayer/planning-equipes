@@ -118,7 +118,7 @@ describe('AccueilPage', () => {
     expect(editionsApi.etat).toHaveBeenCalledOnce();
   });
 
-  it('draws the three states with their label, on the line each one belongs to', async () => {
+  it('draws each state with its label, on the line it belongs to', async () => {
     editionsApi.etat.mockResolvedValue(etat());
     const page = createPage();
     await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
@@ -133,6 +133,27 @@ describe('AccueilPage', () => {
     expect(ligne('resolution').classList.contains('accueil-ligne-a_faire')).toBe(true);
     expect(ligne('resolution').textContent).toContain('À faire');
     expect(text()).toContain('4 étape(s) faite(s) · 1 à vérifier · 4 à faire');
+    expect(text()).not.toContain('pour information');
+  });
+
+  // Warnings alone are drawn apart from what blocks: same line, its own state,
+  // and the summary counts it outside « à vérifier ».
+  it('draws a warning-only diagnostic as information, not as something to check', async () => {
+    editionsApi.etat.mockResolvedValue(
+      etat({
+        problemes: { bloquants: 0, avertissements: 8, reglesAnalysees: true, statut: 'INFO' },
+      }),
+    );
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+
+    const ligne = element().querySelector<HTMLElement>('li[data-ligne="problemes"]')!;
+    expect(ligne.classList.contains('accueil-ligne-info')).toBe(true);
+    expect(ligne.classList.contains('accueil-ligne-attention')).toBe(false);
+    expect(ligne.textContent).toContain('Pour information');
+    expect(ligne.textContent).toContain('8 avertissement(s), rien de bloquant');
+    expect(text()).toContain('1 à vérifier');
+    expect(text()).toContain('1 pour information');
   });
 
   it('links every line to its screen, tab and filter included', async () => {

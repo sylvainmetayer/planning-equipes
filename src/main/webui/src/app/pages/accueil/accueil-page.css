@@ -1,7 +1,8 @@
 /* « État de l'édition »: the checklist of the cycle, one line per step. The
-   three states borrow the semantic colours the other screens already use —
-   error for what needs attention, tertiary for what is done — never a
-   hard-coded colour (the palette is a light-dark() pair). */
+   states borrow the semantic colours the other screens already use — error for
+   what needs a decision, tertiary for what is done — never a hard-coded colour
+   (the palette is a light-dark() pair). The one exception is the amber of
+   « pour information », explained on its rule below. */
 
 .accueil-edition {
   font-weight: 500;
@@ -48,6 +49,21 @@
 .accueil-ligne-attention .accueil-icone,
 .accueil-ligne-attention .accueil-statut {
   color: var(--mat-sys-error);
+}
+
+/* « Pour information »: figures worth reading that hold nothing back, and no
+   coloured border — a planning without a single avertissement barely exists, so
+   this line must never read as the one thing to fix.
+
+   Amber rather than a `--mat-sys-*` token: the theme's tertiary is the blue
+   palette (see material-theme.scss) and is already what « Fait » is drawn in,
+   so it would say nothing here. A pair written by hand, like
+   styles/typologie-colors.css does, because the two halves must each hold
+   their contrast on their own surface: the dark ink reaches ~6:1 on the light
+   card, the light one ~9:1 on the dark card. */
+.accueil-ligne-info .accueil-icone,
+.accueil-ligne-info .accueil-statut {
+  color: light-dark(#8a5000, #f0b357);
 }
 
 .accueil-ligne-fait .accueil-icone,

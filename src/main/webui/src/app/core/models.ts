@@ -2893,8 +2893,13 @@ export interface ScenarioValidationResult {
 
 /* --------------------------- Edition status (home) --------------------------- */
 
-/** The three states a line of the home checklist can be in (`/api/editions/courant/etat`). */
-export type StatutEtat = 'A_FAIRE' | 'ATTENTION' | 'FAIT';
+/**
+ * The states a line of the home checklist can be in
+ * (`/api/editions/courant/etat`), from the step still ahead to the step
+ * behind. `INFO` carries figures worth reading that hold nothing back — the
+ * screen draws it apart from `ATTENTION`, which is what waits on a decision.
+ */
+export type StatutEtat = 'A_FAIRE' | 'ATTENTION' | 'INFO' | 'FAIT';
 
 export interface EtatReferentiels {
   stands: number;

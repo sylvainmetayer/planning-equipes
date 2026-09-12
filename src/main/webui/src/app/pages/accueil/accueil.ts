@@ -28,6 +28,7 @@ export interface LienEtat {
 export interface BilanEtat {
   faits: number;
   attention: number;
+  info: number;
   aFaire: number;
 }
 
@@ -37,6 +38,8 @@ export function statutLabel(statut: StatutEtat): string {
       return $localize`:@@accueil.statut.aFaire:À faire`;
     case 'ATTENTION':
       return $localize`:@@accueil.statut.attention:À vérifier`;
+    case 'INFO':
+      return $localize`:@@accueil.statut.info:Pour information`;
     case 'FAIT':
       return $localize`:@@accueil.statut.fait:Fait`;
   }
@@ -48,6 +51,8 @@ export function statutIcon(statut: StatutEtat): string {
       return 'radio_button_unchecked';
     case 'ATTENTION':
       return 'error_outline';
+    case 'INFO':
+      return 'info_outline';
     case 'FAIT':
       return 'check_circle';
   }
@@ -194,8 +199,12 @@ function problemes(etat: EtatEdition): LigneEtat {
   let detail: string;
   if (statut === 'A_FAIRE') {
     detail = $localize`:@@accueil.detail.problemes.aFaire:Le diagnostic attend les référentiels`;
-  } else if (bloquants > 0 || avertissements > 0) {
+  } else if (bloquants > 0) {
     detail = $localize`:@@accueil.detail.problemes.comptage:${bloquants}:bloquants: bloquant(s) · ${avertissements}:avertissements: avertissement(s)`;
+  } else if (avertissements > 0) {
+    // Nothing blocks: the figure is read, not acted upon. A plan with zero
+    // warnings does not exist on a real event, so it is said as a report.
+    detail = $localize`:@@accueil.detail.problemes.avertissements:${avertissements}:avertissements: avertissement(s), rien de bloquant`;
   } else {
     detail = reglesAnalysees
       ? $localize`:@@accueil.detail.problemes.ok:Aucun problème signalé`
@@ -309,6 +318,7 @@ export function summarizeLignes(lignes: readonly LigneEtat[]): BilanEtat {
   return {
     faits: lignes.filter((ligne) => ligne.statut === 'FAIT').length,
     attention: lignes.filter((ligne) => ligne.statut === 'ATTENTION').length,
+    info: lignes.filter((ligne) => ligne.statut === 'INFO').length,
     aFaire: lignes.filter((ligne) => ligne.statut === 'A_FAIRE').length,
   };
 }

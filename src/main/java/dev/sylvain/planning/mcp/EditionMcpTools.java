@@ -102,7 +102,8 @@ public class EditionMcpTools {
                     + "des disponibilités, ouvertures des stands, besoin en animateurs, dernière résolution (et si "
                     + "les données ont bougé depuis, ou si une résolution est en cours), problèmes bloquants et "
                     + "avertissements, publication, accusés de réception, foire au planning. Chaque ligne porte un "
-                    + "statut A_FAIRE, ATTENTION ou FAIT et les chiffres qui le décident ; aucune donnée nominative. "
+                    + "statut A_FAIRE, ATTENTION, INFO (des chiffres à lire, rien qui bloque) ou FAIT, et les "
+                    + "chiffres qui le décident ; aucune donnée nominative. "
                     + "À appeler en premier pour savoir où en est l'organisateur, avant de choisir un outil plus fin.",
             annotations =
                     @Tool.Annotations(

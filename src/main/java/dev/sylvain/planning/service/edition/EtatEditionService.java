@@ -305,6 +305,13 @@ public class EtatEditionService {
      * blocks, a medium one warns; soft rules are not problems. Over an edition
      * with a referential missing the check says "feasible" for want of
      * anything to check, which would read as done — hence "to do".
+     *
+     * <p>Warnings alone are {@code INFO}, not {@code ATTENTION}: a plan with
+     * zero medium rules in default is all but unreachable on a real event, so
+     * an alert on that count is an alert nobody can ever clear, and the reader
+     * learns to scroll past the one line that will one day be a refusal. What
+     * blocks is a hard rule or a critical capacity cause — or a measurement
+     * that never ran, which is not an acknowledgement to give.</p>
      */
     private static EtatProblemes problemes(Facts facts, boolean referentielsSaisis) {
         // The counts, never the listed causes: that list is capped at ten for
@@ -331,8 +338,10 @@ public class EtatEditionService {
         Statut statut;
         if (!referentielsSaisis) {
             statut = Statut.A_FAIRE;
-        } else if (bloquants > 0 || avertissements > 0 || !reglesAnalysees) {
+        } else if (bloquants > 0 || !reglesAnalysees) {
             statut = Statut.ATTENTION;
+        } else if (avertissements > 0) {
+            statut = Statut.INFO;
         } else {
             statut = Statut.FAIT;
         }

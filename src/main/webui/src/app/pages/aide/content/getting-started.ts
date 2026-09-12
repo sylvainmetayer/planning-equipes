@@ -44,7 +44,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.accueil:La page d'accueil, « État de l'édition », reprend ces étapes en checklist : chaque ligne dit si l'étape est faite, à vérifier ou à faire, avec le chiffre qui compte et un lien vers l'écran qui la fait avancer. C'est là qu'on revient pour savoir où l'on en est ; le solveur, lui, a sa page.`,
+          text: $localize`:@@aide.start.accueil:La page d'accueil, « État de l'édition », reprend ces étapes en checklist : chaque ligne dit si l'étape est faite, à vérifier, pour information ou à faire, avec le chiffre qui compte et un lien vers l'écran qui la fait avancer. C'est là qu'on revient pour savoir où l'on en est ; le solveur, lui, a sa page.`,
         },
         {
           kind: 'paragraph',
