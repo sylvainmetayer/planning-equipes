@@ -1,0 +1,244 @@
+// The wording and the links of the checklist, on hand-built states: what
+// each line says, where it leads, and the summary above the list. The states
+// themselves are decided server-side (`EtatEditionService`), not here.
+
+import { describe, expect, it } from 'vitest';
+import { EtatEdition } from '../../core/models';
+import { buildLignes, statutIcon, statutLabel, summarizeLignes } from './accueil';
+
+/** An edition with nothing entered: every line to do, as the server answers it. */
+function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
+  return {
+    editionId: 'DEFAUT',
+    editionNom: 'Édition par défaut',
+    referentiels: { stands: 0, animateurs: 0, creneaux: 0, statut: 'A_FAIRE' },
+    collecte: {
+      ouverte: false,
+      declarationsEnAttente: 0,
+      declarationsTraitees: 0,
+      statut: 'A_FAIRE',
+    },
+    ouvertures: { anomalies: 0, standsJamaisOuverts: 0, statut: 'A_FAIRE' },
+    besoin: { animateurs: 0, minimum: 0, manque: 0, statut: 'A_FAIRE' },
+    resolution: {
+      resolue: false,
+      resoluLe: null,
+      score: null,
+      scoreHorsPlancher: null,
+      faisable: null,
+      dataStale: false,
+      solveEnCours: false,
+      statut: 'A_FAIRE',
+    },
+    problemes: { bloquants: 0, avertissements: 0, statut: 'A_FAIRE' },
+    publication: {
+      jamaisPublie: true,
+      dernierePublicationLe: null,
+      personnesAPrevenir: 0,
+      statut: 'A_FAIRE',
+    },
+    confirmations: { confirmes: 0, relances: 0, silencieux: 0, statut: 'A_FAIRE' },
+    foire: { ouverte: true, demandesEnAttente: 0, statut: 'A_FAIRE' },
+    ...partial,
+  };
+}
+
+/** Solved, published, acknowledged: every line done. */
+function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
+  return etatVide({
+    referentiels: { stands: 12, animateurs: 40, creneaux: 30, statut: 'FAIT' },
+    collecte: { ouverte: false, declarationsEnAttente: 0, declarationsTraitees: 8, statut: 'FAIT' },
+    ouvertures: { anomalies: 0, standsJamaisOuverts: 0, statut: 'FAIT' },
+    besoin: { animateurs: 40, minimum: 32, manque: 0, statut: 'FAIT' },
+    resolution: {
+      resolue: true,
+      resoluLe: '2026-05-01T10:00:00Z',
+      score: '0hard/0medium/-120soft',
+      scoreHorsPlancher: '0hard/0medium/-20soft',
+      faisable: true,
+      dataStale: false,
+      solveEnCours: false,
+      statut: 'FAIT',
+    },
+    problemes: { bloquants: 0, avertissements: 0, statut: 'FAIT' },
+    publication: {
+      jamaisPublie: false,
+      dernierePublicationLe: '2026-05-01T11:00:00Z',
+      personnesAPrevenir: 0,
+      statut: 'FAIT',
+    },
+    confirmations: { confirmes: 40, relances: 0, silencieux: 0, statut: 'FAIT' },
+    foire: { ouverte: true, demandesEnAttente: 0, statut: 'FAIT' },
+    ...partial,
+  });
+}
+
+describe('buildLignes', () => {
+  it('lists the nine steps of the cycle in the order of the guide', () => {
+    expect(buildLignes(etatVide()).map((ligne) => ligne.id)).toEqual([
+      'referentiels',
+      'collecte',
+      'ouvertures',
+      'besoin',
+      'resolution',
+      'problemes',
+      'publication',
+      'confirmations',
+      'foire',
+    ]);
+  });
+
+  it('carries the state the server decided, line by line', () => {
+    expect(buildLignes(etatVide()).map((ligne) => ligne.statut)).toEqual(
+      Array<string>(9).fill('A_FAIRE'),
+    );
+    expect(buildLignes(etatComplet()).map((ligne) => ligne.statut)).toEqual(
+      Array<string>(9).fill('FAIT'),
+    );
+  });
+
+  it('leads an empty edition to the first referential to enter', () => {
+    const [referentiels] = buildLignes(etatVide());
+    expect(referentiels.lien.route).toBe('/stands');
+    expect(referentiels.detail).toBe('0 stands · 0 animateurs · 0 créneaux');
+
+    const withoutAnimateur = etatVide({
+      referentiels: { stands: 3, animateurs: 0, creneaux: 4, statut: 'A_FAIRE' },
+    });
+    expect(buildLignes(withoutAnimateur)[0].lien.route).toBe('/animateurs');
+  });
+
+  it('links every line to the screen that moves it, with the tab or the filter it needs', () => {
+    const liens = new Map(buildLignes(etatComplet()).map((ligne) => [ligne.id, ligne.lien]));
+    expect(liens.get('collecte')?.route).toBe('/disponibilites');
+    expect(liens.get('ouvertures')?.route).toBe('/ouvertures');
+    expect(liens.get('besoin')).toMatchObject({
+      route: '/diagnostic',
+      queryParams: { onglet: 'besoin' },
+    });
+    expect(liens.get('resolution')?.route).toBe('/solveur');
+    expect(liens.get('problemes')).toMatchObject({
+      route: '/diagnostic',
+      queryParams: { onglet: 'problemes' },
+    });
+    expect(liens.get('publication')?.route).toBe('/solveur');
+    expect(liens.get('confirmations')).toEqual({
+      route: '/animateurs',
+      queryParams: undefined,
+      libelle: 'Voir les animateurs',
+    });
+    expect(liens.get('foire')?.route).toBe('/echanges');
+  });
+
+  it('filters the animateurs on the silent ones as soon as somebody has not answered', () => {
+    const etat = etatComplet({
+      confirmations: { confirmes: 30, relances: 4, silencieux: 6, statut: 'ATTENTION' },
+    });
+    const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
+    expect(confirmations.lien).toEqual({
+      route: '/animateurs',
+      queryParams: { confirmation: 'jamais' },
+      libelle: "Voir qui n'a pas répondu",
+    });
+    expect(confirmations.detail).toBe('30 confirmé(s) · 4 relancé(s) · 6 silencieux');
+  });
+
+  it('says the solve is running rather than describing a plan about to be replaced', () => {
+    const etat = etatComplet({
+      resolution: { ...etatComplet().resolution, solveEnCours: true, statut: 'ATTENTION' },
+    });
+    const resolution = buildLignes(etat).find((ligne) => ligne.id === 'resolution')!;
+    expect(resolution.statut).toBe('ATTENTION');
+    expect(resolution.detail).toBe('Résolution en cours');
+  });
+
+  it('reads the score, its floor-free twin, the broken hard rules and the stale data on one line', () => {
+    const etat = etatComplet({
+      resolution: {
+        resolue: true,
+        resoluLe: '2026-05-01T10:00:00Z',
+        score: '-2hard/0medium/-120soft',
+        scoreHorsPlancher: '-2hard/0medium/-20soft',
+        faisable: false,
+        dataStale: true,
+        solveEnCours: false,
+        statut: 'ATTENTION',
+      },
+    });
+    const resolution = buildLignes(etat).find((ligne) => ligne.id === 'resolution')!;
+    expect(resolution.detail).toContain('Résolue le ');
+    expect(resolution.detail).toContain('score -2hard/0medium/-120soft');
+    expect(resolution.detail).toContain('hors plancher -2hard/0medium/-20soft');
+    expect(resolution.detail).toContain('règles dures en défaut');
+    expect(resolution.detail).toContain('données modifiées depuis');
+  });
+
+  it('omits the floor-free score when it equals the score, and the score when there is no analysis', () => {
+    const identiques = etatComplet({
+      resolution: { ...etatComplet().resolution, scoreHorsPlancher: '0hard/0medium/-120soft' },
+    });
+    expect(buildLignes(identiques)[4].detail).not.toContain('hors plancher');
+
+    const withoutAnalysis = etatComplet({
+      resolution: {
+        ...etatComplet().resolution,
+        score: null,
+        scoreHorsPlancher: null,
+        faisable: null,
+      },
+    });
+    expect(buildLignes(withoutAnalysis)[4].detail).not.toContain('score');
+    expect(buildLignes(withoutAnalysis)[4].detail).toContain('Résolue le ');
+  });
+
+  it('counts what asks for attention on the lines that carry a figure', () => {
+    const etat = etatComplet({
+      collecte: {
+        ouverte: true,
+        declarationsEnAttente: 3,
+        declarationsTraitees: 1,
+        statut: 'ATTENTION',
+      },
+      ouvertures: { anomalies: 2, standsJamaisOuverts: 1, statut: 'ATTENTION' },
+      besoin: { animateurs: 20, minimum: 32, manque: 12, statut: 'ATTENTION' },
+      problemes: { bloquants: 1, avertissements: 4, statut: 'ATTENTION' },
+      publication: {
+        jamaisPublie: false,
+        dernierePublicationLe: '2026-05-01T11:00:00Z',
+        personnesAPrevenir: 7,
+        statut: 'ATTENTION',
+      },
+      foire: { ouverte: true, demandesEnAttente: 2, statut: 'ATTENTION' },
+    });
+    const details = new Map(buildLignes(etat).map((ligne) => [ligne.id, ligne.detail]));
+    expect(details.get('collecte')).toBe('3 déclaration(s) à appliquer ou refuser');
+    expect(details.get('ouvertures')).toBe('2 anomalie(s), 1 stand(s) jamais ouvert(s)');
+    expect(details.get('besoin')).toBe('20 animateurs pour un minimum de 32 : il en manque 12');
+    expect(details.get('problemes')).toBe('1 bloquant(s) · 4 avertissement(s)');
+    expect(details.get('publication')).toBe('7 personne(s) à prévenir');
+    expect(details.get('foire')).toBe('2 demande(s) en attente');
+  });
+});
+
+describe('summarizeLignes', () => {
+  it('counts the lines in each state', () => {
+    const lignes = buildLignes(
+      etatComplet({
+        besoin: { animateurs: 20, minimum: 32, manque: 12, statut: 'ATTENTION' },
+        foire: { ouverte: false, demandesEnAttente: 0, statut: 'A_FAIRE' },
+      }),
+    );
+    expect(summarizeLignes(lignes)).toEqual({ faits: 7, attention: 1, aFaire: 1 });
+  });
+});
+
+describe('statut rendering', () => {
+  it('gives each state a label and an icon of its own', () => {
+    expect(statutLabel('A_FAIRE')).toBe('À faire');
+    expect(statutLabel('ATTENTION')).toBe('À vérifier');
+    expect(statutLabel('FAIT')).toBe('Fait');
+    expect(new Set([statutIcon('A_FAIRE'), statutIcon('ATTENTION'), statutIcon('FAIT')]).size).toBe(
+      3,
+    );
+  });
+});

@@ -213,6 +213,17 @@ Ce sont les seuls, et ce sont les seuls à s'annoncer `openWorldHint = true` :
 `configurer_collecte_disponibilites` lorsqu'elle coche l'invitation. Un client
 qui veut faire confirmer ce qui quitte l'application a de quoi le repérer.
 
+**Une seule lecture pour savoir où en est l'édition.** `etat_edition` rend la
+checklist du cycle que la page d'accueil affiche — référentiels, collecte,
+ouvertures, besoin, dernière résolution, problèmes, publication, accusés de
+réception, foire — chaque ligne avec son statut (`A_FAIRE`, `ATTENTION`, `FAIT`)
+et les chiffres qui le décident, calculés côté serveur et donc identiques pour
+l'écran et pour l'assistant. C'est l'outil à appeler en premier ; les outils
+plus fins (`etat_planning`, `etat_publication`, `analyser_effectifs`…)
+détaillent ensuite la ligne qui pose question. Une résolution en cours s'y lit
+comme un statut, elle ne fait pas échouer l'appel. Aucune donnée nominative :
+des comptes et des dates, jamais une liste de noms.
+
 **Deux dates, deux questions.** `etat_planning` dit quand le solveur a tourné
 pour la dernière fois ; `etat_publication` dit quand les animateurs ont été
 prévenus pour la dernière fois. La seconde est la seule qui décrive ce que les

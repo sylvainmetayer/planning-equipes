@@ -102,6 +102,7 @@ describe('buildRaccourcisNavigation', () => {
     expect(parRoute.get('/stands')).toBe('s');
     expect(parRoute.get('/creneaux')).toBe('c');
     expect(parRoute.get('/')).toBe('g');
+    expect(parRoute.get('/solveur')).toBe('l');
   });
 });
 

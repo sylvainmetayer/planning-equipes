@@ -1,0 +1,198 @@
+// Loading / error / rendering of the home checklist: a resource's states
+// rather than hand-written signals, the three line states drawn with their
+// label, and every line carrying a link to the screen that moves it. The
+// wording itself is `accueil.spec.ts`'s business.
+
+import { provideZonelessChangeDetection, Signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EditionsApi } from '../../core/api/editions-api';
+import { EtatEdition } from '../../core/models';
+import { SolverJobService } from '../../core/solver-job.service';
+import { AccueilPage } from './accueil-page';
+
+function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
+  return {
+    editionId: 'DEFAUT',
+    editionNom: 'Année 2026',
+    referentiels: { stands: 12, animateurs: 40, creneaux: 30, statut: 'FAIT' },
+    collecte: {
+      ouverte: true,
+      declarationsEnAttente: 3,
+      declarationsTraitees: 1,
+      statut: 'ATTENTION',
+    },
+    ouvertures: { anomalies: 0, standsJamaisOuverts: 0, statut: 'FAIT' },
+    besoin: { animateurs: 40, minimum: 32, manque: 0, statut: 'FAIT' },
+    resolution: {
+      resolue: false,
+      resoluLe: null,
+      score: null,
+      scoreHorsPlancher: null,
+      faisable: null,
+      dataStale: false,
+      solveEnCours: false,
+      statut: 'A_FAIRE',
+    },
+    problemes: { bloquants: 0, avertissements: 0, statut: 'FAIT' },
+    publication: {
+      jamaisPublie: true,
+      dernierePublicationLe: null,
+      personnesAPrevenir: 0,
+      statut: 'A_FAIRE',
+    },
+    confirmations: { confirmes: 0, relances: 0, silencieux: 0, statut: 'A_FAIRE' },
+    foire: { ouverte: true, demandesEnAttente: 0, statut: 'A_FAIRE' },
+    ...partial,
+  };
+}
+
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error: Error) => void;
+} {
+  let resolve: (value: T) => void = () => undefined;
+  let reject: (error: Error) => void = () => undefined;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+type PageInternals = {
+  etatEdition: Signal<EtatEdition | null>;
+  chargement: Signal<boolean>;
+  erreur: Signal<string>;
+  recharger: () => void;
+};
+
+describe('AccueilPage', () => {
+  const editionsApi = { etat: vi.fn() };
+  const jobs = {
+    onResult: vi.fn<(type: string, handler: () => void) => () => void>(() => () => undefined),
+  };
+  let fixture: ComponentFixture<AccueilPage>;
+
+  beforeEach(() => {
+    editionsApi.etat.mockReset();
+    jobs.onResult.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: EditionsApi, useValue: editionsApi },
+        { provide: SolverJobService, useValue: jobs },
+      ],
+    });
+  });
+
+  function createPage(): PageInternals {
+    fixture = TestBed.createComponent(AccueilPage);
+    return fixture.componentInstance as unknown as PageInternals;
+  }
+
+  function element(): HTMLElement {
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function text(): string {
+    return element().textContent!.replace(/\s+/g, ' ');
+  }
+
+  it('says it is reading while the first state is in flight, then lists the nine lines', async () => {
+    const pending = deferred<EtatEdition>();
+    editionsApi.etat.mockReturnValue(pending.promise);
+    const page = createPage();
+
+    expect(page.chargement()).toBe(true);
+    expect(text()).toContain("Lecture de l'état de l'édition");
+
+    pending.resolve(etat());
+    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(9);
+    expect(text()).toContain('Année 2026');
+    expect(editionsApi.etat).toHaveBeenCalledOnce();
+  });
+
+  it('draws the three states with their label, on the line each one belongs to', async () => {
+    editionsApi.etat.mockResolvedValue(etat());
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    const racine = element();
+
+    const ligne = (id: string) => racine.querySelector<HTMLElement>(`li[data-ligne="${id}"]`)!;
+    expect(ligne('referentiels').classList.contains('accueil-ligne-fait')).toBe(true);
+    expect(ligne('referentiels').textContent).toContain('Fait');
+    expect(ligne('collecte').classList.contains('accueil-ligne-attention')).toBe(true);
+    expect(ligne('collecte').textContent).toContain('À vérifier');
+    expect(ligne('collecte').textContent).toContain('3 déclaration(s) à appliquer ou refuser');
+    expect(ligne('resolution').classList.contains('accueil-ligne-a_faire')).toBe(true);
+    expect(ligne('resolution').textContent).toContain('À faire');
+    expect(text()).toContain('4 étape(s) faite(s) · 1 à vérifier · 4 à faire');
+  });
+
+  it('links every line to its screen, tab and filter included', async () => {
+    editionsApi.etat.mockResolvedValue(
+      etat({ confirmations: { confirmes: 1, relances: 0, silencieux: 2, statut: 'ATTENTION' } }),
+    );
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await fixture.whenStable();
+
+    const hrefs = Array.from(element().querySelectorAll<HTMLAnchorElement>('a.accueil-lien')).map(
+      (lien) => lien.getAttribute('href'),
+    );
+    expect(hrefs).toEqual([
+      '/stands',
+      '/disponibilites',
+      '/ouvertures',
+      '/diagnostic?onglet=besoin',
+      '/solveur',
+      '/diagnostic?onglet=problemes',
+      '/solveur',
+      '/animateurs?confirmation=jamais',
+      '/echanges',
+    ]);
+  });
+
+  it('shows the failure as a sentence, not a blank card', async () => {
+    editionsApi.etat.mockRejectedValue(new Error('Serveur injoignable.'));
+    const page = createPage();
+
+    await vi.waitFor(() => expect(page.erreur()).toContain('Serveur injoignable.'));
+    expect(page.etatEdition()).toBeNull();
+    expect(text()).toContain('Serveur injoignable.');
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(0);
+  });
+
+  it('keeps the checklist on screen behind the failure of a refresh', async () => {
+    editionsApi.etat.mockResolvedValueOnce(etat());
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+
+    editionsApi.etat.mockRejectedValueOnce(new Error('Serveur injoignable.'));
+    page.recharger();
+    await vi.waitFor(() => expect(page.erreur()).toContain('Serveur injoignable.'));
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(9);
+  });
+
+  it('reloads once a solve lands, and lets go of the hook with the page', async () => {
+    editionsApi.etat.mockResolvedValue(etat());
+    const unregister = vi.fn();
+    jobs.onResult.mockReturnValueOnce(unregister);
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+
+    expect(jobs.onResult).toHaveBeenCalledWith('SOLVE', expect.any(Function));
+    const [, handler] = jobs.onResult.mock.calls[0];
+    handler();
+    await vi.waitFor(() => expect(editionsApi.etat).toHaveBeenCalledTimes(2));
+
+    fixture.destroy();
+    expect(unregister).toHaveBeenCalledOnce();
+  });
+});

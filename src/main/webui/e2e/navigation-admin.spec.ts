@@ -29,7 +29,8 @@ test.afterAll(async () => {
  * `ViewEncapsulation.None`, left the whole CI green.
  */
 const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
-  { path: '/', marker: 'Calculer le planning', sheet: 'solver-volumetry' },
+  { path: '/', marker: "État de l'édition", sheet: 'accueil-ligne' },
+  { path: '/solveur', marker: 'Calculer le planning', sheet: 'solver-volumetry' },
   { path: '/notifications', sheet: 'notification-jour' },
   // One page over four tabs, each visited: a tab's stylesheet travels with the
   // page's chunk, and only a browser can tell that it arrived.

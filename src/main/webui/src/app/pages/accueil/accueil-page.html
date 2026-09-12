@@ -1,0 +1,55 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@accueil.title">État de l'édition</h1>
+    <mat-card-subtitle>
+      @if (etatEdition(); as etat) {
+        <span class="accueil-edition">{{ etat.editionNom }}</span>
+        <ng-container i18n="@@accueil.subtitle"> — chaque étape du cycle, son état et l'écran qui la fait avancer.</ng-container>
+      } @else {
+        <ng-container i18n="@@accueil.subtitle.sansEdition">Chaque étape du cycle, son état et l'écran qui la fait avancer.</ng-container>
+      }
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+  </mat-card-actions>
+  <mat-card-content>
+    @if (chargement() && !etatEdition()) {
+      <mat-progress-bar mode="indeterminate" />
+      <p class="empty-hint" i18n="@@accueil.loading">Lecture de l'état de l'édition…</p>
+    } @else if (erreur()) {
+      <p class="empty-hint accueil-erreur" role="alert">{{ erreur() }}</p>
+    }
+    @if (etatEdition()) {
+      @if (bilan(); as bilan) {
+        <p class="accueil-bilan" i18n="@@accueil.bilan">
+          {{ bilan.faits }} étape(s) faite(s) · {{ bilan.attention }} à vérifier · {{ bilan.aFaire }} à faire
+        </p>
+      }
+      <ol class="accueil-liste">
+        @for (ligne of lignes(); track ligne.id) {
+          <li class="accueil-ligne" [class]="'accueil-ligne accueil-ligne-' + ligne.statut.toLowerCase()"
+              [attr.data-ligne]="ligne.id">
+            <mat-icon class="accueil-icone" [attr.aria-label]="statutLabel(ligne.statut)" role="img">
+              {{ statutIcon(ligne.statut) }}
+            </mat-icon>
+            <div class="accueil-corps">
+              <div class="accueil-titre">
+                <span class="accueil-titre-texte">{{ ligne.titre }}</span>
+                <span class="accueil-statut">{{ statutLabel(ligne.statut) }}</span>
+              </div>
+              <p class="accueil-detail">{{ ligne.detail }}</p>
+            </div>
+            <a matButton class="accueil-lien" [routerLink]="ligne.lien.route" [queryParams]="ligne.lien.queryParams ?? null">
+              {{ ligne.lien.libelle }}
+              <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+            </a>
+          </li>
+        }
+      </ol>
+    }
+  </mat-card-content>
+</mat-card>

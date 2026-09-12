@@ -1,0 +1,98 @@
+/* « État de l'édition »: the checklist of the cycle, one line per step. The
+   three states borrow the semantic colours the other screens already use —
+   error for what needs attention, tertiary for what is done — never a
+   hard-coded colour (the palette is a light-dark() pair). */
+
+.accueil-edition {
+  font-weight: 500;
+}
+
+.accueil-bilan {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0 0 0.75rem;
+}
+
+.accueil-erreur {
+  color: var(--mat-sys-error);
+}
+
+.accueil-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.accueil-ligne {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.accueil-icone {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.accueil-ligne-attention {
+  border-color: var(--mat-sys-error);
+}
+
+.accueil-ligne-attention .accueil-icone,
+.accueil-ligne-attention .accueil-statut {
+  color: var(--mat-sys-error);
+}
+
+.accueil-ligne-fait .accueil-icone,
+.accueil-ligne-fait .accueil-statut {
+  color: var(--mat-sys-tertiary);
+}
+
+.accueil-corps {
+  min-width: 0;
+}
+
+.accueil-titre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+
+.accueil-titre-texte {
+  font: var(--mat-sys-title-medium);
+}
+
+.accueil-statut {
+  font: var(--mat-sys-label-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.accueil-detail {
+  margin: 0.15rem 0 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.accueil-lien {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .accueil-ligne {
+    grid-template-columns: auto 1fr;
+  }
+
+  .accueil-lien {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

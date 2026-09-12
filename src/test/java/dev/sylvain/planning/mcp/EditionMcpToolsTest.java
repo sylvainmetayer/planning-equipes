@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import dev.sylvain.planning.mcp.CreneauMcpTools.CreneauView;
 import dev.sylvain.planning.mcp.EditionMcpTools.EditionView;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.edition.EtatEditionView;
+import dev.sylvain.planning.service.edition.EtatEditionView.Statut;
 import io.quarkiverse.mcp.server.ToolManager;
 import io.quarkiverse.mcp.server.ToolManager.ToolArgument;
 import io.quarkiverse.mcp.server.ToolManager.ToolInfo;
@@ -114,6 +116,40 @@ class EditionMcpToolsTest {
                 .hasSize(1)
                 .first()
                 .isEqualTo(editionTools.edition_courante());
+    }
+
+    /**
+     * The checklist reads the edition its argument designates — a fresh one
+     * has every line to do, and a timeslot created there is counted there, not
+     * in the current edition — and names nobody: the view is counts and dates.
+     */
+    @Test
+    void etatEditionReadsTheDesignatedEditionAndNamesNobody() {
+        editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
+
+        EtatEditionView vide = editionTools.etat_edition(EDITION_TEST);
+
+        assertThat(vide.editionId()).isEqualTo(EDITION_TEST);
+        assertThat(vide.editionNom()).isEqualTo("Édition de test MCP");
+        assertThat(vide.referentiels().statut()).isEqualTo(Statut.A_FAIRE);
+        assertThat(vide.resolution().resolue()).isFalse();
+        assertThat(vide.resolution().solveEnCours()).isFalse();
+        assertThat(vide.publication().jamaisPublie()).isTrue();
+
+        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", EDITION_TEST);
+
+        assertThat(editionTools.etat_edition(EDITION_TEST).referentiels().creneaux())
+                .isEqualTo(1);
+        assertThat(editionTools.etat_edition(null).editionId())
+                .as("sans argument, l'édition courante")
+                .isNotEqualTo(EDITION_TEST);
+        for (var composant : EtatEditionView.class.getRecordComponents()) {
+            assertThat(composant.getType().isRecord() || composant.getType() == String.class)
+                    .as(
+                            "la vue ne porte que des blocs de chiffres et l'identité de l'édition : %s",
+                            composant.getName())
+                    .isTrue();
+        }
     }
 
     @Test

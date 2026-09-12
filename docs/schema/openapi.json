@@ -2061,6 +2061,122 @@
           }
         }
       },
+      "EtatBesoin" : {
+        "required" : [ "animateurs", "manque", "minimum", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "animateurs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "minimum" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "manque" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatCollecte" : {
+        "required" : [ "declarationsEnAttente", "declarationsTraitees", "ouverte", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "ouverte" : {
+            "type" : "boolean"
+          },
+          "declarationsEnAttente" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "declarationsTraitees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatConfirmations" : {
+        "required" : [ "confirmes", "relances", "silencieux", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "confirmes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "relances" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "silencieux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatEditionView" : {
+        "type" : "object",
+        "properties" : {
+          "editionId" : {
+            "type" : "string"
+          },
+          "editionNom" : {
+            "type" : "string"
+          },
+          "referentiels" : {
+            "$ref" : "#/components/schemas/EtatReferentiels"
+          },
+          "collecte" : {
+            "$ref" : "#/components/schemas/EtatCollecte"
+          },
+          "ouvertures" : {
+            "$ref" : "#/components/schemas/EtatOuvertures"
+          },
+          "besoin" : {
+            "$ref" : "#/components/schemas/EtatBesoin"
+          },
+          "resolution" : {
+            "$ref" : "#/components/schemas/EtatResolution"
+          },
+          "problemes" : {
+            "$ref" : "#/components/schemas/EtatProblemes"
+          },
+          "publication" : {
+            "$ref" : "#/components/schemas/EtatPublication"
+          },
+          "confirmations" : {
+            "$ref" : "#/components/schemas/EtatConfirmations"
+          },
+          "foire" : {
+            "$ref" : "#/components/schemas/EtatFoire"
+          }
+        }
+      },
+      "EtatFoire" : {
+        "required" : [ "demandesEnAttente", "ouverte", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "ouverte" : {
+            "type" : "boolean"
+          },
+          "demandesEnAttente" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
       "EtatJourJ" : {
         "required" : [ "creneauxDuJour" ],
         "type" : "object",
@@ -2110,6 +2226,110 @@
       "EtatOuverture" : {
         "type" : "string",
         "enum" : [ "OUVERT_TOTAL", "OUVERT_PARTIEL", "FERME" ]
+      },
+      "EtatOuvertures" : {
+        "required" : [ "anomalies", "standsJamaisOuverts", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "anomalies" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "standsJamaisOuverts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatProblemes" : {
+        "required" : [ "avertissements", "bloquants", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "bloquants" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "avertissements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatPublication" : {
+        "required" : [ "jamaisPublie", "personnesAPrevenir", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "jamaisPublie" : {
+            "type" : "boolean"
+          },
+          "dernierePublicationLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "personnesAPrevenir" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatReferentiels" : {
+        "required" : [ "animateurs", "creneaux", "stands", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "stands" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "animateurs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "creneaux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatResolution" : {
+        "required" : [ "dataStale", "resolue", "solveEnCours", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "resolue" : {
+            "type" : "boolean"
+          },
+          "resoluLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "score" : {
+            "type" : "string"
+          },
+          "scoreHorsPlancher" : {
+            "type" : "string"
+          },
+          "faisable" : {
+            "type" : "boolean"
+          },
+          "dataStale" : {
+            "type" : "boolean"
+          },
+          "solveEnCours" : {
+            "type" : "boolean"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
       },
       "FeasibilityReport" : {
         "type" : "object",
@@ -4715,6 +4935,10 @@
           }
         }
       },
+      "Statut" : {
+        "type" : "string",
+        "enum" : [ "A_FAIRE", "ATTENTION", "FAIT" ]
+      },
       "StatutEnvoi" : {
         "type" : "string",
         "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC" ]
@@ -6818,6 +7042,24 @@
           }
         },
         "summary" : "Courant",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
+    "/api/editions/courant/etat" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatEditionView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Etat",
         "tags" : [ "Edition Resource" ]
       }
     },

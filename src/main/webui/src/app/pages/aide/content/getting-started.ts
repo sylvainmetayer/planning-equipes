@@ -44,6 +44,10 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.start.accueil:La page d'accueil, « État de l'édition », reprend ces étapes en checklist : chaque ligne dit si l'étape est faite, à vérifier ou à faire, avec le chiffre qui compte et un lien vers l'écran qui la fait avancer. C'est là qu'on revient pour savoir où l'on en est ; le solveur, lui, a sa page.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.start.iterate:Les étapes de résolution se répètent : une première résolution courte sert à révéler ce qui bloque, pas à produire le planning final. Ne changez qu'une chose à la fois entre deux essais, sinon plus rien n'est comparable.`,
         },
         {
@@ -58,7 +62,8 @@ export function buildGettingStartedSections(): HelpSection[] {
           label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`,
         },
         { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
-        { route: '/', label: $localize`:@@nav.link.solver:Solveur` },
+        { route: '/', label: $localize`:@@nav.link.accueil:État de l'édition` },
+        { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
       ],

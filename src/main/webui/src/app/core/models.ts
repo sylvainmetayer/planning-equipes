@@ -2757,3 +2757,93 @@ export interface ScenarioValidationResult {
   valide: boolean;
   erreurs: string[];
 }
+
+/* --------------------------- Edition status (home) --------------------------- */
+
+/** The three states a line of the home checklist can be in (`/api/editions/courant/etat`). */
+export type StatutEtat = 'A_FAIRE' | 'ATTENTION' | 'FAIT';
+
+export interface EtatReferentiels {
+  stands: number;
+  animateurs: number;
+  creneaux: number;
+  statut: StatutEtat;
+}
+
+export interface EtatCollecte {
+  ouverte: boolean;
+  declarationsEnAttente: number;
+  declarationsTraitees: number;
+  statut: StatutEtat;
+}
+
+export interface EtatOuvertures {
+  anomalies: number;
+  standsJamaisOuverts: number;
+  statut: StatutEtat;
+}
+
+export interface EtatBesoin {
+  animateurs: number;
+  minimum: number;
+  manque: number;
+  statut: StatutEtat;
+}
+
+export interface EtatResolution {
+  resolue: boolean;
+  resoluLe: string | null;
+  /** `null` without an analysis of the persisted plan in memory (a restart). */
+  score: string | null;
+  scoreHorsPlancher: string | null;
+  faisable: boolean | null;
+  /** Computed server-side: reference data changed after the solve. */
+  dataStale: boolean;
+  solveEnCours: boolean;
+  statut: StatutEtat;
+}
+
+export interface EtatProblemes {
+  bloquants: number;
+  avertissements: number;
+  statut: StatutEtat;
+}
+
+export interface EtatPublication {
+  jamaisPublie: boolean;
+  dernierePublicationLe: string | null;
+  personnesAPrevenir: number;
+  statut: StatutEtat;
+}
+
+export interface EtatConfirmations {
+  confirmes: number;
+  relances: number;
+  silencieux: number;
+  statut: StatutEtat;
+}
+
+export interface EtatFoire {
+  ouverte: boolean;
+  demandesEnAttente: number;
+  statut: StatutEtat;
+}
+
+/**
+ * Where the current edition stands in its cycle — the checklist of the home
+ * screen, one block per step, computed server-side in one call. Counts and
+ * dates only: no name ever travels here.
+ */
+export interface EtatEdition {
+  editionId: string;
+  editionNom: string;
+  referentiels: EtatReferentiels;
+  collecte: EtatCollecte;
+  ouvertures: EtatOuvertures;
+  besoin: EtatBesoin;
+  resolution: EtatResolution;
+  problemes: EtatProblemes;
+  publication: EtatPublication;
+  confirmations: EtatConfirmations;
+  foire: EtatFoire;
+}

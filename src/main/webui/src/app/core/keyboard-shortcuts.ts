@@ -72,7 +72,8 @@ interface DefinitionRoute {
  *
  * <p>The letters read from the French label wherever that letter was free, and
  * fall back to a distinctive one where it was not — `g g` is the home page
- * (the Solveur), `g r` is « Réglages » (Paramètres, `p` being taken by the
+ * (« État de l'édition »), `g l` *lance* the solver (`s` being taken by the
+ * Stands), `g r` is « Réglages » (Paramètres, `p` being taken by the
  * Diagnostic and its *problèmes*), `g m` is the *mensuel* calendar and `g j`
  * the *journée*,
  * `g x` is Échanges (the crossing arrows of a swap, `e` being taken by
@@ -84,7 +85,14 @@ interface DefinitionRoute {
  */
 function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
   return new Map<string, DefinitionRoute>([
-    ['/', { label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle', touche: 'g' }],
+    [
+      '/',
+      { label: $localize`:@@nav.link.accueil:État de l'édition`, icon: 'checklist', touche: 'g' },
+    ],
+    [
+      '/solveur',
+      { label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle', touche: 'l' },
+    ],
     [
       '/notifications',
       {
@@ -209,10 +217,16 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
   ]);
 }
 
-/** Routes the palette must not propose: they need a parameter, or a session it is the opposite of. */
+/**
+ * Routes the palette must not propose: they need a parameter, or a session it
+ * is the opposite of — and the admin shell itself, a layout route whose `''`
+ * child is the home. Listed as well, it doubled the home entry under the same
+ * id, which stayed invisible as long as the home's label matched nothing.
+ */
 function estRoutePalette(route: Route): boolean {
   return (
     route.loadComponent !== undefined &&
+    route.children === undefined &&
     route.path !== undefined &&
     route.path !== 'login' &&
     !route.path.includes(':') &&

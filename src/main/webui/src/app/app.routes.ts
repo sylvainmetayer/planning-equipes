@@ -60,7 +60,14 @@ function redirectToDiagnostic(onglet: string): RedirectFunction {
 
 const adminRoutes: Routes = [
   {
+    // The home: where the edition stands in its cycle, before any screen
+    // that acts on it (issue #485). The solver keeps its page under /solveur.
     path: '',
+    title: () => $localize`:@@route.accueil:État de l'édition`,
+    loadComponent: () => import('./pages/accueil/accueil-page').then((m) => m.AccueilPage),
+  },
+  {
+    path: 'solveur',
     title: () => $localize`:@@route.solver:Solveur`,
     loadComponent: () => import('./pages/solver/solver-page').then((m) => m.SolverPage),
   },
@@ -149,8 +156,9 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.editions:Éditions`,
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage),
   },
-  { path: 'exports', redirectTo: '' },
-  { path: 'solver', redirectTo: '' },
+  // The solver was the home page until #485; both old addresses still land on it.
+  { path: 'exports', redirectTo: 'solveur' },
+  { path: 'solver', redirectTo: 'solveur' },
   // Pre-Paramètres URLs (bookmarks, aide links): the pages were merged there.
   { path: 'data-transfer', redirectTo: 'parametres' },
   { path: 'data-setup', redirectTo: 'parametres' },

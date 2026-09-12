@@ -5,6 +5,8 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.edition.EtatEditionService;
+import dev.sylvain.planning.service.edition.EtatEditionView;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
@@ -32,8 +34,16 @@ import java.util.stream.Stream;
  * per counted référentiel. That is deliberate: an edition list without it
  * ("2025", "2026", "2026 canicule") gives an assistant nothing to recognise
  * the right one by, and editions are counted in units, not in thousands.</p>
+ *
+ * <p>{@code etat_edition} is the one tool here that works <em>inside</em> an
+ * edition rather than on the list, hence the {@code @EditionCiblee} on the
+ * class: its {@code edition} argument designates the edition to read, the
+ * way every other tool's does. The other tools name their edition as a
+ * plain argument, resolved by hand — the interceptor only reads
+ * {@code @EditionArg}, so it leaves them alone.</p>
  */
 @Journalise
+@EditionCiblee
 @ApplicationScoped
 public class EditionMcpTools {
 
@@ -48,6 +58,9 @@ public class EditionMcpTools {
 
     @Inject
     McpEditions editions;
+
+    @Inject
+    EtatEditionService etatEditionService;
 
     @Tool(
             description = "Liste les éditions (« Année 2025 », « Année 2026 », un plan canicule…) : "
@@ -82,6 +95,24 @@ public class EditionMcpTools {
     EditionView edition_courante() {
         String courante = editionContext.editionIdCourant();
         return view(editionService.editionCourante(), courante);
+    }
+
+    @Tool(
+            description = "État de l'édition : la checklist du cycle, calculée — référentiels saisis, collecte "
+                    + "des disponibilités, ouvertures des stands, besoin en animateurs, dernière résolution (et si "
+                    + "les données ont bougé depuis, ou si une résolution est en cours), problèmes bloquants et "
+                    + "avertissements, publication, accusés de réception, foire au planning. Chaque ligne porte un "
+                    + "statut A_FAIRE, ATTENTION ou FAIT et les chiffres qui le décident ; aucune donnée nominative. "
+                    + "À appeler en premier pour savoir où en est l'organisateur, avant de choisir un outil plus fin.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    EtatEditionView etat_edition(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return etatEditionService.etat();
     }
 
     @Tool(

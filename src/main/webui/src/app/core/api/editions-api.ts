@@ -2,7 +2,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { Edition } from '../models';
+import { Edition, EtatEdition } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class EditionsApi {
@@ -16,6 +16,11 @@ export class EditionsApi {
   /** The edition this browser works on, as the server resolved it. */
   current(): Promise<Edition> {
     return this.api.get<Edition>('/api/editions/courant');
+  }
+
+  /** The checklist of the current edition's cycle, one call for the home screen. */
+  etat(): Promise<EtatEdition> {
+    return this.api.get<EtatEdition>('/api/editions/courant/etat');
   }
 
   /** A new edition, empty or duplicated from `source` — the variant of an edition is another edition. */

@@ -82,7 +82,7 @@ test('un solve lancé depuis la page Solveur pourvoit tous les postes', async ({
   expect(parametres.ok()).toBe(true);
 
   const page = await pageAdmin(browser, admin);
-  await page.goto('/');
+  await page.goto('/solveur');
   await page.getByRole('button', { name: 'Calculer le planning' }).click();
   // The server-side job lock is the source of truth: first see the job start
   // (otherwise an early poll could observe "no job yet" and pass before the
@@ -284,7 +284,7 @@ test('la courbe de score se replie, s’en souvient, et continue d’enregistrer
   expect(premier.status).toBe('COMPLETED');
 
   const page = await pageAdmin(browser, admin);
-  await page.goto('/');
+  await page.goto('/solveur');
   await expect(page.getByRole('heading', { name: 'Progression du score' })).toBeVisible();
   // Trois cadres, un par niveau : c'est le rendu déplié.
   await expect(page.getByRole('img', { name: /Contraintes dures/ })).toBeVisible();

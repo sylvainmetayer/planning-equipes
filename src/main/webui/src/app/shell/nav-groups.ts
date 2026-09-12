@@ -68,7 +68,12 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
       id: 'planning',
       title: $localize`:@@nav.group.planning:Planning`,
       links: [
-        { path: '/', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
+        {
+          path: '/',
+          label: $localize`:@@nav.link.accueil:État de l'édition`,
+          icon: 'checklist',
+        },
+        { path: '/solveur', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
         {
           path: '/disponibilites',
           label: $localize`:@@nav.link.disponibilites:Disponibilités`,

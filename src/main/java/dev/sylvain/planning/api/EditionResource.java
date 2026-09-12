@@ -2,6 +2,8 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.edition.EtatEditionService;
+import dev.sylvain.planning.service.edition.EtatEditionView;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -30,6 +32,9 @@ public class EditionResource {
     @Inject
     EditionService editionService;
 
+    @Inject
+    EtatEditionService etatEditionService;
+
     @GET
     public List<Edition> list() {
         return editionService.listEditions();
@@ -45,6 +50,19 @@ public class EditionResource {
     @Path("/courant")
     public Edition courant() {
         return editionService.editionCourante();
+    }
+
+    /**
+     * Where the current edition stands in its cycle: one line per step of
+     * the guide, each with its state and the figures behind it (issue #485).
+     * The single call the home screen makes; the nine screens it links to
+     * keep their own routes. Never refused while a solve runs — the solve is
+     * one of the states it reports.
+     */
+    @GET
+    @Path("/courant/etat")
+    public EtatEditionView etat() {
+        return etatEditionService.etat();
     }
 
     @POST

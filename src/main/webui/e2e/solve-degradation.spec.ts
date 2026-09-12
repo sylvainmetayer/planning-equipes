@@ -111,7 +111,7 @@ async function agrandirLeStand(standId: string, effectif: number): Promise<void>
 
 /** Runs a solve from the page itself, so the recap lands on screen as a user sees it. */
 async function resoudreDepuisLaPage(page: Page): Promise<void> {
-  await page.goto('/');
+  await page.goto('/solveur');
   await page.getByRole('button', { name: 'Calculer le planning' }).click();
   // The server-side lock is the source of truth: see the job hold it, then
   // release it. Polling the result alone could pass before the solve ran.
@@ -220,7 +220,7 @@ test('« Calculer » repart du plan enregistré, « Recommencer de zéro » dema
   await reseed();
   const page = await pageAdmin(browser, admin);
   try {
-    await page.goto('/');
+    await page.goto('/solveur');
     await expect(page.locator('#contenu')).toContainText(
       'Aucun plan enregistré : le calcul part de zéro.',
     );

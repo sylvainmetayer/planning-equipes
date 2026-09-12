@@ -59,7 +59,8 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 
 1. Ouvrir <http://localhost:8080> et se connecter (compte `admin`, mot de passe
    `admin` par défaut en local — variable `ADMIN_PASSWORD`) — la page
-   **Solveur** s'affiche ; le menu latéral donne accès à chaque écran (en
+   **État de l'édition** s'affiche : la checklist du cycle, chaque étape avec
+   son état et un lien vers l'écran qui la fait avancer ; le menu latéral donne accès à chaque écran (en
    mode simple par défaut : « Menu simple », en tête du menu, bascule vers le
    menu avancé qui liste aussi la quinzaine d'écrans spécialisés — diagnostic
    approfondi, vues d'analyse et outils techniques).
@@ -67,7 +68,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
    sélectionné** pour remplir l'édition courante (les référentiels sont ensuite
    modifiables depuis **Stands**, **Emplacements**, **Animateurs**,
    **Créneaux** et **Typologies**).
-3. Revenir sur **Solveur** et cliquer sur **Calculer le planning** : la résolution
+3. Ouvrir **Solveur** et cliquer sur **Calculer le planning** : la résolution
    part en tâche de fond (plusieurs minutes sur le scénario complet), la
    navigation reste libre, le score se trace en direct et une notification
    s'affiche à la fin — y compris dans les autres navigateurs ouverts sur
@@ -199,6 +200,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 
 | Fonctionnalité | En une phrase |
 | --- | --- |
+| État de l'édition | La page d'accueil : les étapes du cycle (référentiels, collecte des disponibilités, ouvertures, besoin, résolution, problèmes, publication, accusés de réception, foire) en checklist calculée — chaque ligne dit si l'étape est faite, à vérifier ou à faire, avec le chiffre qui compte et le lien vers l'écran concerné ; une résolution en cours s'y lit sans rien bloquer |
 | Génération automatique du planning | Le moteur d'optimisation affecte les animateurs aux places à pourvoir, sous trois niveaux d'exigence : le cadre légal et les incompatibilités (jamais franchis), la couverture des postes, puis l'équité, les souhaits et le confort |
 | Stabilité du plan publié | Une fois le planning envoyé, chaque personne déplacée coûte au solveur : un recalcul après un changement tardif bouge le minimum de gens déjà prévenus, et le récapitulatif dit combien la publication préviendrait |
 | Trois façons de lancer le solveur | « Calculer le planning » repart du plan enregistré s'il existe et cherche à l'améliorer, sans rien figer hormis les verrouillages ; « Corriger après un changement » fige ce qui tient et ne recalcule que les postes rouverts ; « Recommencer de zéro » abandonne l'acquis, et le dit avant. La page annonce d'où partira le prochain calcul et d'où le dernier est parti |

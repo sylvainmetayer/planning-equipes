@@ -465,7 +465,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/animateur/:jeton/echanges`, `/animateur/:jeton/disponibilites` and
   `/animateur/:jeton/aide`.
 - **One route = one page = one block.** Admin routes (children of the shell):
-  `/` (default, the solver page),
+  `/` (default, « État de l'édition » — the checklist of the cycle, one line
+  per step with its state and a link to the screen that moves it, read in one
+  call from `GET /api/editions/courant/etat`), `/solveur` (the solver page,
+  the former home),
   `/debug`, `/mcp-client`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
   `/animateurs`, `/competences` (« Compétences » — the animateur × typologie
   grid of appreciations, saved row by row, exported and imported as a CSV),
@@ -494,9 +497,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/import-grille-stands`, `/disponibilites` (what the animateurs
   declared), `/editions`, `/historique` (« Historique des actions »), the
   three public legal pages `/mentions-legales`, `/conditions-utilisation`,
-  `/politique-confidentialite`, and `/aide` (`/solver`,
-  `/exports`, `/data-transfer`, `/data-setup`, `/decoupage` and
-  `/validateur-yaml` are legacy redirects, kept for old bookmarks/links, and so
+  `/politique-confidentialite`, and `/aide` (`/solver` and `/exports` redirect
+  to `/solveur`; `/data-transfer`, `/data-setup`, `/decoupage` and
+  `/validateur-yaml` are legacy redirects too, kept for old bookmarks/links, and so
   are the eight former screens `/day-calendar`, `/rail-jour`, `/carte-jour`,
   `/pauses`, `/problemes`, `/staffing`, `/fragilite` and `/banc-de-touche`,
   whose redirects carry their query params along, renamed where the page now
@@ -557,7 +560,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   control must name itself, or the generated sort button borrows that control's
   `aria-label`), and `app/pages/<page>/` holds one folder per route.
 - **One global keyboard listener, and it already exists.** Ctrl+K (command
-  palette), `g`+letter (navigation), `/` (the page's filter, marked by
+  palette), `g`+letter (navigation — `g g` the home, `g l` the solver), `/` (the page's filter, marked by
   `data-page-filter`), `?` (the shortcut list) and Ctrl+Enter (submit the
   active form) all go through `core/keyboard-shortcuts.service.ts`; its
   destinations are derived from `app.routes.ts`, so a new route is reachable

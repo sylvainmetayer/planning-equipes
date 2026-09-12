@@ -90,7 +90,7 @@ test("l'envoi des plannings par e-mail rend compte, individuellement et pour tou
   // de publier, donc il n'y a plus personne à prévenir et le bouton le dit
   // plutôt que d'inviter à un clic qui serait refusé. Le parcours complet
   // (déplacer un siège, relire la liste, publier) est dans publication.spec.ts.
-  await page.goto('/');
+  await page.goto('/solveur');
   await expect(page.getByText('Tout le monde est à jour')).toBeVisible();
   await expect(page.getByText(/Dernière publication le/)).toBeVisible();
   await page.context().close();

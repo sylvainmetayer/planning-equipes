@@ -43,7 +43,7 @@ export function buildSolverSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/', label: $localize`:@@nav.link.solver:Solveur` },
+        { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
       ],
     },
@@ -100,7 +100,7 @@ export function buildSolverSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/', label: $localize`:@@nav.link.solver:Solveur` },
+        { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
