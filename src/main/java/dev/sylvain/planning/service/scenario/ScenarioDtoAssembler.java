@@ -131,7 +131,6 @@ final class ScenarioDtoAssembler {
                         stand.isReserveMajeurs(),
                         stand.isPremium(),
                         stand.getNiveauEffort(),
-                        stand.getFamille(),
                         indisponibilites(stand.getIndisponibilites()),
                         ouvertures(stand.getOuvertures()),
                         horaires(stand.getHoraires())))
@@ -330,8 +329,6 @@ final class ScenarioDtoAssembler {
                         null,
                         null,
                         parametres.getStrategieCouverturePendantPause(),
-                        parametres.getNombreFamillesDecalage(),
-                        parametres.getDureeDecalageMaxMinutes(),
                         parametres.getModeGrille());
     }
 }

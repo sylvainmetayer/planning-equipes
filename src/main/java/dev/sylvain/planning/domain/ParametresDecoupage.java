@@ -47,10 +47,6 @@ public class ParametresDecoupage {
     public static final int DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT = 6 * 60;
 
     public static final int DUREE_CHEVAUCHEMENT_MINUTES_PAR_DEFAUT = 30;
-    /** No staggering by default: every stand shares the same relay grid, exactly the historical behaviour. */
-    public static final int NOMBRE_FAMILLES_DECALAGE_PAR_DEFAUT = 1;
-
-    public static final int DUREE_DECALAGE_MAX_MINUTES_PAR_DEFAUT = 0;
     /** What the Créneaux screen presumed silently before the mode was declared. */
     public static final ModeGrilleCreneaux MODE_GRILLE_PAR_DEFAUT = ModeGrilleCreneaux.AMPLITUDES;
 
@@ -58,8 +54,6 @@ public class ParametresDecoupage {
     private int dureeVacationMinMinutes = DUREE_VACATION_MIN_MINUTES_PAR_DEFAUT;
     private int dureeVacationMaxMinutes = DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT;
     private int dureeChevauchementMinutes = DUREE_CHEVAUCHEMENT_MINUTES_PAR_DEFAUT;
-    private int nombreFamillesDecalage = NOMBRE_FAMILLES_DECALAGE_PAR_DEFAUT;
-    private int dureeDecalageMaxMinutes = DUREE_DECALAGE_MAX_MINUTES_PAR_DEFAUT;
     private PauseCoverageStrategy strategieCouverturePendantPause = PauseCoverageStrategy.FERMETURE;
     private ModeGrilleCreneaux modeGrille = MODE_GRILLE_PAR_DEFAUT;
 
@@ -118,34 +112,5 @@ public class ParametresDecoupage {
 
     public void setStrategieCouverturePendantPause(PauseCoverageStrategy strategieCouverturePendantPause) {
         this.strategieCouverturePendantPause = strategieCouverturePendantPause;
-    }
-
-    /**
-     * How many time-staggered relay-grid variants to generate per amplitude
-     * (1 = off, the default: every stand shares one grid, unchanged
-     * behaviour). Each stand is deterministically assigned to exactly one
-     * variant by a hash of its id, so stands don't all hand over to a fresh
-     * animateur at the same clock minute.
-     */
-    public int getNombreFamillesDecalage() {
-        return nombreFamillesDecalage;
-    }
-
-    public void setNombreFamillesDecalage(int nombreFamillesDecalage) {
-        this.nombreFamillesDecalage = nombreFamillesDecalage;
-    }
-
-    /**
-     * Spread, in minutes, across which the {@code nombreFamillesDecalage}
-     * variants' internal relay cuts are offset from the un-staggered target
-     * (symmetric: half the variants land earlier, half later). Ignored when
-     * {@code nombreFamillesDecalage <= 1}.
-     */
-    public int getDureeDecalageMaxMinutes() {
-        return dureeDecalageMaxMinutes;
-    }
-
-    public void setDureeDecalageMaxMinutes(int dureeDecalageMaxMinutes) {
-        this.dureeDecalageMaxMinutes = dureeDecalageMaxMinutes;
     }
 }

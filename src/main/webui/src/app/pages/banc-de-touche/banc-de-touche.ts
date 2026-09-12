@@ -73,28 +73,14 @@ export function lignes(banc: BancDeTouche | null, animateurs: Animateur[]): Lign
   });
 }
 
-/**
- * `J3 · 2026-07-16 · 10:00-13:00`, plus the stagger family when there is one.
- *
- * `avecFamille` is decided over the whole list, like the créneaux screen does:
- * every créneau carries a family, but it only means something once a découpage
- * has generated several variants of the same hours. Tagging every line `(F1)`
- * when there is only one family is noise on top of the one thing this label is
- * for — telling two otherwise identical vacations apart.
- */
-export function libelleCreneau(creneau: CreneauSiege, avecFamille = false): string {
-  const family = avecFamille ? ` (F${(creneau.famille ?? 0) + 1})` : '';
-  return `J${creneau.jour} · ${creneau.date} · ${heure(creneau.heureDebut)}-${heure(creneau.heureFin)}${family}`;
+/** `J3 · 2026-07-16 · 10:00-13:00`: what a créneau reads as in a selector. */
+export function libelleCreneau(creneau: CreneauSiege): string {
+  return `J${creneau.jour} · ${creneau.date} · ${heure(creneau.heureDebut)}-${heure(creneau.heureFin)}`;
 }
 
 /** Hours arrive as `HH:mm:ss` from the API; the seconds are always zero and never read. */
 function heure(valeur: string): string {
   return valeur.length > 5 ? valeur.slice(0, 5) : valeur;
-}
-
-/** True once a découpage has produced more than one stagger family, so the tag carries information. */
-export function familleUtile(creneaux: readonly CreneauSiege[]): boolean {
-  return creneaux.some((creneau) => (creneau.famille ?? 0) > 0);
 }
 
 /**

@@ -19,15 +19,9 @@ import {
  * resolved location, the human labels of the typologies, and how many dated
  * exceptions actually override the recurring rules.
  */
-/**
- * @param nombreFamilles relay families the edition's grid has: the family row
- *                       is meaningless on a grid that has only one, and the
- *                       form does not show the field there either (issue #390)
- */
 export function buildStandDetail(
   stand: Stand,
   typologies: readonly TypologieItem[] = [],
-  nombreFamilles = 1,
 ): DetailSection[] {
   const labels = new Map(
     typologies.map((typologie) => [typologie.id, typologie.label || typologie.id]),
@@ -66,17 +60,6 @@ export function buildStandDetail(
           label: $localize`:@@stands.field.niveauEffort:Épuisant physiquement`,
           value: ouiNon(stand.niveauEffort === 'EPUISANT'),
         },
-        ...(nombreFamilles > 1
-          ? [
-              {
-                label: $localize`:@@stands.field.famille:Famille de relais`,
-                value:
-                  stand.famille === null || stand.famille === undefined
-                    ? $localize`:@@stands.famille.nonAttribuee:pas encore attribuée`
-                    : $localize`:@@stands.famille.valeur:Famille ${stand.famille + 1}:numero:`,
-              },
-            ]
-          : []),
       ],
     },
     {

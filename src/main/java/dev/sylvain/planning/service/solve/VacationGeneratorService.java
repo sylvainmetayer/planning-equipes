@@ -48,44 +48,20 @@ public final class VacationGeneratorService {
      * longer needs inheriting here: it now lives on the {@code Stand} itself
      * (see {@code IndisponibiliteStand}), so it applies uniformly whichever
      * créneau — amplitude or vacation — ends up referencing that stand.
-     *
-     * <p>When {@link ParametresDecoupage#getNombreFamillesDecalage()} is
-     * greater than 1, each amplitude is sliced once per "famille" instead of
-     * once overall, each with its internal relay cuts offset by a different
-     * amount (see {@link #vacationEnd}) and tagged via
-     * {@link Creneau#setFamille(int)}. A shared grid otherwise snaps every
-     * amplitude's handover to the same clock minute (a target vacation length
-     * that overshoots a meal window's end always clamps to that same end,
-     * whatever the amplitude), which piles every stand's crew change onto a
-     * handful of instants and forces overlaps that a staggered grid avoids —
-     * see {@code docs/domaine.md}. Poste generation then assigns each stand to
-     * exactly one famille, so it only ever sees that variant's créneaux.</p>
      */
     public static List<Creneau> generateVacations(
             List<Creneau> amplitudes, ParametresDecoupage parametres, ParametresLegaux legaux) {
-        int nombreFamilles = Math.max(1, parametres.getNombreFamillesDecalage());
         List<Creneau> vacations = new ArrayList<>();
         for (Creneau amplitude : amplitudes) {
-            for (int famille = 0; famille < nombreFamilles; famille++) {
-                List<Creneau> tranche = sliceAmplitude(amplitude, parametres, legaux, famille, nombreFamilles);
-                for (Creneau vacation : tranche) {
-                    vacation.setFamille(famille);
-                }
-                vacations.addAll(tranche);
-            }
+            vacations.addAll(sliceAmplitude(amplitude, parametres, legaux));
         }
         return vacations;
     }
 
     private static List<Creneau> sliceAmplitude(
-            Creneau amplitude,
-            ParametresDecoupage parametres,
-            ParametresLegaux legaux,
-            int famille,
-            int nombreFamilles) {
+            Creneau amplitude, ParametresDecoupage parametres, ParametresLegaux legaux) {
         int duree = amplitude.getDureeMinutes();
-        List<int[]> segmentsBruts =
-                sliceIntoMinutes(duree, parametres, mealFenetresInMinutes(amplitude, legaux), famille, nombreFamilles);
+        List<int[]> segmentsBruts = sliceIntoMinutes(duree, parametres, mealFenetresInMinutes(amplitude, legaux));
         List<Segment> segments = new ArrayList<>();
         for (int[] segment : segmentsBruts) {
             segments.addAll(applyLegalPauseIfNeeded(segment, amplitude, parametres, legaux));
@@ -118,21 +94,13 @@ public final class VacationGeneratorService {
      * right after a meal rather than in the middle of it. The next vacation
      * then starts {@code dureeChevauchementMinutes} before the current one
      * ends, which is the whole coverage guarantee — see class javadoc.
-     *
-     * <p>With more than one famille, the cut is not placed at the target but
-     * <b>fanned out inside the retained range</b>: the families are spread
-     * evenly across {@code dureeDecalageMaxMinutes}, centred on the target and
-     * shrunk to fit. See {@link #vacationEnd} for why the fan has to live
-     * inside the range rather than shift the target ahead of the clamp.</p>
      */
-    private static List<int[]> sliceIntoMinutes(
-            int duree, ParametresDecoupage parametres, List<int[]> fenetresRepas, int famille, int nombreFamilles) {
+    private static List<int[]> sliceIntoMinutes(int duree, ParametresDecoupage parametres, List<int[]> fenetresRepas) {
         List<int[]> segments = new ArrayList<>();
         int max = parametres.getDureeVacationMaxMinutes();
         int min = parametres.getDureeVacationMinMinutes();
         int target = parametres.getDureeVacationCibleMinutes();
         int chevauchement = parametres.getDureeChevauchementMinutes();
-        int etalement = nombreFamilles > 1 ? parametres.getDureeDecalageMaxMinutes() : 0;
         int courant = 0;
         while (true) {
             int restant = duree - courant;
@@ -148,28 +116,13 @@ public final class VacationGeneratorService {
             for (int[] fenetre : fenetresRepas) {
                 int debutFenetre = Math.max(fenetre[0], borneBasse);
                 int finFenetre = Math.min(fenetre[1], borneHaute);
-                // The meal window is only kept as a cut range when it is wide
-                // enough to hold the whole spread: otherwise every family would
-                // collapse onto the same instant inside it and the
-                // desynchronisation would be lost (see vacationEnd).
-                if (debutFenetre <= finFenetre && finFenetre - debutFenetre >= etalement) {
+                if (debutFenetre <= finFenetre) {
                     plageBasse = debutFenetre;
                     plageHaute = finFenetre;
                     break;
                 }
             }
-            if (nombreFamilles > 1) {
-                // Keeps room for one last full shift after this handover, by
-                // shrinking the range rather than fixing the cut afterwards: an
-                // after-the-fact correction would bring every family back onto
-                // the same point and cancel the spread.
-                int remainderCap = duree - min + chevauchement;
-                if (remainderCap >= plageBasse) {
-                    plageHaute = Math.min(plageHaute, remainderCap);
-                }
-            }
-            int fin = vacationEnd(cibleFin, plageBasse, plageHaute, famille, nombreFamilles, etalement);
-            fin = clamp(fin, borneBasse, borneHaute);
+            int fin = clamp(clamp(cibleFin, plageBasse, plageHaute), borneBasse, borneHaute);
             // Never leave a remainder shorter than the minimum after this
             // handover: without that guard, a cut close to borneHaute (to fall
             // inside a meal window, say) can shrink the last shift of the opening
@@ -182,44 +135,6 @@ public final class VacationGeneratorService {
             courant = fin - chevauchement;
         }
         return segments;
-    }
-
-    /**
-     * Where this famille's relay cut lands inside {@code [plageBasse,
-     * plageHaute]}: the families are fanned out evenly over {@code etalement}
-     * minutes, centred on {@code cibleFin} and pushed inwards so the whole fan
-     * fits in the range. A single famille (or a zero fan) lands exactly on
-     * {@code clamp(cibleFin, plageBasse, plageHaute)} — bit-for-bit the
-     * historical behaviour.
-     *
-     * <p><b>Why the fan must live inside the range.</b> The first attempt at
-     * staggering shifted {@code cibleFin} itself before the range clamp
-     * applied. That silently does nothing, because a clamp has <i>two</i>
-     * edges: a target pushed past {@code plageHaute} snaps back to
-     * {@code plageHaute}, and a target pulled below {@code plageBasse} snaps
-     * back up to {@code plageBasse} — every famille landing on the very same
-     * instant either way. On real data every stand's evening changeover piled
-     * onto the same minute (the meal window's own edge), so at that instant
-     * both the outgoing and the incoming crew were on the clock at once and
-     * the seat count momentarily <b>doubled</b> — 86 seats genuinely open
-     * became 172 to staff at 18:30, against 153 animateurs. That peak, not any
-     * shortage of people, was what made the scenario unsolvable: no search
-     * budget can fill 172 seats with 153 bodies. Fanning inside the range
-     * spreads the changeovers instead of stacking them, and the peak drops
-     * back under the roster. See the coverage-deficit investigation (kept out of the public repository: it is based on a real event dataset).</p>
-     */
-    private static int vacationEnd(
-            int cibleFin, int plageBasse, int plageHaute, int famille, int nombreFamilles, int etalement) {
-        int largeur = Math.max(0, plageHaute - plageBasse);
-        int fan = Math.min(etalement, largeur);
-        if (nombreFamilles <= 1 || fan == 0) {
-            return clamp(cibleFin, plageBasse, plageHaute);
-        }
-        double demi = fan / 2.0;
-        double centre = clamp(cibleFin, plageBasse, plageHaute);
-        centre = Math.min(Math.max(centre, plageBasse + demi), plageHaute - demi);
-        double position = (double) famille / (nombreFamilles - 1) - 0.5;
-        return (int) Math.round(centre + position * fan);
     }
 
     /**

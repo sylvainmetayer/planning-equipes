@@ -108,14 +108,8 @@ public class StandMcpTools {
             @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
             @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
-            @ToolArg(
-                            description =
-                                    "Famille de relais (0 = première) sur une grille décalée ; omis, la moins peuplée",
-                            required = false)
-                    Integer famille,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = new Stand();
-        stand.setFamille(famille);
         stand.setId(id);
         stand.setNom(nom);
         stand.setTypologiesProposees(
@@ -307,8 +301,6 @@ public class StandMcpTools {
             @ToolArg(description = "Stand premium", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
             @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
-            @ToolArg(description = "Famille de relais (0 = première) sur une grille décalée", required = false)
-                    Integer famille,
             @ToolArg(
                             description =
                                     "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)",
@@ -336,9 +328,6 @@ public class StandMcpTools {
         }
         if (premium != null) {
             stand.setPremium(premium);
-        }
-        if (famille != null) {
-            stand.setFamille(famille);
         }
         if (niveauEffort != null) {
             stand.setNiveauEffort(McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
@@ -761,7 +750,6 @@ public class StandMcpTools {
                 stand.isPremium(),
                 stand.getNiveauEffort(),
                 stand.getEmplacement() == null ? null : stand.getEmplacement().getId(),
-                stand.getFamille(),
                 fermetures,
                 ouvertures,
                 horaires,
@@ -793,7 +781,6 @@ public class StandMcpTools {
             boolean premium,
             NiveauEffort niveauEffort,
             String emplacementId,
-            Integer famille,
             List<PlageView> fermetures,
             List<PlageView> ouvertures,
             List<HoraireView> horaires,

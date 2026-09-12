@@ -25,7 +25,6 @@ import { keepViewInQueryParams, optionalParam } from '../../core/view-query-para
 import {
   creneauxUtiles,
   EtatBanc,
-  familleUtile,
   LigneBanc,
   libelleCreneau,
   libelleStand,
@@ -135,7 +134,6 @@ export class BancDeTouchePage {
    * to display a fraction of them.
    */
   protected readonly creneaux = computed(() => creneauxUtiles(this.banc()));
-  private readonly familleUtile = computed(() => familleUtile(this.creneaux()));
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
@@ -188,7 +186,7 @@ export class BancDeTouchePage {
    * only be empty for — not offering them at all is the better answer.
    */
   protected libelleCreneau(creneau: CreneauSiege): string {
-    return libelleCreneau(creneau, this.familleUtile());
+    return libelleCreneau(creneau);
   }
 
   protected reinitialiser(): void {

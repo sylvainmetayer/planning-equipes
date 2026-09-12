@@ -47,7 +47,6 @@ import {
   aplatissement,
   cellulesDepuis,
   colonneId,
-  cellulesInertes,
   cellulesPartielles,
   key,
   collerBloc,
@@ -81,7 +80,6 @@ interface CelluleView {
   premierDuJour: boolean;
   valeur: string;
   modifiee: boolean;
-  inerte: boolean;
   partielle: boolean;
   fermee: boolean;
   desactivee: boolean;
@@ -175,8 +173,6 @@ export class OuverturesPage {
       .map((ligne) => ligne.standId)
       .filter((standId) => this.hasPartialCells(standId)),
   );
-  /** Cells of another stagger family's créneau: shown, never typed, never sent. */
-  private readonly inertes = signal<ReadonlySet<string>>(new Set());
   /** The last cell focused: where a paste lands, and which day a row copy takes. */
   protected readonly celluleActive = signal<AdresseCellule | null>(null);
   protected readonly enregistrement = signal(false);
@@ -204,11 +200,9 @@ export class OuverturesPage {
     const colonnes = this.colonnes();
     const cellules = this.cellules();
     const reference = this.reference();
-    const inertes = this.inertes();
     const partielles = this.partielles();
     const modifies = new Set(this.standsModifies());
     const verrouille = this.editingLocked();
-    const infobulleInerte = this.infobulleInerte();
     // Every stand is rendered once and the filter only hides rows: rebuilding
     // twenty-eight rows of sixty cells when the field empties is what lagged.
     const visibles = new Set(this.lignes().map((ligne) => ligne.standId));
@@ -223,26 +217,20 @@ export class OuverturesPage {
         modifiee: modifies.has(ligne.standId),
         cellules: colonnes.map((colonne) => {
           const clef = key(ligne.standId, colonne.colonneId);
-          const inerte = inertes.has(clef);
           const partielle = partielles.has(clef);
           const effectif = typees?.get(colonne.colonneId) ?? null;
-          const valeur = inerte ? '' : effectif === null ? FERME : String(effectif);
+          const valeur = effectif === null ? FERME : String(effectif);
           return {
             clef,
             colonneId: colonne.colonneId,
             premierDuJour: colonne.rang === 0,
             valeur,
             modifiee: effectif !== (lues?.get(colonne.colonneId) ?? null),
-            inerte,
             partielle,
-            fermee: !inerte && effectif === null,
-            desactivee: verrouille || inerte,
+            fermee: effectif === null,
+            desactivee: verrouille,
             libelle: `${nom} · ${this.libelleJour(colonne.date)} ${libelleColonne(colonne)}`,
-            infobulle: inerte
-              ? infobulleInerte
-              : partielle
-                ? this.infobullePartielle(ligne.standId, colonne.colonneId)
-                : null,
+            infobulle: partielle ? this.infobullePartielle(ligne.standId, colonne.colonneId) : null,
           };
         }),
       };
@@ -296,7 +284,6 @@ export class OuverturesPage {
       this.cellules.set(cellules);
       this.partielles.set(cellulesPartielles(rapport));
       this.segments.set(segmentsPartiels(rapport));
-      this.inertes.set(cellulesInertes(rapport));
     } catch (error) {
       this.crud.reportError(error);
     } finally {
@@ -346,9 +333,6 @@ export class OuverturesPage {
    * is a statement, and it reads as one. An inert cell shows nothing.
    */
   protected valeur(standId: string, colonneId: string): string {
-    if (this.isInert(standId, colonneId)) {
-      return '';
-    }
     const effectif = this.cellules().get(standId)?.get(colonneId) ?? null;
     return effectif === null ? FERME : String(effectif);
   }
@@ -364,15 +348,6 @@ export class OuverturesPage {
     return isPartialCell(this.partielles(), { standId, colonneId });
   }
 
-  /** A créneau of another stagger family: this stand never holds a seat there. */
-  protected isInert(standId: string, colonneId: string): boolean {
-    return this.inertes().has(key(standId, colonneId));
-  }
-
-  protected infobulleInerte(): string {
-    return $localize`:@@ouvertures.saisie.inerte:Ce créneau est d'une autre famille de relais que ce stand : il n'y tiendra jamais de poste.`;
-  }
-
   protected libelleColonne(colonne: ColonneGrille): string {
     return libelleColonne(colonne);
   }
@@ -384,7 +359,7 @@ export class OuverturesPage {
    * empty effectif as « celui du stand ». Anything else is left as typed.
    */
   protected saisir(standId: string, colonneId: string, text: string): void {
-    if (this.isInert(standId, colonneId) || text.trim() === '') {
+    if (text.trim() === '') {
       return;
     }
     const lu = readCell(text);
@@ -498,21 +473,14 @@ export class OuverturesPage {
     }
     event.preventDefault();
     this.cellules.update((cellules) =>
-      collerBloc(
-        cellules,
-        text,
-        { standId, colonneId },
-        this.standIdsAffiches(),
-        this.colonnes(),
-        this.inertes(),
-      ),
+      collerBloc(cellules, text, { standId, colonneId }, this.standIdsAffiches(), this.colonnes()),
     );
   }
 
   /** The day's cells, for every displayed stand, copied onto every other day. */
   protected recopierJour(date: string): void {
     this.appliquerRecopie((cellules) =>
-      recopierJour(cellules, date, this.standIdsAffiches(), this.colonnes(), this.inertes()),
+      recopierJour(cellules, date, this.standIdsAffiches(), this.colonnes()),
     );
   }
 
@@ -524,9 +492,7 @@ export class OuverturesPage {
         ? (this.colonnes().find((colonne) => colonne.colonneId === active.colonneId)?.date ?? null)
         : jourDeReference(this.cellules(), standId, this.colonnes());
     if (date !== null) {
-      this.appliquerRecopie((cellules) =>
-        recopierJour(cellules, date, [standId], this.colonnes(), this.inertes()),
-      );
+      this.appliquerRecopie((cellules) => recopierJour(cellules, date, [standId], this.colonnes()));
     }
   }
 
@@ -577,7 +543,6 @@ export class OuverturesPage {
     this.reference.update((cellules) => propagerScission(cellules, ancienne, ids));
     this.segments.update((segments) => propagerClefs(segments, ancienne, ids));
     this.partielles.update((partielles) => this.propagerEnsemble(partielles, ancienne, ids));
-    this.inertes.update((inertes) => this.propagerEnsemble(inertes, ancienne, ids));
     this.celluleActive.set(null);
   }
 
@@ -660,7 +625,6 @@ export class OuverturesPage {
     try {
       const rapport = await this.standsApi.saveOpeningsGrid(
         saisie(this.cellules(), standIds, this.colonnes(), {
-          inertes: this.inertes(),
           modifieLeParStand: this.modifieLeParStand(),
           aplatir,
         }),

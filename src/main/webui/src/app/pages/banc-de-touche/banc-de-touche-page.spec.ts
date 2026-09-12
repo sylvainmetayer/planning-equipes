@@ -15,7 +15,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { BancDeTouchePage } from './banc-de-touche-page';
 
 function creneau(id: number): CreneauSiege {
-  return { id, jour: 1, date: '2026-07-08', heureDebut: '10:00', heureFin: '12:00', famille: 0 };
+  return { id, jour: 1, date: '2026-07-08', heureDebut: '10:00', heureFin: '12:00' };
 }
 
 function banc(creneauId: number, partial: Partial<BancDeTouche> = {}): BancDeTouche {

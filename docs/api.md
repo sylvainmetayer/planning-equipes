@@ -810,7 +810,7 @@ davantage — 354 vacations sur le scénario de référence, dont le plan n'en
 pourvoit qu'une partie — et proposer les autres, c'était envoyer des données que
 l'écran n'affichera pas, en laissant l'utilisateur tomber sur un créneau dont la
 réponse ne peut être que vide. La liste porte de quoi étiqueter chaque option
-(`id`, `jour`, `date`, `heureDebut`, `heureFin`, `famille`) : l'écran ne lit plus
+(`id`, `jour`, `date`, `heureDebut`, `heureFin`) : l'écran ne lit plus
 `/api/creneaux` du tout.
 
 Un sélecteur ne peut pas nommer un créneau valide avant sa première réponse,
@@ -1534,8 +1534,8 @@ service, pas par le conteneur, dont l'échec serait un `404`.
 grille (`severite` `ERREUR` ou `AVERTISSEMENT`, `type`, `date`, `message`),
 les anomalies d'ouverture des stands, et le rapport de faisabilité — `null`
 sans stand ou sans créneau. `GET /api/creneaux/diagnostic` décrit la grille et
-suggère un mode (`modeProbable`, `modeCertain`) sans jamais trancher : seules
-des familles ou des créneaux de couverture de pause prouvent des vacations.
+suggère un mode (`modeProbable`, `modeCertain`) sans jamais trancher : seuls
+des créneaux de couverture de pause prouvent des vacations.
 
 **Dériver la grille des stands.** Quand les horaires des stands existent déjà
 — règles saisies, grille importée — la grille de créneaux découle d'eux au lieu
@@ -1886,8 +1886,8 @@ créneau de son jour) et `SEGMENT_TROP_COURT` — la signature du contournement
 `23:59`.
 
 Chaque jour porte aussi ses **colonnes** (`jours[].creneaux`) : un créneau en
-un morceau, ou ses **tranches** quand une fenêtre d'un stand de sa famille
-commence ou finit à l'intérieur (4 personnes de 14 h à 19 h puis 2 jusqu'à
+un morceau, ou ses **tranches** quand une fenêtre d'un stand commence ou
+finit à l'intérieur (4 personnes de 14 h à 19 h puis 2 jusqu'à
 20 h coupe le créneau 14-20 en 14-19 et 19-20, pour tous les stands). `id`
 est celui du créneau, `tranche` le rang dans le créneau, `heureDebut` et
 `heureFin` les bornes de la colonne. Rien n'est stocké : les bornes se relisent
@@ -1942,12 +1942,8 @@ daté : la réponse le dit stand par stand (`regles`, `exceptions`, `compacte`,
 valeur saisie, `effectifMax` la plus grande, et une fenêtre ne nomme son
 effectif que s'il diffère du minimum.
 
-**Familles de relais.** Une grille découpée en plusieurs familles porte une
-variante de chaque vacation par famille, et un stand n'est apparié qu'à une
-seule d'entre elles ([`domaine.md`](domaine.md#familles-de-créneaux)). Les
-cellules des autres familles sortent avec `horsFamille: true`, effectif `null` :
-l'écran les rend inertes, et une case envoyée pour l'une d'elles est ignorée —
-l'écrire rouvrirait un jour que ce stand ne tient jamais.
+**Familles de relais.** Retirées (ADR 0029) : une grille porte une seule
+variante de chaque vacation, et toute case de la grille se saisit.
 
 `400` sur un créneau inconnu, un effectif nul (« laissez la case vide pour
 fermer ») ou un stand inconnu — l'identifiant vient du corps, pas du chemin.
@@ -1977,9 +1973,8 @@ d'exemple écrit ses bandes `10h00-12h00` : Excel convertit `13:00-16:00` en la
 date `30/11/1999 13:16:00`, ce qui détruit la bande, alors qu'il laisse la
 forme en `h` telle quelle.
 
-- Une colonne se pose sur **tous** les créneaux de même date qui contiennent
-  ses heures — une grille décalée en familles en porte un par famille, et
-  `columns[].creneaux` dit combien. Une colonne plus étroite que son créneau
+- Une colonne se pose sur le créneau de même date qui contient ses heures
+  (`columns[].creneaux` en compte un). Une colonne plus étroite que son créneau
   (le 19h-20h du classeur sous un créneau 14-20) écrit une fenêtre à ses
   propres bornes, le reste du créneau restant tel quel ; deux colonnes d'un
   même créneau ne peuvent pas se recouvrir. Une colonne qu'aucun créneau ne

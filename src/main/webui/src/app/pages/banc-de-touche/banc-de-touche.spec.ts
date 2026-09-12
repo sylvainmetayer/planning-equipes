@@ -9,20 +9,18 @@ import {
 import {
   creneauxUtiles,
   etatDe,
-  familleUtile,
   libelleCreneau,
   libelleStand,
   lignes,
   ordreMotifs,
 } from './banc-de-touche';
 
-const creneauSiege = (id: number, family = 0): CreneauSiege => ({
+const creneauSiege = (id: number): CreneauSiege => ({
   id,
   jour: 3,
   date: '2026-07-16',
   heureDebut: '10:00',
   heureFin: '13:00',
-  famille: family,
 });
 
 const motif = (contrainte: string, niveau: MotifExclusion['niveau']): MotifExclusion => ({
@@ -155,23 +153,6 @@ describe('lignes', () => {
 
 describe('libellés', () => {
   const creneau: CreneauSiege = creneauSiege(7);
-
-  it('distingue deux vacations de même horaire par leur famille', () => {
-    expect(libelleCreneau({ ...creneau, famille: 1 }, true)).toBe(
-      'J3 · 2026-07-16 · 10:00-13:00 (F2)',
-    );
-    expect(libelleCreneau({ ...creneau, famille: 0 }, true)).toBe(
-      'J3 · 2026-07-16 · 10:00-13:00 (F1)',
-    );
-  });
-
-  // Every créneau carries a family; tagging them all « F1 » when no découpage
-  // ran is noise on top of the one thing the label exists for.
-  it('ne mentionne la famille que lorsqu’un découpage en a produit plusieurs', () => {
-    expect(libelleCreneau(creneau)).toBe('J3 · 2026-07-16 · 10:00-13:00');
-    expect(familleUtile([creneau, { ...creneau, id: 8, famille: 0 }])).toBe(false);
-    expect(familleUtile([creneau, { ...creneau, id: 8, famille: 1 }])).toBe(true);
-  });
 
   it('coupe les secondes que l’API renvoie sur les horaires', () => {
     expect(libelleCreneau({ ...creneau, heureDebut: '10:00:00', heureFin: '13:00:00' })).toBe(

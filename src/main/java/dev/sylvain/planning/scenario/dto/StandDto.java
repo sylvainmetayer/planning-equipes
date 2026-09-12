@@ -26,13 +26,6 @@ public record StandDto(
         Boolean reserveMajeurs,
         Boolean premium,
         NiveauEffort niveauEffort,
-        /**
-         * Relay family on a staggered grid, 0 = the first one (issue #390).
-         * Absent: the import lets the least populated one be picked, which is
-         * what a file written by hand wants; an export carries the value so a
-         * scenario re-imported keeps the pairing it was solved with.
-         */
-        Integer famille,
         List<@Valid IndisponibiliteStandDto> indisponibilites,
         List<@Valid OuvertureStandDto> ouvertures,
         /**

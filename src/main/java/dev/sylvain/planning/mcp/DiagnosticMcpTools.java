@@ -58,9 +58,8 @@ public class DiagnosticMcpTools {
      * The same computation as {@code GET /api/staffing}, through the same
      * {@link StaffingService}: on the seats a real solve would have to fill,
      * not on stands × créneaux. Counting them in the
-     * caller drifted from the real problem, badly — recurring horaires,
-     * familles de relais and the reduced effectif during meal windows all
-     * change the count.
+     * caller drifted from the real problem, badly — recurring horaires and the
+     * reduced effectif during meal windows both change the count.
      */
     @Tool(
             description = "Combien d'animateurs il faut au minimum pour couvrir l'événement, et pourquoi : pic "

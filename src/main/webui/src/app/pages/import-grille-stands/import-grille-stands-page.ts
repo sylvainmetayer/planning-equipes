@@ -77,9 +77,6 @@ export class ImportGrilleStandsPage {
     (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneauId === null),
   );
   /** A band a staggered grid holds twice: the column carries its cell to each créneau of it. */
-  protected readonly colonnesPartagees = computed(() =>
-    (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneaux > 1),
-  );
   protected readonly peutImporter = computed(
     () =>
       this.fichierCharge() &&

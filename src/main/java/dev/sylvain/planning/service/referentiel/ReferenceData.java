@@ -58,10 +58,4 @@ public interface ReferenceData {
     ParametresDecoupage getParametresDecoupage();
 
     ParametresSolveur getParametresSolveur();
-
-    /**
-     * Persists the relay families a build assigned (issue #390). A harness
-     * without a database has nothing to record.
-     */
-    default void recordStandFamilies(java.util.List<Stand> stands, java.util.Map<String, Integer> familleParStand) {}
 }

@@ -301,13 +301,13 @@ public class CreneauGridService {
         List<GridAnomaly> anomalies = new ArrayList<>();
         Set<String> vus = new HashSet<>();
         for (Creneau creneau : duJour) {
-            String signature = creneau.getHeureDebut() + "→" + creneau.getHeureFin() + "#" + creneau.getFamille();
+            String signature = creneau.getHeureDebut() + "→" + creneau.getHeureFin();
             if (!vus.add(signature)) {
                 anomalies.add(new GridAnomaly(
                         SeveriteGrille.ERREUR,
                         GridAnomalyType.DOUBLON,
                         date,
-                        libelle(creneau) + " : créneau en double (mêmes heures, même famille de décalage)."));
+                        libelle(creneau) + " : créneau en double (mêmes heures)."));
             }
         }
         return anomalies;
@@ -326,7 +326,7 @@ public class CreneauGridService {
                             date,
                             libelle(duJour.get(i)) + " chevauche " + libelle(duJour.get(j))
                                     + ". Entre deux amplitudes du même jour, c'est une saisie en double plutôt "
-                                    + "qu'une intention — le décalage en familles se produit au découpage."));
+                                    + "qu'une intention."));
                 }
             }
         }
@@ -403,16 +403,15 @@ public class CreneauGridService {
     /**
      * Describes the grid currently in place and suggests how it should be
      * read. The suggestion is evidence-based, never authoritative: only
-     * generated vacations carry a famille or a meal-pause flag, so their
-     * presence proves {@link ModeGrilleCreneaux#VACATIONS}, whereas their
-     * absence proves nothing — a hand-written grid of real vacations looks
+     * generated vacations carry a meal-pause flag, so its presence proves
+     * {@link ModeGrilleCreneaux#VACATIONS}, whereas its absence proves nothing — a hand-written grid of real vacations looks
      * exactly like a grid of amplitudes. Hence a separate
      * {@code modeCertain} flag rather than a confident guess.
      */
     public static DiagnosticGrille diagnose(List<Creneau> creneaux, ParametresDecoupage decoupage) {
         if (creneaux.isEmpty()) {
             return new DiagnosticGrille(
-                    0, null, null, 0, false, null, false, "L'édition n'a aucun créneau : la grille est à créer.");
+                    0, null, null, false, null, false, "L'édition n'a aucun créneau : la grille est à créer.");
         }
         List<LocalDate> dates = creneaux.stream()
                 .map(Creneau::getDate)
@@ -420,23 +419,19 @@ public class CreneauGridService {
                 .distinct()
                 .sorted()
                 .toList();
-        int families =
-                (int) creneaux.stream().map(Creneau::getFamille).distinct().count();
         boolean pauses = creneaux.stream().anyMatch(Creneau::isCouverturePause);
         int dureeMediane =
                 mediane(creneaux.stream().map(Creneau::getDureeMinutes).sorted().toList());
 
-        if (families > 1 || pauses) {
+        if (pauses) {
             return new DiagnosticGrille(
                     creneaux.size(),
                     first(dates),
                     last(dates),
-                    families,
                     pauses,
                     ModeGrilleCreneaux.VACATIONS,
                     true,
-                    "Grille déjà découpée : " + families + " famille(s) de décalage"
-                            + (pauses ? " et des créneaux de couverture de pause" : "")
+                    "Grille déjà découpée : des créneaux de couverture de pause"
                             + " — ce sont des vacations produites par le découpage.");
         }
         boolean plutotAmplitudes = dureeMediane > decoupage.getDureeVacationMaxMinutes();
@@ -444,7 +439,6 @@ public class CreneauGridService {
                 creneaux.size(),
                 first(dates),
                 last(dates),
-                families,
                 pauses,
                 plutotAmplitudes ? ModeGrilleCreneaux.AMPLITUDES : ModeGrilleCreneaux.VACATIONS,
                 false,
@@ -501,15 +495,13 @@ public class CreneauGridService {
 
     /**
      * @param modeCertain whether {@code modeProbable} is proven by the data
-     *                    (a famille or a meal-pause créneau) or merely inferred
-     *                    from durations
+     *                    (a meal-pause créneau) or merely inferred from durations
      */
-    @Schema(requiredProperties = {"contientCouverturePause", "modeCertain", "nombreCreneaux", "nombreFamilles"})
+    @Schema(requiredProperties = {"contientCouverturePause", "modeCertain", "nombreCreneaux"})
     public record DiagnosticGrille(
             int nombreCreneaux,
             LocalDate premiereDate,
             LocalDate derniereDate,
-            int nombreFamilles,
             boolean contientCouverturePause,
             ModeGrilleCreneaux modeProbable,
             boolean modeCertain,

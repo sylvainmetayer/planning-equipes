@@ -5,7 +5,6 @@ import {
   ColonneGrille,
   aplatissement,
   cellulesDepuis,
-  cellulesInertes,
   cellulesPartielles,
   collerBloc,
   colonnes,
@@ -42,21 +41,14 @@ function rapport(): RapportOuvertures {
       tranche: 0,
       heureDebut: ['10:00', '14:00', '20:00'][rang],
       heureFin: ['12:00', '20:00', '00:00'][rang],
-      famille: 0,
       couverturePause: false,
     })),
   });
-  const cellule = (
-    creneauId: number,
-    effectif: number | null,
-    partiel = false,
-    horsFamille = false,
-  ) => ({
+  const cellule = (creneauId: number, effectif: number | null, partiel = false) => ({
     creneauId,
     tranche: 0,
     effectif,
     partiel,
-    horsFamille,
     segments: [],
   });
   const jourStand = (date: string, creneaux: ReturnType<typeof cellule>[]) => ({
@@ -156,13 +148,6 @@ describe('colonnes et cellules', () => {
       }),
     ).toBe('10-12');
   });
-
-  it('relève les cases d’une autre famille de relais', () => {
-    const rapportAvecFamille = rapport();
-    rapportAvecFamille.stands[1].jours[0].creneaux[0].horsFamille = true;
-
-    expect(cellulesInertes(rapportAvecFamille)).toEqual(new Set(['B#1@10:00-12:00']));
-  });
 });
 
 describe('lireCellule', () => {
@@ -202,25 +187,6 @@ describe('standsModifies et saisie', () => {
         aplatir: false,
       },
     ]);
-  });
-
-  it('n’écrit ni ne renvoie une case inerte', () => {
-    const reference = cellulesDepuis(rapport());
-    const cols = colonnes(rapport());
-    const inertes = new Set(['A#2@14:00-20:00']);
-
-    const colle = collerBloc(
-      reference,
-      '9\t9',
-      { standId: 'A', colonneId: id(1) },
-      STANDS,
-      cols,
-      inertes,
-    );
-    expect(valeursLigne(colle, 'A', cols)).toEqual([9, 4, 4, 2, 4]);
-
-    const envoye = saisie(colle, ['A'], cols, { inertes });
-    expect(envoye[0].cellules.map((cellule) => cellule.creneauId)).toEqual([1, 3, 4, 5]);
   });
 
   it('compte les cases qu’une recopie a changées', () => {
@@ -455,7 +421,6 @@ describe('segmentsPartiels et aplatissement', () => {
               tranche: 0,
               heureDebut: '14:00',
               heureFin: '20:00',
-              famille: 0,
               couverturePause: false,
             },
             {
@@ -463,7 +428,6 @@ describe('segmentsPartiels et aplatissement', () => {
               tranche: 0,
               heureDebut: '20:00',
               heureFin: '00:00',
-              famille: 0,
               couverturePause: false,
             },
           ],
@@ -492,7 +456,6 @@ describe('segmentsPartiels et aplatissement', () => {
                   tranche: 0,
                   effectif: 4,
                   partiel: true,
-                  horsFamille: false,
                   segments: [{ heureDebut: '14:00', heureFin: '19:00', effectif: 4 }],
                 },
                 {
@@ -500,7 +463,6 @@ describe('segmentsPartiels et aplatissement', () => {
                   tranche: 0,
                   effectif: 2,
                   partiel: false,
-                  horsFamille: false,
                   segments: [{ heureDebut: '20:00', heureFin: '00:00', effectif: 2 }],
                 },
               ],

@@ -397,11 +397,3 @@
   margin-left: 0.25rem;
   opacity: 0.8;
 }
-
-/* A créneau of another stagger family: the stand never holds a seat there, so
-   the cell reads as scenery — no border, no ground, and nothing to type. */
-.grille-saisie .cellule-inerte input {
-  border-color: transparent;
-  background: transparent;
-  color: var(--mat-sys-outline);
-}

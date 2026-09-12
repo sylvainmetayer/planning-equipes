@@ -19,15 +19,6 @@ public class Stand {
     private int effectifMax;
     private boolean reserveMajeurs;
     private boolean premium;
-    /**
-     * Relay-grid family this stand's seats are cut on, when the grid is
-     * staggered (issue #390). Persisted so that adding or removing a stand
-     * never moves the others; {@code null} = not assigned yet, the next
-     * problem build (or the stand's creation) puts it in the least populated
-     * family. A value beyond the grid's family count is reassigned the same
-     * way. Meaningless, and ignored, on a grid with a single family.
-     */
-    private Integer famille;
     /** Physical-effort tier; drives rest-after-effort and pénibilité-fairness constraints in QualiteConstraints/PreferenceConstraints. */
     private NiveauEffort niveauEffort = NiveauEffort.NORMAL;
     /** Physical location the stand is set up at; nullable (not every stand is geocoded). */
@@ -174,14 +165,6 @@ public class Stand {
 
     public void setPremium(boolean premium) {
         this.premium = premium;
-    }
-
-    public Integer getFamille() {
-        return famille;
-    }
-
-    public void setFamille(Integer famille) {
-        this.famille = famille;
     }
 
     public NiveauEffort getNiveauEffort() {

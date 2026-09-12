@@ -263,11 +263,10 @@ désormais seul.
 **Ce qu'elle ne retient pas : une grille qui change.** La règle tient des
 lignes stand × créneau. Tout ce qui rebat ces lignes lui retire sa prise : un
 découpage ou une dérivation qui remplace la grille (le plan enregistré part
-avec). Un stand ajouté, lui, ne déplace plus les autres depuis que la famille
-de relais est un attribut persisté du stand (ADR
-[0026](decisions/0026-famille-de-relais-attribut-du-stand.md)) : avant, un
-identifiant classé avant les autres faisait glisser toutes les familles, et
-le banc avait mesuré 153 personnes sur 153 quel que soit le poids.
+avec). Un stand ajouté, lui, ne déplace pas les autres : c'était le cas du
+temps des familles de relais, où un identifiant classé avant les autres
+faisait glisser toutes les familles, et le banc avait mesuré 153 personnes sur
+153 quel que soit le poids (ADR 0026, puis retrait des familles en ADR 0029).
 
 **Le compte à côté du score.** Chaque résolution rend aussi
 `impactPublication.personnes`, le nombre de personnes que la publication

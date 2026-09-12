@@ -48,7 +48,7 @@ public class EditionRepository {
             new TableToCopy("animateur", "id, prenom, nom, date_naissance, manager, email"),
             new TableToCopy(
                     "stand",
-                    "id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, niveau_effort, famille"),
+                    "id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, niveau_effort"),
             new TableToCopy("animateur_competence", "animateur_id, typologie, niveau"),
             new TableToCopy("animateur_jour_indispo", "animateur_id, jour"),
             new TableToCopy("animateur_souhait", "animateur_id, typologie"),
@@ -77,8 +77,7 @@ public class EditionRepository {
                     "parametres_decoupage",
                     "duree_vacation_cible_minutes, duree_vacation_min_minutes, duree_vacation_max_minutes, "
                             + "duree_chevauchement_minutes, "
-                            + "strategie_couverture_pendant_pause, nombre_familles_decalage, "
-                            + "duree_decalage_max_minutes, mode_grille"),
+                            + "strategie_couverture_pendant_pause, mode_grille"),
             new TableToCopy("parametres_solveur", "duree_resolution_secondes"));
 
     private record TableToCopy(String nom, String colonnes) {}
@@ -241,8 +240,8 @@ public class EditionRepository {
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement("""
-                INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, famille, couverture_pause)
-                SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause
+                INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, couverture_pause)
+                SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, c.couverture_pause
                 FROM creneau c
                 JOIN creneau_remap r ON r.ancien_id = c.id
                 WHERE c.edition_id = ?""")) {

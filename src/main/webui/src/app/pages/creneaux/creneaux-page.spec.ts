@@ -57,15 +57,12 @@ const PARAMETRES_DECOUPAGE = {
   dureeChevauchementMinutes: 30,
   strategieCouverturePendantPause: 'FERMETURE',
   modeGrille: 'AMPLITUDES',
-  nombreFamillesDecalage: 1,
-  dureeDecalageMaxMinutes: 0,
 };
 
 const DIAGNOSTIC = {
   nombreCreneaux: 1,
   premiereDate: '2026-08-01',
   derniereDate: '2026-08-01',
-  nombreFamilles: 1,
   contientCouverturePause: false,
   modeProbable: 'AMPLITUDES',
   modeCertain: false,
@@ -129,8 +126,7 @@ function brancher(
 
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
-  columns: Signal<string[]>;
-  afficherFamilles: Signal<boolean>;
+  columns: string[];
   sort: WritableSignal<Sort>;
   creneauxAffiches: Signal<Creneau[]>;
   selection: TableSelection<number>;
@@ -229,38 +225,6 @@ describe('CreneauxPage', () => {
     createPage();
 
     expect(crud.reload).toHaveBeenCalledOnce();
-  });
-
-  describe('the conditional « Famille » column', () => {
-    // A group generated with N stagger families holds N same-looking variants
-    // of every slot; without the column they read as inexplicable duplicates,
-    // and with it they are noise on the groups that have a single family.
-    it('hides the column when no displayed slot carries a family', () => {
-      const page = createPage([
-        creneau({ id: 1, jour: 1 }),
-        creneau({ id: 2, jour: 2, famille: 0 }),
-      ]);
-
-      expect(page.afficherFamilles()).toBe(false);
-      expect(page.columns()).not.toContain('famille');
-    });
-
-    it('shows the column as soon as one displayed slot carries a family', () => {
-      const page = createPage([
-        creneau({ id: 1, jour: 1 }),
-        creneau({ id: 2, jour: 2, famille: 1 }),
-      ]);
-
-      expect(page.afficherFamilles()).toBe(true);
-      expect(page.columns()).toContain('famille');
-    });
-
-    it('keeps the checkbox and actions columns around the data ones either way', () => {
-      const page = createPage([creneau({ id: 1, jour: 1, famille: 2 })]);
-
-      expect(page.columns()[0]).toBe('select');
-      expect(page.columns().at(-1)).toBe('actions');
-    });
   });
 
   describe('sorting', () => {
@@ -524,12 +488,6 @@ describe('CreneauxPage rendering', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function entetes(): string[] {
-    return Array.from(racine().querySelectorAll('thead th')).map((each) =>
-      each.textContent!.trim(),
-    );
-  }
-
   function lignes(): string[][] {
     return Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
       Array.from(row.querySelectorAll('td')).map((cell) =>
@@ -589,17 +547,6 @@ describe('CreneauxPage rendering', () => {
       ['J1', '10:00–12:00'],
       ['J2', '14:00–19:00'],
     ]);
-  });
-
-  it('hides the « Famille » column while every créneau belongs to the first family', async () => {
-    await rendre([creneau({ id: 1, jour: 1 })]);
-    expect(entetes()).not.toContain('Famille');
-
-    await rendre([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 1, famille: 1 })]);
-    // Two identical hours in different families are not duplicates: the column
-    // is what says so, and it only appears when there is something to say.
-    expect(entetes()).toContain('Famille');
-    expect(lignes().map((row) => row[4])).toEqual(['1', '2']);
   });
 
   it('names the shortfall in the problem column, and says « Aucun » for the others', async () => {
@@ -715,14 +662,14 @@ describe('CreneauxPage rendering', () => {
         diagnostic: {
           modeProbable: 'VACATIONS',
           modeCertain: true,
-          explication: 'Grille déjà découpée : 3 familles.',
+          explication: 'Grille déjà découpée : des créneaux de couverture de pause.',
         },
       });
       await rendreEtLire([creneau({ id: 1, jour: 1 })]);
 
       const diagnostic = racine().querySelector('.grille-diagnostic')!;
       expect(diagnostic.classList.contains('grille-diagnostic-desaccord')).toBe(true);
-      expect(diagnostic.textContent).toContain('3 familles');
+      expect(diagnostic.textContent).toContain('couverture de pause');
     });
 
     it('shows the verdict on the page, errors first, and the stand openings apart', async () => {

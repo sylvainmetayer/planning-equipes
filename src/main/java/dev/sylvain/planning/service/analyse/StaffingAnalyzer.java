@@ -43,17 +43,14 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * schedule as rules (the normal case since the horaires feature) counted as
  * open on every single créneau, around the clock.</li>
  * <li><b>Auto-découpage.</b> When the active group holds generated vacations,
- * its créneaux <em>overlap</em> — several relay families cover the same hours,
- * and consecutive vacations overlap during handovers. Summing a stand's
- * effectif over every such créneau counts the same hour of the same stand once
- * per famille. On a real 16-day edition (5 families, 354 vacations) the
- * workload bound came out above 1500 animateurs for an event staffed by
- * 153.</li>
+ * consecutive vacations <em>overlap</em> during handovers. Summing a stand's
+ * effectif over every such créneau counts the handover minutes twice; on a
+ * real 16-day edition the workload bound came out far above the roster.</li>
  * </ul>
  *
  * <p>Working from the generated postes removes both errors by construction:
- * poste generation already resolved the horaires, already assigned each stand
- * to exactly one famille, and already halved the headcount of a meal-pause
+ * poste generation already resolved the horaires and already halved the
+ * headcount of a meal-pause
  * coverage vacation. Whatever the seats are, they are what has to be staffed.</p>
  *
  * <h2>The five bounds</h2>

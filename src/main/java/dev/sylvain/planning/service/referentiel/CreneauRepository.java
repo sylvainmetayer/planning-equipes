@@ -40,7 +40,7 @@ public class CreneauRepository {
     JdbcEditionScope scope;
 
     private static final String SELECT_CRENEAU_SQL = """
-            SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause, c.modifie_le
+            SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.couverture_pause, c.modifie_le
             FROM creneau c
             WHERE c.edition_id = ?""";
 
@@ -60,7 +60,7 @@ public class CreneauRepository {
     public Creneau findCreneau(Long id) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause,
+                        SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.couverture_pause,
                         c.modifie_le
                         FROM creneau c
                         WHERE c.edition_id = ? AND c.id = ?""")) {
@@ -88,13 +88,6 @@ public class CreneauRepository {
             try (PreparedStatement ps = scope.prepareScoped(connection, "DELETE FROM creneau WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
-            // A new grid may not have the same families as the old one: the
-            // stands' assignments go with the plan (issue #390), and the next
-            // build spreads them again.
-            try (PreparedStatement ps =
-                    scope.prepareScoped(connection, "UPDATE stand SET famille = NULL WHERE edition_id = ?")) {
-                ps.executeUpdate();
-            }
             for (Creneau creneau : creneaux) {
                 creneau.setId(null);
                 insertCreneauTx(connection, creneau);
@@ -114,7 +107,6 @@ public class CreneauRepository {
                 rs.getObject("date_creneau", LocalDate.class),
                 rs.getObject("heure_debut", LocalTime.class),
                 rs.getObject("heure_fin", LocalTime.class));
-        creneau.setFamille(rs.getInt("famille"));
         creneau.setCouverturePause(rs.getBoolean("couverture_pause"));
         creneau.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
         return creneau;
@@ -205,14 +197,13 @@ public class CreneauRepository {
     /** Inserts a new timeslot row; the generated id is set back onto {@code creneau} and returned. */
     Long insertCreneauTx(Connection connection, Creneau creneau) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, famille, couverture_pause)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, couverture_pause)
+                VALUES (?, ?, ?, ?, ?)
                 RETURNING id, modifie_le""")) {
             ps.setObject(2, creneau.getDate());
             ps.setObject(3, creneau.getHeureDebut());
             ps.setObject(4, creneau.getHeureFin());
-            ps.setInt(5, creneau.getFamille());
-            ps.setBoolean(6, creneau.isCouverturePause());
+            ps.setBoolean(5, creneau.isCouverturePause());
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 long id = rs.getLong("id");
@@ -229,7 +220,7 @@ public class CreneauRepository {
         // clause, so the edition predicate can't be the statement's first one.
         try (PreparedStatement ps = connection.prepareStatement("""
                 UPDATE creneau
-                SET date_creneau = ?, heure_debut = ?, heure_fin = ?, famille = ?, couverture_pause = ?,
+                SET date_creneau = ?, heure_debut = ?, heure_fin = ?, couverture_pause = ?,
                 modifie_le = now()
                 WHERE edition_id = ? AND id = ?
                 AND (CAST(? AS timestamptz) IS NULL
@@ -239,13 +230,12 @@ public class CreneauRepository {
             ps.setObject(1, creneau.getDate());
             ps.setObject(2, creneau.getHeureDebut());
             ps.setObject(3, creneau.getHeureFin());
-            ps.setInt(4, creneau.getFamille());
-            ps.setBoolean(5, creneau.isCouverturePause());
-            ps.setString(6, scope.editionId());
-            ps.setLong(7, creneau.getId());
+            ps.setBoolean(4, creneau.isCouverturePause());
+            ps.setString(5, scope.editionId());
+            ps.setLong(6, creneau.getId());
             Timestamp attendu = creneau.getModifieLe() == null ? null : Timestamp.from(creneau.getModifieLe());
+            ps.setTimestamp(7, attendu);
             ps.setTimestamp(8, attendu);
-            ps.setTimestamp(9, attendu);
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
                 staleWrites.refuseStale("creneau", creneau.getId());

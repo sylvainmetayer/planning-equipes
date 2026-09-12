@@ -562,8 +562,7 @@ public final class PlanningWhatIf {
                         creneau.getJour(),
                         creneau.getDate(),
                         creneau.getHeureDebut(),
-                        creneau.getHeureFin(),
-                        creneau.getFamille()))
+                        creneau.getHeureFin()))
                 .toList();
     }
 
@@ -1324,13 +1323,9 @@ public final class PlanningWhatIf {
     /**
      * One créneau of the saved plan, with what it takes to label it in a
      * selector and nothing more.
-     *
-     * @param famille the découpage stagger family, meaningful only once a
-     *                découpage has produced several variants of the same hours
      */
-    @Schema(requiredProperties = {"famille", "jour"})
-    public record CreneauSiege(
-            Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin, int famille) {}
+    @Schema(requiredProperties = {"jour"})
+    public record CreneauSiege(Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin) {}
 
     /**
      * What an échange actually does for the animateur who asked — the three

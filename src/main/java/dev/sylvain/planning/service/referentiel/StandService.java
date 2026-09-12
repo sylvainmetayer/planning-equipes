@@ -7,7 +7,6 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.Ids;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
-import dev.sylvain.planning.service.solve.ProblemBuilder;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -78,7 +77,6 @@ public class StandService {
     public Stand create(Stand stand) {
         stand.setId(Ids.required(stand.getId(), "stand id"));
         validate(stand);
-        assignFamily(stand);
         repository.saveStand(stand, true);
         changeTracker.markModified();
         return stand;
@@ -95,28 +93,9 @@ public class StandService {
         if (stand.getTypologiesProposees() != null) {
             typologies.validateIds(connection, stand.getTypologiesProposees());
         }
-        assignFamily(stand);
         repository.saveStand(connection, stand, true);
         // Marked by the caller once committed, see TypologieService.create.
         return stand;
-    }
-
-    /** The family a new stand joins, when the grid has several and the stand names none. */
-    private void assignFamily(Stand stand) {
-        checkFamilyExistsInGrid(stand);
-        if (stand.getFamille() == null) {
-            // Joins the least populated family of the current grid (issue
-            // #390), so the stands already in place keep their own. Nothing to
-            // assign on a grid with a single family: the value would say
-            // nothing, and would starve the others the day a staggered grid
-            // arrives without replacing this one.
-            List<Creneau> grille = creneaux.list();
-            if (grille.stream().anyMatch(creneau -> creneau.getFamille() > 0)) {
-                List<Stand> tous = new ArrayList<>(list());
-                tous.add(stand);
-                stand.setFamille(ProblemBuilder.standFamilies(tous, grille).get(stand.getId()));
-            }
-        }
     }
 
     /**
@@ -142,7 +121,6 @@ public class StandService {
         }
         stand.setId(id);
         validate(stand);
-        checkFamilyExistsInGrid(stand);
         repository.saveStand(stand, false);
         changeTracker.markModified();
         return stand;
@@ -185,7 +163,6 @@ public class StandService {
         List<Stand> tous = listSolved();
         Map<String, Stand> parId = new LinkedHashMap<>();
         tous.forEach(stand -> parId.put(stand.getId(), stand));
-        Map<String, Integer> familles = ProblemBuilder.standFamilies(tous, edition);
         Set<Long> idsEdition =
                 edition.stream().map(Creneau::getId).filter(Objects::nonNull).collect(Collectors.toSet());
 
@@ -205,19 +182,7 @@ public class StandService {
                             "Créneau inconnu dans la grille du stand " + stand.getId() + " : " + cellule.creneauId());
                 }
             }
-            // A stand only ever receives seats on its own stagger family's
-            // créneaux (ProblemBuilder#buildPostes), so the other families'
-            // cells are inert: they are neither read nor written, and writing
-            // them would reopen days this stand never staffs.
-            int famille = familles.getOrDefault(stand.getId(), 0);
-            List<Creneau> siens = edition.stream()
-                    .filter(creneau -> creneau.getFamille() == famille)
-                    .toList();
-            Set<Long> idsFamille = siens.stream().map(Creneau::getId).collect(Collectors.toSet());
-            List<GrilleHorairesStands.SaisieCellule> retenues = cellules.stream()
-                    .filter(cellule -> idsFamille.contains(cellule.creneauId()))
-                    .toList();
-            lignes.add(GrilleHorairesStands.apply(stand, siens, retenues, saisie.aplatir()));
+            lignes.add(GrilleHorairesStands.apply(stand, edition, cellules, saisie.aplatir()));
             // The precondition the grid read, not the row's own stamp: without
             // this the screen that rewrites the most would be the only one
             // able to overwrite another session in silence (issue #362).
@@ -235,31 +200,7 @@ public class StandService {
         return lignes;
     }
 
-    /** See {@link StandRepository#updateFamilies}: not an edit, {@code modifie_le} untouched. */
-    public void recordFamilies(Map<String, Integer> familleParStand) {
-        repository.updateFamilies(familleParStand);
-    }
-
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */
-    /**
-     * A relay family the grid does not have is refused rather than stored and
-     * silently rewritten by the next build (issue #390): the operator would
-     * otherwise read « Famille 8 » on a two-family grid, see an empty select,
-     * and watch the value change on its own.
-     */
-    private void checkFamilyExistsInGrid(Stand stand) {
-        Integer famille = stand.getFamille();
-        if (famille == null) {
-            return;
-        }
-        int nombreFamilles =
-                creneaux.list().stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
-        if (famille >= nombreFamilles) {
-            throw new BusinessError.Invalid("La grille de cette édition compte " + nombreFamilles
-                    + " famille(s) de relais : « " + famille + " » n'existe pas. La première est 0.");
-        }
-    }
-
     private void validate(Stand stand) {
         StandValidator.check(stand);
         if (stand.getTypologiesProposees() != null) {

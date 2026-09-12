@@ -156,7 +156,6 @@
                   @for (cellule of ligne.cellules; track cellule.colonneId) {
                     <td class="cellule-saisie" [class.premier-du-jour]="cellule.premierDuJour"
                         [class.cellule-modifiee]="cellule.modifiee"
-                        [class.cellule-inerte]="cellule.inerte"
                         [class.cellule-fermee]="cellule.fermee"
                         [class.cellule-partielle]="cellule.partielle">
                       <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"

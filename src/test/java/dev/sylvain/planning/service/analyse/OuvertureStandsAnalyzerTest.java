@@ -53,12 +53,7 @@ class OuvertureStandsAnalyzerTest {
     /** The cell without its segments, for the assertions that read the grid as integers. */
     private static CelluleCreneau withoutSegments(CelluleCreneau cellule) {
         return new CelluleCreneau(
-                cellule.creneauId(),
-                cellule.tranche(),
-                cellule.effectif(),
-                cellule.partiel(),
-                cellule.horsFamille(),
-                List.of());
+                cellule.creneauId(), cellule.tranche(), cellule.effectif(), cellule.partiel(), List.of());
     }
 
     private static RapportOuvertures analyze(List<Stand> stands, List<Creneau> creneaux) {
@@ -189,12 +184,12 @@ class OuvertureStandsAnalyzerTest {
         assertThat(cellules)
                 .map(OuvertureStandsAnalyzerTest::withoutSegments)
                 .containsExactly(
-                        new OuvertureStandsAnalyzer.CelluleCreneau(1L, 2, false, false),
-                        new OuvertureStandsAnalyzer.CelluleCreneau(3L, 0, null, false, false, List.of()),
-                        new OuvertureStandsAnalyzer.CelluleCreneau(3L, 1, 4, false, false, List.of()));
+                        new OuvertureStandsAnalyzer.CelluleCreneau(1L, 2, false),
+                        new OuvertureStandsAnalyzer.CelluleCreneau(3L, 0, null, false, List.of()),
+                        new OuvertureStandsAnalyzer.CelluleCreneau(3L, 1, 4, false, List.of()));
         assertThat(rapport.stands().get(0).jours().get(1).creneaux())
                 .map(OuvertureStandsAnalyzerTest::withoutSegments)
-                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 2, false, false));
+                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 2, false));
     }
 
     /** The recurrence preview validates a grid holding rows a rule would add: no id yet, still one column each. */
@@ -211,8 +206,8 @@ class OuvertureStandsAnalyzerTest {
         assertThat(rapport.stands().get(0).jours().get(0).creneaux())
                 .map(OuvertureStandsAnalyzerTest::withoutSegments)
                 .containsExactly(
-                        new OuvertureStandsAnalyzer.CelluleCreneau(1L, 1, false, false),
-                        new OuvertureStandsAnalyzer.CelluleCreneau(null, 1, false, false));
+                        new OuvertureStandsAnalyzer.CelluleCreneau(1L, 1, false),
+                        new OuvertureStandsAnalyzer.CelluleCreneau(null, 1, false));
     }
 
     @Test
@@ -224,10 +219,10 @@ class OuvertureStandsAnalyzerTest {
 
         assertThat(rapport.stands().get(0).jours().get(0).creneaux())
                 .map(OuvertureStandsAnalyzerTest::withoutSegments)
-                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(1L, null, false, false));
+                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(1L, null, false));
         assertThat(rapport.stands().get(0).jours().get(1).creneaux())
                 .map(OuvertureStandsAnalyzerTest::withoutSegments)
-                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 1, false, false));
+                .containsExactly(new OuvertureStandsAnalyzer.CelluleCreneau(2L, 1, false));
     }
 
     /** A day cut into two windows must read as two stretches, not as one 10:00→20:00 block. */
@@ -362,36 +357,6 @@ class OuvertureStandsAnalyzerTest {
 
         assertThat(rapport.jours()).isEmpty();
         assertThat(rapport.postesTotal()).isZero();
-    }
-
-    /**
-     * A staggered grid holds one variant of every vacation per famille, and a
-     * stand is paired with exactly one of them: the cells of the others carry
-     * no seat and must not be typed.
-     */
-    @Test
-    void lesCreneauxDUneAutreFamilleSontInertes() {
-        List<Creneau> creneaux = new ArrayList<>(List.of(
-                new Creneau(1L, 1, JOUR_1, LocalTime.of(10, 0), LocalTime.of(14, 0)),
-                new Creneau(2L, 1, JOUR_1, LocalTime.of(11, 0), LocalTime.of(15, 0))));
-        creneaux.get(1).setFamille(1);
-        List<Stand> stands = new ArrayList<>(List.of(stand("A"), stand("B")));
-
-        RapportOuvertures rapport = analyze(stands, creneaux);
-
-        // The two stands land on the two families, so each sees one live cell
-        // and one inert — and every stand's inert cell is the other's live one.
-        List<OuvertureStandsAnalyzer.CelluleCreneau> premier =
-                rapport.stands().get(0).jours().get(0).creneaux();
-        List<OuvertureStandsAnalyzer.CelluleCreneau> second =
-                rapport.stands().get(1).jours().get(0).creneaux();
-        assertThat(premier)
-                .extracting(OuvertureStandsAnalyzer.CelluleCreneau::horsFamille)
-                .containsExactly(false, true);
-        assertThat(second)
-                .extracting(OuvertureStandsAnalyzer.CelluleCreneau::horsFamille)
-                .containsExactly(true, false);
-        assertThat(premier.get(1).effectif()).isNull();
     }
 
     /** Columns are read back by position, so a day's créneaux must be chronological whatever their ids. */

@@ -31,9 +31,8 @@ import java.util.Set;
  * animateur import ({@code docs/decisions/0021}), transposed:
  *
  * <ul>
- *   <li><b>Columns</b> land on <em>every</em> créneau of the same date that
- *       contains their hours — a grid staggered into families holds one per
- *       family, and each gets the cell. A column narrower than its créneau
+ *   <li><b>Columns</b> land on the créneau of the same date that contains
+ *       their hours. A column narrower than its créneau
  *       (the workbook's 19h-20h under a créneau 14-20) writes a window at its
  *       own bounds, the rest of the créneau left as it was: the columns are
  *       the workbook's, the créneaux the solver's. A column no créneau
@@ -217,10 +216,8 @@ public class StandGrilleImportService {
                                 + "un « h » pour cette raison."));
                 continue;
             }
-            // Every créneau of that date and those hours, not the first: a grid
-            // staggered into families holds several, one per family, and landing
-            // on one of them left every stand of the others untouched — reported
-            // as updated all the same.
+            // Every créneau of that date containing those hours — one, since
+            // the grid refuses two créneaux with the same hours.
             List<Creneau> cibles = edition.stream()
                     .filter(creneau -> colonne.date().equals(creneau.getDate())
                             && contient(creneau, colonne.heureDebut(), colonne.heureFin()))

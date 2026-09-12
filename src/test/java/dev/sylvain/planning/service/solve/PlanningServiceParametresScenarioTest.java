@@ -82,12 +82,6 @@ class PlanningServiceParametresScenarioTest {
         // before the meal break moved: the deprecated key lands on the legal
         // parameters.
         assertThat(legaux.getCoupureRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
-        // Slicing into offset families: the setting that makes a dense scenario
-        // feasible (see the coverage-deficit investigation (kept out of the public repository: it is based on a real
-        // event dataset)) must be pinnable in the
-        // scenario itself, not only tuned by hand after the import.
-        assertThat(decoupage.getNombreFamillesDecalage()).isEqualTo(3);
-        assertThat(decoupage.getDureeDecalageMaxMinutes()).isEqualTo(75);
 
         ParametresSolveur solveur = service.loadScenarioSections("scenario-parametres-optionnels.yaml")
                 .parametresSolveur()

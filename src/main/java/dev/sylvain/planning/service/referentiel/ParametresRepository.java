@@ -109,8 +109,7 @@ public class ParametresRepository {
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT duree_vacation_cible_minutes, duree_vacation_min_minutes,
                         duree_vacation_max_minutes, duree_chevauchement_minutes,
-                        strategie_couverture_pendant_pause,
-                        nombre_familles_decalage, duree_decalage_max_minutes, mode_grille
+                        strategie_couverture_pendant_pause, mode_grille
                         FROM parametres_decoupage
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -122,8 +121,6 @@ public class ParametresRepository {
                 parametres.setDureeChevauchementMinutes(rs.getInt("duree_chevauchement_minutes"));
                 parametres.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy.valueOf(
                         rs.getString("strategie_couverture_pendant_pause")));
-                parametres.setNombreFamillesDecalage(rs.getInt("nombre_familles_decalage"));
-                parametres.setDureeDecalageMaxMinutes(rs.getInt("duree_decalage_max_minutes"));
                 parametres.setModeGrille(ModeGrilleCreneaux.valueOf(rs.getString("mode_grille")));
                 return parametres;
             }
@@ -138,26 +135,21 @@ public class ParametresRepository {
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_decoupage (edition_id, duree_vacation_cible_minutes,
                         duree_vacation_min_minutes, duree_vacation_max_minutes, duree_chevauchement_minutes,
-                        strategie_couverture_pendant_pause,
-                        nombre_familles_decalage, duree_decalage_max_minutes, mode_grille)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        strategie_couverture_pendant_pause, mode_grille)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET duree_vacation_cible_minutes = EXCLUDED.duree_vacation_cible_minutes,
                         duree_vacation_min_minutes = EXCLUDED.duree_vacation_min_minutes,
                         duree_vacation_max_minutes = EXCLUDED.duree_vacation_max_minutes,
                         duree_chevauchement_minutes = EXCLUDED.duree_chevauchement_minutes,
                         strategie_couverture_pendant_pause = EXCLUDED.strategie_couverture_pendant_pause,
-                        nombre_familles_decalage = EXCLUDED.nombre_familles_decalage,
-                        duree_decalage_max_minutes = EXCLUDED.duree_decalage_max_minutes,
                         mode_grille = EXCLUDED.mode_grille""")) {
             ps.setInt(2, parametres.getDureeVacationCibleMinutes());
             ps.setInt(3, parametres.getDureeVacationMinMinutes());
             ps.setInt(4, parametres.getDureeVacationMaxMinutes());
             ps.setInt(5, parametres.getDureeChevauchementMinutes());
             ps.setString(6, parametres.getStrategieCouverturePendantPause().name());
-            ps.setInt(7, parametres.getNombreFamillesDecalage());
-            ps.setInt(8, parametres.getDureeDecalageMaxMinutes());
-            ps.setString(9, parametres.getModeGrille().name());
+            ps.setString(7, parametres.getModeGrille().name());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save découpage parameters", e);

@@ -205,20 +205,6 @@ class CreneauGridServiceTest {
     /* ------------------------------ Diagnostic ------------------------------ */
 
     @Test
-    void unGrilleAvecFamillesEstCertainementDesVacations() {
-        Creneau vacation = creneau("2026-07-06", "09:00", "12:00");
-        Creneau otherFamily = creneau("2026-07-06", "09:30", "12:30");
-        otherFamily.setFamille(1);
-
-        CreneauGridService.DiagnosticGrille diagnostic =
-                CreneauGridService.diagnose(List.of(vacation, otherFamily), DECOUPAGE);
-
-        assertThat(diagnostic.modeProbable()).isEqualTo(ModeGrilleCreneaux.VACATIONS);
-        assertThat(diagnostic.modeCertain()).isTrue();
-        assertThat(diagnostic.nombreFamilles()).isEqualTo(2);
-    }
-
-    @Test
     void deLonguesJourneesSansFamilleSuggerentDesAmplitudesSansCertitude() {
         CreneauGridService.DiagnosticGrille diagnostic =
                 CreneauGridService.diagnose(List.of(creneau("2026-07-06", "09:00", "20:00")), DECOUPAGE);

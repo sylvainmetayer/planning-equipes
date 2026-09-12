@@ -58,7 +58,6 @@ public final class ChampsModifies {
         map.put("effectifMax", Stand::getEffectifMax);
         map.put("reserveMajeurs", Stand::isReserveMajeurs);
         map.put("premium", Stand::isPremium);
-        map.put("famille", Stand::getFamille);
         map.put("niveauEffort", Stand::getNiveauEffort);
         map.put(
                 "emplacement",
@@ -121,7 +120,6 @@ public final class ChampsModifies {
         map.put("date", Creneau::getDate);
         map.put("heureDebut", Creneau::getHeureDebut);
         map.put("heureFin", Creneau::getHeureFin);
-        map.put("famille", Creneau::getFamille);
         map.put("couverturePause", Creneau::isCouverturePause);
     });
 

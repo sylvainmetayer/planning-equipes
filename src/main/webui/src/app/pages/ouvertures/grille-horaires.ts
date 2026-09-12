@@ -110,16 +110,6 @@ export function cellulesDepuis(rapport: RapportOuvertures): Cellules {
   return cellules;
 }
 
-/**
- * The cells of a créneau belonging to another stagger family than the stand's,
- * keyed `standId#colonneId`. The stand never receives a seat there, so the
- * cell is neither typed nor sent — writing it would reopen a day this stand
- * never staffs.
- */
-export function cellulesInertes(rapport: RapportOuvertures): Set<string> {
-  return cellulesTelles(rapport, (cellule) => cellule.horsFamille);
-}
-
 /** The cells flagged partial by the server, keyed `standId#colonneId`: what a save keeps unless retyped. */
 export function cellulesPartielles(rapport: RapportOuvertures): Set<string> {
   return cellulesTelles(rapport, (cellule) => cellule.partiel);
@@ -271,8 +261,6 @@ export function standsModifies(cellules: Cellules, reference: Cellules): string[
 
 /** What travels with a save besides the cells. */
 export interface OptionsSaisie {
-  /** Cells of another family's créneau: left out, the server ignores them too. */
-  inertes?: ReadonlySet<string>;
   /** The stamps the grid read, sent back as preconditions (issue #362). */
   modifieLeParStand?: ReadonlyMap<string, string | null>;
   /** The explicit request to extend partial cells to their column; without it a cell saved unchanged keeps its stretches. */
@@ -282,9 +270,7 @@ export interface OptionsSaisie {
 /**
  * The body of the save: every cell of every modified stand, each with its
  * column's bounds so a column the screen cut itself writes a window at
- * those bounds, the inert ones left out — the server ignores them too, and
- * sending them would say this stand states something about another family's
- * créneau.
+ * those bounds.
  */
 export function saisie(
   cellules: Cellules,
@@ -292,17 +278,13 @@ export function saisie(
   colonnesGrille: readonly ColonneGrille[],
   options: OptionsSaisie = {},
 ): SaisieStandGrille[] {
-  const inertes = options.inertes ?? new Set<string>();
   return standIds.map((standId) => {
     const ligne = cellules.get(standId) ?? new Map<string, number | null>();
     return {
       standId,
       modifieLe: options.modifieLeParStand?.get(standId) ?? null,
       cellules: colonnesGrille
-        .filter(
-          (colonne) =>
-            ligne.has(colonne.colonneId) && !inertes.has(key(standId, colonne.colonneId)),
-        )
+        .filter((colonne) => ligne.has(colonne.colonneId))
         .map((colonne) => ({
           creneauId: colonne.creneauId,
           heureDebut: formatHeure(colonne.heureDebut),
@@ -460,7 +442,6 @@ export function collerBloc(
   depuis: AdresseCellule,
   standIds: readonly string[],
   colonnesGrille: readonly ColonneGrille[],
-  inertes: ReadonlySet<string> = new Set(),
 ): Cellules {
   const ligne0 = standIds.indexOf(depuis.standId);
   const colonne0 = colonnesGrille.findIndex((each) => each.colonneId === depuis.colonneId);
@@ -484,7 +465,7 @@ export function collerBloc(
         return;
       }
       const lu = readCell(valeur);
-      if (lu !== undefined && !inertes.has(key(standId, colonne.colonneId))) {
+      if (lu !== undefined) {
         resultat = ecrireCellule(resultat, { standId, colonneId: colonne.colonneId }, lu);
       }
     });
@@ -502,7 +483,6 @@ export function recopierJour(
   dateSource: string,
   standIds: readonly string[],
   colonnesGrille: readonly ColonneGrille[],
-  inertes: ReadonlySet<string> = new Set(),
 ): Cellules {
   const source = colonnesGrille.filter((colonne) => colonne.date === dateSource);
   if (source.length === 0) {
@@ -521,9 +501,6 @@ export function recopierJour(
       continue;
     }
     for (const standId of standIds) {
-      if (inertes.has(key(standId, target.colonneId)) || inertes.has(key(standId, origine))) {
-        continue;
-      }
       const valeur = resultat.get(standId)?.get(origine) ?? null;
       if ((resultat.get(standId)?.get(target.colonneId) ?? null) !== valeur) {
         resultat = ecrireCellule(resultat, { standId, colonneId: target.colonneId }, valeur);

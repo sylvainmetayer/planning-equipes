@@ -62,7 +62,7 @@ public class StandRepository {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT s.id, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs,
-                    s.premium, s.niveau_effort, s.famille, s.modifie_le, e.id AS emplacement_id, e.nom AS emplacement_nom,
+                    s.premium, s.niveau_effort, s.modifie_le, e.id AS emplacement_id, e.nom AS emplacement_nom,
                     e.latitude AS emplacement_latitude, e.longitude AS emplacement_longitude
                     FROM stand s
                     LEFT JOIN emplacement e ON e.edition_id = s.edition_id AND e.id = s.emplacement_id
@@ -78,7 +78,6 @@ public class StandRepository {
                     stand.setReserveMajeurs(rs.getBoolean("reserve_majeurs"));
                     stand.setPremium(rs.getBoolean("premium"));
                     stand.setNiveauEffort(NiveauEffort.valueOf(rs.getString("niveau_effort")));
-                    stand.setFamille((Integer) rs.getObject("famille"));
                     stand.setModifieLe(
                             rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                     String emplacementId = rs.getString("emplacement_id");
@@ -314,30 +313,6 @@ public class StandRepository {
         });
     }
 
-    /**
-     * Records the families the problem build just assigned (issue #390).
-     * Deliberately not a save: {@code modifie_le} stays put, because an
-     * assignment made by the solver's own bookkeeping is not an edit and must
-     * not turn a form the operator has open into a stale write.
-     */
-    public void updateFamilies(Map<String, Integer> familleParStand) {
-        if (familleParStand.isEmpty()) {
-            return;
-        }
-        scope.write("Failed to record the stands' relay families", connection -> {
-            try (PreparedStatement ps =
-                    connection.prepareStatement("UPDATE stand SET famille = ? WHERE edition_id = ? AND id = ?")) {
-                for (Map.Entry<String, Integer> entry : familleParStand.entrySet()) {
-                    ps.setInt(1, entry.getValue());
-                    ps.setString(2, scope.editionId());
-                    ps.setString(3, entry.getKey());
-                    ps.addBatch();
-                }
-                ps.executeBatch();
-            }
-        });
-    }
-
     void upsertStand(Connection connection, Stand stand) throws SQLException {
         upsertStand(connection, stand, false);
     }
@@ -345,13 +320,13 @@ public class StandRepository {
     void upsertStand(Connection connection, Stand stand, boolean failIfPresent) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max,
-                reserve_majeurs, premium, emplacement_id, niveau_effort, famille)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                reserve_majeurs, premium, emplacement_id, niveau_effort)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
                 DO UPDATE SET nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min,
                 effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs,
                 premium = EXCLUDED.premium, emplacement_id = EXCLUDED.emplacement_id,
-                niveau_effort = EXCLUDED.niveau_effort, famille = COALESCE(EXCLUDED.famille, stand.famille),
+                niveau_effort = EXCLUDED.niveau_effort,
                 modifie_le = now()
                 WHERE CAST(? AS boolean)
                 AND (CAST(? AS timestamptz) IS NULL
@@ -367,8 +342,7 @@ public class StandRepository {
             ps.setString(
                     8, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
             ps.setString(9, stand.getNiveauEffort().name());
-            ps.setObject(10, stand.getFamille());
-            WriteStamp.bindPrecondition(ps, 11, !failIfPresent, stand.getModifieLe());
+            WriteStamp.bindPrecondition(ps, 10, !failIfPresent, stand.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
                 refuse(failIfPresent, "stand", stand.getId());

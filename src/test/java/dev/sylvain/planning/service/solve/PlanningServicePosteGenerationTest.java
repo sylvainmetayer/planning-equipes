@@ -10,7 +10,6 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -156,129 +155,6 @@ class PlanningServicePosteGenerationTest {
 
         // ceil(5 / 2) = 3, not ceil(effectifMin=1 / 2) = 1.
         assertThat(postes).hasSize(3);
-    }
-
-    /**
-     * When the créneau list spans more than one "famille" (staggered
-     * relay-grid variant, see {@link VacationGeneratorService}), each stand
-     * must be paired only against its own famille's créneaux — never both —
-     * so the cross product stays {@code stands × 1 famille}, not
-     * {@code stands × nombreFamilles}.
-     */
-    @Test
-    void standNestPaireQuAvecLaFamilleDeCreneauxQuiLuiEstAssignee() {
-        Creneau creneauFamille0 =
-                new Creneau(10L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        Creneau creneauFamille1 =
-                new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        creneauFamille1.setFamille(1);
-
-        List<PosteAffectation> postes =
-                ProblemBuilder.buildPostes(List.of(standA, standB), List.of(creneauFamille0, creneauFamille1));
-
-        // Every stand shows up on ONE of the two families only, never on both
-        // (otherwise there would be 4 seats, not 2: the full cartesian product
-        // of the days before the offset was introduced).
-        assertThat(postes).hasSize(2);
-        assertThat(postes)
-                .extracting(p -> p.getStand().getId() + "->" + p.getCreneau().getFamille())
-                .containsExactlyInAnyOrder("STAND-A->0", "STAND-B->1");
-    }
-
-    /**
-     * Familles must be <b>balanced</b>, not merely deterministic: the
-     * staggering only breaks the simultaneity peak if each grid variant
-     * carries a comparable share of the demand. The hash this replaces put
-     * 36 of 91 seats on one famille out of four on the reference scenario —
-     * see {@code ProblemBuilder#spreadStandsByFamily}.
-     */
-    @Test
-    void lesStandsSontRepartisEquitablementEntreLesFamilles() {
-        List<Stand> stands = new ArrayList<>();
-        for (int i = 0; i < 63; i++) {
-            stands.add(new Stand("STAND-" + i, "S" + i, Set.of(), 1, 1, false));
-        }
-        List<Creneau> creneaux = new ArrayList<>();
-        for (int famille = 0; famille < 4; famille++) {
-            Creneau creneau =
-                    new Creneau(100L + famille, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-            creneau.setFamille(famille);
-            creneaux.add(creneau);
-        }
-
-        Map<Integer, Long> parFamille = ProblemBuilder.buildPostes(stands, creneaux).stream()
-                .collect(Collectors.groupingBy(p -> p.getCreneau().getFamille(), Collectors.counting()));
-
-        assertThat(parFamille).hasSize(4);
-        long min = parFamille.values().stream().mapToLong(Long::longValue).min().orElseThrow();
-        long max = parFamille.values().stream().mapToLong(Long::longValue).max().orElseThrow();
-        assertThat(max - min)
-                .as("écart entre la plus grosse et la plus petite famille")
-                .isLessThanOrEqualTo(1);
-    }
-
-    /**
-     * A stand that carries a family keeps it whatever its rank (issue #390):
-     * this is what lets a stand be added without moving the others.
-     */
-    @Test
-    void unStandGardeSaFamillePersisteeEtLeNouveauRejointLaMoinsPeuplee() {
-        List<Creneau> creneaux = twoFamilyGrid();
-        Stand existantA = new Stand("STAND-A", "A", Set.of(), 1, 1, false);
-        Stand existantB = new Stand("STAND-B", "B", Set.of(), 1, 1, false);
-        Stand existantC = new Stand("STAND-C", "C", Set.of(), 1, 1, false);
-        existantA.setFamille(1);
-        existantB.setFamille(1);
-        existantC.setFamille(0);
-        // Sorts first: the historical round-robin would have given it family 0
-        // and pushed A, B and C one family further.
-        Stand ajoute = new Stand("AJOUTE", "Ajouté", Set.of(), 1, 1, false);
-
-        Map<String, Integer> familles =
-                ProblemBuilder.standFamilies(List.of(existantA, existantB, existantC, ajoute), creneaux);
-
-        assertThat(familles)
-                .containsEntry("STAND-A", 1)
-                .containsEntry("STAND-B", 1)
-                .containsEntry("STAND-C", 0);
-        assertThat(familles.get("AJOUTE")).as("la famille la moins peuplée").isEqualTo(0);
-    }
-
-    /** A persisted family the grid does not have is treated as unassigned, never as a family of its own. */
-    @Test
-    void uneFamillePersisteeHorsGrilleEstReattribuee() {
-        Stand horsGrille = new Stand("STAND-X", "X", Set.of(), 1, 1, false);
-        horsGrille.setFamille(7);
-
-        Map<String, Integer> familles = ProblemBuilder.standFamilies(List.of(horsGrille, standA), twoFamilyGrid());
-
-        assertThat(familles.values()).allSatisfy(famille -> assertThat(famille).isBetween(0, 1));
-        assertThat(familles.get("STAND-X")).isNotEqualTo(familles.get("STAND-A"));
-    }
-
-    private static List<Creneau> twoFamilyGrid() {
-        Creneau famille0 = new Creneau(10L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        Creneau famille1 = new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        famille1.setFamille(1);
-        return List.of(famille0, famille1);
-    }
-
-    /** Same stands in a different order must land on the same families. */
-    @Test
-    void laRepartitionParFamilleEstStableQuelQueSoitLOrdreDesStands() {
-        Creneau famille0 = new Creneau(10L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        Creneau famille1 = new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        famille1.setFamille(1);
-        List<Creneau> creneaux = List.of(famille0, famille1);
-
-        Map<String, Integer> ordreDirect = ProblemBuilder.buildPostes(List.of(standA, standB), creneaux).stream()
-                .collect(Collectors.toMap(
-                        p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
-        Map<String, Integer> ordreInverse = ProblemBuilder.buildPostes(List.of(standB, standA), creneaux).stream()
-                .collect(Collectors.toMap(
-                        p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
-
-        assertThat(ordreInverse).isEqualTo(ordreDirect);
     }
 
     /**

@@ -243,7 +243,6 @@ final class ScenarioDomainMapper {
                 Boolean.TRUE.equals(dto.reserveMajeurs()),
                 Boolean.TRUE.equals(dto.premium()));
         stand.setNiveauEffort(dto.niveauEffort() == null ? NiveauEffort.NORMAL : dto.niveauEffort());
-        stand.setFamille(dto.famille());
         if (dto.emplacementId() != null) {
             stand.setEmplacement(emplacementsParId.get(dto.emplacementId()));
         }
@@ -493,8 +492,6 @@ final class ScenarioDomainMapper {
         setInt(dto.dureeVacationMaxMinutes(), parametres::setDureeVacationMaxMinutes);
         setInt(dto.dureeChevauchementMinutes(), parametres::setDureeChevauchementMinutes);
         set(dto.strategieCouverturePendantPause(), parametres::setStrategieCouverturePendantPause);
-        setInt(dto.nombreFamillesDecalage(), parametres::setNombreFamillesDecalage);
-        setInt(dto.dureeDecalageMaxMinutes(), parametres::setDureeDecalageMaxMinutes);
         set(dto.modeGrille(), parametres::setModeGrille);
         return Optional.of(parametres);
     }

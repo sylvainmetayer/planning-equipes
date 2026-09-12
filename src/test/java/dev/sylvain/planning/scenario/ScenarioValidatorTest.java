@@ -118,15 +118,15 @@ class ScenarioValidatorTest {
     void unParametreDeDecoupageNegatifEstSignale() throws IOException {
         String withDecoupage = MINIMAL + """
                 parametresDecoupage:
-                  nombreFamillesDecalage: 0
-                  dureeDecalageMaxMinutes: -5
+                  dureeVacationMinMinutes: 0
+                  dureeChevauchementMinutes: -5
                 """;
 
         List<String> erreurs = ScenarioValidator.validate(withDecoupage);
 
         assertThat(erreurs)
-                .anySatisfy(erreur -> assertThat(erreur).contains("parametresDecoupage.nombreFamillesDecalage"))
-                .anySatisfy(erreur -> assertThat(erreur).contains("parametresDecoupage.dureeDecalageMaxMinutes"));
+                .anySatisfy(erreur -> assertThat(erreur).contains("parametresDecoupage.dureeVacationMinMinutes"))
+                .anySatisfy(erreur -> assertThat(erreur).contains("parametresDecoupage.dureeChevauchementMinutes"));
     }
 
     /**

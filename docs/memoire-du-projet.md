@@ -135,6 +135,11 @@ round-robin — un `hash(id) mod n` donnait 19/21/36/15, donc une famille qui
 relevait 40 % de la demande d'un bloc, exactement ce que l'étalement doit
 éviter.
 
+Épilogue, septembre 2026 : les familles n'ont jamais servi en production, et
+chaque écran qui touchait à la grille devait les comprendre. Elles sont
+retirées (ADR 0029) ; le chevauchement des vacations reste le levier contre le
+pic de relève.
+
 Score dur du scénario de référence : **−260 → −5**, puis 0 après réglage. La
 leçon vaut au-delà du correctif : ce qui ressemblait à un manque de budget ou à
 un manque d'animateurs était un défaut de génération de données — et **la borne

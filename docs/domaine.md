@@ -381,18 +381,16 @@ de créneau — sauf si l'organisateur déclare `pauseSurPoste` (voir plus bas).
 Une amplitude est un créneau ordinaire, en base le temps de l'import ; le
 découpage la remplace **en place**. Le solveur ne voit donc jamais d'amplitude.
 
-### La famille de relais est un attribut du stand
+### Les familles de relais ont été retirées
 
-Quand le découpage produit plusieurs **familles** de vacations (mêmes journées,
-coupures décalées), chaque stand relaie avec les stands de sa famille : la
-génération des postes ne l'apparie qu'aux créneaux de cette famille. La
-famille est **persistée sur le stand** (`stand.famille`, ADR
-[0026](decisions/0026-famille-de-relais-attribut-du-stand.md)) : un stand
-créé rejoint la moins peuplée, un stand ajouté ne déplace jamais les autres,
-et l'opérateur peut l'imposer dans la fiche du stand. Le remplacement de la
-grille (découpage, dérivation « remplacer ») oublie les familles, comme il
-oublie le plan enregistré. Sur une grille à une seule famille, l'attribut est
-sans effet.
+Le découpage a longtemps su générer plusieurs **familles** de vacations aux
+coupures décalées, chaque stand relayant avec sa famille (ADR
+[0026](decisions/0026-famille-de-relais-attribut-du-stand.md)). Le mécanisme
+n'a jamais servi en production et compliquait tout ce qui touche à la grille :
+il est retiré (ADR [0029](decisions/0029-retrait-des-familles-de-relais.md)).
+Une grille porte une seule variante de chaque vacation, tout stand se pose
+sur tout créneau ouvert, et un scénario qui porte encore `famille:` ou
+`nombreFamillesDecalage:` est refusé comme toute clé inconnue.
 
 ### Le cas que le plafond de durée ne détecte pas
 
@@ -422,9 +420,12 @@ le scénario de référence, 86 sièges réellement ouverts devenaient 172 à po
 à 18 h 30, pour 153 animateurs : infaisable par construction, sans la moindre
 pénurie d'animateurs.
 
-Deux leviers désamorcent le pic : `nombreFamillesDecalage` (grilles décalées,
-chaque stand n'en suivant qu'une, donc les relèves s'étalent) et
-`dureeChevauchementMinutes`.
+Le levier qui désamorce le pic est `dureeChevauchementMinutes` : l'équipe
+entrante et l'équipe sortante se recouvrent le temps de la relève, et la
+grille de vacations se règle pour que les relèves ne tombent pas toutes sur la
+même minute. Les grilles décalées par familles, qui étalaient les relèves en
+générant plusieurs variantes de chaque vacation, ont été retirées (ADR
+[0029](decisions/0029-retrait-des-familles-de-relais.md)).
 
 > **L'analyse de faisabilité ne voit pas ce pic** : c'est une estimation
 > optimiste, agrégée par jour. Elle peut répondre « réalisable » alors que le

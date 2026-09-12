@@ -88,13 +88,13 @@ public final class OuvertureStandsAnalyzer {
      *
      * @param tranche the column's rank inside its créneau, from 0
      */
-    @Schema(requiredProperties = {"couverturePause", "famille", "tranche"})
+    @Schema(requiredProperties = {"couverturePause", "tranche"})
     public record ColonneCreneau(
-            Long id, int tranche, LocalTime heureDebut, LocalTime heureFin, int famille, boolean couverturePause) {
+            Long id, int tranche, LocalTime heureDebut, LocalTime heureFin, boolean couverturePause) {
 
         /** A créneau in one piece. */
-        public ColonneCreneau(Long id, LocalTime heureDebut, LocalTime heureFin, int famille, boolean couverturePause) {
-            this(id, 0, heureDebut, heureFin, famille, couverturePause);
+        public ColonneCreneau(Long id, LocalTime heureDebut, LocalTime heureFin, boolean couverturePause) {
+            this(id, 0, heureDebut, heureFin, couverturePause);
         }
     }
 
@@ -125,25 +125,17 @@ public final class OuvertureStandsAnalyzer {
      */
     /**
      * @param tranche     the column's rank inside its créneau ({@link ColonneCreneau#tranche()})
-     * @param horsFamille the créneau belongs to another stagger family than the
-     *                    stand's, so the stand never receives a seat on it —
-     *                    the cell is shown inert rather than editable
      * @param segments    the open stretches of the cell, empty when closed;
      *                    one stretch spanning the column when the cell is not
      *                    partial
      */
-    @Schema(requiredProperties = {"horsFamille", "partiel", "segments", "tranche"})
+    @Schema(requiredProperties = {"partiel", "segments", "tranche"})
     public record CelluleCreneau(
-            Long creneauId,
-            int tranche,
-            Integer effectif,
-            boolean partiel,
-            boolean horsFamille,
-            List<SegmentCellule> segments) {
+            Long creneauId, int tranche, Integer effectif, boolean partiel, List<SegmentCellule> segments) {
 
         /** A cell of a créneau in one piece, without its stretches. */
-        public CelluleCreneau(Long creneauId, Integer effectif, boolean partiel, boolean horsFamille) {
-            this(creneauId, 0, effectif, partiel, horsFamille, List.of());
+        public CelluleCreneau(Long creneauId, Integer effectif, boolean partiel) {
+            this(creneauId, 0, effectif, partiel, List.of());
         }
     }
 
@@ -192,7 +184,6 @@ public final class OuvertureStandsAnalyzer {
      */
     public static RapportOuvertures analyze(List<Stand> stands, List<Creneau> creneaux) {
         Map<LocalDate, List<Creneau>> creneauxParJour = creneauxByDay(creneaux);
-        Map<String, Integer> familles = ProblemBuilder.standFamilies(stands, creneaux);
         List<JourAmplitude> jours = new ArrayList<>();
         Map<LocalDate, Integer> amplitudeParJour = new LinkedHashMap<>();
         Map<LocalDate, List<TrancheCreneau>> colonnesParJour = new LinkedHashMap<>();
@@ -209,7 +200,7 @@ public final class OuvertureStandsAnalyzer {
             // by position.
             List<TrancheCreneau> colonnes = new ArrayList<>();
             for (Creneau creneau : duJour) {
-                colonnes.addAll(columnsOf(creneau, stands, familles));
+                colonnes.addAll(columnsOf(creneau, stands));
             }
             colonnesParJour.put(date, colonnes);
             jours.add(new JourAmplitude(
@@ -249,12 +240,7 @@ public final class OuvertureStandsAnalyzer {
             for (JourAmplitude jour : jours) {
                 List<PosteAffectation> postes = parJour.getOrDefault(jour.date(), List.of());
                 CelluleJour cellule = cellule(
-                        stand,
-                        jour,
-                        postes,
-                        amplitudeParJour.get(jour.date()),
-                        colonnesParJour.get(jour.date()),
-                        familles.getOrDefault(stand.getId(), 0));
+                        stand, jour, postes, amplitudeParJour.get(jour.date()), colonnesParJour.get(jour.date()));
                 cellules.add(cellule);
                 minutesStand += cellule.minutesOuvertes();
                 postesStand += cellule.postes();
@@ -298,12 +284,11 @@ public final class OuvertureStandsAnalyzer {
             JourAmplitude jour,
             List<PosteAffectation> postes,
             int minutesAmplitude,
-            List<TrancheCreneau> colonnes,
-            int familleStand) {
+            List<TrancheCreneau> colonnes) {
         SourceHoraire source = HoraireStandResolver.sourceOfDay(stand, jour.date());
         List<CelluleCreneau> parCreneau = new ArrayList<>();
         for (TrancheCreneau colonne : colonnes) {
-            parCreneau.add(celluleCreneau(stand, colonne.creneau(), colonne.colonne(), familleStand));
+            parCreneau.add(celluleCreneau(stand, colonne.creneau(), colonne.colonne()));
         }
         if (postes.isEmpty()) {
             return new CelluleJour(
@@ -328,20 +313,17 @@ public final class OuvertureStandsAnalyzer {
 
     /**
      * The columns of one créneau: its tranches, cut wherever a window of a
-     * stand of its family starts or ends strictly inside it. Every boundary
-     * counts, so a cell is never partial on the family's own stands; a stand
+     * stand starts or ends strictly inside it. Every boundary counts, so a
+     * cell is never partial on a stand's own boundaries; a stand
      * with an odd boundary (10:07) cuts the column for everyone, which is the
      * price of showing the need as it is rather than flattening it.
      */
-    private static List<TrancheCreneau> columnsOf(Creneau creneau, List<Stand> stands, Map<String, Integer> familles) {
+    private static List<TrancheCreneau> columnsOf(Creneau creneau, List<Stand> stands) {
         int duree = creneau.getDureeMinutes();
         TreeSet<Integer> bornes = new TreeSet<>();
         bornes.add(0);
         bornes.add(duree);
         for (Stand stand : stands) {
-            if (familles.getOrDefault(stand.getId(), 0) != creneau.getFamille()) {
-                continue;
-            }
             for (Creneau.SegmentOuvert segment : creneau.segmentsOuverts(stand)) {
                 if (segment.debutMinutes() > 0 && segment.debutMinutes() < duree) {
                     bornes.add(segment.debutMinutes());
@@ -362,7 +344,6 @@ public final class OuvertureStandsAnalyzer {
                             index,
                             minuteToTime(debutCreneau + tries.get(index)),
                             minuteToTime(debutCreneau + tries.get(index + 1)),
-                            creneau.getFamille(),
                             creneau.isCouverturePause())));
         }
         return colonnes;
@@ -389,13 +370,7 @@ public final class OuvertureStandsAnalyzer {
      * créneau halves the seats, and the organiser types what the stand needs,
      * not what the solver gets.
      */
-    private static CelluleCreneau celluleCreneau(
-            Stand stand, Creneau creneau, ColonneCreneau colonne, int familleStand) {
-        if (creneau.getFamille() != familleStand) {
-            // Another family's créneau: ProblemBuilder#buildPostes never pairs
-            // it with this stand, so it holds no seat to read and none to type.
-            return new CelluleCreneau(colonne.id(), colonne.tranche(), null, false, true, List.of());
-        }
+    private static CelluleCreneau celluleCreneau(Stand stand, Creneau creneau, ColonneCreneau colonne) {
         int[] bornes = boundsWithin(creneau, colonne.heureDebut(), colonne.heureFin());
         int debutCreneau = creneau.getHeureDebut().toSecondOfDay() / 60;
         List<SegmentCellule> lus = new ArrayList<>();
@@ -413,10 +388,10 @@ public final class OuvertureStandsAnalyzer {
             couvert += fin - debut;
         }
         if (lus.isEmpty()) {
-            return new CelluleCreneau(colonne.id(), colonne.tranche(), null, false, false, List.of());
+            return new CelluleCreneau(colonne.id(), colonne.tranche(), null, false, List.of());
         }
         boolean entier = lus.size() == 1 && couvert == bornes[1] - bornes[0];
-        return new CelluleCreneau(colonne.id(), colonne.tranche(), effectif, !entier, false, lus);
+        return new CelluleCreneau(colonne.id(), colonne.tranche(), effectif, !entier, lus);
     }
 
     /**

@@ -1,6 +1,6 @@
 # 0026 — La famille de relais est un attribut du stand
 
-- **Statut** : accepté, implémenté
+- **Statut** : remplacé par [0029](0029-retrait-des-familles-de-relais.md) — les familles de relais sont retirées
 - **Date** : septembre 2026
 - **Portée** : référentiel des stands, génération des postes, IHM, import
 - **Issue** : #390

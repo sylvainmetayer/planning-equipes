@@ -226,8 +226,6 @@ class ScenarioYamlWriterTest {
         legaux.setDureeHebdomadaireMaxMinutes(40 * 60);
         legaux.setPauseMinimaleEntreVacationsMinutes(45);
         ParametresDecoupage decoupage = new ParametresDecoupage();
-        decoupage.setNombreFamillesDecalage(5);
-        decoupage.setDureeDecalageMaxMinutes(120);
         decoupage.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy.EFFECTIF_REDUIT);
 
         String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
@@ -255,8 +253,6 @@ class ScenarioYamlWriterTest {
                 .containsEntry("coupureRepasMinutes", 60)
                 .containsEntry("coupureRepasMidiDebut", "12:00");
         assertThat((Map<String, Object>) parsed.get("parametresDecoupage"))
-                .containsEntry("nombreFamillesDecalage", 5)
-                .containsEntry("dureeDecalageMaxMinutes", 120)
                 .containsEntry("strategieCouverturePendantPause", "EFFECTIF_REDUIT")
                 .containsEntry("modeGrille", "AMPLITUDES")
                 // The meal keys left this section; the deprecated ones are never written.

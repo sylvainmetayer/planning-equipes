@@ -153,9 +153,6 @@ public class ParametresMcpTools {
                     Integer dureeVacationMaxMinutes,
             @ToolArg(description = "Chevauchement entre deux vacations successives, en minutes", required = false)
                     Integer dureeChevauchementMinutes,
-            @ToolArg(description = "Nombre de familles de décalage", required = false) Integer nombreFamillesDecalage,
-            @ToolArg(description = "Décalage maximal entre familles, en minutes", required = false)
-                    Integer dureeDecalageMaxMinutes,
             @ToolArg(description = "Couverture pendant la pause : FERMETURE ou RELEVE", required = false)
                     String strategieCouverturePendantPause,
             @ToolArg(
@@ -177,12 +174,6 @@ public class ParametresMcpTools {
         }
         if (dureeChevauchementMinutes != null) {
             parametres.setDureeChevauchementMinutes(dureeChevauchementMinutes);
-        }
-        if (nombreFamillesDecalage != null) {
-            parametres.setNombreFamillesDecalage(nombreFamillesDecalage);
-        }
-        if (dureeDecalageMaxMinutes != null) {
-            parametres.setDureeDecalageMaxMinutes(dureeDecalageMaxMinutes);
         }
         if (strategieCouverturePendantPause != null) {
             parametres.setStrategieCouverturePendantPause(McpArgs.enumeration(
@@ -395,8 +386,6 @@ public class ParametresMcpTools {
                 parametres.getDureeVacationMinMinutes(),
                 parametres.getDureeVacationMaxMinutes(),
                 parametres.getDureeChevauchementMinutes(),
-                parametres.getNombreFamillesDecalage(),
-                parametres.getDureeDecalageMaxMinutes(),
                 parametres.getStrategieCouverturePendantPause(),
                 parametres.getModeGrille());
     }
@@ -436,8 +425,6 @@ public class ParametresMcpTools {
             int dureeVacationMinMinutes,
             int dureeVacationMaxMinutes,
             int dureeChevauchementMinutes,
-            int nombreFamillesDecalage,
-            int dureeDecalageMaxMinutes,
             PauseCoverageStrategy strategieCouverturePendantPause,
             ModeGrilleCreneaux modeGrille) {}
 

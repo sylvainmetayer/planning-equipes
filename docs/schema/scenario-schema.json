@@ -320,11 +320,6 @@
           "format" : "int32",
           "minimum" : 0
         },
-        "dureeDecalageMaxMinutes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "minimum" : 0
-        },
         "dureePauseRepasMinutes" : {
           "type" : "integer",
           "format" : "int32",
@@ -359,11 +354,6 @@
         },
         "modeGrille" : {
           "$ref" : "#/$defs/ModeGrilleCreneaux"
-        },
-        "nombreFamillesDecalage" : {
-          "type" : "integer",
-          "format" : "int32",
-          "exclusiveMinimum" : 0
         },
         "strategieCouverturePendantPause" : {
           "$ref" : "#/$defs/PauseCoverageStrategy"
@@ -460,10 +450,6 @@
         },
         "emplacementId" : {
           "type" : "string"
-        },
-        "famille" : {
-          "type" : "integer",
-          "format" : "int32"
         },
         "horaires" : {
           "type" : "array",

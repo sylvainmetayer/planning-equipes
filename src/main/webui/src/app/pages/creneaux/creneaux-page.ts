@@ -111,21 +111,7 @@ export class CreneauxPage {
   private readonly dialog = inject(MatDialog);
   private readonly resolution = inject(PlanningResolutionStore);
 
-  /**
-   * The « Famille » column only appears when the displayed slots actually
-   * carry several stagger families: a group generated with N families holds N
-   * same-looking variants of every slot (each stand is assigned exactly one),
-   * which read as inexplicable duplicates without it — and as noise with it,
-   * on the groups that have a single family.
-   */
-  protected readonly columns = computed(() =>
-    this.afficherFamilles()
-      ? ['select', 'jour', 'date', 'horaires', 'famille', 'probleme', 'actions']
-      : ['select', 'jour', 'date', 'horaires', 'probleme', 'actions'],
-  );
-  protected readonly afficherFamilles = computed(() =>
-    this.creneauxAffiches().some((creneau) => (creneau.famille ?? 0) > 0),
-  );
+  protected readonly columns = ['select', 'jour', 'date', 'horaires', 'probleme', 'actions'];
 
   /** Sorting, so the slots at fault can be grouped instead of hunted for. */
   protected readonly sort = signal<Sort>({ active: '', direction: '' });

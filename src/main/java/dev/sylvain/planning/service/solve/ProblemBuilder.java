@@ -15,7 +15,6 @@ import dev.sylvain.planning.solver.constraints.AdHocConstraints;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,8 +80,6 @@ public final class ProblemBuilder {
      * timeslots only, so nothing is refused here: an edition missing either
      * simply has none, and the caller reads which one from the lists.
      *
-     * <p>Writes nothing — the stagger families are recorded by the builds that
-     * solve, never by a read (see {@link #recordStandFamilies}).</p>
      */
     public Seats buildSeatsFromReferenceData() {
         List<Stand> stands = referenceDataService.listSolvedStands();
@@ -197,7 +194,6 @@ public final class ProblemBuilder {
             throw new IllegalStateException("Aucun plan enregistré sur cette édition : rien d'où repartir. "
                     + "Lancez un calcul de zéro (reamorcage=AUCUN), ou laissez le choix automatique.");
         }
-        recordStandFamilies(stands, creneaux);
         PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux, affectationsPrecedentes);
         if (affectationsPrecedentes.isEmpty()) {
             return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0);
@@ -289,7 +285,6 @@ public final class ProblemBuilder {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         List<Stand> stands = referenceDataService.listSolvedStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
-        recordStandFamilies(stands, creneaux);
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException("Aucune donnée de référence. Chargez un scénario ou créez des stands, "
                     + "des animateurs et des créneaux d'abord.");
@@ -546,30 +541,12 @@ public final class ProblemBuilder {
      * créneau itself — the poste still references the real, persisted créneau
      * (a hard requirement of {@code poste_affectation.creneau_id}'s foreign
      * key), so it cannot be split into a synthetic sub-créneau instead.</p>
-     *
-     * <p>When {@code creneaux} contains more than one relay-grid "famille"
-     * (see {@link VacationGeneratorService#generateVacations}), each stand is
-     * deterministically assigned to exactly one (see
-     * {@link #spreadStandsByFamily}) and only ever paired against that
-     * famille's créneaux, instead of the full cross product. Whichever family a
-     * stand lands on is stable across regenerations (it depends only on the set
-     * of stand ids), so re-running découpage doesn't reshuffle which stands
-     * share a grid.
-     * With a single famille (the default, {@code famille} always 0) this is
-     * exactly the historical unfiltered cross product.</p>
      */
     public static List<PosteAffectation> buildPostes(List<Stand> stands, List<Creneau> creneaux) {
-        int nombreFamilles =
-                creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
-        Map<String, Integer> familleParStand = spreadStandsByFamily(stands, nombreFamilles);
         List<PosteAffectation> postes = new ArrayList<>();
         int counter = 0;
         for (Stand stand : stands) {
-            int familleStand = familleParStand.get(stand.getId());
             for (Creneau creneau : creneaux) {
-                if (creneau.getFamille() != familleStand) {
-                    continue;
-                }
                 List<Creneau.SegmentOuvert> segments = creneau.segmentsOuverts(stand);
                 boolean creneauEntierOuvert = segments.size() == 1
                         && segments.get(0).debutMinutes() == 0
@@ -591,89 +568,6 @@ public final class ProblemBuilder {
             }
         }
         return postes;
-    }
-
-    /**
-     * Assigns every stand to exactly one relay-grid famille, round-robin over
-     * the stands sorted by id. Deterministic and stable across regenerations
-     * (it depends on nothing but the set of stand ids), just like the hash it
-     * replaces — but <b>balanced</b>, which the hash was not.
-     *
-     * <p>{@code floorMod(id.hashCode(), n)} spreads ids pseudo-randomly, and on
-     * a roster this small that is visibly lumpy: on the reference scenario it
-     * put 36 of the 91 seats on a single famille out of four (19/21/36/15).
-     * That famille alone then changed crew at one instant with 40% of the whole
-     * event's demand behind it, which is exactly the simultaneity peak the
-     * staggering exists to break — the mechanism was working against itself.
-     * Round-robin over sorted ids gives buckets that differ by at most one
-     * stand.</p>
-     */
-    /**
-     * Which stagger family each stand belongs to, for the given grid — the
-     * pairing {@link #buildPostes} applies. Exposed because every screen that
-     * shows a stand against a créneau has to agree with it: a stand only ever
-     * receives seats on its own family's créneaux, so a grid showing all of
-     * them invites an entry that generates nothing.
-     */
-    public static Map<String, Integer> standFamilies(List<Stand> stands, List<Creneau> creneaux) {
-        int nombreFamilles =
-                creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
-        return spreadStandsByFamily(stands, nombreFamilles);
-    }
-
-    /**
-     * A stand that already has a family keeps it (issue #390); the others,
-     * in id order, each join the least populated family, lowest first. On
-     * stands that have none this is exactly the historical round-robin, so
-     * an edition that never persisted anything is spread as before — and a
-     * stand added later joins without moving anybody.
-     */
-    /**
-     * Writes down the families this solve pairs the stands on (issue #390), so
-     * every later build keeps them.
-     *
-     * <p>Only from a build that <b>solves</b>: {@code GET /api/planning/volumetrie},
-     * {@code GET /api/staffing} and two read-only MCP tools go through
-     * {@link #buildSeatsFromReferenceData()}, which never comes here — a read
-     * has no business writing. And only on a
-     * staggered grid: on a single-family one the assignment says nothing —
-     * freezing every stand at family 0 would starve the other families the day
-     * a staggered grid arrives without replacing this one.</p>
-     */
-    private void recordStandFamilies(List<Stand> stands, List<Creneau> creneaux) {
-        int nombreFamilles =
-                creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
-        if (nombreFamilles <= 1) {
-            return;
-        }
-        referenceDataService.recordStandFamilies(stands, standFamilies(stands, creneaux));
-    }
-
-    private static Map<String, Integer> spreadStandsByFamily(List<Stand> stands, int nombreFamilles) {
-        Map<String, Integer> families = new HashMap<>();
-        int[] population = new int[nombreFamilles];
-        List<Stand> sansFamille = new ArrayList<>();
-        for (Stand stand :
-                stands.stream().sorted(Comparator.comparing(Stand::getId)).toList()) {
-            Integer famille = stand.getFamille();
-            if (famille != null && famille >= 0 && famille < nombreFamilles) {
-                families.put(stand.getId(), famille);
-                population[famille]++;
-            } else {
-                sansFamille.add(stand);
-            }
-        }
-        for (Stand stand : sansFamille) {
-            int moinsPeuplee = 0;
-            for (int famille = 1; famille < nombreFamilles; famille++) {
-                if (population[famille] < population[moinsPeuplee]) {
-                    moinsPeuplee = famille;
-                }
-            }
-            families.put(stand.getId(), moinsPeuplee);
-            population[moinsPeuplee]++;
-        }
-        return families;
     }
 
     /** {@code heureDebut} shifted forward by {@code minutes}, wrapping past midnight. */

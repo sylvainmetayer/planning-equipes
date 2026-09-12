@@ -18,16 +18,6 @@ public class Creneau {
     private LocalTime heureDebut;
     private LocalTime heureFin;
     /**
-     * Which time-staggered relay-grid variant this slot belongs to, when
-     * {@code VacationGeneratorService} generated several instead of one
-     * shared grid (see {@link ParametresDecoupage#getNombreFamillesDecalage()}).
-     * Always {@code 0} for amplitude créneaux and for vacations generated
-     * without staggering — poste generation only filters by famille when a
-     * group actually contains more than one.
-     */
-    private int famille;
-
-    /**
      * True when this slot is the short vacation covering a stand's internal
      * meal pause, generated under
      * {@link ParametresDecoupage.PauseCoverageStrategy#EFFECTIF_REDUIT}.
@@ -131,14 +121,6 @@ public class Creneau {
 
     public void setHeureFin(LocalTime heureFin) {
         this.heureFin = heureFin;
-    }
-
-    public int getFamille() {
-        return famille;
-    }
-
-    public void setFamille(int famille) {
-        this.famille = famille;
     }
 
     public boolean isCouverturePause() {

@@ -17,7 +17,6 @@ const PARAMETRES = {
   dureeChevauchementMinutes: 15,
   strategieCouverturePendantPause: 'FERMETURE',
   modeGrille: 'AMPLITUDES',
-  nombreFamillesDecalage: 1,
   dureeDecalageMaxMinutes: 60,
 };
 
@@ -94,21 +93,17 @@ describe('ParametresDecoupageCard', () => {
     expect(champ('dureeVacationCibleMinutes').value).toBe('240');
     expect(apercu()).toContain("des vacations d'environ 4 h");
     expect(apercu()).toContain('jamais plus de 8 h');
-    // One grid: the "grilles décalées" clause is noise and must stay out.
-    expect(apercu()).not.toContain('grilles décalées');
   });
 
   it('updates the summary while the settings are typed, before anything is saved', async () => {
     await rendre();
 
     saisir('dureeVacationCibleMinutes', '480');
-    saisir('nombreFamillesDecalage', '3');
     await fixture.whenStable();
 
     // The preview is a computed over an immutable signal: an in-place mutation
     // would leave this sentence stale in a zoneless app.
     expect(apercu()).toContain('environ 8 h');
-    expect(apercu()).toContain('réparties sur 3 grilles décalées');
     expect(creneauxApi.saveSlicingParameters).not.toHaveBeenCalled();
   });
 

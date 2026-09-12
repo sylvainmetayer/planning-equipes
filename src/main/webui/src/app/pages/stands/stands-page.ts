@@ -18,7 +18,6 @@ import { labelStandsPluriel } from '../../core/entity-labels';
 import { resumerHoraires } from '../../core/horaire-stand';
 import { NotificationService } from '../../core/notification.service';
 import { ProblemesStore } from '../../core/problemes.store';
-import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ReferenceTablePage } from '../../core/reference-table-page';
 import { Stand } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
@@ -27,11 +26,6 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { buildStandDetail } from './stand-detail';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
-
-/** Relay families of the edition's grid: below two, the family says nothing (issue #390). */
-function nombreFamilles(store: ReferenceDataStore): number {
-  return Math.max(0, ...store.creneaux().map((creneau) => creneau.famille ?? 0)) + 1;
-}
 
 /**
  * Stands CRUD: identity, staffing bounds, adults-only flag and typologies.
@@ -101,7 +95,7 @@ export class StandsPage extends ReferenceTablePage<Stand> {
       detail: (stand, store) => ({
         title: stand.nom || stand.id,
         subtitle: stand.id,
-        sections: buildStandDetail(stand, store.typologies(), nombreFamilles(store)),
+        sections: buildStandDetail(stand, store.typologies()),
       }),
       formulaire: (stand, dialog: MatDialog) => {
         dialog.open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {

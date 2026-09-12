@@ -396,11 +396,8 @@ créneau est ignorée et listée plutôt que refusée, et un créneau sans colon
 garde la case actuelle du stand. Le bouton « Télécharger la grille actuelle
 comme modèle » rend l'édition telle qu'elle est, réimportable telle quelle.
 
-Trois points valent d'être connus avant de verser un fichier. Une colonne se
-pose sur **tous** les créneaux de sa date qui la contiennent, pas sur le
-premier : une grille décalée en familles en porte un par famille, et n'en
-servir qu'un laissait les stands des autres inchangés alors que le rapport les
-disait écrits. Une colonne **plus étroite que son créneau** — les sept
+Deux points valent d'être connus avant de verser un fichier. Une colonne
+**plus étroite que son créneau** — les sept
 tranches du classeur sous quatre ou cinq créneaux — écrit une fenêtre à ses
 propres bornes et laisse le reste du créneau tel quel : le classeur s'importe
 colonne pour colonne, et la grille de saisie montre ensuite les mêmes colonnes.

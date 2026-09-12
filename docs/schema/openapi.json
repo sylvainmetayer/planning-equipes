@@ -642,7 +642,7 @@
         }
       },
       "CelluleCreneau" : {
-        "required" : [ "horsFamille", "partiel", "segments", "tranche" ],
+        "required" : [ "partiel", "segments", "tranche" ],
         "type" : "object",
         "properties" : {
           "creneauId" : {
@@ -658,9 +658,6 @@
             "format" : "int32"
           },
           "partiel" : {
-            "type" : "boolean"
-          },
-          "horsFamille" : {
             "type" : "boolean"
           },
           "segments" : {
@@ -730,7 +727,7 @@
         }
       },
       "ColonneCreneau" : {
-        "required" : [ "couverturePause", "famille", "tranche" ],
+        "required" : [ "couverturePause", "tranche" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -746,10 +743,6 @@
           },
           "heureFin" : {
             "$ref" : "#/components/schemas/LocalTime"
-          },
-          "famille" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "couverturePause" : {
             "type" : "boolean"
@@ -1252,10 +1245,6 @@
           "heureFin" : {
             "$ref" : "#/components/schemas/LocalTime"
           },
-          "famille" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "couverturePause" : {
             "type" : "boolean"
           },
@@ -1334,7 +1323,7 @@
       },
       "CreneauSiege" : {
         "type" : "object",
-        "required" : [ "famille", "jour" ],
+        "required" : [ "jour" ],
         "properties" : {
           "id" : {
             "type" : "integer",
@@ -1352,10 +1341,6 @@
           },
           "heureFin" : {
             "$ref" : "#/components/schemas/LocalTime"
-          },
-          "famille" : {
-            "type" : "integer",
-            "format" : "int32"
           }
         }
       },
@@ -1736,7 +1721,7 @@
         }
       },
       "DiagnosticGrille" : {
-        "required" : [ "contientCouverturePause", "modeCertain", "nombreCreneaux", "nombreFamilles" ],
+        "required" : [ "contientCouverturePause", "modeCertain", "nombreCreneaux" ],
         "type" : "object",
         "properties" : {
           "nombreCreneaux" : {
@@ -1748,10 +1733,6 @@
           },
           "derniereDate" : {
             "$ref" : "#/components/schemas/LocalDate"
-          },
-          "nombreFamilles" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "contientCouverturePause" : {
             "type" : "boolean"
@@ -2966,14 +2947,6 @@
             "format" : "int32"
           },
           "dureeChevauchementMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "nombreFamillesDecalage" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "dureeDecalageMaxMinutes" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -4248,10 +4221,6 @@
           },
           "premium" : {
             "type" : "boolean"
-          },
-          "famille" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "niveauEffort" : {
             "$ref" : "#/components/schemas/NiveauEffort"

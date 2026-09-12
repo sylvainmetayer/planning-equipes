@@ -27,8 +27,6 @@ parametresLegaux:
   coupureRepasSoirDebut: '20:00'
   coupureRepasSoirFin: '21:00'
 parametresDecoupage:
-  nombreFamillesDecalage: 5
-  dureeDecalageMaxMinutes: 120
   dureeChevauchementMinutes: 15
   dureeVacationCibleMinutes: 330
   dureeVacationMinMinutes: 180
