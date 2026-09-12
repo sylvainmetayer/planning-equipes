@@ -2,7 +2,7 @@
 // and the seeding of a tiny two-seat planning through the admin API only —
 // exactly what a browser could do, no backdoor into the database.
 
-import { APIRequestContext, Browser, Page, Playwright, expect } from '@playwright/test';
+import { APIRequestContext, Browser, Locator, Page, Playwright, expect } from '@playwright/test';
 
 export const MOT_DE_PASSE_ADMIN = process.env['E2E_ADMIN_PASSWORD'] ?? 'admin';
 
@@ -326,6 +326,20 @@ export function postesDe(planning: PlanningPersiste, animateurId: string): strin
  * sits at the aim point and "intercepts pointer events" — while a click
  * anywhere on the field opens the panel for real users and tests alike.
  */
+/**
+ * The dialog just opened, once it is ready to be typed in. Material focuses
+ * the first field after the open animation: a `fill()` that lands in between
+ * gets its text moved to that field — a spec that filled « Prénom » found the
+ * text in « Identifiant », one run in three. Waiting for the focus to settle
+ * inside the dialog is what makes the next fill land where it was aimed.
+ */
+export async function dialogueOuvert(page: Page): Promise<Locator> {
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator(':focus')).toHaveCount(1);
+  return dialog;
+}
+
 export async function ouvrirSelect(page: Page, label: string): Promise<void> {
   await page.locator('mat-form-field').filter({ hasText: label }).first().click();
 }

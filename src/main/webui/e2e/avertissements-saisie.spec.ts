@@ -4,7 +4,7 @@
 // serait un refus déguisé, et cette suite est ce qui l'interdit.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, seedReferentielSolveur } from './support';
+import { contexteAdmin, dialogueOuvert, pageAdmin, seedReferentielSolveur } from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
@@ -98,7 +98,7 @@ test.describe('avertissements de saisie', () => {
     await page.goto('/creneaux');
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date').fill(JOUR);
     await dialog.getByLabel('Début').fill('10:00');
     await dialog.getByLabel('Fin').fill('18:00');
@@ -124,7 +124,7 @@ test.describe('avertissements de saisie', () => {
     await page.goto('/creneaux');
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date').fill(JOUR);
     await dialog.getByLabel('Début').fill('15:00');
     await dialog.getByLabel('Fin').fill('17:00');
@@ -144,7 +144,7 @@ test.describe('avertissements de saisie', () => {
     await page.goto('/stands');
 
     await page.getByRole('button', { name: 'Ajouter' }).first().click();
-    const dialog = page.getByRole('dialog');
+    const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Identifiant').fill(STAND_MATIN);
     await dialog.getByLabel('Nom').fill('Stand du matin');
     // A stand always carries a typologie (issue #343): the form refuses to submit without one.
@@ -173,7 +173,7 @@ test.describe('avertissements de saisie', () => {
     await page.goto('/animateurs');
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Identifiant').fill(ANIMATEUR);
     await dialog.getByLabel('Prénom').fill('Camille');
     await dialog.getByLabel('Nom', { exact: true }).fill('Avert');
@@ -230,7 +230,7 @@ test.describe('avertissements de saisie', () => {
 
     const ligne = page.getByRole('row', { name: new RegExp(ANIMATEUR) });
     await ligne.getByRole('button', { name: 'Modifier' }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Prénom').fill('Camille-Marie');
     await dialog.getByRole('button', { name: "Modifier l'animateur" }).click();
     await expect(dialog).toBeHidden();
@@ -248,7 +248,7 @@ test.describe('avertissements de saisie', () => {
 
     const ligne = page.getByRole('row', { name: new RegExp(ANIMATEUR) });
     await ligne.getByRole('button', { name: 'Modifier' }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date de naissance').fill('1990-01-01');
     await dialog.getByRole('button', { name: 'Retirer 2027-08-15' }).click();
     await dialog.getByRole('button', { name: "Modifier l'animateur" }).click();
