@@ -30,7 +30,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       solveEnCours: false,
       statut: 'A_FAIRE',
     },
-    problemes: { bloquants: 0, avertissements: 0, statut: 'A_FAIRE' },
+    problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'A_FAIRE' },
     publication: {
       jamaisPublie: true,
       dernierePublicationLe: null,
@@ -60,7 +60,7 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
       solveEnCours: false,
       statut: 'FAIT',
     },
-    problemes: { bloquants: 0, avertissements: 0, statut: 'FAIT' },
+    problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'FAIT' },
     publication: {
       jamaisPublie: false,
       dernierePublicationLe: '2026-05-01T11:00:00Z',
@@ -147,9 +147,28 @@ describe('buildLignes', () => {
     const etat = etatComplet({
       resolution: { ...etatComplet().resolution, solveEnCours: true, statut: 'ATTENTION' },
     });
-    const resolution = buildLignes(etat).find((ligne) => ligne.id === 'resolution')!;
+    const lignes = buildLignes(etat);
+    const resolution = lignes.find((ligne) => ligne.id === 'resolution')!;
     expect(resolution.statut).toBe('ATTENTION');
     expect(resolution.detail).toBe('Résolution en cours');
+    // And the publication line waits with it: the server refuses to publish
+    // during a solve, and the count would describe a plan about to be rewritten.
+    expect(lignes.find((ligne) => ligne.id === 'publication')!.detail).toContain(
+      'Résolution en cours',
+    );
+  });
+
+  // The rule analysis lives in memory: after a restart nothing has measured the
+  // rules, and « aucun problème signalé » would acknowledge a measurement that
+  // never ran.
+  it('says the rules were not analysed rather than clearing them', () => {
+    const etat = etatComplet({
+      problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: false, statut: 'ATTENTION' },
+    });
+
+    const problemes = buildLignes(etat).find((ligne) => ligne.id === 'problemes')!;
+    expect(problemes.statut).toBe('ATTENTION');
+    expect(problemes.detail).toContain('non analysées');
   });
 
   it('reads the score, its floor-free twin, the broken hard rules and the stale data on one line', () => {
@@ -201,7 +220,7 @@ describe('buildLignes', () => {
       },
       ouvertures: { anomalies: 2, standsJamaisOuverts: 1, statut: 'ATTENTION' },
       besoin: { animateurs: 20, minimum: 32, manque: 12, statut: 'ATTENTION' },
-      problemes: { bloquants: 1, avertissements: 4, statut: 'ATTENTION' },
+      problemes: { bloquants: 1, avertissements: 4, reglesAnalysees: true, statut: 'ATTENTION' },
       publication: {
         jamaisPublie: false,
         dernierePublicationLe: '2026-05-01T11:00:00Z',

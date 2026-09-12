@@ -2245,7 +2245,7 @@
         }
       },
       "EtatProblemes" : {
-        "required" : [ "avertissements", "bloquants", "statut" ],
+        "required" : [ "avertissements", "bloquants", "reglesAnalysees", "statut" ],
         "type" : "object",
         "properties" : {
           "bloquants" : {
@@ -2255,6 +2255,9 @@
           "avertissements" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "reglesAnalysees" : {
+            "type" : "boolean"
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
@@ -2349,6 +2352,14 @@
             }
           },
           "totalCauses" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "causesCritiques" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "causesElevees" : {
             "type" : "integer",
             "format" : "int32"
           },

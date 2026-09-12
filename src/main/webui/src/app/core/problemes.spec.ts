@@ -34,6 +34,8 @@ function report(
     manqueAnimateurs: causes.reduce((max, current) => Math.max(max, current.manque), 0),
     causes,
     totalCauses: causes.length,
+    causesCritiques: 0,
+    causesElevees: 0,
     message: 'Planning non réalisable en l’état.',
     ...overrides,
   };

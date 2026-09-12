@@ -27,7 +27,7 @@ import { SolverJobService } from '../core/solver-job.service';
     @if (jobs.activeJob()) {
       <a
         matIconButton
-        routerLink="/"
+        routerLink="/solveur"
         class="solver-running-indicator"
         [matTooltip]="description()"
         matTooltipPosition="below"

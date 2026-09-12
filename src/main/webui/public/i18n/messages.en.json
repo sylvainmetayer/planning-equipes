@@ -2727,5 +2727,7 @@
   "aide.link.bancDeTouche": "Bench",
   "aide.link.staffing": "Staffing need",
   "aide.link.problemes": "Problems",
-  "aide.link.dayCalendar": "Day calendar"
+  "aide.link.dayCalendar": "Day calendar",
+  "accueil.detail.problemes.nonMesure": "Rules not analysed since start-up",
+  "accueil.detail.publication.solveEnCours": "Solve running: publishing waits for it to finish"
 }

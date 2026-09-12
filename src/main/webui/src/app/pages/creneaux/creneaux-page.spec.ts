@@ -728,6 +728,8 @@ describe('CreneauxPage rendering', () => {
             manqueAnimateurs: 2,
             causes: [],
             totalCauses: 1,
+            causesCritiques: 0,
+            causesElevees: 0,
             message: 'Il manque 2 animateurs.',
           },
         },

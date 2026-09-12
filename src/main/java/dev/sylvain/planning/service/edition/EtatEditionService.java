@@ -6,9 +6,7 @@ import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.CauseInfaisabilite;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.SeveriteInfaisabilite;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
@@ -153,7 +151,11 @@ public class EtatEditionService {
                 referenceDataService.listStands().size(),
                 referenceDataService.listAnimateurs().size(),
                 referenceDataService.listCreneaux().size(),
-                declarationService.fenetre().ouverte(),
+                // The window as it applies today, not the switch alone: a
+                // collection « open from 1 to 10 June », read in September, is
+                // closed for everybody the server answers, and a line saying
+                // « ouverte » kept an edition « à vérifier » for ever.
+                declarationService.isCollecteOuverte(),
                 enAttente,
                 declarations.size() - enAttente,
                 OuvertureStandsAnalyzer.analyze(
@@ -170,7 +172,7 @@ public class EtatEditionService {
                         referenceDataService.listContraintesAdHoc()),
                 publicationService.apercu(),
                 confirmationService.synthese(),
-                demandeEchangeService.fenetre().ouverte(),
+                demandeEchangeService.isFoireOpen(),
                 demandeEchangeService.pendingDemandes().size());
     }
 
@@ -302,15 +304,11 @@ public class EtatEditionService {
      * anything to check, which would read as done — hence "to do".
      */
     private static EtatProblemes problemes(Facts facts, boolean referentielsSaisis) {
-        int bloquants = 0;
-        int avertissements = 0;
-        for (CauseInfaisabilite cause : facts.faisabilite().causes()) {
-            if (cause.severite() == SeveriteInfaisabilite.CRITIQUE) {
-                bloquants++;
-            } else {
-                avertissements++;
-            }
-        }
+        // The counts, never the listed causes: that list is capped at ten for
+        // reading, and counting it reported the size of the cap — « 10
+        // bloquant(s) » on an edition with sixty timeslots short of somebody.
+        int bloquants = facts.faisabilite().causesCritiques();
+        int avertissements = facts.faisabilite().causesElevees();
         if (facts.diagnostic() != null && facts.resolution() != null) {
             for (ConstraintDiagnostic contrainte : facts.diagnostic().contraintes()) {
                 if (contrainte.matchCount() <= 0) {
@@ -323,15 +321,19 @@ public class EtatEditionService {
                 }
             }
         }
+        // A plan is saved, and no analysis is in memory: nothing has looked at
+        // the rules since this process started. Saying « aucun problème
+        // signalé » there acknowledges a measurement that never ran.
+        boolean reglesAnalysees = facts.resolution() == null || facts.diagnostic() != null;
         Statut statut;
         if (!referentielsSaisis) {
             statut = Statut.A_FAIRE;
-        } else if (bloquants > 0 || avertissements > 0) {
+        } else if (bloquants > 0 || avertissements > 0 || !reglesAnalysees) {
             statut = Statut.ATTENTION;
         } else {
             statut = Statut.FAIT;
         }
-        return new EtatProblemes(bloquants, avertissements, statut);
+        return new EtatProblemes(bloquants, avertissements, reglesAnalysees, statut);
     }
 
     private static boolean isMedium(String constraintName) {
@@ -339,10 +341,26 @@ public class EtatEditionService {
         return definition != null && definition.niveau() == ConstraintCatalog.Niveau.MEDIUM;
     }
 
-    /** Nothing to publish, or never published, is the step ahead; people to warn is the step to redo. */
+    /**
+     * Nothing to publish, or never published, is the step ahead; people to warn
+     * is the step to redo.
+     *
+     * <p>While a solve runs, neither: publishing is refused outright
+     * ({@code PlanPublicationService.publier} answers a conflict), and the
+     * count would be read off a plan about to be rewritten. The line then says
+     * what the « Dernière résolution » line says — wait — rather than inviting
+     * a click that will be turned down.</p>
+     */
     private static EtatPublication publication(Facts facts) {
         ApercuPublication apercu = facts.publication();
         Statut statut;
+        if (facts.solveEnCours()) {
+            // The count travels as it stands — a reader over MCP still gets the
+            // figure — but the line is « à vérifier », and the screen words it
+            // as a wait rather than as an invitation to publish.
+            return new EtatPublication(
+                    apercu.jamaisPublie(), apercu.dernierePublicationLe(), apercu.nombreConcernes(), Statut.ATTENTION);
+        }
         if (apercu.planVide() || apercu.jamaisPublie()) {
             statut = Statut.A_FAIRE;
         } else if (apercu.nombreConcernes() > 0) {

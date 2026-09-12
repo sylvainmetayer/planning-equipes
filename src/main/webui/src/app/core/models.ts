@@ -731,6 +731,10 @@ export interface FeasibilityReport {
   manqueAnimateurs: number;
   causes: CauseInfaisabilite[];
   totalCauses: number;
+  /** Blocking causes, counted before the cap on `causes`. */
+  causesCritiques: number;
+  /** The others, counted before that same cap. */
+  causesElevees: number;
   message: string;
 }
 
@@ -2806,6 +2810,12 @@ export interface EtatResolution {
 export interface EtatProblemes {
   bloquants: number;
   avertissements: number;
+  /**
+   * False when no rule analysis is in memory — the store is per-process, so
+   * after a restart nothing has measured the rules until a solve or a visit to
+   * Contraintes. The capacity causes are counted either way.
+   */
+  reglesAnalysees: boolean;
   statut: StatutEtat;
 }
 

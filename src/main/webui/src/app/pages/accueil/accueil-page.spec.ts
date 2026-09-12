@@ -35,7 +35,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       solveEnCours: false,
       statut: 'A_FAIRE',
     },
-    problemes: { bloquants: 0, avertissements: 0, statut: 'FAIT' },
+    problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'FAIT' },
     publication: {
       jamaisPublie: true,
       dernierePublicationLe: null,
@@ -180,19 +180,24 @@ describe('AccueilPage', () => {
     expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(9);
   });
 
-  it('reloads once a solve lands, and lets go of the hook with the page', async () => {
+  // Both kinds of solve: « Corriger après un changement » rewrites the plan and
+  // its score just as a full solve does, and a checklist that ignores it stays
+  // wrong until an F5.
+  it('reloads once either kind of solve lands, and lets go of the hooks with the page', async () => {
     editionsApi.etat.mockResolvedValue(etat());
     const unregister = vi.fn();
-    jobs.onResult.mockReturnValueOnce(unregister);
+    jobs.onResult.mockReturnValue(unregister);
     const page = createPage();
     await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
 
-    expect(jobs.onResult).toHaveBeenCalledWith('SOLVE', expect.any(Function));
-    const [, handler] = jobs.onResult.mock.calls[0];
-    handler();
+    expect(jobs.onResult.mock.calls.map(([type]) => type)).toEqual(['SOLVE', 'SOLVE_INCREMENTAL']);
+    const [[, surSolve], [, surIncremental]] = jobs.onResult.mock.calls;
+    surSolve();
     await vi.waitFor(() => expect(editionsApi.etat).toHaveBeenCalledTimes(2));
+    surIncremental();
+    await vi.waitFor(() => expect(editionsApi.etat).toHaveBeenCalledTimes(3));
 
     fixture.destroy();
-    expect(unregister).toHaveBeenCalledOnce();
+    expect(unregister).toHaveBeenCalledTimes(2);
   });
 });

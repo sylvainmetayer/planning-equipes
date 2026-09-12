@@ -31,6 +31,8 @@ function report(
     manqueAnimateurs: 2,
     causes,
     totalCauses: causes.length,
+    causesCritiques: 0,
+    causesElevees: 0,
     message: 'Planning non réalisable en l’état.',
     ...overrides,
   };

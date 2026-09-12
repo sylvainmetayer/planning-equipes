@@ -120,7 +120,48 @@ class EtatEditionServiceTest {
 
         assertThat(etat.resolution().solveEnCours()).isTrue();
         assertThat(etat.resolution().statut()).isEqualTo(Statut.ATTENTION);
-        assertThat(etat.publication().statut()).isEqualTo(Statut.FAIT);
+        // Publishing is refused while a solve runs, and the count it would show
+        // is read off a plan about to be rewritten: the line waits too, rather
+        // than inviting a click the server turns down.
+        assertThat(etat.publication().statut()).isEqualTo(Statut.ATTENTION);
+    }
+
+    /**
+     * The rule analysis lives in memory: after a restart nothing has measured
+     * the rules until a solve or a visit to Contraintes, and « aucun problème
+     * signalé » there acknowledges a measurement that never ran. The capacity
+     * causes, recomputed on every call, are counted either way.
+     */
+    @Test
+    void withoutARuleAnalysisTheProblemsLineSaysItHasNotMeasuredAnything() {
+        Facts f = filledFacts();
+        Facts facts = new Facts(
+                f.edition(),
+                f.stands(),
+                f.animateurs(),
+                f.creneaux(),
+                f.collecteOuverte(),
+                f.declarationsEnAttente(),
+                f.declarationsTraitees(),
+                f.ouvertures(),
+                f.staffing(),
+                f.resolution(),
+                null,
+                f.lastDataChange(),
+                f.solveEnCours(),
+                f.faisabilite(),
+                f.publication(),
+                f.confirmations(),
+                f.foireOuverte(),
+                f.demandesEnAttente());
+
+        EtatEditionView etat = EtatEditionService.assemble(facts);
+
+        assertThat(etat.problemes().reglesAnalysees()).isFalse();
+        assertThat(etat.problemes().statut()).isEqualTo(Statut.ATTENTION);
+        // And with the analysis in hand, nothing found is an acknowledgement.
+        assertThat(EtatEditionService.assemble(filledFacts()).problemes().reglesAnalysees())
+                .isTrue();
     }
 
     @Test
@@ -204,6 +245,8 @@ class EtatEditionServiceTest {
                         cause(SeveriteInfaisabilite.ELEVE),
                         cause(SeveriteInfaisabilite.ELEVE)),
                 3,
+                1,
+                2,
                 "Trois causes.");
         Facts f = filledFacts();
         Facts facts = new Facts(
@@ -371,7 +414,7 @@ class EtatEditionServiceTest {
                 null,
                 null,
                 false,
-                new FeasibilityReport(true, 0, List.of(), 0, "Réalisable."),
+                new FeasibilityReport(true, 0, List.of(), 0, 0, 0, "Réalisable."),
                 new ApercuPublication(true, true, false, null, 0, List.of()),
                 new SyntheseConfirmations(0, 0, 0, null, true),
                 true,
@@ -398,7 +441,7 @@ class EtatEditionServiceTest {
                 diagnostic("0hard/0medium/-12soft", 0, List.of(contrainte("equilibreHeures", 3))),
                 RESOLU_LE.minusSeconds(60),
                 false,
-                new FeasibilityReport(true, 0, List.of(), 0, "Réalisable."),
+                new FeasibilityReport(true, 0, List.of(), 0, 0, 0, "Réalisable."),
                 new ApercuPublication(false, false, false, publieLe, 0, List.of()),
                 new SyntheseConfirmations(2, 0, 0, publieLe, false),
                 true,
@@ -410,7 +453,7 @@ class EtatEditionServiceTest {
                 score,
                 0,
                 contraintes,
-                new FeasibilityReport(true, 0, List.of(), 0, "Réalisable."),
+                new FeasibilityReport(true, 0, List.of(), 0, 0, 0, "Réalisable."),
                 hardScore,
                 List.of(),
                 "0hard/0medium/-2soft",

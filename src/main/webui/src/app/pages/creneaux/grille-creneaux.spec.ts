@@ -31,7 +31,15 @@ function rapport(anomalies: AnomalieGrille[], faisable: boolean | null = true): 
     faisabilite:
       faisable === null
         ? null
-        : { feasible: faisable, manqueAnimateurs: 0, causes: [], totalCauses: 0, message: '' },
+        : {
+            feasible: faisable,
+            manqueAnimateurs: 0,
+            causes: [],
+            totalCauses: 0,
+            causesCritiques: 0,
+            causesElevees: 0,
+            message: '',
+          },
   };
 }
 

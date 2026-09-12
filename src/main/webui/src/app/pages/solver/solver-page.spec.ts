@@ -46,6 +46,8 @@ function report(): FeasibilityReport {
     manqueAnimateurs: 2,
     causes: [],
     totalCauses: 0,
+    causesCritiques: 0,
+    causesElevees: 0,
     message: 'Non réalisable.',
   };
 }

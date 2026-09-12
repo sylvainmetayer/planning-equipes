@@ -85,11 +85,18 @@ public record EtatEditionView(
             Statut statut) {}
 
     /**
-     * @param bloquants      critical feasibility causes plus hard rules in default
-     * @param avertissements the other feasibility causes plus medium rules in default
+     * @param bloquants        critical feasibility causes plus hard rules in default
+     * @param avertissements   the other feasibility causes plus medium rules in default
+     * @param reglesAnalysees  false when no rule analysis is in memory — the
+     *                         store is per-process, so after a restart nothing
+     *                         has measured the rules until a solve or a visit
+     *                         to Contraintes. « Aucun problème signalé » would
+     *                         then be an acknowledgement of a measurement that
+     *                         never happened; the capacity causes, recomputed
+     *                         on every call, are counted either way.
      */
-    @Schema(requiredProperties = {"avertissements", "bloquants", "statut"})
-    public record EtatProblemes(int bloquants, int avertissements, Statut statut) {}
+    @Schema(requiredProperties = {"avertissements", "bloquants", "reglesAnalysees", "statut"})
+    public record EtatProblemes(int bloquants, int avertissements, boolean reglesAnalysees, Statut statut) {}
 
     /**
      * @param personnesAPrevenir people whose schedule the next publication would announce

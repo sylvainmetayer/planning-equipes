@@ -120,6 +120,14 @@ public class FeasibilityAnalyzer {
                 .max()
                 .orElse(0);
         int totalCauses = causes.size();
+        // Counted before the cap: the list is trimmed for reading, the counts
+        // are not. A screen showing « 10 bloquants » on an edition with sixty
+        // under-staffed timeslots states the size of the cap, not the size of
+        // the problem.
+        int causesCritiques = (int) causes.stream()
+                .filter(cause -> cause.severite() == SeveriteInfaisabilite.CRITIQUE)
+                .count();
+        int causesElevees = totalCauses - causesCritiques;
         // Nothing is feasible without an animateur (issue #416): an edition
         // whose stands are all closed has no shortfall to list, and a report
         // saying « réalisable » there would be read as a green light.
@@ -132,6 +140,8 @@ public class FeasibilityAnalyzer {
                 manqueAnimateurs,
                 topCauses,
                 totalCauses,
+                causesCritiques,
+                causesElevees,
                 sansAnimateur
                         ? buildMessageWithoutAnimateur(totalCauses)
                         : buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
@@ -312,6 +322,21 @@ public class FeasibilityAnalyzer {
      *                         so the UI can say "+N autres"
      */
     @Schema(requiredProperties = {"feasible", "manqueAnimateurs", "totalCauses"})
+    /**
+     * @param causes           the first {@value #MAX_CAUSES}, sorted worst
+     *                         first: enough to read, never the whole list
+     * @param totalCauses      how many were found, before that cap
+     * @param causesCritiques  how many of them block, before that cap — a
+     *                         caller counting the severities of {@code causes}
+     *                         counts the cap instead of the edition
+     * @param causesElevees    the rest: worth a warning, not a blocker
+     */
     public record FeasibilityReport(
-            boolean feasible, int manqueAnimateurs, List<CauseInfaisabilite> causes, int totalCauses, String message) {}
+            boolean feasible,
+            int manqueAnimateurs,
+            List<CauseInfaisabilite> causes,
+            int totalCauses,
+            int causesCritiques,
+            int causesElevees,
+            String message) {}
 }

@@ -59,8 +59,16 @@ export class AccueilPage {
   constructor() {
     // A solve started from anywhere (this browser or another) moves three
     // lines at once: refresh once it lands. Unregistered with the page.
+    //
+    // Both kinds, as the shell and the two other screens already do: an
+    // incremental replan rewrites the plan and its score just the same, and
+    // listening for `SOLVE` alone left the checklist stale until an F5 —
+    // « Corriger après un changement » is precisely what a reader watching this
+    // page launches from another tab.
     const destroyRef = inject(DestroyRef);
-    destroyRef.onDestroy(this.jobs.onResult('SOLVE', () => this.etat.reload()));
+    for (const type of ['SOLVE', 'SOLVE_INCREMENTAL'] as const) {
+      destroyRef.onDestroy(this.jobs.onResult(type, () => this.etat.reload()));
+    }
   }
 
   protected recharger(): void {

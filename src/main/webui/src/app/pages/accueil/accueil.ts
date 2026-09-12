@@ -184,14 +184,18 @@ function resolution(etat: EtatEdition): LigneEtat {
 }
 
 function problemes(etat: EtatEdition): LigneEtat {
-  const { bloquants, avertissements, statut } = etat.problemes;
+  const { bloquants, avertissements, reglesAnalysees, statut } = etat.problemes;
   let detail: string;
   if (statut === 'A_FAIRE') {
     detail = $localize`:@@accueil.detail.problemes.aFaire:Le diagnostic attend les référentiels`;
   } else if (bloquants > 0 || avertissements > 0) {
     detail = $localize`:@@accueil.detail.problemes.comptage:${bloquants}:bloquants: bloquant(s) · ${avertissements}:avertissements: avertissement(s)`;
   } else {
-    detail = $localize`:@@accueil.detail.problemes.ok:Aucun problème signalé`;
+    detail = reglesAnalysees
+      ? $localize`:@@accueil.detail.problemes.ok:Aucun problème signalé`
+      : // Nothing has measured the rules since the application started: an
+        // acknowledgement here would be one nobody earned.
+        $localize`:@@accueil.detail.problemes.nonMesure:Règles non analysées depuis le démarrage`;
   }
   return {
     id: 'problemes',
@@ -209,7 +213,11 @@ function problemes(etat: EtatEdition): LigneEtat {
 function publication(etat: EtatEdition): LigneEtat {
   const { jamaisPublie, dernierePublicationLe, personnesAPrevenir, statut } = etat.publication;
   let detail: string;
-  if (jamaisPublie) {
+  if (etat.resolution.solveEnCours) {
+    // Publishing is refused while a solve runs, and the count is read off a
+    // plan about to be rewritten: the line says wait, not « publish ».
+    detail = $localize`:@@accueil.detail.publication.solveEnCours:Résolution en cours : la publication attend la fin`;
+  } else if (jamaisPublie) {
     detail = $localize`:@@accueil.detail.publication.jamais:Jamais publié`;
   } else if (personnesAPrevenir > 0) {
     detail = $localize`:@@accueil.detail.publication.aPrevenir:${personnesAPrevenir}:count: personne(s) à prévenir`;

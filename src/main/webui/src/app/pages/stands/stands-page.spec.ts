@@ -113,6 +113,8 @@ describe('StandsPage', () => {
       manqueAnimateurs: 0,
       causes: [],
       totalCauses: 0,
+      causesCritiques: 0,
+      causesElevees: 0,
       message: '',
     });
     confirm.ask.mockResolvedValue(true);
