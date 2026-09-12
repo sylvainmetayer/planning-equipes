@@ -91,6 +91,7 @@ public class EquiteService {
         CONTRAINTES_PAR_COLONNE.put(EMPLACEMENTS_PAR_JOUR_MAX, "limiterEmplacementsParJour");
         CONTRAINTES_PAR_COLONNE.put(TAUX_SOUHAITS, "souhaitsIncompatibles");
         CONTRAINTES_PAR_COLONNE.put(TAUX_APPRECIATION, "appreciationIncompatible");
+        CONTRAINTES_PAR_COLONNE.put(PLUS_LONGUE_SERIE, "maxJoursConsecutifsTravailles");
     }
 
     private static final int SECONDES_PAR_JOUR = 24 * 3600;
@@ -346,10 +347,19 @@ public class EquiteService {
     }
 
     /**
-     * Minutes of the poste past the start of the evening, its end included
-     * when it crosses midnight — 20:00-01:00 under a 22:00 evening is three
-     * hours. A poste that starts after midnight on the next date (01:00-03:00)
-     * lies before any evening of its own day and counts nothing.
+     * Minutes of the poste inside the evening, its end included when it crosses
+     * midnight — 20:00-01:00 under a 22:00 evening is three hours.
+     *
+     * <p>Two windows, exactly as {@code Creneau.chevaucheNuit} reads the legal
+     * night: {@code [soiree, 24:00+06:00)} and {@code [00:00, 06:00)} of the
+     * seat's own day. The second one is what a single window got wrong: the
+     * vacation generator splits an 18:00→04:00 stretch into 18:00-22:00,
+     * 22:00-02:00 and a 02:00-04:00 seat dated on the <b>next</b> day, so
+     * whoever held the heart of the night scored zero evening hours and the
+     * measurement depended on where the grid had been cut — the opposite of
+     * what a column meant to arbitrate « I have three night shifts and he has
+     * none » can afford. On the extended axis the two windows are disjoint, so
+     * the overlaps simply add up.</p>
      */
     static int eveningMinutes(PosteAffectation poste, LocalTime debutSoiree) {
         LocalTime debut = poste.heureDebutEffectif();
@@ -362,8 +372,16 @@ public class EquiteService {
         if (finSecondes <= debutSecondes) {
             finSecondes += SECONDES_PAR_JOUR;
         }
-        int soireeSecondes = debutSoiree.toSecondOfDay();
-        return Math.max(0, finSecondes - Math.max(debutSecondes, soireeSecondes)) / 60;
+        int finNuit = Creneau.FIN_NUIT.toSecondOfDay();
+        int recouvrement =
+                recouvrement(debutSecondes, finSecondes, debutSoiree.toSecondOfDay(), SECONDES_PAR_JOUR + finNuit)
+                        + recouvrement(debutSecondes, finSecondes, 0, finNuit);
+        return recouvrement / 60;
+    }
+
+    /** Seconds two intervals share, on the axis extended past midnight. */
+    private static int recouvrement(int debutA, int finA, int debutB, int finB) {
+        return Math.max(0, Math.min(finA, finB) - Math.max(debutA, debutB));
     }
 
     /**
@@ -448,23 +466,40 @@ public class EquiteService {
             }
         }
 
+        /**
+         * The longest run of consecutive <b>calendar</b> days worked, which is
+         * what {@code QualiteConstraints.maxJoursConsecutifsTravailles} counts
+         * (through {@code longestConsecutiveSequence}). Counting positions in
+         * the list of event days instead would run straight through a gap: an
+         * event on 3-5 and 10-12 July, someone on the 5th and the 10th, gave a
+         * streak of two where the solver's rule sees one.
+         */
+        private int longestStreak() {
+            List<LocalDate> triees = joursTravailles.stream().sorted().toList();
+            int plusLongue = 0;
+            int serie = 0;
+            LocalDate precedent = null;
+            for (LocalDate jour : triees) {
+                serie = precedent != null && jour.equals(precedent.plusDays(1)) ? serie + 1 : 1;
+                plusLongue = Math.max(plusLongue, serie);
+                precedent = jour;
+            }
+            return plusLongue;
+        }
+
         LigneEquite toLigne(List<LocalDate> joursEvenement) {
             int repos = 0;
-            int serie = 0;
-            int plusLongueSerie = 0;
             for (LocalDate jour : joursEvenement) {
                 if (joursTravailles.contains(jour)) {
-                    serie++;
-                    plusLongueSerie = Math.max(plusLongueSerie, serie);
                     continue;
                 }
-                serie = 0;
                 // A day the person declared off is not a rest day: they were
                 // not to be called on it (same reading as the Repos screen).
                 if (!animateur.isIndisponibleOn(jour)) {
                     repos++;
                 }
             }
+            int plusLongueSerie = longestStreak();
             int emplacementsMax = emplacementsParJour.values().stream()
                     .mapToInt(Set::size)
                     .max()

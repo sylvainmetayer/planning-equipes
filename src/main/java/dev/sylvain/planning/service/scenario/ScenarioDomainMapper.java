@@ -479,6 +479,7 @@ final class ScenarioDomainMapper {
         set(dto.coupureRepasMidiFin(), parametres::setCoupureRepasMidiFin);
         set(dto.coupureRepasSoirDebut(), parametres::setCoupureRepasSoirDebut);
         set(dto.coupureRepasSoirFin(), parametres::setCoupureRepasSoirFin);
+        set(dto.heureDebutSoiree(), parametres::setHeureDebutSoiree);
         return Optional.of(parametres);
     }
 

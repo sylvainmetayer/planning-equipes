@@ -50,6 +50,7 @@ const LEGAUX = {
   coupureRepasMidiFin: '14:00:00',
   coupureRepasSoirDebut: '19:00:00',
   coupureRepasSoirFin: '21:00:00',
+  heureDebutSoiree: '20:00:00',
 };
 
 describe('ParametresPage ninja picker', () => {

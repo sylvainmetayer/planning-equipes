@@ -125,6 +125,50 @@ class EquiteServiceTest {
         assertThat(sous20h.heuresTotal()).isCloseTo(13.0, within(0.01));
     }
 
+    /**
+     * The generator cuts an 18:00→04:00 stretch into three, the last one dated
+     * on the next day: whoever holds 02:00-04:00 held the heart of the night.
+     * Counted from the evening alone, that seat scored zero and the column
+     * measured where the grid had been cut rather than who worked at night.
+     */
+    @Test
+    void aSeatStartingAfterMidnightStillCountsAsEveningHours() {
+        Animateur ada = animateur("A-ADA", "Ada", "Lovelace");
+        Stand stand = stand("S1");
+        RapportEquite rapport = compute(
+                List.of(ada),
+                List.of(
+                        // 01:00-03:00, wholly inside the early-morning window.
+                        poste(stand, creneau(JEUDI, 1, 3), ada),
+                        // 04:00-08:00: two hours before 06:00, two after.
+                        poste(stand, creneau(VENDREDI, 4, 8), ada)));
+
+        LigneEquite ligne = rapport.lignes().get(0);
+        assertThat(ligne.heuresTotal()).isCloseTo(6.0, within(0.01));
+        assertThat(ligne.heuresSoiree()).isCloseTo(2.0 + 2.0, within(0.01));
+    }
+
+    /**
+     * The streak is a run of calendar days, which is what the solver's rule
+     * counts. Read as positions in the list of event days, it ran straight
+     * through a gap — two days apart became a streak of two.
+     */
+    @Test
+    void theLongestStreakDoesNotRunThroughAGapInTheEventDays() {
+        Animateur ada = animateur("A-ADA", "Ada", "Lovelace");
+        Stand stand = stand("S1");
+        // Event on 15-16 July and 20-21 July; Ada works the 16th and the 20th.
+        RapportEquite rapport = compute(
+                List.of(ada),
+                List.of(
+                        poste(stand, creneau(JEUDI, 9, 12), ada),
+                        poste(stand, creneau(LocalDate.of(2026, 7, 20), 9, 12), ada),
+                        poste(stand, creneau(MERCREDI, 9, 12), null),
+                        poste(stand, creneau(LocalDate.of(2026, 7, 21), 9, 12), null)));
+
+        assertThat(ligne(rapport, "A-ADA").plusLongueSerie()).isEqualTo(1);
+    }
+
     @Test
     void weekEndAndPublicHolidayCountTheWholePosteOnTheDateOfItsCreneau() {
         Animateur ada = animateur("A-ADA", "Ada", "Lovelace");
@@ -300,7 +344,8 @@ class EquiteServiceTest {
                         "typologiesDistinctes:limiterTypologiesDistinctesParAnimateur:true",
                         "emplacementsDistinctsParJourMax:limiterEmplacementsParJour:true",
                         "tauxSouhaits:souhaitsIncompatibles:false",
-                        "tauxAppreciation:appreciationIncompatible:true");
+                        "tauxAppreciation:appreciationIncompatible:true",
+                        "plusLongueSerie:maxJoursConsecutifsTravailles:true");
     }
 
     @Test

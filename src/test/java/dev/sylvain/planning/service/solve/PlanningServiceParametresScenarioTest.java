@@ -66,6 +66,10 @@ class PlanningServiceParametresScenarioTest {
                 .isEqualTo(ParametresLegaux.DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT);
         assertThat(legaux.getPauseMinimaleEntreVacationsMinutes())
                 .isEqualTo(ParametresLegaux.PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT);
+        // A scenario can pin the evening: left out of the DTO, the field was not
+        // « not overridable » but silently reset to 20:00 on every import, and
+        // every evening hour of the equity table moved with it.
+        assertThat(legaux.getHeureDebutSoiree()).isEqualTo(LocalTime.of(22, 0));
 
         ParametresDecoupage decoupage = service.loadScenarioSections("scenario-parametres-optionnels.yaml")
                 .parametresDecoupage()

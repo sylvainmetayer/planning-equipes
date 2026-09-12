@@ -9,6 +9,10 @@ festival:
 # ReferenceDataService returns.
 parametresLegaux:
   reposQuotidienMinimalMinutes: 500
+  # L'heure à partir de laquelle l'écran Équité compte des heures de soirée.
+  # Absente du DTO, elle n'était pas « non surchargeable » : l'import écrivait
+  # des paramètres neufs, donc la remettait à 20:00 sans le dire.
+  heureDebutSoiree: "22:00"
 
 parametresDecoupage:
   dureeVacationMinMinutes: 250

@@ -47,7 +47,10 @@ l'import sait relire — pas seulement les entités, mais aussi `typologies`,
 `contraintes` et `contraintesAdHoc`.
 
 C'est la raison d'être de l'export : **réimporter le fichier reproduit
-exactement le même problème**. Un fichier sans ces sections retombait
+exactement le même problème**. Un champ oublié dans la section n'est pas « non
+surchargeable », il est **remis au défaut** : l'import écrit un objet neuf, si
+bien que `heureDebutSoiree`, absente du DTO, ramenait une édition réglée à 22 h
+à 20 h et déplaçait toutes les heures de soirée de l'écran Équité sans un mot. Un fichier sans ces sections retombait
 silencieusement sur les réglages de l'instance qui l'importe — sa durée de
 résolution, ses durées de vacation, ses plafonds légaux — et le « même »
 scénario rejoué ailleurs résolvait un autre problème.

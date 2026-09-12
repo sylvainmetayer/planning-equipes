@@ -462,6 +462,7 @@ describe('AdminShell', () => {
         '/comparateur',
         '/constraints',
         '/debug',
+        '/equite',
         '/fragilite',
         '/graphe',
         '/heatmap',

@@ -385,6 +385,9 @@
           "format" : "int32",
           "exclusiveMinimum" : 0
         },
+        "heureDebutSoiree" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
         "pauseMinimaleEntreVacationsMinutes" : {
           "type" : "integer",
           "format" : "int32",

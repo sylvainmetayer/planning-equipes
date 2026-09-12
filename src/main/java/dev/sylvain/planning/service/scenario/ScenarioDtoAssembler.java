@@ -311,7 +311,8 @@ final class ScenarioDtoAssembler {
                         parametres.getCoupureRepasMidiDebut(),
                         parametres.getCoupureRepasMidiFin(),
                         parametres.getCoupureRepasSoirDebut(),
-                        parametres.getCoupureRepasSoirFin());
+                        parametres.getCoupureRepasSoirFin(),
+                        parametres.getHeureDebutSoiree());
     }
 
     private static ParametresDecoupageDto parametresDecoupage(ParametresDecoupage parametres) {

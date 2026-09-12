@@ -258,7 +258,10 @@ connaissance de cause — voir
 Ce que ces règles mesurent se lit sur l'écran Équité (`GET /api/planning/equite`),
 qui dit colonne par colonne si une règle du solveur la pèse et si elle est
 active : les heures de soirée, de week-end ou de jour férié n'y sont mesurées
-par aucune règle, et l'écran le dit plutôt que de le laisser croire.
+par aucune règle, et l'écran le dit plutôt que de le laisser croire. Les deux
+dernières sont attribuées **en entier à la date du créneau**, comme la semaine
+ISO l'est par `Creneau.semaineIso()` ; seules les heures de soirée sont au
+prorata, parce que la soirée est une heure de la journée et non une journée.
 
 ## Stabilité du plan publié
 
