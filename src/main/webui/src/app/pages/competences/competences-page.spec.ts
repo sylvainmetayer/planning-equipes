@@ -281,6 +281,58 @@ describe('CompetencesPage', () => {
     ]);
   });
 
+  // Two rounds, two kinds of refusal at once. The overwrite report knows only
+  // the rows it resent: rebuilt from it, the refused row would be reloaded from
+  // the server and the typing lost without a word.
+  it('keeps a refused row as typed through an overwrite of a stale row', async () => {
+    const melange: RapportSaisieCompetences = {
+      animateurs: [
+        {
+          animateurId: 'A1',
+          resultat: 'REJECTED',
+          message: 'Niveau inconnu',
+          modifieLe: null,
+        },
+        {
+          animateurId: 'B2',
+          resultat: 'STALE',
+          message: 'Cette fiche a été modifiée par une autre session',
+          modifieLe: '2026-09-06T12:00:00Z',
+        },
+      ],
+    };
+    const { fixture, saveCompetencesGrid, store, animateurs } = mount({
+      rapport: melange,
+      choixConflit: true,
+    });
+    await fixture.whenStable();
+    saveCompetencesGrid.mockResolvedValueOnce(melange).mockResolvedValueOnce({
+      animateurs: [
+        {
+          animateurId: 'B2',
+          resultat: 'WRITTEN',
+          message: null,
+          modifieLe: '2026-09-07T00:01:00Z',
+        },
+      ],
+    });
+    // The server's version of A1 is the one it always had: nothing was written.
+    store.reload.mockImplementation(async () => {
+      animateurs.set(roster());
+    });
+
+    touche(cellule(fixture, 'A1', 'ateliers'), '1');
+    touche(cellule(fixture, 'B2', 'jeux'), '2');
+    await fixture.whenStable();
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
+
+    expect(saveCompetencesGrid).toHaveBeenCalledTimes(2);
+    const refusee = cellule(fixture, 'A1', 'ateliers');
+    expect(refusee.dataset['niveau']).toBe('DEBUTANT');
+    expect(refusee.classList.contains('cellule-modifiee')).toBe(true);
+  });
+
   it("on « Recharger », writes nothing more and takes the other session's version", async () => {
     const stale: RapportSaisieCompetences = {
       animateurs: [
@@ -358,6 +410,28 @@ describe('CompetencesPage', () => {
     expect(root(fixture).querySelectorAll('.cellule-competence')).toHaveLength(1);
     expect(cellule(fixture, 'B2', 'ateliers')).toBeDefined();
     expect(root(fixture).querySelectorAll('th.colonne-typologie')).toHaveLength(1);
+  });
+
+  // The PUT replaces a person's whole map, so a view narrowed to one column
+  // must still send the levels of the columns it does not show — otherwise
+  // filtering the screen would quietly erase what is off screen.
+  it('sends every typologie of a modified row, even from a view filtered to one column', async () => {
+    const { fixture, saveCompetencesGrid } = mount({ query: { typologies: 'ateliers' } });
+    await fixture.whenStable();
+
+    touche(cellule(fixture, 'A1', 'ateliers'), '2');
+    await fixture.whenStable();
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
+
+    expect(saveCompetencesGrid).toHaveBeenCalledWith([
+      {
+        animateurId: 'A1',
+        modifieLe: '2026-09-06T10:00:00Z',
+        // « jeux » is not a column of this view, and its level travels anyway.
+        competences: { jeux: 'REFERENT', ateliers: 'AUTONOME' },
+      },
+    ]);
   });
 
   it('asks before leaving with unsaved cells, and lets a clean page go', async () => {

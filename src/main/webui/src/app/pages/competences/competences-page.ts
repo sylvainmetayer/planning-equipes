@@ -404,7 +404,7 @@ export class CompetencesPage {
       const rapport = await this.animateursApi.saveCompetencesGrid(
         saisie(this.cells(), modifies, this.changedById()),
       );
-      await this.traiterRapport(rapport, 0);
+      await this.traiterRapport(rapport, 0, new Set());
     } catch (error) {
       this.crud.reportError(error);
     } finally {
@@ -422,6 +422,7 @@ export class CompetencesPage {
   private async traiterRapport(
     rapport: RapportSaisieCompetences,
     dejaEcrits: number,
+    dejaGardees: ReadonlySet<string>,
   ): Promise<void> {
     const ecrites = rapport.animateurs.filter((ligne) => ligne.resultat === 'WRITTEN');
     const perimees = rapport.animateurs.filter((ligne) => ligne.resultat === 'STALE');
@@ -437,7 +438,11 @@ export class CompetencesPage {
         timeout: 0,
       });
     }
-    const gardees = new Set(refusees.map((ligne) => ligne.animateurId));
+    // The rows kept as typed accumulate across the rounds: an overwrite sends
+    // the stale rows again and its report knows nothing of the rows refused on
+    // the first pass. Rebuilt from that second report alone, they would be
+    // reloaded from the server and the user's typing would vanish without a word.
+    const gardees = new Set([...dejaGardees, ...refusees.map((ligne) => ligne.animateurId)]);
     if (perimees.length > 0) {
       const choix = await this.confirm.askThreeWay({
         title: $localize`:@@crud.error.conflit:Modifiée entre-temps`,
@@ -451,7 +456,7 @@ export class CompetencesPage {
         const relance = await this.animateursApi.saveCompetencesGrid(
           saisie(this.cells(), ids).map((ligne) => ({ ...ligne, modifieLe: null })),
         );
-        await this.traiterRapport(relance, total);
+        await this.traiterRapport(relance, total, gardees);
         return;
       }
       if (choix === null) {

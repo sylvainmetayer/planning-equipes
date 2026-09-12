@@ -455,7 +455,10 @@ La grille elle-même s'enregistre par `PUT /api/animateurs/competences/grille`,
 une ligne par fiche modifiée, chacune avec sa propre précondition de
 modification concurrente ([décision 0023](decisions/0023-modification-concurrente-par-horodatage.md)) :
 la réponse est un compte rendu par ligne — écrite, périmée, refusée — et une
-fiche refusée n'annule pas les autres.
+fiche refusée n'annule pas les autres. Deux choses refusent l'appel entier,
+faute de pouvoir tenir la ligne : un niveau qui n'est pas l'un des trois noms
+(la désérialisation le rejette avant le service) et un corps de plus de 2 000
+lignes, le plafond de l'import — la grille porte une ligne par animateur.
 
 ## Fixtures réalistes anonymisées
 

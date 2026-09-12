@@ -82,9 +82,18 @@ public class CompetencesGrilleService {
      * revert every row minutes later — and otherwise never as a whole: an
      * unknown animateur, an unknown typologie or a stale fiche costs its own
      * row and nothing else.
+     *
+     * Two things do cost the whole call, and neither can be answered row by
+     * row: a level that is not one of the three names never reaches this method
+     * — Jackson refuses the body before it — and a payload longer than the
+     * import's own ceiling is refused outright, since the grid has one row per
+     * animateur and nothing legitimate sends more of them than a CSV may carry.
      */
     public List<LigneCompetences> saveGrid(List<SaisieCompetences> saisies) {
         solverJobs.refuseIfSolving();
+        if (saisies.size() > MAX_ROWS) {
+            throw new BusinessError.Invalid("Trop de lignes envoyées : " + grouped(MAX_ROWS) + " lignes au maximum.");
+        }
         Map<String, Animateur> parId = new LinkedHashMap<>();
         animateurs.list().forEach(animateur -> parId.put(animateur.getId(), animateur));
         Set<String> dejaVus = new HashSet<>();

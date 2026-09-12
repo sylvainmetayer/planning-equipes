@@ -179,6 +179,30 @@ class CompetencesGrilleResourceTest {
                 .body("animateurs.size()", equalTo(0));
     }
 
+    /**
+     * The grid has one row per animateur: a body longer than the import's own
+     * ceiling is not a grid, and answering it row by row would mean writing
+     * thousands of fiches before saying so.
+     */
+    @Test
+    void aBodyLongerThanTheImportCeilingIsRefusedAsAWhole() {
+        seedScenario();
+        List<Map<String, Object>> lignes = new java.util.ArrayList<>();
+        for (int index = 0; index <= 2_000; index++) {
+            Map<String, Object> ligne = new LinkedHashMap<>();
+            ligne.put("animateurId", "A" + index);
+            ligne.put("competences", Map.of());
+            lignes.add(ligne);
+        }
+        given().contentType("application/json")
+                .body(Map.of("animateurs", lignes))
+                .when()
+                .put("/api/animateurs/competences/grille")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("Trop de lignes"));
+    }
+
     /* ---------------------------------- CSV --------------------------------- */
 
     /** The export re-imports as is: every row is known and states nothing new, nothing is written by the preview. */
