@@ -177,9 +177,14 @@ function champ(
   return input!;
 }
 
+/** Types into a cell: the events bubble, the grid listens on its body rather than on each of its four thousand cells. */
 function taper(input: HTMLInputElement, valeur: string): void {
   input.value = valeur;
-  input.dispatchEvent(new Event('input'));
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function quitter(input: HTMLInputElement): void {
+  input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
 }
 
 function bouton(fixture: ComponentFixture<OuverturesPage>, libelle: string): HTMLButtonElement {
@@ -276,14 +281,14 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
     expect(champ(fixture, 'A', 2).placeholder).toBe('4');
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
-    champ(fixture, 'A', 2).dispatchEvent(new Event('blur'));
+    quitter(champ(fixture, 'A', 2));
     expect(champ(fixture, 'A', 2).value).toBe('4');
 
     // A dash closes, and the field then reads « - »; a zero closes too.
     taper(champ(fixture, 'A', 2), '-');
     await fixture.whenStable();
     expect(champ(fixture, 'A', 2).closest('td')!.classList.contains('cellule-modifiee')).toBe(true);
-    champ(fixture, 'A', 2).dispatchEvent(new Event('blur'));
+    quitter(champ(fixture, 'A', 2));
     expect(champ(fixture, 'A', 2).value).toBe('-');
     taper(champ(fixture, 'A', 4), '0');
     await fixture.whenStable();
@@ -536,6 +541,29 @@ describe('OuverturesPage — saisie', () => {
       { creneauId: 2, heureDebut: '14:00', heureFin: '19:00', effectif: 4 },
       { creneauId: 2, heureDebut: '19:00', heureFin: '20:00', effectif: 2 },
     ]);
+  });
+
+  it('filters by hiding rows a beat after the keystroke, keeping every cell and its typed value', async () => {
+    const { fixture } = mount({ vue: 'saisie' });
+    await fixture.whenStable();
+    taper(champ(fixture, 'A', 2), '5');
+    await fixture.whenStable();
+
+    const filtre = root(fixture).querySelector<HTMLInputElement>('input[name="recherche"]')!;
+    filtre.value = 'Stand B';
+    filtre.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    // Not yet: the grid follows the field 150 ms after the last keystroke.
+    expect(champ(fixture, 'A', 1).closest('tr')!.classList.contains('ligne-masquee')).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await fixture.whenStable();
+
+    expect(champ(fixture, 'A', 1).closest('tr')!.classList.contains('ligne-masquee')).toBe(true);
+    expect(champ(fixture, 'B', 1).closest('tr')!.classList.contains('ligne-masquee')).toBe(false);
+    // Hidden, not removed: the cells and the value typed before filtering are still there.
+    expect(root(fixture).querySelectorAll('.grille-saisie input')).toHaveLength(8);
+    expect(champ(fixture, 'A', 2).value).toBe('5');
+    expect(bouton(fixture, 'Enregistrer').textContent).toContain('(1)');
   });
 
   it('locks every field and the save while a solve is running, and says so', async () => {

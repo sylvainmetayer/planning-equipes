@@ -81,7 +81,7 @@
         </mat-button-toggle-group>
         <mat-form-field appearance="outline" class="ouvertures-recherche">
           <mat-label i18n="@@ouvertures.recherche">Filtrer par stand</mat-label>
-          <input matInput name="recherche" [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
+          <input matInput name="recherche" [ngModel]="rechercheSaisie()" (ngModelChange)="filtrer($event)" />
         </mat-form-field>
       </div>
 
@@ -140,11 +140,12 @@
                 }
               </tr>
             </thead>
-            <tbody>
-              @for (ligne of lignes(); track ligne.standId) {
-                <tr [class.ligne-modifiee]="standsModifies().includes(ligne.standId)">
+            <tbody (input)="surSaisie($event)" (focusin)="surFocus($event)" (focusout)="surPerteDeFocus($event)"
+                   (keydown)="surClavier($event)" (paste)="surCollage($event)">
+              @for (ligne of lignesVues(); track ligne.standId) {
+                <tr [class.ligne-modifiee]="ligne.modifiee" [class.ligne-masquee]="!ligne.visible">
                   <th scope="row" class="colonne-stand">
-                    <span class="stand-nom">{{ ligne.nom || ligne.standId }}</span>
+                    <span class="stand-nom">{{ ligne.nom }}</span>
                     <button matIconButton type="button" class="recopier-ligne" [disabled]="editingLocked()"
                             i18n-matTooltip="@@ouvertures.saisie.recopierLigne" matTooltip="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
                             i18n-aria-label="@@ouvertures.saisie.recopierLigne" aria-label="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
@@ -152,28 +153,24 @@
                       <mat-icon>content_copy</mat-icon>
                     </button>
                   </th>
-                  @for (colonne of colonnes(); track colonne.colonneId) {
-                    <td class="cellule-saisie" [class.premier-du-jour]="colonne.rang === 0"
-                        [class.cellule-modifiee]="estModifiee(ligne.standId, colonne.colonneId)"
-                        [class.cellule-inerte]="estInerte(ligne.standId, colonne.colonneId)"
-                        [class.cellule-fermee]="estFermee(ligne.standId, colonne.colonneId)"
-                        [class.cellule-partielle]="estPartielle(ligne.standId, colonne.colonneId)">
+                  @for (cellule of ligne.cellules; track cellule.colonneId) {
+                    <td class="cellule-saisie" [class.premier-du-jour]="cellule.premierDuJour"
+                        [class.cellule-modifiee]="cellule.modifiee"
+                        [class.cellule-inerte]="cellule.inerte"
+                        [class.cellule-fermee]="cellule.fermee"
+                        [class.cellule-partielle]="cellule.partielle">
                       <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"
-                             [attr.data-cellule]="identifiant(ligne.standId, colonne.colonneId)"
-                             [attr.aria-label]="(ligne.nom || ligne.standId) + ' · ' + libelleJour(colonne.date) + ' ' + libelleColonne(colonne)"
-                             [attr.title]="estInerte(ligne.standId, colonne.colonneId) ? infobulleInerte() : (estPartielle(ligne.standId, colonne.colonneId) ? infobullePartielle(ligne.standId, colonne.colonneId) : null)"
-                             [disabled]="editingLocked() || estInerte(ligne.standId, colonne.colonneId)"
-                             [value]="valeur(ligne.standId, colonne.colonneId)"
-                             [placeholder]="valeur(ligne.standId, colonne.colonneId)"
-                             (input)="saisir(ligne.standId, colonne.colonneId, $any($event.target).value)"
-                             (focus)="focaliser(ligne.standId, colonne.colonneId)"
-                             (blur)="reafficher($event, ligne.standId, colonne.colonneId)"
-                             (keydown)="auClavier($event, ligne.standId, colonne.colonneId)"
-                             (paste)="auCollage($event, ligne.standId, colonne.colonneId)" />
+                             [attr.data-cellule]="cellule.clef"
+                             [attr.aria-label]="cellule.libelle"
+                             [attr.title]="cellule.infobulle"
+                             [disabled]="cellule.desactivee"
+                             [value]="cellule.valeur"
+                             [placeholder]="cellule.valeur" />
                     </td>
                   }
                 </tr>
-              } @empty {
+              }
+              @if (lignes().length === 0) {
                 <tr>
                   <td [attr.colspan]="colonnes().length + 1" class="empty-hint" i18n="@@ouvertures.aucuneLigne">
                     Aucun stand ne correspond à ce filtre.

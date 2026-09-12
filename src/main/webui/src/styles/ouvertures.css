@@ -357,6 +357,12 @@
   background: var(--mat-sys-surface-container);
 }
 
+/* The filter hides rows instead of removing them: sixty cells per row are
+   built once, and typing in the field costs a class toggle. */
+.grille-saisie .ligne-masquee {
+  display: none;
+}
+
 /* An emptied field keeps showing, greyed, the value the cell still holds:
    emptying says nothing, so what applies stays readable. A closed cell
    reads « - », muted, so closed and open-at-one never look alike. */

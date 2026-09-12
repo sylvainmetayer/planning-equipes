@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   computed,
   inject,
@@ -73,6 +74,30 @@ export type VueOuvertures = 'CONSULTER' | 'SAISIR';
 /** What a closed cell shows, and one of the things typed to close one (`readCell`). */
 const FERME = '-';
 
+/** One cell as the template binds it: text and flags computed once, no call per binding. */
+interface CelluleVue {
+  clef: string;
+  colonneId: string;
+  premierDuJour: boolean;
+  valeur: string;
+  modifiee: boolean;
+  inerte: boolean;
+  partielle: boolean;
+  fermee: boolean;
+  desactivee: boolean;
+  libelle: string;
+  infobulle: string | null;
+}
+
+interface LigneVue {
+  standId: string;
+  nom: string;
+  /** Whether the filter shows the row; a hidden row keeps its cells, and its typed values. */
+  visible: boolean;
+  modifiee: boolean;
+  cellules: CelluleVue[];
+}
+
 /**
  * Read-only stand × jour grid of the opening schedule actually in force, so an
  * administrator can validate it visually before spending minutes on a solve.
@@ -128,6 +153,9 @@ export class OuverturesPage {
   protected readonly chargement = signal(true);
   protected readonly filtre = signal<FiltreOuvertures>('TOUS');
   protected readonly recherche = signal('');
+  /** What the filter field holds, before the grid follows it: sixty-five rows of sixty cells are not re-laid on every keystroke. */
+  protected readonly rechercheSaisie = signal('');
+  private filtreEnAttente: ReturnType<typeof setTimeout> | null = null;
   protected readonly view = signal<VueOuvertures>(
     this.route.snapshot.queryParamMap.get('vue') === 'saisie' ? 'SAISIR' : 'CONSULTER',
   );
@@ -165,6 +193,62 @@ export class OuverturesPage {
   );
   private readonly standIdsAffiches = computed(() => this.lignes().map((ligne) => ligne.standId));
 
+  /**
+   * The rows as the template binds them: every cell's text, flags and
+   * labels computed once per change, so the template reads properties
+   * instead of calling a dozen functions per cell — four thousand cells make
+   * that the difference between a filter that follows the keystroke and one
+   * that lags behind it.
+   */
+  protected readonly lignesVues = computed<LigneVue[]>(() => {
+    const colonnes = this.colonnes();
+    const cellules = this.cellules();
+    const reference = this.reference();
+    const inertes = this.inertes();
+    const partielles = this.partielles();
+    const modifies = new Set(this.standsModifies());
+    const verrouille = this.editingLocked();
+    const infobulleInerte = this.infobulleInerte();
+    // Every stand is rendered once and the filter only hides rows: rebuilding
+    // twenty-eight rows of sixty cells when the field empties is what lagged.
+    const visibles = new Set(this.lignes().map((ligne) => ligne.standId));
+    return (this.rapport()?.stands ?? []).map((ligne) => {
+      const nom = ligne.nom || ligne.standId;
+      const typees = cellules.get(ligne.standId);
+      const lues = reference.get(ligne.standId);
+      return {
+        standId: ligne.standId,
+        nom,
+        visible: visibles.has(ligne.standId),
+        modifiee: modifies.has(ligne.standId),
+        cellules: colonnes.map((colonne) => {
+          const clef = key(ligne.standId, colonne.colonneId);
+          const inerte = inertes.has(clef);
+          const partielle = partielles.has(clef);
+          const effectif = typees?.get(colonne.colonneId) ?? null;
+          const valeur = inerte ? '' : effectif === null ? FERME : String(effectif);
+          return {
+            clef,
+            colonneId: colonne.colonneId,
+            premierDuJour: colonne.rang === 0,
+            valeur,
+            modifiee: effectif !== (lues?.get(colonne.colonneId) ?? null),
+            inerte,
+            partielle,
+            fermee: !inerte && effectif === null,
+            desactivee: verrouille || inerte,
+            libelle: `${nom} · ${this.libelleJour(colonne.date)} ${libelleColonne(colonne)}`,
+            infobulle: inerte
+              ? infobulleInerte
+              : partielle
+                ? this.infobullePartielle(ligne.standId, colonne.colonneId)
+                : null,
+          };
+        }),
+      };
+    });
+  });
+
   protected readonly synthese = computed(() => {
     const rapport = this.rapport();
     return rapport ? synthese(rapport) : null;
@@ -179,7 +263,24 @@ export class OuverturesPage {
 
   constructor() {
     keepViewInQueryParams(() => ({ vue: optionalParam(this.view() === 'SAISIR' ? 'saisie' : '') }));
+    inject(DestroyRef).onDestroy(() => {
+      if (this.filtreEnAttente !== null) {
+        clearTimeout(this.filtreEnAttente);
+      }
+    });
     void this.recharger();
+  }
+
+  /** The filter follows the field a beat after the last keystroke: typing « Village » re-lays the grid once, not seven times. */
+  protected filtrer(texte: string): void {
+    this.rechercheSaisie.set(texte);
+    if (this.filtreEnAttente !== null) {
+      clearTimeout(this.filtreEnAttente);
+    }
+    this.filtreEnAttente = setTimeout(() => {
+      this.filtreEnAttente = null;
+      this.recherche.set(texte);
+    }, 150);
   }
 
   protected async recharger(): Promise<void> {
@@ -252,13 +353,6 @@ export class OuverturesPage {
     return effectif === null ? FERME : String(effectif);
   }
 
-  protected estFermee(standId: string, colonneId: string): boolean {
-    return (
-      !this.estInerte(standId, colonneId) &&
-      (this.cellules().get(standId)?.get(colonneId) ?? null) === null
-    );
-  }
-
   protected estModifiee(standId: string, colonneId: string): boolean {
     return (
       (this.cellules().get(standId)?.get(colonneId) ?? null) !==
@@ -281,10 +375,6 @@ export class OuverturesPage {
 
   protected libelleColonne(colonne: ColonneGrille): string {
     return libelleColonne(colonne);
-  }
-
-  protected identifiant(standId: string, colonneId: string): string {
-    return key(standId, colonneId);
   }
 
   /**
@@ -315,6 +405,58 @@ export class OuverturesPage {
 
   protected focaliser(standId: string, colonneId: string): void {
     this.celluleActive.set({ standId, colonneId });
+  }
+
+  /* ------------------ one listener per event on the body, not per cell ------------------ */
+
+  /**
+   * The cell an event comes from, read off its `data-cellule` — five
+   * listeners on the body instead of five per cell, which is what made
+   * rendering a row of sixty cells expensive.
+   */
+  private adresse(event: Event): AdresseCellule | null {
+    const cible = event.target as HTMLElement | null;
+    const clef = cible?.dataset?.['cellule'];
+    if (!clef) {
+      return null;
+    }
+    const separateur = clef.indexOf('#');
+    return { standId: clef.slice(0, separateur), colonneId: clef.slice(separateur + 1) };
+  }
+
+  protected surSaisie(event: Event): void {
+    const adresse = this.adresse(event);
+    if (adresse) {
+      this.saisir(adresse.standId, adresse.colonneId, (event.target as HTMLInputElement).value);
+    }
+  }
+
+  protected surFocus(event: FocusEvent): void {
+    const adresse = this.adresse(event);
+    if (adresse) {
+      this.focaliser(adresse.standId, adresse.colonneId);
+    }
+  }
+
+  protected surPerteDeFocus(event: FocusEvent): void {
+    const adresse = this.adresse(event);
+    if (adresse) {
+      this.reafficher(event, adresse.standId, adresse.colonneId);
+    }
+  }
+
+  protected surClavier(event: KeyboardEvent): void {
+    const adresse = this.adresse(event);
+    if (adresse) {
+      this.auClavier(event, adresse.standId, adresse.colonneId);
+    }
+  }
+
+  protected surCollage(event: ClipboardEvent): void {
+    const adresse = this.adresse(event);
+    if (adresse) {
+      this.auCollage(event, adresse.standId, adresse.colonneId);
+    }
   }
 
   /**
