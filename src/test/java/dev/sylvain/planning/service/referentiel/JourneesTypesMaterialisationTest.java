@@ -13,6 +13,7 @@ import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Rec
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -178,6 +179,32 @@ class JourneesTypesMaterialisationTest {
                 List.of(creneau(1L, LUNDI, "12:00", "13:00", true), creneau(2L, MARDI, "12:00", "13:00", false)));
 
         assertThat(reconnaissance.journeesTypes()).hasSize(2);
+    }
+
+    /**
+     * The calendar of a hand-written scenario goes through the same check as the
+     * screen's: the same date under two templates reaches the primary key of
+     * {@code journee_type_date}, and must be refused as the data error it is
+     * rather than as a 500.
+     */
+    @Test
+    void unCalendrierRefuseUneDateAffecteeDeuxFoisOuUneJourneeTypeInconnue() {
+        assertThatThrownBy(() -> JourneeTypeService.checkCalendrier(
+                        List.of(new Affectation(LUNDI, 1L), new Affectation(LUNDI, 2L)), Set.of(1L, 2L)))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining(LUNDI.toString())
+                .hasMessageContaining("deux fois");
+
+        assertThatThrownBy(() -> JourneeTypeService.checkCalendrier(List.of(new Affectation(LUNDI, 9L)), Set.of(1L)))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("introuvable");
+
+        assertThatThrownBy(() -> JourneeTypeService.checkCalendrier(List.of(new Affectation(null, 1L)), Set.of(1L)))
+                .isInstanceOf(BusinessError.Invalid.class);
+
+        // The shape the screen and a well-formed file both send.
+        JourneeTypeService.checkCalendrier(
+                List.of(new Affectation(LUNDI, 1L), new Affectation(MARDI, 2L)), Set.of(1L, 2L));
     }
 
     private static VacationType vacation(String debut, String fin, boolean relais) {

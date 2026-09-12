@@ -25,11 +25,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * Day templates and their calendar: the way an edition that types its
  * vacations by hand describes them once per kind of day (ADR 0032).
  *
- * <p>Two writes touch the grid here and both refuse while a solve runs, like
- * every rewrite of the grid: applying the calendar, and the recognition (which
- * writes no créneau, but is only ever followed by an application). The
- * templates and the calendar themselves are edited freely — they change
- * nothing until applied, which is the whole point of previewing.</p>
+ * <p><b>One write touches the grid</b>, and it is the one that refuses while a
+ * solve runs, like every rewrite of the grid: applying the calendar.
+ * Everything else here writes only templates and their calendar — the
+ * recognition included — which no solve reads: they change nothing until
+ * applied, which is the whole point of previewing.</p>
  */
 @ApplicationScoped
 public class JourneeTypeService {
@@ -128,20 +128,31 @@ public class JourneeTypeService {
         for (JourneeType journeeType : repository.list()) {
             ids.add(journeeType.getId());
         }
+        checkCalendrier(calendrier, ids);
+        repository.replaceCalendrier(calendrier);
+        return repository.calendrier();
+    }
+
+    /**
+     * A date is assigned at most once, and only to a template that exists.
+     * Shared with the scenario section: a file listing the same date under two
+     * templates would otherwise reach the primary key of
+     * {@code journee_type_date} and come back as a 500 rather than as the data
+     * error it is.
+     */
+    static void checkCalendrier(List<Affectation> calendrier, Set<Long> idsConnus) {
         Set<LocalDate> dates = new HashSet<>();
         for (Affectation affectation : calendrier) {
             if (affectation.date() == null || affectation.journeeTypeId() == null) {
                 throw new BusinessError.Invalid("Chaque ligne du calendrier porte une date et une journée type");
             }
-            if (!ids.contains(affectation.journeeTypeId())) {
+            if (!idsConnus.contains(affectation.journeeTypeId())) {
                 throw new BusinessError.Invalid("Journée type introuvable : " + affectation.journeeTypeId());
             }
             if (!dates.add(affectation.date())) {
                 throw new BusinessError.Invalid("Le " + affectation.date() + " est affecté deux fois");
             }
         }
-        repository.replaceCalendrier(calendrier);
-        return repository.calendrier();
     }
 
     /* ------------------------------ Whole state ------------------------------ */
@@ -166,8 +177,19 @@ public class JourneeTypeService {
      *
      * @param supprimesAvecPostes among {@code aSupprimer}, those carrying seats of the persisted plan
      * @param postesSupprimes     how many seats those deletions take away
+     * @param modeADeclarer       the grid is not declared as vacations yet, and applying will declare it —
+     *                            a change of its own, even when no créneau moves
      */
-    @Schema(requiredProperties = {"conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement"})
+    @Schema(
+            requiredProperties = {
+                "conserves",
+                "misAJour",
+                "crees",
+                "supprimes",
+                "postesSupprimes",
+                "aucunChangement",
+                "modeADeclarer"
+            })
     public record RapportApplication(
             int conserves,
             int misAJour,
@@ -178,6 +200,7 @@ public class JourneeTypeService {
             int postesSupprimes,
             List<LocalDate> datesEnEcart,
             boolean aucunChangement,
+            boolean modeADeclarer,
             RapportGrille controle) {
 
         public RapportApplication withVerdict(RapportGrille verdict) {
@@ -191,6 +214,7 @@ public class JourneeTypeService {
                     postesSupprimes,
                     datesEnEcart,
                     aucunChangement,
+                    modeADeclarer,
                     verdict);
         }
     }
@@ -200,11 +224,14 @@ public class JourneeTypeService {
 
     public Application previewApplication() {
         Plan plan = planCourant();
+        // Read before anything is written, so the preview and the write agree
+        // on whether the mode still has to be declared.
+        boolean modeADeclarer = parametres.getDecoupage().getModeGrille() != ModeGrilleCreneaux.VACATIONS;
         List<Creneau> resultante = new ArrayList<>(plan.conserves());
         resultante.addAll(plan.misAJour());
         resultante.addAll(plan.aCreer());
         resultante.addAll(creneauxNonGouvernes(plan));
-        return new Application(rapport(plan), resultante);
+        return new Application(rapport(plan, modeADeclarer), resultante);
     }
 
     /**
@@ -216,12 +243,13 @@ public class JourneeTypeService {
     public Application apply() {
         solverJobs.refuseIfSolving();
         Plan plan = planCourant();
-        RapportApplication rapport = rapport(plan);
+        boolean modeADeclarer = parametres.getDecoupage().getModeGrille() != ModeGrilleCreneaux.VACATIONS;
+        RapportApplication rapport = rapport(plan, modeADeclarer);
         if (!plan.isEmpty()) {
             repository.apply(plan);
             changeTracker.markModified();
         }
-        if (parametres.getDecoupage().getModeGrille() != ModeGrilleCreneaux.VACATIONS) {
+        if (modeADeclarer) {
             parametres.updateModeGrille(ModeGrilleCreneaux.VACATIONS);
         }
         return new Application(rapport, creneaux.listCreneaux());
@@ -258,7 +286,7 @@ public class JourneeTypeService {
         return restants;
     }
 
-    private RapportApplication rapport(Plan plan) {
+    private RapportApplication rapport(Plan plan, boolean modeADeclarer) {
         Map<Long, Integer> postes = plan.aSupprimer().isEmpty() ? Map.of() : repository.seatsByCreneau();
         List<Creneau> avecPostes = new ArrayList<>();
         int postesSupprimes = 0;
@@ -278,7 +306,11 @@ public class JourneeTypeService {
                 avecPostes,
                 postesSupprimes,
                 plan.datesEnEcart(),
-                plan.isEmpty(),
+                // Declaring the grid as vacations is a change of its own: a
+                // calendar the grid already matches still has that to do, and
+                // « aucun changement » would disable the only button that does it.
+                plan.isEmpty() && !modeADeclarer,
+                modeADeclarer,
                 null);
     }
 
@@ -316,10 +348,15 @@ public class JourneeTypeService {
      */
     public void importer(List<JourneeType> journeesTypes, List<Affectation> calendrier) {
         List<JourneeType> valides = new ArrayList<>();
+        Set<Long> ids = new HashSet<>();
         for (JourneeType journeeType : journeesTypes) {
             validate(journeeType, valides);
             valides.add(journeeType);
+            ids.add(journeeType.getId());
         }
+        // The file's ids are the provisional ones the mapper drew, so the
+        // calendar is checked against those rather than against the database.
+        checkCalendrier(calendrier, ids);
         repository.replaceAll(valides, calendrier);
     }
 }

@@ -331,7 +331,6 @@
   "journeesTypes.application.crees": "time slot(s) created",
   "journeesTypes.application.supprimes": "time slot(s) removed",
   "journeesTypes.application.postes": "{$INTERPOLATION} of these time slots carry {$INTERPOLATION_1} seat(s) of the saved plan: they will be erased.",
-  "journeesTypes.application.mode": "The grid will then be declared as final vacations.",
   "journeesTypes.application.submit": "Apply",
   "journeesTypes.application.done": "Calendar applied: {$crees} time slot(s) created, {$supprimes} removed, {$conserves} kept.",
   "creneaux.vacations.range": "The grid holds final vacations: the slicing of amplitudes, its settings and the derivation from the stands are put away. Declare the grid as amplitudes above to get them back.",
@@ -2833,5 +2832,6 @@
   "aide.link.problemes": "Problems",
   "aide.link.dayCalendar": "Day calendar",
   "accueil.detail.problemes.nonMesure": "Rules not analysed since start-up",
-  "accueil.detail.publication.solveEnCours": "Solve running: publishing waits for it to finish"
+  "accueil.detail.publication.solveEnCours": "Solve running: publishing waits for it to finish",
+  "journeesTypes.application.modeADeclarer": "The grid will be declared as final vacations: slicing amplitudes no longer has a purpose."
 }

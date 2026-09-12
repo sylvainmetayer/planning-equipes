@@ -1133,6 +1133,8 @@ export interface RapportApplicationJourneesTypes {
   postesSupprimes: number;
   datesEnEcart: string[];
   aucunChangement: boolean;
+  /** The grid is not declared as vacations yet: applying declares it, even when no créneau moves. */
+  modeADeclarer: boolean;
   controle: RapportGrille;
 }
 

@@ -53,7 +53,11 @@ export type DetailResult = 'edit' | null;
         <section class="detail-section">
           <h3 class="detail-section-title">{{ section.title }}</h3>
           <dl class="detail-rows">
-            @for (row of section.rows; track row.label) {
+            <!-- Tracked on the index, not on the label: two rows legitimately
+                 share one — two dated openings on the same date, two windows
+                 without effect on the same day — and a duplicate track key
+                 drops a row instead of showing it. -->
+            @for (row of section.rows; track $index) {
               <dt>{{ row.label }}</dt>
               <dd [class.detail-muted]="row.muted" [class.detail-alerte]="row.alerte">
                 @if (row.chips) {

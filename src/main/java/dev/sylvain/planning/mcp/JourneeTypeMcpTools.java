@@ -188,9 +188,23 @@ public class JourneeTypeMcpTools {
     }
 
     @Tool(
-            description = "Reconnaît les journées types que la grille actuelle implique — chaque date aux mêmes "
-                    + "vacations est le même type de jour — et REMPLACE les journées types et le calendrier par ce "
-                    + "résultat. Les créneaux ne sont pas touchés. Pour voir sans écrire, apercu=true.",
+            description = "Montre les journées types que la grille actuelle implique — chaque date aux mêmes "
+                    + "vacations est le même type de jour — sans RIEN écrire.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ReconnaissanceView previsualiser_reconnaissance_journees_types(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return toView(referenceDataService.previewReconnaissanceJourneesTypes());
+    }
+
+    @Tool(
+            description = "Reconnaît les journées types que la grille actuelle implique et REMPLACE les journées "
+                    + "types et le calendrier par ce résultat. Les créneaux ne sont pas touchés. Appeler "
+                    + "previsualiser_reconnaissance_journees_types d'abord pour voir sans écrire.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -198,16 +212,8 @@ public class JourneeTypeMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ReconnaissanceView reconnaitre_journees_types(
-            @ToolArg(description = "true pour prévisualiser sans écrire", required = false) Boolean apercu,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Reconnaissance reconnaissance = Boolean.TRUE.equals(apercu)
-                ? referenceDataService.previewReconnaissanceJourneesTypes()
-                : referenceDataService.reconnaitreJourneesTypes();
-        return new ReconnaissanceView(
-                reconnaissance.journeesTypes().stream()
-                        .map(JourneeTypeMcpTools::toView)
-                        .toList(),
-                reconnaissance.calendrier());
+        return toView(referenceDataService.reconnaitreJourneesTypes());
     }
 
     /* -------------------------------- Outils -------------------------------- */
@@ -240,6 +246,14 @@ public class JourneeTypeMcpTools {
                 etat.journeesTypes().stream().map(JourneeTypeMcpTools::toView).toList(),
                 etat.calendrier(),
                 etat.datesEnEcart());
+    }
+
+    static ReconnaissanceView toView(Reconnaissance reconnaissance) {
+        return new ReconnaissanceView(
+                reconnaissance.journeesTypes().stream()
+                        .map(JourneeTypeMcpTools::toView)
+                        .toList(),
+                reconnaissance.calendrier());
     }
 
     static RapportApplicationView toView(RapportApplication rapport) {

@@ -62,6 +62,9 @@ export interface JourneeStandsVue {
   lignes: LigneJournee[];
 }
 
+/** How a window running « jusqu'à la fermeture » reads: no end was typed, so none is shown. */
+const OUVERTE = '…';
+
 /** `HH:mm[:ss]` → minutes from midnight. */
 export function minutesDe(heure: string): number {
   const [h, m] = heure.split(':').map(Number);
@@ -137,15 +140,18 @@ export function buildJourneeStands(
       const cellule = ligne.jours.find((candidat) => candidat.date === date);
       const nom = ligne.nom || ligne.standId;
       const blocs = cellule ? blocsDe(cellule, relais, span) : [];
-      const dehors = (horsGrille.get(ligne.standId) ?? []).map(([d, f, heureDebut, heureFin]) => ({
-        ...span(
-          heureDebut,
-          heureFin,
-          `${nom} · ${court(heureDebut)}–${heureFin ? court(heureFin) : '…'}`,
-        ),
-        offsetPercent: percent(d),
-        widthPercent: ((f - d) / amplitude) * 100,
-      }));
+      // Built without `span`: the window is placed from the bounds computed
+      // when it was read, and an open-ended one has no end to format.
+      const dehors = (horsGrille.get(ligne.standId) ?? []).map(([d, f, heureDebut, heureFin]) => {
+        const fin = heureFin === null ? OUVERTE : court(heureFin);
+        return {
+          heureDebut: court(heureDebut),
+          heureFin: fin,
+          offsetPercent: percent(d),
+          widthPercent: ((f - d) / amplitude) * 100,
+          label: `${nom} · ${court(heureDebut)}–${fin}`,
+        };
+      });
       return {
         standId: ligne.standId,
         nom,
@@ -213,8 +219,8 @@ function blocsDe(
 function fenetresHorsGrille(
   anomalies: readonly AnomalieOuverture[],
   date: string,
-): Map<string, [number, number, string, string][]> {
-  const parStand = new Map<string, [number, number, string, string][]>();
+): Map<string, [number, number, string, string | null][]> {
+  const parStand = new Map<string, [number, number, string, string | null][]>();
   for (const anomalie of anomalies) {
     if (anomalie.type !== 'FENETRE_SANS_EFFET' || anomalie.date !== date || !anomalie.heureDebut) {
       continue;
@@ -222,7 +228,9 @@ function fenetresHorsGrille(
     const debut = minutesDe(anomalie.heureDebut);
     const fin = anomalie.heureFin ? intervalle(anomalie.heureDebut, anomalie.heureFin)[1] : 24 * 60;
     const liste = parStand.get(anomalie.standId) ?? [];
-    liste.push([debut, fin, anomalie.heureDebut, anomalie.heureFin ?? '00:00']);
+    // The end is kept null on an open-ended window: `fin` already carries its
+    // numeric bound, and the label says « … » rather than a midnight nobody typed.
+    liste.push([debut, fin, anomalie.heureDebut, anomalie.heureFin ?? null]);
     parStand.set(anomalie.standId, liste);
   }
   return parStand;

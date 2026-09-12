@@ -339,7 +339,6 @@ export class OuverturesPage {
     }
   }
 
-  /** Leaving the entry view with unsaved cells asks first: they would silently survive, invisible, until the next reload. */
   /** « Voir la journée » from a day header of the grid: the same day, laid on time. */
   protected voirJournee(date: string): void {
     this.navigationJour.select(date);
@@ -354,6 +353,7 @@ export class OuverturesPage {
     this.navigationJour.step(delta);
   }
 
+  /** Leaving the entry view with unsaved cells asks first: they would silently survive, invisible, until the next reload. */
   protected async changeView(view: VueOuvertures): Promise<void> {
     if (view !== 'SAISIR' && this.standsModifies().length > 0) {
       const abandon = await this.confirm.ask({

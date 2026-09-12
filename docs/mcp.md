@@ -407,7 +407,8 @@ retire. Rien de tout cela n'écrit un créneau :
 `materialiser_journees_types` l'écrit, puis déclare la grille en `VACATIONS`.
 Une date sans journée type n'est pas touchée. `reconnaitre_journees_types`
 fait le chemin inverse depuis les créneaux, et remplace journées types et
-calendrier (`apercu=true` pour voir sans écrire). `lister_journees_types`
+calendrier ; `previsualiser_reconnaissance_journees_types` le montre sans rien
+écrire. `lister_journees_types`
 rend aussi les dates **en écart**, celles dont les créneaux ne suivent plus
 leur journée type. Voir
 [ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md).

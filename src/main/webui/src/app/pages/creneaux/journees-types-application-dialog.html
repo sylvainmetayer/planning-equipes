@@ -3,6 +3,11 @@
   @if (apercu.aucunChangement) {
     <p class="empty-hint" i18n="@@journeesTypes.application.rien">La grille correspond déjà au calendrier : rien à changer.</p>
   } @else {
+    @if (apercu.modeADeclarer) {
+      <p class="empty-hint" i18n="@@journeesTypes.application.modeADeclarer">
+        La grille sera déclarée en vacations finales : le découpage d'amplitudes n'a plus lieu d'être.
+      </p>
+    }
     <ul class="journees-types-bilan">
       <li><strong>{{ apercu.conserves }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.conserves">créneau(x) conservé(s), avec leurs sièges</ng-container></li>
       <li><strong>{{ apercu.misAJour }}</strong>&nbsp;<ng-container i18n="@@journeesTypes.application.misAJour">relais repas mis à jour</ng-container></li>
@@ -19,7 +24,6 @@
         }
       </ul>
     }
-    <p class="empty-hint" i18n="@@journeesTypes.application.mode">La grille sera ensuite déclarée en vacations finales.</p>
     @if (bilan(); as bilan) {
       <p class="serie-bilan">
         <span [class.serie-bilan-erreur]="bilan.erreurs > 0" i18n="@@creneaux.serie.bilan.erreurs">{{ bilan.erreurs }} erreur(s)</span>

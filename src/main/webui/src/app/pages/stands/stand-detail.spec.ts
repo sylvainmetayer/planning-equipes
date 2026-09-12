@@ -173,6 +173,27 @@ describe('buildStandDetail', () => {
     expect(rowValue(sections, 'Horaires')).toBe('3 exception(s)');
   });
 
+  // Two windows without effect on the same day give two rows sharing a label:
+  // tracked on it, one of the two would be dropped instead of shown.
+  it('keeps both anomalies of a day rather than folding them into one row', () => {
+    const anomalie = (heures: string) => ({
+      type: 'FENETRE_SANS_EFFET' as const,
+      standId: 'S1',
+      standNom: 'Stand',
+      date: '2027-07-12',
+      message: `Fenêtre ${heures} hors de tout créneau`,
+    });
+
+    const section = buildStandDetail(
+      stand({}),
+      [],
+      [anomalie('07:00-08:00'), anomalie('22:00-23:00')],
+    ).find((s) => s.title === 'Ouvertures effectives')!;
+
+    expect(section.rows).toHaveLength(2);
+    expect(section.rows.map((row) => row.label)).toEqual(['12/07', '12/07']);
+  });
+
   // The openings analysis, read on the fiche: a window at an hour the grid
   // does not have is the mistake a hand-typed schedule makes and never sees.
   it("lists the stand's opening anomalies in the error colour, and says « aucune » once the report is in", () => {

@@ -4089,7 +4089,7 @@
         }
       },
       "RapportApplication" : {
-        "required" : [ "conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement" ],
+        "required" : [ "conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement", "modeADeclarer" ],
         "type" : "object",
         "properties" : {
           "conserves" : {
@@ -4133,6 +4133,9 @@
             }
           },
           "aucunChangement" : {
+            "type" : "boolean"
+          },
+          "modeADeclarer" : {
             "type" : "boolean"
           },
           "controle" : {

@@ -138,7 +138,14 @@ describe('JourneesTypesCard', () => {
   });
 
   it('previews before opening the application dialog, and writes nothing itself', async () => {
-    const apercu = { crees: 3, supprimes: 0, conserves: 1, misAJour: 0, aucunChangement: false };
+    const apercu = {
+      crees: 3,
+      supprimes: 0,
+      conserves: 1,
+      misAJour: 0,
+      aucunChangement: false,
+      modeADeclarer: true,
+    };
     api.previewApplication.mockResolvedValue(apercu);
     const { card } = await monter();
 

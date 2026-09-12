@@ -1,10 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   inject,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -77,6 +79,8 @@ export class StandsPage extends ReferenceTablePage<Stand> {
   /** Holds `causeParStandId`: a memoised map, so each row only does a lookup. */
   protected readonly problemes = inject(ProblemesStore);
 
+  /** Bounds the form's callback: this page is lazy, and a callback on a dead one writes into nothing. */
+  private readonly destroyRef = inject(DestroyRef);
   private readonly standsApi = inject(StandsApi);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
@@ -109,12 +113,24 @@ export class StandsPage extends ReferenceTablePage<Stand> {
         ),
       }),
       formulaire: (stand, dialog: MatDialog) => {
-        dialog.open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {
-          data: { stand },
-          width: '40rem',
-          maxWidth: '95vw',
-          autoFocus: 'first-tabbable',
-        });
+        dialog
+          .open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {
+            data: { stand },
+            width: '40rem',
+            maxWidth: '95vw',
+            autoFocus: 'first-tabbable',
+          })
+          .afterClosed()
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((ecrit) => {
+            // The openings are computed server-side from the schedule that was
+            // just written: without this, the fiche reopened after an edit shows
+            // the anomalies of the schedule before it — « aucune » on a window
+            // the user has just broken.
+            if (ecrit) {
+              void this.chargerOuvertures();
+            }
+          });
       },
       ressource: 'stands',
       libelle: () => $localize`:@@stands.entityLabel:Stand`,

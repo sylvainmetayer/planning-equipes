@@ -135,6 +135,25 @@ describe('buildJourneeStands', () => {
     expect(standA.resume).toBe('Stand A : ouvert 09:00–12:00 (2), 12:00–13:00 (2)');
   });
 
+  it('says « … » for a window running until closing, rather than a midnight nobody typed', () => {
+    const ouverte = rapport();
+    ouverte.anomalies = [
+      {
+        ...ouverte.anomalies[0],
+        heureDebut: '07:00',
+        heureFin: null,
+        message: "L'ouverture de 07:00 à la fermeture ne recoupe aucun créneau de ce jour.",
+      },
+    ];
+
+    const fenetre = buildJourneeStands(ouverte, '2027-07-12')!.lignes[1].horsGrille[0];
+
+    expect(fenetre.heureFin).toBe('…');
+    expect(fenetre.label).toContain('07:00–…');
+    // Still placed to midnight: that is how far the grid would have had to reach.
+    expect(fenetre.widthPercent).toBeCloseTo((17 / 17) * 100);
+  });
+
   it('hatches a window outside every vacation where it falls, and says so', () => {
     const vue = buildJourneeStands(rapport(), '2027-07-12')!;
     const standB = vue.lignes[1];

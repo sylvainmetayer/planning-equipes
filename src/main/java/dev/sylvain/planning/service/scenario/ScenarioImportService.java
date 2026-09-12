@@ -116,11 +116,6 @@ public class ScenarioImportService {
     }
 
     /**
-     * Applies the scenario's optional {@code typologies:} section, if any,
-     * <b>after</b> the planning itself has been imported: see this class's
-     * javadoc for why the order is not negotiable.
-     */
-    /**
      * The file's own day templates, when it names them, replace the ones the
      * planning import recognised from its créneaux; absent, the recognised ones
      * stand — the screen and the file then describe the same edition.
@@ -131,6 +126,11 @@ public class ScenarioImportService {
                         referenceDataService.importJourneesTypes(section.journeesTypes(), section.calendrier()));
     }
 
+    /**
+     * Applies the scenario's optional {@code typologies:} section, if any,
+     * <b>after</b> the planning itself has been imported: see this class's
+     * javadoc for why the order is not negotiable.
+     */
     private void applyTypologies(ScenarioYamlReader.ScenarioSections sections) {
         sections.typologies().forEach(referenceDataService::importTypologie);
     }

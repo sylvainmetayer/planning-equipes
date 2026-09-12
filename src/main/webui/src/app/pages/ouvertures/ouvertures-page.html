@@ -258,7 +258,11 @@
                           @for (fenetre of ligne.horsGrille; track fenetre.heureDebut) {
                             <span class="axe-hors" [style.left.%]="fenetre.offsetPercent" [style.width.%]="fenetre.widthPercent" [title]="fenetre.label"></span>
                           }
-                          @for (bloc of ligne.blocs; track bloc.heureDebut + bloc.heureFin) {
+                          <!-- Tracked on the index: a day holding two créneaux
+                               with the same hours — the DOUBLON the grid
+                               reports and lets you keep — gives two blocks
+                               that would share a key. -->
+                          @for (bloc of ligne.blocs; track $index) {
                             <span class="axe-bloc" [class.axe-bloc-relais]="bloc.couverturePause"
                                   [style.left.%]="bloc.offsetPercent" [style.width.%]="bloc.widthPercent" [title]="bloc.label">
                               <span class="axe-bloc-label">{{ bloc.effectif }}</span>

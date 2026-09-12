@@ -430,6 +430,7 @@ public final class CatalogueActions {
         untracked("CreneauResource#previewDerivation", "prévisualisation, n'écrit rien");
         untracked("JourneeTypeResource#previewApplication", "prévisualisation, n'écrit rien");
         untracked("JourneeTypeResource#previewReconnaissance", "prévisualisation, n'écrit rien");
+        untracked("previsualiser_reconnaissance_journees_types", "prévisualisation, n'écrit rien");
         untracked("ConstraintResource#diagnose", "relit l'analyse enregistrée, n'écrit rien");
         untracked("PlanningHoursResource#compute", "calcule les heures d'un planning envoyé, n'écrit rien");
         untracked("ReferenceDataResource#fileScenarioTarget", "lit un fichier pour en annoncer la cible");
