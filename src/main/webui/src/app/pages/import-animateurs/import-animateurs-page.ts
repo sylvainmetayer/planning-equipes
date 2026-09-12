@@ -161,7 +161,7 @@ export class ImportAnimateursPage {
   /**
    * Downloads the example roster the application ships with — the nine columns
    * this screen reads, filled with the animateurs of the anonymised
-   * `festival-realiste` scenario.
+   * `festival-realiste-canicule` scenario.
    *
    * Fetched from the API rather than linked as a static asset: the file lives
    * once, on the classpath next to the scenario it derives from, and a backend

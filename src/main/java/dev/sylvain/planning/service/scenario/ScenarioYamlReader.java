@@ -228,7 +228,7 @@ public final class ScenarioYamlReader {
      * <p>There used to be one public accessor per section, each three lines
      * long and each re-reading and re-parsing the whole file. Importing a
      * scenario called five of them plus the planning build, so a single click
-     * parsed {@code festival-realiste.yaml} seven times — and adding a section
+     * parsed {@code festival-realiste-canicule.yaml} seven times — and adding a section
      * meant adding a seventh near-identical method. One record, one read.</p>
      *
      * @param parametresLegaux    lets a scenario pin the legal parameters it was

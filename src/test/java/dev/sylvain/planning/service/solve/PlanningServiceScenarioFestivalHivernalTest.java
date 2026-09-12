@@ -13,13 +13,13 @@ import org.junit.jupiter.api.Test;
 /**
  * Full-scale regression test on the second <b>anonymised real-world</b>
  * fixture, {@code festival-hivernal.yaml}: the same event as
- * {@code festival-realiste.yaml} but described the way the organiser
+ * {@code festival-realiste-canicule.yaml} but described the way the organiser
  * actually enters it — a grid written in vacations, with the midday rotation
  * (12-13 / 13-14) and the evening reliefs carried by the stands' opening
  * windows — and with the on-post breaks declared.
  *
  * <h2>What it adds</h2>
- * <p>{@code festival-realiste} is sliced by the découpage; this one is not,
+ * <p>{@code festival-realiste-canicule} is sliced by the découpage; this one is not,
  * so it exercises the seats as the operator sees them and the rules that only
  * bite on a hand-written grid: the meal break of issue #438, the relay of the
  * on-post break ({@code pauseSurPosteSansRelais}), and the chain through the

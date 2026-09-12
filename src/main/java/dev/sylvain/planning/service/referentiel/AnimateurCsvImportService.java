@@ -107,7 +107,7 @@ public class AnimateurCsvImportService {
      * The example roster shipped with the application: a dozen fictional
      * people showing every column — a minor during the event, a manager,
      * competences with and without a level, wishes, off days. Its typologies
-     * and its off days are those of the {@code festival-realiste} scenario it
+     * and its off days are those of the {@code festival-realiste-canicule} scenario it
      * sits next to, since the import refuses a row naming anything else.
      *
      * <p>One file, one place: the screen offers it for download through this

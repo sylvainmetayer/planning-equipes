@@ -180,7 +180,7 @@ le snackbar plutôt que la fermeture du dialogue.
 `/animateurs`, qui invalide le lien d'un animateur réel.
 
 L'instance de dev sur `http://localhost:8080` porte l'édition
-`festival-realiste` — 153 animateurs, 65 stands, 354 créneaux, des données
+`festival-hivernal` — 153 animateurs, 65 stands, 62 créneaux, des données
 anonymisées mais réalistes. Explorbot écrit dedans. Un instantané depuis
 `/instantanes` avant un run coûte dix secondes et rend le retour arrière trivial.
 

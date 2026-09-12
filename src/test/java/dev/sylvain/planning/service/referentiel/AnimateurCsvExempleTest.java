@@ -50,7 +50,7 @@ import org.junit.jupiter.api.Test;
  *       has a row showing it, and a row dropped in a hurry would silently
  *       take a lesson away.</li>
  *   <li><b>Its referential holds.</b> Every typologie it names is declared by
- *       the {@code festival-realiste} scenario, and every off day falls on one
+ *       the {@code festival-realiste-canicule} scenario, and every off day falls on one
  *       of its créneau dates — the two things the import refuses a row for.</li>
  * </ul>
  */
@@ -59,7 +59,7 @@ class AnimateurCsvExempleTest {
 
     private static final String EDITION = "CSV-EXEMPLE-TEST";
 
-    private static final String SCENARIO = "scenarios/festival-realiste.yaml";
+    private static final String SCENARIO = "scenarios/festival-realiste-canicule.yaml";
 
     private static final String EXEMPLE = AnimateurCsvImportService.EXEMPLE_RESSOURCE;
 

@@ -58,12 +58,14 @@ Read before working on constraints or the domain model:
 
 ### Costly test jobs
 
-`PlanningServiceScenarioCompletTest`, `PlanningServiceScenarioContinuTest`
-and `PlanningServiceScenarioFestivalRealisteTest` solve large scenarios to
+`PlanningServiceScenarioCompletTest`, `PlanningServiceScenarioContinuTest`,
+`PlanningServiceScenarioFestivalRealisteTest` and
+`PlanningServiceScenarioFestivalHivernalTest` solve large scenarios to
 hard-feasibility — the first two take ~25s/~75s on hand-built problems, the
-third runs the two **anonymised real-world fixtures**
-(`festival-realiste.yaml` and its `-canicule` variant: 153 animateurs, 65
-stands, 45 premium, per-stand recurring schedules) — the only ones whose
+last two run the **anonymised real-world fixtures**
+(`festival-realiste-canicule.yaml`, sliced by the découpage, and
+`festival-hivernal.yaml`, the same event on the organiser's own grid: 153
+animateurs, 65 stands, 45 premium, per-stand recurring schedules) — the only ones whose
 stands carry recurring horaires, which a plain-Java harness must expand with
 `HoraireStandResolver.appliquer` before building postes or it solves a problem
 five times too large. They are tagged `@Tag("scenario-lent")`, excluded from the

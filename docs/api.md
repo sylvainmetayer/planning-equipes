@@ -1840,7 +1840,7 @@ L'endpoint `/exemple` sert
 `src/main/resources/scenarios/exemple-animateurs.csv` tel quel, sous le nom
 `exemple-animateurs.csv` : les neuf colonnes lues, remplies d'une douzaine de
 personnes fictives sur les typologies et les dates du scénario
-`festival-realiste`. C'est ce que le bouton « Télécharger un fichier
+`festival-realiste-canicule`. C'est ce que le bouton « Télécharger un fichier
 d'exemple » de l'écran d'import récupère — servi depuis le classpath plutôt
 que copié dans le bundle, pour qu'il n'existe qu'un seul fichier à garder
 juste.

@@ -198,7 +198,7 @@ qu'elle enseigne bien ce qu'elle prétend : un mineur aux dates de l'événement
 un majeur, un manager, les trois niveaux de compétence, des souhaits, des
 jours d'indisponibilité multiples.
 
-Ses jours d'indisponibilité et ses typologies sont ceux de `festival-realiste`
+Ses jours d'indisponibilité et ses typologies sont ceux de `festival-realiste-canicule`
 (dates du 1<sup>er</sup> au 16 septembre 2026, typologies `DIV`, `ENF`,
 `LOGISTIQUE`…), parce que l'import refuse une ligne qui nomme autre chose et
 que ce scénario est le référentiel de démonstration versionné. Déposé dans une
@@ -482,7 +482,7 @@ changé, la trajectoire de recherche n'est pas celle de l'édition source.
 
 `exemple-animateurs.csv` (voir plus haut) **ne dérive pas** de la fixture :
 ses personnes sont inventées, seuls ses typologies et ses jours
-d'indisponibilité sont pris dans `festival-realiste.yaml`. Une régénération
+d'indisponibilité sont pris dans `festival-realiste-canicule.yaml`. Une régénération
 qui renomme une typologie ou déplace les dates de l'événement fait donc
 échouer `AnimateurCsvExempleTest` : c'est voulu, et le CSV est alors à
 retoucher à la main — douze lignes, pas cent cinquante-trois.
@@ -490,15 +490,15 @@ retoucher à la main — douze lignes, pas cent cinquante-trois.
 Les sources restent hors dépôt : `docs/reel-*.yaml` et
 `scenarios/reel-*.yaml` sont dans `.gitignore`, elles portent des données
 personnelles réelles. **Le préfixe `reel-` est précisément ce qui les rend
-invisibles à git** — d'où le nom `festival-realiste`, sans quoi la fixture ne
-serait pas versionnée et le test casserait en CI.
+invisibles à git** — d'où le nom `festival-realiste-…`, sans quoi la fixture
+ne serait pas versionnée et le test casserait en CI.
 
 Régénération :
 
 ```bash
 python3 src/main/resources/anonymiser-scenario.py \
-    ~/…/reel-2026.yaml src/main/resources/scenarios/festival-realiste.yaml \
-    --edition-id festival-realiste --edition-nom "Festival réaliste" \
+    ~/…/reel-2026-canicule.yaml src/main/resources/scenarios/festival-realiste-canicule.yaml \
+    --edition-id festival-realiste-canicule --edition-nom "Festival réaliste — canicule" \
     --date-debut 2026-09-01
 ```
 

@@ -39,9 +39,9 @@ généré.
 Usage :
 
     python3 src/main/resources/anonymiser-scenario.py \\
-        docs/reel-1708.yaml \\
-        src/main/resources/scenarios/festival-realiste.yaml \\
-        --edition-id festival-realiste --edition-nom "Festival réaliste" \\
+        docs/reel-1708-canicule.yaml \\
+        src/main/resources/scenarios/festival-realiste-canicule.yaml \\
+        --edition-id festival-realiste-canicule --edition-nom "Festival réaliste — canicule" \\
         --date-debut 2026-09-01
 """
 

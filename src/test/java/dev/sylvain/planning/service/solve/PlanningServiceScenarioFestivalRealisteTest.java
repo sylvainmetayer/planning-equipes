@@ -22,10 +22,14 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * Full-scale regression test on the two <b>anonymised real-world</b> fixtures:
- * {@code festival-realiste.yaml} (153 animateurs, 65 stands, 23 emplacements,
- * 20 daily amplitudes) and its {@code -canicule} variant, whose extra evening
- * windows make the same event a materially harder problem.
+ * Full-scale regression test on the <b>anonymised real-world</b> fixture
+ * {@code festival-realiste-canicule.yaml} (153 animateurs, 65 stands, 23
+ * emplacements, 20 daily amplitudes sliced by the découpage, with the evening
+ * windows of a heatwave). Its base variant, sliced without those windows, left
+ * with the relay families (ADR 0029): without staggered relays every stand
+ * changed crew at the same minute and the event was no longer feasible at 153
+ * animateurs — the same event on the organiser's own grid is
+ * {@code festival-hivernal.yaml}, played by its own test.
  *
  * <h2>What these add over the other scenario-lent tests</h2>
  * <p>{@code scenario-complet} and {@code scenario-continu} are hand-built
@@ -82,11 +86,6 @@ class PlanningServiceScenarioFestivalRealisteTest {
      * alarm, and the two runs above already differ by 10 %.</p>
      */
     private static final long SECONDS_LIMITE_SECURITE = 900L;
-
-    @Test
-    void festivalRealisteNeViolateAucuneContrainteHard() throws IOException {
-        assertSlicedAndSolvedWithoutHard("festival-realiste.yaml");
-    }
 
     @Test
     void festivalRealisteEnCaniculeNeViolateAucuneContrainteHard() throws IOException {

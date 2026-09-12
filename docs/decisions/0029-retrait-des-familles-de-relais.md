@@ -49,8 +49,13 @@ La notion disparaît entièrement :
   animateurs au lieu de 175 grâce à quatre familles décalées) n'est plus
   constructible. Si le besoin revient, il se repensera comme des créneaux
   ordinaires aux heures décalées, pas comme des variantes.
-- Les scénarios `festival-realiste` et `festival-realiste-canicule` (découpage
-  automatique à cinq familles) changent de grille : leurs empreintes de test
-  sont régénérées.
+- Le scénario `festival-realiste` (vingt amplitudes découpées automatiquement
+  en cinq familles) n'est plus faisable sans relèves décalées : −327 hard après
+  900 s, contre 0 en une centaine de secondes avec les familles. Il est
+  retiré ; le même événement reste versionné deux fois, découpé avec les
+  fenêtres de canicule (`festival-realiste-canicule`, 0 hard dès la
+  construction) et sur la grille de l'organisateur (`festival-hivernal`, 0 hard
+  en 80 s), désormais joué par le workflow des scénarios. L'exemple de CSV des
+  animateurs se réfère au premier.
 - L'ADR 0026 est remplacé ; la stabilité d'un stand ajouté est acquise sans
   attribut, puisqu'il n'y a plus de répartition à stabiliser.

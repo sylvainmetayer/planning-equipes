@@ -105,17 +105,17 @@ jobs:
       # base de données, donc rien à packager — et donc pas de Quinoa à
       # réveiller, contrairement au workflow Tests.
       # Le profil `scenario-tests` lève l'exclusion du tag ; `-Dtest` limite le
-      # run aux trois classes concernées, le reste de la suite étant déjà
+      # run aux quatre classes concernées, le reste de la suite étant déjà
       # couvert par le workflow Tests.
       #
-      # PlanningServiceScenarioFestivalRealisteTest est le seul des trois à
-      # porter sur des données réelles, et donc sur des stands à horaires
-      # récurrents. Il converge en ~150 s et ~10 s ; son plafond de sécurité de
-      # 900 s ne borne qu'un run qui ne converge pas.
+      # Les deux Festival* portent sur des données réelles anonymisées, donc
+      # sur des stands à horaires récurrents : la canicule découpée converge
+      # en ~10 s, l'hivernal sur la grille de l'organisateur en ~80 s. Leur
+      # plafond de sécurité de 900 s ne borne qu'un run qui ne converge pas.
       - name: Run the large-scenario tests
         run: >-
           ./mvnw -B --no-transfer-progress test -Pscenario-tests
-          -Dtest='PlanningServiceScenarioCompletTest,PlanningServiceScenarioContinuTest,PlanningServiceScenarioFestivalRealisteTest'
+          -Dtest='PlanningServiceScenarioCompletTest,PlanningServiceScenarioContinuTest,PlanningServiceScenarioFestivalRealisteTest,PlanningServiceScenarioFestivalHivernalTest'
 
       - name: Upload test reports
         if: always()

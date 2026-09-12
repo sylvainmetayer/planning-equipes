@@ -20,6 +20,10 @@ sur une fixture versionnée**. Les mesures citées portent sur les scénarios de
 `src/main/resources/scenarios/`, `festival-realiste.yaml` en tête (153
 animateurs, 65 stands dont 45 premium, ≈3 500 sièges après découpage) — la
 copie anonymisée du jeu qui a servi de banc pendant tout le développement.
+Cette fixture a été retirée avec les familles de relais (ADR 0029) : découpée
+sans relèves décalées, elle n'était plus faisable. Ses mesures restent
+valables comme histoire ; `festival-hivernal.yaml` et
+`festival-realiste-canicule.yaml` portent le même événement aujourd'hui.
 
 ---
 
