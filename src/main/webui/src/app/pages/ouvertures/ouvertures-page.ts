@@ -15,14 +15,17 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StandsApi } from '../../core/api/stands-api';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
+import { dayNavigation } from '../../core/day-navigation';
+import { keepViewInQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { JourneeStandsVue, buildJourneeStands, pasHoraire } from './journee-stands';
 import {
   AnomalieOuverture,
   CelluleJourOuverture,
@@ -68,7 +71,19 @@ import {
 } from './grille-horaires';
 
 /** The two faces of the screen: reading what a solve would get, or typing it. */
-export type VueOuvertures = 'CONSULTER' | 'SAISIR';
+/** Reading grid, entry grid, or one day laid on time (ADR 0032). */
+export type VueOuvertures = 'CONSULTER' | 'SAISIR' | 'JOURNEE';
+
+/** The `vue` query param of each view; the reading grid, the default, writes none. */
+const PARAM_VUE: Record<VueOuvertures, string | null> = {
+  CONSULTER: null,
+  SAISIR: 'saisie',
+  JOURNEE: 'journee',
+};
+
+function lireVue(param: string | null): VueOuvertures {
+  return param === 'saisie' ? 'SAISIR' : param === 'journee' ? 'JOURNEE' : 'CONSULTER';
+}
 
 /** What a closed cell shows, and one of the things typed to close one (`readCell`). */
 const FERME = '-';
@@ -123,6 +138,7 @@ interface LigneView {
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
+    MatSelectModule,
     MatTooltipModule,
     RouterLink,
   ],
@@ -155,8 +171,37 @@ export class OuverturesPage {
   protected readonly rechercheSaisie = signal('');
   private filtrePending: ReturnType<typeof setTimeout> | null = null;
   protected readonly view = signal<VueOuvertures>(
-    this.route.snapshot.queryParamMap.get('vue') === 'saisie' ? 'SAISIR' : 'CONSULTER',
+    lireVue(this.route.snapshot.queryParamMap.get('vue')),
   );
+
+  /* ------------------------------- day view ------------------------------- */
+
+  /** The day on screen in « Journée », keyed by its date; the URL's `date` names it. */
+  private readonly navigationJour = dayNavigation(
+    computed(() => this.rapport()?.jours ?? []),
+    (jour) => jour.date,
+    { initial: this.route.snapshot.queryParamMap.get('date') },
+  );
+  protected readonly jourCourant = computed(() => this.navigationJour.current());
+  protected readonly isPremierJour = this.navigationJour.isFirst;
+  protected readonly isDernierJour = this.navigationJour.isLast;
+  /** The day laid on time, narrowed by the same filter and search as the grid. */
+  protected readonly journee = computed<JourneeStandsVue | null>(() => {
+    const rapport = this.rapport();
+    const jour = this.jourCourant();
+    if (!rapport || !jour) {
+      return null;
+    }
+    return buildJourneeStands(
+      rapport,
+      jour.date,
+      new Set(this.lignes().map((ligne) => ligne.standId)),
+    );
+  });
+  protected readonly pasHoraire = computed(() => {
+    const vue = this.journee();
+    return vue ? pasHoraire(vue) : null;
+  });
 
   /* ------------------------------- entry grid ------------------------------ */
 
@@ -250,7 +295,10 @@ export class OuverturesPage {
   );
 
   constructor() {
-    keepViewInQueryParams(() => ({ vue: optionalParam(this.view() === 'SAISIR' ? 'saisie' : '') }));
+    keepViewInQueryParams(() => ({
+      vue: PARAM_VUE[this.view()],
+      date: this.view() === 'JOURNEE' ? this.navigationJour.queryParam() : null,
+    }));
     inject(DestroyRef).onDestroy(() => {
       if (this.filtrePending !== null) {
         clearTimeout(this.filtrePending);
@@ -292,8 +340,22 @@ export class OuverturesPage {
   }
 
   /** Leaving the entry view with unsaved cells asks first: they would silently survive, invisible, until the next reload. */
+  /** « Voir la journée » from a day header of the grid: the same day, laid on time. */
+  protected voirJournee(date: string): void {
+    this.navigationJour.select(date);
+    this.view.set('JOURNEE');
+  }
+
+  protected selectJour(date: string): void {
+    this.navigationJour.select(date);
+  }
+
+  protected decalerJour(delta: number): void {
+    this.navigationJour.step(delta);
+  }
+
   protected async changeView(view: VueOuvertures): Promise<void> {
-    if (view === 'CONSULTER' && this.standsModifies().length > 0) {
+    if (view !== 'SAISIR' && this.standsModifies().length > 0) {
       const abandon = await this.confirm.ask({
         title: $localize`:@@ouvertures.saisie.quitterTitle:Abandonner les modifications ?`,
         message: $localize`:@@ouvertures.saisie.quitterMessage:${this.standsModifies().length}:stands: stand(s) ont des cases modifiées non enregistrées.`,

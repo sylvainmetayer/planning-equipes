@@ -167,7 +167,24 @@ public final class OuvertureStandsAnalyzer {
             int postes,
             Instant modifieLe) {}
 
-    public record Anomaly(AnomalyType type, String standId, String standNom, LocalDate date, String message) {}
+    /**
+     * @param heureDebut with {@code heureFin}, the window a {@link AnomalyType#FENETRE_SANS_EFFET} names —
+     *                   so the day timeline can draw it where it falls; {@code null} on the other types
+     * @param heureFin   {@code null} on an open-ended window (« jusqu'à la fermeture »)
+     */
+    public record Anomaly(
+            AnomalyType type,
+            String standId,
+            String standNom,
+            LocalDate date,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            String message) {
+
+        public Anomaly(AnomalyType type, String standId, String standNom, LocalDate date, String message) {
+            this(type, standId, standNom, date, null, null, message);
+        }
+    }
 
     @Schema(requiredProperties = {"postesTotal", "standsJamaisOuverts"})
     public record RapportOuvertures(
@@ -519,6 +536,8 @@ public final class OuvertureStandsAnalyzer {
                 stand.getId(),
                 stand.getNom(),
                 date,
+                heureDebut,
+                heureFin,
                 libelle + " de " + heureDebut + " à "
                         + (heureFin != null ? heureFin.toString() : "la fermeture")
                         + " ne recoupe aucun créneau de ce jour : elle ne change rien."));

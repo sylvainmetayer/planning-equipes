@@ -204,6 +204,31 @@ describe('OuverturesPage — saisie', () => {
     expect(root(saisie.fixture).querySelector('.grille-saisie')).not.toBeNull();
   });
 
+  // The third view (ADR 0032): the same report, laid on time for one day.
+  it('lays one day on the time axis from ?vue=journee, and jumps there from a day header', async () => {
+    const journee = mount({ vue: 'journee' });
+    await journee.fixture.whenStable();
+    const racine = root(journee.fixture);
+    expect(racine.querySelector('.axe-table')).not.toBeNull();
+    expect(racine.querySelectorAll('.axe-ligne')).toHaveLength(2);
+    // Stand A: two blocks on the first day, headcounts 2 and 4; stand B one partial hour.
+    const blocs = [...racine.querySelectorAll('.axe-ligne')].map((ligne) =>
+      [...ligne.querySelectorAll('.axe-bloc-label')].map((bloc) => bloc.textContent!.trim()),
+    );
+    expect(blocs).toEqual([['2', '4'], ['1']]);
+    expect(racine.querySelectorAll('.axe-bande')).toHaveLength(2);
+
+    const lecture = mount();
+    await lecture.fixture.whenStable();
+    (root(lecture.fixture).querySelectorAll('.voir-journee')[1] as HTMLButtonElement).click();
+    await lecture.fixture.whenStable();
+    expect(root(lecture.fixture).querySelector('.axe-table')).not.toBeNull();
+    expect(
+      (root(lecture.fixture).querySelector('.axe-jour-select mat-select') as HTMLElement)
+        .textContent,
+    ).toContain('09/07');
+  });
+
   it('renders one field per stand and créneau, filled from the report, partial cells marked', async () => {
     const { fixture } = mount({ vue: 'saisie' });
     await fixture.whenStable();

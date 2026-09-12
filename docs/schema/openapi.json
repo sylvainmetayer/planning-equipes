@@ -441,6 +441,12 @@
           "date" : {
             "$ref" : "#/components/schemas/LocalDate"
           },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
           "message" : {
             "type" : "string"
           }

@@ -409,3 +409,247 @@
   margin-left: 0.25rem;
   opacity: 0.8;
 }
+
+/* ------------------------- « Journée » : l'axe du temps ------------------------- */
+/* Même dessin que le rail d'une journée (rail-jour-vue.css) : une ligne par
+   stand, une piste dont les heures sont un fond répété, des blocs positionnés
+   en pourcentage. Les créneaux sont des bandes derrière chaque ligne, et une
+   fenêtre hors de toute vacation est hachurée là où elle tombe. */
+.axe-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.axe-jour-select {
+  width: 20rem;
+  max-width: 100%;
+}
+
+.axe-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1.25rem;
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.axe-legende li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.axe-swatch {
+  display: inline-block;
+  width: 1.5rem;
+  height: 0.75rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.axe-swatch-bloc,
+.axe-bloc {
+  background-color: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.axe-swatch-relais,
+.axe-bloc-relais {
+  background-color: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  border-style: dashed;
+}
+
+.axe-swatch-bande,
+.axe-bande-fond {
+  background-color: var(--mat-sys-surface-container-high);
+}
+
+.axe-swatch-hors,
+.axe-hors {
+  background-color: color-mix(in srgb, var(--mat-sys-error-container) 70%, transparent);
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--mat-sys-error),
+    var(--mat-sys-error) 3px,
+    transparent 3px,
+    transparent 8px
+  );
+  background-size: auto;
+}
+
+.axe-scroll {
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.axe-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.axe-table th,
+.axe-table td {
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.axe-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+  font: var(--mat-sys-label-medium);
+  text-align: left;
+  padding: 0.25rem 0.5rem 0.25rem;
+  box-shadow: inset 0 -1px 0 var(--mat-sys-outline-variant);
+}
+
+.axe-nom-header {
+  width: 14rem;
+}
+
+.axe-table thead th.axe-scale-header {
+  padding-left: 0;
+  padding-right: 0.5rem;
+}
+
+.axe-scale {
+  position: relative;
+  display: block;
+  height: 1rem;
+}
+
+.axe-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+.axe-tick:first-child {
+  transform: none;
+}
+
+.axe-tick:last-child {
+  transform: translateX(-100%);
+}
+
+/* The créneaux of the day, named once in the header; their bands repeat greyed behind every line. */
+.axe-bandes {
+  position: relative;
+  display: block;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+}
+
+.axe-bande {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  padding: 0 0.25rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-surface-container-high);
+  border: 1px solid var(--mat-sys-outline-variant);
+  font: var(--mat-sys-label-small);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.axe-bande-relais {
+  border-style: dashed;
+}
+
+.axe-nom {
+  padding: 0.125rem 0.5rem;
+  font: var(--mat-sys-body-small);
+  font-weight: 500;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.axe-nom-meta::before {
+  content: '\00a0\00b7\00a0';
+}
+
+.axe-nom-meta {
+  font-weight: 400;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.axe-ligne-fermee .axe-nom {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
+
+.axe-ligne-hors .axe-nom {
+  color: var(--mat-sys-error);
+}
+
+.axe-cell {
+  padding: 0.125rem 0.5rem 0.125rem 0;
+}
+
+.axe-track {
+  position: relative;
+  display: block;
+  height: 1.375rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background-color: var(--mat-sys-surface-container-low);
+  background-image: linear-gradient(
+    to right,
+    var(--mat-sys-outline-variant) 0 1px,
+    transparent 1px
+  );
+  background-repeat: repeat;
+}
+
+.axe-bande-fond,
+.axe-hors,
+.axe-bloc {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  min-width: 2px;
+  border-radius: var(--mat-sys-corner-extra-small);
+}
+
+.axe-bloc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-surface);
+  z-index: 1;
+}
+
+.axe-bloc-label {
+  font: var(--mat-sys-label-small);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* The « voir la journée » button on a day header of the reading grid: shown on hover, always reachable. */
+.ouvertures-grille .voir-journee {
+  --mdc-icon-button-state-layer-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  opacity: 0.45;
+}
+
+.ouvertures-grille th:hover .voir-journee,
+.ouvertures-grille .voir-journee:focus-visible {
+  opacity: 1;
+}

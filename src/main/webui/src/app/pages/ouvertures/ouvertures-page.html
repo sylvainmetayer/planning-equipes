@@ -16,6 +16,10 @@
         <mat-icon>grid_on</mat-icon>
         <ng-container i18n="@@ouvertures.vue.saisir">Saisir</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="JOURNEE">
+        <mat-icon>view_timeline</mat-icon>
+        <ng-container i18n="@@ouvertures.vue.journee">Journée</ng-container>
+      </mat-button-toggle>
     </mat-button-toggle-group>
     @if (view() === 'SAISIR') {
       <button matButton="filled" type="button" class="saisie-enregistrer"
@@ -182,6 +186,93 @@
             </tbody>
           </table>
         </div>
+      } @else if (view() === 'JOURNEE') {
+        <!-- One day laid on time: a line per stand, the créneaux as bands, each
+             open stretch a block carrying its headcount, and a window declared
+             outside the grid hatched where it falls — the one thing the two
+             grids cannot show. -->
+        @if (journee(); as vue) {
+          <div class="axe-toolbar">
+            <button matIconButton type="button" [disabled]="isPremierJour()" (click)="decalerJour(-1)"
+                    i18n-aria-label="@@journee.previousDay" aria-label="Jour précédent">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <mat-form-field appearance="outline" class="axe-jour-select" subscriptSizing="dynamic">
+              <mat-label i18n="@@ouvertures.journee.jour">Journée</mat-label>
+              <mat-select [value]="vue.date" (valueChange)="selectJour($event)">
+                @for (jour of rapport()!.jours; track jour.date) {
+                  <mat-option [value]="jour.date">J{{ jour.jour }} · {{ libelleJour(jour.date) }} · {{ heure(jour.heureDebut) }}→{{ heure(jour.heureFin) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <button matIconButton type="button" [disabled]="isDernierJour()" (click)="decalerJour(1)"
+                    i18n-aria-label="@@journee.nextDay" aria-label="Jour suivant">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+          <ul class="axe-legende">
+            <li><i class="axe-swatch axe-swatch-bloc"></i><ng-container i18n="@@ouvertures.journee.legende.bloc">Ouvert, avec l'effectif demandé</ng-container></li>
+            <li><i class="axe-swatch axe-swatch-relais"></i><ng-container i18n="@@ouvertures.journee.legende.relais">Relais repas : sièges divisés par deux</ng-container></li>
+            <li><i class="axe-swatch axe-swatch-bande"></i><ng-container i18n="@@ouvertures.journee.legende.bande">Créneau de la grille</ng-container></li>
+            <li><i class="axe-swatch axe-swatch-hors"></i><ng-container i18n="@@ouvertures.journee.legende.hors">Ouverture hors de toute vacation : sans effet</ng-container></li>
+          </ul>
+          @if (vue.lignes.length === 0) {
+            <p class="empty-hint" i18n="@@ouvertures.journee.aucunStand">Aucun stand ne correspond au filtre pour cette journée.</p>
+          } @else {
+            <div class="axe-scroll">
+              <table class="axe-table" role="grid">
+                <caption class="visually-hidden" i18n="@@ouvertures.journee.caption">Une journée sur l'axe du temps : une ligne par stand, les créneaux en bandes, chaque ouverture en bloc avec son effectif</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" class="axe-nom-header" i18n="@@ouvertures.colonne.stand">Stand</th>
+                    <th scope="col" class="axe-scale-header">
+                      <span class="visually-hidden" i18n="@@ouvertures.journee.colonneHeures">Journée, heure par heure</span>
+                      <span class="axe-scale" aria-hidden="true">
+                        @for (heure of vue.heures; track heure.minutes) {
+                          <span class="axe-tick" [style.left.%]="heure.offsetPercent">{{ heure.label }}</span>
+                        }
+                      </span>
+                      <span class="axe-bandes" aria-hidden="true">
+                        @for (bande of vue.bandes; track bande.id + '@' + bande.heureDebut) {
+                          <span class="axe-bande" [class.axe-bande-relais]="bande.couverturePause"
+                                [style.left.%]="bande.offsetPercent" [style.width.%]="bande.widthPercent" [title]="bande.label">
+                            <span class="axe-bande-label">{{ bande.label }}</span>
+                          </span>
+                        }
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (ligne of vue.lignes; track ligne.standId) {
+                    <tr class="axe-ligne" [class.axe-ligne-fermee]="ligne.etat === 'FERME'" [class.axe-ligne-hors]="ligne.horsGrille.length > 0">
+                      <th scope="row" class="axe-nom">
+                        <span class="axe-nom-label">{{ ligne.nom }}</span>
+                        <span class="axe-nom-meta">{{ ligne.postes }}</span>
+                      </th>
+                      <td class="axe-cell" [attr.aria-label]="ligne.resume">
+                        <span class="axe-track" aria-hidden="true" [style.background-size]="pasHoraire()">
+                          @for (bande of vue.bandes; track bande.id + '@' + bande.heureDebut) {
+                            <span class="axe-bande-fond" [style.left.%]="bande.offsetPercent" [style.width.%]="bande.widthPercent"></span>
+                          }
+                          @for (fenetre of ligne.horsGrille; track fenetre.heureDebut) {
+                            <span class="axe-hors" [style.left.%]="fenetre.offsetPercent" [style.width.%]="fenetre.widthPercent" [title]="fenetre.label"></span>
+                          }
+                          @for (bloc of ligne.blocs; track bloc.heureDebut + bloc.heureFin) {
+                            <span class="axe-bloc" [class.axe-bloc-relais]="bloc.couverturePause"
+                                  [style.left.%]="bloc.offsetPercent" [style.width.%]="bloc.widthPercent" [title]="bloc.label">
+                              <span class="axe-bloc-label">{{ bloc.effectif }}</span>
+                            </span>
+                          }
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
       } @else {
       <div class="table-wrapper">
           <table class="ouvertures-grille">
@@ -194,6 +285,11 @@
                       [matTooltip]="libelleJour(jour.date) + ' · ' + heure(jour.heureDebut) + '→' + heure(jour.heureFin) + ' · ' + duree(jour.minutes)">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
+                    <button matIconButton type="button" class="voir-journee" (click)="voirJournee(jour.date)"
+                            i18n-matTooltip="@@ouvertures.journee.voir" matTooltip="Voir cette journée sur l'axe du temps"
+                            i18n-aria-label="@@ouvertures.journee.voir" aria-label="Voir cette journée sur l'axe du temps">
+                      <mat-icon>view_timeline</mat-icon>
+                    </button>
                   </th>
                 }
                 <th scope="col" class="colonne-total" i18n="@@ouvertures.colonne.total">Total</th>

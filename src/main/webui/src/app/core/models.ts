@@ -290,6 +290,10 @@ export interface AnomalieOuverture {
   standId: string;
   standNom: string;
   date: string | null;
+  /** The window a `FENETRE_SANS_EFFET` names, so the day timeline draws it where it falls; absent on the other types. */
+  heureDebut?: string | null;
+  /** `null` on an open-ended window (« jusqu'à la fermeture »). */
+  heureFin?: string | null;
   message: string;
 }
 
