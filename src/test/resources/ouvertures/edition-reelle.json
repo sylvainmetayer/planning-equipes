@@ -1,0 +1,3846 @@
+{
+ "creneaux": [
+  {
+   "date": "2026-07-06",
+   "heureDebut": "09:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-06",
+   "heureDebut": "13:00:00",
+   "heureFin": "16:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-07",
+   "heureDebut": "09:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-07",
+   "heureDebut": "13:00:00",
+   "heureFin": "16:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-08",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-08",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-08",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-08",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-09",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-09",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-09",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-09",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-09",
+   "heureDebut": "20:00:00",
+   "heureFin": "21:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-10",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-10",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-10",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-10",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-10",
+   "heureDebut": "21:00:00",
+   "heureFin": "00:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-11",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-11",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-11",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-11",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-11",
+   "heureDebut": "21:00:00",
+   "heureFin": "00:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-12",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-12",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-12",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-12",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-12",
+   "heureDebut": "21:00:00",
+   "heureFin": "00:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-13",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-13",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-13",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-13",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-14",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-14",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-14",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-14",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-15",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-15",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-15",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-15",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-16",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-16",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-16",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-16",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-17",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-17",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-17",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-17",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-17",
+   "heureDebut": "21:00:00",
+   "heureFin": "00:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-18",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-18",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-18",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-18",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-18",
+   "heureDebut": "21:00:00",
+   "heureFin": "00:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-19",
+   "heureDebut": "10:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-19",
+   "heureDebut": "12:00:00",
+   "heureFin": "13:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-19",
+   "heureDebut": "13:00:00",
+   "heureFin": "14:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-19",
+   "heureDebut": "14:00:00",
+   "heureFin": "20:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-20",
+   "heureDebut": "09:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-20",
+   "heureDebut": "13:00:00",
+   "heureFin": "16:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-21",
+   "heureDebut": "09:00:00",
+   "heureFin": "12:00:00",
+   "couverturePause": false
+  },
+  {
+   "date": "2026-07-21",
+   "heureDebut": "13:00:00",
+   "heureFin": "16:00:00",
+   "couverturePause": false
+  }
+ ],
+ "stands": [
+  {
+   "id": "S01",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S02",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 1
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-15",
+     "heureDebut": "07:00:00"
+    }
+   ],
+   "indisponibilites": []
+  },
+  {
+   "id": "S03",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-17"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S04",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 1
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S05",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 1
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S06",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S07",
+   "effectifMin": 1,
+   "effectifMax": 3,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S08",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S09",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 1
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S10",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-09",
+     "heureDebut": "14:00:00",
+     "heureFin": "20:00:00",
+     "effectif": 2
+    },
+    {
+     "date": "2026-07-09",
+     "heureDebut": "20:00:00"
+    }
+   ],
+   "indisponibilites": []
+  },
+  {
+   "id": "S11",
+   "effectifMin": 95,
+   "effectifMax": 109,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00",
+       "heureFin": "12:00:00"
+      },
+      {
+       "heureDebut": "13:00:00",
+       "heureFin": "16:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S12",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-11"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 1
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S13",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-10",
+     "heureDebut": "10:00:00",
+     "heureFin": "12:00:00"
+    },
+    {
+     "date": "2026-07-10",
+     "heureDebut": "14:00:00"
+    }
+   ],
+   "indisponibilites": []
+  },
+  {
+   "id": "S14",
+   "effectifMin": 105,
+   "effectifMax": 111,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00",
+       "heureFin": "12:00:00"
+      },
+      {
+       "heureDebut": "13:00:00",
+       "heureFin": "16:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S15",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S16",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S17",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S18",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S19",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S20",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S21",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S22",
+   "effectifMin": 3,
+   "effectifMax": 3,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S23",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S24",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S25",
+   "effectifMin": 3,
+   "effectifMax": 3,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S26",
+   "effectifMin": 2,
+   "effectifMax": 10,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-15"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 10
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "13:00:00",
+       "effectif": 5
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S27",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-17"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S28",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-16",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-17",
+     "heureDebut": "14:00:00",
+     "heureFin": "20:00:00"
+    }
+   ],
+   "indisponibilites": []
+  },
+  {
+   "id": "S29",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-11",
+      "2026-07-13",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-12",
+      "2026-07-14",
+      "2026-07-17"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S30",
+   "effectifMin": 1,
+   "effectifMax": 3,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 3
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "13:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "13:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S31",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-11",
+      "2026-07-14",
+      "2026-07-17"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S32",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-14",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-13",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S33",
+   "effectifMin": 1,
+   "effectifMax": 4,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-11",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 4
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-12",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 4
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S34",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S35",
+   "effectifMin": 1,
+   "effectifMax": 3,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 3
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "13:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "13:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S36",
+   "effectifMin": 3,
+   "effectifMax": 3,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S37",
+   "effectifMin": 1,
+   "effectifMax": 3,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 3
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "13:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "13:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S38",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S39",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-12"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "13:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "JOURS_SEMAINE",
+     "joursSemaine": [
+      "FRIDAY",
+      "SATURDAY"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "13:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "20:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "13:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 2
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S40",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S41",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "13:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S42",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S43",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S44",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "PLAGE",
+     "dateDebut": "2026-07-14",
+     "dateFin": "2026-07-16",
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 2
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-09",
+     "heureDebut": "10:00:00",
+     "heureFin": "12:00:00",
+     "effectif": 2
+    },
+    {
+     "date": "2026-07-09",
+     "heureDebut": "12:00:00",
+     "heureFin": "14:00:00"
+    },
+    {
+     "date": "2026-07-09",
+     "heureDebut": "14:00:00",
+     "heureFin": "20:00:00",
+     "effectif": 2
+    },
+    {
+     "date": "2026-07-12",
+     "heureDebut": "14:00:00",
+     "heureFin": "20:00:00",
+     "effectif": 2
+    }
+   ],
+   "indisponibilites": []
+  },
+  {
+   "id": "S45",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S46",
+   "effectifMin": 1,
+   "effectifMax": 4,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-11",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 4
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-16"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 4
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S47",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 1
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S48",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-12",
+      "2026-07-14",
+      "2026-07-16",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-13",
+      "2026-07-15",
+      "2026-07-17",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S49",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "PLAGE",
+     "dateDebut": "2026-07-14",
+     "dateFin": "2026-07-16",
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "13:00:00"
+      },
+      {
+       "heureDebut": "14:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-09",
+     "heureDebut": "10:00:00",
+     "heureFin": "13:00:00"
+    },
+    {
+     "date": "2026-07-09",
+     "heureDebut": "14:00:00",
+     "heureFin": "20:00:00"
+    },
+    {
+     "date": "2026-07-12",
+     "heureDebut": "14:00:00",
+     "heureFin": "20:00:00"
+    }
+   ],
+   "indisponibilites": []
+  },
+  {
+   "id": "S50",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-14",
+      "2026-07-17",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S51",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 1
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S52",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-12"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S53",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S54",
+   "effectifMin": 1,
+   "effectifMax": 1,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 1
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S55",
+   "effectifMin": 1,
+   "effectifMax": 6,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-14",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 6
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-13",
+      "2026-07-15",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 3
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "13:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "13:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 6
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S56",
+   "effectifMin": 1,
+   "effectifMax": 4,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-14",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 4
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-13",
+      "2026-07-15",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 4
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S57",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-13",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00",
+       "effectif": 1
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S58",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "09:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S59",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-12",
+      "2026-07-17"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-13",
+      "2026-07-15",
+      "2026-07-16"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-14",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S60",
+   "effectifMin": 1,
+   "effectifMax": 3,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-13",
+      "2026-07-15"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-14",
+      "2026-07-16",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 3
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-08",
+     "heureDebut": "10:00:00",
+     "heureFin": "12:00:00",
+     "effectif": 2
+    },
+    {
+     "date": "2026-07-08",
+     "heureDebut": "12:00:00",
+     "heureFin": "14:00:00"
+    },
+    {
+     "date": "2026-07-12",
+     "heureDebut": "10:00:00",
+     "heureFin": "12:00:00",
+     "effectif": 2
+    },
+    {
+     "date": "2026-07-12",
+     "heureDebut": "12:00:00",
+     "heureFin": "14:00:00"
+    },
+    {
+     "date": "2026-07-12",
+     "heureDebut": "14:00:00",
+     "heureFin": "20:00:00",
+     "effectif": 3
+    }
+   ],
+   "indisponibilites": []
+  },
+  {
+   "id": "S61",
+   "effectifMin": 2,
+   "effectifMax": 5,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-17",
+      "2026-07-18"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 4
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 4
+      },
+      {
+       "heureDebut": "20:00:00",
+       "effectif": 5
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-16",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 4
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 4
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-08",
+     "heureDebut": "10:00:00",
+     "heureFin": "12:00:00",
+     "effectif": 4
+    },
+    {
+     "date": "2026-07-08",
+     "heureDebut": "12:00:00",
+     "heureFin": "14:00:00"
+    },
+    {
+     "date": "2026-07-09",
+     "heureDebut": "10:00:00",
+     "heureFin": "12:00:00",
+     "effectif": 4
+    },
+    {
+     "date": "2026-07-09",
+     "heureDebut": "12:00:00",
+     "heureFin": "14:00:00"
+    },
+    {
+     "date": "2026-07-09",
+     "heureDebut": "14:00:00",
+     "heureFin": "20:00:00",
+     "effectif": 4
+    }
+   ],
+   "indisponibilites": []
+  },
+  {
+   "id": "S62",
+   "effectifMin": 2,
+   "effectifMax": 4,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-16",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 4
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 3
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-15",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 4
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 3
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-08",
+     "heureDebut": "10:00:00",
+     "heureFin": "12:00:00",
+     "effectif": 4
+    },
+    {
+     "date": "2026-07-08",
+     "heureDebut": "12:00:00",
+     "heureFin": "14:00:00"
+    }
+   ],
+   "indisponibilites": []
+  },
+  {
+   "id": "S63",
+   "effectifMin": 4,
+   "effectifMax": 5,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-12"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-16",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "JOURS_SEMAINE",
+     "joursSemaine": [
+      "FRIDAY",
+      "SATURDAY"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00"
+      },
+      {
+       "heureDebut": "20:00:00",
+       "effectif": 5
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S64",
+   "effectifMin": 2,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-09",
+      "2026-07-12"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-15",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "14:00:00"
+      }
+     ]
+    }
+   ],
+   "ouvertures": [],
+   "indisponibilites": []
+  },
+  {
+   "id": "S65",
+   "effectifMin": 1,
+   "effectifMax": 2,
+   "horaires": [
+    {
+     "mode": "OUVERTURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-08",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-16",
+      "2026-07-19"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "effectif": 2
+      }
+     ]
+    },
+    {
+     "mode": "FERMETURE",
+     "jours": "DATES",
+     "dates": [
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-20",
+      "2026-07-21"
+     ],
+     "fenetres": [
+      {
+       "heureDebut": "00:00:00"
+      }
+     ]
+    },
+    {
+     "mode": "OUVERTURE",
+     "jours": "TOUS",
+     "fenetres": [
+      {
+       "heureDebut": "10:00:00",
+       "heureFin": "12:00:00",
+       "effectif": 2
+      },
+      {
+       "heureDebut": "12:00:00",
+       "heureFin": "14:00:00"
+      },
+      {
+       "heureDebut": "14:00:00",
+       "heureFin": "20:00:00",
+       "effectif": 2
+      }
+     ]
+    }
+   ],
+   "ouvertures": [
+    {
+     "date": "2026-07-15",
+     "heureDebut": "10:00:00",
+     "heureFin": "12:00:00",
+     "effectif": 2
+    },
+    {
+     "date": "2026-07-15",
+     "heureDebut": "12:00:00",
+     "heureFin": "14:00:00"
+    }
+   ],
+   "indisponibilites": []
+  }
+ ]
+}
