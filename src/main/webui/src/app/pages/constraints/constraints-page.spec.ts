@@ -348,12 +348,27 @@ describe('ConstraintsPage', () => {
       ]);
     });
 
-    it('leaves the rule active: a floor is reported, never decided', async () => {
+    // Reported, never decided: loading a floored rule changes nothing about it,
+    // and the controls stay the ordinary ones — a badge is not a lock. The
+    // « nothing was called » half alone would pass on a page that renders no
+    // control at all, so the toggle is exercised too.
+    it('leaves the rule active and still operable: a floor is reported, never decided', async () => {
       const page = await createPage([AT_FLOOR]);
 
+      expect(page.view()?.contraintes[0].plancher).not.toBeNull();
       expect(page.view()?.contraintes[0].actif).toBe(true);
       expect(constraintsApi.setActive).not.toHaveBeenCalled();
       expect(constraintsApi.setWeight).not.toHaveBeenCalled();
+
+      await page.toggleConstraint(AT_FLOOR, bascule(false));
+      expect(constraintsApi.setActive).toHaveBeenCalledWith(AT_FLOOR.name, false);
+      expect(page.view()?.contraintes[0].actif).toBe(false);
+
+      const poids = document.createElement('input');
+      poids.type = 'number';
+      poids.value = '3';
+      await page.onPoidsChange(AT_FLOOR, poids);
+      expect(constraintsApi.setWeight).toHaveBeenCalledWith(AT_FLOOR.name, 3);
     });
   });
 

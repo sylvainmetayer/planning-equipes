@@ -63,6 +63,9 @@ class ContrainteMcpToolsTest {
 
         assertThat(view.ratioPlancher()).isEqualTo(1.0);
         assertThat(view.motifPlancher()).isEqualTo("Aucun souhait déclaré.");
+        // And the route stays behind: an assistant has no screen to send anyone
+        // to, so the link of the floor must not travel with the rest.
+        assertThat(view.toString()).doesNotContain("/animateurs");
     }
 
     @Test

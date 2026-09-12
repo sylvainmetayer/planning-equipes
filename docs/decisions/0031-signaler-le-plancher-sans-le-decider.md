@@ -6,10 +6,14 @@
 
 ## Contexte
 
-Sur la fixture anonymisée `festival-realiste`, 68 % du score medium était
-une constante : deux règles de qualité matchaient l'intégralité de ce
-qu'elles évaluent parce que la donnée qu'elles mesurent n'existait pas au
-référentiel — aucun souhait déclaré, aucun animateur au niveau référent.
+Sur l'édition 2026 réelle, avant que la grille d'appréciations existe, 68 %
+du score medium était une constante : deux règles de qualité matchaient
+l'intégralité de ce qu'elles évaluent parce que la donnée qu'elles mesurent
+n'existait pas au référentiel — aucun souhait déclaré, aucun animateur au
+niveau référent. Sur la fixture anonymisée `festival-realiste`, qui portait
+des référents et des appréciations avant d'être retirée avec les familles de
+relais ([0029](0029-retrait-des-familles-de-relais.md)), il restait une règle
+signalée, `souhaitsIncompatibles`, pour 39 % du medium.
 Les règles étaient correctes. Mais un organisateur qui lit
 `0hard/-6675medium` ne peut pas savoir que `-5000` de ces points ne
 bougeront jamais, quelle que soit la durée de calcul : il conclut à un
@@ -43,12 +47,20 @@ nommant la donnée absente — sans rien changer à l'état de la règle.
    créneau pour une règle par groupe, paires consécutives, animateur × jour,
    pauses dues… La table (`ConstraintFloorRules`) vit à côté du catalogue et
    un test structurel la rend exhaustive : une règle medium ou soft sans
-   ligne ne compile pas le sens, elle fait échouer la suite. Une règle dont
-   la correspondance est agrégée (équité) ou une récompense n'a pas de
-   lecture par élément, et n'est jamais un plancher.
+   ligne ne compile pas le sens, elle fait échouer la suite. Trois familles de
+   règles n'ont pas de lecture par élément et ne sont jamais un plancher :
+   correspondance agrégée (équité), récompense, et **pénalité portant une
+   fonction de poids** — là, le nombre de correspondances est une quantité
+   d'écart et non un booléen par élément, si bien qu'un ratio de 1,0 désigne
+   exactement ce que le solveur sait réduire.
 2. **Le seuil est 95 %**, pas 100 % : une poignée de sièges échappe toujours
    — un stand sans typologie, un siège vide — et une règle qui en pénalise
-   98 % est tout aussi constante. Constante nommée, une seule.
+   98 % est tout aussi constante. Constante nommée, une seule. Avec un
+   plancher d'échantillon pour le seul plancher *sans motif* : en dessous de
+   dix éléments évalués le ratio ne prouve rien — une correspondance sur une
+   fait 100 % — et une édition en cours de saisie signalerait presque toutes
+   ses règles. Un plancher que le référentiel explique ne passe pas par là :
+   « aucun souhait déclaré » est un fait, pas une inférence.
 3. **La donnée absente est lue dans le problème analysé**, pas dans une
    dépendance de plus : souhaits, appréciations, référents, niveau
    au-dessus de débutant. Elle n'est nommée que si le référentiel n'en

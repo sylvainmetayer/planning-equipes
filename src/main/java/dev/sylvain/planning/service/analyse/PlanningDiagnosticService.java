@@ -162,19 +162,28 @@ public final class PlanningDiagnosticService {
                 hardScore,
                 contraintesAdHocEnCause,
                 scoreHorsPlancher,
-                Math.toIntExact(plancherMedium),
-                Math.toIntExact(plancherSoft));
+                borne(plancherMedium),
+                borne(plancherSoft));
     }
 
     /**
      * The floor reading of one non-hard constraint: {@code null} below
      * {@link ConstraintFloorRules#FLOOR_THRESHOLD}, when the rule evaluated
-     * nothing (no premium seat, no published line — a ratio over zero items
-     * is not a floor, it is silence), and for the rules whose match count is
-     * not per item. Above it, the missing data is named when the referential
-     * actually holds none of it; otherwise the floor is reported bare, since
-     * a rule matching everything for another reason — a premium stand nobody
-     * can legally hold alone — is just as constant.
+     * nothing (a ratio over zero items is not a floor, it is silence), and for
+     * the rules whose match count is not per item. Above it, the missing data
+     * is named when the referential actually holds none of it; otherwise the
+     * floor is reported bare, since a rule matching everything for another
+     * reason — a premium stand nobody can legally hold alone — is just as
+     * constant.
+     *
+     * <p>A <b>bare</b> floor asks for a sample, though, and a named one does
+     * not: when the referential holds no wish at all, the constant is a fact
+     * about the data, true of three seats as of three thousand. « No missing
+     * data identified » is the opposite — an inference drawn from the ratio
+     * alone, and one match out of one item is 100 % of nothing. Below
+     * {@link ConstraintFloorRules#FLOOR_MIN_SAMPLE} items it stays unsaid,
+     * which is what keeps an edition being typed in from flagging almost every
+     * rule it has.</p>
      */
     private static ConstraintFloor floorOf(
             FloorRule rule, int matchCount, Integer evaluated, PlanningEvenement solved) {
@@ -189,7 +198,21 @@ public final class PlanningDiagnosticService {
         if (missingData != null && missingData.absentFrom(solved)) {
             return new ConstraintFloor(ratio, missingData.name(), missingData.libelle(), missingData.lien());
         }
+        if (evaluated < ConstraintFloorRules.FLOOR_MIN_SAMPLE) {
+            return null;
+        }
         return new ConstraintFloor(ratio, null, LIBELLE_PLANCHER_SANS_MOTIF, null);
+    }
+
+    /**
+     * The score levels are {@code long}; the contract carries these two totals
+     * as {@code int}. Saturating rather than throwing: a sum beyond two billion
+     * points is out of reach of any real edition, and an {@code ArithmeticException}
+     * here would take down the whole diagnostic — hence the end of every solve —
+     * over a number nobody would read anyway.
+     */
+    private static int borne(long valeur) {
+        return (int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, valeur));
     }
 
     /** Wording of a floor no missing data explains — the rule itself may not fit this edition. */

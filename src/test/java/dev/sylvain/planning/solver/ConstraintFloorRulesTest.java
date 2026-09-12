@@ -87,20 +87,46 @@ class ConstraintFloorRulesTest {
         return poste;
     }
 
+    /**
+     * A rule whose match count is not a boolean per item has no per-item
+     * reading, and the two shapes that are not are easy to add by accident: a
+     * reward — whose score is positive, so counting it into the floor would
+     * make the score net of the floor <em>worse</em> than the raw one — and a
+     * penalty carrying a weight function, whose match count is a quantity of
+     * excess. Both are named here so that giving one a denominator fails.
+     */
+    @Test
+    void aRewardAndTheGradientRulesHaveNoPerItemReading() {
+        assertThat(ConstraintFloorRules.of("affiniteAdHoc").denominator())
+                .as("a reward is never a floor: its score is positive")
+                .isEqualTo(Denominator.NONE);
+
+        List<String> gradient = List.of(
+                "repartitionMineursParCreneau",
+                "eviterRoulementStandsPremium",
+                "limiterEmplacementsParJour",
+                "limiterTypologiesDistinctesParAnimateur",
+                "maxJoursConsecutifsTravailles",
+                "coupureRepasAuPlusTot",
+                "preserverBufferPolyvalents",
+                "equilibrerCharge",
+                "equilibrerCreneauxPenibles");
+        assertThat(gradient)
+                .allSatisfy(name -> assertThat(ConstraintFloorRules.of(name).denominator())
+                        .as("%s penalises by a magnitude: its match count is an excess, not an item", name)
+                        .isEqualTo(Denominator.NONE));
+    }
+
     @Test
     void countsEachDenominatorAtTheGrainOfItsRules() {
         PlanningEvenement plan = plan();
 
         assertThat(Denominator.FILLED_SEATS.count(plan)).isEqualTo(4);
         assertThat(Denominator.FILLED_PREMIUM_SEATS.count(plan)).isEqualTo(3);
-        assertThat(Denominator.PREMIUM_STANDS.count(plan)).isEqualTo(1);
         // S1×C1, S2×C1, S1×C2, S1×C3 — S2×C2 holds only an empty seat.
         assertThat(Denominator.STAFFED_STAND_CRENEAU_GROUPS.count(plan)).isEqualTo(4);
         // Alice, day 1: 9-13 then 13-17. Bob's two seats are on different days.
         assertThat(Denominator.CONSECUTIVE_PAIRS.count(plan)).isEqualTo(1);
-        assertThat(Denominator.ANIMATEUR_DAYS.count(plan)).isEqualTo(3);
-        assertThat(Denominator.ASSIGNED_ANIMATEURS.count(plan)).isEqualTo(2);
-        assertThat(Denominator.CRENEAUX.count(plan)).isEqualTo(3);
         assertThat(Denominator.NONE.count(plan)).isNull();
     }
 

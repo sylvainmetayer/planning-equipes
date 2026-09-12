@@ -125,14 +125,30 @@ class PlanningServiceDiagnosticViolationsTest {
     // --- Floors (issue #495) --------------------------------------------------
 
     /** Two seats on one stand and one timeslot, both filled: the smallest plan every seat rule evaluates twice. */
-    private static PlanningEvenement twoFilledSeats(Animateur first, Animateur second) {
-        Stand stand = new Stand("STAND-1", "Stand stratégie", Set.of("STRAT"), 2, 2, false);
+    /**
+     * Twelve stands on one timeslot, two seats each: twelve stand × timeslot
+     * groups and twenty-four filled seats, each animateur holding exactly one.
+     * Above {@code FLOOR_MIN_SAMPLE} on both grains, which a two-seat plan is
+     * not — a ratio over one or two items is silence, not a floor.
+     */
+    private static PlanningEvenement filledSeats(int stands, NiveauCompetence first, NiveauCompetence second) {
         Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 7, 16), LocalTime.of(9, 0), LocalTime.of(12, 0));
-        PosteAffectation p1 = new PosteAffectation("P1", stand, creneau);
-        p1.setAnimateur(first);
-        PosteAffectation p2 = new PosteAffectation("P2", stand, creneau);
-        p2.setAnimateur(second);
-        return new PlanningEvenement(creneau.getDate(), List.of(first, second), List.of(p1, p2));
+        List<Animateur> animateurs = new java.util.ArrayList<>();
+        List<PosteAffectation> postes = new java.util.ArrayList<>();
+        for (int index = 0; index < stands; index++) {
+            Stand stand = new Stand("STAND-" + index, "Stand " + index, Set.of("STRAT"), 2, 2, false);
+            Animateur un = animateur("A" + (2 * index), first);
+            Animateur deux = animateur("A" + (2 * index + 1), second);
+            animateurs.add(un);
+            animateurs.add(deux);
+            PosteAffectation p1 = new PosteAffectation("P" + (2 * index), stand, creneau);
+            p1.setAnimateur(un);
+            PosteAffectation p2 = new PosteAffectation("P" + (2 * index + 1), stand, creneau);
+            p2.setAnimateur(deux);
+            postes.add(p1);
+            postes.add(p2);
+        }
+        return new PlanningEvenement(creneau.getDate(), animateurs, postes);
     }
 
     private static Animateur animateur(String id, NiveauCompetence niveau) {
@@ -154,15 +170,14 @@ class PlanningServiceDiagnosticViolationsTest {
         // A referent and a beginner: appreciation, referent and level mixing are
         // all satisfied. Nobody declared a wish, so souhaitsIncompatibles
         // matches both seats — a floor no solve will ever move.
-        PlanningEvenement plan =
-                twoFilledSeats(animateur("A1", NiveauCompetence.REFERENT), animateur("A2", NiveauCompetence.DEBUTANT));
+        PlanningEvenement plan = filledSeats(12, NiveauCompetence.REFERENT, NiveauCompetence.DEBUTANT);
 
         PlanningDiagnosticService.PlanningDiagnostic diagnostic =
                 planningService().diagnose(plan);
 
         ConstraintDiagnostic souhaits = constraint(diagnostic, "souhaitsIncompatibles");
-        assertThat(souhaits.matchCount()).isEqualTo(2);
-        assertThat(souhaits.postesEvalues()).isEqualTo(2);
+        assertThat(souhaits.matchCount()).isEqualTo(24);
+        assertThat(souhaits.postesEvalues()).isEqualTo(24);
         assertThat(souhaits.plancher()).isNotNull().satisfies(plancher -> {
             assertThat(plancher.ratio()).isEqualTo(1.0);
             assertThat(plancher.motif()).isEqualTo("SOUHAITS");
@@ -181,17 +196,19 @@ class PlanningServiceDiagnosticViolationsTest {
 
     @Test
     void aRuleWhoseDataIsEnteredIsNotAFloor() {
-        Animateur alice = animateur("A1", NiveauCompetence.REFERENT);
-        alice.setSouhaits(Set.of("STRAT"));
-        PlanningEvenement plan = twoFilledSeats(alice, animateur("A2", NiveauCompetence.DEBUTANT));
+        PlanningEvenement plan = filledSeats(12, NiveauCompetence.REFERENT, NiveauCompetence.DEBUTANT);
+        // Half the roster declared the wish their seat honours: 50 %, well under
+        // the threshold, and the rule is measuring the plan rather than a hole.
+        for (int index = 0; index < plan.getAnimateurs().size(); index += 2) {
+            plan.getAnimateurs().get(index).setSouhaits(Set.of("STRAT"));
+        }
 
         PlanningDiagnosticService.PlanningDiagnostic diagnostic =
                 planningService().diagnose(plan);
 
-        // One wish honoured out of two seats: 50 %, well under the threshold.
         ConstraintDiagnostic souhaits = constraint(diagnostic, "souhaitsIncompatibles");
-        assertThat(souhaits.matchCount()).isEqualTo(1);
-        assertThat(souhaits.postesEvalues()).isEqualTo(2);
+        assertThat(souhaits.matchCount()).isEqualTo(12);
+        assertThat(souhaits.postesEvalues()).isEqualTo(24);
         assertThat(souhaits.plancher()).isNull();
         assertThat(diagnostic.plancherMedium()).isZero();
         assertThat(diagnostic.scoreHorsPlancher()).isEqualTo(diagnostic.score());
@@ -200,8 +217,7 @@ class PlanningServiceDiagnosticViolationsTest {
     /** A hard rule is respected or the plan is invalid: it is never read as a floor. */
     @Test
     void aHardRuleCarriesNoFloorReading() {
-        PlanningEvenement plan =
-                twoFilledSeats(animateur("A1", NiveauCompetence.REFERENT), animateur("A2", NiveauCompetence.DEBUTANT));
+        PlanningEvenement plan = filledSeats(12, NiveauCompetence.REFERENT, NiveauCompetence.DEBUTANT);
 
         PlanningDiagnosticService.PlanningDiagnostic diagnostic =
                 planningService().diagnose(plan);
@@ -211,6 +227,34 @@ class PlanningServiceDiagnosticViolationsTest {
         assertThat(pourvu.plancher()).isNull();
         // And a rule whose single match is an aggregate has no per-item reading either.
         assertThat(constraint(diagnostic, "equilibrerCharge").postesEvalues()).isNull();
+    }
+
+    /**
+     * A ratio over one item is not a measurement — unless the referential
+     * itself explains it. On a plan of one staffed group, « nobody declared a
+     * wish » is still a fact and is still reported; « no missing data
+     * identified » is an inference from the ratio alone, and that one stays
+     * unsaid until there is a sample to draw it from.
+     */
+    @Test
+    void aBareFloorNeedsASampleWhereANamedOneDoesNot() {
+        PlanningEvenement plan = filledSeats(1, NiveauCompetence.REFERENT, NiveauCompetence.AUTONOME);
+
+        PlanningDiagnosticService.PlanningDiagnostic diagnostic =
+                planningService().diagnose(plan);
+
+        ConstraintDiagnostic mixite = constraint(diagnostic, "favoriserMixiteDesNiveaux");
+        assertThat(mixite.matchCount()).isEqualTo(1);
+        assertThat(mixite.postesEvalues()).isEqualTo(1);
+        assertThat(mixite.plancher())
+                .as("one group out of one says nothing about the edition")
+                .isNull();
+
+        ConstraintDiagnostic souhaits = constraint(diagnostic, "souhaitsIncompatibles");
+        assertThat(souhaits.postesEvalues()).isEqualTo(2);
+        assertThat(souhaits.plancher())
+                .isNotNull()
+                .satisfies(plancher -> assertThat(plancher.motif()).isEqualTo("SOUHAITS"));
     }
 
     /**
@@ -246,18 +290,15 @@ class PlanningServiceDiagnosticViolationsTest {
      */
     @Test
     void aFloorNoMissingDataExplainsIsReportedWithoutACause() {
-        Animateur alice = animateur("A1", NiveauCompetence.REFERENT);
-        alice.setSouhaits(Set.of("STRAT"));
-        Animateur bob = animateur("A2", NiveauCompetence.AUTONOME);
-        bob.setSouhaits(Set.of("STRAT"));
-        PlanningEvenement plan = twoFilledSeats(alice, bob);
+        PlanningEvenement plan = filledSeats(12, NiveauCompetence.REFERENT, NiveauCompetence.AUTONOME);
+        plan.getAnimateurs().forEach(animateur -> animateur.setSouhaits(Set.of("STRAT")));
 
         PlanningDiagnosticService.PlanningDiagnostic diagnostic =
                 planningService().diagnose(plan);
 
         ConstraintDiagnostic mixite = constraint(diagnostic, "favoriserMixiteDesNiveaux");
-        assertThat(mixite.matchCount()).isEqualTo(1);
-        assertThat(mixite.postesEvalues()).isEqualTo(1);
+        assertThat(mixite.matchCount()).isEqualTo(12);
+        assertThat(mixite.postesEvalues()).isEqualTo(12);
         assertThat(mixite.plancher()).isNotNull().satisfies(plancher -> {
             assertThat(plancher.ratio()).isEqualTo(1.0);
             assertThat(plancher.motif()).isNull();

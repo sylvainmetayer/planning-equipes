@@ -186,26 +186,43 @@ sous-ensemble des postes épuisants ou premium.
 
 ### Le plancher : une règle qui pénalise tout faute de donnée
 
-Mesuré sur le jeu réaliste (`docs/memoire-du-projet.md`, §2.g) : **68 % du
-score medium était une constante**, deux règles matchant l'intégralité de ce
-qu'elles évaluent parce que la donnée qu'elles mesurent n'existait pas au
-référentiel — aucun souhait déclaré, aucun animateur au niveau référent. Les
-règles étaient correctes ; un organisateur qui lit `-6 675 medium` ne peut
-pas savoir que `-5 000` ne bougeront jamais.
+Mesuré sur l'édition 2026 réelle, avant la grille d'appréciations
+(`docs/memoire-du-projet.md`, §2.g) : **68 % du score medium était une
+constante**, deux règles matchant l'intégralité de ce qu'elles évaluent parce
+que la donnée qu'elles mesurent n'existait pas au référentiel — aucun souhait
+déclaré, aucun animateur au niveau référent. Les règles étaient correctes ; un
+organisateur qui lit `-6 675 medium` ne peut pas savoir que `-5 000` ne
+bougeront jamais.
+
+Le chiffre est daté, et c'est voulu. Mesuré plus tard sur `festival-realiste`
+— la fixture qui portait alors des référents et des appréciations, retirée
+depuis avec les familles de relais ([0029](decisions/0029-retrait-des-familles-de-relais.md))
+—, il ne restait qu'une règle signalée : `souhaitsIncompatibles`, 3 503 sièges
+sur 3 503, soit 39 % du medium. Le défaut n'a pas disparu du monde pour autant :
+il se reproduit sur toute édition dont une donnée n'est pas saisie, ce qu'est
+n'importe quelle édition au premier jour.
 
 Depuis, chaque analyse lit chaque règle non dure comme un **ratio** :
 `écarts ÷ éléments évalués`, où le dénominateur est le grain de la règle —
 sièges pourvus pour `souhaitsIncompatibles`, groupes stand × créneau pour
 `standComplexeAvecReferent`, paires consécutives pour
-`eviterChangementEmplacementEloigne`, animateur × jour pour
-`limiterEmplacementsParJour`… La table est `ConstraintFloorRules`, à côté du
+`eviterChangementEmplacementEloigne`, sièges publiés pour
+`stabiliteDuPlanPublie`… La table est `ConstraintFloorRules`, à côté du
 catalogue, et elle est **exhaustive par test** : une règle medium ou soft
 ajoutée au catalogue sans ligne dans cette table fait échouer
-`ConstraintFloorRulesTest`. Trois règles n'ont pas de lecture par élément
-(`equilibrerCharge`, `equilibrerCreneauxPenibles` : une seule correspondance
-agrégée ; `affiniteAdHoc` : une récompense) et ne sont jamais un plancher.
+`ConstraintFloorRulesTest`. Dix règles n'ont pas de lecture par élément et ne
+sont donc jamais un plancher : une seule correspondance agrégée
+(`equilibrerCharge`, `equilibrerCreneauxPenibles`), une récompense
+(`affiniteAdHoc`), et les sept règles qui pénalisent par une **fonction de
+poids** — `repartitionMineursParCreneau`, `eviterRoulementStandsPremium`,
+`limiterEmplacementsParJour`, `limiterTypologiesDistinctesParAnimateur`,
+`maxJoursConsecutifsTravailles`, `coupureRepasAuPlusTot`,
+`preserverBufferPolyvalents`. Pour celles-là le nombre de correspondances est
+un *écart*, pas un booléen par élément : un ratio de 1,0 veut dire « tout le
+monde est en écart d'une quantité que le solveur peut réduire », soit
+l'inverse d'un plancher.
 
-**Au-dessus de 95 %** (`FLOOR_THRESHOLD`, pas 100 % : une poignée de sièges
+**À partir de 95 %** (`FLOOR_THRESHOLD`, pas 100 % : une poignée de sièges
 échappe toujours, et une règle qui en pénalise 98 % est tout aussi
 constante), la règle est signalée : badge « mesure une donnée absente » sur
 la page Contraintes, ratio, et la donnée nommée avec un lien vers l'écran de
@@ -213,7 +230,13 @@ saisie quand le référentiel n'en contient effectivement aucune — souhaits,
 appréciations, référents, ou aucune appréciation au-dessus de débutant. Un
 plancher que rien de tel n'explique est signalé quand même, sans lien : une
 règle qui matche tout pour une autre raison — un stand premium que personne
-ne peut légalement tenir seul — est tout aussi constante.
+ne peut légalement tenir seul — est tout aussi constante. Celui-là demande
+toutefois un échantillon : au-dessous de dix éléments évalués
+(`FLOOR_MIN_SAMPLE`) il n'est pas dit, parce qu'une correspondance sur une
+fait 100 % de rien et qu'une édition en cours de saisie signalerait presque
+toutes ses règles. Un plancher que le référentiel explique, lui, est signalé
+quelle que soit la taille : « aucun souhait déclaré » est un fait, aussi vrai
+sur trois sièges que sur trois mille.
 
 Ne sont **pas** des planchers, et ne sont pas signalés : les cas où la
 donnée absente rend la règle *inerte* — zéro stand premium, zéro

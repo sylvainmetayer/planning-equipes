@@ -567,7 +567,7 @@ Chaque entrée non dure porte `postesEvalues` — le nombre d'éléments que la
 règle a évalués sur la dernière analyse, **au grain de la règle** (sièges
 pourvus, groupes stand × créneau, paires consécutives…), pas un nombre de
 postes malgré le nom, gardé pour rester lisible côté écran — et, quand la
-règle a matché au moins 95 % de ces éléments, un objet `plancher` :
+règle a matché au moins 95 % de ces éléments, un objet `plancher` (sans motif, il demande au moins dix éléments évalués) :
 `ratio` (0,95 et au-delà), `motif` (code de la donnée absente, `null` quand
 aucune ne l'explique), `libelle` (la phrase à afficher, en français comme
 les descriptions) et `lien` (route Angular de l'écran de saisie, `null`

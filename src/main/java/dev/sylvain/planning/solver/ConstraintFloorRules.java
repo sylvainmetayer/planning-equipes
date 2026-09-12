@@ -49,6 +49,21 @@ public final class ConstraintFloorRules {
     public static final double FLOOR_THRESHOLD = 0.95;
 
     /**
+     * Items a rule must have evaluated before a floor <b>no missing data
+     * explains</b> is reported. One match out of one item is 100 % and says
+     * nothing at all: an edition being typed in — two stands, one timeslot —
+     * would otherwise have almost every rule reported, and on the reference
+     * fixture the two "consecutive pair" rules evaluate nine pairs, where nine
+     * matches would be enough.
+     *
+     * <p>It does not gate a floor the referential explains: « nobody declared a
+     * wish » is a fact about the data, as true of three seats as of three
+     * thousand, and holding it back would hide the very case the feature was
+     * built for.</p>
+     */
+    public static final int FLOOR_MIN_SAMPLE = 10;
+
+    /**
      * Angular route of the screen where the missing data is entered. A plain
      * string on purpose: the frontend routes are not known to the server, so
      * this constant <b>must follow {@code app.routes.ts}</b> — like the links
@@ -61,7 +76,20 @@ public final class ConstraintFloorRules {
      * What one match of a rule is counted against. Each value knows how to
      * count its items on a planning; {@link #NONE} is for the rules whose
      * match count says nothing per item — a single aggregate match
-     * ({@code equilibrerCharge}) or a reward — and is never a floor.
+     * ({@code equilibrerCharge}), a reward, or a penalty carrying a weight
+     * function — and is never a floor.
+     *
+     * <p>The weight function is the subtle one, and it cost a wrong reading:
+     * when a rule penalises by a <em>magnitude</em> ({@code mineurs - majeurs},
+     * distinct heads on a stand, days beyond the cap), its match count is the
+     * number of items <b>in excess</b> and its score is that excess summed. A
+     * ratio of 1.0 then means "everybody is off by an amount the solver can
+     * reduce", not "a constant no solve will move" — the opposite of a floor.
+     * Measured on the reference fixture, {@code eviterRoulementStandsPremium}
+     * — the rule rewritten precisely to give the solver a monotonic gradient —
+     * matched 45 of 45 premium stands and had its whole 1 414 medium points
+     * declared unmovable. A gradient rule therefore has no per-item reading
+     * here, whatever its grain.</p>
      */
     public enum Denominator {
         /** Seats with an animateur — the grain of the per-seat rules. */
@@ -69,12 +97,6 @@ public final class ConstraintFloorRules {
         /** Filled seats on a premium stand. */
         FILLED_PREMIUM_SEATS(planning -> (int) filledSeats(planning)
                 .filter(poste -> poste.getStand().isPremium())
-                .count()),
-        /** Premium stands holding at least one filled seat. */
-        PREMIUM_STANDS(planning -> (int) filledSeats(planning)
-                .filter(poste -> poste.getStand().isPremium())
-                .map(poste -> poste.getStand().getId())
-                .distinct()
                 .count()),
         /** Stand × timeslot groups holding at least one filled seat. */
         STAFFED_STAND_CRENEAU_GROUPS(planning -> (int) filledSeats(planning)
@@ -84,23 +106,6 @@ public final class ConstraintFloorRules {
                 .count()),
         /** Same animateur, same day, one seat ending exactly when the next starts. */
         CONSECUTIVE_PAIRS(ConstraintFloorRules::consecutivePairs),
-        /** Animateur × day pairs holding at least one filled seat. */
-        ANIMATEUR_DAYS(planning -> (int) filledSeats(planning)
-                .map(poste ->
-                        poste.getAnimateur().getId() + "|" + poste.getCreneau().getJour())
-                .distinct()
-                .count()),
-        /** Animateurs holding at least one seat. */
-        ASSIGNED_ANIMATEURS(planning -> (int) filledSeats(planning)
-                .map(poste -> poste.getAnimateur().getId())
-                .distinct()
-                .count()),
-        /** Distinct timeslots of the plan, empty seats included. */
-        CRENEAUX(planning -> (int) planning.getPostes().stream()
-                .filter(poste -> poste.getCreneau() != null)
-                .map(poste -> poste.getCreneau().getId())
-                .distinct()
-                .count()),
         /** Seats on a stand × timeslot line the published plan had, empty ones included. */
         PUBLISHED_SEATS(ConstraintFloorRules::publishedSeats),
         /** Legal breaks owed on the post, when the edition declares them taken there. */
@@ -127,6 +132,14 @@ public final class ConstraintFloorRules {
      * makes {@code souhaitsIncompatibles} match every seat, whereas no premium
      * stand makes {@code experienceRequisePourStandsPremium} match nothing —
      * inert, not a floor, and not this class's subject.
+     *
+     * <p>Each predicate asks the global question — « is there a referent at
+     * all? » — where the rule asks a per-stand one (« a referent for
+     * <em>this</em> stand »). It is deliberate, and it errs on the cautious
+     * side: a referential holding referents, but only on typologies no stand
+     * offers, has a real floor reported <b>without</b> its cause named rather
+     * than a cause named wrongly. What is lost is the sentence and the link,
+     * never the floor itself.</p>
      */
     public enum MissingData {
         SOUHAITS(
@@ -188,25 +201,25 @@ public final class ConstraintFloorRules {
             rule("standComplexeAvecReferent", Denominator.STAFFED_STAND_CRENEAU_GROUPS, MissingData.REFERENTS),
             rule("equilibrerCharge", Denominator.NONE, null),
             rule("stabiliteDuPlanPublie", Denominator.PUBLISHED_SEATS, null),
-            rule("repartitionMineursParCreneau", Denominator.STAFFED_STAND_CRENEAU_GROUPS, null),
+            rule("repartitionMineursParCreneau", Denominator.NONE, null),
             rule(
                     "experienceRequisePourStandsPremium",
                     Denominator.FILLED_PREMIUM_SEATS,
                     MissingData.NIVEAUX_COMPETENCE),
-            rule("eviterRoulementStandsPremium", Denominator.PREMIUM_STANDS, null),
+            rule("eviterRoulementStandsPremium", Denominator.NONE, null),
             rule("eviterChangementEmplacementEloigne", Denominator.CONSECUTIVE_PAIRS, null),
-            rule("limiterEmplacementsParJour", Denominator.ANIMATEUR_DAYS, null),
+            rule("limiterEmplacementsParJour", Denominator.NONE, null),
             rule("eviterEnchainementStandsEpuisants", Denominator.CONSECUTIVE_PAIRS, null),
             rule("appreciationIncompatible", Denominator.FILLED_SEATS, MissingData.APPRECIATIONS),
             rule("souhaitsIncompatibles", Denominator.FILLED_SEATS, MissingData.SOUHAITS),
-            rule("limiterTypologiesDistinctesParAnimateur", Denominator.ASSIGNED_ANIMATEURS, null),
-            rule("maxJoursConsecutifsTravailles", Denominator.ASSIGNED_ANIMATEURS, null),
+            rule("limiterTypologiesDistinctesParAnimateur", Denominator.NONE, null),
+            rule("maxJoursConsecutifsTravailles", Denominator.NONE, null),
             rule("pauseSurPosteSansRelais", Denominator.BREAKS_DUE, null),
-            rule("coupureRepasAuPlusTot", Denominator.ANIMATEUR_DAYS, null),
+            rule("coupureRepasAuPlusTot", Denominator.NONE, null),
             rule("affiniteAdHoc", Denominator.NONE, null),
             rule("favoriserMixiteDesNiveaux", Denominator.STAFFED_STAND_CRENEAU_GROUPS, null),
             rule("equilibrerCreneauxPenibles", Denominator.NONE, null),
-            rule("preserverBufferPolyvalents", Denominator.CRENEAUX, null));
+            rule("preserverBufferPolyvalents", Denominator.NONE, null));
 
     private ConstraintFloorRules() {}
 
