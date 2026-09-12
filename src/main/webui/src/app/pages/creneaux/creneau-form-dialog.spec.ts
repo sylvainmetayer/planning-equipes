@@ -128,6 +128,7 @@ describe('CreneauFormDialog', () => {
       date: '2026-07-15',
       heureDebut: '14:00',
       heureFin: '19:00',
+      couverturePause: false,
       modifieLe: null,
     });
     const [, , editingId, , options] = save.mock.calls[0] as unknown as [
@@ -157,6 +158,7 @@ describe('CreneauFormDialog', () => {
       date: '2026-07-14',
       heureDebut: '10:00',
       heureFin: '13:00',
+      couverturePause: false,
       modifieLe: null,
     });
     expect((save.mock.calls[0] as unknown as [string, unknown, number])[2]).toBe(7);
@@ -237,8 +239,26 @@ describe('CreneauFormDialog', () => {
       date: '2026-07-08',
       heureDebut: '20:00',
       heureFin: '00:00',
+      couverturePause: false,
       modifieLe: null,
     });
+  });
+
+  // The server writes `couverture_pause` from the body unconditionally, and the
+  // form used to send a body without it: editing the hours of a slot generated
+  // under EFFECTIF_REDUIT reset the flag, and the stands went back to full
+  // headcount on the next solve. The flag has to survive an edit it is not
+  // about.
+  it('keeps the pause-coverage flag of the slot it edits', async () => {
+    const { fixture, save } = monter({ ...CRENEAU, couverturePause: true });
+    await fixture.whenStable();
+
+    saisir(fixture, 'heureFin', '13:00');
+    await fixture.whenStable();
+    submit(fixture);
+    await fixture.whenStable();
+
+    expect(payload(save)).toMatchObject({ id: 7, heureFin: '13:00', couverturePause: true });
   });
 
   it('says nothing about midnight for a slot that stays inside its day', async () => {

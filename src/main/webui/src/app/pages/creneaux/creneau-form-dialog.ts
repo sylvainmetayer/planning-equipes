@@ -16,6 +16,13 @@ interface CreneauDraft {
   date: string;
   heureDebut: string;
   heureFin: string;
+  /**
+   * Carried through even though the form has no control for it yet: the server
+   * writes `couverture_pause` from whatever the body says, so a payload that
+   * omitted it silently reset a pause-covering slot to full headcount on the
+   * next solve.
+   */
+  couverturePause: boolean;
   /** The store's `modifieLe` at opening, sent back as the write's precondition (issue #362). */
   modifieLe: string | null;
 }
@@ -109,6 +116,7 @@ export class CreneauFormDialog {
       date: draft.date,
       heureDebut: draft.heureDebut,
       heureFin: draft.heureFin,
+      couverturePause: draft.couverturePause,
       modifieLe: draft.modifieLe,
     };
     if (editingId != null) {
@@ -132,12 +140,13 @@ export class CreneauFormDialog {
 
 function toDraft(creneau: Creneau | null): CreneauDraft {
   if (!creneau) {
-    return { date: '', heureDebut: '', heureFin: '', modifieLe: null };
+    return { date: '', heureDebut: '', heureFin: '', couverturePause: false, modifieLe: null };
   }
   return {
     date: creneau.date ?? '',
     heureDebut: creneau.heureDebut ?? '',
     heureFin: creneau.heureFin ?? '',
+    couverturePause: creneau.couverturePause ?? false,
     modifieLe: creneau.modifieLe ?? null,
   };
 }
