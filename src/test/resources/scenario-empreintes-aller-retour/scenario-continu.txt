@@ -903,6 +903,7 @@
 .sections.decoupageAuto = false
 .sections.edition = null
 .sections.journeesTypes = null
+.sections.modeGrilleDeclare = VACATIONS
 .sections.parametresDecoupage.dureeChevauchementMinutes = 30
 .sections.parametresDecoupage.dureeVacationCibleMinutes = 180
 .sections.parametresDecoupage.dureeVacationMaxMinutes = 360

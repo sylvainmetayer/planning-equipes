@@ -61,6 +61,7 @@
 .sections.decoupageAuto = false
 .sections.edition = null
 .sections.journeesTypes = null
+.sections.modeGrilleDeclare = null
 .sections.parametresDecoupage = null
 .sections.parametresLegaux = null
 .sections.parametresSolveur = null

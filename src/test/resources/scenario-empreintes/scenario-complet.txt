@@ -3073,6 +3073,7 @@
 .sections.decoupageAuto = false
 .sections.edition = null
 .sections.journeesTypes = null
+.sections.modeGrilleDeclare = null
 .sections.parametresDecoupage = null
 .sections.parametresLegaux.coupureRepasMidiDebut = 12:00
 .sections.parametresLegaux.coupureRepasMidiFin = 14:00
