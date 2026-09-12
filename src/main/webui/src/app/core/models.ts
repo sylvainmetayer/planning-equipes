@@ -2262,6 +2262,12 @@ export interface DemandeEchangeView {
   /** When the targeted colleague agreed or declined; null while they have not answered. */
   cibleDecideLe: string | null;
   decideLe: string | null;
+  /**
+   * When the publication announcing the decision left; null while the decision
+   * has been taken but not yet communicated — the espace then still shows the
+   * planning from before it (issue #531).
+   */
+  communiqueeLe: string | null;
 }
 
 /** Payload of a new demande, one entry of the submission batch. */

@@ -204,6 +204,16 @@
         @if (demande.decideLe) {
           <span class="echanges-demande-date" i18n="@@echanges.decideeLe">décidée le {{ demande.decideLe | date: 'short' }}</span>
         }
+        <!--
+          Ce qui reste à publier : tant que la publication n'est pas partie,
+          l'espace de l'animateur montre le plan d'avant la décision (#531).
+        -->
+        @if (demande.nonCommuniquee) {
+          <span class="echanges-demande-attente">
+            <mat-icon inline>schedule_send</mat-icon>
+            <ng-container i18n="@@echanges.nonCommuniquee">pas encore communiquée — la prochaine publication l'annonce</ng-container>
+          </span>
+        }
       </div>
       @if (demande.commentaireAdmin) {
         <p class="espace-demande-commentaire">{{ demande.commentaireAdmin }}</p>

@@ -53,6 +53,7 @@ function demande(id: string): DemandeEchangeView {
     creeLe: '2026-07-01T10:00:00Z',
     cibleDecideLe: null,
     decideLe: null,
+    communiqueeLe: null,
   };
 }
 

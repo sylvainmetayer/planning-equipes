@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -10,6 +11,8 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.espace.DemandeEchangeService;
+import dev.sylvain.planning.service.espace.DemandeEchangeService.NouvelleDemande;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
@@ -48,6 +51,9 @@ class EspacePlanPublieTest {
 
     @Inject
     PlanPublicationService publication;
+
+    @Inject
+    DemandeEchangeService demandes;
 
     @Inject
     ReferenceDataService referenceData;
@@ -120,6 +126,56 @@ class EspacePlanPublieTest {
 
         publication.publier();
 
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(0));
+    }
+
+    /**
+     * Issue #531: an acceptation moves the working plan, so between the
+     * decision and the publication the espace shows « Acceptée » above the seat
+     * from before it. The contradiction is not a display detail — the aide used
+     * to tell the animateur their planning had changed, and the planning it
+     * sent them to check had not. {@code communiqueeLe} is what lets both
+     * screens name that in-between state.
+     */
+    @Test
+    void uneAcceptationNonPublieeEstDiteNonCommuniquee() {
+        publication.publier();
+
+        String demandeId = demandes.submit(
+                        "PUBESP-A",
+                        List.of(new NouvelleDemande(CRENEAU_ID, "PUBESP-S1", "PUBESP-B", "empêchement", null, null)))
+                .get(0)
+                .getId();
+        demandes.acceptByTarget("PUBESP-B", demandeId);
+        demandes.accept(demandeId, null);
+
+        // Decided, and the espace still serves the plan published before it.
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A") + "/demandes")
+                .then()
+                .statusCode(200)
+                .body("[0].statut", equalTo("ACCEPTEE"))
+                .body("[0].decideLe", notNullValue())
+                .body("[0].communiqueeLe", nullValue());
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(1));
+
+        publication.publier();
+
+        // The publication carries the decision: the seat is gone, and the
+        // demande no longer claims anything the planning contradicts.
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A") + "/demandes")
+                .then()
+                .statusCode(200)
+                .body("[0].communiqueeLe", notNullValue());
         given().when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()

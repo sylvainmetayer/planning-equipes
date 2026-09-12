@@ -196,7 +196,8 @@ public class EchangeMcpTools {
                 demande.commentaireAdmin(),
                 demande.creeLe(),
                 demande.cibleDecideLe(),
-                demande.decideLe());
+                demande.decideLe(),
+                demande.communiqueeLe());
     }
 
     static ViolationHardView toView(HardViolation violation) {
@@ -238,7 +239,9 @@ public class EchangeMcpTools {
             String commentaireAdmin,
             Instant creeLe,
             Instant cibleDecideLe,
-            Instant decideLe) {}
+            Instant decideLe,
+            // Null on a decision the next publication still has to announce.
+            Instant communiqueeLe) {}
 
     /**
      * @param ouverteAujourdhui the switch <b>and</b> today's date against the

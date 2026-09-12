@@ -8,7 +8,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { statutDemandeClasse, statutDemandeLabel } from '../../core/demande-echange-labels';
+import {
+  decisionNonCommuniquee,
+  statutDemandeClasse,
+  statutDemandeLabel,
+} from '../../core/demande-echange-labels';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import {
   DemandeEchangeView,
@@ -31,6 +35,12 @@ import { errorMessage } from '../../core/error-message';
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
   statutClasse: string;
+  /**
+   * Accepted, and « Mon planning » still shows the seat from before it (issue
+   * #531). Only of an acceptation: a refusal changes nothing, so nothing it
+   * says can contradict the planning the animateur reads.
+   */
+  attentePublication: boolean;
 }
 
 /**
@@ -116,6 +126,7 @@ export class EspaceEchangesPage {
       ...demande,
       statutLabel: statutDemandeLabel(demande.statut),
       statutClasse: statutDemandeClasse(demande.statut),
+      attentePublication: demande.statut === 'ACCEPTEE' && decisionNonCommuniquee(demande),
     })),
   );
 
@@ -128,6 +139,9 @@ export class EspaceEchangesPage {
         ...demande,
         statutLabel: statutDemandeLabel(demande.statut),
         statutClasse: statutDemandeClasse(demande.statut),
+        // Still waiting for MY agreement: nothing is decided, so nothing is
+        // pending publication either.
+        attentePublication: false,
       })),
   );
 

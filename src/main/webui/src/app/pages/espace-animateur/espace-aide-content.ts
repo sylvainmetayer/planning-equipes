@@ -265,7 +265,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
             },
             {
               term: $localize`:@@echanges.statut.acceptee:Acceptée`,
-              text: $localize`:@@espace.aide.suivi.def.acceptee:L'échange est fait : votre planning a changé, vérifiez-le.`,
+              text: $localize`:@@espace.aide.suivi.def.acceptee:L'organisation a validé l'échange. Il apparaît dans votre planning à partir de la publication suivante : tant que c'est l'ancien créneau qui s'affiche, c'est qu'elle n'a pas encore eu lieu — la demande le dit alors sous son statut.`,
             },
             {
               term: $localize`:@@echanges.statut.refusee:Refusée`,

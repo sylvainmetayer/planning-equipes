@@ -153,6 +153,16 @@ public class EspaceAnimateurService {
     /**
      * One demande with every label resolved, shared by the espace and the
      * admin screen.
+     *
+     * @param communiqueeLe when the publication that announced the decision
+     *                      left, {@code null} while the decision has been taken
+     *                      but not yet communicated. Decided and not
+     *                      communicated is a state both screens have to be able
+     *                      to name: an acceptation moves the working plan, and
+     *                      the espace goes on showing the published one until
+     *                      the next publication — « Acceptée » next to an
+     *                      unchanged planning reads as a bug, or sends somebody
+     *                      to the wrong stand
      */
     public record DemandeEchangeView(
             String id,
@@ -180,7 +190,8 @@ public class EspaceAnimateurService {
             String commentaireAdmin,
             Instant creeLe,
             Instant cibleDecideLe,
-            Instant decideLe) {}
+            Instant decideLe,
+            Instant communiqueeLe) {}
 
     public EspaceAnimateurView buildView(String animateurId) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
@@ -432,7 +443,8 @@ public class EspaceAnimateurService {
                 demande.getCommentaireAdmin(),
                 demande.getCreeLe(),
                 demande.getCibleDecideLe(),
-                demande.getDecideLe());
+                demande.getDecideLe(),
+                demande.getCommuniqueeLe());
     }
 
     /** {@code null} happens: an échange can name an animateur the referential no longer holds. */

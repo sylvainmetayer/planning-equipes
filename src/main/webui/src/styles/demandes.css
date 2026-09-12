@@ -121,6 +121,22 @@
   margin: 0.15rem 0;
 }
 
+/*
+ * Décision prise, publication pas encore faite (issue #531). Ton neutre et non
+ * d'alerte : rien n'est en défaut, c'est un délai qui s'explique — l'encadré
+ * d'erreur, lui, reste réservé à l'échange qui casse une règle.
+ */
+.espace-demande-publication {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-variant);
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .espace-demande-commentaire {
   display: flex;
   align-items: baseline;
@@ -137,6 +153,15 @@
 
 .echanges-demande-date {
   color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+/* Ce qui reste à publier, sur la carte d'une demande décidée (issue #531). */
+.echanges-demande-attente {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--mat-sys-tertiary);
   font-size: 0.85rem;
 }
 

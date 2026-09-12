@@ -273,6 +273,22 @@
         @if (demande.motif) {
           <p class="espace-demande-motif">{{ demande.motif }}</p>
         }
+        <!--
+          L'espace sert le plan publié, et une acceptation ne touche que le plan
+          de travail : entre les deux, « Acceptée » surmonte un planning qui
+          montre encore l'ancien créneau. Le dire ici plutôt que de laisser lire
+          une contradiction — c'est le trajet qui se joue, pas un détail
+          d'affichage.
+        -->
+        @if (demande.attentePublication) {
+          <p class="espace-demande-publication">
+            <mat-icon inline>schedule_send</mat-icon>
+            <span i18n="@@espace.echanges.attentePublication">
+              L'organisation a validé cet échange. Il apparaîtra dans « Mon planning » à la
+              prochaine publication : jusque-là, c'est encore l'ancien créneau qui s'y affiche.
+            </span>
+          </p>
+        }
         @if (demande.prevalidationOk === false && (demande.statut === 'PROPOSEE' || demande.statut === 'EN_ATTENTE_CIBLE')) {
           <div class="espace-demande-alerte">
             <mat-icon inline>warning</mat-icon>

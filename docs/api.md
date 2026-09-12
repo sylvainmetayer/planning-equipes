@@ -1257,6 +1257,15 @@ nul signifie que rien n'a encore été communiqué : les postes sont alors vides
 et l'interface le dit. Les suggestions d'échange se calculent sur ce même plan
 publié : on ne troque que ce qu'on nous a annoncé.
 
+Entre les deux, une décision prise et pas encore publiée est un état qu'il faut
+**pouvoir nommer**. `communiqueeLe` est nul tant que la publication qui annonce
+la décision n'est pas partie, et les deux écrans le lisent — différemment à
+dessein : l'espace ne le dit que d'une acceptation, le seul cas où le statut
+contredit ce que la personne voit, quand l'écran d'administration le dit de
+toute décision, qui est son reste à publier. Sans cet état, « Acceptée »
+surmonte un planning inchangé : l'animateur croit à une panne, redemande un
+échange déjà accordé, ou se présente au mauvais stand.
+
 **Foire fermée** : soumissions et annulations sont refusées **côté serveur**
 (`400`) ; la vue `foireOuverte` ne sert qu'à l'afficher. Une borne datée est
 appliquée de la même façon — une date vérifiée seulement à l'affichage ne

@@ -29,7 +29,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.ecran:Écran Échanges`,
-              text: $localize`:@@aide.foire.def.ecran:Les demandes en attente, avec pour chacune son impact mesuré sur le planning actuel : échange croisé (les deux permutent) ou simple reprise (le collègue est libre sur le créneau), effet sur le score, règles dures qui seraient cassées. Accepter applique l'échange immédiatement, exactement comme simulé, et le verrouille sur son créneau : une régénération ultérieure ne le défera pas — elle reste à lancer depuis la page Solveur. Refuser ne modifie rien ; le motif saisi est transmis à l'animateur.`,
+              text: $localize`:@@aide.foire.def.ecran:Les demandes en attente, avec pour chacune son impact mesuré sur le planning actuel : échange croisé (les deux permutent) ou simple reprise (le collègue est libre sur le créneau), effet sur le score, règles dures qui seraient cassées. Accepter applique l'échange immédiatement, exactement comme simulé, et le verrouille sur son créneau : une régénération ultérieure ne le défera pas — elle reste à lancer depuis la page Solveur. Refuser ne modifie rien ; le motif saisi est transmis à l'animateur. Une demande décidée porte « pas encore communiquée — la prochaine publication l'annonce » tant que cette publication n'est pas partie : c'est votre reste à publier, et d'ici là l'espace de l'animateur montre encore le plan d'avant votre décision.`,
             },
             {
               term: $localize`:@@aide.foire.term.connexion:Connexion et notifications`,

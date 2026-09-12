@@ -42,6 +42,13 @@ public class DemandeEchange {
     private String commentaireAdmin;
     private Instant creeLe;
     private Instant decideLe;
+    /**
+     * When the publication that announced the decision left; null while it has
+     * been taken but not yet communicated. Written only by the publication
+     * (issue #245), never at insertion — an acceptation changes the working
+     * plan, and the espace keeps showing the published one until then.
+     */
+    private Instant communiqueeLe;
 
     public DemandeEchange() {}
 
@@ -163,5 +170,13 @@ public class DemandeEchange {
 
     public void setDecideLe(Instant decideLe) {
         this.decideLe = decideLe;
+    }
+
+    public Instant getCommuniqueeLe() {
+        return communiqueeLe;
+    }
+
+    public void setCommuniqueeLe(Instant communiqueeLe) {
+        this.communiqueeLe = communiqueeLe;
     }
 }

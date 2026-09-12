@@ -1798,6 +1798,9 @@
           },
           "decideLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "communiqueeLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },

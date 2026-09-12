@@ -16,7 +16,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { EchangesApi } from '../../core/api/echanges-api';
-import { statutDemandeClasse, statutDemandeLabel } from '../../core/demande-echange-labels';
+import {
+  decisionNonCommuniquee,
+  statutDemandeClasse,
+  statutDemandeLabel,
+} from '../../core/demande-echange-labels';
 import {
   ConfigurationFoire,
   DemandeEchangeView,
@@ -32,6 +36,13 @@ import { errorMessage } from '../../core/error-message';
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
   statutClasse: string;
+  /**
+   * Decided, and the publication that announces it has not left (issue #531):
+   * what is left to publish. Said of a refusal as well as of an acceptation —
+   * on this screen it is a list of pending work, not a warning about a
+   * planning somebody is reading.
+   */
+  nonCommuniquee: boolean;
 }
 
 /**
@@ -97,6 +108,7 @@ export class EchangesPage {
       ...demande,
       statutLabel: statutDemandeLabel(demande.statut),
       statutClasse: statutDemandeClasse(demande.statut),
+      nonCommuniquee: decisionNonCommuniquee(demande),
     })),
   );
 

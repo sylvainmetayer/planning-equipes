@@ -624,6 +624,14 @@ public class DemandeEchangeService {
             + "motif, statut, prevalidation_ok, contraintes_violees, commentaire_admin, cree_le, "
             + "cible_decide_le, decide_le";
 
+    /**
+     * Read, never inserted: {@code communiquee_le} is written by the
+     * publication alone ({@link #markAsCommunicated}), so keeping it out of
+     * {@link #COLONNES} keeps the INSERT and its hand-counted parameter
+     * indexes untouched.
+     */
+    private static final String COLONNES_LECTURE = COLONNES + ", communiquee_le";
+
     private void inserer(DemandeEchange demande) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(
@@ -668,7 +676,8 @@ public class DemandeEchangeService {
         // Only the column list and the extra predicate are concatenated, and both
         // are literals from this class's own call sites; the value that varies
         // travels as a bound parameter below.
-        String sql = "SELECT " + COLONNES + " FROM demande_echange WHERE edition_id = ?" + predicatSupplementaire
+        String sql = "SELECT " + COLONNES_LECTURE + " FROM demande_echange WHERE edition_id = ?"
+                + predicatSupplementaire
                 + " ORDER BY cree_le DESC, id";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
@@ -709,6 +718,8 @@ public class DemandeEchangeService {
         demande.setCibleDecideLe(cibleDecideLe == null ? null : cibleDecideLe.toInstant());
         Timestamp decideLe = rs.getTimestamp("decide_le");
         demande.setDecideLe(decideLe == null ? null : decideLe.toInstant());
+        Timestamp communiqueeLe = rs.getTimestamp("communiquee_le");
+        demande.setCommuniqueeLe(communiqueeLe == null ? null : communiqueeLe.toInstant());
         return demande;
     }
 }

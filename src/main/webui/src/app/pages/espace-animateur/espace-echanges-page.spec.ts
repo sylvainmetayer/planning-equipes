@@ -88,6 +88,10 @@ function demande(
     motif: null,
     statut,
     prevalidationOk: true,
+    // Both are part of the payload the server always sends, and the page reads
+    // them together: undefined would let a fixture pass what the API cannot.
+    decideLe: null,
+    communiqueeLe: null,
     ...overrides,
   } as DemandeEchangeView;
 }
@@ -137,8 +141,10 @@ type PageInternals = {
   envoiEnCours: Signal<boolean>;
   formulaireComplet: Signal<boolean>;
   foireOpen: Signal<boolean>;
-  demandes: Signal<{ id: string; statutLabel: string; statutClasse: string }[]>;
-  recuesEnAttente: Signal<{ id: string }[]>;
+  demandes: Signal<
+    { id: string; statutLabel: string; statutClasse: string; attentePublication: boolean }[]
+  >;
+  recuesEnAttente: Signal<{ id: string; attentePublication: boolean }[]>;
   choisirCible: (cibleId: string) => Promise<void>;
   choisirPoste: (poste: PosteAnimateurView | null) => void;
   chercherRemplacants: () => Promise<void>;
@@ -630,6 +636,38 @@ describe('EspaceEchangesPage', () => {
       expect(page.recuesEnAttente().map((row) => row.id)).toEqual(['d1', 'd4']);
     });
 
+    // Issue #531: the espace serves the published plan, so between the
+    // acceptation and the publication « Acceptée » sits above the seat from
+    // before it. Said of an acceptation only — a refusal moves nothing, so
+    // nothing it shows can contradict the planning.
+    it('flags an acceptation the next publication still has to carry', () => {
+      espaceDemandes.set([
+        demande('d1', 'ACCEPTEE', { decideLe: '2026-07-10T09:00:00Z', communiqueeLe: null }),
+        demande('d2', 'ACCEPTEE', {
+          decideLe: '2026-07-10T09:00:00Z',
+          communiqueeLe: '2026-07-10T18:00:00Z',
+        }),
+        demande('d3', 'REFUSEE', { decideLe: '2026-07-10T09:00:00Z', communiqueeLe: null }),
+        demande('d4', 'PROPOSEE', { decideLe: null, communiqueeLe: null }),
+      ]);
+      const page = createPage();
+
+      expect(page.demandes().map((row) => row.attentePublication)).toEqual([
+        true,
+        false,
+        false,
+        false,
+      ]);
+    });
+
+    // A demande targeting me is waiting for my own answer: nothing is decided,
+    // so nothing can be waiting for a publication either.
+    it('never flags a demande received as waiting for a publication', () => {
+      espaceRecues.set([demande('d1', 'EN_ATTENTE_CIBLE')]);
+
+      expect(createPage().recuesEnAttente()[0].attentePublication).toBe(false);
+    });
+
     it('treats a closed foire as read-only, and an unloaded espace as open', () => {
       espaceView.set(view({ foireOuverte: false }));
       expect(createPage().foireOpen()).toBe(false);
@@ -785,6 +823,28 @@ describe('EspaceEchangesPage rendering', () => {
     // The history stays readable: only acting is closed.
     expect(text()).toContain('Mes demandes');
     expect(text()).toContain('Bob Durand');
+  });
+
+  // The sentence the aide used to be wrong about: « Acceptée » on its own sent
+  // the animateur to check a planning that had not moved (issue #531).
+  it('explains an acceptation the publication has not carried yet', async () => {
+    espaceDemandes.set([demande('d1', 'ACCEPTEE', { decideLe: '2026-07-10T09:00:00Z' })]);
+    await rendre();
+
+    expect(racine().querySelector('.espace-demande-publication')).not.toBeNull();
+    expect(text()).toContain('à la prochaine publication');
+  });
+
+  it('says nothing of the kind once the publication has carried it', async () => {
+    espaceDemandes.set([
+      demande('d1', 'ACCEPTEE', {
+        decideLe: '2026-07-10T09:00:00Z',
+        communiqueeLe: '2026-07-10T18:00:00Z',
+      }),
+    ]);
+    await rendre();
+
+    expect(racine().querySelector('.espace-demande-publication')).toBeNull();
   });
 
   it('lists a received request with its two seats, and both answers', async () => {
