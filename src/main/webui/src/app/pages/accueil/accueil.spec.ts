@@ -97,11 +97,15 @@ describe('buildLignes', () => {
     );
   });
 
-  it('leads an empty edition to the first referential to enter', () => {
+  it('leads an empty edition to the first referential to enter, the créneaux', () => {
     const [referentiels] = buildLignes(etatVide());
-    expect(referentiels.lien.route).toBe('/stands');
+    expect(referentiels.lien.route).toBe('/creneaux');
     expect(referentiels.detail).toBe('0 stands · 0 animateurs · 0 créneaux');
 
+    const withoutStand = etatVide({
+      referentiels: { stands: 0, animateurs: 0, creneaux: 4, statut: 'A_FAIRE' },
+    });
+    expect(buildLignes(withoutStand)[0].lien.route).toBe('/stands');
     const withoutAnimateur = etatVide({
       referentiels: { stands: 3, animateurs: 0, creneaux: 4, statut: 'A_FAIRE' },
     });

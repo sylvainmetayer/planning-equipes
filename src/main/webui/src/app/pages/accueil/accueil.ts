@@ -59,8 +59,10 @@ function formatInstant(iso: string | null): string {
 
 function referentiels(etat: EtatEdition): LigneEtat {
   const { stands, animateurs, creneaux, statut } = etat.referentiels;
-  // The first empty referential is where the entry starts, in the guide's order.
-  const route = stands === 0 ? '/stands' : animateurs === 0 ? '/animateurs' : '/creneaux';
+  // The first empty referential is where the entry starts, in the guide's
+  // order: the créneaux first — nothing else has dates before them, and the
+  // stands' openings are typed against them (ADR 0032).
+  const route = creneaux === 0 ? '/creneaux' : stands === 0 ? '/stands' : '/animateurs';
   return {
     id: 'referentiels',
     titre: $localize`:@@accueil.ligne.referentiels:Référentiels saisis`,
