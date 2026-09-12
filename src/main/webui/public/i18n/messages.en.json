@@ -737,7 +737,7 @@
   "ouvertures.saisie.annuler": "Discard changes",
   "ouvertures.saisie.hint": "One cell per stand and column: the headcount, “-” or 0 to close, empty to leave as is. Arrows, Enter and pasting from a spreadsheet. A column can be cut from its header.",
   "ouvertures.saisie.locked": "Entry is locked while the solver is running.",
-  "ouvertures.saisie.caption": "Stand opening entry: one row per stand, one column per slot of each day, the headcount in each cell",
+  "ouvertures.saisie.caption": "Stand opening entry: one row per stand, one column per slot or slot tranche of each day, the headcount in each cell",
   "ouvertures.saisie.recopierJour": "Copy this day onto every other day, for the displayed stands",
   "ouvertures.saisie.recopierLigne": "Copy the day of the active cell (else the first day with a value) onto every day of this stand",
   "ouvertures.saisie.partielle": "This cell holds several values ({$segments}). Saved as shown, it keeps them; retyped, the typed value applies to the whole slot.",

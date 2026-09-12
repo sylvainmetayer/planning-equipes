@@ -55,7 +55,7 @@ import {
   colonnes,
   deplacement,
   ecrireCellule,
-  estPartielle,
+  isPartialCell,
   jourDeReference,
   libelleColonne,
   propagerClefs,
@@ -75,7 +75,7 @@ export type VueOuvertures = 'CONSULTER' | 'SAISIR';
 const FERME = '-';
 
 /** One cell as the template binds it: text and flags computed once, no call per binding. */
-interface CelluleVue {
+interface CelluleView {
   clef: string;
   colonneId: string;
   premierDuJour: boolean;
@@ -89,13 +89,13 @@ interface CelluleVue {
   infobulle: string | null;
 }
 
-interface LigneVue {
+interface LigneView {
   standId: string;
   nom: string;
   /** Whether the filter shows the row; a hidden row keeps its cells, and its typed values. */
   visible: boolean;
   modifiee: boolean;
-  cellules: CelluleVue[];
+  cellules: CelluleView[];
 }
 
 /**
@@ -155,7 +155,7 @@ export class OuverturesPage {
   protected readonly recherche = signal('');
   /** What the filter field holds, before the grid follows it: sixty-five rows of sixty cells are not re-laid on every keystroke. */
   protected readonly rechercheSaisie = signal('');
-  private filtreEnAttente: ReturnType<typeof setTimeout> | null = null;
+  private filtrePending: ReturnType<typeof setTimeout> | null = null;
   protected readonly view = signal<VueOuvertures>(
     this.route.snapshot.queryParamMap.get('vue') === 'saisie' ? 'SAISIR' : 'CONSULTER',
   );
@@ -187,7 +187,7 @@ export class OuverturesPage {
    */
   protected readonly colonnes = signal<ColonneGrille[]>([]);
   /** The column whose header shows the hour field of a cut, or none. */
-  protected readonly scissionEnCours = signal<string | null>(null);
+  protected readonly scissionActive = signal<string | null>(null);
   protected readonly standsModifies = computed(() =>
     standsModifies(this.cellules(), this.reference()),
   );
@@ -200,7 +200,7 @@ export class OuverturesPage {
    * that the difference between a filter that follows the keystroke and one
    * that lags behind it.
    */
-  protected readonly lignesVues = computed<LigneVue[]>(() => {
+  protected readonly rowViews = computed<LigneView[]>(() => {
     const colonnes = this.colonnes();
     const cellules = this.cellules();
     const reference = this.reference();
@@ -264,21 +264,21 @@ export class OuverturesPage {
   constructor() {
     keepViewInQueryParams(() => ({ vue: optionalParam(this.view() === 'SAISIR' ? 'saisie' : '') }));
     inject(DestroyRef).onDestroy(() => {
-      if (this.filtreEnAttente !== null) {
-        clearTimeout(this.filtreEnAttente);
+      if (this.filtrePending !== null) {
+        clearTimeout(this.filtrePending);
       }
     });
     void this.recharger();
   }
 
   /** The filter follows the field a beat after the last keystroke: typing « Village » re-lays the grid once, not seven times. */
-  protected filtrer(texte: string): void {
+  protected filterStands(texte: string): void {
     this.rechercheSaisie.set(texte);
-    if (this.filtreEnAttente !== null) {
-      clearTimeout(this.filtreEnAttente);
+    if (this.filtrePending !== null) {
+      clearTimeout(this.filtrePending);
     }
-    this.filtreEnAttente = setTimeout(() => {
-      this.filtreEnAttente = null;
+    this.filtrePending = setTimeout(() => {
+      this.filtrePending = null;
       this.recherche.set(texte);
     }, 150);
   }
@@ -289,7 +289,7 @@ export class OuverturesPage {
       const rapport = await this.standsApi.openings();
       this.rapport.set(rapport);
       this.colonnes.set(colonnes(rapport));
-      this.scissionEnCours.set(null);
+      this.scissionActive.set(null);
       this.celluleActive.set(null);
       const cellules = cellulesDepuis(rapport);
       this.reference.set(cellules);
@@ -346,26 +346,26 @@ export class OuverturesPage {
    * is a statement, and it reads as one. An inert cell shows nothing.
    */
   protected valeur(standId: string, colonneId: string): string {
-    if (this.estInerte(standId, colonneId)) {
+    if (this.isInert(standId, colonneId)) {
       return '';
     }
     const effectif = this.cellules().get(standId)?.get(colonneId) ?? null;
     return effectif === null ? FERME : String(effectif);
   }
 
-  protected estModifiee(standId: string, colonneId: string): boolean {
+  protected isModified(standId: string, colonneId: string): boolean {
     return (
       (this.cellules().get(standId)?.get(colonneId) ?? null) !==
       (this.reference().get(standId)?.get(colonneId) ?? null)
     );
   }
 
-  protected estPartielle(standId: string, colonneId: string): boolean {
-    return estPartielle(this.partielles(), { standId, colonneId });
+  protected isPartial(standId: string, colonneId: string): boolean {
+    return isPartialCell(this.partielles(), { standId, colonneId });
   }
 
   /** A créneau of another stagger family: this stand never holds a seat there. */
-  protected estInerte(standId: string, colonneId: string): boolean {
+  protected isInert(standId: string, colonneId: string): boolean {
     return this.inertes().has(key(standId, colonneId));
   }
 
@@ -384,7 +384,7 @@ export class OuverturesPage {
    * empty effectif as « celui du stand ». Anything else is left as typed.
    */
   protected saisir(standId: string, colonneId: string, text: string): void {
-    if (this.estInerte(standId, colonneId) || text.trim() === '') {
+    if (this.isInert(standId, colonneId) || text.trim() === '') {
       return;
     }
     const lu = readCell(text);
@@ -414,9 +414,9 @@ export class OuverturesPage {
    * listeners on the body instead of five per cell, which is what made
    * rendering a row of sixty cells expensive.
    */
-  private adresse(event: Event): AdresseCellule | null {
-    const cible = event.target as HTMLElement | null;
-    const clef = cible?.dataset?.['cellule'];
+  private addressOf(event: Event): AdresseCellule | null {
+    const target = event.target as HTMLElement | null;
+    const clef = target?.dataset?.['cellule'];
     if (!clef) {
       return null;
     }
@@ -424,38 +424,38 @@ export class OuverturesPage {
     return { standId: clef.slice(0, separateur), colonneId: clef.slice(separateur + 1) };
   }
 
-  protected surSaisie(event: Event): void {
-    const adresse = this.adresse(event);
-    if (adresse) {
-      this.saisir(adresse.standId, adresse.colonneId, (event.target as HTMLInputElement).value);
+  protected onInput(event: Event): void {
+    const address = this.addressOf(event);
+    if (address) {
+      this.saisir(address.standId, address.colonneId, (event.target as HTMLInputElement).value);
     }
   }
 
-  protected surFocus(event: FocusEvent): void {
-    const adresse = this.adresse(event);
-    if (adresse) {
-      this.focaliser(adresse.standId, adresse.colonneId);
+  protected onFocus(event: FocusEvent): void {
+    const address = this.addressOf(event);
+    if (address) {
+      this.focaliser(address.standId, address.colonneId);
     }
   }
 
-  protected surPerteDeFocus(event: FocusEvent): void {
-    const adresse = this.adresse(event);
-    if (adresse) {
-      this.reafficher(event, adresse.standId, adresse.colonneId);
+  protected onBlur(event: FocusEvent): void {
+    const address = this.addressOf(event);
+    if (address) {
+      this.reafficher(event, address.standId, address.colonneId);
     }
   }
 
-  protected surClavier(event: KeyboardEvent): void {
-    const adresse = this.adresse(event);
-    if (adresse) {
-      this.auClavier(event, adresse.standId, adresse.colonneId);
+  protected onKeydownBody(event: KeyboardEvent): void {
+    const address = this.addressOf(event);
+    if (address) {
+      this.onKeydown(event, address.standId, address.colonneId);
     }
   }
 
-  protected surCollage(event: ClipboardEvent): void {
-    const adresse = this.adresse(event);
-    if (adresse) {
-      this.auCollage(event, adresse.standId, adresse.colonneId);
+  protected onPasteBody(event: ClipboardEvent): void {
+    const address = this.addressOf(event);
+    if (address) {
+      this.onPaste(event, address.standId, address.colonneId);
     }
   }
 
@@ -464,7 +464,7 @@ export class OuverturesPage {
    * does. Left and right only when the caret cannot move inside the field
    * itself, so editing a two-digit value stays possible.
    */
-  protected auClavier(event: KeyboardEvent, standId: string, colonneId: string): void {
+  protected onKeydown(event: KeyboardEvent, standId: string, colonneId: string): void {
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
@@ -491,7 +491,7 @@ export class OuverturesPage {
   }
 
   /** A block copied from a spreadsheet lands from the cell it is pasted in; a single value pastes as typed. */
-  protected auCollage(event: ClipboardEvent, standId: string, colonneId: string): void {
+  protected onPaste(event: ClipboardEvent, standId: string, colonneId: string): void {
     const text = event.clipboardData?.getData('text') ?? '';
     if (!/[\t\n]/.test(text)) {
       return;
@@ -557,7 +557,7 @@ export class OuverturesPage {
    * hour on the column's edge, or outside it, cuts nothing and says so.
    */
   protected scinder(colonne: ColonneGrille, heure: string): void {
-    this.scissionEnCours.set(null);
+    this.scissionActive.set(null);
     const nouvelles = scinder(this.colonnes(), colonne.colonneId, heure);
     if (nouvelles === null) {
       this.notifications.notify({
@@ -591,7 +591,7 @@ export class OuverturesPage {
   }
 
   /** The columns of one day, cuts included — what the day header spans. */
-  protected colonnesDuJour(date: string): ColonneGrille[] {
+  protected columnsOfDay(date: string): ColonneGrille[] {
     return this.colonnes().filter((colonne) => colonne.date === date);
   }
 
@@ -612,7 +612,7 @@ export class OuverturesPage {
     const aplatis = modifies.filter((standId) =>
       Array.from(this.partielles()).some((clef) => {
         const [stand, id] = clef.split('#');
-        return stand === standId && this.estModifiee(standId, id);
+        return stand === standId && this.isModified(standId, id);
       }),
     );
     if (aplatis.length > 0) {

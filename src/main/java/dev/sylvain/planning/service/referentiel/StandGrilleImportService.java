@@ -238,8 +238,7 @@ public class StandGrilleImportService {
                 continue;
             }
             boolean recouvre = cibles.stream().anyMatch(creneau -> {
-                int[] bornes =
-                        OuvertureStandsAnalyzer.bornesDansCreneau(creneau, colonne.heureDebut(), colonne.heureFin());
+                int[] bornes = OuvertureStandsAnalyzer.boundsWithin(creneau, colonne.heureDebut(), colonne.heureFin());
                 return prisParCreneau.getOrDefault(creneau.getId(), List.of()).stream()
                         .anyMatch(pris -> bornes[0] < pris[1] && pris[0] < bornes[1]);
             });
@@ -264,8 +263,7 @@ public class StandGrilleImportService {
             for (Creneau creneau : cibles) {
                 prisParCreneau
                         .computeIfAbsent(creneau.getId(), key -> new ArrayList<>())
-                        .add(OuvertureStandsAnalyzer.bornesDansCreneau(
-                                creneau, colonne.heureDebut(), colonne.heureFin()));
+                        .add(OuvertureStandsAnalyzer.boundsWithin(creneau, colonne.heureDebut(), colonne.heureFin()));
             }
             creneauParColonne.put(colonne.index(), ids);
             columns.add(new ImportedColumn(
@@ -485,7 +483,7 @@ public class StandGrilleImportService {
 
     /** Whether {@code [heureDebut, heureFin)} lies inside the créneau, a {@code 00:00} end counting as midnight. */
     private static boolean contient(Creneau creneau, LocalTime heureDebut, LocalTime heureFin) {
-        int[] bornes = OuvertureStandsAnalyzer.bornesDansCreneau(creneau, heureDebut, heureFin);
+        int[] bornes = OuvertureStandsAnalyzer.boundsWithin(creneau, heureDebut, heureFin);
         return bornes[0] >= 0 && bornes[1] <= creneau.getDureeMinutes() && bornes[0] < bornes[1];
     }
 

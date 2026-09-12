@@ -141,7 +141,7 @@ public final class GrilleHorairesStands {
                 throw new BusinessError.Invalid("Effectif " + cellule.effectif() + " sur le stand " + stand.getId()
                         + " : laissez la case vide pour fermer le stand sur ce créneau");
             }
-            int[] bornes = bornesDeCellule(stand, creneau, cellule);
+            int[] bornes = cellBounds(stand, creneau, cellule);
             List<int[]> duCreneau = parCreneau.computeIfAbsent(creneau.getId(), key -> new ArrayList<>());
             for (int[] autre : duCreneau) {
                 if (bornes[0] < autre[1] && autre[0] < bornes[1]) {
@@ -235,7 +235,7 @@ public final class GrilleHorairesStands {
     }
 
     /** A cell's bounds in minutes from its créneau's start: the whole créneau when it names none. */
-    private static int[] bornesDeCellule(Stand stand, Creneau creneau, SaisieCellule cellule) {
+    private static int[] cellBounds(Stand stand, Creneau creneau, SaisieCellule cellule) {
         int duree = creneau.getDureeMinutes();
         if (cellule.heureDebut() == null && cellule.heureFin() == null) {
             return new int[] {0, duree};
@@ -244,7 +244,7 @@ public final class GrilleHorairesStands {
             throw new BusinessError.Invalid("Une case du stand " + stand.getId() + " nomme une heure de début "
                     + "sans fin, ou l'inverse, sur le créneau " + creneau.getId() + ".");
         }
-        int[] bornes = OuvertureStandsAnalyzer.bornesDansCreneau(creneau, cellule.heureDebut(), cellule.heureFin());
+        int[] bornes = OuvertureStandsAnalyzer.boundsWithin(creneau, cellule.heureDebut(), cellule.heureFin());
         if (bornes[0] < 0 || bornes[1] > duree || bornes[0] >= bornes[1]) {
             throw new BusinessError.Invalid("La case " + cellule.heureDebut() + "-" + cellule.heureFin()
                     + " du stand " + stand.getId() + " sort du créneau " + creneau.getId() + " ("

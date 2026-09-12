@@ -81,7 +81,7 @@
         </mat-button-toggle-group>
         <mat-form-field appearance="outline" class="ouvertures-recherche">
           <mat-label i18n="@@ouvertures.recherche">Filtrer par stand</mat-label>
-          <input matInput name="recherche" [ngModel]="rechercheSaisie()" (ngModelChange)="filtrer($event)" />
+          <input matInput name="recherche" [ngModel]="rechercheSaisie()" (ngModelChange)="filterStands($event)" />
         </mat-form-field>
       </div>
 
@@ -107,7 +107,7 @@
               <tr>
                 <th scope="col" class="colonne-stand" rowspan="2" i18n="@@ouvertures.colonne.stand">Stand</th>
                 @for (jour of rapport()!.jours; track jour.date) {
-                  <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="colonnesDuJour(jour.date).length">
+                  <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="columnsOfDay(jour.date).length">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
                     <button matIconButton type="button" class="recopier-jour" [disabled]="editingLocked()"
@@ -122,17 +122,17 @@
               <tr>
                 @for (colonne of colonnes(); track colonne.colonneId) {
                   <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0">
-                    @if (scissionEnCours() === colonne.colonneId) {
+                    @if (scissionActive() === colonne.colonneId) {
                       <input type="time" class="scission-heure" autofocus
                              i18n-aria-label="@@ouvertures.saisie.scissionHeure" aria-label="Heure de coupe"
                              (change)="scinder(colonne, $any($event.target).value)"
-                             (keydown.escape)="scissionEnCours.set(null)" />
+                             (keydown.escape)="scissionActive.set(null)" />
                     } @else {
                       <span class="libelle-colonne">{{ libelleColonne(colonne) }}</span>
                       <button matIconButton type="button" class="scinder-colonne" [disabled]="editingLocked()"
                               i18n-matTooltip="@@ouvertures.saisie.scinder" matTooltip="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
                               i18n-aria-label="@@ouvertures.saisie.scinder" aria-label="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
-                              (click)="scissionEnCours.set(colonne.colonneId)">
+                              (click)="scissionActive.set(colonne.colonneId)">
                         <mat-icon>call_split</mat-icon>
                       </button>
                     }
@@ -140,9 +140,9 @@
                 }
               </tr>
             </thead>
-            <tbody (input)="surSaisie($event)" (focusin)="surFocus($event)" (focusout)="surPerteDeFocus($event)"
-                   (keydown)="surClavier($event)" (paste)="surCollage($event)">
-              @for (ligne of lignesVues(); track ligne.standId) {
+            <tbody (input)="onInput($event)" (focusin)="onFocus($event)" (focusout)="onBlur($event)"
+                   (keydown)="onKeydownBody($event)" (paste)="onPasteBody($event)">
+              @for (ligne of rowViews(); track ligne.standId) {
                 <tr [class.ligne-modifiee]="ligne.modifiee" [class.ligne-masquee]="!ligne.visible">
                   <th scope="row" class="colonne-stand">
                     <span class="stand-nom">{{ ligne.nom }}</span>

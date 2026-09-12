@@ -51,7 +51,7 @@ class OuvertureStandsAnalyzerTest {
     }
 
     /** The cell without its segments, for the assertions that read the grid as integers. */
-    private static CelluleCreneau sansSegments(CelluleCreneau cellule) {
+    private static CelluleCreneau withoutSegments(CelluleCreneau cellule) {
         return new CelluleCreneau(
                 cellule.creneauId(),
                 cellule.tranche(),

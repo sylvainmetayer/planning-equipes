@@ -70,7 +70,7 @@ export function colonnes(rapport: RapportOuvertures): ColonneGrille[] {
  * cell names its créneau and tranche, the day's column list says which
  * bounds those are.
  */
-function colonneParCellule(rapport: RapportOuvertures): Map<string, string> {
+function colonneByCell(rapport: RapportOuvertures): Map<string, string> {
   const ids = new Map<string, string>();
   for (const jour of rapport.jours) {
     for (const [rang, creneau] of jour.creneaux.entries()) {
@@ -83,7 +83,7 @@ function colonneParCellule(rapport: RapportOuvertures): Map<string, string> {
   return ids;
 }
 
-function idDe(
+function idOf(
   ids: ReadonlyMap<string, string>,
   date: string,
   cellule: CelluleCreneauOuverture,
@@ -93,19 +93,19 @@ function idDe(
 
 /** The cells as the server reports them — the starting point, and the reference a change is measured against. */
 export function cellulesDepuis(rapport: RapportOuvertures): Cellules {
-  const ids = colonneParCellule(rapport);
+  const ids = colonneByCell(rapport);
   const cellules: Cellules = new Map();
   for (const ligne of rapport.stands) {
-    const parColonne = new Map<string, number | null>();
+    const byColonne = new Map<string, number | null>();
     for (const jour of ligne.jours) {
       for (const cellule of jour.creneaux) {
-        const id = idDe(ids, jour.date, cellule);
+        const id = idOf(ids, jour.date, cellule);
         if (id !== undefined) {
-          parColonne.set(id, cellule.effectif);
+          byColonne.set(id, cellule.effectif);
         }
       }
     }
-    cellules.set(ligne.standId, parColonne);
+    cellules.set(ligne.standId, byColonne);
   }
   return cellules;
 }
@@ -129,12 +129,12 @@ function cellulesTelles(
   rapport: RapportOuvertures,
   telle: (cellule: CelluleCreneauOuverture) => boolean,
 ): Set<string> {
-  const ids = colonneParCellule(rapport);
+  const ids = colonneByCell(rapport);
   const clefs = new Set<string>();
   for (const ligne of rapport.stands) {
     for (const jour of ligne.jours) {
       for (const cellule of jour.creneaux) {
-        const id = idDe(ids, jour.date, cellule);
+        const id = idOf(ids, jour.date, cellule);
         if (id !== undefined && telle(cellule)) {
           clefs.add(key(ligne.standId, id));
         }
@@ -146,12 +146,12 @@ function cellulesTelles(
 
 /** The stretches behind every partial cell, keyed `standId#colonneId`: what a save keeps, and what « Aligner » would extend. */
 export function segmentsPartiels(rapport: RapportOuvertures): Map<string, SegmentCellule[]> {
-  const ids = colonneParCellule(rapport);
+  const ids = colonneByCell(rapport);
   const segments = new Map<string, SegmentCellule[]>();
   for (const ligne of rapport.stands) {
     for (const jour of ligne.jours) {
       for (const cellule of jour.creneaux) {
-        const id = idDe(ids, jour.date, cellule);
+        const id = idOf(ids, jour.date, cellule);
         if (id !== undefined && cellule.partiel) {
           segments.set(key(ligne.standId, id), cellule.segments);
         }
@@ -178,10 +178,10 @@ export function aplatissement(
   segments: ReadonlyMap<string, SegmentCellule[]>,
   colonnesGrille: readonly ColonneGrille[],
 ): Aplatissement {
-  const dureeParColonne = new Map(
+  const durationByColonne = new Map(
     colonnesGrille.map((colonne) => [
       colonne.colonneId,
-      minutesEntre(colonne.heureDebut, colonne.heureFin),
+      minutesBetween(colonne.heureDebut, colonne.heureFin),
     ]),
   );
   const stands = new Set<string>();
@@ -189,7 +189,7 @@ export function aplatissement(
   let minutes = 0;
   for (const [clef, stretches] of segments) {
     const [standId, id] = clef.split('#');
-    const duree = dureeParColonne.get(id);
+    const duree = durationByColonne.get(id);
     if (duree === undefined || stretches.length === 0) {
       continue;
     }
@@ -207,9 +207,9 @@ export function aplatissement(
 }
 
 /** Minutes from one wall-clock hour to the next, a `00:00` end counting as midnight. */
-export function minutesEntre(heureDebut: string, heureFin: string): number {
-  const debut = minutesDuJour(heureDebut);
-  const fin = minutesDuJour(heureFin);
+export function minutesBetween(heureDebut: string, heureFin: string): number {
+  const debut = minutesOfDay(heureDebut);
+  const fin = minutesOfDay(heureFin);
   return fin > debut ? fin - debut : fin + 24 * 60 - debut;
 }
 
@@ -331,19 +331,19 @@ export function scinder(
     return null;
   }
   const colonne = colonnesGrille[index];
-  const debut = minutesDuJour(colonne.heureDebut);
-  const coupe = minutesDuJour(heure);
-  const fin = debut + minutesEntre(colonne.heureDebut, colonne.heureFin);
+  const debut = minutesOfDay(colonne.heureDebut);
+  const coupe = minutesOfDay(heure);
+  const fin = debut + minutesBetween(colonne.heureDebut, colonne.heureFin);
   const coupeAbsolue = coupe < debut ? coupe + 24 * 60 : coupe;
   if (coupeAbsolue <= debut || coupeAbsolue >= fin) {
     return null;
   }
-  const avant: ColonneGrille = {
+  const before: ColonneGrille = {
     ...colonne,
     colonneId: colonneId(colonne.creneauId, colonne.heureDebut, heure),
     heureFin: heure,
   };
-  const apres: ColonneGrille = {
+  const after: ColonneGrille = {
     ...colonne,
     colonneId: colonneId(colonne.creneauId, heure, colonne.heureFin),
     heureDebut: heure,
@@ -351,8 +351,8 @@ export function scinder(
   };
   return [
     ...colonnesGrille.slice(0, index),
-    avant,
-    apres,
+    before,
+    after,
     ...colonnesGrille
       .slice(index + 1)
       .map((suivante) =>
@@ -510,13 +510,13 @@ export function recopierJour(
   }
   const heures = (colonne: ColonneGrille) =>
     formatHeure(colonne.heureDebut) + '-' + formatHeure(colonne.heureFin);
-  const parHeures = new Map(source.map((colonne) => [heures(colonne), colonne.colonneId]));
+  const byHours = new Map(source.map((colonne) => [heures(colonne), colonne.colonneId]));
   let resultat = cellules;
   for (const target of colonnesGrille) {
     if (target.date === dateSource) {
       continue;
     }
-    const origine = parHeures.get(heures(target));
+    const origine = byHours.get(heures(target));
     if (origine === undefined) {
       continue;
     }
@@ -595,7 +595,7 @@ export function libelleColonne(colonne: ColonneGrille): string {
 }
 
 /** Whether the report knows this cell as partial. */
-export function estPartielle(partielles: ReadonlySet<string>, adresse: AdresseCellule): boolean {
+export function isPartialCell(partielles: ReadonlySet<string>, adresse: AdresseCellule): boolean {
   return partielles.has(key(adresse.standId, adresse.colonneId));
 }
 
