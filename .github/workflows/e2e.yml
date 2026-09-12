@@ -161,6 +161,23 @@ jobs:
           E2E_ADMIN_PASSWORD: e2e-admin-Kd9nT4wB
         run: npm run e2e
 
+      # Ce qu'un échec a sous les yeux, lisible dans le journal du job sans
+      # télécharger l'artefact : la photographie de la page que Playwright
+      # joint à chaque échec, et les erreurs que l'application a journalisées.
+      - name: Print the failure context
+        if: failure()
+        run: |
+          for contexte in $(find src/main/webui/test-results -name error-context.md 2>/dev/null); do
+            echo "::group::$contexte"
+            head -n 250 "$contexte"
+            echo "::endgroup::"
+          done
+          if [ -f app.log ]; then
+            echo "::group::app.log — ERROR/WARN"
+            grep -nE "ERROR|WARN|Exception" app.log | tail -n 200 || true
+            echo "::endgroup::"
+          fi
+
       # Les traces ne sont conservées qu'en cas d'échec (`trace:
       # 'retain-on-failure'`), donc cet artefact est vide quand tout va bien.
       - name: Upload the Playwright traces
