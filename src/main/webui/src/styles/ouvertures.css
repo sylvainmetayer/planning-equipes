@@ -357,11 +357,16 @@
   background: var(--mat-sys-surface-container);
 }
 
-/* An emptied cell keeps showing, greyed, the headcount the stand currently
-   holds there: what is being closed stays readable until the save. */
+/* An emptied field keeps showing, greyed, the value the cell still holds:
+   emptying says nothing, so what applies stays readable. A closed cell
+   reads « - », muted, so closed and open-at-one never look alike. */
 .grille-saisie .cellule-saisie input::placeholder {
   color: var(--mat-sys-on-surface-variant);
   opacity: 0.6;
+}
+
+.grille-saisie .cellule-fermee input {
+  color: var(--mat-sys-outline);
 }
 
 /* What changed since the last read, and what a save would flatten: two

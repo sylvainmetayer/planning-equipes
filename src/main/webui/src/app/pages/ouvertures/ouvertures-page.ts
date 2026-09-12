@@ -70,6 +70,9 @@ import {
 /** The two faces of the screen: reading what a solve would get, or typing it. */
 export type VueOuvertures = 'CONSULTER' | 'SAISIR';
 
+/** What a closed cell shows, and one of the things typed to close one (`readCell`). */
+const FERME = '-';
+
 /**
  * Read-only stand × jour grid of the opening schedule actually in force, so an
  * administrator can validate it visually before spending minutes on a solve.
@@ -237,22 +240,23 @@ export class OuverturesPage {
     return Array.from(this.partielles()).some((clef) => clef.startsWith(prefixe));
   }
 
-  protected valeur(standId: string, colonneId: string): string {
-    const effectif = this.cellules().get(standId)?.get(colonneId) ?? null;
-    return effectif === null ? '' : String(effectif);
-  }
-
   /**
-   * What an emptied cell still shows, greyed: the headcount the stand
-   * currently holds there, so closing a column never hides what is being
-   * closed. Nothing for a cell that is closed on the server too.
+   * What the field shows: the headcount, or « - » for closed — a closed cell
+   * is a statement, and it reads as one. An inert cell shows nothing.
    */
-  protected valeurEnVigueur(standId: string, colonneId: string): string {
-    if ((this.cellules().get(standId)?.get(colonneId) ?? null) !== null) {
+  protected valeur(standId: string, colonneId: string): string {
+    if (this.estInerte(standId, colonneId)) {
       return '';
     }
-    const actuelle = this.reference().get(standId)?.get(colonneId) ?? null;
-    return actuelle === null ? '' : String(actuelle);
+    const effectif = this.cellules().get(standId)?.get(colonneId) ?? null;
+    return effectif === null ? FERME : String(effectif);
+  }
+
+  protected estFermee(standId: string, colonneId: string): boolean {
+    return (
+      !this.estInerte(standId, colonneId) &&
+      (this.cellules().get(standId)?.get(colonneId) ?? null) === null
+    );
   }
 
   protected estModifiee(standId: string, colonneId: string): boolean {
@@ -283,9 +287,14 @@ export class OuverturesPage {
     return key(standId, colonneId);
   }
 
-  /** A keystroke in a cell: digits become the headcount, an emptied field closes the stand; anything else is left as typed. */
+  /**
+   * A keystroke in a cell: digits become the headcount, a dash or a zero
+   * closes the stand. An emptied field says nothing — the cell keeps its
+   * value, which the placeholder keeps showing, the way the fiche reads an
+   * empty effectif as « celui du stand ». Anything else is left as typed.
+   */
   protected saisir(standId: string, colonneId: string, text: string): void {
-    if (this.estInerte(standId, colonneId)) {
+    if (this.estInerte(standId, colonneId) || text.trim() === '') {
       return;
     }
     const lu = readCell(text);

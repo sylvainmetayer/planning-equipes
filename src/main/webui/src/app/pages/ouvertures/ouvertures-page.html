@@ -95,7 +95,7 @@
 
       @if (view() === 'SAISIR') {
         <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
-          Une case par stand et par colonne : l'effectif, vide pour fermé. Flèches, Entrée et collage depuis un tableur. Les colonnes suivent les fenêtres des stands ; une colonne se scinde depuis son en-tête.
+          Une case par stand et par colonne : l'effectif, « - » ou 0 pour fermer, vide pour laisser tel quel. Flèches, Entrée et collage depuis un tableur. Une colonne se scinde depuis son en-tête.
         </p>
         @if (editingLocked()) {
           <p class="locked-hint" i18n="@@ouvertures.saisie.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
@@ -156,6 +156,7 @@
                     <td class="cellule-saisie" [class.premier-du-jour]="colonne.rang === 0"
                         [class.cellule-modifiee]="estModifiee(ligne.standId, colonne.colonneId)"
                         [class.cellule-inerte]="estInerte(ligne.standId, colonne.colonneId)"
+                        [class.cellule-fermee]="estFermee(ligne.standId, colonne.colonneId)"
                         [class.cellule-partielle]="estPartielle(ligne.standId, colonne.colonneId)">
                       <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"
                              [attr.data-cellule]="identifiant(ligne.standId, colonne.colonneId)"
@@ -163,7 +164,7 @@
                              [attr.title]="estInerte(ligne.standId, colonne.colonneId) ? infobulleInerte() : (estPartielle(ligne.standId, colonne.colonneId) ? infobullePartielle(ligne.standId, colonne.colonneId) : null)"
                              [disabled]="editingLocked() || estInerte(ligne.standId, colonne.colonneId)"
                              [value]="valeur(ligne.standId, colonne.colonneId)"
-                             [placeholder]="valeurEnVigueur(ligne.standId, colonne.colonneId)"
+                             [placeholder]="valeur(ligne.standId, colonne.colonneId)"
                              (input)="saisir(ligne.standId, colonne.colonneId, $any($event.target).value)"
                              (focus)="focaliser(ligne.standId, colonne.colonneId)"
                              (blur)="reafficher($event, ligne.standId, colonne.colonneId)"

@@ -213,7 +213,8 @@ describe('OuverturesPage — saisie', () => {
 
     expect(root(fixture).querySelectorAll('.grille-saisie input')).toHaveLength(8);
     expect(champ(fixture, 'A', 2).value).toBe('4');
-    expect(champ(fixture, 'B', 2).value).toBe('');
+    expect(champ(fixture, 'B', 2).value).toBe('-');
+    expect(champ(fixture, 'B', 2).closest('td')!.classList.contains('cellule-fermee')).toBe(true);
     expect(champ(fixture, 'B', 1).closest('td')!.classList.contains('cellule-partielle')).toBe(
       true,
     );
@@ -266,22 +267,32 @@ describe('OuverturesPage — saisie', () => {
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(false);
   });
 
-  it('shows the headcount in force as the placeholder of a cell emptied, and nothing on a cell closed on the server', async () => {
-    const { fixture } = mount({ vue: 'saisie' });
+  it('keeps the value of a field emptied, shows it as the placeholder, and closes on a dash or a zero', async () => {
+    const { fixture, put } = mount({ vue: 'saisie' });
     await fixture.whenStable();
 
-    // Nothing while the cell holds its value, nor on a cell the server reports closed.
-    expect(champ(fixture, 'A', 2).placeholder).toBe('');
-    expect(champ(fixture, 'B', 2).placeholder).toBe('');
-
+    // Emptying says nothing: the cell keeps its 4, shown greyed, and nothing is modified.
     taper(champ(fixture, 'A', 2), '');
     await fixture.whenStable();
-    expect(champ(fixture, 'A', 2).value).toBe('');
     expect(champ(fixture, 'A', 2).placeholder).toBe('4');
+    expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
+    champ(fixture, 'A', 2).dispatchEvent(new Event('blur'));
+    expect(champ(fixture, 'A', 2).value).toBe('4');
 
-    taper(champ(fixture, 'A', 2), '3');
+    // A dash closes, and the field then reads « - »; a zero closes too.
+    taper(champ(fixture, 'A', 2), '-');
     await fixture.whenStable();
-    expect(champ(fixture, 'A', 2).placeholder).toBe('');
+    expect(champ(fixture, 'A', 2).closest('td')!.classList.contains('cellule-modifiee')).toBe(true);
+    champ(fixture, 'A', 2).dispatchEvent(new Event('blur'));
+    expect(champ(fixture, 'A', 2).value).toBe('-');
+    taper(champ(fixture, 'A', 4), '0');
+    await fixture.whenStable();
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
+    const [stands] = put.mock.calls[0] as unknown as [
+      { cellules: { effectif: number | null }[] }[],
+    ];
+    expect(stands[0].cellules.map((cellule) => cellule.effectif)).toEqual([2, null, 2, null]);
   });
 
   it('moves the focus down on Enter, right on the arrow past the caret, and leaves a letter alone', async () => {
@@ -335,7 +346,7 @@ describe('OuverturesPage — saisie', () => {
     root(fixture).querySelectorAll<HTMLButtonElement>('.recopier-jour')[1].click();
     await fixture.whenStable();
     expect(champ(fixture, 'A', 1).value).toBe('7');
-    expect(champ(fixture, 'B', 1).value).toBe('');
+    expect(champ(fixture, 'B', 1).value).toBe('-');
 
     champ(fixture, 'B', 4).focus();
     taper(champ(fixture, 'B', 4), '2');
@@ -456,7 +467,7 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
     bouton(fixture, 'Annuler les modifications').click();
     await fixture.whenStable();
-    expect(champ(fixture, 'B', 2).value).toBe('');
+    expect(champ(fixture, 'B', 2).value).toBe('-');
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
 
     taper(champ(fixture, 'B', 2), '3');
