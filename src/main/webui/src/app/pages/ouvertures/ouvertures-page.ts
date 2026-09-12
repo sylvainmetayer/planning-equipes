@@ -27,8 +27,18 @@ import { keepViewInQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { JourneeStandsVue, buildJourneeStands, pasHoraire } from './journee-stands';
 import {
+  ColonneJourneeType,
+  colonnesJourneesTypes,
+  ecrireColonneJourneeType,
+  libelleColonneJourneeType,
+  resumeJourneesTypes,
+  valeurJourneeType,
+} from './grille-journees-types';
+import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import {
   AnomalieOuverture,
   CelluleJourOuverture,
+  EtatJourneesTypes,
   LigneStandOuverture,
   RapportOuvertures,
   SegmentCellule,
@@ -70,20 +80,33 @@ import {
   standsModifies,
 } from './grille-horaires';
 
-/** The two faces of the screen: reading what a solve would get, or typing it. */
-/** Reading grid, entry grid, or one day laid on time (ADR 0032). */
-export type VueOuvertures = 'CONSULTER' | 'SAISIR' | 'JOURNEE';
+/**
+ * Reading grid, entry grid by date, entry grid by kind of day, or one day laid
+ * on time (ADR 0032 and 0033). The two entry grids write the same cells: the
+ * one by kind of day says a vacation once for every date its template governs.
+ */
+export type VueOuvertures = 'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE';
 
 /** The `vue` query param of each view; the reading grid, the default, writes none. */
 const PARAM_VUE: Record<VueOuvertures, string | null> = {
   CONSULTER: null,
   SAISIR: 'saisie',
+  JOURNEES_TYPES: 'journees-types',
   JOURNEE: 'journee',
 };
 
 function lireVue(param: string | null): VueOuvertures {
-  return param === 'saisie' ? 'SAISIR' : param === 'journee' ? 'JOURNEE' : 'CONSULTER';
+  if (param === 'saisie') {
+    return 'SAISIR';
+  }
+  if (param === 'journees-types') {
+    return 'JOURNEES_TYPES';
+  }
+  return param === 'journee' ? 'JOURNEE' : 'CONSULTER';
 }
+
+/** What a cell whose dates disagree shows: the template view never flattens one. */
+const ECART = '≠';
 
 /** What a closed cell shows, and one of the things typed to close one (`readCell`). */
 const FERME = '-';
@@ -150,6 +173,7 @@ interface LigneView {
 })
 export class OuverturesPage {
   private readonly standsApi = inject(StandsApi);
+  private readonly journeesTypesApi = inject(JourneesTypesApi);
   private readonly crud = inject(ReferenceCrudService);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
@@ -282,6 +306,87 @@ export class OuverturesPage {
     });
   });
 
+  /* -------------------- entry grid, by kind of day (ADR 0033) -------------------- */
+
+  /** The templates and their calendar; absent until the first read, and null when the read fails. */
+  protected readonly etatJourneesTypes = signal<EtatJourneesTypes | null>(null);
+
+  /** One column per vacation of every template the calendar actually uses. */
+  protected readonly colonnesJourneesTypes = computed<ColonneJourneeType[]>(() => {
+    const rapport = this.rapport();
+    return rapport ? colonnesJourneesTypes(rapport, this.etatJourneesTypes()) : [];
+  });
+
+  private readonly colonnesJourneesTypesParId = computed(
+    () => new Map(this.colonnesJourneesTypes().map((colonne) => [colonne.colonneId, colonne])),
+  );
+
+  /** Where a template column starts a new template, for the header's own row. */
+  protected readonly journeesTypesEntetes = computed(() => {
+    const entetes: { journeeTypeId: number; nom: string; colonnes: number; dates: number }[] = [];
+    for (const colonne of this.colonnesJourneesTypes()) {
+      const dernier = entetes[entetes.length - 1];
+      if (dernier && dernier.journeeTypeId === colonne.journeeTypeId) {
+        dernier.colonnes++;
+        continue;
+      }
+      entetes.push({
+        journeeTypeId: colonne.journeeTypeId,
+        nom: colonne.nomJourneeType,
+        colonnes: 1,
+        dates: colonne.colonnes.length + colonne.datesSansColonne.length,
+      });
+    }
+    return entetes;
+  });
+
+  /** What the per-template grid saves, and what it cannot say — the line above the table. */
+  protected readonly resumeJourneesTypes = computed(() =>
+    resumeJourneesTypes(
+      this.cellules(),
+      (this.rapport()?.stands ?? []).map((ligne) => ligne.standId),
+      this.colonnesJourneesTypes(),
+    ),
+  );
+
+  /** The same rows as {@link rowViews}, one cell per template column instead of per date. */
+  protected readonly rowViewsJourneesTypes = computed<LigneView[]>(() => {
+    const colonnesJT = this.colonnesJourneesTypes();
+    const cellules = this.cellules();
+    const reference = this.reference();
+    const modifies = new Set(this.standsModifies());
+    const verrouille = this.editingLocked();
+    const visibles = new Set(this.lignes().map((ligne) => ligne.standId));
+    return (this.rapport()?.stands ?? []).map((ligne) => {
+      const nom = ligne.nom || ligne.standId;
+      return {
+        standId: ligne.standId,
+        nom,
+        visible: visibles.has(ligne.standId),
+        modifiee: modifies.has(ligne.standId),
+        cellules: colonnesJT.map((colonne) => {
+          const valeur = valeurJourneeType(cellules, ligne.standId, colonne);
+          const lue = valeurJourneeType(reference, ligne.standId, colonne);
+          return {
+            clef: key(ligne.standId, colonne.colonneId),
+            colonneId: colonne.colonneId,
+            premierDuJour: colonne.rang === 0,
+            valeur: this.texteJourneeType(valeur),
+            modifiee: valeur !== lue,
+            partielle: valeur === 'ecart',
+            fermee: valeur === null,
+            desactivee: verrouille || colonne.colonnes.length === 0,
+            libelle: `${nom} · ${colonne.nomJourneeType} ${libelleColonneJourneeType(colonne)}`,
+            infobulle:
+              valeur === 'ecart'
+                ? $localize`:@@ouvertures.journeesTypes.ecartInfobulle:Les dates de cette journée type ne disent pas la même chose. Retapez la case pour les aligner, ou réglez-les une à une dans la grille par date.`
+                : null,
+          };
+        }),
+      };
+    });
+  });
+
   protected readonly synthese = computed(() => {
     const rapport = this.rapport();
     return rapport ? synthese(rapport) : null;
@@ -332,6 +437,10 @@ export class OuverturesPage {
       this.cellules.set(cellules);
       this.partielles.set(cellulesPartielles(rapport));
       this.segments.set(segmentsPartiels(rapport));
+      // The templates come along, not on demand: the toggle to the grid by
+      // kind of day must not wait on a second round trip, and an edition
+      // without templates simply shows no such grid.
+      this.etatJourneesTypes.set(await this.journeesTypesApi.etat().catch(() => null));
     } catch (error) {
       this.crud.reportError(error);
     } finally {
@@ -395,6 +504,10 @@ export class OuverturesPage {
    * is a statement, and it reads as one. An inert cell shows nothing.
    */
   protected valeur(standId: string, colonneId: string): string {
+    const colonneJT = this.colonnesJourneesTypesParId().get(colonneId);
+    if (colonneJT) {
+      return this.texteJourneeType(valeurJourneeType(this.cellules(), standId, colonneJT));
+    }
     const effectif = this.cellules().get(standId)?.get(colonneId) ?? null;
     return effectif === null ? FERME : String(effectif);
   }
@@ -417,6 +530,10 @@ export class OuverturesPage {
     return libelleColonne(colonne);
   }
 
+  protected libelleColonneJourneeType(colonne: ColonneJourneeType): string {
+    return libelleColonneJourneeType(colonne);
+  }
+
   /**
    * A keystroke in a cell: digits become the headcount, a dash or a zero
    * closes the stand. An emptied field says nothing — the cell keeps its
@@ -428,9 +545,27 @@ export class OuverturesPage {
       return;
     }
     const lu = readCell(text);
-    if (lu !== undefined) {
-      this.cellules.update((cellules) => ecrireCellule(cellules, { standId, colonneId }, lu));
+    if (lu === undefined) {
+      return;
     }
+    const colonneJT = this.colonnesJourneesTypesParId().get(colonneId);
+    if (colonneJT) {
+      // One keystroke, every date the template governs: that is the whole
+      // point of the grid by kind of day.
+      this.cellules.update((cellules) =>
+        ecrireColonneJourneeType(cellules, standId, colonneJT, lu),
+      );
+      return;
+    }
+    this.cellules.update((cellules) => ecrireCellule(cellules, { standId, colonneId }, lu));
+  }
+
+  /** `2`, `-` or `≠` — what a template cell shows, and what a blur puts back. */
+  private texteJourneeType(valeur: number | null | 'ecart'): string {
+    if (valeur === 'ecart') {
+      return ECART;
+    }
+    return valeur === null ? FERME : String(valeur);
   }
 
   /**

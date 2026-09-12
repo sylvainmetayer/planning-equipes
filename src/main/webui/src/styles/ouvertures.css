@@ -401,6 +401,17 @@
   border-color: var(--mat-sys-error);
 }
 
+/* Dates of one template that disagree: the same dashed warning as a partial
+   cell, since both mean « one integer cannot hold this ». */
+.grille-saisie .cellule-ecart input {
+  border-style: dashed;
+  border-color: var(--mat-sys-error);
+}
+
+.journees-types-resume {
+  margin-top: 0;
+}
+
 .grille-saisie .ligne-modifiee .colonne-stand {
   font-weight: 600;
 }

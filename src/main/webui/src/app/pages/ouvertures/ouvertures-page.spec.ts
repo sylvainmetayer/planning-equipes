@@ -13,7 +13,8 @@ import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { RapportOuvertures } from '../../core/models';
+import { EtatJourneesTypes, RapportOuvertures } from '../../core/models';
+import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { OuverturesPage } from './ouvertures-page';
 
 /** Two stands, two days of two créneaux each (10-12 and 14-20), ids 1-2 then 3-4. */
@@ -98,15 +99,44 @@ function rapport(): RapportOuvertures {
   };
 }
 
+/** Both days are « Jour normal »: 10-12 then 14-20, the shape the fixture repeats. */
+function etatJourneesTypes(): EtatJourneesTypes {
+  return {
+    journeesTypes: [
+      {
+        id: 4,
+        nom: 'Jour normal',
+        vacations: [
+          { heureDebut: '10:00:00', heureFin: '12:00:00', couverturePause: false },
+          { heureDebut: '14:00:00', heureFin: '20:00:00', couverturePause: false },
+        ],
+      },
+    ],
+    calendrier: [
+      { date: '2026-07-08', journeeTypeId: 4 },
+      { date: '2026-07-09', journeeTypeId: 4 },
+    ],
+    datesEnEcart: [],
+  };
+}
+
 function mount(
   options: {
     vue?: string;
     editingLocked?: boolean;
     confirme?: boolean;
     rapport?: RapportOuvertures;
+    journeesTypes?: EtatJourneesTypes | null;
   } = {},
 ) {
   const get = vi.fn(async () => options.rapport ?? rapport());
+  const etatJT = vi.fn(async () => {
+    const etat = options.journeesTypes === undefined ? etatJourneesTypes() : options.journeesTypes;
+    if (etat === null) {
+      throw new Error('pas de journées types');
+    }
+    return etat;
+  });
   const put = vi.fn(async () => ({
     stands: [
       {
@@ -127,6 +157,7 @@ function mount(
     providers: [
       provideZonelessChangeDetection(),
       { provide: StandsApi, useValue: { openings: get, saveOpeningsGrid: put } },
+      { provide: JourneesTypesApi, useValue: { etat: etatJT } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       {
         provide: SolverJobService,
@@ -144,7 +175,7 @@ function mount(
     ],
   });
   const fixture = TestBed.createComponent(OuverturesPage);
-  return { fixture, get, put, ask, notify };
+  return { fixture, get, put, ask, notify, etatJT };
 }
 
 function root(fixture: ComponentFixture<OuverturesPage>): HTMLElement {
@@ -572,5 +603,65 @@ describe('OuverturesPage — saisie', () => {
       ),
     ).toBe(true);
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
+  });
+});
+
+// The grid by kind of day: the same cells, said once per template. What is
+// checked here is the wiring — the columns, one keystroke reaching every date,
+// and the drift a cell cannot hold.
+describe('OuverturesPage — grille par journée type', () => {
+  it('montre une colonne par vacation de la journée type, pas une par date', async () => {
+    const { fixture } = mount({ vue: 'journees-types' });
+    await fixture.whenStable();
+
+    const entetes = Array.from(
+      root(fixture).querySelectorAll('.grille-journees-types .entete-creneau .libelle-colonne'),
+    ).map((each) => each.textContent!.trim());
+    expect(entetes).toEqual(['10:00-12:00', '14:00-20:00']);
+    expect(
+      root(fixture).querySelector('.grille-journees-types .entete-jour')!.textContent!.trim(),
+    ).toBe('Jour normal');
+  });
+
+  it('écrit une case sur toutes les dates de sa journée type', async () => {
+    const { fixture, put } = mount({ vue: 'journees-types' });
+    await fixture.whenStable();
+
+    taper(champ(fixture, 'A', 0, 'jt:4@14:00-20:00'), '5');
+    await fixture.whenStable();
+
+    expect(bouton(fixture, 'Enregistrer').textContent).toContain('(1)');
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
+
+    const [envoye] = put.mock.calls[0] as unknown as [
+      { standId: string; cellules: { creneauId: number; effectif: number | null }[] }[],
+    ];
+    expect(envoye).toHaveLength(1);
+    // Les deux créneaux 14-20 de l'édition, un par date.
+    expect(
+      envoye[0].cellules
+        .filter((cellule) => cellule.effectif === 5)
+        .map((cellule) => cellule.creneauId),
+    ).toEqual([2, 4]);
+  });
+
+  it('annonce « ≠ » quand deux dates de la même journée type divergent', async () => {
+    const divergent = rapport();
+    divergent.stands[0].jours[1].creneaux[1].effectif = 3;
+
+    const { fixture } = mount({ vue: 'journees-types', rapport: divergent });
+    await fixture.whenStable();
+
+    const case14 = champ(fixture, 'A', 0, 'jt:4@14:00-20:00');
+    expect(case14.value).toBe('≠');
+    expect(case14.closest('td')!.classList.contains('cellule-ecart')).toBe(true);
+  });
+
+  it('reste sur la grille par date quand l’édition n’a pas de journées types', async () => {
+    const { fixture } = mount({ vue: 'journees-types', journeesTypes: null });
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelector('.grille-journees-types')).toBeNull();
   });
 });

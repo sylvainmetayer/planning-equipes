@@ -16,12 +16,16 @@
         <mat-icon>grid_on</mat-icon>
         <ng-container i18n="@@ouvertures.vue.saisir">Saisir</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="JOURNEES_TYPES" [disabled]="colonnesJourneesTypes().length === 0">
+        <mat-icon>event_repeat</mat-icon>
+        <ng-container i18n="@@ouvertures.vue.journeesTypes">Par journée type</ng-container>
+      </mat-button-toggle>
       <mat-button-toggle value="JOURNEE">
         <mat-icon>view_timeline</mat-icon>
         <ng-container i18n="@@ouvertures.vue.journee">Journée</ng-container>
       </mat-button-toggle>
     </mat-button-toggle-group>
-    @if (view() === 'SAISIR') {
+    @if (view() === 'SAISIR' || view() === 'JOURNEES_TYPES') {
       <button matButton="filled" type="button" class="saisie-enregistrer"
               [disabled]="editingLocked() || enregistrement() || standsModifies().length === 0" (click)="enregistrer()">
         <mat-icon>save</mat-icon>
@@ -34,6 +38,7 @@
         <mat-icon>undo</mat-icon>
         <ng-container i18n="@@ouvertures.saisie.annuler">Annuler les modifications</ng-container>
       </button>
+      @if (view() === 'SAISIR') {
       <button matButton type="button" class="saisie-aligner" [matTooltip]="infobulleAligner()"
               [disabled]="editingLocked() || enregistrement() || standsModifies().length > 0 || standsPartiels().length === 0"
               (click)="alignerPartiels()">
@@ -43,6 +48,7 @@
           <span class="saisie-compteur">({{ standsPartiels().length }})</span>
         }
       </button>
+      }
     }
     <button matButton type="button" [disabled]="chargement() || standsModifies().length > 0" (click)="recharger()">
       <mat-icon>refresh</mat-icon>
@@ -179,6 +185,89 @@
               @if (lignes().length === 0) {
                 <tr>
                   <td [attr.colspan]="colonnes().length + 1" class="empty-hint" i18n="@@ouvertures.aucuneLigne">
+                    Aucun stand ne correspond à ce filtre.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (view() === 'JOURNEES_TYPES' && colonnesJourneesTypes().length === 0) {
+        <p class="empty-hint" i18n="@@ouvertures.journeesTypes.sansJourneeType">
+          Cette édition n'a pas de journée type gouvernant ses dates : déclarez-les sur la page Créneaux pour saisir les ouvertures par type de journée.
+        </p>
+        <a matButton routerLink="/creneaux">
+          <mat-icon>event_repeat</mat-icon>
+          <ng-container i18n="@@ouvertures.journeesTypes.versCreneaux">Déclarer les journées types</ng-container>
+        </a>
+      } @else if (view() === 'JOURNEES_TYPES') {
+        <!-- The same cells, said once per kind of day: a column is a vacation of
+             a template and writes to every date that template governs. -->
+        <p class="empty-hint" i18n="@@ouvertures.journeesTypes.hint">
+          Une case vaut pour toutes les dates de sa journée type. « ≠ » signale des dates qui divergent : retapez la case pour les aligner.
+        </p>
+        <p class="empty-hint journees-types-resume">
+          <ng-container i18n="@@ouvertures.journeesTypes.resume">{{ resumeJourneesTypes().colonnes }} cases ici, pour {{ resumeJourneesTypes().cellulesDatees }} dans la grille par date.</ng-container>
+          @if (resumeJourneesTypes().ecarts > 0) {
+            <ng-container i18n="@@ouvertures.journeesTypes.resumeEcarts">{{ resumeJourneesTypes().ecarts }} case(s) en écart entre les dates de leur journée type.</ng-container>
+          }
+          @if (resumeJourneesTypes().datesSansColonne > 0) {
+            <ng-container i18n="@@ouvertures.journeesTypes.resumeHorsGrille">{{ resumeJourneesTypes().datesSansColonne }} date(s) dont un créneau est scindé restent à régler dans la grille par date.</ng-container>
+          }
+        </p>
+        @if (editingLocked()) {
+          <p class="locked-hint" i18n="@@ouvertures.journeesTypes.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
+        }
+        <div class="table-wrapper">
+          <table class="ouvertures-grille grille-saisie grille-journees-types">
+            <caption class="visually-hidden" i18n="@@ouvertures.journeesTypes.caption">Saisie des ouvertures par journée type : une ligne par stand, une colonne par vacation de chaque journée type, l'effectif dans chaque case</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="colonne-stand" rowspan="2" i18n="@@ouvertures.colonne.stand">Stand</th>
+                @for (entete of journeesTypesEntetes(); track entete.journeeTypeId) {
+                  <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="entete.colonnes">
+                    <span class="entete-jour">{{ entete.nom }}</span>
+                    <span class="entete-date" i18n="@@ouvertures.journeesTypes.dates">{{ entete.dates }} jour(s)</span>
+                  </th>
+                }
+              </tr>
+              <tr>
+                @for (colonne of colonnesJourneesTypes(); track colonne.colonneId) {
+                  <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0">
+                    <span class="libelle-colonne">{{ libelleColonneJourneeType(colonne) }}</span>
+                    @if (colonne.couverturePause) {
+                      <mat-icon inline class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
+                    }
+                  </th>
+                }
+              </tr>
+            </thead>
+            <tbody (input)="onInput($event)" (focusin)="onFocus($event)" (focusout)="onBlur($event)"
+                   (keydown)="onKeydownBody($event)" (paste)="onPasteBody($event)">
+              @for (ligne of rowViewsJourneesTypes(); track ligne.standId) {
+                <tr [class.ligne-modifiee]="ligne.modifiee" [class.ligne-masquee]="!ligne.visible">
+                  <th scope="row" class="colonne-stand">
+                    <span class="stand-nom">{{ ligne.nom }}</span>
+                  </th>
+                  @for (cellule of ligne.cellules; track cellule.colonneId) {
+                    <td class="cellule-saisie" [class.premier-du-jour]="cellule.premierDuJour"
+                        [class.cellule-modifiee]="cellule.modifiee"
+                        [class.cellule-fermee]="cellule.fermee"
+                        [class.cellule-ecart]="cellule.partielle">
+                      <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"
+                             [attr.data-cellule]="cellule.clef"
+                             [attr.aria-label]="cellule.libelle"
+                             [attr.title]="cellule.infobulle"
+                             [disabled]="cellule.desactivee"
+                             [value]="cellule.valeur"
+                             [placeholder]="cellule.valeur" />
+                    </td>
+                  }
+                </tr>
+              }
+              @if (lignes().length === 0) {
+                <tr>
+                  <td [attr.colspan]="colonnesJourneesTypes().length + 1" class="empty-hint" i18n="@@ouvertures.journeesTypes.aucuneLigne">
                     Aucun stand ne correspond à ce filtre.
                   </td>
                 </tr>
