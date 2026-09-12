@@ -61,6 +61,7 @@
 .sections.decoupageAuto = false
 .sections.edition.id = event-avec-erreur-planning
 .sections.edition.nom = event-avec-erreur-planning
+.sections.journeesTypes = null
 .sections.parametresDecoupage = null
 .sections.parametresLegaux = null
 .sections.parametresSolveur = null

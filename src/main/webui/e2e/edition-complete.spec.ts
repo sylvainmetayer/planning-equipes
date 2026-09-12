@@ -65,7 +65,7 @@ async function affecterDates(
   await ajout.getByLabel('Au', { exact: true }).fill(au);
   await ajout.locator('mat-form-field').filter({ hasText: 'Journée type' }).click();
   await page.getByRole('option', { name: journeeType }).click();
-  await page.getByRole('button', { name: `Ajouter ${attendu} date(s)` }).click();
+  await page.getByRole('button', { name: `Affecter ${attendu} date(s)` }).click();
 }
 
 async function creerStand(page: Page, id: string, nom: string): Promise<void> {

@@ -301,7 +301,7 @@
   "journeesTypes.calendrier.title": "Calendar",
   "journeesTypes.calendrier.bornes": "from {$INTERPOLATION} to {$INTERPOLATION_1}",
   "journeesTypes.calendrier.journee": "Day template",
-  "journeesTypes.calendrier.ajouter": "Add {$INTERPOLATION} date(s)",
+  "journeesTypes.calendrier.ajouter": "Assign {$INTERPOLATION} date(s)",
   "journeesTypes.calendrier.vide": "No date yet. The dates placed here are the edition's dates.",
   "journeesTypes.calendrier.caption": "Calendar of day templates: one row per date, the template governing it, and the drift from the written time slots",
   "journeesTypes.calendrier.etat": "Status",

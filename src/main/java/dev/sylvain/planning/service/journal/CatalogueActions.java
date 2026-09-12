@@ -81,6 +81,15 @@ public final class CatalogueActions {
         changesData("CRENEAUX_RECURRENTS_CREES", "Créneaux récurrents générés", Entite.CRENEAU);
         changesData("CRENEAUX_DERIVES", "Créneaux dérivés des horaires des stands", Entite.CRENEAU);
         changesData("DECOUPAGE_GENERE", "Découpage des amplitudes en vacations", Entite.CRENEAU);
+        // Day templates (ADR 0032): a template or its calendar changes nothing
+        // the solver reads until applied; applying does, recognising does not.
+        action("JOURNEE_TYPE_CREEE", "Journée type ajoutée", Entite.CRENEAU);
+        action("JOURNEE_TYPE_MODIFIEE", "Journée type modifiée", Entite.CRENEAU);
+        action("JOURNEE_TYPE_DEFINIE", "Journée type définie", Entite.CRENEAU);
+        action("JOURNEE_TYPE_SUPPRIMEE", "Journée type supprimée", Entite.CRENEAU);
+        action("CALENDRIER_JOURNEES_TYPES_MODIFIE", "Calendrier des journées types modifié", Entite.CRENEAU);
+        changesData("JOURNEES_TYPES_APPLIQUEES", "Calendrier des journées types appliqué aux créneaux", Entite.CRENEAU);
+        action("JOURNEES_TYPES_RECONNUES", "Journées types reconnues depuis les créneaux", Entite.CRENEAU);
 
         /* -------------- Locations and game categories --------------- */
         changesData("EMPLACEMENT_CREE", "Emplacement ajouté", Entite.EMPLACEMENT);
@@ -214,6 +223,12 @@ public final class CatalogueActions {
         route("CreneauResource#createRecurrence", "CRENEAUX_RECURRENTS_CREES");
         route("CreneauResource#applyDerivation", "CRENEAUX_DERIVES");
         route("DecoupageResource#generateDecoupage", "DECOUPAGE_GENERE");
+        route("JourneeTypeResource#create", "JOURNEE_TYPE_CREEE");
+        route("JourneeTypeResource#update", "JOURNEE_TYPE_MODIFIEE");
+        route("JourneeTypeResource#delete", "JOURNEE_TYPE_SUPPRIMEE");
+        route("JourneeTypeResource#setCalendrier", "CALENDRIER_JOURNEES_TYPES_MODIFIE");
+        route("JourneeTypeResource#apply", "JOURNEES_TYPES_APPLIQUEES");
+        route("JourneeTypeResource#reconnaitre", "JOURNEES_TYPES_RECONNUES");
 
         route("EmplacementResource#createEmplacement", "EMPLACEMENT_CREE");
         route("EmplacementResource#updateEmplacement", "EMPLACEMENT_MODIFIE");
@@ -329,6 +344,12 @@ public final class CatalogueActions {
         outil("supprimer_creneaux", "CRENEAUX_SUPPRIMES");
         outil("creer_creneaux_recurrents", "CRENEAUX_RECURRENTS_CREES");
         outil("generer_creneaux_depuis_stands", "CRENEAUX_DERIVES");
+        outil("definir_journee_type", "JOURNEE_TYPE_DEFINIE");
+        outil("supprimer_journee_type", "JOURNEE_TYPE_SUPPRIMEE");
+        outil("affecter_journee_type", "CALENDRIER_JOURNEES_TYPES_MODIFIE");
+        outil("retirer_dates_journee_type", "CALENDRIER_JOURNEES_TYPES_MODIFIE");
+        outil("materialiser_journees_types", "JOURNEES_TYPES_APPLIQUEES");
+        outil("reconnaitre_journees_types", "JOURNEES_TYPES_RECONNUES");
         outil("generer_decoupage", "DECOUPAGE_GENERE");
 
         outil("creer_emplacement", "EMPLACEMENT_CREE");
@@ -407,6 +428,8 @@ public final class CatalogueActions {
         untracked("StandResource#analyseGrille", "analyse préalable d'un fichier, n'écrit rien");
         untracked("CreneauResource#previewRecurrence", "prévisualisation, n'écrit rien");
         untracked("CreneauResource#previewDerivation", "prévisualisation, n'écrit rien");
+        untracked("JourneeTypeResource#previewApplication", "prévisualisation, n'écrit rien");
+        untracked("JourneeTypeResource#previewReconnaissance", "prévisualisation, n'écrit rien");
         untracked("ConstraintResource#diagnose", "relit l'analyse enregistrée, n'écrit rien");
         untracked("PlanningHoursResource#compute", "calcule les heures d'un planning envoyé, n'écrit rien");
         untracked("ReferenceDataResource#fileScenarioTarget", "lit un fichier pour en annoncer la cible");

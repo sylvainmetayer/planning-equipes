@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.hasSize;
 
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -173,12 +174,46 @@ class JourneeTypeResourceTest {
         }
     }
 
+    /**
+     * The edition may already hold a calendar — a scenario import recognises
+     * the templates of the grid it lands — so the test empties it first, and
+     * puts it back.
+     */
     @Test
     void unCalendrierSansDateNAPasDApplication() {
-        given().when()
-                .post("/api/journees-types/application/apercu")
+        String calendrierAvant = given().when()
+                .get("/api/journees-types")
                 .then()
-                .statusCode(400)
-                .body("message", containsString("Aucune date"));
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getString("calendrier");
+        List<Map<String, Object>> sauvegarde = given().when()
+                .get("/api/journees-types")
+                .then()
+                .extract()
+                .jsonPath()
+                .getList("calendrier");
+        given().contentType("application/json")
+                .body("[]")
+                .when()
+                .put("/api/journees-types/calendrier")
+                .then()
+                .statusCode(200);
+        try {
+            given().when()
+                    .post("/api/journees-types/application/apercu")
+                    .then()
+                    .statusCode(400)
+                    .body("message", containsString("Aucune date"));
+        } finally {
+            assertThat(calendrierAvant).isNotNull();
+            given().contentType("application/json")
+                    .body(sauvegarde)
+                    .when()
+                    .put("/api/journees-types/calendrier")
+                    .then()
+                    .statusCode(200);
+        }
     }
 }

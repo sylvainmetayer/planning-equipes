@@ -60,6 +60,7 @@
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 5
 .sections.decoupageAuto = false
 .sections.edition = null
+.sections.journeesTypes = null
 .sections.parametresDecoupage = null
 .sections.parametresLegaux = null
 .sections.parametresSolveur = null

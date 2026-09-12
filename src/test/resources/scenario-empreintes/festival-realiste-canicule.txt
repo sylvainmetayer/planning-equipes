@@ -2164,6 +2164,7 @@
 .sections.decoupageAuto = true
 .sections.edition.id = festival-realiste-canicule
 .sections.edition.nom = Festival réaliste — canicule
+.sections.journeesTypes = null
 .sections.parametresDecoupage.dureeChevauchementMinutes = 15
 .sections.parametresDecoupage.dureeVacationCibleMinutes = 330
 .sections.parametresDecoupage.dureeVacationMaxMinutes = 360

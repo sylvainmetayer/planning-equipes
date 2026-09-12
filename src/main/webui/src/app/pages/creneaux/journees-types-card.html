@@ -85,7 +85,7 @@
           </mat-form-field>
           <button matButton type="submit" [disabled]="!peutAjouter()">
             <mat-icon>date_range</mat-icon>
-            <ng-container i18n="@@journeesTypes.calendrier.ajouter">Ajouter {{ datesAAjouter().length }} date(s)</ng-container>
+            <ng-container i18n="@@journeesTypes.calendrier.ajouter">Affecter {{ datesAAjouter().length }} date(s)</ng-container>
           </button>
         </form>
         @if (lignes().length === 0) {

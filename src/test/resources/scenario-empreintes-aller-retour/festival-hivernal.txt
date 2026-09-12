@@ -3604,6 +3604,7 @@
 .sections.contraintes = null
 .sections.decoupageAuto = false
 .sections.edition = null
+.sections.journeesTypes = null
 .sections.parametresDecoupage.dureeChevauchementMinutes = 15
 .sections.parametresDecoupage.dureeVacationCibleMinutes = 330
 .sections.parametresDecoupage.dureeVacationMaxMinutes = 360
