@@ -27,7 +27,7 @@ export function buildGettingStartedSections(): HelpSection[] {
           kind: 'steps',
           items: [
             $localize`:@@aide.start.step1:Choisir ou créer l'édition : tout le reste lui appartient, et rien ne circule d'une édition à l'autre.`,
-            $localize`:@@aide.start.step2:Saisir les référentiels, dans cet ordre : typologies de jeux et emplacements, puis les journées types et leur calendrier sur la page Créneaux — c'est là que l'édition prend ses dates —, puis les stands (leur effectif par créneau, sur la grille des ouvertures), puis les animateurs. Les animateurs entrent aussi d'un seul geste par l'import CSV, si vos bénévoles arrivent déjà dans un tableur ; un scénario YAML ou un dump SQL remplace l'étape entière. Une saisie douteuse mais tenable est enregistrée avec un avertissement à lire, jamais refusée en silence.`,
+            $localize`:@@aide.start.step2:Saisir les référentiels, dans cet ordre : typologies de jeux et emplacements, puis les journées types et leur calendrier sur la page Créneaux — c'est là que l'édition prend ses dates —, puis les stands (leur effectif par créneau, sur la grille des ouvertures), puis les animateurs. C'est l'ordre du menu, et celui des onglets de la page Imports : typologies, emplacements, stands et animateurs entrent chacun d'un fichier CSV de quelques colonnes, si vos données arrivent déjà dans un tableur ; un scénario YAML ou un dump SQL remplace l'étape entière. Une saisie douteuse mais tenable est enregistrée avec un avertissement à lire, jamais refusée en silence.`,
             $localize`:@@aide.start.step3:Ouvrir la collecte des disponibilités, case « prévenir » cochée : elle envoie à chacun le lien de son espace, où il déclare depuis son téléphone ses jours d'absence et les jeux qu'il aimerait animer. Les fiches animateurs doivent donc déjà exister ; et si vous ouvrez la collecte avant d'avoir saisi les créneaux, l'espace n'offre aucun jour à cocher — seuls les souhaits se déclarent.`,
             $localize`:@@aide.start.step4:Appliquer ou refuser les déclarations reçues, puis fermer la collecte : appliquer écrit la proposition entière sur la fiche de l'animateur.`,
             $localize`:@@aide.start.step5:Vérifier les ouvertures des stands, puis le besoin en animateurs : ces deux écrans répondent sans qu'aucun calcul ait tourné.`,
@@ -58,8 +58,8 @@ export function buildGettingStartedSections(): HelpSection[] {
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
         {
-          route: '/import-animateurs',
-          label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`,
+          route: '/imports',
+          label: $localize`:@@aide.lien.importAnimateurs:Imports — onglet Animateurs`,
         },
         { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
         { route: '/', label: $localize`:@@nav.link.accueil:État de l'édition` },

@@ -2169,7 +2169,7 @@
 .sections.parametresDecoupage.dureeVacationCibleMinutes = 330
 .sections.parametresDecoupage.dureeVacationMaxMinutes = 360
 .sections.parametresDecoupage.dureeVacationMinMinutes = 180
-.sections.parametresDecoupage.modeGrille = AMPLITUDES
+.sections.parametresDecoupage.modeGrille = VACATIONS
 .sections.parametresDecoupage.strategieCouverturePendantPause = EFFECTIF_REDUIT
 .sections.parametresLegaux.coupureRepasMidiDebut = 12:00
 .sections.parametresLegaux.coupureRepasMidiFin = 14:00

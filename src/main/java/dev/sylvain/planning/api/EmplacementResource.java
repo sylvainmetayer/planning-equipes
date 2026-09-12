@@ -2,6 +2,9 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvImportReport;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvImportRequest;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvImportService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -26,6 +29,9 @@ public class EmplacementResource {
     @Inject
     ReferenceDataService referenceDataService;
 
+    private static final ReferentielCsvImportReport.ImportTarget CIBLE =
+            ReferentielCsvImportReport.ImportTarget.EMPLACEMENTS;
+
     @GET
     public List<Emplacement> listEmplacements() {
         return referenceDataService.listEmplacements();
@@ -47,5 +53,32 @@ public class EmplacementResource {
     public Response deleteEmplacement(@PathParam("id") String id) {
         referenceDataService.deleteEmplacement(id);
         return Response.noContent().build();
+    }
+
+    /* ------------------------------ Import CSV ------------------------------ */
+
+    /** The shape the import expects, shown rather than described. */
+    @GET
+    @Path("/import-csv/exemple")
+    @Produces("text/csv")
+    public Response exempleCsv() {
+        return CsvDownload.attachment(
+                referenceDataService.exempleCsvReferentiel(CIBLE), ReferentielCsvImportService.exampleFileName(CIBLE));
+    }
+
+    /** What the file would do, line by line, without writing any of it. */
+    @POST
+    @Path("/import-csv/analyse")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ReferentielCsvImportReport analyseCsv(ReferentielCsvImportRequest request) {
+        return referenceDataService.previewCsvReferentiel(CIBLE, request);
+    }
+
+    /** Applies the same file the preview was computed from; the server reads it again before writing. */
+    @POST
+    @Path("/import-csv")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ReferentielCsvImportReport importCsv(ReferentielCsvImportRequest request) {
+        return referenceDataService.importCsvReferentiel(CIBLE, request);
     }
 }

@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  input,
   signal,
   viewChild,
   ElementRef,
@@ -68,6 +69,9 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImportAnimateursPage {
+  /** False inside the Imports page, which carries the title of the screen itself. */
+  readonly entete = input(true);
+
   private readonly animateursApi = inject(AnimateursApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);

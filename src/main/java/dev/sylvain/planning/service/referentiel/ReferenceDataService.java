@@ -104,6 +104,9 @@ public class ReferenceDataService implements ReferenceData {
     JourneeTypeService journeesTypes;
 
     @Inject
+    ReferentielCsvImportService referentielCsvImport;
+
+    @Inject
     JdbcEditionScope scope;
 
     /* ------------------------------ Animateurs ----------------------------- */
@@ -399,6 +402,22 @@ public class ReferenceDataService implements ReferenceData {
 
     /** The créneaux a rule produced (or would produce), and the resulting grid's verdict. */
     public record RecurrenceGrille(List<Creneau> creneaux, CreneauGridService.RapportGrille controle) {}
+
+    /* ----------------------- Referential CSV imports ----------------------- */
+
+    public String exempleCsvReferentiel(ReferentielCsvImportReport.ImportTarget cible) {
+        return referentielCsvImport.exemple(cible);
+    }
+
+    public ReferentielCsvImportReport previewCsvReferentiel(
+            ReferentielCsvImportReport.ImportTarget cible, ReferentielCsvImportRequest request) {
+        return referentielCsvImport.preview(cible, request);
+    }
+
+    public ReferentielCsvImportReport importCsvReferentiel(
+            ReferentielCsvImportReport.ImportTarget cible, ReferentielCsvImportRequest request) {
+        return referentielCsvImport.apply(cible, request);
+    }
 
     /* ------------------------------ Day templates ------------------------------ */
 

@@ -180,6 +180,32 @@ créneaux impliquent, pour qu'une édition importée se lise comme une édition
 tapée ([ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md)).
 L'export écrit la section dès qu'une journée type existe.
 
+## Import CSV des référentiels
+
+Trois référentiels se remplissent d'un fichier de quelques colonnes, sur l'écran
+**Imports** (un onglet chacun) : les **typologies** (`id` et `libelle`
+obligatoires, `ninja` facultative), les **emplacements** (`id` et `nom`
+obligatoires, `latitude` et `longitude` facultatives) et les **stands** (`id`,
+`nom` et `typologies` obligatoires, `effectifMin` et `effectifMax`
+facultatives). Les en-têtes se reconnaissent à la casse et aux accents près, et
+plusieurs typologies se séparent par `|`, `;` ou une virgule.
+
+Trois règles valent pour les trois :
+
+- **Une colonne absente, ou une case vide, n'efface rien.** C'est la doctrine de
+  la grille des compétences ([0030](decisions/0030-grille-competences-import-additif.md))
+  appliquée à une fiche : un fichier de trois colonnes qui renomme des stands ne
+  touche ni leurs horaires, ni leur emplacement, ni leurs indicateurs.
+- **Un identifiant déjà connu est mis à jour**, il n'est pas refusé : réimporter
+  un fichier corrigé est le geste normal.
+- **Une typologie qu'un stand cite sans qu'elle existe est créée**, libellé égal
+  à l'identifiant, et l'aperçu la nomme avant l'écriture. Un stand sans effectif
+  tient à une personne, ce que l'aperçu dit aussi.
+
+L'aperçu (`POST …/import-csv/analyse`) n'écrit rien ; l'écriture
+(`POST …/import-csv`) relit le fichier et refait tous les contrôles. Chaque
+ligne fautive est refusée seule, avec sa raison, sans bloquer les autres.
+
 ## Import CSV des animateurs
 
 Le seul import **partiel** du produit : il ne touche que les animateurs, une

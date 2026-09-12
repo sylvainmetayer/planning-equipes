@@ -254,7 +254,7 @@ class ScenarioYamlWriterTest {
                 .containsEntry("coupureRepasMidiDebut", "12:00");
         assertThat((Map<String, Object>) parsed.get("parametresDecoupage"))
                 .containsEntry("strategieCouverturePendantPause", "EFFECTIF_REDUIT")
-                .containsEntry("modeGrille", "AMPLITUDES")
+                .containsEntry("modeGrille", "VACATIONS")
                 // The meal keys left this section; the deprecated ones are never written.
                 .doesNotContainKeys("dureePauseRepasMinutes", "fenetreRepasMidiDebut");
         assertThat((List<Map<String, Object>>) parsed.get("typologies"))

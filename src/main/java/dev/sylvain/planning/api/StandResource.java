@@ -4,6 +4,9 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.HoraireCompaction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvImportReport;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvImportRequest;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvImportService;
 import dev.sylvain.planning.service.referentiel.StandGrilleImportReport;
 import dev.sylvain.planning.service.referentiel.StandGrilleImportRequest;
 import dev.sylvain.planning.service.referentiel.StandGrilleImportService;
@@ -33,6 +36,8 @@ public class StandResource {
 
     @Inject
     ReferenceDataService referenceDataService;
+
+    private static final ReferentielCsvImportReport.ImportTarget CIBLE = ReferentielCsvImportReport.ImportTarget.STANDS;
 
     @Inject
     StandGrilleImportService grilleImport;
@@ -124,5 +129,32 @@ public class StandResource {
     @Produces("text/csv")
     public Response exempleGrille() {
         return CsvDownload.attachment(grilleImport.exemple(), StandGrilleImportService.EXEMPLE_FICHIER);
+    }
+
+    /* ------------------------------ Import CSV ------------------------------ */
+
+    /** The shape the import expects, shown rather than described. */
+    @GET
+    @Path("/import-csv/exemple")
+    @Produces("text/csv")
+    public Response exempleCsv() {
+        return CsvDownload.attachment(
+                referenceDataService.exempleCsvReferentiel(CIBLE), ReferentielCsvImportService.exampleFileName(CIBLE));
+    }
+
+    /** What the file would do, line by line, without writing any of it. */
+    @POST
+    @Path("/import-csv/analyse")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ReferentielCsvImportReport analyseCsv(ReferentielCsvImportRequest request) {
+        return referenceDataService.previewCsvReferentiel(CIBLE, request);
+    }
+
+    /** Applies the same file the preview was computed from; the server reads it again before writing. */
+    @POST
+    @Path("/import-csv")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ReferentielCsvImportReport importCsv(ReferentielCsvImportRequest request) {
+        return referenceDataService.importCsvReferentiel(CIBLE, request);
     }
 }

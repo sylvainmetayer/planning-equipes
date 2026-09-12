@@ -1,0 +1,108 @@
+<mat-card class="page-card" appearance="outlined">
+  <mat-card-header>
+    <mat-card-title i18n="@@importRef.fichier.titre">1. Le fichier</mat-card-title>
+    <mat-card-subtitle>{{ colonnes() }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="empty-hint">{{ aide() }}</p>
+    <div class="card-actions">
+      <button matButton (click)="telechargerExemple()" [disabled]="telechargementEnCours()">
+        <mat-icon>download</mat-icon>
+        <span i18n="@@importRef.fichier.exemple">Télécharger un fichier d'exemple</span>
+      </button>
+    </div>
+    <div class="card-actions">
+      <button matButton="filled" (click)="choisirFichier()" [disabled]="analyseEnCours() || importEnCours()">
+        <mat-icon>upload_file</mat-icon>
+        <span i18n="@@importCsv.fichier.choisir">Choisir un fichier CSV</span>
+      </button>
+      @if (nomFichier()) {
+        <button matButton (click)="reinitialiser()" [disabled]="importEnCours()">
+          <mat-icon>close</mat-icon>
+          <span i18n="@@importCsv.fichier.oublier">Oublier ce fichier</span>
+        </button>
+      }
+    </div>
+    <input #csvInput type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain" hidden (change)="onFichierChoisi($event)" />
+    @if (nomFichier()) {
+      <p class="empty-hint">
+        <span i18n="@@importCsv.fichier.nom">Fichier chargé :</span> {{ nomFichier() }}
+        @if (rapport(); as vue) {
+          <span i18n="@@importRef.fichier.detail">&nbsp;— séparateur « {{ vue.separator }} », {{ vue.columns.length }} colonne(s), {{ vue.total }} ligne(s).</span>
+        }
+      </p>
+    }
+    @if (analyseEnCours() || importEnCours()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (erreur()) {
+      <p class="field-error" role="alert">{{ erreur() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (rapport(); as vue) {
+  <mat-card class="page-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title i18n="@@importRef.apercu.titre">2. Ce que l'import ferait</mat-card-title>
+      <mat-card-subtitle i18n="@@importRef.apercu.bilan">
+        {{ vue.total }} ligne(s) : {{ vue.created }} création(s), {{ vue.updated }} mise(s) à jour, {{ vue.rejected }} refusée(s).
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (vue.typologiesCreees.length > 0) {
+        <p class="empty-hint" i18n="@@importRef.typologiesCreees">
+          Typologie(s) citée(s) mais absente(s) du référentiel, qui seront créées avec leur identifiant pour libellé : {{ vue.typologiesCreees.join(', ') }}.
+        </p>
+      }
+      <div class="table-wrapper">
+        <table class="import-table">
+          <caption class="visually-hidden" i18n="@@importRef.apercu.caption">Une ligne par ligne du fichier : son numéro, ce qu'elle nomme, ce que l'import en ferait, et pourquoi</caption>
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@importRef.apercu.ligne">Ligne</th>
+              <th scope="col" i18n="@@common.id">Id</th>
+              <th scope="col" i18n="@@common.nom">Nom</th>
+              <th scope="col" i18n="@@importRef.apercu.action">Action</th>
+              <th scope="col" i18n="@@importRef.apercu.pourquoi">Ce qu'il faut savoir</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of vue.rows; track ligne.line) {
+              <tr [class]="classeAction(ligne.action)">
+                <td>{{ ligne.line }}</td>
+                <td>{{ ligne.id ?? '—' }}</td>
+                <td>{{ ligne.libelle ?? '—' }}</td>
+                <td>
+                  <mat-icon inline aria-hidden="true">{{ iconeAction(ligne.action) }}</mat-icon>
+                  @switch (ligne.action) {
+                    @case ('CREE') { <ng-container i18n="@@importRef.action.cree">Créée</ng-container> }
+                    @case ('MIS_A_JOUR') { <ng-container i18n="@@importRef.action.maj">Mise à jour</ng-container> }
+                    @default { <ng-container i18n="@@importRef.action.refuse">Refusée</ng-container> }
+                  }
+                </td>
+                <td>
+                  @for (raison of ligne.raisons; track $index) {
+                    <span class="import-raison">{{ raison }}</span>
+                  }
+                  @for (detail of ligne.details; track $index) {
+                    <span class="import-detail">{{ detail }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="card-actions">
+        <button matButton="filled" (click)="importer()" [disabled]="!peutImporter()">
+          <mat-icon>save</mat-icon>
+          <span i18n="@@importRef.importer">Importer</span>
+        </button>
+        @if (vue.applied) {
+          <span class="empty-hint" i18n="@@importRef.applique">Import effectué.</span>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+}

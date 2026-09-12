@@ -48,7 +48,18 @@ public class ParametresDecoupage {
 
     public static final int DUREE_CHEVAUCHEMENT_MINUTES_PAR_DEFAUT = 30;
     /** What the Créneaux screen presumed silently before the mode was declared. */
-    public static final ModeGrilleCreneaux MODE_GRILLE_PAR_DEFAUT = ModeGrilleCreneaux.AMPLITUDES;
+    /**
+     * A new edition holds final vacations.
+     *
+     * <p>It was AMPLITUDES, « what the screen presumed silently » before the
+     * mode was declared at all (V66). The reason to keep it there has gone: a
+     * grid declared in vacations now puts the slicing away instead of offering
+     * its destructive button, so the old default no longer protects anything —
+     * it only made a hand-typed grid read its meal relays as overlapping
+     * amplitudes until somebody flipped the toggle. An edition that does slice
+     * says so once, on the Créneaux page, or through its scenario file.</p>
+     */
+    public static final ModeGrilleCreneaux MODE_GRILLE_PAR_DEFAUT = ModeGrilleCreneaux.VACATIONS;
 
     private int dureeVacationCibleMinutes = DUREE_VACATION_CIBLE_MINUTES_PAR_DEFAUT;
     private int dureeVacationMinMinutes = DUREE_VACATION_MIN_MINUTES_PAR_DEFAUT;

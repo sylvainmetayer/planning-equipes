@@ -94,8 +94,8 @@ export function buildReferenceDataSections(): HelpSection[] {
       links: [
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         {
-          route: '/import-animateurs',
-          label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`,
+          route: '/imports',
+          label: $localize`:@@aide.lien.importAnimateurs:Imports — onglet Animateurs`,
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
@@ -140,7 +140,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.data.importCsv:Si vos bénévoles arrivent dans un tableur, l'écran « Import CSV des animateurs » évite de tout ressaisir. Enregistrez la feuille au format « CSV UTF-8 » (le .xlsx n'est pas lu, et un fichier enregistré dans un autre encodage est refusé : ses accents sont déjà perdus quand le fichier arrive), déposez-la, et dites quelle colonne est quel champ : une correspondance est proposée d'après les en-têtes, vous la corrigez. L'écran affiche alors, ligne par ligne, ce que l'import ferait — acceptée, rejetée et pourquoi, avec le numéro de ligne du fichier — et rien n'est écrit tant que vous n'avez pas validé. Par défaut il ajoute et met à jour sans supprimer personne, et les jours d'indisponibilité du fichier viennent compléter ceux déjà enregistrés plutôt que les effacer ; deux cases à cocher inversent chacun de ces deux choix. Si vous cochez le remplacement complet, lisez l'avertissement de l'aperçu avant de valider : supprimer une fiche emporte aussi la déclaration de disponibilités de la personne, son accusé de réception du planning publié et son code d'accès à l'espace. Deux refus surprennent au premier essai et sont volontaires : créez d'abord vos créneaux (sans dates d'événement, un jour d'indisponibilité importé serait invisible dans l'espace animateur puis effacé), et donnez une date de naissance à chaque nouvelle fiche (tout le régime mineur / majeur en dépend). Enfin, si deux personnes portent le même nom, ajoutez une colonne identifiant ou e-mail : l'import refuse la ligne plutôt que de choisir à votre place.`,
+          text: $localize`:@@aide.data.importCsv:Tous les fichiers qui remplissent une édition sont sur un seul écran, « Imports », un onglet par référentiel et dans l'ordre où les données se tiennent : typologies, emplacements, stands, animateurs, puis la grille des stands. Les trois premiers onglets demandent peu : un identifiant et un libellé pour une typologie, un identifiant et un nom pour un emplacement — latitude et longitude sont facultatives —, un identifiant, un nom et des typologies pour un stand, dont l'effectif est facultatif : sans lui le stand tient à une personne, à ajuster sur la grille des ouvertures. Une typologie qu'un stand cite sans qu'elle existe est créée, et l'aperçu la nomme avant que rien ne soit écrit. Dans les trois cas, une colonne que le fichier ne porte pas n'efface rien : renommer des stands par un fichier de trois colonnes ne touche ni leurs horaires ni leur emplacement. L'onglet Animateurs évite de tout ressaisir. Enregistrez la feuille au format « CSV UTF-8 » (le .xlsx n'est pas lu, et un fichier enregistré dans un autre encodage est refusé : ses accents sont déjà perdus quand le fichier arrive), déposez-la, et dites quelle colonne est quel champ : une correspondance est proposée d'après les en-têtes, vous la corrigez. L'écran affiche alors, ligne par ligne, ce que l'import ferait — acceptée, rejetée et pourquoi, avec le numéro de ligne du fichier — et rien n'est écrit tant que vous n'avez pas validé. Par défaut il ajoute et met à jour sans supprimer personne, et les jours d'indisponibilité du fichier viennent compléter ceux déjà enregistrés plutôt que les effacer ; deux cases à cocher inversent chacun de ces deux choix. Si vous cochez le remplacement complet, lisez l'avertissement de l'aperçu avant de valider : supprimer une fiche emporte aussi la déclaration de disponibilités de la personne, son accusé de réception du planning publié et son code d'accès à l'espace. Deux refus surprennent au premier essai et sont volontaires : créez d'abord vos créneaux (sans dates d'événement, un jour d'indisponibilité importé serait invisible dans l'espace animateur puis effacé), et donnez une date de naissance à chaque nouvelle fiche (tout le régime mineur / majeur en dépend). Enfin, si deux personnes portent le même nom, ajoutez une colonne identifiant ou e-mail : l'import refuse la ligne plutôt que de choisir à votre place.`,
         },
         {
           kind: 'paragraph',
@@ -153,8 +153,8 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
       links: [
         {
-          route: '/import-animateurs',
-          label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`,
+          route: '/imports',
+          label: $localize`:@@aide.lien.importAnimateurs:Imports — onglet Animateurs`,
         },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
@@ -182,8 +182,8 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
       links: [
         {
-          route: '/import-grille-stands',
-          label: $localize`:@@nav.link.importGrilleStands:Import de la grille des stands`,
+          route: '/imports',
+          label: $localize`:@@aide.lien.importGrille:Imports — onglet Grille des stands`,
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },

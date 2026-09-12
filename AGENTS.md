@@ -472,7 +472,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/debug`, `/mcp-client`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
   `/animateurs`, `/competences` (« Compétences » — the animateur × typologie
   grid of appreciations, saved row by row, exported and imported as a CSV),
-  `/import-animateurs`, `/creneaux`, `/typologies`,
+  `/imports`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed), `/calendar`, `/journee` (« Journée » — one day under four
@@ -494,7 +494,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   animateur »), `/heatmap` (« Heatmap de charge »), `/kpi`, `/comparateur`
   (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
   `/verrouillages`, `/ouvertures` (« Ouvertures des stands »),
-  `/import-grille-stands`, `/disponibilites` (what the animateurs
+  `/disponibilites` (what the animateurs
   declared), `/editions`, `/historique` (« Historique des actions »), the
   three public legal pages `/mentions-legales`, `/conditions-utilisation`,
   `/politique-confidentialite`, and `/aide` (`/solver` and `/exports` redirect

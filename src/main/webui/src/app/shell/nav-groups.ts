@@ -149,13 +149,22 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
     {
       id: 'reference-data',
       title: $localize`:@@nav.group.referenceData:Données de référence`,
+      // Dans l'ordre où une édition se remplit : tout part des typologies, et
+      // les créneaux donnent ses dates à l'édition avant que les stands ne
+      // disent leurs ouvertures (ADR 0032).
       links: [
-        { path: '/stands', label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront' },
+        {
+          path: '/typologies',
+          label: $localize`:@@nav.link.typologies:Typologies`,
+          icon: 'category',
+        },
         {
           path: '/emplacements',
           label: $localize`:@@nav.link.emplacements:Emplacements`,
           icon: 'place',
         },
+        { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
+        { path: '/stands', label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront' },
         {
           path: '/animateurs',
           label: $localize`:@@nav.link.animateurs:Animateurs`,
@@ -166,21 +175,10 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           label: $localize`:@@nav.link.competences:Compétences`,
           icon: 'grid_on',
         },
-        { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
         {
-          path: '/typologies',
-          label: $localize`:@@nav.link.typologies:Typologies`,
-          icon: 'category',
-        },
-        {
-          path: '/import-animateurs',
-          label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`,
+          path: '/imports',
+          label: $localize`:@@nav.link.imports:Imports`,
           icon: 'table_view',
-        },
-        {
-          path: '/import-grille-stands',
-          label: $localize`:@@nav.link.importGrilleStands:Import de la grille des stands`,
-          icon: 'grid_view',
         },
       ],
     },

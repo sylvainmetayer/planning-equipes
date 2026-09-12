@@ -194,20 +194,9 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage),
   },
   {
-    path: 'import-animateurs',
-    title: () => $localize`:@@route.importAnimateurs:Import animateurs`,
-    loadComponent: () =>
-      import('./pages/import-animateurs/import-animateurs-page').then(
-        (m) => m.ImportAnimateursPage,
-      ),
-  },
-  {
-    path: 'import-grille-stands',
-    title: () => $localize`:@@route.importGrilleStands:Import grille des stands`,
-    loadComponent: () =>
-      import('./pages/import-grille-stands/import-grille-stands-page').then(
-        (m) => m.ImportGrilleStandsPage,
-      ),
+    path: 'imports',
+    title: () => $localize`:@@route.imports:Imports`,
+    loadComponent: () => import('./pages/imports/imports-page').then((m) => m.ImportsPage),
   },
   {
     path: 'typologies',

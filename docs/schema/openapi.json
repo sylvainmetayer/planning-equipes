@@ -61,6 +61,10 @@
           }
         }
       },
+      "ActionImport" : {
+        "type" : "string",
+        "enum" : [ "CREE", "MIS_A_JOUR", "REFUSE" ]
+      },
       "ActionView" : {
         "type" : "object",
         "properties" : {
@@ -746,6 +750,10 @@
             }
           }
         }
+      },
+      "CibleImport" : {
+        "type" : "string",
+        "enum" : [ "TYPOLOGIES", "EMPLACEMENTS", "STANDS" ]
       },
       "CodeSession" : {
         "type" : "object",
@@ -3262,6 +3270,37 @@
           }
         }
       },
+      "LigneImportee" : {
+        "type" : "object",
+        "required" : [ "action", "line" ],
+        "properties" : {
+          "line" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "libelle" : {
+            "type" : "string"
+          },
+          "action" : {
+            "$ref" : "#/components/schemas/ActionImport"
+          },
+          "raisons" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "details" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
       "LigneStand" : {
         "required" : [ "effectifMin", "minutesOuvertes", "postes" ],
         "type" : "object",
@@ -4573,6 +4612,70 @@
           "verrouillages" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "ReferentielCsvImportReport" : {
+        "required" : [ "accepted", "applied", "cible", "created", "rejected", "total", "updated" ],
+        "type" : "object",
+        "properties" : {
+          "applied" : {
+            "type" : "boolean"
+          },
+          "cible" : {
+            "$ref" : "#/components/schemas/CibleImport"
+          },
+          "columns" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "separator" : {
+            "type" : "string"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "accepted" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "rejected" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "created" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "updated" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "typologiesCreees" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "rows" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LigneImportee"
+            }
+          }
+        }
+      },
+      "ReferentielCsvImportRequest" : {
+        "type" : "object",
+        "properties" : {
+          "fileName" : {
+            "type" : "string"
+          },
+          "content" : {
+            "type" : "string"
           }
         }
       },
@@ -7434,6 +7537,82 @@
         "tags" : [ "Emplacement Resource" ]
       }
     },
+    "/api/emplacements/import-csv" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Import Csv",
+        "tags" : [ "Emplacement Resource" ]
+      }
+    },
+    "/api/emplacements/import-csv/analyse" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Analyse Csv",
+        "tags" : [ "Emplacement Resource" ]
+      }
+    },
+    "/api/emplacements/import-csv/exemple" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Exemple Csv",
+        "tags" : [ "Emplacement Resource" ]
+      }
+    },
     "/api/emplacements/{id}" : {
       "put" : {
         "parameters" : [ {
@@ -10252,6 +10431,82 @@
         "tags" : [ "Stand Resource" ]
       }
     },
+    "/api/stands/import-csv" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Import Csv",
+        "tags" : [ "Stand Resource" ]
+      }
+    },
+    "/api/stands/import-csv/analyse" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Analyse Csv",
+        "tags" : [ "Stand Resource" ]
+      }
+    },
+    "/api/stands/import-csv/exemple" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Exemple Csv",
+        "tags" : [ "Stand Resource" ]
+      }
+    },
     "/api/stands/import-grille" : {
       "post" : {
         "requestBody" : {
@@ -10464,6 +10719,82 @@
           }
         },
         "summary" : "Create Typologie",
+        "tags" : [ "Typologie Resource" ]
+      }
+    },
+    "/api/typologies/import-csv" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Import Csv",
+        "tags" : [ "Typologie Resource" ]
+      }
+    },
+    "/api/typologies/import-csv/analyse" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Analyse Csv",
+        "tags" : [ "Typologie Resource" ]
+      }
+    },
+    "/api/typologies/import-csv/exemple" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Exemple Csv",
         "tags" : [ "Typologie Resource" ]
       }
     },

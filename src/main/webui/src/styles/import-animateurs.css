@@ -63,3 +63,10 @@ table.import-rapport td mat-icon {
   font-size: 0.9rem;
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* Les onglets de la page Imports : même bande que le diagnostic et la journée,
+   un écran par fichier au lieu d'une entrée de menu par fichier. */
+.imports-onglets {
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}

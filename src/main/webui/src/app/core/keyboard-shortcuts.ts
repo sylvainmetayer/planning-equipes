@@ -151,20 +151,7 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       '/typologies',
       { label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category', touche: 't' },
     ],
-    [
-      '/import-animateurs',
-      {
-        label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`,
-        icon: 'table_view',
-      },
-    ],
-    [
-      '/import-grille-stands',
-      {
-        label: $localize`:@@nav.link.importGrilleStands:Import de la grille des stands`,
-        icon: 'grid_view',
-      },
-    ],
+    ['/imports', { label: $localize`:@@nav.link.imports:Imports`, icon: 'table_view' }],
     [
       '/calendar',
       {

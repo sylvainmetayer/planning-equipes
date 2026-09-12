@@ -47,8 +47,18 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/competences', marker: 'Compétences', sheet: 'competences-legende' },
   { path: '/creneaux', marker: 'Créneaux (', sheet: 'creneau-probleme' },
   { path: '/typologies', marker: 'Typologies (' },
-  { path: '/import-animateurs', marker: 'Import des animateurs', sheet: 'import-compteurs' },
-  { path: '/import-grille-stands', sheet: 'import-compteurs' },
+  // Un seul écran d'imports, un onglet par fichier (les trois référentiels
+  // partagent une carte, les deux plus anciens sont rendus tels quels).
+  { path: '/imports', marker: 'Imports', sheet: 'imports-onglets' },
+  { path: '/imports?onglet=stands' },
+  {
+    // Le titre de l'écran est celui des onglets : le marqueur vise ce que
+    // seul cet onglet-ci dit.
+    path: '/imports?onglet=animateurs',
+    marker: 'date de naissance est obligatoire',
+    sheet: 'import-compteurs',
+  },
+  { path: '/imports?onglet=grille-stands', sheet: 'import-compteurs' },
   { path: '/calendar', marker: 'Calendrier des affectations', sheet: 'calendar-nav' },
   // Same for the day and its four renderings.
   { path: '/journee', marker: 'Journée', sheet: 'journee-toolbar' },

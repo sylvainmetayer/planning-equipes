@@ -57,6 +57,9 @@ public final class CatalogueActions {
         changesData("ANIMATEUR_SUPPRIME", "Animateur supprimé", Entite.ANIMATEUR);
         action("ANIMATEUR_JETON_REGENERE", "Lien d'espace régénéré", Entite.ANIMATEUR);
         changesData("ANIMATEURS_IMPORTES", "Animateurs importés depuis un fichier", Entite.ANIMATEUR);
+        changesData("TYPOLOGIES_IMPORTEES", "Typologies importées depuis un fichier", Entite.TYPOLOGIE);
+        changesData("EMPLACEMENTS_IMPORTES", "Emplacements importés depuis un fichier", Entite.EMPLACEMENT);
+        changesData("STANDS_IMPORTES", "Stands importés depuis un fichier", Entite.STAND);
         changesData("ANIMATEUR_COMPETENCES_GRILLE", "Grille des compétences enregistrée", Entite.ANIMATEUR);
         changesData("COMPETENCES_IMPORTEES", "Grille des compétences importée depuis un fichier", Entite.ANIMATEUR);
         action("ANIMATEURS_RELANCES", "Animateurs relancés à la main", Entite.ANIMATEUR);
@@ -229,6 +232,10 @@ public final class CatalogueActions {
         route("JourneeTypeResource#setCalendrier", "CALENDRIER_JOURNEES_TYPES_MODIFIE");
         route("JourneeTypeResource#apply", "JOURNEES_TYPES_APPLIQUEES");
         route("JourneeTypeResource#reconnaitre", "JOURNEES_TYPES_RECONNUES");
+
+        route("TypologieResource#importCsv", "TYPOLOGIES_IMPORTEES");
+        route("EmplacementResource#importCsv", "EMPLACEMENTS_IMPORTES");
+        route("StandResource#importCsv", "STANDS_IMPORTES");
 
         route("EmplacementResource#createEmplacement", "EMPLACEMENT_CREE");
         route("EmplacementResource#updateEmplacement", "EMPLACEMENT_MODIFIE");
@@ -426,6 +433,12 @@ public final class CatalogueActions {
         untracked("AnimateurResource#analyseCsvAnimateurs", "analyse préalable d'un fichier, n'écrit rien");
         untracked("AnimateurResource#analyseCompetencesGrid", "analyse préalable d'un fichier, n'écrit rien");
         untracked("StandResource#analyseGrille", "analyse préalable d'un fichier, n'écrit rien");
+        untracked("TypologieResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
+        untracked("EmplacementResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
+        untracked("StandResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
+        untracked("TypologieResource#exempleCsv", "télécharge un fichier d'exemple");
+        untracked("EmplacementResource#exempleCsv", "télécharge un fichier d'exemple");
+        untracked("StandResource#exempleCsv", "télécharge un fichier d'exemple");
         untracked("CreneauResource#previewRecurrence", "prévisualisation, n'écrit rien");
         untracked("CreneauResource#previewDerivation", "prévisualisation, n'écrit rien");
         untracked("JourneeTypeResource#previewApplication", "prévisualisation, n'écrit rien");

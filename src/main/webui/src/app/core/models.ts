@@ -2750,6 +2750,38 @@ export interface ImportGrilleDemande {
   content: string;
 }
 
+/* ------------ Referential CSV imports (typologies, emplacements, stands) ------------ */
+
+/** Which referential a file is read against. */
+export type CibleImportReferentiel = 'TYPOLOGIES' | 'EMPLACEMENTS' | 'STANDS';
+
+export type ActionImportReferentiel = 'CREE' | 'MIS_A_JOUR' | 'REFUSE';
+
+export interface LigneImportReferentiel {
+  line: number;
+  id: string | null;
+  libelle: string | null;
+  action: ActionImportReferentiel;
+  raisons: string[];
+  details: string[];
+}
+
+/** What a referential CSV does, or would do — the same shape for the preview and the write. */
+export interface RapportImportReferentiel {
+  applied: boolean;
+  cible: CibleImportReferentiel;
+  columns: string[];
+  separator: string;
+  total: number;
+  accepted: number;
+  rejected: number;
+  created: number;
+  updated: number;
+  /** Typologie ids a stand named without them existing: created, and listed so nothing is silent. */
+  typologiesCreees: string[];
+  rows: LigneImportReferentiel[];
+}
+
 /* ------------- Competence grid (`/api/animateurs/competences`) ------------- */
 
 /**

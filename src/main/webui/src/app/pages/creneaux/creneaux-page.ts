@@ -231,8 +231,9 @@ export class CreneauxPage {
 
   /** The edition's découpage settings, carrying the declared mode; `null` until read. */
   protected readonly parametresDecoupage = signal<ParametresDecoupage | null>(null);
+  /** Until the settings are in, the edition's own default: final vacations. */
   protected readonly mode = computed<ModeGrilleCreneaux>(
-    () => this.parametresDecoupage()?.modeGrille ?? 'AMPLITUDES',
+    () => this.parametresDecoupage()?.modeGrille ?? 'VACATIONS',
   );
   protected readonly diagnostic = signal<DiagnosticGrille | null>(null);
   protected readonly controle = signal<RapportGrille | null>(null);

@@ -63,7 +63,7 @@ function ligne(page: Page, numero: number) {
  */
 test("le format attendu et l'aide se lisent avant tout choix de fichier", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/import-animateurs');
+  await page.goto('/imports?onglet=animateurs');
 
   const contenu = page.locator('#contenu');
   await expect(contenu).toContainText('La date de naissance est obligatoire pour créer une fiche');
@@ -103,8 +103,11 @@ test('un fichier propre : aperçu, validation, rapport, et les fiches en base', 
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/import-animateurs');
-  await expect(page.locator('#contenu')).toContainText('Import des animateurs');
+  await page.goto('/imports?onglet=animateurs');
+  // L'écran s'appelle « Imports » et l'onglet dit lequel : le titre de la page
+  // est celui de l'écran, pas celui du fichier.
+  await expect(page.locator('#contenu')).toContainText('Imports');
+  await expect(page.locator('#contenu')).toContainText('date de naissance est obligatoire');
 
   await deposer(
     page,
@@ -152,7 +155,7 @@ test('un fichier sale : les lignes fautives sont rejetées, les bonnes passent q
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/import-animateurs');
+  await page.goto('/imports?onglet=animateurs');
 
   await deposer(
     page,
@@ -193,7 +196,7 @@ test('un fichier sale : les lignes fautives sont rejetées, les bonnes passent q
 
 test('un fichier sans en-tête reconnaissable se mappe à la main', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/import-animateurs');
+  await page.goto('/imports?onglet=animateurs');
 
   await deposer(
     page,
@@ -242,7 +245,7 @@ async function choisirColonne(page: Page, champ: string, option: string): Promis
  */
 test("une colonne mal mappée est refusée à l'aperçu, pas à l'écriture", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/import-animateurs');
+  await page.goto('/imports?onglet=animateurs');
 
   const commentaire = 'Disponible surtout le week-end et volontiers en soirée '.repeat(6);
   await deposer(
@@ -271,7 +274,7 @@ test("une colonne mal mappée est refusée à l'aperçu, pas à l'écriture", as
 
 test('un classeur .xlsx est refusé avec la marche à suivre', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/import-animateurs');
+  await page.goto('/imports?onglet=animateurs');
 
   await page.locator('input[type="file"]').setInputFiles({
     name: 'benevoles.xlsx',

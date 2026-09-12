@@ -7,53 +7,44 @@ import {
   input,
   signal,
   viewChild,
-  ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
-import { StandsApi } from '../../core/api/stands-api';
+import { ImportsApi } from '../../core/api/imports-api';
 import { errorMessage } from '../../core/error-message';
+import {
+  ActionImportReferentiel,
+  CibleImportReferentiel,
+  RapportImportReferentiel,
+} from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { ImportGrilleAction, ImportGrilleDemande, ImportGrilleRapport } from '../../core/models';
 
 /**
- * Importing the stand matrix — one row per stand, one column per (date,
- * band), an integer per cell — the way the organiser's own workbook holds it:
- * pick the file, read what would happen, then and only then apply.
+ * One referential read from a CSV: pick the file, read what would happen, then
+ * and only then write it.
  *
- * <p>Same contract as the animateur import: the file is posted as text, twice
- * on purpose (the write re-reads and re-checks it), never written to disk on
- * either side. What differs is the identity (a stand, by id or exact name)
- * and what a column that matches nothing does: it is ignored and listed, not
- * a reason to refuse the file.</p>
+ * <p>The three referentials it serves — typologies, emplacements, stands —
+ * differ only by their columns and their words, so they share one component
+ * rather than three near-copies. The file is posted as text, twice on purpose
+ * (the write re-reads and re-checks it), and never kept on either side.</p>
  */
 @Component({
-  selector: 'app-import-grille-stands-page',
-  imports: [
-    MatButtonModule,
-    MatCardModule,
-    MatIconModule,
-    MatProgressBarModule,
-    MatTooltipModule,
-    RouterLink,
-  ],
-  templateUrl: './import-grille-stands-page.html',
-  styleUrl: '../../../styles/import-animateurs.css',
-  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
-  encapsulation: ViewEncapsulation.None,
+  selector: 'app-import-referentiel',
+  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule],
+  templateUrl: './import-referentiel-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ImportGrilleStandsPage {
-  /** False inside the Imports page, which carries the title of the screen itself. */
-  readonly entete = input(true);
+export class ImportReferentielCard {
+  readonly cible = input.required<CibleImportReferentiel>();
+  /** What the tab says the file must hold, in the words of that referential. */
+  readonly colonnes = input.required<string>();
+  readonly aide = input.required<string>();
 
-  private readonly standsApi = inject(StandsApi);
+  private readonly api = inject(ImportsApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly store = inject(ReferenceDataStore);
@@ -65,22 +56,13 @@ export class ImportGrilleStandsPage {
   private derniereAnalyse = 0;
 
   protected readonly nomFichier = signal('');
-  protected readonly rapport = signal<ImportGrilleRapport | null>(null);
+  protected readonly rapport = signal<RapportImportReferentiel | null>(null);
   protected readonly erreur = signal('');
   protected readonly analyseEnCours = signal(false);
   protected readonly importEnCours = signal(false);
   protected readonly telechargementEnCours = signal(false);
 
-  protected readonly fichierCharge = computed(
-    () => this.contenu() !== '' && this.rapport() !== null,
-  );
-  protected readonly colonnesReconnues = computed(() =>
-    (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneauId !== null),
-  );
-  protected readonly colonnesIgnorees = computed(() =>
-    (this.rapport()?.columns ?? []).filter((colonne) => colonne.creneauId === null),
-  );
-  /** A band a staggered grid holds twice: the column carries its cell to each créneau of it. */
+  protected readonly fichierCharge = computed(() => this.nomFichier() !== '');
   protected readonly peutImporter = computed(
     () =>
       this.fichierCharge() &&
@@ -90,18 +72,22 @@ export class ImportGrilleStandsPage {
       !this.importEnCours(),
   );
 
-  protected classeAction(action: ImportGrilleAction): string {
-    return action === 'UPDATED' ? 'import-ligne-maj' : 'import-ligne-rejet';
+  protected classeAction(action: ActionImportReferentiel): string {
+    return action === 'CREE'
+      ? 'import-ligne-creation'
+      : action === 'MIS_A_JOUR'
+        ? 'import-ligne-maj'
+        : 'import-ligne-rejet';
   }
 
-  protected iconeAction(action: ImportGrilleAction): string {
-    return action === 'UPDATED' ? 'edit' : 'block';
+  protected iconeAction(action: ActionImportReferentiel): string {
+    return action === 'CREE' ? 'add' : action === 'MIS_A_JOUR' ? 'edit' : 'block';
   }
 
   protected async telechargerExemple(): Promise<void> {
     this.telechargementEnCours.set(true);
     try {
-      await this.standsApi.downloadGridExample();
+      await this.api.telechargerExemple(this.cible());
     } catch (error) {
       this.erreur.set(errorMessage(error));
     } finally {
@@ -129,14 +115,14 @@ export class ImportGrilleStandsPage {
 
   /** The preview, numbered so only the answer to the last request is kept. */
   protected async analyser(): Promise<void> {
-    if (this.nomFichier() === '') {
+    if (!this.fichierCharge()) {
       return;
     }
     const numero = ++this.derniereAnalyse;
     this.analyseEnCours.set(true);
     this.erreur.set('');
     try {
-      const rapport = await this.standsApi.analyseGridImport(this.demande());
+      const rapport = await this.api.analyse(this.cible(), this.demande());
       if (numero === this.derniereAnalyse) {
         this.rapport.set(rapport);
       }
@@ -158,8 +144,8 @@ export class ImportGrilleStandsPage {
       return;
     }
     const confirme = await this.confirm.ask({
-      title: $localize`:@@importGrille.confirmer.titre:Confirmer l'import`,
-      message: $localize`:@@importGrille.confirmer.message:Réécrire l'horaire de ${rapport.accepted}:acceptees: stand(s) depuis le fichier ? Les stands absents du fichier ne sont pas touchés.`,
+      title: $localize`:@@importRef.confirmer.titre:Confirmer l'import`,
+      message: $localize`:@@importRef.confirmer.message:Écrire ${rapport.created}:crees: création(s) et ${rapport.updated}:majs: mise(s) à jour ? Les fiches absentes du fichier ne sont pas touchées, et une colonne que le fichier ne porte pas n'efface rien.`,
     });
     if (!confirme) {
       return;
@@ -167,14 +153,12 @@ export class ImportGrilleStandsPage {
     this.importEnCours.set(true);
     this.erreur.set('');
     try {
-      const applique = await this.standsApi.applyGridImport(this.demande());
+      const applique = await this.api.importer(this.cible(), this.demande());
       this.rapport.set(applique);
       await this.store.reload();
-      const regles = applique.rows.reduce((total, ligne) => total + ligne.regles, 0);
-      const exceptions = applique.rows.reduce((total, ligne) => total + ligne.exceptions, 0);
       this.notifications.notify({
-        title: $localize`:@@importGrille.succes.titre:Import terminé`,
-        message: $localize`:@@importGrille.succes.message:${applique.accepted}:stands: stand(s) réécrit(s) en ${regles}:regles: règle(s) et ${exceptions}:exceptions: exception(s) datée(s).`,
+        title: $localize`:@@importRef.succes.titre:Import terminé`,
+        message: $localize`:@@importRef.succes.message:${applique.created}:crees: création(s), ${applique.updated}:majs: mise(s) à jour, ${applique.rejected}:refus: ligne(s) refusée(s).`,
         variant: 'success',
       });
     } catch (error) {
@@ -193,7 +177,7 @@ export class ImportGrilleStandsPage {
     this.erreur.set('');
   }
 
-  private demande(): ImportGrilleDemande {
+  private demande() {
     return { fileName: this.nomFichier(), content: this.contenu() };
   }
 }

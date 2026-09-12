@@ -1,0 +1,51 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@imports.title">Imports</h1>
+    <mat-card-subtitle i18n="@@imports.subtitle">
+      Remplir une édition depuis les fichiers que vous avez déjà, dans l'ordre où les données se tiennent. Rien n'est écrit avant votre validation, et aucun fichier n'est conservé.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-button-toggle-group class="imports-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                             aria-label="Onglet des imports" i18n-aria-label="@@imports.onglet.label">
+      <mat-button-toggle value="typologies">
+        <mat-icon>category</mat-icon>
+        <ng-container i18n="@@nav.link.typologies">Typologies</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="emplacements">
+        <mat-icon>place</mat-icon>
+        <ng-container i18n="@@nav.link.emplacements">Emplacements</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="stands">
+        <mat-icon>storefront</mat-icon>
+        <ng-container i18n="@@nav.link.stands">Stands</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="animateurs">
+        <mat-icon>groups</mat-icon>
+        <ng-container i18n="@@nav.link.animateurs">Animateurs</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="grille-stands">
+        <mat-icon>grid_view</mat-icon>
+        <ng-container i18n="@@imports.onglet.grille">Grille des stands</ng-container>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </mat-card-content>
+</mat-card>
+
+@switch (onglet()) {
+  @case ('emplacements') {
+    <app-import-referentiel cible="EMPLACEMENTS" [colonnes]="colonnesEmplacements" [aide]="aideEmplacements" />
+  }
+  @case ('stands') {
+    <app-import-referentiel cible="STANDS" [colonnes]="colonnesStands" [aide]="aideStands" />
+  }
+  @case ('animateurs') {
+    <app-import-animateurs-page [entete]="false" />
+  }
+  @case ('grille-stands') {
+    <app-import-grille-stands-page [entete]="false" />
+  }
+  @default {
+    <app-import-referentiel cible="TYPOLOGIES" [colonnes]="colonnesTypologies" [aide]="aideTypologies" />
+  }
+}

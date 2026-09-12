@@ -74,7 +74,7 @@ describe('buildHelpSections', () => {
     // Entering the staff is the very first thing the cycle does, and the CSV
     // import is one of the two ways to do it: naming it only in its own
     // section would hide it from the one reader who has not started yet.
-    expect(text).toContain('import CSV');
+    expect(text).toContain('fichier CSV');
     // Nothing on a reference screen refuses in silence, and the cycle says so
     // where the reader is about to type for the first time.
     expect(text).toContain('avertissement');
@@ -112,7 +112,7 @@ describe('buildHelpSections', () => {
     const outils = sections.find((candidate) => candidate.id === 'echanges');
     expect(textOf(outils as HelpSection)).toContain('Import CSV des animateurs');
     const routes = (outils as HelpSection).links.map((link) => link.route);
-    expect(routes).toContain('/import-animateurs');
+    expect(routes).toContain('/imports');
   });
 
   /**
