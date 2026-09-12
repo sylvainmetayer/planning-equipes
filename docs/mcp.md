@@ -390,6 +390,10 @@ défaut, ou à la place de la grille avec `remplacer=true` (le planning résolu
 part avec elle, comme pour `generer_decoupage`). Le prompt
 `construire_la_grille_de_creneaux` la propose avant la récurrence.
 
+`creer_creneau` et `modifier_creneau` prennent un `couverturePause`
+facultatif — le relais repas d'une grille tapée à la main, que seul le
+découpage posait jusque-là — et les vues de créneau le rendent.
+
 ## Les journées types se définissent en une ligne
 
 `definir_journee_type` crée ou remplace une journée type par son nom, ses

@@ -575,7 +575,9 @@ describe('CreneauxPage rendering', () => {
       creneau({ id: 2, jour: 2, heureDebut: '14:00', heureFin: '19:00' }),
     ]);
 
-    expect(racine().querySelector('.creneaux-liste-card h2')!.textContent!).toContain('Créneaux (2)');
+    expect(racine().querySelector('.creneaux-liste-card h2')!.textContent!).toContain(
+      'Créneaux (2)',
+    );
     expect(lignes().map((row) => [row[1], row[3]])).toEqual([
       ['J1', '10:00–12:00'],
       ['J2', '14:00–19:00'],
@@ -644,16 +646,28 @@ describe('CreneauxPage rendering', () => {
     expect(creneauxApi.generateSlicing).toHaveBeenCalledOnce();
   });
 
-  it('carries the slicing settings next to the generation, read-only on a grid of final vacations', async () => {
-    brancher(creneauxApi, [], { parametres: { modeGrille: 'VACATIONS' } });
+  it('carries the slicing settings next to the generation on a grid of amplitudes', async () => {
+    brancher(creneauxApi, [], { parametres: { modeGrille: 'AMPLITUDES' } });
     await rendre([creneau({ id: 1, jour: 1 })]);
 
     const carte = racine().querySelector('app-parametres-decoupage')!;
     expect(carte.textContent).toContain('Paramètres de découpage');
-    expect(carte.textContent).toContain('vacations finales');
-    expect(
-      (carte.querySelector('input[name="dureeVacationCibleMinutes"]') as HTMLInputElement).disabled,
-    ).toBe(true);
+    expect(racine().textContent).toContain('Générer le découpage');
+    expect(racine().textContent).toContain('Dériver des horaires des stands');
+  });
+
+  // An edition that types its vacations never slices (ADR 0032): the tooling
+  // is put away, not shown disabled, and one line says how to get it back.
+  it('puts the slicing tooling away on a grid of final vacations, and says where it went', async () => {
+    brancher(creneauxApi, [], { parametres: { modeGrille: 'VACATIONS' } });
+    await rendre([creneau({ id: 1, jour: 1 })]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await fixture.whenStable();
+
+    expect(racine().querySelector('app-parametres-decoupage')).toBeNull();
+    expect(racine().textContent).not.toContain('Générer le découpage');
+    expect(racine().textContent).not.toContain('Dériver des horaires des stands');
+    expect(racine().querySelector('.decoupage-range')!.textContent).toContain('rangés');
   });
 
   describe('the grid as a whole', () => {
@@ -685,9 +699,9 @@ describe('CreneauxPage rendering', () => {
       expect(creneauxApi.setGridMode).toHaveBeenCalledWith('VACATIONS');
       expect(page.mode()).toBe('VACATIONS');
       expect(creneauxApi.control.mock.calls.length).toBe(lectures + 1);
-      // Nothing to slice on a grid of final vacations.
-      expect(bouton('Générer les vacations').disabled).toBe(true);
-      expect(racine().textContent).toContain('rien à découper');
+      // Nothing to slice on a grid of final vacations: the tooling is put away.
+      expect(racine().textContent).not.toContain('Générer les vacations');
+      expect(racine().querySelector('.decoupage-range')).not.toBeNull();
     });
 
     it('says when the data proves a mode the declaration contradicts', async () => {

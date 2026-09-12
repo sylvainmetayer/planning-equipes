@@ -18,12 +18,14 @@
       <mat-icon>playlist_add</mat-icon>
       <ng-container i18n="@@creneaux.serie.action">Créer une série</ng-container>
     </button>
-    <button matButton type="button" [disabled]="editingLocked()" (click)="openDerivation()"
-            i18n-matTooltip="@@creneaux.derivation.tooltip"
-            matTooltip="La grille que les horaires des stands impliquent, prévisualisée avant d'écrire.">
-      <mat-icon>storefront</mat-icon>
-      <ng-container i18n="@@creneaux.derivation.action">Dériver des horaires des stands</ng-container>
-    </button>
+    @if (mode() === 'AMPLITUDES') {
+      <button matButton type="button" [disabled]="editingLocked()" (click)="openDerivation()"
+              i18n-matTooltip="@@creneaux.derivation.tooltip"
+              matTooltip="La grille que les horaires des stands impliquent, prévisualisée avant d'écrire.">
+        <mat-icon>storefront</mat-icon>
+        <ng-container i18n="@@creneaux.derivation.action">Dériver des horaires des stands</ng-container>
+      </button>
+    }
   </mat-card-actions>
   <mat-card-content>
     <div class="grille-mode">
@@ -199,7 +201,15 @@
   </mat-card-content>
 </mat-card>
 
-<app-parametres-decoupage [inactif]="mode() === 'VACATIONS'" [verrouille]="editingLocked()" />
+@if (mode() === 'VACATIONS') {
+  <!-- A grid of final vacations has nothing to slice: the slicing settings,
+       the generation and the derivation from the stands are put away rather
+       than shown disabled, and one line says where they went. -->
+  <p class="empty-hint decoupage-range" i18n="@@creneaux.vacations.range">
+    La grille est en vacations finales : le découpage d'amplitudes, ses paramètres et la dérivation depuis les stands sont rangés. Déclarez la grille en amplitudes ci-dessus pour les retrouver.
+  </p>
+} @else {
+<app-parametres-decoupage [inactif]="false" [verrouille]="editingLocked()" />
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
@@ -209,13 +219,8 @@
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    @if (mode() === 'VACATIONS') {
-      <p class="empty-hint" i18n="@@decoupage.vacations.hint">
-        La grille est en vacations finales : rien à découper. Déclarez-la en amplitudes ci-dessus.
-      </p>
-    }
     <div class="card-actions">
-      <button matButton type="button" [disabled]="previewLoading() || mode() === 'VACATIONS'" (click)="previsualiserDecoupage()">
+      <button matButton type="button" [disabled]="previewLoading()" (click)="previsualiserDecoupage()">
         @if (previewLoading()) {
           <mat-progress-spinner diameter="18" mode="indeterminate" />
         } @else {
@@ -223,7 +228,7 @@
         }
         <ng-container i18n="@@decoupage.preview">Prévisualiser</ng-container>
       </button>
-      <button matButton="filled" type="button" [disabled]="genererLoading() || editingLocked() || mode() === 'VACATIONS'" (click)="genererDecoupage()">
+      <button matButton="filled" type="button" [disabled]="genererLoading() || editingLocked()" (click)="genererDecoupage()">
         @if (genererLoading()) {
           <mat-progress-spinner diameter="18" mode="indeterminate" />
         } @else {
@@ -248,3 +253,4 @@
     }
   </mat-card-content>
 </mat-card>
+}

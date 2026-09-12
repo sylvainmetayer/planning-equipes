@@ -66,6 +66,11 @@ public class CreneauMcpTools {
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM)") String heureFin,
+            @ToolArg(
+                            description = "true pour un relais repas : chaque stand n'y reçoit que la moitié de ses "
+                                    + "sièges, arrondie au supérieur (omis : faux)",
+                            required = false)
+                    Boolean couverturePause,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Creneau creneau = new Creneau(
                 null,
@@ -73,6 +78,7 @@ public class CreneauMcpTools {
                 McpArgs.date(date, "date"),
                 McpArgs.heure(heureDebut, "heureDebut"),
                 McpArgs.heure(heureFin, "heureFin"));
+        creneau.setCouverturePause(Boolean.TRUE.equals(couverturePause));
         return written(referenceDataService.writeCreneau(creneau));
     }
 
@@ -89,6 +95,8 @@ public class CreneauMcpTools {
             @ToolArg(description = "Date (AAAA-MM-JJ)", required = false) String date,
             @ToolArg(description = "Heure de début (HH:MM)", required = false) String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM)", required = false) String heureFin,
+            @ToolArg(description = "Relais repas (sièges divisés par deux) ; omis, inchangé", required = false)
+                    Boolean couverturePause,
             @ToolArg(
                             description =
                                     "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)",
@@ -96,6 +104,9 @@ public class CreneauMcpTools {
                     String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Creneau creneau = findCreneau(id);
+        if (couverturePause != null) {
+            creneau.setCouverturePause(couverturePause);
+        }
         if (modifieLe != null) {
             creneau.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
         }
@@ -477,6 +488,7 @@ public class CreneauMcpTools {
                 creneau.getDate(),
                 creneau.getHeureDebut(),
                 creneau.getHeureFin(),
+                creneau.isCouverturePause(),
                 creneau.getModifieLe());
     }
 
@@ -484,7 +496,13 @@ public class CreneauMcpTools {
     public record WrittenCreneauView(CreneauView creneau, List<String> avertissements) {}
 
     public record CreneauView(
-            Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin, Instant modifieLe) {}
+            Long id,
+            int jour,
+            LocalDate date,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            boolean couverturePause,
+            Instant modifieLe) {}
 
     /** What a recurrence rule produced (or would produce), plus the resulting grid's verdict. */
     public record PrevisualisationRecurrence(int nombreGeneres, List<CreneauView> creneaux, RapportGrille controle) {}
