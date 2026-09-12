@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -100,6 +101,8 @@ export class CompetencesPage {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');
+  /** The import card, which only exists while the import is open; `read` since `#carteImport` is a MatCard. */
+  private readonly carteImport = viewChild('carteImport', { read: ElementRef });
 
   protected readonly chargement = signal(true);
   protected readonly enregistrement = signal(false);
@@ -195,6 +198,18 @@ export class CompetencesPage {
       typologies: optionalParam(this.typologiesChoisies().join(',')),
     }));
     void this.recharger();
+    // The import card is appended under the grid, which is as long as the
+    // roster: on a real one, clicking « Importer un CSV » otherwise looks like
+    // nothing happened. It is shown when the signal turns, so the scroll waits
+    // for the element to exist rather than for a timer.
+    effect(() => {
+      const carte = this.carteImport();
+      if (carte) {
+        // jsdom has no scrollIntoView, and neither does an old browser: the
+        // card is open either way, this only brings it under the eye.
+        carte.nativeElement.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      }
+    });
   }
 
   /**

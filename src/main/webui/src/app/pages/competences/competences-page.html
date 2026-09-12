@@ -131,7 +131,7 @@
 </mat-card>
 
 @if (importOuvert()) {
-  <mat-card appearance="outlined" class="page-card competences-import">
+  <mat-card #carteImport appearance="outlined" class="page-card competences-import">
     <mat-card-header>
       <mat-card-title i18n="@@competences.import.titre">Importer une grille (CSV)</mat-card-title>
       <mat-card-subtitle i18n="@@competences.import.aide">
