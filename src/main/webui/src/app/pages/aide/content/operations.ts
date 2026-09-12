@@ -187,7 +187,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.menuMode:Le menu latéral s'ouvre en mode simple : les écrans de diagnostic approfondi — graphe, autopsie, comparateur A/B, instantanés, historique, MCP, débogage — n'y figurent pas. « Menu simple », en tête du menu, bascule vers le menu avancé qui affiche tout, et ce navigateur retient le choix. Un écran masqué reste atteignable par la palette, par un lien de l'aide ou par son adresse : il apparaît alors dans le menu le temps de la visite.`,
+          text: $localize`:@@aide.shortcuts.menuMode:Le menu latéral s'ouvre en mode simple : une quinzaine d'écrans spécialisés n'y figurent pas — les vues d'analyse (rail et carte de la journée, heatmap de charge, timeline animateur, jours de repos, pauses), les écrans de diagnostic approfondi (fragilité du planning, banc de touche, contraintes, instantanés, comparateur A/B, autopsie du planning, graphe) et les outils techniques (historique, MCP, débogage). « Menu simple », en tête du menu, bascule vers le menu avancé qui affiche tout, et ce navigateur retient le choix. Un écran masqué reste atteignable par la palette, par un lien de l'aide ou par son adresse : il apparaît alors dans le menu le temps de la visite.`,
         },
         {
           kind: 'definitions',

@@ -14,7 +14,11 @@ const STORAGE_KEY = 'planning-equipes.nav.mode';
 /**
  * `simple` hides the expert entries, `avance` shows everything. `simple` is
  * the default: most users — the board of an association, not the developer —
- * use fifteen of the forty-odd screens.
+ * use half of the forty-odd screens. It hides some fifteen of them: the
+ * technical tools, the deep-diagnostic screens, and the specialised renderings
+ * of the plan that answer one question each (the day rail, the load heatmap,
+ * the rest days…). What is left is the everyday cycle — solve, look at it,
+ * fix it, publish it — plus the reference data it runs on.
  */
 export type NavMode = 'simple' | 'avance';
 

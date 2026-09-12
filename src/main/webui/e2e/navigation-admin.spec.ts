@@ -173,7 +173,9 @@ test("la bascule de langue passe l'interface en anglais", async ({ browser }) =>
 
 /**
  * The drawer opens in its simple mode: the expert screens are not listed, and
- * a menu shorter by a third is the point. The toggle at the top of the drawer
+ * a menu shorter by more than a third is the point — the technical tools, the
+ * deep diagnostics and the specialised renderings of the plan all sit behind
+ * the toggle. The toggle at the top of the drawer
  * shows them, the choice survives a reload, and a screen reached by its
  * address is listed for the time of the visit — the entry says where the
  * reader landed, without switching the mode under them.
@@ -187,12 +189,16 @@ test('le menu simple masque les écrans de diagnostic, et les montre sur demande
   await expect(navigation.getByRole('link', { name: 'Stands', exact: true })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Historique' })).toHaveCount(0);
+  // A specialised rendering, not only the technical tools.
+  await expect(navigation.getByRole('link', { name: 'Heatmap de charge' })).toHaveCount(0);
+  await expect(navigation.getByRole('link', { name: 'Heures', exact: true })).toBeVisible();
 
   const bascule = navigation.getByRole('button', { name: /Menu simple/ });
   await expect(bascule).toHaveAttribute('aria-pressed', 'false');
   await bascule.click();
   await expect(navigation.getByRole('link', { name: 'Débogage' })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Historique' })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Heatmap de charge' })).toBeVisible();
   await expect(navigation.getByRole('button', { name: /Menu avancé/ })).toHaveAttribute(
     'aria-pressed',
     'true',

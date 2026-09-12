@@ -453,9 +453,27 @@ describe('AdminShell', () => {
         .flatMap((group) => group.links)
         .filter((link) => link.avance)
         .map((link) => link.path);
-      expect(hidden).toEqual(
-        expect.arrayContaining(['/debug', '/mcp-client', '/historique', '/comparateur', '/kpi']),
-      );
+      // The exact set, not a sample: what the simple menu hides is the whole
+      // point of the mode, so adding a screen has to be a deliberate edit here
+      // rather than something a loose assertion waves through.
+      expect([...hidden].sort()).toEqual([
+        '/banc-de-touche',
+        '/carte-jour',
+        '/comparateur',
+        '/constraints',
+        '/debug',
+        '/fragilite',
+        '/graphe',
+        '/heatmap',
+        '/historique',
+        '/instantanes',
+        '/kpi',
+        '/mcp-client',
+        '/pauses',
+        '/rail-jour',
+        '/repos',
+        '/timeline',
+      ]);
       const visible = paths(shell.visibleGroups());
       for (const path of hidden) {
         expect(visible).not.toContain(path);

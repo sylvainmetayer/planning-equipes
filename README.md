@@ -61,7 +61,8 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
    `admin` par défaut en local — variable `ADMIN_PASSWORD`) — la page
    **Solveur** s'affiche ; le menu latéral donne accès à chaque écran (en
    mode simple par défaut : « Menu simple », en tête du menu, bascule vers le
-   menu avancé qui liste aussi les écrans de diagnostic approfondi).
+   menu avancé qui liste aussi la quinzaine d'écrans spécialisés — diagnostic
+   approfondi, vues d'analyse et outils techniques).
 2. Sur **Paramètres**, choisir un scénario puis **Charger le scénario
    sélectionné** pour remplir l'édition courante (les référentiels sont ensuite
    modifiables depuis **Stands**, **Emplacements**, **Animateurs**,
@@ -96,7 +97,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `PLANNING_MCP_API_KEY` | *(vide = MCP inutilisable)* | Clé API attendue pour authentifier le serveur MCP |
 | `PLANNING_MCP_API_KEY_HEADER` | `X-MCP-Api-Key` | En-tête HTTP portant la clé (ou `Authorization: Bearer <clé>`) |
 | `PLANNING_MCP_REQUIRED_HEADERS` | *(vide)* | En-têtes supplémentaires exigés en plus de la clé, `Nom=valeur` séparés par des virgules (déploiement derrière un proxy type Pangolin) |
-| `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID` | *(vide)* | Identifiant du jeton d'accès Pangolin, révélable depuis la page MCP (même contrôle par mot de passe admin que la clé API) |
+| `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID` | *(vide)* | Identifiant du jeton d'accès Pangolin, révélable depuis la page MCP (menu avancé ; même contrôle par mot de passe admin que la clé API) |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN` | *(vide)* | Jeton d'accès Pangolin correspondant, révélable de la même façon |
 | `ADMIN_PASSWORD` | `admin` | Mot de passe du compte administrateur `admin`. En production, le défaut refuse le démarrage : il faut en donner un |
 | `PROXY_ADDRESS_FORWARDING` | `true` | Suivre les en-têtes `X-Forwarded-*` d'un reverse proxy qui termine le TLS, indispensable pour que la redirection de connexion reste en `https` — voir [`api.md`](docs/api.md#derrière-un-reverse-proxy-qui-termine-le-tls) |

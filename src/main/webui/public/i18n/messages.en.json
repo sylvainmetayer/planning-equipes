@@ -45,7 +45,7 @@
   "shell.navMode.announce.simple": "Simple menu.",
   "shell.navMode.labelAvance": "Advanced menu",
   "shell.navMode.labelSimple": "Simple menu",
-  "aide.shortcuts.menuMode": "The side menu opens in its simple mode: the deep-diagnostic screens — graph, autopsy, A/B comparator, snapshots, history, MCP, debugging — are not listed. “Simple menu”, at the top of the drawer, switches to the advanced menu that shows everything, and this browser remembers the choice. A hidden screen stays reachable through the palette, a link of the help or its address: it then appears in the menu for the time of the visit.",
+  "aide.shortcuts.menuMode": "The side menu opens in simple mode: some fifteen specialised screens are left out — the analysis views (day rail and day map, load heatmap, animateur timeline, rest days, breaks), the deep-diagnostic screens (plan fragility, bench, constraints, snapshots, A/B comparison, plan autopsy, graph) and the technical tools (history, MCP, debugging). « Simple menu », at the top of the menu, switches to the advanced menu that shows everything, and this browser remembers the choice. A hidden screen is still reachable from the palette, from a link in the help or by its address: it then shows up in the menu for the time of the visit.",
   "workInProgress.message": "Feature under development: its behaviour may still change and the solver may not take it into account.",
   "yamlValidator.description": " Checks the structure of a scenario file (types, required fields, value ranges) without importing anything; cross-references are only checked by the real import. ",
   "yamlValidator.pickFile": "Choose a YAML file",
