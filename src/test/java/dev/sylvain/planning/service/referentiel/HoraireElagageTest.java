@@ -145,6 +145,31 @@ class HoraireElagageTest {
         assertThat(stand.getIndisponibilites()).isEmpty();
     }
 
+    /**
+     * Caught end to end: a stand open « 09:00-12:00 every day » that the grid
+     * shuts on a nocturne, whose slots start at 14:00. Dropping that day's
+     * closure moves no open segment — the morning window meets no créneau
+     * there — but it declares an opening nobody wrote, and the screen then
+     * reports a window with no effect. The openings are compared too, for
+     * exactly this.
+     */
+    @Test
+    void uneFermetureQuiSeuleEmpecheUneOuvertureHorsGrilleEstGardee() {
+        List<Creneau> nocturne = new ArrayList<>(creneaux());
+        LocalDate soir = PREMIER_JOUR.plusDays(NOMBRE_JOURS);
+        nocturne.add(new Creneau(99L, 5, soir, LocalTime.of(14, 0), LocalTime.of(19, 0)));
+        Stand stand = stand();
+        stand.setHoraires(new ArrayList<>(List.of(HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0))))));
+        stand.setIndisponibilites(
+                new ArrayList<>(List.of(new IndisponibiliteStand(null, soir, LocalTime.MIDNIGHT, null, null))));
+
+        HoraireElagage.LigneElagage ligne = HoraireElagage.elaguer(stand, nocturne);
+
+        assertThat(ligne.elague()).isFalse();
+        assertThat(stand.getIndisponibilites()).hasSize(1);
+    }
+
     /** A closure that carves out part of a day is not a marker: it stays. */
     @Test
     void uneFermetureDeQuelquesHeuresNEstPasRetiree() {

@@ -57,9 +57,16 @@ un seul mode par jour, l'invariant est intact et rien en aval ne change.
 Les fermetures que cette lecture rend muettes sont retirées par
 `HoraireElagage`, appelé après chaque compactage : chaque fermeture est ôtée à
 tour de rôle et le stand re-résolu contre ses propres créneaux, la suppression
-n'étant gardée que si **tous** les segments ouverts reviennent identiques,
-effectif compris. Deux limites, et les deux consistent à ne pas décider à la
-place de l'opérateur :
+n'étant gardée que si **deux** choses reviennent identiques — tous les segments
+ouverts, effectif compris, et toutes les fenêtres d'ouverture que la résolution
+produit. Les deux, parce que chacune seule laisse passer quelque chose : une
+fermeture peut être la seule à fermer un jour qu'une règle d'ouverture couvre à
+une heure qu'aucun créneau ne touche, et la retirer ne change aucun segment
+tout en déclarant une ouverture que personne n'a écrite — un test de bout en
+bout l'a attrapée ; et une fermeture qui creuse un trou dans une journée peut
+faire toute la différence entre un jour à demi ouvert et un jour clos, sans
+fenêtre d'ouverture d'un côté ni de l'autre. Deux limites de plus, et les deux
+consistent à ne pas décider à la place de l'opérateur :
 
 - **seules des fermetures partent.** Une ouverture n'est jamais retirée, même
   sans effet sur la grille du jour : « ouvert 08:00-09:00 » sur une grille qui
@@ -78,6 +85,9 @@ la réécriture à sens constant qu'il prétend être.
   exceptions datées) : 157 règles deviennent 104, sur 53 stands, **empreinte
   d'ouvertures identique** — 1 307 cases ouvertes, 3 330 sièges, à la minute et
   au siège près. `OuverturesEditionReelleTest` gèle cette empreinte.
+- **Rejoué de bout en bout** sur une copie de cette édition, par les vrais
+  endpoints : duplication, puis simplification. 1 307 cases ouvertes avant et
+  après, zéro écart, 3 330 sièges, zéro anomalie de part et d'autre.
 - **Rejoué sur les seize éditions d'une base de travail** : aucune case
   d'ouverture ne bouge, et les règles baissent de 34 à 45 % partout.
 - **Le piège disparaît** : un créneau ajouté tôt le matin ne rouvre plus rien,

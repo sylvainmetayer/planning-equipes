@@ -37,8 +37,15 @@ import java.util.Map;
  *
  * <p>Within that, nothing is judged by shape: each closure is removed in turn
  * and the stand re-resolved against its own créneaux, the removal kept only
- * when every open segment of every slot comes back identical, headcount
- * included. Pure and static, like {@link HoraireCompaction} next to it.</p>
+ * when <b>two</b> things come back identical — every open segment of every
+ * slot, headcount included, and every opening window the resolution produces.
+ * Both, because either alone lets something through: a closure can be the only
+ * thing shutting a day an opening rule covers at an hour no créneau touches,
+ * and dropping it changes no segment while declaring an opening nobody wrote;
+ * and a closure that carves a hole in a day can be the difference between a
+ * day half open and a day shut, with no opening window on either side.</p>
+ *
+ * <p>Pure and static, like {@link HoraireCompaction} next to it.</p>
  */
 public final class HoraireElagage {
 
@@ -79,14 +86,14 @@ public final class HoraireElagage {
             return new LigneElagage(stand.getId(), reglesAvant, reglesAvant, 0, List.of());
         }
         List<String> retirees = new ArrayList<>();
-        Map<String, List<SegmentOuvert>> reference = ouvertures(stand, regles, fermetures, creneaux);
+        Resolution reference = resolution(stand, regles, fermetures, creneaux);
         for (int i = regles.size() - 1; i >= 0; i--) {
             if (regles.get(i).getMode() != ModeHoraire.FERMETURE) {
                 continue;
             }
             List<HoraireStand> essai = new ArrayList<>(regles);
             HoraireStand candidate = essai.remove(i);
-            if (ouvertures(stand, essai, fermetures, creneaux).equals(reference)) {
+            if (resolution(stand, essai, fermetures, creneaux).equals(reference)) {
                 regles = essai;
                 retirees.add(candidate.toString());
             }
@@ -102,7 +109,7 @@ public final class HoraireElagage {
             }
             List<IndisponibiliteStand> essai = new ArrayList<>(fermetures);
             essai.remove(i);
-            if (ouvertures(stand, regles, essai, creneaux).equals(reference)) {
+            if (resolution(stand, regles, essai, creneaux).equals(reference)) {
                 fermetures = essai;
                 retirees.add("fermeture du " + fermeture.getDate());
             }
@@ -121,23 +128,30 @@ public final class HoraireElagage {
         return fermeture.getHeureFin() == null && LocalTime.MIDNIGHT.equals(fermeture.getHeureDebut());
     }
 
+    /** What a pruning must leave untouched: the openings declared, and the openings served. */
+    private record Resolution(List<String> ouvertures, Map<String, List<SegmentOuvert>> segments) {}
+
     /**
-     * The stand's open segments, slot by slot, as the given rules and closures
-     * resolve them: the thing a pruning must leave untouched. Computed on a
-     * copy so the stand handed in never carries a trial resolution.
+     * The stand as the given rules and closures resolve it. Computed on a copy
+     * so the stand handed in never carries a trial resolution.
      */
-    private static Map<String, List<SegmentOuvert>> ouvertures(
+    private static Resolution resolution(
             Stand stand, List<HoraireStand> regles, List<IndisponibiliteStand> fermetures, List<Creneau> creneaux) {
         Stand essai = copie(stand, regles, fermetures);
         HoraireStandResolver.apply(List.of(essai), creneaux);
-        Map<String, List<SegmentOuvert>> ouvert = new LinkedHashMap<>();
+        List<String> ouvertures = essai.getOuverturesEffectives().stream()
+                .map(fenetre -> fenetre.getDate() + "|" + fenetre.getHeureDebut() + "|" + fenetre.getHeureFin() + "|"
+                        + fenetre.getEffectif())
+                .sorted()
+                .toList();
+        Map<String, List<SegmentOuvert>> segments = new LinkedHashMap<>();
         for (Creneau creneau : creneaux) {
-            List<SegmentOuvert> segments = creneau.segmentsOuverts(essai);
-            if (!segments.isEmpty()) {
-                ouvert.put(creneau.getDate() + "|" + creneau.getHeureDebut() + "|" + creneau.getHeureFin(), segments);
+            List<SegmentOuvert> ouverts = creneau.segmentsOuverts(essai);
+            if (!ouverts.isEmpty()) {
+                segments.put(creneau.getDate() + "|" + creneau.getHeureDebut() + "|" + creneau.getHeureFin(), ouverts);
             }
         }
-        return ouvert;
+        return new Resolution(ouvertures, segments);
     }
 
     /**

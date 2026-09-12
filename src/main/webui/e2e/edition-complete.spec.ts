@@ -99,6 +99,35 @@ async function creerAnimateur(page: Page, id: string, prenom: string, nom: strin
   await expect(dialog).toBeHidden();
 }
 
+/**
+ * L'effectif du stand un sur les deux matins de « Jour normal » : ce qu'une
+ * seule case de la grille par journée type doit avoir écrit sur les deux dates.
+ */
+async function effectifsDesMatins(): Promise<(number | null)[]> {
+  const reponse = await admin.get('/api/ouvertures-stands', DANS_EDITION);
+  expect(reponse.ok()).toBeTruthy();
+  const rapport = (await reponse.json()) as {
+    jours: { date: string; creneaux: { id: number; heureDebut: string }[] }[];
+    stands: {
+      standId: string;
+      jours: { date: string; creneaux: { creneauId: number; effectif: number | null }[] }[];
+    }[];
+  };
+  const matins = new Set(
+    rapport.jours
+      .filter((jour) => jour.date === JOUR1 || jour.date === JOUR2)
+      .flatMap((jour) =>
+        jour.creneaux.filter((creneau) => creneau.heureDebut.startsWith('09:')).map((c) => c.id),
+      ),
+  );
+  expect(matins.size).toBe(2);
+  const standUn = rapport.stands.find((ligne) => ligne.standId === STANDS[0].id)!;
+  return standUn.jours
+    .flatMap((jour) => jour.creneaux)
+    .filter((cellule) => matins.has(cellule.creneauId))
+    .map((cellule) => cellule.effectif);
+}
+
 /** Une case de la grille de saisie, désignée comme son aria-label la nomme : « Stand · JJ/MM colonne ». */
 function cellule(page: Page, stand: string, jour: string, colonne: string) {
   const [, mois, jj] = jour.split('-');
@@ -203,6 +232,28 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   await cellule(page, 'Stand trois E2E', JOUR3, '19-23').fill('-');
   await page.getByRole('button', { name: /^Enregistrer/ }).click();
   await expect(page.getByText(/enregistré/i)).toBeVisible();
+
+  // 4 bis. La même grille lue par journée type (ADR 0033) : six colonnes au
+  // lieu de dix, et une case qui vaut pour les deux jours normaux d'un coup.
+  await page.goto('/ouvertures?vue=journees-types');
+  await expect(page.locator('.grille-journees-types')).toBeVisible();
+  // Six colonnes — quatre vacations de « Jour normal », deux de « Nocturne » —
+  // là où la grille par date en aligne dix.
+  await expect(page.locator('.grille-journees-types .entete-creneau')).toHaveCount(6);
+  const matinJourNormal = page.getByLabel('Stand un E2E · Jour normal 09:00-12:00');
+  const effectifInitial = await matinJourNormal.inputValue();
+
+  await matinJourNormal.fill('2');
+  await page.getByRole('button', { name: /^Enregistrer/ }).click();
+  await expect(page.getByText(/enregistré/i)).toBeVisible();
+  expect(await effectifsDesMatins()).toEqual([2, 2]);
+
+  // Et retour : la même case rend les deux jours à leur effectif de départ, pour
+  // que la suite de la spec lise l'édition qu'elle a saisie.
+  await matinJourNormal.fill(effectifInitial);
+  await page.getByRole('button', { name: /^Enregistrer/ }).click();
+  await expect(page.getByText(/enregistré/i)).toBeVisible();
+  expect(await effectifsDesMatins()).toEqual([Number(effectifInitial), Number(effectifInitial)]);
 
   // Un stand aux heures particulières, déclaré après la grille — une case ne
   // sait pas dire 07:00-08:00, et enregistrer la grille réécrit tout l'horaire
