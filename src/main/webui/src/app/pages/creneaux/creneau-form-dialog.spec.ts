@@ -85,7 +85,12 @@ describe('CreneauFormDialog', () => {
     await fixture.whenStable();
 
     const ngForm = fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm);
-    expect(Object.keys(ngForm.controls).sort()).toEqual(['date', 'heureDebut', 'heureFin']);
+    expect(Object.keys(ngForm.controls).sort()).toEqual([
+      'couverturePause',
+      'date',
+      'heureDebut',
+      'heureFin',
+    ]);
     expect(erreursConsole.filter((args) => JSON.stringify(args).includes('NG01352'))).toEqual([]);
   });
 
@@ -259,6 +264,22 @@ describe('CreneauFormDialog', () => {
     await fixture.whenStable();
 
     expect(payload(save)).toMatchObject({ id: 7, heureFin: '13:00', couverturePause: true });
+  });
+
+  it('declares a meal relay from the checkbox', async () => {
+    const { fixture, save } = monter(CRENEAU);
+    await fixture.whenStable();
+
+    const checkbox = racine(fixture).querySelector(
+      'mat-checkbox[name="couverturePause"] input',
+    ) as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+    checkbox.click();
+    await fixture.whenStable();
+    submit(fixture);
+    await fixture.whenStable();
+
+    expect(payload(save)).toMatchObject({ id: 7, couverturePause: true });
   });
 
   it('says nothing about midnight for a slot that stays inside its day', async () => {

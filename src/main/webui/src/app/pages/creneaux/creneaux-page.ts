@@ -224,6 +224,9 @@ export class CreneauxPage {
 
   /* -------------------------- The grid as a whole -------------------------- */
 
+  /** Same wording as the grid's header: the marker means the same thing on both screens. */
+  protected readonly relaisRepasTooltip = $localize`:@@ouvertures.saisie.relaisRepas:Relais repas : les sièges générés valent la moitié de l'effectif saisi, arrondie au supérieur`;
+
   /** The edition's découpage settings, carrying the declared mode; `null` until read. */
   protected readonly parametresDecoupage = signal<ParametresDecoupage | null>(null);
   protected readonly mode = computed<ModeGrilleCreneaux>(

@@ -129,6 +129,9 @@
                              (keydown.escape)="scissionActive.set(null)" />
                     } @else {
                       <span class="libelle-colonne">{{ libelleColonne(colonne) }}</span>
+                      @if (colonne.couverturePause) {
+                        <mat-icon inline class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
+                      }
                       <button matIconButton type="button" class="scinder-colonne" [disabled]="editingLocked()"
                               i18n-matTooltip="@@ouvertures.saisie.scinder" matTooltip="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
                               i18n-aria-label="@@ouvertures.saisie.scinder" aria-label="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"

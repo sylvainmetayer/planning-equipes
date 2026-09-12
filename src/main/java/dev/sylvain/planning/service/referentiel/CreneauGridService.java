@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -230,6 +231,7 @@ public class CreneauGridService {
             List<Creneau> creneaux, ModeGrilleCreneaux mode, ParametresDecoupage decoupage, ParametresLegaux legaux) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         int amplitudeMaximaleLegale = MINUTES_PAR_JOUR - legaux.getReposQuotidienMinimalMinutes();
+        List<FenetreRepas> fenetresRepas = FenetreRepas.from(legaux);
         for (Creneau creneau : creneaux) {
             if (creneau.getDate() == null || creneau.getHeureDebut() == null || creneau.getHeureFin() == null) {
                 anomalies.add(new GridAnomaly(
@@ -276,8 +278,45 @@ public class CreneauGridService {
                                 + " min plafonne une journée travaillée à " + amplitudeMaximaleLegale
                                 + " min. Toute affectation sur ce créneau violera une contrainte dure."));
             }
+            if (mode == ModeGrilleCreneaux.VACATIONS
+                    && creneau.isCouverturePause()
+                    && !dansUneFenetreRepas(creneau, fenetresRepas)) {
+                anomalies.add(new GridAnomaly(
+                        SeveriteGrille.AVERTISSEMENT,
+                        GridAnomalyType.RELAIS_REPAS_HORS_FENETRE,
+                        creneau.getDate(),
+                        libelle(creneau) + " : relais repas hors de toute fenêtre repas ("
+                                + libelleFenetresRepas(fenetresRepas)
+                                + "). L'effectif y est divisé par deux sans qu'aucune coupure"
+                                + " ne puisse s'y prendre."));
+            }
         }
         return anomalies;
+    }
+
+    /**
+     * A meal-relay vacation halves the seats so that the other half can eat:
+     * it only makes sense inside a window where a meal break may be taken. A
+     * slot running past midnight is never inside one — the windows are
+     * wall-clock, within the day.
+     */
+    private static boolean dansUneFenetreRepas(Creneau creneau, List<FenetreRepas> fenetres) {
+        int debut = creneau.getHeureDebut().toSecondOfDay() / 60;
+        int fin = creneau.getHeureFin().toSecondOfDay() / 60;
+        if (fin <= debut) {
+            return false;
+        }
+        return fenetres.stream().anyMatch(fenetre -> debut >= fenetre.debutMinutes() && fin <= fenetre.finMinutes());
+    }
+
+    private static String libelleFenetresRepas(List<FenetreRepas> fenetres) {
+        if (fenetres.isEmpty()) {
+            return "aucune fenêtre repas déclarée dans les paramètres légaux";
+        }
+        return fenetres.stream()
+                .map(fenetre -> fenetre.libelle() + " " + fenetre.debut() + "-" + fenetre.fin())
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("");
     }
 
     /** Checks that need the whole day: duplicates, overlaps, and holes in the covered span. */
@@ -468,7 +507,9 @@ public class CreneauGridService {
         TROU_DANS_LA_JOURNEE,
         AMPLITUDE_PLUS_COURTE_QUE_LA_VACATION_MINIMALE,
         VACATION_TROP_LONGUE,
-        DATE_ISOLEE
+        DATE_ISOLEE,
+        /** A pause-covering vacation outside every meal window: half the seats, and nobody can eat (VACATIONS only). */
+        RELAIS_REPAS_HORS_FENETRE
     }
 
     public record GridAnomaly(SeveriteGrille severite, GridAnomalyType type, LocalDate date, String message) {}

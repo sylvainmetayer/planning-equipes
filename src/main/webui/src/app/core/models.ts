@@ -1011,7 +1011,8 @@ export type TypeAnomalieGrille =
   | 'TROU_DANS_LA_JOURNEE'
   | 'AMPLITUDE_PLUS_COURTE_QUE_LA_VACATION_MINIMALE'
   | 'VACATION_TROP_LONGUE'
-  | 'DATE_ISOLEE';
+  | 'DATE_ISOLEE'
+  | 'RELAIS_REPAS_HORS_FENETRE';
 
 export interface AnomalieGrille {
   severite: SeveriteGrille;

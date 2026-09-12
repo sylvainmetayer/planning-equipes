@@ -297,6 +297,18 @@
   white-space: nowrap;
 }
 
+/**
+ * The meal-relay marker on a column header, and on a créneau row: an
+ * indication of how the pause is covered, never a shortfall, so it borrows
+ * neither the error nor the warning colour (same rule as calendar-day.css).
+ */
+.ouvertures-grille .relais-repas-icon,
+.creneaux-table .relais-repas-icon {
+  color: var(--mat-sys-on-surface-variant);
+  vertical-align: middle;
+  font-size: 1rem;
+}
+
 .grille-saisie .scinder-colonne {
   --mdc-icon-button-state-layer-size: 1.25rem;
   width: 1.25rem;

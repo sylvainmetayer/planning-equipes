@@ -135,6 +135,7 @@ describe('colonnes et cellules', () => {
         heureDebut: '13:30:00',
         heureFin: '14:30:00',
         rang: 0,
+        couverturePause: false,
       }),
     ).toBe('13:30-14:30');
     expect(
@@ -145,6 +146,7 @@ describe('colonnes et cellules', () => {
         heureDebut: '10:00:00',
         heureFin: '12:00:00',
         rang: 0,
+        couverturePause: false,
       }),
     ).toBe('10-12');
   });
@@ -355,6 +357,7 @@ describe('segmentsPartiels et aplatissement', () => {
       heureDebut: '14:00',
       heureFin: '20:00',
       rang: 0,
+      couverturePause: false,
     },
     {
       date: '2026-07-08',
@@ -363,6 +366,7 @@ describe('segmentsPartiels et aplatissement', () => {
       heureDebut: '20:00',
       heureFin: '00:00',
       rang: 1,
+      couverturePause: false,
     },
   ];
 

@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
@@ -17,10 +19,10 @@ interface CreneauDraft {
   heureDebut: string;
   heureFin: string;
   /**
-   * Carried through even though the form has no control for it yet: the server
-   * writes `couverture_pause` from whatever the body says, so a payload that
-   * omitted it silently reset a pause-covering slot to full headcount on the
-   * next solve.
+   * A meal-relay vacation: the stands are staffed at half their headcount so
+   * the other half can eat. The server writes `couverture_pause` from whatever
+   * the body says, so the payload always carries it — a body that omitted it
+   * used to reset a generated relay to full headcount on the next solve.
    */
   couverturePause: boolean;
   /** The store's `modifieLe` at opening, sent back as the write's precondition (issue #362). */
@@ -41,7 +43,9 @@ export interface CreneauFormData {
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatIconModule,
+    MatTooltipModule,
   ],
   templateUrl: './creneau-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

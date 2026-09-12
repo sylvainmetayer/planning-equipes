@@ -41,6 +41,8 @@ export interface ColonneGrille {
   heureFin: string;
   /** Rank of the column within its day, for the header's own row. */
   rang: number;
+  /** A meal-relay créneau: the seats generated are half the headcount typed, rounded up. */
+  couverturePause: boolean;
 }
 
 /** `standId` → `colonneId` → headcount, `null` for closed. */
@@ -61,6 +63,7 @@ export function colonnes(rapport: RapportOuvertures): ColonneGrille[] {
       heureDebut: creneau.heureDebut,
       heureFin: creneau.heureFin,
       rang,
+      couverturePause: creneau.couverturePause,
     })),
   );
 }

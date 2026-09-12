@@ -20,6 +20,11 @@
   <input matInput name="heureFin" type="time" required
          [ngModel]="draft().heureFin" (ngModelChange)="patch({ heureFin: $event })" />
 </mat-form-field>
+<mat-checkbox name="couverturePause" class="span-2"
+              i18n-matTooltip="@@creneaux.couverturePause.tooltip"
+              matTooltip="Vacation de relais pendant la coupure repas : chaque stand n'y reçoit que la moitié de ses sièges, arrondie au supérieur, pour que l'autre moitié mange."
+              [ngModel]="draft().couverturePause" (ngModelChange)="patch({ couverturePause: $event })"
+              i18n="@@creneaux.field.couverturePause">Relais repas (effectif divisé par deux)</mat-checkbox>
 @if (franchitMinuit()) {
   <p class="locked-hint span-2" i18n="@@creneaux.franchitMinuit">Ce créneau franchit minuit : il se termine le lendemain.</p>
 }

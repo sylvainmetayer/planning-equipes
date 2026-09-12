@@ -12,6 +12,7 @@ import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.GridAnomaly;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.GridAnomalyType;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.RegleRecurrence;
+import dev.sylvain.planning.service.referentiel.CreneauGridService.SeveriteGrille;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -219,6 +220,44 @@ class CreneauGridServiceTest {
 
         assertThat(diagnostic.nombreCreneaux()).isZero();
         assertThat(diagnostic.modeProbable()).isNull();
+    }
+
+    // A hand-typed meal relay (12-13 at half headcount) is only meaningful
+    // where a meal break may be taken. Outside the windows it halves the seats
+    // for nothing, and the flag is silent everywhere else: the grid is the one
+    // place that reads it against the legal parameters.
+    @Test
+    void relaisRepasHorsFenetreEstSignaleEnVacationsSeulement() {
+        Creneau relais = creneau("2026-07-06", "16:00", "17:00");
+        relais.setCouverturePause(true);
+        Creneau midi = creneau("2026-07-06", "12:00", "13:00");
+        midi.setCouverturePause(true);
+        Creneau nuit = creneau("2026-07-06", "23:00", "00:00");
+        nuit.setCouverturePause(true);
+
+        List<GridAnomaly> anomalies = service.validate(
+                        List.of(relais, midi, nuit),
+                        List.of(),
+                        List.of(),
+                        ModeGrilleCreneaux.VACATIONS,
+                        DECOUPAGE,
+                        LEGAUX)
+                .anomalies();
+
+        List<GridAnomaly> horsFenetre = anomalies.stream()
+                .filter(anomalie -> anomalie.type() == GridAnomalyType.RELAIS_REPAS_HORS_FENETRE)
+                .toList();
+        assertThat(horsFenetre).hasSize(2);
+        assertThat(horsFenetre).allSatisfy(anomalie -> {
+            assertThat(anomalie.severite()).isEqualTo(SeveriteGrille.AVERTISSEMENT);
+            assertThat(anomalie.message()).contains("relais repas").contains("midi 12:00-14:00");
+        });
+        assertThat(horsFenetre)
+                .extracting(GridAnomaly::message)
+                .anyMatch(message -> message.contains("16:00-17:00"))
+                .anyMatch(message -> message.contains("23:00-00:00"));
+        assertThat(typesDetectes(List.of(relais), ModeGrilleCreneaux.AMPLITUDES))
+                .doesNotContain(GridAnomalyType.RELAIS_REPAS_HORS_FENETRE);
     }
 
     /* -------------------------------- Outils -------------------------------- */

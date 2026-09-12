@@ -55,7 +55,7 @@
       <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
     }
     <div class="table-wrapper">
-      <table mat-table [dataSource]="creneauxAffiches()" matSort [matSortActive]="sort().active"
+      <table mat-table class="creneaux-table" [dataSource]="creneauxAffiches()" matSort [matSortActive]="sort().active"
              [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
         <caption class="visually-hidden" i18n="@@creneaux.table.caption">Créneaux de l’édition : jour, date, horaires et actions</caption>
         <ng-container matColumnDef="select">
@@ -95,7 +95,12 @@
         </ng-container>
         <ng-container matColumnDef="horaires">
           <th mat-header-cell *matHeaderCellDef i18n="@@creneaux.column.horaires">Horaires</th>
-          <td mat-cell *matCellDef="let creneau">{{ creneau.heureDebut }}–{{ creneau.heureFin }}</td>
+          <td mat-cell *matCellDef="let creneau">
+            {{ creneau.heureDebut }}–{{ creneau.heureFin }}
+            @if (creneau.couverturePause) {
+              <mat-icon inline class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
+            }
+          </td>
         </ng-container>
         <ng-container matColumnDef="actions" stickyEnd>
           <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
