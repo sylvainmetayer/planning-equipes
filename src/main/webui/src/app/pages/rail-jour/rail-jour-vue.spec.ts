@@ -288,7 +288,9 @@ describe('RailJourView', () => {
     // And it stays on screen: `position: sticky` needs a scrolling ancestor of
     // its own — measured at 153 lines, without it the scale simply left.
     expect(racine().querySelector('.rail-scroll .rail-table')).not.toBeNull();
-  });
+    // 150 lines x 5 seats rendered in jsdom: past the 5 s default on a loaded
+    // machine, and a timeout there says nothing about the rail.
+  }, 20_000);
 
   it('drops the hour step on a hatched line, which would tile the pattern', async () => {
     await rendre(planningDeuxJours());

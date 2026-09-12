@@ -63,6 +63,12 @@ describe('BancDeTouchePage', () => {
     store.reload.mockResolvedValue(undefined);
   });
 
+  /** `/banc-de-touche?creneau=7&stand=tir`, as the address bar would hold it. */
+  function chemin(queryParams: Record<string, string>): string {
+    const query = new URLSearchParams(queryParams).toString();
+    return query ? `/banc-de-touche?${query}` : '/banc-de-touche';
+  }
+
   function createPage(queryParams: Record<string, string> = {}): PageInternals {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -70,7 +76,10 @@ describe('BancDeTouchePage', () => {
         provideZonelessChangeDetection(),
         { provide: AnalysesApi, useValue: analysesApi },
         { provide: ReferenceDataStore, useValue: store },
-        { provide: Location, useValue: { path: () => '/banc-de-touche', replaceState: vi.fn() } },
+        // The page restores its state from the address bar, which is what
+        // `keepViewInQueryParams` writes — not from the router snapshot, frozen
+        // at the last real navigation.
+        { provide: Location, useValue: { path: () => chemin(queryParams), replaceState: vi.fn() } },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },

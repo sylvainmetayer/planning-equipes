@@ -78,6 +78,46 @@ describe('FragilitePage loading', () => {
     return (fixture.nativeElement as HTMLElement).textContent!.replace(/\s+/g, ' ');
   }
 
+  /**
+   * The page is a tab of « Diagnostic »: it is destroyed when another tab is
+   * shown and built again on the way back, while its filters live in the
+   * address bar — written there by `keepViewInQueryParams`, which never
+   * navigates. The router snapshot therefore still holds what the last real
+   * navigation parsed, here nothing at all. Reading it, the tab came back
+   * empty and then wrote its defaults over the URL, losing the search twice.
+   */
+  it('restores its filters from the address bar, not from the frozen router snapshot', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: AnalysesApi, useValue: analysesApi },
+        {
+          provide: Location,
+          useValue: {
+            path: () => '/diagnostic?onglet=fragilite&vue=COMPETENCES&filtre=CRITIQUES&q=Alice',
+            replaceState: vi.fn(),
+          },
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
+      ],
+    });
+    analysesApi.fragility.mockResolvedValue(rapport());
+
+    const page = TestBed.createComponent(FragilitePage).componentInstance as unknown as {
+      view: Signal<string>;
+      filtre: Signal<string>;
+      recherche: Signal<string>;
+    };
+
+    expect(page.view()).toBe('COMPETENCES');
+    expect(page.filtre()).toBe('CRITIQUES');
+    expect(page.recherche()).toBe('Alice');
+  });
+
   it('says it is analysing while the first report is in flight, and shows it once it lands', async () => {
     const pending = deferred<RapportFragilite>();
     analysesApi.fragility.mockReturnValue(pending.promise);

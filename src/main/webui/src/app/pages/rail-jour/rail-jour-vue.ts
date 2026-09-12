@@ -29,7 +29,6 @@ import { resumeDeplacement } from '../../shared/deplacement';
 import { PlanningEvenement, TypologieItem, RapportPauses } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
-import { keepViewInQueryParams } from '../../core/view-query-params';
 import { RailBloc, RailJour, RailLigne, buildRailJours, compterStatuts } from './rail-jour';
 
 /** Which lines the rail keeps: everyone, only the mobilisable ones, only the working ones. */
@@ -267,12 +266,6 @@ export class RailJourView {
   protected readonly libreLabel = $localize`:@@railJour.statut.libre:Libre`;
   protected readonly indisponibleLabel = $localize`:@@railJour.statut.indisponible:Indisponible`;
   protected readonly chevauchementLabel = $localize`:@@railJour.chevauchement:Vacations qui se chevauchent : cet animateur est attendu à deux endroits en même temps`;
-
-  constructor() {
-    // Its own key only (`lignes`): the page writes the day, the view and the
-    // shared filters next to it, and each writer leaves the others' keys alone.
-    keepViewInQueryParams(() => ({ lignes: this.view() === 'tous' ? null : this.view() }));
-  }
 
   /** Reads the `lignes` query param the page hands over at construction. */
   static readLignes(value: string | null): RailVue {

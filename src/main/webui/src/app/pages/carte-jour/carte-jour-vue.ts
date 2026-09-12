@@ -17,7 +17,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSliderModule } from '@angular/material/slider';
 import { Emplacement, PlanningEvenement } from '../../core/models';
-import { keepViewInQueryParams } from '../../core/view-query-params';
 import { CarteJourMap } from './carte-jour-map';
 import { JourneeCarte, buildJourneesCarte, formatMinutes, instantCarte } from './carte-jour';
 
@@ -146,13 +145,6 @@ export class CarteJourView {
   protected readonly curseurLabel = $localize`:@@carteJour.cursor.label:Heure de la journée`;
 
   constructor() {
-    // Its own key only (`t`): the page writes the day and the view next to it.
-    keepViewInQueryParams(() => {
-      const courant = this.jourCourant();
-      return {
-        t: courant && this.minutes() !== courant.debutMinutes ? String(this.minutes()) : null,
-      };
-    });
     // A new day has its own opening hour: the replay stops and the cursor goes
     // back to it. Skipped for the day the view opens on, whose cursor comes
     // from the URL.

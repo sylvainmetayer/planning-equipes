@@ -118,13 +118,32 @@ describe('app.routes', () => {
     });
 
     it('traduit la vue « sans relais » des pauses en son filtre, et le jour en date', () => {
-      expect(redirection('pauses', { vue: 'sans-relais', jour: 'J2' })).toBe(
-        '/journee?vue=pauses&relais=sans&date=J2',
+      // `/pauses` always wrote an ISO date in `jour`: that is the bookmark the
+      // redirect has to read back, not a day number.
+      expect(redirection('pauses', { vue: 'sans-relais', jour: '2026-08-02' })).toBe(
+        '/journee?vue=pauses&relais=sans&date=2026-08-02',
       );
     });
 
     it('mène au calendrier sans paramètre superflu', () => {
       expect(redirection('day-calendar', {})).toBe('/journee?vue=calendrier');
+    });
+
+    // The two addresses carrying the most params: the map's cursor, and the
+    // créneau and stand pair of the bench.
+    it('garde le jour et le curseur de la carte', () => {
+      expect(redirection('carte-jour', { jour: '2026-08-02', t: '540' })).toBe(
+        '/journee?vue=carte&jour=2026-08-02&t=540',
+      );
+    });
+
+    it("mène aux onglets du diagnostic avec l'état de chacun", () => {
+      expect(
+        redirection('fragilite', { vue: 'COMPETENCES', filtre: 'CRITIQUES', q: 'Alice' }),
+      ).toBe('/diagnostic?onglet=fragilite&vue=COMPETENCES&filtre=CRITIQUES&q=Alice');
+      expect(redirection('banc-de-touche', { creneau: '12', stand: 'S1' })).toBe(
+        '/diagnostic?onglet=banc&creneau=12&stand=S1',
+      );
     });
   });
 });

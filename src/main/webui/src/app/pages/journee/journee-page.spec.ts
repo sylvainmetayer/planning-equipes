@@ -202,6 +202,11 @@ describe('JourneePage', () => {
     const url = TestBed.inject(Location).path();
     expect(url).not.toContain('stand=');
     expect(url).not.toContain('q=');
+    // Including the key of a rendering that is not on screen. Written by the
+    // rendering itself, `lignes=libres` survived its own reset — the rail was
+    // gone, nothing wrote the key any more, and a reload brought the filter
+    // back on a link that showed no sign of it.
+    expect(url).not.toContain('lignes=');
   });
 
   it('drops the session copy of the plan and re-reads when a rendering wrote to it', async () => {

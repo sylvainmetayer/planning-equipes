@@ -21,7 +21,11 @@ import { ActivatedRoute } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { AnimateurFragilite, CompetenceRare, SeveriteFragilite } from '../../core/models';
 import { errorText, retainedValue } from '../../core/resource-state';
-import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
+import {
+  keepViewInQueryParams,
+  optionalParam,
+  currentViewParams,
+} from '../../core/view-query-params';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
   classeSeverite,
@@ -105,7 +109,10 @@ export class FragilitePage {
   );
 
   constructor() {
-    const params = this.route.snapshot.queryParamMap;
+    // The address bar, not the router snapshot: this page is a tab of
+    // « Diagnostic », created afresh every time the tab is opened, and the
+    // snapshot still holds what the last real navigation parsed.
+    const params = currentViewParams();
     this.view.set(readView(params.get('vue')));
     this.filtre.set(lireFiltre(params.get('filtre')));
     this.recherche.set(params.get('q') ?? '');

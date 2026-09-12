@@ -39,7 +39,6 @@ import {
   ouvrirExplication,
 } from '../../shared/affectation-explanation-dialog';
 import { correspondAuFiltre } from '../../core/text-filter';
-import { keepViewInQueryParams } from '../../core/view-query-params';
 
 interface AssignedEntry {
   poste: PosteAffectation;
@@ -198,9 +197,6 @@ export class CalendarDayView {
   });
 
   constructor() {
-    // Its own key only (`problemes`): the page writes the day, the view and
-    // the shared filters next to it.
-    keepViewInQueryParams(() => ({ problemes: this.seulementProblemes() ? '1' : null }));
     // The count is read with the plan, and again each time the page re-reads it.
     effect(() => {
       this.planning();

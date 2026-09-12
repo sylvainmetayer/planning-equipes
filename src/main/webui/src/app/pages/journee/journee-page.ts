@@ -180,9 +180,14 @@ export class JourneePage {
     this.coupuresManquantes.set(params.get('repas') === 'manquantes');
     this.seulementProblemes.set(params.get('problemes') === '1');
     void this.refresh();
-    // The page's keys: the day, the rendering and the shared filters. Each
-    // view writes its own next to them. `jour`, the key of the four former
-    // screens, is retired once the day is known by its date.
+    // Every key of the screen, written by the one component that is always
+    // mounted. The renderings hold their own state through `model()`, but a
+    // rendering only writes while it is on screen: leaving the rail on
+    // « libres » and switching to the calendar left `lignes=libres` in an
+    // address nothing could clear any more — « Réinitialiser la vue » cleared
+    // the signal, the rail was gone, and a reload brought the filter back.
+    // `jour`, the key of the four former screens, is retired once the day is
+    // known by its date.
     keepViewInQueryParams(() => ({
       date: this.dateParam(),
       jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
@@ -190,6 +195,11 @@ export class JourneePage {
       q: optionalParam(this.filtre()),
       stand: optionalParam(this.stand()),
       animateur: optionalParam(this.animateur()),
+      lignes: this.lignesRail() === 'tous' ? null : this.lignesRail(),
+      t: this.instantCarte() === null ? null : String(this.instantCarte()),
+      relais: this.withoutRelais() ? 'sans' : null,
+      repas: this.coupuresManquantes() ? 'manquantes' : null,
+      problemes: this.seulementProblemes() ? '1' : null,
     }));
   }
 

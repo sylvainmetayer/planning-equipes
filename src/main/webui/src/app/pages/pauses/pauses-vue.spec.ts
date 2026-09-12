@@ -4,7 +4,6 @@
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Location } from '@angular/common';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { RapportPauses } from '../../core/models';
@@ -144,9 +143,14 @@ describe('PausesView', () => {
     expect(titresStands(fixture)[0]).toContain('1 sans relais');
   });
 
-  it('falls back on the first day for a day the report does not know', async () => {
+  // The page's day selector lists every day of the plan, the report only the
+  // days somebody owes a break on. Showing the first day of the report under
+  // the heading of another was a silent lie: nothing on screen dated the rows.
+  it('shows no row for a day the report does not cover', async () => {
     const fixture = await mount(rapport(), { date: '2030-01-01' });
-    expect(text(fixture)).toContain('Alice Martin');
+
+    expect(text(fixture)).not.toContain('Alice Martin');
+    expect(text(fixture)).toContain('Aucune pause à organiser');
   });
 
   it('keeps only what the shared filters name: a stand, a person, a text', async () => {
@@ -182,14 +186,16 @@ describe('PausesView', () => {
     expect(rien.nativeElement.querySelector('.pauses-alerte')).toBeNull();
   });
 
-  it('resets its two switches in one call, writes them to the URL, and leaves the day alone', async () => {
+  // The two switches are the view's, their URL keys are not: the Journée page
+  // writes every key of the screen, because a rendering only writes while it is
+  // displayed and « Réinitialiser la vue » has to clear the keys of the ones
+  // that are not.
+  it('resets its two switches in one call, and leaves the day alone', async () => {
     const fixture = await mount(rapport(), { date: '2026-07-11' });
     const view = fixture.componentInstance;
     view.withoutRelaisOnly.set(true);
     await fixture.whenStable();
     expect(view.modifiee()).toBe(true);
-    // Its own key, next to the page's: `relais`, never the `vue` the page owns.
-    expect(TestBed.inject(Location).path()).toContain('relais=sans');
 
     view.reinitialiser();
     TestBed.tick();
@@ -197,7 +203,6 @@ describe('PausesView', () => {
 
     expect(view.withoutRelaisOnly()).toBe(false);
     expect(view.modifiee()).toBe(false);
-    expect(TestBed.inject(Location).path()).not.toContain('relais=');
     expect(text(fixture)).toContain('Carol Petit');
   });
 

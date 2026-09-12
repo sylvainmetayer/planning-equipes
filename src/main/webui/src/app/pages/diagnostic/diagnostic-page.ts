@@ -5,6 +5,7 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -50,7 +51,15 @@ export class DiagnosticPage {
   protected readonly onglet = signal<OngletDiagnostic>('problemes');
 
   constructor() {
-    this.onglet.set(readOnglet(this.route.snapshot.queryParamMap.get('onglet')));
+    // Followed rather than read once: a link inside the page — « Besoin en
+    // animateurs » on the Problèmes tab — navigates to this very route with
+    // another `onglet`, and the router reuses the component instead of building
+    // it again. Read in the constructor alone, the address changed and the
+    // screen did not, until an F5. `replaceState` (ADR 0018) emits nothing
+    // here, so the effect below cannot feed this subscription.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      this.onglet.set(readOnglet(params.get('onglet')));
+    });
     keepViewInQueryParams(() => ({
       onglet: this.onglet() === 'problemes' ? null : this.onglet(),
     }));

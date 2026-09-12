@@ -149,6 +149,28 @@ describe('keepViewInQueryParams', () => {
     expect(location.path()).not.toContain('q=');
   });
 
+  // A pasted address can carry anything, and the router accepts it: the effect
+  // that mirrors the URL must not be the thing that dies on it. It used to
+  // throw on the first run and stay dead for the life of the page.
+  it('survit à une clé étrangère que personne ne peut décoder', () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideRouter([]), provideLocationMocks()],
+    });
+    const location = TestBed.inject(Location);
+    location.replaceState('/journee?q2=100%&drapeau&autre=a+b');
+
+    expect(() => {
+      TestBed.runInInjectionContext(() => keepViewInQueryParams(() => ({ q: 'Alice' })));
+      TestBed.tick();
+    }).not.toThrow();
+
+    // Somebody else's keys go back out as they came in, the valueless one too.
+    expect(location.path()).toContain('q2=100%');
+    expect(location.path()).toContain('drapeau');
+    expect(location.path()).toContain('autre=a+b');
+    expect(location.path()).toContain('q=Alice');
+  });
+
   // A page made of several components has several writers on one address: the
   // Journée writes the day and the rendering, the rail its line filter. Each
   // touches only the keys it names, or the second would erase the first on

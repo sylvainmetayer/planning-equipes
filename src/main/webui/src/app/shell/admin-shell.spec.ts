@@ -457,21 +457,16 @@ describe('AdminShell', () => {
       // point of the mode, so adding a screen has to be a deliberate edit here
       // rather than something a loose assertion waves through.
       expect([...hidden].sort()).toEqual([
-        '/banc-de-touche',
-        '/carte-jour',
         '/comparateur',
         '/constraints',
         '/debug',
         '/equite',
-        '/fragilite',
         '/graphe',
         '/heatmap',
         '/historique',
         '/instantanes',
         '/kpi',
         '/mcp-client',
-        '/pauses',
-        '/rail-jour',
         '/repos',
         '/timeline',
       ]);

@@ -4,7 +4,9 @@
 import { Location } from '@angular/common';
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideLocationMocks } from '@angular/common/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ApiService } from '../../core/api.service';
@@ -42,6 +44,7 @@ describe('DiagnosticPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        provideLocationMocks(),
         { provide: ApiService, useValue: { get: vi.fn(async () => null) } },
         { provide: AnalysesApi, useValue: analysesApi },
         { provide: ConstraintsApi, useValue: { catalogue: vi.fn(async () => null) } },
@@ -56,10 +59,19 @@ describe('DiagnosticPage', () => {
         },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+          useValue: {
+            snapshot: { queryParamMap: convertToParamMap(queryParams) },
+            // Followed, not read once: a link inside the page navigates to this
+            // same route with another tab, and the component is reused.
+            queryParamMap: of(convertToParamMap(queryParams)),
+          },
         },
       ],
     });
+    // The address bar as a real navigation would have left it: the tabs restore
+    // their own state from there, the router snapshot being frozen.
+    const query = new URLSearchParams(queryParams).toString();
+    TestBed.inject(Location).replaceState(query ? `/diagnostic?${query}` : '/diagnostic');
     fixture = TestBed.createComponent(DiagnosticPage);
     await fixture.whenStable();
     return fixture.componentInstance as unknown as PageInternals;
@@ -84,6 +96,27 @@ describe('DiagnosticPage', () => {
     expect(page.onglet()).toBe('banc');
     expect(racine().querySelector('app-banc-de-touche-page')).not.toBeNull();
     // The bench wrote its own key, the page its own: neither erased the other.
+    const url = TestBed.inject(Location).path();
+    expect(url).toContain('onglet=banc');
+    expect(url).toContain('stand=tir');
+  });
+
+  // A tab is destroyed when another is shown and built again on the way back.
+  // Reading the router snapshot, it then restored its defaults and its own
+  // effect wrote them over the address bar: the filter typed a moment earlier
+  // was gone from the screen and from the URL.
+  it("keeps a tab's own state when it is left and opened again", async () => {
+    const page = await monter({ onglet: 'banc', stand: 'tir' });
+
+    page.changerOnglet('besoin');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(TestBed.inject(Location).path()).toContain('stand=tir');
+
+    page.changerOnglet('banc');
+    TestBed.tick();
+    await fixture.whenStable();
+
     const url = TestBed.inject(Location).path();
     expect(url).toContain('onglet=banc');
     expect(url).toContain('stand=tir');

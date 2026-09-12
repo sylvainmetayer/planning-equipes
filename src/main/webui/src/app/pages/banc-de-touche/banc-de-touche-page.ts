@@ -22,7 +22,11 @@ import { AnalysesApi } from '../../core/api/analyses-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { BancDeTouche, CreneauSiege } from '../../core/models';
 import { errorText, retainedValue } from '../../core/resource-state';
-import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
+import {
+  keepViewInQueryParams,
+  optionalParam,
+  currentViewParams,
+} from '../../core/view-query-params';
 import {
   creneauxUtiles,
   EtatBanc,
@@ -143,7 +147,10 @@ export class BancDeTouchePage {
   protected readonly creneaux = computed(() => creneauxUtiles(this.banc()));
 
   constructor() {
-    const params = this.route.snapshot.queryParamMap;
+    // The address bar, not the router snapshot: this page is a tab of
+    // « Diagnostic », created afresh every time the tab is opened, and the
+    // snapshot still holds what the last real navigation parsed.
+    const params = currentViewParams();
     const creneau = Number(params.get('creneau'));
     this.creneauId.set(Number.isFinite(creneau) && creneau > 0 ? creneau : null);
     this.standId.set(params.get('stand') ?? '');

@@ -9,7 +9,7 @@
 
 import { Location } from '@angular/common';
 import { effect, inject } from '@angular/core';
-import { ParamMap, Params } from '@angular/router';
+import { convertToParamMap, ParamMap, Params } from '@angular/router';
 
 /**
  * Same shape as Angular Material's `Sort`, and assignable both ways — spelled
@@ -93,7 +93,7 @@ export function keepViewInQueryParams(queryParams: () => Params): void {
   const location = inject(Location);
   effect(() => {
     const [chemin, courante = ''] = location.path().split('?');
-    const query = queryString(merged(courante, queryParams()));
+    const query = joined(foreignPieces(courante, queryParams()), queryString(queryParams()));
     // `'/'` rather than `''` for a bare root: the History API reads an empty
     // URL as "the current one", query string included, and the key being
     // cleared would then survive its own clearing.
@@ -101,22 +101,81 @@ export function keepViewInQueryParams(queryParams: () => Params): void {
   });
 }
 
-/** The current query string with `params` written over it: every key named by `params` replaced, the others kept. */
-function merged(courante: string, params: Params): Params {
-  const result: Params = {};
+/**
+ * The query params **as the address bar has them now**, for a component that
+ * restores its view state when it is created.
+ *
+ * Not `route.snapshot.queryParamMap`, and that is the whole point: this file
+ * writes the URL with `Location.replaceState`, without a router navigation
+ * (ADR 0018), so the router's snapshot keeps whatever the last real navigation
+ * parsed. That is invisible to a routed page — it is created by a navigation —
+ * and wrong for a component the page creates and destroys as the user moves
+ * between tabs: the second time a tab was opened it read the state of the
+ * first navigation, restored its defaults, and its own effect then wrote those
+ * defaults over the address bar. Typing a name into the fragility tab, leaving
+ * it and coming back lost both the name and the `q=` in the URL.
+ *
+ * Reading the address bar is symmetric with writing it, and works in both
+ * cases: a real navigation updates `Location` too.
+ */
+export function currentViewParams(): ParamMap {
+  const location = inject(Location, { optional: true });
+  const [, query = ''] = (location?.path() ?? '').split('?');
+  const params: Params = {};
+  for (const morceau of query.split('&')) {
+    if (!morceau) {
+      continue;
+    }
+    const egal = morceau.indexOf('=');
+    const key = decode(egal === -1 ? morceau : morceau.slice(0, egal));
+    const valeur = egal === -1 ? '' : decode(morceau.slice(egal + 1));
+    const existante = params[key];
+    params[key] = existante === undefined ? valeur : [existante, valeur].flat();
+  }
+  return convertToParamMap(params);
+}
+
+/**
+ * The current query string with `params` written over it: every key named by
+ * `params` replaced, the others kept **verbatim**.
+ *
+ * A key nobody names any more is carried across as the raw piece it was, never
+ * decoded and re-encoded: that round trip rewrote a stranger's address for no
+ * reason (`autre=a+b` came back `autre=a%2Bb`), dropped a flag with no value at
+ * all (`?drapeau`), and threw on a malformed escape — `?q2=100%` is an address
+ * the router accepts, so the effect mirroring the URL died on its first run and
+ * stayed dead for the life of the page.
+ *
+ * `Object.hasOwn` rather than `key in`: a param called `constructor` or
+ * `toString` inherits from `Object.prototype` and was silently dropped.
+ */
+function foreignPieces(courante: string, params: Params): string[] {
+  const pieces: string[] = [];
   for (const morceau of courante.split('&')) {
     if (!morceau) {
       continue;
     }
     const egal = morceau.indexOf('=');
-    const key = decodeURIComponent(egal === -1 ? morceau : morceau.slice(0, egal));
-    const valeur = egal === -1 ? '' : decodeURIComponent(morceau.slice(egal + 1));
-    if (!(key in params)) {
-      result[key] =
-        Array.isArray(result[key]) || key in result ? [result[key], valeur].flat() : valeur;
+    const key = decode(egal === -1 ? morceau : morceau.slice(0, egal));
+    if (!Object.hasOwn(params, key)) {
+      pieces.push(morceau);
     }
   }
-  return { ...result, ...params };
+  return pieces;
+}
+
+/** The foreign pieces and the ones this writer owns, in one query string. */
+function joined(etrangers: string[], propres: string): string {
+  return [...etrangers, propres].filter((morceau) => morceau !== '').join('&');
+}
+
+/** `decodeURIComponent` that answers the raw text on a malformed escape rather than throwing. */
+function decode(brut: string): string {
+  try {
+    return decodeURIComponent(brut);
+  } catch {
+    return brut;
+  }
 }
 
 /**

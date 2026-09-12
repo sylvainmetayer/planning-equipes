@@ -13,7 +13,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { RapportPauses } from '../../core/models';
-import { keepViewInQueryParams } from '../../core/view-query-params';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
   coupuresRepasJournee,
@@ -79,10 +78,21 @@ export class PausesView {
   );
 
   protected readonly jours = computed<JourPauses[]>(() => joursDuRapport(this.rapport()));
-  /** The day the page selected, else the first day the report covers. */
+  /**
+   * The day the page selected, when the report knows it. The selector lists
+   * every day of the plan while the report only knows the days somebody works
+   * long enough to owe a break: falling back on the first day of the report
+   * then showed another day's breaks under the current day's heading, with
+   * nothing on screen to give it away. A day the report does not cover has no
+   * rows, and the empty message says so.
+   *
+   * <p>No day at all — nobody asked for one — still opens on the first day the
+   * report covers.</p>
+   */
   protected readonly jourCourant = computed<JourPauses | null>(() => {
     const jours = this.jours();
-    return jours.find((jour) => jour.date === this.date()) ?? jours[0] ?? null;
+    const date = this.date();
+    return date === null ? (jours[0] ?? null) : (jours.find((jour) => jour.date === date) ?? null);
   });
   protected readonly groupes = computed<GroupeStand[]>(() => {
     const stand = this.stand();
@@ -124,15 +134,6 @@ export class PausesView {
 
   protected readonly heure = heure;
   protected readonly libelleRelais = libelleRelais;
-
-  constructor() {
-    // Its own keys only (`relais`, `repas`): the page writes the day, the view
-    // and the shared filters next to them.
-    keepViewInQueryParams(() => ({
-      relais: this.withoutRelaisOnly() ? 'sans' : null,
-      repas: this.coupuresManquantesSeulement() ? 'manquantes' : null,
-    }));
-  }
 
   reinitialiser(): void {
     this.withoutRelaisOnly.set(false);
