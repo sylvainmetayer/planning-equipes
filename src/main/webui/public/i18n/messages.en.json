@@ -472,7 +472,7 @@
   "accueil.subtitle.sansEdition": "Each step of the cycle, its state and the screen that moves it forward.",
   "accueil.loading": "Reading the edition status…",
   "accueil.bilan": "{$INTERPOLATION} step(s) done · {$INTERPOLATION_1} to check · {$INTERPOLATION_2} to do",
-  "accueil.bilan.info": " · {$INTERPOLATION} for information",
+  "accueil.bilan.avecInfo": "{$INTERPOLATION} step(s) done · {$INTERPOLATION_1} to check · {$INTERPOLATION_2} for information · {$INTERPOLATION_3} to do",
   "accueil.statut.aFaire": "To do",
   "accueil.statut.attention": "To check",
   "accueil.statut.info": "For information",

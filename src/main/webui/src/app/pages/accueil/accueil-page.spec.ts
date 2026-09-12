@@ -152,8 +152,7 @@ describe('AccueilPage', () => {
     expect(ligne.classList.contains('accueil-ligne-attention')).toBe(false);
     expect(ligne.textContent).toContain('Pour information');
     expect(ligne.textContent).toContain('8 avertissement(s), rien de bloquant');
-    expect(text()).toContain('1 à vérifier');
-    expect(text()).toContain('1 pour information');
+    expect(text()).toContain('3 étape(s) faite(s) · 1 à vérifier · 1 pour information · 4 à faire');
   });
 
   it('links every line to its screen, tab and filter included', async () => {

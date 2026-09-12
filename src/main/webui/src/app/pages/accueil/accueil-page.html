@@ -26,9 +26,10 @@
     @if (etatEdition()) {
       @if (bilan(); as bilan) {
         <p class="accueil-bilan">
-          <ng-container i18n="@@accueil.bilan">{{ bilan.faits }} étape(s) faite(s) · {{ bilan.attention }} à vérifier · {{ bilan.aFaire }} à faire</ng-container>
           @if (bilan.info > 0) {
-            <ng-container i18n="@@accueil.bilan.info"> · {{ bilan.info }} pour information</ng-container>
+            <ng-container i18n="@@accueil.bilan.avecInfo">{{ bilan.faits }} étape(s) faite(s) · {{ bilan.attention }} à vérifier · {{ bilan.info }} pour information · {{ bilan.aFaire }} à faire</ng-container>
+          } @else {
+            <ng-container i18n="@@accueil.bilan">{{ bilan.faits }} étape(s) faite(s) · {{ bilan.attention }} à vérifier · {{ bilan.aFaire }} à faire</ng-container>
           }
         </p>
       }
