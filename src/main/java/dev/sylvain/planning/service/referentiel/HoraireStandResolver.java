@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -35,6 +36,12 @@ import java.util.TreeSet;
  * database, unit-testable on plain objects.</p>
  */
 public final class HoraireStandResolver {
+
+    /**
+     * Why a day nobody declared came out closed, carried onto the window the
+     * resolution generates so an analysis can name it.
+     */
+    public static final String MOTIF_JOUR_NON_DECLARE = "Jour non déclaré par le stand";
 
     private HoraireStandResolver() {}
 
@@ -99,6 +106,7 @@ public final class HoraireStandResolver {
 
         List<IndisponibiliteStand> fermetures = new ArrayList<>(stand.getIndisponibilites());
         List<OuvertureStand> ouvertures = new ArrayList<>(stand.getOuvertures());
+        boolean declaresOpenings = declaresOpenings(stand.getHoraires());
         for (LocalDate date : dates) {
             if (joursAvecException.contains(date)) {
                 // Layer 1: the day is stated by hand, rules stay out of it.
@@ -106,6 +114,14 @@ public final class HoraireStandResolver {
             }
             JourResolu resolu = resolveDay(stand.getHoraires(), date);
             if (resolu == null) {
+                if (declaresOpenings) {
+                    // Layer 3 with openings declared elsewhere: a day this stand
+                    // never mentions is a day it does not open. See
+                    // declaresOpenings below for why that reading, and not
+                    // the historical open-all-day, is the right one here.
+                    fermetures.add(
+                            new IndisponibiliteStand(null, date, LocalTime.MIDNIGHT, null, MOTIF_JOUR_NON_DECLARE));
+                }
                 continue;
             }
             for (FenetreHoraire fenetre : resolu.fenetres()) {
@@ -127,6 +143,33 @@ public final class HoraireStandResolver {
             }
         }
         stand.setFenetresEffectives(fermetures, ouvertures);
+    }
+
+    /**
+     * True when the stand states, somewhere in its rules, hours at which it
+     * opens — and therefore reads as a schedule rather than as a list of
+     * exceptions to being always open.
+     *
+     * <p>This is what decides the meaning of a day no rule covers. A stand
+     * whose rules only ever <em>close</em> — "shut every afternoon", "shut on
+     * the 14th" — is describing exceptions to a stand that is otherwise open,
+     * and the historical default stands: silence means open. A stand that
+     * declares openings is describing its schedule, and silence there means
+     * exactly what it means on any opening schedule: that day, it does not
+     * open.</p>
+     *
+     * <p>Before this, saying "open on these twelve dates and nothing else"
+     * took a second rule whose only job was to shut the days the first did not
+     * name — and the only way to write it was a closure running from an hour
+     * early enough to cover every créneau, {@code 09:00} until closing on the
+     * reference event. Sixty-five stands carried one. It was boilerplate, and
+     * worse, it was a trap: a créneau added at {@code 08:00} would have
+     * silently reopened every one of them.</p>
+     */
+    static boolean declaresOpenings(List<HoraireStand> horaires) {
+        return horaires.stream()
+                .anyMatch(horaire -> horaire.getMode() == ModeHoraire.OUVERTURE
+                        && !horaire.validFenetres().isEmpty());
     }
 
     /** Which of the three layers decided a given day — see {@link HoraireStand}. */
@@ -154,7 +197,13 @@ public final class HoraireStandResolver {
         if (datee) {
             return SourceHoraire.EXCEPTION;
         }
-        return resolveDay(stand.getHoraires(), date) != null ? SourceHoraire.REGLE : SourceHoraire.DEFAUT;
+        if (resolveDay(stand.getHoraires(), date) != null) {
+            return SourceHoraire.REGLE;
+        }
+        // A day no rule covers is still governed by the rules when they declare
+        // openings: they say it is shut. Only a stand that declares none falls
+        // back to the open-all-day default.
+        return declaresOpenings(stand.getHoraires()) ? SourceHoraire.REGLE : SourceHoraire.DEFAUT;
     }
 
     /** What the rules say about one day: one mode, and the windows to apply. */

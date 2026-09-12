@@ -55,6 +55,12 @@ public final class HoraireCompaction {
      */
     static final int ECART_TOLERE_MINUTES = 1;
 
+    /**
+     * Why a day the stand never mentioned comes out of compaction stated: it
+     * was open all day and has to keep saying so out loud.
+     */
+    static final String MOTIF_OUVERT_TOUTE_LA_JOURNEE = "Ouvert toute la journée (jour non déclaré avant compactage)";
+
     private HoraireCompaction() {}
 
     /** What compaction would do, or did, to one stand. */
@@ -193,6 +199,21 @@ public final class HoraireCompaction {
                 }
             }
         });
+
+        // Days the stand never said anything about were open all day, by
+        // default. Now that rules declaring openings shut the days they do not
+        // name, factoring the stated days into a rule would quietly close these
+        // — so the compaction states them, and stays the meaning-preserving
+        // rewrite it claims to be. Grid-entered data never gets here: an empty
+        // cell already leaves an explicit closure behind.
+        if (HoraireStandResolver.declaresOpenings(regles)) {
+            for (LocalDate date : datesEvenement) {
+                if (!parJour.containsKey(date)) {
+                    ouvertures.add(new OuvertureStand(
+                            null, date, LocalTime.MIDNIGHT, null, MOTIF_OUVERT_TOUTE_LA_JOURNEE, null));
+                }
+            }
+        }
 
         Stand candidat = copyWithHoraires(stand, regles, fermetures, ouvertures);
         int ecart = maxGapMinutes(stand, candidat, creneaux);

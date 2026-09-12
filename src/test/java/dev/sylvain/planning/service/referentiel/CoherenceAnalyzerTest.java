@@ -389,11 +389,13 @@ class CoherenceAnalyzerTest {
     }
 
     /**
-     * A weekday rule that does not cover the timeslot's day leaves it open by
-     * default — the third layer of {@code HoraireStandResolver}.
+     * A weekday rule that does not cover the timeslot's day shuts the stand
+     * there: "open at the weekend" is a schedule, and a Wednesday is not in it.
+     * The créneau then has nobody open on it, which is exactly what the
+     * organiser needs told.
      */
     @Test
-    void aWeekdayRuleThatDoesNotCoverTheDayLeavesTheStandOpen() {
+    void aWeekdayRuleThatDoesNotCoverTheDayClosesTheStand() {
         Stand weekend = stand("WEEKEND");
         HoraireStand regle = new HoraireStand(
                 null,
@@ -403,7 +405,27 @@ class CoherenceAnalyzerTest {
         regle.setJoursSemaine(Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
         weekend.setHoraires(List.of(regle));
 
-        // JOUR_1 is a Wednesday: no rule covers it, so the stand is open all day.
+        // JOUR_1 is a Wednesday: no rule covers it, and the stand declares openings.
+        assertThat(types(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(weekend)))))
+                .containsExactly(TypeAvertissement.CRENEAU_HORS_OUVERTURE_STANDS);
+    }
+
+    /**
+     * The mirror: a stand whose rules only ever close is describing exceptions
+     * to being open, so a day none of them covers stays open all day — the
+     * historical third layer, which that reading keeps.
+     */
+    @Test
+    void aClosingOnlyRuleThatDoesNotCoverTheDayLeavesTheStandOpen() {
+        Stand weekend = stand("WEEKEND");
+        HoraireStand regle = new HoraireStand(
+                null,
+                ModeHoraire.FERMETURE,
+                TypeJoursHoraire.JOURS_SEMAINE,
+                List.of(new FenetreHoraire(LocalTime.of(14, 0), null)));
+        regle.setJoursSemaine(Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
+        weekend.setHoraires(List.of(regle));
+
         assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(weekend))))
                 .isEmpty();
     }

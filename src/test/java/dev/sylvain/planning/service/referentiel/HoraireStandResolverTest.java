@@ -103,8 +103,13 @@ class HoraireStandResolverTest {
         assertThat(stand.getIndisponibilitesEffectives()).hasSize(1);
     }
 
+    /**
+     * "Open on the 14th" is a schedule, so the other eleven days are days this
+     * stand does not open. Saying so used to take a second rule shutting them
+     * one by one — the boilerplate sixty-five stands of a real edition carried.
+     */
     @Test
-    void unJourNonCouvertResteOuvertParDefaut() {
+    void unJourNonDeclareEstFermePourUnStandQuiDeclareSesOuvertures() {
         Stand stand = stand("SEULEMENT-LE-14");
         HoraireStand leQuatorze = new HoraireStand(
                 null,
@@ -118,6 +123,39 @@ class HoraireStandResolverTest {
 
         assertThat(stand.getOuverturesEffectives())
                 .extracting(OuvertureStand::getDate)
+                .containsExactly(LocalDate.of(2026, 7, 14));
+        assertThat(stand.getIndisponibilitesEffectives())
+                .hasSize(DOUZE_JOURS.size() - 1)
+                .allSatisfy(fermeture -> {
+                    assertThat(fermeture.getHeureDebut()).isEqualTo(LocalTime.MIDNIGHT);
+                    assertThat(fermeture.getHeureFin()).isNull();
+                })
+                .extracting(IndisponibiliteStand::getDate)
+                .doesNotContain(LocalDate.of(2026, 7, 14));
+    }
+
+    /**
+     * The mirror, and the reason the reading is not simply "a day nobody
+     * covers is shut": a stand whose rules only ever close is listing
+     * exceptions to being open, and the day none of them names stays open all
+     * day — the historical default, kept exactly where it means something.
+     */
+    @Test
+    void unJourNonCouvertResteOuvertPourUnStandQuiNeDeclareQueDesFermetures() {
+        Stand stand = stand("FERME-LE-14");
+        HoraireStand leQuatorze = new HoraireStand(
+                null,
+                ModeHoraire.FERMETURE,
+                TypeJoursHoraire.DATES,
+                List.of(new FenetreHoraire(LocalTime.of(14, 0), null)));
+        leQuatorze.setDates(Set.of(LocalDate.of(2026, 7, 14)));
+        stand.setHoraires(List.of(leQuatorze));
+
+        HoraireStandResolver.apply(stand, DOUZE_JOURS);
+
+        assertThat(stand.getOuverturesEffectives()).isEmpty();
+        assertThat(stand.getIndisponibilitesEffectives())
+                .extracting(IndisponibiliteStand::getDate)
                 .containsExactly(LocalDate.of(2026, 7, 14));
     }
 

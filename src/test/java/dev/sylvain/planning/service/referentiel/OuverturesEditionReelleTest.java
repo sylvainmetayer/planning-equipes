@@ -54,7 +54,7 @@ class OuverturesEditionReelleTest {
 
     @Test
     void lesOuverturesResoluesSontCellesDeLEmpreinteGelee() throws IOException {
-        Edition edition = lire();
+        Edition edition = readEdition();
         HoraireStandResolver.apply(edition.stands(), edition.creneaux());
 
         String empreinte = empreinte(edition);
@@ -75,7 +75,7 @@ class OuverturesEditionReelleTest {
      */
     @Test
     void lEditionDeReferencePorteBienLaMasseAttendue() throws IOException {
-        Edition edition = lire();
+        Edition edition = readEdition();
 
         assertThat(edition.stands()).hasSize(65);
         assertThat(edition.creneaux()).hasSize(62);
@@ -88,6 +88,30 @@ class OuverturesEditionReelleTest {
                                 + stand.getIndisponibilites().size())
                         .sum())
                 .isEqualTo(27);
+    }
+
+    /**
+     * The point of the whole change, measured on the edition it was measured
+     * on: once a stand that declares openings is closed where it declares
+     * none, a third of its rules stop carrying anything — and not one minute
+     * of opening moves.
+     */
+    @Test
+    void lElagageRetireUnTiersDesReglesSansDeplacerUneOuverture() throws IOException {
+        Edition edition = readEdition();
+        HoraireStandResolver.apply(edition.stands(), edition.creneaux());
+        String avant = empreinte(edition);
+
+        List<HoraireElagage.LigneElagage> lignes = HoraireElagage.elaguer(edition.stands(), edition.creneaux());
+
+        int restantes = edition.stands().stream()
+                .mapToInt(stand -> stand.getHoraires().size())
+                .sum();
+        assertThat(restantes).isEqualTo(101);
+        assertThat(lignes.stream().filter(HoraireElagage.LigneElagage::elague).count())
+                .isEqualTo(56);
+        HoraireStandResolver.apply(edition.stands(), edition.creneaux());
+        assertThat(empreinte(edition)).isEqualTo(avant);
     }
 
     /* ------------------------------ empreinte ------------------------------ */
@@ -127,7 +151,7 @@ class OuverturesEditionReelleTest {
 
     /* -------------------------------- lecture ------------------------------- */
 
-    static Edition lire() throws IOException {
+    static Edition readEdition() throws IOException {
         JsonNode racine;
         try (InputStream flux = OuverturesEditionReelleTest.class.getResourceAsStream(FIXTURE)) {
             if (flux == null) {
@@ -230,7 +254,7 @@ class OuverturesEditionReelleTest {
 
     /** Regenerates the frozen fingerprint; run by hand when a change is meant to move it. */
     public static void main(String[] args) throws IOException {
-        Edition edition = lire();
+        Edition edition = readEdition();
         HoraireStandResolver.apply(edition.stands(), edition.creneaux());
         Files.writeString(EMPREINTE, empreinte(edition), StandardCharsets.UTF_8);
     }
