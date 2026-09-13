@@ -24,17 +24,22 @@ import jakarta.enterprise.context.ApplicationScoped;
  * The principal is what distinguishes the callers, and the role below is
  * attached from it.</p>
  *
- * <p>Every {@code quarkus.http.auth.permission.*} policy of this application
- * is {@code authenticated}, never {@code roles-allowed}, so the role is not
- * load-bearing today. It is set anyway: an identity that says who it is
- * without saying what it may do would make the first {@code @RolesAllowed}
- * added here fail in a way nobody would connect back to this class.</p>
+ * <p>The {@code mcp} role is load-bearing: the {@code /mcp} policy is
+ * {@code roles-allowed=mcp}, not {@code authenticated}. The latter was also
+ * met by the admin's session cookie — form auth reads it on every path — so
+ * « the MCP endpoint needs the API key » was not true for a logged-in
+ * browser. Only the principal {@link McpApiKeyAuthenticationMechanism}
+ * vouches for gets that role; the admin one gets its own, which the API
+ * policies do not check today but the first {@code @RolesAllowed} would.</p>
  */
 @ApplicationScoped
 public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthenticationRequest> {
 
     /** Matches {@code quarkus.security.users.embedded.roles.admin}, so both login paths grant the same role. */
     static final String ROLE_ADMIN = "admin";
+
+    /** Matches {@code quarkus.http.auth.policy.cle-mcp.roles-allowed}. */
+    static final String ROLE_MCP = "mcp";
 
     @Override
     public Class<TrustedAuthenticationRequest> getRequestType() {
@@ -48,6 +53,8 @@ public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthen
                 QuarkusSecurityIdentity.builder().setPrincipal(new QuarkusPrincipal(request.getPrincipal()));
         if (RemoteUserAuthentication.PRINCIPAL_ADMIN.equals(request.getPrincipal())) {
             identite.addRole(ROLE_ADMIN);
+        } else if (McpApiKeyAuthenticationMechanism.PRINCIPAL.equals(request.getPrincipal())) {
+            identite.addRole(ROLE_MCP);
         }
         return Uni.createFrom().item(identite.build());
     }

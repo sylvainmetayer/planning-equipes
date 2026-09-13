@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -186,6 +187,35 @@ class AuthentificationAdminTest {
                 .statusCode(200)
                 .body("authentifie", equalTo(true))
                 .body("nom", equalTo("admin"));
+    }
+
+    /**
+     * The MCP endpoint takes the API key and nothing else. Form auth reads the
+     * session cookie on every path, so under an {@code authenticated} policy a
+     * logged-in browser reached {@code /mcp} without the key. 403, not 401:
+     * the session is valid, it simply is not the credential this path asks for.
+     */
+    @Test
+    void adminSessionDoesNotOpenTheMcpEndpoint() {
+        String cookie = given().contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", MOT_DE_PASSE_DEV)
+                .redirects()
+                .follow(false)
+                .when()
+                .post("/j_security_check")
+                .then()
+                .statusCode(anyOf(is(302), is(200)))
+                .extract()
+                .cookie("planning-session");
+
+        given().cookie("planning-session", cookie).when().post("/mcp").then().statusCode(403);
+        given().cookie("planning-session", cookie)
+                .header("X-MCP-Api-Key", "test-mcp-key")
+                .when()
+                .post("/mcp")
+                .then()
+                .statusCode(not(anyOf(is(401), is(403))));
     }
 
     /**

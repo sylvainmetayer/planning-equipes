@@ -20,6 +20,12 @@ configurable (`X-MCP-Api-Key` par défaut) ou en `Authorization: Bearer`.
 les référentiels et lancer une résolution : une exposition non authentifiée
 serait pire qu'un refus de servir.
 
+**La clé, et rien d'autre.** La politique de `/mcp` exige le rôle `mcp`, que
+seule l'identité construite à partir de la clé porte. Une politique
+`authenticated` laissait passer la session admin : l'authentification par
+formulaire lit son cookie sur tous les chemins, et un navigateur connecté
+atteignait `/mcp` sans clé. Il reçoit désormais `403`.
+
 > **Un filtre Vert.x ne suffit pas.** Les routes de `quarkus-mcp-server-http`
 > sont enregistrées **en amont** de la chaîne de filtres standard : un bean
 > `Filter` ne voit jamais ces requêtes. D'où le passage par le moteur de
