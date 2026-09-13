@@ -99,6 +99,8 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
+        { route: '/emplacements', label: $localize`:@@nav.link.emplacements:Emplacements` },
+        { route: '/typologies', label: $localize`:@@nav.link.typologies:Typologies` },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'besoin' },

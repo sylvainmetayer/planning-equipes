@@ -20,6 +20,16 @@ function declaredPaths(table: Routes, prefix = ''): string[] {
   });
 }
 
+/**
+ * The screens of the admin shell: the ones this guide is about. The espace
+ * animateur has a guide of its own, and the login and legal pages are read
+ * without it.
+ */
+function adminPaths(): string[] {
+  const shell = routes.find((route) => route.path === '' && route.children !== undefined);
+  return declaredPaths(shell?.children ?? []);
+}
+
 /** Every string of a section, so the tests can assert on its whole content. */
 function textOf(section: HelpSection): string {
   return JSON.stringify(section);
@@ -52,6 +62,76 @@ describe('buildHelpSections', () => {
       if (link.route !== undefined) {
         expect(declared).toContain(link.route.slice(1));
       }
+    }
+  });
+
+  /**
+   * A screen no link of the guide names is a screen nobody finds from here:
+   * the history, the MCP page and the locations were exactly that until they
+   * were written. The guide itself is the one exception — a reader who is on
+   * it has already arrived.
+   */
+  it('links every admin screen at least once, the guide itself apart', () => {
+    const linked = new Set(
+      sections
+        .flatMap((section) => section.links)
+        .map((link) => link.route)
+        .filter((route): route is string => route !== undefined)
+        .map((route) => route.slice(1)),
+    );
+    expect(adminPaths().filter((path) => path !== 'aide' && !linked.has(path))).toEqual([]);
+  });
+
+  it('answers « who changed this? » with the action history, and its limits', () => {
+    const section = sections.find((candidate) => candidate.id === 'historique-des-actions');
+    expect(section).toBeDefined();
+    const text = textOf(section as HelpSection);
+    // The five authors, named as the screen's own filter buttons name them.
+    for (const acteur of [
+      'Administration',
+      'Animateurs',
+      'Non identifié',
+      'Assistant',
+      'Application',
+    ]) {
+      expect(text, acteur).toContain(acteur);
+    }
+    // The two things a line deliberately does not carry: no value, no identity.
+    expect(text).toContain('Aucune valeur');
+    expect(text).toContain('ne nomme plus personne');
+    // The window the page loads, which is what makes a fruitless search
+    // ambiguous, and the retention that bounds the table.
+    expect(text).toContain('deux cents dernières actions');
+    expect(text).toContain('quatre-vingt-dix jours');
+    // Read-only by construction: the guide must not suggest a cleanup button.
+    expect(text).toContain("aucun bouton de cet écran n'efface");
+    for (const mot of ['historique', 'journal', 'refusée']) {
+      expect(
+        filterHelpSections(sections, mot).map((each) => each.id),
+        mot,
+      ).toContain('historique-des-actions');
+    }
+  });
+
+  it('says what the MCP key opens, and what it can never read', () => {
+    const section = sections.find((candidate) => candidate.id === 'assistant-mcp');
+    expect(section).toBeDefined();
+    const text = textOf(section as HelpSection);
+    // Revealing the key is a password-protected, two-minute affair.
+    expect(text).toContain('mot de passe administrateur');
+    expect(text).toContain('deux minutes');
+    // It is a full write access, and the guide must not sell it as a read-only view.
+    expect(text).toContain('écriture comprise');
+    // The confidentiality contract, which is why MCP can be offered at all.
+    expect(text).toContain('Ni nom, ni prénom, ni date de naissance, ni adresse e-mail');
+    // And what an assistant does is traced, where the previous section reads it.
+    expect(text).toContain('historique des actions');
+    expect((section as HelpSection).links.map((link) => link.route)).toContain('/mcp-client');
+    for (const mot of ['assistant', 'MCP', 'clé']) {
+      expect(
+        filterHelpSections(sections, mot).map((each) => each.id),
+        mot,
+      ).toContain('assistant-mcp');
     }
   });
 

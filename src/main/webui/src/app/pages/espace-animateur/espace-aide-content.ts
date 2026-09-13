@@ -323,6 +323,10 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
           text: $localize`:@@espace.aide.dispo.intro:Avant de construire le planning, l'organisation ouvre une période pendant laquelle chacun dit les jours où il ne peut pas venir, et les types de jeux qu'il aimerait animer. Vous le faites depuis l'onglet « Mes disponibilités », sur votre téléphone : les jours de l'événement s'affichent en pastilles, touchez celles qui ne vont pas.`,
         },
         {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.dispo.avant:Si la collecte n'a pas encore commencé, l'onglet annonce la date à partir de laquelle revenir : ce n'est pas un refus, il n'y a rien à faire d'ici là.`,
+        },
+        {
           kind: 'steps',
           items: [
             $localize`:@@espace.aide.dispo.etape1:Touchez chaque jour où vous ne pouvez pas venir. Les jours que vous ne touchez pas veulent dire « je suis disponible ».`,
@@ -330,6 +334,14 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
             $localize`:@@espace.aide.dispo.etape3:Ajoutez un mot si votre situation ne tient pas dans des cases (« je pars dimanche après le déjeuner »).`,
             $localize`:@@espace.aide.dispo.etape4:Envoyez. Le formulaire s'ouvre déjà sur ce que l'organisation sait de vous : vous corrigez, vous ne repartez pas de zéro.`,
           ],
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.dispo.attente:Une fois envoyée, votre déclaration s'affiche en haut de l'onglet sous « Votre déclaration en attente », avec sa date d'envoi. Tant qu'elle porte cette mention, l'organisation ne l'a pas encore traitée, et un nouvel envoi remplace celui-là.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.dispo.historique:Plus bas, « Mes déclarations précédentes » garde la trace de ce que vous avez envoyé et de ce que l'organisation en a fait : « Prise en compte », « Non retenue », ou encore « En attente de l'organisation ». Si elle a joint un mot à sa décision, il s'affiche sous la déclaration concernée. « Non retenue » ne veut pas dire perdue : corrigez et renvoyez tant que la collecte est ouverte, ou parlez-en directement à l'organisation.`,
         },
         {
           kind: 'list',
@@ -345,12 +357,16 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
     {
       id: 'foire-fermee',
       icon: 'lock',
-      question: $localize`:@@espace.aide.foire.question:Pourquoi je ne peux plus rien demander ?`,
-      resume: $localize`:@@espace.aide.foire.resume:La foire au planning est fermée : l'espace passe en consultation seule.`,
+      question: $localize`:@@espace.aide.foire.question:Pourquoi je ne peux pas proposer d'échange ?`,
+      resume: $localize`:@@espace.aide.foire.resume:La foire au planning n'est pas ouverte — pas encore, ou plus : l'espace reste en consultation.`,
       blocks: [
         {
           kind: 'paragraph',
           text: $localize`:@@espace.aide.foire.intro:La foire au planning est la période pendant laquelle l'organisation accepte les échanges. Une fois qu'elle est fermée — parce que le planning est figé, ou parce que l'événement a commencé — vous gardez l'accès à votre planning et à l'historique de vos demandes, mais vous ne pouvez plus en proposer, en accorder ni en annuler.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.foire.avant:Deux situations se ressemblent à l'écran et n'appellent pas la même chose. Avant l'ouverture, l'onglet Échanges annonce que la foire n'est pas encore ouverte et la date à partir de laquelle revenir : rien à faire, sinon revenir ce jour-là. Après la fermeture, il annonce qu'elle est fermée : tant que l'organisation ne la rouvre pas, c'est par elle que passe toute demande.`,
         },
         {
           kind: 'paragraph',

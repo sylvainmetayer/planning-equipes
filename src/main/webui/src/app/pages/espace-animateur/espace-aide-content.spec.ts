@@ -73,6 +73,31 @@ describe('buildEspaceAideSections', () => {
     }
   });
 
+  it('answers the availability tab in each of its states, not only the open one', () => {
+    const section = sections.find((each) => each.id === 'declarer-disponibilites')!;
+    const text = textOf(section);
+    // Not open yet: the tab gives a date to come back on, it is not a refusal.
+    expect(text).toContain("n'a pas encore commencé");
+    // Sent but not dealt with: the card at the top, and what a new submission does.
+    expect(text).toContain('Votre déclaration en attente');
+    // Dealt with: what the organisers did with it, in the words the screen uses.
+    expect(text).toContain('Mes déclarations précédentes');
+    for (const statut of ['Prise en compte', 'Non retenue', "En attente de l'organisation"]) {
+      expect(text, statut).toContain(statut);
+    }
+  });
+
+  it('covers the fair before it opens as well as after it closes', () => {
+    const section = sections.find((each) => each.id === 'foire-fermee')!;
+    const text = textOf(section);
+    // « Pas encore ouverte » and « fermée » look alike on screen and do not
+    // call for the same thing: the help has to tell them apart.
+    expect(text).toContain("n'est pas encore ouverte");
+    expect(text).toContain('date à partir de laquelle revenir');
+    // And the panel's question can no longer be the one of the closed case only.
+    expect(section.question).not.toContain('plus rien');
+  });
+
   it('states the two things a schedule taken away cannot say', () => {
     const emporter = sections.find((section) => section.id === 'emporter');
     // Le PDF et l'ICS sont figés : l'aide doit le dire, c'est la première
