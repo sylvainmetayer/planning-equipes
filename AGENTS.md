@@ -86,6 +86,14 @@ close.
 Add the same tag to any future test in this weight class instead of letting
 it slow down the default loop.
 
+The **scenario ladder** — thirty files under `src/test/resources/scenarios/gamme/`,
+from one day and two stands to a month and 150 stands, the last five never
+solvable — is played by `ScenarioLadder*Test` in `service/scenario`. Rungs 1 to
+15 and the infeasible ones stay in the default run (each reaches zero hard in
+its construction heuristic); `ScenarioLadderLargeTest` is `scenario-lent`.
+When a change moves a rung, fix the file or the assertion knowingly — the
+table and the rules are in `docs/developpement.md` (*La gamme de scénarios*).
+
 When an agent session needs to run this profile (or any other job on this
 order of a minute or more — a `docker build`, a long solve), launch it as a
 background command and let the harness notify on completion instead of

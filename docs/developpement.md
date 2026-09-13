@@ -168,7 +168,7 @@ les rattraper coûte cher.
 
 ## Tests
 
-Cinq familles :
+Six familles :
 
 - **contraintes** (`*ConstraintsTest`) — `ConstraintVerifier`, sans Quarkus ni
   base, quelques millisecondes. **Toute nouvelle contrainte ajoute au moins un
@@ -178,6 +178,9 @@ Cinq familles :
 - **frontend** (Vitest, jsdom) — pas branchés sur la phase Maven, job CI dédié ;
 - **structurels** — ils ne jouent aucun scénario, ils **relisent le code** et
   échouent sur une règle que rien d'autre ne vérifie ;
+- **gamme de scénarios** (`ScenarioLadder*Test`) — trente fichiers résolus de
+  bout en bout, du plus petit problème à un mois de 150 stands, voir
+  [plus bas](#la-gamme-de-scénarios) ;
 - **bout en bout** (Playwright) — **à chaque poussée et sur chaque pull
   request**. Ils coûtent plusieurs minutes là où la suite unitaire répond en
   six secondes, et ce coût est assumé : c'est la seule couche qui voit ce
@@ -208,6 +211,49 @@ assistant francophone).
 Quand il échoue sur un nom légitime : le renommer, ou l'ajouter à
 `EXCEPTIONS_ASSUMEES` **avec sa raison**. Un troisième test vérifie que chaque
 exception correspond encore à du code réel.
+
+### La gamme de scénarios
+
+`src/test/resources/scenarios/gamme/` porte trente scénarios de test, rangés par
+taille : un jour, deux stands et trois animateurs au barreau 1, un mois, 150
+stands et 320 animateurs au barreau 25. Chaque barreau exerce une partie de ce
+qu'un fichier sait dire — rotation du midi, stands premium, mineurs et jour
+férié, contraintes ad hoc, horaires récurrents sous toutes leurs portées,
+découpage automatique, journées types, contraintes désactivées, effectifs
+portés par la fenêtre, édition cible. Les barreaux 26 à 30 ne doivent **jamais**
+se résoudre, chacun pour une raison nommée, et le test dit si l'analyse de
+faisabilité la voit.
+
+Le nom d'un fichier est son index : `gamme-18-14j-35stands-132animateurs-effectifs-par-fenetre`.
+`ScenarioLadderCatalogTest` échoue si un nom ne dit plus les jours, stands et
+animateurs du fichier, si un fichier n'est joué par aucun test, ou si la
+numérotation a un trou.
+
+Le problème est construit comme en production, sans base : `ScenarioLadder`
+résout les horaires, découpe les amplitudes, numérote les vacations découpées
+(l'égalité d'un `Creneau` est son id) et applique `contraintes.desactivees`.
+`ScenarioLadderImportTest` rejoue quatre barreaux par l'import réel et vérifie
+que les deux chemins produisent les mêmes sièges. Après le score dur,
+`assertCoreRules` relit le plan lui-même — jours d'indisponibilité,
+chevauchements, mineurs, six jours par semaine, contraintes ad hoc — pour
+qu'une contrainte qui cesserait de pénaliser ne passe pas au vert avec lui.
+
+| Classe | Barreaux | Où |
+| --- | --- | --- |
+| `ScenarioLadderSmallTest` | 1 à 7 | suite par défaut |
+| `ScenarioLadderMediumTest` | 8 à 15 | suite par défaut |
+| `ScenarioLadderInfeasibleTest` | 26 à 30 | suite par défaut |
+| `ScenarioLadderImportTest` | 2, 7, 8, 10 | suite par défaut (`@QuarkusTest`) |
+| `ScenarioLadderLargeTest` | 16 à 25 | `scenario-lent`, `./mvnw test -Pscenario-tests` |
+
+Les barreaux sont dimensionnés avec de la marge — au plus trois quarts de
+l'effectif sollicité le jour le plus chargé : tous atteignent zéro écart dur
+dès l'heuristique de construction, si bien que ce qu'ils relisent ne dépend pas
+de la vitesse de la machine. Ils gardent la couverture fonctionnelle ; la
+convergence d'un problème tendu reste l'affaire des scénarios `festival-*`.
+
+Quand une évolution fait bouger un barreau, c'est une décision : corriger le
+fichier **ou** l'assertion, en disant pourquoi, jamais les deux en silence.
 
 ### Tests de bout en bout (Playwright)
 
