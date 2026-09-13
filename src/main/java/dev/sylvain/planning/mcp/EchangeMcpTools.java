@@ -6,6 +6,7 @@ import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService.FenetreFoire;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
 import io.quarkiverse.mcp.server.Tool;
@@ -44,6 +45,9 @@ public class EchangeMcpTools {
     @Inject
     EspaceAnimateurService espaceAnimateurService;
 
+    @Inject
+    ReferenceDataService referenceDataService;
+
     @Tool(
             description = "Liste les demandes d'échange de l'édition, de la plus récente à la plus ancienne. "
                     + "Filtrable par statut : EN_ATTENTE_CIBLE (le collègue visé n'a pas encore répondu), PROPOSEE "
@@ -60,9 +64,10 @@ public class EchangeMcpTools {
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StatutDemandeEchange filtre =
                 statut == null ? null : McpArgs.enumeration(StatutDemandeEchange.class, statut, "statut");
+        AnonymisationViolations anonymisation = AnonymisationViolations.of(referenceDataService);
         return espaceAnimateurService.toViews(demandeEchangeService.list()).stream()
                 .filter(demande -> filtre == null || filtre.name().equals(demande.statut()))
-                .map(EchangeMcpTools::toView)
+                .map(demande -> toView(demande, anonymisation))
                 .toList();
     }
 
@@ -116,6 +121,7 @@ public class EchangeMcpTools {
             @ToolArg(description = "Id de la demande") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         EchangeSimulation simulation = demandeEchangeService.impact(id);
+        AnonymisationViolations anonymisation = AnonymisationViolations.of(referenceDataService);
         return new ImpactEchangeView(
                 simulation.posteDemandeurId(),
                 simulation.posteCibleId(),
@@ -126,7 +132,7 @@ public class EchangeMcpTools {
                 String.valueOf(simulation.delta()),
                 simulation.casseContrainteDure(),
                 simulation.nouvellesViolationsDures().stream()
-                        .map(EchangeMcpTools::toView)
+                        .map(violation -> toView(violation, anonymisation))
                         .toList());
     }
 
@@ -172,10 +178,12 @@ public class EchangeMcpTools {
     }
 
     private DemandeView view(DemandeEchange demande) {
-        return toView(espaceAnimateurService.toViews(List.of(demande)).get(0));
+        return toView(
+                espaceAnimateurService.toViews(List.of(demande)).get(0),
+                AnonymisationViolations.of(referenceDataService));
     }
 
-    static DemandeView toView(DemandeEchangeView demande) {
+    static DemandeView toView(DemandeEchangeView demande, AnonymisationViolations anonymisation) {
         return new DemandeView(
                 demande.id(),
                 demande.statut(),
@@ -193,7 +201,7 @@ public class EchangeMcpTools {
                 demande.standCibleId(),
                 demande.motif(),
                 demande.prevalidationOk(),
-                AnonymisationViolations.anonymiser(demande.contraintesViolees()),
+                anonymisation.anonymiser(demande.contraintesViolees()),
                 demande.commentaireAdmin(),
                 demande.creeLe(),
                 demande.cibleDecideLe(),
@@ -201,10 +209,10 @@ public class EchangeMcpTools {
                 demande.communiqueeLe());
     }
 
-    static ViolationHardView toView(HardViolation violation) {
+    static ViolationHardView toView(HardViolation violation, AnonymisationViolations anonymisation) {
         return new ViolationHardView(
                 violation.name(),
-                AnonymisationViolations.anonymiser(violation.description()),
+                anonymisation.anonymiser(violation.description()),
                 violation.matchesSupplementaires());
     }
 

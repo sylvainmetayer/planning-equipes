@@ -2,9 +2,13 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.mcp.SolveurMcpTools.ViolationHardView;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -17,10 +21,31 @@ import org.junit.jupiter.api.Test;
  */
 class SolveurMcpToolsTest {
 
+    /** The three lists the anonymisation reads, and nothing else: no database behind them. */
+    private static ReferenceDataService emptyReferential() {
+        return new ReferenceDataService() {
+            @Override
+            public List<Animateur> listAnimateurs() {
+                return List.of();
+            }
+
+            @Override
+            public List<ContrainteAdHoc> listContraintesAdHoc() {
+                return List.of();
+            }
+
+            @Override
+            public List<Stand> listStands() {
+                return List.of();
+            }
+        };
+    }
+
     @Test
     void reportsOnlyTheHardConstraintsActuallyViolated() {
         SolveurMcpTools tools = new SolveurMcpTools();
         tools.analysisStore = new ConstraintAnalysisStore();
+        tools.referenceDataService = emptyReferential();
 
         ConstraintDiagnostic hardViole = new ConstraintDiagnostic(
                 "posteDoitEtrePourvu",

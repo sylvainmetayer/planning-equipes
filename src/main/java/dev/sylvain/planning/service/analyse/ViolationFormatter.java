@@ -130,17 +130,26 @@ public final class ViolationFormatter {
      * The exception's own id comes first: a hard-negative solve names the rule
      * ("affectationForcee") and the reader's next question is always which of
      * their exceptions it is about (issue #84).
+     *
+     * <p>Public, like {@link #animateurLabel}, so that the MCP anonymisation
+     * removes exactly what is written here rather than a copy of the format
+     * that would drift from it.</p>
      */
-    private static String contrainteLabel(ContrainteAdHoc contrainte) {
-        String label = contrainte.getId() == null
-                ? String.valueOf(contrainte.getType())
-                : contrainte.getType() + " " + contrainte.getId();
+    public static String contrainteLabel(ContrainteAdHoc contrainte) {
+        String label = contrainteReference(contrainte);
         return contrainte.getRaison() == null || contrainte.getRaison().isBlank()
                 ? label
                 : label + " (" + contrainte.getRaison() + ")";
     }
 
-    private static String animateurLabel(Animateur animateur) {
+    /** The constraint's label without its free-text reason: its type, then its id. */
+    public static String contrainteReference(ContrainteAdHoc contrainte) {
+        return contrainte.getId() == null
+                ? String.valueOf(contrainte.getType())
+                : contrainte.getType() + " " + contrainte.getId();
+    }
+
+    public static String animateurLabel(Animateur animateur) {
         return animateur.nomWithId();
     }
 

@@ -69,8 +69,15 @@ Trois mécanismes :
    dédié qui ne possède structurellement aucun accesseur vers un champ
    personnel.
 2. **Anonymisation des messages d'écart.** `ViolationFormatter` désigne un
-   animateur par « Prénom Nom (id) » pour l'interface web ;
-   `AnonymisationViolations` réécrit en « animateur id » avant toute sortie MCP.
+   animateur par « Prénom Nom (id) » et une contrainte ad hoc par
+   « TYPE id (raison) » pour l'interface web ; `AnonymisationViolations` réécrit
+   en « animateur id » et retire la raison avant toute sortie MCP. Elle part des
+   fiches de l'édition : le libellé exact de chaque animateur connu est
+   remplacé, quelle que soit la forme du nom (un seul mot, une initiale, un
+   chiffre). Une reconnaissance par la forme ne vient qu'ensuite, pour ce que
+   le référentiel ne connaît plus — une ligne enregistrée peut survivre à la
+   fiche qu'elle nomme. Son pire cas est un libellé abîmé, jamais un nom qui
+   sort ; un stand connu dont le nom a cette forme est épargné.
 3. **Un test structurel.** `McpConfidentialiteStructurelleTest` parcourt par
    réflexion tous les `@Tool` et échoue si l'un expose `Animateur` ou un champ
    `prenom` / `dateNaissance` / `email` / `accessToken`, **y compris à travers

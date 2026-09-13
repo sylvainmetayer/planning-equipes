@@ -470,7 +470,10 @@ public class PlanningMcpTools {
         return toView(deplacementService.apply(posteId, posteCibleId, animateurId, occupantAttendu));
     }
 
-    private static DeplacementView toView(DeplacementSimulation simulation) {
+    private DeplacementView toView(DeplacementSimulation simulation) {
+        // Anonymised before « (+n) » is appended: the net of the anonymisation
+        // would otherwise read « … (+3) » as a label followed by its id.
+        AnonymisationViolations anonymisation = AnonymisationViolations.of(referenceDataService);
         return new DeplacementView(
                 simulation.posteSourceId(),
                 simulation.posteCibleId(),
@@ -481,7 +484,8 @@ public class PlanningMcpTools {
                 String.valueOf(simulation.delta()),
                 simulation.casseContrainteDure(),
                 simulation.nouvellesViolationsDures().stream()
-                        .map(violation -> violation.description() + " (+" + violation.matchesSupplementaires() + ")")
+                        .map(violation -> anonymisation.anonymiser(violation.description()) + " (+"
+                                + violation.matchesSupplementaires() + ")")
                         .toList());
     }
 
@@ -495,7 +499,8 @@ public class PlanningMcpTools {
         return planning;
     }
 
-    private static List<ContrainteImpactView> toViews(List<ContrainteImpact> impacts) {
+    private List<ContrainteImpactView> toViews(List<ContrainteImpact> impacts) {
+        AnonymisationViolations anonymisation = AnonymisationViolations.of(referenceDataService);
         return impacts.stream()
                 .map(impact -> new ContrainteImpactView(
                         impact.name(),
@@ -503,7 +508,7 @@ public class PlanningMcpTools {
                         impact.categorie(),
                         impact.description(),
                         impact.matchCount(),
-                        AnonymisationViolations.anonymiser(impact.details())))
+                        anonymisation.anonymiser(impact.details())))
                 .toList();
     }
 

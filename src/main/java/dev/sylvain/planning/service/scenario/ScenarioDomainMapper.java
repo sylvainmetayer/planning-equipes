@@ -322,8 +322,8 @@ final class ScenarioDomainMapper {
     private static Animateur animateur(AnimateurDto dto) {
         Animateur animateur = new Animateur(
                 dto.id(),
-                dto.prenom(),
-                dto.nom(),
+                requiredName(dto.prenom(), "animateurs.prenom"),
+                requiredName(dto.nom(), "animateurs.nom"),
                 required(dto.dateNaissance(), "animateurs.dateNaissance"),
                 Boolean.TRUE.equals(dto.manager()));
         animateur.setEmail(dto.email());
@@ -554,6 +554,19 @@ final class ScenarioDomainMapper {
         if (valeur == null) {
             boolean date = champ.endsWith("date") || champ.endsWith("dateDebut") || champ.endsWith("dateNaissance");
             throw new BusinessError.Invalid((date ? "Champ date manquant: " : "Section ou champ manquant: ") + champ);
+        }
+        return valeur;
+    }
+
+    /**
+     * A prénom or a nom: blank is as missing as absent. The fiche form, MCP and
+     * the CSV import already refuse a fiche without both; the scenario file
+     * was the one way in, and a fiche named by a single word is one nobody
+     * recognises on a printed planning.
+     */
+    private static String requiredName(String valeur, String champ) {
+        if (valeur == null || valeur.isBlank()) {
+            throw new BusinessError.Invalid("Champ manquant: " + champ);
         }
         return valeur;
     }

@@ -30,6 +30,10 @@ class EspaceAdminMcpToolsTest {
 
     private static final Instant CREE_LE = Instant.parse("2026-05-02T09:30:00Z");
 
+    /** The deleted-animateur net alone, the case these lines exercise. */
+    private static final AnonymisationViolations SANS_REFERENTIEL =
+            AnonymisationViolations.of(List.of(), List.of(), List.of());
+
     @Test
     void uneDeclarationSortSansLeNomDeSonAuteur() {
         DeclarationMcpView vue = DisponibiliteMcpTools.toView(new DeclarationAdminView(
@@ -82,34 +86,36 @@ class EspaceAdminMcpToolsTest {
     }
 
     @Test
-    void uneDemandeDEchangeSortEnIdsEtSesViolationsSontAnonymisees() {
-        DemandeView vue = EchangeMcpTools.toView(new DemandeEchangeView(
-                "e1",
-                42L,
-                LocalDate.of(2026, 7, 11),
-                LocalTime.of(10, 0),
-                LocalTime.of(12, 0),
-                "stand-a",
-                "Stand A",
-                "a1",
-                "Camille Martin",
-                "a2",
-                "Dominique Roy",
-                43L,
-                LocalDate.of(2026, 7, 12),
-                LocalTime.of(14, 0),
-                LocalTime.of(16, 0),
-                "stand-b",
-                "Stand B",
-                "je dépose mes enfants",
-                "PROPOSEE",
-                false,
-                List.of("Camille Martin (a1) dépasse 8 h le 11/07"),
-                null,
-                CREE_LE,
-                CREE_LE,
-                null,
-                null));
+    void aSwapRequestLeavesByIdsAndItsViolationsAreAnonymised() {
+        DemandeView vue = EchangeMcpTools.toView(
+                new DemandeEchangeView(
+                        "e1",
+                        42L,
+                        LocalDate.of(2026, 7, 11),
+                        LocalTime.of(10, 0),
+                        LocalTime.of(12, 0),
+                        "stand-a",
+                        "Stand A",
+                        "a1",
+                        "Camille Martin",
+                        "a2",
+                        "Dominique Roy",
+                        43L,
+                        LocalDate.of(2026, 7, 12),
+                        LocalTime.of(14, 0),
+                        LocalTime.of(16, 0),
+                        "stand-b",
+                        "Stand B",
+                        "je dépose mes enfants",
+                        "PROPOSEE",
+                        false,
+                        List.of("Camille Martin (a1) dépasse 8 h le 11/07"),
+                        null,
+                        CREE_LE,
+                        CREE_LE,
+                        null,
+                        null),
+                SANS_REFERENTIEL);
 
         assertThat(vue.demandeurId()).isEqualTo("a1");
         assertThat(vue.cibleId()).isEqualTo("a2");
@@ -122,9 +128,10 @@ class EspaceAdminMcpToolsTest {
     }
 
     @Test
-    void uneViolationDureDImpactEstAnonymiseeAussi() {
+    void aHardViolationOfAnImpactIsAnonymisedToo() {
         ViolationHardView vue = EchangeMcpTools.toView(
-                new HardViolation("reposQuotidienMinimal", "Camille Martin (a1) enchaîne deux vacations", 2));
+                new HardViolation("reposQuotidienMinimal", "Camille Martin (a1) enchaîne deux vacations", 2),
+                SANS_REFERENTIEL);
 
         assertThat(vue.contrainte()).isEqualTo("reposQuotidienMinimal");
         assertThat(vue.description()).isEqualTo("animateur a1 enchaîne deux vacations");

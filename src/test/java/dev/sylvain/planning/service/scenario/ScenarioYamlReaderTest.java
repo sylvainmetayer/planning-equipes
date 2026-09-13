@@ -101,6 +101,40 @@ class ScenarioYamlReaderTest {
     }
 
     /**
+     * A scenario is refused a fiche the form, MCP and the CSV import all refuse:
+     * a blank nom is as missing as no nom. The file was the one way in, and a
+     * fiche named by a single word is one nobody recognises on a planning.
+     */
+    @Test
+    void anAnimateurWithABlankNameIsRefused() {
+        String yaml = """
+                festival:
+                  dateDebut: "2026-07-16"
+                creneaux:
+                  - id: "1"
+                    jour: 1
+                    date: "2026-07-16"
+                    heureDebut: "10:00:00"
+                    heureFin: "18:00:00"
+                stands:
+                  - id: S1
+                    nom: Stand
+                    typologiesProposees: ["JEU"]
+                    effectifMin: 1
+                    effectifMax: 1
+                animateurs:
+                  - id: A1
+                    prenom: Alice
+                    nom: " "
+                    dateNaissance: "1990-01-01"
+                    competences: {}
+                """;
+
+        assertThatThrownBy(() -> ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new))
+                .hasMessageContaining("Champ manquant: animateurs.nom");
+    }
+
+    /**
      * And the wiring holds end to end: {@link PlanningService} is what supplies the
      * fallback, and it must supply the <b>edition's</b> one.
      *

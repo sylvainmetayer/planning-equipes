@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
@@ -62,6 +63,9 @@ public class SolveurMcpTools {
 
     @Inject
     ConstraintAnalysisStore analysisStore;
+
+    @Inject
+    ReferenceDataService referenceDataService;
 
     @Tool(
             description = "Lance une résolution en tâche de fond à partir des données de référence persistées "
@@ -284,12 +288,11 @@ public class SolveurMcpTools {
                 .filter(definition -> definition.niveau() == ConstraintCatalog.Niveau.HARD)
                 .map(ConstraintCatalog.ConstraintDefinition::name)
                 .toList();
+        AnonymisationViolations anonymisation = AnonymisationViolations.of(referenceDataService);
         return analysis.diagnostic().contraintes().stream()
                 .filter(diagnostic -> hardNames.contains(diagnostic.name()) && diagnostic.matchCount() > 0)
                 .map(diagnostic -> new ViolationHardView(
-                        diagnostic.name(),
-                        diagnostic.matchCount(),
-                        AnonymisationViolations.anonymiser(diagnostic.violations())))
+                        diagnostic.name(), diagnostic.matchCount(), anonymisation.anonymiser(diagnostic.violations())))
                 .toList();
     }
 
