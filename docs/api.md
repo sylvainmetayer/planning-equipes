@@ -143,6 +143,11 @@ et tout est à zéro sans stand ou sans créneau. Même règle pour
 nomme ce qui n'est pas encore saisi, et à l'inverse pour `GET /api/feasibility`
 et `GET /api/fragilite` : sans aucun animateur, rien n'est réalisable, et les
 deux rapports le disent explicitement plutôt que de ne détecter aucun problème.
+`GET /api/feasibility` dit de même, avec son propre message, une édition **sans
+créneau** et une édition dont **aucun stand n'ouvre** sur les créneaux : rien à
+pourvoir n'est pas un feu vert. Et sa capacité par créneau ne compte un mineur
+qu'aux côtés d'un majeur, hors de sa nuit légale, d'un jour férié et des stands
+réservés aux majeurs — une équipe de mineurs seuls n'y couvre plus rien.
 
 ### File d'attente
 

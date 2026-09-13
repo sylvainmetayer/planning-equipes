@@ -100,7 +100,7 @@ rules, empty editions. `ScenarioExtremeDegenerateTest` and
 `ScenarioExtremeCatalogTest` run by default; `ScenarioExtremeAxisTest` and
 `ScenarioExtremeCumulTest` carry `@Tag("scenario-extreme")`, excluded from both
 the default run and `-Pscenario-tests`, and run only with `-Pscenario-extreme`,
-one class at a time, with `-DargLine=-Xmx3g` and nothing else testing — the cumulative one takes close to an hour.
+one class at a time, with `-DargLine=-Xmx3g` and nothing else testing.
 
 When an agent session needs to run this profile (or any other job on this
 order of a minute or more — a `docker build`, a long solve), launch it as a

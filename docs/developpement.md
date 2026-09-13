@@ -273,28 +273,31 @@ défaut : chaque fichier valide, joué par un test, et un nom qui dit sa taille)
 | `extreme-06` | exploitation 24 h/24 pendant une semaine | 0 dur en 3 s |
 | `extreme-07` | vacations d'une heure | 0 dur en 15 s |
 | `extreme-08` | un stand de 200 places | 0 dur en 7 s |
-| `extreme-09` | tout à la fois : 120 j, 400 stands, 1 000 animateurs | lecture 1 s, analyse 0,25 s, construction des 41 370 sièges en 50 min 48 s (0 dur dès la construction), ~1 Go de tas |
+| `extreme-09` | tout à la fois : 120 j, 400 stands, 1 000 animateurs | lecture 1 s, analyse 0,25 s, ~1 Go de tas ; 0 dur en 2 min 37 s par la construction échantillonnée (50 min 48 s avant) |
 | `extreme-10` à `15` | sans animateur, un siège pour 1 000, uniquement des mineurs, 2 000 contraintes ad hoc, stands jamais ouverts, sans créneau | voir `ScenarioExtremeDegenerateTest` |
 
-**Ce qui cède en premier est l'heuristique de construction** : elle évalue chaque
-siège contre chaque candidat, son coût suit sièges × animateurs — et un peu
-plus, le score se renchérissant à mesure que le plan se remplit (le débit tombe
-de 17 000 à 10 900 évaluations par seconde sur `extreme-09`) —, et elle ne se
-parallélise pas sans l'édition Enterprise. Le reste — lecture, construction du
-problème, analyse, recherche locale jusqu'au zéro dur — tient l'échelle.
+**Ce qui cédait en premier était l'heuristique de construction** : elle évalue
+chaque siège contre chaque candidat, son coût suit sièges × animateurs — et un
+peu plus, le score se renchérissant à mesure que le plan se remplit —, et elle
+ne se parallélise pas sans l'édition Enterprise. Au-delà de 15 millions de
+couples, elle est désormais échantillonnée (voir *Réglage du solveur*). Le
+reste — lecture, construction du problème, analyse, recherche locale jusqu'au
+zéro dur — tient l'échelle.
 
-**Le contrôle des contradictions ad hoc est quadratique** : 3,9 s pour 2 000
-exceptions (`extreme-13`), payées à chaque analyse de faisabilité.
+**Le contrôle des contradictions ad hoc** comparait les exceptions deux à deux
+(3,9 s pour 2 000 sur `extreme-13`, payées à chaque analyse de faisabilité).
+Toutes ses règles supposent un animateur en commun : il les lit maintenant par
+index d'animateur, sous la seconde, et `ContrainteAdHocContradictionsIndexTest`
+tient les deux lectures égales, ordre compris.
 
 Les dégénérés (`ScenarioExtremeDegenerateTest`) tournent dans la suite par
 défaut. Les axes et le cumul portent le tag `scenario-extreme`, exclu de la suite
 par défaut **et** du profil `scenario-tests` : `./mvnw test -Pscenario-extreme
 -DargLine=-Xmx3g -Dtest=ScenarioExtremeAxisTest`, une classe à la fois. Leurs
 plafonds valent une dizaine de fois le temps mesuré : ils disent qu'une
-régression a eu lieu, pas combien de temps prend la machine. Le cumul fait
-exception : dix fois ses cinquante minutes serait une journée, son plafond est
-d'une heure et demie. Un tas plus grand n'y gagne rien — 1 Go suffit — et c'est
-lui que la pression mémoire d'une machine partagée tue en premier.
+régression a eu lieu, pas combien de temps prend la machine. Un tas plus grand
+n'y gagne rien — 1 Go suffit au cumul — et c'est lui que la pression mémoire
+d'une machine partagée tue en premier.
 
 ### Tests de bout en bout (Playwright)
 
@@ -362,6 +365,31 @@ plateau : une résolution s'arrête quand le budget est épuisé, **ou** quand l
 planning est déjà faisable et n'a plus progressé. Sans la condition de
 faisabilité, le solveur abandonnait sur un plateau de score **dur** — exactement
 le cas où il a besoin du reste de son budget.
+
+### La construction échantillonnée des très gros problèmes
+
+La première phase de `solverConfig.xml` évalue chaque siège contre chaque
+animateur. Au-delà de **15 millions de couples** sièges × animateurs,
+`LargeProblemConstruction` la remplace à la résolution par la même phase — sièges
+les plus difficiles d'abord, filtre d'éligibilité compris — qui n'évalue que
+**50 animateurs tirés au hasard** par siège. Mesures (même graine) :
+
+| Problème | Construction | 0 dur en | medium à 300 s |
+| --- | --- | --- | --- |
+| `extreme-02` (6 480 sièges × 1 000) | exacte | 182 s | **−5 521** |
+| `extreme-02` | échantillonnée | 12 s | −5 938 |
+| `extreme-09` (41 370 sièges × 1 000) | exacte | 50 min 48 s | — |
+| `extreme-09` | échantillonnée | **2 min 37 s** | — |
+
+Sous le seuil, la construction exacte se rembourse : trois minutes de plus pour
+un premier plan meilleur, que la recherche locale ne rattrape pas en 300 s.
+Au-dessus, elle ne tient plus dans un budget de production. Le seuil est
+l'endroit où la construction exacte dépasserait dix minutes ; toute édition
+réelle est loin dessous. Voir [0036](decisions/0036-construction-echantillonnee-des-tres-gros-problemes.md).
+
+Une première piste, `pickEarlyType` `FIRST_FEASIBLE_SCORE_OR_NON_DETERIORATING_HARD`,
+est inutilisable ici : un siège peut rester vide, « le laisser vide » ne dégrade
+pas le score, et la construction s'arrête en 0,5 s sur un plan entièrement vide.
 
 ### `acceptedCountLimit` : mesuré, pas hérité
 

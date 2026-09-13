@@ -459,7 +459,12 @@ ci-dessous).
 Six règles disent qui ne peut **jamais** tenir un siège : `animateurDisponible`,
 `standReserveAuxMajeurs`, `travailDeNuitInterditPourMineur`,
 `travailInterditJourFerieMineur`, `dureeQuotidienneMaxMineur`,
-`travailContinuMaxMineur` — les motifs de `EligibleAnimateurMoveFilter`.
+`travailContinuMaxMineur` — les motifs de `EligibleAnimateurMoveFilter`. Une
+septième porte le même forfait sans être un motif du filtre, parce qu'elle
+dépend de qui d'autre tient le stand : `mineurNecessiteEncadrementMajeur`. Un
+mineur seul coûtait sinon exactement un siège vide, et sur une équipe de mineurs
+seul l'ordre de la recherche départageait
+([0035](decisions/0035-mineur-seul-au-forfait.md)).
 
 Le filtre les écarte de la recherche, mais la reconstruction du *ruin and
 recreate* ne le lit pas, et elles ne pesaient qu'un point dur : autant qu'un

@@ -476,7 +476,9 @@ générant plusieurs variantes de chaque vacation, ont été retirées (ADR
 [0029](decisions/0029-retrait-des-familles-de-relais.md)).
 
 > **L'analyse de faisabilité ne voit pas ce pic** : c'est une estimation
-> optimiste, agrégée par jour. Elle peut répondre « réalisable » alors que le
+> optimiste, agrégée par jour. Elle ne lit pas les compétences ; elle compte en
+> revanche un mineur seulement là où il peut siéger — à côté d'un majeur, hors
+> de sa nuit, d'un jour férié et d'un stand réservé aux majeurs. Elle peut répondre « réalisable » alors que le
 > solveur ne ramène pas le score dur à zéro, précisément parce que trop de
 > stands réclament un animateur au même quart d'heure. Le signal fiable après
 > résolution est le **score dur réel**, pas `feasible` seul.
