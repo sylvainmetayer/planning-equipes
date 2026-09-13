@@ -126,7 +126,11 @@ public final class LegalConstraints {
                                 && autrePoste
                                         .getAnimateur()
                                         .isMajeurOn(autrePoste.getCreneau().getDate())))
-                .penalize(HardMediumSoftScore.ONE_HARD)
+                // A minor alone costs the flat cost of an eligibility breach: left
+                // at one hard point, it weighed what an empty seat weighs, and a
+                // plan that could not staff an evening could as well leave a
+                // minor alone on the stand as leave the seat empty.
+                .penalize(HardMediumSoftScore.ONE_HARD, poste -> ExclusionEligibilite.FORFAIT)
                 .asConstraint("mineurNecessiteEncadrementMajeur");
     }
 

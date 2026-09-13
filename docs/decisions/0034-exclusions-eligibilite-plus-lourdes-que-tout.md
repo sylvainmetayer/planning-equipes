@@ -1,6 +1,6 @@
 # 0034 — Un siège qui enfreint une exclusion d'éligibilité coûte plus que tout autre écart
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; complété par [0035](0035-mineur-seul-au-forfait.md)
 - **Date** : septembre 2026
 - **Portée** : solveur (score), analyse de faisabilité, saisie des ajustements manuels
 

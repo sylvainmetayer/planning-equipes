@@ -35,7 +35,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
     void mineurSansMajeurSurLeStandEstPenalise() {
         verify("mineurNecessiteEncadrementMajeur")
                 .given(poste(standStrat, creneauMatin, mineurDebutant("M1")))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 
     @Test

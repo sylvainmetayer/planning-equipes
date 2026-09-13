@@ -4,11 +4,13 @@ import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * What a seat breaking one of the eligibility exclusions costs: a day the
  * animateur declared off, a minor at night, on an adults-only stand, on a
- * public holiday, or past a minor's daily or continuous cap.
+ * public holiday, or past a minor's daily or continuous cap — and a minor left
+ * without an adult beside them.
  *
  * <p>These are the rules {@link EligibleAnimateurMoveFilter} keeps out of the
  * search, and the filter is not a wall: the recreate step of the ruin and
@@ -20,6 +22,11 @@ import java.util.stream.Collectors;
  * empty, or an animateur on the day they had declared off rather than leave a
  * forced assignment unkept. Both were measured on the ladder's infeasible
  * rungs.</p>
+ *
+ * <p>A minor without an adult is not a filter motif — it depends on who else
+ * holds the stand — but it is the same kind of rule, and it had the same flaw:
+ * on a team of minors only, leaving a minor alone cost exactly what leaving the
+ * seat empty cost, and nothing but the search order chose between them.</p>
  *
  * <p>Each breach therefore costs a flat {@link #FORFAIT} more than anything a
  * single seat can change elsewhere. The rules penalised in minutes stay under
@@ -34,9 +41,14 @@ public final class ExclusionEligibilite {
     /** The flat hard cost of one breach, on top of the minutes a capped rule counts. */
     public static final int FORFAIT = 10_000;
 
-    /** The constraints that carry it: exactly the ones the eligibility filter names. */
-    public static final Set<String> CONTRAINTES = Arrays.stream(EligibleAnimateurMoveFilter.Motif.values())
-            .map(EligibleAnimateurMoveFilter.Motif::contrainte)
+    /** The constraint no filter motif names but that carries the flat cost too. */
+    public static final String ENCADREMENT_DES_MINEURS = "mineurNecessiteEncadrementMajeur";
+
+    /** The constraints that carry it: the ones the eligibility filter names, and the supervision of minors. */
+    public static final Set<String> CONTRAINTES = Stream.concat(
+                    Arrays.stream(EligibleAnimateurMoveFilter.Motif.values())
+                            .map(EligibleAnimateurMoveFilter.Motif::contrainte),
+                    Stream.of(ENCADREMENT_DES_MINEURS))
             .collect(Collectors.toUnmodifiableSet());
 
     private ExclusionEligibilite() {}
