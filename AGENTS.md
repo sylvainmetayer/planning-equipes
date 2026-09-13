@@ -139,6 +139,31 @@ burn tokens on repeated status checks for no benefit over one notification.
   `docs/developpement.md`.
 - Toolchain pinned in `mise.toml` (`temurin-25`, `maven 3.9.9`, `node 24`); the
   Maven build downloads its own Node through Quinoa, so CI/Docker need none.
+- **An agent session without `mise` and without Docker still runs the whole
+  suite** — apt has the pinned major, and a PostgreSQL 16 server is already
+  installed, which replaces the dev-services container the `%test` profile
+  normally starts:
+
+  ```bash
+  sudo apt-get install -y openjdk-25-jdk-headless   # /usr/lib/jvm/java-25-openjdk-amd64
+  sudo pg_ctlcluster 16 main start
+  sudo -u postgres psql -c "CREATE ROLE festival LOGIN SUPERUSER PASSWORD 'festival'" \
+                        -c "CREATE DATABASE festival OWNER festival"
+  JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw test \
+    -D'%test.quarkus.datasource.devservices.enabled=false' \
+    -D'%test.quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/festival' \
+    -D'%test.quarkus.datasource.username=festival' \
+    -D'%test.quarkus.datasource.password=festival'
+  ```
+
+  The keys are given profile-prefixed because that is the form the whole suite
+  was run with here; a configured URL is enough for Quarkus to skip dev
+  services, so the plain `-Dquarkus.datasource.…` form works as well.
+  Do not settle for `-Dmaven.compiler.release=21` on the JDK the image ships
+  with — it compiles all but a file or two and proves nothing about the
+  version that is deployed. What this loses is the fresh database per run
+  (`devservices.reuse=false` exists to prove that `V1..Vn` migrate a bare
+  database): a migration change deserves a `DROP DATABASE festival` first.
 
 ### Agent sandbox without `mise`
 
