@@ -66,11 +66,61 @@ class LargeProblemConstructionTest {
                     QueuedEntityPlacerConfig placer = (QueuedEntityPlacerConfig) construction.getEntityPlacerConfig();
                     ChangeMoveSelectorConfig change = (ChangeMoveSelectorConfig)
                             placer.getMoveSelectorConfigList().getFirst();
-                    assertThat(change.getValueSelectorConfig().getSelectedCountLimit())
-                            .isEqualTo(LargeProblemConstruction.CANDIDATES_PER_SEAT);
+                    assertThat(change.getSelectedCountLimit()).isEqualTo(LargeProblemConstruction.CANDIDATES_PER_SEAT);
                     assertThat(change.getFilterClass()).isEqualTo(EligibleAnimateurMoveFilter.ChangeMoveFilter.class);
                 });
         assertThat(SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver())
                 .isNotNull();
+    }
+
+    /**
+     * The sampled construction draws its candidates blind, then filters them. A
+     * seat whose whole draw is filtered out, and whose draw missed the empty
+     * value too, used to have no doable move — and Timefold then ends the whole
+     * phase, not just that seat, leaving every later seat empty. Twenty seats
+     * on twenty dates with thirty animateurs available out of a thousand each,
+     * and one date nobody is available on: every seat that can be held is.
+     */
+    @Test
+    void aSeatWhoseWholeDrawIsFilteredOutDoesNotEndTheConstruction() {
+        Stand stand = new Stand("S", "S", Set.of("JEUX"), 1, 1, false);
+        LocalDate debut = LocalDate.of(2028, 7, 1);
+        List<Animateur> roster = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            roster.add(new Animateur("A" + i, "P", "N", LocalDate.of(1990, 1, 1), false));
+        }
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int jour = 0; jour < 21; jour++) {
+            LocalDate date = debut.plusDays(jour);
+            Creneau creneau = new Creneau((long) jour + 1, jour + 1, date, LocalTime.of(10, 0), LocalTime.of(13, 0));
+            postes.add(new PosteAffectation("P" + jour, stand, creneau));
+            for (int i = 0; i < roster.size(); i++) {
+                boolean disponible = jour < 20 && i % 1000 >= jour * 40 && i % 1000 < jour * 40 + 30;
+                if (!disponible) {
+                    roster.get(i).getJoursIndisponibles().add(date);
+                }
+            }
+        }
+        PlanningEvenement probleme = new PlanningEvenement(debut, roster, postes);
+
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
+        LargeProblemConstruction.adapt(solverConfig);
+        solverConfig.setPhaseConfigList(
+                List.of(solverConfig.getPhaseConfigList().getFirst()));
+
+        PlanningEvenement construit = SolverFactory.<PlanningEvenement>create(solverConfig)
+                .buildSolver()
+                .solve(probleme);
+
+        assertThat(construit.getPostes())
+                .filteredOn(poste -> poste.getCreneau().getJour() <= 20)
+                .allSatisfy(poste -> assertThat(poste.getAnimateur())
+                        .as("seat %s", poste.getId())
+                        .isNotNull());
+        assertThat(construit.getPostes())
+                .filteredOn(poste -> poste.getCreneau().getJour() == 21)
+                .allSatisfy(poste -> assertThat(poste.getAnimateur()).isNull());
     }
 }

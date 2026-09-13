@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
  * <p>Measured on the development machine, 3 GB heap: the file read in 1 s,
  * the analysis in 0.25 s, about 1 GB of heap in use. The exact construction
  * took 50 min 48 s for the 41 370 seats; past {@code LargeProblemConstruction}'s
- * threshold it is sampled, and reaches zero hard in 2 min 37 s — which is what
+ * threshold it is sampled, and reaches zero hard in 3 min 30 s — which is what
  * this test holds.</p>
  *
  * <p>Tagged {@code scenario-extreme}, and the heaviest of them:

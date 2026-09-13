@@ -70,11 +70,11 @@
     -->
     <!--
         On a very large problem — past 15 000 000 seats x animateurs — this phase
-        is replaced at solve time by a sampled one that scores 50 animateurs
+        is replaced at solve time by a sampled one that scores 50 eligible animateurs
         drawn at random per seat (LargeProblemConstruction, ADR 0036). Its cost
         follows seats x animateurs, a little more as the plan fills: 182 s for
         6 480 seats and 1 000 animateurs, 50 min for 41 370 seats, where the
-        sampled one reaches zero hard in 2 min 37 s. Every real edition sits far
+        sampled one reaches zero hard in 3 min 30 s. Every real edition sits far
         under the threshold and keeps the phase below as written.
     -->
     <constructionHeuristic>

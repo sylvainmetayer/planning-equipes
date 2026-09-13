@@ -37,8 +37,15 @@ pour un premier plan que la recherche locale ne rattrape pas.
 Au-delà de **15 millions de couples** sièges × (animateurs + la valeur vide),
 `LargeProblemConstruction` remplace à la résolution la première phase par la même
 phase — sièges les plus difficiles d'abord, filtre d'éligibilité compris — qui
-n'évalue que **50 animateurs tirés au hasard** par siège. Mesuré sur
-`extreme-09` : 0 dur en 2 min 37 s au lieu de 50 min 48 s.
+n'évalue que **50 animateurs éligibles tirés au hasard** par siège. Mesuré sur
+`extreme-09` : 0 dur en 3 min 30 s au lieu de 50 min 48 s.
+
+La limite compte les candidats que le filtre d'éligibilité garde, pas les
+tirages. Comptée sur les tirages, un siège dont les 50 tirages étaient tous
+écartés — et la valeur vide pas tirée — n'avait aucun mouvement possible, et
+Timefold termine alors la phase entière : tous les sièges suivants restaient
+vides. Le filtre est rejoué jusqu'à 50 candidats gardés ; il ne coûte presque
+rien au regard d'un calcul de score.
 
 Le seuil est l'endroit où la construction exacte dépasserait dix minutes, en
 prolongeant les deux mesures ci-dessus. Toute édition réelle est loin dessous :
@@ -50,7 +57,7 @@ est construite à partir de lui, pas dupliquée dans un second fichier.
 ## Conséquences
 
 - Sous le seuil, rien ne change.
-- Au-dessus, le premier plan est plus pauvre en medium (−53 938 contre −36 301
+- Au-dessus, le premier plan est plus pauvre en medium (−50 962 contre −36 301
   en fin de construction sur `extreme-09`), et le temps gagné revient à la
   recherche locale.
 - Le seuil est une extrapolation entre deux mesures, pas une mesure au seuil :

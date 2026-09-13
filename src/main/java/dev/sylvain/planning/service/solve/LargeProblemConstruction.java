@@ -27,7 +27,7 @@ import java.util.List;
  *
  * <p>Past {@link #THRESHOLD} seat-candidate pairs, the same placer — seats still
  * taken hardest first, the eligibility filter still applied — scores only
- * {@link #CANDIDATES_PER_SEAT} animateurs drawn at random for each seat. The
+ * {@link #CANDIDATES_PER_SEAT} eligible animateurs drawn at random for each seat. The
  * first plan is worse on the medium level, and the time it saves goes to the
  * local search that polishes it; below the threshold, which every real edition
  * sits under, nothing changes. The trade-off and its measurements are in
@@ -41,11 +41,16 @@ final class LargeProblemConstruction {
      * the exact one wins — on 6.5 million pairs, 300 s ended at -5 521 medium
      * with it and -5 938 sampled, the three minutes it costs repaid by a better
      * first plan. Above it, time wins: 41 million pairs reach zero hard in
-     * 2 min 37 s sampled, 50 min 48 s exact.
+     * 3 min 30 s sampled, 50 min 48 s exact.
      */
     static final long THRESHOLD = 15_000_000L;
 
-    /** Animateurs scored for each seat once sampled. */
+    /**
+     * Animateurs scored for each seat once sampled — counted after the
+     * eligibility filter, not before. Counted on the draws, a seat whose whole
+     * draw was filtered out had no move at all, and Timefold ends the whole
+     * phase on a step with no move: every later seat stayed empty.
+     */
     static final long CANDIDATES_PER_SEAT = 50L;
 
     private static final String PLACER_ENTITY = "placerEntity";
@@ -75,9 +80,9 @@ final class LargeProblemConstruction {
     private static ConstructionHeuristicPhaseConfig sampledConstruction() {
         ChangeMoveSelectorConfig change = new ChangeMoveSelectorConfig()
                 .withEntitySelectorConfig(EntitySelectorConfig.newMimicSelectorConfig(PLACER_ENTITY))
-                .withValueSelectorConfig(new ValueSelectorConfig()
-                        .withSelectionOrder(SelectionOrder.RANDOM)
-                        .withSelectedCountLimit(CANDIDATES_PER_SEAT));
+                .withValueSelectorConfig(new ValueSelectorConfig())
+                .withSelectionOrder(SelectionOrder.RANDOM)
+                .withSelectedCountLimit(CANDIDATES_PER_SEAT);
         change.setFilterClass(EligibleAnimateurMoveFilter.ChangeMoveFilter.class);
         return new ConstructionHeuristicPhaseConfig()
                 .withEntityPlacerConfig(new QueuedEntityPlacerConfig()

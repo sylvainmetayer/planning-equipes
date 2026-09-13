@@ -273,7 +273,7 @@ défaut : chaque fichier valide, joué par un test, et un nom qui dit sa taille)
 | `extreme-06` | exploitation 24 h/24 pendant une semaine | 0 dur en 3 s |
 | `extreme-07` | vacations d'une heure | 0 dur en 15 s |
 | `extreme-08` | un stand de 200 places | 0 dur en 7 s |
-| `extreme-09` | tout à la fois : 120 j, 400 stands, 1 000 animateurs | lecture 1 s, analyse 0,25 s, ~1 Go de tas ; 0 dur en 2 min 37 s par la construction échantillonnée (50 min 48 s avant) |
+| `extreme-09` | tout à la fois : 120 j, 400 stands, 1 000 animateurs | lecture 1 s, analyse 0,25 s, ~1 Go de tas ; 0 dur en 3 min 30 s par la construction échantillonnée (50 min 48 s avant) |
 | `extreme-10` à `15` | sans animateur, un siège pour 1 000, uniquement des mineurs, 2 000 contraintes ad hoc, stands jamais ouverts, sans créneau | voir `ScenarioExtremeDegenerateTest` |
 
 **Ce qui cédait en premier était l'heuristique de construction** : elle évalue
@@ -372,14 +372,17 @@ La première phase de `solverConfig.xml` évalue chaque siège contre chaque
 animateur. Au-delà de **15 millions de couples** sièges × animateurs,
 `LargeProblemConstruction` la remplace à la résolution par la même phase — sièges
 les plus difficiles d'abord, filtre d'éligibilité compris — qui n'évalue que
-**50 animateurs tirés au hasard** par siège. Mesures (même graine) :
+**50 animateurs éligibles tirés au hasard** par siège — la limite compte ce que
+le filtre garde, pas les tirages : comptée sur les tirages, un siège dont tout le
+tirage était écarté n'avait aucun mouvement, et Timefold termine alors la phase
+entière. Mesures (même graine) :
 
 | Problème | Construction | 0 dur en | medium à 300 s |
 | --- | --- | --- | --- |
 | `extreme-02` (6 480 sièges × 1 000) | exacte | 182 s | **−5 521** |
 | `extreme-02` | échantillonnée | 12 s | −5 938 |
 | `extreme-09` (41 370 sièges × 1 000) | exacte | 50 min 48 s | — |
-| `extreme-09` | échantillonnée | **2 min 37 s** | — |
+| `extreme-09` | échantillonnée | **3 min 30 s** | — |
 
 Sous le seuil, la construction exacte se rembourse : trois minutes de plus pour
 un premier plan meilleur, que la recherche locale ne rattrape pas en 300 s.
