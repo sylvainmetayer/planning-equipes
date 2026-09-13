@@ -368,7 +368,13 @@ public class Creneau {
         if (!(o instanceof Creneau creneau)) {
             return false;
         }
-        return Objects.equals(id, creneau.id);
+        // Two créneaux the repository has not numbered yet are two different
+        // timeslots, not the same one: the découpage, a day template or a
+        // grid preview each build theirs without an id. Comparing the null ids
+        // made every one of them equal, and every rule joining seats on their
+        // créneau — minor supervision, the ad hoc incompatibility — then read a
+        // whole event as a single timeslot.
+        return id != null && id.equals(creneau.id);
     }
 
     @Override

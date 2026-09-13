@@ -302,6 +302,22 @@ class CreneauTest {
         assertThat(stand.getOuvertures()).isEmpty();
     }
 
+    /**
+     * The découpage, a day template and a grid preview all build créneaux the
+     * repository has not numbered yet. Two of them are two timeslots: equal ids
+     * of {@code null} made them one, and every rule joining seats on their
+     * créneau read a whole sliced event as a single timeslot.
+     */
+    @Test
+    void deuxCreneauxSansIdNeSontPasLeMeme() {
+        Creneau matin = new Creneau(null, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(12, 0));
+        Creneau apresMidi = new Creneau(null, 1, JOUR, LocalTime.of(14, 0), LocalTime.of(18, 0));
+
+        assertThat(matin).isEqualTo(matin).isNotEqualTo(apresMidi);
+        assertThat(new Creneau(7L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(12, 0)))
+                .isEqualTo(new Creneau(7L, 2, JOUR.plusDays(1), LocalTime.of(10, 0), LocalTime.of(11, 0)));
+    }
+
     private static Stand fermer(LocalTime debut, LocalTime fin) {
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
         stand.setIndisponibilites(List.of(new IndisponibiliteStand(null, JOUR, debut, fin, null)));
