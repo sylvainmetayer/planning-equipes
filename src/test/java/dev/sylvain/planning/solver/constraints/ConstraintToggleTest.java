@@ -35,7 +35,7 @@ class ConstraintToggleTest extends ConstraintTestBase {
 
         verify("animateurDisponible")
                 .given(poste(standStrat, creneauMatin, indisponible))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
 
         verify("animateurDisponible")
                 .given(poste(standStrat, creneauMatin, indisponible), new ConstraintToggle("animateurDisponible"))
@@ -60,7 +60,7 @@ class ConstraintToggleTest extends ConstraintTestBase {
     void standReserveAuxMajeursPeutEtreDesactivee() {
         verify("standReserveAuxMajeurs")
                 .given(poste(standMajeurs, creneauMatin, mineurDebutant("M1")))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
 
         verify("standReserveAuxMajeurs")
                 .given(
@@ -146,6 +146,6 @@ class ConstraintToggleTest extends ConstraintTestBase {
                 .given(
                         poste(standMajeurs, creneauMatin, mineurDebutant("M1")),
                         new ConstraintToggle("appreciationIncompatible"))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 }
