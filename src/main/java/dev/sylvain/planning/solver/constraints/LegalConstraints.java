@@ -97,7 +97,7 @@ public final class LegalConstraints {
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getStand().isReserveMajeurs()
                         && poste.getAnimateur().isMineurOn(poste.getCreneau().getDate()))
-                .penalize(HardMediumSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD, poste -> ExclusionEligibilite.FORFAIT)
                 .asConstraint("standReserveAuxMajeurs");
     }
 
@@ -162,7 +162,7 @@ public final class LegalConstraints {
                         && poste.getCreneau()
                                 .chevaucheNuit(debutNuit(
                                         poste.getAnimateur(), poste.getCreneau().getDate())))
-                .penalize(HardMediumSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD, poste -> ExclusionEligibilite.FORFAIT)
                 .asConstraint("travailDeNuitInterditPourMineur");
     }
 
@@ -192,12 +192,15 @@ public final class LegalConstraints {
                                 constraintFactory.forEach(PosteAffectation.class), "dureeQuotidienneMaxMineur"),
                         Animateur::isMineurOn,
                         LegalConstraints::effectiveWorkMineurMinutes,
-                        LegalConstraints::dailyCapForMineur)
+                        LegalConstraints::dailyCapForMineur,
+                        ExclusionEligibilite.FORFAIT)
                 .asConstraint("dureeQuotidienneMaxMineur");
     }
 
     /**
-     * A day's measure against its cap, per animateur of one age bracket —
+     * A day's measure against its cap, per animateur of one age bracket, plus
+     * {@code forfait} per breach — {@link ExclusionEligibilite#FORFAIT} for the
+     * minors, whose cap the eligibility filter already names, 0 for adults —
      * the shape {@link #dureeQuotidienneMaxMajeur} and
      * {@link #dureeQuotidienneMaxMineur} share, written once (issue #392, A7).
      *
@@ -213,7 +216,8 @@ public final class LegalConstraints {
                     UniConstraintStream<PosteAffectation> postes,
                     BiPredicate<Animateur, LocalDate> bracket,
                     ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure,
-                    ToIntBiFunction<Animateur, LocalDate> cap) {
+                    ToIntBiFunction<Animateur, LocalDate> cap,
+                    int forfait) {
         return postes.filter(poste -> poste.getAnimateur() != null
                         && poste.getCreneau() != null
                         && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
@@ -227,7 +231,7 @@ public final class LegalConstraints {
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
                         (animateur, date, jour, parametres) ->
-                                measure.applyAsInt(jour, parametres) - cap.applyAsInt(animateur, date));
+                                forfait + measure.applyAsInt(jour, parametres) - cap.applyAsInt(animateur, date));
     }
 
     /** Night window start applicable to this minor on this date (art. L3163-1). */
@@ -321,7 +325,8 @@ public final class LegalConstraints {
                                 constraintFactory.forEach(PosteAffectation.class), "dureeQuotidienneMaxMajeur"),
                         Animateur::isMajeurOn,
                         LegalConstraints::effectiveWorkMajeurMinutes,
-                        (animateur, date) -> PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
+                        (animateur, date) -> PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES,
+                        0)
                 .asConstraint("dureeQuotidienneMaxMajeur");
     }
 
@@ -365,7 +370,8 @@ public final class LegalConstraints {
                                 constraintFactory.forEach(PosteAffectation.class), "travailContinuMaxMajeur"),
                         Animateur::isMajeurOn,
                         PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
-                        PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES)
+                        PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES,
+                        0)
                 .asConstraint("travailContinuMaxMajeur");
     }
 
@@ -396,7 +402,8 @@ public final class LegalConstraints {
                                 constraintFactory.forEach(PosteAffectation.class), "travailContinuMaxMineur"),
                         Animateur::isMineurOn,
                         PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
-                        PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
+                        PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES,
+                        ExclusionEligibilite.FORFAIT)
                 .asConstraint("travailContinuMaxMineur");
     }
 
@@ -414,7 +421,8 @@ public final class LegalConstraints {
                     UniConstraintStream<PosteAffectation> postes,
                     BiPredicate<Animateur, LocalDate> bracket,
                     int breakMinutes,
-                    int capMinutes) {
+                    int capMinutes,
+                    int forfait) {
         return postes.filter(poste -> poste.getAnimateur() != null
                         && horaireConnu(poste)
                         && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
@@ -427,7 +435,8 @@ public final class LegalConstraints {
                         !parametres.isPauseSurPoste() && longestSequenceMinutes(jour, breakMinutes) > capMinutes)
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, jour, parametres) -> longestSequenceMinutes(jour, breakMinutes) - capMinutes);
+                        (animateur, date, jour, parametres) ->
+                                forfait + longestSequenceMinutes(jour, breakMinutes) - capMinutes);
     }
 
     /**
@@ -575,7 +584,7 @@ public final class LegalConstraints {
                         && poste.getCreneau().getDate() != null
                         && poste.getAnimateur().isMineurOn(poste.getCreneau().getDate())
                         && JoursFeries.isFerieInFrance(poste.getCreneau().getDate()))
-                .penalize(HardMediumSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD, poste -> ExclusionEligibilite.FORFAIT)
                 .asConstraint("travailInterditJourFerieMineur");
     }
 

@@ -33,7 +33,7 @@ class AffectationConstraintsTest extends ConstraintTestBase {
         indisponible.setJoursIndisponibles(Set.of(D1));
         verify("animateurDisponible")
                 .given(poste(standStrat, creneauMatin, indisponible))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 
     @Test

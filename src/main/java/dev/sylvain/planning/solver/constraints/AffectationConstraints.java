@@ -49,7 +49,7 @@ public final class AffectationConstraints {
                             && poste.getCreneau().getDate() != null
                             && animateur.isIndisponibleOn(poste.getCreneau().getDate());
                 })
-                .penalize(HardMediumSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD, poste -> ExclusionEligibilite.FORFAIT)
                 .asConstraint("animateurDisponible");
     }
 

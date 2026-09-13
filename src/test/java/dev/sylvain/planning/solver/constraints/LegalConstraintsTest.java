@@ -21,7 +21,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
     void mineurSurStandReserveAuxMajeursEstPenalise() {
         verify("standReserveAuxMajeurs")
                 .given(poste(standMajeurs, creneauMatin, mineurDebutant("M1")))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 
     @Test
@@ -51,7 +51,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
     void mineurTravaillantLaNuitEstPenalise() {
         verify("travailDeNuitInterditPourMineur")
                 .given(poste(standStrat, creneauNuit, mineurDebutant("M1")))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 
     @Test
@@ -69,7 +69,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau soiree = creneau("J1-SOIREE", 1, D1, LocalTime.of(20, 0), LocalTime.of(22, 0));
         verify("travailDeNuitInterditPourMineur")
                 .given(poste(standStrat, soiree, under16DebutantMineur("M15")))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 
     @Test
@@ -87,7 +87,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau tardive = creneau("J1-TARDIVE", 1, D1, LocalTime.of(21, 0), LocalTime.of(23, 0));
         verify("travailDeNuitInterditPourMineur")
                 .given(poste(standStrat, tardive, mineurDebutant("M17")))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 
     @Test
@@ -96,7 +96,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau journee = longDay("J1-LONG", 1, D1);
         verify("dureeQuotidienneMaxMineur")
                 .given(poste(standStrat, journee, mineurDebutant("M1")), new ParametresLegaux())
-                .penalizesBy(60);
+                .penalizesBy(ExclusionEligibilite.FORFAIT + 60);
     }
 
     @Test
@@ -113,7 +113,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau journee = longDay("J1-LONG", 1, D1);
         verify("dureeQuotidienneMaxMineur")
                 .given(poste(standStrat, journee, under16DebutantMineur("M15")), new ParametresLegaux())
-                .penalizesBy(120);
+                .penalizesBy(ExclusionEligibilite.FORFAIT + 120);
     }
 
     @Test
@@ -379,7 +379,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         verify("travailContinuMaxMineur")
                 .given(poste(standStrat, aprem, mineur), new ParametresLegaux())
-                .penalizesBy(90);
+                .penalizesBy(ExclusionEligibilite.FORFAIT + 90);
     }
 
     @Test
@@ -411,7 +411,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau suite = creneau("J1-1320-1620", 1, D1, LocalTime.of(13, 20), LocalTime.of(16, 20));
         verify("travailContinuMaxMineur")
                 .given(poste(standStrat, debut, mineur), poste(standStrat, suite, mineur), new ParametresLegaux())
-                .penalizesBy(170);
+                .penalizesBy(ExclusionEligibilite.FORFAIT + 170);
     }
 
     @Test
@@ -506,7 +506,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 creneau("FETE-NAT", 7, java.time.LocalDate.of(2026, 7, 14), LocalTime.of(11, 0), LocalTime.of(15, 0));
         verify("travailInterditJourFerieMineur")
                 .given(poste(standStrat, quatorzeJuillet, mineurDebutant("M1")))
-                .penalizesBy(1);
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 
     @Test
