@@ -680,6 +680,18 @@ borne de `StaffingAnalyzer`, démontrée dans sa javadoc. `StaffingResource` ne
 lui transmet les fenêtres que si la règle est active : une règle que le solveur
 n'a pas à honorer ne doit pas relever le nombre d'animateurs à recruter.
 
+Cette borne compte deux choses, et la seconde est ce qu'une grille écrite à la
+main lui oppose le plus souvent (issue #482). Un **siège qui couvre toute la
+fenêtre** ne laisse à son titulaire aucun trou pour manger : il ne peut donc
+pas travailler des deux côtés. Un siège du soir 20 h-minuit contre une fenêtre
+20 h-21 h interdit ainsi l'après-midi à ses titulaires, et une journée de 138
+sièges 14 h-20 h suivie de 27 sièges 20 h-minuit demande **165** personnes
+distinctes, pas les 96 que la seule grille d'instants démontre. Le cas
+symétrique se lit pareil : un siège 14 h-20 h 30 ne laisse que trente minutes
+d'une fenêtre qui en exige soixante, et ferme la soirée à ses titulaires. Un
+siège qui déborde des **deux** côtés, lui, ne relève rien : c'est la grille
+infaisable ci-dessus, qu'aucun effectif ne sauve.
+
 L'écran **Problèmes** n'a rien de spécifique à faire : la règle étant dure, ses
 écarts remontent déjà par `ConstraintCatalog.NOMS_DURS`.
 

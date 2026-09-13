@@ -392,7 +392,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   resource**: MCP and REST are two callers of the same rules, and a tool that
   injects a resource can only read a business outcome through a JAX-RS
   `Response` it never actually received over HTTP
-  (`LayeringStructuralTest`). Three hard rules, all enforced over every tool so
+  (`LayeringStructuralTest`). Four hard rules, all enforced over every tool so
   a new one cannot opt out by omission:
   1. animateur nom/prénom/dateNaissance never leave over MCP (issue #107) —
      return dedicated view records, never domain objects, and run violation
@@ -410,6 +410,14 @@ Single Quarkus service, no separate solver microservice. Package root:
      `openWorldHint = true` — they are enumerated in
      `McpAnnotationsStructurelleTest`, which also derives the other hints from
      the tool's own name.
+  4. a tool class carries `@RefusMetier`, so a refusal from the domain comes
+     back as a tool result in error carrying its sentence instead of
+     « Internal error » (issue #529) — `RefusMetierInterceptor` is the MCP
+     counterpart of `api/BusinessErrorMapper` and translates `BusinessError`
+     and nothing else, a bug keeping its generic answer as it keeps its 500.
+     The message travels as-is, so **no `BusinessError` may name a person**:
+     designate an animateur by id, never by nom/prénom
+     (`McpRefusMetierStructurelleTest` holds both halves).
 
   See `docs/mcp.md`.
 - **`service/backup/` is the only place the application writes to disk**: a

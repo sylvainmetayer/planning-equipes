@@ -14,6 +14,7 @@ import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.Instant;
@@ -133,7 +134,8 @@ class ReferentielMcpToolsTest {
     void creatingAnAnimateurWithoutBirthDateIsRefusedNamingTheDate() {
         assertThatThrownBy(() -> animateurTools.creer_animateur(
                         "A-MCP-SANS-DATE", null, "Ada", "Lovelace", null, null, null, null, null))
-                .isInstanceOf(BusinessError.Invalid.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("date de naissance");
 
         assertThat(referenceDataService.listAnimateurs())
@@ -145,7 +147,8 @@ class ReferentielMcpToolsTest {
     void creatingAnAnimateurWithBlankNamesIsRefusedOnceNamingEveryMissingField() {
         assertThatThrownBy(() -> animateurTools.creer_animateur(
                         "A-MCP-SANS-NOM", "1990-01-01", " ", "", null, null, null, null, null))
-                .isInstanceOf(BusinessError.Invalid.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("prénom")
                 .hasMessageContaining("nom")
                 .hasMessageNotContaining("date de naissance");
@@ -290,7 +293,7 @@ class ReferentielMcpToolsTest {
                         null,
                         null,
                         null))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("effectifMin");
 
         assertThat(referenceDataService.listTypologies())
@@ -328,7 +331,7 @@ class ReferentielMcpToolsTest {
                         null,
                         null,
                         null))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("TYPO-INEXISTANTE");
     }
 
@@ -412,7 +415,7 @@ class ReferentielMcpToolsTest {
     @Test
     void supprimerDesCreneauxSansFiltreEstRefuse() {
         assertThatThrownBy(() -> creneauTools.supprimer_creneaux(null, null, null, null, null))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("tous=true");
     }
 
@@ -422,14 +425,14 @@ class ReferentielMcpToolsTest {
         assertThat(creneauTools.valider_creneaux(null, null).mode())
                 .isEqualTo(referenceDataService.getParametresDecoupage().getModeGrille());
         assertThatThrownBy(() -> creneauTools.valider_creneaux("BIDULE", null))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("AMPLITUDES");
     }
 
     @Test
     void uneDateMalFormeeRemonteUnMessageExploitable() {
         assertThatThrownBy(() -> creneauTools.creer_creneau("18/07/2026", "09:00", "13:00", null, null))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("AAAA-MM-JJ");
     }
 
@@ -437,7 +440,7 @@ class ReferentielMcpToolsTest {
     void unNiveauDEffortInconnuListeLesValeursPossibles() {
         assertThatThrownBy(() -> standTools.creer_stand(
                         "STAND-MCP-2", "Stand", null, 1, 1, null, null, "TRANQUILLE", null, null))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("NORMAL");
     }
 
@@ -490,7 +493,7 @@ class ReferentielMcpToolsTest {
         try {
             assertThatThrownBy(() -> standTools.ajouter_horaire_stand(
                             "STAND-MCP-EFF-0", "OUVERTURE", "10:00-12:00@0", null, null, null, null, null, null, null))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(ToolCallException.class)
                     .hasMessageContaining("au moins 1");
             assertThatThrownBy(() -> standTools.ajouter_horaire_stand(
                             "STAND-MCP-EFF-0",
@@ -503,11 +506,11 @@ class ReferentielMcpToolsTest {
                             null,
                             null,
                             null))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(ToolCallException.class)
                     .hasMessageContaining("@N");
             assertThatThrownBy(() -> standTools.ajouter_ouverture_stand(
                             "STAND-MCP-EFF-0", "2026-07-18", "14:00", null, null, 0, null))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(ToolCallException.class)
                     .hasMessageContaining("au moins 1");
             // Nothing was written by the refused calls.
             assertThat(standTools.consulter_stand("STAND-MCP-EFF-0", null).horaires())

@@ -21,6 +21,13 @@ import java.time.Instant;
  * switches over this sealed hierarchy exhaustively, so a new kind of refusal
  * does not compile until someone says what it answers.</p>
  *
+ * <p>MCP reads the same distinction through
+ * {@code mcp/RefusMetierInterceptor}: a refusal comes back as a tool result in
+ * error carrying this message, anything else as « Internal error » (issue
+ * #529). The message therefore leaves the building, and on that side it may
+ * not name anybody: designate an animateur by id, never by nom/prénom
+ * (issue #107, held by {@code McpRefusMetierStructurelleTest}).</p>
+ *
  * <p>It extends {@link IllegalArgumentException} deliberately: that is what
  * these already were, so every existing {@code catch} and every test
  * assertion keeps holding, and a plain {@code IllegalArgumentException} — one

@@ -25,6 +25,7 @@ import java.util.List;
  * carries no personal data of its own.</p>
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class VerrouillageMcpTools {

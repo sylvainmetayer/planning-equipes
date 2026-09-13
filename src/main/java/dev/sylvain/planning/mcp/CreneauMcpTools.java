@@ -33,6 +33,7 @@ import java.util.NoSuchElementException;
  * and expensive to spot (see {@link CreneauGridService}).</p>
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class CreneauMcpTools {

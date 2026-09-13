@@ -49,6 +49,7 @@ import java.util.function.Supplier;
  * would have solved the edition as it stood before its own edits.</p>
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class SolveurMcpTools {

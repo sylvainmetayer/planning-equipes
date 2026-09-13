@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
  * the last analysis) plus activation/désactivation.
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class ContrainteMcpTools {

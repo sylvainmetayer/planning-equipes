@@ -38,6 +38,7 @@ import java.util.List;
  * never who.</p>
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class DiagnosticMcpTools {

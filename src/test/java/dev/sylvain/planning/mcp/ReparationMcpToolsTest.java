@@ -10,6 +10,7 @@ import dev.sylvain.planning.mcp.VerrouillageMcpTools.VerrouillageView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.util.Set;
@@ -95,7 +96,8 @@ class ReparationMcpToolsTest {
                 verrouillageTools.verrouiller("ANIMATEUR", poste.animateurId(), null, null, null, null, null);
 
         assertThatThrownBy(() -> planningTools.affecter_poste(poste.posteId(), null, null))
-                .isInstanceOf(BusinessError.Invalid.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("verrouillé");
 
         verrouillageTools.deverrouiller(verrou.id(), null);

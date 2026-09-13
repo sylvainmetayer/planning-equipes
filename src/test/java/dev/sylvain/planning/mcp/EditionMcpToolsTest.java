@@ -8,6 +8,7 @@ import dev.sylvain.planning.mcp.EditionMcpTools.EditionView;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
 import dev.sylvain.planning.service.edition.EtatEditionView.Statut;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkiverse.mcp.server.ToolManager;
 import io.quarkiverse.mcp.server.ToolManager.ToolArgument;
 import io.quarkiverse.mcp.server.ToolManager.ToolInfo;
@@ -79,7 +80,7 @@ class EditionMcpToolsTest {
     @Test
     void uneEditionInconnueEchoueAuLieuDeRetomberSurLaCourante() {
         assertThatThrownBy(() -> creneauTools.lister_creneaux("edition-qui-nexiste-pas"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("Édition inconnue")
                 .hasMessageContaining("lister_editions");
     }
@@ -208,6 +209,6 @@ class EditionMcpToolsTest {
     void supprimerLEditionCouranteEstRefuse() {
         String courante = editionTools.edition_courante().id();
 
-        assertThatThrownBy(() -> editionTools.supprimer_edition(courante)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> editionTools.supprimer_edition(courante)).isInstanceOf(ToolCallException.class);
     }
 }

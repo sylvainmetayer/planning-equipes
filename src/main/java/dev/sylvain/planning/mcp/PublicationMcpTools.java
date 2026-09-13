@@ -1,6 +1,5 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
@@ -49,6 +48,7 @@ import java.util.List;
  * other tools take as input anyway.</p>
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class PublicationMcpTools {
@@ -151,20 +151,12 @@ public class PublicationMcpTools {
     EnvoiView envoyer_planning_animateur(
             @ToolArg(description = "Id de l'animateur") String animateurId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        PlanningDeliveryService.DeliveryReport compteRendu;
-        try {
-            compteRendu = deliveryService.sendToOneAnimateur(animateurId);
-        } catch (BusinessError.Invalid e) {
-            // The service words one of its two refusals for a screen that
-            // already shows the fiche: « Prénom Nom n'a pas d'adresse e-mail ».
-            // That sentence carries no id, so nothing could anonymise it after
-            // the fact — it is replaced, not rewritten. The privacy rule holds
-            // on the failure path too.
-            throw new BusinessError.Invalid(
-                    planPublieService.jamaisPublie()
-                            ? "Le planning n'a pas encore été publié : il n'y a rien à renvoyer."
-                            : "L'animateur " + animateurId + " n'a pas d'adresse e-mail sur sa fiche.");
-        }
+        // No try/catch around the refusals any more: the service words them by
+        // id, and @RefusMetier carries them to the caller for every tool of
+        // the package (issue #529). This one used to rewrite « Prénom Nom n'a
+        // pas d'adresse » by hand, which is exactly the per-tool workaround a
+        // transverse treatment makes unnecessary.
+        PlanningDeliveryService.DeliveryReport compteRendu = deliveryService.sendToOneAnimateur(animateurId);
         // echecs() carries the address it could not reach; the id is what the
         // caller can act on, and the log holds the rest.
         return new EnvoiView(

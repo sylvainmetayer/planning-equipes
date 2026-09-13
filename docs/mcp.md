@@ -106,13 +106,50 @@ qui vient d'afficher la donnée.
 | `lister_animateurs`, `lister_stands` | acceptent une `limite` mais ne plafonnent rien par défaut | leur taille est celle du référentiel, pas celle du planning : l'appelant qui les demande les veut en général en entier |
 | `diagnostiquer_plan` | lève une erreur sans planning persisté, là où `POST /api/constraints/diagnostic` renvoie la vue vide | l'écran a un état vide permanent qui dit déjà « aucune analyse » ; une structure vide rendue à un assistant se lit comme « aucune contrainte en défaut » |
 | `publier_planning`, `configurer_collecte_disponibilites` | comptent les personnes sans adresse et les échecs d'envoi, là où le REST les **nomme** | ces listes existent pour un écran qui affiche déjà les fiches ; `lister_destinataires_publication` redonne le détail par id, qui est ce que les autres outils prennent en entrée |
-| `envoyer_planning_animateur` | réécrit le refus « *Prénom Nom* n'a pas d'adresse » en « l'animateur *id* n'a pas d'adresse » | la phrase du service ne porte aucun id : rien ne pourrait l'anonymiser après coup, elle est donc remplacée, pas réécrite. La règle de confidentialité vaut aussi sur le chemin d'erreur |
 
 **La question « où ça coince ? » ne passe pas par la liste.**
 `synthese_affectations` répond en quelques dizaines de lignes — postes pourvus
 au total, par stand et par jour — là où `lister_affectations` dépenserait le
 contexte entier de l'assistant avant qu'il ne voie qu'un stand est en
 sous-effectif le samedi.
+
+## Un refus métier revient comme refus, pas comme « Internal error »
+
+Un `BusinessError` levé par le domaine repartait en erreur JSON-RPC générique
+(`{"code": -32603, "message": "Internal error"}`) : la phrase qui dit ce qui a
+été refusé — et souvent comment le corriger — était perdue sur les 132 outils.
+Un assistant ne pouvait ni corriger son appel, ni distinguer « tu as mal
+saisi » de « le serveur est cassé » : il réessayait à l'identique.
+
+`RefusMetierInterceptor` est le pendant MCP de `api/BusinessErrorMapper`, et il
+suit la même règle : **seul un refus délibéré passe par là**. Un `BusinessError`
+revient comme résultat d'outil en erreur (`isError`) portant sa phrase ;
+n'importe quoi d'autre — un `IllegalArgumentException` involontaire, une panne
+de base — garde son « Internal error » et son alerte, exactement comme le REST
+garde son 500. Le type qui distingue les deux est ce qui rend la distinction
+possible des deux côtés.
+
+Il est lié aux classes d'outils par `@RefusMetier`, une troisième annotation à
+côté de `@EditionCiblee` et `@Journalise` plutôt qu'un ajout à l'une d'elles :
+ce sont trois questions différentes, et `SauvegardeMcpTools` ne porte pas
+`@EditionCiblee`. Il s'applique **en dehors** de `EditionCibleeInterceptor`,
+si bien que le refus « Édition inconnue « X ». Éditions disponibles : … » — levé
+avant même le corps de l'outil — arrive lui aussi.
+`McpRefusMetierStructurelleTest` échoue sur toute classe d'outils qui oublie le
+binding.
+
+**La phrase traverse telle quelle, et c'est seulement sûr parce qu'aucun refus
+ne nomme quelqu'un.** La faire passer par `AnonymisationViolations` était
+l'autre piste : cette réécriture vise la forme « Prénom Nom (id) » des lignes
+d'écart, et un refus comme « Deux horaires de même portée (MONDAY,TUESDAY)… »
+la déclenche par accident. La règle est donc tenue à la source —
+`McpRefusMetierStructurelleTest` échoue sur un `BusinessError` construit à
+partir du nom, du prénom, de la date de naissance ou de l'adresse d'un
+animateur. Le seul refus qui nommait une personne, « *Prénom Nom* n'a pas
+d'adresse e-mail sur sa fiche », est désormais écrit par id dans
+`PlanningDeliveryService` : l'écran ne perd rien — c'est la fiche de cet
+animateur qui porte le bouton — et `envoyer_planning_animateur` n'a plus à
+remplacer la phrase à la main, ce que ce traitement transverse rend inutile.
 
 ## L'édition se désigne argument par argument
 

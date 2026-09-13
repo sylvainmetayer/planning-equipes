@@ -563,6 +563,96 @@ class StaffingAnalyzerTest {
         assertThat(summary.borneRetenue()).isNotEqualTo(BorneRetenue.COUPURE_REPAS);
     }
 
+    // --- Coupure repas: the seats that deny the break (issue #482) --------
+
+    private static final List<FenetreRepas> SOIR =
+            List.of(new FenetreRepas(FenetreRepas.SOIR, LocalTime.of(20, 0), LocalTime.of(21, 0), 60));
+
+    /**
+     * The grid of {@code demo-festival-2026} on 10/07, the case the grid bound
+     * read far too low: an afternoon of 138 seats 14:00-20:00, an evening of
+     * 27 seats 20:00-24:00, and a 20:00-21:00 window owing 60 minutes.
+     *
+     * <p>An evening seat covers the whole window and runs past it, so its
+     * holder can never take the break and therefore never worked the
+     * afternoon: the two groups are disjoint and the day needs 165 people. The
+     * grid alone gave {@code (138 + 27 + 27) / 2 = 96}, under the 153 the event
+     * is staffed with, and the organiser only met the wall at solve time.</p>
+     */
+    @Test
+    void anEveningSeatSpanningTheWholeWindowBarsItsHolderFromTheAfternoon() {
+        Creneau apresMidi = creneau(1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Creneau soiree = creneau(2, LocalTime.of(20, 0), LocalTime.MIDNIGHT);
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 138), apresMidi, 138));
+        postes.addAll(postes(stand("B", 27), soiree, 27));
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0, List.of(), SOIR);
+
+        assertThat(summary.picSimultane()).isEqualTo(138);
+        assertThat(summary.picRepas()).isEqualTo(165);
+        assertThat(summary.minimumTotal()).isEqualTo(165);
+        assertThat(summary.borneRetenue()).isEqualTo(BorneRetenue.COUPURE_REPAS);
+    }
+
+    /**
+     * The mirror case: the seat that blocks the break is the one <em>before</em>
+     * the window. Ten seats 14:00-20:30 leave their holders half an hour of a
+     * window owing an hour, so none of them can hold one of the four evening
+     * seats: 14 people, where the grid bound read 12.
+     */
+    @Test
+    void anAfternoonSeatRunningIntoTheWindowBarsItsHolderFromTheEvening() {
+        Creneau apresMidi = creneau(1, LocalTime.of(14, 0), LocalTime.of(20, 30));
+        Creneau soiree = creneau(2, LocalTime.of(21, 0), LocalTime.MIDNIGHT);
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 10), apresMidi, 10));
+        postes.addAll(postes(stand("B", 4), soiree, 4));
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0, List.of(), SOIR);
+
+        assertThat(summary.picSimultane()).isEqualTo(10);
+        assertThat(summary.picRepas()).isEqualTo(14);
+        assertThat(summary.borneRetenue()).isEqualTo(BorneRetenue.COUPURE_REPAS);
+    }
+
+    /**
+     * An evening seat that leaves the window entirely free inflates nothing:
+     * 21:00-24:00 against a 20:00-21:00 window owing 60 minutes is exactly the
+     * break, and its holder may well have worked the afternoon.
+     */
+    @Test
+    void aSeatStartingWhenTheWindowClosesInflatesNothing() {
+        Creneau apresMidi = creneau(1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Creneau soiree = creneau(2, LocalTime.of(21, 0), LocalTime.MIDNIGHT);
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 138), apresMidi, 138));
+        postes.addAll(postes(stand("B", 27), soiree, 27));
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0, List.of(), SOIR);
+
+        assertThat(summary.picRepas()).isLessThanOrEqualTo(summary.picSimultane());
+        assertThat(summary.borneRetenue()).isNotEqualTo(BorneRetenue.COUPURE_REPAS);
+    }
+
+    /**
+     * A seat straddling the window on both sides is the unsatisfiable grid
+     * {@code RepasConstraints} documents — its own holder owes a break the seat
+     * forbids, and no headcount ever staffs it. The bound stays what the grid
+     * alone proves rather than counting those seats on both sides at once.
+     */
+    @Test
+    void aSeatStraddlingBothSidesIsNotCountedTwice() {
+        Creneau soiree = creneau(1, LocalTime.of(19, 0), LocalTime.of(23, 0));
+
+        StaffingSummary summary =
+                analyzer.analyze(postes(stand("A", 5), soiree, 5), List.of(), TYPOLOGIES, 48 * 60, 0, List.of(), SOIR);
+
+        // (5 before + 5 inside + 5 after) / 2, and not the 10 that counting the
+        // same five seats on either side of the window would give.
+        assertThat(summary.picRepas()).isEqualTo(8);
+    }
+
     /**
      * The rule switched off, no window reaches the analyzer, and the floor is
      * exactly what it was: a rule the solver is not asked to honour must not

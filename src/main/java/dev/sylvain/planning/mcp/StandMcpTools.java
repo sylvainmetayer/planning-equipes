@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
  * data-loss bug, not a feature.
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class StandMcpTools {

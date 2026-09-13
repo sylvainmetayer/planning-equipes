@@ -8,6 +8,7 @@ import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -74,7 +75,8 @@ class SolveurMcpToolsQueueTest {
         JobMcpView premier = solveurTools.lancer_solveur(4L, null, null, null);
 
         assertThatThrownBy(() -> solveurTools.lancer_solveur(1L, false, null, null))
-                .isInstanceOf(BusinessError.Conflict.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining(premier.id())
                 .hasMessageContaining("enFile");
 
@@ -121,7 +123,8 @@ class SolveurMcpToolsQueueTest {
     @Test
     void unJourMalFormeDansLePerimetreEstRefuseAvantToutLancement() {
         assertThatThrownBy(() -> solveurTools.resoudre_incremental(null, List.of("15/08/2026"), null, 1L, null, null))
-                .isInstanceOf(BusinessError.Invalid.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("AAAA-MM-JJ");
         assertThat(solverJobService.findActive()).isEmpty();
     }

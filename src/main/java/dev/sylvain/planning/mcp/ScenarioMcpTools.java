@@ -37,6 +37,7 @@ import java.util.List;
  * {@code DatabaseResource}, see docs/mcp.md.
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class ScenarioMcpTools {

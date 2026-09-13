@@ -53,6 +53,7 @@ import java.util.TreeMap;
  * animateurs as "Prénom Nom (id)" for the web UI, which must not leak here.
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class PlanningMcpTools {

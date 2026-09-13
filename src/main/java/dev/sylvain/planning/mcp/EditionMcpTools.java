@@ -42,6 +42,7 @@ import java.util.stream.Stream;
  * plain argument, resolved by hand — the interceptor only reads
  * {@code @EditionArg}, so it leaves them alone.</p>
  */
+@RefusMetier
 @Journalise
 @EditionCiblee
 @ApplicationScoped

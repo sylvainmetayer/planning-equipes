@@ -36,6 +36,7 @@ import java.util.Set;
  * Omitted arguments therefore keep their persisted value.
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class AnimateurMcpTools {

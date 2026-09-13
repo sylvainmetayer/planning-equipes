@@ -11,6 +11,7 @@ import dev.sylvain.planning.mcp.VerrouillageMcpTools.VerrouillageView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.util.Set;
@@ -134,14 +135,16 @@ class PlanificationMcpToolsTest {
     void verrouillerUneCibleInconnueEstRefuse() {
         assertThatThrownBy(() ->
                         verrouillageTools.verrouiller("STAND", null, "STAND-QUI-NEXISTE-PAS", null, null, null, null))
-                .isInstanceOf(BusinessError.Invalid.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("STAND-QUI-NEXISTE-PAS");
     }
 
     @Test
     void unTypeDeVerrouillageInconnuEnumereLesTypesPossibles() {
         assertThatThrownBy(() -> verrouillageTools.verrouiller("JOURNEE", null, null, null, "2026-08-15", null, null))
-                .isInstanceOf(BusinessError.Invalid.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("ANIMATEUR_CRENEAU");
     }
 
@@ -151,14 +154,16 @@ class PlanificationMcpToolsTest {
         scenarioTools.reinitialiser_donnees(null);
 
         assertThatThrownBy(() -> instantaneTools.capturer_instantane("Sur du vide", null))
-                .isInstanceOf(BusinessError.Conflict.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining("résolution");
     }
 
     @Test
     void restaurerUnInstantaneInconnuEstRefuse() {
         assertThatThrownBy(() -> instantaneTools.restaurer_instantane(999_999L, null))
-                .isInstanceOf(BusinessError.NotFound.class);
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.NotFound.class);
     }
 
     private InstantaneView solveAndCapture() throws InterruptedException {

@@ -33,6 +33,7 @@ import java.util.List;
  * thousands of seats.</p>
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class InstantaneMcpTools {

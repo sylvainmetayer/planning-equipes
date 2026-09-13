@@ -28,6 +28,7 @@ import java.util.Set;
  * the screen; a tool never re-implements a resource.
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class JourneeTypeMcpTools {

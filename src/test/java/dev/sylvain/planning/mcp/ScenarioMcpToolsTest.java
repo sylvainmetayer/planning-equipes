@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.service.BusinessError;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -31,14 +32,16 @@ class ScenarioMcpToolsTest {
     @Test
     void unYamlIllisibleRemonteUneErreurMetier() {
         assertThatThrownBy(() -> scenarioTools.importer_scenario_yaml("festival: [pas fermé", null))
-                .isInstanceOf(BusinessError.Invalid.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("YAML invalide");
     }
 
     @Test
     void unFichierVideRemonteUneErreurMetier() {
         assertThatThrownBy(() -> scenarioTools.importer_scenario_yaml("", null))
-                .isInstanceOf(BusinessError.Invalid.class);
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class);
     }
 
     /**

@@ -19,6 +19,7 @@ import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
@@ -201,14 +202,16 @@ class DiagnosticMcpToolsTest {
     @Test
     void unPoidsNulOuNegatifEstRefuse() {
         assertThatThrownBy(() -> contrainteTools.modifier_poids_contrainte(CONTRAINTE, 0, null))
-                .isInstanceOf(BusinessError.Invalid.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("poids");
     }
 
     @Test
     void unePonderationSurUneContrainteInconnueEstRefusee() {
         assertThatThrownBy(() -> contrainteTools.modifier_poids_contrainte("contrainteQuiNexistePas", 2, null))
-                .isInstanceOf(BusinessError.NotFound.class);
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.NotFound.class);
     }
 
     @Test

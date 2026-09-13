@@ -33,6 +33,7 @@ import java.util.List;
  * through {@link AnonymisationViolations} like everywhere else.</p>
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class EchangeMcpTools {

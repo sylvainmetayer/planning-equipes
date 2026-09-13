@@ -986,6 +986,40 @@ public class StaffingAnalyzer {
      * same day as 08:00-12:00 and 14:00-20:00 instead and it yields 7, below
      * the peak: ten people cover it by eating from noon to two, and nothing is
      * inflated.</p>
+     *
+     * <h3>The seats that deny the break outright (issue #482)</h3>
+     *
+     * <p>That count is blind to a seat which, on its own, leaves its holder no
+     * room to eat — and a hand-written grid is full of them. Call a seat
+     * <em>blocking</em> when the part of {@code F} it does not cover holds no
+     * free stretch of {@code D}. Whoever holds one cannot take the break, so
+     * by {@code CoupureRepas} they cannot work both sides of the window.</p>
+     *
+     * <ol>
+     * <li>Let {@code A} be the blocking seats that start at {@code W1} or
+     * later and end after {@code W2}. Their holders work after the window, so
+     * none of them works before {@code W1}, so none holds a seat live at any
+     * {@code u < W1}: {@code N >= n(u) + |A|}, the seats of {@code A} being
+     * pairwise concurrent — each covers the instant {@code W1 + D − 1}.</li>
+     * <li>Symmetrically, let {@code B} be the blocking seats that start before
+     * {@code W1} and end at {@code W2} or earlier. Their holders work before
+     * the window, so none works at any {@code v >= W2}:
+     * {@code N >= n(v) + |B|}.</li>
+     * </ol>
+     *
+     * <p>A blocking seat straddling the window on <em>both</em> sides is left
+     * out of {@code A} and {@code B} on purpose: its own holder already owes a
+     * break the seat forbids, so no headcount ever staffs that grid — it is
+     * the unsatisfiable grid {@code RepasConstraints} documents, and a floor
+     * has nothing to say about it.</p>
+     *
+     * <p>Worked example, the one the bound used to miss: an afternoon of 138
+     * seats 14:00-20:00, an evening of 27 seats 20:00-24:00, a 20:00-21:00
+     * window owing 60 minutes. The grid gives {@code (138 + 27 + 27) / 2 = 96}
+     * because it counts the 27 evening holders as merely busy at 20:00; they
+     * are in fact barred from the afternoon, and {@code n(u) + |A| = 138 + 27}
+     * gives the true 165.</p>
+     *
      */
     private static int picRepas(Collection<Siege> sieges, FenetreRepas fenetre) {
         int ouverture = fenetre.debutMinutes();
@@ -1040,7 +1074,29 @@ public class StaffingAnalyzer {
         for (int occupe : occupation) {
             total += occupe;
         }
-        return Math.ceilDiv(total, pas + 1);
+        int parLaGrille = Math.ceilDiv(total, pas + 1);
+
+        // The seats that deny the break to whoever holds them, split by the
+        // side of the window their holder is then barred from.
+        List<Siege> bloquantsApres = new ArrayList<>();
+        List<Siege> bloquantsAvant = new ArrayList<>();
+        for (Siege siege : sieges) {
+            if (siege.debut() >= ouverture
+                    && siege.fin() > fermeture
+                    && Math.min(siege.debut(), fermeture) - ouverture < requis) {
+                bloquantsApres.add(siege);
+            }
+            if (siege.fin() <= fermeture
+                    && siege.debut() < ouverture
+                    && fermeture - Math.max(siege.fin(), ouverture) < requis) {
+                bloquantsAvant.add(siege);
+            }
+        }
+        // pic() rather than the raw count: it is the number of distinct people
+        // the group really needs, and it stays exact on the degenerate window
+        // shorter than its own break, where two blocking seats may follow one
+        // another instead of overlapping.
+        return Math.max(parLaGrille, Math.max(avant + pic(bloquantsApres, 0), apres + pic(bloquantsAvant, 0)));
     }
 
     private static List<Siege> sieges(List<PosteAffectation> postes) {

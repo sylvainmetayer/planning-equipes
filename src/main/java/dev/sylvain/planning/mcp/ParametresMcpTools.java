@@ -31,6 +31,7 @@ import java.util.NoSuchElementException;
  * only, like everything else animateur-related in this package.
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class ParametresMcpTools {

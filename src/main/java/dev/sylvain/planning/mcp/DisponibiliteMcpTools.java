@@ -32,6 +32,7 @@ import java.util.List;
  * could not reach.</p>
  */
 @EditionCiblee
+@RefusMetier
 @Journalise
 @ApplicationScoped
 public class DisponibiliteMcpTools {

@@ -68,7 +68,11 @@ public class PlanningDeliveryService {
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.NotFound("Animateur inconnu : " + animateurId));
         if (!hasAddress(animateur)) {
-            throw new BusinessError.Invalid(animateur.nomAffiche() + " n'a pas d'adresse e-mail sur sa fiche");
+            // By id, not by name: a refusal now travels to whoever asked, MCP
+            // included, and no BusinessError may name a person (issue #529).
+            // The screen loses nothing — it is the fiche of that very
+            // animateur that carries the button.
+            throw new BusinessError.Invalid("L'animateur " + animateurId + " n'a pas d'adresse e-mail sur sa fiche.");
         }
         try {
             send(planning, animateur);
