@@ -112,6 +112,10 @@ jobs:
       # run aux quatre classes concernées, le reste de la suite étant déjà
       # couvert par le workflow Tests.
       #
+      # ScenarioLadderLargeTest joue les barreaux 16 à 25 de la gamme de
+      # scénarios (src/test/resources/scenarios/gamme) : dimensionnés avec de
+      # la marge, ils convergent chacun en moins d'une minute.
+      #
       # Les deux Festival* portent sur des données réelles anonymisées, donc
       # sur des stands à horaires récurrents : la canicule découpée converge
       # en ~10 s, l'hivernal sur la grille de l'organisateur en ~80 s. Leur
@@ -119,7 +123,7 @@ jobs:
       - name: Run the large-scenario tests
         run: >-
           ./mvnw -B --no-transfer-progress test -Pscenario-tests
-          -Dtest='PlanningServiceScenarioCompletTest,PlanningServiceScenarioContinuTest,PlanningServiceScenarioFestivalRealisteTest,PlanningServiceScenarioFestivalHivernalTest'
+          -Dtest='PlanningServiceScenarioCompletTest,PlanningServiceScenarioContinuTest,PlanningServiceScenarioFestivalRealisteTest,PlanningServiceScenarioFestivalHivernalTest,ScenarioLadderLargeTest'
 
       - name: Upload test reports
         if: always()
