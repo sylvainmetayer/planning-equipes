@@ -48,6 +48,7 @@ import { DateMockIndicator } from '../shared/date-mock-indicator';
 import { ScrollHint } from '../shared/scroll-hint';
 import { SolverRunningIndicator } from '../shared/solver-running-indicator';
 import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
+import { VersionFooter } from '../shared/version-footer';
 import { BRANDING } from '../core/branding';
 import { MascotDialog } from './mascot-dialog';
 import { NavGroup, buildNavGroups, visibleNavGroups } from './nav-groups';
@@ -78,6 +79,7 @@ import { NavGroup, buildNavGroups, visibleNavGroups } from './nav-groups';
     ScrollHint,
     SolverRunningIndicator,
     EditionActuelleBar,
+    VersionFooter,
   ],
   templateUrl: './admin-shell.html',
   styleUrl: './admin-shell.css',

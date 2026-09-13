@@ -22,6 +22,7 @@ import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../../core/locale';
 import { errorMessage } from '../../core/error-message';
 import { BrandLogo } from '../../shared/brand-logo';
+import { VersionFooter } from '../../shared/version-footer';
 
 /**
  * Standalone layout of the espace animateur (issue #165): a minimal toolbar
@@ -37,6 +38,7 @@ import { BrandLogo } from '../../shared/brand-logo';
     RouterLink,
     RouterLinkActive,
     BrandLogo,
+    VersionFooter,
     FormsModule,
     MatToolbarModule,
     MatButtonModule,

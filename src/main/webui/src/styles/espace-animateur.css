@@ -65,6 +65,15 @@
   flex: 1 1 auto;
 }
 
+/* A column over the full height: the version footer then sits at the foot of
+   the screen on the short states of this espace — loading, access code,
+   invalid link — instead of under a lone card. */
+app-espace-animateur-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .espace-page {
   max-width: 56rem;
   margin: 0 auto;

@@ -347,3 +347,33 @@ tr.mat-mdc-row.row-selected {
 .app-toolbar-spacer {
   flex: 1 1 auto;
 }
+
+/* The running version, at the foot of both shells. Muted, small and centred:
+   it answers « which version am I on? » and never competes with the page.
+
+   `display: contents` on the component host lets the <footer> itself be the
+   flex item the two shells lay out, the way the brand logo already does with
+   its image (styles/branding.css). */
+app-version-footer {
+  display: contents;
+}
+
+.app-version-footer {
+  /* Pushed to the foot of the screen by the shells, which lay their content out
+     in a column: on a short page the version belongs at the bottom of the
+     window, not floating under the only card. Outside a flex parent it is
+     simply ignored. */
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.app-version-footer a {
+  color: inherit;
+}

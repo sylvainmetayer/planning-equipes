@@ -175,6 +175,16 @@ test("la colonne d'actions reste visible sur un écran étroit", async ({ browse
   await page.context().close();
 });
 
+test('le pied de page admin indique la version en cours', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/');
+  const pied = page.locator('.app-version-footer');
+  await expect(pied).toContainText('Version');
+  // The link points at the exact revision the build was cut from.
+  await expect(pied.getByRole('link')).toHaveAttribute('href', /\/commit\/\S/);
+  await page.context().close();
+});
+
 test('le catalogue des contraintes documente le verrouillage des échanges', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/constraints');

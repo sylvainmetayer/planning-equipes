@@ -81,6 +81,16 @@ test.describe('espace animateur', () => {
     await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0);
   });
 
+  test('le pied de page indique la version en cours', async ({ page }) => {
+    // An animateur reporting a problem has no Débogage screen to quote: the
+    // version has to be readable from the espace itself, on every state of it
+    // — including the dead end of an unknown token.
+    await page.goto('/animateur/jeton-invente');
+    const pied = page.locator('.app-version-footer');
+    await expect(pied).toContainText('Version');
+    await expect(pied.getByRole('link')).toHaveText(/\S/);
+  });
+
   /**
    * The targeted colleague must agree before the admin sees the demande: this
    * opens Bruno's espace (he gets an e-mail address here only — the shared

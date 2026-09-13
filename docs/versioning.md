@@ -22,7 +22,7 @@ Tout le reste **dérive** du tag, sans intervention :
 
 | Où | Comment |
 | --- | --- |
-| Frontend (`APP_VERSION`, page *Débogage*) | `generate-version.js` : le tag exact (`v1.2.0`), sinon le SHA court |
+| Frontend (`APP_VERSION`, pied de page des deux coquilles — admin et espace animateur — et page *Débogage*) | `generate-version.js` : le tag exact (`v1.2.0`), sinon le SHA court |
 | Backend (`quarkus.application.version`, ligne de démarrage Quarkus) | Le `Dockerfile` passe `-Drevision=1.2.0` dérivé du même `git describe`, le `v` retiré ; hors release, le SHA court. En build local, `999-SNAPSHOT` — une valeur qui ne ressemble volontairement à aucune version publiée |
 | Sentry, **côté frontend seulement** | `release: APP_VERSION` : les erreurs du navigateur se regroupent par version, pas par commit. Les événements du backend ne portent pas encore de `release` — `SentryInitializer` ne pose que le DSN et l'environnement |
 | Image Docker | `docker-ghcr.yml` publie `ghcr.io/…:1.2.0` et `ghcr.io/…:1.2` sur le push du tag |

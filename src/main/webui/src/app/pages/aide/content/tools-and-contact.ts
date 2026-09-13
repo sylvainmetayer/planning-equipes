@@ -51,7 +51,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
           ? [
               {
                 kind: 'paragraph' as const,
-                text: $localize`:@@aide.contact.mail:Pour une question d'utilisation, un doute sur un résultat ou un besoin d'accompagnement, écrivez à ${supportEmail}:email: — joignez si possible une capture d'écran et la version affichée en bas de la page Débogage.`,
+                text: $localize`:@@aide.contact.mail:Pour une question d'utilisation, un doute sur un résultat ou un besoin d'accompagnement, écrivez à ${supportEmail}:email: — joignez si possible une capture d'écran et la version affichée en bas de page.`,
               },
             ]
           : []),

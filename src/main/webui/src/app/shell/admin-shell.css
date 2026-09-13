@@ -109,6 +109,13 @@
   background: var(--mat-sys-surface);
 }
 
+/* The scrolling region is a column so the version footer lands at the foot of
+   the window on a short page instead of hanging under its last card. */
+mat-sidenav-content {
+  display: flex;
+  flex-direction: column;
+}
+
 .app-drawer {
   width: 16rem;
   border-right: 1px solid var(--mat-sys-outline-variant);
@@ -118,6 +125,12 @@
   padding: 1.25rem;
   max-width: 1200px;
   margin: 0 auto;
+  /* Flex item of that column since the footer joined it: the auto margins that
+     centre the page switch the stretch off, so its full width has to be said
+     again — padding included, or the page runs 40 px wider than the region
+     that scrolls it. */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /*
