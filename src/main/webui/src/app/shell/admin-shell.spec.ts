@@ -466,6 +466,7 @@ describe('AdminShell', () => {
         '/historique',
         '/instantanes',
         '/kpi',
+        '/marge',
         '/mcp-client',
         '/repos',
         '/timeline',

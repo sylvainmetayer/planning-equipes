@@ -1,0 +1,128 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@nav.link.marge">Marge disponible</h1>
+    <mat-card-subtitle i18n="@@marge.subtitle">
+      Jour par tranche horaire : les animateurs disponibles à ce moment-là, moins les sièges à pourvoir.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="heatmap-toolbar" data-testid="marge-toolbar">
+      <mat-button-toggle-group [value]="mode()" (change)="setMode($event.value)" aria-label="Mode" i18n-aria-label="@@marge.mode.aria">
+        <mat-button-toggle value="AVANT" i18n="@@marge.mode.avant">Avant résolution</mat-button-toggle>
+        <mat-button-toggle value="APRES" i18n="@@marge.mode.apres">Après résolution</mat-button-toggle>
+      </mat-button-toggle-group>
+      @if (viewChanged()) {
+        <button matButton type="button" (click)="resetView()">
+          <mat-icon>filter_alt_off</mat-icon>
+          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+        </button>
+      }
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+    </div>
+
+    <p class="empty-hint">
+      @if (mode() === 'AVANT') {
+        <ng-container i18n="@@marge.hint.avant">Capacité brute — qui n'a pas déclaré cette date indisponible — face aux sièges qu'une résolution devrait pourvoir.</ng-container>
+      } @else {
+        <ng-container i18n="@@marge.hint.apres">Personnes réellement libres sur le planning enregistré, face aux sièges restés vides.</ng-container>
+      }
+    </p>
+
+    <p class="empty-hint" i18n="@@marge.keyboardHint">
+      Dans la grille : les flèches déplacent la sélection, Entrée ouvre l'écran qui répond à la cellule.
+    </p>
+
+    <div class="heatmap-legend">
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-deficitFort"></span><ng-container i18n="@@marge.legend.deficitFort">Déficit marqué</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-deficit"></span><ng-container i18n="@@marge.legend.deficit">Déficit</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-neutre"></span><ng-container i18n="@@marge.legend.neutre">Juste à l'équilibre</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-surplus"></span><ng-container i18n="@@marge.legend.surplus">Marge</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-surplusFort"></span><ng-container i18n="@@marge.legend.surplusFort">Marge confortable</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-vide"></span><ng-container i18n="@@marge.legend.vide">Aucun siège</ng-container></span>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="empty-hint">{{ error() }}</p>
+    }
+    @if (!error() && !loading() && rapport()) {
+      <p class="marge-message" data-testid="marge-message">{{ rapport()!.message }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading()) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content>
+      @if (table().lignes.length === 0) {
+        <p class="empty-hint" i18n="@@marge.empty">Aucune tranche à comparer : saisissez les stands et la grille de créneaux, puis revenez ici.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="heatmap-table" role="grid">
+            <caption class="visually-hidden" i18n="@@marge.table.caption">Marge disponible : une ligne par journée de l'événement, une colonne par tranche horaire de la grille</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="heatmap-row-header" i18n="@@marge.column.jour">Journée</th>
+                @for (colonne of table().colonnes; track colonne.cle) {
+                  <th scope="col" class="heatmap-day-header">{{ colonne.label }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of table().lignes; track ligne.cle; let indexLigne = $index) {
+                <tr>
+                  <th class="heatmap-row-header" scope="row">{{ ligne.label }}</th>
+                  @for (cellule of ligne.cellules; track cellule.cle; let indexColonne = $index) {
+                    <td
+                      class="heatmap-cell marge-cell"
+                      [class.marge-cell-vide]="cellule.niveau === 'vide'"
+                      [class.marge-cell-deficitFort]="cellule.niveau === 'deficitFort'"
+                      [class.marge-cell-deficit]="cellule.niveau === 'deficit'"
+                      [class.marge-cell-neutre]="cellule.niveau === 'neutre'"
+                      [class.marge-cell-surplus]="cellule.niveau === 'surplus'"
+                      [class.marge-cell-surplusFort]="cellule.niveau === 'surplusFort'"
+                      [class.marge-cell-lien]="cellule.niveau !== 'vide'"
+                      [attr.data-ligne]="indexLigne"
+                      [attr.data-colonne]="indexColonne"
+                      [tabindex]="isFocusedCell(indexLigne, indexColonne) ? 0 : -1"
+                      (focus)="focusedCell.set({ ligne: indexLigne, colonne: indexColonne })"
+                      (keydown)="onCellKeydown($event, indexLigne, indexColonne)"
+                      (click)="openCell(indexLigne, indexColonne)"
+                      [matTooltip]="cellule.tooltip"
+                      [attr.aria-label]="cellule.tooltip"
+                    >{{ cellule.label }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <h2 class="marge-synthese-titre" i18n="@@marge.synthese.title">Pire tranche de chaque journée</h2>
+        <ul class="marge-synthese" data-testid="marge-synthese">
+          @for (ligne of synthese(); track ligne.cle) {
+            <li class="marge-synthese-item">
+              <button type="button" class="marge-synthese-lien" (click)="openSummaryLine(ligne)">
+                <span class="marge-synthese-jour">{{ ligne.jourLabel }}</span>
+                <span class="marge-synthese-tranche">{{ ligne.trancheLabel }}</span>
+                <span
+                  class="marge-synthese-valeur"
+                  [class.marge-cell-deficitFort]="ligne.niveau === 'deficitFort'"
+                  [class.marge-cell-deficit]="ligne.niveau === 'deficit'"
+                  [class.marge-cell-neutre]="ligne.niveau === 'neutre'"
+                  [class.marge-cell-surplus]="ligne.niveau === 'surplus'"
+                  [class.marge-cell-surplusFort]="ligne.niveau === 'surplusFort'"
+                >{{ signedLabel(ligne.marge) }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </mat-card-content>
+  </mat-card>
+}

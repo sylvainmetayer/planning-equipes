@@ -1,0 +1,118 @@
+/* « Marge disponible » (issue #499): what this page adds to the shared heatmap
+   grid is a *divergent* scale — the reading is signed, so it runs from red
+   through a neutral zero to green, where the load heatmap only ever gets worse.
+
+   The five steps are written as `light-dark()` pairs rather than `--mat-sys-*`
+   tokens, for the same reason `typologie-colors.css` is: the Material palette
+   is one hue ramp plus an error colour, and it has no green — a diverging scale
+   has no equivalent there to borrow. Every pair therefore carries both halves,
+   which is what keeps the scale readable in dark mode.
+
+   Colour is never the only carrier: each cell prints its signed margin, so the
+   grid is still readable without distinguishing red from green (WCAG 1.4.1). */
+
+.marge-message {
+  margin: 0.5rem 0 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.marge-cell {
+  min-width: 3.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A cell leads somewhere — the bench, or the openings of its day — so it says
+   so under the pointer; the keyboard path is Enter, announced above the grid. */
+.marge-cell-lien {
+  cursor: pointer;
+}
+
+.marge-cell-vide {
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.5;
+}
+
+.marge-cell-deficitFort {
+  background: light-dark(#f3b7bf, #6b1520);
+  color: light-dark(#4e0f17, #f7d9dd);
+  font-weight: 600;
+}
+
+.marge-cell-deficit {
+  background: light-dark(#fbdee2, #4a1820);
+  color: light-dark(#68202b, #f1cad0);
+  font-weight: 500;
+}
+
+.marge-cell-neutre {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+}
+
+.marge-cell-surplus {
+  background: light-dark(#ddf0dc, #1e4024);
+  color: light-dark(#1d4620, #cbe9cc);
+}
+
+.marge-cell-surplusFort {
+  background: light-dark(#b4e0b4, #235c2b);
+  color: light-dark(#123617, #d9f2da);
+  font-weight: 600;
+}
+
+.marge-synthese-titre {
+  margin: 1.25rem 0 0.5rem;
+  font: var(--mat-sys-title-small);
+}
+
+.marge-synthese {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marge-synthese-item {
+  margin: 0;
+}
+
+.marge-synthese-lien {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-small);
+  cursor: pointer;
+}
+
+.marge-synthese-lien:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: -3px;
+}
+
+.marge-synthese-jour {
+  font: var(--mat-sys-label-medium);
+}
+
+.marge-synthese-tranche {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.marge-synthese-valeur {
+  padding: 0 0.375rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 600px) {
+  .marge-synthese {
+    flex-direction: column;
+  }
+}

@@ -729,6 +729,49 @@
           }
         }
       },
+      "CelluleMarge" : {
+        "required" : [ "besoin", "creneauId", "debut", "disponibles", "fin", "jour", "marge", "sieges", "siegesPourvus" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "jour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "sieges" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "siegesPourvus" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "besoin" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "disponibles" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "marge" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "ChangementsView" : {
         "required" : [ "total", "parEntite", "dernieres" ],
         "type" : "object",
@@ -2990,6 +3033,28 @@
           }
         }
       },
+      "JourMarge" : {
+        "required" : [ "cellules", "jour" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "jour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "cellules" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CelluleMarge"
+            }
+          },
+          "pireCellule" : {
+            "$ref" : "#/components/schemas/CelluleMarge"
+          }
+        }
+      },
       "JourStaffing" : {
         "required" : [ "disponibles", "heures", "jour", "minimumJour", "picAvecPause", "picRepas", "picSimultane", "sieges", "standsOuverts" ],
         "type" : "object",
@@ -3427,6 +3492,10 @@
             "type" : "boolean"
           }
         }
+      },
+      "Mode" : {
+        "type" : "string",
+        "enum" : [ "AVANT", "APRES" ]
       },
       "ModeGrilleCreneaux" : {
         "type" : "string",
@@ -4353,6 +4422,51 @@
           },
           "faisabilite" : {
             "$ref" : "#/components/schemas/FeasibilityReport"
+          }
+        }
+      },
+      "RapportMarge" : {
+        "required" : [ "animateursTotal", "cellulesDeficitaires", "jours", "message", "mode", "pauseMinimaleMinutes", "referentielsManquants", "tranches" ],
+        "type" : "object",
+        "properties" : {
+          "mode" : {
+            "$ref" : "#/components/schemas/Mode"
+          },
+          "tranches" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TrancheMarge"
+            }
+          },
+          "jours" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/JourMarge"
+            }
+          },
+          "animateursTotal" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "cellulesDeficitaires" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "pireCellule" : {
+            "$ref" : "#/components/schemas/CelluleMarge"
+          },
+          "pauseMinimaleMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "referentielsManquants" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ReferentielManquant"
+            }
+          },
+          "message" : {
+            "type" : "string"
           }
         }
       },
@@ -5435,6 +5549,18 @@
           },
           "jamaisPublie" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "TrancheMarge" : {
+        "type" : "object",
+        "required" : [ "debut", "fin" ],
+        "properties" : {
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalTime"
           }
         }
       },
@@ -8761,6 +8887,32 @@
         },
         "summary" : "Delete",
         "tags" : [ "Kpi Resource" ]
+      }
+    },
+    "/api/marge" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "mode",
+          "in" : "query",
+          "schema" : {
+            "type" : "string",
+            "default" : "avant"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportMarge"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Analyze",
+        "tags" : [ "Marge Resource" ]
       }
     },
     "/api/mcp/cle" : {

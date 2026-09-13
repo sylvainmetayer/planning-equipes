@@ -11,7 +11,9 @@ import {
   Emplacement,
   EntreeHistorique,
   KpiHistoriqueEntry,
+  ModeMarge,
   RapportFragilite,
+  RapportMarge,
   RapportPauses,
   StaffingSummary,
   TypologieItem,
@@ -31,6 +33,14 @@ export class AnalysesApi {
 
   fragility(): Promise<RapportFragilite> {
     return this.api.get<RapportFragilite>('/api/fragilite');
+  }
+
+  /**
+   * Day × timeslot margin. `avant` reads the seats a solve would have to fill,
+   * `apres` the plan already persisted.
+   */
+  margin(mode: ModeMarge): Promise<RapportMarge> {
+    return this.api.get<RapportMarge>(`/api/marge?mode=${mode === 'APRES' ? 'apres' : 'avant'}`);
   }
 
   /**

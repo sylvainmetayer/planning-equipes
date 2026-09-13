@@ -220,6 +220,12 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           avance: true,
         },
         {
+          path: '/marge',
+          label: $localize`:@@nav.link.marge:Marge disponible`,
+          icon: 'exposure',
+          avance: true,
+        },
+        {
           path: '/timeline',
           label: $localize`:@@nav.link.timeline:Timeline animateur`,
           icon: 'timeline',

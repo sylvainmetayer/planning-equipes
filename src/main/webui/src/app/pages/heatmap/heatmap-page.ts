@@ -99,7 +99,7 @@ export interface HeatmapTable {
     FormsModule,
   ],
   templateUrl: './heatmap-page.html',
-  styleUrl: './heatmap-page.css',
+  styleUrl: '../../../styles/heatmap.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

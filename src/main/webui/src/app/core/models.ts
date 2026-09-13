@@ -423,6 +423,63 @@ export interface RapportFragilite {
   message: string;
 }
 
+/* -------------------- Marge disponible (`/api/marge`) -------------------- */
+
+/**
+ * Which capacity the margin is read against: `AVANT` compares the raw capacity
+ * — who has not declared the date unavailable — to every seat a solve would
+ * have to fill, `APRES` compares the people really free on the persisted plan
+ * to the seats it left empty.
+ */
+export type ModeMarge = 'AVANT' | 'APRES';
+
+/** One column of the margin heatmap: a timeslot of the grid, named by its hours. */
+export interface TrancheMarge {
+  debut: string;
+  fin: string;
+}
+
+/** One day × timeslot cell: available animateurs against the seats still to staff. */
+export interface CelluleMarge {
+  date: string;
+  jour: number;
+  debut: string;
+  fin: string;
+  /** The timeslot the cell is read from — what the bench link carries. */
+  creneauId: number;
+  sieges: number;
+  /** Always 0 in `AVANT`, where no assignment is read. */
+  siegesPourvus: number;
+  /** Every seat before a solve, the unfilled ones after. */
+  besoin: number;
+  disponibles: number;
+  /** `disponibles - besoin`: negative is a hole nobody on the roster can fill. */
+  marge: number;
+}
+
+/** One event day, with the synthesis line the screen shows under the grid. */
+export interface JourMarge {
+  date: string;
+  jour: number;
+  cellules: CelluleMarge[];
+  pireCellule: CelluleMarge | null;
+}
+
+/** What `GET /api/marge` returns — computed without any solve. */
+export interface RapportMarge {
+  mode: ModeMarge;
+  tranches: TrancheMarge[];
+  jours: JourMarge[];
+  animateursTotal: number;
+  cellulesDeficitaires: number;
+  /** The tightest cell of the whole event; `null` when the grid holds none. */
+  pireCellule: CelluleMarge | null;
+  /** The legal break the `APRES` mode keeps either side of a cell, in minutes. */
+  pauseMinimaleMinutes: number;
+  referentielsManquants: ReferentielManquant[];
+  message: string;
+}
+
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
 export interface Emplacement {
   id: string;

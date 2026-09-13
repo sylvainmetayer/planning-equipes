@@ -278,6 +278,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/heatmap/heatmap-page').then((m) => m.HeatmapPage),
   },
   {
+    path: 'marge',
+    title: () => $localize`:@@route.marge:Marge disponible`,
+    loadComponent: () => import('./pages/marge/marge-page').then((m) => m.MargePage),
+  },
+  {
     path: 'timeline',
     title: () => $localize`:@@route.timeline:Timeline animateur`,
     loadComponent: () =>

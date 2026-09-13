@@ -4,6 +4,9 @@ import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
+import dev.sylvain.planning.service.analyse.MargeAnalyzer.Mode;
+import dev.sylvain.planning.service.analyse.MargeAnalyzer.RapportMarge;
+import dev.sylvain.planning.service.analyse.MargeService;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.LigneStand;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
@@ -46,6 +49,9 @@ public class DiagnosticMcpTools {
     StaffingService staffingService;
 
     @Inject
+    MargeService margeService;
+
+    @Inject
     KpiHistoriqueService kpiHistoriqueService;
 
     @Inject
@@ -82,6 +88,42 @@ public class DiagnosticMcpTools {
     StaffingSummary analyser_effectifs(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return staffingService.analyzeEdition();
+    }
+
+    /**
+     * The same computation as {@code GET /api/marge}, through the same
+     * {@link MargeService}. Where {@code analyser_effectifs} answers « combien
+     * faut-il recruter » over the whole event, this one says <em>when</em> the
+     * capacity is tight — which is the question a withdrawal, a recruitment or
+     * one opening window fewer actually turns on.
+     */
+    @Tool(
+            description = "La marge disponible, jour par jour et tranche horaire par tranche horaire : animateurs "
+                    + "disponibles à ce moment-là moins sièges à pourvoir. Les tranches sont les créneaux de la grille, "
+                    + "donc lisibles aussi bien en amplitudes qu'en vacations. Deux modes : « avant » (par défaut) "
+                    + "compare la capacité brute — qui n'a pas déclaré cette date indisponible — aux sièges qu'une "
+                    + "résolution devrait pourvoir, et répond avant toute résolution ; « apres » lit le planning "
+                    + "persisté et ne compte libre que celui qui n'est pas déjà sur un siège qui chevauche, qui "
+                    + "respecte la pause légale entre vacations de part et d'autre, et que les règles dures laissent "
+                    + "prendre un siège de la tranche — face aux seuls sièges restés vides. Chaque journée porte sa "
+                    + "pire tranche, et le rapport la pire de l'événement. Calcul en Java pur, aucune résolution "
+                    + "lancée, compétences hors périmètre (voir analyser_effectifs pour le goulot par typologie). "
+                    + "Lecture optimiste : une tranche annoncée négative l'est, une tranche confortable ne le "
+                    + "garantit pas.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    RapportMarge analyser_marge(
+            @ToolArg(
+                            description = "« avant » (défaut) : capacité brute contre besoin ; « apres » : les "
+                                    + "personnes réellement libres sur le planning persisté",
+                            required = false)
+                    String mode,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return margeService.analyzeEdition("apres".equalsIgnoreCase(mode) ? Mode.APRES : Mode.AVANT);
     }
 
     @Tool(

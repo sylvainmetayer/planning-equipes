@@ -507,7 +507,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/repos` (« Jours de repos » — the animateur x day grid: who works, who
   rests, who was unavailable), `/jour-j` (« Mode jour J » — the day-of screen:
   mark somebody absent, repair the seats they held), `/timeline` (« Timeline
-  animateur »), `/heatmap` (« Heatmap de charge »), `/kpi`, `/comparateur`
+  animateur »), `/heatmap` (« Heatmap de charge »), `/marge` (« Marge
+  disponible » — the day × timeslot grid of what is left: the animateurs
+  available then minus the seats to staff, read either on the seats a solve
+  would have to fill or on the plan persisted), `/kpi`, `/comparateur`
   (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
   `/verrouillages`, `/ouvertures` (« Ouvertures des stands »),
   `/disponibilites` (what the animateurs

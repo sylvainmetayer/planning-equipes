@@ -84,6 +84,10 @@ export function buildOperationsSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.heatmap:Jour croisé avec le stand (places pourvues sur places requises : les trous de couverture) ou avec l'animateur (postes par jour : les surcharges). Pour repérer un déséquilibre d'un coup d'œil.`,
             },
             {
+              term: $localize`:@@aide.views.term.marge:Marge disponible`,
+              text: $localize`:@@aide.views.def.marge:Journée croisée avec la tranche horaire, et dans chaque case ce qui reste : les animateurs disponibles à ce moment-là moins les sièges à pourvoir. Rouge en dessous de zéro, vert au-dessus. Deux lectures : « avant résolution » compare la capacité brute — qui n'a pas déclaré cette date indisponible — aux sièges qu'une résolution devrait pourvoir, et répond donc avant toute résolution ; « après résolution » lit le planning enregistré et ne compte libre que celui qui n'est pas déjà en poste à cette heure-là, qui a eu sa pause légale entre deux vacations et qu'aucune règle dure n'écarte du siège — face aux seuls sièges restés vides. Les tranches sont les créneaux de la grille, donc la vue se lit aussi bien en amplitudes qu'en vacations. Une case mène là où on agit : le banc de touche du créneau après résolution, les ouvertures de la journée avant. Sous la grille, la pire tranche de chaque journée. La lecture est optimiste : une case annoncée négative l'est, une case confortable ne le garantit pas — elle ignore plafonds hebdomadaires, repos quotidien et compétences.`,
+            },
+            {
               term: $localize`:@@aide.views.term.timeline:Timeline animateur`,
               text: $localize`:@@aide.views.def.timeline:Le planning d'une personne : stands à couvrir, amplitude journalière, vacations et pauses entre elles. C'est la vue à envoyer à l'intéressé, exportable en PDF ou en ICS.`,
             },
@@ -137,6 +141,7 @@ export function buildOperationsSections(): HelpSection[] {
       links: [
         { route: '/calendar', label: $localize`:@@nav.link.calendar:Calendrier des affectations` },
         { route: '/heatmap', label: $localize`:@@nav.link.heatmap:Heatmap de charge` },
+        { route: '/marge', label: $localize`:@@nav.link.marge:Marge disponible` },
         { route: '/timeline', label: $localize`:@@nav.link.timeline:Timeline animateur` },
         {
           route: '/journee',
@@ -212,7 +217,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.menuMode:Le menu latéral s'ouvre en mode simple : une quinzaine d'écrans spécialisés n'y figurent pas — les vues d'analyse (rail et carte de la journée, heatmap de charge, timeline animateur, jours de repos, pauses), les écrans de diagnostic approfondi (fragilité du planning, banc de touche, contraintes, instantanés, comparateur A/B, autopsie du planning, graphe) et les outils techniques (historique, MCP, débogage). « Menu simple », en tête du menu, bascule vers le menu avancé qui affiche tout, et ce navigateur retient le choix. Un écran masqué reste atteignable par la palette, par un lien de l'aide ou par son adresse : il apparaît alors dans le menu le temps de la visite.`,
+          text: $localize`:@@aide.shortcuts.menuMode:Le menu latéral s'ouvre en mode simple : une quinzaine d'écrans spécialisés n'y figurent pas — les vues d'analyse (rail et carte de la journée, heatmap de charge, marge disponible, timeline animateur, jours de repos, pauses), les écrans de diagnostic approfondi (fragilité du planning, banc de touche, contraintes, instantanés, comparateur A/B, autopsie du planning, graphe) et les outils techniques (historique, MCP, débogage). « Menu simple », en tête du menu, bascule vers le menu avancé qui affiche tout, et ce navigateur retient le choix. Un écran masqué reste atteignable par la palette, par un lien de l'aide ou par son adresse : il apparaît alors dans le menu le temps de la visite.`,
         },
         {
           kind: 'definitions',

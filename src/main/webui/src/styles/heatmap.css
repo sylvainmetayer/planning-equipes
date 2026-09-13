@@ -1,5 +1,9 @@
-/* Load heatmap (issue #68): day x stand/animateur matrix, color-coded to spot
-   coverage gaps and overload at a glance. */
+/* The heatmap grid, shared by the two screens drawing one: « Heatmap de charge »
+   (day x stand/animateur, issue #68) and « Marge disponible » (day x timeslot,
+   issue #499). It carries the scaffolding both draw — toolbar, legend, sticky
+   row header, cells and their keyboard focus — and the three-level scale of the
+   load reading; the divergent scale of the margin lives in that page's own
+   stylesheet, next to the only screen that means it. */
 
 .heatmap-toolbar {
   display: flex;

@@ -73,6 +73,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/jour-j', marker: 'Mode jour J', sheet: 'jour-j-entete' },
   { path: '/repos', marker: 'Jours de repos', sheet: 'repos-toolbar' },
   { path: '/heatmap', sheet: 'heatmap-toolbar' },
+  { path: '/marge', marker: 'Marge disponible', sheet: 'marge-synthese' },
   { path: '/timeline', marker: 'Timeline animateur', sheet: 'timeline-toolbar' },
   { path: '/journee?vue=rail', marker: 'Mobilisables', sheet: 'rail-toolbar' },
   {
