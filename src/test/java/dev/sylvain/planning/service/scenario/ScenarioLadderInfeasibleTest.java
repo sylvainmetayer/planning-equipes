@@ -1,0 +1,108 @@
+package dev.sylvain.planning.service.scenario;
+
+import static dev.sylvain.planning.service.scenario.ScenarioLadder.brokenHardConstraints;
+import static dev.sylvain.planning.service.scenario.ScenarioLadder.load;
+import static dev.sylvain.planning.service.scenario.ScenarioLadder.matchCounts;
+import static dev.sylvain.planning.service.scenario.ScenarioLadder.solveFor;
+import static dev.sylvain.planning.service.scenario.ScenarioLadder.solveUntilFeasible;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import dev.sylvain.planning.domain.ConstraintToggle;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.scenario.ScenarioValidator;
+import dev.sylvain.planning.service.scenario.ScenarioLadder.Loaded;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
+/**
+ * The rungs of the ladder that must <b>never</b> solve, each for one named
+ * reason. Like {@code PlanningServiceUnsolvableScenarioTest}, they pin the
+ * intent: the file is accepted, and the only rules a solve breaks are the ones
+ * its reason implies. Where the pre-solve analysis can see the reason, the test
+ * says so; where it cannot — a weekly wall, a meal break — the test says that
+ * too, because an optimistic estimate is part of what the operator reads.
+ */
+class ScenarioLadderInfeasibleTest {
+
+    @Test
+    void rung26MoreSeatsThanPeople() {
+        Loaded loaded = load("gamme-26-infaisable-sous-effectif");
+        assertThat(ScenarioValidator.validate(ScenarioLadder.yaml(loaded.name())))
+                .isEmpty();
+        assertThat(loaded.feasibility().feasible()).isFalse();
+        assertThat(loaded.feasibility().manqueAnimateurs()).isEqualTo(3);
+
+        PlanningEvenement solved = solveFor(loaded, 5L);
+
+        assertThat(brokenHardConstraints(solved)).containsExactly("posteDoitEtrePourvu");
+        assertThat(matchCounts(solved)).containsEntry("posteDoitEtrePourvu", 3);
+    }
+
+    /**
+     * The contradiction check compares exceptions with each other, not with the
+     * days an animateur declared: the file is accepted, the analysis sees
+     * nothing, and the solve has to give up either the exception or the day off.
+     */
+    @Test
+    void rung27AForcedAssignmentOnADayOff() {
+        Loaded loaded = load("gamme-27-infaisable-affectation-forcee-jour-indisponible");
+        assertThat(loaded.feasibility().feasible()).isTrue();
+
+        PlanningEvenement solved = solveFor(loaded, 5L);
+
+        assertThat(solved.getScore().hardScore()).isNegative();
+        // Either the exception is kept and the day off is not, or the other way
+        // round: exactly one of the two rules gives way.
+        assertThat(brokenHardConstraints(solved)).hasSize(1).isSubsetOf("affectationForcee", "animateurDisponible");
+    }
+
+    @Test
+    void rung28TheSixDayWallTheAnalysisCannotSee() {
+        Loaded loaded = load("gamme-28-infaisable-mur-des-six-jours");
+        assertThat(loaded.problem().getPostes()).hasSize(21);
+        assertThat(loaded.feasibility().feasible()).isTrue();
+
+        PlanningEvenement solved = solveFor(loaded, 5L);
+
+        assertThat(solved.getScore().hardScore()).isNegative();
+        assertThat(brokenHardConstraints(solved))
+                .isNotEmpty()
+                .isSubsetOf("posteDoitEtrePourvu", "maxJoursTravaillesParSemaine", "reposHebdomadaireMinimal");
+    }
+
+    @Test
+    void rung29AnEveningOnlyMinorsCouldHold() {
+        Loaded loaded = load("gamme-29-infaisable-mineurs-en-soiree");
+
+        PlanningEvenement solved = solveFor(loaded, 5L);
+
+        assertThat(solved.getScore().hardScore()).isNegative();
+        assertThat(brokenHardConstraints(solved))
+                .isNotEmpty()
+                .isSubsetOf(
+                        "posteDoitEtrePourvu", "travailDeNuitInterditPourMineur", "mineurNecessiteEncadrementMajeur");
+    }
+
+    /**
+     * The geometry is the only cause: the same file, the meal-break rule
+     * switched off, solves to zero hard. With the rule on, the solver's cheapest
+     * answer is to leave the seat empty rather than to hold it through the
+     * meal, so either rule may be the one left broken.
+     */
+    @Test
+    void rung30AVacationSpanningTheWholeMealWindow() {
+        Loaded loaded = load("gamme-30-infaisable-coupure-repas");
+        assertThat(loaded.feasibility().feasible()).isTrue();
+
+        PlanningEvenement solved = solveFor(loaded, 5L);
+
+        assertThat(solved.getScore().hardScore()).isNegative();
+        assertThat(brokenHardConstraints(solved))
+                .isNotEmpty()
+                .isSubsetOf("posteDoitEtrePourvu", "coupureRepasObligatoire");
+
+        Loaded sansCoupure = load("gamme-30-infaisable-coupure-repas");
+        sansCoupure.problem().setConstraintsDesactivees(List.of(new ConstraintToggle("coupureRepasObligatoire")));
+        assertThat(solveUntilFeasible(sansCoupure, 30L).getScore().hardScore()).isZero();
+    }
+}

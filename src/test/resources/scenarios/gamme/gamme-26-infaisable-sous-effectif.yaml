@@ -1,0 +1,91 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Barreau infaisable 1 : plus de places que de personnes.
+# Huit places sur la même vacation, cinq animateurs. L'analyse de faisabilité le
+# voit avant tout calcul, et le solveur laisse exactement trois sièges vides.
+
+festival:
+  dateDebut: 2027-09-04
+
+creneaux:
+  - id: J1-APREM
+    jour: 1
+    date: 2027-09-04
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: STAND-1
+    nom: "Stand 1"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: STAND-2
+    nom: "Stand 2"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: STAND-3
+    nom: "Stand 3"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: STAND-4
+    nom: "Stand 4"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+
+animateurs:
+  - id: A101
+    prenom: Ursule
+    nom: Lacroix
+    dateNaissance: 1990-01-01
+    manager: false
+    email: "animateur101@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A102
+    prenom: Vincent
+    nom: Carpentier
+    dateNaissance: 1990-01-02
+    manager: false
+    email: "animateur102@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A103
+    prenom: Wendy
+    nom: Hoarau
+    dateNaissance: 1990-01-03
+    manager: false
+    email: "animateur103@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A104
+    prenom: Xavier
+    nom: Hamon
+    dateNaissance: 1990-01-04
+    manager: false
+    email: "animateur104@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A105
+    prenom: Yasmine
+    nom: Morel
+    dateNaissance: 1990-01-05
+    manager: false
+    email: "animateur105@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
