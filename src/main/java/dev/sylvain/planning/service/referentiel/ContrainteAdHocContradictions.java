@@ -87,7 +87,118 @@ public final class ContrainteAdHocContradictions {
      * scenario import, and to report — before any solve — exceptions entered
      * before this check existed.
      */
+    /**
+     * Every contradiction among {@code contraintes}, each one checked against
+     * the ones ahead of it — the same pairs, in the same order, as calling
+     * {@link #against} for each of them on its prefix.
+     *
+     * <p>That naive form compared every exception with every earlier one, and
+     * its fourth rule, for each forced assignment, every earlier forced
+     * assignment with every earlier incompatibility: 3.9 s for two thousand
+     * exceptions, paid by every feasibility analysis. Every rule needs an
+     * animateur in common — the same pair, the forced animateur inside the
+     * unavailability, the same sole animateur, a forced animateur inside the
+     * incompatible pair — so the earlier exceptions are indexed by animateur,
+     * and only those sharing one are looked at, still in their order.</p>
+     */
     public static List<Contradiction> detectAll(List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
+        List<ContrainteAdHoc> known = identified(contraintes);
+        Map<Long, Creneau> creneauxById = indexCreneaux(creneaux);
+        Map<String, List<Integer>> parAnimateur = new HashMap<>();
+        Map<String, List<Integer>> forceesParAnimateurSeul = new HashMap<>();
+        Map<String, List<Integer>> incompatibilitesParAnimateur = new HashMap<>();
+        List<Contradiction> contradictions = new ArrayList<>();
+        for (int index = 0; index < known.size(); index++) {
+            ContrainteAdHoc candidate = known.get(index);
+            List<String> animateurs = animateurIds(candidate);
+
+            TreeSet<Integer> partageantUnAnimateur = new TreeSet<>();
+            for (String animateur : animateurs) {
+                partageantUnAnimateur.addAll(parAnimateur.getOrDefault(animateur, List.of()));
+            }
+            for (int prior : partageantUnAnimateur) {
+                ContrainteAdHoc other = known.get(prior);
+                contradictoryPairDeclaration(candidate, other).ifPresent(contradictions::add);
+                forcedSeatOnUnavailability(candidate, other, creneauxById).ifPresent(contradictions::add);
+                simultaneousForcedSeats(candidate, other, creneauxById).ifPresent(contradictions::add);
+            }
+            contradictions.addAll(forcedSeatsOfAnIncompatiblePairIndexed(
+                    candidate, known, forceesParAnimateurSeul, incompatibilitesParAnimateur, creneauxById));
+
+            for (String animateur : animateurs) {
+                parAnimateur
+                        .computeIfAbsent(animateur, key -> new ArrayList<>())
+                        .add(index);
+            }
+            String seul = soleAnimateur(candidate);
+            if (candidate.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE && seul != null) {
+                forceesParAnimateurSeul
+                        .computeIfAbsent(seul, key -> new ArrayList<>())
+                        .add(index);
+            }
+            if (candidate.getType() == TypeContrainteAdHoc.INCOMPATIBILITE) {
+                for (String animateur : animateurs) {
+                    incompatibilitesParAnimateur
+                            .computeIfAbsent(animateur, key -> new ArrayList<>())
+                            .add(index);
+                }
+            }
+        }
+        return List.copyOf(contradictions);
+    }
+
+    /**
+     * Rule 4 read through the indexes of {@link #detectAll}: the forced
+     * assignments and incompatibilities that can matter are those naming the
+     * candidate's animateurs, taken in their original order so the result is
+     * the one {@link #forcedSeatsOfAnIncompatiblePair} gives on the prefix.
+     */
+    private static List<Contradiction> forcedSeatsOfAnIncompatiblePairIndexed(
+            ContrainteAdHoc candidate,
+            List<ContrainteAdHoc> known,
+            Map<String, List<Integer>> forceesParAnimateurSeul,
+            Map<String, List<Integer>> incompatibilitesParAnimateur,
+            Map<Long, Creneau> creneaux) {
+        List<Contradiction> contradictions = new ArrayList<>();
+        if (candidate.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE) {
+            String seul = soleAnimateur(candidate);
+            if (seul == null) {
+                return contradictions;
+            }
+            List<Integer> incompatibilites = incompatibilitesParAnimateur.getOrDefault(seul, List.of());
+            if (incompatibilites.isEmpty()) {
+                return contradictions;
+            }
+            TreeSet<Integer> forcees = new TreeSet<>();
+            for (int incompatibilite : incompatibilites) {
+                for (String animateur : animateurIds(known.get(incompatibilite))) {
+                    forcees.addAll(forceesParAnimateurSeul.getOrDefault(animateur, List.of()));
+                }
+            }
+            for (int other : forcees) {
+                for (int incompatibilite : incompatibilites) {
+                    forbiddenTogether(known.get(other), candidate, known.get(incompatibilite), creneaux)
+                            .ifPresent(contradictions::add);
+                }
+            }
+        } else if (candidate.getType() == TypeContrainteAdHoc.INCOMPATIBILITE) {
+            TreeSet<Integer> forcees = new TreeSet<>();
+            for (String animateur : animateurIds(candidate)) {
+                forcees.addAll(forceesParAnimateurSeul.getOrDefault(animateur, List.of()));
+            }
+            List<Integer> ordre = new ArrayList<>(forcees);
+            for (int first = 0; first < ordre.size(); first++) {
+                for (int second = first + 1; second < ordre.size(); second++) {
+                    forbiddenTogether(known.get(ordre.get(first)), known.get(ordre.get(second)), candidate, creneaux)
+                            .ifPresent(contradictions::add);
+                }
+            }
+        }
+        return contradictions;
+    }
+
+    /** The naive reading {@link #detectAll} must stay equal to — kept for the test that holds them together. */
+    static List<Contradiction> detectAllNaively(List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
         List<ContrainteAdHoc> known = identified(contraintes);
         Map<Long, Creneau> creneauxById = indexCreneaux(creneaux);
         List<Contradiction> contradictions = new ArrayList<>();
