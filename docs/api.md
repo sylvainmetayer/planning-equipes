@@ -379,10 +379,12 @@ est `null` au premier solve d'une édition, et absent des résultats produits
 avant cette version.
 
 Le score d'un instantané est copié à la capture depuis la dernière analyse, qui
-vit en mémoire : après un redémarrage, elle est vide. Le solve suivant
-rétablit alors ce score en analysant le plan persisté avant de le remplacer, et
-l'écrit dans l'instantané — une analyse par édition et par redémarrage, devant
-un calcul qui va durer des minutes.
+vit en mémoire : après un redémarrage, elle est vide, et la première lecture la
+redérive du plan persisté — une analyse par édition et par redémarrage (voir
+*Rafraîchir l'analyse* plus bas). La capture la trouve donc en place. Quand elle
+manque quand même — l'analyse n'a pas pu être produite —, le solve suivant
+rétablit ce score en analysant le plan persisté avant de le remplacer et l'écrit
+dans l'instantané, devant un calcul qui va durer des minutes.
 
 Une restauration répond `409` **sans rien écrire** si des références ont
 disparu, en listant lesquelles. Elle répond aussi `409` — même corps que les
@@ -635,6 +637,18 @@ type de job `ANALYZE` (`V55` purge les lignes restantes de `solver_job`, que
 
 Sans rien de persisté, la réponse est la vue vide (`analysedAt` nul) : c'est
 l'état que l'écran affiche déjà avant la première résolution.
+
+**Un redémarrage ne vaut pas « aucune analyse ».** L'analyse vit en mémoire, le
+plan est en base : la première lecture qui ne trouve rien en mémoire redérive
+l'analyse du plan persisté et la garde, plutôt que de rendre la vue vide. Un
+calcul de score par édition et par redémarrage, le même que
+`POST /api/constraints/diagnostic` fait à la demande ; sans siège persisté, un
+`COUNT` suffit à répondre et rien n'est chargé. Un calcul qui échoue rend la vue
+vide et laisse une trace dans les journaux : un écran qui montre un diagnostic
+ne devient pas une page d'erreur parce que l'analyse n'a pas pu être refaite.
+C'est ce qui manquait à l'onglet *Problèmes* de l'écran Diagnostic — ses causes
+d'infaisabilité sont recalculées à chaque lecture, ses règles en défaut
+venaient de cette mémoire, et « Actualiser » relisait la même carte vide.
 
 ### Une exception contradictoire est refusée
 

@@ -8,8 +8,11 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
@@ -34,6 +37,13 @@ class ConstraintDiagnosticResourceTest {
 
     private static final int MAX_POLLS = 240;
     private static final long POLL_INTERVAL_MS = 250;
+
+    /** Emptied by hand below: it is the only thing a restart takes away. */
+    @Inject
+    ConstraintAnalysisStore analysisStore;
+
+    @Inject
+    EditionContext editionContext;
 
     @BeforeEach
     void createTargetEdition() {
@@ -159,6 +169,45 @@ class ConstraintDiagnosticResourceTest {
                 .body("contraintes.size()", greaterThan(0))
                 .body("contraintes.findAll { it.plancher != null }.size()", equalTo(0))
                 .body("contraintes.findAll { it.postesEvalues != null }.size()", equalTo(0));
+    }
+
+    /**
+     * A restart loses the analysis, not the plan — and the screens reading it
+     * must not answer « aucune analyse » for a planning that is right there.
+     *
+     * <p>The analysis lives in memory only, so the morning after a deployment
+     * {@code GET /api/constraints} served an empty view: the Problèmes tab of
+     * the Diagnostic screen kept its feasibility causes, which are recomputed
+     * on every read, and silently dropped the rules in default — and pressing
+     * « Actualiser » re-read the same empty map. It is now derived from the
+     * persisted plan on the first read, once per edition and per restart.</p>
+     */
+    @Test
+    void theCatalogueStillDescribesThePersistedPlanAfterARestart() throws InterruptedException {
+        importScenario();
+        solve();
+        forgetTheAnalysisAsARestartWould();
+
+        JsonPath catalogue = given().header(HEADER, EDITION)
+                .when()
+                .get("/api/constraints")
+                .then()
+                .statusCode(200)
+                .body("analysedAt", notNullValue())
+                .body("scoreGlobal", notNullValue())
+                .body("postesNonPourvus", notNullValue())
+                .extract()
+                .jsonPath();
+        assertThat(catalogue.getList("contraintes.findAll { it.score != null }.name"))
+                .as("les règles doivent porter leur score, comme après un solve")
+                .isNotEmpty();
+    }
+
+    /** The one piece of state a restart takes away, taken away. */
+    private void forgetTheAnalysisAsARestartWould() {
+        editionContext.executeIn(EDITION, () -> {
+            analysisStore.clear();
+        });
     }
 
     private void importScenario() {

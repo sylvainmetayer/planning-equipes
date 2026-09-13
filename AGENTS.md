@@ -224,8 +224,9 @@ Single Quarkus service, no separate solver microservice. Package root:
     does not hold the lock), `ConstraintAnalysisStore` (the score breakdown the
     Contraintes screen shows, written by every solve and re-derivable from the
     persisted plan alone — **nothing analyses by solving a plan it then throws
-    away**), `PlanningPersistenceService`, `PlanSnapshotService`,
-    `SnapshotComparisonService`, `DeplacementService`.
+    away**; in memory, so the first read after a restart re-derives it from that
+    plan instead of answering "never analysed"), `PlanningPersistenceService`,
+    `PlanSnapshotService`, `SnapshotComparisonService`, `DeplacementService`.
   - `service/analyse/` — what is read from a plan without solving it:
     `PlanningDiagnosticService` (score, unfilled seats, per-constraint
     breakdown), the analyzers (feasibility, fragilité, ouvertures, pauses,
