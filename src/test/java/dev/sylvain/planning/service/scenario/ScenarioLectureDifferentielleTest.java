@@ -40,7 +40,9 @@ class ScenarioLectureDifferentielleTest {
     @Test
     void chaqueScenarioLivreSeLitCommeSaReference() throws IOException {
         List<java.nio.file.Path> scenarios = ScenariosLivres.references();
-        assertThat(scenarios).as("les scénarios de référence doivent être trouvés").hasSizeGreaterThan(5);
+        assertThat(scenarios)
+                .as("les scénarios de référence doivent être trouvés")
+                .hasSizeGreaterThan(5);
 
         ReferenceComparison comparaison = new ReferenceComparison("scenario-empreintes");
         List<String> ecarts = new ArrayList<>();

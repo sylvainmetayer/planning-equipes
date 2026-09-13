@@ -46,7 +46,9 @@ class ScenarioEcritureDifferentielleTest {
     @Test
     void chaqueScenarioEcritPuisReluCorrespondASaReference() throws IOException {
         List<Path> scenarios = ScenariosLivres.references();
-        assertThat(scenarios).as("les scénarios de référence doivent être trouvés").hasSizeGreaterThan(5);
+        assertThat(scenarios)
+                .as("les scénarios de référence doivent être trouvés")
+                .hasSizeGreaterThan(5);
 
         ReferenceComparison comparaison = new ReferenceComparison("scenario-empreintes-aller-retour");
         List<String> ecarts = new ArrayList<>();

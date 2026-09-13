@@ -115,8 +115,7 @@ final class ScenarioLadder {
     }
 
     static String yaml(String name) {
-        try (InputStream in =
-                ScenarioLadder.class.getClassLoader().getResourceAsStream(FOLDER + name + ".yaml")) {
+        try (InputStream in = ScenarioLadder.class.getClassLoader().getResourceAsStream(FOLDER + name + ".yaml")) {
             if (in == null) {
                 throw new IllegalArgumentException("No scenario named " + name + " under " + FOLDER);
             }
