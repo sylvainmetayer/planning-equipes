@@ -135,6 +135,15 @@ describe('ReposPage', () => {
     await fixture.whenStable();
   }
 
+  /** Clicks the toggle carrying that label, whichever of the two groups holds it. */
+  async function basculer(libelle: string): Promise<void> {
+    const bouton = Array.from(racine().querySelectorAll('mat-button-toggle')).find(
+      (each) => each.textContent!.trim() === libelle,
+    );
+    (bouton!.querySelector('button') as HTMLElement).click();
+    await fixture.whenStable();
+  }
+
   it('shows one line per animateur, the three states on screen', async () => {
     await rendre(planningDeuxJours());
 
@@ -158,10 +167,10 @@ describe('ReposPage', () => {
   it('counts, under each day, how many people are resting on it', async () => {
     await rendre(planningDeuxJours());
 
-    const pied = Array.from(racine().querySelectorAll('tfoot .repos-total-cell')).map((each) =>
+    const pied = Array.from(racine().querySelectorAll('tfoot .repos-footer-jour')).map((each) =>
       each.textContent!.trim(),
     );
-    expect(pied.slice(0, 2)).toEqual(['1', '0']);
+    expect(pied).toEqual(['1', '0']);
   });
 
   it('filters by name and by "no rest day", and restores both from the URL', async () => {
@@ -217,6 +226,72 @@ describe('ReposPage', () => {
     await saisirFiltre('alice');
 
     expect(racine().querySelectorAll('.repos-cell[tabindex="0"]')).toHaveLength(1);
+  });
+
+  it('leaves the hours out of the cells until the comfort density is asked for', async () => {
+    // The duration is what made a column four times wider than its content; it
+    // stays on the tooltip, which the accessible label already carried.
+    await rendre(planningDeuxJours());
+    expect(cellule(0, 0).textContent!.trim()).toBe('');
+
+    await basculer('Heures');
+    expect(cellule(0, 0).textContent!.trim()).toContain('2 h');
+
+    await rendre(planningDeuxJours(), { densite: 'confort' });
+    expect(cellule(0, 0).textContent!.trim()).toContain('2 h');
+  });
+
+  it('reads the days as a calendar, week-ends named and week boundaries drawn', async () => {
+    // 2026-08-01 is a Saturday, 2026-08-02 a Sunday.
+    await rendre(planningDeuxJours());
+
+    const entetes = Array.from(racine().querySelectorAll('.repos-day-initiale')).map((each) =>
+      each.textContent!.trim(),
+    );
+    expect(entetes).toEqual(['S', 'D']);
+    expect(racine().querySelectorAll('th.repos-colonne-weekend')).toHaveLength(2);
+  });
+
+  it('draws the frise instead of the grid, one proportional bar per animateur', async () => {
+    await rendre(planningDeuxJours(), { vue: 'frise' });
+
+    expect(racine().querySelectorAll('.repos-cell')).toHaveLength(0);
+    expect(racine().querySelectorAll('.repos-frise-ligne')).toHaveLength(3);
+    // Alice works both days — one run; the two others change state on day 2.
+    expect(racine().querySelectorAll('.repos-frise-segment')).toHaveLength(5);
+    // The runs are weighted by their days, so every bar spans the same total.
+    const premiere = racine().querySelector('.repos-frise-barre')!;
+    expect((premiere.firstElementChild as HTMLElement).style.flexGrow).toBe('2');
+  });
+
+  it('offers the frise from the grid, and the grid back', async () => {
+    await rendre(planningDeuxJours());
+
+    await basculer('Frise');
+    expect(racine().querySelectorAll('.repos-frise-ligne')).toHaveLength(3);
+    // The density toggle only means something on the grid.
+    expect(racine().textContent).not.toContain('Compact');
+
+    await basculer('Grille');
+    expect(racine().querySelectorAll('.repos-cell')).toHaveLength(6);
+  });
+
+  it('summarises the plan above it: the rest per day, and the strained lines', async () => {
+    await rendre(planningDeuxJours());
+
+    // One bar per day of the event, and the same figures as the footer.
+    expect(racine().querySelectorAll('.repos-histogramme-jour')).toHaveLength(2);
+    const tendues = Array.from(racine().querySelectorAll('.repos-tendue-nom')).map((each) =>
+      each.textContent!.trim(),
+    );
+    expect(tendues[0]).toBe('Alice');
+    expect(racine().textContent).toContain("2 j d'affilée");
+  });
+
+  it('counts the summary over the displayed lines, like the footer under them', async () => {
+    await rendre(planningDeuxJours(), { q: 'bob' });
+
+    expect(Array.from(racine().querySelectorAll('.repos-tendue-nom'))).toHaveLength(1);
   });
 
   it('reports the error instead of showing a stale grid', async () => {

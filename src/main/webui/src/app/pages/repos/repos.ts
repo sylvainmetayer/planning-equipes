@@ -12,6 +12,8 @@
 // Pure functions, kept out of the component so the counting and the wording
 // are unit-tested without rendering 150 rows.
 
+import { parseDateKey } from '../../core/date-utils';
+import { intlLocale } from '../../core/locale';
 import { Animateur, ContrainteAdHoc, PosteAffectation } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
@@ -34,6 +36,25 @@ export interface ColonneJour {
   label: string;
   /** `Jour 3 — 2026-07-16`, used by the tooltips and the accessible labels. */
   titre: string;
+  /**
+   * Narrow weekday initial (`L`, `M`, … in French) in the UI's own locale, or
+   * an empty string on a plan whose créneaux carry no date. A month-long
+   * edition is thirty columns of `J1 J2 J3 …`, which nobody can locate a
+   * Saturday in; the initial is what turns the header back into a calendar.
+   */
+  initiale: string;
+  /**
+   * Saturday or Sunday. Not a rest day — the event runs on them, that is the
+   * point of it — but the reading grid the weekly-rest rules are argued in,
+   * so the column is tinted rather than left to be counted out.
+   */
+  weekEnd: boolean;
+  /**
+   * First column of a week band, never the very first column of the grid: a
+   * Monday, or every seventh day on a dateless plan. Draws the rule that lets
+   * the eye jump seven days at a time instead of counting them.
+   */
+  debutSemaine: boolean;
 }
 
 export interface CelluleJour {
@@ -54,10 +75,32 @@ export interface CelluleJour {
   conflit: boolean;
 }
 
+/**
+ * A run of consecutive days in the same state, which is how the rest question
+ * is actually asked: nobody reads "worked, worked, worked, worked, worked,
+ * worked", they read "six days in a row". One `LigneRepos` is the same
+ * information as its cells, collapsed — and on a month-long edition it is
+ * three or four shapes instead of thirty cells, which is what lets the frise
+ * draw a whole line without a single pixel of horizontal scrolling.
+ */
+export interface SegmentJours {
+  statut: StatutJour;
+  /** First and last day of the run, in the plan's own numbering, both inclusive. */
+  premierJour: number;
+  dernierJour: number;
+  /** Number of days the run spans — the weight the frise gives it. */
+  jours: number;
+  /** True when any day of the run carries the assigned-yet-unavailable anomaly. */
+  conflit: boolean;
+  tooltip: string;
+}
+
 export interface LigneRepos {
   animateurId: string;
   nom: string;
   cellules: CelluleJour[];
+  /** The same days as {@link cellules}, collapsed into runs. Never empty when the cells are not. */
+  segments: SegmentJours[];
   joursTravailles: number;
   joursRepos: number;
   joursIndisponibles: number;
@@ -84,6 +127,24 @@ export interface TotalJour {
 export interface TableauRepos {
   jours: ColonneJour[];
   lignes: LigneRepos[];
+}
+
+/**
+ * One bar of the per-day rest histogram: the same figure as the grid's footer
+ * row, given a height. A row of thirty numbers is read one number at a time;
+ * the shape of the same thirty is read at once, and the day nobody rests on is
+ * what this screen is looking for.
+ */
+export interface BarreJour {
+  jour: number;
+  label: string;
+  initiale: string;
+  weekEnd: boolean;
+  debutSemaine: boolean;
+  repos: number;
+  /** 0 to 100: the share of the counted lines resting that day, the bar's height. */
+  part: number;
+  tooltip: string;
 }
 
 /** Display label of an animateur, disambiguated by id when two share a name. */
@@ -152,6 +213,39 @@ interface ChargeJour {
 }
 
 /**
+ * The day columns, in the plan's own order, each carrying what a calendar
+ * reading of them needs: the weekday initial, the week-end, and the week
+ * boundaries.
+ *
+ * Dates are what makes all three exact; without them the plan is a bare
+ * sequence of days, and the band is cut every seventh column so the eye still
+ * has a step to count by. The initial then stays empty rather than being
+ * guessed — a wrong Saturday is worse than no Saturday on a screen read for
+ * weekly rest.
+ */
+function colonnes(dates: Map<number, string | null>): ColonneJour[] {
+  const initiales = new Intl.DateTimeFormat(intlLocale(), { weekday: 'narrow' });
+  return Array.from(dates.entries())
+    .sort((left, right) => left[0] - right[0])
+    .map(([jour, date], index) => {
+      const jourSemaine = date ? parseDateKey(date).getDay() : null;
+      return {
+        jour,
+        date,
+        label: $localize`:@@heatmap.dayColumn:J${jour}:jour:`,
+        titre: date
+          ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${jour}:jour: — ${date}:date:`
+          : $localize`:@@calendarDay.dayTitle:Jour ${jour}:jour:`,
+        initiale: date ? initiales.format(parseDateKey(date)) : '',
+        weekEnd: jourSemaine === 0 || jourSemaine === 6,
+        // Never on the first column: the grid's own edge is already there, and
+        // a rule drawn over it only thickens a border.
+        debutSemaine: index > 0 && (jourSemaine === null ? index % 7 === 0 : jourSemaine === 1),
+      };
+    });
+}
+
+/**
  * The whole grid, built from the plan alone. `animateurs` is the edition's
  * referential and `contraintes` its recorded exceptions, both read-only.
  *
@@ -188,16 +282,7 @@ export function buildTableauRepos(
     parJour.set(creneau.jour, charge);
   });
 
-  const jours: ColonneJour[] = Array.from(dates.entries())
-    .sort((left, right) => left[0] - right[0])
-    .map(([jour, date]) => ({
-      jour,
-      date,
-      label: $localize`:@@heatmap.dayColumn:J${jour}:jour:`,
-      titre: date
-        ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${jour}:jour: — ${date}:date:`
-        : $localize`:@@calendarDay.dayTitle:Jour ${jour}:jour:`,
-    }));
+  const jours: ColonneJour[] = colonnes(dates);
 
   const effectif = tousLesAnimateurs(postes, animateurs);
   const noms = libelles(effectif);
@@ -293,6 +378,7 @@ function buildLigne(
     animateurId: animateur.id,
     nom,
     cellules,
+    segments: segmentsDe(cellules, nom),
     joursTravailles,
     joursRepos,
     joursIndisponibles,
@@ -302,6 +388,54 @@ function buildLigne(
       ? $localize`:@@repos.row.resumeSansRepos:${base}:ligne: — attention, aucun jour de repos sur tout l'événement`
       : base,
   };
+}
+
+/**
+ * The cells of one line collapsed into runs of the same state, in order.
+ *
+ * Adjacent cells merge whatever their day numbers: the columns are the days
+ * the plan actually holds créneaux for, so two consecutive columns can be day 3
+ * and day 5 — a run is a run of *columns*, which is what the frise draws, and
+ * its label names the two days it spans rather than claiming the gap.
+ */
+function segmentsDe(cellules: CelluleJour[], nom: string): SegmentJours[] {
+  const segments: SegmentJours[] = [];
+  cellules.forEach((cellule) => {
+    const courant = segments.at(-1);
+    if (courant && courant.statut === cellule.statut) {
+      courant.dernierJour = cellule.jour;
+      courant.jours += 1;
+      courant.conflit = courant.conflit || cellule.conflit;
+      return;
+    }
+    segments.push({
+      statut: cellule.statut,
+      premierJour: cellule.jour,
+      dernierJour: cellule.jour,
+      jours: 1,
+      conflit: cellule.conflit,
+      tooltip: '',
+    });
+  });
+  segments.forEach((segment) => (segment.tooltip = tooltipSegment(nom, segment)));
+  return segments;
+}
+
+/** What a run of days says out loud: who, which days, and how many of them in that state. */
+function tooltipSegment(nom: string, segment: SegmentJours): string {
+  const plage =
+    segment.jours === 1
+      ? $localize`:@@heatmap.dayColumn:J${segment.premierJour}:jour:`
+      : $localize`:@@repos.segment.plage:J${segment.premierJour}:debut: à J${segment.dernierJour}:fin:`;
+  const jours = segment.jours;
+  switch (segment.statut) {
+    case 'travaille':
+      return $localize`:@@repos.segment.travaille:${nom}:animateur: — ${plage}:plage: : ${jours}:jours: jour(s) travaillé(s) d'affilée`;
+    case 'repos':
+      return $localize`:@@repos.segment.repos:${nom}:animateur: — ${plage}:plage: : ${jours}:jours: jour(s) de repos`;
+    case 'indisponible':
+      return $localize`:@@repos.segment.indisponible:${nom}:animateur: — ${plage}:plage: : ${jours}:jours: jour(s) d'indisponibilité`;
+  }
 }
 
 /**
@@ -340,4 +474,52 @@ export function filtrerLignes(
     (ligne) =>
       correspondAuFiltre(recherche, [ligne.nom]) && (!sansReposSeulement || ligne.sansRepos),
   );
+}
+
+/**
+ * The per-day rest tally turned into a histogram, over whichever rows are
+ * handed in — the same ones the footer counts, so the bar and the number under
+ * it never disagree.
+ *
+ * The height is a *share*, not a count: a day where four people out of six
+ * rest and a day where four out of a hundred do are the same number and not
+ * remotely the same day, and it is the second one this screen is opened for.
+ */
+export function histogrammeRepos(jours: ColonneJour[], lignes: LigneRepos[]): BarreJour[] {
+  const effectif = lignes.length;
+  return totauxParJour(jours, lignes).map((total, index) => {
+    const colonne = jours[index];
+    return {
+      jour: colonne.jour,
+      label: colonne.label,
+      initiale: colonne.initiale,
+      weekEnd: colonne.weekEnd,
+      debutSemaine: colonne.debutSemaine,
+      repos: total.repos,
+      part: effectif === 0 ? 0 : Math.round((total.repos / effectif) * 100),
+      tooltip: $localize`:@@repos.histogramme.tooltip:${colonne.titre}:jour: : ${total.repos}:repos: au repos sur ${effectif}:effectif:, ${total.indisponibles}:indisponibles: indisponible(s)`,
+    };
+  });
+}
+
+/** One line of the "most strained" panel: the row, and the two figures it is there for. */
+export interface LigneTendue {
+  ligne: LigneRepos;
+  detail: string;
+}
+
+/**
+ * The lines worth looking at first, capped: the grid is already sorted by
+ * longest run then by load, so this is its head — minus anybody working no day
+ * at all, who has nothing tense about them and would otherwise fill the list
+ * of an edition that has just been created.
+ */
+export function lignesTendues(lignes: LigneRepos[], maximum = 5): LigneTendue[] {
+  return lignes
+    .filter((ligne) => ligne.serieMax > 0)
+    .slice(0, maximum)
+    .map((ligne) => ({
+      ligne,
+      detail: $localize`:@@repos.tendues.detail:${ligne.serieMax}:serie: j d'affilée, ${ligne.joursRepos}:repos: j de repos`,
+    }));
 }

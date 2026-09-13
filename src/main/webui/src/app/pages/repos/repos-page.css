@@ -1,6 +1,13 @@
-/* Rest days: animateur x day grid saying who works, who rests and who was not
-   available. Same shape as the load heatmap, one status per cell instead of a
-   count — sized for ~150 lines, so a cell is one <td> and nothing else. */
+/* Rest days: animateur x day, under two renderings. The grid is the detail —
+   one column per day, sized for ~150 lines, so a cell is one <td> and nothing
+   else; the frise is the same lines with their days collapsed into runs, which
+   is the only one that still fits a month-long edition on a screen.
+
+   Everything here is built around the fact that the event can be thirty days
+   long (`extreme-02-30j-…-mois`): the grid scrolls in both axes inside its own
+   box rather than pushing the page sideways, the headers and the two summary
+   columns stay put while it does, and a cell prints its hours only when asked
+   to — that duration is what made a column four times wider than its content. */
 
 .repos-toolbar {
   display: flex;
@@ -40,6 +47,18 @@
   font: var(--mat-sys-body-medium);
 }
 
+/* --- The grid ------------------------------------------------------------ */
+
+/* Its own scrolling box, and that is what makes the sticky headers work: a
+   `position: sticky` resolves against the nearest scrolling ancestor, so a
+   wrapper that only ever scrolls sideways has nothing to hold a header row
+   against. Bounded rather than fixed — a three-day event keeps the height of
+   its three rows and does not scroll at all. */
+.table-wrapper.repos-grille-defilement {
+  overflow: auto;
+  max-height: min(70vh, 42rem);
+}
+
 .repos-table {
   border-collapse: collapse;
   white-space: nowrap;
@@ -52,12 +71,74 @@
   border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
-/* The name stays readable while the day columns scroll under it. */
-.repos-table .repos-row-header {
+/* The name and the two figures the screen is read for stay put while the day
+   columns scroll under them: over thirty days, « Repos » and « Série » left at
+   the far right were two numbers nobody ever scrolled to. Widths are fixed
+   because the sticky offsets are computed from them. */
+.repos-table .repos-row-header,
+.repos-table .repos-colle-repos,
+.repos-table .repos-colle-serie {
   position: sticky;
-  left: 0;
   z-index: 1;
   background: var(--mat-sys-surface);
+}
+
+.repos-table .repos-row-header {
+  left: 0;
+  width: 11rem;
+  min-width: 11rem;
+}
+
+.repos-table .repos-colle-repos {
+  left: 11rem;
+}
+
+.repos-table .repos-colle-serie {
+  left: 14.75rem;
+  box-shadow: inset -1px 0 0 var(--mat-sys-outline-variant);
+}
+
+.repos-table .repos-colle-repos,
+.repos-table .repos-colle-serie {
+  width: 3.75rem;
+  min-width: 3.75rem;
+  padding-inline: 0.375rem;
+}
+
+/* The offsets above are arithmetic on these widths, so the widths have to be
+   the rendered ones — hence `border-box`, the padding included.
+   `max-width` would not do the job: a table cell ignores it in the automatic
+   layout, and one long name would then widen the column and slide the two
+   frozen figures over it. What is bounded is therefore the *content*, below,
+   which the column's declared width is then always wide enough to hold. */
+.repos-table .repos-row-header,
+.repos-table .repos-colle-repos,
+.repos-table .repos-colle-serie {
+  box-sizing: border-box;
+}
+
+.repos-row-texte {
+  display: inline-block;
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Above the row headers, which are sticky too: the corner cells belong to both
+   bands and must cover, not be covered. */
+.repos-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--mat-sys-surface);
+}
+
+.repos-table thead .repos-row-header,
+.repos-table thead .repos-colle-repos,
+.repos-table thead .repos-colle-serie {
+  z-index: 3;
 }
 
 .repos-day-header,
@@ -68,17 +149,79 @@
   text-align: center;
 }
 
+/* Two lines in the width of one: the weekday initial over the day number.
+   Thirty columns of « J1 J2 J3 … » is a sequence nobody can locate a Saturday
+   in, and the whole point of this screen is weekly rest. */
+.repos-day-header {
+  padding-inline: 0.125rem;
+}
+
+.repos-day-initiale,
+.repos-day-numero {
+  display: block;
+  line-height: 1.15;
+}
+
+.repos-day-initiale {
+  font-weight: 700;
+}
+
+.repos-day-numero {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .repos-cell,
 .repos-total-cell {
-  min-width: 3.5rem;
   text-align: center;
   padding: 0.375rem 0.5rem;
   font: var(--mat-sys-body-small);
   border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
+/* The default is a square of colour: the state is the information, the hours
+   are one tooltip away, and the column is then as wide as a day needs rather
+   than as wide as « 6 h 30 ». */
+.repos-cell {
+  min-width: 1.75rem;
+  padding-inline: 0.125rem;
+}
+
+.repos-table-confort .repos-cell {
+  min-width: 3.5rem;
+  padding-inline: 0.5rem;
+}
+
 .repos-total-cell {
   font-weight: 600;
+}
+
+/* The footer's day cells are day columns like the others, and must measure
+   like them: given the width of the two frozen summary columns instead, they
+   were what set the day column's width — thirty days then needed three screens
+   whatever the cells above them asked for. */
+.repos-footer-jour {
+  min-width: 1.75rem;
+  padding-inline: 0.125rem;
+}
+
+.repos-table-confort .repos-footer-jour {
+  min-width: 3.5rem;
+  padding-inline: 0.5rem;
+}
+
+/* Week-ends and week boundaries, drawn once so they are not counted out. The
+   band tints headers and totals only — a body cell already carries its state
+   as a background, and a second one behind it would say nothing legible. The
+   rule is an inset shadow rather than a border: it must not add a pixel of
+   width anywhere, since the frise aligns its ruler on the same measurements. */
+th.repos-colonne-weekend,
+td.repos-total-cell.repos-colonne-weekend {
+  background: var(--mat-sys-surface-container-high);
+}
+
+.repos-colonne-semaine {
+  box-shadow: inset 1px 0 0 var(--mat-sys-outline);
 }
 
 .repos-cell-travaille {
@@ -110,7 +253,9 @@
   font-weight: 600;
 }
 
-.repos-ligne-sans-repos .repos-row-header {
+.repos-ligne-sans-repos .repos-row-header,
+.repos-ligne-sans-repos .repos-tendue-nom,
+.repos-ligne-sans-repos .repos-frise-nom {
   color: var(--mat-sys-error);
 }
 
@@ -124,4 +269,197 @@
 .repos-cell:focus-visible {
   outline: 3px solid var(--app-accent);
   outline-offset: -3px;
+}
+
+/* --- The summary --------------------------------------------------------- */
+
+.repos-synthese {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2rem;
+}
+
+.repos-synthese-titre {
+  font: var(--mat-sys-title-small);
+  margin: 0 0 0.5rem;
+}
+
+.repos-histogramme {
+  flex: 2 1 22rem;
+  min-width: 0;
+}
+
+.repos-tendues {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.repos-histogramme-jours {
+  display: flex;
+  align-items: stretch;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.repos-histogramme-jour {
+  flex: 1 1 0;
+  min-width: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* The bar grows from the bottom of a fixed-height barrel, so the day nobody
+   rests on is an empty column rather than a small number to notice. */
+.repos-histogramme-fut {
+  height: 4rem;
+  display: flex;
+  align-items: flex-end;
+  background: var(--mat-sys-surface-container);
+}
+
+.repos-histogramme-barre {
+  width: 100%;
+  background: var(--mat-sys-primary);
+}
+
+.repos-histogramme-label {
+  text-align: center;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.repos-tendues-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font: var(--mat-sys-body-small);
+}
+
+.repos-tendues-liste li {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.repos-tendue-nom {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repos-tendue-detail {
+  margin-left: auto;
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+/* --- The frise ----------------------------------------------------------- */
+
+/* One row per animateur, the days collapsed into runs and laid out
+   proportionally: the bar is always exactly the width available, so thirty
+   days read as easily as three and nothing ever scrolls sideways. */
+.repos-frise-entete,
+.repos-frise-ligne {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.repos-frise-lignes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.repos-frise-ligne {
+  padding: 0.1875rem 0;
+}
+
+.repos-frise-nom {
+  flex: 0 0 11rem;
+  font: var(--mat-sys-label-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repos-frise-compteurs {
+  flex: 0 0 3.5rem;
+  text-align: right;
+  font: var(--mat-sys-body-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Ruler and bars are two flex rows over the same width, one slot per day on
+   one side and one run weighted by its days on the other: the totals match, so
+   a boundary drawn on the ruler falls exactly where the run changes. No gap
+   and no border anywhere inside them, for the same reason. */
+.repos-frise-regle,
+.repos-frise-barre {
+  flex: 1 1 0;
+  display: flex;
+  min-width: 0;
+}
+
+.repos-frise-regle {
+  height: 1rem;
+}
+
+.repos-frise-graduation {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.repos-frise-graduation.repos-colonne-weekend {
+  background: var(--mat-sys-surface-container-high);
+}
+
+.repos-frise-graduation-label {
+  position: absolute;
+  left: 0.125rem;
+  bottom: 0;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.repos-frise-barre {
+  height: 1.25rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  overflow: hidden;
+}
+
+.repos-frise-segment {
+  flex-basis: 0;
+  min-width: 2px;
+}
+
+/* --- Narrow screens ------------------------------------------------------ */
+
+/* Below this, nineteen rem of frozen columns is most of the viewport: the name
+   keeps its place, the two figures go back to scrolling with the grid. */
+@media (max-width: 60rem) {
+  .repos-table .repos-colle-repos,
+  .repos-table .repos-colle-serie {
+    position: static;
+  }
+
+  .repos-table .repos-row-header {
+    width: 8.5rem;
+    min-width: 8.5rem;
+  }
+
+  .repos-row-texte {
+    max-width: 5.5rem;
+  }
+
+  .repos-frise-nom {
+    flex-basis: 8.5rem;
+  }
 }

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, ContrainteAdHoc, Creneau, PosteAffectation, Stand } from '../../core/models';
-import { LigneRepos, buildTableauRepos, filtrerLignes, totauxParJour } from './repos';
+import {
+  LigneRepos,
+  buildTableauRepos,
+  filtrerLignes,
+  histogrammeRepos,
+  lignesTendues,
+  totauxParJour,
+} from './repos';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return { jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', ...overrides };
@@ -310,5 +317,136 @@ describe('filtrerLignes', () => {
 
   it('narrows to the animateurs without a single rest day', () => {
     expect(filtrerLignes(lignes, '', true).map((each) => each.nom)).toEqual(['Ines']);
+  });
+});
+
+/** Eight consecutive days from Saturday 2026-08-01, so a week boundary falls inside the grid. */
+function huitJours(animateurs: (string | null)[]): PosteAffectation[] {
+  return animateurs.map((id, index) =>
+    poste({
+      id: `p${index + 1}`,
+      stand: stand('Tir'),
+      creneau: creneau({
+        id: index + 1,
+        jour: index + 1,
+        date: `2026-08-0${index + 1}`,
+      }),
+      animateur: id ? animateur(id) : null,
+    }),
+  );
+}
+
+describe('colonnes', () => {
+  it('reads the days as a calendar: the weekday initial, the week-end, the week boundary', () => {
+    // 2026-08-01 is a Saturday, so the band changes on the third column.
+    const jours = buildTableauRepos(troisJours(['Ines', 'Ines', 'Ines']), [
+      animateur('Ines'),
+    ]).jours;
+
+    expect(jours.map((each) => each.initiale)).toEqual(['S', 'D', 'L']);
+    expect(jours.map((each) => each.weekEnd)).toEqual([true, true, false]);
+    expect(jours.map((each) => each.debutSemaine)).toEqual([false, false, true]);
+  });
+
+  it('cuts the band every seventh day when the plan carries no date, and guesses no weekday', () => {
+    const postes = Array.from({ length: 9 }, (_, index) =>
+      poste({
+        id: `p${index}`,
+        stand: stand('Tir'),
+        creneau: creneau({ id: index + 1, jour: index + 1, date: '' }),
+        animateur: animateur('Ines'),
+      }),
+    );
+
+    const jours = buildTableauRepos(postes, [animateur('Ines')]).jours;
+
+    expect(jours.map((each) => each.initiale)).toEqual(Array(9).fill(''));
+    expect(jours.every((each) => !each.weekEnd)).toBe(true);
+    // Nothing on the first column: the grid's own edge is already a boundary.
+    expect(jours.filter((each) => each.debutSemaine).map((each) => each.jour)).toEqual([8]);
+  });
+});
+
+describe('segments', () => {
+  it('collapses a line into runs of the same state, named by the days they span', () => {
+    const tableau = buildTableauRepos(
+      huitJours(['Ines', 'Ines', 'Ines', null, null, 'Ines', 'Ines', 'Ines']),
+      [animateur('Ines')],
+    );
+
+    const segments = tableau.lignes[0].segments;
+    expect(
+      segments.map((each) => [each.statut, each.premierJour, each.dernierJour, each.jours]),
+    ).toEqual([
+      ['travaille', 1, 3, 3],
+      ['repos', 4, 5, 2],
+      ['travaille', 6, 8, 3],
+    ]);
+    // The frise weights each run by its days, so they always add up to the grid.
+    expect(segments.reduce((total, each) => total + each.jours, 0)).toBe(tableau.jours.length);
+  });
+
+  it('names the run rather than the day as soon as it spans more than one', () => {
+    const tableau = buildTableauRepos(troisJours(['Ines', 'Ines', null]), [animateur('Ines')]);
+
+    const [travail, repos] = tableau.lignes[0].segments;
+    expect(travail.tooltip).toContain('J1 à J2');
+    expect(travail.tooltip).toContain("2 jour(s) travaillé(s) d'affilée");
+    expect(repos.tooltip).toContain('J3');
+    expect(repos.tooltip).not.toContain('à J');
+  });
+
+  it('carries the assigned-yet-unavailable anomaly up to the run that holds it', () => {
+    const tableau = buildTableauRepos(troisJours(['Ines', 'Ines', 'Ines']), [
+      animateur('Ines', { joursIndisponibles: ['2026-08-02'] }),
+    ]);
+
+    // One single worked run, and the anomaly of its second day is on it.
+    expect(tableau.lignes[0].segments).toHaveLength(1);
+    expect(tableau.lignes[0].segments[0].conflit).toBe(true);
+  });
+});
+
+describe('histogrammeRepos', () => {
+  it('turns the footer figures into a share of the lines counted', () => {
+    const tableau = buildTableauRepos(troisJours(['Ines', null, 'Ines']), [
+      animateur('Ines'),
+      animateur('Oscar'),
+      animateur('Zoe', { joursIndisponibles: ['2026-08-01'] }),
+    ]);
+
+    const barres = histogrammeRepos(tableau.jours, tableau.lignes);
+
+    // Day 1: Oscar rests, Zoé was unavailable, Inès works — one out of three.
+    // Day 3 has Zoé back among the available, hence two.
+    expect(barres.map((each) => each.repos)).toEqual([1, 3, 2]);
+    expect(barres.map((each) => each.part)).toEqual([33, 100, 67]);
+    expect(barres[0].tooltip).toContain('1 au repos sur 3');
+  });
+
+  it('draws nothing rather than dividing by zero when every line is filtered out', () => {
+    const tableau = buildTableauRepos(troisJours(['Ines', 'Ines', 'Ines']), [animateur('Ines')]);
+
+    expect(histogrammeRepos(tableau.jours, []).map((each) => each.part)).toEqual([0, 0, 0]);
+  });
+});
+
+describe('lignesTendues', () => {
+  it('takes the head of the grid and caps it', () => {
+    const tableau = buildTableauRepos(
+      huitJours(['Ines', 'Ines', 'Ines', 'Oscar', null, null, null, null]),
+      [animateur('Ines'), animateur('Oscar'), animateur('Zoe')],
+    );
+
+    const tendues = lignesTendues(tableau.lignes, 2);
+
+    expect(tendues.map((each) => each.ligne.nom)).toEqual(['Ines', 'Oscar']);
+    expect(tendues[0].detail).toContain("3 j d'affilée");
+  });
+
+  it('leaves out anybody assigned nowhere, who is not strained but idle', () => {
+    const tableau = buildTableauRepos(troisJours([null, null, null]), [animateur('Zoe')]);
+
+    expect(lignesTendues(tableau.lignes)).toEqual([]);
   });
 });

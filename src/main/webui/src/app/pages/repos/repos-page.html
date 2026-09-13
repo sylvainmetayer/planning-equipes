@@ -8,6 +8,17 @@
   </mat-card-header>
   <mat-card-content>
     <div class="repos-toolbar">
+      <mat-button-toggle-group [value]="vue()" (change)="vue.set($event.value)" [attr.aria-label]="vueLabel">
+        <mat-button-toggle value="grille" i18n="@@repos.vue.grille">Grille</mat-button-toggle>
+        <mat-button-toggle value="frise" i18n="@@repos.vue.frise">Frise</mat-button-toggle>
+      </mat-button-toggle-group>
+      @if (vue() === 'grille') {
+        <mat-button-toggle-group [value]="densite()" (change)="densite.set($event.value)"
+                                 [attr.aria-label]="densiteLabel">
+          <mat-button-toggle value="compact" i18n="@@repos.densite.compact">Compact</mat-button-toggle>
+          <mat-button-toggle value="confort" i18n="@@repos.densite.confort">Heures</mat-button-toggle>
+        </mat-button-toggle-group>
+      }
       <mat-checkbox [checked]="sansReposSeulement()" (change)="sansReposSeulement.set($event.checked)"
                     i18n="@@repos.filter.sansRepos">Seulement sans jour de repos</mat-checkbox>
       @if (viewChanged()) {
@@ -45,10 +56,12 @@
 
     @if (!loading() && !error() && lignes().length > 0) {
       <p class="repos-compteurs" role="status">{{ compteursLabel() }}</p>
-      <p class="empty-hint" i18n="@@repos.keyboardHint">
-        Dans la grille : les flèches déplacent la sélection, Origine et Fin vont au début et à la fin de la ligne.
-        Chaque cellule annonce le détail de sa journée.
-      </p>
+      @if (vue() === 'grille') {
+        <p class="empty-hint" i18n="@@repos.keyboardHint">
+          Dans la grille : les flèches déplacent la sélection, Origine et Fin vont au début et à la fin de la ligne.
+          Chaque cellule annonce le détail de sa journée.
+        </p>
+      }
     }
 
     @if (loading()) {
@@ -60,6 +73,52 @@
   </mat-card-content>
 </mat-card>
 
+@if (!error() && !loading() && tableau().jours.length > 0 && lignesAffichees().length > 0) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content class="repos-synthese">
+      <section class="repos-histogramme">
+        <h2 class="repos-synthese-titre" i18n="@@repos.histogramme.titre">Part des animateurs au repos, jour par jour</h2>
+        <ul class="repos-histogramme-jours">
+          @for (barre of histogramme(); track barre.jour) {
+            <li
+              class="repos-histogramme-jour"
+              [class.repos-colonne-weekend]="barre.weekEnd"
+              [class.repos-colonne-semaine]="barre.debutSemaine"
+              [matTooltip]="barre.tooltip"
+              [attr.aria-label]="barre.tooltip"
+            >
+              <span class="repos-histogramme-fut">
+                <span class="repos-histogramme-barre" [style.height.%]="barre.part"></span>
+              </span>
+              <span class="repos-histogramme-label">{{ barre.initiale || barre.label }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="repos-tendues">
+        <h2 class="repos-synthese-titre" i18n="@@repos.tendues.titre">Lignes les plus tendues</h2>
+        @if (tendues().length === 0) {
+          <p class="empty-hint" i18n="@@repos.tendues.vide">Personne n'est affecté sur cette sélection.</p>
+        } @else {
+          <ul class="repos-tendues-liste">
+            @for (tendue of tendues(); track tendue.ligne.animateurId) {
+              <li [class.repos-ligne-sans-repos]="tendue.ligne.sansRepos">
+                <span class="repos-tendue-nom">{{ tendue.ligne.nom }}</span>
+                @if (tendue.ligne.sansRepos) {
+                  <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel"
+                            [attr.aria-label]="sansReposLabel">priority_high</mat-icon>
+                }
+                <span class="repos-tendue-detail">{{ tendue.detail }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </mat-card-content>
+  </mat-card>
+}
+
 @if (!error() && !loading()) {
   <mat-card appearance="outlined" class="page-card">
     <mat-card-content>
@@ -69,33 +128,93 @@
         </p>
       } @else if (lignesAffichees().length === 0) {
         <p class="empty-hint" i18n="@@repos.emptyFiltre">Aucun animateur ne correspond au filtre.</p>
+      } @else if (vue() === 'frise') {
+        <div class="repos-frise">
+          <div class="repos-frise-entete" aria-hidden="true">
+            <span class="repos-frise-nom"></span>
+            <span class="repos-frise-compteurs"></span>
+            <span class="repos-frise-regle">
+              @for (jour of tableau().jours; track jour.jour) {
+                <span class="repos-frise-graduation" [class.repos-colonne-semaine]="jour.debutSemaine"
+                      [class.repos-colonne-weekend]="jour.weekEnd">
+                  @if ($first || jour.debutSemaine) {
+                    <span class="repos-frise-graduation-label">{{ jour.label }}</span>
+                  }
+                </span>
+              }
+            </span>
+          </div>
+          <ul class="repos-frise-lignes">
+            @for (ligne of lignesAffichees(); track ligne.animateurId) {
+              <li class="repos-frise-ligne" [class.repos-ligne-sans-repos]="ligne.sansRepos">
+                <span class="repos-frise-nom">
+                  {{ ligne.nom }}
+                  @if (ligne.sansRepos) {
+                    <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel"
+                              [attr.aria-label]="sansReposLabel">priority_high</mat-icon>
+                  }
+                </span>
+                <span class="repos-frise-compteurs">{{ ligne.joursRepos }} / {{ ligne.serieMax }}</span>
+                <span class="repos-frise-barre" role="img" [attr.aria-label]="ligne.resume">
+                  @for (segment of ligne.segments; track segment.premierJour) {
+                    <span
+                      class="repos-frise-segment"
+                      [class.repos-cell-travaille]="segment.statut === 'travaille'"
+                      [class.repos-cell-repos]="segment.statut === 'repos'"
+                      [class.repos-cell-indisponible]="segment.statut === 'indisponible'"
+                      [class.repos-cell-conflit]="segment.conflit"
+                      [style.flex-grow]="segment.jours"
+                      [matTooltip]="segment.tooltip"
+                    ></span>
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+        </div>
       } @else {
-        <div class="table-wrapper">
-          <table class="repos-table" role="grid">
+        <div class="table-wrapper repos-grille-defilement">
+          <table class="repos-table" role="grid" [class.repos-table-confort]="densite() === 'confort'">
             <caption class="visually-hidden" i18n="@@repos.table.caption">
               Jours de repos : une ligne par animateur, une colonne par journée de l'événement, puis le nombre de
               jours de repos et la plus longue série de jours travaillés d'affilée
             </caption>
             <thead>
               <tr>
-                <th scope="col" class="repos-row-header">{{ animateurColumnLabel }}</th>
+                <th scope="col" class="repos-row-header">
+                  <span class="repos-row-texte">{{ animateurColumnLabel }}</span>
+                </th>
+                <th scope="col" class="repos-total-header repos-colle-repos" i18n="@@repos.column.repos">Repos</th>
+                <th scope="col" class="repos-total-header repos-colle-serie" i18n="@@repos.column.serie">Série</th>
                 @for (jour of tableau().jours; track jour.jour) {
-                  <th scope="col" class="repos-day-header" [title]="jour.titre">{{ jour.label }}</th>
+                  <th
+                    scope="col"
+                    class="repos-day-header"
+                    [class.repos-colonne-weekend]="jour.weekEnd"
+                    [class.repos-colonne-semaine]="jour.debutSemaine"
+                    [matTooltip]="jour.titre"
+                    [attr.aria-label]="jour.titre"
+                  >
+                    @if (jour.initiale) {
+                      <span class="repos-day-initiale">{{ jour.initiale }}</span>
+                    }
+                    <span class="repos-day-numero">{{ jour.label }}</span>
+                  </th>
                 }
-                <th scope="col" class="repos-total-header" i18n="@@repos.column.repos">Repos</th>
-                <th scope="col" class="repos-total-header" i18n="@@repos.column.serie">Série</th>
               </tr>
             </thead>
             <tbody>
               @for (ligne of lignesAffichees(); track ligne.animateurId; let indexLigne = $index) {
                 <tr [class.repos-ligne-sans-repos]="ligne.sansRepos">
                   <th class="repos-row-header" scope="row" [attr.aria-label]="ligne.resume">
-                    <span class="repos-row-label">{{ ligne.nom }}</span>
+                    <span class="repos-row-label repos-row-texte">{{ ligne.nom }}</span>
                     @if (ligne.sansRepos) {
                       <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel"
                                 [attr.aria-label]="sansReposLabel">priority_high</mat-icon>
                     }
                   </th>
+                  <td class="repos-total-cell repos-colle-repos">{{ ligne.joursRepos }}</td>
+                  <td class="repos-total-cell repos-colle-serie">{{ ligne.serieMax }}</td>
                   @for (cellule of ligne.cellules; track cellule.jour; let indexColonne = $index) {
                     <td
                       class="repos-cell"
@@ -103,6 +222,7 @@
                       [class.repos-cell-repos]="cellule.statut === 'repos'"
                       [class.repos-cell-indisponible]="cellule.statut === 'indisponible'"
                       [class.repos-cell-conflit]="cellule.conflit"
+                      [class.repos-colonne-semaine]="tableau().jours[indexColonne].debutSemaine"
                       [attr.data-ligne]="indexLigne"
                       [attr.data-colonne]="indexColonne"
                       [tabindex]="estCelluleCourante(indexLigne, indexColonne) ? 0 : -1"
@@ -111,25 +231,29 @@
                       [matTooltip]="cellule.tooltip"
                       [attr.aria-label]="cellule.tooltip"
                     >
-                      {{ cellule.label }}
+                      @if (densite() === 'confort') {
+                        {{ cellule.label }}
+                      }
                       @if (cellule.conflit) {
                         <mat-icon inline class="repos-alerte-icon" [attr.aria-label]="conflitLabel">warning</mat-icon>
                       }
                     </td>
                   }
-                  <td class="repos-total-cell">{{ ligne.joursRepos }}</td>
-                  <td class="repos-total-cell">{{ ligne.serieMax }}</td>
                 </tr>
               }
             </tbody>
             <tfoot>
               <tr>
-                <th scope="row" class="repos-row-header" i18n="@@repos.footer.label">Au repos ce jour-là</th>
+                <th scope="row" class="repos-row-header">
+                  <span class="repos-row-texte" i18n="@@repos.footer.label">Au repos ce jour-là</span>
+                </th>
+                <td class="repos-total-cell repos-colle-repos"></td>
+                <td class="repos-total-cell repos-colle-serie"></td>
                 @for (total of totaux(); track total.jour) {
-                  <td class="repos-total-cell">{{ total.repos }}</td>
+                  <td class="repos-total-cell repos-footer-jour"
+                      [class.repos-colonne-weekend]="tableau().jours[$index].weekEnd"
+                      [class.repos-colonne-semaine]="tableau().jours[$index].debutSemaine">{{ total.repos }}</td>
                 }
-                <td class="repos-total-cell"></td>
-                <td class="repos-total-cell"></td>
               </tr>
             </tfoot>
           </table>

@@ -10,6 +10,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -20,13 +21,32 @@ import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { TableFilter } from '../../shared/table-filter';
 import {
+  BarreJour,
   LigneRepos,
+  LigneTendue,
   TableauRepos,
   TotalJour,
   buildTableauRepos,
   filtrerLignes,
+  histogrammeRepos,
+  lignesTendues,
   totauxParJour,
 } from './repos';
+
+/**
+ * How the event is drawn. `grille` is one column per day, the detail; `frise`
+ * is one proportional bar per animateur, which fits any number of days on any
+ * screen and is the only one still readable on a month-long edition.
+ */
+export type VueRepos = 'grille' | 'frise';
+
+/**
+ * Whether a worked cell prints its hours. `compact` is the default: the colour
+ * already says the state, and the duration is what made a column four times
+ * wider than it needed to be — it stays one tooltip away, and `confort` brings
+ * it back for the short editions it fits on.
+ */
+export type DensiteRepos = 'compact' | 'confort';
 
 /**
  * Rest days: one line per animateur, one column per day of the event, each
@@ -46,6 +66,7 @@ import {
   selector: 'app-repos-page',
   imports: [
     MatButtonModule,
+    MatButtonToggleModule,
     MatCardModule,
     MatCheckboxModule,
     MatIconModule,
@@ -66,6 +87,8 @@ export class ReposPage {
   protected readonly filtre = signal('');
   /** Keeps only the animateurs working every single day of the event. */
   protected readonly sansReposSeulement = signal(false);
+  protected readonly vue = signal<VueRepos>('grille');
+  protected readonly densite = signal<DensiteRepos>('compact');
 
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
@@ -96,6 +119,14 @@ export class ReposPage {
     totauxParJour(this.tableau().jours, this.lignesAffichees()),
   );
 
+  /** The footer's own figures, given a height, over the same displayed rows. */
+  protected readonly histogramme = computed<BarreJour[]>(() =>
+    histogrammeRepos(this.tableau().jours, this.lignesAffichees()),
+  );
+
+  /** The head of the grid: the few lines chaining the most consecutive worked days. */
+  protected readonly tendues = computed<LigneTendue[]>(() => lignesTendues(this.lignesAffichees()));
+
   /** How many people never get a day off — the number this screen exists to bring down. */
   protected readonly sansReposCount = computed(
     () => this.lignes().filter((ligne) => ligne.sansRepos).length,
@@ -110,10 +141,16 @@ export class ReposPage {
 
   /** True as soon as the view differs from the one this page opens on. */
   protected readonly viewChanged = computed(
-    () => this.filtre().trim() !== '' || this.sansReposSeulement(),
+    () =>
+      this.filtre().trim() !== '' ||
+      this.sansReposSeulement() ||
+      this.vue() !== 'grille' ||
+      this.densite() !== 'compact',
   );
 
   protected readonly animateurColumnLabel = $localize`:@@repos.column.animateur:Animateur`;
+  protected readonly vueLabel = $localize`:@@repos.vue.label:Choisir l'affichage`;
+  protected readonly densiteLabel = $localize`:@@repos.densite.label:Choisir la densité des cellules`;
   protected readonly sansReposLabel = $localize`:@@repos.row.sansRepos:Aucun jour de repos sur tout l'événement`;
   protected readonly conflitLabel = $localize`:@@repos.cell.conflitBadge:Affecté alors que la journée est déclarée indisponible`;
 
@@ -145,10 +182,16 @@ export class ReposPage {
     const params = this.route.snapshot.queryParamMap;
     this.filtre.set(params.get('q') ?? '');
     this.sansReposSeulement.set(params.get('sansRepos') === '1');
+    // Tolerant on the way in, like every other view param: anything but the
+    // one non-default value falls back to the default rather than failing.
+    this.vue.set(params.get('vue') === 'frise' ? 'frise' : 'grille');
+    this.densite.set(params.get('densite') === 'confort' ? 'confort' : 'compact');
     void this.refresh();
     keepViewInQueryParams(() => ({
       q: optionalParam(this.filtre()),
       sansRepos: this.sansReposSeulement() ? '1' : null,
+      vue: this.vue() === 'frise' ? 'frise' : null,
+      densite: this.densite() === 'confort' ? 'confort' : null,
     }));
   }
 
@@ -165,10 +208,12 @@ export class ReposPage {
     }
   }
 
-  /** Back to the view this page opens on: everybody, no search. */
+  /** Back to the view this page opens on: everybody, no search, the compact grid. */
   protected resetView(): void {
     this.filtre.set('');
     this.sansReposSeulement.set(false);
+    this.vue.set('grille');
+    this.densite.set('compact');
   }
 
   protected estCelluleCourante(ligne: number, colonne: number): boolean {
