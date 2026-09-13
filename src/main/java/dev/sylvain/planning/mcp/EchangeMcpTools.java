@@ -199,10 +199,10 @@ public class EchangeMcpTools {
                 demande.heureDebutCible(),
                 demande.heureFinCible(),
                 demande.standCibleId(),
-                demande.motif(),
+                TextesLibres.renseigne(demande.motif()),
                 demande.prevalidationOk(),
                 anonymisation.anonymiser(demande.contraintesViolees()),
-                demande.commentaireAdmin(),
+                TextesLibres.renseigne(demande.commentaireAdmin()),
                 demande.creeLe(),
                 demande.cibleDecideLe(),
                 demande.decideLe(),
@@ -226,6 +226,8 @@ public class EchangeMcpTools {
      * @param prevalidationOk  what the check said <b>at submission time</b>;
      *                         {@code analyser_impact_echange} re-answers it
      *                         against today's plan
+     * @param motifRenseigne   whether the demandeur gave a reason, never the
+     *                         reason itself — see {@link TextesLibres}
      */
     public record DemandeView(
             String id,
@@ -242,10 +244,10 @@ public class EchangeMcpTools {
             LocalTime heureDebutCible,
             LocalTime heureFinCible,
             String standCibleId,
-            String motif,
+            boolean motifRenseigne,
             Boolean prevalidationOk,
             List<String> contraintesViolees,
-            String commentaireAdmin,
+            boolean commentaireAdminRenseigne,
             Instant creeLe,
             Instant cibleDecideLe,
             Instant decideLe,

@@ -25,11 +25,34 @@ import org.junit.jupiter.api.Test;
  * type that could carry a personal field — the raw {@link Animateur} domain
  * class, or a component named {@code prenom}/{@code dateNaissance}. A new
  * tool returning a domain object instead of a filtered view fails here.
+ *
+ * <p>The free texts a person types are refused by name too — a comment, the
+ * admin's answer, the reason of a lock or of an ad hoc constraint: that is
+ * where a name or a medical appointment comes back in, and a view carries
+ * whether one was written instead (see {@code TextesLibres}). A stand's
+ * {@code motif} is not on the list: it describes a stand, not a person.</p>
  */
 class McpConfidentialiteStructurelleTest {
 
-    private static final Set<String> COMPOSANTS_INTERDITS =
-            Set.of("prenom", "datenaissance", "nomdefamille", "email", "accesstoken");
+    private static final Set<String> COMPOSANTS_INTERDITS = Set.of(
+            "prenom",
+            "datenaissance",
+            "nomdefamille",
+            "email",
+            "accesstoken",
+            "commentaire",
+            "commentaireadmin",
+            "raison");
+
+    /**
+     * Components that bear a forbidden name but that the server writes itself,
+     * as {@code Record.component}. Named one by one, with what they hold, so the
+     * list cannot quietly become the way around the rule.
+     */
+    private static final Set<String> TEXTES_DU_SERVEUR = Set.of(
+            // Why a stand's dated windows were not compacted, e.g. « Aucune
+            // fenêtre datée à compacter »: HoraireCompaction writes every one.
+            "LigneCompactage.raison");
 
     @Test
     void aucunOutilNeRenvoieDeDonneePersonnelleIdentifiante() throws Exception {
@@ -73,9 +96,11 @@ class McpConfidentialiteStructurelleTest {
             return;
         }
         for (RecordComponent composant : classe.getRecordComponents()) {
-            assertThat(composant.getName().toLowerCase(Locale.ROOT))
-                    .as("champ exposé par l'outil %s (record %s)", outil, classe.getSimpleName())
-                    .isNotIn(COMPOSANTS_INTERDITS);
+            if (!TEXTES_DU_SERVEUR.contains(classe.getSimpleName() + "." + composant.getName())) {
+                assertThat(composant.getName().toLowerCase(Locale.ROOT))
+                        .as("champ exposé par l'outil %s (record %s)", outil, classe.getSimpleName())
+                        .isNotIn(COMPOSANTS_INTERDITS);
+            }
             checkType(composant.getGenericType(), outil, visites);
         }
     }

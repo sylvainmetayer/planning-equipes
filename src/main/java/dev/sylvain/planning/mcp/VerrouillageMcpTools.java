@@ -126,11 +126,14 @@ public class VerrouillageMcpTools {
                 verrouillage.getStandId(),
                 verrouillage.getCreneauId(),
                 verrouillage.getJour(),
-                verrouillage.getRaison(),
+                TextesLibres.renseigne(verrouillage.getRaison()),
                 verrouillage.getCreeLe());
     }
 
-    /** A lock, with only the target column its type actually uses filled in. */
+    /**
+     * A lock, with only the target column its type actually uses filled in.
+     * Whether a reason was given, never what it says: see {@link TextesLibres}.
+     */
     public record VerrouillageView(
             String id,
             String type,
@@ -138,6 +141,6 @@ public class VerrouillageMcpTools {
             String standId,
             Long creneauId,
             LocalDate jour,
-            String raison,
+            boolean raisonRenseignee,
             Instant creeLe) {}
 }

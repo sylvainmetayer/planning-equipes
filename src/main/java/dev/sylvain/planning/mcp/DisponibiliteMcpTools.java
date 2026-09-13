@@ -155,8 +155,8 @@ public class DisponibiliteMcpTools {
                 declaration.statut(),
                 declaration.joursIndisponibles(),
                 declaration.souhaits(),
-                declaration.commentaire(),
-                declaration.commentaireAdmin(),
+                TextesLibres.renseigne(declaration.commentaire()),
+                TextesLibres.renseigne(declaration.commentaireAdmin()),
                 declaration.creeLe(),
                 declaration.decideLe(),
                 declaration.joursActuels());
@@ -185,14 +185,15 @@ public class DisponibiliteMcpTools {
     /** The applied declaration and the coherence warnings, in codes (see {@link WarningCodes}). */
     public record DeclarationAppliqueeMcpView(DeclarationMcpView declaration, List<String> avertissements) {}
 
+    /** Whether each comment was written, never what it says: see {@link TextesLibres}. */
     public record DeclarationMcpView(
             String id,
             String animateurId,
             String statut,
             List<LocalDate> joursIndisponibles,
             List<String> souhaits,
-            String commentaire,
-            String commentaireAdmin,
+            boolean commentaireRenseigne,
+            boolean commentaireAdminRenseigne,
             Instant creeLe,
             Instant decideLe,
             List<LocalDate> joursActuels) {}

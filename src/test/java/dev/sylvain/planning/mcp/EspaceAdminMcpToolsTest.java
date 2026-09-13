@@ -35,7 +35,7 @@ class EspaceAdminMcpToolsTest {
             AnonymisationViolations.of(List.of(), List.of(), List.of());
 
     @Test
-    void uneDeclarationSortSansLeNomDeSonAuteur() {
+    void aDeclarationLeavesWithoutItsAuthorsNameNorItsComment() {
         DeclarationMcpView vue = DisponibiliteMcpTools.toView(new DeclarationAdminView(
                 "d1",
                 "a1",
@@ -56,6 +56,8 @@ class EspaceAdminMcpToolsTest {
         assertThat(vue.joursIndisponibles()).containsExactly(LocalDate.of(2026, 7, 11));
         assertThat(vue.joursActuels()).containsExactly(LocalDate.of(2026, 7, 12));
         assertThat(vue.souhaits()).containsExactly("jeux-ambiance");
+        assertThat(vue.commentaireRenseigne()).isTrue();
+        assertThat(vue.commentaireAdminRenseigne()).isFalse();
         assertThat(DeclarationMcpView.class.getRecordComponents())
                 .extracting(composant -> composant.getName().toLowerCase())
                 .doesNotContain("animateurnom", "nom");
@@ -122,6 +124,9 @@ class EspaceAdminMcpToolsTest {
         assertThat(vue.standId()).isEqualTo("stand-a");
         assertThat(vue.standCibleId()).isEqualTo("stand-b");
         assertThat(vue.contraintesViolees()).containsExactly("animateur a1 dépasse 8 h le 11/07");
+        // « je dépose mes enfants »: that a reason exists travels, not the reason.
+        assertThat(vue.motifRenseigne()).isTrue();
+        assertThat(vue.commentaireAdminRenseigne()).isFalse();
         assertThat(DemandeView.class.getRecordComponents())
                 .extracting(composant -> composant.getName().toLowerCase())
                 .doesNotContain("demandeurnom", "ciblenom", "standnom", "standciblenom");

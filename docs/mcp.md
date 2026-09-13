@@ -63,7 +63,7 @@ reçu sur la requête : il suffit de le déclarer côté proxy.
 statut majeur/mineur et moins-de-16-ans — dérivés de la date, jamais la date —
 et les attributs de planification non identifiants.
 
-Trois mécanismes :
+Quatre mécanismes :
 
 1. **Des vues, jamais les objets de domaine.** Chaque outil renvoie un `record`
    dédié qui ne possède structurellement aucun accesseur vers un champ
@@ -78,11 +78,20 @@ Trois mécanismes :
    le référentiel ne connaît plus — une ligne enregistrée peut survivre à la
    fiche qu'elle nomme. Son pire cas est un libellé abîmé, jamais un nom qui
    sort ; un stand connu dont le nom a cette forme est épargné.
-3. **Un test structurel.** `McpConfidentialiteStructurelleTest` parcourt par
+3. **Les textes libres sortent en « renseigné ou non ».** Le motif d'une
+   demande d'échange, le commentaire d'une déclaration, la réponse de
+   l'organisation, la raison d'un verrouillage ou d'une contrainte ad hoc :
+   c'est là qu'un nom ou un rendez-vous médical revient (« je remplace
+   Marie D. »), et aucun filtre ne le distingue d'une phrase anodine. Les vues
+   portent `motifRenseigne`, `commentaireRenseigne`, `raisonRenseignee`…
+   L'écriture reste ouverte : refuser une demande ou une déclaration prend
+   toujours le commentaire que l'animateur lira. Le motif de fermeture d'un
+   stand sort tel quel — il décrit un stand, pas une personne.
+4. **Un test structurel.** `McpConfidentialiteStructurelleTest` parcourt par
    réflexion tous les `@Tool` et échoue si l'un expose `Animateur` ou un champ
-   `prenom` / `dateNaissance` / `email` / `accessToken`, **y compris à travers
-   les génériques**. Un nouvel outil mal filtré casse le build sans qu'on ait à
-   y penser.
+   `prenom` / `dateNaissance` / `email` / `accessToken` / `commentaire` /
+   `commentaireAdmin` / `raison`, **y compris à travers les génériques**. Un
+   nouvel outil mal filtré casse le build sans qu'on ait à y penser.
 
 **Corollaire côté écriture** : `modifier_animateur` fusionne au lieu de
 remplacer, contrairement au `PUT` REST. Un assistant qui ne peut pas lire

@@ -45,7 +45,7 @@ class VerrouillageMcpToolsTest {
     }
 
     @Test
-    void laVueNePorteQueLaCibleDuType() {
+    void theViewCarriesOnlyTheTargetOfItsType() {
         VerrouillagePlanning surJour = verrouillage("V1", TypeVerrouillage.JOUR);
         surJour.setJour(LocalDate.of(2026, 8, 15));
 
@@ -56,7 +56,8 @@ class VerrouillageMcpToolsTest {
         assertThat(view.animateurId()).isNull();
         assertThat(view.standId()).isNull();
         assertThat(view.creneauId()).isNull();
-        assertThat(view.raison()).isEqualTo("validé avec l'équipe");
+        // Free text: that one was written travels, not what it says.
+        assertThat(view.raisonRenseignee()).isTrue();
     }
 
     @Test

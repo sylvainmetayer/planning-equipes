@@ -346,7 +346,7 @@ public class ParametresMcpTools {
                         .toList(),
                 contrainte.getCreneau() == null ? null : contrainte.getCreneau().getId(),
                 contrainte.getStand() == null ? null : contrainte.getStand().getId(),
-                contrainte.getRaison(),
+                TextesLibres.renseigne(contrainte.getRaison()),
                 contrainte.getCreeParUtilisateurId(),
                 contrainte.getCreeLe());
     }
@@ -367,13 +367,14 @@ public class ParametresMcpTools {
 
     public record ParametresSolveurView(int dureeResolutionSecondes) {}
 
+    /** Whether a reason was given, never what it says: see {@link TextesLibres}. */
     public record ContrainteAdHocView(
             String id,
             TypeContrainteAdHoc type,
             List<String> animateurIds,
             Long creneauId,
             String standId,
-            String raison,
+            boolean raisonRenseignee,
             String creeParUtilisateurId,
             Instant creeLe) {}
 }
