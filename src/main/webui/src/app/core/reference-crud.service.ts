@@ -38,6 +38,16 @@ const RECHARGE = '\u0000recharge';
  */
 const MAX_AVERTISSEMENTS_DETAILLES = 3;
 
+/**
+ * The screen of a resource whose route is not its API name. The manual
+ * adjustments are `contraintes-ad-hoc` on the wire and `/ad-hoc-constraints`
+ * in the router: « Voir la fiche » on their warning led to a page that does
+ * not exist.
+ */
+const ROUTE_PAR_RESSOURCE: Readonly<Record<string, string>> = {
+  'contraintes-ad-hoc': '/ad-hoc-constraints',
+};
+
 @Injectable({ providedIn: 'root' })
 export class ReferenceCrudService {
   private readonly store = inject(ReferenceDataStore);
@@ -102,7 +112,7 @@ export class ReferenceCrudService {
           // The dates to check live on the record just saved: one click
           // reopens it, instead of a search through the list behind the snack.
           lien: {
-            route: `/${resource}`,
+            route: ROUTE_PAR_RESSOURCE[resource] ?? `/${resource}`,
             queryParams: { edit: String(identifiant) },
             libelle: $localize`:@@crud.voirFiche:Voir la fiche`,
           },

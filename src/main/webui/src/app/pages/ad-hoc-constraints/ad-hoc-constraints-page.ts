@@ -10,6 +10,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { consumeQueryParam } from '../../core/view-query-params';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
 import {
   AdHocConstraintFormData,
@@ -71,8 +72,17 @@ export class AdHocConstraintsPage {
   private readonly dialog = inject(MatDialog);
 
   constructor() {
-    void this.crud.reload();
+    const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
+    // `?edit=<id>`: « Voir la fiche » on an adjustment saved with a warning
+    // lands here with its form open, as it does on the other reference screens.
+    consumeQueryParam('edit', async (edit) => {
+      await chargement;
+      const contrainte = this.store.contraintes().find((candidate) => candidate.id === edit);
+      if (contrainte) {
+        this.openDialog(contrainte);
+      }
+    });
   }
 
   protected typeLabel(contrainte: ContrainteAdHoc): string {

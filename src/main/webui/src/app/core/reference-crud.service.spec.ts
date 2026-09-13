@@ -121,6 +121,26 @@ describe('ReferenceCrudService', () => {
       expect(notifications.notify).toHaveBeenCalledTimes(1);
     });
 
+    // « Voir la fiche » mène à l'écran de la ressource : son nom d'API, sauf
+    // pour les ajustements, dont la route ne porte pas le même nom.
+    it.each([
+      ['animateurs', 'A1', '/animateurs'],
+      ['contraintes-ad-hoc', 'AH1', '/ad-hoc-constraints'],
+    ])('relie l’avertissement de %s à la fiche sur son écran', async (resource, id, route) => {
+      store.save.mockResolvedValueOnce({
+        id,
+        avertissements: [{ type: 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE', message: 'indisponible' }],
+      });
+
+      await service.save(resource, { id }, null, 'Fiche');
+
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lien: expect.objectContaining({ route, queryParams: { edit: id } }),
+        }),
+      );
+    });
+
     it('détaille au plus trois avertissements puis compte le reste', async () => {
       store.save.mockResolvedValueOnce({
         id: 'A1',
