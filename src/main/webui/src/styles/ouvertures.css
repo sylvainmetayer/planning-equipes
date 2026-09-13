@@ -464,22 +464,38 @@
   background: var(--mat-sys-surface-container-low);
 }
 
+/* Quatre états sur une même ligne, quatre teintes qui se distinguent d'un coup
+   d'œil. Les conteneurs Material — `primary-container` #d7e3ff,
+   `tertiary-container` #e0e0ff, `surface-container-high` #e9e7eb — tiennent en
+   trois pour cent de clarté : ouvert, relais et créneau de la grille se
+   lisaient pareil sur une journée entière. Les couleurs pleines les écartent,
+   et le relais garde en plus ses hachures et son trait pointillé, pour que la
+   différence survive au mode sombre comme au daltonisme. */
 .axe-swatch-bloc,
 .axe-bloc {
-  background-color: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
+  background-color: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
 }
 
 .axe-swatch-relais,
 .axe-bloc-relais {
-  background-color: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
+  background-color: var(--mat-sys-tertiary);
+  color: var(--mat-sys-on-tertiary);
+  /* 135°, quand l'ouverture sans effet hachure à 45° : deux motifs qui ne se
+     confondent pas. Assez pâles pour laisser lire l'effectif au travers. */
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mat-sys-on-tertiary) 22%, transparent) 0 3px,
+    transparent 3px 10px
+  );
   border-style: dashed;
+  border-color: var(--mat-sys-on-tertiary);
 }
 
 .axe-swatch-bande,
 .axe-bande-fond {
-  background-color: var(--mat-sys-surface-container-high);
+  background-color: var(--mat-sys-surface-container-highest);
+  border: 1px solid var(--mat-sys-outline-variant);
 }
 
 .axe-swatch-hors,
