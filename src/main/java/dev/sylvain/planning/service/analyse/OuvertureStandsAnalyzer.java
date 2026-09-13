@@ -66,11 +66,12 @@ public final class OuvertureStandsAnalyzer {
      * this flags produce stretches of a few minutes (historically the single
      * minute a closure ending at {@code 23:59} left on a day closing at midnight).
      *
-     * <p>Deliberately <b>not</b> {@code ParametresDecoupage.dureeVacationMinMinutes}:
-     * that one is the floor for slicing a long amplitude into vacations — 250 min
-     * on some scenarios — and comparing against it flagged every stand
-     * legitimately open for two hours. An anomaly that fires on correct data
-     * stops being read.</p>
+     * <p>Deliberately <b>not</b> a vacation-length setting: the floor the
+     * découpage used when it sliced a long amplitude ran to 250 min on some
+     * scenarios, and comparing against it flagged every stand legitimately open
+     * for two hours. An anomaly that fires on correct data stops being read —
+     * which is why this stays a constant of what a stand opening can plausibly
+     * be, not a knob.</p>
      */
     public static final int DUREE_MINIMALE_EXPLOITABLE_MINUTES = 15;
 

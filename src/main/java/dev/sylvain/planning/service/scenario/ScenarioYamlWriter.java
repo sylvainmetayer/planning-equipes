@@ -5,7 +5,6 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.JourneeType;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -58,7 +57,6 @@ public final class ScenarioYamlWriter {
             List<TypologieItem> typologies,
             List<Emplacement> emplacements,
             ParametresLegaux parametresLegaux,
-            ParametresDecoupage parametresDecoupage,
             ParametresSolveur parametresSolveur,
             Set<String> contraintesDesactivees,
             Map<String, Integer> poidsContraintes,
@@ -75,7 +73,6 @@ public final class ScenarioYamlWriter {
                 List<TypologieItem> typologies,
                 List<Emplacement> emplacements,
                 ParametresLegaux parametresLegaux,
-                ParametresDecoupage parametresDecoupage,
                 ParametresSolveur parametresSolveur,
                 Set<String> contraintesDesactivees,
                 Map<String, Integer> poidsContraintes,
@@ -88,7 +85,6 @@ public final class ScenarioYamlWriter {
                     typologies,
                     emplacements,
                     parametresLegaux,
-                    parametresDecoupage,
                     parametresSolveur,
                     contraintesDesactivees,
                     poidsContraintes,
@@ -103,8 +99,7 @@ public final class ScenarioYamlWriter {
      * appear.
      *
      * <p>It writes the four entity sections and <em>nothing else</em>: no
-     * {@code parametresLegaux}, {@code parametresDecoupage} or
-     * {@code parametresSolveur}, no typologies, no emplacements. That is exactly
+     * {@code parametresLegaux} or {@code parametresSolveur}, no typologies, no emplacements. That is exactly
      * the amputated file {@link PlanningService#exportScenarioYaml()} documents
      * as a fixed bug — one that silently fell back on the importing instance's
      * own settings. Real exports go through {@link #buildScenarioYaml(ScenarioExport)}.</p>
@@ -115,18 +110,7 @@ public final class ScenarioYamlWriter {
     public static String buildScenarioYaml(
             List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux, List<PosteAffectation> postes) {
         return buildScenarioYaml(new ScenarioExport(
-                animateurs,
-                stands,
-                creneaux,
-                postes,
-                List.of(),
-                List.of(),
-                null,
-                null,
-                null,
-                Set.of(),
-                Map.of(),
-                List.of()));
+                animateurs, stands, creneaux, postes, List.of(), List.of(), null, null, Set.of(), Map.of(), List.of()));
     }
 
     /** Full-fidelity variant: writes every optional section {@link ScenarioExport} carries. */

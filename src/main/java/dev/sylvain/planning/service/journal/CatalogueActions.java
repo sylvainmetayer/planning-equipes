@@ -83,7 +83,6 @@ public final class CatalogueActions {
         changesData("CRENEAUX_SUPPRIMES", "Créneaux supprimés en lot", Entite.CRENEAU);
         changesData("CRENEAUX_RECURRENTS_CREES", "Créneaux récurrents générés", Entite.CRENEAU);
         changesData("CRENEAUX_DERIVES", "Créneaux dérivés des horaires des stands", Entite.CRENEAU);
-        changesData("DECOUPAGE_GENERE", "Découpage des amplitudes en vacations", Entite.CRENEAU);
         // Day templates (ADR 0032): a template or its calendar changes nothing
         // the solver reads until applied; applying does, recognising does not.
         action("JOURNEE_TYPE_CREEE", "Journée type ajoutée", Entite.CRENEAU);
@@ -151,8 +150,6 @@ public final class CatalogueActions {
 
         /* ------------------------- Settings ------------------------- */
         changesData("PARAMETRES_LEGAUX_MODIFIES", "Paramètres légaux modifiés", Entite.PARAMETRES);
-        changesData("PARAMETRES_DECOUPAGE_MODIFIES", "Paramètres de découpage modifiés", Entite.PARAMETRES);
-        changesData("MODE_GRILLE_MODIFIE", "Mode de la grille des créneaux changé", Entite.PARAMETRES);
         changesData("PARAMETRES_SOLVEUR_MODIFIES", "Paramètres du solveur modifiés", Entite.PARAMETRES);
         action("PARAMETRES_NOTIFICATIONS_MODIFIES", "Paramètres de notifications modifiés", Entite.PARAMETRES);
         changesData("CONTRAINTE_ACTIVEE", "Contrainte activée", Entite.PARAMETRES);
@@ -225,7 +222,6 @@ public final class CatalogueActions {
         route("CreneauResource#deleteCreneau", "CRENEAU_SUPPRIME");
         route("CreneauResource#createRecurrence", "CRENEAUX_RECURRENTS_CREES");
         route("CreneauResource#applyDerivation", "CRENEAUX_DERIVES");
-        route("DecoupageResource#generateDecoupage", "DECOUPAGE_GENERE");
         route("JourneeTypeResource#create", "JOURNEE_TYPE_CREEE");
         route("JourneeTypeResource#update", "JOURNEE_TYPE_MODIFIEE");
         route("JourneeTypeResource#delete", "JOURNEE_TYPE_SUPPRIMEE");
@@ -290,8 +286,6 @@ public final class CatalogueActions {
         route("ReferenceDataResource#importScenarioFile", "SCENARIO_IMPORTE");
 
         route("ParametresResource#updateParametresLegaux", "PARAMETRES_LEGAUX_MODIFIES");
-        route("ParametresResource#updateParametresDecoupage", "PARAMETRES_DECOUPAGE_MODIFIES");
-        route("ParametresResource#updateModeGrille", "MODE_GRILLE_MODIFIE");
         route("ParametresResource#updateParametresSolveur", "PARAMETRES_SOLVEUR_MODIFIES");
         route("ParametresResource#updateParametresNotifications", "PARAMETRES_NOTIFICATIONS_MODIFIES");
         route("ConstraintResource#setActif", "CONTRAINTE_ACTIVEE");
@@ -357,7 +351,6 @@ public final class CatalogueActions {
         outil("retirer_dates_journee_type", "CALENDRIER_JOURNEES_TYPES_MODIFIE");
         outil("materialiser_journees_types", "JOURNEES_TYPES_APPLIQUEES");
         outil("reconnaitre_journees_types", "JOURNEES_TYPES_RECONNUES");
-        outil("generer_decoupage", "DECOUPAGE_GENERE");
 
         outil("creer_emplacement", "EMPLACEMENT_CREE");
         outil("modifier_emplacement", "EMPLACEMENT_MODIFIE");
@@ -397,7 +390,6 @@ public final class CatalogueActions {
         outil("importer_scenario_yaml", "SCENARIO_IMPORTE");
 
         outil("modifier_parametres_legaux", "PARAMETRES_LEGAUX_MODIFIES");
-        outil("modifier_parametres_decoupage", "PARAMETRES_DECOUPAGE_MODIFIES");
         outil("modifier_parametres_solveur", "PARAMETRES_SOLVEUR_MODIFIES");
         outil("modifier_parametres_notifications", "PARAMETRES_NOTIFICATIONS_MODIFIES");
         outil("activer_contrainte", "CONTRAINTE_ACTIVEE");

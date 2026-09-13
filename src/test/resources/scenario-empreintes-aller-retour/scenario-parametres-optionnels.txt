@@ -5,7 +5,7 @@
 .planning.dateDebutFestival = 2026-07-08
 .planning.fenetresRepas[0]  9e1cd1d1973650c5
 .planning.fenetresRepas[1]  ab651a6748181af8
-.planning.parametresLegaux[0]  24b04fdece55b240
+.planning.parametresLegaux[0]  f9ee3ca3dd40ee23
 .planning.parametresQualite[0]  33dd46864ff3cece
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario = null
@@ -13,16 +13,8 @@
 .planning.score = null
 .planning.verrouillages = (vide)
 .sections.contraintes = null
-.sections.decoupageAuto = false
 .sections.edition = null
 .sections.journeesTypes = null
-.sections.modeGrilleDeclare = VACATIONS
-.sections.parametresDecoupage.dureeChevauchementMinutes = 30
-.sections.parametresDecoupage.dureeVacationCibleMinutes = 300
-.sections.parametresDecoupage.dureeVacationMaxMinutes = 360
-.sections.parametresDecoupage.dureeVacationMinMinutes = 250
-.sections.parametresDecoupage.modeGrille = VACATIONS
-.sections.parametresDecoupage.strategieCouverturePendantPause = RELEVE
 .sections.parametresLegaux.coupureRepasMidiDebut = 12:30
 .sections.parametresLegaux.coupureRepasMidiFin = 14:00
 .sections.parametresLegaux.coupureRepasMinutes = 60
@@ -30,6 +22,7 @@
 .sections.parametresLegaux.coupureRepasSoirFin = 21:00
 .sections.parametresLegaux.dureeHebdomadaireMaxMineurMinutes = 2100
 .sections.parametresLegaux.dureeHebdomadaireMaxMinutes = 2880
+.sections.parametresLegaux.dureeVacationMaxMinutes = 250
 .sections.parametresLegaux.heureDebutSoiree = 22:00
 .sections.parametresLegaux.pauseMinimaleEntreVacationsMinutes = 30
 .sections.parametresLegaux.pauseSurPoste = false

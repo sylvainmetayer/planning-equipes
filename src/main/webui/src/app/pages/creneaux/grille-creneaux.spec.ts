@@ -24,7 +24,6 @@ function anomaly(patch: Partial<AnomalieGrille>): AnomalieGrille {
 
 function rapport(anomalies: AnomalieGrille[], faisable: boolean | null = true): RapportGrille {
   return {
-    mode: 'AMPLITUDES',
     nombreCreneaux: 3,
     anomalies,
     ouvertures: [],

@@ -1,7 +1,6 @@
 package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.DiagnosticGrille;
@@ -138,14 +137,13 @@ public class CreneauMcpTools {
         return new SuppressionResult(String.valueOf(id), true);
     }
 
-    /* ------------------------- Grid: mode and checks ------------------------- */
+    /* ----------------------------- Grid: checks ------------------------------ */
 
     @Tool(
-            description = "Décrit la grille de créneaux en place : combien, sur quelles dates, et si ce sont des "
-                    + "AMPLITUDES journalières (à découper en vacations) ou des VACATIONS déjà solvables. Appeler cet "
-                    + "outil AVANT de créer des créneaux, pour ne pas mélanger les deux natures dans une même édition. "
-                    + "Le champ modeCertain dit si la réponse est prouvée par les données ou seulement probable : quand "
-                    + "il vaut false, demander confirmation à l'utilisateur plutôt que de supposer.",
+            description = "Décrit la grille de créneaux en place : combien de vacations, sur quelles dates, avec "
+                    + "quelle durée médiane, et combien sont des relais repas (effectif divisé par deux). Le premier "
+                    + "appel utile pour découvrir une édition, avant de créer des créneaux ou de lancer "
+                    + "valider_creneaux.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -159,11 +157,9 @@ public class CreneauMcpTools {
 
     @Tool(
             description = "Contrôle la cohérence de la grille de créneaux actuelle et signale ce qui cloche : "
-                    + "doublons, chevauchements, trous dans une journée, durées incohérentes, dates isolées, stands que "
-                    + "personne ne pourra armer, et sous-effectif. Le mode est OBLIGATOIRE parce qu'il change le verdict : "
-                    + "deux créneaux qui se chevauchent le même jour sont une erreur de saisie entre AMPLITUDES, et la "
-                    + "situation normale entre VACATIONS décalées. En cas de doute, appeler diagnostiquer_grille_creneaux "
-                    + "puis demander à l'utilisateur.",
+                    + "doublons, trous dans une journée, vacations plus longues que le maximum légal, dates isolées, "
+                    + "relais repas hors fenêtre, stands que personne ne pourra armer, et sous-effectif. Deux créneaux "
+                    + "qui se chevauchent le même jour sont normaux : ce sont deux vacations décalées.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -171,14 +167,8 @@ public class CreneauMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     RapportGrille valider_creneaux(
-            @ToolArg(
-                            description =
-                                    "AMPLITUDES (journées à découper) ou VACATIONS (vacations finales) ; omis = le "
-                                            + "mode déclaré de l'édition",
-                            required = false)
-                    String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return referenceDataService.controlerGrille(modeOrDeclared(mode));
+        return referenceDataService.controlerGrille();
     }
 
     /* ----------------------------- Grid: recurrence -------------------------- */
@@ -200,8 +190,6 @@ public class CreneauMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     PrevisualisationRecurrence previsualiser_creneaux_recurrents(
-            @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false)
-                    String mode,
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
             @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ), bornes incluses", required = false)
@@ -213,9 +201,8 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false)
                     List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        ModeGrilleCreneaux modeGrille = modeOrDeclared(mode);
         ReferenceDataService.RecurrenceGrille apercu = referenceDataService.previewRecurrence(
-                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres), modeGrille);
+                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
         return new PrevisualisationRecurrence(
                 apercu.creneaux().size(),
                 apercu.creneaux().stream().map(CreneauMcpTools::toView).toList(),
@@ -234,8 +221,6 @@ public class CreneauMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     PrevisualisationRecurrence creer_creneaux_recurrents(
-            @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false)
-                    String mode,
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
             @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ), bornes incluses", required = false)
@@ -247,9 +232,8 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false)
                     List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        ModeGrilleCreneaux modeGrille = modeOrDeclared(mode);
         ReferenceDataService.RecurrenceGrille ecrit = referenceDataService.createRecurrence(
-                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres), modeGrille);
+                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
         return new PrevisualisationRecurrence(
                 ecrit.creneaux().size(),
                 ecrit.creneaux().stream().map(CreneauMcpTools::toView).toList(),
@@ -286,20 +270,17 @@ public class CreneauMcpTools {
                                     "true pour juger la grille dérivée seule, comme si elle remplaçait l'actuelle",
                             required = false)
                     Boolean remplacer,
-            @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false)
-                    String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.previewDerivation(
                 parametresDerivation(dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes),
-                Boolean.TRUE.equals(remplacer),
-                modeOrDeclared(mode)));
+                Boolean.TRUE.equals(remplacer)));
     }
 
     @Tool(
             description = "Écrit la grille de créneaux dérivée des horaires des stands — mêmes arguments que "
                     + "previsualiser_derivation_creneaux, qu'il faut avoir appelé d'abord. Par défaut les créneaux "
-                    + "s'AJOUTENT à la grille ; remplacer=true remplace toute la grille et EFFACE le planning résolu, "
-                    + "comme generer_decoupage.",
+                    + "s'AJOUTENT à la grille ; remplacer=true remplace toute la grille et EFFACE le planning "
+                    + "résolu.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -318,13 +299,10 @@ public class CreneauMcpTools {
                     Integer dureeMinimaleMinutes,
             @ToolArg(description = "true pour remplacer toute la grille (efface le planning résolu)", required = false)
                     Boolean remplacer,
-            @ToolArg(description = "AMPLITUDES ou VACATIONS ; omis = le mode déclaré de l'édition", required = false)
-                    String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.applyDerivation(
                 parametresDerivation(dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes),
-                Boolean.TRUE.equals(remplacer),
-                modeOrDeclared(mode)));
+                Boolean.TRUE.equals(remplacer)));
     }
 
     private static GrilleDepuisFenetres.Parametres parametresDerivation(
@@ -395,57 +373,7 @@ public class CreneauMcpTools {
         return heure == null || heure.equals(creneau.getHeureDebut());
     }
 
-    /* -------------------------------- Slicing ------------------------------- */
-
-    @Tool(
-            description = "Prévisualise le découpage : les vacations que les créneaux actuels de l'édition "
-                    + "(lus comme des amplitudes) produiraient avec les paramètres de découpage courants. "
-                    + "Ne persiste rien.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = true,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    List<CreneauView> previsualiser_decoupage(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return referenceDataService.previewDecoupage().stream()
-                .map(CreneauMcpTools::toView)
-                .toList();
-    }
-
-    @Tool(
-            description = "Génère le découpage EN PLACE : les créneaux actuels de l'édition (les amplitudes) sont "
-                    + "remplacés par les vacations générées, et le planning résolu est effacé avec eux. Pour re-découper "
-                    + "avec d'autres paramètres, ré-importer le scénario source.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = true,
-                            idempotentHint = false,
-                            openWorldHint = false))
-    List<CreneauView> generer_decoupage(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        referenceDataService.generateDecoupage();
-        // Not lister_creneaux(edition): a self-invocation bypasses
-        // EditionCibleeInterceptor, and this call already runs in the edition
-        // it bound.
-        return creneauxCourants();
-    }
-
     /* -------------------------------- Outils -------------------------------- */
-
-    /**
-     * The mode named by the call, or the one the edition declares on its
-     * Créneaux page ({@code parametresDecoupage.modeGrille}) when the call
-     * names none — the declaration is the operator's answer, given once.
-     */
-    private ModeGrilleCreneaux modeOrDeclared(String mode) {
-        if (mode == null || mode.isBlank()) {
-            return referenceDataService.getParametresDecoupage().getModeGrille();
-        }
-        return McpArgs.enumeration(ModeGrilleCreneaux.class, mode, "mode");
-    }
 
     private static RegleRecurrence regle(
             String jours,

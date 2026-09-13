@@ -4,7 +4,6 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.Stand;
@@ -85,11 +84,6 @@ public class EmptyReferenceData implements ReferenceData {
     @Override
     public ParametresLegaux getParametresLegaux() {
         return new ParametresLegaux();
-    }
-
-    @Override
-    public ParametresDecoupage getParametresDecoupage() {
-        return new ParametresDecoupage();
     }
 
     @Override

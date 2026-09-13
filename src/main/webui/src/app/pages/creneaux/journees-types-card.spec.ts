@@ -144,7 +144,6 @@ describe('JourneesTypesCard', () => {
       conserves: 1,
       misAJour: 0,
       aucunChangement: false,
-      modeADeclarer: true,
     };
     api.previewApplication.mockResolvedValue(apercu);
     const { card } = await monter();

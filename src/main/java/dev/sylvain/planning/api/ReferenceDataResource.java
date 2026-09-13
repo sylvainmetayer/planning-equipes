@@ -115,8 +115,8 @@ public class ReferenceDataResource {
      * the (potentially large) planning never travels to the browser and back —
      * the client only sends the desired scenario name.
      *
-     * <p>A scenario may optionally pin {@code parametresLegaux:},
-     * {@code parametresDecoupage:} and/or {@code parametresSolveur:} — when
+     * <p>A scenario may optionally pin {@code parametresLegaux:} and/or
+     * {@code parametresSolveur:} — when
      * present, they are persisted too, so the parameters a scenario was
      * authored/verified against travel with it instead of silently depending
      * on whatever is already configured. {@code parametresSolveur} in
@@ -125,13 +125,9 @@ public class ReferenceDataResource {
      * caller to guess or under-time a solve. Absent, the current database
      * values are left untouched.
      *
-     * <p>A scenario may also pin {@code decoupageAuto:}, applied after
-     * {@code parametresDecoupage:} so the découpage it triggers already runs
-     * against the parameters the scenario itself pinned — sparing the operator
-     * the manual "Découpage" screen round-trip after every import of that
-     * scenario. When it does, this returns 200 with an
-     * {@link ImportScenarioResult} carrying the target edition's name instead
-     * of the usual 204, so the frontend can notify the operator.
+     * <p>Returns 200 with an {@link ImportScenarioResult} carrying the target
+     * edition's name, so the frontend can tell the operator where the data
+     * landed — the browser may be sitting on another edition entirely.
      */
     @POST
     @Path("/import-scenario")
@@ -164,19 +160,15 @@ public class ReferenceDataResource {
      * rule.
      */
     private static Response toResponse(ScenarioImportService.ScenarioImportOutcome outcome) {
-        return Response.ok(new ImportScenarioResult(
-                        outcome.decoupageAuto(), outcome.editionId(), outcome.editionNom(), outcome.editionCreee()))
+        return Response.ok(new ImportScenarioResult(outcome.editionId(), outcome.editionNom(), outcome.editionCreee()))
                 .build();
     }
 
     /**
-     * Body returned by {@link #importScenario} and {@link #importScenarioFile}
-     * when the scenario carried a {@code decoupageAuto:} section, so the
-     * frontend can notify the operator that the imported amplitudes were
-     * auto-sliced into the vacations the edition now holds.
+     * Body returned by {@link #importScenario} and {@link #importScenarioFile}:
+     * where the data landed, and whether the import had to create that edition.
      */
-    public record ImportScenarioResult(
-            boolean decoupageAuto, String editionId, String editionNom, Boolean editionCreee) {}
+    public record ImportScenarioResult(String editionId, String editionNom, Boolean editionCreee) {}
 
     /**
      * Validates a scenario YAML file's structure (types, required fields,

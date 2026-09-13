@@ -163,7 +163,9 @@ const adminRoutes: Routes = [
   // Pre-Paramètres URLs (bookmarks, aide links): the pages were merged there.
   { path: 'data-transfer', redirectTo: 'parametres' },
   { path: 'data-setup', redirectTo: 'parametres' },
-  { path: 'decoupage', redirectTo: 'parametres' },
+  // The découpage had a page of its own, then a card on Paramètres, then
+  // nothing: a grid is made of vacations, so the address lands on the grid.
+  { path: 'decoupage', redirectTo: 'creneaux' },
   { path: 'validateur-yaml', redirectTo: 'debug' },
   {
     path: 'stands',

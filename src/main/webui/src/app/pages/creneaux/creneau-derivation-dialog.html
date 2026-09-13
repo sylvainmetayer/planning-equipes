@@ -44,7 +44,7 @@
     @if (apercu.nombreGeneres === 0) {
       <p class="field-error" role="alert" i18n="@@creneaux.derivation.rien">Aucun stand ne déclare de fenêtre d'ouverture sur ces dates : rien à dériver.</p>
     }
-    <div class="decoupage-resume">
+    <div class="jours-resume">
       @for (jour of resume(); track jour.date) {
         <p>
           <strong>{{ jour.date }}</strong>

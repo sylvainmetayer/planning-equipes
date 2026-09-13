@@ -342,7 +342,6 @@ class ReferentielMcpToolsTest {
         creneauTools.supprimer_creneaux(null, null, null, true, null);
 
         CreneauMcpTools.PrevisualisationRecurrence apercu = creneauTools.previsualiser_creneaux_recurrents(
-                "AMPLITUDES",
                 "09:00-12:00,14:00-18:00",
                 "JOURS_SEMAINE",
                 "2026-07-06",
@@ -356,7 +355,6 @@ class ReferentielMcpToolsTest {
         assertThat(referenceDataService.listCreneaux()).isEmpty(); // la prévisualisation n'écrit rien
 
         CreneauMcpTools.PrevisualisationRecurrence creation = creneauTools.creer_creneaux_recurrents(
-                "AMPLITUDES",
                 "09:00-12:00,14:00-18:00",
                 "JOURS_SEMAINE",
                 "2026-07-06",
@@ -398,13 +396,13 @@ class ReferentielMcpToolsTest {
                 new dev.sylvain.planning.domain.FenetreHoraire(java.time.LocalTime.of(14, 0), null)))));
         referenceDataService.createStand(stand);
 
-        CreneauMcpTools.RapportDerivationMcp apercu = creneauTools.previsualiser_derivation_creneaux(
-                "2026-07-06", "2026-07-07", "20:00", null, null, null, null);
+        CreneauMcpTools.RapportDerivationMcp apercu =
+                creneauTools.previsualiser_derivation_creneaux("2026-07-06", "2026-07-07", "20:00", null, null, null);
         assertThat(apercu.nombreGeneres()).isEqualTo(4);
         assertThat(referenceDataService.listCreneaux()).isEmpty();
 
-        CreneauMcpTools.RapportDerivationMcp ecrit = creneauTools.generer_creneaux_depuis_stands(
-                "2026-07-06", "2026-07-07", "20:00", null, null, null, null);
+        CreneauMcpTools.RapportDerivationMcp ecrit =
+                creneauTools.generer_creneaux_depuis_stands("2026-07-06", "2026-07-07", "20:00", null, null, null);
         assertThat(ecrit.nombreGeneres()).isEqualTo(4);
         assertThat(referenceDataService.listCreneaux()).hasSize(4);
 
@@ -419,14 +417,15 @@ class ReferentielMcpToolsTest {
                 .hasMessageContaining("tous=true");
     }
 
-    /** The edition declares its mode once, on the Créneaux page: a call naming none reads that declaration. */
+    /**
+     * There is one reading of a grid left, so the check takes no mode: two
+     * vacations of the same day that overlap are a staggered handover, never a
+     * duplicate entry.
+     */
     @Test
-    void unModeDeGrilleManquantLitLeModeDeclareDeLEdition() {
-        assertThat(creneauTools.valider_creneaux(null, null).mode())
-                .isEqualTo(referenceDataService.getParametresDecoupage().getModeGrille());
-        assertThatThrownBy(() -> creneauTools.valider_creneaux("BIDULE", null))
-                .isInstanceOf(ToolCallException.class)
-                .hasMessageContaining("AMPLITUDES");
+    void leControleDeGrilleNeDemandePlusDeMode() {
+        assertThat(creneauTools.valider_creneaux(null).nombreCreneaux())
+                .isEqualTo(referenceDataService.listCreneaux().size());
     }
 
     @Test

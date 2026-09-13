@@ -56,6 +56,7 @@ describe('ParametresLegauxCard', () => {
       coupureRepasSoirDebut: '19:00:00',
       coupureRepasSoirFin: '21:00:00',
       heureDebutSoiree: '20:00:00',
+      dureeVacationMaxMinutes: 6 * 60,
     });
     const card = createCard();
     await vi.waitFor(() => expect(card.pauseSurPoste()).toBe(true));
@@ -77,6 +78,7 @@ describe('ParametresLegauxCard', () => {
       coupureRepasSoirDebut: '19:00:00',
       coupureRepasSoirFin: '21:00:00',
       heureDebutSoiree: '20:00:00',
+      dureeVacationMaxMinutes: 6 * 60,
     });
   });
 
@@ -93,6 +95,7 @@ describe('ParametresLegauxCard', () => {
       coupureRepasSoirDebut: '19:00:00',
       coupureRepasSoirFin: '21:00:00',
       heureDebutSoiree: '20:00:00',
+      dureeVacationMaxMinutes: 6 * 60,
     });
     const card = createCard();
     await vi.waitFor(() => expect(card.heureDebutSoiree()).toBe('20:00:00'));

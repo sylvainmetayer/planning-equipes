@@ -248,7 +248,7 @@ class DiagnosticMcpToolsTest {
         p3.setAnimateur(seul);
         persistence.persist(new PlanningEvenement(jour, List.of(alice, bruno, seul), List.of(p1, p2, p3)));
         parametresTools.modifier_parametres_legaux(
-                null, null, null, null, true, null, null, null, null, null, null, null);
+                null, null, null, null, null, true, null, null, null, null, null, null, null);
 
         PausesView tout = diagnosticTools.analyser_pauses(null, null, null, null);
         assertThat(tout.pauseSurPoste()).isTrue();
@@ -280,7 +280,7 @@ class DiagnosticMcpToolsTest {
                 .isEmpty();
 
         parametresTools.modifier_parametres_legaux(
-                null, null, null, null, false, null, null, null, null, null, null, null);
+                null, null, null, null, null, false, null, null, null, null, null, null, null);
         assertThat(diagnosticTools.analyser_pauses(null, null, null, null).pauseSurPoste())
                 .isFalse();
     }

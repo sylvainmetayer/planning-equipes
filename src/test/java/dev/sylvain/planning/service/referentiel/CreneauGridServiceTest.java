@@ -5,8 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.GridAnomaly;
@@ -29,7 +27,6 @@ import org.junit.jupiter.api.Test;
  */
 class CreneauGridServiceTest {
 
-    private static final ParametresDecoupage DECOUPAGE = new ParametresDecoupage();
     private static final ParametresLegaux LEGAUX = new ParametresLegaux();
 
     private final CreneauGridService service = new CreneauGridService();
@@ -123,12 +120,18 @@ class CreneauGridServiceTest {
 
     /* ------------------------------ Validation ------------------------------ */
 
+    /**
+     * Two vacations of the same day that overlap are the normal shape of a
+     * staggered handover, never a mistake. It used to depend on the grid's
+     * declared mode — an overlap between two amplitudes was a duplicate entry —
+     * and there is no second reading left to tell apart.
+     */
     @Test
-    void unChevauchementEstSignaleEntreAmplitudesEtIgnoreEntreVacations() {
+    void unChevauchementEntreVacationsDuMemeJourNestPasUneAnomalie() {
         List<Creneau> qui = List.of(creneau("2026-07-06", "09:00", "13:00"), creneau("2026-07-06", "12:00", "18:00"));
 
-        assertThat(typesDetectes(qui, ModeGrilleCreneaux.AMPLITUDES)).contains(GridAnomalyType.CHEVAUCHEMENT);
-        assertThat(typesDetectes(qui, ModeGrilleCreneaux.VACATIONS)).doesNotContain(GridAnomalyType.CHEVAUCHEMENT);
+        assertThat(service.validate(qui, List.of(), List.of(), LEGAUX).anomalies())
+                .isEmpty();
     }
 
     @Test
@@ -136,9 +139,8 @@ class CreneauGridServiceTest {
         List<Creneau> withHole =
                 List.of(creneau("2026-07-06", "09:00", "12:00"), creneau("2026-07-06", "14:00", "18:00"));
 
-        List<GridAnomaly> anomalies = service.validate(
-                        withHole, List.of(), List.of(), ModeGrilleCreneaux.AMPLITUDES, DECOUPAGE, LEGAUX)
-                .anomalies();
+        List<GridAnomaly> anomalies =
+                service.validate(withHole, List.of(), List.of(), LEGAUX).anomalies();
 
         assertThat(anomalies).extracting(GridAnomaly::type).contains(GridAnomalyType.TROU_DANS_LA_JOURNEE);
         assertThat(anomalies).extracting(GridAnomaly::message).anyMatch(message -> message.contains("120 min"));
@@ -149,8 +151,7 @@ class CreneauGridServiceTest {
         List<Creneau> doublon =
                 List.of(creneau("2026-07-06", "09:00", "12:00"), creneau("2026-07-06", "09:00", "12:00"));
 
-        CreneauGridService.RapportGrille rapport =
-                service.validate(doublon, List.of(), List.of(), ModeGrilleCreneaux.AMPLITUDES, DECOUPAGE, LEGAUX);
+        CreneauGridService.RapportGrille rapport = service.validate(doublon, List.of(), List.of(), LEGAUX);
 
         assertThat(rapport.hasNoBlockingAnomaly()).isFalse();
         assertThat(rapport.anomalies()).extracting(GridAnomaly::type).contains(GridAnomalyType.DOUBLON);
@@ -161,17 +162,29 @@ class CreneauGridServiceTest {
         // 07:00 -> 23:00 = 960 min, above 1440 - 660 (default daily rest) = 780.
         List<Creneau> trop = List.of(creneau("2026-07-06", "07:00", "23:00"));
 
-        CreneauGridService.RapportGrille rapport =
-                service.validate(trop, List.of(), List.of(), ModeGrilleCreneaux.VACATIONS, DECOUPAGE, LEGAUX);
+        CreneauGridService.RapportGrille rapport = service.validate(trop, List.of(), List.of(), LEGAUX);
 
         assertThat(rapport.hasNoBlockingAnomaly()).isFalse();
         assertThat(rapport.anomalies())
                 .extracting(GridAnomaly::type)
                 .contains(GridAnomalyType.REPOS_QUOTIDIEN_IMPOSSIBLE);
-        // The very same grid read as amplitudes is a perfectly ordinary event day.
-        assertThat(service.validate(trop, List.of(), List.of(), ModeGrilleCreneaux.AMPLITUDES, DECOUPAGE, LEGAUX)
-                        .hasNoBlockingAnomaly())
-                .isTrue();
+    }
+
+    /**
+     * The 6 h ceiling (art. L3121-16) now lives with the other legal rules, and
+     * the warning reads it from there: an organiser who raises it is heard.
+     */
+    @Test
+    void uneVacationDepassantLePlafondLegalEstUnAvertissementReglable() {
+        List<Creneau> longue = List.of(creneau("2026-07-06", "09:00", "16:30"));
+
+        assertThat(typesDetectes(longue)).contains(GridAnomalyType.VACATION_TROP_LONGUE);
+
+        ParametresLegaux permissifs = new ParametresLegaux();
+        permissifs.setDureeVacationMaxMinutes(8 * 60);
+        assertThat(service.validate(longue, List.of(), List.of(), permissifs).anomalies())
+                .extracting(GridAnomaly::type)
+                .doesNotContain(GridAnomalyType.VACATION_TROP_LONGUE);
     }
 
     @Test
@@ -181,7 +194,7 @@ class CreneauGridServiceTest {
                 creneau("2026-07-07", "09:00", "12:00"),
                 creneau("2026-08-06", "09:00", "12:00"));
 
-        assertThat(typesDetectes(withMistake, ModeGrilleCreneaux.AMPLITUDES)).contains(GridAnomalyType.DATE_ISOLEE);
+        assertThat(typesDetectes(withMistake)).contains(GridAnomalyType.DATE_ISOLEE);
     }
 
     @Test
@@ -189,15 +202,14 @@ class CreneauGridServiceTest {
         List<Creneau> withPause =
                 List.of(creneau("2026-07-06", "09:00", "12:00"), creneau("2026-07-11", "09:00", "12:00"));
 
-        assertThat(typesDetectes(withPause, ModeGrilleCreneaux.AMPLITUDES)).doesNotContain(GridAnomalyType.DATE_ISOLEE);
+        assertThat(typesDetectes(withPause)).doesNotContain(GridAnomalyType.DATE_ISOLEE);
     }
 
     @Test
     void unCreneauTraversantMinuitNaPasUneDureeNegative() {
         List<Creneau> nuit = List.of(creneau("2026-07-06", "20:00", "00:00"));
 
-        CreneauGridService.RapportGrille rapport =
-                service.validate(nuit, List.of(), List.of(), ModeGrilleCreneaux.AMPLITUDES, DECOUPAGE, LEGAUX);
+        CreneauGridService.RapportGrille rapport = service.validate(nuit, List.of(), List.of(), LEGAUX);
 
         assertThat(rapport.hasNoBlockingAnomaly()).isTrue();
         assertThat(rapport.anomalies()).isEmpty();
@@ -206,28 +218,35 @@ class CreneauGridServiceTest {
     /* ------------------------------ Diagnostic ------------------------------ */
 
     @Test
-    void deLonguesJourneesSansFamilleSuggerentDesAmplitudesSansCertitude() {
-        CreneauGridService.DiagnosticGrille diagnostic =
-                CreneauGridService.diagnose(List.of(creneau("2026-07-06", "09:00", "20:00")), DECOUPAGE);
+    void leDiagnosticDecritLaGrilleEtCompteLesRelais() {
+        Creneau relais = creneau("2026-07-06", "12:00", "13:00");
+        relais.setCouverturePause(true);
 
-        assertThat(diagnostic.modeProbable()).isEqualTo(ModeGrilleCreneaux.AMPLITUDES);
-        assertThat(diagnostic.modeCertain()).isFalse();
+        CreneauGridService.DiagnosticGrille diagnostic =
+                CreneauGridService.diagnose(List.of(creneau("2026-07-06", "09:00", "12:00"), relais));
+
+        assertThat(diagnostic.nombreCreneaux()).isEqualTo(2);
+        assertThat(diagnostic.premiereDate()).isEqualTo(LocalDate.of(2026, 7, 6));
+        assertThat(diagnostic.derniereDate()).isEqualTo(LocalDate.of(2026, 7, 6));
+        assertThat(diagnostic.contientCouverturePause()).isTrue();
+        assertThat(diagnostic.explication()).contains("1 relais repas");
     }
 
     @Test
     void uneGrilleVideLeDitPlutotQueDeDeviner() {
-        CreneauGridService.DiagnosticGrille diagnostic = CreneauGridService.diagnose(List.of(), DECOUPAGE);
+        CreneauGridService.DiagnosticGrille diagnostic = CreneauGridService.diagnose(List.of());
 
         assertThat(diagnostic.nombreCreneaux()).isZero();
-        assertThat(diagnostic.modeProbable()).isNull();
+        assertThat(diagnostic.premiereDate()).isNull();
+        assertThat(diagnostic.explication()).contains("aucun créneau");
     }
 
     // A hand-typed meal relay (12-13 at half headcount) is only meaningful
     // where a meal break may be taken. Outside the windows it halves the seats
-    // for nothing, and the flag is silent everywhere else: the grid is the one
-    // place that reads it against the legal parameters.
+    // for nothing: the grid is the one place that reads the flag against the
+    // legal parameters.
     @Test
-    void relaisRepasHorsFenetreEstSignaleEnVacationsSeulement() {
+    void relaisRepasHorsFenetreEstSignale() {
         Creneau relais = creneau("2026-07-06", "16:00", "17:00");
         relais.setCouverturePause(true);
         Creneau midi = creneau("2026-07-06", "12:00", "13:00");
@@ -235,13 +254,7 @@ class CreneauGridServiceTest {
         Creneau nuit = creneau("2026-07-06", "23:00", "00:00");
         nuit.setCouverturePause(true);
 
-        List<GridAnomaly> anomalies = service.validate(
-                        List.of(relais, midi, nuit),
-                        List.of(),
-                        List.of(),
-                        ModeGrilleCreneaux.VACATIONS,
-                        DECOUPAGE,
-                        LEGAUX)
+        List<GridAnomaly> anomalies = service.validate(List.of(relais, midi, nuit), List.of(), List.of(), LEGAUX)
                 .anomalies();
 
         List<GridAnomaly> horsFenetre = anomalies.stream()
@@ -256,14 +269,12 @@ class CreneauGridServiceTest {
                 .extracting(GridAnomaly::message)
                 .anyMatch(message -> message.contains("16:00-17:00"))
                 .anyMatch(message -> message.contains("23:00-00:00"));
-        assertThat(typesDetectes(List.of(relais), ModeGrilleCreneaux.AMPLITUDES))
-                .doesNotContain(GridAnomalyType.RELAIS_REPAS_HORS_FENETRE);
     }
 
     /* -------------------------------- Outils -------------------------------- */
 
-    private List<GridAnomalyType> typesDetectes(List<Creneau> creneaux, ModeGrilleCreneaux mode) {
-        return service.validate(creneaux, List.of(), List.of(), mode, DECOUPAGE, LEGAUX).anomalies().stream()
+    private List<GridAnomalyType> typesDetectes(List<Creneau> creneaux) {
+        return service.validate(creneaux, List.of(), List.of(), LEGAUX).anomalies().stream()
                 .map(GridAnomaly::type)
                 .toList();
     }

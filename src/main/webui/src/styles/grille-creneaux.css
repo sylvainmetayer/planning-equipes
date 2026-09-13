@@ -1,0 +1,80 @@
+/* The grid of créneaux and the dialogs that write it — the series, the
+   derivation from the stands' hours, the day templates. Global by design
+   (AGENTS.md): loaded with the Créneaux route, unscoped. */
+
+/* Chips listing the vacations of one day, in every preview that shows a day. */
+
+.vacation-chip {
+  display: inline-block;
+  margin: 0.15rem 0.35rem 0.15rem 0;
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-variant);
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+/* One block per day in a preview: date line, then its chips. */
+.jours-resume {
+  margin-top: 1rem;
+}
+
+.jours-resume p {
+  margin: 0 0 0.75rem;
+  line-height: 1.9;
+}
+
+/* The server's own reading of the grid, on one line above the list: how many
+   vacations, over which dates, how many meal relays. */
+.grille-diagnostic {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.controle-bilan {
+  margin-bottom: 0.75rem;
+}
+
+.controle-anomalies,
+.serie-anomalies {
+  margin-bottom: 0.75rem;
+}
+
+/* A warning reads apart from an error: same list, softer icon. */
+.controle-anomalies li.anomalie-avertissement mat-icon,
+.serie-anomalies li.anomalie-avertissement mat-icon {
+  color: var(--mat-sys-tertiary);
+}
+
+/* The preview of a series: what would be added, then the verdict. Greyed
+   when the rule was edited since, so it is never mistaken for the current one. */
+.serie-apercu {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  padding-top: 0.75rem;
+}
+
+.serie-apercu h3 {
+  margin: 0 0 0.5rem;
+  font: var(--mat-sys-title-small);
+}
+
+.serie-apercu-perimee .jours-resume,
+.serie-apercu-perimee .serie-bilan {
+  opacity: 0.5;
+}
+
+.serie-bilan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.serie-bilan-erreur {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}

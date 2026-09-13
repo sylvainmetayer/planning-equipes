@@ -74,7 +74,7 @@ class ReferenceDataChangesTest {
                         "STANDS_IMPORTES",
                         "OUVERTURES_SAISIES",
                         "CRENEAU_SUPPRIME",
-                        "DECOUPAGE_GENERE",
+                        "JOURNEES_TYPES_APPLIQUEES",
                         "EMPLACEMENT_MODIFIE",
                         "TYPOLOGIE_CREEE",
                         "AJUSTEMENT_CREE",

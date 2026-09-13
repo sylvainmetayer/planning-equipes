@@ -122,17 +122,6 @@
       "type" : "string",
       "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ]
     },
-    "DecoupageAutoDto" : {
-      "type" : "object",
-      "properties" : {
-        "groupeCibleNom" : {
-          "type" : "string"
-        },
-        "groupeSourceNom" : {
-          "type" : "string"
-        }
-      }
-    },
     "EditionCibleDto" : {
       "type" : "object",
       "properties" : {
@@ -296,10 +285,6 @@
         "$ref" : "#/$defs/NiveauCompetence"
       }
     },
-    "ModeGrilleCreneaux" : {
-      "type" : "string",
-      "enum" : [ "AMPLITUDES", "VACATIONS" ]
-    },
     "ModeHoraire" : {
       "type" : "string",
       "enum" : [ "OUVERTURE", "FERMETURE" ]
@@ -335,54 +320,6 @@
       },
       "required" : [ "date", "heureDebut" ]
     },
-    "ParametresDecoupageDto" : {
-      "type" : "object",
-      "properties" : {
-        "dureeChevauchementMinutes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "minimum" : 0
-        },
-        "dureePauseRepasMinutes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "minimum" : 0
-        },
-        "dureeVacationCibleMinutes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "exclusiveMinimum" : 0
-        },
-        "dureeVacationMaxMinutes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "exclusiveMinimum" : 0
-        },
-        "dureeVacationMinMinutes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "exclusiveMinimum" : 0
-        },
-        "fenetreRepasMidiDebut" : {
-          "$ref" : "#/$defs/LocalTime"
-        },
-        "fenetreRepasMidiFin" : {
-          "$ref" : "#/$defs/LocalTime"
-        },
-        "fenetreRepasSoirDebut" : {
-          "$ref" : "#/$defs/LocalTime"
-        },
-        "fenetreRepasSoirFin" : {
-          "$ref" : "#/$defs/LocalTime"
-        },
-        "modeGrille" : {
-          "$ref" : "#/$defs/ModeGrilleCreneaux"
-        },
-        "strategieCouverturePendantPause" : {
-          "$ref" : "#/$defs/PauseCoverageStrategy"
-        }
-      }
-    },
     "ParametresLegauxDto" : {
       "type" : "object",
       "properties" : {
@@ -404,6 +341,11 @@
           "$ref" : "#/$defs/LocalTime"
         },
         "dureeHebdomadaireMaxMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "dureeVacationMaxMinutes" : {
           "type" : "integer",
           "format" : "int32",
           "exclusiveMinimum" : 0
@@ -435,10 +377,6 @@
           "exclusiveMinimum" : 0
         }
       }
-    },
-    "PauseCoverageStrategy" : {
-      "type" : "string",
-      "enum" : [ "FERMETURE", "RELEVE", "EFFECTIF_REDUIT" ]
     },
     "PosteDto" : {
       "type" : "object",
@@ -586,9 +524,6 @@
         "$ref" : "#/$defs/CreneauDto"
       }
     },
-    "decoupageAuto" : {
-      "$ref" : "#/$defs/DecoupageAutoDto"
-    },
     "edition" : {
       "$ref" : "#/$defs/EditionCibleDto"
     },
@@ -606,9 +541,6 @@
       "items" : {
         "$ref" : "#/$defs/JourneeTypeDto"
       }
-    },
-    "parametresDecoupage" : {
-      "$ref" : "#/$defs/ParametresDecoupageDto"
     },
     "parametresLegaux" : {
       "$ref" : "#/$defs/ParametresLegauxDto"

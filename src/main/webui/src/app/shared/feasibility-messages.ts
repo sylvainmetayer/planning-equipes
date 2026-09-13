@@ -9,7 +9,7 @@
  * notification logged to the Notifications page.
  */
 export function hardScoreNegativeMessage(hardScore: number): string {
-  return $localize`:@@feasibility.hardScoreNegative:Ce planning n'est pas totalement réalisable (score dur ${hardScore}:hardScore:) : augmentez l'effectif, assouplissez le découpage des vacations ou revoyez les disponibilités, puis relancez une résolution.`;
+  return $localize`:@@feasibility.hardScoreNegative:Ce planning n'est pas totalement réalisable (score dur ${hardScore}:hardScore:) : augmentez l'effectif, raccourcissez les vacations ou revoyez les disponibilités, puis relancez une résolution.`;
 }
 
 /**

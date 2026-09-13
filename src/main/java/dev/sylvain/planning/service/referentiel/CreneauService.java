@@ -1,12 +1,10 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.solve.SolverJobService;
-import dev.sylvain.planning.service.solve.VacationGeneratorService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
@@ -126,42 +124,10 @@ public class CreneauService {
     }
 
     /**
-     * Generates the vacations the edition's current créneaux — read as
-     * amplitudes — would produce, without persisting anything: the découpage
-     * preview.
-     */
-    public List<Creneau> previewDecoupage() {
-        List<Creneau> amplitudes = repository.listCreneaux();
-        if (amplitudes.isEmpty()) {
-            throw new BusinessError.Invalid("Aucune amplitude à découper : l'édition n'a aucun créneau");
-        }
-        return VacationGeneratorService.generateVacations(
-                amplitudes, parametres.getDecoupage(), parametres.getLegaux());
-    }
-
-    /**
-     * Materializes the découpage <b>in place</b> (issue #172): the edition's
-     * créneaux — the amplitudes just read — are replaced by the generated
-     * vacations, and the persisted plan goes with them. Re-running with other
-     * parameters means re-importing the scenario (or duplicating an
-     * "amplitudes" edition first): the edition only ever holds one grid.
-     */
-    public void generateDecoupage() {
-        List<Creneau> vacations = previewDecoupage();
-        repository.replaceCreneaux(vacations);
-        // What the edition holds has just changed nature, so it says so here
-        // rather than in the browser: an assistant calling generer_decoupage
-        // then valider_creneaux would otherwise read staggered vacations as
-        // amplitudes and report every relay overlap as a data-entry mistake.
-        parametres.updateModeGrille(ModeGrilleCreneaux.VACATIONS);
-        changeTracker.markModified();
-    }
-
-    /**
      * Replaces the whole grid by {@code creneaux}, the persisted plan going
-     * with it — what the découpage does, offered to the derivation from the
-     * stands' hours. Refused while a solve runs, like every rewrite of the
-     * grid.
+     * with it — what the derivation from the stands' hours does when it is
+     * asked to start over. Refused while a solve runs, like every rewrite of
+     * the grid.
      */
     public List<Creneau> replace(List<Creneau> creneaux) {
         solverJobs.refuseIfSolving();

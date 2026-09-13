@@ -42,11 +42,26 @@ public class ParametresLegaux {
     /**
      * Minimum gap required between the end of one vacation ({@code Creneau})
      * and the start of another one, same day, for the same animateur — so a
-     * découpage that generates several vacations per day for one seat-track
-     * never reconstitutes an unbroken working day just by chaining vacations
-     * back to back. Default: 30 min.
+     * day cut into several vacations for one seat-track never reconstitutes an
+     * unbroken working day just by chaining vacations back to back.
+     * Default: 30 min.
      */
     public static final int PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT = 30;
+
+    /**
+     * How long one vacation may run before the grid check says so. Default 6 h,
+     * the art. L3121-16 threshold at which a break becomes legally mandatory:
+     * a vacation staying strictly under it never needs an internal break, and
+     * the gap before the animateur's next vacation is their pause.
+     *
+     * <p>It was a <em>slicing</em> setting, read from {@code ParametresDecoupage}
+     * to bound what the découpage produced. The découpage is gone — every grid
+     * is typed or projected from a journée type — but the rule it encoded is
+     * not: it is a rule of the event, judged on whatever grid the organiser
+     * ends up with, so it belongs here with the other rules, the way the meal
+     * break already made that same move (issue #438).</p>
+     */
+    public static final int DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT = 6 * 60;
 
     /**
      * Minimum rest required between the end of an animateur's last vacation on
@@ -98,6 +113,7 @@ public class ParametresLegaux {
     private int dureeHebdomadaireMaxMinutes = DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT;
     private int dureeHebdomadaireMaxMineurMinutes = DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT;
     private int pauseMinimaleEntreVacationsMinutes = PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT;
+    private int dureeVacationMaxMinutes = DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT;
     private int reposQuotidienMinimalMinutes = REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT;
     private boolean pauseSurPoste = PAUSE_SUR_POSTE_PAR_DEFAUT;
 
@@ -148,6 +164,14 @@ public class ParametresLegaux {
 
     public void setPauseMinimaleEntreVacationsMinutes(int pauseMinimaleEntreVacationsMinutes) {
         this.pauseMinimaleEntreVacationsMinutes = pauseMinimaleEntreVacationsMinutes;
+    }
+
+    public int getDureeVacationMaxMinutes() {
+        return dureeVacationMaxMinutes;
+    }
+
+    public void setDureeVacationMaxMinutes(int dureeVacationMaxMinutes) {
+        this.dureeVacationMaxMinutes = dureeVacationMaxMinutes;
     }
 
     public int getReposQuotidienMinimalMinutes() {

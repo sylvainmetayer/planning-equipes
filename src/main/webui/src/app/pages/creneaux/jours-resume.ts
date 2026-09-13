@@ -1,22 +1,23 @@
-// Pure summarization logic for the découpage preview: groups the generated
-// vacations by calendar day and sorts them chronologically, so the page can
-// show "on this day, the amplitude was split into these vacations" without
-// any component/rendering machinery involved — kept separate so it can be
-// unit-tested directly, following the same split as `staffing.ts`.
+// Pure summarization logic shared by every preview that shows a grid day by
+// day — the series dialog, the derivation from the stands' hours: groups the
+// vacations by calendar day and sorts them chronologically, so a dialog can
+// show "on this day, these vacations" without any component/rendering
+// machinery involved. Kept separate so it can be unit-tested directly,
+// following the same split as `staffing.ts`.
 
 import { Creneau } from '../../core/models';
 
-export interface DecoupageVacationSummary {
+export interface VacationResumee {
   heureDebut: string;
   heureFin: string;
 }
 
-export interface DecoupageJourSummary {
+export interface JourResume {
   date: string;
-  vacations: DecoupageVacationSummary[];
+  vacations: VacationResumee[];
 }
 
-export function summarizeVacationsByDay(vacations: Creneau[]): DecoupageJourSummary[] {
+export function summarizeVacationsByDay(vacations: Creneau[]): JourResume[] {
   const byDate = new Map<string, Creneau[]>();
   for (const vacation of vacations) {
     const date = vacation.date ?? '';

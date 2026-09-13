@@ -68,7 +68,7 @@ class LanguagePolicyStructuralTest {
             animateur animateurs stand stands creneau creneaux poste postes
             affectation affectations emplacement emplacements verrouillage verrouillages
             demande demandes echange echanges typologie typologies horaire horaires
-            decoupage vacation vacations amplitude amplitudes edition editions
+            vacation vacations amplitude amplitudes edition editions
             contrainte contraintes planning plannings evenement evenements festival espace espaces
             indisponibilite indisponibilites indisponible indisponibles ouverture ouvertures
             competence competences souhait souhaits parametre parametres legal legaux

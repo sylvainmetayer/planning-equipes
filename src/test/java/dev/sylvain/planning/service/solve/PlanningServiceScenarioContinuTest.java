@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -21,15 +20,14 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * Full-scale regression test for the "continu" scenario family: unlike
- * {@code scenario-complet.yaml} (already hand-split into per-shift créneaux),
- * {@code scenario-continu.yaml} carries one raw all-day créneau per day and
- * only becomes a real staffing problem after découpage ({@link
- * VacationGeneratorService}) splits each day into overlapping relais — the
- * exact "continu scindé" pipeline exercised manually against the dev
- * database while investigating issue #60's follow-up (reset DB -> load
- * scenario continu -> découpage -> solve). Both variants must always solve
- * to zero hard-constraint violations. Built the plain (non-Quarkus) way,
+ * Full-scale regression test for the "continu" scenario family: an event open
+ * from morning to midnight, whose day is covered by overlapping relais — a
+ * vacation hands over to the next a few minutes before it ends, so a stand is
+ * never in deficit, only briefly in surplus. The file used to carry one raw
+ * all-day amplitude per day and let the découpage cut it; it now states those
+ * relais outright, which is the same problem without the machinery. Both
+ * variants must always solve to zero hard-constraint violations. Built the
+ * plain (non-Quarkus) way,
  * like {@link PlanningServiceScenarioCompletTest}, so it needs no database
  * and can give the solver the time this scenario size actually takes,
  * unconstrained by the %test profile's short solver budget.
@@ -76,32 +74,26 @@ class PlanningServiceScenarioContinuTest {
                 null,
                 ConfigProvider.getConfig());
 
-        // Mirrors buildFromReferenceData(): découpage on the raw
-        // créneaux, then postes built from stands x découpé créneaux — not
-        // buildExample(), which would instead use the file's raw,
-        // undivided one-créneau-per-day amplitudes directly.
+        // Mirrors buildFromReferenceData(): postes built from stands x the
+        // file's créneaux — not buildExample(), which would use the file's
+        // hand-pinned poste list when it carries one.
         ScenarioYamlReader.ReferenceScenario reference = planningService.loadReferenceScenario(scenarioName);
-        ParametresDecoupage parametresDecoupage = planningService
-                .loadScenarioSections(scenarioName)
-                .parametresDecoupage()
-                .orElseGet(ParametresDecoupage::new);
-        // The file's legal parameters carry the meal break the découpage cuts
-        // around and the solver judges on; a plain-Java harness hands them
-        // over itself, as production reads them from the edition.
+        // The file's legal parameters carry the meal break the solver judges
+        // on; a plain-Java harness hands them over itself, as production reads
+        // them from the edition.
         ParametresLegaux parametresLegaux = planningService
                 .loadScenarioSections(scenarioName)
                 .parametresLegaux()
                 .orElseGet(ParametresLegaux::new);
-        List<Creneau> creneauxScindes = VacationGeneratorService.generateVacations(
-                List.copyOf(reference.creneauxParId().values()), parametresDecoupage, parametresLegaux);
+        List<Creneau> creneaux = List.copyOf(reference.creneauxParId().values());
         List<Stand> stands = List.copyOf(reference.standsById().values());
-        List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, creneauxScindes);
+        List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, creneaux);
         PlanningEvenement problem = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes);
-        // The grid is cut with the file's own découpage parameters, so it has
-        // to be judged on the same meal windows. Production reads them from the
-        // edition the scenario was imported into; a plain-Java harness has to
-        // hand them over itself, or the plan is scored against windows the
-        // découpage never saw (issue #438).
+        // The grid is laid out around the file's own meal windows, so it has to
+        // be judged on the same ones. Production reads them from the edition the
+        // scenario was imported into; a plain-Java harness has to hand them over
+        // itself, or the plan is scored against windows the grid never saw
+        // (issue #438).
         problem.setFenetresRepas(FenetreRepas.from(parametresLegaux));
         // And its legal parameters, for the same reason: production reads them
         // from the edition, so a file that declares a minimum gap of zero —

@@ -23,7 +23,6 @@ public record ScenarioDto(
         @NotNull @Valid FestivalDto festival,
         @Valid ParametresSolveurDto parametresSolveur,
         @Valid ParametresLegauxDto parametresLegaux,
-        @Valid ParametresDecoupageDto parametresDecoupage,
         @Valid ContraintesDto contraintes,
         List<@Valid TypologieDto> typologies,
         @NotNull List<@Valid CreneauDto> creneaux,
@@ -34,5 +33,4 @@ public record ScenarioDto(
         // Absent: ScenarioDomainMapper generates the postes itself from
         // stands x creneaux (mirroring buildFromReferenceData).
         List<@Valid PosteDto> postes,
-        List<@Valid ContrainteAdHocDto> contraintesAdHoc,
-        @Valid DecoupageAutoDto decoupageAuto) {}
+        List<@Valid ContrainteAdHocDto> contraintesAdHoc) {}

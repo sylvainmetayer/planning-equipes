@@ -5,7 +5,6 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.JourneeType;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.Stand;
@@ -55,8 +54,6 @@ public interface ReferenceData {
     Map<String, Integer> getConstraintWeights();
 
     ParametresLegaux getParametresLegaux();
-
-    ParametresDecoupage getParametresDecoupage();
 
     ParametresSolveur getParametresSolveur();
 

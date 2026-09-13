@@ -80,14 +80,12 @@ public class CreneauResource {
 
     /**
      * The créneaux a rule would add, and the verdict on the grid that would
-     * result — nothing written. {@code mode} defaults to the edition's
-     * declared one ({@code parametresDecoupage.modeGrille}).
+     * result — nothing written.
      */
     @POST
     @Path("/recurrence/apercu")
-    public RapportRecurrence previewRecurrence(RecurrenceRequest requete, @QueryParam("mode") String mode) {
-        return RapportRecurrence.of(
-                referenceDataService.previewRecurrence(requete.regle(), ReferenceDataService.modeGrille(mode, "mode")));
+    public RapportRecurrence previewRecurrence(RecurrenceRequest requete) {
+        return RapportRecurrence.of(referenceDataService.previewRecurrence(requete.regle()));
     }
 
     /**
@@ -97,9 +95,8 @@ public class CreneauResource {
      */
     @POST
     @Path("/recurrence")
-    public RapportRecurrence createRecurrence(RecurrenceRequest requete, @QueryParam("mode") String mode) {
-        return RapportRecurrence.of(
-                referenceDataService.createRecurrence(requete.regle(), ReferenceDataService.modeGrille(mode, "mode")));
+    public RapportRecurrence createRecurrence(RecurrenceRequest requete) {
+        return RapportRecurrence.of(referenceDataService.createRecurrence(requete.regle()));
     }
 
     /**
@@ -150,32 +147,30 @@ public class CreneauResource {
     /** The derivation, judged — nothing written. */
     @POST
     @Path("/derivation/apercu")
-    public RapportDerivation previewDerivation(DerivationRequest requete, @QueryParam("mode") String mode) {
-        return RapportDerivation.of(referenceDataService.previewDerivation(
-                requete.parametres(), requete.remplacer(), ReferenceDataService.modeGrille(mode, "mode")));
+    public RapportDerivation previewDerivation(DerivationRequest requete) {
+        return RapportDerivation.of(referenceDataService.previewDerivation(requete.parametres(), requete.remplacer()));
     }
 
     /**
      * Writes the derived grid: added to the current one, or — {@code remplacer}
-     * — in its place, the persisted plan going with it as for the découpage.
+     * — in its place, the persisted plan going with it.
      * {@code 400} when no stand has a window on the dates, {@code 409} while a
      * solve runs.
      */
     @POST
     @Path("/derivation")
-    public RapportDerivation applyDerivation(DerivationRequest requete, @QueryParam("mode") String mode) {
-        return RapportDerivation.of(referenceDataService.applyDerivation(
-                requete.parametres(), requete.remplacer(), ReferenceDataService.modeGrille(mode, "mode")));
+    public RapportDerivation applyDerivation(DerivationRequest requete) {
+        return RapportDerivation.of(referenceDataService.applyDerivation(requete.parametres(), requete.remplacer()));
     }
 
-    /** The grid's verdict — its own anomalies, the stand openings, the staffing — read in {@code mode}. */
+    /** The grid's verdict — its own anomalies, the stand openings, the staffing. */
     @GET
     @Path("/controle")
-    public RapportGrille validateGrid(@QueryParam("mode") String mode) {
-        return referenceDataService.controlerGrille(ReferenceDataService.modeGrille(mode, "mode"));
+    public RapportGrille validateGrid() {
+        return referenceDataService.controlerGrille();
     }
 
-    /** What the grid looks like, and which mode the data suggests — a suggestion, never a decision. */
+    /** What the grid holds: how many vacations, over which dates, with how many meal relays. */
     @GET
     @Path("/diagnostic")
     public DiagnosticGrille diagnoseGrid() {

@@ -116,18 +116,39 @@ class ScenarioValidatorTest {
      * scenario sections are validated recursively via {@code @Valid}.
      */
     @Test
-    void unParametreDeDecoupageNegatifEstSignale() throws IOException {
-        String withDecoupage = MINIMAL + """
-                parametresDecoupage:
-                  dureeVacationMinMinutes: 0
-                  dureeChevauchementMinutes: -5
+    void unParametreLegalNegatifEstSignale() throws IOException {
+        String withLegaux = MINIMAL + """
+                parametresLegaux:
+                  dureeVacationMaxMinutes: 0
+                  pauseMinimaleEntreVacationsMinutes: -5
                 """;
 
-        List<String> erreurs = ScenarioValidator.validate(withDecoupage);
+        List<String> erreurs = ScenarioValidator.validate(withLegaux);
 
         assertThat(erreurs)
-                .anySatisfy(erreur -> assertThat(erreur).contains("parametresDecoupage.dureeVacationMinMinutes"))
-                .anySatisfy(erreur -> assertThat(erreur).contains("parametresDecoupage.dureeChevauchementMinutes"));
+                .anySatisfy(erreur -> assertThat(erreur).contains("parametresLegaux.dureeVacationMaxMinutes"))
+                .anySatisfy(
+                        erreur -> assertThat(erreur).contains("parametresLegaux.pauseMinimaleEntreVacationsMinutes"));
+    }
+
+    /**
+     * A retired section is refused at binding, by name — like any key the
+     * application does not know, and for a sharper reason: accepting
+     * {@code decoupageAuto} and ignoring it would import a grid of day-long
+     * opening amplitudes as day-long vacations, without a word.
+     */
+    @Test
+    void uneSectionDuDecoupageRetireEstRefuseeParSonNom() {
+        assertThatThrownBy(() -> ScenarioValidator.validate(
+                        MINIMAL + "parametresDecoupage:\n  dureeVacationCibleMinutes: 240\n"))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("parametresDecoupage")
+                .hasMessageContaining("journeesTypes");
+
+        assertThatThrownBy(() -> ScenarioValidator.validate(MINIMAL + "decoupageAuto: {}\n"))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("decoupageAuto")
+                .hasMessageContaining("couverturePause");
     }
 
     /**

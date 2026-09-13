@@ -4,6 +4,8 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 
@@ -19,7 +21,6 @@ import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -206,12 +207,11 @@ class CreneauResourceTest {
         given().contentType("application/json")
                 .body(REGLE_SEMAINE)
                 .when()
-                .post("/api/creneaux/recurrence/apercu?mode=AMPLITUDES")
+                .post("/api/creneaux/recurrence/apercu")
                 .then()
                 .statusCode(200)
                 .body("nombreGeneres", equalTo(10))
                 .body("creneaux.size()", equalTo(10))
-                .body("controle.mode", equalTo("AMPLITUDES"))
                 .body("controle.anomalies.type", org.hamcrest.Matchers.hasItem("TROU_DANS_LA_JOURNEE"));
 
         assertThat(countCreneaux()).isEqualTo(avant);
@@ -224,7 +224,7 @@ class CreneauResourceTest {
         given().contentType("application/json")
                 .body(REGLE_SEMAINE)
                 .when()
-                .post("/api/creneaux/recurrence?mode=AMPLITUDES")
+                .post("/api/creneaux/recurrence")
                 .then()
                 .statusCode(200)
                 .body("nombreGeneres", equalTo(10))
@@ -235,7 +235,7 @@ class CreneauResourceTest {
         given().contentType("application/json")
                 .body(REGLE_SEMAINE)
                 .when()
-                .post("/api/creneaux/recurrence?mode=AMPLITUDES")
+                .post("/api/creneaux/recurrence")
                 .then()
                 .statusCode(200)
                 .body("controle.anomalies.find { it.type == 'DOUBLON' }.severite", equalTo("ERREUR"));
@@ -265,86 +265,18 @@ class CreneauResourceTest {
                 .body("message", containsString("DATES"));
     }
 
-    /** No mode on the call: the edition's declared one applies, and it is what the screen persists. */
+    /**
+     * The verdict takes no mode: there is one reading of a grid left, so the
+     * endpoint that used to demand AMPLITUDES or VACATIONS simply reports.
+     */
     @Test
-    void leControleLitLeModeDeclareDeLEditionQuandLAppelNEnNommePas() {
-        try {
-            io.restassured.path.json.JsonPath parametres = given().when()
-                    .get("/api/parametres-decoupage")
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            assertThat(parametres.getString("modeGrille")).isNotBlank();
-            // Its own write: the mode is not a field of the slicing payload.
-            given().contentType("application/json")
-                    .body(Map.of("modeGrille", "VACATIONS"))
-                    .when()
-                    .put("/api/parametres-decoupage/mode-grille")
-                    .then()
-                    .statusCode(200)
-                    .body("modeGrille", equalTo("VACATIONS"));
-
-            given().when()
-                    .get("/api/creneaux/controle")
-                    .then()
-                    .statusCode(200)
-                    .body("mode", equalTo("VACATIONS"))
-                    .body("nombreCreneaux", notNullValue());
-            given().when()
-                    .get("/api/creneaux/controle?mode=AMPLITUDES")
-                    .then()
-                    .statusCode(200)
-                    .body("mode", equalTo("AMPLITUDES"));
-            // A mistyped mode is a bad request, not a missing page.
-            given().when().get("/api/creneaux/controle?mode=VACATION").then().statusCode(400);
-        } finally {
-            // Restored whatever the assertions did: the edition is shared with
-            // every other test of the class.
-            given().contentType("application/json")
-                    .body(Map.of("modeGrille", "AMPLITUDES"))
-                    .when()
-                    .put("/api/parametres-decoupage/mode-grille")
-                    .then()
-                    .statusCode(200);
-        }
-    }
-
-    /** A Paramètres tab left open must not be able to revert what Créneaux declared. */
-    @Test
-    void enregistrerLesParametresDeDecoupageNeTouchePasAuModeDeclare() {
-        try {
-            given().contentType("application/json")
-                    .body(Map.of("modeGrille", "VACATIONS"))
-                    .when()
-                    .put("/api/parametres-decoupage/mode-grille")
-                    .then()
-                    .statusCode(200);
-            Map<String, Object> anciens = given().when()
-                    .get("/api/parametres-decoupage")
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath()
-                    .getMap("$");
-            Map<String, Object> perimes = new java.util.LinkedHashMap<>(anciens);
-            perimes.put("modeGrille", "AMPLITUDES");
-
-            given().contentType("application/json")
-                    .body(perimes)
-                    .when()
-                    .put("/api/parametres-decoupage")
-                    .then()
-                    .statusCode(200)
-                    .body("modeGrille", equalTo("VACATIONS"));
-        } finally {
-            given().contentType("application/json")
-                    .body(Map.of("modeGrille", "AMPLITUDES"))
-                    .when()
-                    .put("/api/parametres-decoupage/mode-grille")
-                    .then()
-                    .statusCode(200);
-        }
+    void leControleRendUnVerdictSansQuAucunModeSoitDemande() {
+        given().when()
+                .get("/api/creneaux/controle")
+                .then()
+                .statusCode(200)
+                .body("nombreCreneaux", notNullValue())
+                .body("$", not(hasKey("mode")));
     }
 
     @Test
@@ -393,7 +325,7 @@ class CreneauResourceTest {
                 .body("creneaux[1].heureFin", startsWith("20:00"))
                 .body("coupures[0].standIds", org.hamcrest.Matchers.hasItem("DERIV-A"))
                 .body("joursSansFenetre", org.hamcrest.Matchers.empty())
-                .body("controle.mode", notNullValue());
+                .body("controle.nombreCreneaux", notNullValue());
 
         assertThat(countCreneaux()).isEqualTo(avant);
         given().when().delete("/api/stands/DERIV-A").then().statusCode(204);

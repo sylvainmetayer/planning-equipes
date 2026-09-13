@@ -26,7 +26,6 @@ function apercu(patch: Partial<RapportDerivation> = {}): RapportDerivation {
     ],
     joursSansFenetre: ['2026-07-07'],
     controle: {
-      mode: 'AMPLITUDES',
       nombreCreneaux: 2,
       anomalies: [],
       ouvertures: [],
@@ -60,7 +59,6 @@ function monter(
       {
         provide: MAT_DIALOG_DATA,
         useValue: {
-          mode: 'AMPLITUDES',
           dateDebut: options.dates ? options.dates[0] : '2026-07-06',
           dateFin: options.dates ? options.dates[1] : '2026-07-07',
         },
@@ -101,7 +99,7 @@ describe('CreneauDerivationDialog', () => {
     bouton(fixture, 'Prévisualiser').click();
     await fixture.whenStable();
 
-    expect(preview).toHaveBeenCalledWith('AMPLITUDES', {
+    expect(preview).toHaveBeenCalledWith({
       dateDebut: '2026-07-06',
       dateFin: '2026-07-07',
       heureFermeture: '20:00',
@@ -124,7 +122,7 @@ describe('CreneauDerivationDialog', () => {
     await fixture.whenStable();
 
     expect(ask).not.toHaveBeenCalled();
-    expect(post).toHaveBeenCalledExactlyOnceWith('AMPLITUDES', expect.anything());
+    expect(post).toHaveBeenCalledExactlyOnceWith(expect.anything());
     expect(close).toHaveBeenCalledWith(apercu());
   });
 
@@ -161,7 +159,6 @@ describe('CreneauDerivationDialog', () => {
     const bloquee = monter({
       reponse: apercu({
         controle: {
-          mode: 'AMPLITUDES',
           nombreCreneaux: 4,
           anomalies: [
             { severite: 'ERREUR', type: 'DOUBLON', date: '2026-07-06', message: 'Doublon' },

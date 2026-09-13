@@ -12,9 +12,6 @@
 festival:
   dateDebut: 2027-07-16
 
-parametresDecoupage:
-  modeGrille: VACATIONS
-
 creneaux:
   - id: J1-MATIN
     jour: 1

@@ -312,16 +312,6 @@ describe('ScenarioImportService', () => {
       expect(editions.basculer).not.toHaveBeenCalled();
     });
 
-    it('tells the operator when the scenario amplitudes were auto-cut into vacations', async () => {
-      importResult = { decoupageAuto: true } as ImportScenarioResult;
-
-      await service.importer({ kind: 'name', name: 'edition-1708' });
-
-      expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'info' }),
-      );
-    });
-
     it('hands the raw server result back, so the page can build its own recap', async () => {
       importResult = { editionId: 'ed-2026', editionNom: 'Année 2026' } as ImportScenarioResult;
 

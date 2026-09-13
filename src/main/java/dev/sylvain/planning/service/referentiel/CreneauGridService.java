@@ -4,8 +4,6 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
@@ -40,7 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <p>Written for the MCP tools (issue: assisted créneau creation), where a
  * single sentence can produce sixty rows at once and a silent typo is
  * expensive — but deliberately kept free of any MCP dependency so the
- * Découpage screen can call it too.</p>
+ * Créneaux screen can call it too.</p>
  *
  * <h2>Division of labour with the existing analyzers</h2>
  * <p>Two analyzers already audit neighbouring ground and are <em>reused</em>
@@ -186,29 +184,26 @@ public class CreneauGridService {
     /* ------------------------------ Validation ------------------------------ */
 
     /**
-     * Audits {@code creneaux} read in {@code mode}, then folds in the
-     * stand-opening and feasibility reports so a caller gets one verdict
-     * instead of three.
+     * Audits {@code creneaux}, then folds in the stand-opening and feasibility
+     * reports so a caller gets one verdict instead of three.
      *
-     * <p>The mode is not optional and is not guessed: the same overlap is a
-     * mistake between two amplitudes and the normal shape of two staggered
-     * vacations, so a validator that had to assume would be wrong half the
-     * time. {@link #diagnose} exists to <em>suggest</em> a mode from the
-     * data; deciding stays with the operator.</p>
+     * <p>A créneau is a <b>vacation</b> — one shift somebody will actually
+     * work — and nothing else. There used to be a second reading, the daily
+     * opening amplitude a découpage sliced before solving, and the validator
+     * had to be told which one it was looking at: the same overlap is a
+     * data-entry mistake between two amplitudes and the normal shape of two
+     * staggered vacations. Now that events declare their opening hours and
+     * project them through journées types, that ambiguity is gone — and with
+     * it the mode the caller had to supply.</p>
      */
     public RapportGrille validate(
-            List<Creneau> creneaux,
-            List<Stand> stands,
-            List<Animateur> animateurs,
-            ModeGrilleCreneaux mode,
-            ParametresDecoupage decoupage,
-            ParametresLegaux legaux) {
+            List<Creneau> creneaux, List<Stand> stands, List<Animateur> animateurs, ParametresLegaux legaux) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         List<Creneau> dates =
                 creneaux.stream().filter(creneau -> creneau.getDate() != null).toList();
 
-        anomalies.addAll(unitAnomalies(creneaux, mode, decoupage, legaux));
-        anomalies.addAll(anomaliesByDay(dates, mode));
+        anomalies.addAll(unitAnomalies(creneaux, legaux));
+        anomalies.addAll(anomaliesByDay(dates));
         anomalies.addAll(datesIsolees(dates));
 
         anomalies.sort(Comparator.comparingInt(
@@ -223,12 +218,11 @@ public class CreneauGridService {
                 ? null
                 : feasibilityAnalyzer.analyze(animateurs, stands, creneaux);
 
-        return new RapportGrille(mode, creneaux.size(), anomalies, ouvertures, faisabilite);
+        return new RapportGrille(creneaux.size(), anomalies, ouvertures, faisabilite);
     }
 
-    /** Checks that need one créneau at a time: shape, then duration read through the mode. */
-    private static List<GridAnomaly> unitAnomalies(
-            List<Creneau> creneaux, ModeGrilleCreneaux mode, ParametresDecoupage decoupage, ParametresLegaux legaux) {
+    /** Checks that need one créneau at a time: shape, then duration against the legal ceilings. */
+    private static List<GridAnomaly> unitAnomalies(List<Creneau> creneaux, ParametresLegaux legaux) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         int amplitudeMaximaleLegale = MINUTES_PAR_JOUR - legaux.getReposQuotidienMinimalMinutes();
         List<FenetreRepas> fenetresRepas = FenetreRepas.from(legaux);
@@ -250,25 +244,17 @@ public class CreneauGridService {
                         libelle(creneau) + " : durée nulle (début et fin identiques)."));
                 continue;
             }
-            if (mode == ModeGrilleCreneaux.AMPLITUDES && duree < decoupage.getDureeVacationMinMinutes()) {
-                anomalies.add(new GridAnomaly(
-                        SeveriteGrille.AVERTISSEMENT,
-                        GridAnomalyType.AMPLITUDE_PLUS_COURTE_QUE_LA_VACATION_MINIMALE,
-                        creneau.getDate(),
-                        libelle(creneau) + " : amplitude de " + duree + " min, sous la vacation minimale de "
-                                + decoupage.getDureeVacationMinMinutes()
-                                + " min. Le découpage ne pourra rien produire d'exploitable sur ce jour."));
-            }
-            if (mode == ModeGrilleCreneaux.VACATIONS && duree > decoupage.getDureeVacationMaxMinutes()) {
+            if (duree > legaux.getDureeVacationMaxMinutes()) {
                 anomalies.add(new GridAnomaly(
                         SeveriteGrille.AVERTISSEMENT,
                         GridAnomalyType.VACATION_TROP_LONGUE,
                         creneau.getDate(),
                         libelle(creneau) + " : vacation de " + duree + " min, au-delà du maximum de "
-                                + decoupage.getDureeVacationMaxMinutes()
-                                + " min. Est-ce bien une vacation, ou une amplitude à découper ?"));
+                                + legaux.getDureeVacationMaxMinutes()
+                                + " min. Au-delà, une coupure interne devient légalement obligatoire :"
+                                + " couper la journée en deux vacations, ou déclarer la pause sur poste."));
             }
-            if (mode == ModeGrilleCreneaux.VACATIONS && duree > amplitudeMaximaleLegale) {
+            if (duree > amplitudeMaximaleLegale) {
                 anomalies.add(new GridAnomaly(
                         SeveriteGrille.ERREUR,
                         GridAnomalyType.REPOS_QUOTIDIEN_IMPOSSIBLE,
@@ -278,9 +264,7 @@ public class CreneauGridService {
                                 + " min plafonne une journée travaillée à " + amplitudeMaximaleLegale
                                 + " min. Toute affectation sur ce créneau violera une contrainte dure."));
             }
-            if (mode == ModeGrilleCreneaux.VACATIONS
-                    && creneau.isCouverturePause()
-                    && !insideMealWindow(creneau, fenetresRepas)) {
+            if (creneau.isCouverturePause() && !insideMealWindow(creneau, fenetresRepas)) {
                 anomalies.add(new GridAnomaly(
                         SeveriteGrille.AVERTISSEMENT,
                         GridAnomalyType.RELAIS_REPAS_HORS_FENETRE,
@@ -320,7 +304,7 @@ public class CreneauGridService {
     }
 
     /** Checks that need the whole day: duplicates, overlaps, and holes in the covered span. */
-    private static List<GridAnomaly> anomaliesByDay(List<Creneau> creneaux, ModeGrilleCreneaux mode) {
+    private static List<GridAnomaly> anomaliesByDay(List<Creneau> creneaux) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         for (Map.Entry<LocalDate, List<Creneau>> jour : byDate(creneaux).entrySet()) {
             List<Creneau> duJour = jour.getValue().stream()
@@ -328,9 +312,6 @@ public class CreneauGridService {
                     .sorted(Comparator.comparing(Creneau::getHeureDebut))
                     .toList();
             anomalies.addAll(doublons(jour.getKey(), duJour));
-            if (mode == ModeGrilleCreneaux.AMPLITUDES) {
-                anomalies.addAll(chevauchements(jour.getKey(), duJour));
-            }
             anomalies.addAll(trous(jour.getKey(), duJour));
         }
         return anomalies;
@@ -347,26 +328,6 @@ public class CreneauGridService {
                         GridAnomalyType.DOUBLON,
                         date,
                         libelle(creneau) + " : créneau en double (mêmes heures)."));
-            }
-        }
-        return anomalies;
-    }
-
-    private static List<GridAnomaly> chevauchements(LocalDate date, List<Creneau> duJour) {
-        List<GridAnomaly> anomalies = new ArrayList<>();
-        for (int i = 0; i < duJour.size(); i++) {
-            for (int j = i + 1; j < duJour.size(); j++) {
-                int[] premier = intervalle(duJour.get(i));
-                int[] second = intervalle(duJour.get(j));
-                if (premier[1] > second[0] && second[1] > premier[0]) {
-                    anomalies.add(new GridAnomaly(
-                            SeveriteGrille.AVERTISSEMENT,
-                            GridAnomalyType.CHEVAUCHEMENT,
-                            date,
-                            libelle(duJour.get(i)) + " chevauche " + libelle(duJour.get(j))
-                                    + ". Entre deux amplitudes du même jour, c'est une saisie en double plutôt "
-                                    + "qu'une intention."));
-                }
             }
         }
         return anomalies;
@@ -440,17 +401,19 @@ public class CreneauGridService {
     /* ------------------------------ Diagnostic ------------------------------ */
 
     /**
-     * Describes the grid currently in place and suggests how it should be
-     * read. The suggestion is evidence-based, never authoritative: only
-     * generated vacations carry a meal-pause flag, so its presence proves
-     * {@link ModeGrilleCreneaux#VACATIONS}, whereas its absence proves nothing — a hand-written grid of real vacations looks
-     * exactly like a grid of amplitudes. Hence a separate
-     * {@code modeCertain} flag rather than a confident guess.
+     * Describes the grid currently in place: how many créneaux, over which
+     * dates, with how many meal relays among them. The cheap first call — for
+     * an assistant discovering an edition, or a screen opening on it — before
+     * {@link #validate} says whether that grid holds up.
+     *
+     * <p>It used to answer a second question too: <em>how</em> the grid should
+     * be read, amplitudes to slice or vacations to solve, guessed from the
+     * median duration. There is only one reading left, so the guess and the
+     * confidence flag that qualified it are gone with it.</p>
      */
-    public static DiagnosticGrille diagnose(List<Creneau> creneaux, ParametresDecoupage decoupage) {
+    public static DiagnosticGrille diagnose(List<Creneau> creneaux) {
         if (creneaux.isEmpty()) {
-            return new DiagnosticGrille(
-                    0, null, null, false, null, false, "L'édition n'a aucun créneau : la grille est à créer.");
+            return new DiagnosticGrille(0, null, null, false, "L'édition n'a aucun créneau : la grille est à créer.");
         }
         List<LocalDate> dates = creneaux.stream()
                 .map(Creneau::getDate)
@@ -458,34 +421,20 @@ public class CreneauGridService {
                 .distinct()
                 .sorted()
                 .toList();
-        boolean pauses = creneaux.stream().anyMatch(Creneau::isCouverturePause);
+        long relais = creneaux.stream().filter(Creneau::isCouverturePause).count();
         int dureeMediane =
                 mediane(creneaux.stream().map(Creneau::getDureeMinutes).sorted().toList());
 
-        if (pauses) {
-            return new DiagnosticGrille(
-                    creneaux.size(),
-                    first(dates),
-                    last(dates),
-                    pauses,
-                    ModeGrilleCreneaux.VACATIONS,
-                    true,
-                    "Grille déjà découpée : des créneaux de couverture de pause"
-                            + " — ce sont des vacations produites par le découpage.");
-        }
-        boolean plutotAmplitudes = dureeMediane > decoupage.getDureeVacationMaxMinutes();
         return new DiagnosticGrille(
                 creneaux.size(),
                 first(dates),
                 last(dates),
-                pauses,
-                plutotAmplitudes ? ModeGrilleCreneaux.AMPLITUDES : ModeGrilleCreneaux.VACATIONS,
-                false,
-                "Durée médiane de " + dureeMediane + " min, "
-                        + (plutotAmplitudes ? "au-delà" : "en deçà") + " du maximum de vacation ("
-                        + decoupage.getDureeVacationMaxMinutes() + " min) : la grille ressemble à des "
-                        + (plutotAmplitudes ? "amplitudes à découper" : "vacations directement solvables")
-                        + ", mais rien ne le prouve — demander à l'utilisateur.");
+                relais > 0,
+                creneaux.size() + " vacations sur " + dates.size() + " date(s), durée médiane de " + dureeMediane
+                        + " min"
+                        + (relais > 0
+                                ? ", dont " + relais + " relais repas à effectif réduit."
+                                : ", aucun relais repas."));
     }
 
     /* -------------------------------- Sorties ------------------------------- */
@@ -503,12 +452,10 @@ public class CreneauGridService {
         DUREE_NULLE,
         DOUBLON,
         REPOS_QUOTIDIEN_IMPOSSIBLE,
-        CHEVAUCHEMENT,
         TROU_DANS_LA_JOURNEE,
-        AMPLITUDE_PLUS_COURTE_QUE_LA_VACATION_MINIMALE,
         VACATION_TROP_LONGUE,
         DATE_ISOLEE,
-        /** A pause-covering vacation outside every meal window: half the seats, and nobody can eat (VACATIONS only). */
+        /** A pause-covering vacation outside every meal window: half the seats, and nobody can eat. */
         RELAIS_REPAS_HORS_FENETRE
     }
 
@@ -522,11 +469,7 @@ public class CreneauGridService {
      */
     @Schema(requiredProperties = {"nombreCreneaux"})
     public record RapportGrille(
-            ModeGrilleCreneaux mode,
-            int nombreCreneaux,
-            List<GridAnomaly> anomalies,
-            List<Anomaly> ouvertures,
-            FeasibilityReport faisabilite) {
+            int nombreCreneaux, List<GridAnomaly> anomalies, List<Anomaly> ouvertures, FeasibilityReport faisabilite) {
 
         /** True when nothing blocking was found — warnings alone do not make a grid invalid. */
         public boolean hasNoBlockingAnomaly() {
@@ -535,17 +478,15 @@ public class CreneauGridService {
     }
 
     /**
-     * @param modeCertain whether {@code modeProbable} is proven by the data
-     *                    (a meal-pause créneau) or merely inferred from durations
+     * @param contientCouverturePause whether at least one créneau is a meal relay,
+     *                                staffed at half the usual headcount
      */
-    @Schema(requiredProperties = {"contientCouverturePause", "modeCertain", "nombreCreneaux"})
+    @Schema(requiredProperties = {"contientCouverturePause", "nombreCreneaux"})
     public record DiagnosticGrille(
             int nombreCreneaux,
             LocalDate premiereDate,
             LocalDate derniereDate,
             boolean contientCouverturePause,
-            ModeGrilleCreneaux modeProbable,
-            boolean modeCertain,
             String explication) {}
 
     /* -------------------------------- Outils -------------------------------- */

@@ -7,7 +7,6 @@ import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JoursFeries;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -23,8 +22,6 @@ import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ReferenceScenario;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ScenarioSections;
 import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.solve.ProblemBuilder;
-import dev.sylvain.planning.service.solve.VacationGeneratorService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import java.io.IOException;
 import java.io.InputStream;
@@ -131,38 +128,13 @@ final class ScenarioLadder {
         PlanningEvenement problem = ScenarioDomainMapper.planning(dto, ParametresLegaux::new);
         ReferenceScenario reference = ScenarioDomainMapper.reference(dto);
         List<Stand> stands = new ArrayList<>(reference.standsById().values());
-        List<Creneau> creneaux;
-        if (sections.decoupageAuto()) {
-            // What decoupageAuto does on import. An ad hoc rule scoped to one
-            // of the file's amplitudes would point at a timeslot the découpage
-            // replaced, so the sliced files of the ladder scope none that way.
-            creneaux = slice(reference, sections, problem.getParametresLegaux().getFirst());
-            HoraireStandResolver.apply(stands, creneaux);
-            problem.setPostes(ProblemBuilder.buildPostes(stands, creneaux));
-        } else {
-            creneaux = new ArrayList<>(reference.creneauxParId().values());
-            HoraireStandResolver.apply(stands, creneaux);
-        }
+        List<Creneau> creneaux = new ArrayList<>(reference.creneauxParId().values());
+        HoraireStandResolver.apply(stands, creneaux);
         sections.contraintes()
                 .ifPresent(contraintes -> problem.setConstraintsDesactivees(contraintes.desactivees().stream()
                         .map(ConstraintToggle::new)
                         .toList()));
         return new Loaded(name, dto, sections, problem, stands, creneaux);
-    }
-
-    private static List<Creneau> slice(
-            ReferenceScenario reference, ScenarioSections sections, ParametresLegaux parametresLegaux) {
-        List<Creneau> amplitudes = reference.creneauxParId().values().stream()
-                .sorted((a, b) -> a.getId().compareTo(b.getId()))
-                .toList();
-        List<Creneau> vacations = VacationGeneratorService.generateVacations(
-                amplitudes, sections.parametresDecoupage().orElseGet(ParametresDecoupage::new), parametresLegaux);
-        long id = 1;
-        for (Creneau vacation : vacations) {
-            vacation.setId(id++);
-        }
-        Creneau.assignerJours(vacations);
-        return vacations;
     }
 
     /* ------------------------------- solving ------------------------------- */

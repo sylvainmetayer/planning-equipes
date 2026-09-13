@@ -347,9 +347,9 @@ rempli les 26 sièges sans enfreindre une règle ; le solveur les trouve
 désormais seul.
 
 **Ce qu'elle ne retient pas : une grille qui change.** La règle tient des
-lignes stand × créneau. Tout ce qui rebat ces lignes lui retire sa prise : un
-découpage ou une dérivation qui remplace la grille (le plan enregistré part
-avec). Un stand ajouté, lui, ne déplace pas les autres : c'était le cas du
+lignes stand × créneau. Tout ce qui rebat ces lignes lui retire sa prise : une
+dérivation ou un calendrier de journées types qui remplace la grille (le plan
+enregistré part avec). Un stand ajouté, lui, ne déplace pas les autres : c'était le cas du
 temps des familles de relais, où un identifiant classé avant les autres
 faisait glisser toutes les familles, et le banc avait mesuré 153 personnes sur
 153 quel que soit le poids (ADR 0026, puis retrait des familles en ADR 0029).
@@ -569,8 +569,8 @@ l'organisation réelle de l'événement. À 45 minutes, la coupure ne tombait su
 aucun créneau entier : elle flottait dans la fenêtre.
 
 C'était sans importance tant que cette durée n'était qu'une indication pour le
-découpage. Depuis que `coupureRepasObligatoire` la lit, c'est la règle que les
-gens doivent pouvoir planifier. La migration V71 remonte les éditions restées
+découpage, qui a depuis été retiré. Depuis que `coupureRepasObligatoire` la
+lit, c'est la règle que les gens doivent pouvoir planifier. La migration V71 remonte les éditions restées
 à 45 — celles qui n'ont jamais choisi ; une édition ayant saisi une autre
 valeur n'est pas touchée.
 
@@ -592,10 +592,10 @@ Offrir le choix entre 12-13 et 13-14 suppose **deux créneaux distincts** à
 midi : c'est la rotation, et elle demande que quelqu'un tienne le stand
 pendant que les autres mangent. Le classeur source y répond par un **effectif
 réduit** : `couverturePause` sur un créneau divise par deux les sièges qu'un
-stand y ouvre. Le découpage automatique pose ce drapeau tout seul ; depuis
-l'issue #438, le format de scénario sait aussi le lire, ce qui permet à une
-grille écrite à la main — le mode `VACATIONS` — de décrire son service de
-midi. Sans lui, une rotation réclame deux équipages complets.
+stand y ouvre, l'arrondi au supérieur. Le drapeau se pose à la main sur le
+créneau, ou sur la vacation d'une journée type qui le projette ; le format de
+scénario sait le lire (issue #438). Sans lui, une rotation réclame deux
+équipages complets.
 
 Deux réglages conditionnent qu'une telle grille tienne, et ils se mesurent :
 
@@ -655,9 +655,9 @@ c'est exactement ainsi qu'une journée 10 h-20 h passait inaperçue.
 lorsqu'une grille AMPLITUDES était découpée en vacations ; une grille saisie
 en VACATIONS n'est jamais découpée, donc personne ne les regardait. Elles
 voyagent désormais en faits de problème (`FenetreRepas`, projeté depuis
-`ParametresLegaux`), quel que soit le mode. La coupure — durée et fenêtres —
-se règle avec les paramètres légaux, où l'organisateur la cherche, et le
-découpage la lit là pour placer ses relèves.
+`ParametresLegaux`), sur toute grille. La coupure — durée et fenêtres — se
+règle avec les paramètres légaux, où l'organisateur la cherche, à côté du
+plafond de durée d'une vacation qui les y a rejointes.
 
 ### Ce que ça peut rendre infaisable
 

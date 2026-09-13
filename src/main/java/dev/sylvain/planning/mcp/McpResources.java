@@ -60,7 +60,7 @@ public class McpResources {
             uri = "planning://vocabulaire",
             name = "vocabulaire-planning",
             description = "Le vocabulaire métier de l'application : stand, créneau, poste, vacation, "
-                    + "amplitude, typologie, découpage, édition. À lire avant de manipuler les outils.",
+                    + "journée type, typologie, édition. À lire avant de manipuler les outils.",
             mimeType = "text/markdown")
     TextResourceContents vocabulaire() {
         return TextResourceContents.create("planning://vocabulaire", """
@@ -76,10 +76,9 @@ public class McpResources {
                 | **Pause** | les vingt minutes dues dès six heures de travail d'affilée (trente à 4 h 30 pour un mineur). Le solveur ne la planifie pas : déclarée « prise sur le poste » dans les paramètres légaux, elle se prend par relais, et `analyser_pauses` dit où elle tombe et qui peut relayer. |
                 | **Typologie** | une catégorie de jeu. C'est un référentiel modifiable, pas une liste figée : les compétences des animateurs et les typologies proposées par les stands s'y réfèrent. |
                 | **Emplacement** | l'endroit physique où un stand se trouve, utilisé pour limiter les déplacements. |
-                | **Créneau** | une tranche horaire datée. Selon l'étape, la grille contient des **amplitudes** (la journée d'ouverture, à découper) ou des **vacations** (les tranches finales sur lesquelles on affecte). |
-                | **Amplitude** | l'ouverture d'une journée, de bout en bout. À ne pas confondre avec le mot anglais. |
-                | **Vacation** | une tranche de travail d'un animateur. Là encore, faux ami : rien à voir avec des vacances. |
-                | **Découpage** | l'opération qui remplace les amplitudes par des vacations, selon les paramètres de découpage. |
+                | **Créneau** | une tranche horaire datée de la grille : **une vacation**, sur laquelle on affecte. Il n'y en a pas d'autre sorte — un évènement connaît ses horaires d'ouverture et les projette en vacations. |
+                | **Vacation** | une tranche de travail d'un animateur. Faux ami : rien à voir avec des vacances. Marquée `couverturePause`, c'est un **relais repas** : le stand reste ouvert à la moitié de son effectif, arrondie au supérieur, pendant que l'autre moitié mange. |
+                | **Journée type** | un modèle de journée nommé (« Jour normal », « Nocturne ») et ses vacations, projeté sur les dates d'un calendrier. C'est par là qu'une grille se construit sans saisir chaque jour. |
                 | **Poste** | un siège à pourvoir : un stand, un créneau, une place. C'est l'unité que le solveur affecte, et ce que comptent `volumes` et `synthese_affectations`. |
                 | **Édition** | un événement complet et son référentiel. Chaque outil accepte un argument `edition` ; sans lui, il travaille dans l'édition par défaut. Une variante d'une édition est **une autre édition**. |
                 | **Contrainte ad hoc** | une règle sur mesure posée **avant** le calcul pour placer ou écarter quelqu'un (indisponibilité forcée, incompatibilité, affectation forcée, affinité) ; « Ajustement manuel » à l'écran. Toute résolution l'honore, y compris en repartant de zéro. |
@@ -92,7 +91,8 @@ public class McpResources {
                 ## L'ordre dans lequel les choses se font
 
                 1. le référentiel : emplacements, typologies, stands, animateurs ;
-                2. la grille de créneaux, en amplitudes, puis son découpage en vacations ;
+                2. la grille de créneaux : les journées types et leur calendrier, ou une règle récurrente,
+                   ou la dérivation depuis les horaires des stands ;
                 3. la vérification : `valider_creneaux`, `analyser_ouvertures_stands`,
                    `analyser_effectifs`, `analyser_faisabilite` ;
                 4. la résolution : `lancer_solveur`, puis le diagnostic

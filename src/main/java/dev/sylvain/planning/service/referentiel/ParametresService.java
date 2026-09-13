@@ -1,7 +1,5 @@
 package dev.sylvain.planning.service.referentiel;
 
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -33,32 +31,6 @@ public class ParametresService {
     public ParametresLegaux updateLegaux(ParametresLegaux parametres) {
         ParametresValidator.checkParametresLegaux(parametres);
         repository.saveParametresLegaux(parametres);
-        changeTracker.markModified();
-        return parametres;
-    }
-
-    public ParametresDecoupage getDecoupage() {
-        return repository.getParametresDecoupage();
-    }
-
-    /**
-     * Declares what the edition's créneaux are. Its own write, and not a field
-     * of {@link #updateDecoupage}: the mode is decided on the Créneaux page
-     * while the rest of these settings are edited on Paramètres, and a stale
-     * Paramètres tab saving its payload would otherwise silently revert it.
-     */
-    public ParametresDecoupage updateModeGrille(ModeGrilleCreneaux mode) {
-        ParametresDecoupage courants = getDecoupage();
-        courants.setModeGrille(mode);
-        repository.saveParametresDecoupage(courants);
-        return courants;
-    }
-
-    public ParametresDecoupage updateDecoupage(ParametresDecoupage parametres) {
-        ParametresValidator.checkDecoupage(parametres);
-        // The mode is not this payload's business — see updateModeGrille.
-        parametres.setModeGrille(getDecoupage().getModeGrille());
-        repository.saveParametresDecoupage(parametres);
         changeTracker.markModified();
         return parametres;
     }

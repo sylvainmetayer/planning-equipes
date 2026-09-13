@@ -9,9 +9,6 @@
 festival:
   dateDebut: 2027-07-01
 
-parametresDecoupage:
-  modeGrille: VACATIONS
-
 creneaux:
   - id: J1-APREM
     jour: 1

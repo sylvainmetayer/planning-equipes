@@ -1,6 +1,6 @@
 // The grid read as a whole, on the Créneaux page: a recurrence rule typed in a
 // dialog, and the verdict the server gives on the grid. Pure functions, unit
-// tested without rendering — same split as `decoupage.ts` next door.
+// tested without rendering — same split as `jours-resume.ts` next door.
 
 import { parseFenetres } from '../../core/horaire-stand';
 import {

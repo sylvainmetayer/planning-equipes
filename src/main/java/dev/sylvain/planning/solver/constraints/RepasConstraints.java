@@ -30,10 +30,11 @@ import dev.sylvain.planning.domain.PosteAffectation;
  * says the twenty minutes happen inside the vacation. It says nothing about
  * lunch. The parameter that neutralises the first must not carry away the
  * second — which is exactly how a 10:00-20:00 day passed unnoticed.</li>
- * <li><b>Independent of the {@code ModeGrilleCreneaux}.</b> The meal windows
- * used to be read only when an AMPLITUDES grid was sliced into vacations; a
- * grid entered as VACATIONS was never sliced, so nothing ever looked at them.
- * They now travel as {@link FenetreRepas} facts, whatever the mode.</li>
+ * <li><b>Independent of how the grid was built.</b> The meal windows used to
+ * be read only when a day-long amplitude was sliced into vacations by the
+ * découpage; a grid typed by hand was never sliced, so nothing ever looked at
+ * them. They travel as {@link FenetreRepas} facts now, and the découpage that
+ * was their only reader is gone.</li>
  * </ul>
  *
  * <p>Grouped per animateur <i>and date</i>, like the daily legal caps, so each

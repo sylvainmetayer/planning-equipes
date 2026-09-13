@@ -1,7 +1,5 @@
 package dev.sylvain.planning.service.referentiel;
 
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -20,8 +18,8 @@ import java.util.Set;
 import javax.sql.DataSource;
 
 /**
- * The three single-row parameter tables (legal, découpage, solver), the
- * constraint toggles and the per-edition constraint weights.
+ * The two single-row parameter tables (legal, solver), the constraint toggles
+ * and the per-edition constraint weights.
  *
  * <p>Each single-row parameter table holds one row per edition, so every read
  * has to cope with the row not being there yet: an edition that has never been
@@ -43,7 +41,7 @@ public class ParametresRepository {
                         pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes,
                         pause_sur_poste, coupure_repas_minutes, coupure_repas_midi_debut,
                         coupure_repas_midi_fin, coupure_repas_soir_debut, coupure_repas_soir_fin,
-                        heure_debut_soiree
+                        heure_debut_soiree, duree_vacation_max_minutes
                         FROM parametres_legaux
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -60,6 +58,7 @@ public class ParametresRepository {
                 parametres.setCoupureRepasSoirDebut(rs.getObject("coupure_repas_soir_debut", LocalTime.class));
                 parametres.setCoupureRepasSoirFin(rs.getObject("coupure_repas_soir_fin", LocalTime.class));
                 parametres.setHeureDebutSoiree(rs.getObject("heure_debut_soiree", LocalTime.class));
+                parametres.setDureeVacationMaxMinutes(rs.getInt("duree_vacation_max_minutes"));
                 return parametres;
             }
             return new ParametresLegaux();
@@ -75,8 +74,8 @@ public class ParametresRepository {
                         duree_hebdomadaire_max_mineur_minutes, pause_minimale_entre_vacations_minutes,
                         repos_quotidien_minimal_minutes, pause_sur_poste, coupure_repas_minutes,
                         coupure_repas_midi_debut, coupure_repas_midi_fin, coupure_repas_soir_debut,
-                        coupure_repas_soir_fin, heure_debut_soiree)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        coupure_repas_soir_fin, heure_debut_soiree, duree_vacation_max_minutes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET duree_hebdomadaire_max_minutes = EXCLUDED.duree_hebdomadaire_max_minutes,
                         duree_hebdomadaire_max_mineur_minutes = EXCLUDED.duree_hebdomadaire_max_mineur_minutes,
@@ -88,7 +87,8 @@ public class ParametresRepository {
                         coupure_repas_midi_fin = EXCLUDED.coupure_repas_midi_fin,
                         coupure_repas_soir_debut = EXCLUDED.coupure_repas_soir_debut,
                         coupure_repas_soir_fin = EXCLUDED.coupure_repas_soir_fin,
-                        heure_debut_soiree = EXCLUDED.heure_debut_soiree""")) {
+                        heure_debut_soiree = EXCLUDED.heure_debut_soiree,
+                        duree_vacation_max_minutes = EXCLUDED.duree_vacation_max_minutes""")) {
             ps.setInt(2, parametres.getDureeHebdomadaireMaxMinutes());
             ps.setInt(3, parametres.getDureeHebdomadaireMaxMineurMinutes());
             ps.setInt(4, parametres.getPauseMinimaleEntreVacationsMinutes());
@@ -100,63 +100,10 @@ public class ParametresRepository {
             ps.setObject(10, parametres.getCoupureRepasSoirDebut());
             ps.setObject(11, parametres.getCoupureRepasSoirFin());
             ps.setObject(12, parametres.getHeureDebutSoiree());
+            ps.setInt(13, parametres.getDureeVacationMaxMinutes());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save legal parameters", e);
-        }
-    }
-
-    /* ---------------------------- Slicing parameters ------------------------- */
-
-    public ParametresDecoupage getParametresDecoupage() {
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection, """
-                        SELECT duree_vacation_cible_minutes, duree_vacation_min_minutes,
-                        duree_vacation_max_minutes, duree_chevauchement_minutes,
-                        strategie_couverture_pendant_pause, mode_grille
-                        FROM parametres_decoupage
-                        WHERE edition_id = ?""");
-                ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                ParametresDecoupage parametres = new ParametresDecoupage();
-                parametres.setDureeVacationCibleMinutes(rs.getInt("duree_vacation_cible_minutes"));
-                parametres.setDureeVacationMinMinutes(rs.getInt("duree_vacation_min_minutes"));
-                parametres.setDureeVacationMaxMinutes(rs.getInt("duree_vacation_max_minutes"));
-                parametres.setDureeChevauchementMinutes(rs.getInt("duree_chevauchement_minutes"));
-                parametres.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy.valueOf(
-                        rs.getString("strategie_couverture_pendant_pause")));
-                parametres.setModeGrille(ModeGrilleCreneaux.valueOf(rs.getString("mode_grille")));
-                return parametres;
-            }
-            return new ParametresDecoupage();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to load découpage parameters", e);
-        }
-    }
-
-    public void saveParametresDecoupage(ParametresDecoupage parametres) {
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection, """
-                        INSERT INTO parametres_decoupage (edition_id, duree_vacation_cible_minutes,
-                        duree_vacation_min_minutes, duree_vacation_max_minutes, duree_chevauchement_minutes,
-                        strategie_couverture_pendant_pause, mode_grille)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT (edition_id)
-                        DO UPDATE SET duree_vacation_cible_minutes = EXCLUDED.duree_vacation_cible_minutes,
-                        duree_vacation_min_minutes = EXCLUDED.duree_vacation_min_minutes,
-                        duree_vacation_max_minutes = EXCLUDED.duree_vacation_max_minutes,
-                        duree_chevauchement_minutes = EXCLUDED.duree_chevauchement_minutes,
-                        strategie_couverture_pendant_pause = EXCLUDED.strategie_couverture_pendant_pause,
-                        mode_grille = EXCLUDED.mode_grille""")) {
-            ps.setInt(2, parametres.getDureeVacationCibleMinutes());
-            ps.setInt(3, parametres.getDureeVacationMinMinutes());
-            ps.setInt(4, parametres.getDureeVacationMaxMinutes());
-            ps.setInt(5, parametres.getDureeChevauchementMinutes());
-            ps.setString(6, parametres.getStrategieCouverturePendantPause().name());
-            ps.setString(7, parametres.getModeGrille().name());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save découpage parameters", e);
         }
     }
 

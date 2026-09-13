@@ -53,7 +53,7 @@ peut consulter une édition différente de celle qui vient d'être écrite.
 
 « Exporter les données actuelles en scénario » écrit **toutes** les sections que
 l'import sait relire — pas seulement les entités, mais aussi `typologies`,
-`emplacements`, `parametresLegaux`, `parametresDecoupage`, `parametresSolveur`,
+`emplacements`, `parametresLegaux`, `parametresSolveur`, `journeesTypes`,
 `contraintes` et `contraintesAdHoc`.
 
 C'est la raison d'être de l'export : **réimporter le fichier reproduit
@@ -62,7 +62,7 @@ surchargeable », il est **remis au défaut** : l'import écrit un objet neuf, s
 bien que `heureDebutSoiree`, absente du DTO, ramenait une édition réglée à 22 h
 à 20 h et déplaçait toutes les heures de soirée de l'écran Équité sans un mot. Un fichier sans ces sections retombait
 silencieusement sur les réglages de l'instance qui l'importe — sa durée de
-résolution, ses durées de vacation, ses plafonds légaux — et le « même »
+résolution, ses plafonds légaux — et le « même »
 scénario rejoué ailleurs résolvait un autre problème.
 
 **Les créneaux sortent toujours tels qu'ils sont, et la liste de sièges
@@ -72,19 +72,11 @@ fichier ne perd rien. Écrite, elle répétait ce que `effectifMin` et les
 fenêtres d'ouverture disaient déjà — dix mille lignes sur une édition réelle —
 et figeait la grille contre toute modification ultérieure d'un stand. Une
 édition ne peut de toute façon pas produire un staffing qui s'écarte de la
-règle, seul cas où la section a un sens (voir plus bas). Il a existé une
-seconde forme — une édition découpée exportant ses amplitudes sources et
-`decoupageAuto`, pour que l'import rejoue le découpage — et cette page l'a
-décrite longtemps après que #172 l'a retirée. Une fois le découpage joué, les amplitudes qu'il a consommées n'existent
-plus : une édition découpée n'a que ses vacations à exporter. Le fichier de
-scénario tenu à la main, « amplitudes + `decoupageAuto` », reste la source de
-vérité pour redécouper — jamais cet export.
+règle, seul cas où la section a un sens (voir plus bas).
 
 Un créneau peut porter `couverturePause: true` : il couvre un service de
-repas, et le stand n'y ouvre que la moitié de son effectif — ce que le
-découpage automatique marque tout seul sur les vacations qu'il génère, et
-qu'une grille écrite à la main peut donc dire aussi. Le drapeau n'est écrit
-que lorsqu'il vaut vrai.
+repas, et le stand n'y ouvre que la moitié de son effectif, arrondie au
+supérieur. Le drapeau n'est écrit que lorsqu'il vaut vrai.
 
 ## Horaires d'un stand
 
@@ -176,9 +168,14 @@ La section `typologies` permet de fixer un vrai libellé — elle est appliquée
 plus une typologie porte `ninja: true` ; la déclarer retire le drapeau de la
 précédente. L'export réécrit la section entière, drapeau compris.
 
-La section `parametresDecoupage` porte aussi `modeGrille` : ce que le fichier
-déclare est appliqué à l'édition d'atterrissage. Une section `decoupageAuto`
-l'emporte ensuite, puisqu'elle produit des vacations.
+Les sections `parametresDecoupage` et `decoupageAuto` **n'existent plus** : le
+découpage automatique a été retiré (ADR
+[0037](decisions/0037-une-grille-est-toujours-des-vacations.md)), et un fichier
+qui les porte encore est refusé par son nom, avec un message qui dit quoi
+écrire à la place. Les accepter en les ignorant serait pire : une grille
+d'amplitudes s'importerait comme des vacations de quatorze heures sans un mot.
+Le seul réglage qui survit, `dureeVacationMaxMinutes`, a rejoint
+`parametresLegaux`.
 
 La section `journeesTypes` (optionnelle) porte les journées types de
 l'édition — nom, vacations avec `couverturePause` pour un relais repas, et

@@ -3,8 +3,6 @@ package dev.sylvain.planning.service.scenario;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JourneeType;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -240,27 +238,11 @@ public final class ScenarioYamlReader {
      *                            Absent fields fall back to {@link ParametresLegaux}'s
      *                            own defaults, never to the live value, so the
      *                            scenario stays reproducible on its own
-     * @param parametresDecoupage what the découpage consumes, read separately and
-     *                            applied by the scenario-import endpoint; none of
-     *                            it reaches the solver. The meal break used to be
-     *                            here and now sits with {@code parametresLegaux},
-     *                            projected into {@link dev.sylvain.planning.domain.FenetreRepas}
-     *                            facts (issue #438); its old keys are still read
-     * @param modeGrilleDeclare   the grid mode the file itself declares, kept apart
-     *                            from {@code parametresDecoupage} because that object
-     *                            always carries one: its own Java default would
-     *                            otherwise read as a declaration, and a file silent
-     *                            on the subject would flip the target edition
      * @param parametresSolveur   lets a large scenario pin the termination duration
      *                            it actually needs ({@code scenario-complet.yaml}
      *                            takes ~8 min to reach a good score) rather than
      *                            relying on the Données tab. Absent, the current
      *                            database value is left untouched
-     * @param decoupageAuto       a scenario written in "amplitudes" (one long opening
-     *                            window per day, e.g. {@code scenario-continu.yaml})
-     *                            asks its import to slice itself into vacations,
-     *                            instead of leaving the operator to run the
-     *                            "Découpage" screen by hand afterwards
      * @param typologies          {@code {id, label}} pairs defining the scenario's own
      *                            typologie referential entries up front, instead of
      *                            leaving every referenced id to the id-as-its-own-label
@@ -278,10 +260,7 @@ public final class ScenarioYamlReader {
      */
     public record ScenarioSections(
             Optional<ParametresLegaux> parametresLegaux,
-            Optional<ParametresDecoupage> parametresDecoupage,
-            Optional<ModeGrilleCreneaux> modeGrilleDeclare,
             Optional<ParametresSolveur> parametresSolveur,
-            boolean decoupageAuto,
             List<TypologieItem> typologies,
             Optional<EditionCibleDto> edition,
             Optional<ContraintesScenario> contraintes,

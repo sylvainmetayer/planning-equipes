@@ -38,7 +38,7 @@ class ScenarioLadderMediumTest {
 
     @Test
     void rung08AmplitudesSlicedAroundTheMealWithAReducedCrew() {
-        Loaded loaded = load("gamme-08-3j-5stands-16animateurs-decoupage-auto");
+        Loaded loaded = load("gamme-08-3j-5stands-16animateurs-relais-midi-reduit");
         assertThat(loaded.creneaux()).hasSize(12);
         assertThat(loaded.creneaux())
                 .allSatisfy(vacation -> assertThat(vacation.getDureeMinutes()).isLessThanOrEqualTo(300));
@@ -206,7 +206,7 @@ class ScenarioLadderMediumTest {
      */
     @Test
     void rung14AFullReliefCrewOnTheBreakAndOverlappingHandovers() {
-        Loaded loaded = load("gamme-14-10j-15stands-52animateurs-decoupage-releve-repas");
+        Loaded loaded = load("gamme-14-10j-15stands-52animateurs-releve-repas");
         assertThat(loaded.problem().getParametresLegaux().getFirst().getCoupureRepasMinutes())
                 .isEqualTo(45);
         assertThat(loaded.creneaux()).hasSize(26);

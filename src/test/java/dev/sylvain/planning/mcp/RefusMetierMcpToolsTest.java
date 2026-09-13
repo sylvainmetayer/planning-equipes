@@ -40,8 +40,7 @@ class RefusMetierMcpToolsTest {
 
     @Test
     void uneRecurrenceSansFenetreDonneUnExemple() {
-        assertThatThrownBy(() ->
-                        creneauTools.creer_creneaux_recurrents(null, "", null, null, null, null, null, null, null))
+        assertThatThrownBy(() -> creneauTools.creer_creneaux_recurrents("", null, null, null, null, null, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("fenetres")

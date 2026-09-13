@@ -11,15 +11,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import {
-  JourSemaine,
-  ModeGrilleCreneaux,
-  RapportGrille,
-  RapportRecurrence,
-  RegleRecurrence,
-} from '../../core/models';
+import { JourSemaine, RapportGrille, RapportRecurrence, RegleRecurrence } from '../../core/models';
 import { libelleJourSemaine } from '../stands/stand-horaires';
-import { summarizeVacationsByDay } from './decoupage';
+import { summarizeVacationsByDay } from './jours-resume';
 import {
   ErreurSerie,
   SerieDraft,
@@ -34,8 +28,6 @@ import {
 } from './grille-creneaux';
 
 export interface CreneauSerieData {
-  /** The mode the edition declares: what the preview's verdict is read in. */
-  mode: ModeGrilleCreneaux;
   /** The grid's current verdict, so only the errors the rule introduces block it. */
   controleActuel: RapportGrille | null;
 }
@@ -147,10 +139,7 @@ export class CreneauSerieDialog {
     }
     this.chargement.set(true);
     try {
-      const apercu = await this.creneauxApi.previewRecurrence(
-        this.data.mode,
-        regle satisfies RegleRecurrence,
-      );
+      const apercu = await this.creneauxApi.previewRecurrence(regle satisfies RegleRecurrence);
       this.apercu.set(apercu);
       this.signatureApercu.set(signatureSerie(this.draft()));
     } catch (error) {
@@ -167,7 +156,7 @@ export class CreneauSerieDialog {
     }
     this.creation.set(true);
     try {
-      const rapport = await this.creneauxApi.createRecurrence(this.data.mode, regle);
+      const rapport = await this.creneauxApi.createRecurrence(regle);
       this.dialogRef.close(rapport);
     } catch (error) {
       this.crud.reportError(error);

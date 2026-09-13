@@ -63,7 +63,7 @@ Read before working on constraints or the domain model:
 `PlanningServiceScenarioFestivalHivernalTest` solve large scenarios to
 hard-feasibility — the first two take ~25s/~75s on hand-built problems, the
 last two run the **anonymised real-world fixtures**
-(`festival-realiste-canicule.yaml`, sliced by the découpage, and
+(`festival-realiste-canicule.yaml`, the heatwave variant, and
 `festival-hivernal.yaml`, the same event on the organiser's own grid: 153
 animateurs, 65 stands, 45 premium, per-stand recurring schedules) — the only ones whose
 stands carry recurring horaires, which a plain-Java harness must expand with
@@ -612,8 +612,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   declared), `/editions`, `/historique` (« Historique des actions »), the
   three public legal pages `/mentions-legales`, `/conditions-utilisation`,
   `/politique-confidentialite`, and `/aide` (`/solver` and `/exports` redirect
-  to `/solveur`; `/data-transfer`, `/data-setup`, `/decoupage` and
-  `/validateur-yaml` are legacy redirects too, kept for old bookmarks/links, and so
+  to `/solveur`; `/data-transfer`, `/data-setup` and `/validateur-yaml` are
+  legacy redirects too, `/decoupage` now landing on `/creneaux` since the
+  slicing was removed, kept for old bookmarks/links, and so
   are the eight former screens `/day-calendar`, `/rail-jour`, `/carte-jour`,
   `/pauses`, `/problemes`, `/staffing`, `/fragilite` and `/banc-de-touche`,
   whose redirects carry their query params along, renamed where the page now
@@ -1028,7 +1029,6 @@ visible half of the third, a French word that carries an accent.
 | `DemandeEchange` | *swap request* | |
 | `Typologie` | *game category* | a CRUD referential, not an enum |
 | `Horaire` | *opening hours* | |
-| `Decoupage` | *slicing* | |
 | `Vacation` | ***shift*** | false friend: English *vacation* means holidays |
 | `Amplitude` | ***opening span*** | false friend: English *amplitude* is about oscillations |
 
@@ -1052,8 +1052,8 @@ be as wrong after this as before. The subscription token of issue #324 carries n
 so it says `token` everywhere the credential appears — column
 `animateur.abonnement_token`, JSON key `abonnementToken`, path parameter
 `@Path("/{token}")` — while the *concept* is named `abonnement` in the
-identifiers and the URL (`/api/abonnements`), as `Alerte`, `Fragilite` and
-`Decoupage` already are, and *subscription* in the English prose.
+identifiers and the URL (`/api/abonnements`), as `Alerte` and `Fragilite`
+already are, and *subscription* in the English prose.
 
 A JSON key is a contract, not an identifier: `JsonContractTest` freezes the
 keys of every exposed type in `src/test/resources/json-contract.txt`. Renaming

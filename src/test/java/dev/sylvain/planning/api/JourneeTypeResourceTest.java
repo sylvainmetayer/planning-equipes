@@ -53,8 +53,6 @@ class JourneeTypeResourceTest {
 
     @Test
     void unCalendrierAppliqueMaterialiseLesCreneauxEtGardeLeursIds() {
-        String modeAvant =
-                given().when().get("/api/parametres-decoupage").then().extract().path("modeGrille");
         int avant = countCreneaux();
         Integer id = given().contentType("application/json")
                 .body(JOUR_NORMAL)
@@ -84,8 +82,7 @@ class JourneeTypeResourceTest {
                     .statusCode(200)
                     .body("crees", equalTo(8))
                     .body("supprimes", equalTo(0))
-                    .body("aucunChangement", equalTo(false))
-                    .body("controle.mode", equalTo("VACATIONS"));
+                    .body("aucunChangement", equalTo(false));
             assertThat(countCreneaux()).isEqualTo(avant);
 
             given().when()
@@ -93,9 +90,8 @@ class JourneeTypeResourceTest {
                     .then()
                     .statusCode(200)
                     .body("crees", equalTo(8))
-                    .body("controle.mode", equalTo("VACATIONS"));
+                    .body("controle.nombreCreneaux", equalTo(avant + 8));
             assertThat(countCreneaux()).isEqualTo(avant + 8);
-            given().when().get("/api/parametres-decoupage").then().body("modeGrille", equalTo("VACATIONS"));
             given().when()
                     .get("/api/creneaux")
                     .then()
@@ -135,12 +131,6 @@ class JourneeTypeResourceTest {
                 given().when().delete("/api/creneaux/" + creneauId).then().statusCode(204);
             }
             given().when().delete("/api/journees-types/" + id).then().statusCode(204);
-            given().contentType("application/json")
-                    .body("{\"modeGrille\":\"" + modeAvant + "\"}")
-                    .when()
-                    .put("/api/parametres-decoupage/mode-grille")
-                    .then()
-                    .statusCode(200);
         }
     }
 
@@ -179,75 +169,6 @@ class JourneeTypeResourceTest {
      * the templates of the grid it lands — so the test empties it first, and
      * puts it back.
      */
-    /**
-     * Applying declares the grid as vacations, and that is a change of its own:
-     * a calendar the grid already matches would otherwise report « aucun
-     * changement » and disable the only button that declares the mode.
-     */
-    @Test
-    void declarerLaGrilleEnVacationsEstUnChangementAPartEntiere() {
-        String modeAvant =
-                given().when().get("/api/parametres-decoupage").then().extract().path("modeGrille");
-        Integer id = given().contentType("application/json")
-                .body(JOUR_NORMAL)
-                .when()
-                .post("/api/journees-types")
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("id");
-        try {
-            given().contentType("application/json")
-                    .body("{\"modeGrille\":\"AMPLITUDES\"}")
-                    .when()
-                    .put("/api/parametres-decoupage/mode-grille")
-                    .then()
-                    .statusCode(200);
-            given().contentType("application/json")
-                    .body("[{\"date\":\"2033-05-04\",\"journeeTypeId\":" + id + "}]")
-                    .when()
-                    .put("/api/journees-types/calendrier")
-                    .then()
-                    .statusCode(200);
-            given().when().post("/api/journees-types/application").then().statusCode(200);
-
-            // Second pass: the grid matches, and the mode is already declared.
-            given().when()
-                    .post("/api/journees-types/application/apercu")
-                    .then()
-                    .statusCode(200)
-                    .body("crees", equalTo(0))
-                    .body("modeADeclarer", equalTo(false))
-                    .body("aucunChangement", equalTo(true));
-
-            // Declared back to amplitudes: the same unchanged grid has something to do again.
-            given().contentType("application/json")
-                    .body("{\"modeGrille\":\"AMPLITUDES\"}")
-                    .when()
-                    .put("/api/parametres-decoupage/mode-grille")
-                    .then()
-                    .statusCode(200);
-            given().when()
-                    .post("/api/journees-types/application/apercu")
-                    .then()
-                    .statusCode(200)
-                    .body("crees", equalTo(0))
-                    .body("modeADeclarer", equalTo(true))
-                    .body("aucunChangement", equalTo(false));
-        } finally {
-            for (Integer creneauId : creneauxOf("2033-05")) {
-                given().when().delete("/api/creneaux/" + creneauId).then().statusCode(204);
-            }
-            given().when().delete("/api/journees-types/" + id).then().statusCode(204);
-            given().contentType("application/json")
-                    .body("{\"modeGrille\":\"" + modeAvant + "\"}")
-                    .when()
-                    .put("/api/parametres-decoupage/mode-grille")
-                    .then()
-                    .statusCode(200);
-        }
-    }
-
     @Test
     void unCalendrierSansDateNAPasDApplication() {
         String calendrierAvant = given().when()

@@ -140,7 +140,6 @@ class DatabaseResourceTest {
         assertThat(dump)
                 .contains("INSERT INTO parametres_legaux (")
                 .contains("2760")
-                .contains("INSERT INTO parametres_decoupage (")
                 .contains("INSERT INTO parametres_solveur (")
                 .contains("42")
                 .contains("INSERT INTO constraint_toggle (")

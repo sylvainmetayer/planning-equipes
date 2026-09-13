@@ -1,6 +1,5 @@
 package dev.sylvain.planning.service.referentiel;
 
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -55,6 +54,11 @@ final class ParametresValidator {
         if (parametres.getReposQuotidienMinimalMinutes() < 0) {
             throw new BusinessError.Invalid("reposQuotidienMinimalMinutes must not be negative");
         }
+        // Strictly positive, not merely non-negative: at zero every créneau of
+        // the grid would be « too long », and the warning would say nothing.
+        if (parametres.getDureeVacationMaxMinutes() <= 0) {
+            throw new BusinessError.Invalid("dureeVacationMaxMinutes must be positive");
+        }
         if (parametres.getCoupureRepasMinutes() < 0) {
             throw new BusinessError.Invalid("coupureRepasMinutes must not be negative");
         }
@@ -76,20 +80,6 @@ final class ParametresValidator {
     private static void checkFenetre(java.time.LocalTime debut, java.time.LocalTime fin, String champ) {
         if ((debut == null) != (fin == null)) {
             throw new BusinessError.Invalid(champ + " needs both its bounds, or neither");
-        }
-    }
-
-    static void checkDecoupage(ParametresDecoupage parametres) {
-        if (parametres.getDureeVacationMinMinutes() <= 0
-                || parametres.getDureeVacationMaxMinutes() <= 0
-                || parametres.getDureeVacationCibleMinutes() <= 0) {
-            throw new BusinessError.Invalid("vacation durations must be positive");
-        }
-        if (parametres.getDureeVacationMinMinutes() > parametres.getDureeVacationMaxMinutes()) {
-            throw new BusinessError.Invalid("dureeVacationMinMinutes cannot be greater than dureeVacationMaxMinutes");
-        }
-        if (parametres.getDureeChevauchementMinutes() < 0) {
-            throw new BusinessError.Invalid("overlap duration must not be negative");
         }
     }
 

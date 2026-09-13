@@ -1,12 +1,11 @@
 // Sorting, the conditional « Famille » column, multi-selection, the feasibility
-// index and the auto-slicing round-trip of the timeslots table. The first half
-// creates the component without rendering it; the second one renders the page,
-// because the slicing card is a destructive action (it replaces every créneau
-// and wipes the solved planning) and what guards it — a confirmation, a
-// disabled button while it runs — only exists in the template.
+// index and the grid's verdict on the timeslots table. The first half creates
+// the component without rendering it; the second one renders the page, because
+// what guards the writing actions — a confirmation, a disabled button while a
+// solve runs — only exists in the template.
 //
 // Written as the safety net the `<app-reference-table>` extraction needs.
-// `decoupage.spec.ts` owns the per-day summary; what is pinned here is the
+// `jours-resume.spec.ts` owns the per-day summary; what is pinned here is the
 // page that drives it.
 
 import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
@@ -51,27 +50,15 @@ function cause(manque: number): CauseInfaisabilite {
   };
 }
 
-const PARAMETRES_DECOUPAGE = {
-  dureeVacationCibleMinutes: 300,
-  dureeVacationMinMinutes: 180,
-  dureeVacationMaxMinutes: 360,
-  dureeChevauchementMinutes: 30,
-  strategieCouverturePendantPause: 'FERMETURE',
-  modeGrille: 'AMPLITUDES',
-};
-
 const DIAGNOSTIC = {
   nombreCreneaux: 1,
   premiereDate: '2026-08-01',
   derniereDate: '2026-08-01',
   contientCouverturePause: false,
-  modeProbable: 'AMPLITUDES',
-  modeCertain: false,
-  explication: 'Durée médiane de 120 min : rien ne le prouve.',
+  explication: '1 vacations sur 1 date(s), durée médiane de 120 min, aucun relais repas.',
 };
 
 const CONTROLE = {
-  mode: 'AMPLITUDES',
   nombreCreneaux: 1,
   anomalies: [] as { severite: string; type: string; date: string | null; message: string }[],
   ouvertures: [] as unknown[],
@@ -79,18 +66,14 @@ const CONTROLE = {
 };
 
 /**
- * The page reads four endpoints on entry: the créneaux list is the store's
- * business, the three others answer here by URL, with `autres` for whatever
- * a test wants the remaining calls (the découpage preview) to return.
+ * The page reads three endpoints on entry: the créneaux list is the store's
+ * business, the two others answer here by URL.
  */
 function reponseApi(
   url: string,
   autres: unknown = [],
-  surcharges: { parametres?: object; diagnostic?: object; controle?: object } = {},
+  surcharges: { diagnostic?: object; controle?: object } = {},
 ): unknown {
-  if (url.includes('parametres-decoupage')) {
-    return { ...PARAMETRES_DECOUPAGE, ...(surcharges.parametres ?? {}) };
-  }
   if (url.includes('/creneaux/diagnostic')) {
     return { ...DIAGNOSTIC, ...(surcharges.diagnostic ?? {}) };
   }
@@ -105,23 +88,15 @@ function brancher(
   creneauxApi: {
     diagnostic: ReturnType<typeof vi.fn>;
     control: ReturnType<typeof vi.fn>;
-    slicingParameters: ReturnType<typeof vi.fn>;
-    previewSlicing: ReturnType<typeof vi.fn>;
   },
   autres: unknown = [],
-  surcharges: { parametres?: object; diagnostic?: object; controle?: object } = {},
+  surcharges: { diagnostic?: object; controle?: object } = {},
 ): void {
-  creneauxApi.slicingParameters.mockImplementation(async () =>
-    reponseApi('parametres-decoupage', autres, surcharges),
-  );
   creneauxApi.diagnostic.mockImplementation(async () =>
     reponseApi('/creneaux/diagnostic', autres, surcharges),
   );
   creneauxApi.control.mockImplementation(async () =>
     reponseApi('/creneaux/controle', autres, surcharges),
-  );
-  creneauxApi.previewSlicing.mockImplementation(async () =>
-    reponseApi('preview', autres, surcharges),
   );
 }
 
@@ -133,17 +108,9 @@ type PageInternals = {
   selection: TableSelection<number>;
   causeParCreneau: Signal<Map<number, CauseInfaisabilite>>;
   editingLocked: Signal<boolean>;
-  previewVacations: Signal<Creneau[] | null>;
-  previewLoading: Signal<boolean>;
-  genererLoading: Signal<boolean>;
-  resumeDecoupage: Signal<unknown[]>;
-  previsualiserDecoupage: () => Promise<void>;
-  genererDecoupage: () => Promise<void>;
   remove: (creneau: Creneau) => Promise<void>;
   removeSelection: () => Promise<void>;
   editSelection: () => void;
-  mode: Signal<string>;
-  changerMode: (mode: string) => Promise<void>;
   openSerie: () => void;
   openDerivation: () => void;
 };
@@ -159,10 +126,6 @@ describe('CreneauxPage', () => {
   const creneauxApi = {
     diagnostic: vi.fn(),
     control: vi.fn(),
-    slicingParameters: vi.fn(),
-    setGridMode: vi.fn(),
-    previewSlicing: vi.fn(),
-    generateSlicing: vi.fn(),
   };
   const confirm = { ask: vi.fn() };
   const notifications = { notify: vi.fn() };
@@ -189,11 +152,6 @@ describe('CreneauxPage', () => {
     causeParCreneauId.set(new Map());
     confirm.ask.mockResolvedValue(true);
     brancher(creneauxApi);
-    creneauxApi.generateSlicing.mockResolvedValue(undefined);
-    creneauxApi.setGridMode.mockImplementation(async (modeGrille: string) => ({
-      ...PARAMETRES_DECOUPAGE,
-      modeGrille,
-    }));
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -402,87 +360,6 @@ describe('CreneauxPage', () => {
     });
   });
 
-  describe('previewing the auto-slicing', () => {
-    it('drops the previous preview before asking for a new one', async () => {
-      const page = createPage();
-      creneauxApi.previewSlicing.mockResolvedValue([creneau({ id: 1, jour: 1 })]);
-      await page.previsualiserDecoupage();
-      expect(page.previewVacations()).toHaveLength(1);
-
-      creneauxApi.previewSlicing.mockRejectedValue(new Error('Découpage impossible.'));
-      await page.previsualiserDecoupage();
-
-      expect(page.previewVacations()).toBeNull();
-      expect(page.resumeDecoupage()).toEqual([]);
-      expect(crud.reportError).toHaveBeenCalledOnce();
-    });
-
-    it('summarises the previewed vacations by day', async () => {
-      const page = createPage();
-      creneauxApi.previewSlicing.mockResolvedValue([
-        creneau({ id: 1, jour: 1, date: '2026-08-01' }),
-        creneau({ id: 2, jour: 1, date: '2026-08-01' }),
-        creneau({ id: 3, jour: 2, date: '2026-08-02' }),
-      ]);
-
-      await page.previsualiserDecoupage();
-
-      expect(creneauxApi.previewSlicing).toHaveBeenCalledOnce();
-      expect(page.resumeDecoupage()).toHaveLength(2);
-      expect(page.previewLoading()).toBe(false);
-    });
-
-    it('lowers the in-flight flag even when the preview fails', async () => {
-      const page = createPage();
-      creneauxApi.previewSlicing.mockRejectedValue(new Error('Découpage impossible.'));
-
-      await page.previsualiserDecoupage();
-
-      expect(page.previewLoading()).toBe(false);
-    });
-  });
-
-  describe('generating the auto-slicing', () => {
-    // The generation replaces the edition's créneaux and erases the persisted
-    // plan with them: it is confirmed first, and flagged as dangerous.
-    it('writes nothing when the confirmation is refused', async () => {
-      const page = createPage();
-      confirm.ask.mockResolvedValue(false);
-
-      await page.genererDecoupage();
-
-      expect(confirm.ask).toHaveBeenCalledWith(expect.objectContaining({ danger: true }));
-      expect(creneauxApi.generateSlicing).not.toHaveBeenCalled();
-    });
-
-    it('generates, then reloads both the referential and the resolution state', async () => {
-      const page = createPage();
-      crud.reload.mockClear();
-
-      await page.genererDecoupage();
-
-      expect(creneauxApi.generateSlicing).toHaveBeenCalledOnce();
-      expect(crud.reload).toHaveBeenCalledOnce();
-      expect(resolution.reload).toHaveBeenCalledOnce();
-      expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'success' }),
-      );
-    });
-
-    it('reports a failed generation and reloads nothing', async () => {
-      const page = createPage();
-      creneauxApi.generateSlicing.mockRejectedValue(new Error('Découpage refusé.'));
-      crud.reload.mockClear();
-
-      await page.genererDecoupage();
-
-      expect(crud.reportError).toHaveBeenCalledOnce();
-      expect(crud.reload).not.toHaveBeenCalled();
-      expect(notifications.notify).not.toHaveBeenCalled();
-      expect(page.genererLoading()).toBe(false);
-    });
-  });
-
   it('exposes the editing lock as the job service sees it, not as its own copy', () => {
     const page = createPage();
 
@@ -498,10 +375,6 @@ describe('CreneauxPage rendering', () => {
   const creneauxApi = {
     diagnostic: vi.fn(),
     control: vi.fn(),
-    slicingParameters: vi.fn(),
-    previewSlicing: vi.fn(),
-    generateSlicing: vi.fn(async () => undefined),
-    setGridMode: vi.fn(async (modeGrille: string) => ({ ...PARAMETRES_DECOUPAGE, modeGrille })),
   };
   const confirm = { ask: vi.fn(async () => false) };
   const crud = {
@@ -542,8 +415,6 @@ describe('CreneauxPage rendering', () => {
     editingLocked.set(false);
     causeParCreneauId.set(new Map());
     brancher(creneauxApi);
-    creneauxApi.generateSlicing.mockClear();
-    creneauxApi.setGridMode.mockClear();
     confirm.ask.mockClear();
     confirm.ask.mockResolvedValue(false);
     TestBed.configureTestingModule({
@@ -609,65 +480,8 @@ describe('CreneauxPage rendering', () => {
     expect(racine().querySelector('.locked-hint')).not.toBeNull();
     const actions = racine().querySelectorAll('tbody .row-actions button');
     expect(Array.from(actions).every((each) => (each as HTMLButtonElement).disabled)).toBe(true);
-    // Generating the slicing replaces every créneau: locked with the rest.
-    expect(bouton('Générer les vacations').disabled).toBe(true);
-  });
-
-  it('previews the slicing without writing anything', async () => {
-    brancher(creneauxApi, [
-      { id: 1, jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00' },
-      { id: 2, jour: 1, date: '2026-08-01', heureDebut: '12:00', heureFin: '14:00' },
-    ]);
-    await rendre([creneau({ id: 1, jour: 1 })]);
-
-    bouton('Prévisualiser').click();
-    await fixture.whenStable();
-
-    expect(creneauxApi.generateSlicing).not.toHaveBeenCalled();
-    const resume = racine().querySelector('.decoupage-resume')!;
-    expect(resume.textContent!).toContain('2026-08-01');
-    expect(
-      Array.from(resume.querySelectorAll('.vacation-chip')).map((each) => each.textContent!.trim()),
-    ).toEqual(['10:00–12:00', '12:00–14:00']);
-  });
-
-  it('never generates the slicing without an explicit confirmation', async () => {
-    await rendre([creneau({ id: 1, jour: 1 })]);
-
-    bouton('Générer les vacations').click();
-    await fixture.whenStable();
-
-    // It replaces every créneau of the edition and wipes the solved planning.
-    expect(creneauxApi.generateSlicing).not.toHaveBeenCalled();
-
-    confirm.ask.mockResolvedValue(true);
-    bouton('Générer les vacations').click();
-    await fixture.whenStable();
-    expect(creneauxApi.generateSlicing).toHaveBeenCalledOnce();
-  });
-
-  it('carries the slicing settings next to the generation on a grid of amplitudes', async () => {
-    brancher(creneauxApi, [], { parametres: { modeGrille: 'AMPLITUDES' } });
-    await rendre([creneau({ id: 1, jour: 1 })]);
-
-    const carte = racine().querySelector('app-parametres-decoupage')!;
-    expect(carte.textContent).toContain('Paramètres de découpage');
-    expect(racine().textContent).toContain('Générer le découpage');
-    expect(racine().textContent).toContain('Dériver des horaires des stands');
-  });
-
-  // An edition that types its vacations never slices (ADR 0032): the tooling
-  // is put away, not shown disabled, and one line says how to get it back.
-  it('puts the slicing tooling away on a grid of final vacations, and says where it went', async () => {
-    brancher(creneauxApi, [], { parametres: { modeGrille: 'VACATIONS' } });
-    await rendre([creneau({ id: 1, jour: 1 })]);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await fixture.whenStable();
-
-    expect(racine().querySelector('app-parametres-decoupage')).toBeNull();
-    expect(racine().textContent).not.toContain('Générer le découpage');
-    expect(racine().textContent).not.toContain('Dériver des horaires des stands');
-    expect(racine().querySelector('.decoupage-range')!.textContent).toContain('rangés');
+    // The derivation can replace the whole grid: locked with the rest.
+    expect(bouton('Dériver des horaires des stands').disabled).toBe(true);
   });
 
   describe('the grid as a whole', () => {
@@ -681,43 +495,6 @@ describe('CreneauxPage rendering', () => {
     function text(selecteur: string): string {
       return racine().querySelector(selecteur)!.textContent!.replace(/\s+/g, ' ').trim();
     }
-
-    it('declares the mode from the découpage settings and writes it back through them, then rereads the verdict', async () => {
-      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
-      const page = fixture.componentInstance as unknown as PageInternals;
-      expect(page.mode()).toBe('AMPLITUDES');
-      const lectures = creneauxApi.control.mock.calls.length;
-
-      await page.changerMode('VACATIONS');
-      await fixture.whenStable();
-
-      // One write, carrying the whole settings object with only the mode changed —
-      // never a write on entry, which would reset the mode to its default.
-      expect(creneauxApi.setGridMode).toHaveBeenCalledOnce();
-      // Its own endpoint: sending the whole settings object would let a stale
-      // Paramètres tab revert this choice.
-      expect(creneauxApi.setGridMode).toHaveBeenCalledWith('VACATIONS');
-      expect(page.mode()).toBe('VACATIONS');
-      expect(creneauxApi.control.mock.calls.length).toBe(lectures + 1);
-      // Nothing to slice on a grid of final vacations: the tooling is put away.
-      expect(racine().textContent).not.toContain('Générer les vacations');
-      expect(racine().querySelector('.decoupage-range')).not.toBeNull();
-    });
-
-    it('says when the data proves a mode the declaration contradicts', async () => {
-      brancher(creneauxApi, [], {
-        diagnostic: {
-          modeProbable: 'VACATIONS',
-          modeCertain: true,
-          explication: 'Grille déjà découpée : des créneaux de couverture de pause.',
-        },
-      });
-      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
-
-      const diagnostic = racine().querySelector('.grille-diagnostic')!;
-      expect(diagnostic.classList.contains('grille-diagnostic-desaccord')).toBe(true);
-      expect(diagnostic.textContent).toContain('couverture de pause');
-    });
 
     it('shows the verdict on the page, errors first, and the stand openings apart', async () => {
       brancher(creneauxApi, [], {
@@ -773,18 +550,17 @@ describe('CreneauxPage rendering', () => {
       expect(racine().textContent).toContain('Rien à signaler');
     });
 
-    it('opens the série dialog with the declared mode, locked with the rest', async () => {
+    it('opens the série dialog with the current verdict, locked with the rest', async () => {
       await rendreEtLire([creneau({ id: 1, jour: 1 })]);
       const dialog = TestBed.inject(MatDialog) as unknown as { open: ReturnType<typeof vi.fn> };
 
       bouton('Créer une série').click();
       expect(dialog.open).toHaveBeenCalledOnce();
-      expect(
-        (dialog.open.mock.calls[0] as unknown as [unknown, { data: { mode: string } }])[1].data,
-      ).toEqual({
-        mode: 'AMPLITUDES',
-        controleActuel: { ...CONTROLE },
-      });
+      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: object }])[1].data).toEqual(
+        {
+          controleActuel: { ...CONTROLE },
+        },
+      );
 
       editingLocked.set(true);
       await fixture.whenStable();
@@ -803,26 +579,10 @@ describe('CreneauxPage rendering', () => {
       expect(dialog.open).toHaveBeenCalledOnce();
       expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: object }])[1].data).toEqual(
         {
-          mode: 'AMPLITUDES',
           dateDebut: '2026-08-01',
           dateFin: '2026-08-03',
         },
       );
-    });
-
-    it('declares the grid as vacations once the découpage has generated them', async () => {
-      confirm.ask.mockResolvedValue(true);
-      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
-
-      bouton('Générer les vacations').click();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      await fixture.whenStable();
-
-      expect(creneauxApi.generateSlicing).toHaveBeenCalledOnce();
-      // The server declares the grid as vacations when it slices it: the page
-      // reads the settings back rather than writing the mode itself.
-      expect(creneauxApi.setGridMode).not.toHaveBeenCalled();
-      expect(creneauxApi.slicingParameters.mock.calls.length).toBeGreaterThan(1);
     });
   });
 });

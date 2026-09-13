@@ -1,6 +1,5 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -45,32 +44,6 @@ public class ParametresResource {
     public Response updateParametresLegaux(ParametresLegaux parametres) {
         return Response.ok(referenceDataService.updateParametresLegaux(parametres))
                 .build();
-    }
-
-    @GET
-    @Path("/parametres-decoupage")
-    public ParametresDecoupage getParametresDecoupage() {
-        return referenceDataService.getParametresDecoupage();
-    }
-
-    /**
-     * Writes the slicing settings. {@code modeGrille} is <b>not</b> read from
-     * this body — it is declared on the Créneaux page and written by
-     * {@link #updateModeGrille}, so a tab left open here cannot revert it.
-     */
-    @PUT
-    @Path("/parametres-decoupage")
-    public ParametresDecoupage updateParametresDecoupage(ParametresDecoupage parametres) {
-        return referenceDataService.updateParametresDecoupage(parametres);
-    }
-
-    /** What the edition's créneaux are: {@code {"modeGrille": "AMPLITUDES"}} or {@code "VACATIONS"}. */
-    public record ModeGrilleRequest(String modeGrille) {}
-
-    @PUT
-    @Path("/parametres-decoupage/mode-grille")
-    public ParametresDecoupage updateModeGrille(ModeGrilleRequest requete) {
-        return referenceDataService.updateModeGrille(requete == null ? null : requete.modeGrille());
     }
 
     @GET

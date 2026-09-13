@@ -9,11 +9,9 @@ import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JourneeType;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -33,7 +31,6 @@ import dev.sylvain.planning.scenario.dto.HoraireStandDto;
 import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
-import dev.sylvain.planning.scenario.dto.ParametresDecoupageDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
@@ -87,7 +84,7 @@ import java.util.function.Supplier;
  * an import that refused what the validator accepts would make the Validateur
  * screen a liar. And it keeps the reader's leniencies where a stricter rule
  * would refuse files the application itself produced: an id written as a
- * number, a bare {@code decoupageAuto:}, a window with no end.</p>
+ * number, a section that no longer exists, a window with no end.</p>
  */
 final class ScenarioDomainMapper {
 
@@ -126,20 +123,18 @@ final class ScenarioDomainMapper {
         PlanningEvenement evenement =
                 new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes, contraintesAdHoc);
         evenement.setParametresLegaux(
-                List.of(parametresLegaux(scenario.parametresLegaux(), scenario.parametresDecoupage())
-                        .orElseGet(parametresLegauxParDefaut)));
+                List.of(parametresLegaux(scenario.parametresLegaux()).orElseGet(parametresLegauxParDefaut)));
         // The meal windows the file declares, not the ones the database holds:
-        // a scenario is cut with its own découpage parameters, so it has to be
-        // judged on the same ones. Reading them from the edition instead let a
-        // grid be sliced around one window and scored against another — on
-        // festival-realiste-canicule, an evening window deliberately placed at
-        // 17:00-18:00 (inert, it falls in the gap) was scored as 19:00-21:00,
-        // in the middle of the evening block, which no assignment could
-        // satisfy. A file that declares nothing inherits the defaults, exactly
-        // like an edition that never configured them.
+        // a scenario's vacations are laid out around its own windows, so it has
+        // to be judged on the same ones. Reading them from the edition instead
+        // scored a grid against another set — on festival-realiste-canicule, an
+        // evening window deliberately placed at 17:00-18:00 (inert, it falls in
+        // the gap) was scored as 19:00-21:00, in the middle of the evening
+        // block, which no assignment could satisfy. A file that declares
+        // nothing inherits the defaults, exactly like an edition that never
+        // configured them.
         evenement.setFenetresRepas(
-                FenetreRepas.from(parametresLegaux(scenario.parametresLegaux(), scenario.parametresDecoupage())
-                        .orElseGet(parametresLegauxParDefaut)));
+                FenetreRepas.from(parametresLegaux(scenario.parametresLegaux()).orElseGet(parametresLegauxParDefaut)));
         // Same reasoning as the ad hoc constraints above, for the dosage: a file
         // that pins its weights describes the problem it was verified against,
         // and solving it must apply them whether or not it was ever imported.
@@ -411,14 +406,8 @@ final class ScenarioDomainMapper {
     /** The optional sections a file pins, without building its planning. */
     static ScenarioSections sections(ScenarioDto scenario) {
         return new ScenarioSections(
-                parametresLegaux(scenario.parametresLegaux(), scenario.parametresDecoupage()),
-                parametresDecoupage(scenario.parametresDecoupage()),
-                modeGrilleDeclare(scenario.parametresDecoupage()),
+                parametresLegaux(scenario.parametresLegaux()),
                 parametresSolveur(scenario.parametresSolveur()),
-                // Presence, not content: `decoupageAuto: {}`, a bare `decoupageAuto:`
-                // and its historical groupe fields all mean "slice on import";
-                // ScenarioBinder turns an explicit `decoupageAuto: false` into absence.
-                scenario.decoupageAuto() != null,
                 typologies(scenario.typologies()),
                 edition(scenario),
                 contraintes(scenario.contraintes()),
@@ -480,36 +469,15 @@ final class ScenarioDomainMapper {
         return typologies;
     }
 
-    /**
-     * The legal parameters, meal break included. The meal fields are read from
-     * their own section first; a file written before they moved carries them
-     * under {@code parametresDecoupage}, and is still read — those keys are
-     * deprecated, never refused, so that no scenario stops importing.
-     */
-    private static Optional<ParametresLegaux> parametresLegaux(
-            ParametresLegauxDto dto, ParametresDecoupageDto decoupage) {
-        boolean repasDeprecie = decoupage != null
-                && (decoupage.dureePauseRepasMinutes() != null
-                        || decoupage.fenetreRepasMidiDebut() != null
-                        || decoupage.fenetreRepasMidiFin() != null
-                        || decoupage.fenetreRepasSoirDebut() != null
-                        || decoupage.fenetreRepasSoirFin() != null);
-        if (dto == null && !repasDeprecie) {
+    /** The legal parameters, meal break and vacation ceiling included. */
+    private static Optional<ParametresLegaux> parametresLegaux(ParametresLegauxDto dto) {
+        if (dto == null) {
             return Optional.empty();
         }
         ParametresLegaux parametres = new ParametresLegaux();
-        if (repasDeprecie) {
-            setInt(decoupage.dureePauseRepasMinutes(), parametres::setCoupureRepasMinutes);
-            set(decoupage.fenetreRepasMidiDebut(), parametres::setCoupureRepasMidiDebut);
-            set(decoupage.fenetreRepasMidiFin(), parametres::setCoupureRepasMidiFin);
-            set(decoupage.fenetreRepasSoirDebut(), parametres::setCoupureRepasSoirDebut);
-            set(decoupage.fenetreRepasSoirFin(), parametres::setCoupureRepasSoirFin);
-        }
-        if (dto == null) {
-            return Optional.of(parametres);
-        }
         setInt(dto.dureeHebdomadaireMaxMinutes(), parametres::setDureeHebdomadaireMaxMinutes);
         setInt(dto.pauseMinimaleEntreVacationsMinutes(), parametres::setPauseMinimaleEntreVacationsMinutes);
+        setInt(dto.dureeVacationMaxMinutes(), parametres::setDureeVacationMaxMinutes);
         setInt(dto.reposQuotidienMinimalMinutes(), parametres::setReposQuotidienMinimalMinutes);
         if (dto.pauseSurPoste() != null) {
             parametres.setPauseSurPoste(dto.pauseSurPoste());
@@ -521,30 +489,6 @@ final class ScenarioDomainMapper {
         set(dto.coupureRepasSoirFin(), parametres::setCoupureRepasSoirFin);
         set(dto.heureDebutSoiree(), parametres::setHeureDebutSoiree);
         return Optional.of(parametres);
-    }
-
-    private static Optional<ParametresDecoupage> parametresDecoupage(ParametresDecoupageDto dto) {
-        if (dto == null) {
-            return Optional.empty();
-        }
-        ParametresDecoupage parametres = new ParametresDecoupage();
-        setInt(dto.dureeVacationCibleMinutes(), parametres::setDureeVacationCibleMinutes);
-        setInt(dto.dureeVacationMinMinutes(), parametres::setDureeVacationMinMinutes);
-        setInt(dto.dureeVacationMaxMinutes(), parametres::setDureeVacationMaxMinutes);
-        setInt(dto.dureeChevauchementMinutes(), parametres::setDureeChevauchementMinutes);
-        set(dto.strategieCouverturePendantPause(), parametres::setStrategieCouverturePendantPause);
-        set(dto.modeGrille(), parametres::setModeGrille);
-        return Optional.of(parametres);
-    }
-
-    /**
-     * The mode the file spells out, and nothing else: {@link ParametresDecoupage}
-     * is born with a mode, so reading it back off the mapped object cannot tell
-     * a declaration from that default — and importing the default would move an
-     * edition the file never talked about.
-     */
-    private static Optional<ModeGrilleCreneaux> modeGrilleDeclare(ParametresDecoupageDto dto) {
-        return Optional.ofNullable(dto == null ? null : dto.modeGrille());
     }
 
     private static Optional<ParametresSolveur> parametresSolveur(ParametresSolveurDto dto) {

@@ -1,42 +1,80 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
-# Barreau 8 : une grille en amplitudes, découpée à l'import.
-# Une amplitude par jour, de 10 h à 19 h ; decoupageAuto la tranche en vacations
-# d'environ quatre heures (entre deux et cinq), sans chevauchement. Une vacation
-# de quatre heures ouverte à 10 h engloutirait la fenêtre repas de midi : le
-# découpage y coupe, et pose pendant la pause une vacation à effectif réduit
-# (EFFECTIF_REDUIT, moitié arrondie au supérieur). Les vacations découpées se
-# touchent : la pause minimale est à 0.
+# Barreau 8 : une journée d'ouverture 10 h-19 h, exprimée en vacations jointives.
+# Quatre vacations par jour, identiques sur les trois jours : 10 h-12 h, le
+# relais de midi 12 h-13 h, 13 h-14 h puis 14 h-19 h. Le relais porte
+# couverturePause, donc chaque stand y tient à la moitié de son effectif
+# (arrondie au supérieur) pendant que l'autre moitié déjeune, dans la fenêtre
+# repas 12 h-14 h. Les vacations se touchent : la pause minimale est à 0.
 
 festival:
   dateDebut: 2027-08-18
 
-parametresDecoupage:
-  dureeVacationCibleMinutes: 240
-  dureeVacationMinMinutes: 120
-  dureeVacationMaxMinutes: 300
-  dureeChevauchementMinutes: 0
-  strategieCouverturePendantPause: EFFECTIF_REDUIT
-
 parametresLegaux:
   pauseMinimaleEntreVacationsMinutes: 0
 
-decoupageAuto: {}
-
 creneaux:
-  - id: J1-AMPLITUDE
+  - id: J1-V1
     jour: 1
     date: 2027-08-18
     heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J1-V2
+    jour: 1
+    date: 2027-08-18
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J1-V3
+    jour: 1
+    date: 2027-08-18
+    heureDebut: "13:00"
+    heureFin: "14:00"
+  - id: J1-V4
+    jour: 1
+    date: 2027-08-18
+    heureDebut: "14:00"
     heureFin: "19:00"
-  - id: J2-AMPLITUDE
+  - id: J2-V1
     jour: 2
     date: 2027-08-19
     heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J2-V2
+    jour: 2
+    date: 2027-08-19
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J2-V3
+    jour: 2
+    date: 2027-08-19
+    heureDebut: "13:00"
+    heureFin: "14:00"
+  - id: J2-V4
+    jour: 2
+    date: 2027-08-19
+    heureDebut: "14:00"
     heureFin: "19:00"
-  - id: J3-AMPLITUDE
+  - id: J3-V1
     jour: 3
     date: 2027-08-20
     heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J3-V2
+    jour: 3
+    date: 2027-08-20
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J3-V3
+    jour: 3
+    date: 2027-08-20
+    heureDebut: "13:00"
+    heureFin: "14:00"
+  - id: J3-V4
+    jour: 3
+    date: 2027-08-20
+    heureDebut: "14:00"
     heureFin: "19:00"
 
 stands:

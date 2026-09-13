@@ -119,18 +119,16 @@ class ScenarioLadderImportTest {
         assertFeasible(solveIn(EDITION, problem));
     }
 
+    /**
+     * The rung that used to be sliced at import: it states its relay vacations
+     * outright now, and the imported grid must still be the one the plain-Java
+     * harness builds from the same file.
+     */
     @Test
-    void rung08TheImportSlicesTheAmplitudesLikeTheHarness() {
-        String name = "gamme-08-3j-5stands-16animateurs-decoupage-auto";
+    void rung08TheImportedGridMatchesTheHarness() {
+        String name = "gamme-08-3j-5stands-16animateurs-relais-midi-reduit";
         createLandingEdition();
-        given().header(HEADER, EDITION)
-                .contentType("text/plain")
-                .body(ScenarioLadder.yaml(name))
-                .when()
-                .post("/api/reference-data/import-scenario-fichier")
-                .then()
-                .statusCode(200)
-                .body("decoupageAuto", equalTo(true));
+        importInto(EDITION, name);
 
         PlanningEvenement problem = buildIn(EDITION);
         assertSameSeatsAsTheHarness(problem, name);

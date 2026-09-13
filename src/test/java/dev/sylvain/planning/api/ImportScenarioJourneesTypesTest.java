@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -10,17 +11,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * What a scenario says of its own grid, on the way in.
+ * What a scenario says of its own grid, on the way in: the day templates it
+ * names govern their dates, and a file that names none has them recognised
+ * from its créneaux.
  *
- * <p>The mode was parsed and then dropped: {@code updateParametresDecoupage}
- * deliberately refuses to write it — the settings form must not revert a choice
- * made on the Créneaux screen — so a file declaring {@code modeGrille:
- * VACATIONS} landed in an edition still declared {@code AMPLITUDES}. Its relay
- * vacations were then read as overlapping amplitudes, and the découpage cards
- * stayed on screen over a grid with nothing to slice.</p>
+ * <p>It also holds the refusal of the two sections the découpage owned. That
+ * refusal is the safe reading: accepted and ignored, a file of day-long
+ * opening amplitudes would import as day-long vacations, and its author would
+ * hear about it from the solver rather than from the import.</p>
  */
 @QuarkusTest
-class ImportScenarioModeGrilleTest {
+class ImportScenarioJourneesTypesTest {
 
     private static final String HEADER = "X-Edition-Id";
     private static final String EDITION = "IMPORT-MODE-GRILLE";
@@ -62,14 +63,8 @@ class ImportScenarioModeGrilleTest {
                 joursIndisponibles: []
             """;
 
-    private static final String EN_VACATIONS = """
-            parametresDecoupage:
-              modeGrille: VACATIONS
-
-            """ + ENTETE;
-
     /** The same file, plus the day templates its créneaux imply. */
-    private static final String AVEC_JOURNEES_TYPES = EN_VACATIONS + """
+    private static final String AVEC_JOURNEES_TYPES = ENTETE + """
 
             journeesTypes:
               - nom: Jour normal
@@ -108,18 +103,6 @@ class ImportScenarioModeGrilleTest {
                 .statusCode(200);
     }
 
-    @Test
-    void unFichierQuiSeDeclareEnVacationsLandeEnVacations() {
-        importer(EN_VACATIONS);
-
-        given().header(HEADER, EDITION)
-                .when()
-                .get("/api/parametres-decoupage")
-                .then()
-                .statusCode(200)
-                .body("modeGrille", equalTo("VACATIONS"));
-    }
-
     /**
      * And the whole round trip holds: the templates the file names govern its
      * dates, and applying right after the import moves no créneau — a file
@@ -151,46 +134,43 @@ class ImportScenarioModeGrilleTest {
                 .body("supprimes", equalTo(0))
                 .body("misAJour", equalTo(0))
                 .body("conserves", equalTo(2))
-                .body("modeADeclarer", equalTo(false))
                 .body("aucunChangement", equalTo(true));
     }
 
     /**
-     * A file that sets the slicing durations but says nothing of the mode must
-     * not move it: {@link dev.sylvain.planning.domain.ParametresDecoupage} is
-     * born in VACATIONS, so reading the mode back off the mapped object took
-     * that default for a declaration and flipped an edition the file never
-     * talked about — the whole point of the field being optional.
+     * The two sections the découpage owned are refused at the door, by name.
+     * A 400 with a message the author can act on, not a silent import of the
+     * wrong grid.
      */
     @Test
-    void unFichierMuetSurLeModeLaisseLEditionOuElleEst() {
+    void lesSectionsDuDecoupageRetireSontRefusees() {
         given().header(HEADER, EDITION)
-                .contentType("application/json")
-                .body("{\"modeGrille\":\"AMPLITUDES\"}")
+                .contentType("text/plain")
+                .body("""
+                        parametresDecoupage:
+                          dureeVacationCibleMinutes: 180
+
+                        """ + ENTETE)
                 .when()
-                .put("/api/parametres-decoupage/mode-grille")
+                .post("/api/reference-data/import-scenario-fichier")
                 .then()
-                .statusCode(200);
-
-        importer("""
-                parametresDecoupage:
-                  dureeVacationCibleMinutes: 180
-
-                """ + ENTETE);
+                .statusCode(400)
+                .body("message", containsString("parametresDecoupage"));
 
         given().header(HEADER, EDITION)
+                .contentType("text/plain")
+                .body("decoupageAuto: {}\n\n" + ENTETE)
                 .when()
-                .get("/api/parametres-decoupage")
+                .post("/api/reference-data/import-scenario-fichier")
                 .then()
-                .statusCode(200)
-                .body("modeGrille", equalTo("AMPLITUDES"))
-                .body("dureeVacationCibleMinutes", equalTo(180));
+                .statusCode(400)
+                .body("message", containsString("decoupageAuto"));
     }
 
     /** Absent the section, the import recognises the templates the créneaux imply. */
     @Test
     void sansSectionLesJourneesTypesSontReconnuesDepuisLesCreneaux() {
-        importer(EN_VACATIONS);
+        importer(ENTETE);
 
         given().header(HEADER, EDITION)
                 .when()

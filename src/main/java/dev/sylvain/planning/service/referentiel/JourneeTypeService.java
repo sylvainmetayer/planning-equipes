@@ -2,7 +2,6 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JourneeType;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
@@ -41,9 +40,6 @@ public class JourneeTypeService {
 
     @Inject
     CreneauRepository creneaux;
-
-    @Inject
-    ParametresService parametres;
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
@@ -177,19 +173,8 @@ public class JourneeTypeService {
      *
      * @param supprimesAvecPostes among {@code aSupprimer}, those carrying seats of the persisted plan
      * @param postesSupprimes     how many seats those deletions take away
-     * @param modeADeclarer       the grid is not declared as vacations yet, and applying will declare it —
-     *                            a change of its own, even when no créneau moves
      */
-    @Schema(
-            requiredProperties = {
-                "conserves",
-                "misAJour",
-                "crees",
-                "supprimes",
-                "postesSupprimes",
-                "aucunChangement",
-                "modeADeclarer"
-            })
+    @Schema(requiredProperties = {"conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement"})
     public record RapportApplication(
             int conserves,
             int misAJour,
@@ -200,7 +185,6 @@ public class JourneeTypeService {
             int postesSupprimes,
             List<LocalDate> datesEnEcart,
             boolean aucunChangement,
-            boolean modeADeclarer,
             RapportGrille controle) {
 
         public RapportApplication withVerdict(RapportGrille verdict) {
@@ -214,7 +198,6 @@ public class JourneeTypeService {
                     postesSupprimes,
                     datesEnEcart,
                     aucunChangement,
-                    modeADeclarer,
                     verdict);
         }
     }
@@ -224,33 +207,21 @@ public class JourneeTypeService {
 
     public Application previewApplication() {
         Plan plan = planCourant();
-        // Read before anything is written, so the preview and the write agree
-        // on whether the mode still has to be declared.
-        boolean modeADeclarer = parametres.getDecoupage().getModeGrille() != ModeGrilleCreneaux.VACATIONS;
         List<Creneau> resultante = new ArrayList<>(plan.conserves());
         resultante.addAll(plan.misAJour());
         resultante.addAll(plan.aCreer());
         resultante.addAll(creneauxNonGouvernes(plan));
-        return new Application(rapport(plan, modeADeclarer), resultante);
+        return new Application(rapport(plan), resultante);
     }
 
-    /**
-     * Writes the plan, then declares the grid as vacations: a day template says
-     * vacations, and reading what it just wrote as amplitudes would report
-     * every relay overlap as a mistake (the same reason {@code generer_decoupage}
-     * declares it).
-     */
+    /** Writes the plan: the calendar's vacations become the edition's grid. */
     public Application apply() {
         solverJobs.refuseIfSolving();
         Plan plan = planCourant();
-        boolean modeADeclarer = parametres.getDecoupage().getModeGrille() != ModeGrilleCreneaux.VACATIONS;
-        RapportApplication rapport = rapport(plan, modeADeclarer);
+        RapportApplication rapport = rapport(plan);
         if (!plan.isEmpty()) {
             repository.apply(plan);
             changeTracker.markModified();
-        }
-        if (modeADeclarer) {
-            parametres.updateModeGrille(ModeGrilleCreneaux.VACATIONS);
         }
         return new Application(rapport, creneaux.listCreneaux());
     }
@@ -286,7 +257,7 @@ public class JourneeTypeService {
         return restants;
     }
 
-    private RapportApplication rapport(Plan plan, boolean modeADeclarer) {
+    private RapportApplication rapport(Plan plan) {
         Map<Long, Integer> postes = plan.aSupprimer().isEmpty() ? Map.of() : repository.seatsByCreneau();
         List<Creneau> avecPostes = new ArrayList<>();
         int postesSupprimes = 0;
@@ -306,11 +277,7 @@ public class JourneeTypeService {
                 avecPostes,
                 postesSupprimes,
                 plan.datesEnEcart(),
-                // Declaring the grid as vacations is a change of its own: a
-                // calendar the grid already matches still has that to do, and
-                // « aucun changement » would disable the only button that does it.
-                plan.isEmpty() && !modeADeclarer,
-                modeADeclarer,
+                plan.isEmpty(),
                 null);
     }
 

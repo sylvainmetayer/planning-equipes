@@ -42,7 +42,7 @@ public class PlanningEvenement {
      * Empty means no meal rule applies to this solve — which is what a plain
      * Java harness building a problem by hand gets, and what an edition whose
      * windows cannot be honoured gets too (see
-     * {@link FenetreRepas#depuis(ParametresDecoupage)}).
+     * {@link FenetreRepas#from(ParametresLegaux)}).
      */
     @ProblemFactCollectionProperty
     private List<FenetreRepas> fenetresRepas = new ArrayList<>();

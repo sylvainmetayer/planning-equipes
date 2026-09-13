@@ -860,7 +860,7 @@ réparation ci-dessus.
 
 **Ne pas rien avoir à dire n'est pas une erreur.** Le sélecteur de l'écran est
 alimenté par le référentiel, qui porte légitimement **plus** de créneaux que le
-plan : un créneau sur lequel aucun stand n'est ouvert, ou qu'un découpage a créé
+plan : un créneau sur lequel aucun stand n'est ouvert, ou qu'une dérivation a créé
 après la dernière résolution, ne porte aucun siège. Renvoyer `404` dans ce cas
 ouvrait l'écran sur « Créneau inconnu » pour un créneau bien réel, sans rien à
 faire pour en sortir. Le champ `statut` distingue donc les trois réponses :
@@ -1586,36 +1586,27 @@ ajoute les créneaux — jamais ne remplace — et rend le verdict sur la grille
 obtenue. Une règle qui répète un créneau existant ressort en `DOUBLON`,
 sévérité `ERREUR`. `400` sur une règle mal formée.
 
-**Le mode est déclaré par édition.** Une grille contient soit des
-`AMPLITUDES` (journées à découper), soit des `VACATIONS` (vacations finales,
-résolues telles quelles) ; les données seules ne le prouvent pas, et le verdict
-en dépend — un chevauchement le même jour est une faute entre amplitudes et la
-forme normale de vacations décalées. La déclaration vit dans
-`parametresDecoupage.modeGrille` (défaut `AMPLITUDES`) et sert de valeur par
-défaut à tout appel qui n'en nomme pas — le paramètre `mode` des routes
-ci-dessous comme l'argument des outils MCP.
+**Un créneau est une vacation**, et le contrôle n'a plus de mode à recevoir.
+Il y a eu une seconde lecture — les `AMPLITUDES`, journées d'ouverture qu'un
+découpage tranchait avant de résoudre — que les données seules ne prouvaient
+pas, et dont le verdict dépendait : un chevauchement le même jour était une
+faute entre amplitudes et la forme normale de deux relèves décalées. Le
+découpage est retiré (ADR
+[0037](decisions/0037-une-grille-est-toujours-des-vacations.md)), le paramètre
+`mode` avec lui, et un chevauchement n'est plus jamais une anomalie.
 
-Elle a **son propre écrit**, `PUT /api/parametres-decoupage/mode-grille`, corps
-`{ "modeGrille": "AMPLITUDES" }` : le mode se décide sur la page Créneaux
-tandis que le reste des réglages de découpage s'édite sur Paramètres, et un
-onglet Paramètres resté ouvert le ramènerait en arrière en enregistrant sa
-charge utile. `PUT /api/parametres-decoupage` ignore donc ce champ et conserve
-le mode enregistré. `GET` le rend, comme les autres.
-
-Générer le découpage bascule la déclaration en `VACATIONS` **côté serveur** :
-un assistant qui appelle `generer_decoupage` puis `valider_creneaux` lit bien
-des vacations, et non des amplitudes dont chaque chevauchement de relais
-passerait pour une faute de saisie.
-
-Un `mode` mal orthographié répond `400` — l'énumération est convertie par le
-service, pas par le conteneur, dont l'échec serait un `404`.
-
-`GET /api/creneaux/controle?mode=` rend le verdict : les anomalies de la
+`GET /api/creneaux/controle` rend le verdict : les anomalies de la
 grille (`severite` `ERREUR` ou `AVERTISSEMENT`, `type`, `date`, `message`),
 les anomalies d'ouverture des stands, et le rapport de faisabilité — `null`
-sans stand ou sans créneau. `GET /api/creneaux/diagnostic` décrit la grille et
-suggère un mode (`modeProbable`, `modeCertain`) sans jamais trancher : seuls
-des créneaux de couverture de pause prouvent des vacations.
+sans stand ou sans créneau. Deux plafonds de durée s'y lisent : au-delà de
+`parametresLegaux.dureeVacationMaxMinutes` (6 h par défaut, seuil de l'art.
+L3121-16) un avertissement `VACATION_TROP_LONGUE`, au-delà de ce que laisse le
+repos quotidien une erreur `REPOS_QUOTIDIEN_IMPOSSIBLE`.
+
+`GET /api/creneaux/diagnostic` décrit la grille en place — combien de
+vacations, sur quelles dates, avec combien de relais repas. Il suggérait aussi
+un mode, assorti d'un indice de confiance, puisque rien ne le prouvait : il n'y
+a plus qu'une lecture, donc plus de devinette.
 
 **Dériver la grille des stands.** Quand les horaires des stands existent déjà
 — règles saisies, grille importée — la grille de créneaux découle d'eux au lieu
@@ -1632,16 +1623,12 @@ suit — celle d'avant à défaut — et un trou plus court qu'elle est refermé
 que de couper le créneau en deux ; les `coupures` rendues sont celles que la
 grille porte encore, jamais celles que ces fusions ont effacées ;
 `remplacer` juge — et, à l'écriture, remplace — toute la grille, le planning
-résolu partant avec elle comme pour le découpage, sinon les créneaux s'ajoutent.
+résolu partant avec elle, sinon les créneaux s'ajoutent.
 Seuls les jours qu'un stand déclare « ouvert sur ces fenêtres » participent :
 un stand qui ne dit rien d'un jour est ouvert quand les autres le sont, un stand
 qui ne déclare que des fermetures n'a pas de borne de départ connue. La réponse
 porte les créneaux, les `coupures` (jour, heure, premiers stands responsables),
 les `joursSansFenetre`, et le verdict `controle`. `400` sans aucune fenêtre.
-
-Le **découpage** lui-même : `GET /api/decoupage/preview` rend les vacations
-que les paramètres produiraient, `POST /api/decoupage/generer` (corps vide,
-`204`) les écrit à la place des amplitudes et efface le planning résolu.
 
 ### Modification concurrente
 
@@ -1793,7 +1780,7 @@ avertissements du lot sont regroupés en un seul message.
 s'y trouvaient**, et eux seuls — un poste ne survit ni au créneau sur lequel il
 était placé, ni au stand sur lequel il était ouvert (`stand_id` et `creneau_id`
 sont `NOT NULL` : le siège ne peut pas leur survivre). Le reste du plan est
-conservé. C'est la même règle que le découpage applique déjà à la grille entière
+conservé. C'est la même règle que la dérivation applique déjà à la grille entière
 lorsqu'il la remplace.
 
 **Supprimer un animateur, en revanche, ne supprime pas ses postes : il les
@@ -2102,7 +2089,7 @@ du fichier.
 d'importer — c'est ce qu'affiche le dialogue de confirmation, qui enregistre
 aussi un instantané quand un planning résolu existe.
 
-Les sections optionnelles du fichier (`parametresLegaux`, `parametresDecoupage`,
+Les sections optionnelles du fichier (`parametresLegaux`,
 `parametresSolveur`, `typologies`, `contraintes`, `edition`) sont appliquées si
 présentes, laissées telles quelles sinon. `edition:` route l'import vers
 l'édition désignée, créée vide au besoin. Formats :

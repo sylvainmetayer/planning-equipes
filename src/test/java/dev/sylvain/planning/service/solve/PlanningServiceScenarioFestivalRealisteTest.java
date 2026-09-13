@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -24,7 +23,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Full-scale regression test on the <b>anonymised real-world</b> fixture
  * {@code festival-realiste-canicule.yaml} (153 animateurs, 65 stands, 23
- * emplacements, 20 daily amplitudes sliced by the découpage, with the evening
+ * emplacements, morning and afternoon vacations over 16 days, with the evening
  * windows of a heatwave). Its base variant, sliced without those windows, left
  * with the relay families (ADR 0029): without staggered relays every stand
  * changed crew at the same minute and the event was no longer feasible at 153
@@ -89,14 +88,13 @@ class PlanningServiceScenarioFestivalRealisteTest {
 
     @Test
     void festivalRealisteEnCaniculeNeViolateAucuneContrainteHard() throws IOException {
-        assertSlicedAndSolvedWithoutHard("festival-realiste-canicule.yaml");
+        assertSolvedWithoutHard("festival-realiste-canicule.yaml");
     }
 
     /**
-     * Mirrors what {@code decoupageAuto: {}} does at import: the file's
-     * créneaux are daily amplitudes, sliced into vacations before any poste
-     * exists. Going through {@code buildExample()} instead would solve
-     * the raw amplitudes and test a pipeline nobody runs.
+     * Mirrors what the import does: postes are built from the file's stands and
+     * its créneaux. Going through {@code buildExample()} instead would use a
+     * hand-pinned poste list, which this file does not carry.
      *
      * <p>The {@link HoraireStandResolver} call is not optional decoration, and
      * it is what the sibling scenario tests get away with omitting: they run on
@@ -109,7 +107,7 @@ class PlanningServiceScenarioFestivalRealisteTest {
      * {@code ReferenceDataService.listSolvedStands()}; a plain-Java test has
      * to do it by hand.</p>
      */
-    private void assertSlicedAndSolvedWithoutHard(String scenario) throws IOException {
+    private void assertSolvedWithoutHard(String scenario) throws IOException {
         ReferenceData referenceDataService = new EmptyReferenceData();
         PlanningService planningService = new PlanningService(
                 420L,
@@ -122,19 +120,14 @@ class PlanningServiceScenarioFestivalRealisteTest {
                 ConfigProvider.getConfig());
 
         ScenarioYamlReader.ReferenceScenario reference = planningService.loadReferenceScenario(scenario);
-        ParametresDecoupage parametresDecoupage = planningService
-                .loadScenarioSections(scenario)
-                .parametresDecoupage()
-                .orElseGet(ParametresDecoupage::new);
-        // The file's legal parameters carry the meal break the découpage cuts
-        // around and the solver judges on; a plain-Java harness hands them
-        // over itself, as production reads them from the edition.
+        // The file's legal parameters carry the meal break the solver judges
+        // on; a plain-Java harness hands them over itself, as production reads
+        // them from the edition.
         ParametresLegaux parametresLegaux = planningService
                 .loadScenarioSections(scenario)
                 .parametresLegaux()
                 .orElseGet(ParametresLegaux::new);
-        List<Creneau> vacations = VacationGeneratorService.generateVacations(
-                List.copyOf(reference.creneauxParId().values()), parametresDecoupage, parametresLegaux);
+        List<Creneau> vacations = List.copyOf(reference.creneauxParId().values());
         List<Stand> stands = List.copyOf(reference.standsById().values());
         HoraireStandResolver.apply(stands, vacations);
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, vacations);

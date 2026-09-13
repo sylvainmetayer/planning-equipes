@@ -11,9 +11,6 @@
 festival:
   dateDebut: 2027-07-04
 
-parametresDecoupage:
-  modeGrille: VACATIONS
-
 parametresLegaux:
   pauseMinimaleEntreVacationsMinutes: 0
 

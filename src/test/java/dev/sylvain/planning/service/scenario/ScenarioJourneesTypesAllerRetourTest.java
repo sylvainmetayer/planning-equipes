@@ -44,7 +44,6 @@ class ScenarioJourneesTypesAllerRetourTest {
                 List.of(),
                 null,
                 null,
-                null,
                 Set.of(),
                 Map.of(),
                 List.of(),

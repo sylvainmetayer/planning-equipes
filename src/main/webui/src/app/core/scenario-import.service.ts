@@ -4,7 +4,7 @@
 // and animateurs, erases the solved planning and its locks, and may create or
 // overwrite a whole edition. It is also a ten-step choreography — resolve where
 // the file routes, count the impact, confirm, snapshot the plan, import,
-// reload six stores, offer to switch edition, report the auto-découpage — and
+// reload six stores, offer to switch edition — and
 // that choreography used to exist three times, copy-pasted into the settings
 // page with two URLs and two labels of difference. Any change of import policy
 // ("snapshot in this case too", "stop offering the switch when…") had to be
@@ -71,7 +71,6 @@ export class ScenarioImportService {
     const result = await this.lancerImport(source);
     await this.rechargerApresImport();
     await this.proposerBascule(result);
-    this.notifierDecoupageAuto(result);
     return { status: 'imported', result };
   }
 
@@ -217,9 +216,7 @@ export class ScenarioImportService {
   /**
    * Everything an import invalidated. Public because the SQL dump replay —
    * a different operation, but one that replaces the same data — needs exactly
-   * the same set. The découpage parameters shown by the settings page are
-   * reloaded by that page itself, since they are its own state rather than a
-   * shared store.
+   * the same set.
    */
   async rechargerApresImport(): Promise<void> {
     this.planningState.set(null);
@@ -285,19 +282,5 @@ export class ScenarioImportService {
           $localize`:@@parametres.recap.basculer:Vous consultez « ${courante.nom}:courante: » : basculez d'édition (bandeau du haut) pour voir les données importées.`
         : '';
     return destination + ailleurs;
-  }
-
-  // Surfaces the scenario's decoupageAuto section, when present: the import
-  // replaced the file's amplitudes with the generated vacations in place, so
-  // the operator is told without having to open the Créneaux page.
-  private notifierDecoupageAuto(result: ImportScenarioResult | null): void {
-    if (!result?.decoupageAuto) {
-      return;
-    }
-    this.notifications.notify({
-      title: $localize`:@@dataSetup.decoupageAuto.applied:Découpage automatique appliqué`,
-      message: $localize`:@@dataSetup.decoupageAuto.appliedHint:Les amplitudes du scénario ont été découpées : l'édition porte désormais les vacations générées.`,
-      variant: 'info',
-    });
   }
 }

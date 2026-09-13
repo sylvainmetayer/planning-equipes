@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Creneau } from '../../core/models';
-import { summarizeVacationsByDay } from './decoupage';
+import { summarizeVacationsByDay } from './jours-resume';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return {

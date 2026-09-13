@@ -82,11 +82,9 @@ class PlanningServiceScenarioFromTextTest {
         assertThat(importe.sections().parametresLegaux()).isPresent();
         assertThat(importe.sections().parametresLegaux().orElseThrow().getReposQuotidienMinimalMinutes())
                 .isEqualTo(500);
-        assertThat(importe.sections().parametresDecoupage()).isPresent();
         assertThat(importe.sections().parametresSolveur()).isPresent();
         assertThat(importe.sections().parametresSolveur().orElseThrow().dureeResolutionSecondes())
                 .isEqualTo(400);
-        assertThat(importe.sections().decoupageAuto()).isFalse();
     }
 
     /**
@@ -203,14 +201,37 @@ class PlanningServiceScenarioFromTextTest {
                 .hasMessageContaining("stands.effectifMax");
     }
 
+    /**
+     * The two sections the découpage owned are refused by name, not ignored.
+     * Ignoring them would be the dangerous reading: a file of 14-hour opening
+     * amplitudes would import as 14-hour vacations, and its author would find
+     * out from the solver rather than from the import.
+     */
     @Test
-    void appliqueLaSectionDecoupageAutoDuFichierQuandPresente() {
+    void lesSectionsDuDecoupageRetireSontRefuseesParLeurNom() {
         PlanningService service = service();
-        String yaml = scenarioYamlText("scenario-decoupage-auto.yaml");
+        String base = """
+                festival:
+                  dateDebut: 2026-07-08
+                creneaux:
+                  - id: J1
+                    jour: 1
+                    date: 2026-07-08
+                    heureDebut: "10:00"
+                    heureFin: "18:00"
+                stands: []
+                animateurs: []
+                """;
 
-        ScenarioYamlReader.ScenarioImporte importe = service.buildFromScenarioText(yaml);
-
-        assertThat(importe.sections().decoupageAuto()).isTrue();
+        assertThatThrownBy(() -> service.buildFromScenarioText(
+                        base + "parametresDecoupage:\n  dureeVacationCibleMinutes: 240\n"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("parametresDecoupage")
+                .hasMessageContaining("journeesTypes");
+        assertThatThrownBy(() -> service.buildFromScenarioText(base + "decoupageAuto: {}\n"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("decoupageAuto")
+                .hasMessageContaining("couverturePause");
     }
 
     @Test

@@ -16,7 +16,7 @@ describe('feasibility-messages', () => {
 
     it('reste actionnable en citant les leviers de réglage', () => {
       const message = hardScoreNegativeMessage(-1);
-      expect(message).toContain('découpage');
+      expect(message).toContain('vacations');
       expect(message).toContain('disponibilités');
     });
   });

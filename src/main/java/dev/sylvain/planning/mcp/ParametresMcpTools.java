@@ -2,9 +2,6 @@ package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import dev.sylvain.planning.domain.ParametresDecoupage;
-import dev.sylvain.planning.domain.ParametresDecoupage.PauseCoverageStrategy;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -70,6 +67,11 @@ public class ParametresMcpTools {
                     Integer dureeHebdomadaireMaxMineurMinutes,
             @ToolArg(description = "Pause minimale entre deux vacations, en minutes", required = false)
                     Integer pauseMinimaleEntreVacationsMinutes,
+            @ToolArg(
+                            description = "Durée maximale d'une vacation, en minutes : au-delà, le contrôle de "
+                                    + "grille avertit qu'une coupure interne devient obligatoire (L3121-16)",
+                            required = false)
+                    Integer dureeVacationMaxMinutes,
             @ToolArg(description = "Repos quotidien minimal, en minutes", required = false)
                     Integer reposQuotidienMinimalMinutes,
             @ToolArg(
@@ -103,6 +105,9 @@ public class ParametresMcpTools {
         if (pauseMinimaleEntreVacationsMinutes != null) {
             parametres.setPauseMinimaleEntreVacationsMinutes(pauseMinimaleEntreVacationsMinutes);
         }
+        if (dureeVacationMaxMinutes != null) {
+            parametres.setDureeVacationMaxMinutes(dureeVacationMaxMinutes);
+        }
         if (reposQuotidienMinimalMinutes != null) {
             parametres.setReposQuotidienMinimalMinutes(reposQuotidienMinimalMinutes);
         }
@@ -128,74 +133,6 @@ public class ParametresMcpTools {
             parametres.setHeureDebutSoiree(McpArgs.heure(heureDebutSoiree, "heureDebutSoiree"));
         }
         return toView(referenceDataService.updateParametresLegaux(parametres));
-    }
-
-    /* --------------------------- Slicing parameters ------------------------- */
-
-    @Tool(
-            description = "Consulte les paramètres de découpage des amplitudes en vacations.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = true,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    ParametresDecoupageView consulter_parametres_decoupage(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return toView(referenceDataService.getParametresDecoupage());
-    }
-
-    @Tool(
-            description = "Modifie les paramètres de découpage. Seuls les champs fournis sont modifiés. "
-                    + "Prend effet au prochain découpage généré, pas sur les créneaux déjà produits.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    ParametresDecoupageView modifier_parametres_decoupage(
-            @ToolArg(description = "Durée cible d'une vacation, en minutes", required = false)
-                    Integer dureeVacationCibleMinutes,
-            @ToolArg(description = "Durée minimale d'une vacation, en minutes", required = false)
-                    Integer dureeVacationMinMinutes,
-            @ToolArg(description = "Durée maximale d'une vacation, en minutes", required = false)
-                    Integer dureeVacationMaxMinutes,
-            @ToolArg(description = "Chevauchement entre deux vacations successives, en minutes", required = false)
-                    Integer dureeChevauchementMinutes,
-            @ToolArg(description = "Couverture pendant la pause : FERMETURE ou RELEVE", required = false)
-                    String strategieCouverturePendantPause,
-            @ToolArg(
-                            description =
-                                    "Nature déclarée de la grille de créneaux : AMPLITUDES (journées à découper) ou "
-                                            + "VACATIONS (vacations finales)",
-                            required = false)
-                    String modeGrille,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        ParametresDecoupage parametres = referenceDataService.getParametresDecoupage();
-        if (dureeVacationCibleMinutes != null) {
-            parametres.setDureeVacationCibleMinutes(dureeVacationCibleMinutes);
-        }
-        if (dureeVacationMinMinutes != null) {
-            parametres.setDureeVacationMinMinutes(dureeVacationMinMinutes);
-        }
-        if (dureeVacationMaxMinutes != null) {
-            parametres.setDureeVacationMaxMinutes(dureeVacationMaxMinutes);
-        }
-        if (dureeChevauchementMinutes != null) {
-            parametres.setDureeChevauchementMinutes(dureeChevauchementMinutes);
-        }
-        if (strategieCouverturePendantPause != null) {
-            parametres.setStrategieCouverturePendantPause(McpArgs.enumeration(
-                    PauseCoverageStrategy.class, strategieCouverturePendantPause, "strategieCouverturePendantPause"));
-        }
-        ParametresDecoupage ecrits = referenceDataService.updateParametresDecoupage(parametres);
-        if (modeGrille != null) {
-            // Its own write: the mode is not part of this payload — see
-            // ParametresService#updateModeGrille.
-            ecrits = referenceDataService.updateModeGrille(modeGrille);
-        }
-        return toView(ecrits);
     }
 
     /* ---------------------------- Solver parameters ------------------------- */
@@ -385,6 +322,7 @@ public class ParametresMcpTools {
                 parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.getDureeHebdomadaireMaxMineurMinutes(),
                 parametres.getPauseMinimaleEntreVacationsMinutes(),
+                parametres.getDureeVacationMaxMinutes(),
                 parametres.getReposQuotidienMinimalMinutes(),
                 parametres.isPauseSurPoste(),
                 parametres.getCoupureRepasMinutes(),
@@ -393,16 +331,6 @@ public class ParametresMcpTools {
                 parametres.getCoupureRepasSoirDebut(),
                 parametres.getCoupureRepasSoirFin(),
                 parametres.getHeureDebutSoiree());
-    }
-
-    static ParametresDecoupageView toView(ParametresDecoupage parametres) {
-        return new ParametresDecoupageView(
-                parametres.getDureeVacationCibleMinutes(),
-                parametres.getDureeVacationMinMinutes(),
-                parametres.getDureeVacationMaxMinutes(),
-                parametres.getDureeChevauchementMinutes(),
-                parametres.getStrategieCouverturePendantPause(),
-                parametres.getModeGrille());
     }
 
     static ParametresSolveurView toView(ParametresSolveur parametres) {
@@ -427,6 +355,7 @@ public class ParametresMcpTools {
             int dureeHebdomadaireMaxMinutes,
             int dureeHebdomadaireMaxMineurMinutes,
             int pauseMinimaleEntreVacationsMinutes,
+            int dureeVacationMaxMinutes,
             int reposQuotidienMinimalMinutes,
             boolean pauseSurPoste,
             int coupureRepasMinutes,
@@ -435,14 +364,6 @@ public class ParametresMcpTools {
             LocalTime coupureRepasSoirDebut,
             LocalTime coupureRepasSoirFin,
             LocalTime heureDebutSoiree) {}
-
-    public record ParametresDecoupageView(
-            int dureeVacationCibleMinutes,
-            int dureeVacationMinMinutes,
-            int dureeVacationMaxMinutes,
-            int dureeChevauchementMinutes,
-            PauseCoverageStrategy strategieCouverturePendantPause,
-            ModeGrilleCreneaux modeGrille) {}
 
     public record ParametresSolveurView(int dureeResolutionSecondes) {}
 

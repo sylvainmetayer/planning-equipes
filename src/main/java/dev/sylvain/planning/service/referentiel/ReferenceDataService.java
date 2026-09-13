@@ -5,8 +5,6 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.JourneeType;
-import dev.sylvain.planning.domain.ModeGrilleCreneaux;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -252,32 +250,6 @@ public class ReferenceDataService implements ReferenceData {
         return usages.forStands(ids);
     }
 
-    /** Declares what the edition's créneaux are; {@code null} or an unknown value is a 400. */
-    public ParametresDecoupage updateModeGrille(String mode) {
-        if (mode == null || mode.isBlank()) {
-            throw new BusinessError.Invalid("modeGrille est requis : AMPLITUDES (journées à découper en vacations) "
-                    + "ou VACATIONS (vacations finales, solvables telles quelles)");
-        }
-        return parametres.updateModeGrille(modeGrille(mode, "modeGrille"));
-    }
-
-    /**
-     * A grid mode read from a request, as text: bound as an enum it would be
-     * converted by the container, whose failure is a {@code 404} raised before
-     * the method runs — and a mistyped field is a {@code 400}.
-     */
-    public static ModeGrilleCreneaux modeGrille(String valeur, String champ) {
-        if (valeur == null || valeur.isBlank()) {
-            return null;
-        }
-        try {
-            return ModeGrilleCreneaux.valueOf(valeur.trim().toUpperCase(java.util.Locale.ROOT));
-        } catch (IllegalArgumentException e) {
-            throw new BusinessError.Invalid(
-                    champ + " : valeur inconnue « " + valeur + " », attendu AMPLITUDES ou VACATIONS");
-        }
-    }
-
     public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
         return stands.compactHoraires(apply);
     }
@@ -362,45 +334,42 @@ public class ReferenceDataService implements ReferenceData {
     /* ---------------------------- Grid as a whole ---------------------------- */
 
     /**
-     * The grid's verdict, read in {@code mode} — the edition's declared mode
-     * when the caller names none. Stands come resolved, exactly as the solver
-     * reads them.
+     * The grid's verdict. Stands come resolved, exactly as the solver reads
+     * them.
      */
-    public CreneauGridService.RapportGrille controlerGrille(List<Creneau> creneaux, ModeGrilleCreneaux mode) {
-        ParametresDecoupage decoupage = getParametresDecoupage();
-        ModeGrilleCreneaux effectif = mode != null ? mode : decoupage.getModeGrille();
+    public CreneauGridService.RapportGrille controlerGrille(List<Creneau> creneaux) {
         // The stands are resolved against the grid being judged, not against the
         // persisted one: a preview of a grid the edition does not have yet — the
         // ordinary case when deriving or seeding it — would otherwise read every
         // rule-scheduled stand as open all day.
         List<Stand> stands = listStands();
         HoraireStandResolver.apply(stands, creneaux);
-        return grille.validate(creneaux, stands, listAnimateurs(), effectif, decoupage, getParametresLegaux());
+        return grille.validate(creneaux, stands, listAnimateurs(), getParametresLegaux());
     }
 
-    public CreneauGridService.RapportGrille controlerGrille(ModeGrilleCreneaux mode) {
-        return controlerGrille(listCreneaux(), mode);
+    public CreneauGridService.RapportGrille controlerGrille() {
+        return controlerGrille(listCreneaux());
     }
 
     public CreneauGridService.DiagnosticGrille diagnoseGrille() {
-        return CreneauGridService.diagnose(listCreneaux(), getParametresDecoupage());
+        return CreneauGridService.diagnose(listCreneaux());
     }
 
     /**
      * What a recurrence rule would add, and the verdict on the grid that would
      * result — nothing written.
      */
-    public RecurrenceGrille previewRecurrence(CreneauGridService.RegleRecurrence regle, ModeGrilleCreneaux mode) {
+    public RecurrenceGrille previewRecurrence(CreneauGridService.RegleRecurrence regle) {
         List<Creneau> generes = CreneauGridService.generateRecurrence(regle);
         List<Creneau> resultante = new ArrayList<>(listCreneaux());
         resultante.addAll(generes);
-        return new RecurrenceGrille(generes, controlerGrille(resultante, mode));
+        return new RecurrenceGrille(generes, controlerGrille(resultante));
     }
 
     /** Adds the rule's créneaux to the grid — never replacing it — and reports the verdict on the whole. */
-    public RecurrenceGrille createRecurrence(CreneauGridService.RegleRecurrence regle, ModeGrilleCreneaux mode) {
+    public RecurrenceGrille createRecurrence(CreneauGridService.RegleRecurrence regle) {
         List<Creneau> crees = createCreneaux(CreneauGridService.generateRecurrence(regle));
-        return new RecurrenceGrille(crees, controlerGrille(mode));
+        return new RecurrenceGrille(crees, controlerGrille());
     }
 
     /** The créneaux a rule produced (or would produce), and the resulting grid's verdict. */
@@ -469,13 +438,13 @@ public class ReferenceDataService implements ReferenceData {
     /** What applying the calendar would do, and the verdict on the grid that would result — nothing written. */
     public JourneeTypeService.RapportApplication previewJourneesTypes() {
         JourneeTypeService.Application apercu = journeesTypes.previewApplication();
-        return apercu.rapport().withVerdict(controlerGrille(apercu.grilleResultante(), ModeGrilleCreneaux.VACATIONS));
+        return apercu.rapport().withVerdict(controlerGrille(apercu.grilleResultante()));
     }
 
     /** Materialises the calendar, then reads the verdict on the grid as it now stands. */
     public JourneeTypeService.RapportApplication applyJourneesTypes() {
         JourneeTypeService.Application ecrit = journeesTypes.apply();
-        return ecrit.rapport().withVerdict(controlerGrille(ecrit.grilleResultante(), ModeGrilleCreneaux.VACATIONS));
+        return ecrit.rapport().withVerdict(controlerGrille(ecrit.grilleResultante()));
     }
 
     public JourneesTypesMaterialisation.Reconnaissance previewReconnaissanceJourneesTypes() {
@@ -509,17 +478,15 @@ public class ReferenceDataService implements ReferenceData {
      * written. {@code remplacer} says which grid is judged: the derived one
      * alone, or the current grid plus the derived créneaux.
      */
-    public DerivationGrille previewDerivation(
-            GrilleDepuisFenetres.Parametres parametres, boolean remplacer, ModeGrilleCreneaux mode) {
+    public DerivationGrille previewDerivation(GrilleDepuisFenetres.Parametres parametres, boolean remplacer) {
         GrilleDepuisFenetres.Derivation derivation = GrilleDepuisFenetres.deriver(listStands(), parametres);
         List<Creneau> resultante = remplacer ? new ArrayList<>() : new ArrayList<>(listCreneaux());
         resultante.addAll(derivation.creneaux());
-        return new DerivationGrille(derivation, controlerGrille(resultante, mode));
+        return new DerivationGrille(derivation, controlerGrille(resultante));
     }
 
     /** Writes the derived grid: added to the current one, or in its place (the persisted plan goes with it). */
-    public DerivationGrille applyDerivation(
-            GrilleDepuisFenetres.Parametres parametres, boolean remplacer, ModeGrilleCreneaux mode) {
+    public DerivationGrille applyDerivation(GrilleDepuisFenetres.Parametres parametres, boolean remplacer) {
         GrilleDepuisFenetres.Derivation derivation = GrilleDepuisFenetres.deriver(listStands(), parametres);
         if (derivation.creneaux().isEmpty()) {
             throw new BusinessError.Invalid("Aucun stand n'a de fenêtre d'ouverture sur ces dates : rien à dériver");
@@ -528,38 +495,12 @@ public class ReferenceDataService implements ReferenceData {
                 remplacer ? creneaux.replace(derivation.creneaux()) : createCreneaux(derivation.creneaux());
         GrilleDepuisFenetres.Derivation persistee =
                 new GrilleDepuisFenetres.Derivation(ecrits, derivation.coupures(), derivation.joursSansFenetre());
-        return new DerivationGrille(persistee, controlerGrille(mode));
+        return new DerivationGrille(persistee, controlerGrille());
     }
 
     /** What the derivation produced (or would), and the verdict on the resulting grid. */
     public record DerivationGrille(
             GrilleDepuisFenetres.Derivation derivation, CreneauGridService.RapportGrille controle) {}
-
-    /* ------------------------------- Slicing -------------------------------- */
-
-    public List<Creneau> previewDecoupage() {
-        return creneaux.previewDecoupage();
-    }
-
-    public void generateDecoupage() {
-        creneaux.generateDecoupage();
-        // The grid it just wrote is a new set of vacations: the templates are
-        // read back out of it, so the card on Créneaux describes what is there.
-        recogniseJourneesTypesIfAny();
-    }
-
-    /**
-     * Applies a scenario's optional {@code decoupageAuto:} section right after
-     * its raw reference data is imported: the scenario's créneaux (amplitudes)
-     * land in the edition, then the day-to-vacations découpage replaces them —
-     * sparing the operator the manual "Découpage" screen round-trip after
-     * every import of that scenario. The one operation that genuinely spans
-     * two referentials, hence its place here.
-     */
-    public void applyAutomaticDecoupage(PlanningEvenement planning) {
-        importFromPlanning(planning);
-        generateDecoupage();
-    }
 
     /* ------------------------------ Typologies ----------------------------- */
 
@@ -730,15 +671,6 @@ public class ReferenceDataService implements ReferenceData {
 
     public ParametresLegaux updateParametresLegaux(ParametresLegaux valeurs) {
         return parametres.updateLegaux(valeurs);
-    }
-
-    @Override
-    public ParametresDecoupage getParametresDecoupage() {
-        return parametres.getDecoupage();
-    }
-
-    public ParametresDecoupage updateParametresDecoupage(ParametresDecoupage valeurs) {
-        return parametres.updateDecoupage(valeurs);
     }
 
     @Override

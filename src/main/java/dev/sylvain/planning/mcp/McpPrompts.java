@@ -95,9 +95,7 @@ public class McpPrompts {
                 2. lister_declarations_disponibilite avec statut EN_ATTENTE : une déclaration non \
                 décidée n'est pas dans le référentiel, et résoudre avant de la traiter, c'est résoudre \
                 le mauvais problème. Dis-moi combien il en reste.
-                3. valider_creneaux : la grille est-elle cohérente ? Le mode est obligatoire — si tu \
-                hésites entre AMPLITUDES et VACATIONS, appelle diagnostiquer_grille_creneaux et \
-                demande-moi.
+                3. valider_creneaux : la grille est-elle cohérente ?
                 4. analyser_ouvertures_stands : y a-t-il des stands jamais ouverts, des fenêtres sans \
                 effet, des segments trop courts ?
                 5. analyser_effectifs : combien d'animateurs faut-il au minimum, et l'effectif présent \
@@ -144,9 +142,9 @@ public class McpPrompts {
                 Construis la grille de créneaux%s.
 
                 1. diagnostiquer_grille_creneaux pour voir ce qui existe déjà.
-                2. Demande-moi si la grille doit être en AMPLITUDES (journées à découper en vacations) \
-                ou en VACATIONS (vacations finales) : le verdict de la validation en dépend, ne le devine \
-                pas.
+                2. Si les journées de l'évènement se ressemblent, propose-moi de les décrire une fois \
+                en journées types (definir_journee_type) et de leur affecter des dates plutôt que de \
+                saisir chaque jour.
                 3. Si les stands ont déjà leurs horaires (lister_stands), propose-moi d'abord \
                 previsualiser_derivation_creneaux : la grille découle alors de leurs fenêtres sans être \
                 saisie une seconde fois. Sinon, previsualiser_creneaux_recurrents pour me montrer ce que \
@@ -154,8 +152,8 @@ public class McpPrompts {
                 coup.
                 4. generer_creneaux_depuis_stands ou creer_creneaux_recurrents seulement après mon accord \
                 explicite.
-                5. valider_creneaux pour finir, et explique-moi chaque anomalie — doublon, chevauchement, \
-                trou dans une journée, date isolée, stand que personne ne pourra armer, sous-effectif — en \
+                5. valider_creneaux pour finir, et explique-moi chaque anomalie — doublon, vacation trop \
+                longue, trou dans une journée, date isolée, stand que personne ne pourra armer, sous-effectif — en \
                 disant pour chacune si c'est une vraie erreur ou un choix légitime de ma part.""".formatted(suffixe(edition)));
     }
 

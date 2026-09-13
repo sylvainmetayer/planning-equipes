@@ -91,7 +91,7 @@ class CreneauAvailabilityResourceTest {
     /**
      * The regression the screen shipped with. Its créneau selector is fed by
      * the referential, which legitimately holds more créneaux than the plan
-     * does — a stand closed then, or a découpage run after the last solve. That
+     * does — a stand closed then, or a créneau added after the last solve. That
      * used to answer 404 « Créneau inconnu » on a perfectly real créneau, on
      * the very first render, with nothing the user could do about it.
      */

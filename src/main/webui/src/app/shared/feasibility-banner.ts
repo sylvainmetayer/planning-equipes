@@ -21,7 +21,7 @@ const MAX_CAUSES_AFFICHEES = 5;
  * story:
  * - `report`: a capacity estimate that needs no solve — it can say "réalisable"
  *   for a plan the solver still won't manage to bring to zero hard (it ignores
- *   the vacation découpage and legal constraints on minors). Its ranked
+ *   how the grid is cut into vacations, legal constraints on minors). Its ranked
  *   `causes` name the créneaux and stands at fault; the most severe ones are
  *   listed here, the full list lives on the Problèmes page.
  * - `hardScore`: the hard score the solver actually reached. When it's

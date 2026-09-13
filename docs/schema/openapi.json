@@ -1939,7 +1939,7 @@
         }
       },
       "DiagnosticGrille" : {
-        "required" : [ "contientCouverturePause", "modeCertain", "nombreCreneaux" ],
+        "required" : [ "contientCouverturePause", "nombreCreneaux" ],
         "type" : "object",
         "properties" : {
           "nombreCreneaux" : {
@@ -1953,12 +1953,6 @@
             "$ref" : "#/components/schemas/LocalDate"
           },
           "contientCouverturePause" : {
-            "type" : "boolean"
-          },
-          "modeProbable" : {
-            "$ref" : "#/components/schemas/ModeGrilleCreneaux"
-          },
-          "modeCertain" : {
             "type" : "boolean"
           },
           "explication" : {
@@ -2564,7 +2558,7 @@
       },
       "GridAnomalyType" : {
         "type" : "string",
-        "enum" : [ "CRENEAU_INCOMPLET", "DUREE_NULLE", "DOUBLON", "REPOS_QUOTIDIEN_IMPOSSIBLE", "CHEVAUCHEMENT", "TROU_DANS_LA_JOURNEE", "AMPLITUDE_PLUS_COURTE_QUE_LA_VACATION_MINIMALE", "VACATION_TROP_LONGUE", "DATE_ISOLEE", "RELAIS_REPAS_HORS_FENETRE" ]
+        "enum" : [ "CRENEAU_INCOMPLET", "DUREE_NULLE", "DOUBLON", "REPOS_QUOTIDIEN_IMPOSSIBLE", "TROU_DANS_LA_JOURNEE", "VACATION_TROP_LONGUE", "DATE_ISOLEE", "RELAIS_REPAS_HORS_FENETRE" ]
       },
       "HardMediumSoftScore" : {
         "type" : "object",
@@ -3497,18 +3491,6 @@
         "type" : "string",
         "enum" : [ "AVANT", "APRES" ]
       },
-      "ModeGrilleCreneaux" : {
-        "type" : "string",
-        "enum" : [ "AMPLITUDES", "VACATIONS" ]
-      },
-      "ModeGrilleRequest" : {
-        "type" : "object",
-        "properties" : {
-          "modeGrille" : {
-            "type" : "string"
-          }
-        }
-      },
       "ModeHoraire" : {
         "type" : "string",
         "enum" : [ "OUVERTURE", "FERMETURE" ]
@@ -3641,33 +3623,6 @@
           }
         }
       },
-      "ParametresDecoupage" : {
-        "type" : "object",
-        "properties" : {
-          "dureeVacationCibleMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "dureeVacationMinMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "dureeVacationMaxMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "dureeChevauchementMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "strategieCouverturePendantPause" : {
-            "$ref" : "#/components/schemas/PauseCoverageStrategy"
-          },
-          "modeGrille" : {
-            "$ref" : "#/components/schemas/ModeGrilleCreneaux"
-          }
-        }
-      },
       "ParametresLegaux" : {
         "type" : "object",
         "properties" : {
@@ -3680,6 +3635,10 @@
             "format" : "int32"
           },
           "pauseMinimaleEntreVacationsMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "dureeVacationMaxMinutes" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -3784,10 +3743,6 @@
             "type" : "boolean"
           }
         }
-      },
-      "PauseCoverageStrategy" : {
-        "type" : "string",
-        "enum" : [ "FERMETURE", "RELEVE", "EFFECTIF_REDUIT" ]
       },
       "PauseDueView" : {
         "type" : "object",
@@ -4204,7 +4159,7 @@
         }
       },
       "RapportApplication" : {
-        "required" : [ "conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement", "modeADeclarer" ],
+        "required" : [ "conserves", "misAJour", "crees", "supprimes", "postesSupprimes", "aucunChangement" ],
         "type" : "object",
         "properties" : {
           "conserves" : {
@@ -4248,9 +4203,6 @@
             }
           },
           "aucunChangement" : {
-            "type" : "boolean"
-          },
-          "modeADeclarer" : {
             "type" : "boolean"
           },
           "controle" : {
@@ -4401,9 +4353,6 @@
         "type" : "object",
         "required" : [ "nombreCreneaux" ],
         "properties" : {
-          "mode" : {
-            "$ref" : "#/components/schemas/ModeGrilleCreneaux"
-          },
           "nombreCreneaux" : {
             "type" : "integer",
             "format" : "int32"
@@ -6684,13 +6633,6 @@
     },
     "/api/creneaux/controle" : {
       "get" : {
-        "parameters" : [ {
-          "name" : "mode",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -6709,13 +6651,6 @@
     },
     "/api/creneaux/derivation" : {
       "post" : {
-        "parameters" : [ {
-          "name" : "mode",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6747,13 +6682,6 @@
     },
     "/api/creneaux/derivation/apercu" : {
       "post" : {
-        "parameters" : [ {
-          "name" : "mode",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6803,13 +6731,6 @@
     },
     "/api/creneaux/recurrence" : {
       "post" : {
-        "parameters" : [ {
-          "name" : "mode",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6841,13 +6762,6 @@
     },
     "/api/creneaux/recurrence/apercu" : {
       "post" : {
-        "parameters" : [ {
-          "name" : "mode",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7098,43 +7012,6 @@
         },
         "summary" : "Send Test Mail",
         "tags" : [ "Debug Resource" ]
-      }
-    },
-    "/api/decoupage/generer" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
-          }
-        },
-        "summary" : "Generate Decoupage",
-        "tags" : [ "Decoupage Resource" ]
-      }
-    },
-    "/api/decoupage/preview" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Creneau"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary" : "Preview Decoupage",
-        "tags" : [ "Decoupage Resource" ]
       }
     },
     "/api/disponibilites" : {
@@ -9048,84 +8925,6 @@
         },
         "summary" : "Saisir",
         "tags" : [ "Ouverture Stands Resource" ]
-      }
-    },
-    "/api/parametres-decoupage" : {
-      "put" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ParametresDecoupage"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ParametresDecoupage"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Update Parametres Decoupage",
-        "tags" : [ "Parametres Resource" ]
-      },
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ParametresDecoupage"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "Get Parametres Decoupage",
-        "tags" : [ "Parametres Resource" ]
-      }
-    },
-    "/api/parametres-decoupage/mode-grille" : {
-      "put" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ModeGrilleRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ParametresDecoupage"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Update Mode Grille",
-        "tags" : [ "Parametres Resource" ]
       }
     },
     "/api/parametres-legaux" : {

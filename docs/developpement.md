@@ -240,7 +240,7 @@ scénarios de test rangés par taille : un jour, deux stands et trois animateurs
 stands et 320 animateurs au barreau 25. Chaque barreau exerce une partie de ce
 qu'un fichier sait dire — rotation du midi, stands premium, mineurs et jour
 férié, contraintes ad hoc, horaires récurrents sous toutes leurs portées,
-découpage automatique, journées types, contraintes désactivées, effectifs
+relais repas à effectif plein ou réduit, journées types, contraintes désactivées, effectifs
 portés par la fenêtre, édition cible. Les barreaux 26 à 30 ne doivent **jamais**
 se résoudre, chacun pour une raison nommée, et le test dit si l'analyse de
 faisabilité la voit.

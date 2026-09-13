@@ -3,26 +3,21 @@ festival:
   dateDebut: 2026-07-08
 
 # Fixture for PlanningServiceParametresScenarioTest: exercises the optional
-# parametresLegaux/parametresDecoupage/parametresSolveur sections a scenario
-# can pin, with only a subset of fields overridden — the rest must fall back
-# to each class's own defaults, not to whatever the (here DB-less)
-# ReferenceDataService returns.
+# parametresLegaux/parametresSolveur sections a scenario can pin, with only a
+# subset of fields overridden — the rest must fall back to each class's own
+# defaults, not to whatever the (here DB-less) ReferenceDataService returns.
 parametresLegaux:
   reposQuotidienMinimalMinutes: 500
   # L'heure à partir de laquelle l'écran Équité compte des heures de soirée.
   # Absente du DTO, elle n'était pas « non surchargeable » : l'import écrivait
   # des paramètres neufs, donc la remettait à 20:00 sans le dire.
   heureDebutSoiree: "22:00"
-
-parametresDecoupage:
-  dureeVacationMinMinutes: 250
-  strategieCouverturePendantPause: RELEVE
-  # Champs du découpage par familles décalées : présents dans le DTO et lus par
-  # l'importeur depuis leur introduction, mais qu'aucune fixture n'exerçait.
+  # Le plafond d'une vacation, arrivé ici avec le retrait du découpage.
+  dureeVacationMaxMinutes: 250
   # Deliberately unquoted: SnakeYAML's YAML 1.1 resolver reads an unquoted
   # HH:MM:SS scalar as sexagesimal (a Number), not a string — this exercises
   # that parsing path, not just the quoted "HH:MM" créneaux below.
-  fenetreRepasMidiDebut: 12:30:00
+  coupureRepasMidiDebut: 12:30:00
 
 parametresSolveur:
   dureeResolutionSecondes: 400

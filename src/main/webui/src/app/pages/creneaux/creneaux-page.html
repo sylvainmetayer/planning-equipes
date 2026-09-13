@@ -18,39 +18,17 @@
       <mat-icon>playlist_add</mat-icon>
       <ng-container i18n="@@creneaux.serie.action">Créer une série</ng-container>
     </button>
-    @if (mode() === 'AMPLITUDES') {
-      <button matButton type="button" [disabled]="editingLocked()" (click)="openDerivation()"
-              i18n-matTooltip="@@creneaux.derivation.tooltip"
-              matTooltip="La grille que les horaires des stands impliquent, prévisualisée avant d'écrire.">
-        <mat-icon>storefront</mat-icon>
-        <ng-container i18n="@@creneaux.derivation.action">Dériver des horaires des stands</ng-container>
-      </button>
-    }
+    <button matButton type="button" [disabled]="editingLocked()" (click)="openDerivation()"
+            i18n-matTooltip="@@creneaux.derivation.tooltip"
+            matTooltip="La grille que les horaires des stands impliquent, prévisualisée avant d'écrire.">
+      <mat-icon>storefront</mat-icon>
+      <ng-container i18n="@@creneaux.derivation.action">Dériver des horaires des stands</ng-container>
+    </button>
   </mat-card-actions>
   <mat-card-content>
-    <div class="grille-mode">
-      <span class="grille-mode-libelle" i18n="@@creneaux.mode.libelle">Cette grille contient :</span>
-      <mat-button-toggle-group [value]="mode()" (change)="changerMode($event.value)" hideSingleSelectionIndicator
-                               [disabled]="modeLoading() || editingLocked() || !parametresDecoupage()"
-                               i18n-aria-label="@@creneaux.mode.libelle" aria-label="Cette grille contient :">
-        <mat-button-toggle value="AMPLITUDES" i18n-matTooltip="@@creneaux.mode.amplitudes.tooltip"
-                           matTooltip="Des journées entières, à découper en vacations. Deux créneaux qui se chevauchent le même jour sont une erreur.">
-          <ng-container i18n="@@creneaux.mode.amplitudes">Des amplitudes à découper</ng-container>
-        </mat-button-toggle>
-        <mat-button-toggle value="VACATIONS" i18n-matTooltip="@@creneaux.mode.vacations.tooltip"
-                           matTooltip="Des vacations résolues telles quelles : un créneau est un poste. Les chevauchements sont normaux, les durées contrôlées contre la loi.">
-          <ng-container i18n="@@creneaux.mode.vacations">Des vacations finales</ng-container>
-        </mat-button-toggle>
-      </mat-button-toggle-group>
-      @if (diagnostic(); as diagnostic) {
-        <span class="grille-diagnostic" [class.grille-diagnostic-desaccord]="desaccordMode()">
-          @if (desaccordMode()) {
-            <mat-icon>warning</mat-icon>
-          }
-          {{ diagnostic.explication }}
-        </span>
-      }
-    </div>
+    @if (diagnostic(); as diagnostic) {
+      <p class="grille-diagnostic">{{ diagnostic.explication }}</p>
+    }
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
@@ -200,57 +178,3 @@
     }
   </mat-card-content>
 </mat-card>
-
-@if (mode() === 'VACATIONS') {
-  <!-- A grid of final vacations has nothing to slice: the slicing settings,
-       the generation and the derivation from the stands are put away rather
-       than shown disabled, and one line says where they went. -->
-  <p class="empty-hint decoupage-range" i18n="@@creneaux.vacations.range">
-    La grille est en vacations finales : le découpage d'amplitudes, ses paramètres et la dérivation depuis les stands sont rangés. Déclarez la grille en amplitudes ci-dessus pour les retrouver.
-  </p>
-} @else {
-<app-parametres-decoupage [inactif]="false" [verrouille]="editingLocked()" />
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@decoupage.generer.title">Générer le découpage</h2>
-    <mat-card-subtitle i18n="@@decoupage.generer.hint">
-      Découpe les amplitudes de l'édition en vacations, qui les remplacent ; le planning résolu est effacé.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="card-actions">
-      <button matButton type="button" [disabled]="previewLoading()" (click)="previsualiserDecoupage()">
-        @if (previewLoading()) {
-          <mat-progress-spinner diameter="18" mode="indeterminate" />
-        } @else {
-          <mat-icon>visibility</mat-icon>
-        }
-        <ng-container i18n="@@decoupage.preview">Prévisualiser</ng-container>
-      </button>
-      <button matButton="filled" type="button" [disabled]="genererLoading() || editingLocked()" (click)="genererDecoupage()">
-        @if (genererLoading()) {
-          <mat-progress-spinner diameter="18" mode="indeterminate" />
-        } @else {
-          <mat-icon>auto_awesome</mat-icon>
-        }
-        <ng-container i18n="@@decoupage.generer.submit">Générer les vacations (remplace les créneaux)</ng-container>
-      </button>
-    </div>
-
-    @if (resumeDecoupage().length > 0) {
-      <div class="table-wrapper decoupage-resume">
-        @for (jour of resumeDecoupage(); track jour.date) {
-          <p>
-            <strong>{{ jour.date }}</strong>
-            <span i18n="@@decoupage.resume.vacationCount"> — {{ jour.vacations.length }} vacation(s) :</span>
-            @for (vacation of jour.vacations; track $index) {
-              <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
-            }
-          </p>
-        }
-      </div>
-    }
-  </mat-card-content>
-</mat-card>
-}

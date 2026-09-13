@@ -21,11 +21,11 @@ import java.util.List;
  * edition's data.
  *
  * <p>The two import tools delegate to {@link ScenarioImportService} rather
- * than re-implementing the order it owns (paramètres légaux / découpage /
- * solveur pinned by the scenario, then the planning itself, then the optional
- * {@code decoupageAuto:} and {@code typologies:} sections — the order matters,
- * see that class's javadoc). Duplicating it here is exactly how the two would
- * drift. Until #392's A3 they delegated to {@code ReferenceDataResource}
+ * than re-implementing the order it owns (paramètres légaux and solveur pinned
+ * by the scenario, then the planning itself, then the optional
+ * {@code typologies:}, {@code journeesTypes:} and {@code contraintes:}
+ * sections — the order matters, see that class's javadoc). Duplicating it here
+ * is exactly how the two would drift. Until #392's A3 they delegated to {@code ReferenceDataResource}
  * instead, which meant reaching for a JAX-RS {@code Response} to read a
  * business outcome.
  *
@@ -145,27 +145,20 @@ public class ScenarioMcpTools {
             // names: an import that says nothing about where it landed is
             // exactly the silence issue #181 closes.
             return new ImportResult(
-                    true,
-                    outcome.decoupageAuto(),
-                    outcome.editionId(),
-                    outcome.editionNom(),
-                    Boolean.TRUE.equals(outcome.editionCreee()));
+                    true, outcome.editionId(), outcome.editionNom(), Boolean.TRUE.equals(outcome.editionCreee()));
         }
         // The scenario named no edition, so the data landed wherever the call
         // was already pointing — which the outcome cannot know and this can.
         Edition courante = editionService.editionCourante();
-        return new ImportResult(true, outcome.decoupageAuto(), courante.getId(), courante.getNom(), false);
+        return new ImportResult(true, courante.getId(), courante.getNom(), false);
     }
 
     /**
-     * @param decoupageAuto  the scenario carried a {@code decoupageAuto:} section, so its opening spans were
-     *                       sliced into shifts at import time
-     * @param editionId      the edition the data really landed in: the one the scenario names if it names one,
-     *                       otherwise the one of the call
-     * @param editionCreee   the edition did not exist and has just been created by this import
+     * @param editionId    the edition the data really landed in: the one the scenario names if it names one,
+     *                     otherwise the one of the call
+     * @param editionCreee the edition did not exist and has just been created by this import
      */
-    public record ImportResult(
-            boolean importe, boolean decoupageAuto, String editionId, String editionNom, boolean editionCreee) {}
+    public record ImportResult(boolean importe, String editionId, String editionNom, boolean editionCreee) {}
 
     public record ValidationResult(boolean valide, List<String> erreurs) {}
 

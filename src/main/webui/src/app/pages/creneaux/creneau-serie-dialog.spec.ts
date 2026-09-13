@@ -22,7 +22,6 @@ function apercu(patch: Partial<RapportRecurrence['controle']> = {}): RapportRecu
       { id: 0, jour: 0, date: '2026-07-06', heureDebut: '14:00', heureFin: '18:00' },
     ],
     controle: {
-      mode: 'AMPLITUDES',
       nombreCreneaux: 2,
       anomalies: [],
       ouvertures: [],
@@ -56,7 +55,7 @@ function monter(
       { provide: MatDialogRef, useValue: { close } },
       {
         provide: MAT_DIALOG_DATA,
-        useValue: { mode: 'AMPLITUDES', controleActuel: options.controleActuel ?? null },
+        useValue: { controleActuel: options.controleActuel ?? null },
       },
     ],
   });
@@ -120,8 +119,7 @@ describe('CreneauSerieDialog', () => {
     await fixture.whenStable();
 
     expect(preview).toHaveBeenCalledOnce();
-    const [mode, corps] = preview.mock.calls[0] as unknown as [string, unknown];
-    expect(mode).toBe('AMPLITUDES');
+    const [corps] = preview.mock.calls[0] as unknown as [unknown];
     expect(corps).toEqual({
       jours: 'TOUS',
       dateDebut: '2026-07-06',
@@ -142,7 +140,7 @@ describe('CreneauSerieDialog', () => {
 
     bouton(fixture, 'Créer la série').click();
     await fixture.whenStable();
-    expect(post).toHaveBeenCalledExactlyOnceWith('AMPLITUDES', corps);
+    expect(post).toHaveBeenCalledExactlyOnceWith(corps);
     expect(close).toHaveBeenCalledWith(apercu());
   });
 
@@ -183,7 +181,6 @@ describe('CreneauSerieDialog', () => {
     const { fixture } = monter({
       reponse: apercu({ anomalies: [deja] }),
       controleActuel: {
-        mode: 'AMPLITUDES',
         nombreCreneaux: 2,
         anomalies: [deja],
         ouvertures: [],

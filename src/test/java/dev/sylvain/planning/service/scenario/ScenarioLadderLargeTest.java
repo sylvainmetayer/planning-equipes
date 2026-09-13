@@ -176,7 +176,7 @@ class ScenarioLadderLargeTest {
      */
     @Test
     void rung22AMonthSlicedOnImport() {
-        Loaded loaded = load("gamme-22-30j-80stands-256animateurs-decoupage-mois");
+        Loaded loaded = load("gamme-22-30j-80stands-256animateurs-mois-week-ends");
         Map<Boolean, List<Creneau>> parType = loaded.creneaux().stream()
                 .collect(Collectors.partitioningBy(vacation -> isWeekend(vacation.getDate())));
         assertThat(parType.get(false))

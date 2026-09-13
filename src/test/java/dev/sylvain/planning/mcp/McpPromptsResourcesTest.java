@@ -163,7 +163,7 @@ class McpPromptsResourcesTest {
         assertThat(resources.vocabulaire().text())
                 .contains("qu'un id")
                 .contains("Vacation")
-                .contains("Amplitude");
+                .contains("Journée type");
     }
 
     /**

@@ -18,16 +18,16 @@ public class Creneau {
     private LocalTime heureDebut;
     private LocalTime heureFin;
     /**
-     * True when this slot is the short vacation covering a stand's internal
-     * meal pause, generated under
-     * {@link ParametresDecoupage.PauseCoverageStrategy#EFFECTIF_REDUIT}.
-     * Poste generation then staffs it at half the stand's usual headcount
-     * (see {@code ProblemBuilder#buildPostes}).
+     * True when this slot is the short vacation relieving a stand over a meal
+     * service. Poste generation then staffs it at half the stand's usual
+     * headcount, rounded up (see {@link #siegesSegment(int)} and
+     * {@code ProblemBuilder#buildPostes}).
      *
-     * <p>Always {@code false} under the two other strategies — {@code RELEVE}
-     * covers the pause at full headcount and {@code FERMETURE} generates no
-     * covering vacation at all — and always {@code false} on amplitude
-     * créneaux.</p>
+     * <p>Set by hand on the Créneaux page, or carried by the
+     * {@link VacationType} of a journée type. It is the only way to say
+     * « the stand stays open at reduced staffing while the others eat »: a
+     * closure is simply no créneau there, and a full relief is an ordinary
+     * vacation.</p>
      */
     private boolean couverturePause;
 

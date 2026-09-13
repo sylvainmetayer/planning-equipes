@@ -79,8 +79,8 @@ Une journée type modifiée après coup ne propage rien : ses dates passent
 journées types qu'une grille implique — chaque date aux mêmes vacations et
 mêmes drapeaux est la même journée — et remplace journées types et
 calendrier ; elle suit tout remplacement de la grille (import de scénario,
-découpage), si bien qu'une édition importée et une édition tapée se lisent
-pareil sur l'écran Créneaux. La logique est pure
+dérivation depuis les horaires des stands), si bien qu'une édition importée et
+une édition tapée se lisent pareil sur l'écran Créneaux. La logique est pure
 (`JourneesTypesMaterialisation`), le service ne fait que la persister.
 
 Cette dérivation est écrite une fois (`service/referentiel/JoursEvenement`) et lue à la
@@ -413,26 +413,45 @@ classement de personnes nommées). Celui-ci ne classe personne : il répond
 « votre emploi du temps a-t-il changé depuis ce qu'on vous a envoyé ? », une
 personne à la fois, et seulement pour celles à qui il va écrire.
 
-## Découpage automatique en vacations
+## Une grille est faite de vacations
 
-Un scénario « continu » ne définit qu'une **amplitude** par jour. Affecter
-quelqu'un à un poste couvrant l'amplitude entière l'imposerait nominalement en
-poste 10 à 14 h d'affilée.
+Un créneau est une **vacation** : une tranche de travail réelle, sur laquelle on
+affecte quelqu'un. Il n'y a pas d'autre sorte de créneau.
 
-Le découpage résout ça **à la génération, pas au solve** : chaque amplitude
-devient plusieurs vacations plus courtes et chevauchantes. Tant qu'une vacation
-reste sous `dureeVacationMaxMinutes` (6 h par défaut, seuil de l'art. [L3121-16])
-**et** ne recouvre pas entièrement une fenêtre repas, elle n'a besoin d'aucune
-pause interne : **la pause est le trou entre deux vacations**, pas un attribut
-de créneau — sauf si l'organisateur déclare `pauseSurPoste` (voir plus bas).
+Il y en a eu une : l'**amplitude**, la journée d'ouverture de bout en bout, que
+le *découpage* tranchait en vacations plus courtes avant de résoudre. Un
+évènement connaît ses horaires d'ouverture et les projette en vacations par ses
+[journées types](#journées-types) ; le découpage, ses paramètres et le mode qui
+disait laquelle des deux lectures s'appliquait ont donc été retirés (ADR
+[0037](decisions/0037-une-grille-est-toujours-des-vacations.md)).
 
-Une amplitude est un créneau ordinaire, en base le temps de l'import ; le
-découpage la remplace **en place**. Le solveur ne voit donc jamais d'amplitude.
+Ce qui suit décrit les règles qui survivent au mécanisme, parce qu'elles portent
+sur la grille que l'organisateur a, quelle que soit la façon dont elle a été
+écrite.
+
+### Le plafond de durée d'une vacation
+
+Tant qu'une vacation reste sous `dureeVacationMaxMinutes` (6 h par défaut, seuil
+de l'art. [L3121-16]) **et** ne recouvre pas entièrement une fenêtre repas, elle
+n'a besoin d'aucune pause interne : **la pause est le trou entre deux
+vacations**, pas un attribut de créneau — sauf si l'organisateur déclare
+`pauseSurPoste` (voir plus bas).
+
+Au-delà, le contrôle de la grille (`CreneauGridService`) pose un avertissement
+`VACATION_TROP_LONGUE` : une coupure interne devient légalement obligatoire, et
+la réponse est de couper la journée en deux vacations ou de déclarer la pause
+sur poste. Le seuil vit avec les autres règles de l'évènement, dans
+`ParametresLegaux` — il bornait ce que le découpage produisait, il dit
+maintenant à partir de quand la grille est signalée.
+
+Le repos quotidien donne un second plafond, celui-là bloquant : une vacation
+plus longue que `1440 − reposQuotidienMinimalMinutes` garantit une violation de
+contrainte dure, et le contrôle la remonte en erreur.
 
 ### Les familles de relais ont été retirées
 
-Le découpage a longtemps su générer plusieurs **familles** de vacations aux
-coupures décalées, chaque stand relayant avec sa famille (ADR
+La grille a longtemps pu porter plusieurs **familles** de vacations aux coupures
+décalées, chaque stand relayant avec sa famille (ADR
 [0026](decisions/0026-famille-de-relais-attribut-du-stand.md)). Le mécanisme
 n'a jamais servi en production et compliquait tout ce qui touche à la grille :
 il est retiré (ADR [0029](decisions/0029-retrait-des-familles-de-relais.md)).
@@ -440,27 +459,13 @@ Une grille porte une seule variante de chaque vacation, tout stand se pose
 sur tout créneau ouvert, et un scénario qui porte encore `famille:` ou
 `nombreFamillesDecalage:` est refusé comme toute clé inconnue.
 
-### Le cas que le plafond de durée ne détecte pas
-
-`dureeVacationMinMinutes` peut à lui seul empêcher un relais de tomber *avant*
-une fenêtre repas — le premier relais d'une journée ouvrant à 10 h avec un
-minimum de 3 h ne peut pas se produire avant 13 h, alors que le déjeuner
-commence à midi. La seule coupe possible tombe alors *après* la fenêtre, et
-l'animateur travaille seul pendant tout le repas. **Le plafond de durée ne voit
-rien** : la vacation reste sous la limite.
-
-Le découpeur détecte donc aussi ce cas — une vacation qui engloutit une fenêtre
-repas de son début à sa fin — et y insère une vraie coupure, quelle que soit sa
-durée. **Exception** : quand la fenêtre n'est englobée que parce qu'elle est
-tronquée par la fermeture, aucune coupure n'est forcée — la journée se termine
-simplement dans la fenêtre, plutôt que de créer une vacation résiduelle de
-quelques minutes.
-
 ### Le chevauchement est un pic de demande
 
-Pendant le chevauchement de deux vacations consécutives, deux postes existent
-sur le même stand : l'effectif est garanti **en excédent** temporaire, jamais en
-déficit.
+Deux vacations consécutives peuvent se recouvrir le temps d'une relève : deux
+postes existent alors sur le même stand, et l'effectif est garanti **en
+excédent** temporaire, jamais en déficit. C'est la façon normale de couvrir une
+journée continue, et deux vacations du même jour qui se chevauchent ne sont
+donc jamais une anomalie.
 
 Mais c'est aussi la principale source de pic. **Si tous les stands relèvent au
 même instant, le nombre de sièges à pourvoir double à cet instant précis.** Sur
@@ -468,11 +473,10 @@ le scénario de référence, 86 sièges réellement ouverts devenaient 172 à po
 à 18 h 30, pour 153 animateurs : infaisable par construction, sans la moindre
 pénurie d'animateurs.
 
-Le levier qui désamorce le pic est `dureeChevauchementMinutes` : l'équipe
-entrante et l'équipe sortante se recouvrent le temps de la relève, et la
-grille de vacations se règle pour que les relèves ne tombent pas toutes sur la
-même minute. Les grilles décalées par familles, qui étalaient les relèves en
-générant plusieurs variantes de chaque vacation, ont été retirées (ADR
+Le levier qui désamorce le pic est l'étalement des relèves : une grille se règle
+pour qu'elles ne tombent pas toutes sur la même minute. Les grilles décalées par
+familles, qui les étalaient en générant plusieurs variantes de chaque vacation,
+ont été retirées (ADR
 [0029](decisions/0029-retrait-des-familles-de-relais.md)).
 
 > **L'analyse de faisabilité ne voit pas ce pic** : c'est une estimation
@@ -483,33 +487,44 @@ générant plusieurs variantes de chaque vacation, ont été retirées (ADR
 > stands réclament un animateur au même quart d'heure. Le signal fiable après
 > résolution est le **score dur réel**, pas `feasible` seul.
 
-### Couverture pendant une pause
+### Couvrir un stand pendant le repas
 
-| Valeur | Effectif pendant la pause | Vacation générée |
-| --- | --- | --- |
-| `FERMETURE` (défaut) | aucun, le stand ferme | non |
-| `RELEVE` | effectif plein, en plus des deux vacations encadrantes | oui |
-| `EFFECTIF_REDUIT` | moitié de l'effectif du segment ouvert, **arrondie au supérieur** | oui |
+Trois façons de traiter le temps du midi, et chacune s'écrit maintenant à la
+main sur la grille — dans le formulaire du créneau, ou dans la journée type qui
+la projette :
 
-`RELEVE` est à manier avec prudence sur un scénario déjà tendu : une vacation de
-relève de plus par pause, sur *chaque* stand concerné, concentrée sur la même
-fenêtre, est exactement le pic décrit ci-dessus.
+| Ce qu'on veut | Comment on l'écrit |
+| --- | --- |
+| Le stand ferme | aucune vacation sur la fenêtre |
+| Effectif plein pendant la pause | une vacation ordinaire sur la fenêtre |
+| Effectif réduit | une vacation marquée `couverturePause` |
 
-`EFFECTIF_REDUIT` reproduit ce que fait réellement le classeur source : diviser
-l'effectif par deux sur les créneaux de repas plutôt que d'ajouter une équipe ou
-de fermer. **L'arrondi est au supérieur** pour qu'un stand tenu par une seule
-personne la garde au lieu de fermer — fermer reste une décision explicite, pas
-l'effet de bord d'une division entière.
+`couverturePause` est un attribut du créneau : la génération des postes n'y crée
+que la **moitié de l'effectif du segment ouvert, arrondie au supérieur**
+(`Creneau.siegesSegment`). **L'arrondi est au supérieur** pour qu'un stand tenu
+par une seule personne la garde au lieu de fermer — fermer reste une décision
+explicite, pas l'effet de bord d'une division entière.
+
+Une vacation pleine sur la fenêtre repas est à manier avec prudence sur un
+scénario déjà tendu : une équipe de plus par pause, sur *chaque* stand concerné,
+concentrée sur la même fenêtre, est exactement le pic décrit ci-dessus.
+
+Un relais posé **hors** de toute fenêtre repas est signalé par le contrôle de la
+grille (`RELAIS_REPAS_HORS_FENETRE`) : l'effectif y est divisé par deux sans
+qu'aucune coupure ne puisse s'y prendre.
 
 ### Sections de scénario
 
-Un fichier peut fixer ses propres `parametresLegaux`, `parametresDecoupage` et
-`parametresSolveur`, avec uniquement les champs à surcharger — les autres
-gardent le défaut **de la classe Java, jamais la valeur en base**. C'est ce qui
-permet à un gros scénario d'auto-configurer sa durée de résolution plutôt que de
-dépendre de ce qu'un scénario précédent a laissé.
+Un fichier peut fixer ses propres `parametresLegaux` et `parametresSolveur`,
+avec uniquement les champs à surcharger — les autres gardent le défaut **de la
+classe Java, jamais la valeur en base**. C'est ce qui permet à un gros scénario
+d'auto-configurer sa durée de résolution plutôt que de dépendre de ce qu'un
+scénario précédent a laissé.
 
-`decoupageAuto: {}` déclenche le découpage à l'import. Formats complets dans
+Les sections `parametresDecoupage` et `decoupageAuto` ont disparu avec le
+découpage, et un fichier qui les porte encore est **refusé par son nom** plutôt
+qu'importé de travers : une grille d'amplitudes lue comme des vacations
+donnerait des journées de 14 h sans un mot. Formats complets dans
 [`import-export.md`](import-export.md).
 
 ## Contraintes ad hoc
@@ -615,11 +630,9 @@ les projette. Elles ont d'abord été des paramètres de découpage — c'est l�
 l'organisateur les réglait, et là que personne ne les cherchait. La coupure
 repas n'est pas une obligation légale mais la règle que l'organisation se
 donne, jugée par le solveur sur toute grille : elle se règle donc avec les
-autres règles, et le découpage la lit à cet endroit pour placer ses relèves.
-`ParametresDecoupage` ne porte plus que de la génération pure. Un scénario
-l'écrit sous `parametresLegaux` (`coupureRepasMinutes`,
-`coupureRepasMidiDebut`…) ; les anciennes clés sous `parametresDecoupage`
-restent lues, dépréciées, pour qu'aucun fichier ne cesse de s'importer.
+autres règles. Le plafond de durée d'une vacation a fait le même chemin quand
+le découpage a été retiré. Un scénario les écrit sous `parametresLegaux`
+(`coupureRepasMinutes`, `coupureRepasMidiDebut`, `dureeVacationMaxMinutes`…).
 
 **Un scénario est jugé sur les fenêtres qu'il déclare**, pas sur celles de la
 base : `ScenarioYamlReader` les pose sur le planning qu'il construit, et les

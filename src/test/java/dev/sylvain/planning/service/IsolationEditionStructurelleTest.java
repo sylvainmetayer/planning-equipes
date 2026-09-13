@@ -82,7 +82,6 @@ class IsolationEditionStructurelleTest {
             "ponderation_contrainte",
             "verrouillage_planning",
             "parametres_legaux",
-            "parametres_decoupage",
             "parametres_solveur",
             "poste_affectation",
             "planning_resolution",

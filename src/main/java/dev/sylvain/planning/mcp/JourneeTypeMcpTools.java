@@ -269,7 +269,6 @@ public class JourneeTypeMcpTools {
                 rapport.postesSupprimes(),
                 rapport.datesEnEcart(),
                 rapport.aucunChangement(),
-                rapport.modeADeclarer(),
                 rapport.controle());
     }
 
@@ -288,7 +287,6 @@ public class JourneeTypeMcpTools {
             int postesSupprimes,
             List<LocalDate> datesEnEcart,
             boolean aucunChangement,
-            boolean modeADeclarer,
             RapportGrille controle) {}
 
     public record ReconnaissanceView(List<JourneeTypeView> journeesTypes, List<Affectation> calendrier) {}

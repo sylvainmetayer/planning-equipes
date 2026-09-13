@@ -26,14 +26,6 @@ parametresLegaux:
   coupureRepasMinutes: 60
   coupureRepasSoirDebut: '17:00'
   coupureRepasSoirFin: '18:00'
-parametresDecoupage:
-  dureeChevauchementMinutes: 15
-  dureeVacationCibleMinutes: 330
-  dureeVacationMinMinutes: 180
-  dureeVacationMaxMinutes: 360
-  strategieCouverturePendantPause: EFFECTIF_REDUIT
-decoupageAuto: {}
-
 # Constraint dosage this scenario was verified with. The deployment default is
 # neutral (1 for every constraint, see application.properties), so a scenario
 # that needs a ratio carries it here. Applied as a block on import, never

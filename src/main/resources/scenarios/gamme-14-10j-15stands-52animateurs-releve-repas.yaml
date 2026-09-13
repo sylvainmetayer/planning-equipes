@@ -1,77 +1,149 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
-# Barreau 14 : dix jours découpés, relève pendant le repas, coupure de 45 min.
-# Amplitudes 13 h-19 h en semaine, 10 h-19 h le week-end ; le découpage vise des
-# vacations de quatre heures (entre 1 h 30 et 5 h) qui se recouvrent d'un quart
-# d'heure à la relève. Le week-end, la première engloutirait la fenêtre repas :
-# le découpage y coupe et pose une vacation de relève à effectif plein pendant la
-# pause (RELEVE). La coupure repas vaut 45 minutes dans la fenêtre 12 h-14 h.
+# Barreau 14 : dix jours, relève à effectif plein pendant le repas, coupure 45 min.
+# En semaine deux vacations qui se recouvrent d'un quart d'heure à la relève
+# (13 h-17 h, 16 h 45-19 h). Le week-end la journée ouvre plus tôt et se lit en
+# cinq vacations, dont la relève 12 h-12 h 45 posée dans la fenêtre repas
+# 12 h-14 h : elle n'est PAS marquée couverturePause, donc le stand y reste à
+# effectif plein — c'est une relève, pas un effectif réduit, et c'est ce que ce
+# barreau exerce. La coupure repas vaut 45 minutes.
 # L'édition traverse un week-end et deux frontières de semaine.
 
 festival:
   dateDebut: 2027-08-30
 
-parametresDecoupage:
-  dureeVacationCibleMinutes: 240
-  dureeVacationMinMinutes: 90
-  dureeVacationMaxMinutes: 300
-  dureeChevauchementMinutes: 15
-  strategieCouverturePendantPause: RELEVE
-
 parametresLegaux:
   coupureRepasMinutes: 45
 
-decoupageAuto: {}
-
 creneaux:
-  - id: J1-AMPLITUDE
+  - id: J1-V1
     jour: 1
     date: 2027-08-30
     heureDebut: "13:00"
+    heureFin: "17:00"
+  - id: J1-V2
+    jour: 1
+    date: 2027-08-30
+    heureDebut: "16:45"
     heureFin: "19:00"
-  - id: J2-AMPLITUDE
+  - id: J2-V1
     jour: 2
     date: 2027-08-31
     heureDebut: "13:00"
+    heureFin: "17:00"
+  - id: J2-V2
+    jour: 2
+    date: 2027-08-31
+    heureDebut: "16:45"
     heureFin: "19:00"
-  - id: J3-AMPLITUDE
+  - id: J3-V1
     jour: 3
     date: 2027-09-01
     heureDebut: "13:00"
+    heureFin: "17:00"
+  - id: J3-V2
+    jour: 3
+    date: 2027-09-01
+    heureDebut: "16:45"
     heureFin: "19:00"
-  - id: J4-AMPLITUDE
+  - id: J4-V1
     jour: 4
     date: 2027-09-02
     heureDebut: "13:00"
+    heureFin: "17:00"
+  - id: J4-V2
+    jour: 4
+    date: 2027-09-02
+    heureDebut: "16:45"
     heureFin: "19:00"
-  - id: J5-AMPLITUDE
+  - id: J5-V1
     jour: 5
     date: 2027-09-03
     heureDebut: "13:00"
+    heureFin: "17:00"
+  - id: J5-V2
+    jour: 5
+    date: 2027-09-03
+    heureDebut: "16:45"
     heureFin: "19:00"
-  - id: J6-AMPLITUDE
+  - id: J6-V1
     jour: 6
     date: 2027-09-04
     heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J6-V2
+    jour: 6
+    date: 2027-09-04
+    heureDebut: "12:00"
+    heureFin: "12:45"
+  - id: J6-V3
+    jour: 6
+    date: 2027-09-04
+    heureDebut: "12:45"
+    heureFin: "14:00"
+  - id: J6-V4
+    jour: 6
+    date: 2027-09-04
+    heureDebut: "13:45"
+    heureFin: "17:45"
+  - id: J6-V5
+    jour: 6
+    date: 2027-09-04
+    heureDebut: "17:30"
     heureFin: "19:00"
-  - id: J7-AMPLITUDE
+  - id: J7-V1
     jour: 7
     date: 2027-09-05
     heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J7-V2
+    jour: 7
+    date: 2027-09-05
+    heureDebut: "12:00"
+    heureFin: "12:45"
+  - id: J7-V3
+    jour: 7
+    date: 2027-09-05
+    heureDebut: "12:45"
+    heureFin: "14:00"
+  - id: J7-V4
+    jour: 7
+    date: 2027-09-05
+    heureDebut: "13:45"
+    heureFin: "17:45"
+  - id: J7-V5
+    jour: 7
+    date: 2027-09-05
+    heureDebut: "17:30"
     heureFin: "19:00"
-  - id: J8-AMPLITUDE
+  - id: J8-V1
     jour: 8
     date: 2027-09-06
     heureDebut: "13:00"
+    heureFin: "17:00"
+  - id: J8-V2
+    jour: 8
+    date: 2027-09-06
+    heureDebut: "16:45"
     heureFin: "19:00"
-  - id: J9-AMPLITUDE
+  - id: J9-V1
     jour: 9
     date: 2027-09-07
     heureDebut: "13:00"
+    heureFin: "17:00"
+  - id: J9-V2
+    jour: 9
+    date: 2027-09-07
+    heureDebut: "16:45"
     heureFin: "19:00"
-  - id: J10-AMPLITUDE
+  - id: J10-V1
     jour: 10
     date: 2027-09-08
     heureDebut: "13:00"
+    heureFin: "17:00"
+  - id: J10-V2
+    jour: 10
+    date: 2027-09-08
+    heureDebut: "16:45"
     heureFin: "19:00"
 
 stands:

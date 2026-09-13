@@ -11,13 +11,11 @@ import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { DerivationRequest, ModeGrilleCreneaux, RapportDerivation } from '../../core/models';
-import { summarizeVacationsByDay } from './decoupage';
+import { DerivationRequest, RapportDerivation } from '../../core/models';
+import { summarizeVacationsByDay } from './jours-resume';
 import { bilanGrille, grilleBloquee, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
 
 export interface CreneauDerivationData {
-  /** The mode the edition declares: what the preview's verdict is read in. */
-  mode: ModeGrilleCreneaux;
   /** Where the grid's dates already run, to prefill the range; `null` when the grid is empty. */
   dateDebut: string | null;
   dateFin: string | null;
@@ -151,7 +149,7 @@ export class CreneauDerivationDialog {
     }
     this.chargement.set(true);
     try {
-      this.apercu.set(await this.creneauxApi.previewDerivation(this.data.mode, this.requete()));
+      this.apercu.set(await this.creneauxApi.previewDerivation(this.requete()));
       this.signatureApercu.set(JSON.stringify(this.draft()));
     } catch (error) {
       this.crud.reportError(error);
@@ -177,7 +175,7 @@ export class CreneauDerivationDialog {
     }
     this.ecriture.set(true);
     try {
-      const rapport = await this.creneauxApi.derive(this.data.mode, this.requete());
+      const rapport = await this.creneauxApi.derive(this.requete());
       this.dialogRef.close(rapport);
     } catch (error) {
       this.crud.reportError(error);

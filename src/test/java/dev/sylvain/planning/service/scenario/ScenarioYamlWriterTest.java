@@ -14,7 +14,6 @@ import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -216,8 +215,8 @@ class ScenarioYamlWriterTest {
     /**
      * Reproducibility: an exported scenario must carry the settings that shape
      * a solve, not only its entities. Without them the file replayed elsewhere
-     * silently borrowed that instance's own solve duration, vacation lengths
-     * and legal caps — the same "scenario", a different problem.
+     * silently borrowed that instance's own solve duration and legal caps —
+     * the same "scenario", a different problem.
      */
     @Test
     @SuppressWarnings("unchecked")
@@ -225,8 +224,7 @@ class ScenarioYamlWriterTest {
         ParametresLegaux legaux = new ParametresLegaux();
         legaux.setDureeHebdomadaireMaxMinutes(40 * 60);
         legaux.setPauseMinimaleEntreVacationsMinutes(45);
-        ParametresDecoupage decoupage = new ParametresDecoupage();
-        decoupage.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy.EFFECTIF_REDUIT);
+        legaux.setDureeVacationMaxMinutes(5 * 60);
 
         String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
                 List.of(animateur),
@@ -236,7 +234,6 @@ class ScenarioYamlWriterTest {
                 List.of(new TypologieItem("STRATEGIE", "Stratégie", true)),
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
                 legaux,
-                decoupage,
                 new ParametresSolveur(1800),
                 Set.of("equilibrerCharge"),
                 Map.of("maxJoursConsecutifsTravailles", 5),
@@ -251,12 +248,10 @@ class ScenarioYamlWriterTest {
                 // The meal break travels with the legal parameters; times stay
                 // strings, like everywhere else in the file.
                 .containsEntry("coupureRepasMinutes", 60)
-                .containsEntry("coupureRepasMidiDebut", "12:00");
-        assertThat((Map<String, Object>) parsed.get("parametresDecoupage"))
-                .containsEntry("strategieCouverturePendantPause", "EFFECTIF_REDUIT")
-                .containsEntry("modeGrille", "VACATIONS")
-                // The meal keys left this section; the deprecated ones are never written.
-                .doesNotContainKeys("dureePauseRepasMinutes", "fenetreRepasMidiDebut");
+                .containsEntry("coupureRepasMidiDebut", "12:00")
+                // The vacation ceiling made the same move as the meal break.
+                .containsEntry("dureeVacationMaxMinutes", 5 * 60);
+        assertThat(parsed).doesNotContainKey("parametresDecoupage");
         assertThat((List<Map<String, Object>>) parsed.get("typologies"))
                 .singleElement()
                 .satisfies(typologie -> assertThat(typologie)
@@ -341,7 +336,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                null,
                 Set.of(),
                 Map.of(),
                 List.of(incompatibilite)));
@@ -382,7 +376,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 List.of(),
                 List.of(),
-                null,
                 null,
                 null,
                 Set.of(),
@@ -427,14 +420,12 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                null,
                 Set.of(),
                 Map.of(),
                 List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         assertThat(parsed).doesNotContainKey("postes");
-        assertThat(parsed).doesNotContainKey("decoupageAuto");
     }
 
     @Test

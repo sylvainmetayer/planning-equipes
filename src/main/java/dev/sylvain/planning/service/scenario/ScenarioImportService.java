@@ -9,7 +9,6 @@ import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 
 /**
  * Importing a scenario into the referential: the order the sections are applied
@@ -73,30 +72,11 @@ public class ScenarioImportService {
         ScenarioYamlReader.ScenarioSections sections = importe.sections();
         return importIntoTarget(sections.edition(), () -> {
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
-            sections.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
-            // Written through the one call that owns it — updateParametresDecoupage
-            // puts the edition's current mode back onto the object it saves, so the
-            // settings form cannot revert a choice made on the Créneaux screen.
-            // Parsed and dropped until now: a file declaring « modeGrille: VACATIONS »
-            // landed in an edition still declared in amplitudes, whose relay vacations
-            // were read as overlaps. Only a spelled-out mode is applied: a
-            // parametresDecoupage: section silent on it leaves the target edition
-            // where it is, instead of pushing the Java default onto it. A
-            // decoupageAuto: section overrides it right after, which is what it means.
-            sections.modeGrilleDeclare().ifPresent(mode -> referenceDataService.updateModeGrille(mode.name()));
             sections.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
-            if (sections.decoupageAuto()) {
-                referenceDataService.applyAutomaticDecoupage(importe.planning());
-                applyTypologies(sections);
-                applyJourneesTypes(sections);
-                applyContraintes(sections);
-                return true;
-            }
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
             applyJourneesTypes(sections);
             applyContraintes(sections);
-            return false;
         });
     }
 
@@ -108,16 +88,20 @@ public class ScenarioImportService {
      * the edition was just created), because the operator's browser may be
      * sitting on a different edition than the one that was written.
      */
-    private ScenarioImportOutcome importIntoTarget(Optional<EditionCibleDto> cibleDto, Callable<Boolean> importAction) {
+    private ScenarioImportOutcome importIntoTarget(Optional<EditionCibleDto> cibleDto, Runnable importAction) {
         try {
             if (cibleDto.isEmpty()) {
-                return new ScenarioImportOutcome(importAction.call(), null, null, null);
+                importAction.run();
+                return new ScenarioImportOutcome(null, null, null);
             }
             EditionService.ImportTarget target = editionService.resolveForImport(
                     cibleDto.get().id(), cibleDto.get().nom());
-            boolean decoupageAuto = editionContext.executeIn(target.edition().getId(), importAction);
+            editionContext.executeIn(target.edition().getId(), () -> {
+                importAction.run();
+                return null;
+            });
             return new ScenarioImportOutcome(
-                    decoupageAuto, target.edition().getId(), target.edition().getNom(), target.creee());
+                    target.edition().getId(), target.edition().getNom(), target.creee());
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -169,16 +153,13 @@ public class ScenarioImportService {
     }
 
     /**
-     * Where a scenario landed, and what it triggered on the way in.
+     * Where a scenario landed.
      *
-     * @param decoupageAuto the scenario carried a {@code decoupageAuto:} section, so its opening spans were
-     *                      sliced into vacations at import time
-     * @param editionId     the edition the scenario named, or {@code null} when it named none and the data
-     *                      landed in the caller's current edition
-     * @param editionNom    the name of that edition, {@code null} for the same reason
-     * @param editionCreee  the edition did not exist and this import created it; {@code null} when the
-     *                      scenario named no edition
+     * @param editionId    the edition the scenario named, or {@code null} when it named none and the data
+     *                     landed in the caller's current edition
+     * @param editionNom   the name of that edition, {@code null} for the same reason
+     * @param editionCreee the edition did not exist and this import created it; {@code null} when the
+     *                     scenario named no edition
      */
-    public record ScenarioImportOutcome(
-            boolean decoupageAuto, String editionId, String editionNom, Boolean editionCreee) {}
+    public record ScenarioImportOutcome(String editionId, String editionNom, Boolean editionCreee) {}
 }

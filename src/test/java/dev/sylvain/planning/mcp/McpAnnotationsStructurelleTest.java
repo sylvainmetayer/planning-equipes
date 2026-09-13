@@ -74,7 +74,6 @@ class McpAnnotationsStructurelleTest {
             "importer_",
             "restaurer_",
             "deverrouiller",
-            "generer_decoupage",
             "generer_creneaux_depuis_stands",
             // Applying a day-template calendar removes the créneaux a governed
             // date no longer names, seats included; recognising replaces every

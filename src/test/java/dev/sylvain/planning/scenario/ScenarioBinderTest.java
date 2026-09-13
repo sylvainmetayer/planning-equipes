@@ -225,34 +225,31 @@ class ScenarioBinderTest {
     }
 
     /**
-     * {@code decoupageAuto:} means "slice on import" by its presence. Four
-     * spellings, and the one that matters most is the absent key: Jackson
-     * fills a missing record component with the deserialiser's null value
-     * unless told otherwise, and told otherwise it was not, for one run of
-     * the differential test — every scenario read as asking to be sliced.
+     * The two sections the découpage owned are refused by name, whatever their
+     * spelling, and the message says what to write instead. Ignoring them would
+     * be worse than refusing: a grid of day-long opening amplitudes would
+     * import as day-long vacations without a word.
      */
     @Test
-    void decoupageAutoIsReadByPresenceNotByContent() throws IOException {
+    void lesSectionsDuDecoupageRetireSontRefuseesParLeurNom() throws IOException {
         String scenario = Files.readString(Path.of("src/main/resources/scenarios/scenario.yml"));
-        assertThat(scenario).doesNotContain("decoupageAuto");
+        assertThat(scenario).doesNotContain("decoupageAuto").doesNotContain("parametresDecoupage");
 
-        assertThat(ScenarioBinder.bind(scenario).decoupageAuto()).as("absent").isNull();
-        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto: false\n").decoupageAuto())
-                .as("false")
-                .isNull();
-        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n").decoupageAuto())
-                .as("bare")
-                .isNotNull();
-        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto: {}\n").decoupageAuto())
-                .as("empty object")
-                .isNotNull();
-        assertThat(ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n  groupeSourceNom: A\n")
-                        .decoupageAuto()
-                        .groupeSourceNom())
-                .as("historical fields")
-                .isEqualTo("A");
-        assertThatThrownBy(() -> ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n  grouppe: A\n"))
+        for (String section : List.of(
+                "\ndecoupageAuto: {}\n",
+                "\ndecoupageAuto:\n",
+                "\ndecoupageAuto: false\n",
+                "\ndecoupageAuto:\n  groupeSourceNom: A\n")) {
+            assertThatThrownBy(() -> ScenarioBinder.bind(scenario + section))
+                    .as(section)
+                    .isInstanceOf(ScenarioFormatException.class)
+                    .hasMessageContaining("decoupageAuto")
+                    .hasMessageContaining("couverturePause");
+        }
+        assertThatThrownBy(() ->
+                        ScenarioBinder.bind(scenario + "\nparametresDecoupage:\n  dureeVacationCibleMinutes: 240\n"))
                 .isInstanceOf(ScenarioFormatException.class)
-                .hasMessageContaining("grouppe");
+                .hasMessageContaining("parametresDecoupage")
+                .hasMessageContaining("dureeVacationMaxMinutes");
     }
 }

@@ -162,13 +162,12 @@ public class PlanningService {
      * {@link ScenarioYamlReader#SCENARIOS_DIR} folder and reloaded as-is.
      *
      * <p>Everything that shapes a solve is written, not only the entities:
-     * {@code typologies}, {@code emplacements}, {@code parametresLegaux},
-     * {@code parametresDecoupage} and {@code parametresSolveur} — re-importing
-     * the file therefore reproduces the very same problem, which is the whole
-     * point of exporting it. A file missing those sections silently fell back to
-     * the importing instance's own settings (its solve duration, its vacation
-     * lengths, its relay families), so the "same" scenario replayed elsewhere
-     * solved a different problem.</p>
+     * {@code typologies}, {@code emplacements}, {@code parametresLegaux} and
+     * {@code parametresSolveur} — re-importing the file therefore reproduces
+     * the very same problem, which is the whole point of exporting it. A file
+     * missing those sections silently fell back to the importing instance's own
+     * settings (its solve duration, its legal ceilings), so the "same" scenario
+     * replayed elsewhere solved a different problem.</p>
      *
      * <p><b>The créneaux are always written as they are, and the seat list is
      * not.</b> Absent, the {@code postes} section is regenerated on import from
@@ -178,14 +177,7 @@ public class PlanningService {
      * and froze the grid against any later change of a stand: a file carrying
      * its seats describes a problem it no longer states. An edition cannot
      * produce a seat list that departs from the rule anyway, which is the only
-     * case the section exists for. There used to be a second shape — a découpé
-     * edition exporting its source amplitudes plus {@code decoupageAuto}, so the
-     * import re-ran the découpage — and this javadoc still described it long
-     * after issue #172 removed it. Once the découpage has run, the amplitudes
-     * it consumed are gone: a découpé edition has nothing but its vacations
-     * left to export. The hand-maintained "amplitudes + {@code decoupageAuto}"
-     * scenario file stays the source of truth for re-slicing, never this
-     * export.</p>
+     * case the section exists for.</p>
      */
     public String exportScenarioYaml() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
@@ -200,13 +192,10 @@ public class PlanningService {
         }
         HoraireStandResolver.apply(stands, creneaux);
 
-        // The edition's créneaux are exported as-is (issue #172): once the
-        // découpage ran, the amplitudes it consumed are gone, so a découpé
-        // edition exports its vacations plainly — the hand-maintained
-        // "amplitudes + decoupageAuto:" scenario file stays the source of
-        // truth for re-slicing, never this export. No seat list: absent, the
-        // import rebuilds it from the stands and créneaux with the same
-        // builder a solve uses, so writing it only repeated the stands and
+        // The edition's créneaux are exported as-is: they are its vacations,
+        // and a file that reads them back gets the same grid. No seat list:
+        // absent, the import rebuilds it from the stands and créneaux with the
+        // same builder a solve uses, so writing it only repeated the stands and
         // pinned the grid against their next change.
         return ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
                 animateurs,
@@ -216,7 +205,6 @@ public class PlanningService {
                 referenceDataService.listTypologies(),
                 referenceDataService.listEmplacements(),
                 referenceDataService.getParametresLegaux(),
-                referenceDataService.getParametresDecoupage(),
                 referenceDataService.getParametresSolveur(),
                 referenceDataService.getContraintesDesactivees(),
                 referenceDataService.getConstraintWeights(),

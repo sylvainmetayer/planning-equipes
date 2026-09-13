@@ -9,7 +9,6 @@ import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -25,7 +24,6 @@ import dev.sylvain.planning.scenario.dto.HoraireStandDto;
 import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
-import dev.sylvain.planning.scenario.dto.ParametresDecoupageDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
@@ -77,7 +75,6 @@ final class ScenarioDtoAssembler {
                 new FestivalDto(dateDebut),
                 parametresSolveur(export.parametresSolveur()),
                 parametresLegaux(export.parametresLegaux()),
-                parametresDecoupage(export.parametresDecoupage()),
                 contraintes(export),
                 nullWhenEmpty(typologies(export.typologies())),
                 creneaux(creneaux),
@@ -85,12 +82,8 @@ final class ScenarioDtoAssembler {
                 nullWhenEmpty(emplacements(export.emplacements())),
                 stands(export.stands()),
                 animateurs(export.animateurs()),
-                // null, not empty: a scenario carrying decoupageAuto must not
-                // pin a seat list, since the créneaux it would reference only
-                // exist after the découpage has run on import.
                 export.postes() == null ? null : postes(export.postes()),
-                nullWhenEmpty(contraintesAdHoc(export.contraintesAdHoc(), creneaux)),
-                null);
+                nullWhenEmpty(contraintesAdHoc(export.contraintesAdHoc(), creneaux)));
     }
 
     private static <T> List<T> nullWhenEmpty(List<T> liste) {
@@ -329,13 +322,14 @@ final class ScenarioDtoAssembler {
         return parametres == null ? null : new ParametresSolveurDto(parametres.dureeResolutionSecondes());
     }
 
-    /** Only the four fields a scenario file is read back with. */
+    /** Only the fields a scenario file is read back with. */
     private static ParametresLegauxDto parametresLegaux(ParametresLegaux parametres) {
         return parametres == null
                 ? null
                 : new ParametresLegauxDto(
                         parametres.getDureeHebdomadaireMaxMinutes(),
                         parametres.getPauseMinimaleEntreVacationsMinutes(),
+                        parametres.getDureeVacationMaxMinutes(),
                         parametres.getReposQuotidienMinimalMinutes(),
                         parametres.isPauseSurPoste(),
                         parametres.getCoupureRepasMinutes(),
@@ -344,23 +338,5 @@ final class ScenarioDtoAssembler {
                         parametres.getCoupureRepasSoirDebut(),
                         parametres.getCoupureRepasSoirFin(),
                         parametres.getHeureDebutSoiree());
-    }
-
-    private static ParametresDecoupageDto parametresDecoupage(ParametresDecoupage parametres) {
-        return parametres == null
-                ? null
-                : new ParametresDecoupageDto(
-                        parametres.getDureeVacationCibleMinutes(),
-                        parametres.getDureeVacationMinMinutes(),
-                        parametres.getDureeVacationMaxMinutes(),
-                        parametres.getDureeChevauchementMinutes(),
-                        // The deprecated meal keys: never written any more.
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        parametres.getStrategieCouverturePendantPause(),
-                        parametres.getModeGrille());
     }
 }

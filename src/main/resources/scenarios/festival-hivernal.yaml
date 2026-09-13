@@ -17,13 +17,6 @@ parametresLegaux:
   coupureRepasMidiFin: '14:00'
   coupureRepasSoirDebut: '20:00'
   coupureRepasSoirFin: '21:00'
-parametresDecoupage:
-  dureeVacationCibleMinutes: 330
-  dureeVacationMinMinutes: 180
-  dureeVacationMaxMinutes: 360
-  dureeChevauchementMinutes: 15
-  strategieCouverturePendantPause: EFFECTIF_REDUIT
-  modeGrille: VACATIONS
 typologies:
 - id: ESCAPE
   label: Escape game

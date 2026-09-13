@@ -29,7 +29,6 @@ import { consumeQueryParam } from '../../core/view-query-params';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { summarizeVacationsByDay } from './decoupage';
 import { labelCreneauxPluriel } from '../../core/entity-labels';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -42,8 +41,6 @@ import {
   CauseInfaisabilite,
   Creneau,
   DiagnosticGrille,
-  ModeGrilleCreneaux,
-  ParametresDecoupage,
   RapportDerivation,
   RapportGrille,
   RapportRecurrence,
@@ -53,7 +50,6 @@ import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 import { CreneauDerivationData, CreneauDerivationDialog } from './creneau-derivation-dialog';
 import { CreneauSerieData, CreneauSerieDialog } from './creneau-serie-dialog';
-import { ParametresDecoupageCard } from './parametres-decoupage';
 import { JourneesTypesCard } from './journees-types-card';
 import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
 
@@ -87,13 +83,12 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
     MatTooltipModule,
     RouterLink,
     BulkActionsBar,
-    ParametresDecoupageCard,
     JourneesTypesCard,
   ],
   templateUrl: './creneaux-page.html',
   styleUrls: [
     './creneaux.css',
-    '../../../styles/decoupage.css',
+    '../../../styles/grille-creneaux.css',
     '../../../styles/horaires-stand.css',
     '../../../styles/ouvertures.css',
   ],
@@ -229,16 +224,9 @@ export class CreneauxPage {
   /** Same wording as the grid's header: the marker means the same thing on both screens. */
   protected readonly relaisRepasTooltip = $localize`:@@ouvertures.saisie.relaisRepas:Relais repas : les sièges générés valent la moitié de l'effectif saisi, arrondie au supérieur`;
 
-  /** The edition's découpage settings, carrying the declared mode; `null` until read. */
-  protected readonly parametresDecoupage = signal<ParametresDecoupage | null>(null);
-  /** Until the settings are in, the edition's own default: final vacations. */
-  protected readonly mode = computed<ModeGrilleCreneaux>(
-    () => this.parametresDecoupage()?.modeGrille ?? 'VACATIONS',
-  );
   protected readonly diagnostic = signal<DiagnosticGrille | null>(null);
   protected readonly controle = signal<RapportGrille | null>(null);
   protected readonly controleLoading = signal(false);
-  protected readonly modeLoading = signal(false);
 
   protected readonly bilan = computed(() => {
     const controle = this.controle();
@@ -247,29 +235,13 @@ export class CreneauxPage {
   protected readonly anomaliesGrille = computed(() =>
     trierAnomalies(this.controle()?.anomalies ?? []),
   );
-  /** The data proves a mode the declaration contradicts: worth one line, never a silent switch. */
-  protected readonly desaccordMode = computed(() => {
-    const diagnostic = this.diagnostic();
-    return (
-      diagnostic !== null &&
-      diagnostic.modeCertain &&
-      diagnostic.modeProbable !== null &&
-      diagnostic.modeProbable !== this.mode()
-    );
-  });
   protected readonly gridAnomalyIcon = gridAnomalyIcon;
 
   private async chargerGrille(): Promise<void> {
-    try {
-      this.parametresDecoupage.set(await this.creneauxApi.slicingParameters());
-    } catch (error) {
-      this.crud.reportError(error);
-      return;
-    }
     await this.rechargerVerdict();
   }
 
-  /** The diagnostic and the verdict, read again after anything that changes the grid or its mode. */
+  /** The diagnostic and the verdict, read again after anything that changes the grid. */
   protected async rechargerVerdict(): Promise<void> {
     this.controleLoading.set(true);
     try {
@@ -286,34 +258,6 @@ export class CreneauxPage {
     }
   }
 
-  /** Declares the mode, with the rest of the découpage settings untouched, then reads the verdict in it. */
-  protected async changerMode(mode: ModeGrilleCreneaux): Promise<void> {
-    const actuels = this.parametresDecoupage();
-    // Only the two modes are ever written: a toggle group settling on nothing
-    // would otherwise send an absent mode, which the server reads as the
-    // default — a silent reset.
-    if (
-      (mode !== 'AMPLITUDES' && mode !== 'VACATIONS') ||
-      !actuels ||
-      actuels.modeGrille === mode ||
-      this.modeLoading()
-    ) {
-      return;
-    }
-    this.modeLoading.set(true);
-    try {
-      // Its own endpoint: the mode is declared here while the rest of the
-      // slicing settings are edited on Paramètres, and sending the whole object
-      // would let a stale tab there revert this choice.
-      this.parametresDecoupage.set(await this.creneauxApi.setGridMode(mode));
-      await this.rechargerVerdict();
-    } catch (error) {
-      this.crud.reportError(error);
-    } finally {
-      this.modeLoading.set(false);
-    }
-  }
-
   /** « Créer une série » : the dialog previews and writes; the page only has to read again. */
   protected openSerie(): void {
     if (this.editingLocked()) {
@@ -322,7 +266,7 @@ export class CreneauxPage {
     const ref = this.dialog.open<CreneauSerieDialog, CreneauSerieData, RapportRecurrence | null>(
       CreneauSerieDialog,
       {
-        data: { mode: this.mode(), controleActuel: this.controle() },
+        data: { controleActuel: this.controle() },
         width: '44rem',
         autoFocus: 'first-tabbable',
       },
@@ -351,7 +295,7 @@ export class CreneauxPage {
       CreneauDerivationData,
       RapportDerivation | null
     >(CreneauDerivationDialog, {
-      data: { mode: this.mode(), dateDebut: dates[0] ?? null, dateFin: dates.at(-1) ?? null },
+      data: { dateDebut: dates[0] ?? null, dateFin: dates.at(-1) ?? null },
       width: '44rem',
       autoFocus: 'first-tabbable',
     });
@@ -385,9 +329,9 @@ export class CreneauxPage {
   }
 
   /**
-   * The calendar of day templates was applied: the grid, its verdict, the
-   * persisted plan and the declared mode may all have moved, and the card
-   * already told the user what happened.
+   * The calendar of day templates was applied: the grid, its verdict and the
+   * persisted plan may all have moved, and the card already told the user what
+   * happened.
    */
   protected async apresJourneesTypes(): Promise<void> {
     await Promise.all([
@@ -395,11 +339,6 @@ export class CreneauxPage {
       this.resolution.reload(),
       this.problemes.reloadFeasibility(),
     ]);
-    try {
-      this.parametresDecoupage.set(await this.creneauxApi.slicingParameters());
-    } catch (error) {
-      this.crud.reportError(error);
-    }
     await this.rechargerVerdict();
   }
 
@@ -462,66 +401,7 @@ export class CreneauxPage {
       });
   }
 
-  /* --------------------- Découpage automatique en vacations --------------------- */
-  // Lives here rather than on a page of its own: the generation reads the
-  // créneaux above as amplitudes and REPLACES them in place (issue #172), so
-  // it belongs next to the list it rewrites. Its parameters are edited on the
-  // Paramètres page.
-
   private readonly creneauxApi = inject(CreneauxApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
-
-  protected readonly previewVacations = signal<Creneau[] | null>(null);
-  protected readonly previewLoading = signal(false);
-  protected readonly genererLoading = signal(false);
-
-  protected readonly resumeDecoupage = computed(() => {
-    const vacations = this.previewVacations();
-    return vacations ? summarizeVacationsByDay(vacations) : [];
-  });
-
-  protected async previsualiserDecoupage(): Promise<void> {
-    this.previewLoading.set(true);
-    this.previewVacations.set(null);
-    try {
-      this.previewVacations.set(await this.creneauxApi.previewSlicing());
-    } catch (error) {
-      this.crud.reportError(error);
-    } finally {
-      this.previewLoading.set(false);
-    }
-  }
-
-  /** Confirmed first: the generation replaces the edition's créneaux and erases the persisted plan with them. */
-  protected async genererDecoupage(): Promise<void> {
-    const confirme = await this.confirm.ask({
-      title: $localize`:@@decoupage.generer.title:Générer le découpage`,
-      message: $localize`:@@decoupage.generer.confirm:Les amplitudes actuelles seront remplacées par les vacations générées et le planning résolu sera effacé. Re-découper ensuite demandera de ré-importer le scénario source.`,
-      confirmLabel: $localize`:@@decoupage.generer.submitCourt:Générer les vacations`,
-      danger: true,
-    });
-    if (!confirme) {
-      return;
-    }
-    this.genererLoading.set(true);
-    try {
-      await this.creneauxApi.generateSlicing();
-      await Promise.all([this.crud.reload(), this.resolution.reload()]);
-      // The server declares the grid as vacations when it slices it, so the
-      // mode is read back rather than written from here — an assistant slicing
-      // over MCP has to get the same declaration.
-      this.parametresDecoupage.set(await this.creneauxApi.slicingParameters());
-      await this.rechargerVerdict();
-      this.notifications.notify({
-        title: $localize`:@@decoupage.generated:Découpage généré : les vacations ont remplacé les amplitudes.`,
-        variant: 'success',
-        timeout: 6000,
-      });
-    } catch (error) {
-      this.crud.reportError(error);
-    } finally {
-      this.genererLoading.set(false);
-    }
-  }
 }

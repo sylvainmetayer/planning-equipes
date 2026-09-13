@@ -365,7 +365,7 @@ l'un d'eux nomme un outil inexistant.
 | URI | Contenu |
 | --- | --- |
 | `planning://contraintes` | le catalogue des contraintes, **généré depuis `ConstraintCatalog`** : c'est la liste que le solveur applique, elle ne peut donc ni décrire une règle absente ni en oublier une ajoutée la veille |
-| `planning://vocabulaire` | stand, créneau, poste, vacation, amplitude, typologie, découpage, édition — et l'ordre dans lequel on prépare un événement |
+| `planning://vocabulaire` | stand, créneau, poste, vacation, journée type, typologie, édition — et l'ordre dans lequel on prépare un événement |
 
 Le vocabulaire est le seul texte écrit à la main ici : il résume
 `docs/domaine.md` pour un lecteur qui ne verra jamais le modèle Java.
@@ -406,19 +406,26 @@ résolution. Là où l'écran et l'export CSV nomment les personnes, l'outil ne
 rend que des ids. L'heure de début de soirée se lit et se règle par
 `consulter_parametres_legaux` / `modifier_parametres_legaux`.
 
-## Le mode de la grille se déclare une fois
+## Une grille est faite de vacations, et ça ne se demande plus
 
-`valider_creneaux`, `previsualiser_creneaux_recurrents` et
-`creer_creneaux_recurrents` lisent la grille en `AMPLITUDES` ou en `VACATIONS`,
-et le verdict change avec le mode. L'argument `mode` reste accepté, mais il
-n'est plus obligatoire : omis, c'est le mode **déclaré par l'édition** qui
-s'applique — `modeGrille` de `modifier_parametres_decoupage`, la valeur que
-l'organisateur choisit sur la page Créneaux. `diagnostiquer_grille_creneaux`
-continue de dire ce que la grille contient, sans trancher.
+`valider_creneaux`, `previsualiser_creneaux_recurrents`,
+`creer_creneaux_recurrents`, `previsualiser_derivation_creneaux` et
+`generer_creneaux_depuis_stands` prenaient un argument `mode` — `AMPLITUDES` ou
+`VACATIONS` — parce que le verdict en dépendait. Le découpage des amplitudes
+est retiré (ADR
+[0037](decisions/0037-une-grille-est-toujours-des-vacations.md)), l'argument
+avec lui : un créneau est une vacation, et deux qui se chevauchent le même jour
+sont deux relèves décalées, jamais une anomalie.
 
-`generer_decoupage` déclare lui-même la grille en `VACATIONS` : ce qu'il vient
-d'écrire *est* des vacations, et les lire comme des amplitudes ferait ressortir
-chaque chevauchement de relais comme une faute de saisie.
+Ce que le contrôle signale toujours : une vacation au-delà de
+`dureeVacationMaxMinutes` (6 h par défaut, `consulter_parametres_legaux`), une
+vacation que le repos quotidien rend intenable, un relais repas hors fenêtre, un
+doublon, un trou, une date isolée.
+
+`diagnostiquer_grille_creneaux` reste le premier appel utile pour découvrir une
+édition : combien de vacations, sur quelles dates, avec combien de relais
+repas. Il proposait aussi un mode assorti d'un indice de confiance ; il n'y a
+plus de mode à proposer.
 
 ## La grille peut découler des stands
 
@@ -426,12 +433,12 @@ Quand les stands ont déjà leurs horaires, `previsualiser_derivation_creneaux`
 montre la grille qu'ils impliquent — une coupure à chaque heure où un stand
 ouvre ou ferme — et `generer_creneaux_depuis_stands` l'écrit, en ajout par
 défaut, ou à la place de la grille avec `remplacer=true` (le planning résolu
-part avec elle, comme pour `generer_decoupage`). Le prompt
+part avec elle). Le prompt
 `construire_la_grille_de_creneaux` la propose avant la récurrence.
 
 `creer_creneau` et `modifier_creneau` prennent un `couverturePause`
-facultatif — le relais repas d'une grille tapée à la main, que seul le
-découpage posait jusque-là — et les vues de créneau le rendent.
+facultatif — le relais repas, qui garde le stand ouvert à la moitié de son
+effectif arrondie au supérieur — et les vues de créneau le rendent.
 
 ## Les journées types se définissent en une ligne
 

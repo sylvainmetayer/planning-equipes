@@ -10,9 +10,6 @@
 festival:
   dateDebut: 2028-04-03
 
-parametresDecoupage:
-  modeGrille: VACATIONS
-
 parametresLegaux:
   pauseMinimaleEntreVacationsMinutes: 0
 

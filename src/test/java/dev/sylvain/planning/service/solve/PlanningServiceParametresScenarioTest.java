@@ -3,7 +3,6 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -17,7 +16,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 /**
- * Exercises the optional {@code parametresLegaux:} / {@code parametresDecoupage:}
+ * Exercises the optional {@code parametresLegaux:}
  * / {@code parametresSolveur:} scenario sections: absent, a scenario keeps
  * depending on whatever is currently configured (unchanged behavior);
  * present, only the fields it names are overridden, everything else falls
@@ -45,11 +44,8 @@ class PlanningServiceParametresScenarioTest {
 
         assertThat(service.loadScenarioSections("scenario.yml").parametresLegaux())
                 .isEmpty();
-        assertThat(service.loadScenarioSections("scenario.yml").parametresDecoupage())
-                .isEmpty();
         assertThat(service.loadScenarioSections("scenario.yml").parametresSolveur())
                 .isEmpty();
-        assertThat(service.loadScenarioSections("scenario.yml").decoupageAuto()).isFalse();
     }
 
     @Test
@@ -70,21 +66,12 @@ class PlanningServiceParametresScenarioTest {
         // « not overridable » but silently reset to 20:00 on every import, and
         // every evening hour of the equity table moved with it.
         assertThat(legaux.getHeureDebutSoiree()).isEqualTo(LocalTime.of(22, 0));
-
-        ParametresDecoupage decoupage = service.loadScenarioSections("scenario-parametres-optionnels.yaml")
-                .parametresDecoupage()
-                .orElseThrow();
-        assertThat(decoupage.getDureeVacationMinMinutes()).isEqualTo(250);
-        assertThat(decoupage.getStrategieCouverturePendantPause())
-                .isEqualTo(ParametresDecoupage.PauseCoverageStrategy.RELEVE);
-        assertThat(decoupage.getDureeVacationMaxMinutes())
-                .isEqualTo(ParametresDecoupage.DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT);
+        // The vacation ceiling: pinned by the file, and a field it leaves out
+        // (the daily rest) still falls back on the class default above.
+        assertThat(legaux.getDureeVacationMaxMinutes()).isEqualTo(250);
         // Regression: an unquoted HH:MM:SS scalar is read by SnakeYAML as a
         // sexagesimal Number (43830 = 12*3600 + 30*60), not a String — a naive
-        // (String) cast throws ClassCastException instead of parsing it. The
-        // file still writes the window under parametresDecoupage, its home
-        // before the meal break moved: the deprecated key lands on the legal
-        // parameters.
+        // (String) cast throws ClassCastException instead of parsing it.
         assertThat(legaux.getCoupureRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
 
         ParametresSolveur solveur = service.loadScenarioSections("scenario-parametres-optionnels.yaml")
@@ -104,16 +91,6 @@ class PlanningServiceParametresScenarioTest {
                 .isEqualTo(500);
     }
 
-    @Test
-    void scenarioAvecDecoupageAutoEstDetecte() {
-        PlanningService service = service();
-
-        // The old groupeSourceNom/groupeCibleNom fields of the file are accepted
-        // and ignored (issue #172): only the presence of the section counts.
-        assertThat(service.loadScenarioSections("scenario-decoupage-auto.yaml").decoupageAuto())
-                .isTrue();
-    }
-
     /**
      * A missing or blank name (an import with no scenario selected) must fall
      * back on the default scenario, like {@code buildExample}: concatenated
@@ -130,11 +107,7 @@ class PlanningServiceParametresScenarioTest {
                     .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO)
                             .parametresLegaux()
                             .isPresent());
-            assertThat(service.loadScenarioSections(nom).parametresDecoupage()).isNotNull();
             assertThat(service.loadScenarioSections(nom).parametresSolveur()).isNotNull();
-            assertThat(service.loadScenarioSections(nom).decoupageAuto())
-                    .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO)
-                            .decoupageAuto());
             assertThat(service.loadScenarioSections(nom).typologies())
                     .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO)
                             .typologies());

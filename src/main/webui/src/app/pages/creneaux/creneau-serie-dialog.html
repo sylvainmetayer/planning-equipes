@@ -61,7 +61,7 @@
     @if (!apercuAJour()) {
       <p class="empty-hint" i18n="@@creneaux.serie.apercu.perime">La règle a changé depuis cet aperçu : prévisualisez à nouveau avant de créer.</p>
     }
-    <div class="decoupage-resume">
+    <div class="jours-resume">
       @for (jour of resume(); track jour.date) {
         <p>
           <strong>{{ jour.date }}</strong>

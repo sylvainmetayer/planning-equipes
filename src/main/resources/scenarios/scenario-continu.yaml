@@ -2,25 +2,11 @@
 festival:
   dateDebut: 2026-08-01
 
-# dureeVacationMinMinutes: commit 9529a91 (message references its
-# pre-amend hash 092d9ae) set this to 250, not the 180 default, and verified
-# 0 hard on this scenario at the time. A later pass (d06723f) silently
-# regressed it to 240 with no re-verification. Restored to 250 here, but on
-# its own it is no longer sufficient to reach 0 hard on this scenario as it
-# stands today (verified: 250 alone still leaves ~49 hard, same order as 240's
-# ~51-57) — 28 commits happened between 9529a91 and now, including this same
-# session's reposHebdomadaireMineur fix (2026-07-15 added to 18 minors below),
-# which adds its own share of the remaining pressure. Restoring 250 is kept
-# anyway since it is still the documented-correct value and part of the fix;
-# the rest of the gap is closed by the extra animateurs added at the end of
-# this file (see their comment). The other fields below were folded in by
-# d06723f and match ParametresDecoupage's own defaults, so they are harmless —
-# only dureeVacationMinMinutes actually matters here.
-# Le découpage de cette amplitude produit des vacations qui se touchent
-# (10:00-12:05, 12:05-13:05, 13:05-14:10 …). Laisser la pause minimale entre
-# vacations à 30 min interdirait de les enchaîner, et la relève de midi
-# exigerait une équipe entière de plus — c'est le réglage que l'aide en ligne
-# recommande pour une grille en blocs jointifs.
+# La grille est faite de vacations qui se touchent (10:00-12:05, 12:05-13:05,
+# 13:05-14:10 …). Laisser la pause minimale entre vacations à 30 min
+# interdirait de les enchaîner, et la relève de midi exigerait une équipe
+# entière de plus — c'est le réglage que l'aide en ligne recommande pour une
+# grille en blocs jointifs.
 parametresLegaux:
   pauseMinimaleEntreVacationsMinutes: 0
 
@@ -29,26 +15,11 @@ parametresLegaux:
   coupureRepasMidiFin: 14:00:00
   coupureRepasSoirDebut: 19:00:00
   coupureRepasSoirFin: 21:00:00
-parametresDecoupage:
-  dureeChevauchementMinutes: 30
-  dureeVacationCibleMinutes: 180
-  dureeVacationMaxMinutes: 360
-  dureeVacationMinMinutes: 250
-  strategieCouverturePendantPause: RELEVE
-
 # Constraint dosage this scenario was verified with. The deployment default is
 # neutral (1 for every constraint, see application.properties), so a scenario
 # that needs a ratio carries it here. Applied as a block on import, never
 # merged: a rule this section does not name comes back active at its default
 # weight.
-# Le fichier ne porte qu'une amplitude brute par jour : c'est le découpage qui
-# en fait un vrai problème de staffing (relais chevauchants, pause repas), et
-# c'est ce que cette fixture teste. Sans cette section, l'import laisserait les
-# amplitudes telles quelles et le scénario ne serait plus « continu » du tout.
-# Pas de section postes en face : un scénario découpé à l'import ne peut pas
-# épingler des sièges sur des créneaux qui n'existent pas encore.
-decoupageAuto: {}
-
 contraintes:
   poids:
     # "Privilégier le réel sur le souhaité": an appreciation mismatch is
@@ -61,65 +32,345 @@ contraintes:
     maxJoursConsecutifsTravailles: 5
 
 creneaux:
-  - id: J1-JOUR
+  - id: J1-V1
     jour: 1
     date: 2026-07-08
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J1-V2
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J1-V3
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J1-V4
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "13:40"
+    heureFin: "17:50"
+  - id: J1-V5
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "17:20"
     heureFin: "20:00"
-  - id: J2-JOUR
+  - id: J2-V1
     jour: 2
     date: 2026-07-09
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J2-V2
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J2-V3
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J2-V4
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "13:40"
+    heureFin: "17:50"
+  - id: J2-V5
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "17:20"
     heureFin: "20:00"
-  - id: J3-JOUR
+  - id: J3-V1
     jour: 3
     date: 2026-07-10
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J3-V2
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J3-V3
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J3-V4
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "13:40"
+    heureFin: "19:00"
+  - id: J3-V5
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "18:30"
+    heureFin: "21:00"
+  - id: J3-V6
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "21:00"
+    heureFin: "22:00"
+  - id: J3-V7
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "22:00"
     heureFin: "00:00"
-  - id: J4-JOUR
+  - id: J4-V1
     jour: 4
     date: 2026-07-11
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J4-V2
+    jour: 4
+    date: 2026-07-11
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J4-V3
+    jour: 4
+    date: 2026-07-11
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J4-V4
+    jour: 4
+    date: 2026-07-11
+    heureDebut: "13:40"
+    heureFin: "19:00"
+  - id: J4-V5
+    jour: 4
+    date: 2026-07-11
+    heureDebut: "18:30"
+    heureFin: "21:00"
+  - id: J4-V6
+    jour: 4
+    date: 2026-07-11
+    heureDebut: "21:00"
+    heureFin: "22:00"
+  - id: J4-V7
+    jour: 4
+    date: 2026-07-11
+    heureDebut: "22:00"
     heureFin: "00:00"
-  - id: J5-JOUR
+  - id: J5-V1
     jour: 5
     date: 2026-07-12
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J5-V2
+    jour: 5
+    date: 2026-07-12
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J5-V3
+    jour: 5
+    date: 2026-07-12
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J5-V4
+    jour: 5
+    date: 2026-07-12
+    heureDebut: "13:40"
+    heureFin: "17:50"
+  - id: J5-V5
+    jour: 5
+    date: 2026-07-12
+    heureDebut: "17:20"
     heureFin: "20:00"
-  - id: J6-JOUR
+  - id: J6-V1
     jour: 6
     date: 2026-07-13
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J6-V2
+    jour: 6
+    date: 2026-07-13
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J6-V3
+    jour: 6
+    date: 2026-07-13
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J6-V4
+    jour: 6
+    date: 2026-07-13
+    heureDebut: "13:40"
+    heureFin: "17:50"
+  - id: J6-V5
+    jour: 6
+    date: 2026-07-13
+    heureDebut: "17:20"
     heureFin: "20:00"
-  - id: J7-JOUR
+  - id: J7-V1
     jour: 7
     date: 2026-07-14
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J7-V2
+    jour: 7
+    date: 2026-07-14
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J7-V3
+    jour: 7
+    date: 2026-07-14
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J7-V4
+    jour: 7
+    date: 2026-07-14
+    heureDebut: "13:40"
+    heureFin: "17:50"
+  - id: J7-V5
+    jour: 7
+    date: 2026-07-14
+    heureDebut: "17:20"
     heureFin: "20:00"
-  - id: J8-JOUR
+  - id: J8-V1
     jour: 8
     date: 2026-07-15
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J8-V2
+    jour: 8
+    date: 2026-07-15
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J8-V3
+    jour: 8
+    date: 2026-07-15
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J8-V4
+    jour: 8
+    date: 2026-07-15
+    heureDebut: "13:40"
+    heureFin: "17:50"
+  - id: J8-V5
+    jour: 8
+    date: 2026-07-15
+    heureDebut: "17:20"
     heureFin: "20:00"
-  - id: J9-JOUR
+  - id: J9-V1
     jour: 9
     date: 2026-07-16
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J9-V2
+    jour: 9
+    date: 2026-07-16
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J9-V3
+    jour: 9
+    date: 2026-07-16
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J9-V4
+    jour: 9
+    date: 2026-07-16
+    heureDebut: "13:40"
+    heureFin: "17:50"
+  - id: J9-V5
+    jour: 9
+    date: 2026-07-16
+    heureDebut: "17:20"
     heureFin: "20:00"
-  - id: J10-JOUR
+  - id: J10-V1
     jour: 10
     date: 2026-07-17
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J10-V2
+    jour: 10
+    date: 2026-07-17
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J10-V3
+    jour: 10
+    date: 2026-07-17
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J10-V4
+    jour: 10
+    date: 2026-07-17
+    heureDebut: "13:40"
+    heureFin: "19:00"
+  - id: J10-V5
+    jour: 10
+    date: 2026-07-17
+    heureDebut: "18:30"
+    heureFin: "21:00"
+  - id: J10-V6
+    jour: 10
+    date: 2026-07-17
+    heureDebut: "21:00"
+    heureFin: "22:00"
+  - id: J10-V7
+    jour: 10
+    date: 2026-07-17
+    heureDebut: "22:00"
     heureFin: "00:00"
-  - id: J11-JOUR
+  - id: J11-V1
     jour: 11
     date: 2026-07-18
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J11-V2
+    jour: 11
+    date: 2026-07-18
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J11-V3
+    jour: 11
+    date: 2026-07-18
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J11-V4
+    jour: 11
+    date: 2026-07-18
+    heureDebut: "13:40"
+    heureFin: "19:00"
+  - id: J11-V5
+    jour: 11
+    date: 2026-07-18
+    heureDebut: "18:30"
+    heureFin: "21:00"
+  - id: J11-V6
+    jour: 11
+    date: 2026-07-18
+    heureDebut: "21:00"
+    heureFin: "22:00"
+  - id: J11-V7
+    jour: 11
+    date: 2026-07-18
+    heureDebut: "22:00"
     heureFin: "00:00"
-  - id: J12-JOUR
+  - id: J12-V1
     jour: 12
     date: 2026-07-19
     heureDebut: "10:00"
+    heureFin: "12:05"
+  - id: J12-V2
+    jour: 12
+    date: 2026-07-19
+    heureDebut: "12:05"
+    heureFin: "13:05"
+  - id: J12-V3
+    jour: 12
+    date: 2026-07-19
+    heureDebut: "13:05"
+    heureFin: "14:10"
+  - id: J12-V4
+    jour: 12
+    date: 2026-07-19
+    heureDebut: "13:40"
+    heureFin: "17:50"
+  - id: J12-V5
+    jour: 12
+    date: 2026-07-19
+    heureDebut: "17:20"
     heureFin: "20:00"
 
 emplacements:

@@ -95,7 +95,6 @@ class ScenarioEcritureDifferentielleTest {
                 lu.sections().typologies(),
                 emplacements(stands),
                 lu.sections().parametresLegaux().orElse(null),
-                lu.sections().parametresDecoupage().orElse(null),
                 lu.sections().parametresSolveur().orElse(null),
                 lu.sections()
                         .contraintes()

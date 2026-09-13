@@ -61,6 +61,12 @@ export class ParametresLegauxCard {
   protected readonly coupureRepasSoirFin = signal('');
   /** When the evening starts for the Équité screen (HH:MM), the organisation's rule (issue #497). */
   protected readonly heureDebutSoiree = signal('');
+  /**
+   * How long one vacation may run before the grid check warns. It used to bound
+   * what the découpage produced; the découpage is gone and the rule it encoded
+   * is not, so it is edited here with the other rules of the event.
+   */
+  protected readonly dureeVacationMaxHeures = signal<number | null>(null);
 
   /** Ordre public ceilings, mirrored from the server-side validation. */
   protected readonly ceilingAdultHours = DUREE_HEBDOMADAIRE_MAX_HEURES;
@@ -101,12 +107,13 @@ export class ParametresLegauxCard {
     this.coupureRepasSoirDebut.set(parametres.coupureRepasSoirDebut ?? '');
     this.coupureRepasSoirFin.set(parametres.coupureRepasSoirFin ?? '');
     this.heureDebutSoiree.set(parametres.heureDebutSoiree ?? '');
+    this.dureeVacationMaxHeures.set(parametres.dureeVacationMaxMinutes / 60);
   }
 
   /**
    * Saves every legal parameter the card holds — the two weekly ceilings, the
-   * gap between vacations, the daily rest, the on-post break and the meal
-   * break — so that a save never silently resets a field the card did not
+   * gap between vacations, the daily rest, the on-post break, the meal break
+   * and the vacation ceiling — so that a save never silently resets a field the card did not
    * show: the server replaces the whole record. The bounds mirror the
    * server-side check (`ReferenceDataService.updateParametresLegaux`): a value
    * above the ordre public maximum is refused here too, so the administrator
@@ -119,6 +126,7 @@ export class ParametresLegauxCard {
     const pauseMinutes = this.gapBetweenVacationsMinutes();
     const reposHeures = this.reposQuotidienHeures();
     const coupureMinutes = this.coupureRepasMinutes();
+    const vacationMaxHeures = this.dureeVacationMaxHeures();
     if (
       heures === null ||
       heures <= 0 ||
@@ -130,6 +138,8 @@ export class ParametresLegauxCard {
       reposHeures < 0 ||
       coupureMinutes === null ||
       coupureMinutes < 0 ||
+      vacationMaxHeures === null ||
+      vacationMaxHeures <= 0 ||
       this.heureDebutSoiree() === ''
     ) {
       return;
@@ -163,6 +173,7 @@ export class ParametresLegauxCard {
           coupureRepasSoirDebut: this.coupureRepasSoirDebut(),
           coupureRepasSoirFin: this.coupureRepasSoirFin(),
           heureDebutSoiree: this.heureDebutSoiree(),
+          dureeVacationMaxMinutes: Math.round(vacationMaxHeures * 60),
         }),
       );
       this.parametresSaved.set(true);
