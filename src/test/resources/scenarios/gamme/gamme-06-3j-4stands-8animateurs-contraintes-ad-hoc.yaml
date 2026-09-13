@@ -1,0 +1,207 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Barreau 6 : les quatre types de contraintes ad hoc, avec et sans périmètre.
+# Tout le monde sait tout faire, pour que seules les exceptions décident :
+# une indisponibilité forcée sur un stand et une autre sur un créneau, deux
+# animateurs incompatibles, une affectation forcée sur un créneau et une autre
+# sur un stand, un binôme à réunir sur le grand jeu (deux places).
+
+festival:
+  dateDebut: 2027-07-23
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-07-23
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-07-23
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2027-07-24
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2027-07-24
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J3-MATIN
+    jour: 3
+    date: 2027-07-25
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J3-APREM
+    jour: 3
+    date: 2027-07-25
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: GRAND-JEU
+    nom: "Grand jeu de piste"
+    typologiesProposees:
+      - JEUX_DE_PISTE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: ATELIER
+    nom: "Atelier créatif"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: TOURNOI
+    nom: "Tournoi de jeux de société"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: CONTES
+    nom: "Coin des contes"
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A027
+    prenom: Lou
+    nom: Dupont
+    dateNaissance: 1984-01-10
+    manager: false
+    email: "animateur027@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A028
+    prenom: Tom
+    nom: Louis
+    dateNaissance: 1986-02-11
+    manager: false
+    email: "animateur028@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A029
+    prenom: Mila
+    nom: Chauvin
+    dateNaissance: 1988-03-12
+    manager: false
+    email: "animateur029@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A030
+    prenom: Victor
+    nom: Tessier
+    dateNaissance: 1990-04-13
+    manager: false
+    email: "animateur030@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A031
+    prenom: Agathe
+    nom: Andre
+    dateNaissance: 1992-05-14
+    manager: false
+    email: "animateur031@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A032
+    prenom: "Maël"
+    nom: Legrand
+    dateNaissance: 1994-06-15
+    manager: false
+    email: "animateur032@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A033
+    prenom: Julia
+    nom: Henry
+    dateNaissance: 1996-07-16
+    manager: false
+    email: "animateur033@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A034
+    prenom: Liam
+    nom: Gauthier
+    dateNaissance: 1998-08-17
+    manager: false
+    email: "animateur034@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+
+contraintesAdHoc:
+  - id: C01
+    type: INDISPONIBILITE_FORCEE
+    animateurs:
+      - A027
+    standId: CONTES
+    raison: "Ne souhaite plus animer les contes"
+  - id: C02
+    type: INDISPONIBILITE_FORCEE
+    animateurs:
+      - A028
+    creneauId: J2-APREM
+    raison: "Rendez-vous médical"
+  - id: C03
+    type: INCOMPATIBILITE
+    animateurs:
+      - A029
+      - A030
+    raison: "Conflit à apaiser"
+  - id: C04
+    type: AFFECTATION_FORCEE
+    animateurs:
+      - A031
+    creneauId: J3-MATIN
+    raison: "Accueille le groupe scolaire qu'elle connaît"
+  - id: C05
+    type: AFFECTATION_FORCEE
+    animateurs:
+      - A032
+    standId: GRAND-JEU
+    raison: "A conçu le grand jeu"
+  - id: C06
+    type: AFFINITE
+    animateurs:
+      - A033
+      - A034
+    raison: "Binôme habituel"

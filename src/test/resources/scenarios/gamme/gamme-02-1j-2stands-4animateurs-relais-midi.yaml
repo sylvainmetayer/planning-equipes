@@ -1,0 +1,116 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Barreau 2 : la rotation du midi, saisie comme une organisation la tape.
+# Une journée type en quatre vacations jointives ; les deux vacations de midi
+# portent couverturePause, donc chaque stand de deux places n'en ouvre qu'une.
+# Quatre animateurs pour quatre places le matin et quatre l'après-midi : tous
+# travaillent de part et d'autre de la fenêtre 12 h-14 h, et chacun doit tenir
+# exactement une des deux relèves pour garder son heure de repas. Le problème est
+# tendu à dessein — une seule famille de solutions.
+# La pause minimale est à 0 : les blocs se touchent, comme dans le classeur.
+
+festival:
+  dateDebut: 2027-07-04
+
+parametresDecoupage:
+  modeGrille: VACATIONS
+
+parametresLegaux:
+  pauseMinimaleEntreVacationsMinutes: 0
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-07-04
+    heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J1-MIDI1
+    jour: 1
+    date: 2027-07-04
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J1-MIDI2
+    jour: 1
+    date: 2027-07-04
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
+  - id: J1-APREM
+    jour: 1
+    date: 2027-07-04
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+journeesTypes:
+  - nom: "Journée unique"
+    vacations:
+      - heureDebut: "10:00"
+        heureFin: "12:00"
+      - heureDebut: "12:00"
+        heureFin: "13:00"
+        couverturePause: true
+      - heureDebut: "13:00"
+        heureFin: "14:00"
+        couverturePause: true
+      - heureDebut: "14:00"
+        heureFin: "18:00"
+    dates:
+      - 2027-07-04
+
+stands:
+  - id: MOTRICITE
+    nom: "Parcours de motricité"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: PLATEAU
+    nom: "Jeux de plateau"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+
+animateurs:
+  - id: A004
+    prenom: Lucas
+    nom: Mathieu
+    dateNaissance: 1990-01-09
+    manager: false
+    email: "animateur004@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A005
+    prenom: "Léa"
+    nom: Robin
+    dateNaissance: 1997-08-30
+    manager: false
+    email: "animateur005@example.org"
+    competences:
+      MOTRICITE: REFERENT
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A006
+    prenom: Nathan
+    nom: Lemoine
+    dateNaissance: 1985-03-17
+    manager: false
+    email: "animateur006@example.org"
+    competences:
+      MOTRICITE: DEBUTANT
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A007
+    prenom: "Chloé"
+    nom: Noel
+    dateNaissance: 2003-12-01
+    manager: false
+    email: "animateur007@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []

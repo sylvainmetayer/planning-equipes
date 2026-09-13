@@ -1,0 +1,191 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Barreau 5 : les mineurs, et la majorité acquise en cours d'événement.
+# Quatre mineurs sur huit : deux de 16-17 ans, une de 15 ans, et une animatrice
+# qui fête ses 18 ans le samedi — mineure le vendredi, majeure le samedi.
+# Le bar à jeux est réservé aux majeurs ; la soirée du samedi (20 h 30-23 h 30)
+# empiète sur la nuit légale de tous les mineurs ; un mineur n'est jamais seul
+# sur un stand. Le vendredi, les quatre majeurs sont tous indispensables sur
+# chaque vacation : un sur le bar, un sur l'escape (une seule place), un auprès
+# des mineurs sur chacun des deux stands de deux places.
+# Deux journées types, dont une nocturne.
+
+festival:
+  dateDebut: 2027-07-16
+
+parametresDecoupage:
+  modeGrille: VACATIONS
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-07-16
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-07-16
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2027-07-17
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2027-07-17
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-SOIREE
+    jour: 2
+    date: 2027-07-17
+    heureDebut: "20:30"
+    heureFin: "23:30"
+
+journeesTypes:
+  - nom: Vendredi
+    vacations:
+      - heureDebut: "10:00"
+        heureFin: "13:00"
+      - heureDebut: "14:00"
+        heureFin: "18:00"
+    dates:
+      - 2027-07-16
+  - nom: "Samedi nocturne"
+    vacations:
+      - heureDebut: "10:00"
+        heureFin: "13:00"
+      - heureDebut: "14:00"
+        heureFin: "18:00"
+      - heureDebut: "20:30"
+        heureFin: "23:30"
+    dates:
+      - 2027-07-17
+
+stands:
+  - id: PLATEAU
+    nom: "Jeux de plateau"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: MOTRICITE
+    nom: "Parcours de motricité"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+  - id: BAR-A-JEUX
+    nom: "Bar à jeux"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: true
+  - id: ESCAPE
+    nom: "Escape game"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+
+# A023 à A026 : 18 ans le 17 juillet, 17 ans, 16 ans et 15 ans.
+animateurs:
+  - id: A019
+    prenom: Lina
+    nom: Clement
+    dateNaissance: 1990-03-03
+    manager: false
+    email: "animateur019@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+    joursIndisponibles: []
+  - id: A020
+    prenom: Paul
+    nom: Masson
+    dateNaissance: 1986-07-21
+    manager: false
+    email: "animateur020@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      MOTRICITE: REFERENT
+      ENIGMES: AUTONOME
+    joursIndisponibles: []
+  - id: A021
+    prenom: Rose
+    nom: Duval
+    dateNaissance: 1995-10-10
+    manager: false
+    email: "animateur021@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      ENIGMES: REFERENT
+      MOTRICITE: AUTONOME
+    joursIndisponibles: []
+  - id: A022
+    prenom: Sacha
+    nom: Meyer
+    dateNaissance: 2001-01-15
+    manager: false
+    email: "animateur022@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+    joursIndisponibles: []
+  - id: A023
+    prenom: Anna
+    nom: Blanchard
+    dateNaissance: 2009-07-17
+    manager: false
+    email: "animateur023@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: DEBUTANT
+    joursIndisponibles: []
+  - id: A024
+    prenom: "Théo"
+    nom: Leroux
+    dateNaissance: 2010-03-02
+    manager: false
+    email: "animateur024@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      MOTRICITE: DEBUTANT
+    joursIndisponibles: []
+  - id: A025
+    prenom: "Zoé"
+    nom: Caron
+    dateNaissance: 2011-01-20
+    manager: false
+    email: "animateur025@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+      MOTRICITE: AUTONOME
+    joursIndisponibles: []
+  - id: A026
+    prenom: Noah
+    nom: Lemoine
+    dateNaissance: 2012-05-11
+    manager: false
+    email: "animateur026@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+      MOTRICITE: DEBUTANT
+    joursIndisponibles: []

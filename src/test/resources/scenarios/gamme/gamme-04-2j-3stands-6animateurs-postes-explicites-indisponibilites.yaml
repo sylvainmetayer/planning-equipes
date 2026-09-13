@@ -1,0 +1,161 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Barreau 4 : un week-end, des sièges écrits à la main et des indisponibilités.
+# La section postes est présente, donc reprise telle quelle : le stand Dominos
+# ouvre deux places le samedi après-midi alors que son effectif minimum est 1.
+# Le Kapla ferme le dimanche à 16 h 30 (livraison) : son siège de l'après-midi
+# ne court que de 14 h à 16 h 30. Le Quiz n'ouvre que le samedi de 14 h à 17 h.
+# Deux animateurs sont indisponibles, chacun un des deux jours.
+
+festival:
+  dateDebut: 2027-07-10
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-07-10
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-07-10
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J2-MATIN
+    jour: 2
+    date: 2027-07-11
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2027-07-11
+    heureDebut: "14:00"
+    heureFin: "18:30"
+
+stands:
+  - id: KAPLA
+    nom: Kapla
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2027-07-11
+        heureDebut: "16:30"
+        motif: "Livraison de matériel"
+  - id: QUIZ
+    nom: "Quiz musical"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    ouvertures:
+      - date: 2027-07-10
+        heureDebut: "14:00"
+        heureFin: "17:00"
+        motif: "Animation du samedi"
+  - id: DOMINOS
+    nom: "Dominos géants"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 3
+    reserveMajeurs: false
+
+animateurs:
+  - id: A013
+    prenom: Jade
+    nom: Moulin
+    dateNaissance: 1992-02-02
+    manager: false
+    email: "animateur013@example.org"
+    competences:
+      CONSTRUCTION: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2027-07-10
+  - id: A014
+    prenom: Gabriel
+    nom: Cordier
+    dateNaissance: 1996-06-06
+    manager: false
+    email: "animateur014@example.org"
+    competences:
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2027-07-11
+  - id: A015
+    prenom: Louise
+    nom: Poirier
+    dateNaissance: 1980-12-12
+    manager: false
+    email: "animateur015@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: REFERENT
+    joursIndisponibles: []
+  - id: A016
+    prenom: "Raphaël"
+    nom: Girard
+    dateNaissance: 2000-04-04
+    manager: false
+    email: "animateur016@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      CONSTRUCTION: DEBUTANT
+    joursIndisponibles: []
+  - id: A017
+    prenom: Alice
+    nom: Martinez
+    dateNaissance: 1998-09-09
+    manager: true
+    email: "animateur017@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: DEBUTANT
+    joursIndisponibles: []
+  - id: A018
+    prenom: Adam
+    nom: Muller
+    dateNaissance: 1987-01-01
+    manager: false
+    email: "animateur018@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+
+# Dix sièges : un de plus que ce que effectifMin générerait sur Dominos le samedi après-midi.
+postes:
+  - id: P-KAPLA-J1-MATIN
+    standId: KAPLA
+    creneauId: J1-MATIN
+  - id: P-KAPLA-J1-APREM
+    standId: KAPLA
+    creneauId: J1-APREM
+  - id: P-KAPLA-J2-MATIN
+    standId: KAPLA
+    creneauId: J2-MATIN
+  - id: P-KAPLA-J2-APREM
+    standId: KAPLA
+    creneauId: J2-APREM
+  - id: P-QUIZ-J1-APREM
+    standId: QUIZ
+    creneauId: J1-APREM
+  - id: P-DOMINOS-J1-MATIN
+    standId: DOMINOS
+    creneauId: J1-MATIN
+  - id: P-DOMINOS-J1-APREM-1
+    standId: DOMINOS
+    creneauId: J1-APREM
+  - id: P-DOMINOS-J1-APREM-2
+    standId: DOMINOS
+    creneauId: J1-APREM
+  - id: P-DOMINOS-J2-MATIN
+    standId: DOMINOS
+    creneauId: J2-MATIN
+  - id: P-DOMINOS-J2-APREM
+    standId: DOMINOS
+    creneauId: J2-APREM
