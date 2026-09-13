@@ -31,6 +31,7 @@ import {
   versNouvellesDemandes,
 } from './echange-brouillon';
 import { errorMessage } from '../../core/error-message';
+import { ApiError } from '../../core/api.service';
 
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
@@ -85,6 +86,12 @@ export class EspaceEchangesPage {
    */
   protected readonly posteCibleChoisi = signal<PosteAnimateurView | null>(null);
   protected readonly postesCollegue = signal<PosteAnimateurView[]>([]);
+  /**
+   * The server's sentence when too many distinct colleagues were looked up in
+   * its window: when the list comes back, and that the demande can go without
+   * a seat wanted in return. Null otherwise.
+   */
+  protected readonly lookupRefusal = signal<string | null>(null);
   protected readonly motif = signal('');
   /**
    * Answer of « qui peut me remplacer ? » for the currently picked seat, or
@@ -242,14 +249,19 @@ export class EspaceEchangesPage {
     this.cibleId.set(cibleId);
     this.posteCibleChoisi.set(null);
     this.postesCollegue.set([]);
+    this.lookupRefusal.set(null);
     if (!cibleId) {
       return;
     }
     try {
       this.postesCollegue.set(await this.espace.postesCollegue(cibleId));
-    } catch {
+    } catch (error) {
       // No seats loadable (no persisted planning, network...): the picker
       // simply stays empty and the demande falls back to the plain semantics.
+      // Only the rate limit is said, because it says when to come back.
+      if (error instanceof ApiError && error.status === 429) {
+        this.lookupRefusal.set(error.message);
+      }
     }
   }
 

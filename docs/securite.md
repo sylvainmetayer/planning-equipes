@@ -162,6 +162,32 @@ le référentiel** — elle attend une décision explicite de l'admin. Un porteu
 jeton ne peut donc pas modifier les données d'entrée du solveur, seulement
 proposer.
 
+### Consultation des postes d'un collègue
+
+`GET /api/espace-animateur/{jeton}/collegues/{id}/postes` alimente le choix
+« son créneau que je veux en échange ». L'accès est **large par conception** :
+l'espace remet déjà à chaque animateur la liste nominative de ses collègues, et
+une réponse ne dit que des créneaux et des stands — ce que le planning global
+imprimé fait circuler. Il n'est pas restreint aux « collègues pertinents » :
+un échange dirigé peut viser n'importe qui, et un filtre viderait la liste au
+moment où l'animateur en a besoin.
+
+Ce qui est borné, c'est **l'énumération** : sans plafond, une session enchaîne
+autant de requêtes qu'il y a d'animateurs et reconstitue toute la grille, mineurs
+compris. Le plafond compte les **collègues différents**, pas les requêtes :
+revoir le même, recharger la page ou hésiter entre trois ne coûte rien, et
+quelqu'un qui cherche un échange n'en regarde jamais quarante en une heure.
+
+| Variable | Défaut | Usage |
+| --- | --- | --- |
+| `ESPACE_COLLEGUES_MAX` | `40` | Collègues différents consultables par animateur et par fenêtre |
+| `ESPACE_COLLEGUES_FENETRE` | `PT1H` | Durée de la fenêtre |
+
+Au-delà, `429` + `Retry-After`, compté par animateur comme les déclarations. Un
+id inexistant compte comme un vrai : sonder les ids coûte autant que les lire.
+Le refus **ne bloque jamais la demande d'échange** : la liste reste vide avec le
+délai affiché, et la demande part sans créneau souhaité en retour.
+
 ### Verrouillage du form login admin
 
 L'application n'a qu'un compte, `admin`, sans second facteur : une seule paire

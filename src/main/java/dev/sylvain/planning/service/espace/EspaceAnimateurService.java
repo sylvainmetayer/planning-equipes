@@ -80,6 +80,31 @@ public class EspaceAnimateurService {
     @Inject
     PauseAnalyzer pauseAnalyzer;
 
+    @Inject
+    ColleagueLookupLimiter colleagueLookups;
+
+    /**
+     * Too many distinct colleagues looked up in the window (see
+     * {@link ColleagueLookupLimiter}). Not a {@link BusinessError}, like the two
+     * other espace ceilings: that hierarchy maps to 400/404/409, and a caller
+     * told to slow down needs a 429 and a {@code Retry-After}.
+     */
+    public static class TooManyColleagueLookups extends RuntimeException {
+
+        private final long secondsBeforeNextTry;
+
+        TooManyColleagueLookups(long secondsBeforeNextTry) {
+            super("Vous avez consulté les plannings de beaucoup de collègues : la liste revient dans "
+                    + Math.max(1, (secondsBeforeNextTry + 59) / 60)
+                    + " minute(s). Vous pouvez envoyer la demande sans choisir son créneau.");
+            this.secondsBeforeNextTry = secondsBeforeNextTry;
+        }
+
+        public long secondsBeforeNextTry() {
+            return secondsBeforeNextTry;
+        }
+    }
+
     /** One of the animateur's seats in the persisted planning. */
     public record PosteAnimateurView(
             Long creneauId,
@@ -276,8 +301,19 @@ public class EspaceAnimateurService {
      *
      * <p>The other half of the narrowing — the foire must be open — is declared
      * on the route itself, {@code @FoireOpenRequired}.</p>
+     *
+     * <p>And the pace: past {@code planning.espace.collegues.max-collegues}
+     * distinct colleagues in the window, {@link TooManyColleagueLookups}. Counted
+     * before the id is even checked, so probing ids that nobody bears costs the
+     * same as reading real ones.</p>
+     *
+     * @param animateurId who is looking, whose count it is
      */
-    public List<PosteAnimateurView> colleaguePostes(String collegueId) {
+    public List<PosteAnimateurView> colleaguePostes(String animateurId, String collegueId) {
+        RateLimitVerdict verdict = colleagueLookups.lookUp(animateurId, collegueId);
+        if (!verdict.autorise()) {
+            throw new TooManyColleagueLookups(verdict.secondsBeforeNextTry());
+        }
         boolean connu = referenceDataService.listAnimateurs().stream()
                 .anyMatch(candidat -> candidat.getId().equals(collegueId));
         if (!connu) {

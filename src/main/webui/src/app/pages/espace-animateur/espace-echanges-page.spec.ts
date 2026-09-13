@@ -15,6 +15,7 @@
 import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '../../core/api.service';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { NotificationService } from '../../core/notification.service';
 import {
@@ -136,6 +137,7 @@ type PageInternals = {
   cibleId: WritableSignal<string>;
   posteCibleChoisi: WritableSignal<PosteAnimateurView | null>;
   postesCollegue: Signal<PosteAnimateurView[]>;
+  lookupRefusal: Signal<string | null>;
   motif: WritableSignal<string>;
   brouillons: WritableSignal<BrouillonDemande[]>;
   envoiEnCours: Signal<boolean>;
@@ -394,6 +396,28 @@ describe('EspaceEchangesPage', () => {
       expect(page.postesCollegue()).toEqual([]);
       expect(notifications.notify).not.toHaveBeenCalled();
       expect(page.cibleId()).toBe('bob');
+      expect(page.lookupRefusal()).toBeNull();
+    });
+
+    // Past the ceiling of distinct colleagues, the server says when the list
+    // comes back. That one is worth saying — the animateur can wait, or send
+    // the demande without a seat wanted in return, which is never blocked.
+    it('says when the colleague seats are rate limited, and the demande can still be added', async () => {
+      const page = createPage();
+      const message =
+        'Vous avez consulté les plannings de beaucoup de collègues : la liste revient dans 12 minute(s).';
+      espace.postesCollegue.mockRejectedValue(new ApiError(429, 'technical', message));
+      page.posteChoisi.set(poste());
+
+      await page.choisirCible('bob');
+
+      expect(page.postesCollegue()).toEqual([]);
+      expect(page.lookupRefusal()).toBe(message);
+      expect(page.formulaireComplet()).toBe(true);
+
+      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9 })]);
+      await page.choisirCible('carole');
+      expect(page.lookupRefusal()).toBeNull();
     });
   });
 

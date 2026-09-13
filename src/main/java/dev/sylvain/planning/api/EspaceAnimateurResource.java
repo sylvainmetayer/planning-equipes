@@ -110,14 +110,16 @@ public class EspaceAnimateurResource {
     /**
      * A colleague's seats, for the « créneau souhaité en échange » picker of
      * a directed exchange — the same slots-and-stands information the printed
-     * global planning already circulates, nothing more.
+     * global planning already circulates, nothing more. Past a ceiling of
+     * distinct colleagues per window, {@code 429} + {@code Retry-After}
+     * ({@link ColleagueLookupMapper}).
      */
     @GET
     @Path("/{jeton}/collegues/{collegueId}/postes")
     @EspaceSessionRequired
     @FoireOpenRequired
     public List<EspaceAnimateurService.PosteAnimateurView> colleaguePostes(@PathParam("collegueId") String collegueId) {
-        return espaceAnimateurService.colleaguePostes(collegueId);
+        return espaceAnimateurService.colleaguePostes(animateurCourant(), collegueId);
     }
 
     /**
