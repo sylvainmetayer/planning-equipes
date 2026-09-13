@@ -48,6 +48,9 @@ final class SolverConfiguration {
     private final ReferenceData referenceDataService;
     private final long defaultSecondsLimit;
 
+    /** The shared factory's unimproved-time bailout, reapplied to a factory built for one large problem. */
+    private final Long defaultUnimprovedSecondsLimit;
+
     /**
      * The deployment-wide weight of every constraint, read once from
      * {@code application.properties}. An edition may override any of them
@@ -75,6 +78,7 @@ final class SolverConfiguration {
                 ConstraintDiagnosticService.of(readDiagnosticMode(config), this.solverFactory);
         this.referenceDataService = referenceDataService;
         this.defaultSecondsLimit = secondsLimit;
+        this.defaultUnimprovedSecondsLimit = unimprovedSecondsLimit;
         this.maxEmplacementsParJour = maxEmplacementsParJour;
         this.configuredWeights = readConfiguredWeights(config);
     }
@@ -212,6 +216,28 @@ final class SolverConfiguration {
                     .withUnimprovedSecondsSpentLimit(unimprovedSecondsLimit)
                     .withTerminationCompositionStyle(TerminationCompositionStyle.AND)));
         }
+    }
+
+    /**
+     * {@link #resolveSolverFactory(Long)}, for one problem: a problem large
+     * enough for {@link LargeProblemConstruction} gets a factory of its own,
+     * built from the same XML with its construction sampled and the same
+     * termination as the shared one would have had.
+     */
+    SolverFactory<PlanningEvenement> resolveSolverFactory(Long secondsLimitOverride, PlanningEvenement problem) {
+        if (!LargeProblemConstruction.applies(problem)) {
+            return resolveSolverFactory(secondsLimitOverride);
+        }
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
+        if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
+            applyTermination(solverConfig, defaultSecondsLimit, defaultUnimprovedSecondsLimit);
+        } else {
+            applyTermination(solverConfig, secondsLimitOverride, 0L);
+        }
+        LargeProblemConstruction.adapt(solverConfig);
+        return SolverFactory.create(solverConfig);
     }
 
     SolverFactory<PlanningEvenement> resolveSolverFactory(Long secondsLimitOverride) {

@@ -60,8 +60,9 @@ final class SolveRunner {
     public PlanningEvenement solve(
             PlanningEvenement problem, Long secondsLimitOverride, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         prepareProblem(problem);
-        Solver<PlanningEvenement> solver =
-                configuration.resolveSolverFactory(secondsLimitOverride).buildSolver();
+        Solver<PlanningEvenement> solver = configuration
+                .resolveSolverFactory(secondsLimitOverride, problem)
+                .buildSolver();
         if (onSolverReady != null) {
             onSolverReady.accept(solver);
         }
@@ -86,6 +87,9 @@ final class SolveRunner {
         termination.setSecondsSpentLimit(secondsLimitSecurite);
         termination.setBestScoreFeasible(true);
         solverConfig.setTerminationConfig(termination);
+        if (LargeProblemConstruction.applies(problem)) {
+            LargeProblemConstruction.adapt(solverConfig);
+        }
         Solver<PlanningEvenement> solver =
                 SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
         return solver.solve(problem);

@@ -139,9 +139,10 @@ class ScenarioExtremeAxisTest {
     }
 
     /**
-     * Two thousand ad hoc rules. The contradiction check compares them two by
-     * two — 3.9 s here, and the pre-solve analysis pays it on every call — so
-     * this pins a ceiling on it as much as on the solve (zero hard in 11 s).
+     * Two thousand ad hoc rules. The contradiction check used to compare them
+     * pair by pair — 3.9 s here, paid by every pre-solve analysis; indexed by
+     * animateur it takes a fraction of a second, and the ceiling below keeps it
+     * there. The solve reaches zero hard in 11 s.
      */
     @Test
     void twoThousandAdHocRules() {
@@ -151,7 +152,7 @@ class ScenarioExtremeAxisTest {
         Instant debut = Instant.now();
         assertThat(ContrainteAdHocContradictions.detectAll(loaded.problem().getContraintesAdHoc(), loaded.creneaux()))
                 .isEmpty();
-        assertThat(Duration.between(debut, Instant.now())).isLessThan(Duration.ofSeconds(40));
+        assertThat(Duration.between(debut, Instant.now())).isLessThan(Duration.ofSeconds(5));
 
         assertFeasible(solveUntilFeasible(loaded, 120L));
     }

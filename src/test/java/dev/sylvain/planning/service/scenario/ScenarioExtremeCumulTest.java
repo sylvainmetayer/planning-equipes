@@ -26,29 +26,24 @@ import org.junit.jupiter.api.Test;
  * is the construction's own.</p>
  *
  * <p>Measured on the development machine, 3 GB heap: the file read in 1 s,
- * the analysis in 0.25 s, about 1 GB of heap in use, and the construction
- * 50 min 48 s for the 41 370 seats — ending at zero hard on its own, without
- * any local search. Its evaluation rate fell from about 17 000 to about
- * 10 900 moves a second along the way: the score gets dearer as the plan
- * fills.</p>
+ * the analysis in 0.25 s, about 1 GB of heap in use. The exact construction
+ * took 50 min 48 s for the 41 370 seats; past {@code LargeProblemConstruction}'s
+ * threshold it is sampled, and reaches zero hard in 2 min 37 s — which is what
+ * this test holds.</p>
  *
  * <p>Tagged {@code scenario-extreme}, and the heaviest of them:
  * {@code ./mvnw test -Pscenario-extreme -DargLine=-Xmx3g
- * -Dtest=ScenarioExtremeCumulTest}, alone and with nothing else running — close
- * to an hour. A larger heap buys nothing here, and on a shared machine it is
- * what the memory pressure kills first.</p>
+ * -Dtest=ScenarioExtremeCumulTest}, alone and with nothing else running. A
+ * larger heap buys nothing here, and on a shared machine it is what the memory
+ * pressure kills first.</p>
  */
 @Tag("scenario-extreme")
 class ScenarioExtremeCumulTest {
 
     private static final String NOM = "extreme-09-120j-400stands-1000animateurs-cumul";
 
-    /**
-     * Hard stop of the whole solve. The construction measured 50 min 48 s; ten
-     * times that would be a working day, so the margin here is under two — the
-     * ceiling says the construction got markedly slower, not that it moved.
-     */
-    private static final long BUDGET_SECONDS = 5400L;
+    /** Hard stop of the whole solve, about six times the sampled construction measured. */
+    private static final long BUDGET_SECONDS = 900L;
 
     @Test
     void everyLimitAtOnceIsReadBuiltAnalysedAndConstructed() {
@@ -93,8 +88,7 @@ class ScenarioExtremeCumulTest {
         assertThat(analyse).isLessThan(Duration.ofSeconds(60));
         assertThat(construction.get()).as("every seat filled within the budget").isNotNull();
         assertThat(solved.getPostes()).noneMatch(poste -> poste.getAnimateur() == null);
-        if (solved.getScore().hardScore() == 0) {
-            assertCoreRules(solved);
-        }
+        assertThat(solved.getScore().hardScore()).isZero();
+        assertCoreRules(solved);
     }
 }
