@@ -38,7 +38,7 @@
              on the same Jackson release as the rest of the classpath. -->
         <jackson-yaml.version>2.22.0</jackson-yaml.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
-        <mcp-server.version>1.13.1</mcp-server.version>
+        <mcp-server.version>1.13.2</mcp-server.version>
         <skipITs>true</skipITs>
         <!-- Mot de passe admin des tests d'intégration : ils lancent
              l'application packagée en %prod, où la valeur d'exemple est
