@@ -58,11 +58,9 @@ import org.eclipse.microprofile.config.ConfigProvider;
  * own legal parameters, meal windows, weights and switched-off rules handed to
  * the solver. Three things a plain-Java harness has to do by hand, and which
  * the older scenario tests learnt one incident at a time: resolving the
- * {@code horaires}, giving the sliced vacations an id — {@link Creneau} equality
- * <em>is</em> its id, and the generator leaves it to the repository, so without
- * one every vacation of the event is the same timeslot to every rule that joins
- * on it — and applying {@code contraintes.desactivees}, which the mapper leaves
- * to the import.</p>
+ * {@code horaires}, giving the sliced vacations the ids the repository would —
+ * the generator leaves them unset — and applying {@code contraintes.desactivees},
+ * which the mapper leaves to the import.</p>
  *
  * <p>{@link #assertCoreRules} re-checks the rules a zero hard score stands
  * for, computed from the plan rather than read from the score: a constraint
