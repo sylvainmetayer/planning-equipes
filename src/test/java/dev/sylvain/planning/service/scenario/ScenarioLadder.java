@@ -71,6 +71,14 @@ final class ScenarioLadder {
 
     static final String FOLDER = "scenarios/gamme/";
 
+    /** The scenarios that probe the limits rather than the features — see {@code ScenarioExtreme*Test}. */
+    static final String EXTREMES = "scenarios/extremes/";
+
+    /** Where a scenario of either set lives: the extreme ones are named {@code extreme-…}. */
+    static String folderOf(String name) {
+        return name.startsWith("extreme-") ? EXTREMES : FOLDER;
+    }
+
     private ScenarioLadder() {}
 
     /**
@@ -102,9 +110,10 @@ final class ScenarioLadder {
     }
 
     static String yaml(String name) {
-        try (InputStream in = ScenarioLadder.class.getClassLoader().getResourceAsStream(FOLDER + name + ".yaml")) {
+        try (InputStream in =
+                ScenarioLadder.class.getClassLoader().getResourceAsStream(folderOf(name) + name + ".yaml")) {
             if (in == null) {
-                throw new IllegalArgumentException("No ladder scenario named " + name);
+                throw new IllegalArgumentException("No scenario named " + name + " under " + folderOf(name));
             }
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {

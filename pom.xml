@@ -53,8 +53,12 @@
              each — excluded from the default `./mvnw test`/CI run so the
              everyday inner loop stays fast; run them explicitly with
              `./mvnw test -Pscenario-tests` (see the scenario-tests profile
-             below), which clears this property. -->
-        <test.excludedGroups>scenario-lent</test.excludedGroups>
+             below), which clears this property. The @Tag("scenario-extreme")
+             tests — the limits of the solver and the import, measured in
+             minutes and gigabytes — are excluded from both and run only with
+             `-Pscenario-extreme`. -->
+        <test.excludedGroups>scenario-lent,scenario-extreme</test.excludedGroups>
+        <test.groups></test.groups>
         <!-- Silences a JDK 25 native-access warning from JNA (loaded by
              Quarkus's interactive dev-mode console) in the JVM forked by
              quarkus:dev, quarkus:test and quarkus:run. Quarkus 3.28+ already
@@ -326,6 +330,7 @@
                 <configuration>
                     <argLine>@{argLine} ${jvm.args}</argLine>
                     <excludedGroups>${test.excludedGroups}</excludedGroups>
+                    <groups>${test.groups}</groups>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
@@ -370,7 +375,18 @@
         <profile>
             <id>scenario-tests</id>
             <properties>
+                <test.excludedGroups>scenario-extreme</test.excludedGroups>
+            </properties>
+        </profile>
+        <!-- Opt-in: runs only the @Tag("scenario-extreme") tests, the limits of
+             src/test/resources/scenarios/extremes (docs/developpement.md). Heavy:
+             run them one class at a time, in the foreground, with a heap to
+             match — ./mvnw test -Pscenario-extreme -DargLine=-Xmx3g. -->
+        <profile>
+            <id>scenario-extreme</id>
+            <properties>
                 <test.excludedGroups></test.excludedGroups>
+                <test.groups>scenario-extreme</test.groups>
             </properties>
         </profile>
         <!-- Opt-in: regenerates docs/schema/scenario-schema.json from the
