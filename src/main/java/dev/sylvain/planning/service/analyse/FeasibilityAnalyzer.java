@@ -3,16 +3,19 @@ package dev.sylvain.planning.service.analyse;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnDayOff;
+import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -134,7 +137,11 @@ public class FeasibilityAnalyzer {
         // whose stands are all closed has no shortfall to list, and a report
         // saying « réalisable » there would be read as a green light.
         boolean sansAnimateur = animateursSurs.isEmpty();
-        boolean feasible = totalCauses == 0 && !sansAnimateur;
+        boolean sansCreneau = creneauxSurs.isEmpty();
+        // Seats are counted once per timeslot, like the demand of a cause.
+        boolean sansPoste = !sansCreneau
+                && creneauxSurs.stream().allMatch(creneau -> standsSurs.stream().noneMatch(creneau::isStandOpen));
+        boolean feasible = totalCauses == 0 && !sansAnimateur && !sansCreneau && !sansPoste;
         List<CauseInfaisabilite> topCauses = List.copyOf(causes.subList(0, Math.min(MAX_CAUSES, totalCauses)));
 
         return new FeasibilityReport(
@@ -146,7 +153,11 @@ public class FeasibilityAnalyzer {
                 causesElevees,
                 sansAnimateur
                         ? buildMessageWithoutAnimateur(totalCauses)
-                        : buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
+                        : sansCreneau
+                                ? MESSAGE_SANS_CRENEAU
+                                : sansPoste
+                                        ? MESSAGE_SANS_POSTE
+                                        : buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
     }
 
     private List<CauseInfaisabilite> creneauxSousEffectif(
@@ -157,9 +168,7 @@ public class FeasibilityAnalyzer {
                     stands.stream().filter(stand -> creneau.isStandOpen(stand)).toList();
             int demande =
                     standsOuverts.stream().mapToInt(creneau::siegesSimultanes).sum();
-            long capacite = animateurs.stream()
-                    .filter(animateur -> !animateur.isIndisponibleOn(creneau.getDate()))
-                    .count();
+            long capacite = capacite(animateurs, standsOuverts, creneau, demande);
             int manque = (int) Math.max(0, demande - capacite);
             if (manque <= 0) {
                 continue;
@@ -238,6 +247,61 @@ public class FeasibilityAnalyzer {
                     0));
         }
         return causes;
+    }
+
+    /**
+     * An edition without any timeslot has nothing to plan: « réalisable »
+     * would be read as a green light, exactly as on an empty roster.
+     */
+    public static final String MESSAGE_SANS_CRENEAU =
+            "Aucun créneau n'est saisi : il n'y a rien à planifier tant que la"
+                    + " grille est vide. Saisissez les créneaux, puis les ouvertures des stands.";
+
+    /** Timeslots, but no stand open on any of them: no seat to fill, and nothing a solve can produce. */
+    public static final String MESSAGE_SANS_POSTE =
+            "Aucun stand n'ouvre sur les créneaux saisis : il n'y a aucun poste à"
+                    + " pourvoir. Vérifiez les stands et leurs ouvertures.";
+
+    /**
+     * How many of a timeslot's seats the available animateurs could hold, at
+     * most — still optimistic, skills are not read, but no longer counting a
+     * minor where the law or the supervision rule keeps them out.
+     *
+     * <p>A minor counts only where nothing on the seat itself excludes them —
+     * night, a public holiday, a timeslot past their daily cap, an adults-only
+     * stand, the checks of {@link EligibleAnimateurMoveFilter}, read with the
+     * break declared on the post so as never to exclude more than a solve would
+     * — and only beside an adult: each adult placed on a stand of {@code s}
+     * seats opens {@code s − 1} seats to minors. Adults go first to the largest
+     * stands. A team of minors only therefore holds nothing, where counting
+     * heads called it feasible.</p>
+     */
+    private static long capacite(List<Animateur> animateurs, List<Stand> standsOuverts, Creneau creneau, int demande) {
+        Stand standOrdinaire = new Stand("capacite", "capacite", Set.of(), 1, 1, false);
+        PosteAffectation siegeOrdinaire = new PosteAffectation("capacite", standOrdinaire, creneau);
+        long majeurs = 0;
+        long mineurs = 0;
+        for (Animateur animateur : animateurs) {
+            if (animateur.isIndisponibleOn(creneau.getDate())) {
+                continue;
+            }
+            if (!animateur.isMineurOn(creneau.getDate())) {
+                majeurs++;
+            } else if (EligibleAnimateurMoveFilter.motifs(siegeOrdinaire, animateur, true)
+                    .isEmpty()) {
+                mineurs++;
+            }
+        }
+        List<Integer> places = standsOuverts.stream()
+                .filter(stand -> !stand.isReserveMajeurs())
+                .map(creneau::siegesSimultanes)
+                .filter(sieges -> sieges > 0)
+                .sorted(Comparator.reverseOrder())
+                .toList();
+        long hotes = Math.min(majeurs, places.size());
+        long placesPourMineurs =
+                places.stream().limit(hotes).mapToLong(sieges -> sieges - 1L).sum();
+        return Math.min(demande, majeurs + Math.min(mineurs, placesPourMineurs));
     }
 
     /**

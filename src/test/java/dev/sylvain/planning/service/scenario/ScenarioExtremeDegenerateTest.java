@@ -54,14 +54,16 @@ class ScenarioExtremeDegenerateTest {
 
     /**
      * No adult at all: a minor is never alone on a stand, so every seat stays
-     * empty. The pre-solve analysis counts heads, not ages, and calls it
-     * feasible — its documented optimism.
+     * empty — a minor alone costs more than an empty seat. The pre-solve
+     * analysis sees it too: a minor counts only beside an adult.
      */
     @Test
     void aTeamOfMinorsOnlyLeavesEverySeatEmptyRatherThanAMinorAlone() {
         Loaded loaded = load("extreme-12-uniquement-des-mineurs");
         assertThat(loaded.problem().getPostes()).hasSize(24);
-        assertThat(loaded.feasibility().feasible()).isTrue();
+        assertThat(loaded.feasibility().feasible()).isFalse();
+        assertThat(loaded.feasibility().causes())
+                .allSatisfy(cause -> assertThat(cause.capacite()).isZero());
 
         PlanningEvenement solved = solveFor(loaded, 5L);
 
@@ -74,6 +76,9 @@ class ScenarioExtremeDegenerateTest {
     void standsThatNeverOpenMakeAProblemWithoutSeats() {
         Loaded loaded = load("extreme-14-stands-jamais-ouverts");
         assertThat(loaded.problem().getPostes()).isEmpty();
+        assertThat(loaded.feasibility().feasible()).isFalse();
+        assertThat(loaded.feasibility().message())
+                .isEqualTo(dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.MESSAGE_SANS_POSTE);
         assertThat(OuvertureStandsAnalyzer.analyze(new ArrayList<>(loaded.stands()), new ArrayList<>(loaded.creneaux()))
                         .anomalies())
                 .filteredOn(anomalie -> anomalie.type() == AnomalyType.STAND_JAMAIS_OUVERT)
@@ -92,6 +97,9 @@ class ScenarioExtremeDegenerateTest {
         assertThat(loaded.creneaux()).isEmpty();
         assertThat(loaded.problem().getPostes()).isEmpty();
         assertThat(loaded.feasibility().causes()).isEmpty();
+        assertThat(loaded.feasibility().feasible()).isFalse();
+        assertThat(loaded.feasibility().message())
+                .isEqualTo(dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.MESSAGE_SANS_CRENEAU);
 
         PlanningEvenement solved = solveUntilFeasible(loaded, 30L);
 

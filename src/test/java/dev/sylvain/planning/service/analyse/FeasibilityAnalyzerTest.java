@@ -175,14 +175,16 @@ class FeasibilityAnalyzerTest {
     void standFermeSurUnCreneauNeComptePasDansLaDemande() {
         // The stand requires 3 seats but is closed (an indisponibilite covering
         // the whole timeslot): no seat is generated, hence no demand (see
-        // ProblemBuilder.buildPostes).
+        // ProblemBuilder.buildPostes). A second stand of one seat stays open, so
+        // the edition still has something to staff.
         Stand stand = stand("stand-1", 3, "STRATEGIE");
+        Stand ouvert = stand("stand-2", 1, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         stand.setIndisponibilites(List.of(new IndisponibiliteStand(
                 null, creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(), null)));
 
         FeasibilityReport report =
-                analyzer.analyze(List.of(animateur("a1", "STRATEGIE")), List.of(stand), List.of(creneau));
+                analyzer.analyze(List.of(animateur("a1", "STRATEGIE")), List.of(stand, ouvert), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
@@ -308,12 +310,84 @@ class FeasibilityAnalyzerTest {
                 .contains("1 cause bloquante a été détectée");
     }
 
+    /**
+     * Nothing to staff is not a green light either: an edition without any
+     * timeslot, or whose stands open on none, gives a solve nothing to do, and
+     * « réalisable » over it read as done.
+     */
     @Test
-    void nothingToStaffWithAnAnimateurIsFeasible() {
+    void anEditionWithoutAnyTimeslotIsNotFeasible() {
         FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")), List.of(), List.of());
 
-        assertThat(report.feasible()).isTrue();
+        assertThat(report.feasible()).isFalse();
         assertThat(report.causes()).isEmpty();
+        assertThat(report.message()).isEqualTo(FeasibilityAnalyzer.MESSAGE_SANS_CRENEAU);
+    }
+
+    @Test
+    void anEditionWhoseStandsOpenOnNoTimeslotIsNotFeasible() {
+        Stand ferme = stand("stand-1", 1, "STRATEGIE");
+        ferme.setIndisponibilites(List.of(new dev.sylvain.planning.domain.IndisponibiliteStand(
+                null, LocalDate.of(2026, 8, 1), LocalTime.of(9, 0), null, null)));
+
+        FeasibilityReport report = analyzer.analyze(
+                List.of(animateur("a1", "STRATEGIE")), List.of(ferme), List.of(creneau(1, LocalDate.of(2026, 8, 1))));
+
+        assertThat(report.feasible()).isFalse();
+        assertThat(report.causes()).isEmpty();
+        assertThat(report.message()).isEqualTo(FeasibilityAnalyzer.MESSAGE_SANS_POSTE);
+    }
+
+    /** A minor holds a seat only beside an adult: a team of minors holds nothing. */
+    @Test
+    void minorsWithoutAnAdultHoldNoSeat() {
+        Stand stand = stand("stand-1", 2, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        FeasibilityReport report = analyzer.analyze(
+                List.of(mineur("m1", 2010), mineur("m2", 2010), mineur("m3", 2010)), List.of(stand), List.of(creneau));
+
+        assertThat(report.feasible()).isFalse();
+        assertThat(report.causes()).singleElement().satisfies(cause -> {
+            assertThat(cause.demande()).isEqualTo(2);
+            assertThat(cause.capacite()).isZero();
+            assertThat(cause.severite()).isEqualTo(SeveriteInfaisabilite.CRITIQUE);
+        });
+    }
+
+    /** One adult on the largest stand opens its other seats to minors; an adults-only stand opens none. */
+    @Test
+    void anAdultOpensTheOtherSeatsOfTheLargestStandToMinors() {
+        Stand grand = stand("grand", 3, "STRATEGIE");
+        Stand petit = stand("petit", 1, "STRATEGIE");
+        Stand bar = new Stand("bar", "bar", Set.of("STRATEGIE"), 2, 2, true);
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        FeasibilityReport report = analyzer.analyze(
+                List.of(animateur("a1", "STRATEGIE"), mineur("m1", 2010), mineur("m2", 2010), mineur("m3", 2010)),
+                List.of(grand, petit, bar),
+                List.of(creneau));
+
+        // Six seats: the adult on the big stand opens two seats to minors, the third minor has nowhere to go.
+        assertThat(report.causes()).singleElement().satisfies(cause -> {
+            assertThat(cause.demande()).isEqualTo(6);
+            assertThat(cause.capacite()).isEqualTo(3);
+            assertThat(cause.manque()).isEqualTo(3);
+        });
+    }
+
+    /** At night the minors do not count, even beside an adult. */
+    @Test
+    void minorsDoNotCountAtNight() {
+        Stand stand = stand("stand-1", 2, "STRATEGIE");
+        Creneau soiree = new Creneau(1L, 1, LocalDate.of(2026, 8, 1), LocalTime.of(21, 0), LocalTime.of(23, 30));
+
+        FeasibilityReport report = analyzer.analyze(
+                List.of(animateur("a1", "STRATEGIE"), mineur("m1", 2010)), List.of(stand), List.of(soiree));
+
+        assertThat(report.causes())
+                .singleElement()
+                .satisfies(cause -> assertThat(cause.capacite()).isEqualTo(1));
     }
 
     @Test
@@ -400,6 +474,12 @@ class FeasibilityAnalyzerTest {
 
     private static Creneau creneau(long id, LocalDate date) {
         return new Creneau(id, 1, date, LocalTime.of(10, 0), LocalTime.of(12, 0));
+    }
+
+    private static Animateur mineur(String id, int anneeDeNaissance) {
+        Animateur animateur = new Animateur(id, id, id, LocalDate.of(anneeDeNaissance, 1, 1), false);
+        animateur.setCompetences(java.util.Map.of("STRATEGIE", NiveauCompetence.AUTONOME));
+        return animateur;
     }
 
     private static Animateur animateur(String id, String typologie) {
