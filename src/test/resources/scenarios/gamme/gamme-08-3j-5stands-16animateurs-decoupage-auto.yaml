@@ -1,0 +1,271 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Barreau 8 : une grille en amplitudes, découpée à l'import.
+# Une amplitude par jour, de 10 h à 19 h ; decoupageAuto la tranche en vacations
+# d'environ quatre heures (entre deux et cinq), sans chevauchement. Une vacation
+# de quatre heures ouverte à 10 h engloutirait la fenêtre repas de midi : le
+# découpage y coupe, et pose pendant la pause une vacation à effectif réduit
+# (EFFECTIF_REDUIT, moitié arrondie au supérieur). Les vacations découpées se
+# touchent : la pause minimale est à 0.
+
+festival:
+  dateDebut: 2027-08-18
+
+parametresDecoupage:
+  dureeVacationCibleMinutes: 240
+  dureeVacationMinMinutes: 120
+  dureeVacationMaxMinutes: 300
+  dureeChevauchementMinutes: 0
+  strategieCouverturePendantPause: EFFECTIF_REDUIT
+
+parametresLegaux:
+  pauseMinimaleEntreVacationsMinutes: 0
+
+decoupageAuto: {}
+
+creneaux:
+  - id: J1-AMPLITUDE
+    jour: 1
+    date: 2027-08-18
+    heureDebut: "10:00"
+    heureFin: "19:00"
+  - id: J2-AMPLITUDE
+    jour: 2
+    date: 2027-08-19
+    heureDebut: "10:00"
+    heureFin: "19:00"
+  - id: J3-AMPLITUDE
+    jour: 3
+    date: 2027-08-20
+    heureDebut: "10:00"
+    heureFin: "19:00"
+
+stands:
+  - id: PLATEAU
+    nom: "Jeux de plateau"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: CONSTRUCTION
+    nom: "Jeux de construction"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: QUIZ
+    nom: Quiz
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: PALETS
+    nom: "Palets bretons"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: PUZZLE
+    nom: "Puzzles géants"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A151
+    prenom: Clara
+    nom: Garnier
+    dateNaissance: 1980-01-05
+    manager: false
+    email: "animateur151@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A152
+    prenom: Nino
+    nom: Roussel
+    dateNaissance: 1981-02-06
+    manager: false
+    email: "animateur152@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A153
+    prenom: Margaux
+    nom: Dumont
+    dateNaissance: 1982-03-07
+    manager: false
+    email: "animateur153@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: REFERENT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A154
+    prenom: Robin
+    nom: Gerard
+    dateNaissance: 1983-04-08
+    manager: false
+    email: "animateur154@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A155
+    prenom: Elsa
+    nom: Gautier
+    dateNaissance: 1984-05-09
+    manager: false
+    email: "animateur155@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A156
+    prenom: Simon
+    nom: Meunier
+    dateNaissance: 1985-06-10
+    manager: false
+    email: "animateur156@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: REFERENT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A157
+    prenom: Juliette
+    nom: Barbier
+    dateNaissance: 1986-07-11
+    manager: false
+    email: "animateur157@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A158
+    prenom: Martin
+    nom: Fernandez
+    dateNaissance: 1987-08-12
+    manager: false
+    email: "animateur158@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A159
+    prenom: Capucine
+    nom: Giraud
+    dateNaissance: 1988-09-13
+    manager: false
+    email: "animateur159@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: REFERENT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A160
+    prenom: Axel
+    nom: Gaillard
+    dateNaissance: 1989-10-14
+    manager: false
+    email: "animateur160@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A161
+    prenom: "Salomé"
+    nom: Riviere
+    dateNaissance: 1990-11-15
+    manager: false
+    email: "animateur161@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A162
+    prenom: Valentin
+    nom: Huet
+    dateNaissance: 1991-12-16
+    manager: false
+    email: "animateur162@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: REFERENT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A163
+    prenom: Romane
+    nom: Baron
+    dateNaissance: 1992-01-17
+    manager: false
+    email: "animateur163@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A164
+    prenom: Mathis
+    nom: Roussel
+    dateNaissance: 1993-02-18
+    manager: false
+    email: "animateur164@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A165
+    prenom: "Éloïse"
+    nom: Dupuis
+    dateNaissance: 1994-03-19
+    manager: false
+    email: "animateur165@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: REFERENT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A166
+    prenom: Baptiste
+    nom: Faure
+    dateNaissance: 1995-04-20
+    manager: false
+    email: "animateur166@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []

@@ -1,0 +1,295 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Barreau 9 : le référentiel des typologies, les polyvalents et les distances.
+# Six typologies déclarées avec libellé, plus la typologie ninja POLYVALENT :
+# trois animateurs la portent et peuvent tenir n'importe quel stand. Le cirque et
+# la robotique n'ont chacun qu'un spécialiste ; tout le reste de leurs sièges
+# revient aux polyvalents. Trois emplacements, dont un gymnase à 1,6 km du parc,
+# pour que les règles de distance et d'emplacements par jour aient à arbitrer.
+
+festival:
+  dateDebut: 2027-08-26
+
+typologies:
+  - id: CIRQUE
+    label: "Arts du cirque"
+  - id: ROBOTIQUE
+    label: Robotique
+  - id: JEUX_DE_SOCIETE
+    label: "Jeux de société"
+  - id: CONSTRUCTION
+    label: Construction
+  - id: CONTES
+    label: Contes
+  - id: JEUX_DE_PISTE
+    label: "Jeux de piste"
+  - id: POLYVALENT
+    label: Polyvalent
+    ninja: true
+
+emplacements:
+  - id: PARC
+    nom: "Parc municipal"
+    latitude: "45.0"
+    longitude: "1.0"
+  - id: HALLE
+    nom: "Halle du marché"
+    latitude: "45.002"
+    longitude: "1.001"
+  - id: GYMNASE
+    nom: Gymnase
+    latitude: "45.011"
+    longitude: "1.015"
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-08-26
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-08-26
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2027-08-27
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2027-08-27
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J3-MATIN
+    jour: 3
+    date: 2027-08-28
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J3-APREM
+    jour: 3
+    date: 2027-08-28
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J4-MATIN
+    jour: 4
+    date: 2027-08-29
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J4-APREM
+    jour: 4
+    date: 2027-08-29
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: CIRQUE
+    nom: "Initiation au cirque"
+    typologiesProposees:
+      - CIRQUE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    niveauEffort: EPUISANT
+    emplacementId: GYMNASE
+  - id: ROBOTIQUE
+    nom: "Atelier robotique"
+    typologiesProposees:
+      - ROBOTIQUE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    emplacementId: HALLE
+  - id: PLATEAU
+    nom: "Jeux de plateau"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    emplacementId: PARC
+  - id: CONSTRUCTION
+    nom: "Jeux de construction"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    emplacementId: PARC
+  - id: LECTURE
+    nom: "Coin lecture"
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    emplacementId: HALLE
+  - id: GRAND-JEU
+    nom: "Grand jeu de piste"
+    typologiesProposees:
+      - JEUX_DE_PISTE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    emplacementId: GYMNASE
+
+# A171 : cirque ; A172 : robotique ; A173 à A175 : polyvalents.
+animateurs:
+  - id: A171
+    prenom: Apolline
+    nom: Jean
+    dateNaissance: 1985-03-01
+    manager: false
+    email: "animateur171@example.org"
+    competences:
+      CIRQUE: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A172
+    prenom: "Timéo"
+    nom: Brun
+    dateNaissance: 1986-03-02
+    manager: false
+    email: "animateur172@example.org"
+    competences:
+      ROBOTIQUE: REFERENT
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A173
+    prenom: Charlotte
+    nom: Pierre
+    dateNaissance: 1987-03-03
+    manager: false
+    email: "animateur173@example.org"
+    competences:
+      POLYVALENT: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A174
+    prenom: Antoine
+    nom: Leclerc
+    dateNaissance: 1988-03-04
+    manager: false
+    email: "animateur174@example.org"
+    competences:
+      POLYVALENT: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A175
+    prenom: Lise
+    nom: Philippe
+    dateNaissance: 1989-03-05
+    manager: false
+    email: "animateur175@example.org"
+    competences:
+      POLYVALENT: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A176
+    prenom: "Aurélien"
+    nom: Moreau
+    dateNaissance: 1990-03-06
+    manager: false
+    email: "animateur176@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+  - id: A177
+    prenom: Pauline
+    nom: Vasseur
+    dateNaissance: 1991-03-07
+    manager: false
+    email: "animateur177@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+  - id: A178
+    prenom: Quentin
+    nom: Charpentier
+    dateNaissance: 1992-03-08
+    manager: false
+    email: "animateur178@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+  - id: A179
+    prenom: Justine
+    nom: Lemaire
+    dateNaissance: 1993-03-09
+    manager: false
+    email: "animateur179@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+  - id: A180
+    prenom: Bastien
+    nom: Lambert
+    dateNaissance: 1994-03-10
+    manager: false
+    email: "animateur180@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+  - id: A181
+    prenom: "Océane"
+    nom: Rousseau
+    dateNaissance: 1995-03-11
+    manager: false
+    email: "animateur181@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+  - id: A182
+    prenom: Florian
+    nom: Perrin
+    dateNaissance: 1996-03-12
+    manager: false
+    email: "animateur182@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+  - id: A183
+    prenom: Mathilde
+    nom: Fontaine
+    dateNaissance: 1997-03-13
+    manager: false
+    email: "animateur183@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+  - id: A184
+    prenom: Adrien
+    nom: Boyer
+    dateNaissance: 1998-03-14
+    manager: false
+    email: "animateur184@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []

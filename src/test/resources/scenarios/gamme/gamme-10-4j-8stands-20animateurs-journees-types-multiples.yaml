@@ -1,0 +1,500 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Barreau 10 : trois journées types sur quatre jours, et une édition cible.
+# Montage le mercredi (un après-midi), jour normal le jeudi et le vendredi,
+# nocturne le samedi — le dernier jour, pour que personne n'enchaîne une
+# fermeture à 23 h 30 avec une ouverture à 10 h. Les journées types et la grille
+# disent la même chose : les appliquer après l'import ne change rien. La pause
+# légale est prise sur le poste ; la section edition fait atterrir l'import dans
+# son édition, créée au besoin. Trois stands d'une place ferment sur le temps du
+# midi, trois stands tiennent la nocturne.
+
+edition:
+  id: GAMME-10
+  nom: "Gamme 10 — journées types"
+
+festival:
+  dateDebut: 2027-09-01
+
+parametresDecoupage:
+  modeGrille: VACATIONS
+
+parametresLegaux:
+  pauseMinimaleEntreVacationsMinutes: 0
+  pauseSurPoste: true
+
+creneaux:
+  - id: J1-MONTAGE
+    jour: 1
+    date: 2027-09-01
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2027-09-02
+    heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J2-MIDI1
+    jour: 2
+    date: 2027-09-02
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J2-MIDI2
+    jour: 2
+    date: 2027-09-02
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
+  - id: J2-APREM
+    jour: 2
+    date: 2027-09-02
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J3-MATIN
+    jour: 3
+    date: 2027-09-03
+    heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J3-MIDI1
+    jour: 3
+    date: 2027-09-03
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J3-MIDI2
+    jour: 3
+    date: 2027-09-03
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
+  - id: J3-APREM
+    jour: 3
+    date: 2027-09-03
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J4-MATIN
+    jour: 4
+    date: 2027-09-04
+    heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J4-MIDI1
+    jour: 4
+    date: 2027-09-04
+    heureDebut: "12:00"
+    heureFin: "13:00"
+    couverturePause: true
+  - id: J4-MIDI2
+    jour: 4
+    date: 2027-09-04
+    heureDebut: "13:00"
+    heureFin: "14:00"
+    couverturePause: true
+  - id: J4-APREM
+    jour: 4
+    date: 2027-09-04
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J4-NOCTURNE
+    jour: 4
+    date: 2027-09-04
+    heureDebut: "20:00"
+    heureFin: "23:30"
+
+journeesTypes:
+  - nom: Montage
+    vacations:
+      - heureDebut: "14:00"
+        heureFin: "18:00"
+    dates:
+      - 2027-09-01
+  - nom: "Jour normal"
+    vacations:
+      - heureDebut: "10:00"
+        heureFin: "12:00"
+      - heureDebut: "12:00"
+        heureFin: "13:00"
+        couverturePause: true
+      - heureDebut: "13:00"
+        heureFin: "14:00"
+        couverturePause: true
+      - heureDebut: "14:00"
+        heureFin: "18:00"
+    dates:
+      - 2027-09-02
+      - 2027-09-03
+  - nom: Nocturne
+    vacations:
+      - heureDebut: "10:00"
+        heureFin: "12:00"
+      - heureDebut: "12:00"
+        heureFin: "13:00"
+        couverturePause: true
+      - heureDebut: "13:00"
+        heureFin: "14:00"
+        couverturePause: true
+      - heureDebut: "14:00"
+        heureFin: "18:00"
+      - heureDebut: "20:00"
+        heureFin: "23:30"
+    dates:
+      - 2027-09-04
+
+stands:
+  - id: PLATEAU
+    nom: "Jeux de plateau"
+    typologiesProposees:
+      - PLATEAU
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: MOTRICITE
+    nom: "Motricité"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    niveauEffort: EPUISANT
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+  - id: CONSTRUCTION
+    nom: Construction
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+  - id: ESCAPE
+    nom: "Escape game"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    premium: true
+  - id: ATELIER
+    nom: "Atelier créatif"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "12:00"
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+  - id: CONTES
+    nom: Contes
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "12:00"
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+  - id: ADRESSE
+    nom: "Jeux d'adresse"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "12:00"
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+  - id: ARCADE
+    nom: Arcade
+    typologiesProposees:
+      - JEUX_VIDEO
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: true
+
+animateurs:
+  - id: A191
+    prenom: Estelle
+    nom: Hubert
+    dateNaissance: 1978-01-01
+    manager: true
+    email: "animateur191@example.org"
+    competences:
+      MOTRICITE: REFERENT
+      CONSTRUCTION: DEBUTANT
+      CREATIF: AUTONOME
+      CONTES: REFERENT
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles: []
+  - id: A192
+    prenom: Damien
+    nom: Perrot
+    dateNaissance: 1979-06-02
+    manager: true
+    email: "animateur192@example.org"
+    competences:
+      PLATEAU: REFERENT
+      MOTRICITE: DEBUTANT
+      ENIGMES: AUTONOME
+      CREATIF: REFERENT
+      ADRESSE: AUTONOME
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles: []
+  - id: A193
+    prenom: "Noémie"
+    nom: Lebrun
+    dateNaissance: 1980-11-03
+    manager: false
+    email: "animateur193@example.org"
+    competences:
+      PLATEAU: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      ENIGMES: REFERENT
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A194
+    prenom: Yanis
+    nom: Fabre
+    dateNaissance: 1981-04-04
+    manager: false
+    email: "animateur194@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: REFERENT
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      JEUX_VIDEO: DEBUTANT
+    joursIndisponibles: []
+  - id: A195
+    prenom: "Anaïs"
+    nom: Bonnet
+    dateNaissance: 1982-09-05
+    manager: false
+    email: "animateur195@example.org"
+    competences:
+      PLATEAU: AUTONOME
+      MOTRICITE: REFERENT
+      ENIGMES: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: DEBUTANT
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles: []
+  - id: A196
+    prenom: Kylian
+    nom: Blanc
+    dateNaissance: 1983-02-06
+    manager: false
+    email: "animateur196@example.org"
+    competences:
+      PLATEAU: REFERENT
+      CONSTRUCTION: AUTONOME
+      ENIGMES: AUTONOME
+      CONTES: DEBUTANT
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A197
+    prenom: Amandine
+    nom: Morin
+    dateNaissance: 1984-07-07
+    manager: false
+    email: "animateur197@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: DEBUTANT
+      CONTES: AUTONOME
+      JEUX_VIDEO: REFERENT
+    joursIndisponibles: []
+  - id: A198
+    prenom: "Benoît"
+    nom: Chevalier
+    dateNaissance: 1985-12-08
+    manager: false
+    email: "animateur198@example.org"
+    competences:
+      PLATEAU: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: DEBUTANT
+      CREATIF: AUTONOME
+      ADRESSE: REFERENT
+      JEUX_VIDEO: DEBUTANT
+    joursIndisponibles: []
+  - id: A199
+    prenom: Coralie
+    nom: Denis
+    dateNaissance: 1986-05-09
+    manager: false
+    email: "animateur199@example.org"
+    competences:
+      PLATEAU: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      ENIGMES: AUTONOME
+      CONTES: REFERENT
+      ADRESSE: DEBUTANT
+    joursIndisponibles: []
+  - id: A200
+    prenom: Cyril
+    nom: Roy
+    dateNaissance: 1987-10-10
+    manager: false
+    email: "animateur200@example.org"
+    competences:
+      MOTRICITE: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      CREATIF: REFERENT
+      CONTES: DEBUTANT
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles: []
+  - id: A201
+    prenom: Fanny
+    nom: Marchand
+    dateNaissance: 1988-03-11
+    manager: false
+    email: "animateur201@example.org"
+    competences:
+      PLATEAU: DEBUTANT
+      MOTRICITE: AUTONOME
+      ENIGMES: REFERENT
+      CREATIF: DEBUTANT
+      ADRESSE: AUTONOME
+      JEUX_VIDEO: REFERENT
+    joursIndisponibles: []
+  - id: A202
+    prenom: "Gaël"
+    nom: Brunet
+    dateNaissance: 1989-08-12
+    manager: false
+    email: "animateur202@example.org"
+    competences:
+      PLATEAU: AUTONOME
+      CONSTRUCTION: REFERENT
+      ENIGMES: DEBUTANT
+      CONTES: AUTONOME
+      ADRESSE: REFERENT
+    joursIndisponibles: []
+  - id: A203
+    prenom: "Hélène"
+    nom: Arnaud
+    dateNaissance: 1990-01-13
+    manager: false
+    email: "animateur203@example.org"
+    competences:
+      MOTRICITE: REFERENT
+      CONSTRUCTION: DEBUTANT
+      CREATIF: AUTONOME
+      CONTES: REFERENT
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles: []
+  - id: A204
+    prenom: "Ismaël"
+    nom: Bourgeois
+    dateNaissance: 1991-06-14
+    manager: false
+    email: "animateur204@example.org"
+    competences:
+      PLATEAU: REFERENT
+      MOTRICITE: DEBUTANT
+      ENIGMES: AUTONOME
+      CREATIF: REFERENT
+      ADRESSE: AUTONOME
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles: []
+  - id: A205
+    prenom: Jeanne
+    nom: Lacroix
+    dateNaissance: 1992-11-15
+    manager: false
+    email: "animateur205@example.org"
+    competences:
+      PLATEAU: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      ENIGMES: REFERENT
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A206
+    prenom: Kevin
+    nom: Carpentier
+    dateNaissance: 1993-04-16
+    manager: false
+    email: "animateur206@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: REFERENT
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      JEUX_VIDEO: DEBUTANT
+    joursIndisponibles: []
+  - id: A207
+    prenom: Laure
+    nom: Hoarau
+    dateNaissance: 1994-09-17
+    manager: false
+    email: "animateur207@example.org"
+    competences:
+      PLATEAU: AUTONOME
+      MOTRICITE: REFERENT
+      ENIGMES: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: DEBUTANT
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles: []
+  - id: A208
+    prenom: Mehdi
+    nom: Hamon
+    dateNaissance: 1995-02-18
+    manager: false
+    email: "animateur208@example.org"
+    competences:
+      PLATEAU: REFERENT
+      CONSTRUCTION: AUTONOME
+      ENIGMES: AUTONOME
+      CONTES: DEBUTANT
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A209
+    prenom: Nadia
+    nom: Morel
+    dateNaissance: 1996-07-19
+    manager: false
+    email: "animateur209@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: DEBUTANT
+      CONTES: AUTONOME
+      JEUX_VIDEO: REFERENT
+    joursIndisponibles: []
+  - id: A210
+    prenom: Olivier
+    nom: Francois
+    dateNaissance: 1997-12-20
+    manager: false
+    email: "animateur210@example.org"
+    competences:
+      PLATEAU: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: DEBUTANT
+      CREATIF: AUTONOME
+      ADRESSE: REFERENT
+      JEUX_VIDEO: DEBUTANT
+    joursIndisponibles: []

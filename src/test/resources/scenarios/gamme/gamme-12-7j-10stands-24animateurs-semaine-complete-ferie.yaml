@@ -1,0 +1,529 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Barreau 12 : une semaine civile entière, un jour férié et des mineurs.
+# Du lundi 12 au dimanche 18 juillet 2027 : personne ne travaille plus de six
+# jours, et les cinq mineurs gardent deux jours de repos consécutifs dans la
+# semaine. Le 14 juillet est férié : aucun mineur ne travaille ce jour-là.
+# Les mineurs n'ont de place que sur les deux stands de deux personnes, auprès
+# d'un majeur. Au-delà de cinq jours consécutifs, le coût monte (poids 5).
+
+festival:
+  dateDebut: 2027-07-12
+
+contraintes:
+  poids:
+    maxJoursConsecutifsTravailles: 5
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-07-12
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-07-12
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2027-07-13
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2027-07-13
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J3-MATIN
+    jour: 3
+    date: 2027-07-14
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J3-APREM
+    jour: 3
+    date: 2027-07-14
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J4-MATIN
+    jour: 4
+    date: 2027-07-15
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J4-APREM
+    jour: 4
+    date: 2027-07-15
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J5-MATIN
+    jour: 5
+    date: 2027-07-16
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J5-APREM
+    jour: 5
+    date: 2027-07-16
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J6-MATIN
+    jour: 6
+    date: 2027-07-17
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J6-APREM
+    jour: 6
+    date: 2027-07-17
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J7-MATIN
+    jour: 7
+    date: 2027-07-18
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J7-APREM
+    jour: 7
+    date: 2027-07-18
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: STAND-JEUX_DE_SOCIETE
+    nom: "Stand jeux de societe"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: STAND-CONSTRUCTION
+    nom: "Stand construction"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+  - id: STAND-CULTURE
+    nom: "Stand culture"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-ADRESSE
+    nom: "Stand adresse"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-CREATIF
+    nom: "Stand creatif"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-CONTES
+    nom: "Stand contes"
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-MOTRICITE
+    nom: "Stand motricite"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-ENIGMES
+    nom: "Stand enigmes"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-JEUX_DE_PISTE
+    nom: "Stand jeux de piste"
+    typologiesProposees:
+      - JEUX_DE_PISTE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-SCIENCES
+    nom: "Stand sciences"
+    typologiesProposees:
+      - SCIENCES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+# A231 à A235 : mineurs (17, 17, 17, 15 et 15 ans).
+animateurs:
+  - id: A231
+    prenom: "Inès"
+    nom: Blanchard
+    dateNaissance: 2010-01-05
+    manager: false
+    email: "animateur231@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A232
+    prenom: Lucas
+    nom: Leroux
+    dateNaissance: 2009-11-30
+    manager: false
+    email: "animateur232@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A233
+    prenom: "Léa"
+    nom: Caron
+    dateNaissance: 2010-06-01
+    manager: false
+    email: "animateur233@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A234
+    prenom: Nathan
+    nom: Lemoine
+    dateNaissance: 2012-03-03
+    manager: false
+    email: "animateur234@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A235
+    prenom: "Chloé"
+    nom: Dupont
+    dateNaissance: 2011-12-24
+    manager: false
+    email: "animateur235@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A236
+    prenom: Louis
+    nom: Louis
+    dateNaissance: 1981-06-03
+    manager: false
+    email: "animateur236@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A237
+    prenom: Manon
+    nom: Chauvin
+    dateNaissance: 1982-07-03
+    manager: false
+    email: "animateur237@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A238
+    prenom: Jules
+    nom: Tessier
+    dateNaissance: 1983-08-03
+    manager: false
+    email: "animateur238@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A239
+    prenom: Emma
+    nom: Andre
+    dateNaissance: 1984-09-03
+    manager: false
+    email: "animateur239@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A240
+    prenom: Arthur
+    nom: Legrand
+    dateNaissance: 1985-10-03
+    manager: false
+    email: "animateur240@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A241
+    prenom: Jade
+    nom: Henry
+    dateNaissance: 1986-11-03
+    manager: false
+    email: "animateur241@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A242
+    prenom: Gabriel
+    nom: Gauthier
+    dateNaissance: 1987-12-03
+    manager: false
+    email: "animateur242@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A243
+    prenom: Louise
+    nom: Sanchez
+    dateNaissance: 1988-01-03
+    manager: false
+    email: "animateur243@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A244
+    prenom: "Raphaël"
+    nom: Joly
+    dateNaissance: 1989-02-03
+    manager: false
+    email: "animateur244@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A245
+    prenom: Alice
+    nom: Lucas
+    dateNaissance: 1990-03-03
+    manager: false
+    email: "animateur245@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A246
+    prenom: Adam
+    nom: Marie
+    dateNaissance: 1991-04-03
+    manager: false
+    email: "animateur246@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A247
+    prenom: Lina
+    nom: Colin
+    dateNaissance: 1992-05-03
+    manager: false
+    email: "animateur247@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A248
+    prenom: Paul
+    nom: Aubert
+    dateNaissance: 1993-06-03
+    manager: false
+    email: "animateur248@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A249
+    prenom: Rose
+    nom: Picard
+    dateNaissance: 1994-07-03
+    manager: false
+    email: "animateur249@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A250
+    prenom: Sacha
+    nom: Olivier
+    dateNaissance: 1995-08-03
+    manager: false
+    email: "animateur250@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A251
+    prenom: Anna
+    nom: Deschamps
+    dateNaissance: 1996-09-03
+    manager: false
+    email: "animateur251@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A252
+    prenom: "Théo"
+    nom: Weber
+    dateNaissance: 1997-10-03
+    manager: false
+    email: "animateur252@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A253
+    prenom: "Zoé"
+    nom: Menard
+    dateNaissance: 1998-11-03
+    manager: false
+    email: "animateur253@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A254
+    prenom: Noah
+    nom: Mercier
+    dateNaissance: 1999-12-03
+    manager: false
+    email: "animateur254@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
