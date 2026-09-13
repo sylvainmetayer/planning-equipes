@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Cas dégénéré 10 : une édition sans aucun animateur.
+# Trois stands, deux vacations, six sièges, personne pour les tenir. Le fichier
+# est accepté ; l'analyse le dit par son message dédié, et le solve rend un plan
+# dont tous les sièges sont vides, sans rien casser d'autre.
+
+festival:
+  dateDebut: 2028-09-02
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2028-09-02
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2028-09-02
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: STAND-1
+    nom: "Stand 1"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-2
+    nom: "Stand 2"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-3
+    nom: "Stand 3"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs: []

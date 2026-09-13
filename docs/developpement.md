@@ -255,6 +255,47 @@ convergence d'un problème tendu reste l'affaire des scénarios `festival-*`.
 Quand une évolution fait bouger un barreau, c'est une décision : corriger le
 fichier **ou** l'assertion, en disant pourquoi, jamais les deux en silence.
 
+### Les scénarios extrêmes
+
+`src/test/resources/scenarios/extremes/` pousse chaque dimension au-delà de ce
+qu'une édition réelle demande, pour savoir où l'application cède avant qu'une
+édition ne le découvre. Même harnais que la gamme, mêmes invariants relus sur le
+plan, même contrôle de catalogue (`ScenarioExtremeCatalogTest`, suite par
+défaut : chaque fichier valide, joué par un test, et un nom qui dit sa taille).
+
+| Fichier | Limite | Mesuré (machine de développement) |
+| --- | --- | --- |
+| `extreme-01` | 1 000 animateurs pour 240 sièges | 0 dur en 5 s |
+| `extreme-02` | un mois, 150 stands, 1 000 animateurs | 0 dur en 185 s, presque tout en construction |
+| `extreme-03` | 120 jours, six jours fériés, saisonniers | 0 dur en 30 s |
+| `extreme-04` | 120 jours sans relâche, 15 % de marge | 0 dur en 11 s |
+| `extreme-05` | 500 stands le même jour | 0 dur en 30 s |
+| `extreme-06` | exploitation 24 h/24 pendant une semaine | 0 dur en 3 s |
+| `extreme-07` | vacations d'une heure | 0 dur en 15 s |
+| `extreme-08` | un stand de 200 places | 0 dur en 7 s |
+| `extreme-09` | tout à la fois : 120 j, 400 stands, 1 000 animateurs | lecture 1 s, analyse 0,25 s, construction des 41 370 sièges en 50 min 48 s (0 dur dès la construction), ~1 Go de tas |
+| `extreme-10` à `15` | sans animateur, un siège pour 1 000, uniquement des mineurs, 2 000 contraintes ad hoc, stands jamais ouverts, sans créneau | voir `ScenarioExtremeDegenerateTest` |
+
+**Ce qui cède en premier est l'heuristique de construction** : elle évalue chaque
+siège contre chaque candidat, son coût suit sièges × animateurs — et un peu
+plus, le score se renchérissant à mesure que le plan se remplit (le débit tombe
+de 17 000 à 10 900 évaluations par seconde sur `extreme-09`) —, et elle ne se
+parallélise pas sans l'édition Enterprise. Le reste — lecture, construction du
+problème, analyse, recherche locale jusqu'au zéro dur — tient l'échelle.
+
+**Le contrôle des contradictions ad hoc est quadratique** : 3,9 s pour 2 000
+exceptions (`extreme-13`), payées à chaque analyse de faisabilité.
+
+Les dégénérés (`ScenarioExtremeDegenerateTest`) tournent dans la suite par
+défaut. Les axes et le cumul portent le tag `scenario-extreme`, exclu de la suite
+par défaut **et** du profil `scenario-tests` : `./mvnw test -Pscenario-extreme
+-DargLine=-Xmx3g -Dtest=ScenarioExtremeAxisTest`, une classe à la fois. Leurs
+plafonds valent une dizaine de fois le temps mesuré : ils disent qu'une
+régression a eu lieu, pas combien de temps prend la machine. Le cumul fait
+exception : dix fois ses cinquante minutes serait une journée, son plafond est
+d'une heure et demie. Un tas plus grand n'y gagne rien — 1 Go suffit — et c'est
+lui que la pression mémoire d'une machine partagée tue en premier.
+
 ### Tests de bout en bout (Playwright)
 
 Ils réamorcent la base par `/api/database/import` : ne jamais les pointer

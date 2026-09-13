@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Cas dégénéré 15 : une édition sans aucun créneau.
+# Deux stands et trois animateurs, mais aucune grille : pas de bornes, pas de
+# siège. Lire le fichier, analyser et résoudre ne doivent rien casser.
+
+festival:
+  dateDebut: 2028-09-17
+
+creneaux: []
+
+stands:
+  - id: STAND-1
+    nom: "Stand 1"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-2
+    nom: "Stand 2"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A150000
+    prenom: Jeanne
+    nom: Henry
+    dateNaissance: 2000-05-22
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A150001
+    prenom: Kevin
+    nom: Gauthier
+    dateNaissance: 1974-01-10
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A150002
+    prenom: Laure
+    nom: Sanchez
+    dateNaissance: 1998-04-28
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []

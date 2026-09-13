@@ -94,6 +94,14 @@ its construction heuristic); `ScenarioLadderLargeTest` is `scenario-lent`.
 When a change moves a rung, fix the file or the assertion knowingly — the
 table and the rules are in `docs/developpement.md` (*La gamme de scénarios*).
 
+The **extreme scenarios** (`src/test/resources/scenarios/extremes/`) probe the
+limits — a thousand animateurs, 120 days, 500 stands a day, two thousand ad hoc
+rules, empty editions. `ScenarioExtremeDegenerateTest` and
+`ScenarioExtremeCatalogTest` run by default; `ScenarioExtremeAxisTest` and
+`ScenarioExtremeCumulTest` carry `@Tag("scenario-extreme")`, excluded from both
+the default run and `-Pscenario-tests`, and run only with `-Pscenario-extreme`,
+one class at a time, with `-DargLine=-Xmx3g` and nothing else testing — the cumulative one takes close to an hour.
+
 When an agent session needs to run this profile (or any other job on this
 order of a minute or more — a `docker build`, a long solve), launch it as a
 background command and let the harness notify on completion instead of
